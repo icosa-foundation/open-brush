@@ -216,6 +216,8 @@ namespace TiltBrush
             SdfMoveComponentDown = 14005,
             SdfCycleComponentOperation = 14006,
             SdfRemoveComponent = 14007,
+            SdfEditorNextPage = 14008,
+            SdfAddPrimitive = 14009,
         }
 
         public enum ControlsType
@@ -5112,7 +5114,9 @@ namespace TiltBrush
                 case GlobalCommands.SdfMoveComponentDown:
                 case GlobalCommands.SdfCycleComponentOperation:
                 case GlobalCommands.SdfRemoveComponent:
-                    SdfEditorPopup.Active?.Handle(rEnum);
+                case GlobalCommands.SdfEditorNextPage:
+                case GlobalCommands.SdfAddPrimitive:
+                    SdfEditorPopup.Active?.Handle(rEnum, iParam1);
                     EatToolScaleInput();
                     break;
                 case GlobalCommands.SaveModel:
@@ -5543,6 +5547,8 @@ namespace TiltBrush
                 case GlobalCommands.SdfMoveComponentDown:
                 case GlobalCommands.SdfCycleComponentOperation:
                 case GlobalCommands.SdfRemoveComponent:
+                case GlobalCommands.SdfEditorNextPage:
+                case GlobalCommands.SdfAddPrimitive:
                     return false;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;
                 case GlobalCommands.ToggleCameraPostEffects: return CameraConfig.PostEffects;
@@ -5697,8 +5703,10 @@ namespace TiltBrush
                 case GlobalCommands.SdfMoveComponentDown:
                 case GlobalCommands.SdfCycleComponentOperation:
                 case GlobalCommands.SdfRemoveComponent:
+                case GlobalCommands.SdfEditorNextPage:
+                case GlobalCommands.SdfAddPrimitive:
                     return SdfEditorPopup.Active != null &&
-                        SdfEditorPopup.Active.CanHandle(rEnum);
+                        SdfEditorPopup.Active.CanHandle(rEnum, iParam);
                 case GlobalCommands.SaveModel:
                 case GlobalCommands.SaveSelected:
                     return SelectionManager.m_Instance.HasSelection;

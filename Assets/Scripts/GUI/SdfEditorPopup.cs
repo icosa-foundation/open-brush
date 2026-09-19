@@ -23,12 +23,12 @@ namespace TiltBrush
     /// Configures the reusable selection-options popup as a persistent SDF component editor.
     public class SdfEditorPopup : MonoBehaviour
     {
-        private readonly Dictionary<SketchControlsScript.GlobalCommands, OptionButton> m_Buttons =
-            new Dictionary<SketchControlsScript.GlobalCommands, OptionButton>();
+        private readonly List<OptionButton> m_Buttons = new List<OptionButton>();
 
         private SdfStencil m_Stencil;
         private PopUpWindow m_Popup;
         private int m_ComponentIndex;
+        private int m_Page;
 
         internal static SdfEditorPopup Active { get; private set; }
 
@@ -50,7 +50,8 @@ namespace TiltBrush
             Refresh();
         }
 
-        internal bool CanHandle(SketchControlsScript.GlobalCommands command)
+        internal bool CanHandle(
+            SketchControlsScript.GlobalCommands command, int commandParam = -1)
         {
             int count = m_Stencil != null ? m_Stencil.ComponentCount : 0;
             switch (command)
@@ -67,14 +68,19 @@ namespace TiltBrush
                     return count > 1 && m_ComponentIndex > 0;
                 case SketchControlsScript.GlobalCommands.SdfRemoveComponent:
                     return count > 0;
+                case SketchControlsScript.GlobalCommands.SdfEditorNextPage:
+                    return true;
+                case SketchControlsScript.GlobalCommands.SdfAddPrimitive:
+                    return Enum.IsDefined(typeof(SDFPrimitiveType), commandParam);
                 default:
                     return false;
             }
         }
 
-        internal void Handle(SketchControlsScript.GlobalCommands command)
+        internal void Handle(
+            SketchControlsScript.GlobalCommands command, int commandParam = -1)
         {
-            if (!CanHandle(command))
+            if (!CanHandle(command, commandParam))
             {
                 return;
             }
@@ -106,6 +112,13 @@ namespace TiltBrush
                     m_ComponentIndex = Mathf.Min(
                         m_ComponentIndex, m_Stencil.ComponentCount - 1);
                     break;
+                case SketchControlsScript.GlobalCommands.SdfEditorNextPage:
+                    m_Page = (m_Page + 1) % 3;
+                    ConfigurePage();
+                    break;
+                case SketchControlsScript.GlobalCommands.SdfAddPrimitive:
+                    AddPrimitive((SDFPrimitiveType)commandParam);
+                    break;
             }
             Refresh();
         }
@@ -116,27 +129,6 @@ namespace TiltBrush
                 GetComponentsInChildren<OptionButton>(true)
                     .ToDictionary(button => button.gameObject.name);
 
-            Configure(
-                buttons["FlipSelection"],
-                SketchControlsScript.GlobalCommands.SdfPreviousComponent,
-                "Icons/backwardarrow", "Previous component");
-            Configure(
-                buttons["SelectAll"],
-                SketchControlsScript.GlobalCommands.SdfNextComponent,
-                "Icons/forwardarrow", "Next component");
-            Configure(
-                buttons["Ungroup"],
-                SketchControlsScript.GlobalCommands.SdfMoveComponentUp,
-                "Icons/uparrow", "Move component up");
-            Configure(
-                buttons["Group"],
-                SketchControlsScript.GlobalCommands.SdfMoveComponentDown,
-                "Icons/downarrow", "Move component down");
-            Configure(
-                buttons["InvertSelection"],
-                SketchControlsScript.GlobalCommands.SdfCycleComponentOperation,
-                "Icons/edit", "Change operation");
-
             GameObject removeObject = Instantiate(
                 buttons["FlipSelection"].gameObject,
                 buttons["FlipSelection"].transform.parent);
@@ -144,19 +136,114 @@ namespace TiltBrush
             removeObject.transform.localPosition = new Vector3(0f, 0f, -0.02f);
             OptionButton removeButton = removeObject.GetComponent<OptionButton>();
             removeButton.RegisterComponent();
-            Configure(
-                removeButton,
-                SketchControlsScript.GlobalCommands.SdfRemoveComponent,
-                "Icons/Knot_Delete", "Remove component");
+
+            m_Buttons.Add(buttons["FlipSelection"]);
+            m_Buttons.Add(buttons["SelectAll"]);
+            m_Buttons.Add(buttons["Ungroup"]);
+            m_Buttons.Add(buttons["Group"]);
+            m_Buttons.Add(buttons["InvertSelection"]);
+            m_Buttons.Add(removeButton);
+            ConfigurePage();
         }
 
         private void Configure(
             OptionButton button, SketchControlsScript.GlobalCommands command,
-            string resourcePath, string description)
+            string resourcePath, string description, int commandParam = -1)
         {
             Texture2D texture = Resources.Load<Texture2D>(resourcePath);
             button.SetContextCommand(command, texture ?? button.ButtonTexture, description);
-            m_Buttons[command] = button;
+            button.SetCommandParameters(commandParam);
+        }
+
+        private void ConfigurePage()
+        {
+            switch (m_Page)
+            {
+                case 0:
+                    Configure(m_Buttons[0], SketchControlsScript.GlobalCommands.SdfPreviousComponent,
+                        "Icons/backwardarrow", "Previous component");
+                    Configure(m_Buttons[1], SketchControlsScript.GlobalCommands.SdfNextComponent,
+                        "Icons/forwardarrow", "Next component");
+                    Configure(m_Buttons[2], SketchControlsScript.GlobalCommands.SdfMoveComponentUp,
+                        "Icons/uparrow", "Move component up");
+                    Configure(m_Buttons[3], SketchControlsScript.GlobalCommands.SdfMoveComponentDown,
+                        "Icons/downarrow", "Move component down");
+                    Configure(m_Buttons[4],
+                        SketchControlsScript.GlobalCommands.SdfCycleComponentOperation,
+                        "Icons/edit", "Change operation");
+                    Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
+                        "Icons/forwardarrow", "Add components");
+                    break;
+                case 1:
+                    ConfigureAddButton(0, SDFPrimitiveType.Sphere, "Icons/guide_sphere");
+                    ConfigureAddButton(1, SDFPrimitiveType.Torus, "Icons/guides_settings");
+                    ConfigureAddButton(2, SDFPrimitiveType.Cuboid, "Icons/guide_cube");
+                    ConfigureAddButton(3, SDFPrimitiveType.BoxFrame, "Icons/guides_settings");
+                    ConfigureAddButton(4, SDFPrimitiveType.Cylinder, "Icons/guides_settings");
+                    Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
+                        "Icons/forwardarrow", "More component types");
+                    break;
+                default:
+                    ConfigureAddButton(0, SDFPrimitiveType.Capsule, "Icons/guide_capsule");
+                    ConfigureAddButton(1, SDFPrimitiveType.Ellipsoid, "Icons/guide_ellipsoid");
+                    ConfigureAddButton(2, SDFPrimitiveType.Cone, "Icons/guides_settings");
+                    ConfigureAddButton(3, SDFPrimitiveType.Pyramid, "Icons/guides_settings");
+                    Configure(m_Buttons[4], SketchControlsScript.GlobalCommands.SdfRemoveComponent,
+                        "Icons/Knot_Delete", "Remove component");
+                    Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
+                        "Icons/backwardarrow", "Component controls");
+                    break;
+            }
+        }
+
+        private void ConfigureAddButton(
+            int buttonIndex, SDFPrimitiveType type, string resourcePath)
+        {
+            Configure(
+                m_Buttons[buttonIndex],
+                SketchControlsScript.GlobalCommands.SdfAddPrimitive,
+                resourcePath,
+                $"Add {SdfStencil.PrimitiveTypeName(type)}",
+                (int)type);
+        }
+
+        private void AddPrimitive(SDFPrimitiveType type)
+        {
+            Vector4 geometry;
+            switch (type)
+            {
+                case SDFPrimitiveType.Sphere:
+                    geometry = new Vector4(0.25f, 0f, 0f, 0f);
+                    break;
+                case SDFPrimitiveType.Torus:
+                    geometry = new Vector4(0.25f, 0.08f, 0f, 0f);
+                    break;
+                case SDFPrimitiveType.Cuboid:
+                    geometry = new Vector4(0.25f, 0.25f, 0.25f, 0f);
+                    break;
+                case SDFPrimitiveType.BoxFrame:
+                    geometry = new Vector4(0.25f, 0.25f, 0.25f, 0.05f);
+                    break;
+                case SDFPrimitiveType.Cylinder:
+                case SDFPrimitiveType.Cone:
+                case SDFPrimitiveType.Pyramid:
+                    geometry = new Vector4(0.25f, 0.25f, 0f, 0f);
+                    break;
+                case SDFPrimitiveType.Capsule:
+                    geometry = new Vector4(0.15f, 0.25f, 0f, 0f);
+                    break;
+                case SDFPrimitiveType.Ellipsoid:
+                    geometry = new Vector4(0.25f, 0.2f, 0.15f, 0f);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(type), type, null);
+            }
+
+            Perform(EditSdfGuideCommand.AddPrimitive(
+                m_Stencil, type, geometry, TrTransform.identity));
+            m_ComponentIndex = m_Stencil.ComponentCount - 1;
+            m_Page = 0;
+            ConfigurePage();
         }
 
         private void CycleOperation()
@@ -205,9 +292,10 @@ namespace TiltBrush
             }
             m_Popup.SetWindowText(label);
 
-            foreach (var pair in m_Buttons)
+            foreach (OptionButton button in m_Buttons)
             {
-                pair.Value.SetButtonAvailable(CanHandle(pair.Key));
+                button.SetButtonAvailable(CanHandle(
+                    button.m_Command, button.m_CommandParam));
             }
         }
 
