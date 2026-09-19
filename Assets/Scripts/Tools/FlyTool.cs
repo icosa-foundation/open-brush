@@ -30,7 +30,7 @@ namespace TiltBrush
         [SerializeField] private TouchJoystick m_MoveJoystick;
         [SerializeField] private TouchscreenVirtualKey m_UpButton;
         [SerializeField] private TouchscreenVirtualKey m_DownButton;
-        [SerializeField] [Min(0f)] private float m_PinchDollyDistance = 5f;
+        [SerializeField][Min(0f)] private float m_PinchDollyDistance = 5f;
 
         private GameObject _toolDirectionIndicator;
         private bool m_LockToController;
