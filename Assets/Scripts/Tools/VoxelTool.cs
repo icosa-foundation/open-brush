@@ -81,10 +81,16 @@ namespace TiltBrush
 
             if (m_CurrentModel != null && ShowGrid)
             {
-                Color previewColor = m_CurrentModel.ContainsAt(canvasPosition)
-                    ? App.BrushColor.CurrentColor
-                    : Color.red;
-                m_CurrentModel.PreviewAt(canvasPosition, previewColor);
+                Color guideColor = Mode switch
+                {
+                    EditMode.Erase => new Color(0.9f, 0.12f, 0.08f),
+                    EditMode.Paint => new Color(0.18f, 0.48f, 0.95f),
+                    _ => new Color(0.12f, 0.8f, 0.28f),
+                };
+                Color targetColor = Mode == EditMode.Erase
+                    ? guideColor
+                    : App.BrushColor.CurrentColor;
+                m_CurrentModel.PreviewForTool(canvasPosition, targetColor, guideColor);
             }
 
             if (IsEatingInput)

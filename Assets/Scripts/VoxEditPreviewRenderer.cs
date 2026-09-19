@@ -39,6 +39,14 @@ namespace TiltBrush
             TrTransform modelToCanvas,
             Vector3 canvasPosition,
             Color color)
+            => Draw(model, modelToCanvas, canvasPosition, color, color);
+
+        public static void Draw(
+            RuntimeVoxDocument.RuntimeModel model,
+            TrTransform modelToCanvas,
+            Vector3 canvasPosition,
+            Color targetColor,
+            Color guideColor)
         {
             if (model == null || !TryGetMaterial())
             {
@@ -74,7 +82,11 @@ namespace TiltBrush
                 modelToWorld.translation);
             s_GridProperties.SetColor(
                 SnapGrid3D.ShaderParam.Color,
-                new Color(color.r * 0.45f, color.g * 0.45f, color.b * 0.45f, 0.5f));
+                new Color(
+                    guideColor.r * 0.45f,
+                    guideColor.g * 0.45f,
+                    guideColor.b * 0.45f,
+                    0.5f));
             s_GridProperties.SetVector(
                 SnapGrid3D.ShaderParam.GridCount,
                 (Vector3)gridCount);
@@ -106,7 +118,7 @@ namespace TiltBrush
             Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, vertexCount);
 
             Color boundsColor = isInside
-                ? new Color(0.18f, 0.55f, 0.72f, 0.35f)
+                ? new Color(guideColor.r, guideColor.g, guideColor.b, 0.35f)
                 : new Color(0.65f, 0.08f, 0.08f, 0.5f);
             DrawBox(
                 modelToWorld,
@@ -123,7 +135,7 @@ namespace TiltBrush
                     modelToWorld,
                     (Vector3)cell - Vector3.one * 0.5f,
                     (Vector3)cell + Vector3.one * 0.5f,
-                    new Color(color.r, color.g, color.b, 0.9f),
+                    new Color(targetColor.r, targetColor.g, targetColor.b, 0.9f),
                     0.075f,
                     renderParams.worldBounds,
                     ref s_TargetProperties);
