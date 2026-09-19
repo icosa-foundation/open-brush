@@ -108,6 +108,12 @@ namespace TiltBrush
             }
         }
 
+        /// True when the current non-empty selection consists entirely of guides.
+        public bool SelectionContainsOnlyGuides =>
+            m_SelectedStrokes.Count == 0 &&
+            m_SelectedWidgets.Count > 0 &&
+            m_SelectedWidgets.All(widget => widget is StencilWidget);
+
         /// Returns true when cached selection tool is hot.
         public bool SelectionToolIsHot
         {
@@ -1101,6 +1107,28 @@ namespace TiltBrush
             }
             var pos = InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush);
             AudioManager.m_Instance.PlayGroupedSound(pos);
+        }
+
+        public void ConvertSelectedGuidesToSdf()
+        {
+            if (!SelectionContainsOnlyGuides)
+            {
+                return;
+            }
+
+            List<StencilWidget> guides = m_SelectedWidgets.OfType<StencilWidget>().ToList();
+            CanvasScript targetCanvas = guides[0].Canvas ?? App.ActiveCanvas;
+            try
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new ConvertGuidesToSdfCommand(guides, targetCanvas));
+            }
+            catch (InvalidOperationException exception)
+            {
+                Debug.LogWarning($"SDFGuideConversion: {exception.Message}");
+                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush, exception.Message);
+            }
         }
 
         /// Consumers who call SelectStroke(s) or DeselectStroke(s) must call this once they're

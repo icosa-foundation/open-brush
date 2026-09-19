@@ -492,6 +492,9 @@ namespace TiltBrush
 
             public string Type { get; set; }
 
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+            public SdfMeshState Mesh { get; set; }
+
             public Vector4 Geometry
             {
                 get { return m_Geometry; }
@@ -538,6 +541,20 @@ namespace TiltBrush
             [JsonIgnore] public bool HasTransform { get; private set; }
             [JsonIgnore] public bool HasBlend { get; private set; }
             [JsonIgnore] public bool HasFlip { get; private set; }
+        }
+
+        [Serializable]
+        public class SdfMeshState
+        {
+            public int Size { get; set; }
+            public float Padding { get; set; }
+            public Vector3 MinBounds { get; set; }
+            public Vector3 MaxBounds { get; set; }
+
+            // Json.NET writes byte arrays as base64 rather than millions of JSON numbers. The
+            // enclosing .tilt archive then compresses the data further.
+            public byte[] Samples { get; set; }
+            public byte[] PackedUvs { get; set; }
         }
 
         // This is the accessor used by Json.NET for reading/writing the "Type" field.

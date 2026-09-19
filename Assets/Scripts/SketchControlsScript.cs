@@ -208,6 +208,7 @@ namespace TiltBrush
             LoadQuillConfirmUnsaved = 13000,
             LoadQuillFile = 13001,
             OpenQuillPanelSearchPopup = 13002,
+            ConvertSelectionToSdf = 14000,
         }
 
         public enum ControlsType
@@ -5094,6 +5095,10 @@ namespace TiltBrush
                     SelectionManager.m_Instance.ToggleGroupSelectedStrokesAndWidgets();
                     EatToolScaleInput();
                     break;
+                case GlobalCommands.ConvertSelectionToSdf:
+                    SelectionManager.m_Instance.ConvertSelectedGuidesToSdf();
+                    EatToolScaleInput();
+                    break;
                 case GlobalCommands.SaveModel:
                     SaveModel();
                     break;
@@ -5514,6 +5519,7 @@ namespace TiltBrush
                         && PointerManager.m_Instance.StraightEdgeGuide.CurrentShape == (StraightEdgeGuideScript.Shape)iParam);
                 case GlobalCommands.Disco: return LightsControlScript.m_Instance.DiscoMode;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.UngroupingAllowed;
+                case GlobalCommands.ConvertSelectionToSdf: return false;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;
                 case GlobalCommands.ToggleCameraPostEffects: return CameraConfig.PostEffects;
                 case GlobalCommands.ToggleWatermark: return CameraConfig.Watermark;
@@ -5658,6 +5664,7 @@ namespace TiltBrush
                 case GlobalCommands.ResetAllPanels: return m_PanelManager.PanelsHaveBeenCustomized();
                 case GlobalCommands.Duplicate: return ClipboardManager.Instance.CanCopy;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionCanBeGrouped;
+                case GlobalCommands.ConvertSelectionToSdf: return SelectionManager.m_Instance.SelectionContainsOnlyGuides;
                 case GlobalCommands.SaveModel:
                 case GlobalCommands.SaveSelected:
                     return SelectionManager.m_Instance.HasSelection;

@@ -22,6 +22,26 @@ namespace TiltBrush
 
         public Mesh m_DefaultMesh;
 
+        public Mesh SourceMesh
+        {
+            get
+            {
+                var collider = GetComponentInChildren<MeshCollider>();
+                return collider != null && collider.sharedMesh != null
+                    ? collider.sharedMesh
+                    : m_DefaultMesh;
+            }
+        }
+
+        internal Transform SourceMeshTransform
+        {
+            get
+            {
+                var collider = GetComponentInChildren<MeshCollider>();
+                return collider != null ? collider.transform : transform;
+            }
+        }
+
         public override Vector3 Extents
         {
             get

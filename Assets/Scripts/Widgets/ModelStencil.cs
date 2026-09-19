@@ -53,6 +53,9 @@ namespace TiltBrush
         private SDFMesh m_SDFMeshComponent;
         private SDFGroupMeshGenerator m_MeshGenerator;
 
+        internal SDFMeshAsset SdfMeshAsset => m_SDFMeshAsset;
+        internal ComputeShader SdfComputeShader => m_SDFComputeShader;
+
         public override Vector3 Extents
         {
             get

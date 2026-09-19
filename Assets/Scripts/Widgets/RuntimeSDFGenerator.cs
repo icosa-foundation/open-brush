@@ -178,13 +178,35 @@ namespace TiltBrush
             stopwatch.Stop();
             Debug.Log($"ModelStencil: RuntimeSDFGenerator - Generated {size}³ SDF in {stopwatch.ElapsedMilliseconds}ms");
 
-            // Create SDFMeshAsset in memory (not saved to disk)
+            return CreateSDFAsset(
+                mesh, samples, null, size, padding, minBounds, maxBounds);
+        }
+
+        /// <summary>
+        /// Recreates an in-memory IsoMesh asset from serialized sample data.
+        /// </summary>
+        public static SDFMeshAsset CreateSDFAsset(
+            Mesh sourceMesh, float[] samples, float[] packedUvs, int size, float padding,
+            Vector3 minBounds, Vector3 maxBounds)
+        {
+            if (samples == null)
+            {
+                throw new System.ArgumentNullException(nameof(samples));
+            }
+            if (size < 2 || samples.Length != size * size * size)
+            {
+                throw new System.ArgumentException(
+                    $"An SDF asset of size {size} requires {size * size * size} samples.",
+                    nameof(samples));
+            }
+
             SDFMeshAsset asset = ScriptableObject.CreateInstance<SDFMeshAsset>();
 
-            // Use reflection to set private fields (SDFMeshAsset.Create is Editor-only)
+            // IsoMesh only exposes asset creation in editor code. Keep this runtime bridge in one
+            // place until the package exposes a supported constructor.
             var type = typeof(SDFMeshAsset);
             type.GetField("m_sourceMesh", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .SetValue(asset, mesh);
+                .SetValue(asset, sourceMesh);
             type.GetField("m_samples", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 .SetValue(asset, samples);
             type.GetField("m_size", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
@@ -198,7 +220,7 @@ namespace TiltBrush
             type.GetField("m_tessellationLevel", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
                 .SetValue(asset, 0);
             type.GetField("m_packedUVs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .SetValue(asset, null);
+                .SetValue(asset, packedUvs);
 
             return asset;
         }
