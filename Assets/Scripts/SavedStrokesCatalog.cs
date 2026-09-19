@@ -54,10 +54,9 @@ namespace TiltBrush
             m_SavedStrokeFiles = new List<SavedStrokeFile>();
             m_ChangedFiles = new HashSet<string>();
 
-            // The sketch set is a library-wide tree index, so ask it to rebuild before
+            // The sketch set is a library-wide tree index, so wait for it to rebuild before
             // this folder page is populated from it.
-            SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes)?.RequestRefresh();
-            StartCoroutine(ScanReferenceDirectory());
+            RequestScanAfterSketchSetRefresh();
 
             if (Directory.Exists(m_CurrentSavedStrokesDirectory))
             {
@@ -189,6 +188,9 @@ namespace TiltBrush
             }
             sketchSet.OnChanged += OnFileSketchSetChanged;
             m_WaitingForSketchSetUpdate = true;
+            // Subscribe before requesting so an independent watcher cannot complete the
+            // refresh before this catalog is listening for it.
+            sketchSet.RequestRefresh();
         }
 
         private void StopWatchingCurrentDirectory()
