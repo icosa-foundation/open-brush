@@ -368,14 +368,15 @@ namespace TiltBrush
         static DynamicExportableMaterial CreateImageQuadMaterial(ReferenceImage ri)
         {
             BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(kPbrTransparentGuid);
+            string sourcePath = ri.GetExportSourcePath();
             return new DynamicExportableMaterial(
                 parent: desc,
                 // GetExportName() not totally guaranteed to be unique; maybe we should detect collisions?
                 durableName: $"image_{ri.GetExportName()}",
                 uniqueName: MakeDeterministicUniqueName(desc.m_Guid, ri, 0),
-                uriBase: Path.GetDirectoryName(ri.FileFullPath))
+                uriBase: Path.GetDirectoryName(sourcePath))
             {
-                BaseColorTex = Path.GetFileName(ri.FileFullPath),
+                BaseColorTex = Path.GetFileName(sourcePath),
                 MetallicFactor = kRefimageMetallicFactor
             };
         }

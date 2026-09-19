@@ -188,6 +188,23 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafImages_MaterializeAPathOnlyExportSource()
+        {
+            byte[] bytes = { 1, 2, 3, 4 };
+            var image = new ReferenceImage(
+                "Nested/image.png", $"export-{Guid.NewGuid():N}",
+                () => new MemoryStream(bytes, writable: false), bytes.Length,
+                "./Nested/image.png");
+
+            string source = image.GetExportSourcePath();
+
+            Assert.IsTrue(File.Exists(source));
+            CollectionAssert.AreEqual(bytes, File.ReadAllBytes(source));
+            Assert.AreEqual("Nested/image.png", image.FileFullPath);
+            Assert.AreEqual("./Nested/image.png", image.RelativePath);
+        }
+
+        [Test]
         public void SafVideos_PreserveSubfoldersAndSeparatePlaybackPath()
         {
             var first = new ReferenceVideo("cache-a/clip.mp4", "id-a", "First/clip.mp4");

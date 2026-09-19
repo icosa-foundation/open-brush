@@ -1735,8 +1735,8 @@ namespace TiltBrush
         )]
         public static string FormEncodeImage(int index)
         {
-            var path = _GetActiveImage(index).ReferenceImage.FileFullPath;
-            return Convert.ToBase64String(File.ReadAllBytes(path));
+            return Convert.ToBase64String(
+                _GetActiveImage(index).ReferenceImage.ReadEncodedBytes());
         }
 
         [ApiEndpoint(

@@ -874,7 +874,7 @@ namespace TiltBrush
 
         /// Reads the encoded image. The catalog supplies a stream for documents that have no
         /// filesystem path, so nothing needs to be copied out of shared storage to decode it.
-        private byte[] ReadEncodedBytes()
+        internal byte[] ReadEncodedBytes()
         {
             if (m_OpenRead == null)
             {
@@ -886,6 +886,36 @@ namespace TiltBrush
                 source.CopyTo(buffer);
                 return buffer.ToArray();
             }
+        }
+
+        /// Path-only exporters cannot consume the catalog's stream directly. Materialize a
+        /// content-identity-scoped private copy on demand while keeping the logical path used by
+        /// sketch persistence unchanged.
+        internal string GetExportSourcePath()
+        {
+            if (m_OpenRead == null)
+            {
+                return FileFullPath;
+            }
+
+            string directory = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                "ReferenceImageExports",
+                SafPrivatePaths.GetStableId(CatalogIdentity));
+            string path = Path.Combine(directory, FileName);
+            if (File.Exists(path)) { return path; }
+
+            Directory.CreateDirectory(directory);
+            string temporaryPath = path + ".tmp";
+            using (Stream source = m_OpenRead())
+            using (var destination = new FileStream(
+                temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                source.CopyTo(destination);
+            }
+            if (File.Exists(path)) { File.Delete(path); }
+            File.Move(temporaryPath, path);
+            return path;
         }
 
         /// SVG import goes through RuntimeSVGImporter, which opens a path. Shared storage has
