@@ -151,7 +151,7 @@ namespace TiltBrush
             // The backend rejects escaping paths, but refuse the obvious shapes before the round
             // trip and never let a caller name an absolute path.
             if (string.IsNullOrWhiteSpace(relativePath) ||
-                relativePath.Contains("..") ||
+                Array.Exists(rawSegments, segment => segment == "." || segment == "..") ||
                 Path.IsPathRooted(relativePath))
             {
                 relativePath = null;
