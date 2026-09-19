@@ -23,9 +23,45 @@ namespace TiltBrush
     public class SelectionTray : BaseTray
     {
         [SerializeField] private OptionButton m_GroupButton;
+        [SerializeField] private Texture2D m_ConvertToSdfTexture;
+
+        private SketchControlsScript.GlobalCommands m_DefaultGroupCommand;
+        private Texture2D m_DefaultGroupTexture;
+        private string m_DefaultGroupDescription;
+        private bool m_ContextActionInitialized;
+
+        protected override void Start()
+        {
+            base.Start();
+            m_DefaultGroupCommand = m_GroupButton.m_Command;
+            m_DefaultGroupTexture = m_GroupButton.ButtonTexture;
+            m_DefaultGroupDescription = m_GroupButton.Description;
+            m_ContextActionInitialized = true;
+            RefreshContextAction();
+        }
 
         protected override void OnSelectionChanged()
         {
+            RefreshContextAction();
+        }
+
+        private void RefreshContextAction()
+        {
+            if (!m_ContextActionInitialized || m_GroupButton == null ||
+                SelectionManager.m_Instance == null)
+            {
+                return;
+            }
+
+            bool guidesOnly = SelectionManager.m_Instance.SelectionContainsOnlyGuides;
+            m_GroupButton.SetContextCommand(
+                guidesOnly
+                    ? SketchControlsScript.GlobalCommands.ConvertSelectionToSdf
+                    : m_DefaultGroupCommand,
+                guidesOnly && m_ConvertToSdfTexture != null
+                    ? m_ConvertToSdfTexture
+                    : m_DefaultGroupTexture,
+                guidesOnly ? "Convert to SDF" : m_DefaultGroupDescription);
             m_GroupButton.UpdateVisuals();
         }
 
