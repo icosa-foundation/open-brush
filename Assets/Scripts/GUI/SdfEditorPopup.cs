@@ -352,21 +352,37 @@ namespace TiltBrush
                 {
                     return 0;
                 }
-                switch (primitive.Value.Type)
-                {
-                    case SDFPrimitiveType.Sphere: return 1;
-                    case SDFPrimitiveType.Torus:
-                    case SDFPrimitiveType.Cylinder:
-                    case SDFPrimitiveType.Capsule:
-                    case SDFPrimitiveType.Cone:
-                    case SDFPrimitiveType.Pyramid:
-                        return 2;
-                    case SDFPrimitiveType.Cuboid:
-                    case SDFPrimitiveType.Ellipsoid:
-                        return 3;
-                    case SDFPrimitiveType.BoxFrame: return 4;
-                    default: return 0;
-                }
+                return DimensionCountForPrimitive(primitive.Value.Type);
+            }
+        }
+
+        private static int DimensionCountForPrimitive(SDFPrimitiveType type)
+        {
+            switch (type)
+            {
+                case SDFPrimitiveType.Sphere: return 1;
+                case SDFPrimitiveType.Torus:
+                case SDFPrimitiveType.Cylinder:
+                case SDFPrimitiveType.Capsule:
+                case SDFPrimitiveType.Cone:
+                case SDFPrimitiveType.Pyramid:
+                    return 2;
+                case SDFPrimitiveType.Cuboid:
+                case SDFPrimitiveType.Ellipsoid:
+                    return 3;
+                case SDFPrimitiveType.BoxFrame: return 4;
+                default: return 0;
+            }
+        }
+
+        private static Vector3 DimensionAxis(int dimensionIndex)
+        {
+            switch (dimensionIndex)
+            {
+                case 0: return Vector3.right;
+                case 1: return Vector3.up;
+                case 2: return Vector3.forward;
+                default: return new Vector3(1f, 1f, 1f).normalized;
             }
         }
 
@@ -449,6 +465,15 @@ namespace TiltBrush
             return m_Stencil.GetComponentDefinitions()[m_ComponentIndex].Transform;
         }
 
+        internal Vector4 BeginHandleResize(SdfComponentHandle handle)
+        {
+            m_ComponentIndex = handle.ComponentIndex;
+            m_DimensionIndex = handle.DimensionIndex;
+            Refresh();
+            return m_Stencil.GetComponentDefinitions()[m_ComponentIndex]
+                .Primitive.Value.Geometry;
+        }
+
         internal void PreviewHandleTransform(SdfComponentHandle handle)
         {
             if (!m_EditComponentHandles || handle.ComponentIndex < 0 ||
@@ -487,6 +512,61 @@ namespace TiltBrush
             Refresh();
         }
 
+        internal void PreviewHandleResize(SdfComponentHandle handle)
+        {
+            if (!m_EditComponentHandles || !handle.IsDimensionHandle ||
+                handle.ComponentIndex < 0 ||
+                handle.ComponentIndex >= m_Stencil.ComponentCount)
+            {
+                return;
+            }
+
+            SdfStencil.ComponentDefinition component =
+                m_Stencil.GetComponentDefinitions()[handle.ComponentIndex];
+            if (!component.IsPrimitive)
+            {
+                return;
+            }
+
+            TrTransform componentPose_GS =
+                TrTransform.FromTransform(m_Stencil.transform) * component.Transform;
+            Vector3 axis_GS = componentPose_GS.rotation * handle.DimensionAxis;
+            float dimension = Vector3.Dot(
+                handle.transform.position - componentPose_GS.translation,
+                axis_GS.normalized) / Mathf.Max(k_MinimumDimension, componentPose_GS.scale);
+            Vector4 geometry = component.Primitive.Value.Geometry;
+            geometry[handle.DimensionIndex] = Mathf.Max(k_MinimumDimension, dimension);
+            if (!Mathf.Approximately(
+                component.Primitive.Value.Geometry[handle.DimensionIndex],
+                geometry[handle.DimensionIndex]))
+            {
+                m_Stencil.SetComponentPrimitiveGeometry(handle.ComponentIndex, geometry);
+            }
+        }
+
+        internal void CommitHandleResize(
+            SdfComponentHandle handle, Vector4 dragStart)
+        {
+            if (!m_EditComponentHandles || !handle.IsDimensionHandle ||
+                handle.ComponentIndex < 0 ||
+                handle.ComponentIndex >= m_Stencil.ComponentCount)
+            {
+                return;
+            }
+
+            PreviewHandleResize(handle);
+            SdfStencil.PrimitiveDefinition primitive =
+                m_Stencil.GetComponentDefinitions()[handle.ComponentIndex].Primitive.Value;
+            Vector4 dragEnd = primitive.Geometry;
+            if (dragStart != dragEnd)
+            {
+                m_Stencil.SetComponentPrimitiveGeometry(handle.ComponentIndex, dragStart);
+                Perform(EditSdfGuideCommand.SetPrimitiveGeometry(
+                    m_Stencil, handle.ComponentIndex, primitive.Type, dragEnd));
+            }
+            Refresh();
+        }
+
         private TrTransform ComponentTransformFromHandle(SdfComponentHandle handle)
         {
             TrTransform sdfPose_GS = TrTransform.FromTransform(m_Stencil.transform);
@@ -509,7 +589,11 @@ namespace TiltBrush
 
             IReadOnlyList<SdfStencil.ComponentDefinition> components =
                 m_Stencil.GetComponentDefinitions();
-            if (m_ComponentHandles.Count != components.Count)
+            int expectedHandleCount = components.Sum(component =>
+                1 + (component.IsPrimitive
+                    ? DimensionCountForPrimitive(component.Primitive.Value.Type)
+                    : 0));
+            if (m_ComponentHandles.Count != expectedHandleCount)
             {
                 DestroyComponentHandles();
                 Renderer sourceRenderer =
@@ -520,18 +604,53 @@ namespace TiltBrush
                 TrTransform sdfPose_GS = TrTransform.FromTransform(m_Stencil.transform);
                 for (int i = 0; i < components.Count; ++i)
                 {
+                    TrTransform componentPose_GS = sdfPose_GS * components[i].Transform;
                     m_ComponentHandles.Add(SdfComponentHandle.Create(
-                        this, i, sdfPose_GS * components[i].Transform, sourceMaterial));
+                        this, i, componentPose_GS, sourceMaterial));
+                    if (!components[i].IsPrimitive)
+                    {
+                        continue;
+                    }
+                    SdfStencil.PrimitiveDefinition primitive = components[i].Primitive.Value;
+                    int dimensionCount = DimensionCountForPrimitive(primitive.Type);
+                    for (int dimension = 0; dimension < dimensionCount; ++dimension)
+                    {
+                        Vector3 axis = DimensionAxis(dimension);
+                        TrTransform dimensionPose_GS = TrTransform.TRS(
+                            componentPose_GS * (axis * primitive.Geometry[dimension]),
+                            componentPose_GS.rotation, 1f);
+                        m_ComponentHandles.Add(SdfComponentHandle.CreateDimension(
+                            this, i, dimension, axis, dimensionPose_GS, sourceMaterial));
+                    }
                 }
             }
 
             TrTransform pose_GS = TrTransform.FromTransform(m_Stencil.transform);
-            for (int i = 0; i < m_ComponentHandles.Count; ++i)
+            int handleIndex = 0;
+            for (int i = 0; i < components.Count; ++i)
             {
-                SdfComponentHandle handle = m_ComponentHandles[i];
+                TrTransform componentPose_GS = pose_GS * components[i].Transform;
+                SdfComponentHandle handle = m_ComponentHandles[handleIndex++];
                 handle.SetComponentIndex(i);
-                handle.SetPose(pose_GS * components[i].Transform);
+                handle.SetPose(componentPose_GS);
                 handle.SetSelected(i == m_ComponentIndex);
+                if (!components[i].IsPrimitive)
+                {
+                    continue;
+                }
+                SdfStencil.PrimitiveDefinition primitive = components[i].Primitive.Value;
+                int dimensionCount = DimensionCountForPrimitive(primitive.Type);
+                for (int dimension = 0; dimension < dimensionCount; ++dimension)
+                {
+                    SdfComponentHandle dimensionHandle = m_ComponentHandles[handleIndex++];
+                    Vector3 axis = DimensionAxis(dimension);
+                    dimensionHandle.SetComponentIndex(i);
+                    dimensionHandle.SetPose(TrTransform.TRS(
+                        componentPose_GS * (axis * primitive.Geometry[dimension]),
+                        componentPose_GS.rotation, 1f));
+                    dimensionHandle.SetSelected(
+                        i == m_ComponentIndex && dimension == m_DimensionIndex);
+                }
             }
         }
 

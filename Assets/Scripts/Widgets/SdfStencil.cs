@@ -296,6 +296,26 @@ namespace TiltBrush
             ReplaceComponents(definitions);
         }
 
+        internal void SetComponentPrimitiveGeometry(int index, Vector4 geometry)
+        {
+            List<ComponentDefinition> definitions =
+                new List<ComponentDefinition>(GetComponentDefinitions());
+            if (index < 0 || index >= definitions.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+            ComponentDefinition component = definitions[index];
+            if (!component.IsPrimitive)
+            {
+                throw new ArgumentException($"SDF component {index} is a mesh operand.");
+            }
+            PrimitiveDefinition primitive = component.Primitive.Value;
+            definitions[index] = new ComponentDefinition(new PrimitiveDefinition(
+                primitive.Type, geometry, primitive.Transform, primitive.Operation,
+                primitive.Blend, primitive.Flip));
+            ReplaceComponents(definitions);
+        }
+
         internal IReadOnlyList<SDFObject> GetComponents()
         {
             return m_SdfManager.GetComponentsInChildren<SDFObject>(true)
