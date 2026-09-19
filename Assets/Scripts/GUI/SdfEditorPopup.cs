@@ -222,14 +222,14 @@ namespace TiltBrush
                         "Icons/downarrow", "Move component down");
                     Configure(m_Buttons[4],
                         SketchControlsScript.GlobalCommands.SdfCycleComponentOperation,
-                        "Icons/edit", "Change operation");
+                        "Icons/rebrush", "Change operation");
                     Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
                         "Icons/forwardarrow", "Edit component values");
                     break;
                 case 1:
                     Configure(m_Buttons[0],
                         SketchControlsScript.GlobalCommands.SdfNextPrimitiveDimension,
-                        "Icons/guides_settings", $"Next dimension ({DimensionName})");
+                        "Icons/settings", $"Next dimension ({DimensionName})");
                     Configure(m_Buttons[1],
                         SketchControlsScript.GlobalCommands.SdfAdjustPrimitiveDimension,
                         "Icons/IcosaCategories/minus-solid", $"Decrease {DimensionName}", -1);
@@ -248,7 +248,7 @@ namespace TiltBrush
                 case 2:
                     Configure(m_Buttons[0],
                         SketchControlsScript.GlobalCommands.SdfToggleComponentHandles,
-                        "Icons/edit",
+                        "Icons/selection",
                         m_EditComponentHandles ? "Hide component handles" : "Edit components");
                     Configure(m_Buttons[1], SketchControlsScript.GlobalCommands.SdfRemoveComponent,
                         "Icons/Knot_Delete", "Remove component");
@@ -260,18 +260,18 @@ namespace TiltBrush
                     break;
                 case 3:
                     ConfigureAddButton(0, SDFPrimitiveType.Sphere, "Icons/guide_sphere");
-                    ConfigureAddButton(1, SDFPrimitiveType.Torus, "Icons/guides_settings");
+                    ConfigureAddButton(1, SDFPrimitiveType.Torus, "Icons/settings");
                     ConfigureAddButton(2, SDFPrimitiveType.Cuboid, "Icons/guide_cube");
-                    ConfigureAddButton(3, SDFPrimitiveType.BoxFrame, "Icons/guides_settings");
-                    ConfigureAddButton(4, SDFPrimitiveType.Cylinder, "Icons/guides_settings");
+                    ConfigureAddButton(3, SDFPrimitiveType.BoxFrame, "Icons/settings");
+                    ConfigureAddButton(4, SDFPrimitiveType.Cylinder, "Icons/settings");
                     Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
                         "Icons/forwardarrow", "More component types");
                     break;
                 default:
                     ConfigureAddButton(0, SDFPrimitiveType.Capsule, "Icons/guide_capsule");
                     ConfigureAddButton(1, SDFPrimitiveType.Ellipsoid, "Icons/guide_ellipsoid");
-                    ConfigureAddButton(2, SDFPrimitiveType.Cone, "Icons/guides_settings");
-                    ConfigureAddButton(3, SDFPrimitiveType.Pyramid, "Icons/guides_settings");
+                    ConfigureAddButton(2, SDFPrimitiveType.Cone, "Icons/settings");
+                    ConfigureAddButton(3, SDFPrimitiveType.Pyramid, "Icons/settings");
                     Disable(m_Buttons[4]);
                     Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
                         "Icons/backwardarrow", "Component controls");
