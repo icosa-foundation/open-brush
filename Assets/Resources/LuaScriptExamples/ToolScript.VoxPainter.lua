@@ -1,5 +1,5 @@
 Settings = {
-    description="Hold the trigger to paint voxels on an imported VOX widget, or start a new widget in empty space. Editable widget saving is still under development.",
+    description="Paint the current VOX widget. Point at another occupied widget to switch targets, or use New Model before placing another widget.",
     space="canvas"
 }
 
@@ -9,41 +9,69 @@ Parameters = {
     mode={label="Mode", type="list", items={"Add", "Erase", "Paint"}, default="Add"},
     autoVisuals={label="Update While Drawing", type="toggle", default=true},
     optimizedMesh={label="Optimized Mesh", type="toggle", default=true},
+    newModel={label="New Model", type="button", onclick="BeginNewModel"},
 }
 
-function Start()
-    doc = nil
-    model = nil
-    origin = nil
+function ResetGesture()
     lastCell = nil
     lastMode = nil
 end
 
+function BeginNewModel()
+    if doc ~= nil then doc:Refresh() end
+    doc = nil
+    model = nil
+    createNewOnNextAdd = true
+    ResetGesture()
+end
+
+function Start()
+    doc = nil
+    model = nil
+    createNewOnNextAdd = false
+    ResetGesture()
+end
+
 function Main()
-    if Brush.triggerReleasedThisFrame or not Brush.triggerIsPressed then
-        if doc ~= nil then doc:Refresh() end
+    local position = Brush.position
+
+    if doc ~= nil and not doc.isValid then
         doc = nil
         model = nil
-        origin = nil
-        lastCell = nil
-        lastMode = nil
+        createNewOnNextAdd = false
+        ResetGesture()
+    end
+
+    if Brush.triggerReleasedThisFrame then
+        if doc ~= nil then doc:Refresh() end
+        ResetGesture()
         return
     end
 
-    local position = Brush.position
-    if model == nil then
-        model = Vox:FindModelAt(position)
-        if model == nil then
-            if Parameters.mode ~= "Add" then return end
-            doc = Vox:NewWidget(Parameters.modelSize, Parameters.modelSize, Parameters.modelSize)
-            model = doc:Model()
-            origin = position
-            model:PlaceAt(origin, Parameters.gridSize)
-        else
+    if not Brush.triggerIsPressed then
+        return
+    end
+
+    if Brush.triggerPressedThisFrame and not createNewOnNextAdd then
+        local pointedModel = Vox:FindModelAt(position)
+        if pointedModel ~= nil then
+            model = pointedModel
             doc = model.document
             Parameters.gridSize = model.voxelSize
+            ResetGesture()
         end
     end
+
+    if model == nil then
+        if Parameters.mode ~= "Add" then return end
+        doc = Vox:NewWidget(Parameters.modelSize, Parameters.modelSize, Parameters.modelSize)
+        model = doc:Model()
+        model:PlaceAt(position, Parameters.gridSize)
+        createNewOnNextAdd = false
+    elseif not model:ContainsAt(position) then
+        return
+    end
+
     doc:SetAutoVisuals(Parameters.autoVisuals, Parameters.optimizedMesh, false)
 
     local cell = model:CanvasToVoxel(position)
@@ -64,4 +92,6 @@ end
 
 function End()
     if doc ~= nil then doc:Refresh() end
+    doc = nil
+    model = nil
 end

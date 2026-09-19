@@ -126,6 +126,10 @@ namespace TiltBrush
         public Vector3 VoxelToCanvas(Vector3 voxelPosition)
             => m_DocumentWrapper.GetModelTransform(_Model) * voxelPosition;
 
+        [LuaDocsDescription("Returns true when a canvas position maps to a cell inside this model's editable volume")]
+        public bool ContainsAt(Vector3 canvasPosition)
+            => _Model.IsInBounds(Vector3Int.RoundToInt(CanvasToVoxel(canvasPosition)));
+
         [LuaDocsDescription("Paints the voxel at a canvas position using an RGB color. Allocates an unused palette entry, or uses the nearest color if all 255 entries are occupied. Returns false outside the model or if unchanged.")]
         [LuaDocsExample("model:PaintAt(Brush.position, Brush.colorRgb)")]
         public bool PaintAt(Vector3 canvasPosition, Color color)
@@ -321,6 +325,9 @@ namespace TiltBrush
 
         [LuaDocsDescription("If true, model/palette edits automatically rebuild scene geometry")]
         public bool autoVisuals => m_AutoVisuals;
+
+        [LuaDocsDescription("False after this document's widget has been deleted")]
+        public bool isValid => !m_WidgetBacked || !m_WidgetWasCreated || m_Widget != null;
 
         [LuaDocsDescription("Returns a model with the given name")]
         [LuaDocsExample("local m = doc:FindModel('model_0')")]
