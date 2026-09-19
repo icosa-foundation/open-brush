@@ -30,6 +30,7 @@ namespace TiltBrush
         [SerializeField] private TouchJoystick m_MoveJoystick;
         [SerializeField] private TouchscreenVirtualKey m_UpButton;
         [SerializeField] private TouchscreenVirtualKey m_DownButton;
+        [SerializeField] [Min(0f)] private float m_PinchDollyDistance = 5f;
 
         private GameObject _toolDirectionIndicator;
         private bool m_LockToController;
@@ -49,6 +50,10 @@ namespace TiltBrush
 
         private bool m_Armed = false;
         private bool m_InvertLook = false;
+        private bool m_IsPinching;
+        private int m_FirstPinchTouchId;
+        private int m_SecondPinchTouchId;
+        private float m_PreviousPinchDistance;
 
         private Vector3 m_Velocity;
 
@@ -88,6 +93,7 @@ namespace TiltBrush
             }
 
             m_Armed = false;
+            ResetPinchGesture();
 
             // Make sure our UI reticle isn't active.
             SketchControlsScript.m_Instance.ForceShowUIReticle(false);
@@ -118,6 +124,7 @@ namespace TiltBrush
             {
                 EnhancedTouchSupport.Disable();
             }
+            ResetPinchGesture();
             _toolDirectionIndicator.SetActive(!bHide);
         }
 
@@ -148,6 +155,7 @@ namespace TiltBrush
                 Gamepad gamepad = Gamepad.current;
                 Vector2 mv = Vector2.zero;
                 Vector3 touchTranslation = Vector3.zero;
+                Vector3 pinchTranslation = Vector3.zero;
 
                 // Read the on-screen touch controls first. While one is held it takes
                 // priority, so a drag on it doesn't also get treated as a look-drag
@@ -174,7 +182,18 @@ namespace TiltBrush
                     }
                 }
 
-                if (!uiControlTouched && Mouse.current != null && Mouse.current.leftButton.isPressed)
+                bool pinchGesture = false;
+                if (m_IsTouchScreen && !uiControlTouched && EnhancedTouchSupport.enabled)
+                {
+                    pinchGesture = TryGetPinchTranslation(out pinchTranslation);
+                }
+                else
+                {
+                    ResetPinchGesture();
+                }
+
+                if (!uiControlTouched && !pinchGesture
+                    && Mouse.current != null && Mouse.current.leftButton.isPressed)
                 {
                     mv += InputManager.m_Instance.GetMouseMoveDelta();
                 }
@@ -189,8 +208,8 @@ namespace TiltBrush
                     }
                 }
 
-                if (m_IsTouchScreen && !uiControlTouched
-                    && EnhancedTouchSupport.enabled && Touch.activeTouches.Count > 0)
+                if (m_IsTouchScreen && !uiControlTouched && !pinchGesture
+                    && EnhancedTouchSupport.enabled && Touch.activeTouches.Count == 1)
                 {
                     var t = Touch.activeTouches[0];
                     Vector2 delta = t.delta;
@@ -272,11 +291,12 @@ namespace TiltBrush
                     m_InvertLook = !m_InvertLook;
                 }
 
-                if (cameraTranslation != Vector3.zero)
+                if (cameraTranslation != Vector3.zero || pinchTranslation != Vector3.zero)
                 {
                     TrTransform newScene = App.Scene.Pose;
-                    var sceneTranslation = App.VrSdk.GetVrCamera().transform.rotation * (cameraTranslation * movementSpeed);
-                    newScene.translation -= sceneTranslation;
+                    var sceneTranslation = App.VrSdk.GetVrCamera().transform.rotation *
+                        (cameraTranslation * movementSpeed);
+                    newScene.translation -= sceneTranslation + pinchTranslation;
                     newScene = SketchControlsScript.MakeValidScenePose(newScene, BoundsRadius);
                     App.Scene.Pose = newScene;
                 }
@@ -326,6 +346,50 @@ namespace TiltBrush
             }
 
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
+        }
+
+        private bool TryGetPinchTranslation(out Vector3 translation)
+        {
+            translation = Vector3.zero;
+            if (Touch.activeTouches.Count != 2)
+            {
+                ResetPinchGesture();
+                return false;
+            }
+
+            Touch firstTouch = Touch.activeTouches[0];
+            Touch secondTouch = Touch.activeTouches[1];
+            float pinchDistance = Vector2.Distance(
+                firstTouch.screenPosition, secondTouch.screenPosition);
+            bool sameTouches = m_IsPinching &&
+                ((firstTouch.touchId == m_FirstPinchTouchId &&
+                  secondTouch.touchId == m_SecondPinchTouchId) ||
+                 (firstTouch.touchId == m_SecondPinchTouchId &&
+                  secondTouch.touchId == m_FirstPinchTouchId));
+
+            if (!sameTouches)
+            {
+                m_IsPinching = true;
+                m_FirstPinchTouchId = firstTouch.touchId;
+                m_SecondPinchTouchId = secondTouch.touchId;
+                m_PreviousPinchDistance = pinchDistance;
+                return true;
+            }
+
+            float screenReferenceSize = Mathf.Max(1f, Mathf.Min(Screen.width, Screen.height));
+            float dollyDistance = (pinchDistance - m_PreviousPinchDistance) /
+                screenReferenceSize * m_PinchDollyDistance;
+            m_PreviousPinchDistance = pinchDistance;
+
+            Vector2 midpoint = (firstTouch.screenPosition + secondTouch.screenPosition) * 0.5f;
+            translation = App.VrSdk.GetVrCamera().ScreenPointToRay(midpoint).direction * dollyDistance;
+            return true;
+        }
+
+        private void ResetPinchGesture()
+        {
+            m_IsPinching = false;
+            m_PreviousPinchDistance = 0f;
         }
 
         void ApplyVelocity(Vector3 velocity)
