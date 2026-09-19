@@ -57,6 +57,12 @@ namespace TiltBrush
             new SelectCreatedSdfCommand(m_CreateCommand, targetCanvas, this);
         }
 
+        protected override void OnUndo()
+        {
+            SelectionManager.m_Instance.UpdateSelectionWidget();
+            App.Switchboard.TriggerSelectionChanged();
+        }
+
         private sealed class ConfigureCreatedSdfCommand : BaseCommand
         {
             private readonly CreateWidgetCommand m_CreateCommand;
@@ -119,6 +125,8 @@ namespace TiltBrush
                 {
                     SelectionManager.m_Instance.SelectWidget(stencil);
                 }
+                SelectionManager.m_Instance.UpdateSelectionWidget();
+                App.Switchboard.TriggerSelectionChanged();
             }
 
             protected override void OnUndo()
