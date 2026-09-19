@@ -2245,6 +2245,14 @@ namespace TiltBrush
 
         public static string BlocksModelLibraryPath()
         {
+            // The Open Brush SAF grant cannot access the sibling Blocks tree. Open Blocks is
+            // deliberately unavailable in scoped-storage builds until it has its own optional
+            // persisted tree grant.
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                return null;
+            }
+
             bool isAndroid = Application.platform == RuntimePlatform.Android;
             return GetBlocksModelLibraryPath(
                 UserPath(), isAndroid, isAndroid && SteamManager.RunningUnderLepton);

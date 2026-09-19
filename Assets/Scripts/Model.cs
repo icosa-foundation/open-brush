@@ -97,10 +97,14 @@ namespace TiltBrush
                             {
                                 return materializedPath.Replace("\\", "/");
                             }
-                            string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
-                            if (System.IO.File.Exists(blocksPath))
+                            string blocksRoot = App.BlocksModelLibraryPath();
+                            if (!string.IsNullOrEmpty(blocksRoot))
                             {
-                                return blocksPath.Replace("\\", "/");
+                                string blocksPath = Path.Combine(blocksRoot, path);
+                                if (System.IO.File.Exists(blocksPath))
+                                {
+                                    return blocksPath.Replace("\\", "/");
+                                }
                             }
 
                             return Path.Combine(App.ModelLibraryPath(), path).Replace("\\", "/");
