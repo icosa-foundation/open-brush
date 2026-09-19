@@ -233,6 +233,31 @@ namespace TiltBrush
                 .ToList();
         }
 
+        internal void SetComponentTransform(int index, TrTransform transform)
+        {
+            var definitions = new List<ComponentDefinition>(GetComponentDefinitions());
+            if (index < 0 || index >= definitions.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            ComponentDefinition component = definitions[index];
+            if (component.IsPrimitive)
+            {
+                PrimitiveDefinition primitive = component.Primitive.Value;
+                definitions[index] = new ComponentDefinition(new PrimitiveDefinition(
+                    primitive.Type, primitive.Geometry, transform, primitive.Operation,
+                    primitive.Blend, primitive.Flip));
+            }
+            else
+            {
+                definitions[index] = new ComponentDefinition(
+                    component.MeshAsset, transform, component.Operation,
+                    component.Blend, component.Flip);
+            }
+            ReplaceComponents(definitions);
+        }
+
         internal IReadOnlyList<SDFObject> GetComponents()
         {
             return m_SdfManager.GetComponentsInChildren<SDFObject>(true)

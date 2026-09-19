@@ -221,6 +221,7 @@ namespace TiltBrush
             SdfNextPrimitiveDimension = 14010,
             SdfAdjustPrimitiveDimension = 14011,
             SdfAdjustComponentBlend = 14012,
+            SdfToggleComponentHandles = 14013,
         }
 
         public enum ControlsType
@@ -5122,6 +5123,7 @@ namespace TiltBrush
                 case GlobalCommands.SdfNextPrimitiveDimension:
                 case GlobalCommands.SdfAdjustPrimitiveDimension:
                 case GlobalCommands.SdfAdjustComponentBlend:
+                case GlobalCommands.SdfToggleComponentHandles:
                     SdfEditorPopup.Active?.Handle(rEnum, iParam1);
                     EatToolScaleInput();
                     break;
@@ -5558,6 +5560,7 @@ namespace TiltBrush
                 case GlobalCommands.SdfNextPrimitiveDimension:
                 case GlobalCommands.SdfAdjustPrimitiveDimension:
                 case GlobalCommands.SdfAdjustComponentBlend:
+                case GlobalCommands.SdfToggleComponentHandles:
                     return false;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;
                 case GlobalCommands.ToggleCameraPostEffects: return CameraConfig.PostEffects;
@@ -5717,6 +5720,7 @@ namespace TiltBrush
                 case GlobalCommands.SdfNextPrimitiveDimension:
                 case GlobalCommands.SdfAdjustPrimitiveDimension:
                 case GlobalCommands.SdfAdjustComponentBlend:
+                case GlobalCommands.SdfToggleComponentHandles:
                     return SdfEditorPopup.Active != null &&
                         SdfEditorPopup.Active.CanHandle(rEnum, iParam);
                 case GlobalCommands.SaveModel:

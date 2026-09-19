@@ -28,12 +28,15 @@ namespace TiltBrush
         private const float k_BlendStep = 0.025f;
 
         private readonly List<OptionButton> m_Buttons = new List<OptionButton>();
+        private readonly List<SdfComponentHandle> m_ComponentHandles =
+            new List<SdfComponentHandle>();
 
         private SdfStencil m_Stencil;
         private PopUpWindow m_Popup;
         private int m_ComponentIndex;
         private int m_DimensionIndex;
         private int m_Page;
+        private bool m_EditComponentHandles;
 
         internal static SdfEditorPopup Active { get; private set; }
 
@@ -95,6 +98,8 @@ namespace TiltBrush
                     }
                     return commandParam > 0 ||
                         m_Stencil.GetComponentDefinitions()[m_ComponentIndex].Blend > 0f;
+                case SketchControlsScript.GlobalCommands.SdfToggleComponentHandles:
+                    return count > 0;
                 default:
                     return false;
             }
@@ -140,7 +145,7 @@ namespace TiltBrush
                         m_ComponentIndex, m_Stencil.ComponentCount - 1);
                     break;
                 case SketchControlsScript.GlobalCommands.SdfEditorNextPage:
-                    m_Page = (m_Page + 1) % 4;
+                    m_Page = (m_Page + 1) % 5;
                     ConfigurePage();
                     break;
                 case SketchControlsScript.GlobalCommands.SdfAddPrimitive:
@@ -155,6 +160,10 @@ namespace TiltBrush
                     break;
                 case SketchControlsScript.GlobalCommands.SdfAdjustComponentBlend:
                     AdjustBlend(commandParam);
+                    break;
+                case SketchControlsScript.GlobalCommands.SdfToggleComponentHandles:
+                    m_EditComponentHandles = !m_EditComponentHandles;
+                    ConfigurePage();
                     break;
             }
             Refresh();
@@ -187,9 +196,15 @@ namespace TiltBrush
             OptionButton button, SketchControlsScript.GlobalCommands command,
             string resourcePath, string description, int commandParam = -1)
         {
+            button.gameObject.SetActive(true);
             Texture2D texture = Resources.Load<Texture2D>(resourcePath);
             button.SetContextCommand(command, texture ?? button.ButtonTexture, description);
             button.SetCommandParameters(commandParam);
+        }
+
+        private static void Disable(OptionButton button)
+        {
+            button.gameObject.SetActive(false);
         }
 
         private void ConfigurePage()
@@ -228,9 +243,22 @@ namespace TiltBrush
                         SketchControlsScript.GlobalCommands.SdfAdjustComponentBlend,
                         "Icons/additive", "Increase blend", 1);
                     Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
-                        "Icons/forwardarrow", "Add components");
+                        "Icons/forwardarrow", "Component tools");
                     break;
                 case 2:
+                    Configure(m_Buttons[0],
+                        SketchControlsScript.GlobalCommands.SdfToggleComponentHandles,
+                        "Icons/edit",
+                        m_EditComponentHandles ? "Hide component handles" : "Edit components");
+                    Configure(m_Buttons[1], SketchControlsScript.GlobalCommands.SdfRemoveComponent,
+                        "Icons/Knot_Delete", "Remove component");
+                    Disable(m_Buttons[2]);
+                    Disable(m_Buttons[3]);
+                    Disable(m_Buttons[4]);
+                    Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
+                        "Icons/forwardarrow", "Add components");
+                    break;
+                case 3:
                     ConfigureAddButton(0, SDFPrimitiveType.Sphere, "Icons/guide_sphere");
                     ConfigureAddButton(1, SDFPrimitiveType.Torus, "Icons/guides_settings");
                     ConfigureAddButton(2, SDFPrimitiveType.Cuboid, "Icons/guide_cube");
@@ -244,8 +272,7 @@ namespace TiltBrush
                     ConfigureAddButton(1, SDFPrimitiveType.Ellipsoid, "Icons/guide_ellipsoid");
                     ConfigureAddButton(2, SDFPrimitiveType.Cone, "Icons/guides_settings");
                     ConfigureAddButton(3, SDFPrimitiveType.Pyramid, "Icons/guides_settings");
-                    Configure(m_Buttons[4], SketchControlsScript.GlobalCommands.SdfRemoveComponent,
-                        "Icons/Knot_Delete", "Remove component");
+                    Disable(m_Buttons[4]);
                     Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
                         "Icons/backwardarrow", "Component controls");
                     break;
@@ -414,6 +441,112 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
         }
 
+        internal TrTransform BeginHandleTransform(SdfComponentHandle handle)
+        {
+            m_ComponentIndex = handle.ComponentIndex;
+            m_DimensionIndex = 0;
+            Refresh();
+            return m_Stencil.GetComponentDefinitions()[m_ComponentIndex].Transform;
+        }
+
+        internal void PreviewHandleTransform(SdfComponentHandle handle)
+        {
+            if (!m_EditComponentHandles || handle.ComponentIndex < 0 ||
+                handle.ComponentIndex >= m_Stencil.ComponentCount)
+            {
+                return;
+            }
+
+            TrTransform transform = ComponentTransformFromHandle(handle);
+            TrTransform current =
+                m_Stencil.GetComponentDefinitions()[handle.ComponentIndex].Transform;
+            if (!TrTransform.Approximately(current, transform))
+            {
+                m_Stencil.SetComponentTransform(handle.ComponentIndex, transform);
+            }
+        }
+
+        internal void CommitHandleTransform(
+            SdfComponentHandle handle, TrTransform dragStart)
+        {
+            if (!m_EditComponentHandles || handle.ComponentIndex < 0 ||
+                handle.ComponentIndex >= m_Stencil.ComponentCount)
+            {
+                return;
+            }
+
+            PreviewHandleTransform(handle);
+            TrTransform dragEnd =
+                m_Stencil.GetComponentDefinitions()[handle.ComponentIndex].Transform;
+            if (!TrTransform.Approximately(dragStart, dragEnd))
+            {
+                m_Stencil.SetComponentTransform(handle.ComponentIndex, dragStart);
+                Perform(EditSdfGuideCommand.SetComponentTransform(
+                    m_Stencil, handle.ComponentIndex, dragEnd));
+            }
+            Refresh();
+        }
+
+        private TrTransform ComponentTransformFromHandle(SdfComponentHandle handle)
+        {
+            TrTransform sdfPose_GS = TrTransform.FromTransform(m_Stencil.transform);
+            float componentScale =
+                m_Stencil.GetComponentDefinitions()[handle.ComponentIndex].Transform.scale;
+            TrTransform handlePose_GS = TrTransform.TRS(
+                handle.transform.position,
+                handle.transform.rotation,
+                sdfPose_GS.scale * componentScale);
+            return sdfPose_GS.inverse * handlePose_GS;
+        }
+
+        private void RefreshComponentHandles()
+        {
+            if (!m_EditComponentHandles || m_Stencil == null)
+            {
+                DestroyComponentHandles();
+                return;
+            }
+
+            IReadOnlyList<SdfStencil.ComponentDefinition> components =
+                m_Stencil.GetComponentDefinitions();
+            if (m_ComponentHandles.Count != components.Count)
+            {
+                DestroyComponentHandles();
+                Renderer sourceRenderer =
+                    m_Stencil.GetComponentsInChildren<Renderer>(true).FirstOrDefault();
+                Material sourceMaterial = sourceRenderer != null
+                    ? sourceRenderer.sharedMaterial
+                    : null;
+                TrTransform sdfPose_GS = TrTransform.FromTransform(m_Stencil.transform);
+                for (int i = 0; i < components.Count; ++i)
+                {
+                    m_ComponentHandles.Add(SdfComponentHandle.Create(
+                        this, i, sdfPose_GS * components[i].Transform, sourceMaterial));
+                }
+            }
+
+            TrTransform pose_GS = TrTransform.FromTransform(m_Stencil.transform);
+            for (int i = 0; i < m_ComponentHandles.Count; ++i)
+            {
+                SdfComponentHandle handle = m_ComponentHandles[i];
+                handle.SetComponentIndex(i);
+                handle.SetPose(pose_GS * components[i].Transform);
+                handle.SetSelected(i == m_ComponentIndex);
+            }
+        }
+
+        private void DestroyComponentHandles()
+        {
+            foreach (SdfComponentHandle handle in m_ComponentHandles)
+            {
+                if (handle != null)
+                {
+                    handle.DisposeHandle();
+                }
+            }
+            m_ComponentHandles.Clear();
+        }
+
         private void Refresh()
         {
             int count = m_Stencil != null ? m_Stencil.ComponentCount : 0;
@@ -440,10 +573,12 @@ namespace TiltBrush
             }
             m_Popup.SetWindowText(label);
 
-            if (m_Page == 1)
+            if (m_Page == 1 || m_Page == 2)
             {
                 ConfigurePage();
             }
+
+            RefreshComponentHandles();
 
             foreach (OptionButton button in m_Buttons)
             {
@@ -463,6 +598,7 @@ namespace TiltBrush
         private void OnDestroy()
         {
             App.Switchboard.SelectionChanged -= OnSelectionChanged;
+            DestroyComponentHandles();
             if (Active == this)
             {
                 Active = null;
