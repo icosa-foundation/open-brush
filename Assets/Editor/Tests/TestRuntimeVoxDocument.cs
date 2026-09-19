@@ -288,7 +288,7 @@ namespace TiltBrush
             RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
             Assert.IsTrue(loaded.HasPreservedSourceData);
             Assert.IsTrue(loaded.Models[0].TryGetPaletteIndex(Vector3Int.zero, out byte originalColor));
-            Assert.AreEqual(2, originalColor);
+            Assert.AreEqual(3, originalColor);
             Assert.IsTrue(loaded.Models[0].AddOrUpdateVoxel(new Vector3Int(1, 2, 3), 2));
             loaded.ReplacePaletteEntry(2, new Color32(12, 34, 56, 255));
 

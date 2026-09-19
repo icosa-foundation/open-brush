@@ -116,7 +116,7 @@ namespace TiltBrush
 
         private static byte[] BuildXyziChunk(
             RuntimeVoxDocument.RuntimeModel model,
-            IReadOnlyList<byte> logicalToRawPalette)
+            IReadOnlyList<byte> runtimeToStoredPalette)
         {
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
@@ -152,9 +152,9 @@ namespace TiltBrush
                     writer.Write((byte)voxel.Key.x);
                     writer.Write((byte)voxel.Key.y);
                     writer.Write((byte)voxel.Key.z);
-                    byte paletteIndex = logicalToRawPalette == null
+                    byte paletteIndex = runtimeToStoredPalette == null
                         ? voxel.Value
-                        : logicalToRawPalette[voxel.Value - 1];
+                        : runtimeToStoredPalette[voxel.Value - 1];
                     writer.Write(paletteIndex);
                 }
 
@@ -320,7 +320,7 @@ namespace TiltBrush
                 modelsBySourceId.TryAdd(model.SourceModelId, model);
             }
 
-            byte[] logicalToRawPalette = Enumerable.Range(1, 255).Select(value => (byte)value).ToArray();
+            byte[] runtimeToStoredPalette = Enumerable.Range(1, 255).Select(value => (byte)value).ToArray();
             PreservedChunk indexMap = chunks.FirstOrDefault(chunk => chunk.Id == "IMAP");
             if (indexMap != null)
             {
@@ -329,15 +329,15 @@ namespace TiltBrush
                     throw new InvalidDataException("VOX IMAP chunk is shorter than 255 entries.");
                 }
 
-                for (int rawIndex = 0; rawIndex < byte.MaxValue; rawIndex++)
+                for (int runtimeIndex = 0; runtimeIndex < byte.MaxValue; runtimeIndex++)
                 {
-                    byte logicalIndex = indexMap.Content[rawIndex];
-                    if (logicalIndex == 0)
+                    byte storedIndex = indexMap.Content[runtimeIndex];
+                    if (storedIndex == 0)
                     {
-                        throw new InvalidDataException("VOX IMAP contains an invalid logical palette index.");
+                        throw new InvalidDataException("VOX IMAP contains an invalid stored palette index.");
                     }
 
-                    logicalToRawPalette[logicalIndex - 1] = (byte)(rawIndex + 1);
+                    runtimeToStoredPalette[runtimeIndex] = storedIndex;
                 }
             }
 
@@ -367,7 +367,7 @@ namespace TiltBrush
                     {
                         chunk.Content = ExtractChunkContent(BuildXyziChunk(
                             model,
-                            logicalToRawPalette));
+                            runtimeToStoredPalette));
                     }
                     voxelIndex++;
                 }
@@ -377,7 +377,7 @@ namespace TiltBrush
                     chunk.Content = BuildPreservedRgbaContent(
                         document.Palette,
                         chunk.Content,
-                        logicalToRawPalette);
+                        runtimeToStoredPalette);
                 }
             }
 
@@ -397,7 +397,7 @@ namespace TiltBrush
         private static byte[] BuildPreservedRgbaContent(
             Color32[] palette,
             byte[] originalContent,
-            IReadOnlyList<byte> logicalToRawPalette)
+            IReadOnlyList<byte> runtimeToStoredPalette)
         {
             if (palette == null || palette.Length != 256)
             {
@@ -409,15 +409,15 @@ namespace TiltBrush
             }
 
             byte[] content = (byte[])originalContent.Clone();
-            for (int logicalIndex = 0; logicalIndex < byte.MaxValue; logicalIndex++)
+            for (int runtimeIndex = 0; runtimeIndex < byte.MaxValue; runtimeIndex++)
             {
-                int rawIndex = logicalToRawPalette[logicalIndex] - 1;
+                int rawIndex = runtimeToStoredPalette[runtimeIndex] - 1;
                 if (rawIndex < 0 || rawIndex >= byte.MaxValue)
                 {
                     throw new InvalidDataException("VOX IMAP contains an invalid palette index.");
                 }
 
-                Color32 color = palette[logicalIndex];
+                Color32 color = palette[runtimeIndex];
                 int offset = rawIndex * 4;
                 content[offset] = color.r;
                 content[offset + 1] = color.g;
