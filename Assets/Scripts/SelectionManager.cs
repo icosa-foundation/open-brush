@@ -114,6 +114,11 @@ namespace TiltBrush
             m_SelectedWidgets.Count > 0 &&
             m_SelectedWidgets.All(widget => widget is StencilWidget);
 
+        public SdfStencil SelectedSdfGuide =>
+            m_SelectedStrokes.Count == 0 && m_SelectedWidgets.Count == 1
+                ? m_SelectedWidgets.First() as SdfStencil
+                : null;
+
         /// Returns true when cached selection tool is hot.
         public bool SelectionToolIsHot
         {
@@ -1120,8 +1125,10 @@ namespace TiltBrush
             CanvasScript targetCanvas = guides[0].Canvas ?? App.ActiveCanvas;
             try
             {
+                var command = new ConvertGuidesToSdfCommand(guides, targetCanvas);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new ConvertGuidesToSdfCommand(guides, targetCanvas));
+                    command);
+                SelectionTray.Instance?.OpenSdfEditor();
             }
             catch (InvalidOperationException exception)
             {

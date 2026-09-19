@@ -209,6 +209,13 @@ namespace TiltBrush
             LoadQuillFile = 13001,
             OpenQuillPanelSearchPopup = 13002,
             ConvertSelectionToSdf = 14000,
+            EditSelectedSdf = 14001,
+            SdfPreviousComponent = 14002,
+            SdfNextComponent = 14003,
+            SdfMoveComponentUp = 14004,
+            SdfMoveComponentDown = 14005,
+            SdfCycleComponentOperation = 14006,
+            SdfRemoveComponent = 14007,
         }
 
         public enum ControlsType
@@ -5099,6 +5106,15 @@ namespace TiltBrush
                     SelectionManager.m_Instance.ConvertSelectedGuidesToSdf();
                     EatToolScaleInput();
                     break;
+                case GlobalCommands.SdfPreviousComponent:
+                case GlobalCommands.SdfNextComponent:
+                case GlobalCommands.SdfMoveComponentUp:
+                case GlobalCommands.SdfMoveComponentDown:
+                case GlobalCommands.SdfCycleComponentOperation:
+                case GlobalCommands.SdfRemoveComponent:
+                    SdfEditorPopup.Active?.Handle(rEnum);
+                    EatToolScaleInput();
+                    break;
                 case GlobalCommands.SaveModel:
                     SaveModel();
                     break;
@@ -5520,6 +5536,14 @@ namespace TiltBrush
                 case GlobalCommands.Disco: return LightsControlScript.m_Instance.DiscoMode;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.UngroupingAllowed;
                 case GlobalCommands.ConvertSelectionToSdf: return false;
+                case GlobalCommands.EditSelectedSdf: return false;
+                case GlobalCommands.SdfPreviousComponent:
+                case GlobalCommands.SdfNextComponent:
+                case GlobalCommands.SdfMoveComponentUp:
+                case GlobalCommands.SdfMoveComponentDown:
+                case GlobalCommands.SdfCycleComponentOperation:
+                case GlobalCommands.SdfRemoveComponent:
+                    return false;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;
                 case GlobalCommands.ToggleCameraPostEffects: return CameraConfig.PostEffects;
                 case GlobalCommands.ToggleWatermark: return CameraConfig.Watermark;
@@ -5665,6 +5689,16 @@ namespace TiltBrush
                 case GlobalCommands.Duplicate: return ClipboardManager.Instance.CanCopy;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionCanBeGrouped;
                 case GlobalCommands.ConvertSelectionToSdf: return SelectionManager.m_Instance.SelectionContainsOnlyGuides;
+                case GlobalCommands.EditSelectedSdf:
+                    return SelectionManager.m_Instance.SelectedSdfGuide != null;
+                case GlobalCommands.SdfPreviousComponent:
+                case GlobalCommands.SdfNextComponent:
+                case GlobalCommands.SdfMoveComponentUp:
+                case GlobalCommands.SdfMoveComponentDown:
+                case GlobalCommands.SdfCycleComponentOperation:
+                case GlobalCommands.SdfRemoveComponent:
+                    return SdfEditorPopup.Active != null &&
+                        SdfEditorPopup.Active.CanHandle(rEnum);
                 case GlobalCommands.SaveModel:
                 case GlobalCommands.SaveSelected:
                     return SelectionManager.m_Instance.HasSelection;

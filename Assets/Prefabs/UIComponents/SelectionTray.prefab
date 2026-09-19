@@ -78,6 +78,8 @@ MonoBehaviour:
   m_ShowOnToolType: 21
   m_GroupButton: {fileID: 2130795022144400380}
   m_ConvertToSdfTexture: {fileID: 2800000, guid: 6f34ab16fe01b6643a64c90c5d63f722, type: 3}
+  m_EditSdfTexture: {fileID: 2800000, guid: 0141ac6bf9f578f4e95706cdd2117914, type: 3}
+  m_SdfEditorPopupPrefab: {fileID: 1482747986032460, guid: 7ec487560f2d49542a12bad74a535fbf, type: 3}
   references:
     version: 2
     RefIds: []
