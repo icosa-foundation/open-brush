@@ -2545,7 +2545,7 @@ GameObject:
   - component: {fileID: 1309728082083505309}
   - component: {fileID: 833481837647873070}
   - component: {fileID: 4709743279037718069}
-  - component: {fileID: 1818163080500232717}
+  - component: {fileID: 2839034634235165640}
   m_Layer: 16
   m_Name: Button_Voxel
   m_TagString: Untagged
@@ -2646,7 +2646,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.01}
   m_Center: {x: 0, y: 0, z: -0.05}
---- !u!114 &1818163080500232717
+--- !u!114 &2839034634235165640
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2655,9 +2655,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 341949722745420667}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 962894c5495cabc458506a8548e8a1e2, type: 3}
+  m_Script: {fileID: 11500000, guid: 94af55572ac6b254fa2744deb13b5b5f, type: 3}
   m_Name:
-  m_EditorClassIdentifier:
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxelToolButton
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Voxel Tool

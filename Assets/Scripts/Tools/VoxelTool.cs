@@ -94,18 +94,8 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
             {
-                Mode = Mode switch
-                {
-                    EditMode.Add => EditMode.Erase,
-                    EditMode.Erase => EditMode.Paint,
-                    _ => EditMode.Add,
-                };
+                CycleMode();
                 InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
-            }
-
-            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.MenuContextClick))
-            {
-                RequestNewModel();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
@@ -126,12 +116,26 @@ namespace TiltBrush
             }
         }
 
+        public EditMode CycleMode()
+        {
+            Mode = Mode switch
+            {
+                EditMode.Add => EditMode.Erase,
+                EditMode.Erase => EditMode.Paint,
+                _ => EditMode.Add,
+            };
+            ControllerConsoleScript.m_Instance?.AddNewLine($"Voxel mode: {Mode}", true);
+            return Mode;
+        }
+
         public void RequestNewModel()
         {
             EndGesture();
             m_CurrentDocument = null;
             m_CurrentModel = null;
             m_CreateNewOnNextAdd = true;
+            Mode = EditMode.Add;
+            ControllerConsoleScript.m_Instance?.AddNewLine("Voxel tool: new model", true);
         }
 
         private void BeginGesture(Vector3 canvasPosition)
