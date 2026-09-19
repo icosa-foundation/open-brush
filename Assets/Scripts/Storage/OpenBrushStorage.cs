@@ -84,18 +84,24 @@ namespace TiltBrush
         public static string LocalVrVideoStagingPath =>
             Path.Combine(LocalStagingPath, "VRVideos");
 
-        public static string LocalMaterializedMediaLibraryPath
+        /// A logical anchor, not a directory: nothing is written here and nothing creates it.
+        /// The media catalogs are written against local paths, so under scoped storage they are
+        /// given this prefix and the SAF-relative directory is recovered by subtracting it again.
+        ///
+        /// Deliberately not scoped by root. It used to embed a hash of the root identity, left
+        /// over from when media really was materialized per root. That made the anchor change the
+        /// moment a folder was granted - before the grant the identity is empty, so the prefix
+        /// hashed the empty string - and every directory captured beforehand then failed to match
+        /// it, leaving each catalog reporting its own home as "outside its storage area". The
+        /// root is fixed for the life of an installation and SafRootChangeGuard discards derived
+        /// state if it ever is not, so there is nothing for the scoping to protect.
+        public static string MediaLibraryAnchorPath
         {
             get
             {
-                string rootId = UserStorage.Backend.Kind ==
-                    StorageBackendKind.StorageAccessFramework
-                    ? UserStorage.Backend.RootIdentity
-                    : "";
                 return Path.Combine(
                     OpenBrushStorage.PersistentDataPath,
-                    "OpenBrushSafMaterialized",
-                    SafPrivatePaths.GetStableId(rootId),
+                    "OpenBrushSafMediaLibrary",
                     "Media Library");
             }
         }

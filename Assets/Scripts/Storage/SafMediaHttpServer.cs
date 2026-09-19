@@ -82,7 +82,13 @@ namespace TiltBrush
                     Respond(ctx, HttpStatusCode.Forbidden);
                     return ctx;
                 }
-                if (!TryParse(ctx.Request.Url.LocalPath, out StorageArea area, out string relativePath))
+                // RawUrl, not Url.LocalPath: LocalPath is already decoded, so unescaping the
+                // segments below would be a second decode and a name containing a literal
+                // percent escape would resolve to the wrong document.
+                string rawPath = ctx.Request.RawUrl ?? string.Empty;
+                int query = rawPath.IndexOf('?');
+                if (query >= 0) { rawPath = rawPath.Substring(0, query); }
+                if (!TryParse(rawPath, out StorageArea area, out string relativePath))
                 {
                     Respond(ctx, HttpStatusCode.NotFound);
                     return ctx;
@@ -97,7 +103,9 @@ namespace TiltBrush
             {
                 // A media loader polling a missing or unreadable document must get a status code,
                 // not an unhandled exception on the listener thread.
-                Debug.LogWarning($"SAF_MEDIA_HTTP {e.GetType().Name}: {e.Message}");
+                Debug.LogWarning(
+                    $"SAF_MEDIA_HTTP {e.GetType().Name}: {e.Message} " +
+                    $"(url={ctx.Request.RawUrl})");
                 TryRespondFailure(ctx);
             }
             return ctx;
@@ -135,7 +143,11 @@ namespace TiltBrush
                     return false;
                 }
             }
-            relativePath = string.Join("/", rawSegments);
+            // Trailing or doubled separators produce empty segments, which the backend rejects
+            // outright as an unsafe path. Dropping them here keeps a harmless URL shape working
+            // and stops a stray slash reading as a traversal attempt.
+            relativePath = string.Join(
+                "/", Array.FindAll(rawSegments, segment => segment.Length > 0));
             // The backend rejects escaping paths, but refuse the obvious shapes before the round
             // trip and never let a caller name an absolute path.
             if (string.IsNullOrWhiteSpace(relativePath) ||

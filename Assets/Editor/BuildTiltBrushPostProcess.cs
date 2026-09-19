@@ -147,9 +147,24 @@ public class BuildTiltBrushPostProcess
             namespaceManager) as XmlElement;
         if (launcherActivity == null)
         {
+            // Already converted. An incremental build reuses the generated Gradle project, so
+            // this runs against a manifest a previous build already rewrote: there is no
+            // PlayerActivity left because it is now the GameActivity launcher. Treating that as
+            // a failure made local builds fail on every second run, each one leaving the
+            // previous APK in place to be installed and mistaken for the new one.
+            var converted = doc.SelectSingleNode(
+                "/manifest/application/activity[@android:name='" + kGameActivity + "']" +
+                "[intent-filter/action[@android:name='android.intent.action.MAIN']]" +
+                "[intent-filter/category[@android:name='android.intent.category.LAUNCHER']]",
+                namespaceManager) as XmlElement;
+            if (converted != null)
+            {
+                return;
+            }
             throw new BuildTiltBrush.BuildFailedException(
                 "The generated Android manifest has no PlayerActivity launcher to convert " +
-                "for the selected GameActivity entry point.");
+                "for the selected GameActivity entry point, and no GameActivity launcher " +
+                "either - the manifest has neither entry point.");
         }
 
         // Preserve Unity's generated launch mode, configuration changes, orientation, and other

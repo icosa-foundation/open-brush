@@ -2233,7 +2233,7 @@ namespace TiltBrush
         {
             if (OpenBrushStorage.IsScopedStorageMode)
             {
-                return OpenBrushStorage.LocalMaterializedMediaLibraryPath;
+                return OpenBrushStorage.MediaLibraryAnchorPath;
             }
             return Path.Combine(UserPath(), "Media Library");
         }
