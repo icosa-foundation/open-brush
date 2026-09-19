@@ -99,7 +99,9 @@ namespace TiltBrush
                     area,
                     "",
                     new StorageTreeQuery(
-                        recursive: true,
+                        // UserRoot overlaps every mapped area. Sweep its direct children for
+                        // root-level transactions, but let each mapped area own its descendants.
+                        recursive: area != StorageArea.UserRoot,
                         includeDirectories: false,
                         includeExtensions: kSidecarExtensions),
                     cancellationToken);

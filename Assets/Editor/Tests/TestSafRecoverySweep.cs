@@ -40,6 +40,8 @@ namespace TiltBrush
 
             private readonly List<Entry> m_Entries = new List<Entry>();
 
+            public bool UserRootWasRecursive { get; private set; }
+
             public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
             public bool IsReady => true;
             public string RootIdentity { get; set; } = "sweep-root";
@@ -80,9 +82,15 @@ namespace TiltBrush
 
             public StorageTreeResult EnumerateTree(
                 StorageArea area, string relativeDirectory, StorageTreeQuery query,
-                CancellationToken cancellationToken) =>
-                StorageTreeEnumerator.Enumerate(
+                CancellationToken cancellationToken)
+            {
+                if (area == StorageArea.UserRoot)
+                {
+                    UserRootWasRecursive = query.Recursive;
+                }
+                return StorageTreeEnumerator.Enumerate(
                     this, area, relativeDirectory, query, cancellationToken);
+            }
 
             public Stream OpenRead(
                 StorageArea area, string relativePath, bool requireSeekable,
@@ -206,6 +214,16 @@ namespace TiltBrush
             Assert.AreEqual(0, report.Recovered);
             Assert.AreEqual(0, report.Pending);
             Assert.IsTrue(backend.Contains(StorageArea.Sketches, "Sketch.tilt"));
+        }
+
+        [Test]
+        public void Sweep_DoesNotRecursivelyRescanMappedAreasThroughUserRoot()
+        {
+            var backend = new AreaScopedBackend();
+
+            SafTransactionRecovery.RecoverAll(backend, CancellationToken.None);
+
+            Assert.IsFalse(backend.UserRootWasRecursive);
         }
 
         [Test]
