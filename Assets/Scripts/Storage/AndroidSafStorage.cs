@@ -129,9 +129,13 @@ namespace TiltBrush
                     "queryDirectory", relativePath);
                 if (result == null)
                 {
+                    // Not the provider's doing. Every exit from the Java method builds a result,
+                    // including its own catch blocks, so it cannot hand one of these back as
+                    // null. A null means no Java frame ran to completion at all - in practice a
+                    // worker thread that got here without being attached to the JVM.
                     return StorageDirectoryResult.Failed(
                         StorageResultCode.ProviderUnavailable,
-                        "Provider returned no directory-query result.");
+                        "The directory query never reached the provider.");
                 }
 
                 var code = (StorageResultCode)result.Get<int>("code");
@@ -541,10 +545,12 @@ namespace TiltBrush
         {
             if (result == null)
             {
+                // The bridge cannot return a null result, so this is a call that never arrived
+                // rather than a provider failure. See the note in QueryDirectory.
                 return new StorageMutationResult(
                     StorageResultCode.ProviderUnavailable,
                     fallbackDocumentId,
-                    "Provider returned no mutation result.");
+                    "The mutation never reached the provider.");
             }
             var code = (StorageResultCode)result.Get<int>("code");
             string documentUri = result.Get<string>("documentUri");
@@ -588,7 +594,9 @@ namespace TiltBrush
             error = null;
             if (result == null)
             {
-                error = "Provider returned no channel result.";
+                // The bridge cannot return a null result, so this is a call that never arrived
+                // rather than a provider failure. See the note in QueryDirectory.
+                error = "The channel request never reached the provider.";
                 return false;
             }
 
