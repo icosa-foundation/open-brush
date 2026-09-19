@@ -218,6 +218,9 @@ namespace TiltBrush
             SdfRemoveComponent = 14007,
             SdfEditorNextPage = 14008,
             SdfAddPrimitive = 14009,
+            SdfNextPrimitiveDimension = 14010,
+            SdfAdjustPrimitiveDimension = 14011,
+            SdfAdjustComponentBlend = 14012,
         }
 
         public enum ControlsType
@@ -5116,6 +5119,9 @@ namespace TiltBrush
                 case GlobalCommands.SdfRemoveComponent:
                 case GlobalCommands.SdfEditorNextPage:
                 case GlobalCommands.SdfAddPrimitive:
+                case GlobalCommands.SdfNextPrimitiveDimension:
+                case GlobalCommands.SdfAdjustPrimitiveDimension:
+                case GlobalCommands.SdfAdjustComponentBlend:
                     SdfEditorPopup.Active?.Handle(rEnum, iParam1);
                     EatToolScaleInput();
                     break;
@@ -5549,6 +5555,9 @@ namespace TiltBrush
                 case GlobalCommands.SdfRemoveComponent:
                 case GlobalCommands.SdfEditorNextPage:
                 case GlobalCommands.SdfAddPrimitive:
+                case GlobalCommands.SdfNextPrimitiveDimension:
+                case GlobalCommands.SdfAdjustPrimitiveDimension:
+                case GlobalCommands.SdfAdjustComponentBlend:
                     return false;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;
                 case GlobalCommands.ToggleCameraPostEffects: return CameraConfig.PostEffects;
@@ -5705,6 +5714,9 @@ namespace TiltBrush
                 case GlobalCommands.SdfRemoveComponent:
                 case GlobalCommands.SdfEditorNextPage:
                 case GlobalCommands.SdfAddPrimitive:
+                case GlobalCommands.SdfNextPrimitiveDimension:
+                case GlobalCommands.SdfAdjustPrimitiveDimension:
+                case GlobalCommands.SdfAdjustComponentBlend:
                     return SdfEditorPopup.Active != null &&
                         SdfEditorPopup.Active.CanHandle(rEnum, iParam);
                 case GlobalCommands.SaveModel:
