@@ -910,7 +910,7 @@ namespace TiltBrush
         /// <summary>
         /// Create a model stencil from an existing model
         /// </summary>
-        public static ModelStencil CreateFromModel(Model model)
+        public static ModelStencil CreateFromModel(Model model, CanvasScript canvas = null)
         {
             var prefab = WidgetManager.m_Instance.ModelStencilPrefab;
             if (prefab == null)
@@ -921,7 +921,7 @@ namespace TiltBrush
 
             var stencil = Instantiate(prefab);
             stencil.Model = model;
-            stencil.transform.parent = App.Instance.m_CanvasTransform;
+            stencil.transform.parent = (canvas ?? App.ActiveCanvas).transform;
             stencil.Show(true, false);
 
             return stencil;
