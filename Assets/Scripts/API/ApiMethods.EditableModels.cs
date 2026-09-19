@@ -203,10 +203,19 @@ namespace TiltBrush
             "Converts a model to a guide",
             "0"
         )]
-        public static void ConvertToGuide(int index)
+        public static string ConvertToGuide(int index)
         {
             var model = _GetActiveModel(index);
-            model.ConvertToStencil();
+            ModelStencil stencil = model.ConvertToStencil();
+            if (stencil == null)
+            {
+                throw new InvalidOperationException(
+                    $"Model {index} could not be converted to a guide.");
+            }
+            return new JObject
+            {
+                ["guide"] = WidgetManager.m_Instance.GetActiveWidgetIndex(stencil)
+            }.ToString(Newtonsoft.Json.Formatting.None);
         }
     }
 }

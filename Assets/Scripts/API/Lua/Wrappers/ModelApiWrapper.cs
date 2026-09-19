@@ -89,8 +89,8 @@ namespace TiltBrush
 
         [LuaDocsDescription(@"Converts this model to a stencil/guide for painting")]
         [LuaDocsExample(@"myStencil = myModel:ConvertToGuide()")]
-        [LuaDocsReturnValue(@"Returns a ModelStencil instance that can be used as a guide")]
-        public ModelStencil ConvertToGuide()
+        [LuaDocsReturnValue(@"Returns a Guide instance")]
+        public GuideApiWrapper ConvertToGuide()
         {
             if (_ModelWidget == null)
             {
@@ -98,7 +98,8 @@ namespace TiltBrush
                 return null;
             }
 
-            return _ModelWidget.ConvertToStencil();
+            ModelStencil stencil = _ModelWidget.ConvertToStencil();
+            return stencil == null ? null : new GuideApiWrapper(stencil);
         }
     }
 }
