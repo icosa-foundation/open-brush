@@ -3979,6 +3979,10 @@ MonoBehaviour:
     m_Localized: Toggle straight edge snapping
     m_Metadata:
       m_Items: []
+  - m_Id: 543158158396841984
+    m_Localized: Captures all widgets and also the current camera path if visible
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

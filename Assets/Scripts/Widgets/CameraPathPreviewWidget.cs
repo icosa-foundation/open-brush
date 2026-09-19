@@ -60,13 +60,8 @@ namespace TiltBrush
                 if (m_OverridePathT == null && !m_UserInteracting &&
                     WidgetManager.m_Instance.FollowingPath)
                 {
-                    // It's possible for Path.GetSpeed() to return a value <= 0, which makes the
-                    // camera path stop advancing.  To correct this, ensure the minimum speed is
-                    // the lowest speed available for a speed knot.
-                    float speed = Mathf.Max(m_CurrentPathWidget.Path.GetSpeed(m_PathT),
-                        CameraPathSpeedKnot.kMinSpeed);
-                    bool completed = m_CurrentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
-                        m_PathT, out m_PathT);
+                    bool completed = m_CurrentPathWidget.Path.MoveAlongPathByTime(
+                        Time.deltaTime, m_PathT, out m_PathT);
 
                     if ((VideoRecorderUtils.ActiveVideoRecording != null || VideoRecorderUtils.ActiveStillFrameExporter != null) && completed)
                     {
