@@ -226,7 +226,11 @@ namespace TiltBrush
         /// Persistent path is relative to the Tilt Brush/Media Library/SoundClips directory, if it is a
         /// filename.
         public string PersistentPath { get; }
-        public string AbsolutePath { get; }
+        public string AbsolutePath { get; private set; }
+        internal string CatalogIdentity { get; }
+        // When set, a URL Unity's audio loader can open directly, so the clip is streamed from
+        // shared storage instead of being copied into app-private storage first.
+        private readonly Func<string> m_MediaUrl;
         public string HumanName { get; }
 
         public Texture2D Thumbnail { get; private set; }
@@ -242,10 +246,20 @@ namespace TiltBrush
         public string Error { get; private set; }
 
         public SoundClip(string filePath)
+            : this(filePath, filePath.Substring(App.SoundClipLibraryPath().Length + 1),
+                filePath, null)
         {
-            PersistentPath = filePath.Substring(App.SoundClipLibraryPath().Length + 1);
+        }
+
+        internal SoundClip(
+            string filePath, string persistentPath, string catalogIdentity,
+            Func<string> mediaUrl = null)
+        {
+            PersistentPath = persistentPath;
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             AbsolutePath = filePath;
+            CatalogIdentity = catalogIdentity;
+            m_MediaUrl = mediaUrl;
         }
 
         // Dummy SoundClip - this is used when a clip referenced in a sketch cannot be found.
@@ -297,8 +311,21 @@ namespace TiltBrush
             }
         }
 
-        async Task<AudioClip> LoadClip(string path)
+        async Task<AudioClip> LoadClip()
         {
+            // Prefer streaming over the local HTTP handler. UnityWebRequestMultimedia takes only a
+            // URL, which is the only reason a copy was ever needed; serving the document avoids it.
+            string streamedUrl = m_MediaUrl?.Invoke();
+            string path;
+            if (streamedUrl != null)
+            {
+                // The logical path still drives format detection; it carries the extension.
+                path = PersistentPath;
+            }
+            else
+            {
+                path = AbsolutePath;
+            }
             AudioClip clip = null;
             AudioType audioType = path.ToLower() switch
             {
@@ -313,7 +340,7 @@ namespace TiltBrush
                 _ => throw new ArgumentOutOfRangeException(nameof(path), $"Unsupported audio type: {path}.")
             };
 
-            string url = new Uri(path).AbsoluteUri;
+            string url = streamedUrl ?? new Uri(path).AbsoluteUri;
             using (UnityWebRequest uwr = UnityWebRequestMultimedia.GetAudioClip(url, audioType))
             {
                 _ = uwr.SendWebRequest();
@@ -349,7 +376,7 @@ namespace TiltBrush
                 yield break;
             }
             controller.m_SoundClipAudioSource.playOnAwake = false;
-            var audioClipTask = LoadClip(AbsolutePath);
+            var audioClipTask = LoadClip();
             while (!audioClipTask.IsCompleted)
             {
                 yield return null;
@@ -405,12 +432,18 @@ namespace TiltBrush
             Height = 128;
             Aspect = 1;
 
-            var audioClipTask = LoadClip(AbsolutePath);
+            var audioClipTask = LoadClip();
             while (!audioClipTask.IsCompleted)
             {
                 yield return null;
             }
 
+            if (audioClipTask.IsCanceled || audioClipTask.IsFaulted)
+            {
+                Error = audioClipTask.Exception?.GetBaseException().Message ??
+                    "The audio load was canceled.";
+                yield break;
+            }
             var clip = audioClipTask.Result;
             if (clip != null)
             {

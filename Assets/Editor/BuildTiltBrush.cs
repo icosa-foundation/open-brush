@@ -70,7 +70,10 @@ static class BuildTiltBrush
         public bool disableAccountLogins;
         public bool AndroidBuildAppBundle;
         public AndroidSdkVersions? AndroidTargetSdkVersion;
+        public bool ScopedStorage;
     }
+
+    public static bool IsScopedStorageBuildActive { get; private set; }
 
     [Serializable()]
     public class BuildFailedException : System.Exception
@@ -807,6 +810,10 @@ static class BuildTiltBrush
                 {
                     tiltOptions.AndroidTargetSdkVersion = ParseAndroidTargetSdkVersion(args[++i]);
                 }
+                else if (args[i] == "-btb-scoped-storage")
+                {
+                    tiltOptions.ScopedStorage = true;
+                }
                 else if (args[i] == "-androidExportType")
                 {
                     string androidExportType = args[++i];
@@ -912,6 +919,37 @@ static class BuildTiltBrush
         }
     }
 
+    class TempSetScopedStorageAndroidSettings : IDisposable
+    {
+        private readonly bool m_IsActive;
+        private readonly bool m_PreviousForceSDCardPermission;
+        private readonly bool m_PreviousScopedStorageBuildActive;
+
+        public TempSetScopedStorageAndroidSettings(TiltBuildOptions tiltOptions)
+        {
+            m_IsActive = tiltOptions.Target == BuildTarget.Android && tiltOptions.ScopedStorage;
+            m_PreviousScopedStorageBuildActive = IsScopedStorageBuildActive;
+            m_PreviousForceSDCardPermission = PlayerSettings.Android.forceSDCardPermission;
+            IsScopedStorageBuildActive = m_IsActive;
+
+            if (!m_IsActive)
+            {
+                return;
+            }
+
+            PlayerSettings.Android.forceSDCardPermission = false;
+        }
+
+        public void Dispose()
+        {
+            if (m_IsActive)
+            {
+                PlayerSettings.Android.forceSDCardPermission = m_PreviousForceSDCardPermission;
+            }
+
+            IsScopedStorageBuildActive = m_PreviousScopedStorageBuildActive;
+        }
+    }
     class TempSetPlayerSettings : IDisposable
     {
         private BuildTarget m_Target;
@@ -1437,6 +1475,13 @@ static class BuildTiltBrush
         {
             if (m_backup != null)
             {
+                // Restoring an open scene on disk makes Unity show a modal asking whether to
+                // reload it. Close the temporary scene before replacing its file so scripted
+                // builds can finish without requiring editor interaction.
+                if (EditorSceneManager.GetActiveScene().path == m_scene)
+                {
+                    EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+                }
                 FileUtil.DeleteFileOrDirectory(m_scene);
                 FileUtil.MoveFileOrDirectory(m_backup, m_scene);
             }
@@ -1614,7 +1659,9 @@ static class BuildTiltBrush
             target,
             tiltOptions.Il2Cpp ? "DISABLE_SYSTEM_AUDIO_CAPTURE" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null,
-            tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null))
+            tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null,
+            target == BuildTarget.Android && tiltOptions.ScopedStorage ? "OPEN_BRUSH_SCOPED_STORAGE" : null))
+        using (var unused16 = new TempSetScopedStorageAndroidSettings(tiltOptions))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))

@@ -17,6 +17,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using MoonSharp.Interpreter;
 using MoonSharp.Interpreter.Loaders;
@@ -213,9 +215,19 @@ namespace TiltBrush
             LatestToolScriptControlPointSpace = space;
         }
 
+        /// Stands in for the plugins directory when there is no filesystem behind it. MoonSharp
+        /// substitutes module names into ModulePaths and hands the result back to the loader, so
+        /// the two only have to agree on a prefix - it never needs to exist on disk.
+        private const string kLogicalPluginsRoot = "/openbrush/Plugins";
+
         void Awake()
         {
             m_Instance = this;
+            if (UsesStorageBackend)
+            {
+                m_UserPluginsPath = kLogicalPluginsRoot;
+                return;
+            }
             m_UserPluginsPath = Path.Combine(App.UserPath(), "Plugins");
             if (!Directory.Exists(m_UserPluginsPath))
             {
@@ -223,8 +235,10 @@ namespace TiltBrush
             }
         }
 
-        void OnDestroy()
+        private void OnDestroy()
         {
+            m_FileWatcher?.Dispose();
+            m_FileWatcher = null;
             if (m_Instance == this)
             {
                 m_Instance = null;
@@ -274,12 +288,15 @@ namespace TiltBrush
                 ActiveScripts[category] = 0;
             }
 
-            if (!Directory.Exists(LuaModulesPath))
+            if (!UsesStorageBackend && !Directory.Exists(LuaModulesPath))
             {
                 Directory.CreateDirectory(LuaModulesPath);
             }
 
-            CopyLuaModules();
+            if (UserStorage.Backend.Kind == StorageBackendKind.Local)
+            {
+                CopyLuaModules();
+            }
 
             // Allow includes from Scripts/LuaModules
             Script.DefaultOptions.ScriptLoader = new OpenBrushScriptLoader();
@@ -291,7 +308,8 @@ namespace TiltBrush
             LoadExampleScripts();
             LoadUserScripts();
 
-            if (Directory.Exists(UserPluginsPath()))
+            if (UserStorage.Backend.Kind == StorageBackendKind.Local &&
+                Directory.Exists(UserPluginsPath()))
             {
                 m_FileWatcher = new FileWatcher(UserPluginsPath(), "*.lua");
                 m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
@@ -318,8 +336,19 @@ namespace TiltBrush
 
         public void CopyLuaModules()
         {
-            // Copy built-in Lua Libraries to User's LuaModules directory
             var libraries = Resources.LoadAll<TextAsset>("LuaModules");
+            if (UsesStorageBackend)
+            {
+                // Published into shared storage rather than a local directory, so the modules sit
+                // beside the user's own and are read back through the same stream loader.
+                foreach (var library in libraries)
+                {
+                    PublishLuaModuleAsync(library).AsAsyncVoid();
+                }
+                return;
+            }
+
+            // Copy built-in Lua Libraries to User's LuaModules directory
             foreach (var library in libraries)
             {
                 var newFilename = Path.Join(LuaModulesPath, $"{library.name}.lua");
@@ -327,6 +356,25 @@ namespace TiltBrush
                 {
                     FileUtils.WriteTextFromResources($"LuaModules/{library.name}", newFilename);
                 }
+            }
+        }
+
+        private static async Task PublishLuaModuleAsync(TextAsset library)
+        {
+            string relativePath = $"LuaModules/{library.name}.lua";
+            // __autocomplete is regenerated from the current API, so it always overwrites.
+            if (library.name != "__autocomplete" &&
+                UserStorage.Backend.Exists(StorageArea.Plugins, relativePath))
+            {
+                return;
+            }
+            RuntimeContentWriteResult result = await RuntimeContentPublisher.PublishIfMissingAsync(
+                StorageArea.Plugins, relativePath, "text/x-lua", library.bytes,
+                CancellationToken.None);
+            if (!result.Success)
+            {
+                Debug.LogWarning(
+                    $"SAF_PLUGINS Could not publish Lua module {library.name}: {result.Error}");
             }
         }
 
@@ -484,12 +532,62 @@ namespace TiltBrush
 
         public void LoadUserScripts()
         {
+            if (UsesStorageBackend)
+            {
+                // Shared storage has no directory to walk, so enumerate it through the backend
+                // and read each plugin as a stream.
+                StorageTreeResult tree = UserStorage.Backend.EnumerateTree(
+                    StorageArea.Plugins, "",
+                    new StorageTreeQuery(
+                        recursive: true,
+                        includeDirectories: false,
+                        includeExtensions: new[] { ".lua" }),
+                    CancellationToken.None);
+                if (!tree.Success)
+                {
+                    Debug.LogWarning($"SAF_PLUGINS Could not list plugins: {tree.Error}");
+                    return;
+                }
+                foreach (StorageDocument document in tree.Entries)
+                {
+                    LoadScriptFromStorage(document);
+                }
+                return;
+            }
             string[] files = Directory.GetFiles(UserPluginsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
             foreach (string scriptPath in files)
             {
                 LoadScriptFromPath(scriptPath);
             }
         }
+
+        /// True when plugins live in shared storage, which exposes no filesystem path.
+        private static bool UsesStorageBackend =>
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
+
+        private string LoadScriptFromStorage(StorageDocument document)
+        {
+            string filename = document.DisplayName;
+            if (filename.StartsWith("__")) { return null; }
+            string contents;
+            try
+            {
+                using (Stream source = UserStorage.Backend.OpenRead(
+                           document.DocumentId, requireSeekable: false, CancellationToken.None))
+                using (var reader = new StreamReader(source))
+                {
+                    contents = reader.ReadToEnd();
+                }
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"SAF_PLUGINS Could not read {filename}: {e.Message}");
+                return null;
+            }
+            return LoadScriptFromString(Path.GetFileNameWithoutExtension(filename), contents);
+        }
+
+
 
         private void LoadExampleScripts()
         {
@@ -1315,23 +1413,52 @@ namespace TiltBrush
             }
         }
 
-        public bool CopyActiveScriptToUserScriptFolder(LuaApiCategory category)
+        public Task<bool> CopyActiveScriptToUserScriptFolderAsync(LuaApiCategory category)
         {
             var index = ActiveScripts[category];
             var scriptName = GetScriptNames(category)[index];
-            return CopyScriptToUserScriptFolder(category, scriptName);
+            return CopyScriptToUserScriptFolderAsync(category, scriptName);
         }
 
-        public bool CopyScriptToUserScriptFolder(LuaApiCategory category, string scriptName)
+        public async Task<bool> CopyScriptToUserScriptFolderAsync(
+            LuaApiCategory category, string scriptName)
         {
             var originalFilename = $"{category}.{scriptName}";
-            var newFilename = Path.Join(UserPluginsPath(), $"{originalFilename}.lua");
-            if (!File.Exists(newFilename))
+            string displayName = $"{originalFilename}.lua";
+            if (UserStorage.Backend.Kind == StorageBackendKind.Local)
             {
-                FileUtils.WriteTextFromResources($"LuaScriptExamples/{originalFilename}", newFilename);
-                return true;
+                var newFilename = Path.Join(UserPluginsPath(), displayName);
+                if (!File.Exists(newFilename))
+                {
+                    FileUtils.WriteTextFromResources(
+                        $"LuaScriptExamples/{originalFilename}", newFilename);
+                    return true;
+                }
+                return false;
             }
-            return false;
+
+            TextAsset resource = Resources.Load<TextAsset>(
+                $"LuaScriptExamples/{originalFilename}");
+            if (resource == null)
+            {
+                Debug.LogWarning(
+                    $"SAF_STORAGE Missing example plugin resource: {originalFilename}");
+                return false;
+            }
+            RuntimeContentWriteResult result =
+                await RuntimeContentPublisher.PublishIfMissingAsync(
+                    StorageArea.Plugins,
+                    displayName,
+                    "text/x-lua",
+                    resource.bytes,
+                    CancellationToken.None);
+            if (!result.Success)
+            {
+                Debug.LogWarning(
+                    $"SAF_STORAGE Could not publish example plugin {displayName}: " +
+                    $"{result.Error}");
+            }
+            return result.Success && result.Created;
         }
 
         public bool IsBackgroundScriptActive(string scriptName)

@@ -54,6 +54,7 @@ namespace TiltBrush
 
         private bool cameraViewRequested;
         private bool cameraViewGenerated;
+        private bool m_StartupScriptRun;
 
         public enum ForcePaintingMode
         {
@@ -92,7 +93,11 @@ namespace TiltBrush
         void Awake()
         {
             m_Instance = this;
-            m_UserScriptsPath = Path.Combine(App.UserPath(), "Scripts");
+            // Scripts are enumerated and read through the backend when storage has no
+            // filesystem, so this path is only used by the desktop watcher and the local reads.
+            m_UserScriptsPath = UsesStorageBackend
+                ? null
+                : Path.Combine(App.UserPath(), "Scripts");
             App.HttpServer.AddHttpHandler($"/help", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/commands", InfoCallback);
             App.HttpServer.AddHttpHandler($"/help/brushes", InfoCallback);
@@ -108,20 +113,18 @@ namespace TiltBrush
             BrushTransformStack = new Stack<(Vector3, Quaternion)>();
             ResetBrushTransform();
 
-            if (!Directory.Exists(m_UserScriptsPath))
-            {
-                Directory.CreateDirectory(m_UserScriptsPath);
-            }
-            if (Directory.Exists(m_UserScriptsPath))
-            {
-                m_FileWatcher = new FileSystemWatcher(m_UserScriptsPath, "*.html");
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.Created += OnScriptsDirectoryChanged;
-                m_FileWatcher.Changed += OnScriptsDirectoryChanged;
-                // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
-                m_FileWatcher.EnableRaisingEvents = true;
-            }
+            ConfigureLocalScriptsWatcher();
             App.Instance.StateChanged += RunStartupScript;
+        }
+
+        private void OnDestroy()
+        {
+            if (App.Instance != null)
+            {
+                App.Instance.StateChanged -= RunStartupScript;
+            }
+            m_FileWatcher?.Dispose();
+            m_FileWatcher = null;
         }
 
         private string DeviceLoginCallback(HttpListenerRequest request)
@@ -186,17 +189,64 @@ Success. If you are not automatically redirected, please visit <a href='{success
         {
 
             if (!(oldState == App.AppState.LoadingBrushesAndLighting && newState == App.AppState.Standard)) return;
+            RunStartupScriptIfReady();
+        }
 
-            var startupScriptPath = Path.Combine(m_UserScriptsPath, m_startupScriptName);
-
-            if (File.Exists(startupScriptPath))
+        internal void RunStartupScriptIfReady()
+        {
+            if (m_StartupScriptRun || App.CurrentState != App.AppState.Standard)
             {
-                var lines = File.ReadAllLines(startupScriptPath);
+                return;
+            }
+            string[] lines = null;
+            if (UsesStorageBackend)
+            {
+                if (UserStorage.Backend.Exists(StorageArea.Scripts, m_startupScriptName))
+                {
+                    lines = ReadScriptText(m_startupScriptName)
+                        .Split(new[] { "\r\n", "\n" }, StringSplitOptions.None);
+                }
+            }
+            else
+            {
+                string startupScriptPath = Path.Combine(m_UserScriptsPath, m_startupScriptName);
+                if (File.Exists(startupScriptPath))
+                {
+                    lines = File.ReadAllLines(startupScriptPath);
+                }
+            }
+
+            if (lines != null)
+            {
+                m_StartupScriptRun = true;
                 foreach (string pair in lines)
                 {
                     EnqueueCommand(pair);
                 }
             }
+        }
+
+
+        private void ConfigureLocalScriptsWatcher()
+        {
+            if (UserStorage.Backend.Kind != StorageBackendKind.Local)
+            {
+                return;
+            }
+            if (!Directory.Exists(m_UserScriptsPath))
+            {
+                Directory.CreateDirectory(m_UserScriptsPath);
+            }
+            if (!Directory.Exists(m_UserScriptsPath))
+            {
+                return;
+            }
+            m_FileWatcher = new FileSystemWatcher(m_UserScriptsPath, "*.html");
+            m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            m_FileWatcher.Created += OnScriptsDirectoryChanged;
+            m_FileWatcher.Changed += OnScriptsDirectoryChanged;
+            // m_FileWatcher.FileDeleted += OnScriptsDirectoryChanged; TODO
+            m_FileWatcher.EnableRaisingEvents = true;
         }
 
         private class EnqueuedApiCommand
@@ -248,8 +298,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         private void OnScriptsDirectoryChanged(object sender, FileSystemEventArgs e)
         {
-            var fileinfo = new FileInfo(e.FullPath);
-            RegisterUserScript(fileinfo);
+            RegisterUserScript(
+                Path.GetFileName(e.FullPath), () => File.ReadAllText(e.FullPath));
         }
 
         private string InfoCallback(HttpListenerRequest request)
@@ -353,7 +403,26 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         private void PopulateUserScripts()
         {
-            App.HttpServer.AddHttpHandler(BASE_USER_SCRIPTS_URL, UserScriptsCallback);
+            if (!App.HttpServer.HttpHandlerExists(BASE_USER_SCRIPTS_URL))
+            {
+                App.HttpServer.AddHttpHandler(BASE_USER_SCRIPTS_URL, UserScriptsCallback);
+            }
+            if (UsesStorageBackend)
+            {
+                StorageDirectoryResult listing = UserStorage.Backend.List(
+                    StorageArea.Scripts, "", CancellationToken.None);
+                if (listing.Success)
+                {
+                    foreach (StorageDocument document in listing.Documents)
+                    {
+                        if (document.IsDirectory) { continue; }
+                        RegisterUserScript(
+                            document.DisplayName,
+                            () => ReadScriptText(document.DisplayName));
+                    }
+                }
+                return;
+            }
             if (!Directory.Exists(m_UserScriptsPath))
             {
                 Directory.CreateDirectory(m_UserScriptsPath);
@@ -364,23 +433,35 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 FileInfo[] AllFileInfo = dirInfo.GetFiles();
                 foreach (FileInfo fileinfo in AllFileInfo)
                 {
-                    RegisterUserScript(fileinfo);
+                    RegisterUserScript(fileinfo.Name, () => File.ReadAllText(fileinfo.FullName));
                 }
             }
         }
 
-        private void RegisterUserScript(FileInfo file)
+        /// True when scripts live in shared storage, which has no directory to walk.
+        private static bool UsesStorageBackend =>
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
+
+        private static string ReadScriptText(string displayName)
         {
-            if (file.Extension == ".html" || file.Extension == ".htm")
+            using (Stream source = UserStorage.Backend.OpenRead(
+                       StorageArea.Scripts, displayName, requireSeekable: false,
+                       CancellationToken.None))
+            using (var reader = new StreamReader(source))
             {
-                var f = file.OpenText();
-                string filename = $"{BASE_USER_SCRIPTS_URL}/{file.Name}";
-                m_UserScripts[filename] = f.ReadToEnd();
-                f.Close();
-                if (!App.HttpServer.HttpHandlerExists(filename))
-                {
-                    App.HttpServer.AddHttpHandler(filename, UserScriptsCallback);
-                }
+                return reader.ReadToEnd();
+            }
+        }
+
+        private void RegisterUserScript(string name, Func<string> readText)
+        {
+            string extension = Path.GetExtension(name);
+            if (extension != ".html" && extension != ".htm") { return; }
+            string filename = $"{BASE_USER_SCRIPTS_URL}/{name}";
+            m_UserScripts[filename] = readText();
+            if (!App.HttpServer.HttpHandlerExists(filename))
+            {
+                App.HttpServer.AddHttpHandler(filename, UserScriptsCallback);
             }
         }
 

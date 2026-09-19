@@ -898,10 +898,11 @@ namespace TiltBrush
             LocalTransform = delta_LS * LocalTransform;
         }
 
-        /// I believe (but am not sure) that Media Library content loads synchronously,
-        /// and PAC content loads asynchronously.
+        /// Restore saved widgets, waiting for indexing and model import when necessary.
         public static async Task CreateModelFromSaveData(TiltModels75 modelDatas)
         {
+            Func<bool> restoreCurrent = ModelCatalog.m_Instance.CaptureModelRestoreValidation();
+            Func<bool> sceneCurrent = ModelCatalog.m_Instance.CaptureModelRestoreSceneValidation();
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
             Debug.AssertFormat(!modelDatas.InSet_deprecated,
@@ -920,7 +921,8 @@ namespace TiltBrush
                     modelDatas.GroupIds,
                     modelDatas.LayerIds,
                     modelDatas.SplitMeshPaths,
-                    modelDatas.NotSplittableMeshPaths
+                    modelDatas.NotSplittableMeshPaths,
+                    restoreCurrent
                 );
                 ok = await okTask;
 
@@ -944,61 +946,84 @@ namespace TiltBrush
                 ok = false;
             }
 
-            if (!ok)
+            if (!ok && sceneCurrent())
             {
-                ModelCatalog.m_Instance.AddMissingModel(
-                    modelDatas.FilePath, modelDatas.Transforms, modelDatas.RawTransforms);
+                ModelCatalog.m_Instance.AddMissingModel(modelDatas);
+                // A newly selected root may have finished scanning before this old-source
+                // attempt returned. Keep the reference and arrange recovery from the new source.
+                if (modelDatas.FilePath != null && !restoreCurrent())
+                {
+                    ModelCatalog.m_Instance.ForceCatalogScan();
+                }
             }
         }
 
-        /// I believe (but am not sure) that this is synchronous.
+        /// Waits for asynchronous catalog discovery and model import when necessary.
         /// Returns false if the model can't be loaded -- in this case, caller is responsible
         /// for creating the missing-model placeholder.
         public static async Task<bool> CreateModelsFromRelativePath(
             string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs,
-            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
+            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths,
+            Func<bool> restoreCurrent = null)
         {
+            restoreCurrent ??= ModelCatalog.m_Instance.CaptureModelRestoreValidation();
+            if (!restoreCurrent()) { return false; }
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
-            Model model = ModelCatalog.m_Instance.GetModel(relativePath);
-            if (model == null) { return false; }
-
-            if (!model.m_Valid)
+            Model model = await ModelCatalog.m_Instance.GetModelAsync(relativePath);
+            if (model == null || !restoreCurrent()) { return false; }
+            // Keep the owner alive if a catalog refresh removes it during asynchronous import.
+            model.AcquireUsage();
+            try
             {
-                // Reload the model if it's not valid or if we're loading a subtree.
-                Task t = model.LoadModelAsync();
-                await t;
-            }
-            if (!model.m_Valid)
-            {
-                return false;
-            }
-
-            // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
-            model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
-            model.InitMeshSplits();
-
-            if (xfs != null)
-            {
-                // Pre M13 format
-                for (int i = 0; i < xfs.Length; ++i)
+                if (!model.m_Valid)
                 {
-                    bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
-                    uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                    CreateModel(model, subtrees[i], xfs[i], pin, isNonRawTransform: true, groupId, 0);
+                    try
+                    {
+                        await model.LoadModelAsync();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"MODEL_RESTORE Could not import {relativePath}: {e.Message}");
+                        return false;
+                    }
                 }
-            }
-            if (rawXfs != null)
-            {
-                // Post M13 format
-                for (int i = 0; i < rawXfs.Length; ++i)
+                if (!model.m_Valid || !restoreCurrent()) { return false; }
+
+                // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits
+                model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
+                model.InitMeshSplits();
+
+                if (xfs != null)
                 {
-                    bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
-                    uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                    int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                    CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId);
+                    // Pre M13 format
+                    for (int i = 0; i < xfs.Length; ++i)
+                    {
+                        if (!restoreCurrent()) { return false; }
+                        bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
+                        uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
+                        string subtree = subtrees != null && i < subtrees.Length ? subtrees[i] : null;
+                        CreateModel(model, subtree, xfs[i], pin, isNonRawTransform: true, groupId, 0);
+                    }
                 }
+                if (rawXfs != null)
+                {
+                    // Post M13 format
+                    for (int i = 0; i < rawXfs.Length; ++i)
+                    {
+                        if (!restoreCurrent()) { return false; }
+                        bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
+                        uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
+                        int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
+                        string subtree = subtrees != null && i < subtrees.Length ? subtrees[i] : null;
+                        CreateModel(model, subtree, rawXfs[i], pin, isNonRawTransform: false, groupId, layerId);
+                    }
+                }
+                return true;
             }
-            return true;
+            finally
+            {
+                model.ReleaseUsage();
+            }
         }
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.

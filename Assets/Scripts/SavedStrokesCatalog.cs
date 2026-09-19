@@ -31,6 +31,14 @@ namespace TiltBrush
         private bool m_DirectoryScanRequired;
         private HashSet<string> m_ChangedFiles;
         private bool m_WaitingForSketchSetUpdate;
+        private bool m_SketchSetSubscribed;
+        private bool m_SeedingSafDefaults;
+        private bool m_SafSeedAttempted;
+        private const string kSafSeedPreference =
+            "GooglePlayStorage.SeededDefaultSavedStrokesFdV1";
+
+        private bool IsSafStorage =>
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
 
         public bool IsScanning => m_ScanningDirectory;
 
@@ -42,23 +50,39 @@ namespace TiltBrush
 
         private void Init()
         {
-            App.InitMediaLibraryPath();
-            App.InitSavedStrokesLibraryPath(m_DefaultSavedStrokes);
+            if (!IsSafStorage)
+            {
+                App.InitMediaLibraryPath();
+                App.InitSavedStrokesLibraryPath(m_DefaultSavedStrokes);
+            }
             ChangeDirectory(HomeDirectory);
         }
 
         public void ChangeDirectory(string newPath)
         {
+            StopWatchingCurrentDirectory();
             m_CurrentSavedStrokesDirectory = newPath;
             m_SavedStrokeFiles = new List<SavedStrokeFile>();
             m_ChangedFiles = new HashSet<string>();
 
-            StartCoroutine(ScanReferenceDirectory());
+            // Subscribe before requesting the library-wide index rebuild, then populate this
+            // folder page only after the refreshed index reports completion.
+            EnsureSketchSetSubscription();
+            SketchSet sketchSet =
+                SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
+            if (sketchSet == null)
+            {
+                m_DirectoryScanRequired = true;
+            }
+            else
+            {
+                sketchSet.RequestRefresh();
+            }
 
-            if (Directory.Exists(m_CurrentSavedStrokesDirectory))
+            if (!IsSafStorage && Directory.Exists(m_CurrentSavedStrokesDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentSavedStrokesDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
                 m_FileWatcher.FileChanged += OnDirectoryChanged;
                 m_FileWatcher.FileCreated += OnDirectoryChanged;
                 m_FileWatcher.FileDeleted += OnDirectoryChanged;
@@ -71,7 +95,48 @@ namespace TiltBrush
 
         public bool IsSubDirectoryOfHome()
         {
-            return m_CurrentSavedStrokesDirectory.StartsWith(HomeDirectory);
+            return IsPathWithinDirectory(HomeDirectory, m_CurrentSavedStrokesDirectory);
+        }
+
+        internal static bool IsNavigableDirectory(string path)
+        {
+            return !path.EndsWith(
+                SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static bool IsNavigableLocalDirectory(string path)
+        {
+            try
+            {
+                return IsNavigableDirectory(path) && (File.GetAttributes(path) & FileAttributes.ReparsePoint) == 0;
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                return false;
+            }
+        }
+
+        internal static bool IsPathWithinDirectory(string root, string path)
+        {
+            string fullRoot = Path.GetFullPath(root).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string fullPath = Path.GetFullPath(path).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            return fullPath.Equals(fullRoot, comparison) ||
+                fullPath.StartsWith(fullRoot + Path.DirectorySeparatorChar,
+                    comparison);
+        }
+
+        internal static bool IsDirectChildPath(string directory, string path)
+        {
+            return string.Equals(
+                Path.GetFullPath(Path.GetDirectoryName(path) ?? "").TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                Path.GetFullPath(directory).TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
         }
 
         public string GetCurrentDirectory()
@@ -87,10 +152,10 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
-            m_FileWatcher.EnableRaisingEvents = false;
+            StopWatchingCurrentDirectory();
 
             // Clean up event subscription if still active
-            if (m_WaitingForSketchSetUpdate)
+            if (m_WaitingForSketchSetUpdate || m_SketchSetSubscribed)
             {
                 var sketchSet = SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
                 if (sketchSet != null)
@@ -118,6 +183,19 @@ namespace TiltBrush
         // has already scanned.
         private void Update()
         {
+            EnsureSketchSetSubscription();
+            if (IsSafStorage)
+            {
+                if (!m_SeedingSafDefaults &&
+                    UserStorage.Backend.IsReady &&
+                    !m_SafSeedAttempted &&
+                    PlayerPrefs.GetInt(
+                        kSafSeedPreference,
+                        0) == 0)
+                {
+                    StartCoroutine(SeedSafDefaults());
+                }
+            }
             if (m_DirectoryScanRequired)
             {
                 ForceCatalogScan();
@@ -135,23 +213,57 @@ namespace TiltBrush
 
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)
         {
-            m_DirectoryScanRequired = true;
+            if (!ReferenceEquals(source, m_FileWatcher)) { return; }
+            RequestScanAfterSketchSetRefresh();
+        }
+
+        /// This catalog holds no index of its own - its scan copies FileSketchSet's list - so it
+        /// must run after that set has re-read the folder, never alongside it. Scanning first
+        /// copies the old list, and because the scan clears its own flag while nothing is
+        /// subscribed to OnChanged, the panel then stays stale until some later filesystem event
+        /// happens to trigger another pass.
+        private void RequestScanAfterSketchSetRefresh()
+        {
+            // m_SketchSetSubscribed is this branch's persistent subscription, as opposed to
+            // the one-shot m_WaitingForSketchSetUpdate. If either is live the refresh is
+            // already coming, and subscribing again would double-handle it.
+            if (m_WaitingForSketchSetUpdate || m_SketchSetSubscribed) { return; }
+            var sketchSet = SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
+            if (sketchSet == null)
+            {
+                // Nothing to wait for. Scanning on the next Update is worse than waiting but
+                // much better than never refreshing at all.
+                m_DirectoryScanRequired = true;
+                return;
+            }
+            sketchSet.OnChanged += OnFileSketchSetChanged;
+            m_WaitingForSketchSetUpdate = true;
+            // Subscribe before requesting so an independent watcher cannot complete the
+            // refresh before this catalog is listening for it.
+            sketchSet.RequestRefresh();
+        }
+
+        private void StopWatchingCurrentDirectory()
+        {
+            if (m_FileWatcher == null) { return; }
+            m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher.FileChanged -= OnDirectoryChanged;
+            m_FileWatcher.FileCreated -= OnDirectoryChanged;
+            m_FileWatcher.FileDeleted -= OnDirectoryChanged;
+            m_FileWatcher.Dispose();
+            m_FileWatcher = null;
         }
 
         public void NotifyFileCreated(string fullpath)
         {
-            if (fullpath.StartsWith(m_CurrentSavedStrokesDirectory))
+            if (IsSafStorage)
             {
-                // Don't scan immediately - wait for FileSketchSet to process the file
-                if (!m_WaitingForSketchSetUpdate)
-                {
-                    var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
-                    if (sketchSet != null)
-                    {
-                        sketchSet.OnChanged += OnFileSketchSetChanged;
-                        m_WaitingForSketchSetUpdate = true;
-                    }
-                }
+                NotifyStorageChanged();
+                return;
+            }
+            if (IsPathWithinDirectory(m_CurrentSavedStrokesDirectory, fullpath))
+            {
+                RequestScanAfterSketchSetRefresh();
             }
         }
 
@@ -161,12 +273,30 @@ namespace TiltBrush
             NotifyFileCreated(fullpath);
         }
 
+        public void NotifyFileDeleted(string fullpath)
+        {
+            // Same logic as NotifyFileCreated
+            NotifyFileCreated(fullpath);
+        }
+
+        public void NotifyStorageChanged()
+        {
+            SketchSet sketchSet =
+                SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
+            sketchSet?.RequestRefresh();
+            EnsureSketchSetSubscription();
+        }
+
         private void OnFileSketchSetChanged()
         {
-            // FileSketchSet has processed files, now safe to scan
             m_DirectoryScanRequired = true;
 
-            // Unsubscribe - we only need this once per notification
+            if (m_SketchSetSubscribed)
+            {
+                return;
+            }
+
+            // FileSketchSet has processed files, so the path catalog is safe to scan.
             var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
             if (sketchSet != null)
             {
@@ -191,7 +321,10 @@ namespace TiltBrush
             for (int i = 0; i < catalog.NumSketches; i++)
             {
                 var sketchFileInfo = catalog.GetSketchSceneFileInfo(i);
-                if (!sketchFileInfo.FullPath.StartsWith(m_CurrentSavedStrokesDirectory)) continue;
+                if (!IsInCurrentDirectory(sketchFileInfo))
+                {
+                    continue;
+                }
                 catalog.GetSketchIcon(i, out var icon, out _, out _);
                 var savedStrokeFile = new SavedStrokeFile(i, sketchFileInfo, icon);
                 m_SavedStrokeFiles.Add(savedStrokeFile);
@@ -199,6 +332,129 @@ namespace TiltBrush
 
             m_ScanningDirectory = false;
             CatalogChanged?.Invoke();
+        }
+
+        // The sketch set is a library-wide index; the reference panel is a
+        // folder page. Keep only direct children of the selected folder here.
+        private bool IsInCurrentDirectory(SceneFileInfo fileInfo)
+        {
+            if (fileInfo == null)
+            {
+                return false;
+            }
+            if (!IsSafStorage)
+            {
+                return IsDirectChildPath(
+                    m_CurrentSavedStrokesDirectory, fileInfo.FullPath);
+            }
+
+            if (!(fileInfo is SafSceneFileInfo safInfo) ||
+                !OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
+                    m_CurrentSavedStrokesDirectory, out string sharedPath) ||
+                !OpenBrushStorage.TryResolveStorageDestination(
+                    sharedPath, out StorageArea area, out string relativeDirectory) ||
+                area != StorageArea.SavedStrokes)
+            {
+                return false;
+            }
+            string logicalPath = safInfo.Document.RelativeDisplayPath
+                .Replace('\\', '/').Trim('/');
+            string logicalParent = relativeDirectory.Replace('\\', '/').Trim('/');
+            int separator = logicalPath.LastIndexOf('/');
+            string parentPath = separator < 0 ? "" : logicalPath.Substring(0, separator);
+            return string.Equals(parentPath, logicalParent, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private void EnsureSketchSetSubscription()
+        {
+            if (m_SketchSetSubscribed || SketchCatalog.m_Instance == null)
+            {
+                return;
+            }
+            SketchSet sketchSet =
+                SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
+            if (sketchSet != null)
+            {
+                if (!m_WaitingForSketchSetUpdate) { sketchSet.OnChanged += OnFileSketchSetChanged; }
+                m_WaitingForSketchSetUpdate = false;
+                m_SketchSetSubscribed = true;
+            }
+        }
+
+        private IEnumerator<object> SeedSafDefaults()
+        {
+            m_SeedingSafDefaults = true;
+            m_SafSeedAttempted = true;
+            StorageDirectoryResult listing = UserStorage.Backend.List(
+                StorageArea.SavedStrokes, "", default);
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                m_SeedingSafDefaults = false;
+                yield break;
+            }
+            if (listing.Code == StorageResultCode.NotFound ||
+                listing.Documents.Count == 0)
+            {
+                foreach (string resourcePath in m_DefaultSavedStrokes)
+                {
+                    TextAsset resource = Resources.Load<TextAsset>(resourcePath);
+                    if (resource == null)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Missing default saved stroke: {resourcePath}");
+                        continue;
+                    }
+
+                    string displayName = Path.GetFileName(resourcePath);
+                    string seedError = null;
+                    try
+                    {
+                        using (IStorageWriteTransaction transaction =
+                            UserStorage.Backend.BeginWrite(
+                                StorageArea.SavedStrokes,
+                                displayName,
+                                TiltFile.TILT_MIME_TYPE,
+                                default))
+                        {
+                            using (Stream stream = transaction.OpenWrite())
+                            {
+                                stream.Write(resource.bytes, 0, resource.bytes.Length);
+                            }
+                            StorageMutationResult commit = transaction.Commit();
+                            if (!commit.Success)
+                            {
+                                seedError = commit.Error;
+                            }
+                        }
+                    }
+                    catch (Exception e) when (
+                        e is IOException ||
+                        e is UnauthorizedAccessException ||
+                        e is InvalidOperationException)
+                    {
+                        seedError = e.Message;
+                    }
+                    finally
+                    {
+                        Resources.UnloadAsset(resource);
+                    }
+                    if (seedError != null)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_STORAGE Failed to seed {displayName}: {seedError}");
+                        m_SeedingSafDefaults = false;
+                        yield break;
+                    }
+                    yield return null;
+                }
+            }
+
+            PlayerPrefs.SetInt(
+                kSafSeedPreference,
+                1);
+            PlayerPrefs.Save();
+            m_SeedingSafDefaults = false;
+            NotifyStorageChanged();
         }
     }
 }

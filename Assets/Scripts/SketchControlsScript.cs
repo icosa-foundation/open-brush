@@ -4145,7 +4145,18 @@ namespace TiltBrush
             for (int i = 0; i < SketchCatalog.m_Instance.GetSet(SketchSetType.User).NumSketches; ++i)
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(i);
-                using (var coroutine = LoadAndExport(rInfo.FullPath))
+                string loadPath = rInfo.FullPath;
+                if (rInfo is SafSceneFileInfo)
+                {
+                    // Bulk export reads each sketch through LoadAndExport, which opens a path.
+                    // Shared storage has none, and copying every sketch out to satisfy it is
+                    // exactly the behaviour this backend exists to avoid.
+                    Debug.LogWarning(
+                        $"SAF_EXPORT Bulk export is unsupported on shared storage: " +
+                        $"{rInfo.HumanName}");
+                    continue;
+                }
+                using (var coroutine = LoadAndExport(loadPath))
                 {
                     while (coroutine.MoveNext())
                     {
@@ -4259,8 +4270,14 @@ namespace TiltBrush
 #if USD_SUPPORTED
             var current = SaveLoadScript.m_Instance.SceneFile;
             string basename = (current.Valid)
-                ? Path.GetFileNameWithoutExtension(current.FullPath)
+                ? current is SafSceneFileInfo
+                    ? FileUtils.GetValidFilename(current.HumanName)
+                    : Path.GetFileNameWithoutExtension(current.FullPath)
                 : "Untitled";
+            if (string.IsNullOrEmpty(basename))
+            {
+                basename = "Untitled";
+            }
             string directoryName = FileUtils.GenerateNonexistentFilename(
                 App.ModelLibraryPath(), basename, "");
 
@@ -4272,6 +4289,24 @@ namespace TiltBrush
             //    ? SelectionManager.m_Instance.SelectedStrokes
             //    : null
             ExportUsd.ExportPayload(usdname);
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync(
+                    directoryName,
+                    "model",
+                    (success, publishError) =>
+                    {
+                        if (!success)
+                        {
+                            OutputWindowScript.Error("Failed to save model", publishError);
+                            return;
+                        }
+
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Brush, "Model created!");
+                    });
+                return;
+            }
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, "Model created!");
 #endif
@@ -5850,8 +5885,11 @@ namespace TiltBrush
                     texture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
                     RenderTexture.active = prev;
                     byte[] jpegBytes = texture.EncodeToJPG();
-                    string filename =
-                        Path.GetFileNameWithoutExtension(SaveLoadScript.m_Instance.SceneFile.FullPath);
+                    SceneFileInfo sceneFile =
+                        SaveLoadScript.m_Instance.SceneFile;
+                    string filename = sceneFile is SafSceneFileInfo
+                        ? FileUtils.GetValidFilename(sceneFile.HumanName)
+                        : Path.GetFileNameWithoutExtension(sceneFile.FullPath);
                     File.WriteAllBytes(Path.Combine(App.UserPath(), filename + ".jpg"), jpegBytes);
                 }
                 finally

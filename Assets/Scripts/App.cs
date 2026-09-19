@@ -655,6 +655,9 @@ namespace TiltBrush
             {
                 HttpServer.AddHttpHandler("/load", HttpLoadSketchCallback);
             }
+            // Lets Unity's audio and video loaders read shared storage by URL, which is the only
+            // form they accept. No-op outside Google Play storage mode.
+            SafMediaHttpServer.Register();
 
             m_AutosaveRestoreFileExists = File.Exists(AutosaveRestoreFilePath());
 
@@ -763,7 +766,9 @@ namespace TiltBrush
                 }
             }
 
-            if (Config.m_AutosaveRestoreEnabled && AutosaveRestoreFileExists)
+            if (Config.m_AutosaveRestoreEnabled &&
+                AutosaveRestoreFileExists &&
+                !OpenBrushStorage.IsScopedStorageMode)
             {
                 string lastAutosave = SaveLoadScript.m_Instance.MostRecentAutosaveFile();
                 if (lastAutosave != null)
@@ -1894,15 +1899,15 @@ namespace TiltBrush
             try
             {
                 string sConfigPath = App.ConfigPath();
-                if (!File.Exists(sConfigPath))
-                {
-                    return;
-                }
-
                 string text;
                 try
                 {
-                    text = File.ReadAllText(sConfigPath, System.Text.Encoding.UTF8);
+                    text = SharedUserConfig.ReadText(UserStorage.Backend, sConfigPath,
+                        e => Debug.LogWarning($"[SAF_USER_CONFIG] Using local configuration: {e.Message}"));
+                    if (text == null)
+                    {
+                        return;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -2032,10 +2037,16 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
+#if OPEN_BRUSH_SCOPED_STORAGE
+                    // Google Play builds use app-private storage only as a working cache.
+                    // Canonical user-visible files are written through Android SAF.
+                    m_UserPath = OpenBrushStorage.LocalUserPathRoot;
+#else
                     m_UserPath = SteamManager.RunningUnderLepton
                         ? "/sdcard/Documents"
                         : "/sdcard/";
                     m_OldUserPath = Application.persistentDataPath;
+#endif
                     break;
                 case RuntimePlatform.IPhonePlayer:
                 default:
@@ -2220,6 +2231,10 @@ namespace TiltBrush
 
         public static string MediaLibraryPath()
         {
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                return OpenBrushStorage.MediaLibraryAnchorPath;
+            }
             return Path.Combine(UserPath(), "Media Library");
         }
 
@@ -2230,7 +2245,28 @@ namespace TiltBrush
 
         public static string BlocksModelLibraryPath()
         {
-            string userPath = UserPath();
+            // The Open Brush SAF grant cannot access the sibling Blocks tree. Open Blocks is
+            // deliberately unavailable in scoped-storage builds until it has its own optional
+            // persisted tree grant.
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                return null;
+            }
+
+            bool isAndroid = Application.platform == RuntimePlatform.Android;
+            return GetBlocksModelLibraryPath(
+                UserPath(), isAndroid, isAndroid && SteamManager.RunningUnderLepton);
+        }
+
+        internal static string GetBlocksModelLibraryPath(
+            string userPath, bool isAndroid, bool runningUnderLepton)
+        {
+            // Blocks is a separate app's shared library, not part of our private working cache.
+            if (isAndroid)
+            {
+                return Path.Combine(
+                    runningUnderLepton ? "/sdcard/Documents" : "/sdcard", "Blocks", "OfflineModels");
+            }
             var userParent = Directory.GetParent(userPath);
             string blocksRoot = userParent != null ? userParent.FullName : userPath;
             return Path.Combine(blocksRoot, "Blocks", "OfflineModels");
@@ -2294,6 +2330,10 @@ namespace TiltBrush
 
         static public string UserExportPath()
         {
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                return OpenBrushStorage.LocalExportStagingPath;
+            }
             return App.Config.m_ExportPath ?? Path.Combine(UserPath(), "Exports");
         }
 
@@ -2304,16 +2344,28 @@ namespace TiltBrush
 
         static public string SnapshotPath()
         {
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                return OpenBrushStorage.LocalSnapshotStagingPath;
+            }
             return Path.Combine(UserPath(), "Snapshots");
         }
 
         static public string VideosPath()
         {
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                return OpenBrushStorage.LocalVideoStagingPath;
+            }
             return Path.Combine(UserPath(), "Videos");
         }
 
         static public string VrVideosPath()
         {
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                return OpenBrushStorage.LocalVrVideoStagingPath;
+            }
             return Path.Combine(UserPath(), "VRVideos");
         }
 
@@ -2324,7 +2376,10 @@ namespace TiltBrush
                 AppExit();
             }
 
-            AutosaveRestoreFileExists = false;
+            if (!OpenBrushStorage.IsScopedStorageMode)
+            {
+                AutosaveRestoreFileExists = false;
+            }
         }
 
         void OnPlaybackComplete()

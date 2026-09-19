@@ -54,6 +54,10 @@ namespace TiltBrush
         private int m_FullSizeReferences = 0;
         private float m_ImageAspect; // only valid if ImageState == Ready
         private string m_Path;
+        private readonly Func<Stream> m_OpenRead;
+        private readonly string m_PersistentPath;
+        private readonly long? m_KnownFileSize;
+        private readonly string m_CacheIdentity;
         private SVGParser.SceneInfo _SvgSceneInfo;
 
         private LocalizedString m_ErrorImageTooLargeHelpText = new LocalizedString("Strings", "PANEL_REFERENCE_ICONIMAGE_LOADERRORTEXT");
@@ -65,6 +69,7 @@ namespace TiltBrush
 
         public string FileName { get { return Path.GetFileName(m_Path); } }
         public string FileFullPath { get { return m_Path; } }
+        internal string CatalogIdentity { get; }
 
         // Aspect ratio of Icon (and of the fullres image, if applicable)
         public float ImageAspect
@@ -142,12 +147,28 @@ namespace TiltBrush
         public string FilePath { get { return m_Path; } }
 
         // Path relative to Catalog's HomeDirectory with forward slashes.
-        public string RelativePath =>
+        public string RelativePath => m_PersistentPath ??
             $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\", "/");
 
         public ReferenceImage(string path)
         {
             m_Path = path;
+            CatalogIdentity = path;
+        }
+
+        public ReferenceImage(
+            string displayPath,
+            string catalogIdentity,
+            Func<Stream> openRead,
+            long? knownFileSize,
+            string persistentPath = null)
+        {
+            m_Path = displayPath;
+            m_PersistentPath = persistentPath;
+            CatalogIdentity = catalogIdentity;
+            m_CacheIdentity = catalogIdentity;
+            m_OpenRead = openRead;
+            m_KnownFileSize = knownFileSize;
         }
 
         /// Returns a full-resolution Texture2D.
@@ -157,15 +178,16 @@ namespace TiltBrush
         {
             if (FilePath.EndsWith(".svg"))
             {
+                if (IsUnsupportedVectorImage) { return; }
                 // Try the cache first.
-                m_FullSize = ImageCache.LoadImageCache(FilePath);
+                m_FullSize = ImageCache.LoadImageCache(FilePath, m_CacheIdentity);
                 if (m_FullSize == null)
                 {
                     // TODO Move into the async code path?
                     var importer = new RuntimeSVGImporter();
                     _SvgSceneInfo = importer.ParseToSceneInfo(File.ReadAllText(FilePath));
                     m_FullSize = importer.ImportAsTexture(FilePath);
-                    ImageCache.SaveImageCache(m_FullSize, FilePath);
+                    ImageCache.SaveImageCache(m_FullSize, FilePath, m_CacheIdentity);
                 }
             }
             else
@@ -174,7 +196,7 @@ namespace TiltBrush
                 if (m_FullSizeReferences == 1)
                 {
                     // Try the cache first.
-                    m_FullSize = ImageCache.LoadImageCache(FilePath);
+                    m_FullSize = ImageCache.LoadImageCache(FilePath, m_CacheIdentity);
                     if (m_FullSize == null)
                     {
                         // Otherwise, this will generate a cache.
@@ -198,7 +220,7 @@ namespace TiltBrush
             int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
             var reader = new Future<HdrTextureLoader.DecodedImage>(
                 () => HdrTextureLoader.Decode(
-                    File.ReadAllBytes(path), path, maxDimension, resizeDimension),
+                    ReadEncodedBytes(), path, maxDimension, resizeDimension),
                 longRunning: true);
             HdrTextureLoader.DecodedImage decoded = null;
             Exception decodeError = null;
@@ -225,7 +247,7 @@ namespace TiltBrush
                     throw decodeError;
                 }
                 HdrTextureLoader.CreateTexture(decoded, m_FullSize);
-                ImageCache.SaveImageCache(m_FullSize, path);
+                ImageCache.SaveImageCache(m_FullSize, path, m_CacheIdentity);
             }
             catch (Exception e)
             {
@@ -255,8 +277,9 @@ namespace TiltBrush
             // Temporarily increase the reference count during loading to prevent texture destruction if
             // ReturnImageFullSize is called during load.
             m_FullSizeReferences++;
-            var reader = new ThreadedImageReader(path, -1,
-                App.PlatformConfig.ReferenceImagesMaxDimension);
+            var reader = CreateImageReader(
+                maxDimension: -1,
+                abortDimension: App.PlatformConfig.ReferenceImagesMaxDimension);
             while (!reader.Finished)
             {
                 if (!runForeground) { yield return null; }
@@ -288,7 +311,7 @@ namespace TiltBrush
                     }
 
                     // Cache the texture.
-                    ImageCache.SaveImageCache(dest, path);
+                    ImageCache.SaveImageCache(dest, path, m_CacheIdentity);
                 }
             }
             catch (FutureFailed e)
@@ -336,7 +359,8 @@ namespace TiltBrush
             if (m_Icon == null)
             {
                 // Try to load from cache.
-                m_Icon = ImageCache.LoadIconCache(FilePath, out m_ImageAspect);
+                m_Icon = ImageCache.LoadIconCache(
+                    FilePath, out m_ImageAspect, m_CacheIdentity);
                 if (m_Icon != null)
                 {
                     m_State = ImageState.Ready;
@@ -395,6 +419,11 @@ namespace TiltBrush
 
             if (FilePath.EndsWith(".svg"))
             {
+                if (IsUnsupportedVectorImage)
+                {
+                    m_State = ImageState.Error;
+                    return true;
+                }
                 // TODO Move into the async code path?
                 var importer = new RuntimeSVGImporter();
                 var tex = importer.ImportAsTexture(FilePath);
@@ -406,7 +435,7 @@ namespace TiltBrush
                     return true;
                 }
 
-                ImageCache.SaveImageCache(tex, FilePath);
+                ImageCache.SaveImageCache(tex, FilePath, m_CacheIdentity);
                 m_ImageAspect = (float)tex.width / tex.height;
                 int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
                 if (tex.width > resizeLimit || tex.height > resizeLimit)
@@ -420,7 +449,8 @@ namespace TiltBrush
                 {
                     m_Icon = tex;
                 }
-                ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+                ImageCache.SaveIconCache(
+                    m_Icon, FilePath, m_ImageAspect, m_CacheIdentity);
                 m_State = ImageState.Ready;
                 return true;
             }
@@ -467,7 +497,7 @@ namespace TiltBrush
                 int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
                 var reader = new Future<HdrTextureLoader.DecodedImage>(
                     () => HdrTextureLoader.Decode(
-                        File.ReadAllBytes(FilePath), FilePath,
+                        ReadEncodedBytes(), FilePath,
                         maxDimension, resizeDimension),
                     longRunning: true);
                 HdrTextureLoader.DecodedImage decoded = null;
@@ -529,13 +559,15 @@ namespace TiltBrush
                                 RenderTextureFormat.ARGBHalf, linear: true);
                             imageCacheTexture = resizedTexture;
                         }
-                        ImageCache.SaveImageCache(imageCacheTexture, FilePath);
+                        ImageCache.SaveImageCache(
+                            imageCacheTexture, FilePath, m_CacheIdentity);
 
                         m_Icon = ResampleTexture(
                             texture, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION,
                             TextureFormat.RGBA32, RenderTextureFormat.ARGB32, linear: true);
                         m_Icon.wrapMode = TextureWrapMode.Clamp;
-                        ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+                        ImageCache.SaveIconCache(
+                            m_Icon, FilePath, m_ImageAspect, m_CacheIdentity);
                         m_State = ImageState.Ready;
                     }
                 }
@@ -667,6 +699,15 @@ namespace TiltBrush
         // Like RequestLoadCoroutine, but allowed to use main thread CPU time
         IEnumerator<Timeslice> RequestLoadCoroutineMainThread()
         {
+            if (m_OpenRead != null)
+            {
+                foreach (Timeslice timeslice in RequestLoadCoroutine())
+                {
+                    yield return timeslice;
+                }
+                yield break;
+            }
+
             // On main thread! Can decode images using WWW class. This is about 10x faster
             using (WWW loader = new WWW(PathToWwwUrl(m_Path)))
             {
@@ -691,7 +732,8 @@ namespace TiltBrush
                     DownsizeTexture(inTex, ref m_Icon, ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION);
                     m_Icon.wrapMode = TextureWrapMode.Clamp;
                     m_ImageAspect = (float)inTex.width / inTex.height;
-                    ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+                    ImageCache.SaveIconCache(
+                        m_Icon, FilePath, m_ImageAspect, m_CacheIdentity);
                     yield return null;
 
                     // Create the full size image cache as well.
@@ -700,12 +742,14 @@ namespace TiltBrush
                     {
                         Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
                         DownsizeTexture(inTex, ref resizedTex, resizeLimit);
-                        ImageCache.SaveImageCache(resizedTex, m_Path);
+                        ImageCache.SaveImageCache(
+                            resizedTex, m_Path, m_CacheIdentity);
                         Object.Destroy(resizedTex);
                     }
                     else
                     {
-                        ImageCache.SaveImageCache(inTex, m_Path);
+                        ImageCache.SaveImageCache(
+                            inTex, m_Path, m_CacheIdentity);
                     }
                     Object.Destroy(inTex);
                     m_State = ImageState.Ready;
@@ -722,7 +766,7 @@ namespace TiltBrush
 
         IEnumerable<Timeslice> RequestLoadCoroutine()
         {
-            var reader = new ThreadedImageReader(m_Path,
+            var reader = CreateImageReader(
                 ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION,
                 App.PlatformConfig.ReferenceImagesMaxDimension);
             while (!reader.Finished)
@@ -789,11 +833,20 @@ namespace TiltBrush
             }
 
             m_State = ImageState.Ready;
-            ImageCache.SaveIconCache(m_Icon, FilePath, m_ImageAspect);
+            ImageCache.SaveIconCache(
+                m_Icon, FilePath, m_ImageAspect, m_CacheIdentity);
         }
 
         private bool ValidateFileSize()
         {
+            if (m_KnownFileSize.HasValue)
+            {
+                return m_KnownFileSize.Value <= App.PlatformConfig.ReferenceImagesMaxFileSize;
+            }
+            if (m_OpenRead != null)
+            {
+                return true;
+            }
             try
             {
                 FileInfo info = new FileInfo(m_Path);
@@ -806,6 +859,70 @@ namespace TiltBrush
             }
 
         }
+
+        private ThreadedImageReader CreateImageReader(int maxDimension, int abortDimension)
+        {
+            return m_OpenRead == null
+                ? new ThreadedImageReader(m_Path, maxDimension, abortDimension)
+                : new ThreadedImageReader(
+                    m_OpenRead,
+                    m_Path,
+                    maxDimension,
+                    abortDimension,
+                    App.PlatformConfig.ReferenceImagesMaxFileSize);
+        }
+
+        /// Reads the encoded image. The catalog supplies a stream for documents that have no
+        /// filesystem path, so nothing needs to be copied out of shared storage to decode it.
+        internal byte[] ReadEncodedBytes()
+        {
+            if (m_OpenRead == null)
+            {
+                return File.ReadAllBytes(FilePath);
+            }
+            using (Stream source = m_OpenRead())
+            using (var buffer = new MemoryStream())
+            {
+                source.CopyTo(buffer);
+                return buffer.ToArray();
+            }
+        }
+
+        /// Path-only exporters cannot consume the catalog's stream directly. Materialize a
+        /// content-identity-scoped private copy on demand while keeping the logical path used by
+        /// sketch persistence unchanged.
+        internal string GetExportSourcePath()
+        {
+            if (m_OpenRead == null)
+            {
+                return FileFullPath;
+            }
+
+            string directory = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                "ReferenceImageExports",
+                SafPrivatePaths.GetStableId(CatalogIdentity));
+            string path = Path.Combine(directory, FileName);
+            if (File.Exists(path)) { return path; }
+
+            Directory.CreateDirectory(directory);
+            string temporaryPath = path + ".tmp";
+            using (Stream source = m_OpenRead())
+            using (var destination = new FileStream(
+                temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                source.CopyTo(destination);
+            }
+            if (File.Exists(path)) { File.Delete(path); }
+            File.Move(temporaryPath, path);
+            return path;
+        }
+
+        /// SVG import goes through RuntimeSVGImporter, which opens a path. Shared storage has
+        /// none, so SVG references are unsupported there rather than copied out to satisfy it.
+        private bool IsUnsupportedVectorImage =>
+            FilePath.EndsWith(".svg") && m_OpenRead != null &&
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
 
         private bool ValidateDimensions(int imageWidth, int imageHeight, int maxDimension)
         {
