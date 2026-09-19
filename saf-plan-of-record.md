@@ -201,6 +201,48 @@ missing a native library and the rest pre-existing in untouched code. It also
 **deletes `Assets/Resources/PerformanceTestRun*.json`** from the working tree;
 those are now gitignored, so ignore them.
 
+### Building locally in about five minutes
+
+Much faster than CI once the caches are warm, and worth the setup. Close the
+Editor first - batchmode needs the project to itself, and the link needs the
+memory.
+
+```bash
+/Applications/Unity/Hub/Editor/6000.6.0f1/Unity.app/Contents/MacOS/Unity \
+  -batchmode -quit -projectPath . -buildTarget Android \
+  -logFile <log> -executeMethod BuildTiltBrush.CommandLine \
+  -btb-target Android -btb-display OpenXR -btb-bopt Development \
+  -btb-il2cpp -btb-scoped-storage -btb-stamp local -btb-out <path>/OpenBrush.apk
+```
+
+`-btb-bopt Development` is what compiles the startup probe in. The first build is
+slow - 6144 shader variants and 5279 objects - but those caches persist, so later
+builds are five to eight minutes.
+
+Four things will waste a morning if you do not know them:
+
+1. **The package is `foundation.icosa.openbrush`, not `...openbrushviewer`.**
+   CI's artefacts are branch-suffixed (`...viewerPR1120`), a local build is not.
+   Installing one and launching the other looks exactly like a build that
+   produces an unlaunchable APK. Read the package from the APK rather than
+   assuming: `aapt2 dump badging <apk> | grep package`.
+2. **Bind logcat to the PID.** With several Open Brush variants installed,
+   `adb logcat` shows all of them, and reading another app's output while
+   believing it is yours produces confident, wrong conclusions.
+   `PID=$(adb shell pidof <pkg>)` then `adb logcat -d | awk -v p=$PID '$3==p'`.
+3. **Check the build actually succeeded, and not just for `error CS`.** A build
+   can fail with `IOException: No space left on device` and still exit leaving
+   the previous APK in place, so the next install silently tests stale code.
+   Grep for `No space left|IOException|BuildFailedException|_btb_ Abort`.
+   Verify a marker string reached the APK if it matters:
+   `unzip -p <apk> assets/bin/Data/Managed/Metadata/global-metadata.dat | strings | grep <marker>`.
+4. **Disk space is the real constraint.** A build needs several GB free on top
+   of an 11 GB `Library/`, and `Library/Bee/artifacts` alone is 4 GB of cache
+   worth keeping.
+
+`adb install -r` does not stop a running app, so `adb shell am force-stop <pkg>`
+before relaunching or you will read the old process's log.
+
 ### Satisfying pre-commit
 
 `pre-commit` is a required PR check and runs `dotnet format whitespace`, failing
