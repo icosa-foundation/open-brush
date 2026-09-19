@@ -26,6 +26,18 @@ namespace TiltBrush
         // 0..255 and each model dimension can contain at most 256 cells.
         public const int MaxModelDimension = byte.MaxValue + 1;
 
+        internal sealed class WidgetViewState
+        {
+            public ModelWidget Widget;
+            public bool WidgetBacked;
+            public bool WidgetWasCreated;
+            public bool VisualsDirty = true;
+            public bool AutoVisuals;
+            public bool LastSpawnOptimized = true;
+            public bool LastSpawnCollider = true;
+            public TrTransform SpawnTransform = TrTransform.identity;
+        }
+
         public sealed class RuntimeModel
         {
             private readonly Dictionary<Vector3Int, byte> m_voxels;
@@ -166,6 +178,8 @@ namespace TiltBrush
 
         public IReadOnlyList<RuntimeModel> Models => m_models;
         public bool HasPreservedSourceData => m_sourceVoxBytes != null;
+        // Transient scene/API state. This is deliberately not included in VOX serialization.
+        internal WidgetViewState ViewState { get; } = new WidgetViewState();
 
         // Palette is 1-based from VOX perspective. Palette[0] corresponds to index 1.
         public Color32[] Palette { get; } = new Color32[256];

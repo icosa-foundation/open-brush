@@ -298,14 +298,7 @@ namespace TiltBrush
     public class VoxDocumentApiWrapper
     {
         [MoonSharpHidden] public RuntimeVoxDocument _Document;
-        [MoonSharpHidden] private ModelWidget m_Widget;
-        [MoonSharpHidden] private readonly bool m_WidgetBacked;
-        [MoonSharpHidden] private bool m_WidgetWasCreated;
-        [MoonSharpHidden] private bool m_VisualsDirty = true;
-        [MoonSharpHidden] private bool m_AutoVisuals;
-        [MoonSharpHidden] private bool m_LastSpawnOptimized = true;
-        [MoonSharpHidden] private bool m_LastSpawnCollider = true;
-        [MoonSharpHidden] private TrTransform m_SpawnTransform = TrTransform.identity;
+        [MoonSharpHidden] private readonly RuntimeVoxDocument.WidgetViewState m_ViewState;
 
         public VoxDocumentApiWrapper(
             RuntimeVoxDocument document,
@@ -313,9 +306,18 @@ namespace TiltBrush
             bool createWidgetOnRefresh = false)
         {
             _Document = document;
-            m_Widget = widget;
-            m_WidgetBacked = widget != null || createWidgetOnRefresh;
-            m_WidgetWasCreated = widget != null;
+            m_ViewState = document.ViewState;
+            if (widget != null)
+            {
+                if (m_ViewState.Widget != null && m_ViewState.Widget != widget)
+                {
+                    throw new InvalidOperationException(
+                        "A VOX document cannot be attached to more than one model widget.");
+                }
+                m_ViewState.Widget = widget;
+                m_ViewState.WidgetWasCreated = true;
+            }
+            m_ViewState.WidgetBacked |= widget != null || createWidgetOnRefresh;
         }
 
         [LuaDocsDescription("All models in this VOX document")]
@@ -344,13 +346,14 @@ namespace TiltBrush
         public VoxModelApiWrapper defaultModel => Model();
 
         [LuaDocsDescription("If true, model/palette edits automatically rebuild scene geometry")]
-        public bool autoVisuals => m_AutoVisuals;
+        public bool autoVisuals => m_ViewState.AutoVisuals;
 
         [LuaDocsDescription("False after this document's widget has been deleted")]
-        public bool isValid => !m_WidgetBacked || !m_WidgetWasCreated || m_Widget != null;
+        public bool isValid => !m_ViewState.WidgetBacked ||
+            !m_ViewState.WidgetWasCreated || m_ViewState.Widget != null;
 
         [MoonSharpHidden]
-        internal ModelWidget Widget => m_Widget;
+        internal ModelWidget Widget => m_ViewState.Widget;
 
         [LuaDocsDescription("Returns a model with the given name")]
         [LuaDocsExample("local m = doc:FindModel('model_0')")]
@@ -397,30 +400,30 @@ namespace TiltBrush
         [LuaDocsExample("doc:Spawn(true, true)")]
         public void Spawn(bool optimized = true, bool generateCollider = true)
         {
-            m_LastSpawnOptimized = optimized;
-            m_LastSpawnCollider = generateCollider;
-            if (m_WidgetBacked)
+            m_ViewState.LastSpawnOptimized = optimized;
+            m_ViewState.LastSpawnCollider = generateCollider;
+            if (m_ViewState.WidgetBacked)
             {
                 if (!_Document.Models.Any(model => model.Voxels.Count > 0))
                 {
-                    m_Widget?.Hide();
-                    m_VisualsDirty = false;
+                    m_ViewState.Widget?.Hide();
+                    m_ViewState.VisualsDirty = false;
                     return;
                 }
-                if (m_Widget == null && m_WidgetWasCreated)
+                if (m_ViewState.Widget == null && m_ViewState.WidgetWasCreated)
                 {
                     return;
                 }
-                if (m_Widget == null && !TryCreateWidget())
+                if (m_ViewState.Widget == null && !TryCreateWidget())
                 {
                     return;
                 }
-                if (!m_Widget.Showing)
+                if (!m_ViewState.Widget.Showing)
                 {
-                    m_Widget.Show(true, false);
+                    m_ViewState.Widget.Show(true, false);
                 }
-                m_Widget.RefreshEditableVoxMeshes(optimized);
-                m_VisualsDirty = false;
+                m_ViewState.Widget.RefreshEditableVoxMeshes(optimized);
+                m_ViewState.VisualsDirty = false;
                 return;
             }
         }
@@ -429,9 +432,9 @@ namespace TiltBrush
         [LuaDocsExample("doc:SpawnAt(0, 0, 0, true, true)")]
         public void SpawnAt(float x, float y, float z, bool optimized = true, bool generateCollider = true)
         {
-            m_LastSpawnOptimized = optimized;
-            m_LastSpawnCollider = generateCollider;
-            var transform = m_SpawnTransform;
+            m_ViewState.LastSpawnOptimized = optimized;
+            m_ViewState.LastSpawnCollider = generateCollider;
+            var transform = m_ViewState.SpawnTransform;
             transform.translation = new Vector3(x, y, z);
             SetTransform(transform);
             Spawn(optimized, generateCollider);
@@ -446,18 +449,18 @@ namespace TiltBrush
                 throw new ArgumentOutOfRangeException(nameof(transform), "VOX scene scale must be positive and finite.");
             }
 
-            m_SpawnTransform = transform;
-            if (m_Widget != null)
+            m_ViewState.SpawnTransform = transform;
+            if (m_ViewState.Widget != null)
             {
                 TrTransform current = GetSceneTransform();
                 if (current == transform)
                 {
                     return;
                 }
-                m_Widget.SetSignedWidgetSize(transform.scale);
-                transform.scale = m_Widget.GetSignedWidgetSize();
-                App.Scene.ActiveCanvas.AsCanvas[m_Widget.transform] = transform;
-                m_SpawnTransform = GetSceneTransform();
+                m_ViewState.Widget.SetSignedWidgetSize(transform.scale);
+                transform.scale = m_ViewState.Widget.GetSignedWidgetSize();
+                App.Scene.ActiveCanvas.AsCanvas[m_ViewState.Widget.transform] = transform;
+                m_ViewState.SpawnTransform = GetSceneTransform();
                 SaveLoadScript.m_Instance?.SketchChanged();
                 return;
             }
@@ -467,10 +470,11 @@ namespace TiltBrush
         [LuaDocsExample("doc:SetAutoVisuals(true, true, true)")]
         public void SetAutoVisuals(bool enabled = true, bool optimized = true, bool generateCollider = true)
         {
-            m_VisualsDirty |= m_LastSpawnOptimized != optimized || m_LastSpawnCollider != generateCollider;
-            m_AutoVisuals = enabled;
-            m_LastSpawnOptimized = optimized;
-            m_LastSpawnCollider = generateCollider;
+            m_ViewState.VisualsDirty |= m_ViewState.LastSpawnOptimized != optimized ||
+                m_ViewState.LastSpawnCollider != generateCollider;
+            m_ViewState.AutoVisuals = enabled;
+            m_ViewState.LastSpawnOptimized = optimized;
+            m_ViewState.LastSpawnCollider = generateCollider;
             if (enabled)
             {
                 Refresh();
@@ -480,35 +484,36 @@ namespace TiltBrush
         [LuaDocsDescription("Shows pending edits, or spawns this document if it is not visible. Does nothing if the visuals are already current.")]
         public void Refresh()
         {
-            if (m_VisualsDirty || m_Widget == null || !m_Widget.Showing)
+            if (m_ViewState.VisualsDirty || m_ViewState.Widget == null ||
+                !m_ViewState.Widget.Showing)
             {
-                Spawn(m_LastSpawnOptimized, m_LastSpawnCollider);
+                Spawn(m_ViewState.LastSpawnOptimized, m_ViewState.LastSpawnCollider);
             }
         }
 
         [LuaDocsDescription("Clears this document's spawned scene object, if present")]
         public void ClearScene()
         {
-            m_SpawnTransform = GetSceneTransform();
-            if (m_Widget != null)
+            m_ViewState.SpawnTransform = GetSceneTransform();
+            if (m_ViewState.Widget != null)
             {
-                m_Widget.Show(false, false);
+                m_ViewState.Widget.Show(false, false);
             }
         }
 
         [MoonSharpHidden]
         internal void OnDocumentMutated()
         {
-            m_VisualsDirty = true;
-            if (m_WidgetBacked)
+            m_ViewState.VisualsDirty = true;
+            if (m_ViewState.WidgetBacked)
             {
                 SaveLoadScript.m_Instance?.SketchChanged();
                 if (!_Document.Models.Any(model => model.Voxels.Count > 0))
                 {
-                    m_Widget?.Hide();
+                    m_ViewState.Widget?.Hide();
                 }
             }
-            if (m_AutoVisuals)
+            if (m_ViewState.AutoVisuals)
             {
                 Refresh();
             }
@@ -517,11 +522,11 @@ namespace TiltBrush
         [MoonSharpHidden]
         internal TrTransform GetSceneTransform()
         {
-            if (m_Widget != null)
+            if (m_ViewState.Widget != null)
             {
-                return App.Scene.ActiveCanvas.AsCanvas[m_Widget.transform];
+                return App.Scene.ActiveCanvas.AsCanvas[m_ViewState.Widget.transform];
             }
-            return m_SpawnTransform;
+            return m_ViewState.SpawnTransform;
         }
 
         [MoonSharpHidden]
@@ -545,9 +550,9 @@ namespace TiltBrush
                 widget.LoadingFromSketch = true;
                 widget.Model = model;
                 widget.AdoptEditableVoxDocument(_Document);
-                m_Widget = widget;
-                m_WidgetWasCreated = true;
-                SetTransform(m_SpawnTransform);
+                m_ViewState.Widget = widget;
+                m_ViewState.WidgetWasCreated = true;
+                SetTransform(m_ViewState.SpawnTransform);
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: true);
                 model.ReleaseFromCatalog();
                 return true;
@@ -559,8 +564,8 @@ namespace TiltBrush
                     UnityEngine.Object.Destroy(widget.gameObject);
                 }
                 model.ReleaseFromCatalog();
-                m_Widget = null;
-                m_WidgetWasCreated = false;
+                m_ViewState.Widget = null;
+                m_ViewState.WidgetWasCreated = false;
                 throw;
             }
         }
