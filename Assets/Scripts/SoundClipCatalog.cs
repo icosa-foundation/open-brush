@@ -424,7 +424,7 @@ namespace TiltBrush
                 GetSafCatalogIdentity(backend, document),
                 // Streamed straight from shared storage; nothing is copied out to play it.
                 () => SafMediaHttpServer.GetUrl(
-                    StorageArea.UserRoot, document.RelativeDisplayPath));
+                    StorageArea.MediaLibrarySoundClips, document.RelativeDisplayPath));
         }
 
         /// Gets a clip form the catalog, given its filename. Returns null if no such clip is found.

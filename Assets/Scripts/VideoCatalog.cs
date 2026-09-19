@@ -497,7 +497,7 @@ namespace TiltBrush
                     // Streamed from shared storage when the local handler is available; the device
                     // probe confirmed the descriptor is seekable, so scrubbing works over ranges.
                     () => SafMediaHttpServer.GetUrl(
-                        StorageArea.UserRoot, document.RelativeDisplayPath));
+                        StorageArea.MediaLibraryVideos, document.RelativeDisplayPath));
                 nextVideos.Add(video);
                 newVideos.Add(video);
             }

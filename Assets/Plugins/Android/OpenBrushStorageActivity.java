@@ -30,7 +30,7 @@ public class OpenBrushStorageActivity extends Activity {
                         + OPEN_BRUSH_FOLDER_NAME
                         + "\" for sketches, exports, snapshots, videos, media, "
                         + "scripts, plugins, and fonts. "
-                        + "You can choose Not Now and continue with reduced storage features.")
+                        + "Folder access is required; choosing Exit closes Open Brush.")
                 .setPositiveButton("Choose Folder",
                         new DialogInterface.OnClickListener() {
                             @Override
@@ -38,7 +38,7 @@ public class OpenBrushStorageActivity extends Activity {
                                 launchFolderPicker();
                             }
                         })
-                .setNegativeButton("Not Now",
+                .setNegativeButton("Exit",
                         new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
