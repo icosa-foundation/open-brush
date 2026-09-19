@@ -401,6 +401,12 @@ namespace TiltBrush
             m_LastSpawnCollider = generateCollider;
             if (m_WidgetBacked)
             {
+                if (!_Document.Models.Any(model => model.Voxels.Count > 0))
+                {
+                    m_Widget?.Hide();
+                    m_VisualsDirty = false;
+                    return;
+                }
                 if (m_Widget == null && m_WidgetWasCreated)
                 {
                     return;
