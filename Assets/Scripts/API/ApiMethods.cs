@@ -1767,6 +1767,7 @@ namespace TiltBrush
             }
 
             var path = GetSafeReferenceImageWritePath(filename);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllBytes(path, bytes);
             _PublishApiMediaLibraryPathToSharedStorage(path);
             return path;
