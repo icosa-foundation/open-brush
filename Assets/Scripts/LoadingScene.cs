@@ -70,6 +70,26 @@ namespace TiltBrush
 
             DontDestroyOnLoad(gameObject);
 
+#if UNITY_ANDROID
+            if (OpenBrushStorage.IsScopedStorageMode &&
+                !AndroidStorageManager.StartupStorageReady)
+            {
+                m_Overlay.MessageStatus =
+                    m_RequestAndroidFolderPermissions.GetLocalizedStringAsync().Result;
+                while (!AndroidStorageManager.StartupStorageReady &&
+                       !AndroidStorageManager.StartupStorageCanceled)
+                {
+                    yield return null;
+                }
+
+                if (AndroidStorageManager.StartupStorageCanceled)
+                {
+                    yield break;
+                }
+                m_Overlay.MessageStatus = m_LoadingText.GetLocalizedStringAsync().Result;
+            }
+#endif
+
 #if UNITY_ANDROID && !OPEN_BRUSH_SCOPED_STORAGE
             if (Application.platform == RuntimePlatform.Android)
             {

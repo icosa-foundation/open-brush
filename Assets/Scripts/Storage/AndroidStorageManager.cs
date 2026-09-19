@@ -30,8 +30,14 @@ namespace TiltBrush
         // Set once the startup grant is in place. A later re-selection is a recovery path that
         // requires a restart rather than a hot swap, so it must not re-enter startup.
         private static bool m_StartupSelectionComplete;
+        private static bool m_StartupStorageReady;
+        private static bool m_StartupStorageCanceled;
         private static string m_StorageStreamProbeRootIdentity;
         private static AndroidStorageManager m_Instance;
+
+        public static bool StartupStorageReady =>
+            !OpenBrushStorage.IsScopedStorageMode || m_StartupStorageReady;
+        public static bool StartupStorageCanceled => m_StartupStorageCanceled;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void CreateInstance()
@@ -72,25 +78,11 @@ namespace TiltBrush
                 yield break;
             }
 
-            while (App.CurrentState != App.AppState.Standard)
-            {
-                yield return null;
-            }
-
-            yield return null;
-
             if (!AndroidSafStorage.HasOpenBrushFolder())
             {
                 // A Google Play build has no usable storage without this grant and no degraded
-                // mode to fall back on, so the choice is the folder or nothing. Ask once and
-                // exit if the user declines.
-                string message =
-                    "Open Brush needs a folder for your sketches and media. " +
-                    "Choosing one is required to continue.";
-                ControllerConsoleScript.m_Instance?.AddNewLine(message);
-                OutputWindowScript.m_Instance?.CreateInfoCardAtController(
-                    InputManager.ControllerName.Brush, message, fPopScalar: 0.5f);
-
+                // mode to fall back on. Request it before LoadingScene loads Main so every Main
+                // scene Awake method observes the real user config and shared runtime content.
                 m_RequestInProgress = true;
                 AndroidSafStorage.RequestOpenBrushFolder();
                 while (m_RequestInProgress)
@@ -106,9 +98,18 @@ namespace TiltBrush
             }
 
             m_StartupSelectionComplete = true;
-            // The only root comparison left. Everything derived from the previous root is
-            // discarded here if the folder is not the one this installation last used.
+            // This must precede Main scene loading too: catalog-local caches and seed markers
+            // belong to the selected root and must not be observed for a newly selected one.
             SafRootChangeGuard.ReconcileAtStartup();
+            m_StartupStorageReady = true;
+
+            while (App.CurrentState != App.AppState.Standard)
+            {
+                yield return null;
+            }
+
+            yield return null;
+
             RunStorageStreamProbeOnce();
             yield return RecoverTransactions(null);
         }
@@ -169,6 +170,7 @@ namespace TiltBrush
             // run an application whose every storage operation would fail.
             Debug.LogWarning(
                 "SAF_STORAGE No Open Brush folder was selected; quitting.");
+            m_StartupStorageCanceled = true;
             Application.Quit();
             Debug.Break();
         }
