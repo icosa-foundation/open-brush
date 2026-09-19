@@ -101,6 +101,7 @@ namespace TiltBrush
             // This must precede Main scene loading too: catalog-local caches and seed markers
             // belong to the selected root and must not be observed for a newly selected one.
             SafRootChangeGuard.ReconcileAtStartup();
+            SafApiImportStaging.InitializeSession();
             m_StartupStorageReady = true;
 
             while (App.CurrentState != App.AppState.Standard)

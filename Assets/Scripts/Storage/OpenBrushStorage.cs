@@ -21,6 +21,95 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    internal static class SafApiImportStaging
+    {
+        private static readonly object sm_Gate = new object();
+        private static readonly HashSet<string> sm_CurrentDirectories =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static bool sm_Initialized;
+
+        public static string CreateDirectory(string parentDirectory)
+        {
+            lock (sm_Gate)
+            {
+                InitializeSessionLocked();
+                string directory = Path.Combine(
+                    parentDirectory, $"import-{Guid.NewGuid():N}");
+                sm_CurrentDirectories.Add(directory);
+                return directory;
+            }
+        }
+
+        public static void InitializeSession()
+        {
+            lock (sm_Gate) { InitializeSessionLocked(); }
+        }
+
+        private static void InitializeSessionLocked()
+        {
+            if (sm_Initialized) { return; }
+            // A crash cannot run the quit handler, so clear the preceding session's private
+            // URL-import copies during storage startup.
+            CleanupOrphans(OpenBrushStorage.MediaLibraryAnchorPath);
+            Application.quitting += CleanupCurrentSession;
+            sm_Initialized = true;
+        }
+
+        internal static void CleanupOrphans(string rootDirectory)
+        {
+            if (!Directory.Exists(rootDirectory)) { return; }
+            try
+            {
+                // Deepest first in case a future import layout nests owned directories.
+                foreach (string directory in Directory.EnumerateDirectories(
+                             rootDirectory, "import-*", SearchOption.AllDirectories)
+                         .Where(IsOwnedDirectory)
+                         .OrderByDescending(path => path.Length)
+                         .ToList())
+                {
+                    DeleteBestEffort(directory);
+                }
+            }
+            catch (Exception e) when (
+                e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"SAF_IMPORT Could not scan stale API imports: {e.Message}");
+            }
+        }
+
+        private static bool IsOwnedDirectory(string directory)
+        {
+            string name = Path.GetFileName(directory);
+            return name.StartsWith("import-", StringComparison.Ordinal) &&
+                Guid.TryParseExact(name.Substring("import-".Length), "N", out _);
+        }
+
+        private static void CleanupCurrentSession()
+        {
+            List<string> directories;
+            lock (sm_Gate)
+            {
+                directories = sm_CurrentDirectories.ToList();
+                sm_CurrentDirectories.Clear();
+            }
+            foreach (string directory in directories) { DeleteBestEffort(directory); }
+        }
+
+        private static void DeleteBestEffort(string directory)
+        {
+            try
+            {
+                if (Directory.Exists(directory)) { Directory.Delete(directory, recursive: true); }
+            }
+            catch (Exception e) when (
+                e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning(
+                    $"SAF_IMPORT Could not remove API import staging '{directory}': {e.Message}");
+            }
+        }
+    }
+
     public static class OpenBrushStorage
     {
         public static bool IsScopedStorageMode

@@ -270,7 +270,10 @@ namespace TiltBrush
             {
                 // Assign the logical path before returning a widget, even without a selected tree.
                 // Publication must never rename this path after it is used by a sketch or Lua.
-                absoluteDestinationPath = Path.Combine(absoluteDestinationPath, $"import-{Guid.NewGuid():N}");
+                // The local copy lives only for this process; the SAF copy is canonical after
+                // publication, and stale copies from a crash are removed on the next import.
+                absoluteDestinationPath =
+                    SafApiImportStaging.CreateDirectory(absoluteDestinationPath);
             }
             var request = System.Net.WebRequest.CreateHttp(url);
             request.UserAgent = ApiManager.WebRequestUserAgent;
