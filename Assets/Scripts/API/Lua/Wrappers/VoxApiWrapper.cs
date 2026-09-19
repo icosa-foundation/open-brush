@@ -503,6 +503,10 @@ namespace TiltBrush
             if (m_WidgetBacked)
             {
                 SaveLoadScript.m_Instance?.SketchChanged();
+                if (!_Document.Models.Any(model => model.Voxels.Count > 0))
+                {
+                    m_Widget?.Hide();
+                }
             }
             if (m_AutoVisuals)
             {
