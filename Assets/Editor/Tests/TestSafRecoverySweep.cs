@@ -21,9 +21,8 @@ using NUnit.Framework;
 
 namespace TiltBrush
 {
-    /// Covers how recovery *discovers* interrupted saves, which is the half that changed when the
-    /// transaction journal was removed. Recovery used to read records of what had been started;
-    /// it now sweeps storage for the sidecars an interrupted save leaves behind.
+    /// Covers recovery from app-created sidecars. A private intent marker is required so a user's
+    /// own file with the same suffix is never mistaken for transaction state.
     internal class TestSafRecoverySweep
     {
         /// Area-scoped, unlike the shared fake in TestFile, because the sweep visits every area
@@ -40,11 +39,11 @@ namespace TiltBrush
 
             private readonly List<Entry> m_Entries = new List<Entry>();
 
-            public bool UserRootWasRecursive { get; private set; }
+            public int EnumerateTreeCount { get; private set; }
 
             public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
             public bool IsReady => true;
-            public string RootIdentity { get; set; } = "sweep-root";
+            public string RootIdentity { get; set; } = $"sweep-root-{Guid.NewGuid():N}";
 
             public StorageDocumentId Add(StorageArea area, string name, byte[] data)
             {
@@ -84,10 +83,7 @@ namespace TiltBrush
                 StorageArea area, string relativeDirectory, StorageTreeQuery query,
                 CancellationToken cancellationToken)
             {
-                if (area == StorageArea.UserRoot)
-                {
-                    UserRootWasRecursive = query.Recursive;
-                }
+                EnumerateTreeCount++;
                 return StorageTreeEnumerator.Enumerate(
                     this, area, relativeDirectory, query, cancellationToken);
             }
@@ -158,11 +154,30 @@ namespace TiltBrush
             }
         }
 
+        private static void MarkInterrupted(
+            AreaScopedBackend backend, StorageArea area, string target,
+            string kind = "tilt-replacement")
+        {
+            SafTransactionMarker.Persist(new SafTransactionRecord
+            {
+                TransactionId = Guid.NewGuid().ToString("N"),
+                RootId = backend.RootIdentity,
+                Kind = kind,
+                Area = area,
+                RelativePath = target,
+                TargetDisplayName = target,
+                TemporaryDisplayName = $"{target}.ob-tmp",
+                BackupDisplayName = $"{target}.ob-bak",
+                InvalidDisplayName = $"{target}.ob-invalid",
+            });
+        }
+
         [Test]
         public void Sweep_RestoresTheBackupWhenTheCanonicalIsMissing()
         {
             var backend = new AreaScopedBackend();
             backend.Add(StorageArea.Sketches, "Sketch.tilt.ob-bak", ValidTilt());
+            MarkInterrupted(backend, StorageArea.Sketches, "Sketch.tilt");
 
             SafRecoveryReport report =
                 SafTransactionRecovery.RecoverAll(backend, CancellationToken.None);
@@ -177,6 +192,7 @@ namespace TiltBrush
         {
             var backend = new AreaScopedBackend();
             backend.Add(StorageArea.Sketches, "Sketch.tilt.ob-tmp", ValidTilt());
+            MarkInterrupted(backend, StorageArea.Sketches, "Sketch.tilt");
 
             SafRecoveryReport report =
                 SafTransactionRecovery.RecoverAll(backend, CancellationToken.None);
@@ -192,6 +208,7 @@ namespace TiltBrush
             StorageDocumentId canonical =
                 backend.Add(StorageArea.Sketches, "Sketch.tilt", ValidTilt());
             backend.Add(StorageArea.Sketches, "Sketch.tilt.ob-bak", ValidTilt());
+            MarkInterrupted(backend, StorageArea.Sketches, "Sketch.tilt");
 
             SafRecoveryReport report =
                 SafTransactionRecovery.RecoverAll(backend, CancellationToken.None);
@@ -217,17 +234,17 @@ namespace TiltBrush
         }
 
         [Test]
-        public void Sweep_DoesNotRecursivelyRescanMappedAreasThroughUserRoot()
+        public void Recovery_DoesNotSweepSharedStorageWithoutMarkers()
         {
             var backend = new AreaScopedBackend();
 
             SafTransactionRecovery.RecoverAll(backend, CancellationToken.None);
 
-            Assert.IsFalse(backend.UserRootWasRecursive);
+            Assert.AreEqual(0, backend.EnumerateTreeCount);
         }
 
         [Test]
-        public void Sweep_LeavesSidecarsInOtherAreasToTheirOwnArea()
+        public void Recovery_IgnoresUserFilesWithSidecarSuffixes()
         {
             var backend = new AreaScopedBackend();
             backend.Add(StorageArea.MediaLibraryVideos, "Clip.mp4.ob-bak", new byte[] { 1, 2, 3 });
@@ -235,9 +252,11 @@ namespace TiltBrush
             SafRecoveryReport report =
                 SafTransactionRecovery.RecoverAll(backend, CancellationToken.None);
 
-            // A non-tilt payload is restored on presence alone, in the area it was found in.
-            Assert.AreEqual(1, report.Recovered, string.Join("; ", report.Errors));
-            Assert.IsTrue(backend.Contains(StorageArea.MediaLibraryVideos, "Clip.mp4"));
+            Assert.AreEqual(0, report.Recovered, string.Join("; ", report.Errors));
+            Assert.AreEqual(0, report.Pending, string.Join("; ", report.Errors));
+            Assert.IsTrue(backend.Contains(
+                StorageArea.MediaLibraryVideos, "Clip.mp4.ob-bak"));
+            Assert.IsFalse(backend.Contains(StorageArea.MediaLibraryVideos, "Clip.mp4"));
         }
     }
 }

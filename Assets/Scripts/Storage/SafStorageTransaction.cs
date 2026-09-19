@@ -45,7 +45,9 @@ namespace TiltBrush
     /// had reached.
     internal sealed class SafTransactionRecord
     {
+        public int MarkerVersion = 1;
         public string TransactionId;
+        public string RootId;
         public string Kind = "tilt-replacement";
         public StorageArea Area;
         public string RelativePath;
@@ -60,9 +62,7 @@ namespace TiltBrush
     }
 
     /// Where app-private state for a root lives, and how to fold an arbitrary id into a path
-    /// segment. All that remains of the transaction journal, which is why it is no longer named
-    /// for one: recovery works from the sidecars an interrupted save leaves in shared storage,
-    /// so nothing here records what a transaction intended, only where its leftovers live.
+    /// segment. Transaction markers and publication recovery records share this namespace.
     internal static class SafPrivatePaths
     {
         public static string GetRecoveryRootDirectory(string rootId)
@@ -95,6 +95,87 @@ namespace TiltBrush
 
 
 
+    }
+
+    /// A single app-private intent marker distinguishes transaction sidecars from user files
+    /// that happen to use a reserved-looking suffix. Unlike the former state journal, this is
+    /// written once before shared storage is touched rather than fsynced at every rename step.
+    internal static class SafTransactionMarker
+    {
+        private const int kVersion = 1;
+
+        private static string GetDirectory(string rootId) => Path.Combine(
+            SafPrivatePaths.GetRecoveryRootDirectory(rootId), "transactions");
+
+        private static string GetPath(SafTransactionRecord record) => Path.Combine(
+            GetDirectory(record.RootId), $"{record.TransactionId}.json");
+
+        public static void Persist(SafTransactionRecord record)
+        {
+            string path = GetPath(record);
+            Directory.CreateDirectory(Path.GetDirectoryName(path));
+            string temporaryPath = path + ".tmp";
+            byte[] json = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(
+                JsonConvert.SerializeObject(record, Formatting.Indented));
+            using (var stream = new FileStream(
+                temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            {
+                stream.Write(json, 0, json.Length);
+                stream.Flush(flushToDisk: true);
+            }
+            if (File.Exists(path))
+            {
+                File.Replace(temporaryPath, path, null);
+            }
+            else
+            {
+                File.Move(temporaryPath, path);
+            }
+        }
+
+        public static void Delete(SafTransactionRecord record)
+        {
+            string path = GetPath(record);
+            if (File.Exists(path)) { File.Delete(path); }
+        }
+
+        public static List<SafTransactionRecord> Load(
+            string rootId, out List<string> errors)
+        {
+            errors = new List<string>();
+            var records = new List<SafTransactionRecord>();
+            string directory = GetDirectory(rootId);
+            if (!Directory.Exists(directory)) { return records; }
+
+            foreach (string path in Directory.EnumerateFiles(directory, "*.json"))
+            {
+                try
+                {
+                    SafTransactionRecord record =
+                        JsonConvert.DeserializeObject<SafTransactionRecord>(
+                            File.ReadAllText(path));
+                    if (record == null ||
+                        record.MarkerVersion != kVersion ||
+                        string.IsNullOrEmpty(record.TransactionId) ||
+                        !string.Equals(record.RootId, rootId, StringComparison.Ordinal) ||
+                        string.IsNullOrEmpty(record.RelativePath) ||
+                        string.IsNullOrEmpty(record.TargetDisplayName))
+                    {
+                        errors.Add($"Unsupported or malformed SAF transaction marker: {path}");
+                        continue;
+                    }
+                    records.Add(record);
+                }
+                catch (Exception e) when (
+                    e is IOException ||
+                    e is UnauthorizedAccessException ||
+                    e is JsonException)
+                {
+                    errors.Add($"Failed to read SAF transaction marker {path}: {e.Message}");
+                }
+            }
+            return records;
+        }
     }
 
     internal static class SafDestinationLocks
@@ -226,6 +307,7 @@ namespace TiltBrush
             m_Record = new SafTransactionRecord
             {
                 TransactionId = transactionId,
+                RootId = rootId,
                 Kind = m_MimeType == TiltFile.TILT_MIME_TYPE
                     ? "tilt-replacement"
                     : "file-replacement",
@@ -247,6 +329,7 @@ namespace TiltBrush
             try
             {
                 FindExistingTarget(cancellationToken);
+                SafTransactionMarker.Persist(m_Record);
                 Debug.Log(
                     $"SAF_TRANSACTION {m_Record.TransactionId} " +
                     $"{SafTransactionState.CreatingTemporary}");
@@ -354,6 +437,7 @@ namespace TiltBrush
                 }
 
                 Transition(SafTransactionState.Complete);
+                DeleteMarkerBestEffort();
                 m_Finished = true;
                 ReleaseLock();
                 return new StorageMutationResult(
@@ -399,6 +483,7 @@ namespace TiltBrush
                     }
                     m_Record.TemporaryDocumentId = null;
                 }
+                DeleteMarkerBestEffort();
             }
             m_Finished = true;
             ReleaseLock();
@@ -555,6 +640,23 @@ namespace TiltBrush
         {
             Debug.LogWarning(
                 $"SAF_TRANSACTION {m_Record.TransactionId} {state}: {error ?? ""}");
+        }
+
+        private void DeleteMarkerBestEffort()
+        {
+            try
+            {
+                SafTransactionMarker.Delete(m_Record);
+            }
+            catch (Exception e) when (
+                e is IOException || e is UnauthorizedAccessException)
+            {
+                // A stale marker is safe: startup recovery validates the canonical document,
+                // finds no sidecars, and retries this deletion.
+                Debug.LogWarning(
+                    $"SAF_TRANSACTION Could not remove marker for " +
+                    $"{m_Record.TransactionId}: {e.Message}");
+            }
         }
 
         private void CloseStream()

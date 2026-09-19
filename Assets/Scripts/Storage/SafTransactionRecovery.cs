@@ -53,7 +53,8 @@ namespace TiltBrush
                 return report;
             }
             List<SafTransactionRecord> records =
-                DiscoverInterruptedTransactions(backend, cancellationToken, report.Errors);
+                SafTransactionMarker.Load(rootId, out List<string> markerErrors);
+            report.Errors.AddRange(markerErrors);
             foreach (SafTransactionRecord record in records)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -65,7 +66,19 @@ namespace TiltBrush
                 {
                     if (RecoverRecord(backend, area, record, report, cancellationToken))
                     {
-                        report.Recovered++;
+                        try
+                        {
+                            SafTransactionMarker.Delete(record);
+                            report.Recovered++;
+                        }
+                        catch (Exception e) when (
+                            e is IOException || e is UnauthorizedAccessException)
+                        {
+                            report.Pending++;
+                            report.Errors.Add(
+                                $"SAF_RECOVERY Could not remove transaction marker " +
+                                $"{record.TransactionId}: {e.Message}");
+                        }
                     }
                     else
                     {
@@ -74,80 +87,6 @@ namespace TiltBrush
                 }
             }
             return report;
-        }
-
-        private static readonly string[] kSidecarExtensions =
-        {
-            ".ob-tmp", ".ob-bak", ".ob-invalid",
-        };
-
-        /// Finds interrupted saves by looking for the sidecars they leave behind, rather than by
-        /// reading a record of what was started. A sidecar is named after its target, so the
-        /// directory listing says everything recovery needs: which document it belongs to, and
-        /// which stage of the rename sequence was reached.
-        private static List<SafTransactionRecord> DiscoverInterruptedTransactions(
-            IUserStorageBackend backend,
-            CancellationToken cancellationToken,
-            List<string> errors)
-        {
-            var records = new List<SafTransactionRecord>();
-            var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (StorageArea area in (StorageArea[])Enum.GetValues(typeof(StorageArea)))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                StorageTreeResult tree = backend.EnumerateTree(
-                    area,
-                    "",
-                    new StorageTreeQuery(
-                        // UserRoot overlaps every mapped area. Sweep its direct children for
-                        // root-level transactions, but let each mapped area own its descendants.
-                        recursive: area != StorageArea.UserRoot,
-                        includeDirectories: false,
-                        includeExtensions: kSidecarExtensions),
-                    cancellationToken);
-                if (!tree.Success)
-                {
-                    // A missing area is the normal case; anything else is worth reporting, but
-                    // must not stop the other areas being swept.
-                    if (tree.Code != StorageResultCode.NotFound)
-                    {
-                        errors.Add($"Could not sweep {area} for interrupted saves: {tree.Error}");
-                    }
-                    continue;
-                }
-                foreach (StorageDocument document in tree.Entries)
-                {
-                    int cut = document.DisplayName.LastIndexOf(".ob-", StringComparison.Ordinal);
-                    if (cut <= 0) { continue; }
-                    string target = document.DisplayName.Substring(0, cut);
-                    string relativePath = CombineWithDirectory(
-                        document.RelativeDisplayPath, document.DisplayName, target);
-                    if (!seen.Add($"{area}\n{relativePath}")) { continue; }
-                    records.Add(new SafTransactionRecord
-                    {
-                        TransactionId = relativePath,
-                        Kind = target.EndsWith(".tilt", StringComparison.OrdinalIgnoreCase)
-                            ? "tilt-replacement"
-                            : "file-replacement",
-                        Area = area,
-                        RelativePath = relativePath,
-                        TargetDisplayName = target,
-                        TemporaryDisplayName = $"{target}.ob-tmp",
-                        BackupDisplayName = $"{target}.ob-bak",
-                        InvalidDisplayName = $"{target}.ob-invalid",
-                    });
-                }
-            }
-            return records;
-        }
-
-        /// Swaps a sidecar's own name for its target's, keeping the directory it sits in.
-        private static string CombineWithDirectory(
-            string sidecarPath, string sidecarName, string target)
-        {
-            string normalized = (sidecarPath ?? sidecarName).Replace('\\', '/');
-            int separator = normalized.LastIndexOf('/');
-            return separator < 0 ? target : $"{normalized.Substring(0, separator)}/{target}";
         }
 
         private static bool RecoverRecord(
@@ -171,6 +110,13 @@ namespace TiltBrush
             StorageDocument temporary = Find(listing, record.TemporaryDisplayName);
             StorageDocument backup = Find(listing, record.BackupDisplayName);
             StorageDocument invalid = Find(listing, invalidName);
+
+            if (canonical == null && temporary == null && backup == null && invalid == null)
+            {
+                // The process can die after recording intent but before creating the first
+                // shared document. There is nothing to recover in that case.
+                return true;
+            }
 
             if (IsValidDocument(backend, canonical, record.Kind, cancellationToken))
             {
