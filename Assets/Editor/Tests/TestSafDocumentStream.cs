@@ -277,6 +277,7 @@ namespace TiltBrush
             Assert.AreEqual(0, channel.Writes);
             stream.Dispose();
             Assert.AreEqual("pending", Encoding.ASCII.GetString(channel.Contents));
+            Assert.AreEqual(1, channel.DiskFlushes);
             Assert.IsTrue(channel.Closed);
         }
 

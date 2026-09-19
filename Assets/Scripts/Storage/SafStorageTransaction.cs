@@ -583,7 +583,8 @@ namespace TiltBrush
             }
             catch (ObjectDisposedException)
             {
-                // The archive writer's caller already closed and flushed the descriptor.
+                // Disposing a writable SafDocumentStream flushes it to disk before closing its
+                // channel, so the caller has already made the temporary document durable.
             }
             finally
             {

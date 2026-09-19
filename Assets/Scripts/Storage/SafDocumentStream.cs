@@ -253,9 +253,12 @@ namespace TiltBrush
             }
             try
             {
-                if (disposing)
+                if (disposing && m_CanWrite)
                 {
-                    DrainWriteBuffer();
+                    // Transaction callers normally dispose the returned stream before Commit.
+                    // Make that close durable while the channel is still available; Commit can
+                    // then safely validate and rename the temporary document.
+                    FlushCore(toDisk: true);
                 }
             }
             finally
