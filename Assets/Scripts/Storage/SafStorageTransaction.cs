@@ -509,8 +509,28 @@ namespace TiltBrush
             {
                 throw new IOException(listing.Error);
             }
+            EnsureReservedNamesAvailable(
+                listing.Documents,
+                m_Record.TemporaryDisplayName,
+                m_Record.BackupDisplayName,
+                m_Record.InvalidDisplayName);
             m_Record.TargetDocumentId = ResolveFileOverwriteTarget(
                 listing.Documents, TargetDocumentId, m_Record.TargetDisplayName).Value;
+        }
+
+        internal static void EnsureReservedNamesAvailable(
+            IReadOnlyList<StorageDocument> documents,
+            params string[] reservedNames)
+        {
+            StorageDocument collision = documents.FirstOrDefault(document =>
+                reservedNames.Any(name => string.Equals(
+                    document.DisplayName, name, StringComparison.OrdinalIgnoreCase)));
+            if (collision != null)
+            {
+                throw new IOException(
+                    $"A document already occupies the reserved transaction filename " +
+                    $"'{collision.DisplayName}'. Rename it before saving this file.");
+            }
         }
 
         internal static StorageDocumentId ResolveFileOverwriteTarget(

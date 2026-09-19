@@ -138,6 +138,19 @@ namespace TiltBrush
                 new[] { directory }, default, "target.bin").IsValid);
         }
 
+        [TestCase("target.bin.ob-tmp")]
+        [TestCase("TARGET.BIN.OB-BAK")]
+        [TestCase("target.bin.ob-invalid")]
+        public void SafOverwrite_RejectsPreexistingReservedSidecars(string existingName)
+        {
+            StorageDocument existing = OverwriteDocument("user-file", existingName, false);
+            Assert.Throws<IOException>(() => SafFileWriteTransaction.EnsureReservedNamesAvailable(
+                new[] { existing },
+                "target.bin.ob-tmp",
+                "target.bin.ob-bak",
+                "target.bin.ob-invalid"));
+        }
+
         [Test]
         public void GltfBundle_IncludesBuffersAndTexturesOnceAndSkipsEmbeddedData()
         {
