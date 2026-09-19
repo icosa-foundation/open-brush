@@ -338,7 +338,8 @@ namespace TiltBrush
                 throw new ArgumentNullException(nameof(bytes));
             }
 
-            IVoxFile voxFile = VoxReader.VoxReader.Read(bytes);
+            IVoxFile voxFile = VoxReader.VoxReader.Read(
+                VoxWriter.CreateVoxReaderCompatibleCopy(bytes));
             RuntimeVoxDocument document = FromVoxFile(voxFile);
             if (preserveSourceData)
             {

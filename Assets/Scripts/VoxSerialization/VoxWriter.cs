@@ -24,6 +24,23 @@ namespace TiltBrush
     internal static class VoxWriter
     {
         private const int VoxVersion = 150;
+        private static readonly HashSet<string> s_VoxReaderChunkIds = new HashSet<string>(
+            new[]
+            {
+                "MAIN", "PACK", "SIZE", "XYZI", "RGBA", "MATT", "MATL", "nTRN",
+                "nGRP", "nSHP", "LAYR", "rOBJ", "rCAM", "NOTE", "IMAP", "META",
+            },
+            StringComparer.Ordinal);
+
+        // VoxReader rejects unrecognized chunk IDs. Parse semantics from a filtered copy while
+        // retaining the original bytes on RuntimeVoxDocument for lossless round-trip preservation.
+        internal static byte[] CreateVoxReaderCompatibleCopy(byte[] sourceData)
+        {
+            PreservedVoxFile source = PreservedVoxFile.Parse(sourceData);
+            return source.Main.RemoveUnknownChildren(s_VoxReaderChunkIds)
+                ? source.Write()
+                : sourceData;
+        }
 
         public static byte[] Write(RuntimeVoxDocument document)
         {
@@ -530,6 +547,25 @@ namespace TiltBrush
                     Content = content,
                     Children = children,
                 };
+            }
+
+            public bool RemoveUnknownChildren(ISet<string> knownChunkIds)
+            {
+                bool removed = false;
+                for (int i = Children.Count - 1; i >= 0; i--)
+                {
+                    PreservedChunk child = Children[i];
+                    if (!knownChunkIds.Contains(child.Id))
+                    {
+                        Children.RemoveAt(i);
+                        removed = true;
+                    }
+                    else
+                    {
+                        removed |= child.RemoveUnknownChildren(knownChunkIds);
+                    }
+                }
+                return removed;
             }
 
             public void Write(BinaryWriter writer)

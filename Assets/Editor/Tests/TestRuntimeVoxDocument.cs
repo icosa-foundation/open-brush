@@ -309,6 +309,28 @@ namespace TiltBrush
         }
 
         [Test]
+        public void RuntimeVoxDocument_PreservesUnknownChunksWhileEditingVoxels()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "future",
+                new Vector3Int(8, 8, 8));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 1);
+
+            byte[] futureData = { 2, 7, 1, 8, 2, 8 };
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "FUTR", futureData);
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+            Assert.IsTrue(loaded.Models[0].AddOrUpdateVoxel(new Vector3Int(1, 2, 3), 2));
+
+            byte[] editedBytes = loaded.ToVoxBytes();
+            CollectionAssert.AreEqual(futureData, FindMainChildContent(editedBytes, "FUTR", 0));
+
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(editedBytes);
+            Assert.IsTrue(reloaded.Models[0].TryGetPaletteIndex(new Vector3Int(1, 2, 3), out _));
+        }
+
+        [Test]
         public void Model_CreatesIndependentEditableVoxDocuments()
         {
             var source = new RuntimeVoxDocument();

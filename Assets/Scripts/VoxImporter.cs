@@ -186,7 +186,7 @@ namespace TiltBrush
             {
                 m_voxData = File.ReadAllBytes(m_path);
             }
-            return VoxReader.VoxReader.Read(m_voxData);
+            return VoxReader.VoxReader.Read(VoxWriter.CreateVoxReaderCompatibleCopy(m_voxData));
         }
 
         internal byte[] CopySourceBytes()
