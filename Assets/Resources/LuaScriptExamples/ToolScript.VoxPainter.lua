@@ -9,6 +9,7 @@ Parameters = {
     mode={label="Mode", type="list", items={"Add", "Erase", "Paint"}, default="Add"},
     autoVisuals={label="Update While Drawing", type="toggle", default=true},
     optimizedMesh={label="Optimized Mesh", type="toggle", default=true},
+    showGrid={label="Show Voxel Grid", type="toggle", default=true},
     newModel={label="New Model", type="button", onclick="BeginNewModel"},
 }
 
@@ -40,6 +41,12 @@ function Main()
         model = nil
         createNewOnNextAdd = false
         ResetGesture()
+    end
+
+    if model ~= nil and Parameters.showGrid then
+        local previewColor = Brush.colorRgb
+        if not model:ContainsAt(position) then previewColor = Color.red end
+        model:PreviewAt(position, previewColor)
     end
 
     if Brush.triggerReleasedThisFrame then

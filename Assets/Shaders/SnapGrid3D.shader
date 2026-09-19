@@ -72,6 +72,8 @@ Shader "Custom/Grid3D"
             float _CanvasScale;
             float4x4 _CanvasToWorldMatrix;
             float4x4 _WorldToCanvasMatrix;
+            float _UseGridOrigin;
+            float3 _GridOrigin;
 
             struct appdata {
                 uint id : SV_VERTEXID;
@@ -155,7 +157,15 @@ Shader "Custom/Grid3D"
                 );
 
                 float3 gridOrigin_CS = _GridCount * -0.5;
-                float3 vertexPos_CS = (xyzIndex + gridOrigin_CS) * _GridInterval + quad;
+                float3 vertexPos_CS;
+                if (_UseGridOrigin > 0.5)
+                {
+                    vertexPos_CS = (_GridOrigin + xyzIndex - 0.5) * _GridInterval + quad;
+                }
+                else
+                {
+                    vertexPos_CS = (xyzIndex + gridOrigin_CS) * _GridInterval + quad;
+                }
 
                 float3 _Pointer_CS = mul(_WorldToCanvasMatrix, _Pointer_GS);
 
@@ -174,9 +184,15 @@ Shader "Custom/Grid3D"
                 float3 canvasOffsetFix_CS = quantizedCanvasOrigin_CS - _CanvasOrigin_CS;
                 float3 canvasOffsetFix_GS = mul(_CanvasToWorldMatrix, canvasOffsetFix_CS);
 
-                vertexPos_CS += quantizedPointer_CS;
+                if (_UseGridOrigin <= 0.5)
+                {
+                    vertexPos_CS += quantizedPointer_CS;
+                }
                 float3 vertexPos_GS = mul(_CanvasToWorldMatrix, vertexPos_CS);
-                vertexPos_GS -= canvasOffsetFix_GS;
+                if (_UseGridOrigin <= 0.5)
+                {
+                    vertexPos_GS -= canvasOffsetFix_GS;
+                }
                 o.vertex = mul(UNITY_MATRIX_VP, float4(vertexPos_GS, 1));
 
 
@@ -204,5 +220,3 @@ Shader "Custom/Grid3D"
         }
     }
 }
-
-
