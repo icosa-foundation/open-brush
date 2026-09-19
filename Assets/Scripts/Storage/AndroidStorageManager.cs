@@ -136,6 +136,22 @@ namespace TiltBrush
             m_RequestInProgress = false;
             AndroidSafStorage.InvalidateReadiness();
 
+            if (!AndroidSafStorage.HasOpenBrushFolder())
+            {
+                if (!m_StartupSelectionComplete)
+                {
+                    CancelStartupForMissingStorage(
+                        "The selected provider did not grant persistent read and write access.");
+                }
+                else
+                {
+                    ControllerConsoleScript.m_Instance?.AddNewLine(
+                        "The selected Open Brush folder cannot be read and written. " +
+                        "Restart Open Brush and choose a writable folder.");
+                }
+                return;
+            }
+
             if (!m_StartupSelectionComplete)
             {
                 // Startup is still waiting on this; it runs the probe and recovery itself.
@@ -168,8 +184,12 @@ namespace TiltBrush
 
             // No grant and no degraded mode: there is nowhere to read or write. Exit rather than
             // run an application whose every storage operation would fail.
-            Debug.LogWarning(
-                "SAF_STORAGE No Open Brush folder was selected; quitting.");
+            CancelStartupForMissingStorage("No Open Brush folder was selected.");
+        }
+
+        private static void CancelStartupForMissingStorage(string reason)
+        {
+            Debug.LogWarning($"SAF_STORAGE {reason} Quitting.");
             m_StartupStorageCanceled = true;
             Application.Quit();
             Debug.Break();
