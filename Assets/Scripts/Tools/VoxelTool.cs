@@ -94,7 +94,18 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
             {
-                Mode = Mode == EditMode.Erase ? EditMode.Add : EditMode.Erase;
+                Mode = Mode switch
+                {
+                    EditMode.Add => EditMode.Erase,
+                    EditMode.Erase => EditMode.Paint,
+                    _ => EditMode.Add,
+                };
+                InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+            }
+
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.MenuContextClick))
+            {
+                RequestNewModel();
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
