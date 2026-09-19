@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -218,11 +219,25 @@ namespace TiltBrush
                     m_GestureBefore,
                     after,
                     m_CreateWidgetCommand);
+                bool documentIsEmpty = m_CurrentDocument._Document.Models.All(
+                    model => model.Voxels.Count == 0);
+                if (documentIsEmpty)
+                {
+                    new HideWidgetCommand(m_GestureWidget, command);
+                }
                 if (m_CreateWidgetCommand == null)
                 {
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
                 }
-                m_CurrentDocument.Refresh();
+                if (documentIsEmpty)
+                {
+                    m_CurrentDocument = null;
+                    m_CurrentModel = null;
+                }
+                else
+                {
+                    m_CurrentDocument.Refresh();
+                }
             }
 
             m_GestureActive = false;
