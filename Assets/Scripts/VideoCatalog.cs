@@ -316,12 +316,13 @@ namespace TiltBrush
             }
             finally
             {
-                // Rescans are gated on this flag, so it must be cleared however the scan
-                // ends. Leaving it set stops the catalog refreshing for the rest of the
-                // session. Only the current scan may clear it; see the generation above.
-                if (generation == m_ScanGeneration)
+                // A replacement scan cannot start while this flag is set. Always release it
+                // when the active coroutine exits, and queue the new generation if navigation
+                // made this one stale while it was running.
+                m_ScanningDirectory = false;
+                if (generation != m_ScanGeneration)
                 {
-                    m_ScanningDirectory = false;
+                    m_DirectoryScanRequired = true;
                 }
             }
         }
