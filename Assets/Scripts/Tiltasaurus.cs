@@ -139,17 +139,25 @@ namespace TiltBrush
 
         void Start()
         {
-            // First, look for the Tiltasaurus file in the user path.
-            string sFullPath = Path.Combine(App.UserPath(), m_Filename + ".json");
-            if (!File.Exists(sFullPath))
+            // First, look in the user root. In scoped-storage builds this reads the selected
+            // tree directly; App.UserPath is only a private working directory there.
+            string filename = m_Filename + ".json";
+            string userPath = Path.Combine(App.UserPath(), filename);
+            string json = SharedUserConfig.ReadText(
+                UserStorage.Backend,
+                userPath,
+                e => Debug.LogWarning(
+                    $"SAF_STORAGE Could not read shared {filename}: {e.Message}"));
+            if (json == null)
             {
-                // If user path doesn't exist, look for it in the Support folder.
-                sFullPath = Path.Combine(App.SupportPath(), m_Filename + ".json");
+                // If the user file doesn't exist, look for the bundled default.
+                string supportPath = Path.Combine(App.SupportPath(), filename);
+                if (File.Exists(supportPath)) { json = File.ReadAllText(supportPath); }
             }
 
-            if (File.Exists(sFullPath))
+            if (json != null)
             {
-                m_Content = JsonUtility.FromJson<TiltasaurusContent>(File.ReadAllText(sFullPath));
+                m_Content = JsonUtility.FromJson<TiltasaurusContent>(json);
                 m_Content.Init();
                 ChooseNewPrompt();
             }
