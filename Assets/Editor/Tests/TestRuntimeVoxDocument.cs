@@ -508,6 +508,34 @@ namespace TiltBrush
         }
 
         [Test]
+        public void RuntimeVoxDocument_ReadsAndPreservesLegacyMaterialProperties()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "legacy-material",
+                new Vector3Int(2, 2, 2));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 9);
+            byte[] materialContent = BuildLegacyMaterialContent(
+                9,
+                type: 1,
+                weight: 0.8f,
+                propertyBits: 0b1010,
+                propertyValues: new[] { 0.25f, 1.4f });
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "MATT", materialContent);
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+
+            RuntimeVoxDocument.RuntimeMaterial material = loaded.Materials[9];
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Metal, material.Type);
+            Assert.AreEqual(0.8f, material.Weight);
+            Assert.AreEqual(0.25f, material.Roughness);
+            Assert.AreEqual(1.4f, material.IndexOfRefraction);
+            CollectionAssert.AreEqual(
+                materialContent,
+                FindMainChildContent(loaded.ToVoxBytes(), "MATT", 0));
+        }
+
+        [Test]
         public void Model_CreatesIndependentEditableVoxDocuments()
         {
             var source = new RuntimeVoxDocument();
@@ -694,6 +722,28 @@ namespace TiltBrush
             {
                 writer.Write(paletteIndex);
                 WriteDictionary(writer, properties);
+                return stream.ToArray();
+            }
+        }
+
+        private static byte[] BuildLegacyMaterialContent(
+            int paletteIndex,
+            int type,
+            float weight,
+            int propertyBits,
+            float[] propertyValues)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(paletteIndex);
+                writer.Write(type);
+                writer.Write(weight);
+                writer.Write(propertyBits);
+                foreach (float value in propertyValues)
+                {
+                    writer.Write(value);
+                }
                 return stream.ToArray();
             }
         }

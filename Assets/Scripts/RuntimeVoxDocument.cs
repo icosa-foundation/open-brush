@@ -381,12 +381,19 @@ namespace TiltBrush
 
             foreach (IChunk chunk in voxFile.Chunks)
             {
-                if (chunk.Type != VoxReader.ChunkType.MaterialNew)
+                RuntimeMaterial material;
+                switch (chunk.Type)
                 {
-                    continue;
+                    case VoxReader.ChunkType.MaterialNew:
+                        material = ReadMaterial(chunk.Content);
+                        break;
+                    case VoxReader.ChunkType.MaterialOld:
+                        material = ReadLegacyMaterial(chunk.Content);
+                        break;
+                    default:
+                        continue;
                 }
 
-                RuntimeMaterial material = ReadMaterial(chunk.Content);
                 if (material.PaletteIndex >= 1 && material.PaletteIndex <= byte.MaxValue)
                 {
                     document.m_materials[material.PaletteIndex] = material;
@@ -763,6 +770,48 @@ namespace TiltBrush
             {
                 int paletteIndex = reader.ReadInt32();
                 return new RuntimeMaterial(paletteIndex, ReadDictionary(reader));
+            }
+        }
+
+        private static RuntimeMaterial ReadLegacyMaterial(byte[] content)
+        {
+            using (var stream = new MemoryStream(content, writable: false))
+            using (var reader = new BinaryReader(stream, Encoding.UTF8))
+            {
+                int paletteIndex = reader.ReadInt32();
+                int type = reader.ReadInt32();
+                float weight = reader.ReadSingle();
+                int propertyBits = reader.ReadInt32();
+                var properties = new Dictionary<string, string>
+                {
+                    ["_type"] = type switch
+                    {
+                        0 => "_diffuse",
+                        1 => "_metal",
+                        2 => "_glass",
+                        3 => "_emit",
+                        _ => $"_legacy_{type}",
+                    },
+                    ["_weight"] = weight.ToString("R", CultureInfo.InvariantCulture),
+                };
+                string[] propertyNames =
+                {
+                    "_plastic", "_rough", "_spec", "_ior", "_att", "_flux", "_glow",
+                };
+                for (int bit = 0; bit < propertyNames.Length; bit++)
+                {
+                    if ((propertyBits & (1 << bit)) != 0)
+                    {
+                        properties[propertyNames[bit]] = reader
+                            .ReadSingle()
+                            .ToString("R", CultureInfo.InvariantCulture);
+                    }
+                }
+                if ((propertyBits & (1 << 7)) != 0)
+                {
+                    properties["_is_total_power"] = "1";
+                }
+                return new RuntimeMaterial(paletteIndex, properties);
             }
         }
 
