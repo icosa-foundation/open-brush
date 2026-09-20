@@ -88,8 +88,16 @@ namespace TiltBrush
                 // A Google Play build has no usable storage without this grant and no degraded
                 // mode to fall back on. Request it before LoadingScene loads Main so every Main
                 // scene Awake method observes the real user config and shared runtime content.
-                m_RequestInProgress = true;
-                AndroidSafStorage.RequestOpenBrushFolder();
+                while (true)
+                {
+                    m_RequestInProgress = true;
+                    if (AndroidSafStorage.RequestOpenBrushFolder())
+                    {
+                        break;
+                    }
+                    m_RequestInProgress = false;
+                    yield return null;
+                }
                 while (m_RequestInProgress)
                 {
                     yield return null;
@@ -133,7 +141,12 @@ namespace TiltBrush
             }
 
             m_RequestInProgress = true;
-            AndroidSafStorage.RequestOpenBrushFolder();
+            if (!AndroidSafStorage.RequestOpenBrushFolder())
+            {
+                m_RequestInProgress = false;
+                ControllerConsoleScript.m_Instance?.AddNewLine(
+                    "The Android activity is not ready to open the folder picker. Try again.");
+            }
         }
 
         public void OnOpenBrushFolderSelected(string uriString)

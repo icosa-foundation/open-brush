@@ -40,7 +40,7 @@ namespace TiltBrush
             }
         }
 
-        public static void RequestOpenBrushFolder()
+        public static bool RequestOpenBrushFolder()
         {
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             AttachToJvmIfNeeded();
@@ -52,11 +52,12 @@ namespace TiltBrush
             using AndroidJavaObject activity = GetActivity();
             if (activity == null)
             {
-                Debug.LogError(
-                    "SAF_STORAGE Cannot request the Open Brush folder: no activity yet.");
-                return;
+                return false;
             }
             bridge.CallStatic("requestOpenBrushFolder", activity);
+            return true;
+#else
+            return false;
 #endif
         }
 
