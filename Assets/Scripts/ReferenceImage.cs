@@ -898,34 +898,44 @@ namespace TiltBrush
             }
         }
 
-        /// Path-only exporters cannot consume the catalog's stream directly. Materialize a
-        /// content-identity-scoped private copy on demand while keeping the logical path used by
-        /// sketch persistence unchanged.
-        internal string GetExportSourcePath()
+        /// Path-only exporters cannot consume the catalog's stream directly. Create a private
+        /// per-export copy owned by the payload while keeping the logical path used by sketch
+        /// persistence unchanged.
+        internal string GetExportSourcePath(ExportUtils.SceneStatePayload owner)
         {
             if (m_OpenRead == null)
             {
                 return FileFullPath;
             }
+            if (owner == null)
+            {
+                throw new ArgumentNullException(nameof(owner));
+            }
 
             string directory = Path.Combine(
-                OpenBrushStorage.LocalStagingPath,
-                "ReferenceImageExports",
-                SafPrivatePaths.GetStableId(CatalogIdentity));
+                OpenBrushStorage.LocalReferenceImageExportStagingPath,
+                Guid.NewGuid().ToString("N"));
             string path = Path.Combine(directory, FileName);
-            if (File.Exists(path)) { return path; }
 
             Directory.CreateDirectory(directory);
             string temporaryPath = path + ".tmp";
-            using (Stream source = m_OpenRead())
-            using (var destination = new FileStream(
-                temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
+            try
             {
-                source.CopyTo(destination);
+                using (Stream source = m_OpenRead())
+                using (var destination = new FileStream(
+                    temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
+                {
+                    source.CopyTo(destination);
+                }
+                File.Move(temporaryPath, path);
+                owner.OwnTemporaryFile(path, ownContainingDirectory: true);
+                return path;
             }
-            if (File.Exists(path)) { File.Delete(path); }
-            File.Move(temporaryPath, path);
-            return path;
+            catch
+            {
+                File.Delete(temporaryPath);
+                throw;
+            }
         }
 
         private bool ValidateDimensions(int imageWidth, int imageHeight, int maxDimension)

@@ -299,6 +299,11 @@ namespace TiltBrush
         /// The current exportable SceneState of Open Brush.
         public class SceneStatePayload
         {
+            private readonly HashSet<string> m_OwnedTemporaryFiles =
+                new HashSet<string>(StringComparer.Ordinal);
+            private readonly HashSet<string> m_OwnedTemporaryDirectories =
+                new HashSet<string>(StringComparer.Ordinal);
+
             // Metadata.
             public string generator = "Tilt Brush 23.3.841faedfb compatible (Actually: Open Brush {0}.{1})";
             public DeterministicIdGenerator idGenerator = new DeterministicIdGenerator();
@@ -333,6 +338,22 @@ namespace TiltBrush
                 this.reverseWinding = (GetFromUnity_Axes(this).determinant < 0);
             }
 
+            internal void OwnTemporaryFile(string path, bool ownContainingDirectory = false)
+            {
+                if (!string.IsNullOrEmpty(path))
+                {
+                    m_OwnedTemporaryFiles.Add(path);
+                    if (ownContainingDirectory)
+                    {
+                        string directory = Path.GetDirectoryName(path);
+                        if (!string.IsNullOrEmpty(directory))
+                        {
+                            m_OwnedTemporaryDirectories.Add(directory);
+                        }
+                    }
+                }
+            }
+
             // Tears down the payload as safely as possible; throws no exceptions
             public void Destroy()
             {
@@ -350,6 +371,35 @@ namespace TiltBrush
                         item.Destroy();
                     }
                 }
+                foreach (string path in m_OwnedTemporaryFiles)
+                {
+                    try
+                    {
+                        File.Delete(path);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"Unable to remove temporary export file {path}: {e.Message}");
+                    }
+                }
+                m_OwnedTemporaryFiles.Clear();
+                foreach (string path in m_OwnedTemporaryDirectories)
+                {
+                    try
+                    {
+                        Directory.Delete(path, recursive: false);
+                    }
+                    catch (DirectoryNotFoundException)
+                    {
+                    }
+                    catch (Exception e) when (
+                        e is IOException || e is UnauthorizedAccessException)
+                    {
+                        Debug.LogWarning(
+                            $"Unable to remove temporary export directory {path}: {e.Message}");
+                    }
+                }
+                m_OwnedTemporaryDirectories.Clear();
             }
         }
 

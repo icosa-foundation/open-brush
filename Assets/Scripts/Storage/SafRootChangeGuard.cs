@@ -39,6 +39,10 @@ namespace TiltBrush
         /// grant is in place and before catalogs read anything.
         public static void ReconcileAtStartup()
         {
+            // Export payloads normally remove these files themselves. Clear anything left by a
+            // crash or forced process termination before another session can accumulate it.
+            TryDeleteDirectory(OpenBrushStorage.LocalReferenceImageExportStagingPath);
+
             if (!OpenBrushStorage.IsScopedStorageMode)
             {
                 return;

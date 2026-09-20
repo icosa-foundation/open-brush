@@ -233,7 +233,7 @@ namespace TiltBrush
         }
 
         [Test]
-        public void SafImages_MaterializeAPathOnlyExportSource()
+        public void SafImages_RemovePathOnlyExportSourceWithPayload()
         {
             byte[] bytes = { 1, 2, 3, 4 };
             var image = new ReferenceImage(
@@ -241,12 +241,22 @@ namespace TiltBrush
                 () => new MemoryStream(bytes, writable: false), bytes.Length,
                 "./Nested/image.png");
 
-            string source = image.GetExportSourcePath();
-
-            Assert.IsTrue(File.Exists(source));
-            CollectionAssert.AreEqual(bytes, File.ReadAllBytes(source));
-            Assert.AreEqual("Nested/image.png", image.FileFullPath);
-            Assert.AreEqual("./Nested/image.png", image.RelativePath);
+            var payload = new ExportUtils.SceneStatePayload(AxisConvention.kUnity, null);
+            string source = image.GetExportSourcePath(payload);
+            string sourceDirectory = Path.GetDirectoryName(source);
+            try
+            {
+                Assert.IsTrue(File.Exists(source));
+                CollectionAssert.AreEqual(bytes, File.ReadAllBytes(source));
+                Assert.AreEqual("Nested/image.png", image.FileFullPath);
+                Assert.AreEqual("./Nested/image.png", image.RelativePath);
+            }
+            finally
+            {
+                payload.Destroy();
+            }
+            Assert.IsFalse(File.Exists(source));
+            Assert.IsFalse(Directory.Exists(sourceDirectory));
         }
 
         [Test]

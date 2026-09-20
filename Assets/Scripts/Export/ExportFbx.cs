@@ -456,7 +456,19 @@ namespace TiltBrush
             var payload = ExportCollector.GetExportPayload(
                 AxisConvention.kFbxAccordingToUnity,
                 includeLocalMediaContent: true);
+            try
+            {
+                WritePayloadObjects(G, payload);
+            }
+            finally
+            {
+                payload.Destroy();
+            }
+        }
 
+        private static void WritePayloadObjects(
+            FbxExportGlobals G, ExportUtils.SceneStatePayload payload)
+        {
             // Write out each brush entry's geometry.
             foreach (var brushMeshPayload in payload.groups.SelectMany(g => g.brushMeshes))
             {
