@@ -293,7 +293,7 @@ namespace TiltBrush
         public int count => _Models?.Count ?? 0;
     }
 
-    [LuaDocsDescription("An editable VOX document")]
+    [LuaDocsDescription("An experimental editable VOX widget document")]
     [MoonSharpUserData]
     public class VoxDocumentApiWrapper
     {
@@ -396,12 +396,11 @@ namespace TiltBrush
         public string ExportBase64()
             => Convert.ToBase64String(_Document.ToVoxBytes());
 
-        [LuaDocsDescription("Spawns or refreshes this document in the current canvas")]
-        [LuaDocsExample("doc:Spawn(true, true)")]
-        public void Spawn(bool optimized = true, bool generateCollider = true)
+        [LuaDocsDescription("Shows this document as an editable model widget, rebuilding its mesh if needed")]
+        [LuaDocsExample("doc:Show(true)")]
+        public void Show(bool optimized = true)
         {
-            m_ViewState.LastSpawnOptimized = optimized;
-            m_ViewState.LastSpawnCollider = generateCollider;
+            m_ViewState.OptimizedMesh = optimized;
             if (m_ViewState.WidgetBacked)
             {
                 if (!_Document.Models.Any(model => model.Voxels.Count > 0))
@@ -428,19 +427,18 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Spawns this document at a specific canvas position")]
-        [LuaDocsExample("doc:SpawnAt(0, 0, 0, true, true)")]
-        public void SpawnAt(float x, float y, float z, bool optimized = true, bool generateCollider = true)
+        [LuaDocsDescription("Shows this document as an editable model widget at a canvas position")]
+        [LuaDocsExample("doc:ShowAt(0, 0, 0, true)")]
+        public void ShowAt(float x, float y, float z, bool optimized = true)
         {
-            m_ViewState.LastSpawnOptimized = optimized;
-            m_ViewState.LastSpawnCollider = generateCollider;
-            var transform = m_ViewState.SpawnTransform;
+            m_ViewState.OptimizedMesh = optimized;
+            var transform = m_ViewState.WidgetTransform;
             transform.translation = new Vector3(x, y, z);
             SetTransform(transform);
-            Spawn(optimized, generateCollider);
+            Show(optimized);
         }
 
-        [LuaDocsDescription("Sets the spawned document's position, rotation and scale in canvas space")]
+        [LuaDocsDescription("Sets this document widget's position, rotation and scale in canvas space")]
         [LuaDocsExample("doc:SetTransform(Transform:New(Vector3:New(0,1,0), 0.1))")]
         public void SetTransform(TrTransform transform)
         {
@@ -449,7 +447,7 @@ namespace TiltBrush
                 throw new ArgumentOutOfRangeException(nameof(transform), "VOX scene scale must be positive and finite.");
             }
 
-            m_ViewState.SpawnTransform = transform;
+            m_ViewState.WidgetTransform = transform;
             if (m_ViewState.Widget != null)
             {
                 TrTransform current = GetSceneTransform();
@@ -460,41 +458,39 @@ namespace TiltBrush
                 m_ViewState.Widget.SetSignedWidgetSize(transform.scale);
                 transform.scale = m_ViewState.Widget.GetSignedWidgetSize();
                 App.Scene.ActiveCanvas.AsCanvas[m_ViewState.Widget.transform] = transform;
-                m_ViewState.SpawnTransform = GetSceneTransform();
+                m_ViewState.WidgetTransform = GetSceneTransform();
                 SaveLoadScript.m_Instance?.SketchChanged();
                 return;
             }
         }
 
-        [LuaDocsDescription("Configures automatic visual updates and mesh options. Widget-backed documents retain their normal widget collider; generateCollider applies only to runtime roots. When disabled, call Refresh to show pending edits.")]
-        [LuaDocsExample("doc:SetAutoVisuals(true, true, true)")]
-        public void SetAutoVisuals(bool enabled = true, bool optimized = true, bool generateCollider = true)
+        [LuaDocsDescription("Configures automatic mesh updates. When disabled, call Refresh to show pending edits.")]
+        [LuaDocsExample("doc:SetAutoVisuals(true, true)")]
+        public void SetAutoVisuals(bool enabled = true, bool optimized = true)
         {
-            m_ViewState.VisualsDirty |= m_ViewState.LastSpawnOptimized != optimized ||
-                m_ViewState.LastSpawnCollider != generateCollider;
+            m_ViewState.VisualsDirty |= m_ViewState.OptimizedMesh != optimized;
             m_ViewState.AutoVisuals = enabled;
-            m_ViewState.LastSpawnOptimized = optimized;
-            m_ViewState.LastSpawnCollider = generateCollider;
+            m_ViewState.OptimizedMesh = optimized;
             if (enabled)
             {
                 Refresh();
             }
         }
 
-        [LuaDocsDescription("Shows pending edits, or spawns this document if it is not visible. Does nothing if the visuals are already current.")]
+        [LuaDocsDescription("Shows pending edits, or shows this document's widget if hidden. Does nothing if the visuals are already current.")]
         public void Refresh()
         {
             if (m_ViewState.VisualsDirty || m_ViewState.Widget == null ||
                 !m_ViewState.Widget.Showing)
             {
-                Spawn(m_ViewState.LastSpawnOptimized, m_ViewState.LastSpawnCollider);
+                Show(m_ViewState.OptimizedMesh);
             }
         }
 
-        [LuaDocsDescription("Clears this document's spawned scene object, if present")]
-        public void ClearScene()
+        [LuaDocsDescription("Hides this document's model widget, if present")]
+        public void Hide()
         {
-            m_ViewState.SpawnTransform = GetSceneTransform();
+            m_ViewState.WidgetTransform = GetSceneTransform();
             if (m_ViewState.Widget != null)
             {
                 m_ViewState.Widget.Show(false, false);
@@ -526,7 +522,7 @@ namespace TiltBrush
             {
                 return App.Scene.ActiveCanvas.AsCanvas[m_ViewState.Widget.transform];
             }
-            return m_ViewState.SpawnTransform;
+            return m_ViewState.WidgetTransform;
         }
 
         [MoonSharpHidden]
@@ -552,7 +548,7 @@ namespace TiltBrush
                 widget.AdoptEditableVoxDocument(_Document);
                 m_ViewState.Widget = widget;
                 m_ViewState.WidgetWasCreated = true;
-                SetTransform(m_ViewState.SpawnTransform);
+                SetTransform(m_ViewState.WidgetTransform);
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: true);
                 model.ReleaseFromCatalog();
                 return true;
@@ -576,11 +572,11 @@ namespace TiltBrush
 
     }
 
-    [LuaDocsDescription("Runtime VOX document API")]
+    [LuaDocsDescription("Experimental editable VOX widget API")]
     [MoonSharpUserData]
     public class VoxApiWrapper
     {
-        [LuaDocsDescription("Finds an occupied voxel in a visible editable VOX widget or runtime document. Returns nil if none is found.")]
+        [LuaDocsDescription("Finds an occupied voxel in a visible editable VOX widget. Returns nil if none is found.")]
         [LuaDocsExample("local model = Vox:FindModelAt(Brush.position)")]
         public static VoxModelApiWrapper FindModelAt(Vector3 canvasPosition)
         {

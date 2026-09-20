@@ -33,9 +33,8 @@ namespace TiltBrush
             public bool WidgetWasCreated;
             public bool VisualsDirty = true;
             public bool AutoVisuals;
-            public bool LastSpawnOptimized = true;
-            public bool LastSpawnCollider = true;
-            public TrTransform SpawnTransform = TrTransform.identity;
+            public bool OptimizedMesh = true;
+            public TrTransform WidgetTransform = TrTransform.identity;
         }
 
         public sealed class RuntimeModel

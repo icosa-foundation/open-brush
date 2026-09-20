@@ -280,7 +280,7 @@ namespace TiltBrush
                 widget.Show(true);
 
                 m_CurrentDocument = new VoxDocumentApiWrapper(document, widget);
-                m_CurrentDocument.SetAutoVisuals(true, true, false);
+                m_CurrentDocument.SetAutoVisuals(true, true);
                 m_CurrentModel = m_CurrentDocument.Model();
                 m_CurrentModel.PlaceAt(canvasPosition, Mathf.Max(VoxelSize, 0.0001f));
                 m_CreateWidgetCommand.SetWidgetCost(widget.GetTiltMeterCost());
@@ -297,7 +297,7 @@ namespace TiltBrush
         {
             m_CurrentModel = model;
             m_CurrentDocument = model.document;
-            m_CurrentDocument.SetAutoVisuals(true, true, false);
+            m_CurrentDocument.SetAutoVisuals(true, true);
             VoxelSize = model.voxelSize;
             m_CreateNewOnNextAdd = false;
         }
@@ -322,7 +322,7 @@ namespace TiltBrush
                 int modelIndex = Mathf.Clamp(m_CurrentModel?.index ?? 0, 0,
                     widget.EditableVoxDocument.Models.Count - 1);
                 m_CurrentDocument = new VoxDocumentApiWrapper(widget.EditableVoxDocument, widget);
-                m_CurrentDocument.SetAutoVisuals(true, true, false);
+                m_CurrentDocument.SetAutoVisuals(true, true);
                 m_CurrentModel = m_CurrentDocument.Model(modelIndex);
             }
         }
