@@ -146,10 +146,12 @@ namespace TiltBrush
                 // straight out of storage. UnityGLTF's loader contract is stream-based, so this
                 // needs no materialized copy - only a different IDataLoader.
                 string gltfFileName;
+                SafGltfDataLoader safDataLoader = null;
                 if (TryGetStorageModelLocation(model, out StorageArea area, out string directory,
                         out string fileName))
                 {
-                    options.DataLoader = new SafGltfDataLoader(area, directory);
+                    safDataLoader = new SafGltfDataLoader(area, directory);
+                    options.DataLoader = safDataLoader;
                     gltfFileName = fileName;
                 }
                 else
@@ -160,9 +162,14 @@ namespace TiltBrush
                 GLTFSceneImporter gltf = new GLTFSceneImporter(gltfFileName, options);
 
                 if (options.ImportContext.TryGetPlugin<UnityGLTF.Plugins.OpenBrushAudioImportContext>(out var audioPlugin))
+                {
                     audioPlugin.GltfDirectory = string.IsNullOrEmpty(localPath)
                         ? null
                         : Path.GetDirectoryName(localPath);
+                    audioPlugin.OpenSidecar = safDataLoader == null
+                        ? null
+                        : safDataLoader.LoadStream;
+                }
 
                 // Device builds only: GLTFSceneImporter hard-forces this false in the editor (to
                 // avoid a historical editor freeze), so editor imports stay single-threaded regardless.

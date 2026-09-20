@@ -105,6 +105,9 @@ namespace UnityGLTF.Plugins
         /// Set by the import call site so sidecar URI audio can be resolved.
         public string GltfDirectory { get; set; }
 
+        /// Set for storage-backed models whose sidecars do not have filesystem paths.
+        public Func<string, Stream> OpenSidecar { get; set; }
+
         public OpenBrushAudioImportContext(GLTFImportContext context)
         {
             _context = context;
@@ -190,6 +193,23 @@ namespace UnityGLTF.Plugins
                 }
                 else if (!string.IsNullOrEmpty(audio.uri))
                 {
+                    if (OpenSidecar != null)
+                    {
+                        try
+                        {
+                            using Stream source = OpenSidecar(audio.uri);
+                            string extension = Path.GetExtension(Uri.UnescapeDataString(audio.uri));
+                            _audioFilePaths[i] = CopyToCache(importDir, source, extension);
+                        }
+                        catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException ||
+                            ex is ArgumentException || ex is UriFormatException)
+                        {
+                            Debug.LogWarning(
+                                $"[OBAudio] Could not read audio sidecar uri '{audio.uri}': {ex.Message}");
+                        }
+                        continue;
+                    }
+
                     if (string.IsNullOrEmpty(GltfDirectory))
                     {
                         Debug.LogWarning($"[OBAudio] Cannot resolve sidecar URI '{audio.uri}': GltfDirectory not set.");
@@ -322,6 +342,38 @@ namespace UnityGLTF.Plugins
             using var stream = File.OpenRead(sourcePath);
             using var sha256 = SHA256.Create();
             return Path.Combine(directory, $"{FormatHash(sha256.ComputeHash(stream))}{extension}");
+        }
+
+        private static string CopyToCache(string directory, Stream source, string extension)
+        {
+            string temporaryPath = Path.Combine(directory, $".{Guid.NewGuid():N}.tmp");
+            try
+            {
+                byte[] hash;
+                using (var sha256 = SHA256.Create())
+                using (var output = File.Create(temporaryPath))
+                using (var hashingOutput = new CryptoStream(output, sha256, CryptoStreamMode.Write))
+                {
+                    source.CopyTo(hashingOutput);
+                    hashingOutput.FlushFinalBlock();
+                    hash = sha256.Hash;
+                }
+
+                string cachePath = Path.Combine(directory, $"{FormatHash(hash)}{extension}");
+                if (File.Exists(cachePath))
+                {
+                    File.Delete(temporaryPath);
+                }
+                else
+                {
+                    File.Move(temporaryPath, cachePath);
+                }
+                return cachePath;
+            }
+            finally
+            {
+                if (File.Exists(temporaryPath)) { File.Delete(temporaryPath); }
+            }
         }
 
         private static string FormatHash(byte[] hash) =>
