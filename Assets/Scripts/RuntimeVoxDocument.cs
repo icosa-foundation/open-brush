@@ -43,6 +43,8 @@ namespace TiltBrush
 
             public string Name { get; }
             public Vector3Int Size { get; }
+            // VOX-world position of local voxel (0, 0, 0). Together with GlobalRotation,
+            // this is the affine transform used for rendering and editing.
             public Vector3 TransformOffset { get; set; }
             public Vector3 LocalTransformOffset { get; }
             public Matrix4x4 GlobalRotation { get; }
@@ -298,6 +300,7 @@ namespace TiltBrush
                     sourceModel.LocalSize.X,
                     sourceModel.LocalSize.Y,
                     sourceModel.LocalSize.Z);
+                Matrix4x4 globalRotation = ToUnityMatrix(sourceModel.GlobalRotation);
 
                 if (!voxelDataBySourceId.TryGetValue(
                         sourceModel.Id,
@@ -317,13 +320,10 @@ namespace TiltBrush
                         sourceModel.LocalPosition.X,
                         sourceModel.LocalPosition.Y,
                         sourceModel.LocalPosition.Z),
-                    ToUnityMatrix(sourceModel.GlobalRotation),
+                    globalRotation,
                     ToUnityMatrix(sourceModel.LocalRotation));
                 document.m_models.Add(runtimeModel);
-                runtimeModel.TransformOffset = new Vector3(
-                    sourceModel.GlobalPosition.X,
-                    sourceModel.GlobalPosition.Y,
-                    sourceModel.GlobalPosition.Z);
+                runtimeModel.TransformOffset = GetTransformOffset(sourceModel, globalRotation);
 
                 if (!sourceModel.IsCopy)
                 {
@@ -390,7 +390,70 @@ namespace TiltBrush
             return m_sourceVoxBytes;
         }
 
-        private static Matrix4x4 ToUnityMatrix(VoxReader.Matrix3 source)
+        // VoxReader reports GlobalPosition at the center index of the transformed bounds.
+        // Recover the exact world position of local voxel zero, including the half-cell
+        // convention used for negative axes by Matrix3.RotateIndex.
+        internal static Vector3 GetTransformOffset(IModel sourceModel)
+        {
+            return GetTransformOffset(sourceModel, ToUnityMatrix(sourceModel.GlobalRotation));
+        }
+
+        private static Vector3 GetTransformOffset(IModel sourceModel, Matrix4x4 rotation)
+        {
+            var globalPosition = new Vector3(
+                sourceModel.GlobalPosition.X,
+                sourceModel.GlobalPosition.Y,
+                sourceModel.GlobalPosition.Z);
+            var globalSize = new Vector3Int(
+                sourceModel.GlobalSize.X,
+                sourceModel.GlobalSize.Y,
+                sourceModel.GlobalSize.Z);
+            var localSize = new Vector3Int(
+                sourceModel.LocalSize.X,
+                sourceModel.LocalSize.Y,
+                sourceModel.LocalSize.Z);
+
+            Vector3 origin = globalPosition - new Vector3(
+                globalSize.x / 2,
+                globalSize.y / 2,
+                globalSize.z / 2);
+            for (int worldAxis = 0; worldAxis < 3; worldAxis++)
+            {
+                for (int localAxis = 0; localAxis < 3; localAxis++)
+                {
+                    if (rotation[worldAxis, localAxis] < 0f)
+                    {
+                        origin[worldAxis] += localSize[localAxis] - 1;
+                        break;
+                    }
+                }
+            }
+            return origin;
+        }
+
+        // Convert the affine local-origin placement back to the nTRN pivot expected by
+        // MagicaVoxel. Imported documents retain their source nTRN chunks; this is used
+        // when serializing newly generated documents.
+        internal static Vector3 GetSceneTranslation(RuntimeModel model)
+        {
+            var centeredOrigin = new Vector3(
+                -(model.Size.x / 2),
+                -(model.Size.y / 2),
+                -(model.Size.z / 2));
+            Vector3 rotatedOrigin = RotateVoxelIndex(model.GlobalRotation, centeredOrigin);
+            return model.TransformOffset - rotatedOrigin;
+        }
+
+        private static Vector3 RotateVoxelIndex(Matrix4x4 rotation, Vector3 position)
+        {
+            Vector3 rotated = rotation.MultiplyVector(position + Vector3.one * 0.5f);
+            return new Vector3(
+                Mathf.Floor(rotated.x),
+                Mathf.Floor(rotated.y),
+                Mathf.Floor(rotated.z));
+        }
+
+        internal static Matrix4x4 ToUnityMatrix(VoxReader.Matrix3 source)
         {
             var result = Matrix4x4.identity;
             for (int row = 0; row < 3; row++)

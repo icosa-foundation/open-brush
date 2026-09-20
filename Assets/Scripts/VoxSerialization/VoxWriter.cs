@@ -226,7 +226,8 @@ namespace TiltBrush
                     childNodeId: shapeNodeId,
                     layerId: -1,
                     // VOX translations are integers; round to the nearest voxel on export.
-                    translation: Vector3Int.RoundToInt(model.TransformOffset),
+                    translation: Vector3Int.RoundToInt(
+                        RuntimeVoxDocument.GetSceneTranslation(model)),
                     name: model.Name);
 
                 yield return BuildShapeNodeChunk(shapeNodeId, i);

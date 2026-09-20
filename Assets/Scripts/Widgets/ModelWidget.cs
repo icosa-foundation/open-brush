@@ -535,8 +535,9 @@ namespace TiltBrush
                 modelTransform.SetParent(hierarchyRoot, false);
             }
 
-            modelTransform.localPosition = model.TransformOffset;
-            modelTransform.localRotation = VoxMeshBuilder.ModelRotation;
+            TrTransform modelPose = VoxMeshBuilder.GetModelTransform(model);
+            modelTransform.localPosition = modelPose.translation;
+            modelTransform.localRotation = modelPose.rotation;
             MeshFilter filter = modelTransform.GetComponent<MeshFilter>();
             if (filter == null)
             {
@@ -565,6 +566,7 @@ namespace TiltBrush
             bool first = true;
             foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
             {
+                TrTransform modelTransform = VoxMeshBuilder.GetModelTransform(model);
                 foreach (Vector3Int voxel in model.Voxels.Keys)
                 {
                     for (int x = 0; x < 2; x++)
@@ -575,8 +577,7 @@ namespace TiltBrush
                                     voxel.x + (x == 0 ? -0.5f : 0.5f),
                                     voxel.y + (y == 0 ? -0.5f : 0.5f),
                                     voxel.z + (z == 0 ? -0.5f : 0.5f));
-                                Vector3 position = model.TransformOffset +
-                                    VoxMeshBuilder.ModelRotation * corner;
+                                Vector3 position = modelTransform * corner;
                                 if (first)
                                 {
                                     bounds = new Bounds(position, Vector3.zero);

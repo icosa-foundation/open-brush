@@ -134,14 +134,10 @@ namespace TiltBrush
                     }
 
                     GameObject modelObject = new GameObject($"Model_{i}_{model.Name}");
-                    Vector3 voxPosition = new Vector3(
-                        model.GlobalPosition.X,
-                        model.GlobalPosition.Y,
-                        model.GlobalPosition.Z);
-                    Quaternion voxToUnity = Quaternion.Euler(-90f, 0f, 0f);
-                    modelObject.transform.localPosition = voxToUnity * voxPosition;
-                    modelObject.transform.localRotation = voxToUnity;
                     modelObject.transform.SetParent(parent.transform, false);
+                    TrTransform modelTransform = VoxMeshBuilder.GetModelTransform(model);
+                    modelObject.transform.localPosition = modelTransform.translation;
+                    modelObject.transform.localRotation = modelTransform.rotation;
 
                     // Generate mesh based on mode
                     Mesh mesh = options.MeshMode == MeshMode.Optimized

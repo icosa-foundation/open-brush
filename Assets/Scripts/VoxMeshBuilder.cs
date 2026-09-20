@@ -27,6 +27,28 @@ namespace TiltBrush
         // VOX uses Z-up; runtime scene objects use Unity's Y-up coordinates.
         public static readonly Quaternion ModelRotation = Quaternion.Euler(-90f, 0f, 0f);
 
+        internal static TrTransform GetModelTransform(RuntimeVoxDocument.RuntimeModel model)
+        {
+            return GetModelTransform(model.TransformOffset, model.GlobalRotation);
+        }
+
+        internal static TrTransform GetModelTransform(IModel model)
+        {
+            return GetModelTransform(
+                RuntimeVoxDocument.GetTransformOffset(model),
+                RuntimeVoxDocument.ToUnityMatrix(model.GlobalRotation));
+        }
+
+        private static TrTransform GetModelTransform(Vector3 offset, Matrix4x4 globalRotation)
+        {
+            Quaternion sceneRotation = Quaternion.LookRotation(
+                globalRotation.MultiplyVector(Vector3.forward),
+                globalRotation.MultiplyVector(Vector3.up));
+            return TrTransform.TR(
+                ModelRotation * offset,
+                ModelRotation * sceneRotation);
+        }
+
         // Only use for runtime VOX objects, which own their procedurally generated meshes.
         internal static void DestroyRuntimeSceneObject(GameObject root)
         {

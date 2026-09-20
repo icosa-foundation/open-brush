@@ -113,8 +113,9 @@ namespace TiltBrush
         {
             TrTransform transform = m_DocumentWrapper.GetSceneTransform();
             transform.scale = voxelSize;
+            Vector3 modelCenter = VoxMeshBuilder.GetModelTransform(_Model) * centerVoxel;
             transform.translation = canvasPosition - transform.rotation *
-                (_Model.TransformOffset + VoxMeshBuilder.ModelRotation * centerVoxel) * voxelSize;
+                modelCenter * voxelSize;
             m_DocumentWrapper.SetTransform(transform);
         }
 
@@ -568,7 +569,7 @@ namespace TiltBrush
 
         [MoonSharpHidden]
         internal TrTransform GetModelTransform(RuntimeVoxDocument.RuntimeModel model)
-            => GetSceneTransform() * TrTransform.TR(model.TransformOffset, VoxMeshBuilder.ModelRotation);
+            => GetSceneTransform() * VoxMeshBuilder.GetModelTransform(model);
 
     }
 

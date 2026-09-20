@@ -151,6 +151,40 @@ namespace TiltBrush
         }
 
         [Test]
+        public void VoxMeshBuilder_AppliesSceneRotationAndCellCenteredPlacement()
+        {
+            var rotation = new VoxReader.Matrix3(new[,]
+            {
+                { 0, -1, 0 },
+                { 1, 0, 0 },
+                { 0, 0, 1 },
+            });
+            var sourceModel = new VoxReader.Model(
+                id: 0,
+                name: "rotated",
+                voxels: Array.Empty<VoxReader.Voxel>(),
+                isCopy: false,
+                // VoxReader exposes the center index of the transformed bounds here.
+                position: new VoxReader.Vector3(9, 20, 30),
+                localPosition: new VoxReader.Vector3(10, 20, 30),
+                rotation: rotation,
+                localRotation: rotation,
+                localSize: new VoxReader.Vector3(4, 3, 2));
+
+            Vector3 origin = RuntimeVoxDocument.GetTransformOffset(sourceModel);
+            Assert.AreEqual(new Vector3(10, 18, 29), origin);
+
+            TrTransform transform = VoxMeshBuilder.GetModelTransform(sourceModel);
+            Vector3 localVoxel = new Vector3(3, 2, 1);
+            Vector3 expectedVoxWorld = new Vector3(8, 21, 30);
+            Assert.That(
+                Vector3.Distance(
+                    VoxMeshBuilder.ModelRotation * expectedVoxWorld,
+                    transform * localVoxel),
+                Is.LessThan(0.0001f));
+        }
+
+        [Test]
         public void RuntimeVoxDocument_RoundTripsThroughVoxBytes()
         {
             var source = new RuntimeVoxDocument();
