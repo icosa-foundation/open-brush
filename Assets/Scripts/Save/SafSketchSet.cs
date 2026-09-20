@@ -44,6 +44,7 @@ namespace TiltBrush
         }
 
         private readonly IUserStorageBackend m_Backend;
+        private readonly string m_RootIdentity;
         private StorageDocument m_Document;
         private readonly StorageArea m_Area;
         private readonly TiltFile m_TiltFile;
@@ -66,12 +67,16 @@ namespace TiltBrush
         public DateTime CreationTime => m_Document.LastModified ?? DateTime.MinValue;
         public StorageDocument Document => m_Document;
         internal bool IsCurrentStorageRoot =>
-            ReferenceEquals(m_Backend, UserStorage.Backend);
+            ReferenceEquals(m_Backend, UserStorage.Backend) &&
+            m_Backend.IsReady &&
+            string.Equals(
+                m_RootIdentity, m_Backend.RootIdentity, StringComparison.Ordinal);
 
         public SafSceneFileInfo(IUserStorageBackend backend, StorageDocument document,
             StorageArea area = StorageArea.Sketches)
         {
             m_Backend = backend ?? throw new ArgumentNullException(nameof(backend));
+            m_RootIdentity = backend.RootIdentity;
             m_Document = document ?? throw new ArgumentNullException(nameof(document));
             m_Area = area;
             m_TiltFile = new TiltFile(
