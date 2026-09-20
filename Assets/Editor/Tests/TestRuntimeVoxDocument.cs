@@ -109,6 +109,37 @@ namespace TiltBrush
             Assert.AreEqual(72, cubes.triangles.Length);
         }
 
+        [Test]
+        public void VoxMeshBuilder_AssignsMaterialGroupsToSubmeshes()
+        {
+            var document = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel model = document.CreateModel(
+                "materials",
+                new Vector3Int(2, 1, 1));
+            document.ReplacePaletteEntry(1, new Color32(255, 0, 0, 255));
+            document.ReplacePaletteEntry(2, new Color32(0, 0, 255, 255));
+            model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            model.AddOrUpdateVoxel(Vector3Int.right, 2);
+            var paletteSubmeshIndices = new int[256];
+            paletteSubmeshIndices[1] = 1;
+
+            Mesh mesh = new VoxMeshBuilder().GenerateOptimizedMesh(
+                model,
+                document.Palette,
+                paletteSubmeshIndices,
+                2);
+            try
+            {
+                Assert.AreEqual(2, mesh.subMeshCount);
+                Assert.AreEqual(30, mesh.GetTriangles(0).Length);
+                Assert.AreEqual(30, mesh.GetTriangles(1).Length);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(mesh);
+            }
+        }
+
         [TestCase(10, 0, 0)]
         [TestCase(0, 7, 0)]
         [TestCase(0, 0, 5)]

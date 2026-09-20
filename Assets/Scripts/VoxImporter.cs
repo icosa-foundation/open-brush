@@ -124,6 +124,17 @@ namespace TiltBrush
                     return (parent, m_warnings.Distinct().ToList(), m_collector);
                 }
 
+                VoxMaterialSet materialSet = options.MaterialOverride == null
+                    ? new VoxMaterialSet(document, m_standardMaterial)
+                    : null;
+                if (materialSet != null)
+                {
+                    foreach (Material material in materialSet.OwnedMaterials)
+                    {
+                        m_collector.Add(material);
+                    }
+                }
+
                 for (int i = 0; i < models.Count; i++)
                 {
                     RuntimeVoxDocument.RuntimeModel model = models[i];
@@ -143,8 +154,8 @@ namespace TiltBrush
 
                     // Generate mesh based on mode
                     Mesh mesh = options.MeshMode == MeshMode.Optimized
-                        ? GenerateOptimizedMesh(model, document.Palette)
-                        : GenerateSeparateCubesMesh(model, document.Palette);
+                        ? GenerateOptimizedMesh(model, document.Palette, materialSet)
+                        : GenerateSeparateCubesMesh(model, document.Palette, materialSet);
 
                     if (mesh != null)
                     {
@@ -152,7 +163,9 @@ namespace TiltBrush
                         mf.mesh = mesh;
 
                         var mr = modelObject.AddComponent<MeshRenderer>();
-                        mr.material = options.MaterialOverride ?? m_standardMaterial;
+                        mr.sharedMaterials = options.MaterialOverride != null
+                            ? new[] { options.MaterialOverride }
+                            : materialSet.Materials.ToArray();
 
                         if (options.GenerateCollider)
                         {
@@ -218,11 +231,18 @@ namespace TiltBrush
 
         private Mesh GenerateOptimizedMesh(
             RuntimeVoxDocument.RuntimeModel model,
-            Color32[] palette)
+            Color32[] palette,
+            VoxMaterialSet materialSet)
         {
             try
             {
-                return m_meshBuilder.GenerateOptimizedMesh(model, palette);
+                return materialSet == null
+                    ? m_meshBuilder.GenerateOptimizedMesh(model, palette)
+                    : m_meshBuilder.GenerateOptimizedMesh(
+                        model,
+                        palette,
+                        materialSet.PaletteSubmeshIndices,
+                        materialSet.Materials.Count);
             }
             catch (Exception ex)
             {
@@ -234,11 +254,18 @@ namespace TiltBrush
 
         private Mesh GenerateSeparateCubesMesh(
             RuntimeVoxDocument.RuntimeModel model,
-            Color32[] palette)
+            Color32[] palette,
+            VoxMaterialSet materialSet)
         {
             try
             {
-                return m_meshBuilder.GenerateSeparateCubesMesh(model, palette);
+                return materialSet == null
+                    ? m_meshBuilder.GenerateSeparateCubesMesh(model, palette)
+                    : m_meshBuilder.GenerateSeparateCubesMesh(
+                        model,
+                        palette,
+                        materialSet.PaletteSubmeshIndices,
+                        materialSet.Materials.Count);
             }
             catch (Exception ex)
             {

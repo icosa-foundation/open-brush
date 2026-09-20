@@ -74,18 +74,40 @@ namespace TiltBrush
 
         public Mesh GenerateOptimizedMesh(RuntimeVoxDocument.RuntimeModel model, Color32[] palette)
         {
-            RuntimeVoxelGrid grid = new RuntimeVoxelGrid(model, palette);
-            MeshData meshData = GreedyMesh(grid);
+            return GenerateOptimizedMesh(model, palette, null, 1);
+        }
+
+        internal Mesh GenerateOptimizedMesh(
+            RuntimeVoxDocument.RuntimeModel model,
+            Color32[] palette,
+            IReadOnlyList<int> paletteSubmeshIndices,
+            int submeshCount)
+        {
+            RuntimeVoxelGrid grid = new RuntimeVoxelGrid(model, palette, paletteSubmeshIndices);
+            MeshData meshData = GreedyMesh(grid, submeshCount);
             return CreateMesh($"{model.Name}_Optimized", meshData);
         }
 
         public Mesh GenerateSeparateCubesMesh(RuntimeVoxDocument.RuntimeModel model, Color32[] palette)
         {
-            MeshData meshData = new MeshData();
+            return GenerateSeparateCubesMesh(model, palette, null, 1);
+        }
+
+        internal Mesh GenerateSeparateCubesMesh(
+            RuntimeVoxDocument.RuntimeModel model,
+            Color32[] palette,
+            IReadOnlyList<int> paletteSubmeshIndices,
+            int submeshCount)
+        {
+            MeshData meshData = new MeshData(submeshCount);
 
             foreach (RuntimeVoxDocument.RuntimeVoxel voxel in model.EnumerateVoxels(palette))
             {
-                AddCube(meshData, voxel.Position, voxel.Color);
+                AddCube(
+                    meshData,
+                    voxel.Position,
+                    voxel.Color,
+                    GetSubmeshIndex(voxel.PaletteIndex, paletteSubmeshIndices));
             }
 
             return CreateMesh($"{model.Name}_Cubes", meshData);
@@ -100,7 +122,7 @@ namespace TiltBrush
 
         public Mesh GenerateSeparateCubesMesh(IModel model)
         {
-            MeshData meshData = new MeshData();
+            MeshData meshData = new MeshData(1);
 
             foreach (Voxel voxel in model.Voxels)
             {
@@ -117,7 +139,7 @@ namespace TiltBrush
                     voxel.Color.A
                 );
 
-                AddCube(meshData, position, color);
+                AddCube(meshData, position, color, 0);
             }
 
             return CreateMesh($"{model.Name}_Cubes", meshData);
@@ -134,7 +156,11 @@ namespace TiltBrush
 
             mesh.SetVertices(meshData.vertices);
             mesh.SetColors(meshData.colors);
-            mesh.SetTriangles(meshData.triangles, 0);
+            mesh.subMeshCount = meshData.triangles.Count;
+            for (int i = 0; i < meshData.triangles.Count; i++)
+            {
+                mesh.SetTriangles(meshData.triangles[i], i);
+            }
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             mesh.UploadMeshData(false);
@@ -142,7 +168,7 @@ namespace TiltBrush
             return mesh;
         }
 
-        private void AddCube(MeshData meshData, Vector3 center, Color32 color)
+        private void AddCube(MeshData meshData, Vector3 center, Color32 color, int submeshIndex)
         {
             int baseIndex = meshData.vertices.Count;
             float size = 1.0f;
@@ -194,19 +220,20 @@ namespace TiltBrush
             {
                 int vertexOffset = baseIndex + i * 4;
 
-                meshData.triangles.Add(vertexOffset + 0);
-                meshData.triangles.Add(vertexOffset + 1);
-                meshData.triangles.Add(vertexOffset + 2);
+                List<int> triangles = meshData.triangles[submeshIndex];
+                triangles.Add(vertexOffset + 0);
+                triangles.Add(vertexOffset + 1);
+                triangles.Add(vertexOffset + 2);
 
-                meshData.triangles.Add(vertexOffset + 0);
-                meshData.triangles.Add(vertexOffset + 2);
-                meshData.triangles.Add(vertexOffset + 3);
+                triangles.Add(vertexOffset + 0);
+                triangles.Add(vertexOffset + 2);
+                triangles.Add(vertexOffset + 3);
             }
         }
 
         private MeshData GreedyMesh(VoxelGrid grid)
         {
-            MeshData meshData = new MeshData();
+            MeshData meshData = new MeshData(1);
 
             GreedyMeshAxis(grid, meshData, 0);
             GreedyMeshAxis(grid, meshData, 1);
@@ -217,7 +244,12 @@ namespace TiltBrush
 
         private MeshData GreedyMesh(RuntimeVoxelGrid grid)
         {
-            MeshData meshData = new MeshData();
+            return GreedyMesh(grid, 1);
+        }
+
+        private MeshData GreedyMesh(RuntimeVoxelGrid grid, int submeshCount)
+        {
+            MeshData meshData = new MeshData(submeshCount);
 
             GreedyMeshAxis(grid, meshData, 0);
             GreedyMeshAxis(grid, meshData, 1);
@@ -341,6 +373,7 @@ namespace TiltBrush
             bool[,] mask = new bool[dims[u], dims[v]];
             bool[,] faceTowardsPositive = new bool[dims[u], dims[v]];
             Color32[,] colorMask = new Color32[dims[u], dims[v]];
+            int[,] submeshMask = new int[dims[u], dims[v]];
 
             for (pos[axis] = 0; pos[axis] <= dims[axis]; pos[axis]++)
             {
@@ -370,6 +403,9 @@ namespace TiltBrush
                             colorMask[pos[u], pos[v]] = current
                                 ? grid.GetColor(checkPos)
                                 : grid.GetColor(neighborPos);
+                            submeshMask[pos[u], pos[v]] = current
+                                ? grid.GetSubmeshIndex(checkPos)
+                                : grid.GetSubmeshIndex(neighborPos);
                         }
                     }
                 }
@@ -384,11 +420,13 @@ namespace TiltBrush
                         }
 
                         Color32 currentColor = colorMask[iu, iv];
+                        int currentSubmesh = submeshMask[iu, iv];
 
                         int width = 1;
                         while (iu + width < dims[u] &&
                                mask[iu + width, iv] &&
                                ColorsEqual(colorMask[iu + width, iv], currentColor) &&
+                               submeshMask[iu + width, iv] == currentSubmesh &&
                                faceTowardsPositive[iu + width, iv] == faceTowardsPositive[iu, iv])
                         {
                             width++;
@@ -402,6 +440,7 @@ namespace TiltBrush
                             {
                                 if (!mask[iu + k, iv + height] ||
                                     !ColorsEqual(colorMask[iu + k, iv + height], currentColor) ||
+                                    submeshMask[iu + k, iv + height] != currentSubmesh ||
                                     faceTowardsPositive[iu + k, iv + height] != faceTowardsPositive[iu, iv])
                                 {
                                     done = true;
@@ -419,7 +458,7 @@ namespace TiltBrush
                         pos[v] = iv;
                         AddQuad(meshData, (Vector3)(pos + grid.Offset) - Vector3.one * 0.5f,
                             axis, width, height, currentColor,
-                            faceTowardsPositive[iu, iv]);
+                            faceTowardsPositive[iu, iv], currentSubmesh);
 
                         for (int ku = 0; ku < width; ku++)
                         {
@@ -445,7 +484,8 @@ namespace TiltBrush
             int width,
             int height,
             Color32 color,
-            bool normalTowardsPositive)
+            bool normalTowardsPositive,
+            int submeshIndex = 0)
         {
             int baseIndex = meshData.vertices.Count;
 
@@ -472,23 +512,25 @@ namespace TiltBrush
 
             if (normalTowardsPositive)
             {
-                meshData.triangles.Add(baseIndex + 0);
-                meshData.triangles.Add(baseIndex + 1);
-                meshData.triangles.Add(baseIndex + 2);
+                List<int> triangles = meshData.triangles[submeshIndex];
+                triangles.Add(baseIndex + 0);
+                triangles.Add(baseIndex + 1);
+                triangles.Add(baseIndex + 2);
 
-                meshData.triangles.Add(baseIndex + 0);
-                meshData.triangles.Add(baseIndex + 2);
-                meshData.triangles.Add(baseIndex + 3);
+                triangles.Add(baseIndex + 0);
+                triangles.Add(baseIndex + 2);
+                triangles.Add(baseIndex + 3);
             }
             else
             {
-                meshData.triangles.Add(baseIndex + 0);
-                meshData.triangles.Add(baseIndex + 2);
-                meshData.triangles.Add(baseIndex + 1);
+                List<int> triangles = meshData.triangles[submeshIndex];
+                triangles.Add(baseIndex + 0);
+                triangles.Add(baseIndex + 2);
+                triangles.Add(baseIndex + 1);
 
-                meshData.triangles.Add(baseIndex + 0);
-                meshData.triangles.Add(baseIndex + 3);
-                meshData.triangles.Add(baseIndex + 2);
+                triangles.Add(baseIndex + 0);
+                triangles.Add(baseIndex + 3);
+                triangles.Add(baseIndex + 2);
             }
         }
 
@@ -496,7 +538,16 @@ namespace TiltBrush
         {
             public List<Vector3> vertices = new List<Vector3>();
             public List<Color32> colors = new List<Color32>();
-            public List<int> triangles = new List<int>();
+            public List<List<int>> triangles;
+
+            public MeshData(int submeshCount)
+            {
+                triangles = new List<List<int>>(submeshCount);
+                for (int i = 0; i < submeshCount; i++)
+                {
+                    triangles.Add(new List<int>());
+                }
+            }
         }
 
         private class VoxelGrid
@@ -567,13 +618,17 @@ namespace TiltBrush
 
         private class RuntimeVoxelGrid
         {
-            private readonly Dictionary<Vector3Int, Color32> m_voxels = new Dictionary<Vector3Int, Color32>();
+            private readonly Dictionary<Vector3Int, RuntimeVoxelCell> m_voxels =
+                new Dictionary<Vector3Int, RuntimeVoxelCell>();
             private readonly Vector3Int m_size;
 
             public Vector3Int Size => m_size;
             public Vector3Int Offset { get; }
 
-            public RuntimeVoxelGrid(RuntimeVoxDocument.RuntimeModel model, Color32[] palette)
+            public RuntimeVoxelGrid(
+                RuntimeVoxDocument.RuntimeModel model,
+                Color32[] palette,
+                IReadOnlyList<int> paletteSubmeshIndices)
             {
                 int minX = int.MaxValue;
                 int minY = int.MaxValue;
@@ -610,7 +665,11 @@ namespace TiltBrush
                 foreach (RuntimeVoxDocument.RuntimeVoxel voxel in model.EnumerateVoxels(palette))
                 {
                     Vector3Int normalized = voxel.Position - Offset;
-                    m_voxels[normalized] = voxel.Color;
+                    m_voxels[normalized] = new RuntimeVoxelCell(
+                        voxel.Color,
+                        VoxMeshBuilder.GetSubmeshIndex(
+                            voxel.PaletteIndex,
+                            paletteSubmeshIndices));
                 }
             }
 
@@ -621,13 +680,43 @@ namespace TiltBrush
 
             public Color32 GetColor(Vector3Int pos)
             {
-                if (m_voxels.TryGetValue(pos, out Color32 color))
+                if (m_voxels.TryGetValue(pos, out RuntimeVoxelCell voxel))
                 {
-                    return color;
+                    return voxel.Color;
                 }
 
                 return new Color32(255, 255, 255, 255);
             }
+
+            public int GetSubmeshIndex(Vector3Int pos)
+            {
+                return m_voxels.TryGetValue(pos, out RuntimeVoxelCell voxel)
+                    ? voxel.SubmeshIndex
+                    : 0;
+            }
+        }
+
+        private readonly struct RuntimeVoxelCell
+        {
+            public Color32 Color { get; }
+            public int SubmeshIndex { get; }
+
+            public RuntimeVoxelCell(Color32 color, int submeshIndex)
+            {
+                Color = color;
+                SubmeshIndex = submeshIndex;
+            }
+        }
+
+        private static int GetSubmeshIndex(
+            byte paletteIndex,
+            IReadOnlyList<int> paletteSubmeshIndices)
+        {
+            int offset = paletteIndex - 1;
+            return paletteSubmeshIndices != null &&
+                offset >= 0 && offset < paletteSubmeshIndices.Count
+                ? paletteSubmeshIndices[offset]
+                : 0;
         }
     }
 }

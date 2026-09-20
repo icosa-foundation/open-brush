@@ -34,6 +34,7 @@ namespace TiltBrush
         private Model m_Model;
         private RuntimeVoxDocument m_EditableVoxDocument;
         private readonly HashSet<Mesh> m_OwnedVoxMeshes = new HashSet<Mesh>();
+        private readonly HashSet<Material> m_OwnedVoxMaterials = new HashSet<Material>();
         private bool m_HasEditableVoxVisuals;
         private bool m_EditableVoxOptimized = true;
         private bool m_PreserveCustomSize;
@@ -321,6 +322,7 @@ namespace TiltBrush
         {
             // Clean up existing model
             ReleaseOwnedVoxMeshes();
+            ReleaseOwnedVoxMaterials();
             if (m_ModelInstance != null)
             {
                 GameObject.Destroy(m_ModelInstance.gameObject);
@@ -444,15 +446,27 @@ namespace TiltBrush
             }
 
             var builder = new VoxMeshBuilder();
+            var materialSet = new VoxMaterialSet(
+                m_EditableVoxDocument,
+                ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial);
             var replacementMeshes = new List<Mesh>(m_EditableVoxDocument.Models.Count);
             var previousAssignments = new List<(MeshFilter filter, Mesh mesh)>();
+            var previousMaterials = new List<(MeshRenderer renderer, Material[] materials)>();
             try
             {
                 foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
                 {
                     replacementMeshes.Add(optimized
-                        ? builder.GenerateOptimizedMesh(model, m_EditableVoxDocument.Palette)
-                        : builder.GenerateSeparateCubesMesh(model, m_EditableVoxDocument.Palette));
+                        ? builder.GenerateOptimizedMesh(
+                            model,
+                            m_EditableVoxDocument.Palette,
+                            materialSet.PaletteSubmeshIndices,
+                            materialSet.Materials.Count)
+                        : builder.GenerateSeparateCubesMesh(
+                            model,
+                            m_EditableVoxDocument.Palette,
+                            materialSet.PaletteSubmeshIndices,
+                            materialSet.Materials.Count));
                 }
 
                 for (int i = 0; i < m_EditableVoxDocument.Models.Count; i++)
@@ -465,6 +479,9 @@ namespace TiltBrush
                         ghost: false);
                     previousAssignments.Add((visibleFilter, visibleFilter.sharedMesh));
                     visibleFilter.sharedMesh = replacementMeshes[i];
+                    MeshRenderer visibleRenderer = visibleFilter.GetComponent<MeshRenderer>();
+                    previousMaterials.Add((visibleRenderer, visibleRenderer.sharedMaterials));
+                    visibleRenderer.sharedMaterials = materialSet.Materials.ToArray();
 
                     if (m_SnapGhost != null)
                     {
@@ -475,6 +492,11 @@ namespace TiltBrush
                             ghost: true);
                         previousAssignments.Add((ghostFilter, ghostFilter.sharedMesh));
                         ghostFilter.sharedMesh = replacementMeshes[i];
+                        MeshRenderer ghostRenderer = ghostFilter.GetComponent<MeshRenderer>();
+                        previousMaterials.Add((ghostRenderer, ghostRenderer.sharedMaterials));
+                        ghostRenderer.sharedMaterials = Enumerable
+                            .Repeat(m_SnapGhostMaterial, materialSet.Materials.Count)
+                            .ToArray();
                     }
                 }
             }
@@ -487,17 +509,33 @@ namespace TiltBrush
                         filter.sharedMesh = mesh;
                     }
                 }
+                foreach ((MeshRenderer renderer, Material[] materials) in previousMaterials)
+                {
+                    if (renderer != null)
+                    {
+                        renderer.sharedMaterials = materials;
+                    }
+                }
                 foreach (Mesh mesh in replacementMeshes)
                 {
                     DestroyOwnedVoxMesh(mesh);
+                }
+                foreach (Material material in materialSet.OwnedMaterials)
+                {
+                    DestroyOwnedVoxMaterial(material);
                 }
                 throw;
             }
 
             ReleaseOwnedVoxMeshes();
+            ReleaseOwnedVoxMaterials();
             foreach (Mesh mesh in replacementMeshes)
             {
                 m_OwnedVoxMeshes.Add(mesh);
+            }
+            foreach (Material material in materialSet.OwnedMaterials)
+            {
+                m_OwnedVoxMaterials.Add(material);
             }
             m_HasEditableVoxVisuals = true;
             m_EditableVoxOptimized = optimized;
@@ -621,6 +659,31 @@ namespace TiltBrush
             else
             {
                 UnityEngine.Object.DestroyImmediate(mesh);
+            }
+        }
+
+        private void ReleaseOwnedVoxMaterials()
+        {
+            foreach (Material material in m_OwnedVoxMaterials)
+            {
+                DestroyOwnedVoxMaterial(material);
+            }
+            m_OwnedVoxMaterials.Clear();
+        }
+
+        private static void DestroyOwnedVoxMaterial(Material material)
+        {
+            if (material == null)
+            {
+                return;
+            }
+            if (Application.isPlaying)
+            {
+                UnityEngine.Object.Destroy(material);
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(material);
             }
         }
 
