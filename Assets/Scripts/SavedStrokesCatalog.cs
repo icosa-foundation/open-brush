@@ -273,12 +273,6 @@ namespace TiltBrush
             NotifyFileCreated(fullpath);
         }
 
-        public void NotifyFileDeleted(string fullpath)
-        {
-            // Same logic as NotifyFileCreated
-            NotifyFileCreated(fullpath);
-        }
-
         public void NotifyStorageChanged()
         {
             SketchSet sketchSet =

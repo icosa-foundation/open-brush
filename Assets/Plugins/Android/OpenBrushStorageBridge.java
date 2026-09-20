@@ -531,21 +531,6 @@ public class OpenBrushStorageBridge {
         }
     }
 
-    public static long channelLength(int handle) {
-        ChannelEntry entry = findChannel(handle);
-        if (entry == null) {
-            return -1;
-        }
-        try {
-            long length = entry.read != null ? entry.read.size() : entry.write.size();
-            entry.error = null;
-            return length;
-        } catch (Exception e) {
-            entry.error = formatProviderError("Failed to measure the shared document", e);
-            return -1;
-        }
-    }
-
     public static boolean truncateChannel(int handle, long length) {
         ChannelEntry entry = findChannel(handle);
         if (entry == null) {
@@ -812,10 +797,6 @@ public class OpenBrushStorageBridge {
             return new FlagLookupResult(0, formatProviderError(
                     "Failed to query document capabilities", e));
         }
-    }
-
-    private static Uri findDocumentUri(Context context, String relativePath) {
-        return findDocumentUriResult(context, relativePath).uri;
     }
 
     private static final class ChannelEntry {

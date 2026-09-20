@@ -17,8 +17,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using Newtonsoft.Json.Linq;
-using UnityEngine;
 
 namespace TiltBrush
 {
@@ -277,17 +275,6 @@ namespace TiltBrush
             }
         }
 
-        private static StorageMutationResult StaleRootMutation(StorageDocumentId documentId)
-        {
-            return new StorageMutationResult(
-                StorageResultCode.Cancelled,
-                documentId,
-                "The document belongs to a previously selected Open Brush folder.");
-        }
-
-
-
-
         internal static string GetAreaPath(StorageArea area)
         {
             switch (area)
@@ -380,21 +367,6 @@ namespace TiltBrush
 
 
 
-        private DocumentLocation FindLocationByPath(StorageArea area, string relativePath)
-        {
-            string rootId = RootIdentity;
-            lock (m_LocationGate)
-            {
-                ResetLocationsForRootLocked(rootId);
-                return m_Locations.Values.FirstOrDefault(location =>
-                    location.Area == area &&
-                    string.Equals(
-                        location.RelativePath,
-                        relativePath,
-                        StringComparison.OrdinalIgnoreCase));
-            }
-        }
-
         private void ResetLocationsForRootLocked(string rootId)
         {
             if (m_MappedRootId == rootId)
@@ -404,117 +376,6 @@ namespace TiltBrush
             m_Locations.Clear();
             m_MappedRootId = rootId;
         }
-
-
-
-        internal static string GetMaterialTexturePath(string line)
-        {
-            var tokens = System.Text.RegularExpressions.Regex.Matches(line, @"\S+");
-            if (tokens.Count < 2 ||
-                !(tokens[0].Value.StartsWith("map_", StringComparison.OrdinalIgnoreCase) ||
-                  tokens[0].Value.Equals("bump", StringComparison.OrdinalIgnoreCase)))
-            {
-                return null;
-            }
-            int index = 1;
-            while (index < tokens.Count && tokens[index].Value.StartsWith("-", StringComparison.Ordinal))
-            {
-                string option = tokens[index++].Value.ToLowerInvariant();
-                if (option == "-o" || option == "-s" || option == "-t")
-                {
-                    int count = 0;
-                    while (index < tokens.Count && count < 3 && double.TryParse(tokens[index].Value,
-                        System.Globalization.NumberStyles.Float,
-                        System.Globalization.CultureInfo.InvariantCulture, out _))
-                    {
-                        index++;
-                        count++;
-                    }
-                    if (count == 0) { return null; }
-                }
-                else
-                {
-                    int count;
-                    switch (option)
-                    {
-                        case "-mm": count = 2; break;
-                        case "-blendu":
-                        case "-blendv":
-                        case "-boost":
-                        case "-texres":
-                        case "-clamp":
-                        case "-bm":
-                        case "-imfchan":
-                        case "-type":
-                        case "-cc":
-                        case "-colorspace": count = 1; break;
-                        default: return null;
-                    }
-                    index += count;
-                }
-            }
-            return index < tokens.Count ? line.Substring(tokens[index].Index).Trim().Trim('"') : null;
-        }
-
-        private DocumentLocation FindByRelativePath(
-            StorageArea area,
-            string relativePath,
-            CancellationToken cancellationToken)
-        {
-            string normalized = relativePath.Replace('\\', '/').Trim('/');
-            string directory = GetLogicalDirectory(normalized);
-            string name = Path.GetFileName(normalized);
-            StorageDirectoryResult listing = List(area, directory, cancellationToken);
-            if (!listing.Success)
-            {
-                throw new IOException(listing.Error);
-            }
-            StorageDocument document = listing.Documents.FirstOrDefault(candidate =>
-                string.Equals(candidate.DisplayName, name, StringComparison.OrdinalIgnoreCase));
-            return document == null ? null : GetLocation(document.DocumentId);
-        }
-
-        private static void AddLocalDependency(
-            HashSet<string> dependencies, string baseDirectory, string uri)
-        {
-            if (string.IsNullOrWhiteSpace(uri) ||
-                uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase) ||
-                Uri.TryCreate(uri, UriKind.Absolute, out _))
-            {
-                return;
-            }
-            string normalized = Uri.UnescapeDataString(uri).Replace('\\', '/');
-            var segments = new List<string>();
-            if (!string.IsNullOrEmpty(baseDirectory))
-            {
-                segments.AddRange(baseDirectory.Replace('\\', '/').Split('/'));
-            }
-            foreach (string segment in normalized.Split('/'))
-            {
-                if (string.IsNullOrEmpty(segment) || segment == ".")
-                {
-                    continue;
-                }
-                if (segment == "..")
-                {
-                    if (segments.Count == 0)
-                    {
-                        return;
-                    }
-                    segments.RemoveAt(segments.Count - 1);
-                    continue;
-                }
-                segments.Add(segment);
-            }
-            if (segments.Count > 0)
-            {
-                dependencies.Add(string.Join("/", segments));
-            }
-        }
-
-
-
-
 
         private static string CombinePath(string root, string relativePath)
         {

@@ -1818,9 +1818,7 @@ namespace TiltBrush
             SyncItem item, IUserStorageBackend backend)
         {
             if (!ReferenceEquals(backend, UserStorage.Backend) ||
-                !backend.IsReady ||
-                !string.Equals(
-                    item.RootIdentity, backend.RootIdentity, StringComparison.Ordinal))
+                !TransferRootMatches(item, backend))
             {
                 throw new OperationCanceledException(
                     "User storage changed during Google Drive transfer.");
