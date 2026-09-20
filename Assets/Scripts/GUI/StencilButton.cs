@@ -36,6 +36,10 @@ namespace TiltBrush
             ));
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
+            if (GetComponentInParent<PopUpWindow>() != null)
+            {
+                m_Manager?.GetPanelForPopUps()?.CloseActivePopUp(true);
+            }
         }
     }
 } // namespace TiltBrush
