@@ -81,7 +81,7 @@ namespace TiltBrush
             {
                 // An existing SDF can be expanded without changing its scoped CSG expression only
                 // when that expression starts the destination component list.
-                SdfStencil existing = orderedGuides.OfType<SdfStencil>().Single();
+                SdfStencil existing = orderedGuides.OfType<SdfStencil>().First();
                 orderedGuides.Remove(existing);
                 orderedGuides.Insert(0, existing);
             }
