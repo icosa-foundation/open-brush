@@ -26771,6 +26771,12 @@ MonoBehaviour:
   - m_Type: 9
     m_StencilPrefab: {fileID: 114000010150538192, guid: ecebdb0665594e5fa660d0791b73b7f9,
       type: 3}
+  - m_Type: 5
+    m_StencilPrefab: {fileID: 2931348545058988909, guid: 2ffe0b92e0711644f8f952391ad2ba7c, type: 3}
+  - m_Type: 4
+    m_StencilPrefab: {fileID: 4250067310114456478, guid: f089c079ea854eb47a6567a4c29e7d9c, type: 3}
+  - m_Type: 7
+    m_StencilPrefab: {fileID: 8811235154394292095, guid: ad146a79beafb3d4ca1501e63dd2283d, type: 3}
   m_SdfStencilPrefab: {fileID: 114000014087559444, guid: 5aca7862c0c5bc141be1e744ff9ab0db,
     type: 3}
   m_ModelStencilPrefab: {fileID: 114000010150538192, guid: 0e55eb46ff631c648a6aba2d99cbd6a2,

@@ -1986,7 +1986,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "guide.add",
-            "Adds a guide to the scene (cube, sphere, capsule, cone, ellipsoid, sdf)",
+            "Adds a guide to the scene (cube, sphere, capsule, cone, cylinder, pyramid, ellipsoid, sdf)",
             "cube"
         )]
         public static void AddGuide(string type)
@@ -2006,6 +2006,12 @@ namespace TiltBrush
                     break;
                 case "cone":
                     stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Cone);
+                    break;
+                case "cylinder":
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Cylinder);
+                    break;
+                case "pyramid":
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Pyramid);
                     break;
                 case "ellipsoid":
                     stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Ellipsoid);
