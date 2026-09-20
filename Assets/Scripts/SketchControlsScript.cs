@@ -222,6 +222,7 @@ namespace TiltBrush
             SdfAdjustPrimitiveDimension = 14011,
             SdfAdjustComponentBlend = 14012,
             SdfToggleComponentHandles = 14013,
+            CreateGuideFromSelectedModel = 14014,
         }
 
         public enum ControlsType
@@ -5112,6 +5113,10 @@ namespace TiltBrush
                     SelectionManager.m_Instance.ConvertSelectedGuidesToSdf();
                     EatToolScaleInput();
                     break;
+                case GlobalCommands.CreateGuideFromSelectedModel:
+                    SelectionManager.m_Instance.CreateGuideFromSelectedModel();
+                    EatToolScaleInput();
+                    break;
                 case GlobalCommands.SdfPreviousComponent:
                 case GlobalCommands.SdfNextComponent:
                 case GlobalCommands.SdfMoveComponentUp:
@@ -5548,6 +5553,7 @@ namespace TiltBrush
                 case GlobalCommands.Disco: return LightsControlScript.m_Instance.DiscoMode;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.UngroupingAllowed;
                 case GlobalCommands.ConvertSelectionToSdf: return false;
+                case GlobalCommands.CreateGuideFromSelectedModel: return false;
                 case GlobalCommands.EditSelectedSdf: return false;
                 case GlobalCommands.SdfPreviousComponent:
                 case GlobalCommands.SdfNextComponent:
@@ -5708,6 +5714,8 @@ namespace TiltBrush
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionCanBeGrouped;
                 case GlobalCommands.ConvertSelectionToSdf:
                     return SelectionManager.m_Instance.SelectionCanConvertGuidesToSdf;
+                case GlobalCommands.CreateGuideFromSelectedModel:
+                    return SelectionManager.m_Instance.SelectionCanCreateGuideFromModel;
                 case GlobalCommands.EditSelectedSdf:
                     return SelectionManager.m_Instance.SelectedSdfGuide != null;
                 case GlobalCommands.SdfPreviousComponent:

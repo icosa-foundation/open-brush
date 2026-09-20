@@ -74,19 +74,24 @@ namespace TiltBrush
 
             bool guidesOnly = SelectionManager.m_Instance.SelectionContainsOnlyGuides;
             bool singleSdf = SelectionManager.m_Instance.SelectedSdfGuide != null;
+            bool singleModel = SelectionManager.m_Instance.SelectionIsSingleModel;
             m_GroupButton.SetContextCommand(
                 singleSdf
                     ? SketchControlsScript.GlobalCommands.EditSelectedSdf
+                    : singleModel
+                    ? SketchControlsScript.GlobalCommands.CreateGuideFromSelectedModel
                     : guidesOnly
                     ? SketchControlsScript.GlobalCommands.ConvertSelectionToSdf
                     : m_DefaultGroupCommand,
                 singleSdf && m_EditSdfTexture != null
                     ? m_EditSdfTexture
-                    : guidesOnly && m_ConvertToSdfTexture != null
+                    : (singleModel || guidesOnly) && m_ConvertToSdfTexture != null
                     ? m_ConvertToSdfTexture
                     : m_DefaultGroupTexture,
                 singleSdf
                     ? "Edit SDF"
+                    : singleModel
+                    ? "Create Guide from Model"
                     : guidesOnly ? "Convert to SDF" : m_DefaultGroupDescription);
             m_GroupButton.UpdateVisuals();
         }

@@ -69,6 +69,7 @@ namespace TiltBrush
         private HashSet<GrabWidget> m_SelectedWidgets;
         private HashSet<GrabWidget> m_SelectedWidgetsCopyWhileGrabbingGroup;
         private bool m_SdfGuideConversionInProgress;
+        private bool m_ModelGuideConversionInProgress;
 
         private bool m_IsAnimatingTossFromGrabbingGroup;
         private bool m_IsGrabbingGroup;
@@ -128,6 +129,27 @@ namespace TiltBrush
             m_SelectedStrokes.Count == 0 && m_SelectedWidgets.Count == 1
                 ? m_SelectedWidgets.First() as SdfStencil
                 : null;
+
+        public bool SelectionIsSingleModel =>
+            m_SelectedStrokes.Count == 0 && m_SelectedWidgets.Count == 1 &&
+            m_SelectedWidgets.First() is ModelWidget;
+
+        public bool SelectionCanCreateGuideFromModel
+        {
+            get
+            {
+                if (m_ModelGuideConversionInProgress || !SelectionIsSingleModel ||
+                    m_SelectedWidgets.First() is not ModelWidget modelWidget ||
+                    modelWidget.Model == null || !modelWidget.Model.m_Valid)
+                {
+                    return false;
+                }
+
+                return modelWidget.GetMeshes().Any(
+                    meshFilter => meshFilter != null && meshFilter.sharedMesh != null &&
+                        meshFilter.sharedMesh.vertexCount > 0);
+            }
+        }
 
         /// Returns true when cached selection tool is hot.
         public bool SelectionToolIsHot
@@ -1148,6 +1170,63 @@ namespace TiltBrush
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, "Creating SDF guide...");
             StartCoroutine(ConvertSelectedGuidesToSdfCoroutine(guides, targetCanvas));
+        }
+
+        public void CreateGuideFromSelectedModel()
+        {
+            if (!SelectionCanCreateGuideFromModel)
+            {
+                return;
+            }
+
+            var modelWidget = (ModelWidget)m_SelectedWidgets.First();
+            m_ModelGuideConversionInProgress = true;
+            App.Switchboard.TriggerSelectionChanged();
+            OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush, "Creating guide from model...");
+            StartCoroutine(CreateGuideFromSelectedModelCoroutine(modelWidget));
+        }
+
+        private IEnumerator CreateGuideFromSelectedModelCoroutine(ModelWidget modelWidget)
+        {
+            yield return null;
+
+            try
+            {
+                if (modelWidget == null || !IsWidgetSelected(modelWidget))
+                {
+                    OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        InputManager.ControllerName.Brush,
+                        "Model guide creation cancelled because the selection changed.");
+                    yield break;
+                }
+
+                var command = new CreateModelGuideCommand(modelWidget);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                ModelStencil stencil = command.Result;
+                if (stencil == null)
+                {
+                    throw new InvalidOperationException(
+                        "The selected model could not be converted to a guide.");
+                }
+                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush, "Model guide created.");
+            }
+            catch (Exception exception) when (
+                exception is InvalidOperationException ||
+                exception is ArgumentException ||
+                exception is NotSupportedException)
+            {
+                Debug.LogWarning($"SDFModelGuide: {exception.Message}");
+                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush, exception.Message);
+            }
+            finally
+            {
+                m_ModelGuideConversionInProgress = false;
+                UpdateSelectionWidget();
+                App.Switchboard.TriggerSelectionChanged();
+            }
         }
 
         private IEnumerator ConvertSelectedGuidesToSdfCoroutine(
