@@ -512,7 +512,8 @@ namespace TiltBrush
 
 
         public static void PublishVideoCaptureToSharedStorageAsync(
-            string localVideoPath, string label, Action<bool, string> onComplete)
+            string localVideoPath, string label, Action<bool, string> onComplete,
+            bool retainLocalPayload = false)
         {
             if (!IsScopedStorageMode ||
                 !TryGetSharedGeneratedFileRelativePath(localVideoPath, out _))
@@ -523,7 +524,12 @@ namespace TiltBrush
 
             if (File.Exists(localVideoPath))
             {
-                PublishGeneratedFileToSharedStorageAsync(localVideoPath, label, onComplete);
+                PublishSinglePathAsync(
+                    localVideoPath,
+                    label,
+                    TryGetSharedGeneratedFileRelativePath,
+                    transactionOwnsPayload: !retainLocalPayload,
+                    onComplete);
                 return;
             }
 
@@ -559,29 +565,38 @@ namespace TiltBrush
                         UserStorage.Backend,
                         area,
                         stagedPaths,
-                        transactionOwnsPayload: true,
+                        transactionOwnsPayload: !retainLocalPayload,
                         CancellationToken.None),
                     onComplete);
                 return;
             }
 
-            PublishGeneratedFileToSharedStorageAsync(frameDirectory, label, (framesCopied, frameError) =>
-            {
-                if (!framesCopied)
+            PublishSinglePathAsync(
+                frameDirectory,
+                label,
+                TryGetSharedGeneratedFileRelativePath,
+                transactionOwnsPayload: !retainLocalPayload,
+                (framesCopied, frameError) =>
                 {
-                    onComplete?.Invoke(false, frameError);
-                    return;
-                }
+                    if (!framesCopied)
+                    {
+                        onComplete?.Invoke(false, frameError);
+                        return;
+                    }
 
-                if (!File.Exists(metadataPath))
-                {
-                    onComplete?.Invoke(true, null);
-                    return;
-                }
+                    if (!File.Exists(metadataPath))
+                    {
+                        onComplete?.Invoke(true, null);
+                        return;
+                    }
 
-                PublishGeneratedFileToSharedStorageAsync(
-                    metadataPath, label + " metadata", onComplete);
-            });
+                    PublishSinglePathAsync(
+                        metadataPath,
+                        label + " metadata",
+                        TryGetSharedGeneratedFileRelativePath,
+                        transactionOwnsPayload: !retainLocalPayload,
+                        onComplete);
+                });
         }
 
         public static void PublishExportToSharedStorageAsync(

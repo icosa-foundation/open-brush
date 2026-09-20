@@ -1850,7 +1850,9 @@ namespace TiltBrush
                             {
                                 OutputWindowScript.Error("Failed to save video", publishError);
                             }
-                        });
+                        },
+                        // Preview and YouTube upload reopen this path after publication finishes.
+                        retainLocalPayload: true);
                 }
                 if (App.GoogleIdentity.LoggedIn)
                 {
