@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -67,6 +68,7 @@ namespace TiltBrush
         // The list of widgets currently selected.
         private HashSet<GrabWidget> m_SelectedWidgets;
         private HashSet<GrabWidget> m_SelectedWidgetsCopyWhileGrabbingGroup;
+        private bool m_SdfGuideConversionInProgress;
 
         private bool m_IsAnimatingTossFromGrabbingGroup;
         private bool m_IsGrabbingGroup;
@@ -117,8 +119,10 @@ namespace TiltBrush
         /// A lone editable SDF is already in the target format. Keeping conversion disabled for
         /// that selection also prevents a repeated UI event from replacing the result again.
         public bool SelectionCanConvertGuidesToSdf =>
-            SelectionContainsOnlyGuides &&
+            !m_SdfGuideConversionInProgress && SelectionContainsOnlyGuides &&
             (m_SelectedWidgets.Count != 1 || m_SelectedWidgets.First() is not SdfStencil);
+
+        public bool SdfGuideConversionInProgress => m_SdfGuideConversionInProgress;
 
         public SdfStencil SelectedSdfGuide =>
             m_SelectedStrokes.Count == 0 && m_SelectedWidgets.Count == 1
@@ -1138,6 +1142,30 @@ namespace TiltBrush
             CanvasScript targetCanvas = sourceCanvases.Count == 1
                 ? sourceCanvases[0]
                 : App.ActiveCanvas;
+
+            m_SdfGuideConversionInProgress = true;
+            App.Switchboard.TriggerSelectionChanged();
+            OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush, "Creating SDF guide...");
+            StartCoroutine(ConvertSelectedGuidesToSdfCoroutine(guides, targetCanvas));
+        }
+
+        private IEnumerator ConvertSelectedGuidesToSdfCoroutine(
+            List<StencilWidget> guides, CanvasScript targetCanvas)
+        {
+            // Give the busy notification and disabled button one rendered frame before any GPU
+            // generation or readback can block the main thread.
+            yield return null;
+
+            if (guides.Any(guide => guide == null || !IsWidgetSelected(guide)))
+            {
+                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush,
+                    "SDF conversion cancelled because the selection changed.");
+                FinishSdfGuideConversion();
+                yield break;
+            }
+
             try
             {
                 var command = new ConvertGuidesToSdfCommand(guides, targetCanvas);
@@ -1145,12 +1173,26 @@ namespace TiltBrush
                     command);
                 SelectionTray.Instance?.OpenSdfEditor();
             }
-            catch (InvalidOperationException exception)
+            catch (Exception exception) when (
+                exception is InvalidOperationException ||
+                exception is ArgumentException ||
+                exception is NotSupportedException)
             {
                 Debug.LogWarning($"SDFGuideConversion: {exception.Message}");
                 OutputWindowScript.m_Instance.CreateInfoCardAtController(
                     InputManager.ControllerName.Brush, exception.Message);
             }
+            finally
+            {
+                FinishSdfGuideConversion();
+            }
+        }
+
+        private void FinishSdfGuideConversion()
+        {
+            m_SdfGuideConversionInProgress = false;
+            UpdateSelectionWidget();
+            App.Switchboard.TriggerSelectionChanged();
         }
 
         /// Consumers who call SelectStroke(s) or DeselectStroke(s) must call this once they're
