@@ -451,7 +451,9 @@ namespace TiltBrush
                         document.DisplayName,
                         estimatedBytes,
                         document.LastModified?.ToUniversalTime() ?? DateTime.MinValue,
-                        QuillSourceType.Quill));
+                        QuillSourceType.Quill,
+                        () => MaterializeSafEntry(
+                            backend, childDirectory, QuillSourceType.Quill)));
                     continue;
                 }
                 if (!Path.GetExtension(document.DisplayName)
@@ -464,9 +466,117 @@ namespace TiltBrush
                     Path.GetFileNameWithoutExtension(document.DisplayName),
                     document.Size ?? 0,
                     document.LastModified?.ToUniversalTime() ?? DateTime.MinValue,
-                    QuillSourceType.Imm));
+                    QuillSourceType.Imm,
+                    () => MaterializeSafEntry(backend, immPath, QuillSourceType.Imm)));
             }
             return result;
+        }
+
+        internal static string MaterializeSafEntry(
+            IUserStorageBackend backend,
+            string relativePath,
+            QuillSourceType sourceType,
+            string localRoot = null)
+        {
+            if (backend == null) { throw new ArgumentNullException(nameof(backend)); }
+            string normalized = (relativePath ?? "").Replace('\\', '/').Trim('/');
+            if (string.IsNullOrEmpty(normalized))
+            {
+                throw new ArgumentException("A Quill storage path is required.", nameof(relativePath));
+            }
+
+            localRoot = localRoot ?? OpenBrushStorage.LocalQuillMaterializationPath;
+            string localPath = GetSafeMaterializationPath(localRoot, normalized);
+            if (sourceType == QuillSourceType.Imm)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(localPath));
+                string temporaryPath = $"{localPath}.ob-materialize-{Guid.NewGuid():N}";
+                try
+                {
+                    using (Stream input = backend.OpenRead(
+                        StorageArea.MediaLibraryQuill,
+                        normalized,
+                        requireSeekable: false,
+                        CancellationToken.None))
+                    using (var output = new FileStream(
+                        temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        input.CopyTo(output);
+                    }
+                    if (File.Exists(localPath)) { File.Delete(localPath); }
+                    File.Move(temporaryPath, localPath);
+                    return localPath;
+                }
+                finally
+                {
+                    if (File.Exists(temporaryPath)) { File.Delete(temporaryPath); }
+                }
+            }
+
+            StorageTreeResult tree = backend.EnumerateTree(
+                StorageArea.MediaLibraryQuill,
+                normalized,
+                new StorageTreeQuery(recursive: true),
+                CancellationToken.None);
+            if (!tree.Success)
+            {
+                throw new IOException(tree.Error);
+            }
+
+            string temporaryDirectory = $"{localPath}.ob-materialize-{Guid.NewGuid():N}";
+            try
+            {
+                Directory.CreateDirectory(temporaryDirectory);
+                string prefix = normalized + "/";
+                foreach (StorageDocument document in tree.Entries)
+                {
+                    if (document.IsDirectory ||
+                        !document.RelativeDisplayPath.StartsWith(prefix, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+                    string childPath = document.RelativeDisplayPath.Substring(prefix.Length);
+                    string destination = GetSafeMaterializationPath(
+                        temporaryDirectory, childPath);
+                    Directory.CreateDirectory(Path.GetDirectoryName(destination));
+                    using (Stream input = backend.OpenRead(
+                        document.DocumentId,
+                        requireSeekable: false,
+                        CancellationToken.None))
+                    using (var output = new FileStream(
+                        destination, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        input.CopyTo(output);
+                    }
+                }
+                if (Directory.Exists(localPath)) { Directory.Delete(localPath, recursive: true); }
+                Directory.Move(temporaryDirectory, localPath);
+                return localPath;
+            }
+            finally
+            {
+                if (Directory.Exists(temporaryDirectory))
+                {
+                    Directory.Delete(temporaryDirectory, recursive: true);
+                }
+            }
+        }
+
+        private static string GetSafeMaterializationPath(string root, string relativePath)
+        {
+            string fullRoot = Path.GetFullPath(root).TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            string localRelativePath = relativePath.Replace('/', Path.DirectorySeparatorChar);
+            string fullPath = Path.GetFullPath(Path.Combine(fullRoot, localRelativePath));
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            if (!fullPath.StartsWith(fullRoot, comparison))
+            {
+                throw new IOException($"Quill storage path escapes its materialization root: {relativePath}");
+            }
+            return fullPath;
         }
 
         private static string GetDirectoryForSource(SourceDirectory sourceDirectory)
@@ -484,7 +594,7 @@ namespace TiltBrush
             }
 
             var randomFile = m_Files[UnityEngine.Random.Range(0, m_Files.Count)];
-            return randomFile.FullPath;
+            return randomFile.GetLoadPath();
         }
     }
 }

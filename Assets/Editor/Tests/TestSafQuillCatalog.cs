@@ -28,6 +28,7 @@ namespace TiltBrush
             public string RootIdentity { get; set; } = "root";
             public string ChangeRootOnList { get; set; }
             public bool WrongChildParent { get; set; }
+            public string MaterializedRoot => m_MaterializedRoot;
 
             public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
             public bool IsReady => true;
@@ -48,9 +49,9 @@ namespace TiltBrush
                 if (!m_Children.ContainsKey(path)) { m_Children[path] = new List<Entry>(); }
             }
 
-            public void AddFile(string path)
+            public void AddFile(string path, byte[] data = null)
             {
-                AddEntry(Parent(path), Path.GetFileName(path), false, Array.Empty<byte>());
+                AddEntry(Parent(path), Path.GetFileName(path), false, data ?? Array.Empty<byte>());
             }
 
             private Entry AddEntry(string parent, string name, bool directory, byte[] data)
@@ -97,13 +98,22 @@ namespace TiltBrush
 
 
             public Stream OpenRead(StorageArea area, string relativePath, bool requireSeekable,
-                CancellationToken cancellationToken) => throw new NotSupportedException();
+                CancellationToken cancellationToken)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                Assert.AreEqual(StorageArea.MediaLibraryQuill, area);
+                string normalized = (relativePath ?? "").Replace('\\', '/').Trim('/');
+                Entry entry = m_Children[Parent(normalized)].Single(candidate =>
+                    candidate.Document.DisplayName == Path.GetFileName(normalized));
+                return new MemoryStream(entry.Data, writable: false);
+            }
             public bool Exists(StorageArea area, string relativePath) => false;
             public Stream OpenRead(StorageDocumentId documentId, bool requireSeekable,
                 CancellationToken cancellationToken) => new MemoryStream(m_Entries[documentId].Data);
             public StorageTreeResult EnumerateTree(StorageArea area, string relativeDirectory,
                 StorageTreeQuery query, CancellationToken cancellationToken) =>
-                StorageTreeResult.Succeeded(Array.Empty<StorageDocument>());
+                StorageTreeEnumerator.Enumerate(
+                    this, area, relativeDirectory, query, cancellationToken);
             public IStorageWriteTransaction BeginWrite(StorageArea area, string relativePath,
                 string mimeType, CancellationToken cancellationToken, StorageDocumentId targetDocumentId = default) =>
                 throw new NotSupportedException();
@@ -165,6 +175,28 @@ namespace TiltBrush
             Assert.IsEmpty(QuillFileCatalog.QuerySafFiles(backend, ""));
             Assert.IsEmpty(QuillFileCatalog.QuerySafFiles(backend, "Outer"));
             Assert.AreEqual(2, QuillFileCatalog.QuerySafFiles(backend, "Outer\\Inner").Count);
+        }
+
+        [Test]
+        public void MaterializeSafEntry_CopiesImmAndQuillProjectBytes()
+        {
+            using var backend = new Backend();
+            backend.AddFile("standalone.imm", new byte[] { 1, 2, 3 });
+            backend.AddProject("Project", true);
+            backend.AddDirectory("Project/Textures");
+            backend.AddFile("Project/Textures/albedo.png", new byte[] { 4, 5 });
+
+            string immPath = QuillFileCatalog.MaterializeSafEntry(
+                backend, "standalone.imm", QuillSourceType.Imm, backend.MaterializedRoot);
+            string projectPath = QuillFileCatalog.MaterializeSafEntry(
+                backend, "Project", QuillSourceType.Quill, backend.MaterializedRoot);
+
+            CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, File.ReadAllBytes(immPath));
+            CollectionAssert.AreEqual(
+                new byte[] { 4, 5 },
+                File.ReadAllBytes(Path.Combine(projectPath, "Textures", "albedo.png")));
+            Assert.IsTrue(File.Exists(Path.Combine(projectPath, "Quill.json")));
+            Assert.IsTrue(File.Exists(Path.Combine(projectPath, "Quill.qbin")));
         }
     }
 }
