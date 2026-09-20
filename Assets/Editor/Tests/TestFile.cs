@@ -1585,6 +1585,21 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafNamedSketchLoad_ResolvesTheSharedDocument()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("Named Sketch.tilt", Array.Empty<byte>());
+
+            SceneFileInfo file = SketchControlsScript.ResolveNamedSceneFile(
+                backend, Path.Combine(App.UserSketchPath(), "named sketch.TILT"));
+
+            Assert.IsInstanceOf<SafSceneFileInfo>(file);
+            Assert.AreEqual("Named Sketch", file.HumanName);
+            Assert.AreEqual(StorageArea.Sketches, backend.LastListedArea);
+            Assert.AreEqual("", backend.LastListedDirectory);
+        }
+
+        [Test]
         public void DriveSyncLedger_RecognizesConfirmedStorageAndDriveVersions()
         {
             string root = Path.Combine(

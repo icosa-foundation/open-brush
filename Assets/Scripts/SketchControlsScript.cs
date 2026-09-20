@@ -18,6 +18,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using TiltBrush.Layers;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -5480,8 +5481,24 @@ namespace TiltBrush
 
         private void LoadNamed(string path, bool quickload, bool additive)
         {
-            var fileInfo = new DiskSceneFileInfo(path);
-            fileInfo.ReadMetadata();
+            SceneFileInfo fileInfo;
+            try
+            {
+                fileInfo = ResolveNamedSceneFile(UserStorage.Backend, path);
+            }
+            catch (IOException e)
+            {
+                OutputWindowScript.Error("Failed to load sketch", e.Message);
+                return;
+            }
+            if (fileInfo is SafSceneFileInfo safFileInfo)
+            {
+                safFileInfo.ReadMetadata();
+            }
+            else
+            {
+                ((DiskSceneFileInfo)fileInfo).ReadMetadata();
+            }
             if (SaveLoadScript.m_Instance.LastMetadataError != null)
             {
                 ControllerConsoleScript.m_Instance.AddNewLine(
@@ -5502,6 +5519,32 @@ namespace TiltBrush
             {
                 EatGazeObjectInput();
             }
+        }
+
+        internal static SceneFileInfo ResolveNamedSceneFile(
+            IUserStorageBackend backend, string path)
+        {
+            if (backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return new DiskSceneFileInfo(path);
+            }
+
+            string displayName = Path.GetFileName(path);
+            StorageDirectoryResult listing = backend.List(
+                StorageArea.Sketches, "", CancellationToken.None);
+            if (!listing.Success)
+            {
+                throw new IOException(listing.Error);
+            }
+            StorageDocument document = listing.Documents.FirstOrDefault(candidate =>
+                string.Equals(
+                    candidate.DisplayName, displayName, StringComparison.OrdinalIgnoreCase));
+            if (document == null)
+            {
+                throw new FileNotFoundException(
+                    $"Sketch '{displayName}' was not found in shared storage.");
+            }
+            return new SafSceneFileInfo(backend, document);
         }
 
         public void OpenURLAndInformUser(string url)
