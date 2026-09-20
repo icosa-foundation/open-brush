@@ -23,6 +23,8 @@ namespace TiltBrush
     /// </summary>
     public static class RuntimeSDFGenerator
     {
+        private const string k_LogPrefix = "SDFMeshGeneration:";
+
         // Compute shader property IDs
         private static class PropertyIDs
         {
@@ -53,13 +55,19 @@ namespace TiltBrush
         {
             if (mesh == null)
             {
-                Debug.LogError("ModelStencil: RuntimeSDFGenerator - Mesh is null");
+                Debug.LogError($"{k_LogPrefix} The source mesh is null.");
                 return null;
             }
 
             if (computeShader == null)
             {
-                Debug.LogError("ModelStencil: RuntimeSDFGenerator - Compute shader is null. Assign it in Inspector.");
+                Debug.LogError($"{k_LogPrefix} The compute shader is null.");
+                return null;
+            }
+
+            if (size < 2)
+            {
+                Debug.LogError($"{k_LogPrefix} Resolution {size} must be at least 2.");
                 return null;
             }
 
@@ -74,7 +82,7 @@ namespace TiltBrush
                 triangles == null || triangles.Length < 3)
             {
                 Debug.LogError(
-                    "ModelStencil: RuntimeSDFGenerator - Mesh has no renderable triangles");
+                    $"{k_LogPrefix} The source mesh has no renderable triangles.");
                 return null;
             }
 
@@ -87,99 +95,104 @@ namespace TiltBrush
             if (normals == null || normals.Length != vertices.Length)
             {
                 Debug.LogError(
-                    "ModelStencil: RuntimeSDFGenerator - Mesh normals do not match its vertices");
+                    $"{k_LogPrefix} Source mesh normals do not match its vertices.");
                 return null;
             }
 
-            // Create compute buffers
-            ComputeBuffer verticesBuffer = new ComputeBuffer(vertices.Length, sizeof(float) * 3);
-            ComputeBuffer trianglesBuffer = new ComputeBuffer(triangles.Length, sizeof(int));
-            ComputeBuffer normalsBuffer = new ComputeBuffer(normals.Length, sizeof(float) * 3);
-            ComputeBuffer boundsBuffer = new ComputeBuffer(6, sizeof(int));
+            ComputeBuffer verticesBuffer = null;
+            ComputeBuffer trianglesBuffer = null;
+            ComputeBuffer normalsBuffer = null;
+            ComputeBuffer boundsBuffer = null;
+            ComputeBuffer samplesBuffer = null;
 
-            int voxelCount = size * size * size;
-            ComputeBuffer samplesBuffer = new ComputeBuffer(voxelCount, sizeof(float));
+            try
+            {
+                int voxelCount = checked(size * size * size);
+                verticesBuffer = new ComputeBuffer(vertices.Length, sizeof(float) * 3);
+                trianglesBuffer = new ComputeBuffer(triangles.Length, sizeof(int));
+                normalsBuffer = new ComputeBuffer(normals.Length, sizeof(float) * 3);
+                boundsBuffer = new ComputeBuffer(6, sizeof(int));
+                samplesBuffer = new ComputeBuffer(voxelCount, sizeof(float));
 
-            // Set buffer data
-            verticesBuffer.SetData(vertices);
-            trianglesBuffer.SetData(triangles);
-            normalsBuffer.SetData(normals);
+                verticesBuffer.SetData(vertices);
+                trianglesBuffer.SetData(triangles);
+                normalsBuffer.SetData(normals);
 
-            // Find kernels
-            int computeBoundsKernel = computeShader.FindKernel("CS_ComputeMeshBounds");
-            int sampleKernel = computeShader.FindKernel("CS_SampleMeshDistances");
+                int computeBoundsKernel = computeShader.FindKernel("CS_ComputeMeshBounds");
+                int sampleKernel = computeShader.FindKernel("CS_SampleMeshDistances");
 
-            // === Phase 1: Compute Bounds ===
-            // Initialize bounds buffer with appropriate values for InterlockedMin/Max
-            int[] initialBounds = new int[6];
-            initialBounds[0] = int.MaxValue; // min X
-            initialBounds[1] = int.MaxValue; // min Y
-            initialBounds[2] = int.MaxValue; // min Z
-            initialBounds[3] = int.MinValue; // max X
-            initialBounds[4] = int.MinValue; // max Y
-            initialBounds[5] = int.MinValue; // max Z
-            boundsBuffer.SetData(initialBounds);
+                int[] initialBounds = {
+                    int.MaxValue, int.MaxValue, int.MaxValue,
+                    int.MinValue, int.MinValue, int.MinValue,
+                };
+                boundsBuffer.SetData(initialBounds);
 
-            computeShader.SetBuffer(computeBoundsKernel, PropertyIDs.InputVertices, verticesBuffer);
-            computeShader.SetBuffer(computeBoundsKernel, PropertyIDs.InputTriangles, trianglesBuffer);
-            computeShader.SetBuffer(computeBoundsKernel, PropertyIDs.BoundsBuffer, boundsBuffer);
-            computeShader.SetInt(PropertyIDs.TriangleCount, triangles.Length);
-            computeShader.SetMatrix(PropertyIDs.ModelTransformMatrix, Matrix4x4.identity);
+                computeShader.SetBuffer(
+                    computeBoundsKernel, PropertyIDs.InputVertices, verticesBuffer);
+                computeShader.SetBuffer(
+                    computeBoundsKernel, PropertyIDs.InputTriangles, trianglesBuffer);
+                computeShader.SetBuffer(
+                    computeBoundsKernel, PropertyIDs.BoundsBuffer, boundsBuffer);
+                computeShader.SetInt(PropertyIDs.TriangleCount, triangles.Length);
+                computeShader.SetMatrix(PropertyIDs.ModelTransformMatrix, Matrix4x4.identity);
+                computeShader.Dispatch(
+                    computeBoundsKernel, Mathf.CeilToInt(triangles.Length / 64f), 1, 1);
 
-            int boundsThreadGroups = Mathf.CeilToInt(triangles.Length / 64f);
-            computeShader.Dispatch(computeBoundsKernel, boundsThreadGroups, 1, 1);
+                int[] boundsData = new int[6];
+                boundsBuffer.GetData(boundsData);
 
-            // Get bounds
-            int[] boundsData = new int[6];
-            boundsBuffer.GetData(boundsData);
+                const float packingMultiplier = 1000f;
+                Vector3 minBounds = new Vector3(
+                    boundsData[0] / packingMultiplier,
+                    boundsData[1] / packingMultiplier,
+                    boundsData[2] / packingMultiplier) - Vector3.one * padding;
+                Vector3 maxBounds = new Vector3(
+                    boundsData[3] / packingMultiplier,
+                    boundsData[4] / packingMultiplier,
+                    boundsData[5] / packingMultiplier) + Vector3.one * padding;
 
-            const float packingMultiplier = 1000f;
-            Vector3 minBounds = new Vector3(
-                boundsData[0] / packingMultiplier,
-                boundsData[1] / packingMultiplier,
-                boundsData[2] / packingMultiplier
-            );
-            Vector3 maxBounds = new Vector3(
-                boundsData[3] / packingMultiplier,
-                boundsData[4] / packingMultiplier,
-                boundsData[5] / packingMultiplier
-            );
+                computeShader.SetBuffer(
+                    sampleKernel, PropertyIDs.InputVertices, verticesBuffer);
+                computeShader.SetBuffer(
+                    sampleKernel, PropertyIDs.InputTriangles, trianglesBuffer);
+                computeShader.SetBuffer(
+                    sampleKernel, PropertyIDs.InputNormals, normalsBuffer);
+                computeShader.SetBuffer(sampleKernel, PropertyIDs.Samples, samplesBuffer);
+                computeShader.SetInt(PropertyIDs.Size, size);
+                computeShader.SetFloat(PropertyIDs.Padding, padding);
+                computeShader.SetInt(PropertyIDs.TriangleCount, triangles.Length);
+                computeShader.SetInt(PropertyIDs.VertexCount, vertices.Length);
+                computeShader.SetVector(PropertyIDs.MinBounds, minBounds);
+                computeShader.SetVector(PropertyIDs.MaxBounds, maxBounds);
+                computeShader.SetMatrix(PropertyIDs.ModelTransformMatrix, Matrix4x4.identity);
 
-            minBounds -= Vector3.one * padding;
-            maxBounds += Vector3.one * padding;
+                int threadGroups = Mathf.CeilToInt(size / 8f);
+                computeShader.Dispatch(sampleKernel, threadGroups, threadGroups, threadGroups);
 
-            // === Phase 2: Sample Distance Field ===
-            computeShader.SetBuffer(sampleKernel, PropertyIDs.InputVertices, verticesBuffer);
-            computeShader.SetBuffer(sampleKernel, PropertyIDs.InputTriangles, trianglesBuffer);
-            computeShader.SetBuffer(sampleKernel, PropertyIDs.InputNormals, normalsBuffer);
-            computeShader.SetBuffer(sampleKernel, PropertyIDs.Samples, samplesBuffer);
-            computeShader.SetInt(PropertyIDs.Size, size);
-            computeShader.SetFloat(PropertyIDs.Padding, padding);
-            computeShader.SetInt(PropertyIDs.TriangleCount, triangles.Length);
-            computeShader.SetInt(PropertyIDs.VertexCount, vertices.Length);
-            computeShader.SetVector(PropertyIDs.MinBounds, minBounds);
-            computeShader.SetVector(PropertyIDs.MaxBounds, maxBounds);
-            computeShader.SetMatrix(PropertyIDs.ModelTransformMatrix, Matrix4x4.identity);
+                float[] samples = new float[voxelCount];
+                samplesBuffer.GetData(samples);
 
-            int threadGroups = Mathf.CeilToInt(size / 8f);
-            computeShader.Dispatch(sampleKernel, threadGroups, threadGroups, threadGroups);
-
-            // Get samples
-            float[] samples = new float[voxelCount];
-            samplesBuffer.GetData(samples);
-
-            // Cleanup
-            verticesBuffer.Dispose();
-            trianglesBuffer.Dispose();
-            normalsBuffer.Dispose();
-            boundsBuffer.Dispose();
-            samplesBuffer.Dispose();
-
-            stopwatch.Stop();
-            Debug.Log($"ModelStencil: RuntimeSDFGenerator - Generated {size}³ SDF in {stopwatch.ElapsedMilliseconds}ms");
-
-            return CreateSDFAsset(
-                mesh, samples, null, size, padding, minBounds, maxBounds);
+                stopwatch.Stop();
+                Debug.Log(
+                    $"{k_LogPrefix} Generated a {size}³ field from {triangles.Length / 3:N0} " +
+                    $"triangles in {stopwatch.ElapsedMilliseconds:N0} ms.");
+                return CreateSDFAsset(
+                    mesh, samples, null, size, padding, minBounds, maxBounds);
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError(
+                    $"{k_LogPrefix} Generation failed at resolution {size}: {exception.Message}");
+                return null;
+            }
+            finally
+            {
+                verticesBuffer?.Dispose();
+                trianglesBuffer?.Dispose();
+                normalsBuffer?.Dispose();
+                boundsBuffer?.Dispose();
+                samplesBuffer?.Dispose();
+            }
         }
 
         /// <summary>
