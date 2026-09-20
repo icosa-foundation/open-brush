@@ -215,7 +215,8 @@ namespace TiltBrush
             if (m_EditableVoxDocument != null)
             {
                 clone.m_EditableVoxDocument = RuntimeVoxDocument.FromBytes(
-                    m_EditableVoxDocument.ToVoxBytes());
+                    m_EditableVoxDocument.ToVoxBytes(),
+                    m_EditableVoxDocument.HasPreservedSourceData);
             }
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.

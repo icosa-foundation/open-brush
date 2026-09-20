@@ -20,6 +20,7 @@ namespace TiltBrush
         private readonly ModelWidget m_Widget;
         private readonly byte[] m_Before;
         private readonly byte[] m_After;
+        private readonly bool m_PreserveSourceData;
 
         public ModifyVoxDocumentCommand(
             ModelWidget widget,
@@ -31,6 +32,7 @@ namespace TiltBrush
             m_Widget = widget;
             m_Before = (byte[])before.Clone();
             m_After = (byte[])after.Clone();
+            m_PreserveSourceData = widget.EditableVoxDocument.HasPreservedSourceData;
         }
 
         public override bool NeedsSave => true;
@@ -53,7 +55,9 @@ namespace TiltBrush
                 return;
             }
 
-            m_Widget.AdoptEditableVoxDocument(RuntimeVoxDocument.FromBytes(bytes));
+            m_Widget.AdoptEditableVoxDocument(RuntimeVoxDocument.FromBytes(
+                bytes,
+                m_PreserveSourceData));
             if (m_Widget.Showing && m_Widget.gameObject.activeInHierarchy)
             {
                 m_Widget.RefreshEditableVoxMeshes();
