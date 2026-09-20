@@ -37,9 +37,21 @@ namespace TiltBrush
         internal static byte[] CreateVoxReaderCompatibleCopy(byte[] sourceData)
         {
             PreservedVoxFile source = PreservedVoxFile.Parse(sourceData);
-            return source.Main.RemoveUnknownChildren(s_VoxReaderChunkIds)
-                ? source.Write()
-                : sourceData;
+            bool changed = source.Main.RemoveUnknownChildren(s_VoxReaderChunkIds);
+            if (!source.Main.Children.Any(chunk => chunk.Id == "RGBA"))
+            {
+                // RGBA is optional in the VOX format, but the bundled semantic reader assumes
+                // it exists. Supply the specification's default palette only to its temporary
+                // input; RuntimeVoxDocument retains the unchanged source bytes for write-back.
+                source.Main.Children.Add(new PreservedChunk
+                {
+                    Id = "RGBA",
+                    Content = BuildDefaultRgbaContent(),
+                    Children = new List<PreservedChunk>(),
+                });
+                changed = true;
+            }
+            return changed ? source.Write() : sourceData;
         }
 
         public static byte[] Write(RuntimeVoxDocument document)
@@ -403,7 +415,10 @@ namespace TiltBrush
                 chunks.Add(new PreservedChunk
                 {
                     Id = "RGBA",
-                    Content = ExtractChunkContent(BuildRgbaChunk(document.Palette)),
+                    Content = BuildPreservedRgbaContent(
+                        document.Palette,
+                        BuildDefaultRgbaContent(),
+                        runtimeToStoredPalette),
                     Children = new List<PreservedChunk>(),
                 });
             }
@@ -442,6 +457,41 @@ namespace TiltBrush
                 content[offset + 3] = color.a;
             }
             return content;
+        }
+
+        private static byte[] BuildDefaultRgbaContent()
+        {
+            // MagicaVoxel's default palette is a 6x6x6 RGB cube without black, followed by
+            // ten-step red, green, blue, and grayscale ramps. The final RGBA entry is unused.
+            byte[] levels = { 255, 204, 153, 102, 51, 0 };
+            byte[] ramps = { 238, 221, 187, 170, 136, 119, 85, 68, 34, 17 };
+            var content = new byte[1024];
+            int colorIndex = 0;
+
+            foreach (byte r in levels)
+            foreach (byte g in levels)
+            foreach (byte b in levels)
+            {
+                if (r != 0 || g != 0 || b != 0)
+                {
+                    WriteRgba(content, colorIndex++, r, g, b);
+                }
+            }
+
+            foreach (byte value in ramps) WriteRgba(content, colorIndex++, value, 0, 0);
+            foreach (byte value in ramps) WriteRgba(content, colorIndex++, 0, value, 0);
+            foreach (byte value in ramps) WriteRgba(content, colorIndex++, 0, 0, value);
+            foreach (byte value in ramps) WriteRgba(content, colorIndex++, value, value, value);
+            return content;
+        }
+
+        private static void WriteRgba(byte[] content, int colorIndex, byte r, byte g, byte b)
+        {
+            int offset = colorIndex * 4;
+            content[offset] = r;
+            content[offset + 1] = g;
+            content[offset + 2] = b;
+            content[offset + 3] = byte.MaxValue;
         }
 
         private static byte[] ExtractChunkContent(byte[] chunk)
