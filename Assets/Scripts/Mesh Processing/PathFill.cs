@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,6 +21,7 @@ namespace TiltBrush
 
     /// How to resolve regions when the projected outline overlaps itself.
     /// Matches the SVG / Illustrator fill rules of the same name.
+    [Serializable]
     public enum PathFillRule
     {
         NonZero,
@@ -37,7 +39,7 @@ namespace TiltBrush
         List<int> outTriangles);
 
     /// Builds a surface that spans a closed 3D path -- the 3D analogue of filling a
-    /// closed path in a 2D drawing app.
+    /// closed path in a 2D drawing app. <see cref="FillBrush"/> is the brush built on it.
     ///
     /// <remarks>
     /// The exact analogue of a 2D fill is the minimal surface spanning the loop (the
@@ -153,6 +155,12 @@ namespace TiltBrush
             /// Only useful for debugging and for callers that want a planar patch.
             public bool SkipLift;
 
+            /// Optional per-path-point colours, parallel to the path passed to
+            /// <see cref="Fill"/>. When supplied, <see cref="Result.Colors"/> is produced by
+            /// interpolating them across the surface with the same mean value weights that
+            /// drive the lift, so a multi-coloured outline bleeds into its fill.
+            public IList<Color32> PathColors;
+
             /// Triangulator for step 4. Null selects the Unity Vector Graphics tessellator
             /// (<see cref="PathFillTessellator"/>), which implements both fill rules.
             public PathFillTessellateFn Tessellator;
@@ -169,6 +177,7 @@ namespace TiltBrush
                         MaxVertices = 20000,
                         MaxRefinementPasses = 4,
                         SkipLift = false,
+                        PathColors = null,
                         Tessellator = null,
                     };
                 }
@@ -182,9 +191,17 @@ namespace TiltBrush
             public Vector3[] Normals;
             public Vector2[] Uvs;
 
+            /// Per-vertex colours, or null if Options.PathColors was not supplied.
+            public Color32[] Colors;
+
             /// The simplified boundary, in input order, without a repeated closing point.
             /// These points lie exactly on the fill's edge.
             public Vector3[] Boundary;
+
+            /// Indices into the path passed to <see cref="Fill"/>, one per boundary point,
+            /// for callers that need to carry their own per-point data across the
+            /// weld-and-simplify stage.
+            public int[] BoundaryIndices;
 
             /// Best-fit plane. The normal is the surface orientation; triangles are wound
             /// counter-clockwise when viewed from the side the normal points to.
@@ -213,13 +230,17 @@ namespace TiltBrush
             float diagonal = PathFillGeometry.BoundsDiagonal(path);
             if (diagonal <= 0f) { return null; }
 
-            List<Vector3> loop = PathFillGeometry.WeldAndOpen(path, diagonal * kWeldFraction);
-            if (loop.Count < 3) { return null; }
+            List<int> loopIndices = PathFillGeometry.WeldAndOpen(path, diagonal * kWeldFraction);
+            if (loopIndices.Count < 3) { return null; }
 
             float tolerance = (options.SimplifyTolerance > 0f ? options.SimplifyTolerance : 0.002f) * diagonal;
             int maxBoundary = Mathf.Max(3, options.MaxBoundaryPoints > 0 ? options.MaxBoundaryPoints : 250);
-            loop = PathFillGeometry.SimplifyClosed(loop, tolerance, maxBoundary);
-            if (loop.Count < 3) { return null; }
+            loopIndices = PathFillGeometry.SimplifyClosed(path, loopIndices, tolerance, maxBoundary);
+            if (loopIndices.Count < 3) { return null; }
+
+            int boundaryCount = loopIndices.Count;
+            var loop = new List<Vector3>(boundaryCount);
+            for (int i = 0; i < boundaryCount; ++i) { loop.Add(path[loopIndices[i]]); }
 
             Vector3 origin, normal;
             if (!PathFillGeometry.FitPlane(loop, out origin, out normal)) { return null; }
@@ -228,17 +249,26 @@ namespace TiltBrush
             PathFillGeometry.BasisFromNormal(normal, out axisU, out axisV);
 
             // Project, keeping each boundary point's signed distance from the plane.
-            int boundaryCount = loop.Count;
             var outline = new List<Vector2>(boundaryCount);
-            var residuals = new List<float>(boundaryCount);
+            var residuals = new float[boundaryCount];
             float sumSqResidual = 0f;
             for (int i = 0; i < boundaryCount; ++i)
             {
                 Vector3 d = loop[i] - origin;
                 outline.Add(new Vector2(Vector3.Dot(d, axisU), Vector3.Dot(d, axisV)));
                 float h = Vector3.Dot(d, normal);
-                residuals.Add(h);
+                residuals[i] = h;
                 sumSqResidual += h * h;
+            }
+
+            Color32[] boundaryColors = null;
+            if (options.PathColors != null && options.PathColors.Count == path.Count)
+            {
+                boundaryColors = new Color32[boundaryCount];
+                for (int i = 0; i < boundaryCount; ++i)
+                {
+                    boundaryColors[i] = options.PathColors[loopIndices[i]];
+                }
             }
 
             // Normalize the 2D outline into a predictable numeric range for the tessellator.
@@ -263,20 +293,35 @@ namespace TiltBrush
             PathFillGeometry.EnsureCounterClockwise(verts2d, triangles);
 
             // Lift back into 3D. Mean value coordinates are computed in the scaled frame
-            // (they are scale invariant) and applied to the unscaled residuals.
+            // (they are scale invariant) and applied to the unscaled residuals. The same
+            // weights carry the boundary colours inwards.
             int vertexCount = verts2d.Count;
             var vertices = new Vector3[vertexCount];
             var uvs = new Vector2[vertexCount];
+            Color32[] colors = boundaryColors != null ? new Color32[vertexCount] : null;
+            var weights = new float[boundaryCount];
+            var scratch = new PathFillGeometry.Scratch(boundaryCount);
             Vector2 uvMin = PathFillGeometry.Min(verts2d);
             float uvExtent = PathFillGeometry.MaxExtent(verts2d);
             float uvScale = 1f / (uvExtent > 0f ? uvExtent : 1f);
             float invScale = 1f / scale;
+            bool needWeights = !options.SkipLift || colors != null;
             for (int i = 0; i < vertexCount; ++i)
             {
                 Vector2 p = verts2d[i];
-                float height = options.SkipLift
-                    ? 0f
-                    : PathFillGeometry.MeanValueInterpolate(p, scaledOutline, residuals);
+                if (needWeights)
+                {
+                    PathFillGeometry.MeanValueWeights(p, scaledOutline, weights, scratch);
+                }
+                float height = 0f;
+                if (!options.SkipLift)
+                {
+                    for (int j = 0; j < boundaryCount; ++j) { height += weights[j] * residuals[j]; }
+                }
+                if (colors != null)
+                {
+                    colors[i] = BlendColors(weights, boundaryColors);
+                }
                 Vector2 local = p * invScale;
                 vertices[i] = origin + axisU * local.x + axisV * local.y + normal * height;
                 uvs[i] = (p - uvMin) * uvScale;
@@ -287,7 +332,9 @@ namespace TiltBrush
                 Vertices = vertices,
                 Triangles = triangles.ToArray(),
                 Uvs = uvs,
+                Colors = colors,
                 Boundary = loop.ToArray(),
+                BoundaryIndices = loopIndices.ToArray(),
                 PlaneOrigin = origin,
                 PlaneNormal = normal,
                 Flatness = Mathf.Sqrt(sumSqResidual / boundaryCount) / diagonal,
@@ -300,6 +347,24 @@ namespace TiltBrush
         public static Result Fill(IList<Vector3> path)
         {
             return Fill(path, Options.Default);
+        }
+
+        /// Mean value weights can go negative where the outline is concave, so the blend is
+        /// clamped rather than assumed to stay inside the boundary colours' range.
+        private static Color32 BlendColors(float[] weights, Color32[] boundaryColors)
+        {
+            float r = 0f, g = 0f, b = 0f, a = 0f;
+            for (int i = 0; i < weights.Length; ++i)
+            {
+                float w = weights[i];
+                Color32 c = boundaryColors[i];
+                r += w * c.r; g += w * c.g; b += w * c.b; a += w * c.a;
+            }
+            return new Color32(
+                (byte)Mathf.Clamp(r, 0f, 255f),
+                (byte)Mathf.Clamp(g, 0f, 255f),
+                (byte)Mathf.Clamp(b, 0f, 255f),
+                (byte)Mathf.Clamp(a, 0f, 255f));
         }
 
         /// Convenience wrapper that builds a Unity Mesh. Returns null if the path cannot be
@@ -315,6 +380,7 @@ namespace TiltBrush
             mesh.triangles = result.Triangles;
             mesh.normals = result.Normals;
             mesh.uv = result.Uvs;
+            if (result.Colors != null) { mesh.colors32 = result.Colors; }
             mesh.RecalculateBounds();
             return mesh;
         }

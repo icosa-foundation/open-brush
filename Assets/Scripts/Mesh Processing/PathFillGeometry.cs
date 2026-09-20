@@ -39,33 +39,38 @@ namespace TiltBrush
             return (hi - lo).magnitude;
         }
 
-        /// Removes consecutive duplicates and the repeated closing point, if any. The
-        /// returned loop is implicitly closed: the edge from the last point back to the
-        /// first is not represented by a duplicated vertex.
-        public static List<Vector3> WeldAndOpen(IList<Vector3> path, float weldTolerance)
+        /// Removes consecutive duplicates and the repeated closing point, if any. Returns
+        /// indices into `path` rather than points, so that callers can carry per-point
+        /// attributes (colour, pressure) through to the boundary. The returned loop is
+        /// implicitly closed: the edge from the last point back to the first is not
+        /// represented by a duplicated entry.
+        public static List<int> WeldAndOpen(IList<Vector3> path, float weldTolerance)
         {
             float tolSq = weldTolerance * weldTolerance;
-            var result = new List<Vector3>(path.Count);
+            var result = new List<int>(path.Count);
             for (int i = 0; i < path.Count; ++i)
             {
-                if (result.Count > 0 && (path[i] - result[result.Count - 1]).sqrMagnitude <= tolSq)
+                if (result.Count > 0 &&
+                    (path[i] - path[result[result.Count - 1]]).sqrMagnitude <= tolSq)
                 {
                     continue;
                 }
-                result.Add(path[i]);
+                result.Add(i);
             }
             while (result.Count > 1 &&
-                   (result[result.Count - 1] - result[0]).sqrMagnitude <= tolSq)
+                   (path[result[result.Count - 1]] - path[result[0]]).sqrMagnitude <= tolSq)
             {
                 result.RemoveAt(result.Count - 1);
             }
             return result;
         }
 
-        /// Ramer-Douglas-Peucker simplification of a closed loop. The loop is cut at two
-        /// far-apart anchors so the recursion has well-defined endpoints; the tolerance is
-        /// then adjusted until the result has between 3 and maxPoints vertices.
-        public static List<Vector3> SimplifyClosed(List<Vector3> loop, float tolerance, int maxPoints)
+        /// Ramer-Douglas-Peucker simplification of a closed loop, as indices into `path`.
+        /// The loop is cut at two far-apart anchors so the recursion has well-defined
+        /// endpoints; the tolerance is then adjusted until the result has between 3 and
+        /// maxPoints vertices.
+        public static List<int> SimplifyClosed(IList<Vector3> path, List<int> loop,
+                                               float tolerance, int maxPoints)
         {
             if (loop.Count <= 3) { return loop; }
 
@@ -73,23 +78,23 @@ namespace TiltBrush
             float best = -1f;
             for (int i = 1; i < loop.Count; ++i)
             {
-                float d = (loop[i] - loop[0]).sqrMagnitude;
+                float d = (path[loop[i]] - path[loop[0]]).sqrMagnitude;
                 if (d > best) { best = d; anchor = i; }
             }
             if (anchor == 0) { return loop; }
 
             // Loosen until we are under the cap, then tighten if we over-simplified.
             float tol = tolerance;
-            List<Vector3> simplified = SimplifyClosedAt(loop, anchor, tol);
+            List<int> simplified = SimplifyClosedAt(path, loop, anchor, tol);
             for (int attempt = 0; attempt < 24 && simplified.Count > maxPoints; ++attempt)
             {
                 tol *= 2f;
-                simplified = SimplifyClosedAt(loop, anchor, tol);
+                simplified = SimplifyClosedAt(path, loop, anchor, tol);
             }
             for (int attempt = 0; attempt < 24 && simplified.Count < 3; ++attempt)
             {
                 tol *= 0.5f;
-                simplified = SimplifyClosedAt(loop, anchor, tol);
+                simplified = SimplifyClosedAt(path, loop, anchor, tol);
             }
             if (simplified.Count < 3 || simplified.Count > maxPoints)
             {
@@ -98,30 +103,32 @@ namespace TiltBrush
             return simplified;
         }
 
-        private static List<Vector3> SimplifyClosedAt(List<Vector3> loop, int anchor, float tolerance)
+        private static List<int> SimplifyClosedAt(IList<Vector3> path, List<int> loop,
+                                                  int anchor, float tolerance)
         {
             int n = loop.Count;
-            var first = new List<Vector3>(anchor + 1);
+            var first = new List<int>(anchor + 1);
             for (int i = 0; i <= anchor; ++i) { first.Add(loop[i]); }
-            var second = new List<Vector3>(n - anchor + 1);
+            var second = new List<int>(n - anchor + 1);
             for (int i = anchor; i < n; ++i) { second.Add(loop[i]); }
             second.Add(loop[0]);
 
-            List<Vector3> a = Simplify(first, tolerance);
-            List<Vector3> b = Simplify(second, tolerance);
+            List<int> a = Simplify(path, first, tolerance);
+            List<int> b = Simplify(path, second, tolerance);
 
             // a ends where b starts, and b ends where a starts.
-            var result = new List<Vector3>(a.Count + b.Count - 2);
+            var result = new List<int>(a.Count + b.Count - 2);
             result.AddRange(a);
             for (int i = 1; i < b.Count - 1; ++i) { result.Add(b[i]); }
             return result;
         }
 
-        /// Ramer-Douglas-Peucker simplification of an open polyline. Endpoints are kept.
-        public static List<Vector3> Simplify(List<Vector3> points, float tolerance)
+        /// Ramer-Douglas-Peucker simplification of an open polyline, as indices into `path`.
+        /// Endpoints are kept.
+        public static List<int> Simplify(IList<Vector3> path, List<int> chain, float tolerance)
         {
-            int n = points.Count;
-            if (n <= 2) { return new List<Vector3>(points); }
+            int n = chain.Count;
+            if (n <= 2) { return new List<int>(chain); }
 
             var keep = new bool[n];
             keep[0] = true;
@@ -140,7 +147,8 @@ namespace TiltBrush
                 int worstIndex = -1;
                 for (int i = firstIndex + 1; i < last; ++i)
                 {
-                    float d = DistanceToSegment(points[i], points[firstIndex], points[last]);
+                    float d = DistanceToSegment(
+                        path[chain[i]], path[chain[firstIndex]], path[chain[last]]);
                     if (d > worst) { worst = d; worstIndex = i; }
                 }
                 if (worst > tolerance && worstIndex > 0)
@@ -153,18 +161,18 @@ namespace TiltBrush
                 }
             }
 
-            var result = new List<Vector3>(n);
+            var result = new List<int>(n);
             for (int i = 0; i < n; ++i)
             {
-                if (keep[i]) { result.Add(points[i]); }
+                if (keep[i]) { result.Add(chain[i]); }
             }
             return result;
         }
 
-        private static List<Vector3> UniformSample(List<Vector3> loop, int count)
+        private static List<int> UniformSample(List<int> loop, int count)
         {
             count = Mathf.Max(3, Mathf.Min(count, loop.Count));
-            var result = new List<Vector3>(count);
+            var result = new List<int>(count);
             for (int i = 0; i < count; ++i)
             {
                 result.Add(loop[(int)((long)i * loop.Count / count)]);
@@ -489,19 +497,71 @@ namespace TiltBrush
         /// welded to the stroke it was built from.
         public static float MeanValueInterpolate(Vector2 p, IList<Vector2> polygon, IList<float> values)
         {
+            var weights = new float[polygon.Count];
+            MeanValueWeights(p, polygon, weights);
+            float total = 0f;
+            for (int i = 0; i < weights.Length; ++i) { total += weights[i] * values[i]; }
+            return total;
+        }
+
+        /// Fills `weights` with normalized mean value coordinates of `p` with respect to
+        /// `polygon`; they sum to 1. Weights may be negative where the polygon is concave,
+        /// which is inherent to the scheme: interpolated values can overshoot the range of
+        /// the boundary values there. Callers that interpolate a bounded quantity (colour,
+        /// say) should clamp.
+        public static void MeanValueWeights(Vector2 p, IList<Vector2> polygon, float[] weights)
+        {
+            var scratch = new Scratch(polygon.Count);
+            MeanValueWeights(p, polygon, weights, scratch);
+        }
+
+        /// Scratch buffers for <see cref="MeanValueWeights"/>. The brush path evaluates mean
+        /// value coordinates once per output vertex, every time the stroke changes, so the
+        /// inner loop must not allocate.
+        public class Scratch
+        {
+            public Vector2[] Offsets;
+            public float[] Distances;
+            public float[] TanHalf;
+
+            public Scratch(int boundaryCount)
+            {
+                Resize(boundaryCount);
+            }
+
+            public void Resize(int boundaryCount)
+            {
+                if (Offsets != null && Offsets.Length >= boundaryCount) { return; }
+                Offsets = new Vector2[boundaryCount];
+                Distances = new float[boundaryCount];
+                TanHalf = new float[boundaryCount];
+            }
+        }
+
+        public static void MeanValueWeights(Vector2 p, IList<Vector2> polygon, float[] weights,
+                                            Scratch scratch)
+        {
             int n = polygon.Count;
             const float kEpsilon = 1e-5f;
 
-            var offsets = new Vector2[n];
-            var distances = new float[n];
+            scratch.Resize(n);
+            Vector2[] offsets = scratch.Offsets;
+            float[] distances = scratch.Distances;
+            float[] tanHalf = scratch.TanHalf;
+
+            for (int i = 0; i < n; ++i) { weights[i] = 0f; }
+
             for (int i = 0; i < n; ++i)
             {
                 offsets[i] = polygon[i] - p;
                 distances[i] = offsets[i].magnitude;
-                if (distances[i] < kEpsilon) { return values[i]; }
+                if (distances[i] < kEpsilon)
+                {
+                    weights[i] = 1f;
+                    return;
+                }
             }
 
-            var tanHalf = new float[n];
             for (int i = 0; i < n; ++i)
             {
                 int j = (i + 1) % n;
@@ -511,7 +571,9 @@ namespace TiltBrush
                 {
                     // p lies on the edge (i, j).
                     float t = distances[i] / (distances[i] + distances[j]);
-                    return Mathf.Lerp(values[i], values[j], t);
+                    weights[i] = 1f - t;
+                    weights[j] = t;
+                    return;
                 }
                 tanHalf[i] = Mathf.Abs(area) <= 0f
                     ? 0f
@@ -519,28 +581,28 @@ namespace TiltBrush
             }
 
             double totalWeight = 0.0;
-            double accumulator = 0.0;
             for (int i = 0; i < n; ++i)
             {
                 int prev = (i + n - 1) % n;
                 double weight = (tanHalf[prev] + tanHalf[i]) / distances[i];
+                weights[i] = (float)weight;
                 totalWeight += weight;
-                accumulator += weight * values[i];
             }
 
             if (Math.Abs(totalWeight) < 1e-12)
             {
                 // Degenerate configuration; fall back to inverse distance weighting.
                 totalWeight = 0.0;
-                accumulator = 0.0;
                 for (int i = 0; i < n; ++i)
                 {
                     double weight = 1.0 / distances[i];
+                    weights[i] = (float)weight;
                     totalWeight += weight;
-                    accumulator += weight * values[i];
                 }
             }
-            return (float)(accumulator / totalWeight);
+
+            float inverse = (float)(1.0 / totalWeight);
+            for (int i = 0; i < n; ++i) { weights[i] *= inverse; }
         }
 
         // -------------------------------------------------------------------------------

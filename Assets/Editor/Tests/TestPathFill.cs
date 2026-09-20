@@ -365,6 +365,76 @@ namespace TiltBrush
         }
 
         // ---------------------------------------------------------------------------
+        // Per-point attributes, which FillBrush uses to carry stroke colour into the fill
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void BoundaryIndicesAddressTheOriginalPath()
+        {
+            var path = Loop(96, 1f, t => 0f, Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+            PathFill.Result result = PathFill.Fill(path);
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Boundary.Length, result.BoundaryIndices.Length);
+            for (int i = 0; i < result.BoundaryIndices.Length; ++i)
+            {
+                Assert.Less((path[result.BoundaryIndices[i]] - result.Boundary[i]).magnitude, 1e-6f,
+                            "simplification must only drop points, never move them");
+            }
+        }
+
+        [Test]
+        public void PathColorsAreInterpolatedAcrossTheFill()
+        {
+            var path = Loop(64, 1f, t => 0f, Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+            var pathColors = new List<Color32>(path.Count);
+            foreach (Vector3 p in path)
+            {
+                pathColors.Add(p.x >= 0f ? new Color32(255, 0, 0, 255) : new Color32(0, 0, 255, 255));
+            }
+
+            PathFill.Options options = PathFill.Options.Default;
+            options.PathColors = pathColors;
+            PathFill.Result result = PathFill.Fill(path, options);
+
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(result.Colors);
+            Assert.AreEqual(result.Vertices.Length, result.Colors.Length);
+
+            bool exactAtBoundary = false;
+            bool blendedInside = false;
+            for (int i = 0; i < result.Vertices.Length; ++i)
+            {
+                Vector3 v = result.Vertices[i];
+                Color32 c = result.Colors[i];
+                if (v.x > 0.9f && Mathf.Abs(v.y) < 0.2f)
+                {
+                    exactAtBoundary |= c.r == 255 && c.b == 0;
+                }
+                if (new Vector2(v.x, v.y).magnitude < 0.05f)
+                {
+                    blendedInside |= c.r > 40 && c.b > 40;
+                }
+            }
+            Assert.IsTrue(exactAtBoundary, "colour must be exact where the fill meets the stroke");
+            Assert.IsTrue(blendedInside, "colour must blend across the interior");
+        }
+
+        [Test]
+        public void ColorsAreOmittedOrIgnoredWhenNotUsable()
+        {
+            var path = Loop(64, 1f, t => 0f, Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+
+            Assert.IsNull(PathFill.Fill(path).Colors,
+                          "no colours in, no colours out");
+
+            PathFill.Options mismatched = PathFill.Options.Default;
+            mismatched.PathColors = new List<Color32> { new Color32(1, 2, 3, 4) };
+            PathFill.Result result = PathFill.Fill(path, mismatched);
+            Assert.IsNotNull(result, "a mismatched colour list must not fail the fill");
+            Assert.IsNull(result.Colors);
+        }
+
+        // ---------------------------------------------------------------------------
         // Building blocks
         // ---------------------------------------------------------------------------
 
