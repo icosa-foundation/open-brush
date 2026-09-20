@@ -134,6 +134,10 @@ namespace TiltBrush
             {
                 SetWrapped(File.OpenRead(filename), ownsStream: true);
             }
+            public StreamWithReadProgress(Stream stream)
+            {
+                SetWrapped(stream, ownsStream: true);
+            }
             public override int Read(byte[] buffer, int offset, int count)
             {
                 var amountRead = base.Read(buffer, offset, count);
@@ -641,9 +645,19 @@ namespace TiltBrush
 
         private async Task CreateZipFileAsync(
             string zipName, string rootDir, string[] paths,
-            CancellationToken token)
+            CancellationToken token, SceneFileInfo sceneFile = null,
+            string sceneArchivedName = null)
         {
-            long totalLength = paths.Aggregate(0L, (acc, elt) => acc + new FileInfo(elt).Length) + 1;
+            long totalLength = paths.Aggregate(0L, (acc, elt) => acc + new FileInfo(elt).Length);
+            if (sceneFile is SafSceneFileInfo safScene)
+            {
+                totalLength += safScene.Document.Size ?? 0;
+            }
+            else if (sceneFile != null)
+            {
+                totalLength += new FileInfo(sceneFile.FullPath).Length;
+            }
+            totalLength += 1;
             long read = 1;
 
             using (var zip = File.OpenWrite(zipName))
@@ -676,8 +690,38 @@ namespace TiltBrush
                             }
                         }
                     }
+                    if (sceneFile != null)
+                    {
+                        ZipArchiveEntry entry = archive.CreateEntry(
+                            sceneArchivedName.Replace('\\', '/'));
+                        using (Stream writer = entry.Open())
+                        using (var reader = new StreamWithReadProgress(
+                            OpenSceneFileReadStream(sceneFile, token)))
+                        {
+                            var task = reader.CopyToAsync(writer, 0x1_0000, token);
+                            while (!task.IsCompleted)
+                            {
+                                long prev = reader.TotalRead;
+                                await Awaiters.NextFrame;
+                                read += reader.TotalRead - prev;
+                                SetUploadProgress(
+                                    UploadStep.ZipElements, read / (double)totalLength);
+                            }
+                            await task;
+                        }
+                    }
                 }
             }
+        }
+
+        private static Stream OpenSceneFileReadStream(
+            SceneFileInfo source, CancellationToken token)
+        {
+            if (source is SafSceneFileInfo safSource)
+            {
+                return safSource.OpenRawReadStream(requireSeekable: false, token);
+            }
+            return File.OpenRead(source.FullPath);
         }
 
         // TODO: Refactor. This is largely the same as UploadCurrentSketchSketchFabAsync aside from a few url changes and the response.
@@ -738,16 +782,10 @@ namespace TiltBrush
             var thumbnail = await CreateTiltForUploadAsync(fileInfo);
             token.ThrowIfCancellationRequested();
 
-            // Create a copy of the .tilt file in tempUploadDir.
-            string tempTiltPath = Path.Combine(tempUploadDir, $"{uploadName}.tilt");
-            CopySceneFileToPath(
-                SaveLoadScript.m_Instance.SceneFile, tempTiltPath);
-
             // Save thumbnail as a png to temp path
             string tempThumbnailPath = Path.Combine(tempUploadDir, "thumbnail.png");
             File.WriteAllBytes(tempThumbnailPath, thumbnail);
 
-            filesToZip.Add(tempTiltPath);
             filesToZip.Add(tempThumbnailPath);
 
             // Always use new glb if we're not publishing legacy glTF.
@@ -764,7 +802,9 @@ namespace TiltBrush
                 filesToZip.Add(newGlbPath);
             }
 
-            await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
+            await CreateZipFileAsync(
+                zipName, tempUploadDir, filesToZip.ToArray(), token,
+                SaveLoadScript.m_Instance.SceneFile, $"{uploadName}.tilt");
 
             // Collect remix IDs if this sketch is derived from another asset
             var remixIds = new List<string>();
@@ -818,15 +858,11 @@ namespace TiltBrush
             await CreateTiltForUploadAsync(fileInfo);
             token.ThrowIfCancellationRequested();
 
-            // Create a copy of the .tilt file in tempUploadDir.
-            string tempTiltPath = Path.Combine(tempUploadDir, "sketch.tilt");
-            CopySceneFileToPath(
-                SaveLoadScript.m_Instance.SceneFile, tempTiltPath);
-
             // Collect files into a .zip file, including the .tilt file.
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
-            var filesToZip = exportResults.exportedFiles.ToList().Append(tempTiltPath);
-            await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
+            await CreateZipFileAsync(
+                zipName, tempUploadDir, exportResults.exportedFiles, token,
+                SaveLoadScript.m_Instance.SceneFile, "sketch.tilt");
             var uploadLength = new FileInfo(zipName).Length;
 
             var service = new SketchfabService(App.SketchfabIdentity);
@@ -1090,28 +1126,6 @@ namespace TiltBrush
             }
 
             return thumbnail;
-        }
-
-        private static void CopySceneFileToPath(
-            SceneFileInfo source, string destinationPath)
-        {
-            if (source is SafSceneFileInfo safSource)
-            {
-                using (Stream input = UserStorage.Backend.OpenRead(
-                    safSource.Document.DocumentId,
-                    requireSeekable: true,
-                    CancellationToken.None))
-                using (var output = new FileStream(
-                    destinationPath,
-                    FileMode.Create,
-                    FileAccess.Write,
-                    FileShare.None))
-                {
-                    input.CopyTo(output);
-                }
-                return;
-            }
-            File.Copy(source.FullPath, destinationPath);
         }
 
         public AssetGetter GetAsset(string assetId, VrAssetFormat[] assetTypes, string reason)

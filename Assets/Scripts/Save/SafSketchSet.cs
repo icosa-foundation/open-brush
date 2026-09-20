@@ -119,6 +119,18 @@ namespace TiltBrush
             return m_Backend.Delete(m_Document.DocumentId, CancellationToken.None);
         }
 
+        internal Stream OpenRawReadStream(
+            bool requireSeekable, CancellationToken cancellationToken)
+        {
+            if (!IsCurrentStorageRoot)
+            {
+                throw new IOException(
+                    "The selected storage root changed before the sketch could be read.");
+            }
+            return m_Backend.OpenRead(
+                m_Document.DocumentId, requireSeekable, cancellationToken);
+        }
+
         internal StorageMutationResult RenameInCurrentRoot(string displayName)
         {
             if (!IsCurrentStorageRoot)
