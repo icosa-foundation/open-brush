@@ -690,6 +690,17 @@ namespace TiltBrush
                     "Unexpected: enqueuing same stroke twice @ {0}",
                     Time.frameCount);
             }
+
+            // When peer editing is on, the strokes the symmetry drew alongside this one go too.
+            // Unlike the stroke itself, a peer may legitimately already be queued or erased - the
+            // eraser often sweeps through several strokes of the same group.
+            foreach (var peer in SymmetryPeerEditing.PeersOf(strokeObj))
+            {
+                if (peer.IsGeometryEnabled)
+                {
+                    m_DeleteStrokes.Add(peer);
+                }
+            }
         }
 
         public void MemorizeDeleteSelection(GameObject rObject)

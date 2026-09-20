@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using UnityEngine;
@@ -50,6 +51,11 @@ namespace TiltBrush
         public Vector3 Spin;
         /// Name of the active symmetry script. Only meaningful for ScriptedSymmetryMode.
         public string ScriptName;
+        /// The transform that maps the main pointer's stroke onto each symmetry pointer's stroke,
+        /// indexed by pointer index, in the canvas space the strokes were drawn into. Empty for
+        /// modes whose pointers have no fixed relationship to the main one, in which case an edit
+        /// can't be mirrored onto peers.
+        public List<TrTransform> PointerTransforms = new List<TrTransform>();
 
         /// Takes a snapshot of the symmetry settings currently in effect.
         public static SymmetrySettingsSnapshot FromCurrentSettings()
@@ -73,6 +79,8 @@ namespace TiltBrush
                 WallpaperSkewY = pm.m_WallpaperSymmetrySkewY,
                 ScriptName = "",
             };
+
+            snapshot.PointerTransforms = pm.GetSymmetryTransforms_CS();
 
             var widget = pm.SymmetryWidget;
             if (widget != null)
@@ -164,6 +172,16 @@ namespace TiltBrush
                     {
                         writer.BaseStream.Write(name, 0, name.Length);
                     }
+                    writer.Int32(PointerTransforms?.Count ?? 0);
+                    if (PointerTransforms != null)
+                    {
+                        foreach (var xf in PointerTransforms)
+                        {
+                            writer.Vec3(xf.translation);
+                            writer.Quaternion(xf.rotation);
+                            writer.Float(xf.scale);
+                        }
+                    }
                 }
                 return stream.ToArray();
             }
@@ -213,6 +231,16 @@ namespace TiltBrush
                     {
                         snapshot.ScriptName = "";
                     }
+                    int numTransforms = reader.Int32();
+                    // 32 bytes each; a count that couldn't fit in the blob is corrupt.
+                    if (numTransforms < 0 || (long)numTransforms * 32 > data.Length) { return null; }
+                    snapshot.PointerTransforms = new List<TrTransform>(numTransforms);
+                    for (int i = 0; i < numTransforms; ++i)
+                    {
+                        Vector3 t = reader.Vec3();
+                        Quaternion r = reader.Quaternion();
+                        snapshot.PointerTransforms.Add(TrTransform.TRS(t, r, reader.Float()));
+                    }
                     return snapshot;
                 }
             }
@@ -245,7 +273,20 @@ namespace TiltBrush
                 WallpaperSkewY == other.WallpaperSkewY &&
                 WidgetTransform == other.WidgetTransform &&
                 Spin == other.Spin &&
-                ScriptName == other.ScriptName;
+                ScriptName == other.ScriptName &&
+                SameTransforms(PointerTransforms, other.PointerTransforms);
+        }
+
+        private static bool SameTransforms(List<TrTransform> a, List<TrTransform> b)
+        {
+            int countA = a?.Count ?? 0;
+            int countB = b?.Count ?? 0;
+            if (countA != countB) { return false; }
+            for (int i = 0; i < countA; ++i)
+            {
+                if (a[i] != b[i]) { return false; }
+            }
+            return true;
         }
 
         public override int GetHashCode()
@@ -263,6 +304,7 @@ namespace TiltBrush
                 hash = (hash * 397) ^ WallpaperSkewX.GetHashCode();
                 hash = (hash * 397) ^ WidgetTransform.GetHashCode();
                 hash = (hash * 397) ^ (ScriptName?.GetHashCode() ?? 0);
+                hash = (hash * 397) ^ (PointerTransforms?.Count ?? 0);
                 return hash;
             }
         }

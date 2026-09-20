@@ -20,6 +20,14 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
+        [ApiEndpoint("symmetry.peerediting",
+        description: "Turns on or off applying edits (deletion, transforms) made to a stroke drawn with symmetry to the strokes the symmetry created alongside it",
+        exampleUsage: "true")]
+        public static void SymmetryPeerEditingEnabled(bool enabled)
+        {
+            SymmetryPeerEditing.Enabled = enabled;
+        }
+
         [ApiEndpoint("symmetry.type",
         description: "Sets the custom symmetry type (Currently either 'point' or 'wallpaper'",
         exampleUsage: "wallpaper")]

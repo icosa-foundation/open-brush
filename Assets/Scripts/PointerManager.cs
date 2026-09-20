@@ -2307,6 +2307,31 @@ namespace TiltBrush
             }
         }
 
+        /// The transforms that map the stroke drawn by the main pointer onto the stroke drawn by
+        /// each symmetry pointer, indexed by pointer index, in the canvas space of the canvas
+        /// being drawn into - the space a stroke's control points live in, and the space edits to
+        /// them are expressed in. Empty for modes whose pointers have no fixed relationship to
+        /// the main one, such as TwoHanded.
+        ///
+        /// This is what lets an edit to one stroke be mirrored onto its symmetry peers: peer j's
+        /// version of a transform T applied to peer i is C * T * C.inverse, where C is
+        /// Mj * Mi.inverse.
+        public List<TrTransform> GetSymmetryTransforms_CS()
+        {
+            if (CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+            {
+                // Already canvas space. Re-running the script here would advance any state it
+                // keeps, so take the transforms the current line is using.
+                return GetScriptedTransforms(update: false);
+            }
+
+            var xfCanvas = App.Scene.ActiveCanvas.Pose; // canvas -> global
+            var xfCanvasInverse = xfCanvas.inverse;
+            return GetSymmetriesForCurrentMode()
+                .Select(xf_GS => xfCanvasInverse * xf_GS * xfCanvas)
+                .ToList();
+        }
+
         public List<TrTransform> GetSymmetriesForCurrentMode()
         {
             List<TrTransform> xfSymmetriesGS;
