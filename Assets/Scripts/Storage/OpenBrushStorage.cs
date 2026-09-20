@@ -331,6 +331,32 @@ namespace TiltBrush
                 transactionOwnsPayload: true, onComplete);
         }
 
+        public static void PublishUserRootFileToSharedStorageAsync(
+            string localPath, string displayName, string label,
+            Action<bool, string> onComplete)
+        {
+            if (!IsScopedStorageMode)
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                onComplete?.Invoke(false, "SAF storage backend is unavailable.");
+                return;
+            }
+            AndroidStorageManager.StartStorageOperation(
+                label,
+                () => SafStagedOutputPublisher.Publish(
+                    UserStorage.Backend,
+                    StorageArea.UserRoot,
+                    displayName,
+                    localPath,
+                    transactionOwnsPayload: true,
+                    CancellationToken.None),
+                onComplete);
+        }
+
         /// Resolves a local path to its shared destination and publishes it, or reports success
         /// when there is nothing to publish. The resolver decides which tree the path belongs to.
         private static void PublishSinglePathAsync(

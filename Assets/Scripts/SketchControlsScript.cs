@@ -5918,6 +5918,8 @@ namespace TiltBrush
                 camPose.ToTransform(camObj.transform);
                 int res = App.UserConfig.Profiling.ScreenshotResolution;
                 RenderTexture renderTexture = RenderTexture.GetTemporary(res, res, 24);
+                string screenshotPath = null;
+                string screenshotName = null;
                 try
                 {
                     cam.targetTexture = renderTexture;
@@ -5933,12 +5935,49 @@ namespace TiltBrush
                     string filename = sceneFile is SafSceneFileInfo
                         ? FileUtils.GetValidFilename(sceneFile.HumanName)
                         : Path.GetFileNameWithoutExtension(sceneFile.FullPath);
-                    File.WriteAllBytes(Path.Combine(App.UserPath(), filename + ".jpg"), jpegBytes);
+                    screenshotName = filename + ".jpg";
+                    if (OpenBrushStorage.IsScopedStorageMode)
+                    {
+                        string stagingDirectory = Path.Combine(
+                            OpenBrushStorage.LocalStagingPath, "Profiling");
+                        Directory.CreateDirectory(stagingDirectory);
+                        screenshotPath = Path.Combine(stagingDirectory, screenshotName);
+                    }
+                    else
+                    {
+                        screenshotPath = Path.Combine(App.UserPath(), screenshotName);
+                    }
+                    File.WriteAllBytes(screenshotPath, jpegBytes);
                 }
                 finally
                 {
                     Destroy(camObj);
                     RenderTexture.ReleaseTemporary(renderTexture);
+                }
+                if (OpenBrushStorage.IsScopedStorageMode)
+                {
+                    bool publicationFinished = false;
+                    bool publicationSucceeded = false;
+                    string publicationError = null;
+                    OpenBrushStorage.PublishUserRootFileToSharedStorageAsync(
+                        screenshotPath,
+                        screenshotName,
+                        "profiling screenshot",
+                        (success, error) =>
+                        {
+                            publicationSucceeded = success;
+                            publicationError = error;
+                            publicationFinished = true;
+                        });
+                    while (!publicationFinished)
+                    {
+                        yield return null;
+                    }
+                    if (!publicationSucceeded)
+                    {
+                        OutputWindowScript.Error(
+                            "Failed to save profiling screenshot", publicationError);
+                    }
                 }
             }
 
