@@ -691,6 +691,8 @@ namespace TiltBrush
             {
                 return;
             }
+            Stream stream = m_Stream;
+            bool flushFailed = false;
             try
             {
                 // Durable, not merely flushed to the OS. The rename sequence below is about to
@@ -699,24 +701,40 @@ namespace TiltBrush
                 // behind an intact zip central directory, which is the corruption recovery would
                 // otherwise have to decompress the whole archive to detect. Measured at ~740ms
                 // per GiB on a Nothing Phone (3a), so roughly 150ms for a 200MB sketch.
-                if (m_Stream is ISyncableStream syncable)
+                if (stream is ISyncableStream syncable)
                 {
                     syncable.FlushToDisk();
                 }
                 else
                 {
-                    m_Stream.Flush();
+                    stream.Flush();
                 }
-                m_Stream.Dispose();
             }
             catch (ObjectDisposedException)
             {
                 // Disposing a writable SafDocumentStream flushes it to disk before closing its
                 // channel, so the caller has already made the temporary document durable.
             }
+            catch
+            {
+                flushFailed = true;
+                throw;
+            }
             finally
             {
-                m_Stream = null;
+                try
+                {
+                    stream.Dispose();
+                }
+                catch when (flushFailed)
+                {
+                    // Preserve the flush failure. SafDocumentStream still closes its channel in
+                    // its own finally block if its second flush attempt also fails.
+                }
+                finally
+                {
+                    m_Stream = null;
+                }
             }
         }
 
