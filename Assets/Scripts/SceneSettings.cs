@@ -312,18 +312,27 @@ namespace TiltBrush
             SetCustomSkybox(tex, aspectRatio);
         }
 
-        internal static byte[] ReadSkyboxBytes(IUserStorageBackend backend, string relativePath, string localPath)
+        internal static byte[] ReadSkyboxBytes(
+            IUserStorageBackend backend, string relativePath, string localPath,
+            long? maxBytes = null)
         {
+            Stream source;
             if (File.Exists(localPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
-                return File.ReadAllBytes(localPath);
+                source = File.OpenRead(localPath);
             }
-            StorageDocument document = OpenBrushStorage.ResolveMediaDocument(
-                backend, StorageArea.MediaLibraryBackgroundImages, relativePath);
-            using Stream source = backend.OpenRead(document.DocumentId, false, System.Threading.CancellationToken.None);
-            using var bytes = new MemoryStream();
-            source.CopyTo(bytes);
-            return bytes.ToArray();
+            else
+            {
+                StorageDocument document = OpenBrushStorage.ResolveMediaDocument(
+                    backend, StorageArea.MediaLibraryBackgroundImages, relativePath);
+                source = backend.OpenRead(
+                    document.DocumentId, false, System.Threading.CancellationToken.None);
+            }
+            using (source)
+            {
+                return ReferenceImage.ReadBytesWithLimit(
+                    source, maxBytes ?? App.PlatformConfig.ReferenceImagesMaxFileSize);
+            }
         }
 
         private IEnumerator LoadCustomHdrSkybox(

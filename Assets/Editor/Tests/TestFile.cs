@@ -637,6 +637,9 @@ namespace TiltBrush
             CollectionAssert.AreEqual(new byte[] { 4, 5, 6 },
                 SceneSettings.ReadSkyboxBytes(backend, "Nested/sky.png", missingCache));
             Assert.IsFalse(File.Exists(missingCache));
+            Assert.Throws<IOException>(() =>
+                SceneSettings.ReadSkyboxBytes(
+                    backend, "Nested/sky.png", missingCache, maxBytes: 2));
             Assert.Throws<ArgumentException>(() =>
                 OpenBrushStorage.ResolveMediaDocument(backend, StorageArea.MediaLibraryBackgroundImages, "../sky.png"));
         }
