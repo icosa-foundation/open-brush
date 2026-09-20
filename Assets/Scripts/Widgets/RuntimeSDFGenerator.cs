@@ -24,6 +24,8 @@ namespace TiltBrush
     public static class RuntimeSDFGenerator
     {
         private const string k_LogPrefix = "SDFMeshGeneration:";
+        private const int k_MinResolution = 2;
+        private const int k_MaxResolution = 256;
 
         // Compute shader property IDs
         private static class PropertyIDs
@@ -65,9 +67,11 @@ namespace TiltBrush
                 return null;
             }
 
-            if (size < 2)
+            if (size < k_MinResolution || size > k_MaxResolution)
             {
-                Debug.LogError($"{k_LogPrefix} Resolution {size} must be at least 2.");
+                Debug.LogError(
+                    $"{k_LogPrefix} Resolution {size} must be between " +
+                    $"{k_MinResolution} and {k_MaxResolution}.");
                 return null;
             }
 
@@ -206,11 +210,40 @@ namespace TiltBrush
             {
                 throw new System.ArgumentNullException(nameof(samples));
             }
-            if (size < 2 || samples.Length != size * size * size)
+            if (size < k_MinResolution || size > k_MaxResolution)
+            {
+                throw new System.ArgumentOutOfRangeException(
+                    nameof(size), size,
+                    $"SDF resolution must be between {k_MinResolution} and {k_MaxResolution}.");
+            }
+
+            int expectedSampleCount = size * size * size;
+            if (samples.Length != expectedSampleCount)
             {
                 throw new System.ArgumentException(
-                    $"An SDF asset of size {size} requires {size * size * size} samples.",
+                    $"An SDF asset of size {size} requires {expectedSampleCount} samples, " +
+                    $"but received {samples.Length}.",
                     nameof(samples));
+            }
+            if (packedUvs != null && packedUvs.Length != 0 &&
+                packedUvs.Length != expectedSampleCount)
+            {
+                throw new System.ArgumentException(
+                    $"An SDF asset of size {size} requires either no packed UVs or " +
+                    $"{expectedSampleCount} values, but received {packedUvs.Length}.",
+                    nameof(packedUvs));
+            }
+            if (float.IsNaN(padding) || float.IsInfinity(padding) || padding < 0f)
+            {
+                throw new System.ArgumentOutOfRangeException(
+                    nameof(padding), padding, "SDF padding must be finite and non-negative.");
+            }
+            if (!IsFinite(minBounds) || !IsFinite(maxBounds) ||
+                maxBounds.x <= minBounds.x || maxBounds.y <= minBounds.y ||
+                maxBounds.z <= minBounds.z)
+            {
+                throw new System.ArgumentException(
+                    "SDF bounds must be finite and have positive size on every axis.");
             }
 
             SDFMeshAsset asset = ScriptableObject.CreateInstance<SDFMeshAsset>();
@@ -236,6 +269,13 @@ namespace TiltBrush
                 .SetValue(asset, packedUvs);
 
             return asset;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                !float.IsNaN(value.z) && !float.IsInfinity(value.z);
         }
 
         /// <summary>
