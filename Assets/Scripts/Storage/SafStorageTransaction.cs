@@ -55,6 +55,7 @@ namespace TiltBrush
         public string TargetDocumentId;
         public string TemporaryDisplayName;
         public string TemporaryDocumentId;
+        public string ParentDocumentId;
         public bool TemporaryWriteCompleted;
         public string BackupDisplayName;
         public string BackupDocumentId;
@@ -359,12 +360,14 @@ namespace TiltBrush
                     m_MimeType,
                     out m_Stream,
                     out StorageDocumentId temporaryId,
+                    out StorageDocumentId parentId,
                     out string error))
             {
                 Fail(SafTransactionState.RollbackRequired, error);
                 throw new IOException(error);
             }
             m_Record.TemporaryDocumentId = temporaryId.Value;
+            m_Record.ParentDocumentId = parentId.Value;
             return m_Stream;
         }
 
@@ -420,7 +423,8 @@ namespace TiltBrush
                 {
                     Transition(SafTransactionState.BackupCleanupPending);
                     StorageMutationResult cleanup = AndroidSafStorage.DeleteDocument(
-                        new StorageDocumentId(m_Record.BackupDocumentId));
+                        new StorageDocumentId(m_Record.BackupDocumentId),
+                        new StorageDocumentId(m_Record.ParentDocumentId));
                     if (!cleanup.Success)
                     {
                         m_Finished = true;
@@ -471,7 +475,9 @@ namespace TiltBrush
                 if (TemporaryDocumentId.IsValid)
                 {
                     StorageMutationResult cleanup =
-                        AndroidSafStorage.DeleteDocument(TemporaryDocumentId);
+                        AndroidSafStorage.DeleteDocument(
+                            TemporaryDocumentId,
+                            new StorageDocumentId(m_Record.ParentDocumentId));
                     if (!cleanup.Success && cleanup.Code != StorageResultCode.NotFound)
                     {
                         Fail(

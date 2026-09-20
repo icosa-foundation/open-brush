@@ -295,10 +295,12 @@ namespace TiltBrush
             string mimeType,
             out Stream stream,
             out StorageDocumentId documentId,
+            out StorageDocumentId parentDocumentId,
             out string error)
         {
             stream = null;
             documentId = default;
+            parentDocumentId = default;
             error = null;
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
             AttachToJvmIfNeeded();
@@ -310,9 +312,15 @@ namespace TiltBrush
                 mimeType);
             bool success = TryCreateChannelStream(
                 result, canWrite: true, out stream, out string documentUri, out error);
+            string parentDocumentUri = result == null
+                ? null
+                : result.Get<string>("parentDocumentUri");
             if (!success && !string.IsNullOrEmpty(documentUri))
             {
-                if (!DeleteDocumentUri(documentUri))
+                StorageMutationResult cleanup = DeleteDocument(
+                    new StorageDocumentId(documentUri),
+                    new StorageDocumentId(parentDocumentUri));
+                if (!cleanup.Success)
                 {
                     error = $"{error} Temporary document cleanup also failed.";
                 }
@@ -320,6 +328,9 @@ namespace TiltBrush
             }
             documentId = success
                 ? new StorageDocumentId(documentUri)
+                : default;
+            parentDocumentId = success
+                ? new StorageDocumentId(parentDocumentUri)
                 : default;
             return success;
 #else

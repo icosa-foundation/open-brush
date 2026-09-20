@@ -44,12 +44,21 @@ public class OpenBrushStorageBridge {
         public final int handle;
         public final long length;
         public final String documentUri;
+        public final String parentDocumentUri;
         public final String error;
 
         ChannelOpenResult(int handle, long length, Uri documentUri, String error) {
+            this(handle, length, documentUri, null, error);
+        }
+
+        ChannelOpenResult(
+                int handle, long length, Uri documentUri, Uri parentDocumentUri, String error) {
             this.handle = handle;
             this.length = length;
             this.documentUri = documentUri == null ? "" : documentUri.toString();
+            this.parentDocumentUri = parentDocumentUri == null
+                    ? ""
+                    : parentDocumentUri.toString();
             this.error = error == null ? "" : error;
         }
     }
@@ -412,7 +421,8 @@ public class OpenBrushStorageBridge {
             if (result.handle < 0) {
                 deleteDocumentQuietly(context.getContentResolver(), document);
             }
-            return result;
+            return new ChannelOpenResult(
+                    result.handle, result.length, document, parent, result.error);
         } catch (Exception e) {
             return new ChannelOpenResult(-1, -1, null, formatProviderError(
                     "Failed to create document", e));
