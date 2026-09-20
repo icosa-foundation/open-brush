@@ -10,6 +10,19 @@ def app_store_connect_key
 end
 
 platform :ios do
+  desc "Create any missing iOS App Store signing assets in the match repository"
+  lane :bootstrap_signing do
+    app_store_connect_key
+
+    match(
+      type: "appstore",
+      storage_mode: "git",
+      git_url: "git@github.com:#{match_org}/#{match_repo}.git",
+      app_identifier: ENV["IOS_BUNDLE_ID"],
+      readonly: false
+    )
+  end
+
   lane :init_ci do
     github_action(
       api_token: ENV["GH_PAT"],
