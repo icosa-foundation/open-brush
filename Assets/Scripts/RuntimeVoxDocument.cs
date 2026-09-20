@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
 using UnityEngine;
 using VoxReader.Interfaces;
 
@@ -51,6 +52,7 @@ namespace TiltBrush
             public Matrix4x4 LocalRotation { get; }
             public int SourceModelId { get; }
             public bool IsCopy { get; }
+            public bool IsVisible { get; }
             public IReadOnlyDictionary<Vector3Int, byte> Voxels => m_voxels;
 
             public RuntimeModel(string name, Vector3Int size)
@@ -66,7 +68,8 @@ namespace TiltBrush
                 Dictionary<Vector3Int, byte> voxels = null,
                 Vector3? localTransformOffset = null,
                 Matrix4x4? globalRotation = null,
-                Matrix4x4? localRotation = null)
+                Matrix4x4? localRotation = null,
+                bool isVisible = true)
             {
                 if (size.x <= 0 || size.y <= 0 || size.z <= 0 ||
                     size.x > MaxModelDimension ||
@@ -86,6 +89,7 @@ namespace TiltBrush
                 LocalTransformOffset = localTransformOffset ?? Vector3.zero;
                 GlobalRotation = globalRotation ?? Matrix4x4.identity;
                 LocalRotation = localRotation ?? Matrix4x4.identity;
+                IsVisible = isVisible;
             }
 
             public bool AddOrUpdateVoxel(Vector3Int position, byte paletteIndex)
@@ -293,6 +297,8 @@ namespace TiltBrush
             }
 
             var voxelDataBySourceId = new Dictionary<int, Dictionary<Vector3Int, byte>>();
+            IReadOnlyList<bool> modelVisibility = GetModelVisibility(voxFile);
+            int modelIndex = 0;
 
             foreach (IModel sourceModel in voxFile.Models)
             {
@@ -321,7 +327,8 @@ namespace TiltBrush
                         sourceModel.LocalPosition.Y,
                         sourceModel.LocalPosition.Z),
                     globalRotation,
-                    ToUnityMatrix(sourceModel.LocalRotation));
+                    ToUnityMatrix(sourceModel.LocalRotation),
+                    modelVisibility[modelIndex++]);
                 document.m_models.Add(runtimeModel);
                 runtimeModel.TransformOffset = GetTransformOffset(sourceModel, globalRotation);
 
@@ -464,6 +471,251 @@ namespace TiltBrush
                 }
             }
             return result;
+        }
+
+        private static IReadOnlyList<bool> GetModelVisibility(IVoxFile voxFile)
+        {
+            var transforms = new List<SceneTransform>();
+            var transformsByChild = new Dictionary<int, SceneTransform>();
+            var parentGroupByChild = new Dictionary<int, SceneGroup>();
+            var shapes = new Dictionary<int, SceneShape>();
+            var hiddenLayers = new HashSet<int>();
+
+            foreach (IChunk chunk in voxFile.Chunks)
+            {
+                switch (chunk.Type)
+                {
+                    case VoxReader.ChunkType.TransformNode:
+                    {
+                        SceneTransform transform = ReadTransform(chunk.Content);
+                        transforms.Add(transform);
+                        transformsByChild[transform.ChildNodeId] = transform;
+                        break;
+                    }
+                    case VoxReader.ChunkType.GroupNode:
+                    {
+                        SceneGroup group = ReadGroup(chunk.Content);
+                        foreach (int childNodeId in group.ChildNodeIds)
+                        {
+                            parentGroupByChild[childNodeId] = group;
+                        }
+                        break;
+                    }
+                    case VoxReader.ChunkType.ShapeNode:
+                    {
+                        SceneShape shape = ReadShape(chunk.Content);
+                        shapes[shape.NodeId] = shape;
+                        break;
+                    }
+                    case VoxReader.ChunkType.Layer:
+                    {
+                        (int layerId, bool hidden) = ReadLayer(chunk.Content);
+                        if (hidden)
+                        {
+                            hiddenLayers.Add(layerId);
+                        }
+                        break;
+                    }
+                }
+            }
+
+            if (transforms.Count == 0)
+            {
+                var legacyVisibility = new bool[voxFile.Models.Length];
+                Array.Fill(legacyVisibility, true);
+                return legacyVisibility;
+            }
+
+            var result = new List<bool>(voxFile.Models.Length);
+            foreach (SceneTransform transform in transforms)
+            {
+                if (!shapes.TryGetValue(transform.ChildNodeId, out SceneShape shape))
+                {
+                    continue;
+                }
+
+                bool visible = !shape.Hidden && IsTransformVisible(
+                    transform,
+                    hiddenLayers,
+                    parentGroupByChild,
+                    transformsByChild);
+                foreach (int unused in shape.ModelIds)
+                {
+                    result.Add(visible);
+                }
+            }
+
+            if (result.Count != voxFile.Models.Length)
+            {
+                throw new InvalidDataException(
+                    $"VOX scene visibility produced {result.Count} instances for " +
+                    $"{voxFile.Models.Length} reader models.");
+            }
+            return result;
+        }
+
+        private static bool IsTransformVisible(
+            SceneTransform transform,
+            ISet<int> hiddenLayers,
+            IReadOnlyDictionary<int, SceneGroup> parentGroupByChild,
+            IReadOnlyDictionary<int, SceneTransform> transformsByChild)
+        {
+            var visited = new HashSet<int>();
+            while (transform != null && visited.Add(transform.NodeId))
+            {
+                if (transform.Hidden || hiddenLayers.Contains(transform.LayerId))
+                {
+                    return false;
+                }
+                if (!parentGroupByChild.TryGetValue(transform.NodeId, out SceneGroup parentGroup))
+                {
+                    return true;
+                }
+                if (parentGroup.Hidden)
+                {
+                    return false;
+                }
+                if (!transformsByChild.TryGetValue(parentGroup.NodeId, out transform))
+                {
+                    return true;
+                }
+            }
+            return transform == null;
+        }
+
+        private static SceneTransform ReadTransform(byte[] content)
+        {
+            using (var stream = new MemoryStream(content, writable: false))
+            using (var reader = new BinaryReader(stream, Encoding.UTF8))
+            {
+                int nodeId = reader.ReadInt32();
+                bool hidden = IsHidden(ReadDictionary(reader));
+                int childNodeId = reader.ReadInt32();
+                reader.ReadInt32(); // Reserved id.
+                int layerId = reader.ReadInt32();
+                return new SceneTransform(nodeId, childNodeId, layerId, hidden);
+            }
+        }
+
+        private static SceneGroup ReadGroup(byte[] content)
+        {
+            using (var stream = new MemoryStream(content, writable: false))
+            using (var reader = new BinaryReader(stream, Encoding.UTF8))
+            {
+                int nodeId = reader.ReadInt32();
+                bool hidden = IsHidden(ReadDictionary(reader));
+                int childCount = reader.ReadInt32();
+                var childNodeIds = new int[childCount];
+                for (int i = 0; i < childCount; i++)
+                {
+                    childNodeIds[i] = reader.ReadInt32();
+                }
+                return new SceneGroup(nodeId, childNodeIds, hidden);
+            }
+        }
+
+        private static SceneShape ReadShape(byte[] content)
+        {
+            using (var stream = new MemoryStream(content, writable: false))
+            using (var reader = new BinaryReader(stream, Encoding.UTF8))
+            {
+                int nodeId = reader.ReadInt32();
+                bool hidden = IsHidden(ReadDictionary(reader));
+                int modelCount = reader.ReadInt32();
+                var modelIds = new int[modelCount];
+                for (int i = 0; i < modelCount; i++)
+                {
+                    modelIds[i] = reader.ReadInt32();
+                    ReadDictionary(reader);
+                }
+                return new SceneShape(nodeId, modelIds, hidden);
+            }
+        }
+
+        private static (int layerId, bool hidden) ReadLayer(byte[] content)
+        {
+            using (var stream = new MemoryStream(content, writable: false))
+            using (var reader = new BinaryReader(stream, Encoding.UTF8))
+            {
+                int layerId = reader.ReadInt32();
+                bool hidden = IsHidden(ReadDictionary(reader));
+                return (layerId, hidden);
+            }
+        }
+
+        private static Dictionary<string, string> ReadDictionary(BinaryReader reader)
+        {
+            int count = reader.ReadInt32();
+            if (count < 0)
+            {
+                throw new InvalidDataException("VOX dictionary has a negative entry count.");
+            }
+
+            var result = new Dictionary<string, string>(count);
+            for (int i = 0; i < count; i++)
+            {
+                result[ReadString(reader)] = ReadString(reader);
+            }
+            return result;
+        }
+
+        private static string ReadString(BinaryReader reader)
+        {
+            int length = reader.ReadInt32();
+            if (length < 0 || length > reader.BaseStream.Length - reader.BaseStream.Position)
+            {
+                throw new InvalidDataException("VOX string has an invalid length.");
+            }
+            return Encoding.UTF8.GetString(reader.ReadBytes(length));
+        }
+
+        private static bool IsHidden(IReadOnlyDictionary<string, string> attributes)
+        {
+            return attributes.TryGetValue("_hidden", out string hidden) && hidden == "1";
+        }
+
+        private sealed class SceneTransform
+        {
+            public int NodeId { get; }
+            public int ChildNodeId { get; }
+            public int LayerId { get; }
+            public bool Hidden { get; }
+
+            public SceneTransform(int nodeId, int childNodeId, int layerId, bool hidden)
+            {
+                NodeId = nodeId;
+                ChildNodeId = childNodeId;
+                LayerId = layerId;
+                Hidden = hidden;
+            }
+        }
+
+        private sealed class SceneGroup
+        {
+            public int NodeId { get; }
+            public IReadOnlyList<int> ChildNodeIds { get; }
+            public bool Hidden { get; }
+
+            public SceneGroup(int nodeId, IReadOnlyList<int> childNodeIds, bool hidden)
+            {
+                NodeId = nodeId;
+                ChildNodeIds = childNodeIds;
+                Hidden = hidden;
+            }
+        }
+
+        private sealed class SceneShape
+        {
+            public int NodeId { get; }
+            public IReadOnlyList<int> ModelIds { get; }
+            public bool Hidden { get; }
+
+            public SceneShape(int nodeId, IReadOnlyList<int> modelIds, bool hidden)
+            {
+                NodeId = nodeId;
+                ModelIds = modelIds;
+                Hidden = hidden;
+            }
         }
     }
 }

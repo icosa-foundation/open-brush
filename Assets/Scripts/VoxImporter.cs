@@ -107,6 +107,7 @@ namespace TiltBrush
 
                 // Read the .vox file using VoxReader library
                 IVoxFile voxFile = LoadVoxFile();
+                RuntimeVoxDocument document = RuntimeVoxDocument.FromVoxFile(voxFile);
 
                 // Create parent GameObject
                 string rootName = string.IsNullOrEmpty(options.RootObjectName)
@@ -115,19 +116,19 @@ namespace TiltBrush
                 GameObject parent = new GameObject(rootName);
 
                 // Process each model in the vox file
-                IModel[] models = voxFile.Models;
+                IReadOnlyList<RuntimeVoxDocument.RuntimeModel> models = document.Models;
 
-                if (models.Length == 0)
+                if (models.Count == 0)
                 {
                     m_warnings.Add("VOX file contains no models");
                     return (parent, m_warnings.Distinct().ToList(), m_collector);
                 }
 
-                for (int i = 0; i < models.Length; i++)
+                for (int i = 0; i < models.Count; i++)
                 {
-                    IModel model = models[i];
+                    RuntimeVoxDocument.RuntimeModel model = models[i];
 
-                    if (model.Voxels.Length == 0)
+                    if (model.Voxels.Count == 0)
                     {
                         m_warnings.Add($"Model {i} ({model.Name}) contains no voxels");
                         continue;
@@ -138,11 +139,12 @@ namespace TiltBrush
                     TrTransform modelTransform = VoxMeshBuilder.GetModelTransform(model);
                     modelObject.transform.localPosition = modelTransform.translation;
                     modelObject.transform.localRotation = modelTransform.rotation;
+                    modelObject.SetActive(model.IsVisible);
 
                     // Generate mesh based on mode
                     Mesh mesh = options.MeshMode == MeshMode.Optimized
-                        ? GenerateOptimizedMesh(model)
-                        : GenerateSeparateCubesMesh(model);
+                        ? GenerateOptimizedMesh(model, document.Palette)
+                        : GenerateSeparateCubesMesh(model, document.Palette);
 
                     if (mesh != null)
                     {
@@ -214,11 +216,13 @@ namespace TiltBrush
             }
         }
 
-        private Mesh GenerateOptimizedMesh(IModel model)
+        private Mesh GenerateOptimizedMesh(
+            RuntimeVoxDocument.RuntimeModel model,
+            Color32[] palette)
         {
             try
             {
-                return m_meshBuilder.GenerateOptimizedMesh(model);
+                return m_meshBuilder.GenerateOptimizedMesh(model, palette);
             }
             catch (Exception ex)
             {
@@ -228,11 +232,13 @@ namespace TiltBrush
             }
         }
 
-        private Mesh GenerateSeparateCubesMesh(IModel model)
+        private Mesh GenerateSeparateCubesMesh(
+            RuntimeVoxDocument.RuntimeModel model,
+            Color32[] palette)
         {
             try
             {
-                return m_meshBuilder.GenerateSeparateCubesMesh(model);
+                return m_meshBuilder.GenerateSeparateCubesMesh(model, palette);
             }
             catch (Exception ex)
             {

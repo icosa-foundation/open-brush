@@ -595,6 +595,10 @@ namespace TiltBrush
                     for (int i = document.Models.Count - 1; i >= 0; i--)
                     {
                         VoxModelApiWrapper model = wrapper.models[i];
+                        if (!model._Model.IsVisible)
+                        {
+                            continue;
+                        }
                         Vector3Int cell = Vector3Int.RoundToInt(model.CanvasToVoxel(canvasPosition));
                         if (model._Model.TryGetPaletteIndex(cell, out _))
                         {

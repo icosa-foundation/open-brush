@@ -185,6 +185,43 @@ namespace TiltBrush
         }
 
         [Test]
+        public void RuntimeVoxDocument_AppliesNodeAndLayerVisibility()
+        {
+            var source = new RuntimeVoxDocument();
+            for (int i = 0; i < 3; i++)
+            {
+                RuntimeVoxDocument.RuntimeModel model = source.CreateModel(
+                    $"model_{i}",
+                    new Vector3Int(4, 4, 4));
+                model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            }
+
+            byte[] bytes = source.ToVoxBytes();
+            bytes = ReplaceMainChildContent(
+                bytes,
+                "nTRN",
+                occurrence: 1,
+                BuildTransformContent(10, 1000, -1, hidden: true));
+            bytes = ReplaceMainChildContent(
+                bytes,
+                "nTRN",
+                occurrence: 2,
+                BuildTransformContent(11, 1001, 7, hidden: false));
+            bytes = AppendMainChild(bytes, "LAYR", BuildLayerContent(7, hidden: true));
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(bytes);
+
+            Assert.IsFalse(loaded.Models[0].IsVisible);
+            Assert.IsFalse(loaded.Models[1].IsVisible);
+            Assert.IsTrue(loaded.Models[2].IsVisible);
+
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(loaded.ToVoxBytes());
+            Assert.IsFalse(reloaded.Models[0].IsVisible);
+            Assert.IsFalse(reloaded.Models[1].IsVisible);
+            Assert.IsTrue(reloaded.Models[2].IsVisible);
+        }
+
+        [Test]
         public void RuntimeVoxDocument_RoundTripsThroughVoxBytes()
         {
             var source = new RuntimeVoxDocument();
@@ -469,6 +506,128 @@ namespace TiltBrush
                 Buffer.BlockCopy(newChildrenLength, 0, result, 16, sizeof(int));
                 return result;
             }
+        }
+
+        private static byte[] ReplaceMainChildContent(
+            byte[] source,
+            string wantedId,
+            int occurrence,
+            byte[] replacementContent)
+        {
+            int mainContentLength = BitConverter.ToInt32(source, 12);
+            int mainChildrenLength = BitConverter.ToInt32(source, 16);
+            int offset = 20 + mainContentLength;
+            int end = offset + mainChildrenLength;
+            while (offset < end)
+            {
+                string id = Encoding.ASCII.GetString(source, offset, 4);
+                int contentLength = BitConverter.ToInt32(source, offset + 4);
+                int childrenLength = BitConverter.ToInt32(source, offset + 8);
+                int chunkLength = 12 + contentLength + childrenLength;
+                if (id == wantedId)
+                {
+                    if (occurrence == 0)
+                    {
+                        int replacementLength = 12 + replacementContent.Length + childrenLength;
+                        int delta = replacementLength - chunkLength;
+                        var result = new byte[source.Length + delta];
+                        Buffer.BlockCopy(source, 0, result, 0, offset);
+                        Buffer.BlockCopy(Encoding.ASCII.GetBytes(id), 0, result, offset, 4);
+                        Buffer.BlockCopy(
+                            BitConverter.GetBytes(replacementContent.Length),
+                            0,
+                            result,
+                            offset + 4,
+                            sizeof(int));
+                        Buffer.BlockCopy(
+                            BitConverter.GetBytes(childrenLength),
+                            0,
+                            result,
+                            offset + 8,
+                            sizeof(int));
+                        Buffer.BlockCopy(
+                            replacementContent,
+                            0,
+                            result,
+                            offset + 12,
+                            replacementContent.Length);
+                        Buffer.BlockCopy(
+                            source,
+                            offset + 12 + contentLength,
+                            result,
+                            offset + 12 + replacementContent.Length,
+                            childrenLength);
+                        Buffer.BlockCopy(
+                            source,
+                            offset + chunkLength,
+                            result,
+                            offset + replacementLength,
+                            source.Length - offset - chunkLength);
+                        Buffer.BlockCopy(
+                            BitConverter.GetBytes(mainChildrenLength + delta),
+                            0,
+                            result,
+                            16,
+                            sizeof(int));
+                        return result;
+                    }
+                    occurrence--;
+                }
+                offset += chunkLength;
+            }
+            Assert.Fail($"Could not find VOX chunk '{wantedId}'.");
+            return null;
+        }
+
+        private static byte[] BuildTransformContent(
+            int nodeId,
+            int childNodeId,
+            int layerId,
+            bool hidden)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(nodeId);
+                WriteDictionary(writer, hidden ? new[] { ("_hidden", "1") } : Array.Empty<(string, string)>());
+                writer.Write(childNodeId);
+                writer.Write(-1);
+                writer.Write(layerId);
+                writer.Write(1);
+                WriteDictionary(writer, Array.Empty<(string, string)>());
+                return stream.ToArray();
+            }
+        }
+
+        private static byte[] BuildLayerContent(int layerId, bool hidden)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(layerId);
+                WriteDictionary(writer, hidden ? new[] { ("_hidden", "1") } : Array.Empty<(string, string)>());
+                writer.Write(-1);
+                return stream.ToArray();
+            }
+        }
+
+        private static void WriteDictionary(
+            BinaryWriter writer,
+            (string key, string value)[] entries)
+        {
+            writer.Write(entries.Length);
+            foreach ((string key, string value) in entries)
+            {
+                WriteString(writer, key);
+                WriteString(writer, value);
+            }
+        }
+
+        private static void WriteString(BinaryWriter writer, string value)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(value);
+            writer.Write(bytes.Length);
+            writer.Write(bytes);
         }
 
         private static byte[] RemoveMainChild(byte[] source, string wantedId)

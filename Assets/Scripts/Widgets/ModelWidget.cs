@@ -538,6 +538,7 @@ namespace TiltBrush
             TrTransform modelPose = VoxMeshBuilder.GetModelTransform(model);
             modelTransform.localPosition = modelPose.translation;
             modelTransform.localRotation = modelPose.rotation;
+            modelTransform.gameObject.SetActive(model.IsVisible);
             MeshFilter filter = modelTransform.GetComponent<MeshFilter>();
             if (filter == null)
             {
@@ -566,6 +567,10 @@ namespace TiltBrush
             bool first = true;
             foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
             {
+                if (!model.IsVisible)
+                {
+                    continue;
+                }
                 TrTransform modelTransform = VoxMeshBuilder.GetModelTransform(model);
                 foreach (Vector3Int voxel in model.Voxels.Keys)
                 {
