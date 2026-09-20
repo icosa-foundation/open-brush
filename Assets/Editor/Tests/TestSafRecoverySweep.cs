@@ -202,6 +202,23 @@ namespace TiltBrush
         }
 
         [Test]
+        public void Sweep_DiscardsIncompleteGenericTemporaryForPublicationRetry()
+        {
+            var backend = new AreaScopedBackend();
+            backend.Add(StorageArea.Exports, "Export.glb.ob-tmp", new byte[] { 1, 2, 3 });
+            MarkInterrupted(
+                backend, StorageArea.Exports, "Export.glb", kind: "file-replacement");
+
+            SafRecoveryReport report =
+                SafTransactionRecovery.RecoverAll(backend, CancellationToken.None);
+
+            Assert.AreEqual(1, report.Recovered, string.Join("; ", report.Errors));
+            Assert.AreEqual(0, report.Pending, string.Join("; ", report.Errors));
+            Assert.IsFalse(backend.Contains(StorageArea.Exports, "Export.glb.ob-tmp"));
+            Assert.IsFalse(backend.Contains(StorageArea.Exports, "Export.glb"));
+        }
+
+        [Test]
         public void Sweep_KeepsAGoodCanonicalAndClearsItsLeftovers()
         {
             var backend = new AreaScopedBackend();

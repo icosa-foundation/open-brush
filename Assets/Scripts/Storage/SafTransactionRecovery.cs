@@ -132,6 +132,21 @@ namespace TiltBrush
                     report, cancellationToken);
             }
 
+            // A generic temporary cannot prove that its write completed. When no installed,
+            // backed-up, or quarantined document exists, discard it and its marker so the
+            // publication journal can retry from the preserved staging payload.
+            if (record.Kind != "tilt-replacement" &&
+                canonical == null && backup == null && invalid == null)
+            {
+                if (!DeleteIfPresent(
+                        backend, temporary, cancellationToken, out string error))
+                {
+                    MarkPending(record, error, report);
+                    return false;
+                }
+                return true;
+            }
+
             // Readability cannot establish that a generic payload finished writing.
             // Archive payloads can instead prove completeness through their validation, which
             // is the only test left here: a record reconstructed from sidecars carries no
