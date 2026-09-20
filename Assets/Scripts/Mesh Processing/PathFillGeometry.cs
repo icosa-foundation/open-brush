@@ -393,6 +393,48 @@ namespace TiltBrush
             return a.x * b.y - a.y * b.x;
         }
 
+        /// Removes triangles a tessellator should not have produced: indices outside the
+        /// vertex array, repeated indices, or corners that are not finite. Returns how many
+        /// were dropped. Cheap insurance -- a single bad index becomes a shard reaching off
+        /// to wherever that vertex slot happens to land, or an exception during refinement.
+        public static int DropInvalidTriangles(List<Vector2> vertices, List<int> triangles)
+        {
+            int limit = vertices.Count;
+            var kept = new List<int>(triangles.Count);
+            int dropped = 0;
+            for (int i = 0; i + 2 < triangles.Count; i += 3)
+            {
+                int a = triangles[i], b = triangles[i + 1], c = triangles[i + 2];
+                bool bad = a < 0 || b < 0 || c < 0 ||
+                           a >= limit || b >= limit || c >= limit ||
+                           a == b || b == c || c == a;
+                if (!bad)
+                {
+                    bad = !IsFinite(vertices[a]) || !IsFinite(vertices[b]) || !IsFinite(vertices[c]);
+                }
+                if (bad) { ++dropped; continue; }
+                kept.Add(a); kept.Add(b); kept.Add(c);
+            }
+            if (dropped > 0)
+            {
+                triangles.Clear();
+                triangles.AddRange(kept);
+            }
+            return dropped;
+        }
+
+        public static bool IsFinite(Vector2 v)
+        {
+            return !float.IsNaN(v.x) && !float.IsNaN(v.y) &&
+                   !float.IsInfinity(v.x) && !float.IsInfinity(v.y);
+        }
+
+        public static bool IsFinite(Vector3 v)
+        {
+            return !float.IsNaN(v.x) && !float.IsNaN(v.y) && !float.IsNaN(v.z) &&
+                   !float.IsInfinity(v.x) && !float.IsInfinity(v.y) && !float.IsInfinity(v.z);
+        }
+
         // -------------------------------------------------------------------------------
         // Refinement
         // -------------------------------------------------------------------------------
@@ -407,9 +449,10 @@ namespace TiltBrush
             for (int pass = 0; pass < maxPasses; ++pass)
             {
                 if (LongestEdge(vertices, triangles) <= targetEdge) { return; }
-                // After a 1->4 split the new vertex count is V + E, and E is about half the
-                // index count for a triangulated patch.
-                if (vertices.Count + triangles.Count / 2 > maxVertices) { return; }
+                // A 1->4 split adds exactly one vertex per unique edge. Count them rather
+                // than estimating: callers treat maxVertices as a hard limit, because they
+                // store geometry counts in 16-bit fields.
+                if (vertices.Count + CountUniqueEdges(triangles) > maxVertices) { return; }
                 SubdivideOnce(vertices, triangles);
             }
         }
@@ -427,6 +470,26 @@ namespace TiltBrush
                 longest = Mathf.Max(longest, (a - c).magnitude);
             }
             return longest;
+        }
+
+        /// Number of distinct undirected edges in the triangle list, which is exactly how
+        /// many vertices a 1->4 subdivision pass would add.
+        public static int CountUniqueEdges(List<int> triangles)
+        {
+            var edges = new HashSet<long>();
+            for (int i = 0; i + 2 < triangles.Count; i += 3)
+            {
+                int a = triangles[i], b = triangles[i + 1], c = triangles[i + 2];
+                edges.Add(EdgeKey(a, b));
+                edges.Add(EdgeKey(b, c));
+                edges.Add(EdgeKey(c, a));
+            }
+            return edges.Count;
+        }
+
+        private static long EdgeKey(int a, int b)
+        {
+            return a < b ? ((long)a << 32) | (uint)b : ((long)b << 32) | (uint)a;
         }
 
         private static void SubdivideOnce(List<Vector2> vertices, List<int> triangles)

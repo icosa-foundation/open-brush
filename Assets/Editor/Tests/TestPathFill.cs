@@ -435,6 +435,122 @@ namespace TiltBrush
         }
 
         // ---------------------------------------------------------------------------
+        // Hardening against what the tessellator can actually hand back
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void MalformedTessellationIsSurvived()
+        {
+            // LibTess pads unfilled polygon slots with Undef (-1), and the vector graphics
+            // package casts its indices to UInt16 unchecked, so that padding arrives as
+            // 65535. It also runs LibTess with NoEmptyPolygons off, so degenerate faces come
+            // through. None of it may reach the mesh.
+            PathFillTessellateFn hostile = (outline, rule, verts, tris) =>
+            {
+                verts.Clear();
+                tris.Clear();
+                for (int i = 0; i < outline.Count; ++i) { verts.Add(outline[i]); }
+                Vector2 centre = Vector2.zero;
+                for (int i = 0; i < outline.Count; ++i) { centre += outline[i]; }
+                int centreIndex = verts.Count;
+                verts.Add(centre / outline.Count);
+                verts.Add(new Vector2(float.NaN, float.NaN));
+                int nanIndex = verts.Count - 1;
+                for (int i = 0; i < outline.Count; ++i)
+                {
+                    tris.Add(i);
+                    tris.Add((i + 1) % outline.Count);
+                    tris.Add(centreIndex);
+                }
+                tris.Add(0); tris.Add(1); tris.Add(65535);        // Undef through the cast
+                tris.Add(2); tris.Add(2); tris.Add(centreIndex);  // degenerate face
+                tris.Add(3); tris.Add(4); tris.Add(nanIndex);     // non-finite corner
+                return true;
+            };
+
+            var path = Loop(24, 1f, t => 0.2f * Mathf.Sin(2f * t),
+                            Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+            PathFill.Options options = PathFill.Options.Default;
+            options.Tessellator = hostile;
+
+            PathFill.Result result = PathFill.Fill(path, options);
+            Assert.IsNotNull(result, "a few bad triangles must not lose the whole fill");
+            Assert.AreEqual(3, result.DroppedTriangles);
+            Assert.IsTrue(result.HasAnomalies);
+
+            for (int i = 0; i < result.Triangles.Length; ++i)
+            {
+                Assert.Less(result.Triangles[i], result.Vertices.Length);
+                Assert.GreaterOrEqual(result.Triangles[i], 0);
+            }
+            foreach (Vector3 v in result.Vertices)
+            {
+                Assert.IsTrue(PathFillGeometry.IsFinite(v), "no vertex may be NaN or infinite");
+            }
+        }
+
+        [Test]
+        public void VertexBudgetIsAHardCapNotAnEstimate()
+        {
+            // A self-crossing outline makes the tessellator emit a vertex per intersection,
+            // so the raw tessellation can overrun the budget before refinement is even
+            // considered. Callers store geometry counts in 16-bit fields, so the cap has to
+            // hold exactly.
+            PathFillTessellateFn explosive = (outline, rule, verts, tris) =>
+            {
+                verts.Clear();
+                tris.Clear();
+                for (int i = 0; i < outline.Count; ++i) { verts.Add(outline[i]); }
+                Vector2 centre = Vector2.zero;
+                for (int i = 0; i < outline.Count; ++i) { centre += outline[i]; }
+                centre /= outline.Count;
+                int extra = outline.Count * outline.Count / 4;
+                for (int i = 0; i < extra; ++i)
+                {
+                    float a = 2f * Mathf.PI * i / extra;
+                    verts.Add(centre + new Vector2(Mathf.Cos(a), Mathf.Sin(a)) * (0.1f + 0.001f * i));
+                }
+                for (int i = 1; i + 1 < verts.Count; ++i)
+                {
+                    tris.Add(0); tris.Add(i); tris.Add(i + 1);
+                }
+                return true;
+            };
+
+            var path = Loop(400, 1f, t => 0.1f * Mathf.Sin(3f * t),
+                            Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+
+            foreach (int cap in new[] { 500, 2000, 6000 })
+            {
+                PathFill.Options options = PathFill.Options.Default;
+                options.Tessellator = explosive;
+                options.MaxVertices = cap;
+                options.MaxBoundaryPoints = 128;
+
+                PathFill.Result result = PathFill.Fill(path, options);
+                if (result == null) { continue; }   // refusing is an acceptable outcome
+                Assert.LessOrEqual(result.Vertices.Length, cap,
+                                   "MaxVertices must hold exactly, not approximately");
+            }
+        }
+
+        [Test]
+        public void CountUniqueEdgesMatchesWhatSubdivisionAdds()
+        {
+            var vertices = new List<Vector2>
+            {
+                new Vector2(0f, 0f), new Vector2(10f, 0f), new Vector2(10f, 10f), new Vector2(0f, 10f),
+            };
+            var triangles = new List<int> { 0, 1, 2, 0, 2, 3 };
+
+            int expected = PathFillGeometry.CountUniqueEdges(triangles);
+            int before = vertices.Count;
+            PathFillGeometry.Subdivide(vertices, triangles, 0.001f, int.MaxValue, 1);
+            Assert.AreEqual(before + expected, vertices.Count,
+                            "a 1->4 pass adds exactly one vertex per unique edge");
+        }
+
+        // ---------------------------------------------------------------------------
         // Building blocks
         // ---------------------------------------------------------------------------
 

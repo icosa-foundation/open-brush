@@ -63,6 +63,14 @@ namespace TiltBrush
         /// every vertex taking the current brush colour.
         [SerializeField] private bool m_ColorFromControlPoints;
 
+        /// If set, warn when a fill comes back malformed or too large to store. Logs only
+        /// when the reported numbers change, so it stays quiet unless something is wrong.
+        [SerializeField] private bool m_LogAnomalies;
+
+        private int m_LastLoggedDropped;
+        private int m_LastLoggedRepaired;
+        private int m_LastLoggedOversize;
+
         /// Reused across rebuilds to keep per-frame allocation down.
         private List<Vector3> m_PathPositions;
         private List<Color32> m_PathColors;
@@ -201,6 +209,39 @@ namespace TiltBrush
 
         private void CreateGeometry(ref Knot knot, PathFill.Result fill)
         {
+            // Knot.nVert and Knot.nTri are 16-bit. Overflowing them does not throw; it wraps,
+            // leaving the knot describing a range that has nothing to do with the geometry
+            // actually in the pool, which draws as stray triangles stitched between unrelated
+            // vertices. PathFill caps its own output, but the brush must not rely on that
+            // when the cap is configurable from the prefab.
+            int vertsNeeded = fill.Vertices.Length * NS;
+            int trisNeeded = (fill.Triangles.Length / 3) * NS;
+            if (vertsNeeded > ushort.MaxValue || trisNeeded > ushort.MaxValue)
+            {
+                if (m_LogAnomalies && m_LastLoggedOversize != vertsNeeded)
+                {
+                    m_LastLoggedOversize = vertsNeeded;
+                    Debug.LogWarning(
+                        $"FillBrush: fill needs {vertsNeeded} verts / {trisNeeded} tris, which " +
+                        $"does not fit a knot's 16-bit counts. Lower MaxVertices on the brush " +
+                        $"prefab. Skipping this rebuild.");
+                }
+                return;
+            }
+
+            if (m_LogAnomalies && fill.HasAnomalies &&
+                (fill.DroppedTriangles != m_LastLoggedDropped ||
+                 fill.RepairedVertices != m_LastLoggedRepaired))
+            {
+                m_LastLoggedDropped = fill.DroppedTriangles;
+                m_LastLoggedRepaired = fill.RepairedVertices;
+                Debug.LogWarning(
+                    $"FillBrush: tessellation anomalies -- {fill.DroppedTriangles} triangles " +
+                    $"dropped, {fill.RepairedVertices} vertices repaired, " +
+                    $"{fill.ProjectedSelfIntersections} projected self-intersections, " +
+                    $"flatness {fill.Flatness:F3}, boundary {fill.Boundary.Length}.");
+            }
+
             Color32 fallbackColor = m_knots[m_knots.Count - 1].color;
             for (int i = 0; i < fill.Vertices.Length; ++i)
             {

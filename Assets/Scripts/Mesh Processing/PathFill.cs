@@ -129,6 +129,10 @@ namespace TiltBrush
         /// welded before anything else runs.
         private const float kWeldFraction = 1e-5f;
 
+        /// How many times the boundary is coarsened when the raw tessellation overruns the
+        /// vertex budget.
+        private const int kMaxCoarseningAttempts = 3;
+
         public struct Options
         {
             /// Winding rule used to decide which regions of a self-overlapping outline are
@@ -217,6 +221,16 @@ namespace TiltBrush
             /// Number of crossing pairs in the projected outline. Non-zero means the fill
             /// rule decided something the 3D curve did not.
             public int ProjectedSelfIntersections;
+
+            /// Triangles discarded because the tessellator produced indices or corners that
+            /// could not be used. Non-zero means something upstream misbehaved.
+            public int DroppedTriangles;
+
+            /// Vertices that came out non-finite and were dropped back onto the plane.
+            public int RepairedVertices;
+
+            /// True if this fill hit anything that should not happen.
+            public bool HasAnomalies { get { return DroppedTriangles > 0 || RepairedVertices > 0; } }
         }
 
         /// Builds a fill surface for a closed path. The path may be given closed (last point
@@ -251,15 +265,9 @@ namespace TiltBrush
             // Project, keeping each boundary point's signed distance from the plane.
             var outline = new List<Vector2>(boundaryCount);
             var residuals = new float[boundaryCount];
-            float sumSqResidual = 0f;
-            for (int i = 0; i < boundaryCount; ++i)
-            {
-                Vector3 d = loop[i] - origin;
-                outline.Add(new Vector2(Vector3.Dot(d, axisU), Vector3.Dot(d, axisV)));
-                float h = Vector3.Dot(d, normal);
-                residuals[i] = h;
-                sumSqResidual += h * h;
-            }
+            float sumSqResidual;
+            Project(path, loopIndices, origin, normal, axisU, axisV,
+                    loop, outline, ref residuals, out sumSqResidual);
 
             Color32[] boundaryColors = null;
             if (options.PathColors != null && options.PathColors.Count == path.Count)
@@ -278,15 +286,61 @@ namespace TiltBrush
             var scaledOutline = new List<Vector2>(boundaryCount);
             for (int i = 0; i < boundaryCount; ++i) { scaledOutline.Add(outline[i] * scale); }
 
+            int maxVertices = options.MaxVertices > 0 ? options.MaxVertices : 20000;
+
             PathFillTessellateFn tessellate = options.Tessellator ?? PathFillTessellator.Tessellate;
             var verts2d = new List<Vector2>();
             var triangles = new List<int>();
             if (!tessellate(scaledOutline, options.Rule, verts2d, triangles)) { return null; }
+            int droppedTriangles = PathFillGeometry.DropInvalidTriangles(verts2d, triangles);
             if (verts2d.Count < 3 || triangles.Count < 3) { return null; }
+
+            // MaxVertices is a hard cap, not just a refinement budget. A self-crossing
+            // outline makes the tessellator emit a vertex per intersection, so the raw
+            // tessellation can blow far past the budget before refinement is considered --
+            // and callers store geometry counts in 16-bit fields. Back off the boundary
+            // detail and try again rather than handing back something they cannot hold.
+            int coarseAttempts = 0;
+            while (verts2d.Count > maxVertices && coarseAttempts < kMaxCoarseningAttempts)
+            {
+                ++coarseAttempts;
+                int coarserCap = Mathf.Max(3, boundaryCount / 2);
+                if (coarserCap >= boundaryCount) { break; }
+
+                loopIndices = PathFillGeometry.SimplifyClosed(path, loopIndices, tolerance, coarserCap);
+                if (loopIndices.Count < 3) { return null; }
+                if (loopIndices.Count >= boundaryCount) { break; }
+
+                boundaryCount = loopIndices.Count;
+                Project(path, loopIndices, origin, normal, axisU, axisV,
+                        loop, outline, ref residuals, out sumSqResidual);
+                extent = PathFillGeometry.MaxExtent(outline);
+                if (extent <= 0f) { return null; }
+                scale = kTessellationExtent / extent;
+                scaledOutline.Clear();
+                for (int i = 0; i < boundaryCount; ++i) { scaledOutline.Add(outline[i] * scale); }
+
+                if (boundaryColors != null)
+                {
+                    boundaryColors = new Color32[boundaryCount];
+                    for (int i = 0; i < boundaryCount; ++i)
+                    {
+                        boundaryColors[i] = options.PathColors[loopIndices[i]];
+                    }
+                }
+
+                verts2d.Clear();
+                triangles.Clear();
+                if (!tessellate(scaledOutline, options.Rule, verts2d, triangles)) { return null; }
+                droppedTriangles += PathFillGeometry.DropInvalidTriangles(verts2d, triangles);
+                if (verts2d.Count < 3 || triangles.Count < 3) { return null; }
+            }
+
+            // Still over budget after backing off: better no fill than corrupt geometry.
+            if (verts2d.Count > maxVertices) { return null; }
 
             // Refine so the lift has interior vertices to act on.
             float meanEdge = PathFillGeometry.MeanEdgeLength(scaledOutline);
-            int maxVertices = options.MaxVertices > 0 ? options.MaxVertices : 20000;
             int maxPasses = Mathf.Max(0, options.MaxRefinementPasses);
             PathFillGeometry.Subdivide(verts2d, triangles, meanEdge, maxVertices, maxPasses);
 
@@ -301,6 +355,7 @@ namespace TiltBrush
             Color32[] colors = boundaryColors != null ? new Color32[vertexCount] : null;
             var weights = new float[boundaryCount];
             var scratch = new PathFillGeometry.Scratch(boundaryCount);
+            int repairedVertices = 0;
             Vector2 uvMin = PathFillGeometry.Min(verts2d);
             float uvExtent = PathFillGeometry.MaxExtent(verts2d);
             float uvScale = 1f / (uvExtent > 0f ? uvExtent : 1f);
@@ -325,6 +380,16 @@ namespace TiltBrush
                 Vector2 local = p * invScale;
                 vertices[i] = origin + axisU * local.x + axisV * local.y + normal * height;
                 uvs[i] = (p - uvMin) * uvScale;
+
+                if (!PathFillGeometry.IsFinite(vertices[i]))
+                {
+                    // Should not happen, but a single non-finite vertex draws as a shard
+                    // stretching off to infinity. Drop it back onto the plane instead.
+                    vertices[i] = origin + axisU * local.x + axisV * local.y;
+                    if (!PathFillGeometry.IsFinite(vertices[i])) { vertices[i] = origin; }
+                    uvs[i] = Vector2.zero;
+                    ++repairedVertices;
+                }
             }
 
             var result = new Result
@@ -339,6 +404,8 @@ namespace TiltBrush
                 PlaneNormal = normal,
                 Flatness = Mathf.Sqrt(sumSqResidual / boundaryCount) / diagonal,
                 ProjectedSelfIntersections = PathFillGeometry.CountSelfIntersections(scaledOutline),
+                DroppedTriangles = droppedTriangles,
+                RepairedVertices = repairedVertices,
             };
             result.Normals = PathFillGeometry.ComputeNormals(result.Vertices, result.Triangles, normal);
             return result;
@@ -347,6 +414,33 @@ namespace TiltBrush
         public static Result Fill(IList<Vector3> path)
         {
             return Fill(path, Options.Default);
+        }
+
+        /// Rebuilds the projected boundary for the given indices, against a fixed plane.
+        /// Called again when the boundary is coarsened, which is why it reuses its buffers
+        /// and why the plane is an input rather than being refitted -- refitting would move
+        /// the surface under a caller that has already been told where it is.
+        private static void Project(IList<Vector3> path, List<int> loopIndices,
+                                    Vector3 origin, Vector3 normal, Vector3 axisU, Vector3 axisV,
+                                    List<Vector3> loop, List<Vector2> outline,
+                                    ref float[] residuals, out float sumSqResidual)
+        {
+            int count = loopIndices.Count;
+            loop.Clear();
+            outline.Clear();
+            if (residuals.Length < count) { residuals = new float[count]; }
+
+            sumSqResidual = 0f;
+            for (int i = 0; i < count; ++i)
+            {
+                Vector3 p = path[loopIndices[i]];
+                loop.Add(p);
+                Vector3 d = p - origin;
+                outline.Add(new Vector2(Vector3.Dot(d, axisU), Vector3.Dot(d, axisV)));
+                float h = Vector3.Dot(d, normal);
+                residuals[i] = h;
+                sumSqResidual += h * h;
+            }
         }
 
         /// Mean value weights can go negative where the outline is concave, so the blend is

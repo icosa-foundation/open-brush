@@ -104,6 +104,7 @@ namespace TiltBrush
 
             outVertices.Clear();
             outTriangles.Clear();
+            int dropped = 0;
             foreach (VectorUtils.Geometry geometry in geometries)
             {
                 if (geometry.Vertices == null || geometry.Indices == null) { continue; }
@@ -112,13 +113,36 @@ namespace TiltBrush
                 {
                     outVertices.Add(geometry.Vertices[i]);
                 }
-                for (int i = 0; i < geometry.Indices.Length; ++i)
+                int limit = geometry.Vertices.Length;
+                for (int i = 0; i + 2 < geometry.Indices.Length; i += 3)
                 {
-                    outTriangles.Add(offset + geometry.Indices[i]);
+                    int a = geometry.Indices[i];
+                    int b = geometry.Indices[i + 1];
+                    int c = geometry.Indices[i + 2];
+
+                    // LibTess pads the slots of a polygon it did not fill with Undef (-1), and
+                    // the package casts its indices to UInt16 unchecked, so that padding
+                    // arrives here as 65535. Forwarding it would index a vertex that does not
+                    // exist. Degenerate faces reach us too, because LibTess is run with its
+                    // NoEmptyPolygons option off.
+                    if (a >= limit || b >= limit || c >= limit || a == b || b == c || c == a)
+                    {
+                        ++dropped;
+                        continue;
+                    }
+
+                    outTriangles.Add(offset + a);
+                    outTriangles.Add(offset + b);
+                    outTriangles.Add(offset + c);
                 }
             }
+            DroppedTriangles = dropped;
             return outVertices.Count >= 3 && outTriangles.Count >= 3;
         }
+
+        /// Number of triangles the last call discarded as malformed. Surfaced for diagnosis;
+        /// a non-zero value means the tessellator produced something we could not use.
+        public static int DroppedTriangles { get; private set; }
 
         /// A closed BezierContour whose segments are straight lines. BezierPathSegment holds
         /// a start point plus two cubic control points; the segment's end point is the next
