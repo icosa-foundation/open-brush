@@ -224,9 +224,42 @@ namespace TiltBrush
             }
 
             Directory.CreateDirectory(fullLibraryPath);
-            string destinationPath = GetUniqueSoundClipPath(fullLibraryPath, Path.GetFileName(fullSourcePath));
+            string filename = Path.GetFileName(fullSourcePath);
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                filename = OpenBrushStorage.GetUniqueImportPath(
+                    UserStorage.Backend,
+                    StorageArea.MediaLibrarySoundClips,
+                    filename,
+                    candidate => File.Exists(Path.Combine(fullLibraryPath, candidate)));
+            }
+            string destinationPath = GetUniqueSoundClipPath(fullLibraryPath, filename);
             File.Copy(fullSourcePath, destinationPath);
-            SoundClipCatalog.Instance.ForceCatalogScan();
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                string sharedPath = $"Media Library/Sound Clips/{Path.GetFileName(destinationPath)}";
+                OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
+                    destinationPath,
+                    sharedPath,
+                    "glTF audio",
+                    (success, error) =>
+                    {
+                        if (success)
+                        {
+                            SoundClipCatalog.Instance?.ForceCatalogScan();
+                        }
+                        else
+                        {
+                            Debug.LogWarning(
+                                $"SAF_SOUND Could not publish extracted glTF audio: {error}");
+                        }
+                    },
+                    preserveDestination: true);
+            }
+            else
+            {
+                SoundClipCatalog.Instance.ForceCatalogScan();
+            }
             return destinationPath;
         }
 
