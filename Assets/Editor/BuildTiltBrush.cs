@@ -1418,6 +1418,10 @@ static class BuildTiltBrush
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            if (targetSettings == null)
+            {
+                return;
+            }
             m_xrEnabled = targetSettings.InitManagerOnStart;
 
             switch (tiltOptions.XrSdk)
@@ -1469,6 +1473,10 @@ static class BuildTiltBrush
         public void Dispose()
         {
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            if (targetSettings == null)
+            {
+                return;
+            }
             targetSettings.InitManagerOnStart = m_xrEnabled;
 
             // Remove build loaders.
