@@ -80,14 +80,15 @@ namespace TiltBrush
             int guideIndex = RequiredInt(request, "guide");
             SdfStencil stencil = GetSdfStencil(guideIndex);
             SdfStencil.PrimitiveDefinition definition = ParsePrimitiveDefinition(request);
-            SDFPrimitive primitive = stencil.AddPrimitive(
-                definition.Type, definition.Geometry, definition.Transform,
-                definition.Operation, definition.Blend);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                EditSdfGuideCommand.AddPrimitive(
+                    stencil, definition.Type, definition.Geometry, definition.Transform,
+                    operation: definition.Operation, blend: definition.Blend));
 
             return new JObject
             {
                 ["guide"] = guideIndex,
-                ["primitive"] = PrimitiveIndex(stencil, primitive)
+                ["primitive"] = stencil.GetPrimitives().Count - 1
             }.ToString(Formatting.None);
         }
 
@@ -100,6 +101,7 @@ namespace TiltBrush
             JObject request = ParseSdfRequest(json);
             SdfStencil stencil = GetSdfStencil(RequiredInt(request, "guide"));
             SDFPrimitive primitive = stencil.GetPrimitive(RequiredInt(request, "primitive"));
+            int componentIndex = ComponentIndex(stencil, primitive);
 
             SDFPrimitiveType? type = request["type"] == null
                 ? (SDFPrimitiveType?)null
@@ -117,7 +119,9 @@ namespace TiltBrush
                 ? (float?)null
                 : request.Value<float>("blend");
 
-            stencil.UpdatePrimitive(primitive, type, geometry, transform, operation, blend);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                EditSdfGuideCommand.UpdatePrimitive(
+                    stencil, componentIndex, type, geometry, transform, operation, blend));
         }
 
         [ApiEndpoint(
@@ -127,7 +131,9 @@ namespace TiltBrush
         public static void RemoveSdfPrimitive(int guideIndex, int primitiveIndex)
         {
             SdfStencil stencil = GetSdfStencil(guideIndex);
-            stencil.RemovePrimitive(stencil.GetPrimitive(primitiveIndex));
+            int componentIndex = ComponentIndex(stencil, stencil.GetPrimitive(primitiveIndex));
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                EditSdfGuideCommand.RemoveComponent(stencil, componentIndex));
         }
 
         [ApiEndpoint(
@@ -136,7 +142,9 @@ namespace TiltBrush
             "0")]
         public static void ClearSdfGuide(int guideIndex)
         {
-            GetSdfStencil(guideIndex).ClearPrimitives();
+            SdfStencil stencil = GetSdfStencil(guideIndex);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                EditSdfGuideCommand.Clear(stencil));
         }
 
         [ApiEndpoint(
@@ -222,17 +230,17 @@ namespace TiltBrush
             return value.Value<int>(property);
         }
 
-        private static int PrimitiveIndex(SdfStencil stencil, SDFPrimitive primitive)
+        private static int ComponentIndex(SdfStencil stencil, SDFObject component)
         {
-            IReadOnlyList<SDFPrimitive> primitives = stencil.GetPrimitives();
-            for (int i = 0; i < primitives.Count; ++i)
+            IReadOnlyList<SDFObject> components = stencil.GetComponents();
+            for (int i = 0; i < components.Count; ++i)
             {
-                if (primitives[i] == primitive)
+                if (components[i] == component)
                 {
                     return i;
                 }
             }
-            throw new InvalidOperationException("The new SDF primitive was not registered with its guide.");
+            throw new InvalidOperationException("The SDF component was not registered with its guide.");
         }
 
         private static Vector4 ParseVector4(JToken token, string property)

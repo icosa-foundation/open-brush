@@ -54,7 +54,9 @@ namespace TiltBrush
 
         internal static EditSdfGuideCommand AddPrimitive(
             SdfStencil stencil, SDFPrimitiveType type, UnityEngine.Vector4 geometry,
-            TrTransform transform, int index = -1)
+            TrTransform transform, int index = -1,
+            SDFCombineType operation = SDFCombineType.SmoothUnion,
+            float blend = 0f, bool flip = false)
         {
             var components = Snapshot(stencil);
             int insertionIndex = index < 0 ? components.Count : index;
@@ -62,11 +64,24 @@ namespace TiltBrush
             {
                 throw new ArgumentOutOfRangeException(nameof(index));
             }
+            if (insertionIndex == 0 && operation != SDFCombineType.SmoothUnion)
+            {
+                throw new ArgumentException(
+                    "The first SDF component must use the union operation.",
+                    nameof(operation));
+            }
             components.Insert(insertionIndex, new SdfStencil.ComponentDefinition(
                 new SdfStencil.PrimitiveDefinition(
-                    type, geometry, transform, SDFCombineType.SmoothUnion, 0f, false)));
+                    type, geometry, transform, operation, blend, flip)));
             NormalizeFirstOperation(components);
             return new EditSdfGuideCommand(stencil, components);
+        }
+
+        internal static EditSdfGuideCommand Clear(SdfStencil stencil)
+        {
+            Snapshot(stencil);
+            return new EditSdfGuideCommand(
+                stencil, Array.Empty<SdfStencil.ComponentDefinition>());
         }
 
         internal static EditSdfGuideCommand RemoveComponent(SdfStencil stencil, int index)
@@ -158,6 +173,31 @@ namespace TiltBrush
                 new SdfStencil.PrimitiveDefinition(
                     type, geometry, primitive.Transform, primitive.Operation,
                     primitive.Blend, primitive.Flip));
+            return new EditSdfGuideCommand(stencil, components);
+        }
+
+        internal static EditSdfGuideCommand UpdatePrimitive(
+            SdfStencil stencil, int index, SDFPrimitiveType? type = null,
+            UnityEngine.Vector4? geometry = null, TrTransform? transform = null,
+            SDFCombineType? operation = null, float? blend = null)
+        {
+            var components = Snapshot(stencil);
+            ValidateIndex(components, index);
+            SdfStencil.ComponentDefinition component = components[index];
+            if (!component.IsPrimitive)
+            {
+                throw new ArgumentException($"SDF component {index} is a mesh operand.");
+            }
+
+            SdfStencil.PrimitiveDefinition primitive = component.Primitive.Value;
+            components[index] = new SdfStencil.ComponentDefinition(
+                new SdfStencil.PrimitiveDefinition(
+                    type ?? primitive.Type,
+                    geometry ?? primitive.Geometry,
+                    transform ?? primitive.Transform,
+                    operation ?? primitive.Operation,
+                    blend ?? primitive.Blend,
+                    primitive.Flip));
             return new EditSdfGuideCommand(stencil, components);
         }
 
