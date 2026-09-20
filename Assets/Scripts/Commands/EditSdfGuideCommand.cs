@@ -124,6 +124,15 @@ namespace TiltBrush
             return new EditSdfGuideCommand(stencil, components);
         }
 
+        internal static EditSdfGuideCommand SetComponentFlip(
+            SdfStencil stencil, int index, bool flip)
+        {
+            var components = Snapshot(stencil);
+            ValidateIndex(components, index);
+            components[index] = Copy(components[index], flip: flip);
+            return new EditSdfGuideCommand(stencil, components);
+        }
+
         internal static EditSdfGuideCommand SetPrimitiveGeometry(
             SdfStencil stencil, int index, SDFPrimitiveType type,
             UnityEngine.Vector4 geometry)
@@ -156,22 +165,24 @@ namespace TiltBrush
             SdfStencil.ComponentDefinition component,
             TrTransform? transform = null,
             SDFCombineType? operation = null,
-            float? blend = null)
+            float? blend = null,
+            bool? flip = null)
         {
             TrTransform updatedTransform = transform ?? component.Transform;
             SDFCombineType updatedOperation = operation ?? component.Operation;
             float updatedBlend = blend ?? component.Blend;
+            bool updatedFlip = flip ?? component.Flip;
             if (!component.IsPrimitive)
             {
                 return new SdfStencil.ComponentDefinition(
                     component.MeshAsset, updatedTransform, updatedOperation,
-                    updatedBlend, component.Flip);
+                    updatedBlend, updatedFlip);
             }
 
             SdfStencil.PrimitiveDefinition primitive = component.Primitive.Value;
             return new SdfStencil.ComponentDefinition(new SdfStencil.PrimitiveDefinition(
                 primitive.Type, primitive.Geometry, updatedTransform, updatedOperation,
-                updatedBlend, primitive.Flip));
+                updatedBlend, updatedFlip));
         }
 
         private static void NormalizeFirstOperation(

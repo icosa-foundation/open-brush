@@ -123,6 +123,8 @@ namespace TiltBrush
                     return count > 0 && m_ComponentIndex >= 0;
                 case SketchControlsScript.GlobalCommands.SdfToggleComponentHandles:
                     return count > 0;
+                case SketchControlsScript.GlobalCommands.SdfToggleComponentFlip:
+                    return count > 0 && m_ComponentIndex >= 0;
                 default:
                     return false;
             }
@@ -200,6 +202,9 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.SdfToggleComponentHandles:
                     m_EditComponentHandles = !m_EditComponentHandles;
                     ConfigurePage();
+                    break;
+                case SketchControlsScript.GlobalCommands.SdfToggleComponentFlip:
+                    ToggleComponentFlip();
                     break;
             }
             Refresh();
@@ -307,7 +312,12 @@ namespace TiltBrush
                         m_EditComponentHandles ? "Hide component handles" : "Edit components");
                     Configure(m_Buttons[1], SketchControlsScript.GlobalCommands.SdfRemoveComponent,
                         "Icons/Knot_Delete", "Remove component");
-                    Disable(m_Buttons[2]);
+                    bool componentIsFlipped = m_ComponentIndex >= 0 &&
+                        m_Stencil.GetComponentDefinitions()[m_ComponentIndex].Flip;
+                    Configure(m_Buttons[2],
+                        SketchControlsScript.GlobalCommands.SdfToggleComponentFlip,
+                        "Icons/flipselection_outline",
+                        componentIsFlipped ? "Restore component" : "Invert component");
                     Disable(m_Buttons[3]);
                     Disable(m_Buttons[4]);
                     Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
@@ -670,6 +680,14 @@ namespace TiltBrush
                 m_Stencil, m_ComponentIndex, operation));
         }
 
+        private void ToggleComponentFlip()
+        {
+            SdfStencil.ComponentDefinition component =
+                m_Stencil.GetComponentDefinitions()[m_ComponentIndex];
+            Perform(EditSdfGuideCommand.SetComponentFlip(
+                m_Stencil, m_ComponentIndex, !component.Flip));
+        }
+
         private static void Perform(BaseCommand command)
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
@@ -910,7 +928,7 @@ namespace TiltBrush
             }
             m_Popup.SetWindowText(label);
 
-            if (m_Page == 1 || m_Page == 2)
+            if (m_Page == 1 || m_Page == 2 || m_Page == 3)
             {
                 ConfigurePage();
             }
