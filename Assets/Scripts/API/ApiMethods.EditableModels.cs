@@ -82,7 +82,15 @@ namespace TiltBrush
                     client.Headers.Add("user-agent", ApiManager.WebRequestUserAgent);
                     client.DownloadFile(newUri, dependencyPath);
                 }
-                _PublishApiMediaLibraryPathToSharedStorage(fullLocalPath, preserveDestination: true);
+                string importPath = Path.Combine(modelDirectory, filename);
+                _PublishApiMediaLibraryPathToSharedStorage(
+                    fullLocalPath,
+                    preserveDestination: true,
+                    onComplete: (success, _) =>
+                    {
+                        if (success) { ImportModel(importPath); }
+                    });
+                return;
             }
             ImportModel(Path.Combine(modelDirectory, filename));
         }

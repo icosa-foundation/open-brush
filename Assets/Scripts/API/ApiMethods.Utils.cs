@@ -465,11 +465,13 @@ namespace TiltBrush
         }
 
         internal static void _PublishApiMediaLibraryPathToSharedStorage(
-            string localPath, bool preserveDestination = false)
+            string localPath, bool preserveDestination = false,
+            Action<bool, string> onComplete = null)
         {
             if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
                     localPath, out string relativePath))
             {
+                onComplete?.Invoke(false, "The API media path is outside shared storage.");
                 return;
             }
             _PublishApiPathToSharedStorage(
@@ -477,17 +479,20 @@ namespace TiltBrush
                 relativePath,
                 "media file",
                 (path, label, complete) => OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
-                    path, relativePath, label, complete, preserveDestination: preserveDestination));
+                    path, relativePath, label, complete, preserveDestination: preserveDestination),
+                onComplete);
         }
 
         private static void _PublishApiPathToSharedStorage(
             string localPath,
             string relativePath,
             string label,
-            Action<string, string, Action<bool, string>> publish)
+            Action<string, string, Action<bool, string>> publish,
+            Action<bool, string> onComplete = null)
         {
             if (!OpenBrushStorage.IsScopedStorageMode)
             {
+                onComplete?.Invoke(true, null);
                 return;
             }
 
@@ -502,6 +507,7 @@ namespace TiltBrush
                             : $"Failed to copy API {label} to shared storage: {error}";
                         ControllerConsoleScript.m_Instance?.AddNewLine(message);
                     }
+                    onComplete?.Invoke(success, error);
                 });
             }
 
