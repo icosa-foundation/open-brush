@@ -560,7 +560,7 @@ jobs:
             version: ${{ needs.configuration.outputs.version }}
             buildName: ${{ needs.configuration.outputs.basename }}
             buildsPath: build/${{ matrix.vrsdk }}
-            chownFilesTo: ${{ needs.configuration.outputs.uid }}:${{ needs.configuration.outputs.gid }}
+            chownFilesTo: ${{ matrix.runner != 'macos-26' && format('{0}:{1}', needs.configuration.outputs.uid, needs.configuration.outputs.gid) || '' }}
             buildMethod: BuildTiltBrush.CommandLine
             androidExportType: ${{ matrix.androidExportType || 'androidPackage' }}
             androidTargetSdkVersion: ${{ matrix.androidTargetSdkVersion }}
