@@ -12,35 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using System.Collections.Generic;
 
 namespace TiltBrush
 {
-    /// The set of strokes that were laid down together by a single pass of a symmetry mode:
-    /// the stroke the user drew plus the copies the symmetry made of it.
+    /// The set of strokes that a single pass of a symmetry mode laid down together: the stroke
+    /// the user drew plus the copies the symmetry made of it.
     ///
-    /// Membership is maintained at runtime and round-trips through the .tilt file via the
-    /// group's Guid (see SketchWriter.StrokeExtension.SymmetryGroup).
+    /// The group is also the record of how those strokes were made, so a stroke drawn with
+    /// symmetry always has one, even in the rare case where it ends up being the only member.
+    ///
+    /// Strokes hold the group by reference, so peer lookup costs nothing and there is no
+    /// registry to keep in sync; a group becomes garbage once its last stroke does. Identity is
+    /// the object itself. Ids are assigned only when saving (see SketchWriter), which keeps the
+    /// links local to a sketch and makes an additive load trivially free of collisions.
     public class SymmetryStrokeGroup
     {
         private readonly List<Stroke> m_Strokes = new List<Stroke>();
 
-        public Guid Id { get; }
+        /// The symmetry settings that were in place when this group was drawn; may be null for
+        /// groups loaded from a sketch that didn't record them. Immutable, and usually shared
+        /// with every other group drawn with the same settings.
+        public SymmetrySettingsSnapshot Settings { get; }
 
-        /// The symmetry settings that were in place when this group was drawn. May be null for
-        /// groups loaded from a sketch that didn't record them.
-        public SymmetrySettingsSnapshot Settings { get; internal set; }
-
-        internal SymmetryStrokeGroup(Guid id, SymmetrySettingsSnapshot settings)
+        public SymmetryStrokeGroup(SymmetrySettingsSnapshot settings)
         {
-            Id = id;
             Settings = settings;
         }
 
-        /// All the strokes in the group, including the one the user drew directly.
-        /// Order is the order in which the strokes joined, which for freshly-drawn strokes is
-        /// pointer order.
+        /// The strokes in the group, in the order they were recorded, which for a freshly-drawn
+        /// line is pointer order.
         public IReadOnlyList<Stroke> Strokes => m_Strokes;
 
         public int Count => m_Strokes.Count;
@@ -57,25 +58,18 @@ namespace TiltBrush
             }
         }
 
+        /// Only called by Stroke.JoinSymmetryGroup, which guarantees a stroke joins once.
         internal void Add(Stroke stroke)
         {
-            if (!m_Strokes.Contains(stroke))
-            {
-                m_Strokes.Add(stroke);
-            }
+            m_Strokes.Add(stroke);
         }
 
         internal void Remove(Stroke stroke)
         {
             m_Strokes.Remove(stroke);
-            if (m_Strokes.Count == 0)
-            {
-                SymmetryStrokeGroups.Forget(this);
-            }
         }
 
-        /// Removes every stroke from the group and unregisters it. The strokes keep their record
-        /// of the symmetry settings; they just stop being peers of each other.
+        /// Empties the group; its strokes stop being peers of each other.
         public void Disband()
         {
             // Copy, because leaving mutates m_Strokes.
@@ -83,82 +77,6 @@ namespace TiltBrush
             {
                 stroke.LeaveSymmetryGroup();
             }
-            SymmetryStrokeGroups.Forget(this);
-        }
-    }
-
-    /// Registry of the symmetry groups in the current sketch, keyed by group Guid.
-    public static class SymmetryStrokeGroups
-    {
-        private static readonly Dictionary<Guid, SymmetryStrokeGroup> m_Groups =
-            new Dictionary<Guid, SymmetryStrokeGroup>();
-
-        /// Creates and registers a new, empty group.
-        public static SymmetryStrokeGroup Create(SymmetrySettingsSnapshot settings)
-        {
-            var group = new SymmetryStrokeGroup(Guid.NewGuid(), settings);
-            m_Groups[group.Id] = group;
-            return group;
-        }
-
-        /// Returns the group with this id, or null if there isn't one.
-        public static SymmetryStrokeGroup Get(Guid id)
-        {
-            if (id == Guid.Empty) { return null; }
-            m_Groups.TryGetValue(id, out var group);
-            return group;
-        }
-
-        /// Returns the group with this id, creating it if necessary. Used when loading, where
-        /// strokes arrive one at a time and each carries a copy of the group's settings.
-        public static SymmetryStrokeGroup GetOrCreate(Guid id, SymmetrySettingsSnapshot settings)
-        {
-            if (id == Guid.Empty) { return null; }
-            if (!m_Groups.TryGetValue(id, out var group))
-            {
-                group = new SymmetryStrokeGroup(id, settings);
-                m_Groups[id] = group;
-            }
-            else if (group.Settings == null)
-            {
-                group.Settings = settings;
-            }
-            return group;
-        }
-
-        /// Gives the passed strokes' groups fresh ids, so that strokes merged into the current
-        /// sketch don't become peers of strokes that happen to share a group id.
-        public static void RemapGroupIds(IEnumerable<Stroke> strokes)
-        {
-            var oldToNew = new Dictionary<Guid, SymmetryStrokeGroup>();
-            foreach (var stroke in strokes)
-            {
-                var oldId = stroke.SymmetryGroupId;
-                if (oldId == Guid.Empty) { continue; }
-                if (!oldToNew.TryGetValue(oldId, out var newGroup))
-                {
-                    newGroup = Create(stroke.m_SymmetrySettings);
-                    oldToNew[oldId] = newGroup;
-                }
-                int pointerIndex = stroke.SymmetryPointerIndex;
-                stroke.LeaveSymmetryGroup();
-                stroke.JoinSymmetryGroup(newGroup, pointerIndex);
-            }
-        }
-
-        internal static void Forget(SymmetryStrokeGroup group)
-        {
-            if (group != null && m_Groups.TryGetValue(group.Id, out var registered) &&
-                ReferenceEquals(registered, group))
-            {
-                m_Groups.Remove(group.Id);
-            }
-        }
-
-        /// Drops every group. Called when the sketch is cleared.
-        public static void Clear()
-        {
-            m_Groups.Clear();
         }
     }
 } // namespace TiltBrush

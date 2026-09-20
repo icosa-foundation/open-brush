@@ -931,7 +931,6 @@ namespace TiltBrush
             NetworkOperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
             m_MemoryList.Clear();
-            SymmetryStrokeGroups.Clear();
             App.GroupManager.ResetGroups();
             SelectionManager.m_Instance.OnFinishReset();
             m_CurrentNodeByTime = null;

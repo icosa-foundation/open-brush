@@ -229,6 +229,9 @@ namespace TiltBrush
         // Symmetry settings captured when the current line was started; null if the line isn't
         // being drawn with symmetry.
         private SymmetrySettingsSnapshot m_ActiveSymmetrySettings;
+        // The most recently captured settings, reused whenever nothing has changed since, so that
+        // a sketch holds one snapshot per distinct set of settings rather than one per stroke.
+        private SymmetrySettingsSnapshot m_LastSymmetrySettings;
         // The group the strokes of the current line join as they are recorded. Created lazily so
         // that discarded lines don't leave empty groups behind.
         private SymmetryStrokeGroup m_ActiveSymmetryStrokeGroup;
@@ -2261,28 +2264,35 @@ namespace TiltBrush
         private void BeginSymmetryStrokeGroup()
         {
             m_ActiveSymmetryStrokeGroup = null;
-            m_ActiveSymmetrySettings = SymmetryModeEnabled
-                ? SymmetrySettingsSnapshot.FromCurrentSettings()
-                : null;
+            if (!SymmetryModeEnabled)
+            {
+                m_ActiveSymmetrySettings = null;
+                return;
+            }
+
+            var settings = SymmetrySettingsSnapshot.FromCurrentSettings();
+            // Settings usually don't change from one stroke to the next, so keep sharing the
+            // snapshot we already have instead of holding a copy per group.
+            if (settings != null && settings.Equals(m_LastSymmetrySettings))
+            {
+                settings = m_LastSymmetrySettings;
+            }
+            m_LastSymmetrySettings = settings;
+            m_ActiveSymmetrySettings = settings;
         }
 
         /// Links a freshly-recorded stroke to the other strokes of the line it belongs to.
         private void AddStrokeToActiveSymmetryGroup(Stroke stroke, int pointerIndex)
         {
             if (stroke == null || m_ActiveSymmetrySettings == null) { return; }
-            m_ActiveSymmetryStrokeGroup ??= SymmetryStrokeGroups.Create(m_ActiveSymmetrySettings);
+            m_ActiveSymmetryStrokeGroup ??= new SymmetryStrokeGroup(m_ActiveSymmetrySettings);
             stroke.JoinSymmetryGroup(m_ActiveSymmetryStrokeGroup, pointerIndex);
         }
 
         /// Closes off the current line's symmetry group. A group that ended up with a single
-        /// stroke has no peers to track, so it is disbanded; the stroke keeps its record of the
-        /// symmetry settings.
+        /// stroke is kept: it carries that stroke's record of the symmetry settings.
         private void EndSymmetryStrokeGroup()
         {
-            if (m_ActiveSymmetryStrokeGroup != null && m_ActiveSymmetryStrokeGroup.Count < 2)
-            {
-                m_ActiveSymmetryStrokeGroup.Disband();
-            }
             m_ActiveSymmetryStrokeGroup = null;
             m_ActiveSymmetrySettings = null;
         }

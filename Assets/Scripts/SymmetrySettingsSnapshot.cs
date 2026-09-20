@@ -21,8 +21,9 @@ namespace TiltBrush
 {
     /// A record of the symmetry settings that were in place at the moment a stroke was created.
     ///
-    /// Snapshots are shared (by reference) between all the strokes of a single symmetry group,
-    /// and are treated as immutable once they have been handed to a stroke.
+    /// Snapshots are immutable once created, and shared by every symmetry group that was drawn
+    /// with the same settings, so a sketch holds one per distinct set of settings rather than one
+    /// per stroke. SketchWriter dedupes them the same way when saving.
     [Serializable]
     public class SymmetrySettingsSnapshot
     {
@@ -219,6 +220,50 @@ namespace TiltBrush
             {
                 Debug.LogWarning($"Ignoring unreadable symmetry settings: {e.Message}");
                 return null;
+            }
+        }
+
+        // -------------------------------------------------------------------------------------- //
+        // Value equality; lets identical settings be shared by every group that was drawn with
+        // them, both in memory and in the saved file.
+        // -------------------------------------------------------------------------------------- //
+
+        public override bool Equals(object obj)
+        {
+            if (!(obj is SymmetrySettingsSnapshot other)) { return false; }
+            return Mode == other.Mode &&
+                CustomType == other.CustomType &&
+                PointFamily == other.PointFamily &&
+                PointOrder == other.PointOrder &&
+                WallpaperGroup == other.WallpaperGroup &&
+                WallpaperRepeatX == other.WallpaperRepeatX &&
+                WallpaperRepeatY == other.WallpaperRepeatY &&
+                WallpaperScale == other.WallpaperScale &&
+                WallpaperScaleX == other.WallpaperScaleX &&
+                WallpaperScaleY == other.WallpaperScaleY &&
+                WallpaperSkewX == other.WallpaperSkewX &&
+                WallpaperSkewY == other.WallpaperSkewY &&
+                WidgetTransform == other.WidgetTransform &&
+                Spin == other.Spin &&
+                ScriptName == other.ScriptName;
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hash = (int)Mode;
+                hash = (hash * 397) ^ (int)CustomType;
+                hash = (hash * 397) ^ (int)PointFamily;
+                hash = (hash * 397) ^ PointOrder;
+                hash = (hash * 397) ^ (int)WallpaperGroup;
+                hash = (hash * 397) ^ WallpaperRepeatX;
+                hash = (hash * 397) ^ WallpaperRepeatY;
+                hash = (hash * 397) ^ WallpaperScale.GetHashCode();
+                hash = (hash * 397) ^ WallpaperSkewX.GetHashCode();
+                hash = (hash * 397) ^ WidgetTransform.GetHashCode();
+                hash = (hash * 397) ^ (ScriptName?.GetHashCode() ?? 0);
+                return hash;
             }
         }
 
