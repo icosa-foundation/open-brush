@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -126,6 +127,85 @@ namespace TiltBrush
             TrTransform toPeer = transforms[to] * transforms[from].inverse;
             peerXf_CS = toPeer * xf_CS * toPeer.inverse;
             return peerXf_CS.IsFinite();
+        }
+
+        // ---- Repainting ------------------------------------------------------------------- //
+        //
+        // Symmetry can give each of its pointers a different colour, brush or size - a colour
+        // shift across the mirrors, or per-pointer colours and brushes from a symmetry script -
+        // so a peer is kept consistent with the stroke being repainted rather than made identical
+        // to it. A group whose strokes all matched to begin with still ends up all matching.
+
+        /// What a peer should become when 'stroke' is repainted with the passed values:
+        /// - colour keeps the peer's offset from the stroke's colour, in HSV
+        /// - size keeps the peer's ratio to the stroke's size
+        /// - brush follows only if the peer was using the same brush as the stroke
+        ///
+        /// Call before the repaint is applied: the stroke's current values are the "before" side
+        /// of each relationship.
+        public static void GetPeerRepaintParams(
+            Stroke stroke, Stroke peer,
+            Color newColor, Guid newGuid, float newSize,
+            out Color peerColor, out Guid peerGuid, out float peerSize)
+        {
+            peerColor = OffsetColorLike(newColor, stroke.m_Color, peer.m_Color);
+            peerGuid = peer.m_BrushGuid == stroke.m_BrushGuid ? newGuid : peer.m_BrushGuid;
+            peerSize = Mathf.Approximately(stroke.m_BrushSize, 0f)
+                ? newSize
+                : peer.m_BrushSize * (newSize / stroke.m_BrushSize);
+        }
+
+        /// newColor, moved by the offset that takes sourceColor to peerColor. Hue wraps, the rest
+        /// clamps, and the new colour's alpha is kept as picked.
+        private static Color OffsetColorLike(Color newColor, Color sourceColor, Color peerColor)
+        {
+            Color.RGBToHSV(newColor, out float hNew, out float sNew, out float vNew);
+            Color.RGBToHSV(sourceColor, out float hSource, out float sSource, out float vSource);
+            Color.RGBToHSV(peerColor, out float hPeer, out float sPeer, out float vPeer);
+
+            Color result = Color.HSVToRGB(
+                Mathf.Repeat(hNew + (hPeer - hSource), 1f),
+                Mathf.Clamp01(sNew + (sPeer - sSource)),
+                Mathf.Clamp01(vNew + (vPeer - vSource)));
+            result.a = newColor.a;
+            return result;
+        }
+
+        /// For every peer outside the passed set, the repaint values that keep it consistent with
+        /// the stroke it belongs with. The four out lists are parallel, and all are left empty
+        /// when peer editing is off.
+        ///
+        /// The value lists are parallel to 'strokes', as RepaintStrokeCommand takes them.
+        public static void GatherPeerRepaints(
+            IReadOnlyList<Stroke> strokes,
+            IReadOnlyList<Color> colors, IReadOnlyList<Guid> guids, IReadOnlyList<float> sizes,
+            List<Stroke> outPeers, List<Color> outColors, List<Guid> outGuids, List<float> outSizes)
+        {
+            outPeers.Clear();
+            outColors.Clear();
+            outGuids.Clear();
+            outSizes.Clear();
+            if (!Enabled) { return; }
+
+            var handled = new HashSet<Stroke>(new ReferenceComparer<Stroke>());
+            foreach (var stroke in strokes)
+            {
+                handled.Add(stroke);
+            }
+            for (int i = 0; i < strokes.Count; ++i)
+            {
+                foreach (var peer in strokes[i].SymmetryPeers)
+                {
+                    if (!handled.Add(peer)) { continue; }
+                    GetPeerRepaintParams(
+                        strokes[i], peer, colors[i], guids[i], sizes[i],
+                        out Color peerColor, out Guid peerGuid, out float peerSize);
+                    outPeers.Add(peer);
+                    outColors.Add(peerColor);
+                    outGuids.Add(peerGuid);
+                    outSizes.Add(peerSize);
+                }
+            }
         }
 
         /// Collects the peers of the passed strokes along with the transform each one needs so

@@ -140,6 +140,11 @@ namespace TiltBrush
         // Non-null if there are strokes that should be repainted this frame.
         // TODO: give this the same treatment as m_DeleteStrokes?
         private BaseCommand m_RepaintStrokeParent;
+        /// Strokes already repainted in the batch m_RepaintStrokeParent is collecting. A stroke the
+        /// user paints over directly wins over the same stroke being repainted as someone's peer,
+        /// which is what happens when a tool is swept across several strokes of one group.
+        private HashSet<Stroke> m_RepaintStrokeBatch =
+            new HashSet<Stroke>(new ReferenceComparer<Stroke>());
 
         private TrTransform m_xfSketchInitial_RS;
 
@@ -407,6 +412,7 @@ namespace TiltBrush
                 {
                     PerformAndRecordCommand(m_RepaintStrokeParent);
                     m_RepaintStrokeParent = null;
+                    m_RepaintStrokeBatch.Clear();
                 }
                 OperationStackChanged?.Invoke();
             }
@@ -736,6 +742,21 @@ namespace TiltBrush
                 newGuids.Add(newGuid);
                 newSizes.Add(newSize);
             }
+
+            // Strokes the symmetry drew alongside the selected ones follow them, keeping whatever
+            // colour, brush or size relationship the symmetry gave them.
+            var peers = new List<Stroke>();
+            var peerColors = new List<Color>();
+            var peerGuids = new List<Guid>();
+            var peerSizes = new List<float>();
+            SymmetryPeerEditing.GatherPeerRepaints(
+                strokes, newColors, newGuids, newSizes,
+                peers, peerColors, peerGuids, peerSizes);
+            strokes.AddRange(peers);
+            newColors.AddRange(peerColors);
+            newGuids.AddRange(peerGuids);
+            newSizes.AddRange(peerSizes);
+
             PerformAndRecordCommand(
                 new RepaintStrokeCommand(strokes, newColors, newGuids, newSizes)
             );
@@ -788,7 +809,9 @@ namespace TiltBrush
                 if (m_RepaintStrokeParent == null)
                 {
                     m_RepaintStrokeParent = new BaseCommand();
+                    m_RepaintStrokeBatch.Clear();
                 }
+                m_RepaintStrokeBatch.Add(stroke);
 
                 GetRepaintParams(
                     stroke,
@@ -812,6 +835,18 @@ namespace TiltBrush
                 }
 
                 new RepaintStrokeCommand(stroke, newColor, newGuid, newSize, m_RepaintStrokeParent);
+
+                // Peers follow, relative to the stroke as it is now: the commands are performed
+                // at the end of the frame, so nothing has been repainted yet.
+                foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+                {
+                    if (!m_RepaintStrokeBatch.Add(peer)) { continue; }
+                    SymmetryPeerEditing.GetPeerRepaintParams(
+                        stroke, peer, newColor, newGuid, newSize,
+                        out Color peerColor, out Guid peerGuid, out float peerSize);
+                    new RepaintStrokeCommand(
+                        peer, peerColor, peerGuid, peerSize, m_RepaintStrokeParent);
+                }
                 return true;
             }
             return false;
