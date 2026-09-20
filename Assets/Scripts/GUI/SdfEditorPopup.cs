@@ -29,6 +29,13 @@ namespace TiltBrush
         private const float k_MinimumDimension = 0.005f;
         private const float k_BlendStep = 0.025f;
 
+        private enum NumericValueKind
+        {
+            Dimension,
+            Blend,
+            Transform,
+        }
+
         private readonly List<OptionButton> m_Buttons = new List<OptionButton>();
         private readonly List<SdfComponentHandle> m_ComponentHandles =
             new List<SdfComponentHandle>();
@@ -37,6 +44,7 @@ namespace TiltBrush
         private PopUpWindow m_Popup;
         private int m_ComponentIndex;
         private int m_DimensionIndex;
+        private int m_TransformValueIndex;
         private int m_Page;
         private bool m_EditComponentHandles;
 
@@ -44,7 +52,7 @@ namespace TiltBrush
 
         internal void Initialize(
             SdfStencil stencil, int componentIndex = 0,
-            int dimensionIndex = 0, int page = 0)
+            int dimensionIndex = 0, int page = 0, int transformValueIndex = 0)
         {
             m_Stencil = stencil != null
                 ? stencil
@@ -58,6 +66,7 @@ namespace TiltBrush
             m_Popup.SetPersistent(true);
             m_ComponentIndex = componentIndex;
             m_DimensionIndex = dimensionIndex;
+            m_TransformValueIndex = Mathf.Clamp(transformValueIndex, 0, 6);
             m_Page = Mathf.Clamp(page, 0, 5);
             ConfigureButtons();
             Active = this;
@@ -109,6 +118,9 @@ namespace TiltBrush
                     return SelectedPrimitive.HasValue;
                 case SketchControlsScript.GlobalCommands.SdfSetComponentBlend:
                     return count > 1 && m_ComponentIndex > 0;
+                case SketchControlsScript.GlobalCommands.SdfNextTransformValue:
+                case SketchControlsScript.GlobalCommands.SdfSetTransformValue:
+                    return count > 0 && m_ComponentIndex >= 0;
                 case SketchControlsScript.GlobalCommands.SdfToggleComponentHandles:
                     return count > 0;
                 default:
@@ -173,10 +185,17 @@ namespace TiltBrush
                     AdjustBlend(commandParam);
                     break;
                 case SketchControlsScript.GlobalCommands.SdfSetPrimitiveDimension:
-                    OpenNumericInput(editDimension: true);
+                    OpenNumericInput(NumericValueKind.Dimension);
                     return;
                 case SketchControlsScript.GlobalCommands.SdfSetComponentBlend:
-                    OpenNumericInput(editDimension: false);
+                    OpenNumericInput(NumericValueKind.Blend);
+                    return;
+                case SketchControlsScript.GlobalCommands.SdfNextTransformValue:
+                    m_TransformValueIndex = (m_TransformValueIndex + 1) % 7;
+                    ConfigurePage();
+                    break;
+                case SketchControlsScript.GlobalCommands.SdfSetTransformValue:
+                    OpenNumericInput(NumericValueKind.Transform);
                     return;
                 case SketchControlsScript.GlobalCommands.SdfToggleComponentHandles:
                     m_EditComponentHandles = !m_EditComponentHandles;
@@ -272,8 +291,12 @@ namespace TiltBrush
                     Configure(m_Buttons[2],
                         SketchControlsScript.GlobalCommands.SdfSetComponentBlend,
                         "Icons/settings", "Set blend");
-                    Disable(m_Buttons[3]);
-                    Disable(m_Buttons[4]);
+                    Configure(m_Buttons[3],
+                        SketchControlsScript.GlobalCommands.SdfNextTransformValue,
+                        "Icons/settings", $"Next transform value ({TransformValueName})");
+                    Configure(m_Buttons[4],
+                        SketchControlsScript.GlobalCommands.SdfSetTransformValue,
+                        "Icons/settings", $"Set {TransformValueName}");
                     Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
                         "Icons/forwardarrow", "Component tools");
                     break;
@@ -463,24 +486,61 @@ namespace TiltBrush
                 Mathf.Max(0f, component.Blend + direction * k_BlendStep)));
         }
 
-        private void OpenNumericInput(bool editDimension)
+        private string TransformValueName
+        {
+            get
+            {
+                string[] names =
+                {
+                    "position X", "position Y", "position Z",
+                    "rotation X", "rotation Y", "rotation Z", "scale",
+                };
+                return names[m_TransformValueIndex];
+            }
+        }
+
+        private float SelectedTransformValue
+        {
+            get
+            {
+                TrTransform transform =
+                    m_Stencil.GetComponentDefinitions()[m_ComponentIndex].Transform;
+                if (m_TransformValueIndex < 3)
+                {
+                    return transform.translation[m_TransformValueIndex];
+                }
+                if (m_TransformValueIndex < 6)
+                {
+                    return transform.rotation.eulerAngles[m_TransformValueIndex - 3];
+                }
+                return transform.scale;
+            }
+        }
+
+        private void OpenNumericInput(NumericValueKind kind)
         {
             int componentIndex = m_ComponentIndex;
             int dimensionIndex = m_DimensionIndex;
+            int transformValueIndex = m_TransformValueIndex;
             SdfStencil stencil = m_Stencil;
             string value;
             string title;
-            if (editDimension)
+            if (kind == NumericValueKind.Dimension)
             {
                 value = SelectedPrimitive.Value.Geometry[dimensionIndex]
                     .ToString("0.###", CultureInfo.InvariantCulture);
                 title = $"Set {DimensionName}";
             }
-            else
+            else if (kind == NumericValueKind.Blend)
             {
                 value = stencil.GetComponentDefinitions()[componentIndex].Blend
                     .ToString("0.###", CultureInfo.InvariantCulture);
                 title = "Set blend";
+            }
+            else
+            {
+                value = SelectedTransformValue.ToString("0.###", CultureInfo.InvariantCulture);
+                title = $"Set {TransformValueName}";
             }
 
             m_Popup.SetPersistent(false);
@@ -493,31 +553,39 @@ namespace TiltBrush
             }
 
             numericPopup.Initialize(value, input => ApplyNumericInput(
-                stencil, componentIndex, dimensionIndex, editDimension, input));
+                stencil, componentIndex, dimensionIndex, transformValueIndex, kind, input));
             numericPopup.m_OnClose += () =>
             {
                 if (stencil != null)
                 {
                     stencil.StartCoroutine(ReopenEditorNextFrame(
-                        stencil, componentIndex, dimensionIndex));
+                        stencil, componentIndex, dimensionIndex, transformValueIndex));
                 }
             };
         }
 
         private static void ApplyNumericInput(
             SdfStencil stencil, int componentIndex, int dimensionIndex,
-            bool editDimension, string input)
+            int transformValueIndex, NumericValueKind kind, string input)
         {
+            float minimum = kind == NumericValueKind.Dimension ||
+                (kind == NumericValueKind.Transform && transformValueIndex == 6)
+                ? k_MinimumDimension
+                : kind == NumericValueKind.Blend ? 0f : float.NegativeInfinity;
             if (stencil == null ||
                 !float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture,
                     out float value) || float.IsNaN(value) || float.IsInfinity(value) ||
-                value < (editDimension ? k_MinimumDimension : 0f))
+                value < minimum)
             {
                 OutputWindowScript.m_Instance.CreateInfoCardAtController(
                     InputManager.ControllerName.Brush,
-                    editDimension
+                    kind == NumericValueKind.Dimension
                         ? $"Enter a dimension of at least {k_MinimumDimension:0.###}."
-                        : "Enter a blend value of zero or more.");
+                        : kind == NumericValueKind.Blend
+                        ? "Enter a blend value of zero or more."
+                        : transformValueIndex == 6
+                        ? $"Enter a scale of at least {k_MinimumDimension:0.###}."
+                        : "Enter a finite transform value.");
                 return;
             }
 
@@ -528,7 +596,7 @@ namespace TiltBrush
 
             SdfStencil.ComponentDefinition component =
                 stencil.GetComponentDefinitions()[componentIndex];
-            if (editDimension)
+            if (kind == NumericValueKind.Dimension)
             {
                 if (!component.IsPrimitive || dimensionIndex < 0 ||
                     dimensionIndex >= DimensionCountForPrimitive(component.Primitive.Value.Type))
@@ -541,21 +609,43 @@ namespace TiltBrush
                 Perform(EditSdfGuideCommand.SetPrimitiveGeometry(
                     stencil, componentIndex, primitive.Type, geometry));
             }
-            else
+            else if (kind == NumericValueKind.Blend)
             {
                 Perform(EditSdfGuideCommand.SetComponentBlend(
                     stencil, componentIndex, value));
             }
+            else
+            {
+                TrTransform transform = component.Transform;
+                if (transformValueIndex < 3)
+                {
+                    transform.translation[transformValueIndex] = value;
+                }
+                else if (transformValueIndex < 6)
+                {
+                    Vector3 euler = transform.rotation.eulerAngles;
+                    euler[transformValueIndex - 3] = value;
+                    transform.rotation = Quaternion.Euler(euler);
+                }
+                else
+                {
+                    transform.scale = value;
+                }
+                Perform(EditSdfGuideCommand.SetComponentTransform(
+                    stencil, componentIndex, transform));
+            }
         }
 
         private static IEnumerator ReopenEditorNextFrame(
-            SdfStencil stencil, int componentIndex, int dimensionIndex)
+            SdfStencil stencil, int componentIndex, int dimensionIndex,
+            int transformValueIndex)
         {
             yield return null;
             if (stencil != null && SelectionManager.m_Instance.SelectedSdfGuide == stencil)
             {
                 SelectionTray.Instance?.OpenSdfEditor(
-                    componentIndex, dimensionIndex, page: 2);
+                    componentIndex, dimensionIndex, page: 2,
+                    transformValueIndex: transformValueIndex);
             }
         }
 

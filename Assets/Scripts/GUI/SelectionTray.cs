@@ -98,7 +98,8 @@ namespace TiltBrush
         }
 
         public void OpenSdfEditor(
-            int componentIndex = 0, int dimensionIndex = 0, int page = 0)
+            int componentIndex = 0, int dimensionIndex = 0, int page = 0,
+            int transformValueIndex = 0)
         {
             SdfStencil stencil = SelectionManager.m_Instance.SelectedSdfGuide;
             BasePanel panel = m_Manager?.GetPanelForPopUps();
@@ -112,7 +113,8 @@ namespace TiltBrush
                 explicitPosition: false, transition: true,
                 sDelayedText: "SDF Components");
             SdfEditorPopup controller = popupObject.AddComponent<SdfEditorPopup>();
-            controller.Initialize(stencil, componentIndex, dimensionIndex, page);
+            controller.Initialize(
+                stencil, componentIndex, dimensionIndex, page, transformValueIndex);
         }
 
         internal NumericInputPopupWindow OpenNumericInput(string title)
