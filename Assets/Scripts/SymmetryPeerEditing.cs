@@ -94,17 +94,16 @@ namespace TiltBrush
             }
         }
 
-        /// The transform that does to 'peer' what xf_CS does to 'stroke'.
+        /// C = Mpeer * Mstroke.inverse: the canvas-space transform that carries the stroke onto
+        /// its peer, from the symmetry transforms the two were drawn with.
         ///
-        /// The two strokes are related by C = Mpeer * Mstroke.inverse, where M is the symmetry
-        /// transform each was drawn with, so the peer's version of the edit is C * xf * C.inverse.
         /// False when the symmetry mode didn't record a fixed relationship between the two (a
         /// sketch saved before peers were recorded, or a mode like TwoHanded), in which case the
         /// caller should leave the peer alone rather than guess.
-        public static bool TryGetPeerTransform(
-            Stroke stroke, Stroke peer, TrTransform xf_CS, out TrTransform peerXf_CS)
+        public static bool TryGetPeerSymmetryTransform(
+            Stroke stroke, Stroke peer, out TrTransform toPeer)
         {
-            peerXf_CS = TrTransform.identity;
+            toPeer = TrTransform.identity;
             var group = stroke?.SymmetryPeerGroup;
             if (group == null || peer == null || !ReferenceEquals(group, peer.SymmetryPeerGroup))
             {
@@ -124,9 +123,66 @@ namespace TiltBrush
                 return false;
             }
 
-            TrTransform toPeer = transforms[to] * transforms[from].inverse;
+            toPeer = transforms[to] * transforms[from].inverse;
+            return toPeer.IsFinite();
+        }
+
+        /// The transform that does to 'peer' what xf_CS does to 'stroke'. Both are canvas-space
+        /// left transforms, the form stroke edits take: the peer's version is C * xf * C.inverse.
+        public static bool TryGetPeerTransform(
+            Stroke stroke, Stroke peer, TrTransform xf_CS, out TrTransform peerXf_CS)
+        {
+            peerXf_CS = TrTransform.identity;
+            if (!TryGetPeerSymmetryTransform(stroke, peer, out TrTransform toPeer)) { return false; }
             peerXf_CS = toPeer * xf_CS * toPeer.inverse;
             return peerXf_CS.IsFinite();
+        }
+
+        /// The control points a peer should take when 'stroke' is reshaped to newControlPoints -
+        /// what the reshape tool needs to sculpt a whole group at once.
+        ///
+        /// Each point moves by the peer's version of how that point moved on the stroke, so the
+        /// peer keeps any differences of its own rather than being snapped onto an exact mirror
+        /// image. Point i maps to point i, as the two were drawn.
+        ///
+        /// Call before the edit is applied to the stroke; false when the peer can't be mirrored
+        /// point for point, or when the symmetry didn't record how the two are related.
+        public static bool TryGetPeerControlPoints(
+            Stroke stroke, Stroke peer,
+            PointerManager.ControlPoint[] newControlPoints,
+            out PointerManager.ControlPoint[] peerControlPoints)
+        {
+            peerControlPoints = null;
+            if (!TryGetPeerSymmetryTransform(stroke, peer, out TrTransform toPeer)) { return false; }
+
+            var oldControlPoints = stroke.m_ControlPoints;
+            int count = oldControlPoints.Length;
+            if (newControlPoints.Length != count || peer.m_ControlPoints.Length != count)
+            {
+                return false;
+            }
+
+            var result = (PointerManager.ControlPoint[])peer.m_ControlPoints.Clone();
+            Quaternion toPeerRotation = toPeer.rotation;
+            Quaternion fromPeerRotation = Quaternion.Inverse(toPeerRotation);
+            for (int i = 0; i < count; ++i)
+            {
+                Vector3 moved = newControlPoints[i].m_Pos - oldControlPoints[i].m_Pos;
+                bool turned = newControlPoints[i].m_Orient != oldControlPoints[i].m_Orient;
+                if (moved == Vector3.zero && !turned) { continue; }
+
+                result[i].m_Pos += toPeer.MultiplyVector(moved);
+                if (turned)
+                {
+                    // The same turn, seen from the peer's side of the symmetry.
+                    Quaternion turn = newControlPoints[i].m_Orient *
+                        Quaternion.Inverse(oldControlPoints[i].m_Orient);
+                    result[i].m_Orient =
+                        (toPeerRotation * turn * fromPeerRotation) * result[i].m_Orient;
+                }
+            }
+            peerControlPoints = result;
+            return true;
         }
 
         // ---- Repainting ------------------------------------------------------------------- //

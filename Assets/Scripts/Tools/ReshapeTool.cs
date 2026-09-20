@@ -526,10 +526,30 @@ namespace TiltBrush
         {
             PlayModifyStrokeSound();
             var undoParent = ApiManager.Instance.ActiveUndo;
+
+            // Work out how the symmetry peers move before the stroke itself does: each peer's
+            // points move by its own version of how the stroke's points moved. A peer the tool
+            // is sculpting directly is left out; it is getting its own displacement already.
+            var peerEdits = new List<(Stroke stroke, PointerManager.ControlPoint[] points)>();
+            foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+            {
+                if (m_SculptContacts.ContainsKey(peer)) { continue; }
+                if (SymmetryPeerEditing.TryGetPeerControlPoints(
+                        stroke, peer, newControlPoints,
+                        out PointerManager.ControlPoint[] peerPoints))
+                {
+                    peerEdits.Add((peer, peerPoints));
+                }
+            }
+
             ModifyStrokePointsCommand cmd;
             if (undoParent == null)
             {
                 cmd = new ModifyStrokePointsCommand(stroke, newControlPoints);
+                foreach (var edit in peerEdits)
+                {
+                    new ModifyStrokePointsCommand(edit.stroke, edit.points, cmd);
+                }
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             }
             else
@@ -545,6 +565,21 @@ namespace TiltBrush
                 }
                 // Apply immediately while keeping this command in the active undo group.
                 cmd.Redo();
+
+                foreach (var edit in peerEdits)
+                {
+                    if (!m_ActiveSculptCommands.TryGetValue(edit.stroke, out var peerCmd))
+                    {
+                        peerCmd = new ModifyStrokePointsCommand(
+                            edit.stroke, edit.points, undoParent);
+                        m_ActiveSculptCommands.Add(edit.stroke, peerCmd);
+                    }
+                    else
+                    {
+                        peerCmd.UpdateEndPoints(edit.points);
+                    }
+                    peerCmd.Redo();
+                }
             }
         }
 
