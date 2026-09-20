@@ -73,6 +73,83 @@ namespace TiltBrush
         /// Which control points on the stroke should be dropped due to simplification
         public bool[] m_ControlPointsToDrop;
 
+        /// The symmetry group this stroke belongs to; null if it has no symmetry peers.
+        [NonSerialized] private SymmetryStrokeGroup m_SymmetryGroup;
+
+        /// Identifies the set of strokes a symmetry mode laid down together with this one.
+        /// Guid.Empty if this stroke has no symmetry peers.
+        public Guid SymmetryGroupId => m_SymmetryGroupId;
+
+        /// Which of the symmetry's pointers drew this stroke; 0 is the pointer the user controls,
+        /// -1 if unknown.
+        public int SymmetryPointerIndex => m_SymmetryPointerIndex;
+
+        /// The symmetry group this stroke belongs to, or null if it has none.
+        public SymmetryStrokeGroup SymmetryPeerGroup
+        {
+            get
+            {
+                if (m_SymmetryGroup == null && m_SymmetryGroupId != Guid.Empty)
+                {
+                    m_SymmetryGroup = SymmetryStrokeGroups.Get(m_SymmetryGroupId);
+                }
+                return m_SymmetryGroup;
+            }
+        }
+
+        /// The other strokes that were created alongside this one by a symmetry mode.
+        /// Empty if the stroke wasn't drawn with symmetry.
+        public IEnumerable<Stroke> SymmetryPeers =>
+            SymmetryPeerGroup?.PeersOf(this) ?? Enumerable.Empty<Stroke>();
+
+        public bool HasSymmetryPeers => (SymmetryPeerGroup?.Count ?? 0) > 1;
+
+        /// The symmetry settings that were in place when this stroke was created;
+        /// null if it wasn't drawn with symmetry.
+        public SymmetrySettingsSnapshot SymmetrySettings => m_SymmetrySettings;
+
+        /// Makes this stroke a member of the passed symmetry group, adopting the group's
+        /// record of the symmetry settings.
+        public void JoinSymmetryGroup(SymmetryStrokeGroup group, int pointerIndex)
+        {
+            if (group == null) { return; }
+            if (m_SymmetryGroup != null && !ReferenceEquals(m_SymmetryGroup, group))
+            {
+                LeaveSymmetryGroup();
+            }
+            m_SymmetryGroup = group;
+            m_SymmetryGroupId = group.Id;
+            m_SymmetryPointerIndex = pointerIndex;
+            if (group.Settings != null)
+            {
+                m_SymmetrySettings = group.Settings;
+            }
+            group.Add(this);
+            InvalidateCopy();
+        }
+
+        /// Removes this stroke from its symmetry group. The record of the symmetry settings is
+        /// kept; only the link to the peers goes away.
+        public void LeaveSymmetryGroup()
+        {
+            var group = SymmetryPeerGroup;
+            m_SymmetryGroup = null;
+            m_SymmetryGroupId = Guid.Empty;
+            m_SymmetryPointerIndex = -1;
+            group?.Remove(this);
+            InvalidateCopy();
+        }
+
+        /// Reconnects a freshly-deserialized stroke with its symmetry peers.
+        public void ResolveSymmetryGroup()
+        {
+            if (m_SymmetryGroupId == Guid.Empty) { return; }
+            var group = SymmetryStrokeGroups.GetOrCreate(m_SymmetryGroupId, m_SymmetrySettings);
+            m_SymmetryGroup = group;
+            m_SymmetrySettings ??= group.Settings;
+            group.Add(this);
+        }
+
         /// The canvas this stroke is a part of.
         public CanvasScript Canvas
         {
@@ -189,6 +266,11 @@ namespace TiltBrush
 
             if (existing.m_Guid != null)
                 m_Guid = Guid.NewGuid();
+
+            // The copy keeps the record of the symmetry settings it was drawn with, but it is
+            // not a peer of the strokes the original was drawn with.
+            m_SymmetryGroupId = Guid.Empty;
+            m_SymmetryPointerIndex = -1;
         }
 
         /// Makes a copy of stroke, if one has not already been made.
@@ -217,6 +299,7 @@ namespace TiltBrush
         /// - Stroke will never become garbage because of the Batch -> Subset -> Stroke link
         public void DestroyStroke()
         {
+            LeaveSymmetryGroup();
             Uncreate();
             // The object is still in a valid state; we should probably purposely vandalize it,
             // but some code might still erroneously use Destroy() when they mean Uncreate()

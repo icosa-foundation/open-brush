@@ -76,6 +76,8 @@ namespace TiltBrush
             Seed = 1 << 3, // int32; if not found then you get a random int.
             Layer = 1 << 4, // uint32;
             ControlPointColors = 1 << 16, // Variable-length: Color32[] + ColorControlMode; per-point colors
+            SymmetryGroup = 1 << 17,      // Variable-length: Guid + int32; links a stroke to its symmetry peers
+            SymmetrySettings = 1 << 18,   // Variable-length: the symmetry settings the stroke was drawn with
         }
 
         [Flags]
@@ -84,6 +86,64 @@ namespace TiltBrush
             None = 0,
             Pressure = 1 << 0,  // float, 1.0 is nominal
             Timestamp = 1 << 1, // uint32, milliseconds
+        }
+
+        /// Adds the symmetry extension bits that the passed stroke needs.
+        private static StrokeExtension GetSymmetryExtensions(StrokeData stroke)
+        {
+            StrokeExtension mask = StrokeExtension.None;
+            if (stroke.m_SymmetryGroupId != Guid.Empty) { mask |= StrokeExtension.SymmetryGroup; }
+            if (stroke.m_SymmetrySettings != null &&
+                stroke.m_SymmetrySettings.Mode != PointerManager.SymmetryMode.None)
+            {
+                mask |= StrokeExtension.SymmetrySettings;
+            }
+            return mask;
+        }
+
+        /// Writes the symmetry extension blocks. Must be called in ascending extension ID order
+        /// relative to the other extensions, ie after ControlPointColors.
+        private static void WriteSymmetryExtensions(
+            SketchBinaryWriter writer, StrokeData stroke, StrokeExtension strokeExtensionMask)
+        {
+            if ((strokeExtensionMask & StrokeExtension.SymmetryGroup) != 0)
+            {
+                writer.UInt32(20); // 16 byte Guid + int32 pointer index
+                writer.Guid(stroke.m_SymmetryGroupId);
+                writer.Int32(stroke.m_SymmetryPointerIndex);
+            }
+            if ((strokeExtensionMask & StrokeExtension.SymmetrySettings) != 0)
+            {
+                byte[] data = stroke.m_SymmetrySettings.ToBytes();
+                writer.UInt32((uint)data.Length);
+                writer.BaseStream.Write(data, 0, data.Length);
+            }
+        }
+
+        /// Reads a StrokeExtension.SymmetryGroup block. Returns false on a malformed block.
+        private static bool ReadSymmetryGroup(SketchBinaryReader reader, Stroke stroke)
+        {
+            uint dataSize = reader.UInt32();
+            if (dataSize != 20) { return reader.Skip(dataSize); }
+            stroke.m_SymmetryGroupId = reader.ReadGuid();
+            stroke.m_SymmetryPointerIndex = reader.Int32();
+            return true;
+        }
+
+        /// Reads a StrokeExtension.SymmetrySettings block. Returns false on a malformed block.
+        private static bool ReadSymmetrySettings(SketchBinaryReader reader, Stroke stroke)
+        {
+            uint dataSize = reader.UInt32();
+            var data = new byte[dataSize];
+            int read = 0;
+            while (read < dataSize)
+            {
+                int n = reader.BaseStream.Read(data, read, (int)dataSize - read);
+                if (n <= 0) { return false; }
+                read += n;
+            }
+            stroke.m_SymmetrySettings = SymmetrySettingsSnapshot.FromBytes(data);
+            return true;
         }
 
         public struct AdjustedMemoryBrushStroke
@@ -233,6 +293,7 @@ namespace TiltBrush
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
                 if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
+                strokeExtensionMask |= GetSymmetryExtensions(stroke);
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -302,6 +363,8 @@ namespace TiltBrush
                         }
                     }
                 }
+
+                WriteSymmetryExtensions(writer, stroke, strokeExtensionMask);
 
                 // Control points
                 writer.Int32(stroke.m_ControlPoints.Length);
@@ -363,6 +426,7 @@ namespace TiltBrush
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
                 if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
+                strokeExtensionMask |= GetSymmetryExtensions(stroke);
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -432,6 +496,8 @@ namespace TiltBrush
                         }
                     }
                 }
+
+                WriteSymmetryExtensions(writer, stroke, strokeExtensionMask);
 
                 // Control points
                 writer.Int32(stroke.m_ControlPoints.Length);
@@ -535,6 +601,7 @@ namespace TiltBrush
             if (bAdditive)
             {
                 GroupManager.MoveStrokesToNewGroups(strokes, oldGroupToNewGroup);
+                SymmetryStrokeGroups.RemapGroupIds(strokes);
             }
             return true;
         }
@@ -676,6 +743,12 @@ namespace TiltBrush
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
+                        case StrokeExtension.SymmetryGroup:
+                            if (!ReadSymmetryGroup(reader, stroke)) { return null; }
+                            break;
+                        case StrokeExtension.SymmetrySettings:
+                            if (!ReadSymmetrySettings(reader, stroke)) { return null; }
+                            break;
                         default:
                             {
                                 // Skip unknown extension.
@@ -751,6 +824,9 @@ namespace TiltBrush
                         stroke.m_ControlPoints[j] = rControlPoint;
                     }
                 }
+
+                // Reconnect the stroke with the peers its symmetry mode created it alongside.
+                stroke.ResolveSymmetryGroup();
 
                 // Deserialized strokes are expected in timestamp order, yielding aggregate complexity
                 // of O(N) to populate the by-time linked list.
@@ -885,6 +961,12 @@ namespace TiltBrush
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
+                        case StrokeExtension.SymmetryGroup:
+                            if (!ReadSymmetryGroup(reader, stroke)) { return null; }
+                            break;
+                        case StrokeExtension.SymmetrySettings:
+                            if (!ReadSymmetrySettings(reader, stroke)) { return null; }
+                            break;
                         default:
                             {
                                 // Skip unknown extension.
@@ -955,6 +1037,7 @@ namespace TiltBrush
                     }
                 }
 
+                stroke.ResolveSymmetryGroup();
                 result.Add(stroke);
             }
             return result;

@@ -226,6 +226,12 @@ namespace TiltBrush
         private int m_StraightEdgeControlPointIndex;
 
         private SymmetryMode m_CurrentSymmetryMode;
+        // Symmetry settings captured when the current line was started; null if the line isn't
+        // being drawn with symmetry.
+        private SymmetrySettingsSnapshot m_ActiveSymmetrySettings;
+        // The group the strokes of the current line join as they are recorded. Created lazily so
+        // that discarded lines don't leave empty groups behind.
+        private SymmetryStrokeGroup m_ActiveSymmetryStrokeGroup;
         private SymmetryWidget m_SymmetryWidgetScript;
         private bool m_UseSymmetryWidget = false;
         public Color m_lastChosenColor { get; private set; }
@@ -1305,6 +1311,7 @@ namespace TiltBrush
                 }
 
                 Stroke stroke = pointer.DetachLine(false, null, flags, isFinalStroke);
+                AddStrokeToActiveSymmetryGroup(stroke, pointerIndex);
                 if (m_StraightEdgeEnabled &&
                     m_StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line)
                 {
@@ -2175,6 +2182,8 @@ namespace TiltBrush
         // stopped and started a new one.
         void InitiateLine(bool isContinue = false)
         {
+            BeginSymmetryStrokeGroup();
+
             if (!isContinue && m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
                 ResetScriptedPointerStrokeContinuationState();
@@ -2243,6 +2252,39 @@ namespace TiltBrush
                 DetachPointerStroke(i, discard, ref groupStart, ref groupStartTime, isFinalStroke,
                     forceGroupContinue: forceGroupContinue);
             }
+
+            EndSymmetryStrokeGroup();
+        }
+
+        /// Takes a snapshot of the symmetry settings for the line that's about to be drawn.
+        /// The strokes of that line are linked together as symmetry peers as they are recorded.
+        private void BeginSymmetryStrokeGroup()
+        {
+            m_ActiveSymmetryStrokeGroup = null;
+            m_ActiveSymmetrySettings = SymmetryModeEnabled
+                ? SymmetrySettingsSnapshot.FromCurrentSettings()
+                : null;
+        }
+
+        /// Links a freshly-recorded stroke to the other strokes of the line it belongs to.
+        private void AddStrokeToActiveSymmetryGroup(Stroke stroke, int pointerIndex)
+        {
+            if (stroke == null || m_ActiveSymmetrySettings == null) { return; }
+            m_ActiveSymmetryStrokeGroup ??= SymmetryStrokeGroups.Create(m_ActiveSymmetrySettings);
+            stroke.JoinSymmetryGroup(m_ActiveSymmetryStrokeGroup, pointerIndex);
+        }
+
+        /// Closes off the current line's symmetry group. A group that ended up with a single
+        /// stroke has no peers to track, so it is disbanded; the stroke keeps its record of the
+        /// symmetry settings.
+        private void EndSymmetryStrokeGroup()
+        {
+            if (m_ActiveSymmetryStrokeGroup != null && m_ActiveSymmetryStrokeGroup.Count < 2)
+            {
+                m_ActiveSymmetryStrokeGroup.Disband();
+            }
+            m_ActiveSymmetryStrokeGroup = null;
+            m_ActiveSymmetrySettings = null;
         }
 
         public void HandleColorJitter()
