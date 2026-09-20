@@ -901,10 +901,9 @@ namespace TiltBrush
                 string assetLocation = Path.GetDirectoryName(source);
                 gameObject.transform.localScale = Vector3.one * 10f; // Match the scale of the legacy obj importer
                 m_ImportMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_Location.AbsolutePath);
-                // ImportMaterialCollector resolves texture files off assetLocation at export time.
-                // Streamed from shared storage there is no such directory, so exporting a sketch
-                // that contains this model is unsupported rather than silently wrong.
-                m_AllowExport = m_ImportMaterialCollector != null && GetSharedStorageUrl() == null;
+                // Export uses the loaded meshes and Unity materials; it does not need to
+                // materialize the streamed OBJ dependency tree locally.
+                m_AllowExport = m_ImportMaterialCollector != null;
                 // m_Valid = true;
                 GameObject parent = new GameObject("ImportedObjParent");
                 gameObject.transform.SetParent(parent.transform, true);
