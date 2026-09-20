@@ -114,6 +114,26 @@ namespace TiltBrush
         [LuaDocsReturnValue("A new ellipsoid guide")]
         public static GuideApiWrapper NewEllipsoid(TrTransform transform) => _Add(StencilType.Ellipsoid, transform);
 
+        [LuaDocsDescription("Creates a new cylinder guide with a default size using the transform for position and orientation")]
+        [LuaDocsReturnValue("A new cylinder guide")]
+        public static GuideApiWrapper NewCylinder(TrTransform transform) => _Add(StencilType.Cylinder, transform);
+
+        [LuaDocsDescription("Creates a new cone guide with a default size using the transform for position and orientation")]
+        [LuaDocsReturnValue("A new cone guide")]
+        public static GuideApiWrapper NewCone(TrTransform transform) => _Add(StencilType.Cone, transform);
+
+        [LuaDocsDescription("Creates a new pyramid guide with a default size using the transform for position and orientation")]
+        [LuaDocsReturnValue("A new pyramid guide")]
+        public static GuideApiWrapper NewPyramid(TrTransform transform) => _Add(StencilType.Pyramid, transform);
+
+        [LuaDocsDescription("Creates a new torus guide with a default size using the transform for position and orientation")]
+        [LuaDocsReturnValue("A new torus guide")]
+        public static GuideApiWrapper NewTorus(TrTransform transform) => _Add(StencilType.Torus, transform);
+
+        [LuaDocsDescription("Creates a new box-frame guide with a default size using the transform for position and orientation")]
+        [LuaDocsReturnValue("A new box-frame guide")]
+        public static GuideApiWrapper NewBoxFrame(TrTransform transform) => _Add(StencilType.BoxFrame, transform);
+
         [LuaDocsDescription("Creates a new SDF guide with a default size using the transform for position and orientation")]
         [LuaDocsExample("myGuide = Guide:NewSDF(Transform:New(0, 5, 2))")]
         [LuaDocsParameter("transform", "The transform of the Guide Widget")]

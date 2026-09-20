@@ -35,7 +35,9 @@ namespace TiltBrush
         InteriorDome = 6,
         Pyramid = 7,
         Ellipsoid = 8,
-        Custom = 9
+        Custom = 9,
+        Torus = 10,
+        BoxFrame = 11
     }
 
     [Serializable]

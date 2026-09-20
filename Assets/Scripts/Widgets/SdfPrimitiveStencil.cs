@@ -24,6 +24,8 @@ namespace TiltBrush
     public sealed class SdfPrimitiveStencil : SdfStencil
     {
         private const float k_MinimumAspectRatio = 0.05f;
+        private const float k_TorusMaximumTubeRatio = 0.9f;
+        private const float k_BoxFrameThicknessRatio = 0.08f;
 
         [SerializeField] private StencilType m_PrimitiveGuideType = StencilType.Cylinder;
         [SerializeField] private SDFPrimitiveType m_PrimitiveType = SDFPrimitiveType.Cylinder;
@@ -77,12 +79,24 @@ namespace TiltBrush
             m_AspectRatio /= maximumAspect;
             m_Size *= maximumAspect;
 
-            float radialAspect = Mathf.Max(
-                k_MinimumAspectRatio, Mathf.Max(m_AspectRatio.x, m_AspectRatio.z));
-            m_AspectRatio = new Vector3(
-                radialAspect,
-                Mathf.Max(k_MinimumAspectRatio, m_AspectRatio.y),
-                radialAspect);
+            if (UsesRadialDimensions)
+            {
+                float radialAspect = Mathf.Max(
+                    k_MinimumAspectRatio, Mathf.Max(m_AspectRatio.x, m_AspectRatio.z));
+                float heightAspect = Mathf.Max(k_MinimumAspectRatio, m_AspectRatio.y);
+                if (m_PrimitiveType == SDFPrimitiveType.Torus)
+                {
+                    heightAspect = Mathf.Min(heightAspect, radialAspect * k_TorusMaximumTubeRatio);
+                }
+                m_AspectRatio = new Vector3(radialAspect, heightAspect, radialAspect);
+            }
+            else
+            {
+                m_AspectRatio = new Vector3(
+                    Mathf.Max(k_MinimumAspectRatio, m_AspectRatio.x),
+                    Mathf.Max(k_MinimumAspectRatio, m_AspectRatio.y),
+                    Mathf.Max(k_MinimumAspectRatio, m_AspectRatio.z));
+            }
             transform.localScale = Vector3.one * m_Size;
 
             if (PrimitiveCount > 0)
@@ -122,9 +136,59 @@ namespace TiltBrush
             {
                 return Axis.Invalid;
             }
-            Vector3 secondary_OS = transform.InverseTransformPoint(secondaryHand);
-            float radialDistance = new Vector2(secondary_OS.x, secondary_OS.z).magnitude;
-            return Mathf.Abs(secondary_OS.y) > radialDistance ? Axis.Y : Axis.XZ;
+            if (UsesRadialDimensions)
+            {
+                Vector3 secondary_OS = transform.InverseTransformPoint(secondaryHand);
+                float radialDistance = new Vector2(secondary_OS.x, secondary_OS.z).magnitude;
+                return Mathf.Abs(secondary_OS.y) > radialDistance ? Axis.Y : Axis.XZ;
+            }
+
+            Vector3 hands_OS = transform.InverseTransformDirection(primaryHand - secondaryHand);
+            Vector3 absoluteHands = hands_OS.Abs();
+            if (absoluteHands.x > absoluteHands.y && absoluteHands.x > absoluteHands.z)
+            {
+                return Axis.X;
+            }
+            return absoluteHands.y > absoluteHands.z ? Axis.Y : Axis.Z;
+        }
+
+        public override void RecordAndApplyScaleToAxis(float deltaScale, Axis axis)
+        {
+            Vector3 newDimensions = CustomDimension;
+            if (UsesRadialDimensions)
+            {
+                switch (axis)
+                {
+                    case Axis.XZ:
+                        newDimensions.x *= deltaScale;
+                        newDimensions.z *= deltaScale;
+                        break;
+                    case Axis.Y:
+                        newDimensions.y *= deltaScale;
+                        break;
+                    default:
+                        throw new ArgumentException(nameof(axis));
+                }
+            }
+            else if (axis == Axis.X || axis == Axis.Y || axis == Axis.Z)
+            {
+                newDimensions[(int)axis] *= deltaScale;
+            }
+            else
+            {
+                throw new ArgumentException(nameof(axis));
+            }
+
+            if (m_RecordMovements)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new MoveWidgetCommand(this, LocalTransform, newDimensions));
+            }
+            else
+            {
+                m_AspectRatio = newDimensions;
+                UpdateScale();
+            }
         }
 
         protected override void RegisterHighlightForSpecificAxis(Axis highlightAxis)
@@ -145,9 +209,17 @@ namespace TiltBrush
             float parentScale = TrTransform.FromTransform(transform.parent).scale;
             switch (axis)
             {
+                case Axis.X:
                 case Axis.Y:
-                    axisVec = transform.up;
-                    extent = parentScale * Extents.y;
+                case Axis.Z:
+                    if (UsesRadialDimensions && axis != Axis.Y)
+                    {
+                        throw new NotImplementedException(axis.ToString());
+                    }
+                    Vector3 localAxis = Vector3.zero;
+                    localAxis[(int)axis] = 1f;
+                    axisVec = transform.TransformDirection(localAxis);
+                    extent = parentScale * Extents[(int)axis];
                     break;
                 case Axis.XZ:
                     Vector3 hands = handB - handA;
@@ -167,20 +239,57 @@ namespace TiltBrush
 
         private Vector4 GeometryFromAspectRatio()
         {
-            float radius = 0.5f * Mathf.Max(m_AspectRatio.x, m_AspectRatio.z);
-            float halfHeight = 0.5f * m_AspectRatio.y;
-            return new Vector4(radius, halfHeight, 0f, 0f);
+            return GeometryForExtents(m_PrimitiveType, m_AspectRatio);
+        }
+
+        internal static Vector4 GeometryForExtents(
+            SDFPrimitiveType primitiveType, Vector3 extents)
+        {
+            switch (primitiveType)
+            {
+                case SDFPrimitiveType.Cylinder:
+                case SDFPrimitiveType.Cone:
+                    return new Vector4(
+                        0.5f * Mathf.Min(extents.x, extents.z),
+                        0.5f * extents.y, 0f, 0f);
+                case SDFPrimitiveType.Pyramid:
+                    return new Vector4(
+                        0.5f * Mathf.Max(extents.x, extents.z),
+                        0.5f * extents.y, 0f, 0f);
+                case SDFPrimitiveType.Torus:
+                    float outerRadius = 0.5f * Mathf.Max(extents.x, extents.z);
+                    float minorRadius = 0.5f * extents.y;
+                    float majorRadius = Mathf.Max(
+                        k_MinimumAspectRatio * 0.5f, outerRadius - minorRadius);
+                    return new Vector4(majorRadius, minorRadius, 0f, 0f);
+                case SDFPrimitiveType.BoxFrame:
+                    float thickness = Mathf.Max(
+                        k_MinimumAspectRatio * 0.5f,
+                        Mathf.Min(extents.x, Mathf.Min(extents.y, extents.z)) *
+                        k_BoxFrameThicknessRatio);
+                    return new Vector4(
+                        0.5f * extents.x, 0.5f * extents.y, 0.5f * extents.z,
+                        thickness);
+                default:
+                    throw new ArgumentOutOfRangeException(
+                        nameof(primitiveType), primitiveType,
+                        "Unsupported standalone SDF guide primitive.");
+            }
         }
 
         private void ValidateConfiguration()
         {
             bool valid =
-                m_PrimitiveGuideType == StencilType.Cylinder &&
-                m_PrimitiveType == SDFPrimitiveType.Cylinder ||
-                m_PrimitiveGuideType == StencilType.Cone &&
-                m_PrimitiveType == SDFPrimitiveType.Cone ||
-                m_PrimitiveGuideType == StencilType.Pyramid &&
-                m_PrimitiveType == SDFPrimitiveType.Pyramid;
+                (m_PrimitiveGuideType == StencilType.Cylinder &&
+                 m_PrimitiveType == SDFPrimitiveType.Cylinder) ||
+                (m_PrimitiveGuideType == StencilType.Cone &&
+                 m_PrimitiveType == SDFPrimitiveType.Cone) ||
+                (m_PrimitiveGuideType == StencilType.Pyramid &&
+                 m_PrimitiveType == SDFPrimitiveType.Pyramid) ||
+                (m_PrimitiveGuideType == StencilType.Torus &&
+                 m_PrimitiveType == SDFPrimitiveType.Torus) ||
+                (m_PrimitiveGuideType == StencilType.BoxFrame &&
+                 m_PrimitiveType == SDFPrimitiveType.BoxFrame);
             if (!valid)
             {
                 throw new InvalidOperationException(
@@ -188,6 +297,9 @@ namespace TiltBrush
                     $"{m_PrimitiveGuideType} -> {m_PrimitiveType}.");
             }
         }
+
+        private bool UsesRadialDimensions =>
+            m_PrimitiveType != SDFPrimitiveType.BoxFrame;
 
         private static void ValidateExtents(Vector3 value)
         {

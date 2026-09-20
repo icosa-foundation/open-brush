@@ -275,8 +275,15 @@ namespace TiltBrush
                     break;
                 case StencilType.Pyramid:
                     primitiveType = SDFPrimitiveType.Pyramid;
-                    geometry = new Vector4(
-                        Mathf.Max(extents.x, extents.z) * 0.5f, extents.y * 0.5f, 0f, 0f);
+                    geometry = SdfPrimitiveStencil.GeometryForExtents(primitiveType, extents);
+                    break;
+                case StencilType.Torus:
+                    primitiveType = SDFPrimitiveType.Torus;
+                    geometry = SdfPrimitiveStencil.GeometryForExtents(primitiveType, extents);
+                    break;
+                case StencilType.BoxFrame:
+                    primitiveType = SDFPrimitiveType.BoxFrame;
+                    geometry = SdfPrimitiveStencil.GeometryForExtents(primitiveType, extents);
                     break;
                 default:
                     throw new NotSupportedException(
