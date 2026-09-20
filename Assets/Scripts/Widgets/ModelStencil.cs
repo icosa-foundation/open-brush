@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Linq;
 using UnityEngine;
 using IsoMesh;
 
@@ -24,6 +25,8 @@ namespace TiltBrush
     /// </summary>
     public class ModelStencil : StencilWidget
     {
+        private const string k_LogPrefix = "SDFModelGuide:";
+
         [Header("Model Stencil Configuration")]
         [SerializeField] private Model m_Model;
         [SerializeField] private SDFMeshAsset m_SDFMeshAsset;
@@ -91,29 +94,13 @@ namespace TiltBrush
             base.Awake();
         }
 
-        private void Start()
+        protected override void Start()
         {
+            base.Start();
             // Only load if not already loaded (Model property setter may have already called LoadModel)
             if (m_Model != null && !m_ModelLoaded)
             {
                 LoadModel();
-            }
-        }
-
-        private void OnDestroy()
-        {
-            // Clean up IsoMesh components
-            if (m_MeshGenerator != null && m_MeshGenerator.gameObject != null)
-            {
-                Destroy(m_MeshGenerator.gameObject); // Destroy the GameObject, not just the component
-            }
-            if (m_SDFGroup != null)
-            {
-                Destroy(m_SDFGroup); // SDFGroup is on main GameObject, destroy component only
-            }
-            if (m_SDFMeshComponent != null && m_SDFMeshComponent.gameObject != null)
-            {
-                Destroy(m_SDFMeshComponent.gameObject); // Destroy the GameObject
             }
         }
 
@@ -128,7 +115,6 @@ namespace TiltBrush
             // Prevent double-loading (can be called from both property setter and Start())
             if (m_ModelLoaded)
             {
-                Debug.Log("ModelStencil: LoadModel() called but model already loaded, skipping");
                 return;
             }
 
@@ -142,7 +128,7 @@ namespace TiltBrush
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
             if (m_ModelInstance == null)
             {
-                Debug.LogError("ModelStencil: Failed to instantiate model - m_ModelParent returned null");
+                Debug.LogError($"{k_LogPrefix} Failed to instantiate the source model.");
                 return;
             }
 
@@ -154,8 +140,6 @@ namespace TiltBrush
 
             // Count total triangles BEFORE generating SDF (which destroys the model instance)
             m_TotalTriangleCount = CountTotalTriangles();
-            Debug.Log($"ModelStencil: Model has {m_TotalTriangleCount:N0} triangles");
-
             // Generate SDF at runtime if not manually assigned
             if (m_SDFMeshAsset == null)
             {
@@ -178,24 +162,24 @@ namespace TiltBrush
                 if (m_TotalTriangleCount <= 0)
                 {
                     Debug.LogWarning(
-                        "ModelStencil: Cannot create MeshCollider fallback: model has no triangles");
+                        $"{k_LogPrefix} Cannot create a collider fallback because the model " +
+                        "has no triangles.");
                 }
                 else if (m_TotalTriangleCount <= threshold)
                 {
-                    Debug.Log($"ModelStencil: Using MeshCollider fallback on {platform}");
                     SetupMeshCollider();
                 }
                 else
                 {
                     Debug.LogWarning(
-                        $"ModelStencil: Cannot create MeshCollider fallback on {platform}: " +
-                        $"{m_TotalTriangleCount:N0} triangles exceeds the {threshold:N0} triangle limit");
+                        $"{k_LogPrefix} Cannot create a collider fallback on {platform}: " +
+                        $"{m_TotalTriangleCount:N0} triangles exceeds the " +
+                        $"{threshold:N0} triangle limit.");
                 }
             }
 
             // Mark model as loaded to prevent double-loading
             m_ModelLoaded = true;
-            Debug.Log("ModelStencil: Model loading complete");
         }
 
         /// <summary>
@@ -208,8 +192,9 @@ namespace TiltBrush
 
             if (m_SDFComputeShader == null)
             {
-                Debug.LogWarning("ModelStencil: No SDF compute shader assigned. Cannot generate runtime SDF. " +
-                               "Assign Compute_SDFMesh shader in Inspector or fallback to MeshCollider.");
+                Debug.LogWarning(
+                    $"{k_LogPrefix} The SDF compute shader is unavailable; using the " +
+                    "collider fallback when possible.");
                 return;
             }
 
@@ -217,7 +202,7 @@ namespace TiltBrush
             var meshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
             if (meshFilters.Length == 0)
             {
-                Debug.LogWarning("ModelStencil: No meshes found in model instance");
+                Debug.LogWarning($"{k_LogPrefix} The source model contains no meshes.");
                 return;
             }
 
@@ -226,15 +211,13 @@ namespace TiltBrush
 
             if (combinedMesh == null || combinedMesh.triangles.Length == 0)
             {
-                Debug.LogWarning("ModelStencil: Failed to combine meshes for SDF generation");
+                Debug.LogWarning($"{k_LogPrefix} Failed to combine the source meshes.");
                 return;
             }
 
             // Determine appropriate SDF size based on triangle count
             int triangleCount = combinedMesh.triangles.Length / 3;
             int sdfSize = RuntimeSDFGenerator.GetRecommendedSDFSize(triangleCount);
-
-            Debug.Log($"ModelStencil: Generating {sdfSize}³ SDF for model with {triangleCount:N0} triangles...");
 
             // Generate SDF
             m_SDFMeshAsset = RuntimeSDFGenerator.GenerateSDF(
@@ -246,10 +229,17 @@ namespace TiltBrush
 
             if (m_SDFMeshAsset != null)
             {
-                Debug.Log($"ModelStencil: Successfully generated SDF for '{m_Model.HumanName}'");
+                Debug.Log(
+                    $"{k_LogPrefix} Generated a {sdfSize}³ SDF for " +
+                    $"'{m_Model.HumanName}' ({triangleCount:N0} triangles).");
 
                 // Generate and assign preview mesh from SDF
                 GenerateSDFPreviewMesh();
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"{k_LogPrefix} SDF generation failed for '{m_Model.HumanName}'.");
             }
         }
 
@@ -260,65 +250,21 @@ namespace TiltBrush
         {
             if (m_SDFMeshAsset == null)
             {
-                Debug.LogError("ModelStencil: Cannot generate preview - SDFMeshAsset is null");
+                Debug.LogError($"{k_LogPrefix} Cannot generate a preview without an SDF asset.");
                 return;
-            }
-
-            Debug.Log($"ModelStencil: Setting up IsoMesh preview mesh generation ({m_PreviewResolution}³ resolution)...");
-
-            // Destroy the original model instance completely
-            // Use DestroyImmediate since we're in runtime setup, not a Unity lifecycle method
-            if (m_ModelInstance != null)
-            {
-                Debug.Log($"ModelStencil: Destroying original model instance: {m_ModelInstance.name} (GameObject: {m_ModelInstance.gameObject.name})");
-                GameObject toDestroy = m_ModelInstance.gameObject;
-                Debug.Log($"ModelStencil: About to destroy GameObject at path: {GetGameObjectPath(toDestroy)}");
-                Debug.Log($"ModelStencil: GameObject has {toDestroy.transform.childCount} children");
-
-                // Destroy all children first to ensure clean destruction
-                while (toDestroy.transform.childCount > 0)
-                {
-                    Transform child = toDestroy.transform.GetChild(0);
-                    Debug.Log($"ModelStencil: Destroying child: {child.name}");
-                    DestroyImmediate(child.gameObject);
-                }
-
-                Debug.Log($"ModelStencil: All children destroyed, now destroying parent");
-                DestroyImmediate(toDestroy);
-                m_ModelInstance = null;
-                Debug.Log("ModelStencil: Model instance destroyed immediately");
-
-                // Verify destruction
-                Transform[] allChildren = transform.GetComponentsInChildren<Transform>(true);
-                Debug.Log($"ModelStencil: After destruction, StencilModel has {allChildren.Length - 1} children/descendants");
-                foreach (Transform child in allChildren)
-                {
-                    if (child != transform)
-                    {
-                        Debug.Log($"ModelStencil: Remaining child: {child.name} at path: {GetGameObjectPath(child.gameObject)}");
-                    }
-                }
-            }
-            else
-            {
-                Debug.LogWarning("ModelStencil: m_ModelInstance is null, cannot destroy original model");
             }
 
             // Create IsoMesh component hierarchy
             // This follows IsoMesh's architecture: SDFGroup -> SDFMesh -> SDFGroupMeshGenerator
 
-            // 1. Create SDFGroup component (manages the SDF hierarchy)
-            Debug.Log("ModelStencil: Creating SDFGroup component");
             m_SDFGroup = gameObject.AddComponent<SDFGroup>();
 
             if (m_SDFGroup == null)
             {
-                Debug.LogError("ModelStencil: Failed to create SDFGroup component");
+                Debug.LogError($"{k_LogPrefix} Failed to create the IsoMesh group.");
                 return;
             }
 
-            // 2. Create a child GameObject for the SDFMesh component
-            Debug.Log("ModelStencil: Creating SDFMesh child object");
             GameObject sdfMeshObject = new GameObject("SDF Mesh");
             sdfMeshObject.transform.SetParent(transform);
             sdfMeshObject.transform.localPosition = Vector3.zero;
@@ -328,28 +274,26 @@ namespace TiltBrush
             m_SDFMeshComponent = sdfMeshObject.AddComponent<SDFMesh>();
             if (m_SDFMeshComponent == null)
             {
-                Debug.LogError("ModelStencil: Failed to create SDFMesh component");
+                Debug.LogError($"{k_LogPrefix} Failed to create the IsoMesh operand.");
                 return;
             }
 
             // Assign the SDFMeshAsset using reflection (Asset property is read-only)
-            Debug.Log($"ModelStencil: Assigning SDFMeshAsset (Size: {m_SDFMeshAsset.Size}, Bounds: {m_SDFMeshAsset.MinBounds} to {m_SDFMeshAsset.MaxBounds})");
             var assetField = typeof(SDFMesh).GetField("m_asset",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
 
             if (assetField == null)
             {
-                Debug.LogError("ModelStencil: Failed to find 'm_asset' field in SDFMesh via reflection");
+                Debug.LogError(
+                    $"{k_LogPrefix} The installed IsoMesh version does not expose its " +
+                    "mesh-asset field.");
                 return;
             }
 
             assetField.SetValue(m_SDFMeshComponent, m_SDFMeshAsset);
-            Debug.Log($"ModelStencil: SDFMeshAsset assigned, Asset property = {m_SDFMeshComponent.Asset != null}");
 
-            // 3. Create a child GameObject for SDFGroupMeshGenerator component
             // IMPORTANT: SDFGroupMeshGenerator must be on its own GameObject (not the parent)
             // It will auto-create a child GameObject with the generated mesh
-            Debug.Log("ModelStencil: Creating SDFGroupMeshGenerator child object");
             GameObject meshGeneratorObject = new GameObject("SDF Mesh Generator");
             meshGeneratorObject.transform.SetParent(transform);
             meshGeneratorObject.transform.localPosition = Vector3.zero;
@@ -360,101 +304,75 @@ namespace TiltBrush
 
             if (m_MeshGenerator == null)
             {
-                Debug.LogError("ModelStencil: Failed to create SDFGroupMeshGenerator component");
+                Debug.LogError($"{k_LogPrefix} Failed to create the preview mesh generator.");
                 return;
             }
 
             // Set the SDFGroup reference on the mesh generator
             var groupField = typeof(SDFGroupMeshGenerator).GetField("m_group",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (groupField != null)
+            if (groupField == null)
             {
-                groupField.SetValue(m_MeshGenerator, m_SDFGroup);
-                Debug.Log("ModelStencil: Set SDFGroup reference on mesh generator");
+                Debug.LogError(
+                    $"{k_LogPrefix} The installed IsoMesh version does not expose its " +
+                    "preview-group field.");
+                return;
             }
-            else
-            {
-                Debug.LogWarning("ModelStencil: Could not find 'm_group' field in SDFGroupMeshGenerator");
-            }
+            groupField.SetValue(m_MeshGenerator, m_SDFGroup);
 
             // Configure mesh generator settings using reflection (properties are read-only)
-            Debug.Log("ModelStencil: Configuring IsoMesh settings via reflection");
-
             // VoxelSettings: Set cell count (SamplesPerSide = CellCount + 1)
             var voxelSettings = m_MeshGenerator.VoxelSettings;
             var cellCountField = typeof(VoxelSettings).GetField("m_cellCount",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (cellCountField != null)
+            if (cellCountField == null)
             {
-                cellCountField.SetValue(voxelSettings, m_PreviewResolution - 1);
-                Debug.Log($"ModelStencil: Set cell count to {m_PreviewResolution - 1} (SamplesPerSide will be {m_PreviewResolution})");
+                Debug.LogError(
+                    $"{k_LogPrefix} The installed IsoMesh version does not expose its " +
+                    "preview-resolution field.");
+                return;
             }
-            else
-            {
-                Debug.LogError("ModelStencil: Failed to find 'm_cellCount' field in VoxelSettings");
-            }
+            cellCountField.SetValue(voxelSettings, m_PreviewResolution - 1);
 
             // MainSettings: Set output mode and auto-update
             var mainSettings = m_MeshGenerator.MainSettings;
             var outputModeField = typeof(MainSettings).GetField("m_outputMode",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (outputModeField != null)
+            if (outputModeField == null)
             {
-                outputModeField.SetValue(mainSettings, OutputMode.MeshFilter);
-                Debug.Log("ModelStencil: Set output mode to MeshFilter");
+                Debug.LogError(
+                    $"{k_LogPrefix} The installed IsoMesh version does not expose its " +
+                    "preview-output field.");
+                return;
             }
-            else
-            {
-                Debug.LogError("ModelStencil: Failed to find 'm_outputMode' field in MainSettings");
-            }
+            outputModeField.SetValue(mainSettings, OutputMode.MeshFilter);
             mainSettings.AutoUpdate = true;
-            Debug.Log("ModelStencil: Set AutoUpdate to true");
 
             // AlgorithmSettings: Set isosurface extraction type
             var algorithmSettings = m_MeshGenerator.AlgorithmSettings;
             var extractionTypeField = typeof(AlgorithmSettings).GetField("m_isosurfaceExtractionType",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (extractionTypeField != null)
+            if (extractionTypeField == null)
             {
-                extractionTypeField.SetValue(algorithmSettings, IsosurfaceExtractionType.SurfaceNets);
-                Debug.Log("ModelStencil: Set extraction type to SurfaceNets");
+                Debug.LogError(
+                    $"{k_LogPrefix} The installed IsoMesh version does not expose its " +
+                    "extraction-method field.");
+                return;
             }
-            else
-            {
-                Debug.LogError("ModelStencil: Failed to find 'm_isosurfaceExtractionType' field in AlgorithmSettings");
-            }
+            extractionTypeField.SetValue(
+                algorithmSettings, IsosurfaceExtractionType.SurfaceNets);
 
             // Notify the mesh generator about setting changes
-            Debug.Log("ModelStencil: Notifying mesh generator of setting changes");
             m_MeshGenerator.OnCellCountChanged();
             m_MeshGenerator.OnOutputModeChanged();
             m_MeshGenerator.OnIsosurfaceExtractionTypeChanged();
 
             // Manually initialize the group and mesh (since we're doing this at runtime)
-            Debug.Log($"ModelStencil: Registering SDFMesh with SDFGroup (Group.IsReady = {m_SDFGroup.IsReady})");
             m_SDFGroup.Register(m_SDFMeshComponent);
-            Debug.Log($"ModelStencil: After registration - Group.IsReady = {m_SDFGroup.IsReady}, IsRegistered = {m_SDFGroup.IsRegistered(m_SDFMeshComponent)}");
 
             // Start coroutine to trigger mesh generation after components are initialized
             // IsoMesh components need to go through Unity's lifecycle (OnEnable, Start) before UpdateMesh() works
             StartCoroutine(TriggerMeshGenerationCoroutine());
-
-            Debug.Log($"ModelStencil: IsoMesh preview mesh generation setup complete");
-        }
-
-        /// <summary>
-        /// Helper to get full path of a GameObject in the hierarchy
-        /// </summary>
-        private string GetGameObjectPath(GameObject obj)
-        {
-            string path = obj.name;
-            Transform current = obj.transform.parent;
-            while (current != null)
-            {
-                path = current.name + "/" + path;
-                current = current.parent;
-            }
-            return path;
         }
 
         /// <summary>
@@ -464,31 +382,20 @@ namespace TiltBrush
         {
             // Wait a few frames for IsoMesh components to complete their initialization
             // (OnEnable, Start, etc. need to run first)
-            Debug.Log("ModelStencil: Waiting for IsoMesh components to initialize...");
             yield return null; // Wait 1 frame
             yield return null; // Wait another frame to be safe
 
-            Debug.Log("ModelStencil: Components initialized, calling UpdateMesh()...");
-
             if (m_MeshGenerator != null && m_SDFGroup != null && m_SDFGroup.IsReady)
             {
-                // Check if the generator is initialized (private field check via reflection)
-                var initializedField = typeof(SDFGroupMeshGenerator).GetField("m_initialized",
-                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                bool isInitialized = initializedField != null && (bool)initializedField.GetValue(m_MeshGenerator);
-
-                Debug.Log($"ModelStencil: Generator state - Initialized: {isInitialized}, Group.IsReady: {m_SDFGroup.IsReady}, Group.IsEmpty: {m_SDFGroup.IsEmpty}");
-
-                // Now trigger mesh generation
                 m_MeshGenerator.UpdateMesh();
-                Debug.Log("ModelStencil: UpdateMesh() called");
-
-                // Start checking coroutine to see if mesh was generated
                 StartCoroutine(CheckMeshGenerationCoroutine());
             }
             else
             {
-                Debug.LogError($"ModelStencil: Cannot call UpdateMesh() - MeshGenerator: {m_MeshGenerator != null}, SDFGroup: {m_SDFGroup != null}, Group.IsReady: {m_SDFGroup?.IsReady ?? false}");
+                Debug.LogError(
+                    $"{k_LogPrefix} Preview generation could not start " +
+                    $"(generator: {m_MeshGenerator != null}, group: {m_SDFGroup != null}, " +
+                    $"ready: {m_SDFGroup?.IsReady ?? false}).");
             }
         }
 
@@ -498,8 +405,9 @@ namespace TiltBrush
         /// </summary>
         private System.Collections.IEnumerator CheckMeshGenerationCoroutine()
         {
-            // Check after 1, 5, and 30 frames to see if IsoMesh generates the mesh
+            // Check after 1, 6, and 36 total frames to allow asynchronous generation to finish.
             int[] frameChecks = { 1, 5, 30 };
+            int elapsedFrames = 0;
 
             foreach (int frameCount in frameChecks)
             {
@@ -508,64 +416,44 @@ namespace TiltBrush
                 {
                     yield return null;
                 }
+                elapsedFrames += frameCount;
 
-                Debug.Log($"ModelStencil: [Frame+{frameCount}] Checking if mesh was generated...");
-
-                // Check if MeshFilter was created on the main object
-                MeshFilter meshFilter = gameObject.GetComponent<MeshFilter>();
-                MeshRenderer meshRenderer = gameObject.GetComponent<MeshRenderer>();
-                Debug.Log($"ModelStencil: [Frame+{frameCount}] MeshFilter on main: {meshFilter != null}, MeshRenderer on main: {meshRenderer != null}");
-                if (meshFilter != null)
+                if (HasGeneratedPreviewMesh())
                 {
-                    Debug.Log($"ModelStencil: [Frame+{frameCount}] MeshFilter.mesh: {meshFilter.mesh != null}, vertices: {meshFilter.mesh?.vertexCount ?? 0}");
-                    if (meshFilter.mesh != null && meshRenderer != null)
-                    {
-                        Debug.Log($"ModelStencil: [Frame+{frameCount}] Material: {meshRenderer.sharedMaterial?.name ?? "null"}, Enabled: {meshRenderer.enabled}");
-                        yield break; // Success! Stop checking
-                    }
-                }
-
-                // Check for generated mesh in children
-                MeshFilter[] childFilters = GetComponentsInChildren<MeshFilter>();
-                Debug.Log($"ModelStencil: [Frame+{frameCount}] Found {childFilters.Length} MeshFilters in hierarchy");
-
-                bool foundIsoMeshGenerated = false;
-                foreach (var filter in childFilters)
-                {
-                    if (filter.gameObject != gameObject) // Skip main object
-                    {
-                        string path = GetGameObjectPath(filter.gameObject);
-                        // Check if this is the IsoMesh-generated mesh (not the base widget meshes)
-                        if (path.Contains("SDF Mesh") || filter.gameObject.name.Contains("Generated Mesh"))
-                        {
-                            Debug.Log($"ModelStencil: [Frame+{frameCount}] IsoMesh child MeshFilter on '{filter.gameObject.name}' at path: {path}");
-                            Debug.Log($"ModelStencil: [Frame+{frameCount}]   - Mesh: {filter.mesh != null}, Vertices: {filter.mesh?.vertexCount ?? 0}, Active: {filter.gameObject.activeSelf}");
-                            MeshRenderer childRenderer = filter.GetComponent<MeshRenderer>();
-                            if (childRenderer != null)
-                            {
-                                Debug.Log($"ModelStencil: [Frame+{frameCount}]   - Renderer enabled: {childRenderer.enabled}, Material: {childRenderer.sharedMaterial?.name ?? "null"}");
-                            }
-                            if (filter.mesh != null && filter.mesh.vertexCount > 0)
-                            {
-                                foundIsoMeshGenerated = true;
-                            }
-                        }
-                    }
-                }
-
-                // If we found a generated mesh, stop checking
-                if (foundIsoMeshGenerated)
-                {
-                    Debug.Log($"ModelStencil: [Frame+{frameCount}] IsoMesh successfully generated mesh!");
+                    ReleaseSourceModel();
                     yield break;
                 }
 
-                // If this was the last check and no mesh was generated, log an error
                 if (frameCount == frameChecks[frameChecks.Length - 1])
                 {
-                    Debug.LogError($"ModelStencil: [Frame+{frameCount}] IsoMesh did not generate any mesh after {frameCount} frames! This likely means UpdateMesh() doesn't work at runtime or requires different API.");
+                    Debug.LogError(
+                        $"{k_LogPrefix} IsoMesh did not produce a preview mesh after " +
+                        $"{elapsedFrames} frames.");
                 }
             }
+        }
+
+        private bool HasGeneratedPreviewMesh()
+        {
+            return GetComponentsInChildren<MeshFilter>(true).Any(filter =>
+                filter.sharedMesh != null && filter.sharedMesh.vertexCount > 0 &&
+                (filter.transform.IsChildOf(m_MeshGenerator.transform) ||
+                 filter.gameObject == m_MeshGenerator.gameObject));
+        }
+
+        private void ReleaseSourceModel()
+        {
+            if (m_ModelInstance == null)
+            {
+                return;
+            }
+
+            // The SDF preview replaces the source-model renderer. Disable it immediately, then
+            // use normal runtime destruction so Unity can finish lifecycle callbacks safely.
+            GameObject sourceModel = m_ModelInstance.gameObject;
+            m_ModelInstance = null;
+            sourceModel.SetActive(false);
+            Destroy(sourceModel);
         }
 
         /// <summary>
@@ -599,7 +487,7 @@ namespace TiltBrush
         {
             if (m_ModelInstance == null)
             {
-                Debug.LogError("ModelStencil: Cannot count triangles - model instance is null");
+                Debug.LogError($"{k_LogPrefix} Cannot count triangles without a model instance.");
                 return 0;
             }
 
@@ -681,7 +569,7 @@ namespace TiltBrush
             else
             {
                 // Should never happen
-                Debug.LogWarning("No SDF or MeshCollider found");
+                Debug.LogWarning($"{k_LogPrefix} No SDF or collider is available for snapping.");
                 surfacePos = transform.position;
                 surfaceNorm = (pos - transform.position).normalized;
             }
@@ -915,7 +803,7 @@ namespace TiltBrush
             var prefab = WidgetManager.m_Instance.ModelStencilPrefab;
             if (prefab == null)
             {
-                Debug.LogError("ModelStencil: No prefab assigned to WidgetManager");
+                Debug.LogError($"{k_LogPrefix} No model-guide prefab is assigned.");
                 return null;
             }
 
