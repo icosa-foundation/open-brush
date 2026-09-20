@@ -96,7 +96,13 @@ namespace TiltBrush
                     m_Model.ReleaseUsage();
                 }
                 m_Model = value;
-                m_EditableVoxDocument = m_Model?.CreateEditableVoxDocument();
+                // A broken-apart model widget represents only one imported hierarchy subtree,
+                // while an editable VOX document owns the complete file. Keep legacy split VOX
+                // widgets on the ordinary mesh-model path rather than attaching a document that
+                // cannot be refreshed without recreating the omitted subtrees.
+                m_EditableVoxDocument = string.IsNullOrEmpty(Subtree)
+                    ? m_Model?.CreateEditableVoxDocument()
+                    : null;
                 // Increment usage count on new model.
                 if (m_Model != null)
                 {
@@ -116,6 +122,11 @@ namespace TiltBrush
             if (document == null || !IsVoxModel())
             {
                 throw new InvalidOperationException("Only VOX model widgets can adopt an editable document.");
+            }
+            if (!string.IsNullOrEmpty(Subtree))
+            {
+                throw new InvalidOperationException(
+                    "A split model subtree cannot adopt a complete editable VOX document.");
             }
             m_EditableVoxDocument = document;
         }
@@ -608,6 +619,14 @@ namespace TiltBrush
 
         public bool HasMultipleNodes()
         {
+            // VOX internal models remain document implementation details. Exposing the generic
+            // model Break Apart operation would create subtree widgets that no longer own a
+            // complete editable document.
+            if (m_EditableVoxDocument != null)
+            {
+                return false;
+            }
+
             // TODO test all other 3d model formats work with "break apart" command
             // Currently we assume that they do
 
@@ -629,6 +648,11 @@ namespace TiltBrush
 
         public bool MeshSplitPossible()
         {
+            if (m_EditableVoxDocument != null)
+            {
+                return false;
+            }
+
             // Unsplit models initially always have the possibility of being split.
             // We only return false if we're already tried to split this mesh
             bool hasBeenSplit = false;
