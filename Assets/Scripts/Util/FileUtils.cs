@@ -73,6 +73,15 @@ namespace TiltBrush
             return true;
         }
 
+        /// Checks the volume where user-visible saves are written. In scoped-storage builds the
+        /// local path is only a staging location, so its free space must not gate the operation.
+        static public bool CheckUserStorageSpaceWithError(string localPath, string error = null)
+        {
+            return OpenBrushStorage.IsScopedStorageMode
+                ? CheckSharedStorageSpaceWithError(error: error)
+                : CheckDiskSpaceWithError(localPath, error);
+        }
+
         /// Returns true on success.
         /// Returns false and shows a user-visible error on failure.
         static public bool InitializeDirectoryWithUserError(

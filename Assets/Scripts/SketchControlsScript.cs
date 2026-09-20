@@ -4559,7 +4559,7 @@ namespace TiltBrush
                 // Keyboard command, for debugging and emergency use.
                 case GlobalCommands.Save:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        if (!FileUtils.CheckUserStorageSpaceWithError(App.UserSketchPath()))
                         {
                             return;
                         }
@@ -4597,7 +4597,7 @@ namespace TiltBrush
                     }
                 case GlobalCommands.SaveNew:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        if (!FileUtils.CheckUserStorageSpaceWithError(App.UserSketchPath()))
                         {
                             return;
                         }
@@ -4611,7 +4611,7 @@ namespace TiltBrush
                     }
                 case GlobalCommands.SaveAs:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        if (!FileUtils.CheckUserStorageSpaceWithError(App.UserSketchPath()))
                         {
                             return;
                         }
@@ -4625,7 +4625,7 @@ namespace TiltBrush
                     }
                 case GlobalCommands.SaveSelected:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.SavedStrokesPath()))
+                        if (!FileUtils.CheckUserStorageSpaceWithError(App.SavedStrokesPath()))
                         {
                             return;
                         }
@@ -4636,7 +4636,7 @@ namespace TiltBrush
                     }
                 case GlobalCommands.SaveAndUpload:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        if (!FileUtils.CheckUserStorageSpaceWithError(App.UserSketchPath()))
                         {
                             Debug.LogError("SaveAndUpload: Disk space error");
                             return;
