@@ -92,6 +92,8 @@ namespace TiltBrush
                     return count > 1 && m_ComponentIndex > 0;
                 case SketchControlsScript.GlobalCommands.SdfRemoveComponent:
                     return count > 0;
+                case SketchControlsScript.GlobalCommands.SdfDuplicateComponent:
+                    return count > 0 && m_ComponentIndex >= 0;
                 case SketchControlsScript.GlobalCommands.SdfEditorNextPage:
                     return true;
                 case SketchControlsScript.GlobalCommands.SdfAddPrimitive:
@@ -168,6 +170,11 @@ namespace TiltBrush
                         m_Stencil, m_ComponentIndex));
                     m_ComponentIndex = Mathf.Min(
                         m_ComponentIndex, m_Stencil.ComponentCount - 1);
+                    break;
+                case SketchControlsScript.GlobalCommands.SdfDuplicateComponent:
+                    Perform(EditSdfGuideCommand.DuplicateComponent(
+                        m_Stencil, m_ComponentIndex));
+                    ++m_ComponentIndex;
                     break;
                 case SketchControlsScript.GlobalCommands.SdfEditorNextPage:
                     m_Page = (m_Page + 1) % 6;
@@ -318,7 +325,9 @@ namespace TiltBrush
                         SketchControlsScript.GlobalCommands.SdfToggleComponentFlip,
                         "Icons/flipselection_outline",
                         componentIsFlipped ? "Restore component" : "Invert component");
-                    Disable(m_Buttons[3]);
+                    Configure(m_Buttons[3],
+                        SketchControlsScript.GlobalCommands.SdfDuplicateComponent,
+                        "Icons/copy", "Duplicate component");
                     Disable(m_Buttons[4]);
                     Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
                         "Icons/forwardarrow", "Add components");

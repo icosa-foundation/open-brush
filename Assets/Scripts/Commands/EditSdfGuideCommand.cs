@@ -78,6 +78,15 @@ namespace TiltBrush
             return new EditSdfGuideCommand(stencil, components);
         }
 
+        internal static EditSdfGuideCommand DuplicateComponent(
+            SdfStencil stencil, int index)
+        {
+            var components = Snapshot(stencil);
+            ValidateIndex(components, index);
+            components.Insert(index + 1, Copy(components[index]));
+            return new EditSdfGuideCommand(stencil, components);
+        }
+
         internal static EditSdfGuideCommand MoveComponent(
             SdfStencil stencil, int fromIndex, int toIndex)
         {

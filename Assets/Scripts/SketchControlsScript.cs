@@ -228,6 +228,7 @@ namespace TiltBrush
             SdfNextTransformValue = 14017,
             SdfSetTransformValue = 14018,
             SdfToggleComponentFlip = 14019,
+            SdfDuplicateComponent = 14020,
         }
 
         public enum ControlsType
@@ -5139,6 +5140,7 @@ namespace TiltBrush
                 case GlobalCommands.SdfNextTransformValue:
                 case GlobalCommands.SdfSetTransformValue:
                 case GlobalCommands.SdfToggleComponentFlip:
+                case GlobalCommands.SdfDuplicateComponent:
                     SdfEditorPopup.Active?.Handle(rEnum, iParam1);
                     EatToolScaleInput();
                     break;
@@ -5582,6 +5584,7 @@ namespace TiltBrush
                 case GlobalCommands.SdfNextTransformValue:
                 case GlobalCommands.SdfSetTransformValue:
                 case GlobalCommands.SdfToggleComponentFlip:
+                case GlobalCommands.SdfDuplicateComponent:
                     return false;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;
                 case GlobalCommands.ToggleCameraPostEffects: return CameraConfig.PostEffects;
@@ -5750,6 +5753,7 @@ namespace TiltBrush
                 case GlobalCommands.SdfNextTransformValue:
                 case GlobalCommands.SdfSetTransformValue:
                 case GlobalCommands.SdfToggleComponentFlip:
+                case GlobalCommands.SdfDuplicateComponent:
                     return SdfEditorPopup.Active != null &&
                         SdfEditorPopup.Active.CanHandle(rEnum, iParam);
                 case GlobalCommands.SaveModel:
