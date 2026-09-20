@@ -541,6 +541,28 @@ namespace TiltBrush
         }
 
         [Test]
+        public void RuntimeVoxDocument_RestoreSnapshotPreservesDocumentAndModelIdentity()
+        {
+            var document = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel model = document.CreateModel(
+                "undoable",
+                new Vector3Int(4, 4, 4));
+            model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            byte[] before = document.ToVoxBytes();
+            model.AddOrUpdateVoxel(Vector3Int.one, 2);
+
+            var documentWrapper = new VoxDocumentApiWrapper(document);
+            VoxModelApiWrapper modelWrapper = documentWrapper.Model();
+            document.RestoreFromBytes(before, preserveSourceData: false);
+
+            Assert.AreSame(document, documentWrapper._Document);
+            Assert.AreSame(model, modelWrapper._Model);
+            Assert.AreEqual(1, modelWrapper.voxelCount);
+            Assert.IsTrue(modelWrapper.SetVoxel(2, 2, 2, 3));
+            Assert.IsTrue(model.Voxels.ContainsKey(new Vector3Int(2, 2, 2)));
+        }
+
+        [Test]
         public void RuntimeVoxDocument_ReadsAndPreservesLegacyMaterialProperties()
         {
             var source = new RuntimeVoxDocument();

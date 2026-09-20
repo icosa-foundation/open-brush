@@ -55,9 +55,7 @@ namespace TiltBrush
                 return;
             }
 
-            m_Widget.AdoptEditableVoxDocument(RuntimeVoxDocument.FromBytes(
-                bytes,
-                m_PreserveSourceData));
+            m_Widget.EditableVoxDocument.RestoreFromBytes(bytes, m_PreserveSourceData);
             if (m_Widget.Showing && m_Widget.gameObject.activeInHierarchy)
             {
                 m_Widget.RefreshEditableVoxMeshes();
