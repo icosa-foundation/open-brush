@@ -46,7 +46,8 @@ namespace TiltBrush
             TrTransform modelToCanvas,
             Vector3 canvasPosition,
             Color targetColor,
-            Color guideColor)
+            Color guideColor,
+            bool showGrid = true)
         {
             if (model == null || !TryGetMaterial())
             {
@@ -68,54 +69,58 @@ namespace TiltBrush
             TrTransform modelToWorld = canvasToWorld * modelToCanvas;
             Vector3 pointerWorld = canvasToWorld * canvasPosition;
 
-            s_GridProperties ??= new MaterialPropertyBlock();
-            s_GridProperties.Clear();
-            s_GridProperties.SetMatrix(
-                SnapGrid3D.ShaderParam.CanvasToWorldMatrix,
-                modelToWorld.ToMatrix4x4());
-            s_GridProperties.SetMatrix(
-                SnapGrid3D.ShaderParam.WorldToCanvasMatrix,
-                modelToWorld.inverse.ToMatrix4x4());
-            s_GridProperties.SetVector(SnapGrid3D.ShaderParam.Pointer, pointerWorld);
-            s_GridProperties.SetVector(
-                SnapGrid3D.ShaderParam.CanvasOrigin,
-                modelToWorld.translation);
-            s_GridProperties.SetColor(
-                SnapGrid3D.ShaderParam.Color,
-                new Color(
-                    guideColor.r * 0.45f,
-                    guideColor.g * 0.45f,
-                    guideColor.b * 0.45f,
-                    0.5f));
-            s_GridProperties.SetVector(
-                SnapGrid3D.ShaderParam.GridCount,
-                (Vector3)gridCount);
-            s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.GridInterval, 1f);
-            s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.LineWidth, 0.03f);
-            s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.LineLength, 0.32f);
-            s_GridProperties.SetFloat(
-                SnapGrid3D.ShaderParam.CanvasScale,
-                Mathf.Abs(modelToWorld.scale));
-            s_GridProperties.SetFloat(kUseGridOrigin, 1f);
-            s_GridProperties.SetVector(kGridOrigin, (Vector3)gridOrigin);
-            s_GridProperties.SetFloat(kPreviewMode, 0f);
-
             Vector3 localCenter = new Vector3(
                 (model.Size.x - 1) * 0.5f,
                 (model.Size.y - 1) * 0.5f,
                 (model.Size.z - 1) * 0.5f);
             float worldDiameter = Mathf.Max(model.Size.x, Mathf.Max(model.Size.y, model.Size.z)) *
                 Mathf.Abs(modelToWorld.scale) * 2f;
-            var renderParams = new RenderParams(s_Material)
+            var worldBounds = new Bounds(
+                modelToWorld * localCenter,
+                Vector3.one * Mathf.Max(worldDiameter, 0.1f));
+            if (showGrid)
             {
-                layer = s_Layer,
-                matProps = s_GridProperties,
-                worldBounds = new Bounds(
-                    modelToWorld * localCenter,
-                    Vector3.one * Mathf.Max(worldDiameter, 0.1f)),
-            };
-            int vertexCount = gridCount.x * gridCount.y * gridCount.z * kVerticesPerGridPoint;
-            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, vertexCount);
+                s_GridProperties ??= new MaterialPropertyBlock();
+                s_GridProperties.Clear();
+                s_GridProperties.SetMatrix(
+                    SnapGrid3D.ShaderParam.CanvasToWorldMatrix,
+                    modelToWorld.ToMatrix4x4());
+                s_GridProperties.SetMatrix(
+                    SnapGrid3D.ShaderParam.WorldToCanvasMatrix,
+                    modelToWorld.inverse.ToMatrix4x4());
+                s_GridProperties.SetVector(SnapGrid3D.ShaderParam.Pointer, pointerWorld);
+                s_GridProperties.SetVector(
+                    SnapGrid3D.ShaderParam.CanvasOrigin,
+                    modelToWorld.translation);
+                s_GridProperties.SetColor(
+                    SnapGrid3D.ShaderParam.Color,
+                    new Color(
+                        guideColor.r * 0.45f,
+                        guideColor.g * 0.45f,
+                        guideColor.b * 0.45f,
+                        0.5f));
+                s_GridProperties.SetVector(
+                    SnapGrid3D.ShaderParam.GridCount,
+                    (Vector3)gridCount);
+                s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.GridInterval, 1f);
+                s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.LineWidth, 0.03f);
+                s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.LineLength, 0.32f);
+                s_GridProperties.SetFloat(
+                    SnapGrid3D.ShaderParam.CanvasScale,
+                    Mathf.Abs(modelToWorld.scale));
+                s_GridProperties.SetFloat(kUseGridOrigin, 1f);
+                s_GridProperties.SetVector(kGridOrigin, (Vector3)gridOrigin);
+                s_GridProperties.SetFloat(kPreviewMode, 0f);
+
+                var renderParams = new RenderParams(s_Material)
+                {
+                    layer = s_Layer,
+                    matProps = s_GridProperties,
+                    worldBounds = worldBounds,
+                };
+                int vertexCount = gridCount.x * gridCount.y * gridCount.z * kVerticesPerGridPoint;
+                Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, vertexCount);
+            }
 
             Color boundsColor = isInside
                 ? new Color(guideColor.r, guideColor.g, guideColor.b, 0.35f)
@@ -126,7 +131,7 @@ namespace TiltBrush
                 (Vector3)model.Size - Vector3.one * 0.5f,
                 boundsColor,
                 0.035f,
-                renderParams.worldBounds,
+                worldBounds,
                 ref s_BoundsProperties);
 
             if (isInside)
@@ -137,7 +142,7 @@ namespace TiltBrush
                     (Vector3)cell + Vector3.one * 0.5f,
                     new Color(targetColor.r, targetColor.g, targetColor.b, 0.9f),
                     0.075f,
-                    renderParams.worldBounds,
+                    worldBounds,
                     ref s_TargetProperties);
             }
         }

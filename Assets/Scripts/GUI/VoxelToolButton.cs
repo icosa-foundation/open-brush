@@ -19,6 +19,7 @@ namespace TiltBrush
     {
         private VoxelTool.EditMode? m_LastMode;
         private bool m_LastActive;
+        private string m_LastTargetDescription;
 
         public override void UpdateVisuals()
         {
@@ -27,15 +28,18 @@ namespace TiltBrush
             VoxelTool activeTool = SketchSurfacePanel.m_Instance.ActiveTool as VoxelTool;
             bool active = activeTool != null;
             VoxelTool.EditMode mode = activeTool?.Mode ?? VoxelTool.EditMode.Add;
-            if (m_LastMode == mode && m_LastActive == active)
+            string targetDescription = activeTool?.CurrentTargetDescription;
+            if (m_LastMode == mode && m_LastActive == active &&
+                m_LastTargetDescription == targetDescription)
             {
                 return;
             }
 
             m_LastMode = mode;
             m_LastActive = active;
+            m_LastTargetDescription = targetDescription;
             SetExtraDescriptionText(active
-                ? $"Mode: {mode}. Press again to start a new model"
+                ? $"Mode: {mode}. Target: {targetDescription}. Press again to start a new model"
                 : "Activate in Add mode");
         }
 

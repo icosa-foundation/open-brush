@@ -46,6 +46,10 @@ namespace TiltBrush
         public int ModelSize { get; set; } = kDefaultModelSize;
         public float VoxelSize { get; set; } = kDefaultVoxelSize;
         public bool ShowGrid { get; set; } = true;
+        public bool HasCurrentTarget => m_CurrentModel != null;
+        public string CurrentTargetDescription => m_CurrentModel == null
+            ? "No current target"
+            : $"{m_CurrentModel.name} ({m_CurrentModel.sizeX}x{m_CurrentModel.sizeY}x{m_CurrentModel.sizeZ})";
 
         public override bool ShouldShowPointer() => true;
 
@@ -80,7 +84,7 @@ namespace TiltBrush
             PointerManager.m_Instance.SetMainPointerPosition(attachPoint.position);
             Vector3 canvasPosition = App.Scene.ActiveCanvas.AsCanvas[attachPoint].translation;
 
-            if (m_CurrentModel != null && ShowGrid)
+            if (m_CurrentModel != null)
             {
                 Color guideColor = Mode switch
                 {
@@ -91,7 +95,7 @@ namespace TiltBrush
                 Color targetColor = Mode == EditMode.Erase
                     ? guideColor
                     : App.BrushColor.CurrentColor;
-                m_CurrentModel.PreviewForTool(canvasPosition, targetColor, guideColor);
+                m_CurrentModel.PreviewForTool(canvasPosition, targetColor, guideColor, ShowGrid);
             }
 
             if (IsEatingInput)
@@ -295,11 +299,18 @@ namespace TiltBrush
 
         private void SetCurrentModel(VoxModelApiWrapper model)
         {
+            bool targetChanged = !ReferenceEquals(m_CurrentDocument?._Document, model.document._Document) ||
+                !ReferenceEquals(m_CurrentModel?._Model, model._Model);
             m_CurrentModel = model;
             m_CurrentDocument = model.document;
             m_CurrentDocument.SetAutoVisuals(true, true);
             VoxelSize = model.voxelSize;
             m_CreateNewOnNextAdd = false;
+            if (targetChanged)
+            {
+                ControllerConsoleScript.m_Instance?.AddNewLine(
+                    $"Voxel target: {CurrentTargetDescription}", true);
+            }
         }
 
         private void EnsureCurrentTarget()

@@ -143,13 +143,15 @@ namespace TiltBrush
         internal void PreviewForTool(
             Vector3 canvasPosition,
             Color targetColor,
-            Color guideColor)
+            Color guideColor,
+            bool showGrid)
             => VoxEditPreviewRenderer.Draw(
                 _Model,
                 m_DocumentWrapper.GetModelTransform(_Model),
                 canvasPosition,
                 targetColor,
-                guideColor);
+                guideColor,
+                showGrid);
 
         [LuaDocsDescription("Paints the voxel at a canvas position using an RGB color. Allocates an unused palette entry, or uses the nearest color if all 255 entries are occupied. Returns false outside the model or if unchanged.")]
         [LuaDocsExample("model:PaintAt(Brush.position, Brush.colorRgb)")]
