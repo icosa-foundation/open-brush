@@ -152,6 +152,7 @@ namespace TiltBrush
                 Debug.Log(
                     $"{logPrefix} Saved snapshot path={fullPath} size={width}x{height} " +
                     $"superSampling={superSampling} post={usePostProcessing}.");
+                _PublishApiGeneratedFileToSharedStorage(fullPath);
                 return fullPath;
             }
             catch (Exception e)
