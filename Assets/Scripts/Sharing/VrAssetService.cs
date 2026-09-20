@@ -593,31 +593,22 @@ namespace TiltBrush
         }
 
         /// Returns a writable SceneFileInfo
-        private DiskSceneFileInfo GetWritableFile()
+        private SceneFileInfo GetWritableFile()
         {
             // hermetic gltf files currently don't work with AccessLevel.PRIVATE
             SceneFileInfo currentFileInfo = SaveLoadScript.m_Instance.SceneFile;
 
-            DiskSceneFileInfo fileInfo;
-            if (currentFileInfo.Valid)
+            if (CanReuseSceneFileForUpload(currentFileInfo))
             {
-                if (currentFileInfo is DiskSceneFileInfo)
-                {
-                    fileInfo = (DiskSceneFileInfo)currentFileInfo;
-                }
-                else
-                {
-                    // This is a cloud sketch not saved before
-                    fileInfo = SaveLoadScript.m_Instance.GetNewNameSceneFileInfo();
-                }
+                return currentFileInfo;
             }
-            else
-            {
-                // Save as a new file
-                fileInfo = SaveLoadScript.m_Instance.GetNewNameSceneFileInfo();
-            }
-            return fileInfo;
+            // Cloud, read-only and unsaved sketches need a new writable destination.
+            return SaveLoadScript.m_Instance.GetNewNameSceneFileInfo();
         }
+
+        internal static bool CanReuseSceneFileForUpload(SceneFileInfo fileInfo) =>
+            fileInfo != null && fileInfo.Valid && !fileInfo.ReadOnly &&
+            fileInfo.InfoType == FileInfoType.Disk;
 
         /// Returns a relative path R such that Join(fromDir, R) refers to toFile, or null on error.
         /// Does not handle ".." paths.
@@ -736,7 +727,7 @@ namespace TiltBrush
             //bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
             bool publishLegacyGltf = false;
 
-            DiskSceneFileInfo fileInfo = GetWritableFile();
+            SceneFileInfo fileInfo = GetWritableFile();
 
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
             string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
@@ -829,7 +820,7 @@ namespace TiltBrush
         private async Task<(string, long)> UploadCurrentSketchSketchfabAsync(
             CancellationToken token, string tempUploadDir, bool _)
         {
-            DiskSceneFileInfo fileInfo = GetWritableFile();
+            SceneFileInfo fileInfo = GetWritableFile();
 
             SetUploadProgress(UploadStep.CreateGltf, 0);
             // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
@@ -884,7 +875,7 @@ namespace TiltBrush
                     CancellationToken token, string tempUploadDir, bool isDemoUpload)
         {
             bool publishLegacyGltf = false;
-            DiskSceneFileInfo fileInfo = GetWritableFile();
+            SceneFileInfo fileInfo = GetWritableFile();
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
             string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
 
@@ -1095,7 +1086,7 @@ namespace TiltBrush
 
         /// Helper for UploadCurrentSketchXxxAsync
         /// Writes the sketch to the passed fileInfo and returns a sketch thumbnail.
-        private async Task<byte[]> CreateTiltForUploadAsync(DiskSceneFileInfo fileInfo)
+        private async Task<byte[]> CreateTiltForUploadAsync(SceneFileInfo fileInfo)
         {
             // Create and save snapshot.
             SetUploadProgress(UploadStep.CreateTilt, 0);
