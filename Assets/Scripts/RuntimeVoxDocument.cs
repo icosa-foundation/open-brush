@@ -640,36 +640,36 @@ namespace TiltBrush
                 switch (chunk.Type)
                 {
                     case VoxReader.ChunkType.TransformNode:
-                    {
-                        SceneTransform transform = ReadTransform(chunk.Content);
-                        transforms.Add(transform);
-                        transformsByChild[transform.ChildNodeId] = transform;
-                        break;
-                    }
+                        {
+                            SceneTransform transform = ReadTransform(chunk.Content);
+                            transforms.Add(transform);
+                            transformsByChild[transform.ChildNodeId] = transform;
+                            break;
+                        }
                     case VoxReader.ChunkType.GroupNode:
-                    {
-                        SceneGroup group = ReadGroup(chunk.Content);
-                        foreach (int childNodeId in group.ChildNodeIds)
                         {
-                            parentGroupByChild[childNodeId] = group;
+                            SceneGroup group = ReadGroup(chunk.Content);
+                            foreach (int childNodeId in group.ChildNodeIds)
+                            {
+                                parentGroupByChild[childNodeId] = group;
+                            }
+                            break;
                         }
-                        break;
-                    }
                     case VoxReader.ChunkType.ShapeNode:
-                    {
-                        SceneShape shape = ReadShape(chunk.Content);
-                        shapes[shape.NodeId] = shape;
-                        break;
-                    }
-                    case VoxReader.ChunkType.Layer:
-                    {
-                        (int layerId, bool hidden) = ReadLayer(chunk.Content);
-                        if (hidden)
                         {
-                            hiddenLayers.Add(layerId);
+                            SceneShape shape = ReadShape(chunk.Content);
+                            shapes[shape.NodeId] = shape;
+                            break;
                         }
-                        break;
-                    }
+                    case VoxReader.ChunkType.Layer:
+                        {
+                            (int layerId, bool hidden) = ReadLayer(chunk.Content);
+                            if (hidden)
+                            {
+                                hiddenLayers.Add(layerId);
+                            }
+                            break;
+                        }
                 }
             }
 
