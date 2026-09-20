@@ -269,9 +269,10 @@ namespace TiltBrush
                 StencilWidget stencil;
                 try
                 {
-                    StencilWidget stencilPrefab = state.Sdf == null
-                        ? WidgetManager.m_Instance.GetStencilPrefab(guide.Type)
-                        : WidgetManager.m_Instance.SdfStencilPrefab;
+                    bool isEditableSdf = guide.Type == StencilType.Custom && state.Sdf != null;
+                    StencilWidget stencilPrefab = isEditableSdf
+                        ? WidgetManager.m_Instance.SdfStencilPrefab
+                        : WidgetManager.m_Instance.GetStencilPrefab(guide.Type);
                     stencil = Instantiate(stencilPrefab);
                 }
                 catch (ArgumentException e)
