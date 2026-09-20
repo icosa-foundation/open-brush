@@ -354,7 +354,8 @@ namespace TiltBrush
         public static void PublishGeneratedFilesToSharedStorageAsync(
             IReadOnlyList<string> localPaths,
             string label,
-            Action<bool, string> onComplete)
+            Action<bool, string> onComplete,
+            bool transactionOwnsPayload = true)
         {
             if (!IsScopedStorageMode || localPaths == null || localPaths.Count == 0)
             {
@@ -391,7 +392,7 @@ namespace TiltBrush
                         UserStorage.Backend,
                         bundleArea.Value,
                         stagedPaths,
-                        transactionOwnsPayload: true,
+                        transactionOwnsPayload,
                         CancellationToken.None),
                     onComplete);
                 return;
@@ -405,9 +406,11 @@ namespace TiltBrush
                     onComplete?.Invoke(true, null);
                     return;
                 }
-                PublishGeneratedFileToSharedStorageAsync(
+                PublishSinglePathAsync(
                     localPaths[index++],
                     label,
+                    TryGetSharedGeneratedFileRelativePath,
+                    transactionOwnsPayload,
                     (success, error) =>
                     {
                         if (success)
@@ -522,81 +525,39 @@ namespace TiltBrush
                 return;
             }
 
-            if (File.Exists(localVideoPath))
-            {
-                PublishSinglePathAsync(
-                    localVideoPath,
-                    label,
-                    TryGetSharedGeneratedFileRelativePath,
-                    transactionOwnsPayload: !retainLocalPayload,
-                    onComplete);
-                return;
-            }
-
             string directory = Path.GetDirectoryName(localVideoPath);
             string basename = Path.GetFileNameWithoutExtension(localVideoPath);
             string frameDirectory = Path.Combine(directory, basename + "_frames");
             string metadataPath = Path.Combine(directory, basename + "_sequence.txt");
+            string cameraPath = Path.ChangeExtension(localVideoPath, ".usda");
+            var stagedPaths = new List<string>();
 
-            if (!Directory.Exists(frameDirectory))
+            if (File.Exists(localVideoPath))
+            {
+                stagedPaths.Add(localVideoPath);
+            }
+            else if (Directory.Exists(frameDirectory))
+            {
+                stagedPaths.Add(frameDirectory);
+                if (File.Exists(metadataPath))
+                {
+                    stagedPaths.Add(metadataPath);
+                }
+            }
+            else
             {
                 onComplete?.Invoke(false, "Local video capture output does not exist: " + localVideoPath);
                 return;
             }
-
-            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            if (File.Exists(cameraPath))
             {
-                var stagedPaths = new List<SafStagedPath>
-                {
-                    new SafStagedPath(frameDirectory, Path.GetFileName(frameDirectory)),
-                };
-                if (File.Exists(metadataPath))
-                {
-                    stagedPaths.Add(new SafStagedPath(
-                        metadataPath, Path.GetFileName(metadataPath)));
-                }
-                StorageArea area = localVideoPath.StartsWith(
-                    App.VrVideosPath(), StringComparison.OrdinalIgnoreCase)
-                    ? StorageArea.VrVideos
-                    : StorageArea.Videos;
-                AndroidStorageManager.StartStorageOperation(
-                    label,
-                    () => SafStagedOutputPublisher.PublishBundle(
-                        UserStorage.Backend,
-                        area,
-                        stagedPaths,
-                        transactionOwnsPayload: !retainLocalPayload,
-                        CancellationToken.None),
-                    onComplete);
-                return;
+                stagedPaths.Add(cameraPath);
             }
-
-            PublishSinglePathAsync(
-                frameDirectory,
+            PublishGeneratedFilesToSharedStorageAsync(
+                stagedPaths,
                 label,
-                TryGetSharedGeneratedFileRelativePath,
-                transactionOwnsPayload: !retainLocalPayload,
-                (framesCopied, frameError) =>
-                {
-                    if (!framesCopied)
-                    {
-                        onComplete?.Invoke(false, frameError);
-                        return;
-                    }
-
-                    if (!File.Exists(metadataPath))
-                    {
-                        onComplete?.Invoke(true, null);
-                        return;
-                    }
-
-                    PublishSinglePathAsync(
-                        metadataPath,
-                        label + " metadata",
-                        TryGetSharedGeneratedFileRelativePath,
-                        transactionOwnsPayload: !retainLocalPayload,
-                        onComplete);
-                });
+                onComplete,
+                transactionOwnsPayload: !retainLocalPayload);
         }
 
         public static void PublishExportToSharedStorageAsync(
