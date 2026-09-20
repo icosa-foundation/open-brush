@@ -508,6 +508,39 @@ namespace TiltBrush
         }
 
         [Test]
+        public void RuntimeVoxDocument_RemapMaterialPaletteIndexThroughImap()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "mapped-material",
+                new Vector3Int(2, 2, 2));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 1);
+
+            var indexMap = new byte[256];
+            for (int i = 0; i < byte.MaxValue; i++)
+            {
+                indexMap[i] = (byte)(i + 1);
+            }
+            indexMap[0] = 2;
+            indexMap[1] = 3;
+            indexMap[2] = 1;
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "IMAP", indexMap);
+            sourceBytes = AppendMainChild(
+                sourceBytes,
+                "MATL",
+                BuildMaterialContent(1, new[] { ("_type", "_glass") }));
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+
+            Assert.IsTrue(loaded.Models[0].TryGetPaletteIndex(Vector3Int.zero, out byte paletteIndex));
+            Assert.AreEqual(3, paletteIndex);
+            Assert.IsTrue(loaded.Materials.TryGetValue(
+                paletteIndex,
+                out RuntimeVoxDocument.RuntimeMaterial material));
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Glass, material.Type);
+        }
+
+        [Test]
         public void RuntimeVoxDocument_ReadsAndPreservesLegacyMaterialProperties()
         {
             var source = new RuntimeVoxDocument();

@@ -379,6 +379,7 @@ namespace TiltBrush
                 document.Palette[byte.MaxValue] = new Color32(unused.R, unused.G, unused.B, unused.A);
             }
 
+            int[] storedToRuntimePalette = BuildStoredToRuntimePaletteMap(voxFile.Chunks);
             foreach (IChunk chunk in voxFile.Chunks)
             {
                 RuntimeMaterial material;
@@ -396,7 +397,10 @@ namespace TiltBrush
 
                 if (material.PaletteIndex >= 1 && material.PaletteIndex <= byte.MaxValue)
                 {
-                    document.m_materials[material.PaletteIndex] = material;
+                    int runtimePaletteIndex = storedToRuntimePalette[material.PaletteIndex];
+                    document.m_materials[runtimePaletteIndex] = new RuntimeMaterial(
+                        runtimePaletteIndex,
+                        material.Properties);
                 }
             }
 
@@ -771,6 +775,44 @@ namespace TiltBrush
                 int paletteIndex = reader.ReadInt32();
                 return new RuntimeMaterial(paletteIndex, ReadDictionary(reader));
             }
+        }
+
+        private static int[] BuildStoredToRuntimePaletteMap(IEnumerable<IChunk> chunks)
+        {
+            var storedToRuntime = new int[byte.MaxValue + 1];
+            IChunk indexMap = null;
+            foreach (IChunk chunk in chunks)
+            {
+                if (chunk.Type == VoxReader.ChunkType.IndexMap)
+                {
+                    indexMap = chunk;
+                    break;
+                }
+            }
+            if (indexMap == null)
+            {
+                for (int index = 1; index <= byte.MaxValue; index++)
+                {
+                    storedToRuntime[index] = index;
+                }
+                return storedToRuntime;
+            }
+
+            if (indexMap.Content.Length < byte.MaxValue)
+            {
+                throw new InvalidDataException("VOX IMAP chunk is shorter than 255 entries.");
+            }
+
+            for (int runtimeIndex = 1; runtimeIndex <= byte.MaxValue; runtimeIndex++)
+            {
+                int storedIndex = indexMap.Content[runtimeIndex - 1];
+                if (storedIndex == 0 || storedToRuntime[storedIndex] != 0)
+                {
+                    throw new InvalidDataException("VOX IMAP is not a palette-index permutation.");
+                }
+                storedToRuntime[storedIndex] = runtimeIndex;
+            }
+            return storedToRuntime;
         }
 
         private static RuntimeMaterial ReadLegacyMaterial(byte[] content)
