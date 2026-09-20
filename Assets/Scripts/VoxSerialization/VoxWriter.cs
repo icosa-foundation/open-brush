@@ -469,14 +469,14 @@ namespace TiltBrush
             int colorIndex = 0;
 
             foreach (byte r in levels)
-            foreach (byte g in levels)
-            foreach (byte b in levels)
-            {
-                if (r != 0 || g != 0 || b != 0)
-                {
-                    WriteRgba(content, colorIndex++, r, g, b);
-                }
-            }
+                foreach (byte g in levels)
+                    foreach (byte b in levels)
+                    {
+                        if (r != 0 || g != 0 || b != 0)
+                        {
+                            WriteRgba(content, colorIndex++, r, g, b);
+                        }
+                    }
 
             foreach (byte value in ramps) WriteRgba(content, colorIndex++, value, 0, 0);
             foreach (byte value in ramps) WriteRgba(content, colorIndex++, 0, value, 0);
