@@ -102,15 +102,17 @@ namespace TiltBrush
         }
 
         private static string sm_PersistentDataPath;
+        private static string sm_TemporaryCachePath;
 
-        /// Application.persistentDataPath is main-thread only, and storage paths are wanted from
-        /// worker threads - transaction recovery hit exactly that and failed with "can only be
-        /// called from the main thread". The value is fixed for the process, so it is captured
-        /// before the scene loads and read from the cache thereafter.
+        /// Unity application paths are main-thread only, and storage paths are wanted from worker
+        /// threads - transaction recovery hit exactly that and failed with "can only be called
+        /// from the main thread". The values are fixed for the process, so they are captured before
+        /// the scene loads and read from the cache thereafter.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void CapturePersistentDataPath()
+        private static void CaptureApplicationPaths()
         {
             sm_PersistentDataPath = Application.persistentDataPath;
+            sm_TemporaryCachePath = Application.temporaryCachePath;
         }
 
         public static string PersistentDataPath
@@ -139,7 +141,9 @@ namespace TiltBrush
         }
 
         public static string LocalStagingPath =>
-            Path.Combine(Application.temporaryCachePath, "OpenBrushSafStaging");
+            Path.Combine(
+                sm_TemporaryCachePath ??= Application.temporaryCachePath,
+                "OpenBrushSafStaging");
 
         public static string LocalSnapshotStagingPath =>
             Path.Combine(LocalStagingPath, "Snapshots");
