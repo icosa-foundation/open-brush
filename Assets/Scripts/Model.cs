@@ -43,11 +43,9 @@ namespace TiltBrush
 
             private Type type;
             private string path;
-            // A SAF cache path is only for loading; identity and metadata use path.
-            private string materializedPath;
             private string id; // Only valid when the type is IcosaAssetId.
 
-            public static Location File(string relativePath, string materializedPath = null)
+            public static Location File(string relativePath)
             {
                 int lastIndex = relativePath.LastIndexOf('#');
                 string path, fragment;
@@ -66,7 +64,6 @@ namespace TiltBrush
                 {
                     type = Type.LocalFile,
                     path = path,
-                    materializedPath = materializedPath,
                 };
             }
 
@@ -93,10 +90,6 @@ namespace TiltBrush
                     switch (type)
                     {
                         case Type.LocalFile:
-                            if (materializedPath != null)
-                            {
-                                return materializedPath.Replace("\\", "/");
-                            }
                             string blocksRoot = App.BlocksModelLibraryPath();
                             if (!string.IsNullOrEmpty(blocksRoot))
                             {
