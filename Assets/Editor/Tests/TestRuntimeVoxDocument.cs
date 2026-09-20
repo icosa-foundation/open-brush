@@ -434,6 +434,49 @@ namespace TiltBrush
         }
 
         [Test]
+        public void RuntimeVoxDocument_ReadsAndPreservesMaterialProperties()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "material",
+                new Vector3Int(2, 2, 2));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 7);
+            byte[] materialContent = BuildMaterialContent(
+                7,
+                new[]
+                {
+                    ("_type", "_glass"),
+                    ("_weight", "0.75"),
+                    ("_rough", "0.2"),
+                    ("_spec", "0.6"),
+                    ("_ior", "1.45"),
+                    ("_att", "0.3"),
+                    ("_flux", "2.5"),
+                    ("_plastic", "1"),
+                    ("_future", "retained"),
+                });
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "MATL", materialContent);
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+
+            Assert.IsTrue(loaded.Materials.TryGetValue(
+                7,
+                out RuntimeVoxDocument.RuntimeMaterial material));
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Glass, material.Type);
+            Assert.AreEqual(0.75f, material.Weight);
+            Assert.AreEqual(0.2f, material.Roughness);
+            Assert.AreEqual(0.6f, material.Specular);
+            Assert.AreEqual(1.45f, material.IndexOfRefraction);
+            Assert.AreEqual(0.3f, material.Attenuation);
+            Assert.AreEqual(2.5f, material.Flux);
+            Assert.IsTrue(material.Plastic);
+            Assert.AreEqual("retained", material.Properties["_future"]);
+            CollectionAssert.AreEqual(
+                materialContent,
+                FindMainChildContent(loaded.ToVoxBytes(), "MATL", 0));
+        }
+
+        [Test]
         public void Model_CreatesIndependentEditableVoxDocuments()
         {
             var source = new RuntimeVoxDocument();
@@ -607,6 +650,19 @@ namespace TiltBrush
                 writer.Write(layerId);
                 WriteDictionary(writer, hidden ? new[] { ("_hidden", "1") } : Array.Empty<(string, string)>());
                 writer.Write(-1);
+                return stream.ToArray();
+            }
+        }
+
+        private static byte[] BuildMaterialContent(
+            int paletteIndex,
+            (string key, string value)[] properties)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(paletteIndex);
+                WriteDictionary(writer, properties);
                 return stream.ToArray();
             }
         }

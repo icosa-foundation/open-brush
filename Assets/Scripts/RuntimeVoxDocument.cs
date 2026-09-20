@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
 using UnityEngine;
@@ -164,6 +165,85 @@ namespace TiltBrush
             }
         }
 
+        public enum MaterialType
+        {
+            Diffuse,
+            Metal,
+            Glass,
+            Emit,
+            Unknown,
+        }
+
+        public sealed class RuntimeMaterial
+        {
+            public int PaletteIndex { get; }
+            public MaterialType Type { get; }
+            public float? Weight { get; }
+            public float? Roughness { get; }
+            public float? Specular { get; }
+            public float? IndexOfRefraction { get; }
+            public float? Attenuation { get; }
+            public float? Flux { get; }
+            public bool Plastic { get; }
+            public IReadOnlyDictionary<string, string> Properties { get; }
+
+            internal RuntimeMaterial(
+                int paletteIndex,
+                IReadOnlyDictionary<string, string> properties)
+            {
+                PaletteIndex = paletteIndex;
+                Properties = properties;
+                Type = ParseMaterialType(GetProperty(properties, "_type"));
+                Weight = ParseFloat(properties, "_weight");
+                Roughness = ParseFloat(properties, "_rough");
+                Specular = ParseFloat(properties, "_spec");
+                IndexOfRefraction = ParseFloat(properties, "_ior");
+                Attenuation = ParseFloat(properties, "_att");
+                Flux = ParseFloat(properties, "_flux");
+                Plastic = properties.TryGetValue("_plastic", out string plastic) &&
+                    plastic != "0";
+            }
+
+            private static string GetProperty(
+                IReadOnlyDictionary<string, string> properties,
+                string key)
+            {
+                return properties.TryGetValue(key, out string value) ? value : null;
+            }
+
+            private static float? ParseFloat(
+                IReadOnlyDictionary<string, string> properties,
+                string key)
+            {
+                return properties.TryGetValue(key, out string value) &&
+                    float.TryParse(
+                        value,
+                        NumberStyles.Float,
+                        CultureInfo.InvariantCulture,
+                        out float parsed)
+                    ? parsed
+                    : null;
+            }
+
+            private static MaterialType ParseMaterialType(string value)
+            {
+                switch (value)
+                {
+                    case null:
+                    case "_diffuse":
+                        return MaterialType.Diffuse;
+                    case "_metal":
+                        return MaterialType.Metal;
+                    case "_glass":
+                        return MaterialType.Glass;
+                    case "_emit":
+                        return MaterialType.Emit;
+                    default:
+                        return MaterialType.Unknown;
+                }
+            }
+        }
+
         public readonly struct RuntimeVoxel
         {
             public Vector3Int Position { get; }
@@ -179,9 +259,12 @@ namespace TiltBrush
         }
 
         private readonly List<RuntimeModel> m_models = new List<RuntimeModel>();
+        private readonly Dictionary<int, RuntimeMaterial> m_materials =
+            new Dictionary<int, RuntimeMaterial>();
         private byte[] m_sourceVoxBytes;
 
         public IReadOnlyList<RuntimeModel> Models => m_models;
+        public IReadOnlyDictionary<int, RuntimeMaterial> Materials => m_materials;
         public bool HasPreservedSourceData => m_sourceVoxBytes != null;
         // Transient scene/API state. This is deliberately not included in VOX serialization.
         internal WidgetViewState ViewState { get; } = new WidgetViewState();
@@ -294,6 +377,20 @@ namespace TiltBrush
             {
                 VoxReader.Color unused = voxFile.Palette.RawColors[byte.MaxValue];
                 document.Palette[byte.MaxValue] = new Color32(unused.R, unused.G, unused.B, unused.A);
+            }
+
+            foreach (IChunk chunk in voxFile.Chunks)
+            {
+                if (chunk.Type != VoxReader.ChunkType.MaterialNew)
+                {
+                    continue;
+                }
+
+                RuntimeMaterial material = ReadMaterial(chunk.Content);
+                if (material.PaletteIndex >= 1 && material.PaletteIndex <= byte.MaxValue)
+                {
+                    document.m_materials[material.PaletteIndex] = material;
+                }
             }
 
             var voxelDataBySourceId = new Dictionary<int, Dictionary<Vector3Int, byte>>();
@@ -657,6 +754,16 @@ namespace TiltBrush
                 result[ReadString(reader)] = ReadString(reader);
             }
             return result;
+        }
+
+        private static RuntimeMaterial ReadMaterial(byte[] content)
+        {
+            using (var stream = new MemoryStream(content, writable: false))
+            using (var reader = new BinaryReader(stream, Encoding.UTF8))
+            {
+                int paletteIndex = reader.ReadInt32();
+                return new RuntimeMaterial(paletteIndex, ReadDictionary(reader));
+            }
         }
 
         private static string ReadString(BinaryReader reader)
