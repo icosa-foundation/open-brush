@@ -540,7 +540,14 @@ namespace TiltBrush
             m_HasEditableVoxVisuals = true;
             m_EditableVoxOptimized = optimized;
 
+            int previousTiltMeterCost = GetTiltMeterCost();
             m_ObjModelScript.UpdateAllMeshChildren();
+            int currentTiltMeterCost = GetTiltMeterCost();
+            if (currentTiltMeterCost != previousTiltMeterCost)
+            {
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(previousTiltMeterCost, up: false);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(currentTiltMeterCost, up: true);
+            }
             WidgetManager.m_Instance.AdjustModelVertCount(-m_NumVertsTrackedByWidgetManager);
             m_ObjModelScript.InvalidateMeshVertexCount();
             m_NumVertsTrackedByWidgetManager = m_ObjModelScript.GetNumVertsInMeshes();
