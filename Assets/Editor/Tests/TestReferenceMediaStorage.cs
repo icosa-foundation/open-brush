@@ -269,8 +269,37 @@ namespace TiltBrush
                 svg.Length,
                 "./shared.svg");
 
-            Assert.AreEqual(svg, image.ReadSvgText());
+            Assert.AreEqual(svg, image.ReadSvgText(svg.Length));
             Assert.IsFalse(File.Exists(image.FilePath));
+        }
+
+        [Test]
+        public void SafImages_EnforceSizeLimitWhenProviderOmitsLength()
+        {
+            byte[] bytes = { 1, 2, 3, 4 };
+            var image = new ReferenceImage(
+                "shared.hdr", "unknown-size-id",
+                () => new MemoryStream(bytes, writable: false),
+                null,
+                "./shared.hdr");
+
+            CollectionAssert.AreEqual(bytes, image.ReadEncodedBytes(bytes.Length));
+            Assert.Throws<IOException>(() => image.ReadEncodedBytes(bytes.Length - 1));
+        }
+
+        [Test]
+        public void SafSvgImages_EnforceSizeLimitWhenProviderOmitsLength()
+        {
+            const string svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"/>";
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(svg);
+            var image = new ReferenceImage(
+                "shared.svg", "unknown-svg-size-id",
+                () => new MemoryStream(bytes, writable: false),
+                null,
+                "./shared.svg");
+
+            Assert.AreEqual(svg, image.ReadSvgText(bytes.Length));
+            Assert.Throws<IOException>(() => image.ReadSvgText(bytes.Length - 1));
         }
 
         [Test]

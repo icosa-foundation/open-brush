@@ -873,28 +873,69 @@ namespace TiltBrush
         /// filesystem path, so nothing needs to be copied out of shared storage to decode it.
         internal byte[] ReadEncodedBytes()
         {
-            if (m_OpenRead == null)
+            return ReadEncodedBytes(App.PlatformConfig.ReferenceImagesMaxFileSize);
+        }
+
+        internal byte[] ReadEncodedBytes(long maxBytes)
+        {
+            using (Stream source = m_OpenRead == null
+                ? File.OpenRead(FilePath)
+                : m_OpenRead())
             {
-                return File.ReadAllBytes(FilePath);
-            }
-            using (Stream source = m_OpenRead())
-            using (var buffer = new MemoryStream())
-            {
-                source.CopyTo(buffer);
-                return buffer.ToArray();
+                return ReadBytesWithLimit(source, maxBytes);
             }
         }
 
         internal string ReadSvgText()
         {
-            if (m_OpenRead == null)
-            {
-                return File.ReadAllText(FilePath);
-            }
-            using (Stream source = m_OpenRead())
-            using (var reader = new StreamReader(source, detectEncodingFromByteOrderMarks: true))
+            return ReadSvgText(App.PlatformConfig.ReferenceImagesMaxFileSize);
+        }
+
+        internal string ReadSvgText(long maxBytes)
+        {
+            byte[] bytes = ReadEncodedBytes(maxBytes);
+            using (var source = new MemoryStream(bytes, writable: false))
+            using (var reader = new StreamReader(
+                source, detectEncodingFromByteOrderMarks: true))
             {
                 return reader.ReadToEnd();
+            }
+        }
+
+        internal static byte[] ReadBytesWithLimit(Stream source, long maxBytes)
+        {
+            if (source == null)
+            {
+                throw new ArgumentNullException(nameof(source));
+            }
+            if (maxBytes < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(maxBytes));
+            }
+
+            using (var output = new MemoryStream())
+            {
+                var chunk = new byte[81920];
+                long total = 0;
+                while (true)
+                {
+                    long remaining = maxBytes - total;
+                    int requested = remaining >= chunk.Length
+                        ? chunk.Length
+                        : (int)remaining + 1;
+                    int count = source.Read(chunk, 0, requested);
+                    if (count == 0)
+                    {
+                        return output.ToArray();
+                    }
+                    total += count;
+                    if (total > maxBytes)
+                    {
+                        throw new IOException(
+                            $"Reference image exceeds the {maxBytes}-byte size limit.");
+                    }
+                    output.Write(chunk, 0, count);
+                }
             }
         }
 
