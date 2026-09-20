@@ -92,7 +92,7 @@ namespace TiltBrush
 #if UNITY_ANDROID
             // Probe Android sources in order: app audio, then mic.
             m_Type = AudioCaptureType.App;
-#elif UNITY_IOS
+#elif UNITY_IOS || UNITY_TVOS
             m_Type = AudioCaptureType.App;
 #else
             m_Type = AudioCaptureType.System;
