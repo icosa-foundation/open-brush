@@ -44,6 +44,7 @@ jobs:
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
       fastlanelane: ${{ steps.version.outputs.fastlanelane}}
+      iosviewerlane: ${{ steps.version.outputs.iosviewerlane }}
       googleplaytrack: ${{ steps.version.outputs.googleplaytrack }}
       googleplaystatus: ${{ steps.version.outputs.googleplaystatus }}
       googleplayhasproduction: ${{ steps.version.outputs.googleplayhasproduction }}
@@ -105,6 +106,7 @@ jobs:
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
+            echo "iosviewerlane=release" >> $GITHUB_OUTPUT
             GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_RELEASE_TRACK"
             GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_RELEASE_STATUS"
 
@@ -114,6 +116,7 @@ jobs:
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
             echo "fastlanelane=beta" >> $GITHUB_OUTPUT
+            echo "iosviewerlane=beta" >> $GITHUB_OUTPUT
             GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_PRERELEASE_TRACK"
             GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_PRERELEASE_STATUS"
           fi
@@ -230,12 +233,12 @@ jobs:
   build:
     name: ${{ matrix.name }} ${{ matrix.flavors.title }}
     needs: configuration
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, MacOS Viewer, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Viewer, tvOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -253,6 +256,14 @@ jobs:
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: MacOS Viewer
+            targetPlatform: StandaloneOSX
+            vrsdk: Monoscopic
+            cache: MacOS
+            extraoptions: -btb-il2cpp
+            extra_defines: OPEN_BRUSH_VIEWER
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: Android OpenXR
@@ -317,6 +328,16 @@ jobs:
             extra_defines: OPEN_BRUSH_VIEWER
             packages_to_remove: com.unity.formats.usd
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER  # The Fusion plugin does not reliably set these Fusion symbols for iOS command-line builds.
+
+          - name: tvOS Viewer
+            targetPlatform: tvOS
+            vrsdk: Monoscopic
+            cache: tvOS
+            runner: macos-26
+            extraoptions: -btb-il2cpp
+            extra_defines: OPEN_BRUSH_VIEWER
+            packages_to_remove: com.unity.formats.usd
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: iOS Zapbox
             targetPlatform: iOS
@@ -457,7 +478,8 @@ jobs:
             echo "filename=$BASENAME.exe" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneLinux64" ]]; then
             echo "filename=$BASENAME" >> $GITHUB_ENV
-          elif [[ "${{ matrix.targetPlatform}}" == "iOS" ]]; then
+          elif [[ "${{ matrix.targetPlatform}}" == "iOS" ||
+                  "${{ matrix.targetPlatform}}" == "tvOS" ]]; then
             echo "filename=$BASENAME" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
             echo "filename=$BASENAME.app" >> $GITHUB_ENV
@@ -796,6 +818,134 @@ jobs:
           name: MacOS (DMG)
           path: |
             dist/OpenBrush.dmg
+
+  publish_macos_viewer:
+    name: Publish Viewer macOS
+    needs: [configuration, build]
+    runs-on: macos-26
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            Gemfile
+            Gemfile.lock
+            fastlane
+            Support/macos
+
+      - name: Download macOS Viewer Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: MacOS Viewer
+          path: build_macos_viewer
+
+      - name: Install App Store signing assets
+        env:
+          APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
+          APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+
+          MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+
+          MAC_BUNDLE_ID: foundation.icosa.openbrushviewer
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${MATCH_DEPLOY_KEY}"
+          bundle install
+          bundle exec fastlane mac sync_certificates
+
+      - name: Sign and package for the Mac App Store
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          MAC_BUNDLE_ID: foundation.icosa.openbrushviewer
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+        run: |
+          tar xvfz build_macos_viewer/*tgz
+
+          shopt -s nullglob
+          APP_PATHS=(StandaloneOSX/OpenBrush*.app)
+          if [[ ${#APP_PATHS[@]} -ne 1 ]]; then
+            echo "Expected exactly one Open Brush Viewer app, found ${#APP_PATHS[@]}."
+            exit 1
+          fi
+          APP_PATH="${APP_PATHS[0]}"
+          INFO_PLIST="$APP_PATH/Contents/Info.plist"
+          APP_ENTITLEMENTS="$RUNNER_TEMP/openbrush-viewer-app-store.entitlements"
+
+          cp "$MAC_PROVISIONING_PROFILE_PATH" "$APP_PATH/Contents/embedded.provisionprofile"
+          sed \
+            -e "s/__TEAM_ID__/$APPLE_TEAM_ID/g" \
+            -e "s/__BUNDLE_ID__/$MAC_BUNDLE_ID/g" \
+            Support/macos/OpenBrushViewerAppStore.entitlements > "$APP_ENTITLEMENTS"
+
+          /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $MAC_BUNDLE_ID" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString $VERSION" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $VERSION" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Set :ITSAppUsesNonExemptEncryption false" "$INFO_PLIST" || \
+            /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$INFO_PLIST"
+          /usr/libexec/PlistBuddy -c "Set :LSApplicationCategoryType public.app-category.graphics-design" "$INFO_PLIST" || \
+            /usr/libexec/PlistBuddy -c "Add :LSApplicationCategoryType string public.app-category.graphics-design" "$INFO_PLIST"
+
+          # Sign native code from the inside out, then seal nested bundles and the app.
+          while IFS= read -r -d '' native_file; do
+            if file -b "$native_file" | grep -q 'Mach-O'; then
+              codesign --force --verify --verbose --timestamp --options runtime --sign "$MAC_APP_IDENTITY" "$native_file"
+            fi
+          done < <(find "$APP_PATH" -type f -print0)
+
+          while IFS= read -r -d '' code_bundle; do
+            codesign --force --verify --verbose --timestamp --options runtime --sign "$MAC_APP_IDENTITY" "$code_bundle"
+          done < <(find "$APP_PATH/Contents" -depth -type d \( \
+            -name '*.bundle' -o -name '*.framework' -o -name '*.plugin' \) -print0)
+
+          while IFS= read -r -d '' child_bundle; do
+            codesign --force --verify --verbose --timestamp --options runtime \
+              --entitlements Support/macos/OpenBrushViewerAppStoreChild.entitlements \
+              --sign "$MAC_APP_IDENTITY" "$child_bundle"
+          done < <(find "$APP_PATH/Contents" -depth -type d \( -name '*.app' -o -name '*.xpc' \) -print0)
+
+          codesign --force --verify --verbose --timestamp --options runtime \
+            --entitlements "$APP_ENTITLEMENTS" --sign "$MAC_APP_IDENTITY" "$APP_PATH"
+          codesign --verify --deep --strict --verbose=4 "$APP_PATH"
+
+          mkdir dist
+          productbuild --component "$APP_PATH" /Applications \
+            --sign "$MAC_INSTALLER_IDENTITY" dist/OpenBrushViewer.pkg
+
+      - name: Upload to App Store Connect
+        env:
+          APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
+          APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+
+          MAC_BUNDLE_ID: foundation.icosa.openbrushviewer
+          MAC_PKG_PATH: dist/OpenBrushViewer.pkg
+          FASTLANE_LANE: ${{ needs.configuration.outputs.iosviewerlane }}
+        run: bundle exec fastlane mac ${FASTLANE_LANE}
+
+      - name: Save package and logs
+        uses: actions/upload-artifact@v7
+        if: ${{ always() }}
+        with:
+          name: MacOS Viewer App Store package and logs
+          path: |
+            dist/OpenBrushViewer.pkg
+            /Users/runner/Library/Logs/gym/
 
   release:
     name: Create Github Release
@@ -1667,6 +1817,153 @@ jobs:
           fi
           VERSION_ID="$(abxr-cli -f json apps upload $ARBORXR_APP_ID OpenBrush_Pico_$VERSION.apk --notes "${CHANGELOG}" --version $VERSION --wait --wait_time 300 | jq -r '.id')"
           abxr-cli apps release_channel_set_version $ARBORXR_APP_ID --release_channel_id $ARBORXR_CHANNEL --version_id $VERSION_ID
+
+  publish_ios_viewer:
+    name: Publish Viewer iOS
+    needs: [configuration, build]
+    runs-on: macos-26
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            Gemfile
+            Gemfile.lock
+            fastlane
+
+      - name: Free extra space
+        # As of 02/08/2024, this increases free space from 21GB to 47GB
+        run: |
+          echo "Initial free space"
+          df -h
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
+          df -h
+
+      - name: Download iOS Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: iOS Viewer
+          path: build
+
+      - name: Fix File Permissions
+        run: |
+          export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
+          export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
+
+          find $IOS_BUILD_PATH -type f -name "*.sh" -exec chmod +x {} \;
+
+      - name: Run fastlane
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
+          APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+
+          MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+
+          IOS_BUNDLE_ID: foundation.icosa.openbrushviewer
+          PROJECT_NAME: Open Brush Viewer
+          FASTLANE_LANE: ${{ needs.configuration.outputs.iosviewerlane }}
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${MATCH_DEPLOY_KEY}"
+          export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
+          export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
+
+          bundle install
+          bundle exec fastlane ios ${FASTLANE_LANE}
+
+      - name: Save logs
+        uses: actions/upload-artifact@v7
+        if: ${{ failure() }}
+        with:
+          name: fastlane viewer logs
+          path: /Users/runner/Library/Logs/gym/
+
+  publish_tvos_viewer:
+    name: Publish Viewer tvOS
+    needs: [configuration, build]
+    runs-on: macos-26
+    if: |
+      github.event_name == 'push' &&
+      github.repository == 'icosa-foundation/open-brush' &&
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          sparse-checkout: |
+            Gemfile
+            Gemfile.lock
+            fastlane
+
+      - name: Free extra space
+        run: |
+          echo "Initial free space"
+          df -h
+          rm -rf "$AGENT_TOOLSDIRECTORY"
+          echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
+          df -h
+
+      - name: Download tvOS Artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: tvOS Viewer
+          path: build
+
+      - name: Fix File Permissions
+        run: |
+          export FILENAME=$(basename $(readlink -f build/tvOS/OpenBrush*))
+          export TVOS_BUILD_PATH=$(pwd)/build/tvOS/${FILENAME}
+
+          find $TVOS_BUILD_PATH -type f -name "*.sh" -exec chmod +x {} \;
+
+      - name: Run fastlane
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+          APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
+          APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
+          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
+
+          MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
+          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+
+          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
+          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
+          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
+
+          TVOS_BUNDLE_ID: foundation.icosa.openbrushviewer
+          PROJECT_NAME: Open Brush Viewer
+          FASTLANE_LANE: ${{ needs.configuration.outputs.iosviewerlane }}
+        run: |
+          eval "$(ssh-agent -s)"
+          ssh-add - <<< "${MATCH_DEPLOY_KEY}"
+          export FILENAME=$(basename $(readlink -f build/tvOS/OpenBrush*))
+          export TVOS_BUILD_PATH=$(pwd)/build/tvOS/${FILENAME}
+
+          bundle install
+          bundle exec fastlane tvos ${FASTLANE_LANE}
+
+      - name: Save logs
+        uses: actions/upload-artifact@v7
+        if: ${{ failure() }}
+        with:
+          name: fastlane tvOS viewer logs
+          path: /Users/runner/Library/Logs/gym/
 
   publish_ios_zapbox:
     name: Publish Zapbox iOS
