@@ -34,6 +34,7 @@ namespace TiltBrush
         private static bool m_StartupStorageCanceled;
         private static string m_StorageStreamProbeRootIdentity;
         private static AndroidStorageManager m_Instance;
+        private string[] m_PreexistingVideoStagingPaths = Array.Empty<string>();
 
         public static bool StartupStorageReady =>
             !OpenBrushStorage.IsScopedStorageMode || m_StartupStorageReady;
@@ -61,6 +62,10 @@ namespace TiltBrush
         private void Awake()
         {
             m_Instance = this;
+            // This instance is created before LoadingScene can admit Main. Capture only payloads
+            // left by an earlier process so delayed recovery never removes a current recording.
+            m_PreexistingVideoStagingPaths =
+                OpenBrushStorage.GetExistingVideoStagingPaths();
         }
 
         private void OnDestroy()
@@ -273,7 +278,10 @@ namespace TiltBrush
             {
                 SafApiImportStaging.CleanupOrphans(
                     OpenBrushStorage.MediaLibraryAnchorPath);
-                OpenBrushStorage.CleanupRecoveredVideoStaging();
+                string[] staleVideoStagingPaths = m_PreexistingVideoStagingPaths;
+                m_PreexistingVideoStagingPaths = Array.Empty<string>();
+                OpenBrushStorage.CleanupRecoveredVideoStaging(
+                    staleVideoStagingPaths);
             }
 
             if (recoveryError != null)

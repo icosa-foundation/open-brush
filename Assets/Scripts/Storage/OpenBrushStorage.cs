@@ -619,24 +619,56 @@ namespace TiltBrush
             }
         }
 
-        /// Removes video payloads retained for consumers in a previous process. Recovery must
-        /// finish first so an interrupted publication can still read its payload. Once it has,
-        /// no in-memory consumer from that process remains and the whole staging directory is
-        /// stale.
-        internal static void CleanupRecoveredVideoStaging()
+        /// Captures the top-level video payloads that exist before Main can start a recording.
+        internal static string[] GetExistingVideoStagingPaths()
         {
             string videoStagingPath = LocalVideoStagingPath;
             try
             {
-                if (Directory.Exists(videoStagingPath))
-                {
-                    Directory.Delete(videoStagingPath, recursive: true);
-                }
+                return Directory.Exists(videoStagingPath)
+                    ? Directory.GetFileSystemEntries(videoStagingPath)
+                    : Array.Empty<string>();
             }
             catch (Exception e) when (
                 e is IOException || e is UnauthorizedAccessException)
             {
-                Debug.LogWarning($"SAF_VIDEO_RECOVERY Could not remove stale video staging '{videoStagingPath}': {e.Message}");
+                Debug.LogWarning($"SAF_VIDEO_RECOVERY Could not inspect stale video staging '{videoStagingPath}': {e.Message}");
+                return Array.Empty<string>();
+            }
+        }
+
+        /// Removes video payloads captured before the current process admitted Main. Recovery
+        /// must finish first so an interrupted publication can still read its payload.
+        internal static void CleanupRecoveredVideoStaging(IEnumerable<string> stalePaths)
+        {
+            string videoStagingPath = Path.GetFullPath(LocalVideoStagingPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            foreach (string path in stalePaths)
+            {
+                string fullPath = Path.GetFullPath(path);
+                string parent = Path.GetDirectoryName(fullPath)?.TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                if (!string.Equals(
+                        parent, videoStagingPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                try
+                {
+                    if (Directory.Exists(fullPath))
+                    {
+                        Directory.Delete(fullPath, recursive: true);
+                    }
+                    else
+                    {
+                        File.Delete(fullPath);
+                    }
+                }
+                catch (Exception e) when (
+                    e is IOException || e is UnauthorizedAccessException)
+                {
+                    Debug.LogWarning($"SAF_VIDEO_RECOVERY Could not remove stale video staging '{fullPath}': {e.Message}");
+                }
             }
         }
 
