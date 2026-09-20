@@ -238,6 +238,13 @@ namespace TiltBrush
 
         private string m_VideoCaptureFile;
         private bool m_VideoCapturePublished;
+        private sealed class RetainedVideoCapture
+        {
+            public bool Published;
+            public bool ConsumerFinished;
+        }
+        private readonly Dictionary<string, RetainedVideoCapture> m_RetainedVideoCaptures =
+            new Dictionary<string, RetainedVideoCapture>(StringComparer.OrdinalIgnoreCase);
         private IEnumerator m_UploadIconBlinker;
         private bool m_WaitingForAuth = false;
 
@@ -377,6 +384,10 @@ namespace TiltBrush
         override protected void OnDestroy()
         {
             base.OnDestroy();
+            foreach (string capturePath in m_RetainedVideoCaptures.Keys.ToList())
+            {
+                FinishVideoCaptureConsumer(capturePath);
+            }
             if (m_OauthMonitored)
             {
                 OAuth2Identity.ProfileUpdated -= OnProfileUpdated;
@@ -405,6 +416,9 @@ namespace TiltBrush
                 // If the video camera is recording, stop it when hidden.
                 if ((MultiCamStyle)m_CurrentCameraIndex == MultiCamStyle.Video)
                 {
+                    bool abandoningRetainedCapture =
+                        m_CurrentVideoState == VideoState.ReadyToShare ||
+                        m_CurrentVideoState == VideoState.Previewing;
                     if (m_CurrentVideoState == VideoState.Capturing)
                     {
                         StopVideoCapture(false);
@@ -417,6 +431,10 @@ namespace TiltBrush
                     if (m_CurrentVideoState == VideoState.Previewing)
                     {
                         m_CurrentVideoState = VideoState.Ready;
+                    }
+                    if (abandoningRetainedCapture)
+                    {
+                        FinishVideoCaptureConsumer(m_VideoCaptureFile);
                     }
                 }
 
@@ -887,9 +905,12 @@ namespace TiltBrush
                             else if (m_CurrentVideoState == VideoState.Previewing)
                             {
                                 // Share or new
+                                bool sharing = false;
                                 if (InputManager.m_Instance.GetCommandHeld(InputManager.SketchCommands.Confirm))
                                 {
-                                    App.Instance.StartCoroutine(YouTube.m_Instance.ShareVideo(m_VideoCaptureFile));
+                                    sharing = true;
+                                    App.Instance.StartCoroutine(
+                                        ShareVideoAndReleaseStaging(m_VideoCaptureFile));
                                     m_UploadingIcon.SetActive(true);
                                     StartCoroutine(m_UploadIconBlinker = Blink(m_UploadingIcon, 0.5f));
                                 }
@@ -901,6 +922,11 @@ namespace TiltBrush
                                 {
                                     // No button confirmation yet.
                                     break;
+                                }
+
+                                if (!sharing)
+                                {
+                                    FinishVideoCaptureConsumer(m_VideoCaptureFile);
                                 }
 
                                 m_CurrentVideoState = VideoState.Ready;
@@ -1756,6 +1782,7 @@ namespace TiltBrush
         public void StartVideoCapture(string filePath, bool offlineRender = false)
         {
             filePath = RevalidateCaptureName(filePath, MultiCamStyle.Video);
+            string previousCapture = m_VideoCaptureFile;
             if (!VideoRecorderUtils.StartVideoCapture(filePath,
                 GetVideoRecorder(m_CurrentCameraIndex),
                 SketchControlsScript.m_Instance.MultiCamCaptureRig.UsdPathSerializer,
@@ -1764,6 +1791,7 @@ namespace TiltBrush
                 return;
             }
 
+            FinishVideoCaptureConsumer(previousCapture);
             m_CurrentVideoState = VideoState.Capturing;
             m_VideoRecordTimer.gameObject.SetActive(true);
             m_VideoRecordTimer.text = "0:00:00";
@@ -1841,14 +1869,27 @@ namespace TiltBrush
                 if (OpenBrushStorage.IsScopedStorageMode && !m_VideoCapturePublished)
                 {
                     m_VideoCapturePublished = true;
+                    string publishedCapturePath = m_VideoCaptureFile;
+                    m_RetainedVideoCaptures[publishedCapturePath] = new RetainedVideoCapture
+                    {
+                        ConsumerFinished = !App.GoogleIdentity.LoggedIn,
+                    };
                     OpenBrushStorage.PublishVideoCaptureToSharedStorageAsync(
-                        m_VideoCaptureFile,
+                        publishedCapturePath,
                         "video",
                         (success, publishError) =>
                         {
                             if (!success)
                             {
                                 OutputWindowScript.Error("Failed to save video", publishError);
+                                m_RetainedVideoCaptures.Remove(publishedCapturePath);
+                                return;
+                            }
+                            if (m_RetainedVideoCaptures.TryGetValue(
+                                    publishedCapturePath, out RetainedVideoCapture retained))
+                            {
+                                retained.Published = true;
+                                TryReleaseVideoCapture(publishedCapturePath, retained);
                             }
                         },
                         // Preview and YouTube upload reopen this path after publication finishes.
@@ -1992,6 +2033,35 @@ namespace TiltBrush
                 }
                 m_SnapshotCaptureInProgress = false;
             }
+        }
+
+        private IEnumerator ShareVideoAndReleaseStaging(string capturePath)
+        {
+            yield return YouTube.m_Instance.ShareVideo(capturePath);
+            FinishVideoCaptureConsumer(capturePath);
+        }
+
+        private void FinishVideoCaptureConsumer(string capturePath)
+        {
+            if (string.IsNullOrEmpty(capturePath) ||
+                !m_RetainedVideoCaptures.TryGetValue(
+                    capturePath, out RetainedVideoCapture retained))
+            {
+                return;
+            }
+            retained.ConsumerFinished = true;
+            TryReleaseVideoCapture(capturePath, retained);
+        }
+
+        private void TryReleaseVideoCapture(
+            string capturePath, RetainedVideoCapture retained)
+        {
+            if (!retained.Published || !retained.ConsumerFinished)
+            {
+                return;
+            }
+            OpenBrushStorage.DeleteRetainedVideoCapture(capturePath);
+            m_RetainedVideoCaptures.Remove(capturePath);
         }
 
         private IEnumerator TakeScreenshotInternalAsync(

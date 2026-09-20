@@ -560,6 +560,30 @@ namespace TiltBrush
                 transactionOwnsPayload: !retainLocalPayload);
         }
 
+        internal static void DeleteRetainedVideoCapture(string localVideoPath)
+        {
+            if (!TryGetSharedGeneratedFileRelativePath(localVideoPath, out _))
+            {
+                return;
+            }
+            string directory = Path.GetDirectoryName(localVideoPath);
+            string basename = Path.GetFileNameWithoutExtension(localVideoPath);
+            foreach (string path in new[]
+            {
+                localVideoPath,
+                Path.Combine(directory, basename + "_sequence.txt"),
+                Path.ChangeExtension(localVideoPath, ".usda"),
+            })
+            {
+                File.Delete(path);
+            }
+            string frameDirectory = Path.Combine(directory, basename + "_frames");
+            if (Directory.Exists(frameDirectory))
+            {
+                Directory.Delete(frameDirectory, recursive: true);
+            }
+        }
+
         public static void PublishExportToSharedStorageAsync(
             string localExportDirectory,
             string localReadmePath,
