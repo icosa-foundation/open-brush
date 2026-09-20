@@ -13,7 +13,9 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using IsoMesh;
 using UnityEngine;
@@ -40,7 +42,9 @@ namespace TiltBrush
 
         internal static SdfEditorPopup Active { get; private set; }
 
-        internal void Initialize(SdfStencil stencil)
+        internal void Initialize(
+            SdfStencil stencil, int componentIndex = 0,
+            int dimensionIndex = 0, int page = 0)
         {
             m_Stencil = stencil != null
                 ? stencil
@@ -52,6 +56,9 @@ namespace TiltBrush
             }
 
             m_Popup.SetPersistent(true);
+            m_ComponentIndex = componentIndex;
+            m_DimensionIndex = dimensionIndex;
+            m_Page = Mathf.Clamp(page, 0, 5);
             ConfigureButtons();
             Active = this;
             App.Switchboard.SelectionChanged += OnSelectionChanged;
@@ -98,6 +105,10 @@ namespace TiltBrush
                     }
                     return commandParam > 0 ||
                         m_Stencil.GetComponentDefinitions()[m_ComponentIndex].Blend > 0f;
+                case SketchControlsScript.GlobalCommands.SdfSetPrimitiveDimension:
+                    return SelectedPrimitive.HasValue;
+                case SketchControlsScript.GlobalCommands.SdfSetComponentBlend:
+                    return count > 1 && m_ComponentIndex > 0;
                 case SketchControlsScript.GlobalCommands.SdfToggleComponentHandles:
                     return count > 0;
                 default:
@@ -145,7 +156,7 @@ namespace TiltBrush
                         m_ComponentIndex, m_Stencil.ComponentCount - 1);
                     break;
                 case SketchControlsScript.GlobalCommands.SdfEditorNextPage:
-                    m_Page = (m_Page + 1) % 5;
+                    m_Page = (m_Page + 1) % 6;
                     ConfigurePage();
                     break;
                 case SketchControlsScript.GlobalCommands.SdfAddPrimitive:
@@ -161,6 +172,12 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.SdfAdjustComponentBlend:
                     AdjustBlend(commandParam);
                     break;
+                case SketchControlsScript.GlobalCommands.SdfSetPrimitiveDimension:
+                    OpenNumericInput(editDimension: true);
+                    return;
+                case SketchControlsScript.GlobalCommands.SdfSetComponentBlend:
+                    OpenNumericInput(editDimension: false);
+                    return;
                 case SketchControlsScript.GlobalCommands.SdfToggleComponentHandles:
                     m_EditComponentHandles = !m_EditComponentHandles;
                     ConfigurePage();
@@ -243,9 +260,24 @@ namespace TiltBrush
                         SketchControlsScript.GlobalCommands.SdfAdjustComponentBlend,
                         "Icons/additive", "Increase blend", 1);
                     Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
-                        "Icons/forwardarrow", "Component tools");
+                        "Icons/forwardarrow", "Numeric values");
                     break;
                 case 2:
+                    Configure(m_Buttons[0],
+                        SketchControlsScript.GlobalCommands.SdfNextPrimitiveDimension,
+                        "Icons/settings", $"Next dimension ({DimensionName})");
+                    Configure(m_Buttons[1],
+                        SketchControlsScript.GlobalCommands.SdfSetPrimitiveDimension,
+                        "Icons/settings", $"Set {DimensionName}");
+                    Configure(m_Buttons[2],
+                        SketchControlsScript.GlobalCommands.SdfSetComponentBlend,
+                        "Icons/settings", "Set blend");
+                    Disable(m_Buttons[3]);
+                    Disable(m_Buttons[4]);
+                    Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
+                        "Icons/forwardarrow", "Component tools");
+                    break;
+                case 3:
                     Configure(m_Buttons[0],
                         SketchControlsScript.GlobalCommands.SdfToggleComponentHandles,
                         "Icons/selection",
@@ -258,7 +290,7 @@ namespace TiltBrush
                     Configure(m_Buttons[5], SketchControlsScript.GlobalCommands.SdfEditorNextPage,
                         "Icons/forwardarrow", "Add components");
                     break;
-                case 3:
+                case 4:
                     ConfigureAddButton(0, SDFPrimitiveType.Sphere, "Icons/guide_sphere");
                     ConfigureAddButton(1, SDFPrimitiveType.Torus, "Icons/settings");
                     ConfigureAddButton(2, SDFPrimitiveType.Cuboid, "Icons/guide_cube");
@@ -429,6 +461,102 @@ namespace TiltBrush
             Perform(EditSdfGuideCommand.SetComponentBlend(
                 m_Stencil, m_ComponentIndex,
                 Mathf.Max(0f, component.Blend + direction * k_BlendStep)));
+        }
+
+        private void OpenNumericInput(bool editDimension)
+        {
+            int componentIndex = m_ComponentIndex;
+            int dimensionIndex = m_DimensionIndex;
+            SdfStencil stencil = m_Stencil;
+            string value;
+            string title;
+            if (editDimension)
+            {
+                value = SelectedPrimitive.Value.Geometry[dimensionIndex]
+                    .ToString("0.###", CultureInfo.InvariantCulture);
+                title = $"Set {DimensionName}";
+            }
+            else
+            {
+                value = stencil.GetComponentDefinitions()[componentIndex].Blend
+                    .ToString("0.###", CultureInfo.InvariantCulture);
+                title = "Set blend";
+            }
+
+            m_Popup.SetPersistent(false);
+            NumericInputPopupWindow numericPopup =
+                SelectionTray.Instance?.OpenNumericInput(title);
+            if (numericPopup == null)
+            {
+                m_Popup.SetPersistent(true);
+                return;
+            }
+
+            numericPopup.Initialize(value, input => ApplyNumericInput(
+                stencil, componentIndex, dimensionIndex, editDimension, input));
+            numericPopup.m_OnClose += () =>
+            {
+                if (stencil != null)
+                {
+                    stencil.StartCoroutine(ReopenEditorNextFrame(
+                        stencil, componentIndex, dimensionIndex));
+                }
+            };
+        }
+
+        private static void ApplyNumericInput(
+            SdfStencil stencil, int componentIndex, int dimensionIndex,
+            bool editDimension, string input)
+        {
+            if (stencil == null ||
+                !float.TryParse(input, NumberStyles.Float, CultureInfo.InvariantCulture,
+                    out float value) || float.IsNaN(value) || float.IsInfinity(value) ||
+                value < (editDimension ? k_MinimumDimension : 0f))
+            {
+                OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                    InputManager.ControllerName.Brush,
+                    editDimension
+                        ? $"Enter a dimension of at least {k_MinimumDimension:0.###}."
+                        : "Enter a blend value of zero or more.");
+                return;
+            }
+
+            if (componentIndex < 0 || componentIndex >= stencil.ComponentCount)
+            {
+                return;
+            }
+
+            SdfStencil.ComponentDefinition component =
+                stencil.GetComponentDefinitions()[componentIndex];
+            if (editDimension)
+            {
+                if (!component.IsPrimitive || dimensionIndex < 0 ||
+                    dimensionIndex >= DimensionCountForPrimitive(component.Primitive.Value.Type))
+                {
+                    return;
+                }
+                SdfStencil.PrimitiveDefinition primitive = component.Primitive.Value;
+                Vector4 geometry = primitive.Geometry;
+                geometry[dimensionIndex] = value;
+                Perform(EditSdfGuideCommand.SetPrimitiveGeometry(
+                    stencil, componentIndex, primitive.Type, geometry));
+            }
+            else
+            {
+                Perform(EditSdfGuideCommand.SetComponentBlend(
+                    stencil, componentIndex, value));
+            }
+        }
+
+        private static IEnumerator ReopenEditorNextFrame(
+            SdfStencil stencil, int componentIndex, int dimensionIndex)
+        {
+            yield return null;
+            if (stencil != null && SelectionManager.m_Instance.SelectedSdfGuide == stencil)
+            {
+                SelectionTray.Instance?.OpenSdfEditor(
+                    componentIndex, dimensionIndex, page: 2);
+            }
         }
 
         private void CycleOperation()

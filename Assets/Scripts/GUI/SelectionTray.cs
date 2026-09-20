@@ -28,6 +28,7 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_ConvertToSdfTexture;
         [SerializeField] private Texture2D m_EditSdfTexture;
         [SerializeField] private GameObject m_SdfEditorPopupPrefab;
+        [SerializeField] private GameObject m_NumericInputPopupPrefab;
 
         private SketchControlsScript.GlobalCommands m_DefaultGroupCommand;
         private Texture2D m_DefaultGroupTexture;
@@ -96,7 +97,8 @@ namespace TiltBrush
             m_GroupButton.UpdateVisuals();
         }
 
-        public void OpenSdfEditor()
+        public void OpenSdfEditor(
+            int componentIndex = 0, int dimensionIndex = 0, int page = 0)
         {
             SdfStencil stencil = SelectionManager.m_Instance.SelectedSdfGuide;
             BasePanel panel = m_Manager?.GetPanelForPopUps();
@@ -110,7 +112,22 @@ namespace TiltBrush
                 explicitPosition: false, transition: true,
                 sDelayedText: "SDF Components");
             SdfEditorPopup controller = popupObject.AddComponent<SdfEditorPopup>();
-            controller.Initialize(stencil);
+            controller.Initialize(stencil, componentIndex, dimensionIndex, page);
+        }
+
+        internal NumericInputPopupWindow OpenNumericInput(string title)
+        {
+            BasePanel panel = m_Manager?.GetPanelForPopUps();
+            if (panel == null || m_NumericInputPopupPrefab == null)
+            {
+                return null;
+            }
+
+            GameObject popupObject = panel.CreatePopUp(
+                m_NumericInputPopupPrefab, Vector3.zero,
+                explicitPosition: false, transition: true,
+                sDelayedText: title);
+            return popupObject.GetComponent<NumericInputPopupWindow>();
         }
 
         public void RepaintSelected()
