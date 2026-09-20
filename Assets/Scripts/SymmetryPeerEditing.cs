@@ -171,6 +171,96 @@ namespace TiltBrush
             return result;
         }
 
+        /// The per-control-point override colours a peer should take when 'stroke' is given
+        /// newOverrideColors in newMode - what the tint tool needs to paint a group at once.
+        ///
+        /// Peers are drawn point for point alongside the stroke, so point i maps to point i. Only
+        /// the points the edit actually changes are touched on the peer, and each keeps its own
+        /// offset from the stroke's colour, in HSV, so a group drawn with a colour shift stays
+        /// shifted. Alpha is left as the peer had it; brushes such as QuillFlatBrush use it for
+        /// per-vertex opacity.
+        ///
+        /// Call before the edit is applied to the stroke, and false when the peer can't be
+        /// mirrored point for point - a stroke simplified differently, or a scripted symmetry
+        /// pointer that started a new stroke mid-line.
+        public static bool TryGetPeerPointColors(
+            Stroke stroke, Stroke peer,
+            List<Color32?> newOverrideColors, ColorOverrideMode newMode,
+            out List<Color32?> peerColors, out ColorOverrideMode peerMode)
+        {
+            peerColors = null;
+            peerMode = peer.m_ColorOverrideMode;
+
+            int count = stroke.m_ControlPoints.Length;
+            if (peer.m_ControlPoints.Length != count) { return false; }
+
+            // A null list means the stroke's overrides were dropped altogether, which mirrors as
+            // a clear at every point the stroke had one.
+            bool clearingAll = newOverrideColors == null;
+            if (!clearingAll && newOverrideColors.Count != count) { return false; }
+
+            var result = HasOverridesFor(peer, count)
+                ? new List<Color32?>(peer.m_OverrideColors)
+                : new List<Color32?>(new Color32?[count]);
+
+            // As the tint tool does for the stroke itself: a peer moving to Replace keeps the
+            // colour its existing overrides were showing under the old mode.
+            if (newMode == ColorOverrideMode.Replace &&
+                peer.m_ColorOverrideMode != ColorOverrideMode.Replace)
+            {
+                for (int i = 0; i < count; ++i)
+                {
+                    if (result[i].HasValue) { result[i] = peer.GetColor(i); }
+                }
+            }
+            // Clearing the stroke's last override says nothing about how the peer's remaining
+            // ones should be read, so the peer keeps its own mode in that case.
+            peerMode = newMode == ColorOverrideMode.None ? peer.m_ColorOverrideMode : newMode;
+
+            bool anyOverrides = false;
+            bool strokeHasOverrides = HasOverridesFor(stroke, count);
+            for (int i = 0; i < count; ++i)
+            {
+                Color32? before = strokeHasOverrides ? stroke.m_OverrideColors[i] : null;
+                Color32? after = clearingAll ? null : newOverrideColors[i];
+                if (!SameColor(before, after))
+                {
+                    result[i] = after.HasValue
+                        ? OffsetPointColor(after.Value, stroke.GetColor(i), peer.GetColor(i))
+                        : (Color32?)null;
+                }
+                anyOverrides |= result[i].HasValue;
+            }
+
+            if (!anyOverrides)
+            {
+                peerColors = null;
+                peerMode = ColorOverrideMode.None;
+                return true;
+            }
+            peerColors = result;
+            return true;
+        }
+
+        private static bool HasOverridesFor(Stroke stroke, int count)
+        {
+            return stroke.m_OverrideColors != null && stroke.m_OverrideColors.Count == count;
+        }
+
+        private static bool SameColor(Color32? a, Color32? b)
+        {
+            if (a.HasValue != b.HasValue) { return false; }
+            return !a.HasValue || a.Value.Equals(b.Value);
+        }
+
+        /// As OffsetColorLike, for a single control point, keeping the peer's own alpha.
+        private static Color32 OffsetPointColor(Color32 newColor, Color32 sourceColor, Color32 peerColor)
+        {
+            Color32 result = OffsetColorLike(newColor, sourceColor, peerColor);
+            result.a = peerColor.a;
+            return result;
+        }
+
         /// For every peer outside the passed set, the repaint values that keep it consistent with
         /// the stroke it belongs with. The four out lists are parallel, and all are left empty
         /// when peer editing is off.
