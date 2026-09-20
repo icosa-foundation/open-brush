@@ -2304,6 +2304,10 @@ namespace TiltBrush
 
         public static string SplatPosesPath()
         {
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                return OpenBrushStorage.LocalSplatPoseStagingPath;
+            }
             return Path.Combine(UserPath(), "SplatPoses");
         }
 

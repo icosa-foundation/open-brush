@@ -154,6 +154,9 @@ namespace TiltBrush
         public static string LocalVrVideoStagingPath =>
             Path.Combine(LocalStagingPath, "VRVideos");
 
+        public static string LocalSplatPoseStagingPath =>
+            Path.Combine(LocalStagingPath, "SplatPoses");
+
         /// A logical anchor, not a directory: nothing is written here and nothing creates it.
         /// The media catalogs are written against local paths, so under scoped storage they are
         /// given this prefix and the SAF-relative directory is recovered by subtracting it again.
@@ -673,7 +676,7 @@ namespace TiltBrush
                     $"Gaussian capture {captureName}",
                     () => SafStagedOutputPublisher.PublishUniqueDirectory(
                         backend, StorageArea.SplatPoses, localCaptureDirectory,
-                        transactionOwnsPayload: false, CancellationToken.None),
+                        transactionOwnsPayload: true, CancellationToken.None),
                     onComplete);
                 return;
             }
@@ -681,7 +684,7 @@ namespace TiltBrush
                 Path.Combine("SplatPoses", captureName),
                 localCaptureDirectory,
                 $"Gaussian capture {captureName}",
-                transactionOwnsPayload: false,
+                transactionOwnsPayload: true,
                 onComplete);
         }
 
