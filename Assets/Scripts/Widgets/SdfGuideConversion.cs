@@ -87,20 +87,41 @@ namespace TiltBrush
             }
 
             var definitions = new List<SdfStencil.ComponentDefinition>(guides.Count);
-            bool expandedExistingSdf = false;
-            foreach (StencilWidget guide in orderedGuides)
+            var generatedAssets = new List<SDFMeshAsset>();
+            try
             {
-                bool expandSdf = guide is SdfStencil && !expandedExistingSdf;
-                AddComponentDefinitions(guide, sdfPose_GS, definitions, expandSdf);
-                expandedExistingSdf |= expandSdf;
+                bool expandedExistingSdf = false;
+                foreach (StencilWidget guide in orderedGuides)
+                {
+                    bool expandSdf = guide is SdfStencil && !expandedExistingSdf;
+                    AddComponentDefinitions(
+                        guide, sdfPose_GS, definitions, generatedAssets, expandSdf);
+                    expandedExistingSdf |= expandSdf;
+                }
+                SdfStencil.ValidateComponentDefinitions(definitions);
+                return new Result(sdfPose_GS, definitions);
             }
-            SdfStencil.ValidateComponentDefinitions(definitions);
-            return new Result(sdfPose_GS, definitions);
+            catch
+            {
+                foreach (SDFMeshAsset asset in generatedAssets)
+                {
+                    if (Application.isPlaying)
+                    {
+                        UnityEngine.Object.Destroy(asset);
+                    }
+                    else
+                    {
+                        UnityEngine.Object.DestroyImmediate(asset);
+                    }
+                }
+                throw;
+            }
         }
 
         private static void AddComponentDefinitions(
             StencilWidget guide, TrTransform sdfPose_GS,
-            List<SdfStencil.ComponentDefinition> definitions, bool expandExistingSdf)
+            List<SdfStencil.ComponentDefinition> definitions,
+            List<SDFMeshAsset> generatedAssets, bool expandExistingSdf)
         {
             if (guide is SdfStencil sdfGuide)
             {
@@ -115,7 +136,8 @@ namespace TiltBrush
                     definitions.Add(CreateGeneratedMeshDefinition(
                         generatedMesh,
                         TrTransform.FromTransform(meshTransform),
-                        sdfPose_GS));
+                        sdfPose_GS,
+                        generatedAssets));
                     return;
                 }
                 TrTransform sourcePose_GS = GuidePose(guide);
@@ -174,6 +196,7 @@ namespace TiltBrush
                     throw new InvalidOperationException(
                         "SDF generation failed for the custom guide mesh.");
                 }
+                generatedAssets.Add(asset);
                 TrTransform sourcePose_GS = TrTransform.FromTransform(
                     customGuide.SourceMeshTransform);
                 definitions.Add(CreateMeshDefinition(asset, sourcePose_GS, sdfPose_GS));
@@ -185,7 +208,8 @@ namespace TiltBrush
         }
 
         private static SdfStencil.ComponentDefinition CreateGeneratedMeshDefinition(
-            Mesh sourceMesh, TrTransform sourcePose_GS, TrTransform sdfPose_GS)
+            Mesh sourceMesh, TrTransform sourcePose_GS, TrTransform sdfPose_GS,
+            List<SDFMeshAsset> generatedAssets)
         {
             ComputeShader computeShader =
                 WidgetManager.m_Instance.ModelStencilPrefab?.SdfComputeShader;
@@ -202,6 +226,7 @@ namespace TiltBrush
             {
                 throw new InvalidOperationException("Scoped SDF mesh generation failed.");
             }
+            generatedAssets.Add(asset);
             return CreateMeshDefinition(asset, sourcePose_GS, sdfPose_GS);
         }
 
