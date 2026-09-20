@@ -71,6 +71,19 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SoundClip_OpenReadUsesStorageStreamWhenPathIsOpaque()
+        {
+            var clip = new SoundClip(
+                "content://provider/clip", "Nested/clip.WAV", "catalog-id", null,
+                () => new MemoryStream(new byte[] { 1, 2, 3 }, writable: false));
+
+            using Stream stream = clip.OpenRead();
+
+            Assert.AreEqual(1, stream.ReadByte());
+            Assert.AreEqual("clip.WAV", clip.HumanName);
+        }
+
+        [Test]
         public void SoundDefaults_DoNotModifyExistingLibrary()
         {
             File.WriteAllText(Path.Combine(m_Root, "custom.wav"), "user audio");

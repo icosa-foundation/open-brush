@@ -424,7 +424,10 @@ namespace TiltBrush
                 GetSafCatalogIdentity(backend, document),
                 // Streamed straight from shared storage; nothing is copied out to play it.
                 () => SafMediaHttpServer.GetUrl(
-                    StorageArea.MediaLibrarySoundClips, document.RelativeDisplayPath));
+                    StorageArea.MediaLibrarySoundClips, document.RelativeDisplayPath),
+                // UnityGLTF defers glTF sidecar writes, so its source must be seekable.
+                () => backend.OpenRead(
+                    document.DocumentId, requireSeekable: true, CancellationToken.None));
         }
 
         /// Gets a clip form the catalog, given its filename. Returns null if no such clip is found.

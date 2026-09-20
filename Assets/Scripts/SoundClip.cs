@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -231,6 +232,8 @@ namespace TiltBrush
         // When set, a URL Unity's audio loader can open directly, so the clip is streamed from
         // shared storage instead of being copied into app-private storage first.
         private readonly Func<string> m_MediaUrl;
+        // Exporters need a seekable stream because a glTF sidecar is written after scene export.
+        private readonly Func<Stream> m_OpenRead;
         public string HumanName { get; }
 
         public Texture2D Thumbnail { get; private set; }
@@ -247,20 +250,23 @@ namespace TiltBrush
 
         public SoundClip(string filePath)
             : this(filePath, filePath.Substring(App.SoundClipLibraryPath().Length + 1),
-                filePath, null)
+                filePath, null, null)
         {
         }
 
         internal SoundClip(
             string filePath, string persistentPath, string catalogIdentity,
-            Func<string> mediaUrl = null)
+            Func<string> mediaUrl = null, Func<Stream> openRead = null)
         {
             PersistentPath = persistentPath;
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             AbsolutePath = filePath;
             CatalogIdentity = catalogIdentity;
             m_MediaUrl = mediaUrl;
+            m_OpenRead = openRead;
         }
+
+        internal Stream OpenRead() => m_OpenRead?.Invoke() ?? File.OpenRead(AbsolutePath);
 
         // Dummy SoundClip - this is used when a clip referenced in a sketch cannot be found.
         private SoundClip()
