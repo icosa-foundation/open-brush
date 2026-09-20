@@ -619,6 +619,27 @@ namespace TiltBrush
             }
         }
 
+        /// Removes video payloads retained for consumers in a previous process. Recovery must
+        /// finish first so an interrupted publication can still read its payload. Once it has,
+        /// no in-memory consumer from that process remains and the whole staging directory is
+        /// stale.
+        internal static void CleanupRecoveredVideoStaging()
+        {
+            string videoStagingPath = LocalVideoStagingPath;
+            try
+            {
+                if (Directory.Exists(videoStagingPath))
+                {
+                    Directory.Delete(videoStagingPath, recursive: true);
+                }
+            }
+            catch (Exception e) when (
+                e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"SAF_VIDEO_RECOVERY Could not remove stale video staging '{videoStagingPath}': {e.Message}");
+            }
+        }
+
         public static void PublishExportToSharedStorageAsync(
             string localExportDirectory,
             string localReadmePath,

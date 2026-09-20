@@ -273,6 +273,7 @@ namespace TiltBrush
             {
                 SafApiImportStaging.CleanupOrphans(
                     OpenBrushStorage.MediaLibraryAnchorPath);
+                OpenBrushStorage.CleanupRecoveredVideoStaging();
             }
 
             if (recoveryError != null)
