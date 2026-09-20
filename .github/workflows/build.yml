@@ -642,7 +642,9 @@ jobs:
   build_tvos:
     name: tvOS Viewer ${{ matrix.flavors.title }}
     needs: configuration
-    runs-on: macos-26
+    # UnityLinker fails without diagnostics on the 7 GB ARM runner. Use the
+    # 14 GB Intel runner to give the tvOS build enough headroom.
+    runs-on: macos-26-intel
     strategy:
       fail-fast: false
       matrix:
