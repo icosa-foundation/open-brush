@@ -176,17 +176,18 @@ namespace TiltBrush
         /// by the user of this method.
         public void AcquireImageFullsize(bool runForeground = false)
         {
-            if (FilePath.EndsWith(".svg"))
+            if (FilePath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
             {
-                if (IsUnsupportedVectorImage) { return; }
                 // Try the cache first.
                 m_FullSize = ImageCache.LoadImageCache(FilePath, m_CacheIdentity);
                 if (m_FullSize == null)
                 {
                     // TODO Move into the async code path?
                     var importer = new RuntimeSVGImporter();
-                    _SvgSceneInfo = importer.ParseToSceneInfo(File.ReadAllText(FilePath));
-                    m_FullSize = importer.ImportAsTexture(FilePath);
+                    string svg = ReadSvgText();
+                    _SvgSceneInfo = importer.ParseToSceneInfo(svg);
+                    m_FullSize = importer.ParseToTexture(
+                        svg, Path.GetFileNameWithoutExtension(FilePath));
                     ImageCache.SaveImageCache(m_FullSize, FilePath, m_CacheIdentity);
                 }
             }
@@ -417,16 +418,12 @@ namespace TiltBrush
 
             Debug.Assert(m_State == ImageState.NotReady, "Invariant");
 
-            if (FilePath.EndsWith(".svg"))
+            if (FilePath.EndsWith(".svg", StringComparison.OrdinalIgnoreCase))
             {
-                if (IsUnsupportedVectorImage)
-                {
-                    m_State = ImageState.Error;
-                    return true;
-                }
                 // TODO Move into the async code path?
                 var importer = new RuntimeSVGImporter();
-                var tex = importer.ImportAsTexture(FilePath);
+                var tex = importer.ParseToTexture(
+                    ReadSvgText(), Path.GetFileNameWithoutExtension(FilePath));
 
                 if (!ValidateDimensions(tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
                 {
@@ -888,6 +885,19 @@ namespace TiltBrush
             }
         }
 
+        internal string ReadSvgText()
+        {
+            if (m_OpenRead == null)
+            {
+                return File.ReadAllText(FilePath);
+            }
+            using (Stream source = m_OpenRead())
+            using (var reader = new StreamReader(source, detectEncodingFromByteOrderMarks: true))
+            {
+                return reader.ReadToEnd();
+            }
+        }
+
         /// Path-only exporters cannot consume the catalog's stream directly. Materialize a
         /// content-identity-scoped private copy on demand while keeping the logical path used by
         /// sketch persistence unchanged.
@@ -917,12 +927,6 @@ namespace TiltBrush
             File.Move(temporaryPath, path);
             return path;
         }
-
-        /// SVG import goes through RuntimeSVGImporter, which opens a path. Shared storage has
-        /// none, so SVG references are unsupported there rather than copied out to satisfy it.
-        private bool IsUnsupportedVectorImage =>
-            FilePath.EndsWith(".svg") && m_OpenRead != null &&
-            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
 
         private bool ValidateDimensions(int imageWidth, int imageHeight, int maxDimension)
         {

@@ -250,6 +250,20 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafSvgImages_ReadProviderTextWithoutMaterializingAFile()
+        {
+            const string svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M0 0\"/></svg>";
+            var image = new ReferenceImage(
+                "shared.svg", "svg-id",
+                () => new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svg)),
+                svg.Length,
+                "./shared.svg");
+
+            Assert.AreEqual(svg, image.ReadSvgText());
+            Assert.IsFalse(File.Exists(image.FilePath));
+        }
+
+        [Test]
         public void SafVideos_PreserveSubfoldersAndSeparatePlaybackPath()
         {
             var first = new ReferenceVideo("cache-a/clip.mp4", "id-a", "First/clip.mp4");
