@@ -238,7 +238,7 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, MacOS Viewer, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Viewer, tvOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Viewer, tvOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -256,14 +256,6 @@ jobs:
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
-            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
-
-          - name: MacOS Viewer
-            targetPlatform: StandaloneOSX
-            vrsdk: Monoscopic
-            cache: MacOS
-            extraoptions: -btb-il2cpp
-            extra_defines: OPEN_BRUSH_VIEWER
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: Android OpenXR
@@ -842,11 +834,11 @@ jobs:
             fastlane
             Support/macos
 
-      - name: Download macOS Viewer Artifact
+      - name: Download macOS Artifact
         uses: actions/download-artifact@v8
         with:
-          name: MacOS Viewer
-          path: build_macos_viewer
+          name: MacOS
+          path: build_macos
 
       - name: Install App Store signing assets
         env:
@@ -875,7 +867,7 @@ jobs:
           MAC_BUNDLE_ID: foundation.icosa.openbrushviewer
           APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
         run: |
-          tar xvfz build_macos_viewer/*tgz
+          tar xvfz build_macos/*tgz
 
           shopt -s nullglob
           APP_PATHS=(StandaloneOSX/OpenBrush*.app)
