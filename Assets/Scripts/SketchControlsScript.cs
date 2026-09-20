@@ -5706,7 +5706,8 @@ namespace TiltBrush
                 case GlobalCommands.ResetAllPanels: return m_PanelManager.PanelsHaveBeenCustomized();
                 case GlobalCommands.Duplicate: return ClipboardManager.Instance.CanCopy;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionCanBeGrouped;
-                case GlobalCommands.ConvertSelectionToSdf: return SelectionManager.m_Instance.SelectionContainsOnlyGuides;
+                case GlobalCommands.ConvertSelectionToSdf:
+                    return SelectionManager.m_Instance.SelectionCanConvertGuidesToSdf;
                 case GlobalCommands.EditSelectedSdf:
                     return SelectionManager.m_Instance.SelectedSdfGuide != null;
                 case GlobalCommands.SdfPreviousComponent:

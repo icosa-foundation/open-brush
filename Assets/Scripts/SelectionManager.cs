@@ -114,6 +114,12 @@ namespace TiltBrush
             m_SelectedWidgets.Count > 0 &&
             m_SelectedWidgets.All(widget => widget is StencilWidget);
 
+        /// A lone editable SDF is already in the target format. Keeping conversion disabled for
+        /// that selection also prevents a repeated UI event from replacing the result again.
+        public bool SelectionCanConvertGuidesToSdf =>
+            SelectionContainsOnlyGuides &&
+            (m_SelectedWidgets.Count != 1 || m_SelectedWidgets.First() is not SdfStencil);
+
         public SdfStencil SelectedSdfGuide =>
             m_SelectedStrokes.Count == 0 && m_SelectedWidgets.Count == 1
                 ? m_SelectedWidgets.First() as SdfStencil
@@ -1116,7 +1122,7 @@ namespace TiltBrush
 
         public void ConvertSelectedGuidesToSdf()
         {
-            if (!SelectionContainsOnlyGuides)
+            if (!SelectionCanConvertGuidesToSdf)
             {
                 return;
             }
