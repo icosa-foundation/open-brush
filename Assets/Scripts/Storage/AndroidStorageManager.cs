@@ -269,7 +269,6 @@ namespace TiltBrush
             }
             future.Close();
 
-            SafApiImportStaging.InitializeSession();
             if (publicationRecoveryComplete)
             {
                 SafApiImportStaging.CleanupOrphans(
