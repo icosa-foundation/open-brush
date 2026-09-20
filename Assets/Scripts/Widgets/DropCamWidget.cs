@@ -365,9 +365,7 @@ namespace TiltBrush
 
             if (currentPathWidget != null && currentPathWidget.Path.NumPositionKnots > 1)
             {
-                float speed = Mathf.Max(currentPathWidget.Path.GetSpeed(pathT),
-                    CameraPathSpeedKnot.kMinSpeed);
-                bool completed = currentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
+                bool completed = currentPathWidget.Path.MoveAlongPathByTime(Time.deltaTime,
                     pathT, out pathT);
                 if (completed)
                 {
