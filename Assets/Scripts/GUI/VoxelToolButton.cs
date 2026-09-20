@@ -14,9 +14,10 @@
 
 namespace TiltBrush
 {
-    /// Tool button that exposes the voxel tool's current mode and new-model action.
+    /// Tool button that exposes the voxel tool's current state and settings popup.
     public sealed class VoxelToolButton : ToolButton
     {
+        [UnityEngine.SerializeField] private UnityEngine.GameObject m_SettingsPopup;
         private VoxelTool.EditMode? m_LastMode;
         private bool m_LastActive;
         private string m_LastTargetDescription;
@@ -39,16 +40,20 @@ namespace TiltBrush
             m_LastActive = active;
             m_LastTargetDescription = targetDescription;
             SetExtraDescriptionText(active
-                ? $"Mode: {mode}. Target: {targetDescription}. Press again to start a new model"
+                ? $"Mode: {mode}. Target: {targetDescription}. Press again for settings"
                 : "Activate in Add mode");
         }
 
         protected override void OnButtonPressed()
         {
-            if (SketchSurfacePanel.m_Instance.ActiveTool is VoxelTool tool)
+            if (SketchSurfacePanel.m_Instance.ActiveTool is VoxelTool)
             {
-                tool.RequestNewModel();
-                UpdateVisuals();
+                BasePanel panel = m_Manager?.GetPanelForPopUps();
+                if (panel != null && m_SettingsPopup != null)
+                {
+                    panel.CreatePopUp(m_SettingsPopup, UnityEngine.Vector3.zero, false, false);
+                    ResetState();
+                }
                 return;
             }
 

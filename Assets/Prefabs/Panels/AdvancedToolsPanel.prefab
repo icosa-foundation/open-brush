@@ -2694,6 +2694,7 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_Tool: 6002
   m_EatGazeInputOnPress: 0
+  m_SettingsPopup: {fileID: 1178614306003409665, guid: 76ceeb08d7b22c946aa5d92cea965ef0, type: 3}
   references:
     version: 2
     RefIds: []

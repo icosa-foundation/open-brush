@@ -30,6 +30,8 @@ namespace TiltBrush
 
         private const int kDefaultModelSize = 128;
         private const float kDefaultVoxelSize = 0.1f;
+        private static readonly int[] kModelSizes = { 16, 32, 64, 128, 256 };
+        private static readonly float[] kVoxelSizes = { 0.025f, 0.05f, 0.1f, 0.2f, 0.4f };
 
         private VoxDocumentApiWrapper m_CurrentDocument;
         private VoxModelApiWrapper m_CurrentModel;
@@ -137,6 +139,31 @@ namespace TiltBrush
             };
             ControllerConsoleScript.m_Instance?.AddNewLine($"Voxel mode: {Mode}", true);
             return Mode;
+        }
+
+        public int CycleModelSize()
+        {
+            ModelSize = CyclePreset(kModelSizes, Mathf.Clamp(ModelSize, 1,
+                RuntimeVoxDocument.MaxModelDimension));
+            ControllerConsoleScript.m_Instance?.AddNewLine(
+                $"New voxel model size: {ModelSize}x{ModelSize}x{ModelSize}", true);
+            return ModelSize;
+        }
+
+        public float CycleVoxelSize()
+        {
+            VoxelSize = CyclePreset(kVoxelSizes, Mathf.Max(VoxelSize, 0.0001f));
+            ControllerConsoleScript.m_Instance?.AddNewLine(
+                $"New voxel size: {VoxelSize:0.###} m", true);
+            return VoxelSize;
+        }
+
+        public bool ToggleGrid()
+        {
+            ShowGrid = !ShowGrid;
+            ControllerConsoleScript.m_Instance?.AddNewLine(
+                $"Voxel grid: {(ShowGrid ? "shown" : "hidden")}", true);
+            return ShowGrid;
         }
 
         public void RequestNewModel()
@@ -336,6 +363,29 @@ namespace TiltBrush
                 m_CurrentDocument.SetAutoVisuals(true, true);
                 m_CurrentModel = m_CurrentDocument.Model(modelIndex);
             }
+        }
+
+        private static int CyclePreset(int[] presets, int current)
+        {
+            int currentIndex = Array.IndexOf(presets, current);
+            if (currentIndex >= 0)
+            {
+                return presets[(currentIndex + 1) % presets.Length];
+            }
+            int nextIndex = Array.FindIndex(presets, value => value > current);
+            return presets[nextIndex >= 0 ? nextIndex : 0];
+        }
+
+        private static float CyclePreset(float[] presets, float current)
+        {
+            int currentIndex = Array.FindIndex(presets,
+                value => Mathf.Abs(value - current) < 0.0001f);
+            if (currentIndex >= 0)
+            {
+                return presets[(currentIndex + 1) % presets.Length];
+            }
+            int nextIndex = Array.FindIndex(presets, value => value > current);
+            return presets[nextIndex >= 0 ? nextIndex : 0];
         }
     }
 }
