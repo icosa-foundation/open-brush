@@ -238,7 +238,7 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Viewer, tvOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -320,16 +320,6 @@ jobs:
             extra_defines: OPEN_BRUSH_VIEWER
             packages_to_remove: com.unity.formats.usd
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER  # The Fusion plugin does not reliably set these Fusion symbols for iOS command-line builds.
-
-          - name: tvOS Viewer
-            targetPlatform: tvOS
-            vrsdk: Monoscopic
-            cache: tvOS
-            runner: macos-26
-            extraoptions: -btb-il2cpp
-            extra_defines: OPEN_BRUSH_VIEWER
-            packages_to_remove: com.unity.formats.usd
-            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: iOS Zapbox
             targetPlatform: iOS
@@ -541,7 +531,7 @@ jobs:
 
       - name: Build project
         uses: Wandalen/wretry.action@v3
-        env:
+        env: &unity_build_environment
           GIT_LFS_SKIP_SMUDGE: "1"
           VERSION: ${{ needs.configuration.outputs.version}}
           UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', vars.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
@@ -560,7 +550,7 @@ jobs:
             version: ${{ needs.configuration.outputs.version }}
             buildName: ${{ needs.configuration.outputs.basename }}
             buildsPath: build/${{ matrix.vrsdk }}
-            chownFilesTo: ${{ matrix.runner != 'macos-26' && format('{0}:{1}', needs.configuration.outputs.uid, needs.configuration.outputs.gid) || '' }}
+            chownFilesTo: ${{ needs.configuration.outputs.uid }}:${{ needs.configuration.outputs.gid }}
             buildMethod: BuildTiltBrush.CommandLine
             androidExportType: ${{ matrix.androidExportType || 'androidPackage' }}
             androidTargetSdkVersion: ${{ matrix.androidTargetSdkVersion }}
@@ -648,6 +638,158 @@ jobs:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
+
+  build_tvos:
+    name: tvOS Viewer ${{ matrix.flavors.title }}
+    needs: configuration
+    runs-on: macos-26
+    strategy:
+      fail-fast: false
+      matrix:
+        flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
+
+    steps:
+      - name: Set masking
+        run: echo "::add-mask::DoNotStealThis1"
+
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          lfs: true
+
+      - name: Checkout private photon repository if available
+        if: ${{ env.PHOTON_PAT }}
+        uses: actions/checkout@v7
+        with:
+          token: ${{ env.PHOTON_PAT }}
+          repository: icosa-mirror/photon-fusion
+          ref: fusion-2.1.2-voice-2.63-realtime5-unity6
+          path: photon-fusion-mirror/
+
+      - name: Copy photon files
+        if: ${{ env.PHOTON_PAT }}
+        run: |
+          rsync -a --ignore-existing photon-fusion-mirror/ ./
+          echo "For debugging: these are the files in Assets/Photon:"
+          find Assets/Photon
+
+      - name: Restore Library/
+        id: cache_library
+        uses: actions/cache/restore@v6
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
+        with:
+          path: Library
+          key: Library_tvOS_${{ env.UNITY_VERSION }}
+
+      - name: Remove problematic packages
+        run: |
+          cp Packages/manifest.json{,.bak}
+          cp Packages/packages-lock.json{,.bak}
+          for PACKAGE in com.unity.formats.usd; do
+            jq 'del( .dependencies ["'${PACKAGE}'"] )' Packages/manifest.json > Packages/manifest.json.new
+            mv Packages/manifest.json.new Packages/manifest.json
+            jq 'del( .dependencies ["'${PACKAGE}'"] )' Packages/packages-lock.json > Packages/packages-lock.json.new
+            mv Packages/packages-lock.json.new Packages/packages-lock.json
+          done
+          diff -u Packages/manifest.json.bak Packages/manifest.json || true
+          diff -u Packages/packages-lock.json.bak Packages/packages-lock.json || true
+
+      - name: Set output filename
+        env:
+          BASENAME: ${{ needs.configuration.outputs.basename }}
+        run: echo "filename=$BASENAME" >> "$GITHUB_ENV"
+
+      - name: Set build stamp
+        if: ${{ needs.configuration.outputs.stamp }}
+        run: echo "stamp=-btb-stamp ${{ needs.configuration.outputs.stamp }}" >> "$GITHUB_ENV"
+
+      - name: Enable Development Mode
+        if: ${{ matrix.flavors.development == true }}
+        run: echo "btbbopts=-btb-bopt Development" >> "$GITHUB_ENV"
+
+      - name: Update version
+        env:
+          VERSION: ${{ needs.configuration.outputs.version }}
+        run: |
+          sed -i.bak -e "s/m_VersionNumber:.*$/m_VersionNumber: $VERSION/" Assets/Scenes/Main.unity
+          sed -i.bak -e "s/bundleVersion:.*$/bundleVersion: $VERSION/" ProjectSettings/ProjectSettings.asset
+          rm Assets/Scenes/Main.unity.bak ProjectSettings/ProjectSettings.asset.bak
+
+      - name: Add secure secrets file
+        env:
+          SECRETS_ASSET: ${{ secrets.SECRETS_ASSET }}
+          SECRETS_ASSET_META: ${{ secrets.SECRETS_ASSET_META }}
+        if: |
+          env.SECRETS_ASSET != null &&
+          env.SECRETS_ASSET_META != null
+        run: |
+          echo "$SECRETS_ASSET" > Assets/Secrets.asset
+          echo "$SECRETS_ASSET_META" > Assets/Secrets.asset.meta
+          SECRETS_ASSET_META_GUID=$(grep "guid:" Assets/Secrets.asset.meta | cut -d" " -f2)
+          sed -i.bak -e "s/Secrets:.*$/Secrets: {fileID: 11400000, guid: $SECRETS_ASSET_META_GUID, type: 2}/" Assets/Scenes/Main.unity
+          rm Assets/Scenes/Main.unity.bak
+
+      - name: Enable Viewer build
+        run: echo -e "\n-define:OPEN_BRUSH_VIEWER" | tee -a Assets/csc.rsp
+
+      - name: Enable Photon defines
+        if: ${{ env.PHOTON_PAT }}
+        run: |
+          for DEFINE in MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER; do
+            echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
+          done
+
+      - name: Generate ViverseViewer.bytes from source
+        run: python Support/Python/unitybuild/viverseviewer.py .
+
+      - name: Build project
+        uses: Wandalen/wretry.action@v3
+        env: *unity_build_environment
+        with:
+          retry_condition: steps._this.outputs.engineExitCode == 1
+          action: game-ci/unity-builder@v5
+          with: |
+            unityVersion: ${{ env.UNITY_VERSION }}
+            targetPlatform: tvOS
+            customParameters: -btb-target tvOS -btb-display Monoscopic -btb-out build/Monoscopic/tvOS/${{ env.filename }} ${{ needs.configuration.outputs.description }} ${{ env.stamp }} ${{ env.btbbopts }} -btb-il2cpp
+            versioning: Custom
+            version: ${{ needs.configuration.outputs.version }}
+            buildName: ${{ needs.configuration.outputs.basename }}
+            buildsPath: build/Monoscopic
+            buildMethod: BuildTiltBrush.CommandLine
+
+      - name: Upload build/
+        uses: actions/upload-artifact@v7
+        with:
+          name: tvOS Viewer ${{ matrix.flavors.title }}
+          path: |
+            build/Monoscopic
+            !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
+
+      - name: Clean Library before caching
+        env:
+          UNITY_LIBRARY_CACHE_PATHS: "DataStore ArtifactDB SourceAssetDB PlayerDataCache ShaderCache ShaderCache.db"
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'
+        run: |
+          library_cache="$RUNNER_TEMP/unity-library-cache"
+          mkdir "$library_cache"
+          for cache_path in $UNITY_LIBRARY_CACHE_PATHS; do
+            if [ -e "Library/$cache_path" ]; then
+              mv "Library/$cache_path" "$library_cache/$cache_path"
+            fi
+          done
+          rm -rf Library
+          mv "$library_cache" Library
+
+      - name: Save Library/ cache
+        uses: actions/cache/save@v6
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development
+        env:
+          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
+        with:
+          path: Library
+          key: Library_tvOS_${{ env.UNITY_VERSION }}
 
   signmacos:
     name: Sign the MacOS .app
@@ -1890,7 +2032,7 @@ jobs:
 
   publish_tvos_viewer:
     name: Publish Viewer tvOS
-    needs: [configuration, build]
+    needs: [configuration, build_tvos]
     runs-on: macos-26
     if: |
       github.event_name == 'push' &&
