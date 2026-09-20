@@ -1461,6 +1461,51 @@ namespace TiltBrush
             }
         }
 
+        [Test]
+        public void RuntimeContentSeeder_OverwritesOnlyExplicitlyReplaceableContent()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("__autocomplete.lua", System.Text.Encoding.UTF8.GetBytes("old api"));
+            backend.Add("user-module.lua", System.Text.Encoding.UTF8.GetBytes("user edit"));
+            var seeds = new[]
+            {
+                new RuntimeContentSeed(
+                    StorageArea.Plugins,
+                    "__autocomplete.lua",
+                    "text/x-lua",
+                    System.Text.Encoding.UTF8.GetBytes("current api"),
+                    overwriteExisting: true),
+                new RuntimeContentSeed(
+                    StorageArea.Plugins,
+                    "user-module.lua",
+                    "text/x-lua",
+                    System.Text.Encoding.UTF8.GetBytes("bundled default")),
+            };
+
+            RuntimeContentSeedResult result = RuntimeContentSeeder.SeedMissing(
+                backend, seeds, CancellationToken.None);
+
+            Assert.IsTrue(result.Success, result.Error);
+            Assert.AreEqual(1, result.SeededCount);
+            Assert.AreEqual(1, backend.CommitCount);
+            StorageDirectoryResult listing = backend.List(
+                StorageArea.Plugins, "", CancellationToken.None);
+            StorageDocument autocomplete = listing.Documents.Single(
+                document => document.DisplayName == "__autocomplete.lua");
+            StorageDocument userModule = listing.Documents.Single(
+                document => document.DisplayName == "user-module.lua");
+            using (var reader = new StreamReader(backend.OpenRead(
+                autocomplete.DocumentId, false, CancellationToken.None)))
+            {
+                Assert.AreEqual("current api", reader.ReadToEnd());
+            }
+            using (var reader = new StreamReader(backend.OpenRead(
+                userModule.DocumentId, false, CancellationToken.None)))
+            {
+                Assert.AreEqual("user edit", reader.ReadToEnd());
+            }
+        }
+
 
         [Test]
         public void DepthCapturePublication_CoversEveryWrittenSidecar()

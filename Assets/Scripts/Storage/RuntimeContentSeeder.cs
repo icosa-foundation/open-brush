@@ -46,7 +46,8 @@ namespace TiltBrush
             string relativePath,
             string mimeType,
             byte[] data,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            bool overwriteExisting = false)
         {
             if (data == null)
             {
@@ -65,11 +66,12 @@ namespace TiltBrush
                     return new RuntimeContentWriteResult(
                         listing.Code, created: false, listing.Error);
                 }
-                if (listing.Success && listing.Documents.Any(document =>
-                        string.Equals(
-                            document.DisplayName,
-                            displayName,
-                            StringComparison.OrdinalIgnoreCase)))
+                StorageDocument existing = listing.Success
+                    ? listing.Documents.FirstOrDefault(document =>
+                        string.Equals(document.DisplayName, displayName,
+                            StringComparison.OrdinalIgnoreCase))
+                    : null;
+                if (existing != null && !overwriteExisting)
                 {
                     return new RuntimeContentWriteResult(
                         StorageResultCode.Success, created: false);
@@ -80,10 +82,11 @@ namespace TiltBrush
                         area,
                         normalized,
                         mimeType ?? StorageMimeTypes.ForPath(normalized),
-                        cancellationToken))
+                        cancellationToken,
+                        existing?.DocumentId ?? default))
                     {
                         if (backend.Kind == StorageBackendKind.StorageAccessFramework &&
-                            transaction.TargetDocumentId.IsValid)
+                            transaction.TargetDocumentId.IsValid && !overwriteExisting)
                         {
                             return new RuntimeContentWriteResult(
                                 StorageResultCode.Success, created: false);
@@ -150,14 +153,17 @@ namespace TiltBrush
         public string RelativePath { get; }
         public string MimeType { get; }
         public byte[] Data { get; }
+        public bool OverwriteExisting { get; }
 
         public RuntimeContentSeed(
-            StorageArea area, string relativePath, string mimeType, byte[] data)
+            StorageArea area, string relativePath, string mimeType, byte[] data,
+            bool overwriteExisting = false)
         {
             Area = area;
             RelativePath = relativePath ?? throw new ArgumentNullException(nameof(relativePath));
             MimeType = mimeType;
             Data = data ?? throw new ArgumentNullException(nameof(data));
+            OverwriteExisting = overwriteExisting;
         }
     }
 
@@ -210,30 +216,33 @@ namespace TiltBrush
                     return new RuntimeContentSeedResult(
                         listing.Code, seededCount, listing.Error);
                 }
-                var names = new HashSet<string>(
-                    listing.Documents.Select(document => document.DisplayName),
-                    StringComparer.OrdinalIgnoreCase);
+                var documentsByName = listing.Documents
+                    .GroupBy(document => document.DisplayName, StringComparer.OrdinalIgnoreCase)
+                    .ToDictionary(grouping => grouping.Key, grouping => grouping.First(),
+                        StringComparer.OrdinalIgnoreCase);
                 foreach (RuntimeContentSeed seed in group)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
                     string relativePath = NormalizeRelativePath(seed.RelativePath);
                     string displayName = Path.GetFileName(relativePath);
-                    if (names.Contains(displayName))
+                    documentsByName.TryGetValue(displayName, out StorageDocument existing);
+                    if (existing != null && !seed.OverwriteExisting)
                     {
                         continue;
                     }
+                    StorageDocumentId writtenDocumentId = default;
                     try
                     {
                         using (IStorageWriteTransaction transaction = backend.BeginWrite(
                             seed.Area,
                             relativePath,
                             seed.MimeType ?? StorageMimeTypes.ForPath(relativePath),
-                            cancellationToken))
+                            cancellationToken,
+                            existing?.DocumentId ?? default))
                         {
                             if (backend.Kind == StorageBackendKind.StorageAccessFramework &&
-                                transaction.TargetDocumentId.IsValid)
+                                transaction.TargetDocumentId.IsValid && !seed.OverwriteExisting)
                             {
-                                names.Add(displayName);
                                 continue;
                             }
                             using (Stream output = transaction.OpenWrite())
@@ -246,6 +255,7 @@ namespace TiltBrush
                                 return new RuntimeContentSeedResult(
                                     commit.Code, seededCount, commit.Error);
                             }
+                            writtenDocumentId = commit.DocumentId;
                         }
                     }
                     catch (OperationCanceledException e)
@@ -266,7 +276,9 @@ namespace TiltBrush
                         return new RuntimeContentSeedResult(
                             StorageResultCode.Failed, seededCount, e.Message);
                     }
-                    names.Add(displayName);
+                    documentsByName[displayName] = new StorageDocument(
+                        writtenDocumentId, default, displayName, seed.MimeType, false,
+                        seed.Data.Length, DateTime.UtcNow, 0, relativePath);
                     ++seededCount;
                 }
             }

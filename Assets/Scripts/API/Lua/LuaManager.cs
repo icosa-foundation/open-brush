@@ -370,7 +370,8 @@ namespace TiltBrush
             }
             RuntimeContentWriteResult result = await RuntimeContentPublisher.PublishIfMissingAsync(
                 StorageArea.Plugins, relativePath, "text/x-lua", library.bytes,
-                CancellationToken.None);
+                CancellationToken.None,
+                overwriteExisting: library.name == "__autocomplete");
             if (!result.Success)
             {
                 Debug.LogWarning(

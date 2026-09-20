@@ -328,7 +328,8 @@ namespace TiltBrush
                     StorageArea.Plugins,
                     $"LuaModules/{library.name}.lua",
                     "text/x-lua",
-                    library.bytes));
+                    library.bytes,
+                    overwriteExisting: library.name == "__autocomplete"));
             }
             Task<RuntimeContentSeedResult> task = Task.Run(() =>
                 RuntimeContentSeeder.SeedMissing(
