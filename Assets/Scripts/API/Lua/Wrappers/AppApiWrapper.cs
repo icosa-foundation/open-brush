@@ -167,18 +167,27 @@ namespace TiltBrush
                 throw new ArgumentException($"Invalid plugin file path: {path}");
             }
 
-            string fullPath = Path.GetFullPath(Path.Join(LuaManager.Instance.UserPluginsPath(), path));
-            if (!_IsSubdirectory(fullPath, LuaManager.Instance.UserPluginsPath()))
+            string pluginsRoot = LuaManager.Instance.UserPluginsPath();
+            string fullPath = Path.GetFullPath(Path.Join(pluginsRoot, path));
+            if (!_IsSubdirectory(fullPath, pluginsRoot))
             {
                 throw new ArgumentException($"Invalid plugin file path: {path}");
             }
 
-            Stream fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            string contents;
-            using (var sr = new StreamReader(fileStream)) contents = sr.ReadToEnd();
-            fileStream.Close();
-
-            return contents;
+            Stream fileStream = UserStorage.Backend.Kind ==
+                    StorageBackendKind.StorageAccessFramework
+                ? UserStorage.Backend.OpenRead(
+                    StorageArea.Plugins,
+                    Path.GetRelativePath(pluginsRoot, fullPath).Replace('\\', '/'),
+                    requireSeekable: false,
+                    System.Threading.CancellationToken.None)
+                : new FileStream(
+                    fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using (fileStream)
+            using (var reader = new StreamReader(fileStream))
+            {
+                return reader.ReadToEnd();
+            }
         }
 
         [LuaDocsDescription("Displays an error message on the back of the user's brush controller")]
