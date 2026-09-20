@@ -506,8 +506,9 @@ jobs:
         env:
           VERSION: ${{ needs.configuration.outputs.version}}
         run: |
-          sed -e "s/m_VersionNumber:.*$/m_VersionNumber: $VERSION/" -i Assets/Scenes/Main.unity
-          sed -e "s/bundleVersion:.*$/bundleVersion: $VERSION/" -i ProjectSettings/ProjectSettings.asset
+          sed -i.bak -e "s/m_VersionNumber:.*$/m_VersionNumber: $VERSION/" Assets/Scenes/Main.unity
+          sed -i.bak -e "s/bundleVersion:.*$/bundleVersion: $VERSION/" ProjectSettings/ProjectSettings.asset
+          rm Assets/Scenes/Main.unity.bak ProjectSettings/ProjectSettings.asset.bak
 
       - name: Add secure secrets file
         env:
@@ -520,7 +521,8 @@ jobs:
           echo "$SECRETS_ASSET" > Assets/Secrets.asset
           echo "$SECRETS_ASSET_META" > Assets/Secrets.asset.meta
           SECRETS_ASSET_META_GUID=$(grep "guid:" Assets/Secrets.asset.meta | cut -d" " -f2)
-          sed -e "s/Secrets:.*$/Secrets: {fileID: 11400000, guid: $SECRETS_ASSET_META_GUID, type: 2}/" -i Assets/Scenes/Main.unity
+          sed -i.bak -e "s/Secrets:.*$/Secrets: {fileID: 11400000, guid: $SECRETS_ASSET_META_GUID, type: 2}/" Assets/Scenes/Main.unity
+          rm Assets/Scenes/Main.unity.bak
 
       - name: Enable keystore
         if: matrix.targetPlatform == 'Android'
