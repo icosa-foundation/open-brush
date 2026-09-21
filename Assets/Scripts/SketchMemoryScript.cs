@@ -977,6 +977,7 @@ namespace TiltBrush
             NetworkOperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
             m_MemoryList.Clear();
+            SymmetryPeerPreview.Forget();
             SymmetryMirrors.Clear();
             App.GroupManager.ResetGroups();
             SelectionManager.m_Instance.OnFinishReset();
