@@ -261,55 +261,61 @@ namespace TiltBrush
                 yield break;
             }
 
-            if (listing.Code == StorageResultCode.NotFound ||
-                listing.Documents.Count == 0)
+            var existingNames = new HashSet<string>(
+                listing.Documents
+                    .Where(document => !document.IsDirectory)
+                    .Select(document => document.DisplayName),
+                StringComparer.OrdinalIgnoreCase);
+            foreach (string resourcePath in m_DefaultImages)
             {
-                foreach (string resourcePath in m_DefaultImages)
+                string displayName = Path.GetFileName(resourcePath);
+                if (existingNames.Contains(displayName))
                 {
-                    byte[] bytes = LoadSafDefaultBytes(resourcePath);
-                    if (bytes == null)
+                    continue;
+                }
+                byte[] bytes = LoadSafDefaultBytes(resourcePath);
+                if (bytes == null)
+                {
+                    Debug.LogWarning(
+                        $"SAF_STORAGE Missing default media resource: {resourcePath}");
+                    continue;
+                }
+                string mimeType = GetImageMimeType(displayName);
+                var writeFuture = new Future<StorageMutationResult>(
+                    () => WriteSafDefault(
+                        backend, StorageAreaKind, displayName, mimeType, bytes),
+                    cleanupFunction: null,
+                    longRunning: true);
+                StorageMutationResult result;
+                while (true)
+                {
+                    bool finished;
+                    try
+                    {
+                        finished = writeFuture.TryGetResult(out result);
+                    }
+                    catch (FutureFailed e)
                     {
                         Debug.LogWarning(
-                            $"SAF_STORAGE Missing default media resource: {resourcePath}");
-                        continue;
-                    }
-                    string displayName = Path.GetFileName(resourcePath);
-                    string mimeType = GetImageMimeType(displayName);
-                    var writeFuture = new Future<StorageMutationResult>(
-                        () => WriteSafDefault(
-                            backend, StorageAreaKind, displayName, mimeType, bytes),
-                        cleanupFunction: null,
-                        longRunning: true);
-                    StorageMutationResult result;
-                    while (true)
-                    {
-                        bool finished;
-                        try
-                        {
-                            finished = writeFuture.TryGetResult(out result);
-                        }
-                        catch (FutureFailed e)
-                        {
-                            Debug.LogWarning(
-                                $"SAF_STORAGE Failed to seed {displayName}: " +
-                                $"{e.InnerException?.Message ?? e.Message}");
-                            m_SeedingSafDefaults = false;
-                            yield break;
-                        }
-                        if (finished)
-                        {
-                            break;
-                        }
-                        yield return null;
-                    }
-                    if (!result.Success)
-                    {
-                        Debug.LogWarning(
-                            $"SAF_STORAGE Failed to seed {displayName}: {result.Error}");
+                            $"SAF_STORAGE Failed to seed {displayName}: " +
+                            $"{e.InnerException?.Message ?? e.Message}");
                         m_SeedingSafDefaults = false;
                         yield break;
                     }
+                    if (finished)
+                    {
+                        break;
+                    }
+                    yield return null;
                 }
+                if (!result.Success)
+                {
+                    Debug.LogWarning(
+                        $"SAF_STORAGE Failed to seed {displayName}: {result.Error}");
+                    m_SeedingSafDefaults = false;
+                    yield break;
+                }
+                existingNames.Add(displayName);
             }
 
             PlayerPrefs.SetInt(
