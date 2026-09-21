@@ -94,6 +94,20 @@ namespace TiltBrush
             return mirror;
         }
 
+        /// Keeps the active mirror's record in step with the settings, since the active mirror is
+        /// by definition whatever the widget is currently set to. The stored copy is what recall
+        /// brings back and what the sketch saves, so it can't be left behind when the user
+        /// changes the order or the wallpaper group.
+        ///
+        /// This records the change; it does not move any strokes. Strokes follow a change of pose
+        /// (see SymmetryMirrorMove), but a change that alters how many copies there are isn't a
+        /// transform of the strokes that exist.
+        public static void NoteSettingsChanged()
+        {
+            if (m_Active == null) { return; }
+            m_Active.Settings = SymmetrySettingsSnapshot.FromCurrentSettings();
+        }
+
         public static SymmetryMirror Get(Guid id)
         {
             m_Mirrors.TryGetValue(id, out var mirror);

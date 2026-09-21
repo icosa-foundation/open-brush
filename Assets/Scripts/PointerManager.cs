@@ -1668,6 +1668,9 @@ namespace TiltBrush
             CalculateMirrorMatrices();
             CalculateMirrorColors();
             CalculateMirrorPointers();
+            // Every symmetry setting is changed through here, so this is where the active mirror
+            // finds out that what it stands for has changed.
+            SymmetryMirrors.NoteSettingsChanged();
         }
 
         private void CalculateMirrorMatrices()
