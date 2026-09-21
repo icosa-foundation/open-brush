@@ -166,5 +166,23 @@ namespace TiltBrush
 
             Assert.AreEqual(expected, SafSketchSet.IsTopLevelSketchDocument(document));
         }
+
+        [Test]
+        public void SafDirectorySketchCannotBeOverwrittenAsAnArchive()
+        {
+            const long supportsRename = 1L << 6;
+            var backend = new LocalUserStorageBackend(_ => Path.GetTempPath());
+            var directory = new StorageDocument(
+                new StorageDocumentId("directory"), default, "Directory.tilt",
+                "vnd.android.document/directory", true, null, null,
+                supportsRename, "Directory.tilt");
+            var archive = new StorageDocument(
+                new StorageDocumentId("archive"), default, "Archive.tilt",
+                TiltFile.TILT_MIME_TYPE, false, 0, null,
+                supportsRename, "Archive.tilt");
+
+            Assert.IsTrue(new SafSceneFileInfo(backend, directory).ReadOnly);
+            Assert.IsFalse(new SafSceneFileInfo(backend, archive).ReadOnly);
+        }
     }
 }
