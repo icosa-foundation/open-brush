@@ -50,6 +50,14 @@ namespace TiltBrush
         /// something a single revolution-indexed strip can describe.
         private const float kMaxBacktrackFraction = 0.15f;
 
+        /// How far a path must travel along its axis, relative to its overall size, before
+        /// it counts as a spiral rather than a closed curve that winds. Measured across the
+        /// tool scripts: 0.58 for the conical and spherical spirals and for a helix, against
+        /// 0.00 for torus knots and 0.00 to 0.02 for spirographs. A flat spiral has no rise
+        /// at all and is filled like any other planar path, which is the behaviour the
+        /// planar case promises.
+        private const float kMinAxialRise = 0.1f;
+
         /// How consistently the path's turning must point the same way before that
         /// direction is trusted as an axis. This compares the length of the summed turning
         /// against the sum of the lengths, so it reads 1 when every step turns the same way
@@ -68,6 +76,13 @@ namespace TiltBrush
             /// False when the path doubles back enough that pairing points by revolution
             /// stops meaning anything.
             public bool Advances;
+
+            /// How far the path travels along its axis from end to end, as a fraction of its
+            /// overall size. This is what separates a spiral from a closed curve that
+            /// happens to wind: a spirograph rosette and a torus knot both wind several
+            /// times but come back to where they started, so they bound a region and should
+            /// be filled. A spiral goes somewhere.
+            public float AxialRise;
         }
 
         /// The axis a path winds about: the direction it sweeps area around, which is
@@ -141,17 +156,26 @@ namespace TiltBrush
             bool advances = swept > 0f &&
                             Mathf.Min(forward, backward) <= kMaxBacktrackFraction * swept;
 
+            float extent = PathFillGeometry.BoundsDiagonal(path);
+            float rise = extent > 0f
+                ? Mathf.Abs(Vector3.Dot(path[n - 1] - path[0], normal)) / extent
+                : 0f;
+
             return new Winding
             {
                 Angles = angles,
                 Turns = total / (Mathf.PI * 2f),
                 Advances = advances,
+                AxialRise = rise,
             };
         }
 
         public static bool ShouldLoft(Winding winding)
         {
-            return winding != null && winding.Advances && Mathf.Abs(winding.Turns) >= kMinTurns;
+            return winding != null
+                && winding.Advances
+                && Mathf.Abs(winding.Turns) >= kMinTurns
+                && winding.AxialRise >= kMinAxialRise;
         }
 
         /// Builds the strip between the path and itself one revolution later. Returns false

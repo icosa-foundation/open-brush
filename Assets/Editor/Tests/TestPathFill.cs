@@ -558,6 +558,100 @@ namespace TiltBrush
         }
 
         [Test]
+        public void WindingCurvesThatComeBackAreFilledNotLofted()
+        {
+            // Winding alone is not what makes a spiral. A spirograph rosette and a torus
+            // knot both wind several times, but they come back to where they started, so
+            // they bound a region and belong to the fill. What separates a spiral is that it
+            // travels along the axis it winds about. Measured across the tool scripts: an
+            // axial rise of 0.58 for the spirals and a helix, against 0.00 for torus knots
+            // and 0.00 to 0.02 for spirographs.
+            var windingLoops = new List<List<Vector3>>
+            {
+                TorusKnot(3, 2, 0.5f, 500),
+                TorusKnot(2, 3, 0.5f, 500),
+                TorusKnot(7, 3, 0.5f, 500),
+                FlatSpiral(5f, 300),
+            };
+
+            foreach (List<Vector3> path in windingLoops)
+            {
+                PathFill.Options options = PathFill.Options.Default;
+                options.Tessellator = FanTessellate;
+                PathFill.Result result = PathFill.Fill(path, options);
+                Assert.IsNotNull(result);
+                Assert.Greater(Mathf.Abs(result.Turns), 1.3f, "these really do wind");
+                Assert.AreEqual(PathFillMode.PlanarFill, result.Mode,
+                                "a curve that winds but comes back bounds a region");
+            }
+        }
+
+        [Test]
+        public void HelicesAreLoftedLikeSpirals()
+        {
+            // Nothing in the construction is specific to the two spiral scripts: a helix
+            // winds and rises, so it is surfaced the same way.
+            PathFill.Result result = PathFill.Fill(Helix(5f, 300, 1f, 2f));
+            Assert.IsNotNull(result);
+            Assert.AreEqual(PathFillMode.SpiralLoft, result.Mode);
+            Assert.AreEqual(5f, Mathf.Abs(result.Turns), 0.5f);
+
+            // The surface of a constant-radius coil lies on its cylinder.
+            foreach (Vector3 v in result.Vertices)
+            {
+                Assert.AreEqual(1f, new Vector2(v.x, v.y).magnitude, 0.05f);
+            }
+
+            // One turn is a loop, not a coil.
+            PathFill.Result single = PathFill.Fill(Helix(1.1f, 300, 1f, 2f));
+            Assert.IsNotNull(single);
+            Assert.AreEqual(PathFillMode.PlanarFill, single.Mode);
+        }
+
+        /// A (p, q) torus knot, as ToolScript.TorusKnot.lua draws it.
+        private static List<Vector3> TorusKnot(int p, int q, float ratio, int steps)
+        {
+            var path = new List<Vector3>();
+            const float R = 1f;
+            for (int i = 0; i <= steps; ++i)
+            {
+                float t = (i / (float)steps) * (2f * Mathf.PI);
+                path.Add(new Vector3(
+                    (R + ratio * Mathf.Cos(q * t)) * Mathf.Cos(p * t),
+                    (R + ratio * Mathf.Cos(q * t)) * Mathf.Sin(p * t),
+                    ratio * Mathf.Sin(q * t)));
+            }
+            return path;
+        }
+
+        /// An Archimedean spiral lying flat: it winds, but it does not rise, so it is filled
+        /// like any other planar path.
+        private static List<Vector3> FlatSpiral(float turns, int steps)
+        {
+            var path = new List<Vector3>();
+            for (int i = 0; i <= steps; ++i)
+            {
+                float f = i / (float)steps;
+                float angle = 2f * Mathf.PI * turns * f;
+                path.Add(new Vector3(Mathf.Cos(angle) * f, Mathf.Sin(angle) * f, 0f));
+            }
+            return path;
+        }
+
+        private static List<Vector3> Helix(float turns, int steps, float radius, float height)
+        {
+            var path = new List<Vector3>();
+            for (int i = 0; i <= steps; ++i)
+            {
+                float f = i / (float)steps;
+                float angle = 2f * Mathf.PI * turns * f;
+                path.Add(new Vector3(radius * Mathf.Cos(angle), radius * Mathf.Sin(angle),
+                                     height * f));
+            }
+            return path;
+        }
+
+        [Test]
         public void SpiralLoftCanBeTurnedOff()
         {
             PathFill.Options options = PathFill.Options.Default;
