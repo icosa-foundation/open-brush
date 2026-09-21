@@ -386,61 +386,75 @@ namespace TiltBrush
                 m_SeedingSafDefaults = false;
                 yield break;
             }
-            if (listing.Code == StorageResultCode.NotFound ||
-                listing.Documents.Count == 0)
+            var existingNames = new HashSet<string>(
+                listing.Documents
+                    .Where(document => !document.IsDirectory)
+                    .Select(document => document.DisplayName),
+                StringComparer.OrdinalIgnoreCase);
+            foreach (string resourcePath in m_DefaultSavedStrokes ?? Array.Empty<string>())
             {
-                foreach (string resourcePath in m_DefaultSavedStrokes)
+                string displayName = Path.GetFileName(resourcePath);
+                if (existingNames.Contains(displayName))
                 {
-                    TextAsset resource = Resources.Load<TextAsset>(resourcePath);
-                    if (resource == null)
-                    {
-                        Debug.LogWarning(
-                            $"SAF_STORAGE Missing default saved stroke: {resourcePath}");
-                        continue;
-                    }
+                    continue;
+                }
+                TextAsset resource = Resources.Load<TextAsset>(resourcePath);
+                if (resource == null)
+                {
+                    Debug.LogWarning(
+                        $"SAF_STORAGE Missing default saved stroke: {resourcePath}");
+                    continue;
+                }
 
-                    string displayName = Path.GetFileName(resourcePath);
-                    string seedError = null;
-                    try
+                string seedError = null;
+                try
+                {
+                    using (IStorageWriteTransaction transaction =
+                        UserStorage.Backend.BeginWrite(
+                            StorageArea.SavedStrokes,
+                            displayName,
+                            TiltFile.TILT_MIME_TYPE,
+                            default))
                     {
-                        using (IStorageWriteTransaction transaction =
-                            UserStorage.Backend.BeginWrite(
-                                StorageArea.SavedStrokes,
-                                displayName,
-                                TiltFile.TILT_MIME_TYPE,
-                                default))
+                        // A provider file may have appeared since the initial listing.
+                        if (UserStorage.Backend.Kind ==
+                                StorageBackendKind.StorageAccessFramework &&
+                            transaction.TargetDocumentId.IsValid)
                         {
-                            using (Stream stream = transaction.OpenWrite())
-                            {
-                                stream.Write(resource.bytes, 0, resource.bytes.Length);
-                            }
-                            StorageMutationResult commit = transaction.Commit();
-                            if (!commit.Success)
-                            {
-                                seedError = commit.Error;
-                            }
+                            existingNames.Add(displayName);
+                            continue;
+                        }
+                        using (Stream stream = transaction.OpenWrite())
+                        {
+                            stream.Write(resource.bytes, 0, resource.bytes.Length);
+                        }
+                        StorageMutationResult commit = transaction.Commit();
+                        if (!commit.Success)
+                        {
+                            seedError = commit.Error;
                         }
                     }
-                    catch (Exception e) when (
-                        e is IOException ||
-                        e is UnauthorizedAccessException ||
-                        e is InvalidOperationException)
-                    {
-                        seedError = e.Message;
-                    }
-                    finally
-                    {
-                        Resources.UnloadAsset(resource);
-                    }
-                    if (seedError != null)
-                    {
-                        Debug.LogWarning(
-                            $"SAF_STORAGE Failed to seed {displayName}: {seedError}");
-                        m_SeedingSafDefaults = false;
-                        yield break;
-                    }
-                    yield return null;
                 }
+                catch (Exception e) when (
+                    e is IOException ||
+                    e is UnauthorizedAccessException ||
+                    e is InvalidOperationException)
+                {
+                    seedError = e.Message;
+                }
+                finally
+                {
+                    Resources.UnloadAsset(resource);
+                }
+                if (seedError != null)
+                {
+                    Debug.LogWarning(
+                        $"SAF_STORAGE Failed to seed {displayName}: {seedError}");
+                    m_SeedingSafDefaults = false;
+                    yield break;
+                }
+                existingNames.Add(displayName);
+                yield return null;
             }
 
             PlayerPrefs.SetInt(
