@@ -445,10 +445,21 @@ namespace TiltBrush
         public static void Subdivide(List<Vector2> vertices, List<int> triangles,
                                      float targetEdge, int maxVertices, int maxPasses)
         {
+            Subdivide(vertices, triangles, targetEdge, maxVertices, int.MaxValue, maxPasses);
+        }
+
+        /// maxIndices bounds the index count as well, for callers that will facet the result
+        /// and therefore end up with one vertex per index.
+        public static void Subdivide(List<Vector2> vertices, List<int> triangles,
+                                     float targetEdge, int maxVertices, int maxIndices,
+                                     int maxPasses)
+        {
             if (targetEdge <= 0f) { return; }
             for (int pass = 0; pass < maxPasses; ++pass)
             {
                 if (LongestEdge(vertices, triangles) <= targetEdge) { return; }
+                // Each pass multiplies the index count by exactly four.
+                if (maxIndices != int.MaxValue && (long)triangles.Count * 4 > maxIndices) { return; }
                 // A 1->4 split adds exactly one vertex per unique edge. Count them rather
                 // than estimating: callers treat maxVertices as a hard limit, because they
                 // store geometry counts in 16-bit fields.
@@ -671,6 +682,45 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------
         // Normals
         // -------------------------------------------------------------------------------
+
+        /// Splits every triangle into its own three vertices so each can carry the face's
+        /// normal, giving flat, faceted shading instead of a smoothly interpolated surface.
+        /// Vertex count becomes exactly the index count, which is why callers budget for it
+        /// before refining rather than after.
+        public static void Facet(ref Vector3[] vertices, ref Vector2[] uvs, ref Color32[] colors,
+                                 ref int[] triangles, out Vector3[] normals, Vector3 fallback)
+        {
+            int cornerCount = triangles.Length;
+            var newVertices = new Vector3[cornerCount];
+            var newUvs = new Vector2[cornerCount];
+            var newColors = colors != null ? new Color32[cornerCount] : null;
+            var newTriangles = new int[cornerCount];
+            normals = new Vector3[cornerCount];
+
+            for (int i = 0; i + 2 < cornerCount; i += 3)
+            {
+                int ia = triangles[i], ib = triangles[i + 1], ic = triangles[i + 2];
+                Vector3 a = vertices[ia], b = vertices[ib], c = vertices[ic];
+                Vector3 face = Vector3.Cross(b - a, c - a);
+                face = face.sqrMagnitude > 0f ? face.normalized : fallback;
+
+                newVertices[i] = a; newVertices[i + 1] = b; newVertices[i + 2] = c;
+                newUvs[i] = uvs[ia]; newUvs[i + 1] = uvs[ib]; newUvs[i + 2] = uvs[ic];
+                normals[i] = face; normals[i + 1] = face; normals[i + 2] = face;
+                if (newColors != null)
+                {
+                    newColors[i] = colors[ia];
+                    newColors[i + 1] = colors[ib];
+                    newColors[i + 2] = colors[ic];
+                }
+                newTriangles[i] = i; newTriangles[i + 1] = i + 1; newTriangles[i + 2] = i + 2;
+            }
+
+            vertices = newVertices;
+            uvs = newUvs;
+            colors = newColors;
+            triangles = newTriangles;
+        }
 
         /// Area-weighted vertex normals. Vertices touched by no triangle, or by triangles
         /// that cancel out, fall back to the surface's plane normal.

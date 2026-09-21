@@ -435,6 +435,107 @@ namespace TiltBrush
         }
 
         // ---------------------------------------------------------------------------
+        // Faceted output, which the Flat Fill variant uses
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void FacetedFillGivesEachTriangleItsOwnNormal()
+        {
+            var path = Loop(48, 1f, t => 0.25f * Mathf.Sin(2f * t),
+                            Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+            PathFill.Options options = PathFill.Options.Default;
+            options.Faceted = true;
+
+            PathFill.Result result = PathFill.Fill(path, options);
+            Assert.IsNotNull(result);
+            Assert.AreEqual(result.Triangles.Length, result.Vertices.Length,
+                            "faceting gives every triangle its own corners");
+            Assert.AreEqual(result.Vertices.Length, result.Uvs.Length);
+
+            for (int i = 0; i + 2 < result.Triangles.Length; i += 3)
+            {
+                Assert.AreEqual(i, result.Triangles[i]);
+                Assert.AreEqual(i + 1, result.Triangles[i + 1]);
+                Assert.AreEqual(i + 2, result.Triangles[i + 2]);
+
+                Vector3 n0 = result.Normals[i];
+                Assert.Greater(Vector3.Dot(n0, result.Normals[i + 1]), 0.9999f);
+                Assert.Greater(Vector3.Dot(n0, result.Normals[i + 2]), 0.9999f);
+
+                Vector3 a = result.Vertices[i];
+                Vector3 b = result.Vertices[i + 1];
+                Vector3 c = result.Vertices[i + 2];
+                Vector3 face = Vector3.Cross(b - a, c - a);
+                if (face.sqrMagnitude > 1e-18f)
+                {
+                    Assert.Greater(Vector3.Dot(face.normalized, n0), 0.999f,
+                                   "the shared normal is the outward face normal");
+                }
+            }
+        }
+
+        [Test]
+        public void FacetingSplitsTheSurfaceWithoutMovingIt()
+        {
+            var path = Loop(48, 1f, t => 0.25f * Mathf.Sin(2f * t),
+                            Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+            PathFill.Options faceted = PathFill.Options.Default;
+            faceted.Faceted = true;
+
+            PathFill.Result flat = PathFill.Fill(path, faceted);
+            PathFill.Result smooth = PathFill.Fill(path, PathFill.Options.Default);
+            Assert.IsNotNull(flat);
+            Assert.IsNotNull(smooth);
+
+            foreach (Vector3 v in flat.Vertices)
+            {
+                float nearest = float.MaxValue;
+                foreach (Vector3 s in smooth.Vertices)
+                {
+                    nearest = Mathf.Min(nearest, (v - s).magnitude);
+                }
+                Assert.Less(nearest, 1e-5f, "faceting must split the surface, not move it");
+            }
+        }
+
+        [Test]
+        public void FacetedFillRespectsTheVertexBudget()
+        {
+            var path = Loop(48, 1f, t => 0.25f * Mathf.Sin(2f * t),
+                            Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+            foreach (int cap in new[] { 600, 3000 })
+            {
+                PathFill.Options options = PathFill.Options.Default;
+                options.Faceted = true;
+                options.MaxVertices = cap;
+                PathFill.Result result = PathFill.Fill(path, options);
+                if (result == null) { continue; }
+                Assert.LessOrEqual(result.Vertices.Length, cap,
+                                   "the budget must account for the split, not just the patch");
+            }
+        }
+
+        [Test]
+        public void FacetedFillCarriesColorsToEveryCorner()
+        {
+            var path = Loop(48, 1f, t => 0f, Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+            var pathColors = new List<Color32>(path.Count);
+            foreach (Vector3 p in path)
+            {
+                pathColors.Add(p.x >= 0f ? new Color32(255, 0, 0, 255) : new Color32(0, 0, 255, 255));
+            }
+
+            PathFill.Options options = PathFill.Options.Default;
+            options.Faceted = true;
+            options.PathColors = pathColors;
+
+            PathFill.Result result = PathFill.Fill(path, options);
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(result.Colors);
+            Assert.AreEqual(result.Vertices.Length, result.Colors.Length);
+        }
+
+        // ---------------------------------------------------------------------------
         // Hardening against what the tessellator can actually hand back
         // ---------------------------------------------------------------------------
 

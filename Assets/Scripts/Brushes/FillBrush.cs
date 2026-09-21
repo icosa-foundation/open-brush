@@ -59,6 +59,11 @@ namespace TiltBrush
         /// Stroke length limit, in control points.
         [SerializeField] private int m_MaxKnots;
 
+        /// If set, each triangle carries its own face normal for flat faceted shading,
+        /// mirroring HullBrush's m_Faceted. Costs one vertex per index, so keep MaxVertices
+        /// in mind when turning it on.
+        [SerializeField] private bool m_Faceted;
+
         /// If set, per-control-point colours are interpolated across the fill instead of
         /// every vertex taking the current brush colour.
         [SerializeField] private bool m_ColorFromControlPoints;
@@ -140,9 +145,18 @@ namespace TiltBrush
         {
             PathFill.Options options = PathFill.Options.Default;
             options.Rule = m_FillRule;
+            options.Faceted = m_Faceted;
             if (m_SimplifyTolerance > 0f) { options.SimplifyTolerance = m_SimplifyTolerance; }
             if (m_MaxBoundaryPoints > 0) { options.MaxBoundaryPoints = m_MaxBoundaryPoints; }
             if (m_MaxVertices > 0) { options.MaxVertices = m_MaxVertices; }
+
+            // Overrunning GeometryBrush's soft vertex limit ends the stroke and starts a new
+            // one. For a ribbon that is invisible; for a fill it means half a shape and then
+            // a second fill on top. Keep the budget inside the limit whatever the prefab
+            // says, remembering that a double-sided descriptor doubles every vertex and that
+            // faceting turns each index into a vertex.
+            int ceiling = Mathf.Max(64, (m_SoftVertexLimit * 4) / (5 * Mathf.Max(1, NS)));
+            options.MaxVertices = Mathf.Min(options.MaxVertices, ceiling);
             if (m_MaxRefinementPasses > 0) { options.MaxRefinementPasses = m_MaxRefinementPasses; }
             return options;
         }

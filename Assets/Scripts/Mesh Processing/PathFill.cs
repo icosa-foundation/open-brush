@@ -155,6 +155,11 @@ namespace TiltBrush
             /// means a denser, smoother fill, bounded by MaxVertices.
             public int MaxRefinementPasses;
 
+            /// When set, each triangle gets its own vertices carrying the face normal, for
+            /// flat faceted shading rather than a smoothly interpolated surface. This makes
+            /// the output vertex count equal the index count, which MaxVertices accounts for.
+            public bool Faceted;
+
             /// When false, the fill is left flat on the best-fit plane (step 6 is skipped).
             /// Only useful for debugging and for callers that want a planar patch.
             public bool SkipLift;
@@ -181,6 +186,7 @@ namespace TiltBrush
                         MaxVertices = 20000,
                         MaxRefinementPasses = 4,
                         SkipLift = false,
+                        Faceted = false,
                         PathColors = null,
                         Tessellator = null,
                     };
@@ -301,7 +307,8 @@ namespace TiltBrush
             // and callers store geometry counts in 16-bit fields. Back off the boundary
             // detail and try again rather than handing back something they cannot hold.
             int coarseAttempts = 0;
-            while (verts2d.Count > maxVertices && coarseAttempts < kMaxCoarseningAttempts)
+            while (FinalVertexCount(verts2d.Count, triangles.Count, options.Faceted) > maxVertices &&
+                   coarseAttempts < kMaxCoarseningAttempts)
             {
                 ++coarseAttempts;
                 int coarserCap = Mathf.Max(3, boundaryCount / 2);
@@ -337,12 +344,16 @@ namespace TiltBrush
             }
 
             // Still over budget after backing off: better no fill than corrupt geometry.
-            if (verts2d.Count > maxVertices) { return null; }
+            if (FinalVertexCount(verts2d.Count, triangles.Count, options.Faceted) > maxVertices)
+            {
+                return null;
+            }
 
             // Refine so the lift has interior vertices to act on.
             float meanEdge = PathFillGeometry.MeanEdgeLength(scaledOutline);
             int maxPasses = Mathf.Max(0, options.MaxRefinementPasses);
-            PathFillGeometry.Subdivide(verts2d, triangles, meanEdge, maxVertices, maxPasses);
+            PathFillGeometry.Subdivide(verts2d, triangles, meanEdge, maxVertices,
+                                       options.Faceted ? maxVertices : int.MaxValue, maxPasses);
 
             PathFillGeometry.EnsureCounterClockwise(verts2d, triangles);
 
@@ -392,10 +403,18 @@ namespace TiltBrush
                 }
             }
 
+            Vector3[] normals = null;
+            int[] triangleArray = triangles.ToArray();
+            if (options.Faceted)
+            {
+                PathFillGeometry.Facet(ref vertices, ref uvs, ref colors, ref triangleArray,
+                                       out normals, normal);
+            }
+
             var result = new Result
             {
                 Vertices = vertices,
-                Triangles = triangles.ToArray(),
+                Triangles = triangleArray,
                 Uvs = uvs,
                 Colors = colors,
                 Boundary = loop.ToArray(),
@@ -407,13 +426,21 @@ namespace TiltBrush
                 DroppedTriangles = droppedTriangles,
                 RepairedVertices = repairedVertices,
             };
-            result.Normals = PathFillGeometry.ComputeNormals(result.Vertices, result.Triangles, normal);
+            result.Normals = normals ??
+                PathFillGeometry.ComputeNormals(result.Vertices, result.Triangles, normal);
             return result;
         }
 
         public static Result Fill(IList<Vector3> path)
         {
             return Fill(path, Options.Default);
+        }
+
+        /// How many vertices the caller will end up holding. Faceting gives every triangle
+        /// its own corners, so the count becomes the index count.
+        private static int FinalVertexCount(int vertexCount, int indexCount, bool faceted)
+        {
+            return faceted ? indexCount : vertexCount;
         }
 
         /// Rebuilds the projected boundary for the given indices, against a fixed plane.
