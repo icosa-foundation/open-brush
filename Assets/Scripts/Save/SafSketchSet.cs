@@ -568,7 +568,7 @@ namespace TiltBrush
                 // Preserve the ordinary Sketchbook's direct-file listing and error behavior.
                 StorageDirectoryResult listing = m_Backend.List(m_Area, "", CancellationToken.None);
                 return listing.Success
-                    ? StorageTreeResult.Succeeded(listing.Documents.Where(file => !file.IsDirectory).ToArray())
+                    ? StorageTreeResult.Succeeded(listing.Documents.Where(IsTopLevelSketchDocument).ToArray())
                     : StorageTreeResult.Failed(listing.Code, listing.Error);
             }
             return m_Backend.EnumerateTree(m_Area, "", new StorageTreeQuery(
@@ -576,6 +576,12 @@ namespace TiltBrush
                 includeExtensions: new[] { SaveLoadScript.TILT_SUFFIX },
                 recurseIntoDirectory: name => !name.EndsWith(
                     SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase)), CancellationToken.None);
+        }
+
+        internal static bool IsTopLevelSketchDocument(StorageDocument document)
+        {
+            return document.DisplayName.EndsWith(
+                SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase);
         }
 
         private void ClearCatalog()
