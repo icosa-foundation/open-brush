@@ -28,6 +28,29 @@ namespace TiltBrush
             SymmetryPeerEditing.Enabled = enabled;
         }
 
+        [ApiEndpoint("symmetry.mirror.new",
+        description: "Starts a new mirror with the current symmetry settings. Strokes drawn from now on follow this mirror instead of the previous one, which keeps the strokes already drawn under it",
+        exampleUsage: "")]
+        public static void NewSymmetryMirror()
+        {
+            SymmetryMirrors.Create(SymmetrySettingsSnapshot.FromCurrentSettings());
+        }
+
+        [ApiEndpoint("symmetry.mirror.recall",
+        description: "Brings back an earlier mirror by its position, oldest first, and puts its settings back on the widget. Moves no strokes",
+        exampleUsage: "0")]
+        public static void RecallSymmetryMirror(int index)
+        {
+            var mirrors = SymmetryMirrors.All;
+            if (index < 0 || index >= mirrors.Count)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    $"No mirror {index}; this sketch has {mirrors.Count}");
+                return;
+            }
+            SymmetryMirrors.Recall(mirrors[index]);
+        }
+
         [ApiEndpoint("symmetry.type",
         description: "Sets the custom symmetry type (Currently either 'point' or 'wallpaper'",
         exampleUsage: "wallpaper")]

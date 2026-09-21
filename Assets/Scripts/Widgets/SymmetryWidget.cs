@@ -316,6 +316,7 @@ namespace TiltBrush
             base.OnUserBeginInteracting();
             m_Home.gameObject.SetActive(true);
             m_Home.Reset();
+            SymmetryMirrorMove.Begin();
         }
 
         override protected void OnUserEndInteracting()
@@ -326,6 +327,8 @@ namespace TiltBrush
             {
                 ResetToHome();
             }
+            // After any snap, so the strokes follow the mirror to where it ends up.
+            SymmetryMirrorMove.End();
         }
 
         public Mirror ToMirror()

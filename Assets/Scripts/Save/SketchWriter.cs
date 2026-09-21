@@ -326,6 +326,20 @@ namespace TiltBrush
                 if (item.groupId == 0 || item.groupId > groups.Length) { continue; }
                 item.stroke.JoinSymmetryGroup(groups[item.groupId - 1], item.pointerIndex);
             }
+
+            // A loaded sketch has no active mirror, so the widget would have nothing to carry
+            // with it. Adopt the one the newest symmetric strokes were drawn under.
+            if (SymmetryMirrors.Active == null)
+            {
+                for (int i = groups.Length - 1; i >= 0; --i)
+                {
+                    if (groups[i].Mirror != null)
+                    {
+                        SymmetryMirrors.Active = groups[i].Mirror;
+                        break;
+                    }
+                }
+            }
         }
 
         /// Fills buf with exactly count bytes; false if the stream ended first.

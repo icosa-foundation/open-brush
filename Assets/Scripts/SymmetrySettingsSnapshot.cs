@@ -110,6 +110,23 @@ namespace TiltBrush
             return snapshot;
         }
 
+        /// A copy of these settings placed at the passed transforms - what a group's record
+        /// becomes when its strokes have followed the mirror somewhere else. Snapshots are shared
+        /// between groups, so this returns a new one rather than changing this one.
+        public SymmetrySettingsSnapshot WithPointerTransforms(IList<TrTransform> transforms)
+        {
+            var copy = (SymmetrySettingsSnapshot)MemberwiseClone();
+            copy.PointerTransforms = new List<TrTransform>(transforms);
+            var widget = PointerManager.m_Instance != null
+                ? PointerManager.m_Instance.SymmetryWidget
+                : null;
+            if (widget != null)
+            {
+                copy.WidgetTransform = App.Scene.AsScene[widget.transform];
+            }
+            return copy;
+        }
+
         /// Restores these settings, so that new strokes are created the same way as the
         /// stroke this snapshot came from. Does not restore the active symmetry script.
         public void ApplyToCurrentSettings()

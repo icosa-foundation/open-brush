@@ -47,13 +47,15 @@ namespace TiltBrush
     {
         private static readonly Dictionary<Guid, SymmetryMirror> m_Mirrors =
             new Dictionary<Guid, SymmetryMirror>();
+        // The same mirrors, oldest first, so that recalling one by position is stable.
+        private static readonly List<SymmetryMirror> m_Order = new List<SymmetryMirror>();
         private static SymmetryMirror m_Active;
 
         /// Mirrors are kept even when nothing references them, so that a sketch can offer them
-        /// back to the user.
-        public static IEnumerable<SymmetryMirror> All => m_Mirrors.Values;
+        /// back to the user. Oldest first.
+        public static IReadOnlyList<SymmetryMirror> All => m_Order;
 
-        public static int Count => m_Mirrors.Count;
+        public static int Count => m_Order.Count;
 
         /// The mirror the widget is showing, which new strokes are linked to. Null only before
         /// anything has been drawn with symmetry.
@@ -65,6 +67,7 @@ namespace TiltBrush
                 if (value != null && !m_Mirrors.ContainsKey(value.Id))
                 {
                     m_Mirrors[value.Id] = value;
+                    m_Order.Add(value);
                 }
                 m_Active = value;
             }
@@ -86,6 +89,7 @@ namespace TiltBrush
         {
             var mirror = new SymmetryMirror(Guid.NewGuid(), settings);
             m_Mirrors[mirror.Id] = mirror;
+            m_Order.Add(mirror);
             m_Active = mirror;
             return mirror;
         }
@@ -105,6 +109,7 @@ namespace TiltBrush
             {
                 mirror = new SymmetryMirror(id, settings);
                 m_Mirrors[id] = mirror;
+                m_Order.Add(mirror);
             }
             return mirror;
         }
@@ -122,6 +127,7 @@ namespace TiltBrush
         public static void Clear()
         {
             m_Mirrors.Clear();
+            m_Order.Clear();
             m_Active = null;
         }
     }
