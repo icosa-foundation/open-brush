@@ -84,6 +84,32 @@ namespace TiltBrush
             return result.root;
         }
 
+        /// A model in the shared media library can be read without being copied out of it. Returns
+        /// false for every other source - Icosa downloads, bundled content, non-SAF platforms -
+        /// which keep the ordinary filesystem route.
+        private static bool TryGetStorageModelLocation(
+            Model model, out StorageArea area, out string directory, out string fileName)
+        {
+            area = StorageArea.MediaLibraryModels;
+            directory = null;
+            fileName = null;
+            if (model == null ||
+                UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return false;
+            }
+            string relativePath = model.RelativePath;
+            if (string.IsNullOrEmpty(relativePath))
+            {
+                return false;
+            }
+            string normalized = relativePath.Replace('\\', '/').Trim('/');
+            int separator = normalized.LastIndexOf('/');
+            directory = separator < 0 ? string.Empty : normalized.Substring(0, separator);
+            fileName = separator < 0 ? normalized : normalized.Substring(separator + 1);
+            return !string.IsNullOrEmpty(fileName);
+        }
+
         private static async Task _ImportUsingUnityGltf(
             string localPath,
             string assetLocation,
@@ -109,16 +135,41 @@ namespace TiltBrush
                 // See https://github.com/KhronosGroup/UnityGLTF/issues/805. FileLoader also implements
                 // IDataLoader2, letting the importer read the glTF JSON off the main thread when
                 // IsMultithreaded is set.
-                var fullPath = Uri.UnescapeDataString(localPath).Replace("\\", "/");
+                var fullPath = string.IsNullOrEmpty(localPath)
+                    ? null
+                    : Uri.UnescapeDataString(localPath).Replace("\\", "/");
                 // The importer's file name must be RELATIVE to the FileLoader root (the directory),
                 // not absolute. Passing the full path makes FileLoader concatenate root + absolute
                 // path into a doubled, invalid path (e.g. ".../id/C:/.../id/file.gltf2"), which fails
                 // File.Exists and spams "Invalid AssetDatabase path" before falling through.
-                options.DataLoader = new FileLoader(Path.GetDirectoryName(fullPath));
-                GLTFSceneImporter gltf = new GLTFSceneImporter(Path.GetFileName(fullPath), options);
+                // On a backend with no filesystem, resolve the glTF and its external references
+                // straight out of storage. UnityGLTF's loader contract is stream-based, so this
+                // needs no materialized copy - only a different IDataLoader.
+                string gltfFileName;
+                SafGltfDataLoader safDataLoader = null;
+                if (TryGetStorageModelLocation(model, out StorageArea area, out string directory,
+                        out string fileName))
+                {
+                    safDataLoader = new SafGltfDataLoader(area, directory);
+                    options.DataLoader = safDataLoader;
+                    gltfFileName = fileName;
+                }
+                else
+                {
+                    options.DataLoader = new FileLoader(Path.GetDirectoryName(fullPath));
+                    gltfFileName = Path.GetFileName(fullPath);
+                }
+                GLTFSceneImporter gltf = new GLTFSceneImporter(gltfFileName, options);
 
                 if (options.ImportContext.TryGetPlugin<UnityGLTF.Plugins.OpenBrushAudioImportContext>(out var audioPlugin))
-                    audioPlugin.GltfDirectory = Path.GetDirectoryName(localPath);
+                {
+                    audioPlugin.GltfDirectory = string.IsNullOrEmpty(localPath)
+                        ? null
+                        : Path.GetDirectoryName(localPath);
+                    audioPlugin.OpenSidecar = safDataLoader == null
+                        ? null
+                        : safDataLoader.LoadStream;
+                }
 
                 // Device builds only: GLTFSceneImporter hard-forces this false in the editor (to
                 // avoid a historical editor freeze), so editor imports stay single-threaded regardless.

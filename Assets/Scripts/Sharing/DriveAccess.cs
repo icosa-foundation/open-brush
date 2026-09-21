@@ -300,7 +300,8 @@ namespace TiltBrush
                 $"trashed = false";
             request.Fields =
                 "nextPageToken, " +
-                "files(id, name, description, thumbnailLink, modifiedTime, size, mimeType, description)";
+                "files(id, name, description, thumbnailLink, modifiedTime, size, " +
+                "mimeType, md5Checksum, version)";
 
             var items = new List<DriveData.File>();
             do
@@ -618,12 +619,16 @@ namespace TiltBrush
         }
 
         /// Upload a file to Drive. Make sure mimetype and parents are specified.
-        public async Task UploadFileAsync(DriveData.File file, Stream dataStream,
-                                          CancellationToken token, IProgress<long> progress = null)
+        public async Task<DriveData.File> UploadFileAsync(
+            DriveData.File file,
+            Stream dataStream,
+            CancellationToken token,
+            IProgress<long> progress = null)
         {
             Debug.Assert(file.Parents != null);
             Debug.Assert(dataStream.CanSeek);
             var uploader = m_DriveService.Files.Create(file, dataStream, file.MimeType);
+            uploader.Fields = "id, name, modifiedTime, size, md5Checksum, version";
             if (progress != null) { uploader.ProgressChanged += (p) => progress.Report(p.BytesSent); }
             long position = dataStream.Position;
             var result = await Retry(() =>
@@ -631,18 +636,23 @@ namespace TiltBrush
                 dataStream.Seek(position, SeekOrigin.Begin);
                 return uploader.UploadAsync(token);
             });
+            token.ThrowIfCancellationRequested();
             if (result.Status != UploadStatus.Completed && !token.IsCancellationRequested)
             {
-                Debug.LogException(new DriveSync.DataTransferError("Google Drive new file upload failed.",
-                    result.Exception));
+                throw new DriveSync.DataTransferError(
+                    "Google Drive new file upload failed.", result.Exception);
             }
             await RefreshFreeSpaceAsync(token);
+            return uploader.ResponseBody;
         }
 
         /// Update an existing file. Make sure mimetype and existing id are specified. file paramater will
         /// be altered during this function.
-        public async Task UpdateFileAsync(DriveData.File file, Stream dataStream,
-                                          CancellationToken token, IProgress<long> progress = null)
+        public async Task<DriveData.File> UpdateFileAsync(
+            DriveData.File file,
+            Stream dataStream,
+            CancellationToken token,
+            IProgress<long> progress = null)
         {
             Debug.Assert(!string.IsNullOrEmpty(file.Id));
             Debug.Assert(!string.IsNullOrEmpty(file.MimeType));
@@ -651,6 +661,7 @@ namespace TiltBrush
             file.Id = null;
             file.Parents = null;
             var uploader = m_DriveService.Files.Update(file, id, dataStream, file.MimeType);
+            uploader.Fields = "id, name, modifiedTime, size, md5Checksum, version";
             if (progress != null)
             {
                 uploader.ProgressChanged += (p) => progress.Report(p.BytesSent);
@@ -661,12 +672,14 @@ namespace TiltBrush
                 dataStream.Seek(position, SeekOrigin.Begin);
                 return uploader.UploadAsync(token);
             });
+            token.ThrowIfCancellationRequested();
             if (result.Status != UploadStatus.Completed && !token.IsCancellationRequested)
             {
-                Debug.LogException(new DriveSync.DataTransferError("Google Drive file update failed.",
-                    result.Exception));
+                throw new DriveSync.DataTransferError(
+                    "Google Drive file update failed.", result.Exception);
             }
             await RefreshFreeSpaceAsync(token);
+            return uploader.ResponseBody;
         }
 
         /// Download a file with a given id to a stream.
@@ -683,6 +696,7 @@ namespace TiltBrush
             await Retry(() =>
             {
                 dataStream.Seek(position, SeekOrigin.Begin);
+                dataStream.SetLength(position);
                 return downloadRequest.DownloadAsync(dataStream, token);
             });
         }

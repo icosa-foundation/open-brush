@@ -757,11 +757,23 @@ namespace TiltBrush
 
         public static void SaveDepthCaptureFiles(string imagePath, DepthCaptureFiles files)
         {
+            string[] paths = GetDepthCaptureFilePaths(imagePath);
+            File.WriteAllBytes(paths[0], files.normalizedDepthPng);
+            File.WriteAllBytes(paths[1], files.linearDepth16Png);
+            File.WriteAllBytes(paths[2], files.linearDepthExr);
+            File.WriteAllBytes(paths[3], files.metadataJson);
+        }
+
+        public static string[] GetDepthCaptureFilePaths(string imagePath)
+        {
             string captureBasePath = GetCaptureBasePath(imagePath);
-            File.WriteAllBytes($"{captureBasePath}_depth.png", files.normalizedDepthPng);
-            File.WriteAllBytes($"{captureBasePath}_depth16.png", files.linearDepth16Png);
-            File.WriteAllBytes($"{captureBasePath}_depth.exr", files.linearDepthExr);
-            File.WriteAllBytes($"{captureBasePath}_depth.json", files.metadataJson);
+            return new[]
+            {
+                $"{captureBasePath}_depth.png",
+                $"{captureBasePath}_depth16.png",
+                $"{captureBasePath}_depth.exr",
+                $"{captureBasePath}_depth.json",
+            };
         }
 
         private static string GetCaptureBasePath(string imagePath)

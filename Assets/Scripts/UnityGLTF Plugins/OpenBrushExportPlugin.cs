@@ -745,17 +745,24 @@ namespace TiltBrush
                 var (paused, volume, loop, spatialBlend, minDistance, maxDistance) =
                     widget.GetAudioExportSettings();
 
-                if (!File.Exists(soundClip.AbsolutePath))
+                Stream fileStream;
+                try
                 {
-                    Debug.LogWarning($"KHR_audio_emitter: audio file not found, skipping: {soundClip.AbsolutePath}");
+                    fileStream = soundClip.OpenRead();
+                }
+                catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException ||
+                    ex is ArgumentException)
+                {
+                    Debug.LogWarning(
+                        $"KHR_audio_emitter: audio file could not be opened, skipping " +
+                        $"{soundClip.PersistentPath}: {ex.Message}");
                     continue;
                 }
 
                 // Export the audio file — bufferView for GLB, sidecar file for GLTF
-                var fileStream = new FileStream(soundClip.AbsolutePath, FileMode.Open, FileAccess.Read);
                 var result = exporter.ExportFile(
-                    Path.GetFileName(soundClip.AbsolutePath),
-                    AudioMimeType(soundClip.AbsolutePath),
+                    Path.GetFileName(soundClip.PersistentPath),
+                    AudioMimeType(soundClip.PersistentPath),
                     fileStream);
 
                 int audioIndex = rootExt.audio.Count;

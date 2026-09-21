@@ -17,7 +17,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Localization;
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !OPEN_BRUSH_SCOPED_STORAGE
 using UnityEngine.Android;
 #endif
 
@@ -40,7 +40,7 @@ namespace TiltBrush
         // m_MaximumLoadingTime
         private float m_FakeLoadingRate;
         private float m_CurrentLoadingPosition;
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !OPEN_BRUSH_SCOPED_STORAGE
         private bool m_FolderPermissionOverride = false;
         private bool m_WaitingForPermission = false;
 #endif
@@ -71,6 +71,26 @@ namespace TiltBrush
             DontDestroyOnLoad(gameObject);
 
 #if UNITY_ANDROID
+            if (OpenBrushStorage.IsScopedStorageMode &&
+                !AndroidStorageManager.StartupStorageReady)
+            {
+                m_Overlay.MessageStatus =
+                    m_RequestAndroidFolderPermissions.GetLocalizedStringAsync().Result;
+                while (!AndroidStorageManager.StartupStorageReady &&
+                       !AndroidStorageManager.StartupStorageCanceled)
+                {
+                    yield return null;
+                }
+
+                if (AndroidStorageManager.StartupStorageCanceled)
+                {
+                    yield break;
+                }
+                m_Overlay.MessageStatus = m_LoadingText.GetLocalizedStringAsync().Result;
+            }
+#endif
+
+#if UNITY_ANDROID && !OPEN_BRUSH_SCOPED_STORAGE
             if (Application.platform == RuntimePlatform.Android)
             {
                 if (!UserHasManageExternalStoragePermission())
@@ -123,7 +143,7 @@ namespace TiltBrush
             m_Overlay.Progress = m_CurrentLoadingPosition;
         }
 
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !OPEN_BRUSH_SCOPED_STORAGE
         private bool UserHasManageExternalStoragePermission()
         {
             bool isExternalStorageManager = false;

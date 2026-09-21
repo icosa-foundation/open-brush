@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
@@ -39,7 +40,11 @@ namespace TiltBrush
         private string m_CurrentDirectory;
         private bool m_DirectoryScanRequired;
         private bool m_IsScanningDirectory;
+        private int m_ScanGeneration;
         private string m_SearchText = "";
+        private bool m_SafInitialized;
+        private bool UsesSaf => m_SourceDirectory == SourceDirectory.Imm &&
+            UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework;
 
         public int ItemCount => m_Files.Count;
         public bool IsScanning => m_IsScanningDirectory;
@@ -71,12 +76,16 @@ namespace TiltBrush
             Instance = this;
 
             App.InitMediaLibraryPath();
-            App.InitQuillMediaLibraryPath(m_DefaultQuillFiles);
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                App.InitQuillMediaLibraryPath(m_DefaultQuillFiles);
+            }
             SetSourceDirectory(m_SourceDirectory);
         }
 
         private void OnDestroy()
         {
+            ++m_ScanGeneration;
             if (Instance == this)
             {
                 Instance = null;
@@ -87,6 +96,12 @@ namespace TiltBrush
 
         private void Update()
         {
+            if (UsesSaf && !m_SafInitialized)
+            {
+                m_SafInitialized = true;
+                ChangeDirectory(HomeDirectory);
+                m_DirectoryScanRequired = true;
+            }
             if (m_DirectoryScanRequired)
             {
                 ForceCatalogScan();
@@ -118,6 +133,7 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
+            m_DirectoryScanRequired = true;
             if (!m_IsScanningDirectory)
             {
                 m_DirectoryScanRequired = false;
@@ -133,10 +149,11 @@ namespace TiltBrush
             }
 
             m_CurrentDirectory = path;
+            ++m_ScanGeneration;
             m_Files.Clear();
 
             // Quill's external project folder is only discovered, never created by Open Brush.
-            if (m_SourceDirectory == SourceDirectory.Imm && !Directory.Exists(m_CurrentDirectory))
+            if (!UsesSaf && m_SourceDirectory == SourceDirectory.Imm && !Directory.Exists(m_CurrentDirectory))
             {
                 App.InitDirectoryAtPath(m_CurrentDirectory);
             }
@@ -169,7 +186,7 @@ namespace TiltBrush
         {
             StopWatchingCurrentDirectory();
 
-            if (!Directory.Exists(m_CurrentDirectory))
+            if (UsesSaf || !Directory.Exists(m_CurrentDirectory))
             {
                 return;
             }
@@ -203,6 +220,69 @@ namespace TiltBrush
             m_DirectoryScanRequired = true;
         }
 
+        internal static IEnumerator<object> SeedSafDefaults(
+            IUserStorageBackend backend, string[] defaults, Func<string, byte[]> loadResource)
+        {
+            if (!backend.IsReady) { yield break; }
+            string key = "QuillDefaults.HandledFilesV1";
+            var handled = DefaultMediaSeeder.GetHandledFiles(PlayerPrefs.GetString(key, ""), false, null);
+            foreach (string resourcePath in defaults ?? Array.Empty<string>())
+            {
+                if (string.IsNullOrEmpty(resourcePath)) { continue; }
+                string normalized = resourcePath.Replace('\\', '/');
+                if (handled.Contains(normalized)) { continue; }
+                if (!backend.IsReady) { yield break; }
+                byte[] bytes = loadResource(resourcePath);
+                if (bytes == null)
+                {
+                    Debug.LogWarning($"[SAF_REVIEW_DEFAULT_IMM] Missing default resource: {resourcePath}");
+                    continue;
+                }
+                var write = new Future<SafPublicationResult>(() =>
+                {
+                    string name = Path.GetFileName(normalized);
+                    StorageDirectoryResult listing = backend.List(StorageArea.MediaLibraryQuill, "", CancellationToken.None);
+                    if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                    {
+                        return new SafPublicationResult(listing.Code, listing.Error);
+                    }
+                    if (listing.Success && listing.Documents.Any(document =>
+                        document.DisplayName.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        return new SafPublicationResult(StorageResultCode.Success);
+                    }
+                    using IStorageWriteTransaction transaction = backend.BeginWrite(
+                        StorageArea.MediaLibraryQuill, name, "application/octet-stream", CancellationToken.None);
+                    using (Stream output = transaction.OpenWrite()) { output.Write(bytes, 0, bytes.Length); }
+                    StorageMutationResult commit = transaction.Commit();
+                    return new SafPublicationResult(commit.Code, commit.Error);
+                }, cleanupFunction: null, longRunning: true);
+                SafPublicationResult result;
+                while (true)
+                {
+                    bool finished;
+                    try { finished = write.TryGetResult(out result); }
+                    catch (FutureFailed e)
+                    {
+                        write.Close();
+                        Debug.LogWarning($"[SAF_REVIEW_DEFAULT_IMM] Could not seed {normalized}: {e.Message}");
+                        yield break;
+                    }
+                    if (finished) { break; }
+                    yield return null;
+                }
+                write.Close();
+                if (!result.Success)
+                {
+                    Debug.LogWarning($"[SAF_REVIEW_DEFAULT_IMM] Could not seed {normalized}: {result.Error}");
+                    yield break;
+                }
+                handled.Add(normalized);
+                PlayerPrefs.SetString(key, string.Join("\n", handled.OrderBy(value => value)));
+                PlayerPrefs.Save();
+            }
+        }
+
         private IEnumerator<object> ScanDirectory()
         {
             if (m_IsScanningDirectory)
@@ -211,9 +291,70 @@ namespace TiltBrush
             }
 
             m_IsScanningDirectory = true;
+            try
+            {
+                using (var scan = ScanDirectoryImpl(m_ScanGeneration))
+                {
+                    while (scan.MoveNext()) { yield return scan.Current; }
+                }
+            }
+            finally
+            {
+                m_IsScanningDirectory = false;
+            }
+        }
 
+        private IEnumerator<object> ScanDirectoryImpl(int generation)
+        {
             var files = new List<QuillFileInfo>();
-            if (Directory.Exists(m_CurrentDirectory))
+            if (UsesSaf)
+            {
+                IUserStorageBackend backend = UserStorage.Backend;
+                string directory = m_CurrentDirectory;
+                yield return SeedSafDefaults(backend, m_DefaultQuillFiles, resourcePath =>
+                {
+                    TextAsset resource = Resources.Load<TextAsset>(resourcePath);
+                    if (resource == null) { return null; }
+                    byte[] bytes = resource.bytes;
+                    Resources.UnloadAsset(resource);
+                    return bytes;
+                });
+                if (!CatalogScanGuard.IsCurrent(generation, m_ScanGeneration,
+                    backend, UserStorage.Backend,
+                    directory, m_CurrentDirectory, StringComparer.Ordinal))
+                {
+                    m_DirectoryScanRequired = true;
+                    yield break;
+                }
+                string relativeDirectory = Path.GetRelativePath(HomeDirectory, directory);
+                var query = new Future<List<QuillFileInfo>>(() =>
+                {
+                    return QuerySafFiles(backend,
+                        relativeDirectory == "." ? "" : relativeDirectory.Replace('\\', '/'));
+                }, cleanupFunction: null, longRunning: true);
+                while (true)
+                {
+                    bool finished;
+                    try { finished = query.TryGetResult(out files); }
+                    catch (FutureFailed e)
+                    {
+                        Debug.LogWarning($"[SAF_REVIEW_IMM] Could not scan IMM library: {e.Message}");
+                        yield break;
+                    }
+                    if (finished) { break; }
+                    yield return null;
+                }
+                if (!UsesSaf || !CatalogScanGuard.IsCurrent(generation, m_ScanGeneration,
+                    backend, UserStorage.Backend,
+                    directory, m_CurrentDirectory, StringComparer.Ordinal))
+                {
+                    m_DirectoryScanRequired = true;
+                    yield break;
+                }
+                files = files.Where(file => string.IsNullOrEmpty(m_SearchText) ||
+                    file.DisplayName.IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+            }
+            else if (Directory.Exists(m_CurrentDirectory))
             {
                 foreach (string path in Directory.GetFiles(m_CurrentDirectory, "*.imm", SearchOption.TopDirectoryOnly))
                 {
@@ -254,7 +395,6 @@ namespace TiltBrush
                 .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            m_IsScanningDirectory = false;
             CatalogChanged?.Invoke();
         }
 
@@ -262,6 +402,181 @@ namespace TiltBrush
         {
             string quillJson = Path.Combine(directoryPath, "Quill.json");
             return File.Exists(quillJson);
+        }
+
+        internal static List<QuillFileInfo> QuerySafFiles(
+            IUserStorageBackend backend, string relativeDirectory)
+        {
+            if (backend == null) { throw new ArgumentNullException(nameof(backend)); }
+            string directory = (relativeDirectory ?? "").Replace('\\', '/').Trim('/');
+            StorageDirectoryResult listing = backend.List(
+                StorageArea.MediaLibraryQuill, directory, CancellationToken.None);
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                throw new IOException(listing.Error);
+            }
+            if (!listing.Success) { return new List<QuillFileInfo>(); }
+
+            var result = new List<QuillFileInfo>();
+            foreach (StorageDocument document in listing.Documents)
+            {
+                if (document.IsDirectory)
+                {
+                    string childDirectory = string.IsNullOrEmpty(directory)
+                        ? document.DisplayName
+                        : $"{directory}/{document.DisplayName}";
+                    StorageDirectoryResult children = backend.List(
+                        StorageArea.MediaLibraryQuill, childDirectory, CancellationToken.None);
+                    if (!children.Success)
+                    {
+                        if (children.Code == StorageResultCode.NotFound) { continue; }
+                        throw new IOException(children.Error);
+                    }
+                    bool hasQuillJson = children.Documents.Any(child =>
+                        !child.IsDirectory && child.ParentDocumentId.Equals(document.DocumentId) &&
+                        child.DisplayName == "Quill.json");
+                    bool hasQuillQbin = children.Documents.Any(child =>
+                        !child.IsDirectory && child.ParentDocumentId.Equals(document.DocumentId) &&
+                        child.DisplayName == "Quill.qbin");
+                    if (!hasQuillJson || !hasQuillQbin) { continue; }
+
+                    // The listing already carries everything QuillFileInfo records - name, size
+                    // and timestamp - so the entry is built from it rather than from a
+                    // DirectoryInfo over a copy.
+                    long estimatedBytes = children.Documents
+                        .Where(child => !child.IsDirectory)
+                        .Sum(child => child.Size ?? 0);
+                    result.Add(new QuillFileInfo(
+                        childDirectory,
+                        document.DisplayName,
+                        estimatedBytes,
+                        document.LastModified?.ToUniversalTime() ?? DateTime.MinValue,
+                        QuillSourceType.Quill,
+                        () => MaterializeSafEntry(
+                            backend, childDirectory, QuillSourceType.Quill)));
+                    continue;
+                }
+                if (!Path.GetExtension(document.DisplayName)
+                        .Equals(".imm", StringComparison.OrdinalIgnoreCase)) { continue; }
+                string immPath = string.IsNullOrEmpty(directory)
+                    ? document.DisplayName
+                    : $"{directory}/{document.DisplayName}";
+                result.Add(new QuillFileInfo(
+                    immPath,
+                    Path.GetFileNameWithoutExtension(document.DisplayName),
+                    document.Size ?? 0,
+                    document.LastModified?.ToUniversalTime() ?? DateTime.MinValue,
+                    QuillSourceType.Imm,
+                    () => MaterializeSafEntry(backend, immPath, QuillSourceType.Imm)));
+            }
+            return result;
+        }
+
+        internal static string MaterializeSafEntry(
+            IUserStorageBackend backend,
+            string relativePath,
+            QuillSourceType sourceType,
+            string localRoot = null)
+        {
+            if (backend == null) { throw new ArgumentNullException(nameof(backend)); }
+            string normalized = (relativePath ?? "").Replace('\\', '/').Trim('/');
+            if (string.IsNullOrEmpty(normalized))
+            {
+                throw new ArgumentException("A Quill storage path is required.", nameof(relativePath));
+            }
+
+            localRoot = localRoot ?? OpenBrushStorage.LocalQuillMaterializationPath;
+            string localPath = GetSafeMaterializationPath(localRoot, normalized);
+            if (sourceType == QuillSourceType.Imm)
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(localPath));
+                string temporaryPath = $"{localPath}.ob-materialize-{Guid.NewGuid():N}";
+                try
+                {
+                    using (Stream input = backend.OpenRead(
+                        StorageArea.MediaLibraryQuill,
+                        normalized,
+                        requireSeekable: false,
+                        CancellationToken.None))
+                    using (var output = new FileStream(
+                        temporaryPath, FileMode.CreateNew, FileAccess.Write, FileShare.None))
+                    {
+                        input.CopyTo(output);
+                    }
+                    if (File.Exists(localPath)) { File.Delete(localPath); }
+                    File.Move(temporaryPath, localPath);
+                    return localPath;
+                }
+                finally
+                {
+                    if (File.Exists(temporaryPath)) { File.Delete(temporaryPath); }
+                }
+            }
+
+            StorageTreeResult tree = backend.EnumerateTree(
+                StorageArea.MediaLibraryQuill,
+                normalized,
+                new StorageTreeQuery(recursive: true),
+                CancellationToken.None);
+            if (!tree.Success)
+            {
+                throw new IOException(tree.Error);
+            }
+
+            string temporaryDirectory = $"{localPath}.ob-materialize-{Guid.NewGuid():N}";
+            try
+            {
+                Directory.CreateDirectory(temporaryDirectory);
+                string prefix = normalized + "/";
+                foreach (StorageDocument document in tree.Entries)
+                {
+                    if (document.IsDirectory ||
+                        !document.RelativeDisplayPath.StartsWith(prefix, StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+                    string childPath = document.RelativeDisplayPath.Substring(prefix.Length);
+                    string destination = GetSafeMaterializationPath(
+                        temporaryDirectory, childPath);
+                    Directory.CreateDirectory(Path.GetDirectoryName(destination));
+                    using (Stream input = backend.OpenRead(
+                        document.DocumentId,
+                        requireSeekable: false,
+                        CancellationToken.None))
+                    using (var output = new FileStream(
+                        destination, FileMode.Create, FileAccess.Write, FileShare.None))
+                    {
+                        input.CopyTo(output);
+                    }
+                }
+                if (Directory.Exists(localPath)) { Directory.Delete(localPath, recursive: true); }
+                Directory.Move(temporaryDirectory, localPath);
+                return localPath;
+            }
+            finally
+            {
+                if (Directory.Exists(temporaryDirectory))
+                {
+                    Directory.Delete(temporaryDirectory, recursive: true);
+                }
+            }
+        }
+
+        private static string GetSafeMaterializationPath(string root, string relativePath)
+        {
+            string fullRoot = Path.GetFullPath(root).TrimEnd(
+                Path.DirectorySeparatorChar,
+                Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
+            string localRelativePath = relativePath.Replace('/', Path.DirectorySeparatorChar);
+            string fullPath = Path.GetFullPath(Path.Combine(fullRoot, localRelativePath));
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            if (!fullPath.StartsWith(fullRoot, comparison))
+            {
+                throw new IOException($"Quill storage path escapes its materialization root: {relativePath}");
+            }
+            return fullPath;
         }
 
         private static string GetDirectoryForSource(SourceDirectory sourceDirectory)
@@ -279,7 +594,7 @@ namespace TiltBrush
             }
 
             var randomFile = m_Files[UnityEngine.Random.Range(0, m_Files.Count)];
-            return randomFile.FullPath;
+            return randomFile.GetLoadPath();
         }
     }
 }

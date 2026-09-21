@@ -26,6 +26,14 @@ namespace TiltBrush
         {
             Color color = Color.white;
 
+            // Unity offers no runtime route from bytes to a Font, so a custom font needs a real
+            // file. Shared storage has none, and nothing is copied out of it any more.
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                Debug.LogWarning(
+                    $"SAF_FONTS Custom fonts are unsupported on this build: {fontPath}");
+                return null;
+            }
             fontPath = Path.Combine(App.UserPath(), "Fonts", fontPath);
 
             float unit = 1f;
