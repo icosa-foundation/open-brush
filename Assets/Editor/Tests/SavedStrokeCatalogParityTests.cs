@@ -154,35 +154,19 @@ namespace TiltBrush
         }
 
         [TestCase("Sketch.tilt", false, true)]
-        [TestCase("Sketch.TILT", true, true)]
+        [TestCase("Sketch.TILT", false, true)]
+        [TestCase("Sketch.TILT", true, false)]
         [TestCase("Folder", true, false)]
         [TestCase("Notes.txt", false, false)]
-        public void SafSketchbookIncludesTiltFilesAndDirectories(
+        public void SafUserSketchbookIncludesOnlyTiltArchiveFiles(
             string name, bool isDirectory, bool expected)
         {
             var document = new StorageDocument(
                 new StorageDocumentId(name), default, name, "application/octet-stream",
                 isDirectory, null, null, 0, name);
 
-            Assert.AreEqual(expected, SafSketchSet.IsTopLevelSketchDocument(document));
-        }
-
-        [Test]
-        public void SafDirectorySketchCannotBeOverwrittenAsAnArchive()
-        {
-            const long supportsRename = 1L << 6;
-            var backend = new LocalUserStorageBackend(_ => Path.GetTempPath());
-            var directory = new StorageDocument(
-                new StorageDocumentId("directory"), default, "Directory.tilt",
-                "vnd.android.document/directory", true, null, null,
-                supportsRename, "Directory.tilt");
-            var archive = new StorageDocument(
-                new StorageDocumentId("archive"), default, "Archive.tilt",
-                TiltFile.TILT_MIME_TYPE, false, 0, null,
-                supportsRename, "Archive.tilt");
-
-            Assert.IsTrue(new SafSceneFileInfo(backend, directory).ReadOnly);
-            Assert.IsFalse(new SafSceneFileInfo(backend, archive).ReadOnly);
+            Assert.AreEqual(expected,
+                SafSketchSet.IsSupportedUserSketchDocument(document));
         }
     }
 }

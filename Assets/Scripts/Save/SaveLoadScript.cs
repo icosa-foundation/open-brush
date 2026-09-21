@@ -658,6 +658,9 @@ namespace TiltBrush
             {
                 string displayName = GetSafDestinationDisplayName(
                     backend, area, fileInfo);
+                // SAF storage always writes one archive document. PreferredTiltFormat.Directory
+                // applies only to filesystem saves because the SAF transaction and recovery
+                // protocol is deliberately file-only.
                 using (IStorageWriteTransaction transaction = backend.BeginWrite(
                     area,
                     displayName,

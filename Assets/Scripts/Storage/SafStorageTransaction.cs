@@ -553,6 +553,10 @@ namespace TiltBrush
                 }
                 if (target.IsDirectory)
                 {
+                    // SAF sketch saves intentionally produce single-file archives, and the user
+                    // sketch catalog excludes directory-format .tilt containers. Recovery can
+                    // validate file backups only, so accepting a directory here could strand the
+                    // original after an interrupted rename sequence.
                     throw new IOException("A SAF directory cannot be overwritten by a file.");
                 }
                 if (!string.Equals(

@@ -60,7 +60,7 @@ namespace TiltBrush
         public string FullPath => null;
         public string StorageId => m_Document.DocumentId.Value;
         public bool Exists => Available;
-        public bool ReadOnly => m_Document.IsDirectory || !m_Document.SupportsRename;
+        public bool ReadOnly => !m_Document.SupportsRename;
         public string AssetId => m_AssetId;
         public string SourceId => m_SourceId;
         public int? TriangleCount => null;
@@ -565,10 +565,14 @@ namespace TiltBrush
         {
             if (m_Type != SketchSetType.SavedStrokes)
             {
-                // Preserve the ordinary Sketchbook's direct-file listing and error behavior.
+                // SAF deliberately writes user sketches only as single-file Tilt archives.
+                // Directory-format .tilt containers belong to the filesystem backend; the SAF
+                // file transaction and its crash recovery cannot safely overwrite them. Keep
+                // them out of the ordinary Sketchbook rather than exposing an unsaveable entry.
                 StorageDirectoryResult listing = m_Backend.List(m_Area, "", CancellationToken.None);
                 return listing.Success
-                    ? StorageTreeResult.Succeeded(listing.Documents.Where(IsTopLevelSketchDocument).ToArray())
+                    ? StorageTreeResult.Succeeded(listing.Documents
+                        .Where(IsSupportedUserSketchDocument).ToArray())
                     : StorageTreeResult.Failed(listing.Code, listing.Error);
             }
             return m_Backend.EnumerateTree(m_Area, "", new StorageTreeQuery(
@@ -578,9 +582,9 @@ namespace TiltBrush
                     SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase)), CancellationToken.None);
         }
 
-        internal static bool IsTopLevelSketchDocument(StorageDocument document)
+        internal static bool IsSupportedUserSketchDocument(StorageDocument document)
         {
-            return document.DisplayName.EndsWith(
+            return !document.IsDirectory && document.DisplayName.EndsWith(
                 SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase);
         }
 
