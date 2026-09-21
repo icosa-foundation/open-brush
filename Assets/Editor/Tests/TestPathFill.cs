@@ -490,6 +490,86 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SpiralsAreSurfacedBetweenTheirTurns()
+        {
+            // A spiral does not bound a region, so there is nothing to fill. It is surfaced
+            // between each turn and the next instead, which for these two tool scripts means
+            // the cone and the sphere they were drawn on. Both shapes are known exactly, so
+            // the surface can be checked against them rather than merely for sanity.
+            var sphereCases = new[] { 3f, 10f, 40f };
+            foreach (float turns in sphereCases)
+            {
+                int steps = turns > 20f ? 500 : 200;
+                PathFill.Result result = PathFill.Fill(SphericalSpiral(turns, steps));
+                Assert.IsNotNull(result);
+                Assert.AreEqual(PathFillMode.SpiralLoft, result.Mode,
+                                turns + " turns should be surfaced as a spiral");
+                Assert.AreEqual(turns, Mathf.Abs(result.Turns), 0.5f);
+                foreach (Vector3 v in result.Vertices)
+                {
+                    Assert.AreEqual(1f, v.magnitude, 0.05f,
+                                    "a spherical spiral's surface lies on its sphere");
+                }
+            }
+
+            foreach (float turns in new[] { 2f, 6f, 20f })
+            {
+                int stepsPerTurn = turns > 10f ? 32 : 24;
+                PathFill.Result result = PathFill.Fill(ConicalSpiral(turns, stepsPerTurn));
+                Assert.IsNotNull(result);
+                Assert.AreEqual(PathFillMode.SpiralLoft, result.Mode);
+                foreach (Vector3 v in result.Vertices)
+                {
+                    // The script puts radius at (1 - z) / 2.
+                    float radius = new Vector2(v.x, v.y).magnitude;
+                    Assert.AreEqual((1f - v.z) * 0.5f, radius, 0.05f,
+                                    "a conical spiral's surface lies on its cone");
+                }
+            }
+        }
+
+        [Test]
+        public void LoopsAreNotMistakenForSpirals()
+        {
+            var loops = new List<List<Vector3>>
+            {
+                Loop(64, 1f, t => 0f, Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f)),
+                Loop(64, 1f, t => 0.4f * Mathf.Sin(2f * t),
+                     Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f)),
+                Star(5, 2f, 0.7f),
+            };
+
+            // A loop closed with a little overshoot is still a loop, not a spiral.
+            var overshoot = new List<Vector3>();
+            for (int i = 0; i < 70; ++i)
+            {
+                float t = 2f * Mathf.PI * 1.083f * i / 69f;
+                overshoot.Add(new Vector3(Mathf.Cos(t), Mathf.Sin(t), 0f));
+            }
+            loops.Add(overshoot);
+
+            foreach (List<Vector3> loop in loops)
+            {
+                PathFill.Result result = PathFill.Fill(loop);
+                Assert.IsNotNull(result);
+                Assert.AreEqual(PathFillMode.PlanarFill, result.Mode,
+                                "a path that winds once bounds a region and should be filled");
+            }
+        }
+
+        [Test]
+        public void SpiralLoftCanBeTurnedOff()
+        {
+            PathFill.Options options = PathFill.Options.Default;
+            options.SpiralLoft = false;
+            options.Tessellator = FanTessellate;
+
+            PathFill.Result result = PathFill.Fill(SphericalSpiral(10f, 200), options);
+            Assert.IsNotNull(result);
+            Assert.AreEqual(PathFillMode.PlanarFill, result.Mode);
+        }
+
+        [Test]
         public void SpiralPathsProduceNoSpikes()
         {
             // Mean value coordinates are only well behaved on a simple polygon. A spiral
@@ -508,6 +588,10 @@ namespace TiltBrush
             {
                 PathFill.Options options = PathFill.Options.Default;
                 options.Tessellator = FanTessellate;
+                // Force the planar path: these paths are surfaced as spirals now, but the
+                // planar fall-back must stay free of spikes for everything else that
+                // overlaps itself.
+                options.SpiralLoft = false;
                 PathFill.Result result = PathFill.Fill(path, options);
                 Assert.IsNotNull(result);
 

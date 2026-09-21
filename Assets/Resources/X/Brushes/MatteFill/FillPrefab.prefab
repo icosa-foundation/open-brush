@@ -47,6 +47,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_FillRule: 0
+  m_SpiralLoft: 1
   m_Faceted: 0
   m_SimplifyTolerance: 0.002
   m_MaxBoundaryPoints: 128

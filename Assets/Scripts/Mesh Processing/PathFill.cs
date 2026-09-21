@@ -19,6 +19,17 @@ using UnityEngine;
 namespace TiltBrush
 {
 
+    /// Which construction produced a surface.
+    public enum PathFillMode
+    {
+        /// The path bounds a region: triangulated in the plane and lifted back out.
+        PlanarFill,
+
+        /// The path winds around an axis more than once: surfaced between each turn and the
+        /// next. See <see cref="PathFillSpiral"/>.
+        SpiralLoft,
+    }
+
     /// How to resolve regions when the projected outline overlaps itself.
     /// Matches the SVG / Illustrator fill rules of the same name.
     [Serializable]
@@ -58,6 +69,14 @@ namespace TiltBrush
     ///                   to go and shading normals are usable.
     ///   6. Lift:        displace every vertex off the plane by the residual field,
     ///                   interpolated from the boundary with mean value coordinates.
+    ///
+    /// Not every path bounds a region, though. One that winds around an axis more than once
+    /// -- a spiral -- has no interior to fill, and projecting it produces an outline wound
+    /// many times over that any winding rule will answer nonsensically. Those are surfaced
+    /// between their turns instead, by <see cref="PathFillSpiral"/>, which is checked first
+    /// and reported as <see cref="PathFillMode.SpiralLoft"/>. The aim across both is not a
+    /// correct answer for input that has none, but a surface that is predictable from the
+    /// stroke and worth looking at.
     ///
     /// The projection is a parameterization device, not a flattening. Boundary vertices
     /// return to their exact input positions (mean value coordinates interpolate the
@@ -133,6 +152,10 @@ namespace TiltBrush
         /// vertex budget.
         private const int kMaxCoarseningAttempts = 3;
 
+        /// Upper bound on path samples used to build a spiral surface. The strip is linear
+        /// in this, unlike the planar fill's boundary.
+        private const int kMaxSpiralSamples = 2048;
+
         public struct Options
         {
             /// Winding rule used to decide which regions of a self-overlapping outline are
@@ -154,6 +177,12 @@ namespace TiltBrush
             /// an interior edge length comparable to the boundary sampling. More passes
             /// means a denser, smoother fill, bounded by MaxVertices.
             public int MaxRefinementPasses;
+
+            /// When set, a path that winds more than once around an axis is surfaced between
+            /// its turns rather than being flattened into a plane and filled. Turning this
+            /// off makes a spiral fall back to the planar fill, which is bounded but not
+            /// meaningful.
+            public bool SpiralLoft;
 
             /// When set, each triangle gets its own vertices carrying the face normal, for
             /// flat faceted shading rather than a smoothly interpolated surface. This makes
@@ -186,6 +215,7 @@ namespace TiltBrush
                         MaxVertices = 20000,
                         MaxRefinementPasses = 4,
                         SkipLift = false,
+                        SpiralLoft = true,
                         Faceted = false,
                         PathColors = null,
                         Tessellator = null,
@@ -224,8 +254,16 @@ namespace TiltBrush
             /// would serve the path better.
             public float Flatness;
 
+            /// Which construction produced this surface.
+            public PathFillMode Mode;
+
+            /// Revolutions the path makes about the plane normal. Past
+            /// <see cref="PathFillSpiral.kMinTurns"/> the path is surfaced as a spiral.
+            public float Turns;
+
             /// Number of crossing pairs in the projected outline. Non-zero means the fill
-            /// rule decided something the 3D curve did not.
+            /// rule decided something the 3D curve did not. Not meaningful for a spiral,
+            /// which is not trying to bound a region in the first place.
             public int ProjectedSelfIntersections;
 
             /// Triangles discarded because the tessellator produced indices or corners that
@@ -278,6 +316,15 @@ namespace TiltBrush
 
             Vector3 axisU, axisV;
             PathFillGeometry.BasisFromNormal(normal, out axisU, out axisV);
+
+            // A path that winds around an axis more than once does not bound a region, so
+            // there is nothing to fill. Surface it between its turns instead.
+            float measuredTurns = 0f;
+            if (options.SpiralLoft)
+            {
+                Result loft = TryBuildSpiral(path, diagonal, tolerance, options, out measuredTurns);
+                if (loft != null) { return loft; }
+            }
 
             // Project, keeping each boundary point's signed distance from the plane.
             var outline = new List<Vector2>(boundaryCount);
@@ -453,6 +500,8 @@ namespace TiltBrush
                 BoundaryIndices = loopIndices.ToArray(),
                 PlaneOrigin = origin,
                 PlaneNormal = normal,
+                Mode = PathFillMode.PlanarFill,
+                Turns = measuredTurns,
                 Flatness = Mathf.Sqrt(sumSqResidual / boundaryCount) / diagonal,
                 ProjectedSelfIntersections = PathFillGeometry.CountSelfIntersections(scaledOutline),
                 DroppedTriangles = droppedTriangles,
@@ -467,6 +516,102 @@ namespace TiltBrush
         public static Result Fill(IList<Vector3> path)
         {
             return Fill(path, Options.Default);
+        }
+
+        /// Builds the spiral surface if the path winds enough to deserve one. Returns null
+        /// when it does not, so the caller falls through to the planar fill.
+        private static Result TryBuildSpiral(IList<Vector3> path, float diagonal,
+                                             float tolerance, Options options,
+                                             out float measuredTurns)
+        {
+            measuredTurns = 0f;
+            int maxVertices = options.MaxVertices > 0 ? options.MaxVertices : 20000;
+
+            // The strip costs two vertices per sample, so it can afford far more of the path
+            // than the planar fill's boundary cap allows -- and a spiral needs them, since
+            // that cap is spread across every turn.
+            int sampleCap = Mathf.Clamp(maxVertices / 2, 8, kMaxSpiralSamples);
+            List<int> sampleIndices = PathFillGeometry.WeldAndOpen(path, diagonal * kWeldFraction);
+            if (sampleIndices.Count < 4) { return null; }
+
+            // Simplify the path as the open polyline it is. SimplifyClosed cuts the loop at
+            // two far-apart anchors, which is right for something that closes and wrong for
+            // a spiral: the cut lands mid-sweep and the two halves are decimated
+            // independently, losing the even angular spacing the strip depends on.
+            if (sampleIndices.Count > sampleCap)
+            {
+                float spiralTolerance = tolerance;
+                for (int attempt = 0; attempt < 24 && sampleIndices.Count > sampleCap; ++attempt)
+                {
+                    List<int> reduced = PathFillGeometry.Simplify(path, sampleIndices, spiralTolerance);
+                    if (reduced.Count < 4) { break; }
+                    sampleIndices = reduced;
+                    spiralTolerance *= 2f;
+                }
+            }
+            if (sampleIndices.Count < 4) { return null; }
+
+            var samples = new List<Vector3>(sampleIndices.Count);
+            for (int i = 0; i < sampleIndices.Count; ++i) { samples.Add(path[sampleIndices[i]]); }
+
+            // Wind about the axis the path sweeps area around, not the best-fit plane
+            // normal -- for a spherical spiral those are unrelated.
+            Vector3 axisOrigin, axis;
+            if (!PathFillSpiral.FindAxis(samples, out axisOrigin, out axis)) { return null; }
+
+            PathFillSpiral.Winding winding = PathFillSpiral.MeasureWinding(samples, axisOrigin, axis);
+            measuredTurns = winding.Turns;
+            if (!PathFillSpiral.ShouldLoft(winding)) { return null; }
+
+            List<Color32> sampleColors = null;
+            if (options.PathColors != null && options.PathColors.Count == path.Count)
+            {
+                sampleColors = new List<Color32>(sampleIndices.Count);
+                for (int i = 0; i < sampleIndices.Count; ++i)
+                {
+                    sampleColors.Add(options.PathColors[sampleIndices[i]]);
+                }
+            }
+
+            var vertices = new List<Vector3>();
+            var triangles = new List<int>();
+            var uvs = new List<Vector2>();
+            var colors = sampleColors != null ? new List<Color32>() : null;
+            if (!PathFillSpiral.Build(samples, winding, sampleColors,
+                                      vertices, triangles, uvs, colors))
+            {
+                return null;
+            }
+
+            Vector3[] vertexArray = vertices.ToArray();
+            Vector2[] uvArray = uvs.ToArray();
+            Color32[] colorArray = colors != null ? colors.ToArray() : null;
+            int[] triangleArray = triangles.ToArray();
+            Vector3[] normals = null;
+            if (options.Faceted)
+            {
+                PathFillGeometry.Facet(ref vertexArray, ref uvArray, ref colorArray,
+                                       ref triangleArray, out normals, axis);
+            }
+
+            var result = new Result
+            {
+                Mode = PathFillMode.SpiralLoft,
+                Vertices = vertexArray,
+                Triangles = triangleArray,
+                Uvs = uvArray,
+                Colors = colorArray,
+                Boundary = samples.ToArray(),
+                BoundaryIndices = sampleIndices.ToArray(),
+                PlaneOrigin = axisOrigin,
+                PlaneNormal = axis,
+                Turns = winding.Turns,
+                Flatness = 0f,
+                ProjectedSelfIntersections = 0,
+            };
+            result.Normals = normals ??
+                PathFillGeometry.ComputeNormals(result.Vertices, result.Triangles, axis);
+            return result;
         }
 
         /// How many vertices the caller will end up holding. Faceting gives every triangle
