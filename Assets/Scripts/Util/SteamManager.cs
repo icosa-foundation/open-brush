@@ -41,6 +41,28 @@ namespace TiltBrush
         public static bool RunningUnderLepton =>
             Application.platform == RuntimePlatform.Android && RunningUnderSteam;
 
+        public static bool IsSteamFrame
+        {
+            get
+            {
+#if UNITY_ANDROID && !UNITY_EDITOR
+                EnsureInstance();
+                if (m_Initialized)
+                {
+                    try
+                    {
+                        return SteamClientApi.IsSteamFrame();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[MOBILE_VERTEX_LIMITS] Steam hardware detection unavailable: {ex.Message}");
+                    }
+                }
+#endif
+                return false;
+            }
+        }
+
         public static bool RunningUnderSteam
         {
             get
@@ -336,7 +358,7 @@ namespace TiltBrush
             private const int OverlayPageModeDefault = 0;
             private const string SteamClientVersion = "SteamClient023";
             private const string SteamFriendsVersion = "SteamFriends018";
-            private const string SteamUtilsVersion = "SteamUtils010";
+            private const string SteamUtilsVersion = "SteamUtils011";
 
             private static IntPtr m_SteamFriends;
             private static IntPtr m_SteamUtils;
@@ -386,6 +408,13 @@ namespace TiltBrush
             }
 
             public static bool IsOverlayEnabled() => NativeIsOverlayEnabled(m_SteamUtils);
+
+            public static bool IsSteamFrame()
+            {
+                return m_SteamUtils != IntPtr.Zero &&
+                    NativeIsRunningOnSteamHardware(m_SteamUtils) ==
+                    Steamworks.ESteamHardwareType.k_ESteamHardwareTypeSteamFrame;
+            }
 
             public static void OpenOverlayUrl(string url)
             {
@@ -450,6 +479,10 @@ namespace TiltBrush
                 CallingConvention = CallingConvention.Cdecl)]
             [return: MarshalAs(UnmanagedType.I1)]
             private static extern bool NativeIsOverlayEnabled(IntPtr steamUtils);
+
+            [DllImport(NativeLibrary, EntryPoint = "SteamAPI_ISteamUtils_IsRunningOnSteamHardware",
+                CallingConvention = CallingConvention.Cdecl)]
+            private static extern Steamworks.ESteamHardwareType NativeIsRunningOnSteamHardware(IntPtr steamUtils);
 
             [DllImport(NativeLibrary,
                 EntryPoint = "SteamAPI_ISteamFriends_ActivateGameOverlayToWebPage",

@@ -12,25 +12,47 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace TiltBrush
 {
-    /*
-     * The stencils are textured procedurally and modified via global float parameters.
-     * This class exists to make sure that those parameters are non-zero which enables
-     * the stencil to be visible in the editor.
-     */
-
+    // Keep the MonoBehaviour type for existing prefab references. Initialization is global
+    // and does not depend on a guide or settings panel being instantiated.
     public class InitializeStencilUniforms : MonoBehaviour
     {
-        // Update uniforms here as this is the least intrusive place to do so
-        private void OnDrawGizmos()
+        // Runs for each player/Play-mode session, including with domain reload disabled.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void InitializeDefaults()
         {
             Shader.SetGlobalFloat(ModifyStencilGridSizeCommand.GlobalGridSizeMultiplierHash, 1f);
             Shader.SetGlobalFloat(ModifyStencilGridLineWidthCommand.GlobalGridLineWidthMultiplierHash, 1f);
             Shader.SetGlobalFloat(ModifyStencilFrameWidthCommand.GlobalFrameWidthMultiplierHash, 1f);
         }
+
+#if UNITY_EDITOR
+        [InitializeOnLoadMethod]
+        private static void InitializeEditor()
+        {
+            EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+
+            // A script reload during play must not reset the user's current settings.
+            if (!EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                InitializeDefaults();
+            }
+        }
+
+        private static void OnPlayModeStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.EnteredEditMode)
+            {
+                InitializeDefaults();
+            }
+        }
+#endif
     }
 } // namespace TiltBrush

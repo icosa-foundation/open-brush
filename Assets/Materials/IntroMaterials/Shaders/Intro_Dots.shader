@@ -35,6 +35,7 @@ Category {
       Tags { "LightMode"="UniversalForward" }
 
       CGPROGRAM
+      #pragma multi_compile_instancing
       #pragma vertex vert
       #pragma fragment frag
       #pragma target 3.0
@@ -54,6 +55,7 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float waveform : TEXCOORD1;
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -64,8 +66,10 @@ Category {
       half _IntroDissolve;
       v2f vert (ParticleVertex_t v)
       {
+        UNITY_SETUP_INSTANCE_ID(v);
         v.color = TbVertToSrgb(v.color);
-        v2f o;
+        v2f o = (v2f)0;
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);
@@ -84,6 +88,7 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         float4 tex = tex2D(_MainTex, i.texcoord);
         float4 c = i.color * _TintColor * tex;
 

@@ -29,6 +29,7 @@ Category {
       Tags { "LightMode"="UniversalForward" }
 
       CGPROGRAM
+      #pragma multi_compile_instancing
       #pragma vertex vert
       #pragma fragment frag
       #pragma multi_compile __ AUDIO_REACTIVE
@@ -42,12 +43,14 @@ Category {
         fixed4 color : COLOR;
         float3 normal : NORMAL;
         float2 texcoord : TEXCOORD0;
+        UNITY_VERTEX_INPUT_INSTANCE_ID
       };
 
       struct v2f {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -55,7 +58,9 @@ Category {
 
       v2f vert (appdata_t v)
       {
-        v2f o;
+        UNITY_SETUP_INSTANCE_ID(v);
+        v2f o = (v2f)0;
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
         o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
         o.color = TbVertToNative(v.color) * (1.0 - _IntroDissolve);
@@ -66,6 +71,7 @@ Category {
 
       fixed4 frag (v2f i) : COLOR
       {
+         UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
          half4 c = tex2D(_MainTex, i.texcoord );
         return i.color * c;
       }

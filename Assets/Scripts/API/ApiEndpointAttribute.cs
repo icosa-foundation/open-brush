@@ -73,7 +73,7 @@ namespace TiltBrush
 
         public object[] DecodeParams(string commandValue)
         {
-            var parameters = new object[parameterInfo.Length];
+            var parameters = parameterInfo.Select(parameter => parameter.IsOptional ? parameter.DefaultValue : null).ToArray();
 
             string[] tokens = commandValue.Split(',').Select(x => x.Trim()).Where(x => x.Length > 0).ToArray();
 

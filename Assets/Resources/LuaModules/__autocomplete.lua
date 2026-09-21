@@ -1895,6 +1895,40 @@ function StrokeList:Deselect() end
 
 function StrokeList:Delete() end
 
+---Crops these strokes to a sphere and updates this list with the remaining strokes
+---@param center Vector3 The center of the sphere
+---@param radius number The radius of the sphere
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropSphere(center, radius, keepInside) end
+
+---Crops these strokes to a box and updates this list with the remaining strokes
+---@param center Vector3 The center of the box
+---@param size Vector3 The full width, height and depth
+---@param rotation? Vector3 Euler rotation in degrees
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropBox(center, size, rotation, keepInside) end
+
+---Crops these strokes to a capsule and updates this list with the remaining strokes
+---@param center Vector3 The center of the capsule
+---@param radius number The radius of the capsule
+---@param height number The full height of the capsule
+---@param rotation? Vector3 Euler rotation in degrees (axis is Y before rotation)
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropCapsule(center, radius, height, rotation, keepInside) end
+
+---Crops these strokes to an ellipsoid and updates this list with the remaining strokes
+---@param center Vector3 The center of the ellipsoid
+---@param size Vector3 The full width, height and depth
+---@param rotation? Vector3 Euler rotation in degrees
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropEllipsoid(center, size, rotation, keepInside) end
+
+---Keeps the side of a plane its normal points toward and updates this list with the remaining strokes
+---@param point Vector3 A point on the plane
+---@param normal Vector3 Direction of the side to keep
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropPlane(point, normal, keepInside) end
+
 ---@param clipStart number The amount of the stroke to hide from the start (0-1)
 ---@param clipEnd number The amount of the stroke to hide from the end (0-1)
 function StrokeList:SetShaderClipping(clipStart, clipEnd) end
@@ -2989,10 +3023,13 @@ ColorOverrideMode.Add = nil
 
 
 ---@class Tool
+---@field latestControlPoints ControlPointList Control points for the single path selected by the active Tool Script stroke preview
+---@field latestControlPointSpace ScriptCoordSpace The coordinate space for the latest Tool Script control points
 ---@field startPoint Transform The position and orientation of the point where the trigger was pressed
 ---@field endPoint Transform The position and full controller orientation of the point where the trigger was released. Use endPoint.rotation to match the scripted tool preview orientation.
 ---@field vector Vector3 The vector from startPoint to endPoint
 ---@field rotation Vector3 Legacy controller-up vector at release. Use endPoint.rotation for full release orientation.
+---@field isPreview boolean True for a live stroke-preview invocation and false for the single final invocation. Tool Scripts using previewType=stroke are invoked only during those phases.
 Tool = {}
 
 ---@class json

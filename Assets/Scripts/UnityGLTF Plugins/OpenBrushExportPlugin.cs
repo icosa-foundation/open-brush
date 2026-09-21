@@ -345,10 +345,15 @@ namespace TiltBrush
                 App.UserConfig.Export.ExportStrokeTimestamp)
             {
                 var brush = transform.GetComponent<BaseBrushScript>();
-                var mesh = transform.GetComponent<MeshFilter>()?.sharedMesh;
-                if (brush?.Stroke != null && mesh != null && mesh.vertexCount > 0)
+                var mf = transform.GetComponent<MeshFilter>();
+                // Unity's missing-component objects require Unity's overloaded null check.
+                if (brush != null && brush.Stroke != null && mf != null)
                 {
-                    m_TimestampSources[mesh] = TimestampSource.ForStroke(brush.Stroke);
+                    var mesh = mf.sharedMesh;
+                    if (mesh != null && mesh.vertexCount > 0)
+                    {
+                        m_TimestampSources[mesh] = TimestampSource.ForStroke(brush.Stroke);
+                    }
                 }
             }
             if (!App.UserConfig.Export.KeepStrokes &&

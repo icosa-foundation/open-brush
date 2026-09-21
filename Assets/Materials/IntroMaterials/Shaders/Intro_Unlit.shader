@@ -29,6 +29,7 @@ SubShader {
 
         CGPROGRAM
 
+        #pragma multi_compile_instancing
         #pragma vertex vert
         #pragma fragment frag
         #pragma multi_compile_fog
@@ -44,6 +45,7 @@ SubShader {
             float4 vertex : POSITION;
             float2 texcoord : TEXCOORD0;
             float4 color : COLOR;
+          UNITY_VERTEX_INPUT_INSTANCE_ID
         };
 
         struct v2f {
@@ -51,11 +53,14 @@ SubShader {
             float2 texcoord : TEXCOORD0;
             float4 color : COLOR;
             UNITY_FOG_COORDS(1)
+          UNITY_VERTEX_OUTPUT_STEREO
         };
 
         v2f vert (appdata_t v)
         {
-            v2f o;
+            UNITY_SETUP_INSTANCE_ID(v);
+            v2f o = (v2f)0;
+            UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
             o.vertex = UnityObjectToClipPos(v.vertex);
             o.texcoord = v.texcoord;
@@ -69,6 +74,7 @@ SubShader {
 
         fixed4 frag (v2f i) : COLOR
         {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
             fixed4 c;
             UNITY_APPLY_FOG(i.fogCoord, i.color);
             c = tex2D(_MainTex, i.texcoord) * i.color;

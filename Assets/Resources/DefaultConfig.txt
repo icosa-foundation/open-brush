@@ -3,9 +3,12 @@
   },
   "Brushes": {
   },
+  "Splats": {
+  },
   "Video": {
   },
   "Flags": {
+    "MemoryWarningVertCount": 0,
     "WebScriptsCanControlPlugins": false,
     "EnablePluginWebRequests": false,
     "PluginWebRequestRules": [
