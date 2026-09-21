@@ -50,5 +50,40 @@ namespace TiltBrush
                 UnityEngine.Object.DestroyImmediate(owner);
             }
         }
+
+        [Test]
+        public void SafSavedReferenceOutsideActiveFolderIsCached()
+        {
+            IUserStorageBackend previous = UserStorage.Backend;
+            var owner = new GameObject("SafImageRestorationTest");
+            owner.SetActive(false);
+            var document = new StorageDocument(
+                new StorageDocumentId("image-id"), default, "reference.png",
+                "image/png", false, 4, DateTime.UtcNow, 0, "B/reference.png");
+            var backend = new CatalogTestBackend
+            {
+                Listing = () => StorageDirectoryResult.Succeeded(new[] { document }),
+            };
+            try
+            {
+                UserStorage.SetBackendForTests(backend);
+                var catalog = owner.AddComponent<ImageRestorationTestCatalog>();
+                catalog.TestRoot = Path.Combine(
+                    Path.GetTempPath(), $"saf-image-restore-{Guid.NewGuid():N}");
+                catalog.SetImages();
+
+                ReferenceImage first = catalog.RelativePathToImage("B/reference.png");
+                ReferenceImage second = catalog.RelativePathToImage("B/reference.png");
+
+                Assert.NotNull(first);
+                Assert.AreSame(first, second);
+                Assert.AreEqual(0, catalog.ItemCount);
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previous);
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
     }
 }

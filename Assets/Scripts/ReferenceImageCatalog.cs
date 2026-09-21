@@ -864,7 +864,16 @@ namespace TiltBrush
             {
                 // Saved sketches can refer to folders that the reference panel has never opened.
                 // Do not add these images to the panel's current-directory listing.
-                return ResolveSafImage(UserStorage.Backend, StorageAreaKind, logicalPath);
+                if (!m_UnlistedImages.TryGetValue(fullPath, out refImage))
+                {
+                    refImage = ResolveSafImage(
+                        UserStorage.Backend, StorageAreaKind, logicalPath);
+                    if (refImage != null)
+                    {
+                        m_UnlistedImages[fullPath] = refImage;
+                    }
+                }
+                return refImage;
             }
             if (refImage == null)
             {
