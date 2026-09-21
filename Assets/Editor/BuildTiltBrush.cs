@@ -107,7 +107,6 @@ static class BuildTiltBrush
         {
             // Monoscopic
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
-            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.tvOS),
 
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
@@ -601,8 +600,6 @@ static class BuildTiltBrush
                 return BuildTargetGroup.Android;
             case BuildTarget.iOS:
                 return BuildTargetGroup.iOS;
-            case BuildTarget.tvOS:
-                return BuildTargetGroup.tvOS;
             default:
                 throw new ArgumentException("buildTarget");
         }
@@ -920,19 +917,10 @@ static class BuildTiltBrush
 
     class TempSetPlayerSettings : IDisposable
     {
-        class SavedPlatformIcons
-        {
-            public PlatformIconKind Kind;
-            public Texture2D[][] Textures;
-        }
-
         private BuildTarget m_Target;
         private UIOrientation m_OrientationSettings;
         private iOSTargetDevice m_iOSTargetDevice;
         private Texture2D[] m_Icons;
-        private List<SavedPlatformIcons> m_PlatformIcons;
-        private BuildTargetGroup? m_PlatformIconTarget;
-        private string m_GeneratedIconDirectory;
         private bool m_RestoreAndroidTargetSdkVersion;
         private AndroidSdkVersions m_AndroidTargetSdkVersion;
         private bool m_RestoreAndroidXrSettings;
@@ -952,10 +940,6 @@ static class BuildTiltBrush
             {
                 PlayerSettings.iOS.targetDevice = iOSTargetDevice.iPhoneAndiPad;
                 Debug.Log("Configured the Open Brush Viewer build for iPhone and iPad.");
-            }
-            else if (m_Target == BuildTarget.tvOS)
-            {
-                ConfigurePlatformIcons(BuildTargetGroup.tvOS, "tvOS");
             }
 #endif
 
@@ -1015,7 +999,6 @@ static class BuildTiltBrush
             PlayerSettings.defaultInterfaceOrientation = m_OrientationSettings;
             PlayerSettings.iOS.targetDevice = m_iOSTargetDevice;
             PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), m_Icons, IconKind.Any);
-            RestorePlatformIcons();
             if (m_RestoreAndroidTargetSdkVersion)
             {
                 PlayerSettings.Android.targetSdkVersion = m_AndroidTargetSdkVersion;
@@ -1029,125 +1012,6 @@ static class BuildTiltBrush
             AssetDatabase.SaveAssets();
         }
 
-        void ConfigurePlatformIcons(BuildTargetGroup targetGroup, string platformName)
-        {
-            var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(
-                targetGroup);
-            var logo = AssetDatabase.LoadAssetAtPath<Texture2D>(
-                "Assets/Resources/DefaultImages/OpenBrushLogo.png");
-            if (logo == null)
-            {
-                throw new BuildFailedException(
-                    $"Could not load the Open Brush logo for {platformName} icons.");
-            }
-
-            m_PlatformIconTarget = targetGroup;
-            m_GeneratedIconDirectory = $"Assets/__GeneratedOpenBrush{platformName}Icons";
-            if (AssetDatabase.IsValidFolder(m_GeneratedIconDirectory))
-            {
-                AssetDatabase.DeleteAsset(m_GeneratedIconDirectory);
-            }
-            AssetDatabase.CreateFolder(
-                "Assets", Path.GetFileName(m_GeneratedIconDirectory));
-
-            m_PlatformIcons = new List<SavedPlatformIcons>();
-            foreach (var kind in PlayerSettings.GetSupportedIconKinds(buildTarget))
-            {
-                var icons = PlayerSettings.GetPlatformIcons(buildTarget, kind);
-                var savedTextures = icons.Select(icon => icon.GetTextures()).ToArray();
-                m_PlatformIcons.Add(new SavedPlatformIcons
-                {
-                    Kind = kind,
-                    Textures = savedTextures,
-                });
-
-                for (int iconIndex = 0; iconIndex < icons.Length; ++iconIndex)
-                {
-                    var icon = icons[iconIndex];
-                    var textures = new Texture2D[icon.maxLayerCount];
-                    for (int layer = 0; layer < textures.Length; ++layer)
-                    {
-                        bool composite = textures.Length == 1;
-                        bool foreground = composite || layer == 0;
-                        bool background = composite || layer == textures.Length - 1;
-                        string path = $"{m_GeneratedIconDirectory}/" +
-                            $"{SanitizeFileName(kind.ToString())}-{iconIndex}-{layer}.png";
-                        CreatePlatformIconTexture(
-                            logo, icon.width, icon.height, foreground, background, path);
-                        textures[layer] = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
-                    }
-                    icon.SetTextures(textures);
-                }
-                PlayerSettings.SetPlatformIcons(buildTarget, kind, icons);
-            }
-
-            Debug.Log($"Configured generated Open Brush Viewer icons for {platformName}.");
-        }
-
-        static void CreatePlatformIconTexture(
-            Texture2D logo, int width, int height, bool foreground, bool background, string path)
-        {
-            var previous = RenderTexture.active;
-            var renderTexture = RenderTexture.GetTemporary(
-                width, height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
-            RenderTexture.active = renderTexture;
-            GL.Clear(true, true, background
-                ? new Color32(18, 17, 22, 255)
-                : new Color32(0, 0, 0, 0));
-
-            if (foreground)
-            {
-                float logoSize = Mathf.Min(width, height) * 0.62f;
-                var destination = new Rect(
-                    (width - logoSize) / 2f,
-                    (height - logoSize) / 2f,
-                    logoSize,
-                    logoSize);
-                GL.PushMatrix();
-                GL.LoadPixelMatrix(0, width, height, 0);
-                Graphics.DrawTexture(destination, logo);
-                GL.PopMatrix();
-            }
-
-            var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
-            texture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            texture.Apply();
-            File.WriteAllBytes(path, texture.EncodeToPNG());
-            UnityEngine.Object.DestroyImmediate(texture);
-            RenderTexture.active = previous;
-            RenderTexture.ReleaseTemporary(renderTexture);
-            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
-        }
-
-        static string SanitizeFileName(string value)
-        {
-            foreach (char invalid in Path.GetInvalidFileNameChars())
-            {
-                value = value.Replace(invalid, '-');
-            }
-            return value;
-        }
-
-        void RestorePlatformIcons()
-        {
-            if (m_PlatformIcons == null || !m_PlatformIconTarget.HasValue)
-            {
-                return;
-            }
-
-            var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(
-                m_PlatformIconTarget.Value);
-            foreach (var saved in m_PlatformIcons)
-            {
-                var icons = PlayerSettings.GetPlatformIcons(buildTarget, saved.Kind);
-                for (int i = 0; i < icons.Length; ++i)
-                {
-                    icons[i].SetTextures(saved.Textures[i]);
-                }
-                PlayerSettings.SetPlatformIcons(buildTarget, saved.Kind, icons);
-            }
-            AssetDatabase.DeleteAsset(m_GeneratedIconDirectory);
-        }
     }
 
     class TempSetScriptingBackend : IDisposable
@@ -1187,9 +1051,7 @@ static class BuildTiltBrush
             m_prevBundleVersion = PlayerSettings.bundleVersion;
             // https://stackoverflow.com/a/9741724/194921 for more on the meaning/format of this string
             PlayerSettings.bundleVersion = configVersionNumber;
-            if (!string.IsNullOrEmpty(stamp) &&
-                target != BuildTarget.iOS &&
-                target != BuildTarget.tvOS)
+            if (!string.IsNullOrEmpty(stamp) && target != BuildTarget.iOS)
             {
                 PlayerSettings.bundleVersion += string.Format("-{0}", stamp);
             }
@@ -1207,15 +1069,12 @@ static class BuildTiltBrush
         private string m_identifier;
         private string m_name;
         private string m_company;
-        private bool m_UsesApplicationIdentifier;
+        private bool m_IsAndroidOrIos;
         private BuildTarget m_Target;
         public TempSetAppNames(BuildTarget target, string Description)
         {
             m_Target = target;
-            m_UsesApplicationIdentifier =
-                m_Target == BuildTarget.Android ||
-                m_Target == BuildTarget.iOS ||
-                m_Target == BuildTarget.tvOS;
+            m_IsAndroidOrIos = m_Target == BuildTarget.Android || m_Target == BuildTarget.iOS;
             m_identifier = PlayerSettings.GetApplicationIdentifier(TargetToGroup(target));
             m_name = PlayerSettings.productName;
             m_company = PlayerSettings.companyName;
@@ -1248,7 +1107,7 @@ static class BuildTiltBrush
                 new_name += $"-({Description.Replace("#", "")})";
                 new_identifier += $"-{Description.Replace("_", "").Replace("#", "").Replace("-", "")}";
             }
-            if (m_UsesApplicationIdentifier)
+            if (m_IsAndroidOrIos)
             {
                 PlayerSettings.SetApplicationIdentifier(TargetToGroup(target), new_identifier);
             }
@@ -1258,7 +1117,7 @@ static class BuildTiltBrush
 
         public void Dispose()
         {
-            if (m_UsesApplicationIdentifier)
+            if (m_IsAndroidOrIos)
             {
                 PlayerSettings.SetApplicationIdentifier(TargetToGroup(m_Target), m_identifier);
             }

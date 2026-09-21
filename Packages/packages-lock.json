@@ -47,11 +47,11 @@
       "hash": "4f87195d54ccefe076678cb83a296b3f0428fc53"
     },
     "com.netpyoung.webp": {
-      "version": "https://github.com/icosa-mirror/unity.webp.git?path=unity_project/Assets/unity.webp#a14fb1f0185ea6f1e88cd59df383e57d671bd313",
+      "version": "https://github.com/netpyoung/unity.webp.git?path=unity_project/Assets/unity.webp#0.3.22",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "a14fb1f0185ea6f1e88cd59df383e57d671bd313"
+      "hash": "9818db6327e09d399bf4fb84da4ed19f03b565b4"
     },
     "com.rlabrecque.steamworks.net": {
       "version": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#ba71581f1ed7349e8d0f17ddc6f135dd3bc8a6a3",

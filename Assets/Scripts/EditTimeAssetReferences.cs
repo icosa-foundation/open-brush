@@ -55,7 +55,6 @@ namespace TiltBrush
             {
                 case BuildTarget.Android:
                 case BuildTarget.iOS:
-                case BuildTarget.tvOS:
                     return m_PlatformConfigMobile;
                 case BuildTarget.StandaloneWindows:
                 case BuildTarget.StandaloneWindows64:

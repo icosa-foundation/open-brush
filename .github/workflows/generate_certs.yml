@@ -70,7 +70,6 @@ jobs:
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${MATCH_DEPLOY_KEY}"
           bundle exec fastlane ios bootstrap_signing
-          bundle exec fastlane tvos bootstrap_signing
           bundle exec fastlane mac bootstrap_signing
         env:
           APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
@@ -82,7 +81,6 @@ jobs:
           APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
 
           IOS_BUNDLE_ID: foundation.icosa.openbrushviewer
-          TVOS_BUNDLE_ID: foundation.icosa.openbrushviewer
           MAC_BUNDLE_ID: foundation.icosa.openbrushviewer
 
           MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}

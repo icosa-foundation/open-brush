@@ -460,8 +460,7 @@ jobs:
             echo "filename=$BASENAME.exe" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneLinux64" ]]; then
             echo "filename=$BASENAME" >> $GITHUB_ENV
-          elif [[ "${{ matrix.targetPlatform}}" == "iOS" ||
-                  "${{ matrix.targetPlatform}}" == "tvOS" ]]; then
+          elif [[ "${{ matrix.targetPlatform}}" == "iOS" ]]; then
             echo "filename=$BASENAME" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
             echo "filename=$BASENAME.app" >> $GITHUB_ENV
@@ -531,7 +530,7 @@ jobs:
 
       - name: Build project
         uses: Wandalen/wretry.action@v3
-        env: &unity_build_environment
+        env:
           GIT_LFS_SKIP_SMUDGE: "1"
           VERSION: ${{ needs.configuration.outputs.version}}
           UNITY_EMAIL: ${{ fromJSON(format('["unitytest@mikeage.net", "{0}"]', vars.UNITY_EMAIL))[secrets.UNITY_SERIAL != null] }}
@@ -638,160 +637,6 @@ jobs:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
-
-  build_tvos:
-    name: tvOS Viewer ${{ matrix.flavors.title }}
-    needs: configuration
-    # UnityLinker fails without diagnostics on the 7 GB ARM runner. Use the
-    # 14 GB Intel runner to give the tvOS build enough headroom.
-    runs-on: macos-26-intel
-    strategy:
-      fail-fast: false
-      matrix:
-        flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-
-    steps:
-      - name: Set masking
-        run: echo "::add-mask::DoNotStealThis1"
-
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          lfs: true
-
-      - name: Checkout private photon repository if available
-        if: ${{ env.PHOTON_PAT }}
-        uses: actions/checkout@v7
-        with:
-          token: ${{ env.PHOTON_PAT }}
-          repository: icosa-mirror/photon-fusion
-          ref: fusion-2.1.2-voice-2.63-realtime5-unity6
-          path: photon-fusion-mirror/
-
-      - name: Copy photon files
-        if: ${{ env.PHOTON_PAT }}
-        run: |
-          rsync -a --ignore-existing photon-fusion-mirror/ ./
-          echo "For debugging: these are the files in Assets/Photon:"
-          find Assets/Photon
-
-      - name: Restore Library/
-        id: cache_library
-        uses: actions/cache/restore@v6
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
-        with:
-          path: Library
-          key: Library_tvOS_${{ env.UNITY_VERSION }}
-
-      - name: Remove problematic packages
-        run: |
-          cp Packages/manifest.json{,.bak}
-          cp Packages/packages-lock.json{,.bak}
-          for PACKAGE in com.unity.formats.usd; do
-            jq 'del( .dependencies ["'${PACKAGE}'"] )' Packages/manifest.json > Packages/manifest.json.new
-            mv Packages/manifest.json.new Packages/manifest.json
-            jq 'del( .dependencies ["'${PACKAGE}'"] )' Packages/packages-lock.json > Packages/packages-lock.json.new
-            mv Packages/packages-lock.json.new Packages/packages-lock.json
-          done
-          diff -u Packages/manifest.json.bak Packages/manifest.json || true
-          diff -u Packages/packages-lock.json.bak Packages/packages-lock.json || true
-
-      - name: Set output filename
-        env:
-          BASENAME: ${{ needs.configuration.outputs.basename }}
-        run: echo "filename=$BASENAME" >> "$GITHUB_ENV"
-
-      - name: Set build stamp
-        if: ${{ needs.configuration.outputs.stamp }}
-        run: echo "stamp=-btb-stamp ${{ needs.configuration.outputs.stamp }}" >> "$GITHUB_ENV"
-
-      - name: Enable Development Mode
-        if: ${{ matrix.flavors.development == true }}
-        run: echo "btbbopts=-btb-bopt Development" >> "$GITHUB_ENV"
-
-      - name: Update version
-        env:
-          VERSION: ${{ needs.configuration.outputs.version }}
-        run: |
-          sed -i.bak -e "s/m_VersionNumber:.*$/m_VersionNumber: $VERSION/" Assets/Scenes/Main.unity
-          sed -i.bak -e "s/bundleVersion:.*$/bundleVersion: $VERSION/" ProjectSettings/ProjectSettings.asset
-          rm Assets/Scenes/Main.unity.bak ProjectSettings/ProjectSettings.asset.bak
-
-      - name: Add secure secrets file
-        env:
-          SECRETS_ASSET: ${{ secrets.SECRETS_ASSET }}
-          SECRETS_ASSET_META: ${{ secrets.SECRETS_ASSET_META }}
-        if: |
-          env.SECRETS_ASSET != null &&
-          env.SECRETS_ASSET_META != null
-        run: |
-          echo "$SECRETS_ASSET" > Assets/Secrets.asset
-          echo "$SECRETS_ASSET_META" > Assets/Secrets.asset.meta
-          SECRETS_ASSET_META_GUID=$(grep "guid:" Assets/Secrets.asset.meta | cut -d" " -f2)
-          sed -i.bak -e "s/Secrets:.*$/Secrets: {fileID: 11400000, guid: $SECRETS_ASSET_META_GUID, type: 2}/" Assets/Scenes/Main.unity
-          rm Assets/Scenes/Main.unity.bak
-
-      - name: Enable Viewer build
-        run: echo -e "\n-define:OPEN_BRUSH_VIEWER" | tee -a Assets/csc.rsp
-
-      - name: Enable Photon defines
-        if: ${{ env.PHOTON_PAT }}
-        run: |
-          for DEFINE in MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER; do
-            echo -e "\n-define:$DEFINE" | tee -a Assets/csc.rsp
-          done
-
-      - name: Generate ViverseViewer.bytes from source
-        run: python Support/Python/unitybuild/viverseviewer.py .
-
-      - name: Build project
-        uses: Wandalen/wretry.action@v3
-        env: *unity_build_environment
-        with:
-          retry_condition: steps._this.outputs.engineExitCode == 1
-          action: game-ci/unity-builder@v5
-          with: |
-            unityVersion: ${{ env.UNITY_VERSION }}
-            targetPlatform: tvOS
-            customParameters: -btb-target tvOS -btb-display Monoscopic -btb-out build/Monoscopic/tvOS/${{ env.filename }} ${{ needs.configuration.outputs.description }} ${{ env.stamp }} ${{ env.btbbopts }} -btb-il2cpp
-            versioning: Custom
-            version: ${{ needs.configuration.outputs.version }}
-            buildName: ${{ needs.configuration.outputs.basename }}
-            buildsPath: build/Monoscopic
-            buildMethod: BuildTiltBrush.CommandLine
-
-      - name: Upload build/
-        uses: actions/upload-artifact@v7
-        with:
-          name: tvOS Viewer ${{ matrix.flavors.title }}
-          path: |
-            build/Monoscopic
-            !build/**/*_BackUpThisFolder_ButDontShipItWithYourGame
-
-      - name: Clean Library before caching
-        env:
-          UNITY_LIBRARY_CACHE_PATHS: "DataStore ArtifactDB SourceAssetDB PlayerDataCache ShaderCache ShaderCache.db"
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'
-        run: |
-          library_cache="$RUNNER_TEMP/unity-library-cache"
-          mkdir "$library_cache"
-          for cache_path in $UNITY_LIBRARY_CACHE_PATHS; do
-            if [ -e "Library/$cache_path" ]; then
-              mv "Library/$cache_path" "$library_cache/$cache_path"
-            fi
-          done
-          rm -rf Library
-          mv "$library_cache" Library
-
-      - name: Save Library/ cache
-        uses: actions/cache/save@v6
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development
-        env:
-          SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
-        with:
-          path: Library
-          key: Library_tvOS_${{ env.UNITY_VERSION }}
 
   signmacos:
     name: Sign the MacOS .app
@@ -2030,79 +1875,6 @@ jobs:
         if: ${{ failure() }}
         with:
           name: fastlane viewer logs
-          path: /Users/runner/Library/Logs/gym/
-
-  publish_tvos_viewer:
-    name: Publish Viewer tvOS
-    needs: [configuration, build_tvos]
-    runs-on: macos-26
-    if: |
-      github.event_name == 'push' &&
-      github.repository == 'icosa-foundation/open-brush' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          sparse-checkout: |
-            Gemfile
-            Gemfile.lock
-            fastlane
-
-      - name: Free extra space
-        run: |
-          echo "Initial free space"
-          df -h
-          rm -rf "$AGENT_TOOLSDIRECTORY"
-          echo "Disk space after cleanup of \$AGENT_TOOLSDIRECTORY"
-          df -h
-
-      - name: Download tvOS Artifact
-        uses: actions/download-artifact@v8
-        with:
-          name: tvOS Viewer
-          path: build
-
-      - name: Fix File Permissions
-        run: |
-          export FILENAME=$(basename $(readlink -f build/tvOS/OpenBrush*))
-          export TVOS_BUILD_PATH=$(pwd)/build/tvOS/${FILENAME}
-
-          find $TVOS_BUILD_PATH -type f -name "*.sh" -exec chmod +x {} \;
-
-      - name: Run fastlane
-        env:
-          VERSION: ${{ needs.configuration.outputs.version }}
-          APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
-          APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
-          APPLE_TEAM_ID: ${{ vars.APPLE_TEAM_ID }}
-
-          MATCH_REPOSITORY: ${{ secrets.MATCH_REPOSITORY }}
-          MATCH_DEPLOY_KEY: ${{ secrets.MATCH_DEPLOY_KEY }}
-          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-
-          APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
-          APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
-          APPSTORE_P8: ${{ secrets.APPSTORE_P8 }}
-
-          TVOS_BUNDLE_ID: foundation.icosa.openbrushviewer
-          PROJECT_NAME: Open Brush Viewer
-          FASTLANE_LANE: ${{ needs.configuration.outputs.iosviewerlane }}
-        run: |
-          eval "$(ssh-agent -s)"
-          ssh-add - <<< "${MATCH_DEPLOY_KEY}"
-          export FILENAME=$(basename $(readlink -f build/tvOS/OpenBrush*))
-          export TVOS_BUILD_PATH=$(pwd)/build/tvOS/${FILENAME}
-
-          bundle install
-          bundle exec fastlane tvos ${FASTLANE_LANE}
-
-      - name: Save logs
-        uses: actions/upload-artifact@v7
-        if: ${{ failure() }}
-        with:
-          name: fastlane tvOS viewer logs
           path: /Users/runner/Library/Logs/gym/
 
   publish_ios_zapbox:
