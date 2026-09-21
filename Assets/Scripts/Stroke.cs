@@ -417,6 +417,20 @@ namespace TiltBrush
             InvalidateCopy();
         }
 
+        /// Moves this stroke's geometry where it lies, keeping its control points in step.
+        ///
+        /// Cheap enough to do every frame: it transforms the vertices this stroke already owns
+        /// inside its batch, rather than regenerating the geometry or copying it to another
+        /// canvas. Only works for batched strokes; returns false for anything else, and for a
+        /// stroke with no geometry yet.
+        public bool TransformGeometryInPlace(TrTransform leftTransform)
+        {
+            if (m_Type != Type.BatchedBrushStroke || m_BatchSubset == null) { return false; }
+            m_BatchSubset.m_ParentBatch.TransformSubset(m_BatchSubset, leftTransform);
+            LeftTransformControlPoints(leftTransform);
+            return true;
+        }
+
         /// Set the parent canvas of this stroke, preserving the _canvas_-relative position.
         /// There will be a pop if the previous and current canvases have different
         /// transforms.
