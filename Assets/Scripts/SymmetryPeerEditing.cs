@@ -99,12 +99,14 @@ namespace TiltBrush
             }
         }
 
-        /// The canvas a stroke's geometry belongs to. The selection canvas is a staging area a
-        /// stroke passes through while selected, so a selected stroke counts as being in the
-        /// canvas it will return to.
+        /// The canvas a stroke's geometry belongs to. The selection canvas, and the preview
+        /// canvases a peer is shown in while following a selection, are staging areas a stroke
+        /// passes through, so a stroke in one counts as being in the canvas it will return to.
         private static CanvasScript EffectiveCanvas(Stroke stroke)
         {
-            return stroke.Canvas == App.Scene.SelectionCanvas && stroke.m_PreviousCanvas != null
+            bool staged = stroke.Canvas == App.Scene.SelectionCanvas ||
+                App.Scene.IsPreviewCanvas(stroke.Canvas);
+            return staged && stroke.m_PreviousCanvas != null
                 ? stroke.m_PreviousCanvas
                 : stroke.Canvas;
         }

@@ -47,6 +47,10 @@ namespace TiltBrush
 
         private CanvasScript m_ActiveCanvas;
         private List<CanvasScript> m_LayerCanvases;
+        // Canvases used to show something transiently. They render and follow the scene like any
+        // other canvas, but are not layers: they are never listed, never saved, and their contents
+        // belong to the layer each stroke came from.
+        private List<CanvasScript> m_PreviewCanvases = new List<CanvasScript>();
 
         /// Helper for getting and setting transforms on Transform components.
         /// Transform natively allows you to access parent-relative ("local")
@@ -167,6 +171,11 @@ namespace TiltBrush
                         yield return m_LayerCanvases[i];
                     }
                 }
+
+                for (int i = 0; i < m_PreviewCanvases.Count; ++i)
+                {
+                    yield return m_PreviewCanvases[i];
+                }
             }
         }
 
@@ -188,8 +197,52 @@ namespace TiltBrush
             }
         }
 
+        /// A canvas for showing strokes somewhere other than where they live, without touching
+        /// their geometry: put strokes in it with Stroke.SetParent and move it. It renders and
+        /// follows the scene like a layer, but never appears in the layer list and is never saved.
+        /// The caller owns it and must destroy it.
+        public CanvasScript AddPreviewCanvas()
+        {
+            var go = new GameObject("Preview Canvas");
+            go.transform.parent = transform;
+            Coords.AsLocal[go.transform] = TrTransform.identity;
+            go.transform.hasChanged = false;
+
+            // As AddLayerNow: the Unity layer named "MainCanvas" is used for all non-selection
+            // canvases, otherwise GPU intersection filters them out.
+            HierarchyUtils.RecursivelySetLayer(go.transform, App.Scene.MainCanvas.gameObject.layer);
+
+            var canvas = go.AddComponent<CanvasScript>();
+            m_PreviewCanvases.Add(canvas);
+            return canvas;
+        }
+
+        public bool IsPreviewCanvas(CanvasScript canvas)
+        {
+            return canvas != null && m_PreviewCanvases.Contains(canvas);
+        }
+
+        /// Destroys a preview canvas. Any strokes still in it go with it, so the caller is
+        /// responsible for putting them back where they belong first.
+        public void DestroyPreviewCanvas(CanvasScript canvas)
+        {
+            if (!m_PreviewCanvases.Remove(canvas)) { return; }
+            foreach (Batch b in canvas.BatchManager.AllBatches())
+            {
+                b.Destroy();
+            }
+            Destroy(canvas.gameObject);
+        }
+
         public void ResetLayers(bool notify = false)
         {
+            // Nothing transient survives a reset; the strokes are going away with it.
+            SymmetryPeerPreview.Forget();
+            foreach (var canvas in m_PreviewCanvases.ToArray())
+            {
+                DestroyPreviewCanvas(canvas);
+            }
+
             if (m_LayerCanvases != null)
             {
                 foreach (var canvas in m_LayerCanvases.ToArray())

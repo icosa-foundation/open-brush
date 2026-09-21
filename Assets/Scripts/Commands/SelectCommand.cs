@@ -173,6 +173,10 @@ namespace TiltBrush
         /// peers are worked out now, while the strokes are still where the move left them.
         private void GatherSymmetryPeers()
         {
+            // Peers shown following the selection are only being drawn elsewhere; they have to be
+            // back home before their move is worked out, and the deselect is what applies it.
+            SymmetryPeerPreview.Hide();
+
             // Same condition as NeedsSave: nothing is baked into the strokes unless a deselect is
             // carrying a transform.
             if (!m_Deselect || m_InitialTransform == TrTransform.identity || m_Strokes == null)
@@ -247,6 +251,8 @@ namespace TiltBrush
         {
             if (m_Deselect)
             {
+                // Peers must be in their own layers before the move is written into them.
+                SymmetryPeerPreview.Hide();
                 if (m_Strokes != null)
                 {
                     SelectionManager.m_Instance.DeselectStrokes(m_Strokes, m_TargetCanvas);
@@ -291,6 +297,7 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectionTransform = m_InitialTransform;
             if (m_Deselect)
             {
+                SymmetryPeerPreview.Hide();
                 TransformItems.TransformEach(
                     m_PeerStrokes, m_PeerTransforms.Select(xf => xf.inverse).ToList());
                 if (m_Strokes != null)

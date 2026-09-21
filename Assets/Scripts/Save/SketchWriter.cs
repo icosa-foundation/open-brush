@@ -336,7 +336,9 @@ namespace TiltBrush
                     snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
                     resetGroupContinue = false;
                 }
-                if (stroke.IsGeometryEnabled && stroke.Canvas == App.Scene.SelectionCanvas)
+                if (stroke.IsGeometryEnabled &&
+                    (stroke.Canvas == App.Scene.SelectionCanvas ||
+                     App.Scene.IsPreviewCanvas(stroke.Canvas)))
                 {
                     if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
                     {

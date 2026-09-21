@@ -717,6 +717,26 @@ namespace TiltBrush
 
         public void ResolveChanges()
         {
+            // Show the symmetry peers of the selection following it, but only once it has
+            // actually been moved: while the user is still picking strokes there is nothing to
+            // follow, and parking peers costs about what selecting them does.
+            TrTransform selectionXf = SelectionTransform;
+            bool wantPeerPreview = HasSelection && SymmetryPeerEditing.Enabled &&
+                selectionXf != TrTransform.identity;
+            if (!wantPeerPreview)
+            {
+                SymmetryPeerPreview.Hide();
+            }
+            else if (!SymmetryPeerPreview.IsShowing || m_bSelectionWidgetNeedsUpdate)
+            {
+                // Rebuilt only when the selection itself changes; a drag doesn't change it.
+                SymmetryPeerPreview.Show(m_SelectedStrokes);
+            }
+            if (SymmetryPeerPreview.IsShowing)
+            {
+                SymmetryPeerPreview.UpdateTransform(selectionXf);
+            }
+
             if (m_bSelectionWidgetNeedsUpdate)
             {
                 m_SelectionWidget.SelectionTransform = SelectionTransformToScene(SelectionTransform);
@@ -772,6 +792,10 @@ namespace TiltBrush
 
         public void ClearActiveSelection()
         {
+            // The deselect below is what writes the move into the peers, so they have to be back
+            // in their own layers before it is worked out.
+            SymmetryPeerPreview.Hide();
+
             // Make sure we don't have a selection active.
             if (HasSelection)
             {
@@ -823,6 +847,7 @@ namespace TiltBrush
 
         public void ForgetStrokesInSelectionCanvas()
         {
+            SymmetryPeerPreview.Hide();
             m_SelectedStrokes.Clear();
             m_SelectionJoinTransforms.Clear();
             m_SelectedWidgets.Clear();
