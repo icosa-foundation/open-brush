@@ -46,10 +46,16 @@ namespace TiltBrush
         }
 
         /// The strokes the symmetry created alongside this one; empty when peer editing is off.
+        ///
+        /// Erased strokes are left out. They are invisible, and the edits tools make - recreating
+        /// geometry, moving a stroke between canvases - would bring one back.
         public static IEnumerable<Stroke> PeersOf(Stroke stroke)
         {
-            if (!Enabled || stroke == null) { return System.Linq.Enumerable.Empty<Stroke>(); }
-            return stroke.SymmetryPeers;
+            if (!Enabled || stroke == null) { yield break; }
+            foreach (var peer in stroke.SymmetryPeers)
+            {
+                if (peer.IsGeometryEnabled) { yield return peer; }
+            }
         }
 
         /// The passed strokes plus their symmetry peers, without duplicates. Returns the strokes
@@ -84,14 +90,23 @@ namespace TiltBrush
         /// Appends the peers of the first 'count' entries, skipping any already seen.
         private static void AppendPeers(List<Stroke> strokes, HashSet<Stroke> seen, int count)
         {
-            if (!Enabled) { return; }
             for (int i = 0; i < count; ++i)
             {
-                foreach (var peer in strokes[i].SymmetryPeers)
+                foreach (var peer in PeersOf(strokes[i]))
                 {
                     if (seen.Add(peer)) { strokes.Add(peer); }
                 }
             }
+        }
+
+        /// The canvas a stroke's geometry belongs to. The selection canvas is a staging area a
+        /// stroke passes through while selected, so a selected stroke counts as being in the
+        /// canvas it will return to.
+        private static CanvasScript EffectiveCanvas(Stroke stroke)
+        {
+            return stroke.Canvas == App.Scene.SelectionCanvas && stroke.m_PreviousCanvas != null
+                ? stroke.m_PreviousCanvas
+                : stroke.Canvas;
         }
 
         /// C = Mpeer * Mstroke.inverse: the canvas-space transform that carries the stroke onto
@@ -112,7 +127,7 @@ namespace TiltBrush
 
             // The transforms describe the strokes as they were drawn, in the canvas they were
             // drawn into. If they no longer share a canvas, that relationship no longer holds.
-            if (stroke.Canvas != peer.Canvas) { return false; }
+            if (EffectiveCanvas(stroke) != EffectiveCanvas(peer)) { return false; }
 
             var transforms = group.Settings?.PointerTransforms;
             int from = stroke.SymmetryPointerIndex;
@@ -340,7 +355,7 @@ namespace TiltBrush
             }
             for (int i = 0; i < strokes.Count; ++i)
             {
-                foreach (var peer in strokes[i].SymmetryPeers)
+                foreach (var peer in PeersOf(strokes[i]))
                 {
                     if (!handled.Add(peer)) { continue; }
                     GetPeerRepaintParams(
@@ -375,7 +390,7 @@ namespace TiltBrush
             }
             foreach (var stroke in strokes)
             {
-                foreach (var peer in stroke.SymmetryPeers)
+                foreach (var peer in PeersOf(stroke))
                 {
                     if (!handled.Add(peer)) { continue; }
                     if (TryGetPeerTransform(stroke, peer, xf_CS, out TrTransform peerXf))
