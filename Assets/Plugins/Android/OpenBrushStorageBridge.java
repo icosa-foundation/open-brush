@@ -385,7 +385,7 @@ public class OpenBrushStorageBridge {
 
         ChannelOpenResult result = openChannel(context, temporary, "rwt");
         if (result.handle < 0) {
-            deleteDocumentQuietly(context.getContentResolver(), temporary);
+            deleteDocumentQuietly(context, temporary, parent);
         }
         return result;
     }
@@ -419,7 +419,7 @@ public class OpenBrushStorageBridge {
             }
             ChannelOpenResult result = openChannel(context, document, "rwt");
             if (result.handle < 0) {
-                deleteDocumentQuietly(context.getContentResolver(), document);
+                deleteDocumentQuietly(context, document, parent);
             }
             return new ChannelOpenResult(
                     result.handle, result.length, document, parent, result.error);
@@ -470,7 +470,7 @@ public class OpenBrushStorageBridge {
                 }
             }
             if (probe != null) {
-                deleteDocumentQuietly(context.getContentResolver(), probe);
+                deleteDocumentQuietly(context, probe, root);
             }
         }
     }
@@ -779,9 +779,22 @@ public class OpenBrushStorageBridge {
         return current;
     }
 
-    private static void deleteDocumentQuietly(ContentResolver resolver, Uri document) {
+    private static void deleteDocumentQuietly(Context context, Uri document, Uri parent) {
         try {
-            DocumentsContract.deleteDocument(resolver, document);
+            FlagLookupResult capability = lookupDocumentFlags(context, document);
+            if (capability.error == null
+                    && (capability.flags
+                    & DocumentsContract.Document.FLAG_SUPPORTS_DELETE) == 0
+                    && (capability.flags
+                    & DocumentsContract.Document.FLAG_SUPPORTS_REMOVE) != 0
+                    && parent != null) {
+                DocumentsContract.removeDocument(
+                        context.getContentResolver(), document, parent);
+            } else {
+                // Preserve the original best-effort delete for providers that do not expose
+                // reliable flags, as well as the ordinary FLAG_SUPPORTS_DELETE case.
+                DocumentsContract.deleteDocument(context.getContentResolver(), document);
+            }
         } catch (Exception ignored) {
             // Best effort cleanup for temporary and backup documents.
         }
