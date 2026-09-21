@@ -154,6 +154,7 @@ namespace TiltBrush
             options.Rule = m_FillRule;
             options.Faceted = m_Faceted;
             options.SpiralLoft = m_SpiralLoft;
+            options.Diagnostics = m_LogAnomalies;
             if (m_SimplifyTolerance > 0f) { options.SimplifyTolerance = m_SimplifyTolerance; }
             if (m_MaxBoundaryPoints > 0) { options.MaxBoundaryPoints = m_MaxBoundaryPoints; }
             if (m_MaxVertices > 0) { options.MaxVertices = m_MaxVertices; }

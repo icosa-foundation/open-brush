@@ -92,14 +92,43 @@ namespace TiltBrush
             }
             if (anchor == 0) { return loop; }
 
-            // Loosen until we are under the cap, then tighten if we over-simplified.
             float tol = tolerance;
             List<int> simplified = SimplifyClosedAt(path, loop, anchor, tol);
-            for (int attempt = 0; attempt < 24 && simplified.Count > maxPoints; ++attempt)
+
+            // Loosen until we are under the cap, then bisect back towards it. Doubling alone
+            // overshoots badly -- a wobbly half-metre loop landed on nine boundary points
+            // when it was allowed a hundred and twenty-eight -- and each overshoot is a
+            // wasted pass over the whole path as well as a worse outline.
+            if (simplified.Count > maxPoints)
             {
-                tol *= 2f;
-                simplified = SimplifyClosedAt(path, loop, anchor, tol);
+                float tooFine = tol;
+                float coarseEnough = 0f;
+                for (int attempt = 0; attempt < 16; ++attempt)
+                {
+                    tol *= 2f;
+                    simplified = SimplifyClosedAt(path, loop, anchor, tol);
+                    if (simplified.Count <= maxPoints) { coarseEnough = tol; break; }
+                    tooFine = tol;
+                }
+                if (coarseEnough > 0f)
+                {
+                    for (int attempt = 0; attempt < 6; ++attempt)
+                    {
+                        float mid = (tooFine + coarseEnough) * 0.5f;
+                        List<int> candidate = SimplifyClosedAt(path, loop, anchor, mid);
+                        if (candidate.Count <= maxPoints)
+                        {
+                            coarseEnough = mid;
+                            simplified = candidate;
+                        }
+                        else
+                        {
+                            tooFine = mid;
+                        }
+                    }
+                }
             }
+
             for (int attempt = 0; attempt < 24 && simplified.Count < 3; ++attempt)
             {
                 tol *= 0.5f;
@@ -512,7 +541,29 @@ namespace TiltBrush
             return a < b ? ((long)a << 32) | (uint)b : ((long)b << 32) | (uint)a;
         }
 
-        private static void SubdivideOnce(List<Vector2> vertices, List<int> triangles)
+        /// The distinct undirected edges of the triangle list, as index pairs. A 1->4 pass
+        /// inserts one vertex at the midpoint of each.
+        public static void CollectUniqueEdges(List<int> triangles, List<int> outEdges)
+        {
+            outEdges.Clear();
+            var seen = new HashSet<long>();
+            for (int i = 0; i + 2 < triangles.Count; i += 3)
+            {
+                int a = triangles[i], b = triangles[i + 1], c = triangles[i + 2];
+                AddEdge(seen, outEdges, a, b);
+                AddEdge(seen, outEdges, b, c);
+                AddEdge(seen, outEdges, c, a);
+            }
+        }
+
+        private static void AddEdge(HashSet<long> seen, List<int> outEdges, int a, int b)
+        {
+            if (!seen.Add(EdgeKey(a, b))) { return; }
+            outEdges.Add(a);
+            outEdges.Add(b);
+        }
+
+        public static void SubdivideOnce(List<Vector2> vertices, List<int> triangles)
         {
             long stride = vertices.Count;
             var midpoints = new Dictionary<long, int>(triangles.Count);

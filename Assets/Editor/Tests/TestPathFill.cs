@@ -273,6 +273,7 @@ namespace TiltBrush
             };
             PathFill.Options options = PathFill.Options.Default;
             options.SimplifyTolerance = 1e-6f;
+            options.Diagnostics = true;
 
             PathFill.Result result = PathFill.Fill(figureEight, options);
             Assert.IsNotNull(result);
@@ -432,6 +433,76 @@ namespace TiltBrush
             PathFill.Result result = PathFill.Fill(path, mismatched);
             Assert.IsNotNull(result, "a mismatched colour list must not fail the fill");
             Assert.IsNull(result.Colors);
+        }
+
+        // ---------------------------------------------------------------------------
+        // Doing no more work than the stroke needs
+        // ---------------------------------------------------------------------------
+
+        [Test]
+        public void FlatStrokesAreNotSubdividedAtAll()
+        {
+            // Subdivision exists to give the lift somewhere to curve. A flat stroke has no
+            // lift, so every vertex it would add sits exactly where the coarse surface
+            // already is. Most strokes are flat, so this is the common case.
+            var flat = Loop(96, 1f, t => 0f, Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+            PathFill.Result result = PathFill.Fill(flat);
+            Assert.IsNotNull(result);
+            Assert.AreEqual(0, result.RefinementPasses);
+            Assert.AreEqual(result.Boundary.Length, result.Vertices.Length,
+                            "a flat fill needs no vertices beyond its outline");
+        }
+
+        [Test]
+        public void CurvedStrokesAreSubdividedUntilTheySettle()
+        {
+            var saddle = Loop(96, 1f, t => 0.3f * Mathf.Sin(2f * t),
+                              Vector3.right, Vector3.up, new Vector3(0f, 0f, 1f));
+            PathFill.Result result = PathFill.Fill(saddle);
+            Assert.IsNotNull(result);
+            Assert.Greater(result.RefinementPasses, 0, "a curved fill does need refining");
+            Assert.Greater(result.Vertices.Length, result.Boundary.Length);
+
+            // Refining further must not move the surface by more than the tolerance it
+            // stopped at -- that is what stopping there claimed.
+            PathFill.Options finer = PathFill.Options.Default;
+            finer.SurfaceTolerance = PathFill.Options.Default.SurfaceTolerance * 0.05f;
+            finer.MaxRefinementPasses = PathFill.Options.Default.MaxRefinementPasses + 2;
+            PathFill.Result refined = PathFill.Fill(saddle, finer);
+            Assert.IsNotNull(refined);
+            Assert.Greater(refined.Vertices.Length, result.Vertices.Length);
+
+            float diagonal = PathFillGeometry.BoundsDiagonal(saddle);
+            foreach (Vector3 v in result.Vertices)
+            {
+                float nearest = float.MaxValue;
+                foreach (Vector3 f in refined.Vertices)
+                {
+                    nearest = Mathf.Min(nearest, (v - f).magnitude);
+                }
+                Assert.Less(nearest, PathFill.Options.Default.SurfaceTolerance * diagonal * 4f,
+                            "the coarse surface must sit where the fine one does");
+            }
+        }
+
+        [Test]
+        public void DiagnosticsAreOptional()
+        {
+            // Counting the projected outline's self-intersections is quadratic in the
+            // boundary and only the log ever reads it.
+            var figureEight = new List<Vector3>
+            {
+                new Vector3(-1f, -1f, 0f), new Vector3(1f, 1f, 0f),
+                new Vector3(1f, -1f, 0f), new Vector3(-1f, 1f, 0f),
+            };
+
+            PathFill.Options quiet = PathFill.Options.Default;
+            quiet.SimplifyTolerance = 1e-6f;
+            Assert.AreEqual(0, PathFill.Fill(figureEight, quiet).ProjectedSelfIntersections);
+
+            PathFill.Options loud = quiet;
+            loud.Diagnostics = true;
+            Assert.Greater(PathFill.Fill(figureEight, loud).ProjectedSelfIntersections, 0);
         }
 
         // ---------------------------------------------------------------------------
