@@ -235,8 +235,19 @@ namespace TiltBrush
             /// Vertices that came out non-finite and were dropped back onto the plane.
             public int RepairedVertices;
 
-            /// True if this fill hit anything that should not happen.
-            public bool HasAnomalies { get { return DroppedTriangles > 0 || RepairedVertices > 0; } }
+            /// Vertices whose lift was held back to the range the boundary itself spans.
+            /// A large count means the outline overlaps itself badly enough that the
+            /// interpolation is no longer meaningful, even though the result is now bounded.
+            public int ClampedVertices;
+
+            /// True if this fill hit anything that should not happen. Clamping counts: on a
+            /// well-conditioned outline the interpolation never leaves the boundary's range,
+            /// so any clamping at all says the outline is overlapping itself badly enough
+            /// that the result, though bounded, is no longer a meaningful spanning surface.
+            public bool HasAnomalies
+            {
+                get { return DroppedTriangles > 0 || RepairedVertices > 0 || ClampedVertices > 0; }
+            }
         }
 
         /// Builds a fill surface for a closed path. The path may be given closed (last point
@@ -367,6 +378,20 @@ namespace TiltBrush
             var weights = new float[boundaryCount];
             var scratch = new PathFillGeometry.Scratch(boundaryCount);
             int repairedVertices = 0;
+            int clampedVertices = 0;
+
+            // A surface spanning a loop cannot reach further off the plane than the loop
+            // itself does: a harmonic interpolant attains its extremes on the boundary, and
+            // that is the surface being approximated here. Enforcing it costs nothing when
+            // the interpolation is well conditioned and is the difference between a bounded
+            // surface and a shard when it is not.
+            float minResidual = float.MaxValue;
+            float maxResidual = -float.MaxValue;
+            for (int i = 0; i < boundaryCount; ++i)
+            {
+                minResidual = Mathf.Min(minResidual, residuals[i]);
+                maxResidual = Mathf.Max(maxResidual, residuals[i]);
+            }
             Vector2 uvMin = PathFillGeometry.Min(verts2d);
             float uvExtent = PathFillGeometry.MaxExtent(verts2d);
             float uvScale = 1f / (uvExtent > 0f ? uvExtent : 1f);
@@ -383,6 +408,13 @@ namespace TiltBrush
                 if (!options.SkipLift)
                 {
                     for (int j = 0; j < boundaryCount; ++j) { height += weights[j] * residuals[j]; }
+                    if (height < minResidual || height > maxResidual || float.IsNaN(height))
+                    {
+                        height = float.IsNaN(height)
+                            ? 0f
+                            : Mathf.Clamp(height, minResidual, maxResidual);
+                        ++clampedVertices;
+                    }
                 }
                 if (colors != null)
                 {
@@ -425,6 +457,7 @@ namespace TiltBrush
                 ProjectedSelfIntersections = PathFillGeometry.CountSelfIntersections(scaledOutline),
                 DroppedTriangles = droppedTriangles,
                 RepairedVertices = repairedVertices,
+                ClampedVertices = clampedVertices,
             };
             result.Normals = normals ??
                 PathFillGeometry.ComputeNormals(result.Vertices, result.Triangles, normal);

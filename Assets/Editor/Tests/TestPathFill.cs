@@ -435,6 +435,165 @@ namespace TiltBrush
         }
 
         // ---------------------------------------------------------------------------
+        // Self-overlapping outlines, which is what the tool script spirals produce
+        // ---------------------------------------------------------------------------
+
+        /// ToolScript.Spiral.lua
+        private static List<Vector3> ConicalSpiral(float turns, int stepsPerTurn)
+        {
+            var points = new List<Vector3>();
+            float totalSteps = turns * stepsPerTurn;
+            for (float i = 0f; i <= 1f; i += 1f / totalSteps)
+            {
+                float angle = Mathf.PI * 2f * turns * i;
+                points.Add(new Vector3(Mathf.Cos(angle) * i, Mathf.Sin(angle) * i, -(i * 2f) + 1f));
+            }
+            return points;
+        }
+
+        /// ToolScript.SpiralSphere.lua
+        private static List<Vector3> SphericalSpiral(float turns, int steps)
+        {
+            var points = new List<Vector3>();
+            for (int i = 0; i <= steps; ++i)
+            {
+                float z = 2.0f * i / steps - 1f;
+                float radius = Mathf.Sqrt(Mathf.Max(0f, 1f - z * z));
+                float angle = (Mathf.PI * 2f * turns * i) / steps;
+                points.Add(new Vector3(radius * Mathf.Sin(angle), radius * Mathf.Cos(angle), z));
+            }
+            return points;
+        }
+
+        /// A centroid fan triangulates any outline, however self-overlapping, so the lift
+        /// can be exercised on these paths without depending on the real tessellator.
+        private static bool FanTessellate(IList<Vector2> outline, PathFillRule rule,
+                                          List<Vector2> verts, List<int> tris)
+        {
+            verts.Clear();
+            tris.Clear();
+            Vector2 centre = Vector2.zero;
+            for (int i = 0; i < outline.Count; ++i)
+            {
+                verts.Add(outline[i]);
+                centre += outline[i];
+            }
+            int hub = verts.Count;
+            verts.Add(centre / outline.Count);
+            for (int i = 0; i < outline.Count; ++i)
+            {
+                tris.Add(i);
+                tris.Add((i + 1) % outline.Count);
+                tris.Add(hub);
+            }
+            return true;
+        }
+
+        [Test]
+        public void SpiralPathsProduceNoSpikes()
+        {
+            // Mean value coordinates are only well behaved on a simple polygon. A spiral
+            // projects to an outline wound many times over, where the weights take large
+            // values of both signs; before this was handled, the lift overshot the
+            // boundary's own range by a factor of 80 to 150, which draws as spikes.
+            var paths = new List<List<Vector3>>
+            {
+                ConicalSpiral(6f, 12),
+                ConicalSpiral(20f, 32),
+                SphericalSpiral(10f, 200),
+                SphericalSpiral(40f, 500),
+            };
+
+            foreach (List<Vector3> path in paths)
+            {
+                PathFill.Options options = PathFill.Options.Default;
+                options.Tessellator = FanTessellate;
+                PathFill.Result result = PathFill.Fill(path, options);
+                Assert.IsNotNull(result);
+
+                float lo = float.MaxValue, hi = -float.MaxValue;
+                foreach (Vector3 b in result.Boundary)
+                {
+                    float h = Vector3.Dot(b - result.PlaneOrigin, result.PlaneNormal);
+                    lo = Mathf.Min(lo, h);
+                    hi = Mathf.Max(hi, h);
+                }
+                foreach (Vector3 v in result.Vertices)
+                {
+                    float h = Vector3.Dot(v - result.PlaneOrigin, result.PlaneNormal);
+                    Assert.LessOrEqual(h, hi + 1e-4f,
+                                       "the surface may not reach further off the plane than the path does");
+                    Assert.GreaterOrEqual(h, lo - 1e-4f);
+                }
+
+                // And nothing may fly away from the stroke in any direction.
+                Vector3 min = path[0], max = path[0];
+                foreach (Vector3 p in path)
+                {
+                    min = Vector3.Min(min, p);
+                    max = Vector3.Max(max, p);
+                }
+                Vector3 centre = (min + max) * 0.5f;
+                float diagonal = (max - min).magnitude;
+                foreach (Vector3 v in result.Vertices)
+                {
+                    Assert.LessOrEqual((v - centre).magnitude, diagonal);
+                }
+            }
+        }
+
+        [Test]
+        public void MeanValueWeightsStayAConvexCombinationOrFallBack()
+        {
+            // The sum of the weight magnitudes is exactly the factor by which the
+            // interpolation can overshoot: one while the weights form a convex combination,
+            // and hundreds on a spiral. Whatever the outline, it must stay bounded.
+            var outlines = new List<List<Vector2>>
+            {
+                new List<Vector2> { new Vector2(-50f, -50f), new Vector2(50f, -50f),
+                                    new Vector2(50f, 50f), new Vector2(-50f, 50f) },
+                new List<Vector2> { new Vector2(-50f, -50f), new Vector2(50f, -50f),
+                                    new Vector2(50f, 50f), new Vector2(0f, -10f),
+                                    new Vector2(-50f, 50f) },
+                new List<Vector2> { new Vector2(-50f, -50f), new Vector2(50f, 50f),
+                                    new Vector2(50f, -50f), new Vector2(-50f, 50f) },
+            };
+
+            // A spiral outline, wound six times.
+            var spiral = new List<Vector2>();
+            for (int i = 0; i < 120; ++i)
+            {
+                float t = i / 119f;
+                float angle = Mathf.PI * 2f * 6f * t;
+                spiral.Add(new Vector2(Mathf.Cos(angle) * t * 50f, Mathf.Sin(angle) * t * 50f));
+            }
+            outlines.Add(spiral);
+
+            foreach (List<Vector2> outline in outlines)
+            {
+                var weights = new float[outline.Count];
+                for (int gx = 1; gx < 12; ++gx)
+                {
+                    for (int gy = 1; gy < 12; ++gy)
+                    {
+                        var p = new Vector2(-50f + 100f * gx / 12f, -50f + 100f * gy / 12f);
+                        PathFillGeometry.MeanValueWeights(p, outline, weights);
+
+                        float sum = 0f, magnitude = 0f;
+                        foreach (float w in weights)
+                        {
+                            sum += w;
+                            magnitude += Mathf.Abs(w);
+                        }
+                        Assert.AreEqual(1f, sum, 1e-3f, "normalized weights must sum to one");
+                        Assert.LessOrEqual(magnitude, 4.5f,
+                                           "beyond this the weights extrapolate instead of interpolating");
+                    }
+                }
+            }
+        }
+
+        // ---------------------------------------------------------------------------
         // Faceted output, which the Flat Fill variant uses
         // ---------------------------------------------------------------------------
 

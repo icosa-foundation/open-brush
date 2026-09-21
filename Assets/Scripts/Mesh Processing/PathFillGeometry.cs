@@ -23,6 +23,15 @@ namespace TiltBrush
     /// free of Unity scene state, so it can be exercised directly from edit-mode tests.
     public static class PathFillGeometry
     {
+        /// Once normalized, mean value weights sum to one. On a well-behaved outline they
+        /// are also all positive, so their magnitudes sum to one as well and the result is a
+        /// convex combination that cannot leave the range of the boundary values. Where the
+        /// outline overlaps itself the weights take large values of both signs, and this sum
+        /// becomes the factor by which the interpolation can overshoot. Measured: 1.0 for a
+        /// convex outline, 2.3 for a concave one, 8.8 for a figure eight, and 266 to 535 for
+        /// the spirals the tool scripts draw. Past this, stop trusting the coordinates.
+        private const double kMaxWeightSpread = 4.0;
+
         // -------------------------------------------------------------------------------
         // Path preparation
         // -------------------------------------------------------------------------------
@@ -655,17 +664,29 @@ namespace TiltBrush
             }
 
             double totalWeight = 0.0;
+            double totalMagnitude = 0.0;
             for (int i = 0; i < n; ++i)
             {
                 int prev = (i + n - 1) % n;
                 double weight = (tanHalf[prev] + tanHalf[i]) / distances[i];
                 weights[i] = (float)weight;
                 totalWeight += weight;
+                totalMagnitude += Math.Abs(weight);
             }
 
-            if (Math.Abs(totalWeight) < 1e-12)
+            // Mean value coordinates are only well behaved on a simple polygon. Where the
+            // outline overlaps itself -- a spiral, or anything wound more than once -- the
+            // weights take large values of both signs that still sum to one after
+            // normalizing, so the total gives no warning while the interpolation swings far
+            // outside the boundary's own range. That is what a spike is. The magnitudes are
+            // what tell you: they sum to one only while the weights form a convex
+            // combination.
+            if (totalMagnitude <= 0.0 ||
+                totalMagnitude > kMaxWeightSpread * Math.Abs(totalWeight))
             {
-                // Degenerate configuration; fall back to inverse distance weighting.
+                // Inverse distance weighting instead: every weight is positive, so the
+                // result is a genuine convex combination and cannot leave the range of the
+                // boundary values. Smooth, and defined for any outline at all.
                 totalWeight = 0.0;
                 for (int i = 0; i < n; ++i)
                 {

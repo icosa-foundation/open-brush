@@ -74,6 +74,7 @@ namespace TiltBrush
 
         private int m_LastLoggedDropped;
         private int m_LastLoggedRepaired;
+        private int m_LastLoggedClamped;
         private int m_LastLoggedOversize;
 
         /// Reused across rebuilds to keep per-frame allocation down.
@@ -245,15 +246,21 @@ namespace TiltBrush
 
             if (m_LogAnomalies && fill.HasAnomalies &&
                 (fill.DroppedTriangles != m_LastLoggedDropped ||
-                 fill.RepairedVertices != m_LastLoggedRepaired))
+                 fill.RepairedVertices != m_LastLoggedRepaired ||
+                 fill.ClampedVertices != m_LastLoggedClamped))
             {
                 m_LastLoggedDropped = fill.DroppedTriangles;
                 m_LastLoggedRepaired = fill.RepairedVertices;
+                m_LastLoggedClamped = fill.ClampedVertices;
                 Debug.LogWarning(
-                    $"FillBrush: tessellation anomalies -- {fill.DroppedTriangles} triangles " +
-                    $"dropped, {fill.RepairedVertices} vertices repaired, " +
-                    $"{fill.ProjectedSelfIntersections} projected self-intersections, " +
-                    $"flatness {fill.Flatness:F3}, boundary {fill.Boundary.Length}.");
+                    $"FillBrush: {fill.DroppedTriangles} triangles dropped, " +
+                    $"{fill.RepairedVertices} vertices repaired, " +
+                    $"{fill.ClampedVertices}/{fill.Vertices.Length} vertices clamped to the " +
+                    $"boundary's range, {fill.ProjectedSelfIntersections} projected " +
+                    $"self-intersections, flatness {fill.Flatness:F3}, " +
+                    $"boundary {fill.Boundary.Length}. A self-overlapping or strongly " +
+                    $"non-planar path has no well-defined fill; the result is bounded but " +
+                    $"arbitrary.");
             }
 
             Color32 fallbackColor = m_knots[m_knots.Count - 1].color;
