@@ -62,12 +62,6 @@ namespace TiltBrush
         /// Stroke length limit, in control points.
         [SerializeField] private int m_MaxKnots;
 
-        /// If set, a stroke that winds around an axis more than once is surfaced between
-        /// its turns rather than flattened onto a plane and filled. A spiral has no interior
-        /// to fill, so this is what makes one come out as a cone or a shell instead of a
-        /// disc on an arbitrary plane.
-        [SerializeField] private bool m_SpiralLoft;
-
         /// If set, each triangle carries its own face normal for flat faceted shading,
         /// mirroring HullBrush's m_Faceted. Costs one vertex per index, so keep MaxVertices
         /// in mind when turning it on.
@@ -163,7 +157,6 @@ namespace TiltBrush
             PathFill.Options options = PathFill.Options.Default;
             options.Rule = m_FillRule;
             options.Faceted = m_Faceted;
-            options.SpiralLoft = m_SpiralLoft;
             options.Diagnostics = m_LogAnomalies;
             options.Cache = m_SimplifyCache;
             if (m_SimplifyTolerance > 0f)
@@ -281,9 +274,9 @@ namespace TiltBrush
                     $"{fill.ClampedVertices}/{fill.Vertices.Length} vertices clamped to the " +
                     $"boundary's range, {fill.ProjectedSelfIntersections} projected " +
                     $"self-intersections, flatness {fill.Flatness:F3}, " +
-                    $"boundary {fill.Boundary.Length}, mode {fill.Mode}, " +
-                    $"turns {fill.Turns:F2}. A self-overlapping or strongly non-planar path " +
-                    $"has no well-defined fill; the result is bounded but arbitrary.");
+                    $"boundary {fill.Boundary.Length}. A self-overlapping or strongly " +
+                    $"non-planar path has no well-defined fill; the result is bounded but " +
+                    $"arbitrary.");
             }
 
             Color32 fallbackColor = m_knots[m_knots.Count - 1].color;
