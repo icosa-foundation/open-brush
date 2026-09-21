@@ -424,9 +424,10 @@ namespace TiltBrush
         /// canvas. Only works for batched strokes; returns false for anything else, and for a
         /// stroke with no geometry yet.
         ///
-        /// Pass updateControlPoints: false to move only what is drawn, for a preview of a move
-        /// that hasn't been decided on yet. The stroke's data then still says where it really
-        /// is, so a save taken mid-preview is correct, and putting it back is exact.
+        /// Pass updateControlPoints: false to move only what is drawn. Be careful with this:
+        /// anything that rebuilds the stroke regenerates its geometry from its control points, so
+        /// a stroke moved this way jumps back the moment another tool touches it. Only use it
+        /// where nothing else can reach the stroke in the meantime.
         public bool TransformGeometryInPlace(TrTransform leftTransform, bool updateControlPoints = true)
         {
             if (m_Type != Type.BatchedBrushStroke || m_BatchSubset == null) { return false; }

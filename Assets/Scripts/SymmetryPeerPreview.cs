@@ -22,6 +22,12 @@ namespace TiltBrush
     /// same way a mirror's strokes follow the mirror. The peers are put back exactly as they were
     /// when the preview ends, because the move is only written into the strokes for real by the
     /// deselect that bakes it - this is a preview and owns none of the result.
+    ///
+    /// The preview moves the control points along with the geometry, even though it is only a
+    /// preview. Anything that rebuilds a stroke - tinting or repainting it, for instance -
+    /// regenerates its geometry from its control points, so a stroke previewed by moving its
+    /// geometry alone would jump back the moment another tool touched it, and the preview would
+    /// then owe it an inverse transform it had never been given.
     public static class SymmetryPeerPreview
     {
         private static readonly List<Stroke> m_Strokes = new List<Stroke>();
@@ -73,9 +79,7 @@ namespace TiltBrush
                 if (!target.IsFinite()) { continue; }
                 TrTransform step = target * m_Applied[i].inverse;
                 if (step == TrTransform.identity) { continue; }
-                // Geometry only: the peer's data still says where it really is, so the deselect
-                // works out the move from the right place and a save taken mid-drag is correct.
-                if (m_Strokes[i].TransformGeometryInPlace(step, updateControlPoints: false))
+                if (m_Strokes[i].TransformGeometryInPlace(step))
                 {
                     m_Applied[i] = target;
                 }
@@ -89,8 +93,7 @@ namespace TiltBrush
             {
                 if (m_Applied[i] != TrTransform.identity)
                 {
-                    m_Strokes[i].TransformGeometryInPlace(
-                        m_Applied[i].inverse, updateControlPoints: false);
+                    m_Strokes[i].TransformGeometryInPlace(m_Applied[i].inverse);
                 }
             }
             Forget();
