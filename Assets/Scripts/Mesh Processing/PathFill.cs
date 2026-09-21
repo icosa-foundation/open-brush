@@ -162,6 +162,10 @@ namespace TiltBrush
         /// vertex budget.
         private const int kMaxCoarseningAttempts = 3;
 
+        /// How much of the path each simplification block covers. Larger blocks simplify
+        /// slightly better and re-simplify more when the tail changes.
+        private const int kSimplifyBlockSize = 256;
+
         /// Upper bound on path samples used to build a spiral surface. The strip is linear
         /// in this, unlike the planar fill's boundary.
         private const int kMaxSpiralSamples = 2048;
@@ -174,7 +178,19 @@ namespace TiltBrush
 
             /// Boundary simplification tolerance, as a fraction of the path's bounding box
             /// diagonal. Zero or less selects the default.
+            ///
+            /// Prefer SimplifyToleranceAbsolute for a stroke being drawn. A tolerance tied
+            /// to the bounding box grows as the stroke does, so the part already drawn keeps
+            /// being re-simplified more coarsely and the outline shifts under the user:
+            /// measured on a circle, the points kept from the first hundred fell from 11 to
+            /// 6 between a quarter drawn and fully drawn.
             public float SimplifyTolerance;
+
+            /// Boundary simplification tolerance in world units. When positive this is used
+            /// instead of SimplifyTolerance, giving a tolerance that does not move as the
+            /// stroke grows. A brush should set it from its own size -- detail finer than
+            /// the brush is not visible anyway.
+            public float SimplifyToleranceAbsolute;
 
             /// Hard cap on boundary points after simplification. The tolerance is doubled
             /// until the boundary fits.
@@ -208,6 +224,11 @@ namespace TiltBrush
             /// When false, the fill is left flat on the best-fit plane (step 6 is skipped).
             /// Only useful for debugging and for callers that want a planar patch.
             public bool SkipLift;
+
+            /// Optional memo for boundary simplification, which is otherwise repeated over
+            /// the whole path on every call. A caller rebuilding the same growing stroke
+            /// should keep one and pass it every time. It never changes the result.
+            public PathFillGeometry.SimplifyCache Cache;
 
             /// When set, measurements that exist only to be reported are computed. Counting
             /// the projected outline's self-intersections is quadratic in the boundary, and
@@ -325,12 +346,28 @@ namespace TiltBrush
             float diagonal = PathFillGeometry.BoundsDiagonal(path);
             if (diagonal <= 0f) { return null; }
 
-            float tolerance = (options.SimplifyTolerance > 0f ? options.SimplifyTolerance : 0.002f) * diagonal;
-            List<int> loopIndices = PathFillGeometry.WeldAndOpen(path, diagonal * kWeldFraction);
-            if (loopIndices.Count < 3) { return null; }
+            float tolerance = options.SimplifyToleranceAbsolute > 0f
+                ? options.SimplifyToleranceAbsolute
+                : (options.SimplifyTolerance > 0f ? options.SimplifyTolerance : 0.002f) * diagonal;
+            List<int> welded = PathFillGeometry.WeldAndOpen(path, diagonal * kWeldFraction);
+            if (welded.Count < 3) { return null; }
 
             int maxBoundary = Mathf.Max(3, options.MaxBoundaryPoints > 0 ? options.MaxBoundaryPoints : 250);
-            loopIndices = PathFillGeometry.SimplifyClosed(path, loopIndices, tolerance, maxBoundary);
+
+            // Simplify in fixed blocks so a growing stroke only pays for its tail. Only
+            // sound because the tolerance no longer moves as the stroke grows.
+            List<int> loopIndices = PathFillGeometry.SimplifyBlocks(
+                path, welded, tolerance, kSimplifyBlockSize, options.Cache);
+
+            // Over the cap the tolerance itself has to be searched for, which cannot be
+            // memoized. Run that search on what the blocks already produced rather than on
+            // the raw path: it is the same kind of simplification applied again, only to far
+            // fewer points, and it keeps the cached work instead of throwing it away.
+            if (loopIndices.Count > maxBoundary)
+            {
+                loopIndices = PathFillGeometry.SimplifyClosed(
+                    path, loopIndices, tolerance, maxBoundary);
+            }
             if (loopIndices.Count < 3) { return null; }
 
             int boundaryCount = loopIndices.Count;

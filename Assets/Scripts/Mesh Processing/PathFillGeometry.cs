@@ -74,6 +74,98 @@ namespace TiltBrush
             return result;
         }
 
+        /// Memo for <see cref="SimplifyBlocks"/>, owned by a caller that simplifies the same
+        /// growing path over and over -- which is every brush, once per control point.
+        public class SimplifyCache
+        {
+            internal readonly List<int> Completed = new List<int>();
+            internal float Tolerance = float.NaN;
+            internal int BlockSize;
+            internal int CompletedBlocks;
+            internal int LastCoveredIndex = -1;
+
+            public void Clear()
+            {
+                Completed.Clear();
+                Tolerance = float.NaN;
+                BlockSize = 0;
+                CompletedBlocks = 0;
+                LastCoveredIndex = -1;
+            }
+        }
+
+        /// Ramer-Douglas-Peucker over a path cut into fixed blocks, so that a growing path
+        /// only pays for its tail. Blocks are bounded by index and share their endpoints, so
+        /// the result depends only on the path, the tolerance and the block size -- the
+        /// cache memoizes, it does not change the answer. That matters because strokes are
+        /// rebuilt from their control points on load and must come back identical.
+        ///
+        /// The cost of this is a few forced vertices, one per block boundary, which a plain
+        /// whole-path pass would have been free to drop.
+        public static List<int> SimplifyBlocks(IList<Vector3> path, List<int> loop,
+                                               float tolerance, int blockSize,
+                                               SimplifyCache cache)
+        {
+            int n = loop.Count;
+            if (n <= 2 || blockSize < 2) { return new List<int>(loop); }
+
+            bool reusable = cache != null
+                            && cache.Tolerance == tolerance
+                            && cache.BlockSize == blockSize
+                            && cache.CompletedBlocks * blockSize < n
+                            && cache.LastCoveredIndex >= 0
+                            && loop[cache.CompletedBlocks * blockSize] == cache.LastCoveredIndex;
+            if (cache != null && !reusable)
+            {
+                cache.Clear();
+                cache.Tolerance = tolerance;
+                cache.BlockSize = blockSize;
+            }
+
+            var result = new List<int>(n);
+            int completedBlocks = cache != null ? cache.CompletedBlocks : 0;
+            if (cache != null) { result.AddRange(cache.Completed); }
+
+            // Blocks share endpoints, so each one after the first contributes all but its
+            // first index.
+            var block = new List<int>(blockSize + 1);
+            while ((completedBlocks + 1) * blockSize <= n - 1)
+            {
+                int start = completedBlocks * blockSize;
+                block.Clear();
+                for (int i = start; i <= start + blockSize; ++i) { block.Add(loop[i]); }
+                List<int> simplified = Simplify(path, block, tolerance);
+                for (int i = result.Count == 0 ? 0 : 1; i < simplified.Count; ++i)
+                {
+                    result.Add(simplified[i]);
+                }
+                ++completedBlocks;
+            }
+
+            if (cache != null)
+            {
+                cache.Completed.Clear();
+                cache.Completed.AddRange(result);
+                cache.CompletedBlocks = completedBlocks;
+                cache.LastCoveredIndex = loop[completedBlocks * blockSize];
+            }
+
+            // The trailing partial block is redone every time; it is the only part that can
+            // still change.
+            int tailStart = completedBlocks * blockSize;
+            if (tailStart < n - 1)
+            {
+                block.Clear();
+                for (int i = tailStart; i < n; ++i) { block.Add(loop[i]); }
+                List<int> tail = Simplify(path, block, tolerance);
+                for (int i = result.Count == 0 ? 0 : 1; i < tail.Count; ++i)
+                {
+                    result.Add(tail[i]);
+                }
+            }
+            return result;
+        }
+
         /// Ramer-Douglas-Peucker simplification of a closed loop, as indices into `path`.
         /// The loop is cut at two far-apart anchors so the recursion has well-defined
         /// endpoints; the tolerance is then adjusted until the result has between 3 and

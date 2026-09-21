@@ -49,7 +49,7 @@ MonoBehaviour:
   m_FillRule: 0
   m_SpiralLoft: 1
   m_Faceted: 1
-  m_SimplifyTolerance: 0.002
+  m_SimplifyTolerance: 0.25
   m_MaxBoundaryPoints: 128
   m_MaxVertices: 3600
   m_MaxRefinementPasses: 2

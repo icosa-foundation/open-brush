@@ -41,8 +41,11 @@ namespace TiltBrush
         /// Which regions count as inside when the loop crosses itself.
         [SerializeField] private PathFillRule m_FillRule;
 
-        /// Boundary simplification tolerance, as a fraction of the loop's bounding box
-        /// diagonal. Larger is simpler and cheaper.
+        /// Boundary simplification tolerance, as a multiple of the brush's own size.
+        /// Anchoring it to the brush rather than to the stroke's bounding box keeps it
+        /// constant for the whole stroke, so the outline of what has already been drawn
+        /// stops shifting as the stroke grows -- and detail finer than the brush is not
+        /// visible anyway.
         [SerializeField] private float m_SimplifyTolerance;
 
         /// Cap on boundary points after simplification. Drives the cost of every stage.
@@ -87,6 +90,10 @@ namespace TiltBrush
         private List<Vector3> m_PathPositions;
         private List<Color32> m_PathColors;
 
+        /// Boundary simplification is repeated over the whole stroke on every control point
+        /// otherwise, which is the largest single cost on a long stroke.
+        private PathFillGeometry.SimplifyCache m_SimplifyCache;
+
         public FillBrush()
             : base(bCanBatch: true,
                 upperBoundVertsPerKnot: 1,
@@ -94,6 +101,7 @@ namespace TiltBrush
         {
             m_PathPositions = new List<Vector3>();
             m_PathColors = new List<Color32>();
+            m_SimplifyCache = new PathFillGeometry.SimplifyCache();
         }
 
         //
@@ -104,6 +112,7 @@ namespace TiltBrush
         {
             base.InitBrush(desc, localPointerXf);
             SetDoubleSided(desc);
+            m_SimplifyCache.Clear();
             m_geometry.Layout = GetVertexLayout(desc);
         }
 
@@ -127,6 +136,7 @@ namespace TiltBrush
         public override void ResetBrushForPreview(TrTransform localPointerXf)
         {
             base.ResetBrushForPreview(localPointerXf);
+            m_SimplifyCache.Clear();
             OnChanged_MakeGeometry();
         }
 
@@ -155,7 +165,12 @@ namespace TiltBrush
             options.Faceted = m_Faceted;
             options.SpiralLoft = m_SpiralLoft;
             options.Diagnostics = m_LogAnomalies;
-            if (m_SimplifyTolerance > 0f) { options.SimplifyTolerance = m_SimplifyTolerance; }
+            options.Cache = m_SimplifyCache;
+            if (m_SimplifyTolerance > 0f)
+            {
+                options.SimplifyToleranceAbsolute =
+                    m_SimplifyTolerance * m_BaseSize_PS * POINTER_TO_LOCAL;
+            }
             if (m_MaxBoundaryPoints > 0) { options.MaxBoundaryPoints = m_MaxBoundaryPoints; }
             if (m_MaxVertices > 0) { options.MaxVertices = m_MaxVertices; }
 

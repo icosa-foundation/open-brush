@@ -440,6 +440,76 @@ namespace TiltBrush
         // ---------------------------------------------------------------------------
 
         [Test]
+        public void SimplifyCacheNeverChangesTheResult()
+        {
+            // Strokes are rebuilt from their control points on load, so a stroke drawn with
+            // a warm cache and the same stroke simplified cold must agree exactly.
+            var full = new List<Vector3>();
+            var random = new System.Random(3);
+            const int kPoints = 900;
+            for (int i = 0; i < kPoints; ++i)
+            {
+                float t = 2f * Mathf.PI * i / kPoints;
+                float r = 0.5f + 0.005f * (float)(random.NextDouble() - 0.5);
+                full.Add(new Vector3(r * Mathf.Cos(t), r * Mathf.Sin(t), 0f));
+            }
+
+            const float kTolerance = 0.0028f;
+            const int kBlock = 256;
+            var cache = new PathFillGeometry.SimplifyCache();
+
+            for (int prefix = 8; prefix <= full.Count; prefix += 11)
+            {
+                List<Vector3> part = full.GetRange(0, prefix);
+                List<int> welded = PathFillGeometry.WeldAndOpen(
+                    part, PathFillGeometry.BoundsDiagonal(part) * 1e-5f);
+
+                List<int> warm = PathFillGeometry.SimplifyBlocks(
+                    part, welded, kTolerance, kBlock, cache);
+                List<int> cold = PathFillGeometry.SimplifyBlocks(
+                    part, welded, kTolerance, kBlock, null);
+
+                Assert.AreEqual(cold, warm, "the cache must memoize, not decide");
+            }
+        }
+
+        [Test]
+        public void AnAbsoluteToleranceHoldsTheOutlineStillWhileDrawing()
+        {
+            // A tolerance tied to the bounding box grows as the stroke does, so the part
+            // already drawn keeps being re-simplified more coarsely and its outline shifts.
+            var full = new List<Vector3>();
+            const int kPoints = 600;
+            for (int i = 0; i < kPoints; ++i)
+            {
+                float t = 2f * Mathf.PI * i / kPoints;
+                full.Add(new Vector3(0.5f * Mathf.Cos(t), 0.5f * Mathf.Sin(t), 0f));
+            }
+
+            var keptEarly = new List<int>();
+            foreach (int prefix in new[] { 150, 300, 450, 600 })
+            {
+                List<Vector3> part = full.GetRange(0, prefix);
+                List<int> welded = PathFillGeometry.WeldAndOpen(
+                    part, PathFillGeometry.BoundsDiagonal(part) * 1e-5f);
+                List<int> simplified = PathFillGeometry.SimplifyClosed(part, welded, 0.0028f, 128);
+
+                int count = 0;
+                foreach (int index in simplified)
+                {
+                    if (index < 100) { ++count; }
+                }
+                keptEarly.Add(count);
+            }
+
+            for (int i = 1; i < keptEarly.Count; ++i)
+            {
+                Assert.AreEqual(keptEarly[0], keptEarly[i],
+                                "the outline of what is already drawn must not move");
+            }
+        }
+
+        [Test]
         public void FlatStrokesAreNotSubdividedAtAll()
         {
             // Subdivision exists to give the lift somewhere to curve. A flat stroke has no
