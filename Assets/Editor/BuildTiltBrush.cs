@@ -1194,8 +1194,10 @@ static class BuildTiltBrush
             EnableRequiredFeature<OpenXR.Extensions.OpenXRAndroidSettings>(settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRSupportFeature>(
                 settings);
-            EnableRequiredFeature<
-                UnityEngine.XR.OpenXR.Features.Android.AndroidXRBuildProfileFeature>(settings);
+            // AndroidXRBuildProfileFeature is internal in com.unity.xr.androidxr-openxr 1.4.1,
+            // so locate it by runtime type name instead of referencing the inaccessible type.
+            EnableRequiredFeatureByTypeName(settings,
+                "UnityEngine.XR.OpenXR.Features.Android.AndroidXRBuildProfileFeature");
 
             // Foveated rendering currently crashes Android AndroidXR and Android Viewer
             // AndroidXR. AR Face is not used by Open Brush. Keep main's serialized defaults
@@ -1248,6 +1250,26 @@ static class BuildTiltBrush
             requiredFeatures.Add(feature);
             feature.enabled = true;
             Debug.Log($"Enabled required OpenXR feature {typeof(T).FullName} for " +
+                $"this {m_targetGroup} build.");
+        }
+
+        void EnableRequiredFeatureByTypeName(
+            UnityEngine.XR.OpenXR.OpenXRSettings settings, string featureTypeName)
+        {
+            var features = new List<UnityEngine.XR.OpenXR.Features.OpenXRFeature>();
+            settings.GetFeatures(features);
+            var feature = features.Find(candidate =>
+                candidate.GetType().FullName == featureTypeName);
+            if (feature == null)
+            {
+                throw new BuildFailedException(
+                    $"Could not find required OpenXR feature {featureTypeName}. " +
+                    "Is its package installed?");
+            }
+
+            requiredFeatures.Add(feature);
+            feature.enabled = true;
+            Debug.Log($"Enabled required OpenXR feature {featureTypeName} for " +
                 $"this {m_targetGroup} build.");
         }
 
