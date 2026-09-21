@@ -2285,8 +2285,24 @@ namespace TiltBrush
         private void AddStrokeToActiveSymmetryGroup(Stroke stroke, int pointerIndex)
         {
             if (stroke == null || m_ActiveSymmetrySettings == null) { return; }
-            m_ActiveSymmetryStrokeGroup ??= new SymmetryStrokeGroup(m_ActiveSymmetrySettings);
+            m_ActiveSymmetryStrokeGroup ??=
+                new SymmetryStrokeGroup(m_ActiveSymmetrySettings, GetMirrorForNewStrokes());
             stroke.JoinSymmetryGroup(m_ActiveSymmetryStrokeGroup, pointerIndex);
+        }
+
+        /// The mirror new strokes are linked to: the one the widget is showing. Symmetry that
+        /// the widget doesn't stand for - scripted, two-handed - has no mirror, so those strokes
+        /// keep their placement and are not moved when a mirror is.
+        private SymmetryMirror GetMirrorForNewStrokes()
+        {
+            switch (m_CurrentSymmetryMode)
+            {
+                case SymmetryMode.SinglePlane:
+                case SymmetryMode.MultiMirror:
+                    return SymmetryMirrors.EnsureActive();
+                default:
+                    return null;
+            }
         }
 
         /// Closes off the current line's symmetry group. A group that ended up with a single

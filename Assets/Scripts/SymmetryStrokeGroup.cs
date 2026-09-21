@@ -33,11 +33,21 @@ namespace TiltBrush
         /// The symmetry settings that were in place when this group was drawn; may be null for
         /// groups loaded from a sketch that didn't record them. Immutable, and usually shared
         /// with every other group drawn with the same settings.
-        public SymmetrySettingsSnapshot Settings { get; }
+        ///
+        /// This is where the group's strokes actually sit. It is deliberately not the mirror's
+        /// current settings: the mirror can have moved or been changed since, and the difference
+        /// between the two is what moving the mirror applies to these strokes.
+        public SymmetrySettingsSnapshot Settings { get; internal set; }
 
-        public SymmetryStrokeGroup(SymmetrySettingsSnapshot settings)
+        /// The mirror this group was drawn under, if it was drawn under one. Null for symmetry
+        /// that isn't the widget's - scripted symmetry, two-handed - which nothing can move
+        /// after the fact.
+        public SymmetryMirror Mirror { get; internal set; }
+
+        public SymmetryStrokeGroup(SymmetrySettingsSnapshot settings, SymmetryMirror mirror = null)
         {
             Settings = settings;
+            Mirror = mirror;
         }
 
         /// The strokes in the group, in the order they were recorded, which for a freshly-drawn

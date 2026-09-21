@@ -100,7 +100,7 @@ namespace TiltBrush
         // and ignore it, and skip the two stroke fields as unknown single-word extensions.
 
         private const uint SYMMETRY_TABLE_SENTINEL = 0x53594d54; // 'SYMT'
-        private const int SYMMETRY_TABLE_VERSION = 1;
+        private const int SYMMETRY_TABLE_VERSION = 2;
         private const uint kMaxSymmetrySettingsBytes = 64 * 1024;
 
         /// Assigns file-local ids to the symmetry groups used by a set of strokes, and dedupes
@@ -113,6 +113,12 @@ namespace TiltBrush
                 new Dictionary<SymmetryStrokeGroup, uint>();
             // Per group, the 1-based index of its settings in m_Settings; 0 if it has none.
             private readonly List<uint> m_GroupSettings = new List<uint>();
+            // Per group, the 1-based index of its mirror in m_Mirrors; 0 if it has none.
+            private readonly List<uint> m_GroupMirrors = new List<uint>();
+            // The mirrors the groups were drawn under, by identity, in id order.
+            private readonly List<SymmetryMirror> m_Mirrors = new List<SymmetryMirror>();
+            private readonly Dictionary<SymmetryMirror, uint> m_MirrorIds =
+                new Dictionary<SymmetryMirror, uint>();
             // Distinct settings, deduped by value.
             private readonly List<SymmetrySettingsSnapshot> m_Settings =
                 new List<SymmetrySettingsSnapshot>();
@@ -140,6 +146,7 @@ namespace TiltBrush
                 id = (uint)m_GroupSettings.Count + 1;
                 m_GroupIds[group] = id;
                 m_GroupSettings.Add(AddSettings(group.Settings));
+                m_GroupMirrors.Add(AddMirror(group.Mirror));
                 return id;
             }
 
@@ -150,6 +157,16 @@ namespace TiltBrush
                 id = (uint)m_Settings.Count + 1;
                 m_SettingsIds[settings] = id;
                 m_Settings.Add(settings);
+                return id;
+            }
+
+            private uint AddMirror(SymmetryMirror mirror)
+            {
+                if (mirror == null) { return 0; }
+                if (m_MirrorIds.TryGetValue(mirror, out uint id)) { return id; }
+                id = (uint)m_Mirrors.Count + 1;
+                m_MirrorIds[mirror] = id;
+                m_Mirrors.Add(mirror);
                 return id;
             }
 
@@ -178,6 +195,27 @@ namespace TiltBrush
                 {
                     writer.UInt32(settingsId);
                 }
+
+                // Mirrors: the identity a group's strokes follow, which outlives any particular
+                // settings the mirror had. Each carries its current settings so that a sketch can
+                // offer it back to the user.
+                writer.Int32(m_Mirrors.Count);
+                foreach (var mirror in m_Mirrors)
+                {
+                    writer.Guid(mirror.Id);
+                    byte[] data = mirror.Settings != null
+                        ? mirror.Settings.ToBytes()
+                        : System.Array.Empty<byte>();
+                    writer.UInt32((uint)data.Length);
+                    if (data.Length > 0)
+                    {
+                        writer.BaseStream.Write(data, 0, data.Length);
+                    }
+                }
+                foreach (uint mirrorId in m_GroupMirrors)
+                {
+                    writer.UInt32(mirrorId);
+                }
             }
         }
 
@@ -199,13 +237,18 @@ namespace TiltBrush
 
             var settings = new List<SymmetrySettingsSnapshot>();
             var groupSettings = new List<uint>();
+            var mirrors = new List<SymmetryMirror>();
+            var groupMirrors = new List<uint>();
 
             var buf = new byte[4];
             if (ReadExactly(stream, buf, 4) &&
                 (uint)(buf[0] | buf[1] << 8 | buf[2] << 16 | buf[3] << 24) == SYMMETRY_TABLE_SENTINEL)
             {
                 var reader = new SketchBinaryReader(stream);
-                if (reader.Int32() == SYMMETRY_TABLE_VERSION)
+                // Version 1 had no mirrors; its groups load with their peers and settings intact
+                // and simply have no mirror to follow.
+                int version = reader.Int32();
+                if (version == 1 || version == SYMMETRY_TABLE_VERSION)
                 {
                     // A stroke can reference at most one group, so a well-formed table is
                     // bounded by the strokes that referenced it. Anything larger is corrupt.
@@ -222,6 +265,32 @@ namespace TiltBrush
                     for (int i = 0; i < numGroups && i < pending.Count; ++i)
                     {
                         groupSettings.Add(reader.UInt32());
+                    }
+
+                    int numMirrors = version >= 2 ? reader.Int32() : 0;
+                    for (int i = 0; i < numMirrors && i < pending.Count; ++i)
+                    {
+                        Guid mirrorGuid = reader.ReadGuid();
+                        uint size = reader.UInt32();
+                        SymmetrySettingsSnapshot mirrorSettings = null;
+                        if (size > 0 && size <= kMaxSymmetrySettingsBytes)
+                        {
+                            var data = new byte[size];
+                            if (!ReadExactly(stream, data, (int)size)) { break; }
+                            mirrorSettings = SymmetrySettingsSnapshot.FromBytes(data);
+                        }
+                        else if (size > 0)
+                        {
+                            break;
+                        }
+                        mirrors.Add(SymmetryMirrors.GetOrCreate(mirrorGuid, mirrorSettings));
+                    }
+                    if (mirrors.Count == numMirrors)
+                    {
+                        for (int i = 0; i < groupSettings.Count; ++i)
+                        {
+                            groupMirrors.Add(reader.UInt32());
+                        }
                     }
                 }
             }
@@ -245,7 +314,11 @@ namespace TiltBrush
                 var groupSnapshot = (settingsId > 0 && settingsId <= settings.Count)
                     ? settings[(int)settingsId - 1]
                     : null;
-                groups[i] = new SymmetryStrokeGroup(groupSnapshot);
+                uint mirrorId = i < groupMirrors.Count ? groupMirrors[(int)i] : 0;
+                var groupMirror = (mirrorId > 0 && mirrorId <= mirrors.Count)
+                    ? mirrors[(int)mirrorId - 1]
+                    : null;
+                groups[i] = new SymmetryStrokeGroup(groupSnapshot, groupMirror);
             }
 
             foreach (var item in pending)
