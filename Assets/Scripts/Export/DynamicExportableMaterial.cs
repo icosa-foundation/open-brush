@@ -14,12 +14,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace TiltBrush
 {
 
-    public class DynamicExportableMaterial : IExportableMaterial
+    public class DynamicExportableMaterial : IExportableMaterial, IExportableMaterialTextureSource
     {
         // Constructor
         public DynamicExportableMaterial(
@@ -37,6 +38,7 @@ namespace TiltBrush
             m_FloatParams = new Dictionary<string, float>();
             m_VectorParams = new Dictionary<string, Vector3>();
             m_ColorParams = new Dictionary<string, Color>();
+            m_TextureSources = new Dictionary<string, TextureSource>();
 
             // Set defaults
 
@@ -113,6 +115,34 @@ namespace TiltBrush
 
         #endregion
 
+        public void SetTextureSource(string textureUri, string sourceIdentity, Func<Stream> openRead)
+        {
+            if (string.IsNullOrEmpty(textureUri))
+            {
+                throw new ArgumentNullException(nameof(textureUri));
+            }
+            if (string.IsNullOrEmpty(sourceIdentity))
+            {
+                throw new ArgumentNullException(nameof(sourceIdentity));
+            }
+            if (openRead == null) { throw new ArgumentNullException(nameof(openRead)); }
+            m_TextureSources[textureUri] = new TextureSource(sourceIdentity, openRead);
+        }
+
+        public bool TryGetTextureSource(
+            string textureUri, out string sourceIdentity, out Func<Stream> openRead)
+        {
+            if (m_TextureSources.TryGetValue(textureUri, out TextureSource source))
+            {
+                sourceIdentity = source.Identity;
+                openRead = source.OpenRead;
+                return true;
+            }
+            sourceIdentity = null;
+            openRead = null;
+            return false;
+        }
+
         /// The descriptor this material was based from.
         /// This can be useful when exporting to formats like fbx that don't have good material support
         public BrushDescriptor Parent { get; }
@@ -125,6 +155,19 @@ namespace TiltBrush
         private Dictionary<string, float> m_FloatParams;
         private Dictionary<string, Vector3> m_VectorParams;
         private Dictionary<string, Color> m_ColorParams;
+        private readonly Dictionary<string, TextureSource> m_TextureSources;
+
+        private readonly struct TextureSource
+        {
+            public readonly string Identity;
+            public readonly Func<Stream> OpenRead;
+
+            public TextureSource(string identity, Func<Stream> openRead)
+            {
+                Identity = identity;
+                OpenRead = openRead;
+            }
+        }
     }
 
 } // namespace TiltBrush

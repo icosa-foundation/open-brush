@@ -373,7 +373,7 @@ namespace TiltBrush
                         continue;
                     }
                     ExportFileReference fileRef = ExportFileReference.GetOrCreateSafeLocal(
-                        G.m_disambiguationContext, textureUri, exportableMaterial.UriBase,
+                        G.m_disambiguationContext, exportableMaterial, textureUri,
                         $"{meshNamespace}_{Path.GetFileName(textureUri)}");
                     AddTextureToMaterial(G, fileRef, material, parameterName);
                 }
@@ -391,8 +391,6 @@ namespace TiltBrush
             FbxSurfaceLambert fbxMaterial,
             string parameterName)
         {
-            Debug.Assert(File.Exists(fileRef.m_originalLocation));
-
             var destPath = Path.Combine(G.m_outputDir, fileRef.m_uri);
             if (!File.Exists(destPath))
             {
@@ -400,7 +398,7 @@ namespace TiltBrush
                 {
                     return;
                 }
-                File.Copy(fileRef.m_originalLocation, destPath);
+                fileRef.CopyTo(destPath);
             }
 
             // It's kind of weird that the parameter name is used for the texture node's name,

@@ -157,9 +157,6 @@ namespace TiltBrush
         public static string LocalSplatPoseStagingPath =>
             Path.Combine(LocalStagingPath, "SplatPoses");
 
-        public static string LocalReferenceImageExportStagingPath =>
-            Path.Combine(LocalStagingPath, "ReferenceImageExports");
-
         /// A logical anchor, not a directory: nothing is written here and nothing creates it.
         /// The media catalogs are written against local paths, so under scoped storage they are
         /// given this prefix and the SAF-relative directory is recovered by subtracting it again.

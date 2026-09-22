@@ -152,6 +152,32 @@ namespace TiltBrush
         }
 
         [Test]
+        public void TestStreamBackedExportFileReferenceCopiesDirectlyToDestination()
+        {
+            byte[] expected = { 1, 2, 3, 4 };
+            var material = new DynamicExportableMaterial(
+                null, "stream-test", Guid.NewGuid(), null);
+            material.SetTextureSource(
+                "image.png", "provider-document-id",
+                () => new MemoryStream(expected, writable: false));
+            ExportFileReference file = ExportFileReference.GetOrCreateSafeLocal(
+                new ExportFileReference.DisambiguationContext(),
+                material, "image.png");
+            string destination = Path.GetTempFileName();
+            File.Delete(destination);
+            try
+            {
+                file.CopyTo(destination);
+                CollectionAssert.AreEqual(expected, File.ReadAllBytes(destination));
+                Assert.IsNull(file.m_originalLocation);
+            }
+            finally
+            {
+                File.Delete(destination);
+            }
+        }
+
+        [Test]
         public void TestCreateUniqueName()
         {
             HashSet<string> names = new HashSet<string>();
