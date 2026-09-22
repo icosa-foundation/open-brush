@@ -182,6 +182,11 @@ namespace TiltBrush
             ControllerConsoleScript.m_Instance?.AddNewLine(message);
             OutputWindowScript.m_Instance?.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, message, fPopScalar: 0.5f);
+            // The picker has already persisted the new root, while every catalog and document
+            // handle in this process still belongs to the old one. Do not allow the partially
+            // switched session to perform another storage operation.
+            Application.Quit();
+            Debug.Break();
         }
 
         public void OnOpenBrushFolderCanceled(string unused)
