@@ -71,9 +71,9 @@ namespace TiltBrush
         }
 
         private static GameObject _ImportUsingLegacyGltf(
-            string localPath, string assetLocation, IUriLoader loader = null)
+            string localPath, string assetLocation)
         {
-            loader = loader ?? new TiltBrushUriLoader(
+            var loader = new TiltBrushUriLoader(
                 localPath, assetLocation, loadImages: false);
             var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
             var importOptions = new GltfImportOptions
@@ -84,125 +84,6 @@ namespace TiltBrush
             };
             ImportGltf.GltfImportResult result = ImportGltf.Import(localPath, loader, materialCollector, importOptions);
             return result.root;
-        }
-
-        /// The legacy importer insists on opening the primary glTF by filename. Materialize that
-        /// one file, then copy sidecars lazily as its ordinary URI loader asks for them. This is
-        /// only the exception fallback; the normal UnityGLTF path remains stream-backed.
-        private sealed class SafLegacyGltfLoader : IUriLoader, IDisposable
-        {
-            private readonly IUserStorageBackend m_Backend;
-            private readonly StorageArea m_Area;
-            private readonly string m_Directory;
-            private readonly string m_TemporaryAreaRoot;
-            private readonly TiltBrushUriLoader m_LocalLoader;
-
-            public string PrimaryPath { get; }
-            public string AssetLocation => Path.GetDirectoryName(PrimaryPath);
-
-            public SafLegacyGltfLoader(
-                IUserStorageBackend backend, StorageArea area,
-                string directory, string fileName)
-            {
-                m_Backend = backend;
-                m_Area = area;
-                m_Directory = directory;
-                m_TemporaryAreaRoot = Path.Combine(
-                    Application.temporaryCachePath,
-                    "OpenBrushSafLegacyGltf",
-                    Guid.NewGuid().ToString("N"));
-                try
-                {
-                    if (!SafGltfDataLoader.TryResolveAreaRelativePath(
-                            directory, fileName, out string primaryRelativePath))
-                    {
-                        throw new IOException($"Invalid SAF glTF path: {fileName}");
-                    }
-                    PrimaryPath = Materialize(primaryRelativePath);
-                    m_LocalLoader = new TiltBrushUriLoader(
-                        PrimaryPath, AssetLocation, loadImages: false);
-                }
-                catch
-                {
-                    DeleteTemporaryFiles();
-                    throw;
-                }
-            }
-
-            public IBufferReader Load(string uri)
-            {
-                if (uri != null)
-                {
-                    string sanitized = IcosaRawAsset.GetPolySanitizedFilePath(uri);
-                    if (!SafGltfDataLoader.TryResolveAreaRelativePath(
-                            m_Directory, sanitized, out string relativePath))
-                    {
-                        throw new IOException($"glTF reference escapes shared storage: {uri}");
-                    }
-                    Materialize(relativePath);
-                }
-                return m_LocalLoader.Load(uri);
-            }
-
-            public bool CanLoadImages() => false;
-            public TiltBrushToolkit.RawImage LoadAsImage(string uri) =>
-                throw new NotSupportedException();
-
-#if UNITY_EDITOR
-            public Texture2D LoadAsAsset(string uri) => m_LocalLoader.LoadAsAsset(uri);
-#endif
-
-            public void Dispose()
-            {
-                DeleteTemporaryFiles();
-            }
-
-            private void DeleteTemporaryFiles()
-            {
-                try
-                {
-                    if (Directory.Exists(m_TemporaryAreaRoot))
-                    {
-                        Directory.Delete(m_TemporaryAreaRoot, recursive: true);
-                    }
-                }
-                catch (Exception e) when (
-                    e is IOException || e is UnauthorizedAccessException)
-                {
-                    Debug.LogWarning(
-                        $"Could not remove legacy glTF staging: {e.Message}");
-                }
-            }
-
-            private string Materialize(string areaRelativePath)
-            {
-                string destination = Path.GetFullPath(Path.Combine(
-                    m_TemporaryAreaRoot,
-                    areaRelativePath.Replace('/', Path.DirectorySeparatorChar)));
-                string rootPrefix = Path.GetFullPath(m_TemporaryAreaRoot).TrimEnd(
-                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
-                    Path.DirectorySeparatorChar;
-                if (!destination.StartsWith(rootPrefix, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new IOException(
-                        $"glTF reference escapes temporary storage: {areaRelativePath}");
-                }
-                if (File.Exists(destination))
-                {
-                    return destination;
-                }
-
-                Directory.CreateDirectory(Path.GetDirectoryName(destination));
-                using (Stream input = m_Backend.OpenRead(
-                    m_Area, areaRelativePath, requireSeekable: false,
-                    System.Threading.CancellationToken.None))
-                using (var output = new FileStream(
-                    destination, FileMode.CreateNew, FileAccess.Write, FileShare.None))
-                {
-                    input.CopyTo(output);
-                }
-                return destination;
-            }
         }
 
         /// A model in the shared media library can be read without being copied out of it. Returns
@@ -329,23 +210,21 @@ namespace TiltBrush
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to import using UnityGltf. Falling back to legacy import.\nUnityGltf Exception: {e}");
-                // Fall back to the older import code
-                GameObject go;
-                if (TryGetStorageModelLocation(
-                        model, out StorageArea area, out string directory, out string fileName))
+                if (TryGetStorageModelLocation(model, out _, out _, out _))
                 {
-                    using (var loader = new SafLegacyGltfLoader(
-                        UserStorage.Backend, area, directory, fileName))
-                    {
-                        go = _ImportUsingLegacyGltf(
-                            loader.PrimaryPath, loader.AssetLocation, loader);
-                    }
+                    // The legacy Tilt Brush importer opens the primary glTF by filename. Do not
+                    // copy a SAF model and its dependency tree into private storage to satisfy a
+                    // path-only API. Keep this fallback disabled until ImportGltf/GltfFileInfo
+                    // accepts the primary document as a stream; sidecars already use IUriLoader.
+                    Debug.LogError(
+                        $"Failed to import SAF model using UnityGltf. The path-only legacy " +
+                        $"fallback is deliberately disabled.\nUnityGltf Exception: {e}");
+                    throw;
                 }
-                else
-                {
-                    go = _ImportUsingLegacyGltf(localPath, assetLocation);
-                }
+                Debug.LogError(
+                    $"Failed to import using UnityGltf. Falling back to legacy import.\n" +
+                    $"UnityGltf Exception: {e}");
+                GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);
             }
