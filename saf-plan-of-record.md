@@ -44,10 +44,10 @@ Everything else. In particular **no save has ever been performed on a device.**
 The write path — temp document, fsync, rename sequence — has only ever run in
 EditMode against fakes.
 
-`RunStorageStreamProbe` exercises the whole channel path at startup (write a
-Tilt archive, seek, validate, reopen by document URI, read every entry back,
-delete) but it is gated on `Debug.isDebugBuild`, so it needs a **Development**
-build. See §3.
+The former development-build startup stream probe was temporary bring-up
+instrumentation and has been removed. Verify the write path through the actual
+save workflow rather than creating and deleting a diagnostic document at every
+development-build startup.
 
 ### Fixed after that run, not yet re-tested
 
@@ -174,12 +174,6 @@ Three traps that will waste your time:
 3. **Filter to the app.** `adb logcat -d | grep ' Unity'` — the SAF tags are
    `SAF_STORAGE`, `SAF_CATALOG`, `SAF_TRANSACTION`, `SAF_RECOVERY`,
    `SAF_SOUND`, `SAF_STREAM`.
-
-The line that confirms the design, on a Development build:
-
-```
-SAF_STREAM Channel-backed Tilt archive passed (N bytes)
-```
 
 ### Running the EditMode tests
 

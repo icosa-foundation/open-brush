@@ -345,51 +345,6 @@ public class OpenBrushStorageBridge {
         }
     }
 
-    public static ChannelOpenResult createTemporaryChannel(
-            String relativeDirectory, String targetFileName, String mimeType) {
-        Context context = resolveContext();
-        String normalizedDirectory = normalize(relativeDirectory);
-        if (!isSafeRelativePath(normalizedDirectory)
-                || targetFileName == null
-                || targetFileName.length() == 0
-                || targetFileName.contains("/")
-                || targetFileName.contains("\\")) {
-            return new ChannelOpenResult(-1, -1, null, "Invalid temporary document path");
-        }
-
-        Uri parent = ensureDirectoryUri(context, normalizedDirectory);
-        if (parent == null) {
-            return new ChannelOpenResult(
-                    -1, -1, null, "Failed to open temporary document directory");
-        }
-
-        String temporaryName = "." + targetFileName + ".openbrush-fd-"
-                + NEXT_TEMP_FILE_ID.getAndIncrement() + ".tmp";
-        Uri temporary;
-        try {
-            temporary = DocumentsContract.createDocument(
-                    context.getContentResolver(),
-                    parent,
-                    mimeType == null || mimeType.length() == 0
-                            ? "application/octet-stream"
-                            : mimeType,
-                    temporaryName);
-        } catch (Exception e) {
-            return new ChannelOpenResult(-1, -1, null, formatProviderError(
-                    "Failed to create temporary document", e));
-        }
-        if (temporary == null) {
-            return new ChannelOpenResult(
-                    -1, -1, null, "Provider returned no temporary document");
-        }
-
-        ChannelOpenResult result = openChannel(context, temporary, "rwt");
-        if (result.handle < 0) {
-            deleteDocumentQuietly(context, temporary, parent);
-        }
-        return result;
-    }
-
     public static ChannelOpenResult createNamedChannel(
             String relativeDirectory, String displayName, String mimeType) {
         Context context = resolveContext();
@@ -673,19 +628,6 @@ public class OpenBrushStorageBridge {
         } catch (Exception e) {
             return new DocumentMutationResult(7, null, formatProviderError(
                     "Failed to delete document", e));
-        }
-    }
-
-    public static boolean deleteDocumentUri(String documentUri) {
-        Context context = resolveContext();
-        if (documentUri == null || documentUri.length() == 0) {
-            return false;
-        }
-        try {
-            return DocumentsContract.deleteDocument(
-                    context.getContentResolver(), Uri.parse(documentUri));
-        } catch (Exception e) {
-            return false;
         }
     }
 

@@ -32,7 +32,6 @@ namespace TiltBrush
         private static bool m_StartupSelectionComplete;
         private static bool m_StartupStorageReady;
         private static bool m_StartupStorageCanceled;
-        private static string m_StorageStreamProbeRootIdentity;
         private static AndroidStorageManager m_Instance;
         private string[] m_PreexistingVideoStagingPaths = Array.Empty<string>();
 
@@ -123,7 +122,6 @@ namespace TiltBrush
 
             yield return null;
 
-            RunStorageStreamProbeOnce();
             yield return RecoverTransactions(null);
         }
 
@@ -211,31 +209,6 @@ namespace TiltBrush
             m_StartupStorageCanceled = true;
             Application.Quit();
             Debug.Break();
-        }
-
-        private static void RunStorageStreamProbeOnce()
-        {
-            string rootIdentity = AndroidSafStorage.GetSelectedRootIdentity();
-            if (!Debug.isDebugBuild ||
-                string.IsNullOrEmpty(rootIdentity) ||
-                string.Equals(
-                    m_StorageStreamProbeRootIdentity,
-                    rootIdentity,
-                    StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            m_StorageStreamProbeRootIdentity = rootIdentity;
-            bool success = AndroidSafStorage.RunStorageStreamProbe(out string report);
-            if (success)
-            {
-                Debug.Log($"SAF_STREAM {report}");
-            }
-            else
-            {
-                Debug.LogError($"SAF_STREAM {report}");
-            }
         }
 
         private IEnumerator RecoverTransactions(Action onComplete)
