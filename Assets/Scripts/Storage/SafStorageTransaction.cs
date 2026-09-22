@@ -577,7 +577,7 @@ namespace TiltBrush
                     throw new IOException(
                         "Multiple SAF documents share the overwrite destination name.");
                 }
-                return target.DocumentId;
+                return ValidateOverwriteTarget(target);
             }
 
             List<StorageDocument> matches = documents.Where(document =>
@@ -596,9 +596,20 @@ namespace TiltBrush
             }
             if (matches.Count == 1)
             {
-                return matches[0].DocumentId;
+                return ValidateOverwriteTarget(matches[0]);
             }
             return default;
+        }
+
+        private static StorageDocumentId ValidateOverwriteTarget(StorageDocument target)
+        {
+            if (!target.SupportsReplacement)
+            {
+                throw new IOException(
+                    "The storage provider cannot safely replace this document because it " +
+                    "does not support both renaming and backup cleanup.");
+            }
+            return target.DocumentId;
         }
 
         private Stream OpenTemporaryRead()

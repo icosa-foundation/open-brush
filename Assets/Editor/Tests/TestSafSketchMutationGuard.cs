@@ -5,11 +5,12 @@ namespace TiltBrush
 {
     public class TestSafSketchMutationGuard
     {
-        private static StorageDocument MakeDocument()
+        private static StorageDocument MakeDocument(long providerFlags = (1L << 2) | (1L << 6))
         {
             return new StorageDocument(
                 new StorageDocumentId("sketch-id"), default, "Sketch.tilt",
-                TiltFile.TILT_MIME_TYPE, false, null, DateTime.UtcNow, 0, "Sketch.tilt");
+                TiltFile.TILT_MIME_TYPE, false, null, DateTime.UtcNow,
+                providerFlags, "Sketch.tilt");
         }
 
         [TestCase("backend")]
@@ -63,6 +64,27 @@ namespace TiltBrush
                 Assert.AreEqual(1, backend.DeleteCalls);
                 Assert.AreEqual(1, backend.RenameCalls);
                 Assert.IsTrue(file.Available);
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previous);
+            }
+        }
+
+        [Test]
+        public void RenameOnlySceneFileCannotBeOverwrittenButCanStillBeRenamed()
+        {
+            IUserStorageBackend previous = UserStorage.Backend;
+            var backend = new CatalogTestBackend { RootIdentity = "root-a" };
+            try
+            {
+                UserStorage.SetBackendForTests(backend);
+                var file = new SafSceneFileInfo(backend, MakeDocument(1L << 6));
+
+                Assert.IsTrue(file.ReadOnly);
+                Assert.AreEqual(StorageResultCode.Success,
+                    file.RenameInCurrentRoot("Renamed.tilt").Code);
+                Assert.AreEqual(1, backend.RenameCalls);
             }
             finally
             {

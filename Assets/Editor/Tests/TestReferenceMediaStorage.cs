@@ -96,10 +96,14 @@ namespace TiltBrush
             }
         }
 
-        private static StorageDocument OverwriteDocument(string id, string name, bool directory)
+        private const long kSupportsDeleteAndRename = (1L << 2) | (1L << 6);
+
+        private static StorageDocument OverwriteDocument(
+            string id, string name, bool directory,
+            long providerFlags = kSupportsDeleteAndRename)
         {
             return new StorageDocument(new StorageDocumentId(id), default, name,
-                "application/octet-stream", directory, null, null, 0, name);
+                "application/octet-stream", directory, null, null, providerFlags, name);
         }
 
         [TestCase(false)]
@@ -118,6 +122,16 @@ namespace TiltBrush
             StorageDocument file = OverwriteDocument("file", "target.bin", false);
             Assert.AreEqual(file.DocumentId, SafFileWriteTransaction.ResolveFileOverwriteTarget(
                 new[] { file }, explicitIdentity ? file.DocumentId : default, "target.bin"));
+        }
+
+        [TestCase(0)]
+        [TestCase(1L << 6)]
+        public void SafOverwrite_RejectsTargetsWithoutSafeBackupCleanup(long providerFlags)
+        {
+            StorageDocument file = OverwriteDocument(
+                "file", "target.bin", false, providerFlags);
+            Assert.Throws<IOException>(() => SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { file }, file.DocumentId, "target.bin"));
         }
 
         [TestCase(false)]

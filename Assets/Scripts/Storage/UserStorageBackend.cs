@@ -113,6 +113,10 @@ namespace TiltBrush
         public bool SupportsDelete => (ProviderFlags & kFlagSupportsDelete) != 0;
         public bool SupportsRename => (ProviderFlags & kFlagSupportsRename) != 0;
         public bool SupportsRemove => (ProviderFlags & kFlagSupportsRemove) != 0;
+        // Replacement renames the original to a backup, then must remove that backup.
+        // Rename support alone can therefore strand a reserved transaction sidecar.
+        public bool SupportsReplacement =>
+            SupportsRename && (SupportsDelete || SupportsRemove);
 
         public StorageDocument(
             StorageDocumentId documentId,
