@@ -498,14 +498,15 @@ namespace TiltBrush
         internal static List<SafStagedPath> ClaimGeneratedFilesForPublication(
             IReadOnlyList<SafStagedPath> stagedPaths)
         {
-            var claimed = new List<(string original, string reserved)>();
+            var claimed = new List<(string original, string reserved, bool isDirectory)>();
             try
             {
                 var result = new List<SafStagedPath>(stagedPaths.Count);
                 foreach (SafStagedPath stagedPath in stagedPaths)
                 {
                     string source = stagedPath.SourcePath;
-                    if (!File.Exists(source))
+                    bool isDirectory = Directory.Exists(source);
+                    if (!isDirectory && !File.Exists(source))
                     {
                         throw new FileNotFoundException(
                             "Generated output does not exist.", source);
@@ -513,8 +514,9 @@ namespace TiltBrush
                     string reserved = Path.Combine(
                         Path.GetDirectoryName(source),
                         $".ob-publish-{Guid.NewGuid():N}-{Path.GetFileName(source)}");
-                    File.Move(source, reserved);
-                    claimed.Add((source, reserved));
+                    if (isDirectory) { Directory.Move(source, reserved); }
+                    else { File.Move(source, reserved); }
+                    claimed.Add((source, reserved, isDirectory));
                     result.Add(new SafStagedPath(
                         reserved, stagedPath.DestinationRelativePath));
                 }
@@ -524,8 +526,12 @@ namespace TiltBrush
             {
                 for (int i = claimed.Count - 1; i >= 0; --i)
                 {
-                    (string original, string reserved) = claimed[i];
-                    if (File.Exists(reserved) && !File.Exists(original))
+                    (string original, string reserved, bool isDirectory) = claimed[i];
+                    if (isDirectory && Directory.Exists(reserved) && !Directory.Exists(original))
+                    {
+                        Directory.Move(reserved, original);
+                    }
+                    else if (!isDirectory && File.Exists(reserved) && !File.Exists(original))
                     {
                         File.Move(reserved, original);
                     }
