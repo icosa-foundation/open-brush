@@ -1770,7 +1770,17 @@ namespace TiltBrush
             var path = GetSafeReferenceImageWritePath(filename);
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllBytes(path, bytes);
-            _PublishApiMediaLibraryPathToSharedStorage(path);
+            _PublishApiMediaLibraryPathToSharedStorage(
+                path,
+                onComplete: (success, _) =>
+                {
+                    // SAF publications do not trigger the filesystem watcher that normally
+                    // refreshes reference images, so expose the new image after publication.
+                    if (success && OpenBrushStorage.IsScopedStorageMode)
+                    {
+                        ReferenceImageCatalog.m_Instance?.ForceCatalogScan();
+                    }
+                });
             return path;
         }
 
