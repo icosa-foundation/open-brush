@@ -60,6 +60,8 @@ public class OpenBrushStorageActivity extends Activity {
         intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
         intent.addFlags(Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
         intent.addFlags(Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+        // Open Brush manages device storage; remote DocumentsProviders are not supported roots.
+        intent.putExtra(Intent.EXTRA_LOCAL_ONLY, true);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             String selectedRoot =
                     OpenBrushStorageBridge.getSelectedRootIdentity();
