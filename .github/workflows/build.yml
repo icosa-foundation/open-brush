@@ -805,14 +805,9 @@ jobs:
     needs: [configuration, build]
     runs-on: macos-26
     if: |
+      github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
-      (
-        github.event_name == 'pull_request' ||
-        (
-          github.event_name == 'push' &&
-          (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-        )
-      )
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
@@ -918,7 +913,6 @@ jobs:
             --sign "$MAC_INSTALLER_IDENTITY" dist/OpenBrushViewer.pkg
 
       - name: Upload to App Store Connect
-        if: github.event_name != 'pull_request'
         env:
           APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
           APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
@@ -1818,14 +1812,9 @@ jobs:
     needs: [configuration, build]
     runs-on: macos-26
     if: |
+      github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
-      (
-        github.event_name == 'pull_request' ||
-        (
-          github.event_name == 'push' &&
-          (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
-        )
-      )
+      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
@@ -1858,31 +1847,6 @@ jobs:
 
           find $IOS_BUILD_PATH -type f -name "*.sh" -exec chmod +x {} \;
 
-      - name: Use production bundle identifier for signing test
-        if: github.event_name == 'pull_request'
-        env:
-          IOS_BUNDLE_ID: foundation.icosa.openbrushviewer
-        run: |
-          export FILENAME=$(basename $(readlink -f build/iOS/OpenBrush*))
-          export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
-          PROJECT_FILE="$IOS_BUILD_PATH/Unity-iPhone.xcodeproj/project.pbxproj"
-          PR_BUNDLE_ID="${IOS_BUNDLE_ID}-PR${{ github.event.pull_request.number }}"
-
-          if [[ ! -f "$PROJECT_FILE" ]]; then
-            echo "Could not find exported Xcode project at $PROJECT_FILE."
-            exit 1
-          fi
-          if ! grep -Fq "$PR_BUNDLE_ID" "$PROJECT_FILE"; then
-            echo "Could not find PR bundle identifier $PR_BUNDLE_ID in $PROJECT_FILE."
-            exit 1
-          fi
-
-          sed -i '' "s/$PR_BUNDLE_ID/$IOS_BUNDLE_ID/g" "$PROJECT_FILE"
-          if grep -Fq "$PR_BUNDLE_ID" "$PROJECT_FILE"; then
-            echo "Failed to replace PR bundle identifier $PR_BUNDLE_ID."
-            exit 1
-          fi
-
       - name: Run fastlane
         env:
           VERSION: ${{ needs.configuration.outputs.version }}
@@ -1908,11 +1872,7 @@ jobs:
           export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
 
           bundle install
-          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
-            bundle exec fastlane ios build
-          else
-            bundle exec fastlane ios ${FASTLANE_LANE}
-          fi
+          bundle exec fastlane ios ${FASTLANE_LANE}
 
       - name: Save logs
         uses: actions/upload-artifact@v7
