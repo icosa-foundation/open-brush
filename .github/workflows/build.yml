@@ -634,8 +634,8 @@ jobs:
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
-  signmacos:
-    name: Sign the MacOS .app
+  signmacosdev:
+    name: Sign macOS app for Developer ID distribution
     needs: [configuration, build]
     if: |
       github.event_name == 'push' &&
@@ -731,7 +731,7 @@ jobs:
 
   createdmg:
     name: Create and Notarize DMG
-    needs: [configuration, signmacos]
+    needs: [configuration, signmacosdev]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
@@ -1127,7 +1127,7 @@ jobs:
 
   publish_steam:
     name: Publish Steam Release
-    needs: [configuration, build, signmacos]
+    needs: [configuration, build, signmacosdev]
     if: |
       github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
