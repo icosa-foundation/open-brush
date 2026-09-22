@@ -1206,6 +1206,43 @@ namespace TiltBrush
             }
         }
 
+        [Test]
+        public void SafGeneratedBundles_RestoreFilesAndDirectoriesBeforeJournalHandoff()
+        {
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"restore-claim-test-{Guid.NewGuid():N}");
+            string frameDirectory = Path.Combine(stagingRoot, "video_frames");
+            string metadataPath = Path.Combine(stagingRoot, "video_sequence.txt");
+            Directory.CreateDirectory(frameDirectory);
+            File.WriteAllText(Path.Combine(frameDirectory, "0001.png"), "frame");
+            File.WriteAllText(metadataPath, "metadata");
+            try
+            {
+                var original = new[]
+                {
+                    new SafStagedPath(frameDirectory, "video_frames"),
+                    new SafStagedPath(metadataPath, "video_sequence.txt"),
+                };
+                List<SafStagedPath> claimed =
+                    OpenBrushStorage.ClaimGeneratedFilesForPublication(original);
+                Assert.IsNull(OpenBrushStorage.RestoreUnjournaledGeneratedFiles(
+                    original, claimed));
+                Assert.AreEqual("frame", File.ReadAllText(
+                    Path.Combine(frameDirectory, "0001.png")));
+                Assert.AreEqual("metadata", File.ReadAllText(metadataPath));
+                Assert.IsFalse(Directory.Exists(claimed[0].SourcePath));
+                Assert.IsFalse(File.Exists(claimed[1].SourcePath));
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, recursive: true);
+                }
+            }
+        }
+
         [TestCase("unchanged")]
         [TestCase("edited")]
         [TestCase("deleted")]

@@ -435,6 +435,7 @@ namespace TiltBrush
                     bundleArea = area;
                     stagedPaths.Add(new SafStagedPath(localPath, areaRelativePath));
                 }
+                List<SafStagedPath> originalPaths = stagedPaths;
                 if (transactionOwnsPayload)
                 {
                     try
@@ -449,6 +450,7 @@ namespace TiltBrush
                         return;
                     }
                 }
+                int journalPersisted = 0;
                 AndroidStorageManager.StartStorageOperation(
                     label,
                     () => SafStagedOutputPublisher.PublishBundle(
@@ -456,8 +458,26 @@ namespace TiltBrush
                         bundleArea.Value,
                         stagedPaths,
                         transactionOwnsPayload,
-                        CancellationToken.None),
-                    onComplete);
+                        CancellationToken.None,
+                        onJournalPersisted: () => Interlocked.Exchange(
+                            ref journalPersisted, 1)),
+                    (success, error) =>
+                    {
+                        if (!success && transactionOwnsPayload &&
+                            Volatile.Read(ref journalPersisted) == 0)
+                        {
+                            // The worker can fail before it creates a recovery record (or never
+                            // start). Give the generated output its original name back so the
+                            // application can retry. After journal handoff, recovery owns it.
+                            string restoreError = RestoreUnjournaledGeneratedFiles(
+                                originalPaths, stagedPaths);
+                            if (restoreError != null)
+                            {
+                                error = $"{error} {restoreError}";
+                            }
+                        }
+                        onComplete?.Invoke(success, error);
+                    });
                 return;
             }
 
@@ -538,6 +558,38 @@ namespace TiltBrush
                 }
                 throw;
             }
+        }
+
+        internal static string RestoreUnjournaledGeneratedFiles(
+            IReadOnlyList<SafStagedPath> originalPaths,
+            IReadOnlyList<SafStagedPath> claimedPaths)
+        {
+            var errors = new List<string>();
+            for (int i = 0; i < claimedPaths.Count; ++i)
+            {
+                string original = originalPaths[i].SourcePath;
+                string claimed = claimedPaths[i].SourcePath;
+                bool isDirectory = Directory.Exists(claimed);
+                if (!isDirectory && !File.Exists(claimed)) { continue; }
+                if (File.Exists(original) || Directory.Exists(original))
+                {
+                    // Another capture may already be using the original name. Never overwrite
+                    // it; retain the earlier generated output at its unique claimed path.
+                    errors.Add($"Generated output retained at {claimed} because {original} exists.");
+                    continue;
+                }
+                try
+                {
+                    if (isDirectory) { Directory.Move(claimed, original); }
+                    else { File.Move(claimed, original); }
+                }
+                catch (Exception e) when (
+                    e is IOException || e is UnauthorizedAccessException)
+                {
+                    errors.Add($"Generated output retained at {claimed}: {e.Message}");
+                }
+            }
+            return errors.Count == 0 ? null : string.Join(" ", errors);
         }
 
 
