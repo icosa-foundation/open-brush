@@ -805,9 +805,14 @@ jobs:
     needs: [configuration, build]
     runs-on: macos-26
     if: |
-      github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+      (
+        github.event_name == 'pull_request' ||
+        (
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+        )
+      )
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
@@ -913,6 +918,7 @@ jobs:
             --sign "$MAC_INSTALLER_IDENTITY" dist/OpenBrushViewer.pkg
 
       - name: Upload to App Store Connect
+        if: github.event_name != 'pull_request'
         env:
           APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
           APPLE_DEVELOPER_EMAIL: ${{ secrets.APPLE_DEVELOPER_EMAIL }}
@@ -1812,9 +1818,14 @@ jobs:
     needs: [configuration, build]
     runs-on: macos-26
     if: |
-      github.event_name == 'push' &&
       github.repository == 'icosa-foundation/open-brush' &&
-      (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+      (
+        github.event_name == 'pull_request' ||
+        (
+          github.event_name == 'push' &&
+          (github.ref == 'refs/heads/main' || contains(github.ref, 'refs/tags/v'))
+        )
+      )
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v7
@@ -1872,7 +1883,11 @@ jobs:
           export IOS_BUILD_PATH=$(pwd)/build/iOS/${FILENAME}
 
           bundle install
-          bundle exec fastlane ios ${FASTLANE_LANE}
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            bundle exec fastlane ios build
+          else
+            bundle exec fastlane ios ${FASTLANE_LANE}
+          fi
 
       - name: Save logs
         uses: actions/upload-artifact@v7
