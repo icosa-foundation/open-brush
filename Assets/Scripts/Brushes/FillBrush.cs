@@ -90,6 +90,7 @@ namespace TiltBrush
         /// Boundary simplification is repeated over the whole stroke on every control point
         /// otherwise, which is the largest single cost on a long stroke.
         private PathFillGeometry.SimplifyCache m_SimplifyCache;
+        private readonly MembraneFill.Workspace m_MembraneWorkspace = new MembraneFill.Workspace();
 
         public FillBrush()
             : base(bCanBatch: true,
@@ -110,6 +111,7 @@ namespace TiltBrush
             base.InitBrush(desc, localPointerXf);
             SetDoubleSided(desc);
             m_SimplifyCache.Clear();
+            if (m_UseMembrane) { m_MembraneWorkspace.WarmUp(MakeFillOptions()); }
             m_geometry.Layout = GetVertexLayout(desc);
         }
 
@@ -227,7 +229,7 @@ namespace TiltBrush
 
             UnityEngine.Profiling.Profiler.BeginSample("Fill Path");
             PathFill.Result fill = m_UseMembrane
-                ? MembraneFill.Fill(m_PathPositions, options)
+                ? MembraneFill.Fill(m_PathPositions, options, m_MembraneWorkspace)
                 : PathFill.Fill(m_PathPositions, options);
             UnityEngine.Profiling.Profiler.EndSample();
 

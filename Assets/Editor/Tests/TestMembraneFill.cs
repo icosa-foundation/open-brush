@@ -73,6 +73,53 @@ namespace TiltBrush
         }
 
         [Test]
+        public void WorkspaceReuseDoesNotCarryGeometryOrColorsBetweenStrokes()
+        {
+            var workspace = new MembraneFill.Workspace();
+            var path = TwistedLoop();
+            var options = PathFill.Options.Default;
+            foreach (bool faceted in new[] { false, true, false })
+            {
+                options.Faceted = faceted;
+                foreach (int colorMode in new[] { 0, 1, 2, 1, 0 })
+                {
+                    options.PathColors = colorMode == 0 ? null : new List<Color32>();
+                    for (int i = 0; i < path.Count && colorMode != 0; ++i)
+                    {
+                        options.PathColors.Add(new Color32((byte)(colorMode == 1 ? 80 : i * 2), 120, 160, 255));
+                    }
+                    var warm = MembraneFill.Fill(path, options, workspace);
+                    var cold = MembraneFill.Fill(path, options);
+                    CollectionAssert.AreEqual(cold.Vertices, warm.Vertices);
+                    CollectionAssert.AreEqual(cold.Normals, warm.Normals);
+                    CollectionAssert.AreEqual(cold.Colors, warm.Colors);
+                    CollectionAssert.AreEqual(cold.Uvs, warm.Uvs);
+                    CollectionAssert.AreEqual(cold.Triangles, warm.Triangles);
+                    var vertices = warm.Vertices;
+                    var triangles = warm.Triangles;
+                    path[12] += new Vector3(0.01f, 0, 0);
+                    var changed = MembraneFill.Fill(path, options, workspace);
+                    Assert.AreSame(vertices, changed.Vertices);
+                    Assert.AreSame(triangles, changed.Triangles);
+                    if (colorMode == 1)
+                    {
+                        foreach (var color in changed.Colors)
+                        {
+                            Assert.AreEqual(new Color32(80, 120, 160, 255), color);
+                        }
+                    }
+                }
+            }
+            // A smaller budget rebuilds storage; returning to the original budget must
+            // still produce the same cold result rather than retaining old rim samples.
+            options.MaxVertices = 64;
+            MembraneFill.Fill(path, options, workspace);
+            options.MaxVertices = 3000;
+            CollectionAssert.AreEqual(MembraneFill.Fill(path, options).Vertices,
+                MembraneFill.Fill(path, options, workspace).Vertices);
+        }
+
+        [Test]
         public void PlanarRimIsPreservedAndBothLayoutsRespectBudgets()
         {
             var square = new List<Vector3>
