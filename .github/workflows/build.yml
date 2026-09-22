@@ -43,8 +43,8 @@ jobs:
       basename: ${{ steps.github.outputs.basename }}
       description: ${{ steps.github.outputs.description}}
       itchchannelname: ${{ steps.version.outputs.itchchannelname }}
-      fastlanelane: ${{ steps.version.outputs.fastlanelane}}
-      iosviewerlane: ${{ steps.version.outputs.iosviewerlane }}
+      zapboxlane: ${{ steps.version.outputs.zapboxlane}}
+      viewerlane: ${{ steps.version.outputs.viewerlane }}
       googleplaytrack: ${{ steps.version.outputs.googleplaytrack }}
       googleplaystatus: ${{ steps.version.outputs.googleplaystatus }}
       googleplayhasproduction: ${{ steps.version.outputs.googleplayhasproduction }}
@@ -105,8 +105,8 @@ jobs:
             STAMP=""
             echo "prerelease=false" >> $GITHUB_OUTPUT
             echo "itchchannelname=release" >> $GITHUB_OUTPUT
-            echo "fastlanelane=beta" >> $GITHUB_OUTPUT
-            echo "iosviewerlane=release" >> $GITHUB_OUTPUT
+            echo "zapboxlane=beta" >> $GITHUB_OUTPUT
+            echo "viewerlane=release" >> $GITHUB_OUTPUT
             GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_RELEASE_TRACK"
             GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_RELEASE_STATUS"
 
@@ -115,8 +115,8 @@ jobs:
             STAMP=$(git describe --tags --match "v[0-9]*.[0-9]*" ${{ github.event.pull_request.head.sha }} | cut -d'-' -f3)
             echo "prerelease=true" >> $GITHUB_OUTPUT
             echo "itchchannelname=beta" >> $GITHUB_OUTPUT
-            echo "fastlanelane=beta" >> $GITHUB_OUTPUT
-            echo "iosviewerlane=beta" >> $GITHUB_OUTPUT
+            echo "zapboxlane=beta" >> $GITHUB_OUTPUT
+            echo "viewerlane=beta" >> $GITHUB_OUTPUT
             GOOGLE_PLAY_TRACKS="$GOOGLE_PLAY_PRERELEASE_TRACK"
             GOOGLE_PLAY_STATUS="$GOOGLE_PLAY_PRERELEASE_STATUS"
           fi
@@ -920,7 +920,7 @@ jobs:
 
           MAC_BUNDLE_ID: foundation.icosa.openbrushviewer
           MAC_PKG_PATH: dist/OpenBrushViewer.pkg
-          FASTLANE_LANE: ${{ needs.configuration.outputs.iosviewerlane }}
+          FASTLANE_LANE: ${{ needs.configuration.outputs.viewerlane }}
         run: bundle exec fastlane mac ${FASTLANE_LANE}
 
       - name: Save package and logs
@@ -1860,7 +1860,7 @@ jobs:
 
           IOS_BUNDLE_ID: foundation.icosa.openbrushviewer
           PROJECT_NAME: Open Brush Viewer
-          FASTLANE_LANE: ${{ needs.configuration.outputs.iosviewerlane }}
+          FASTLANE_LANE: ${{ needs.configuration.outputs.viewerlane }}
         run: |
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${MATCH_DEPLOY_KEY}"
@@ -1933,7 +1933,7 @@ jobs:
 
           IOS_BUNDLE_ID: ${{ vars.IOS_ZAPBOX_BUNDLE_ID }}
           PROJECT_NAME: Open Brush for Zapbox
-          FASTLANE_LANE: ${{ needs.configuration.outputs.fastlanelane }}
+          FASTLANE_LANE: ${{ needs.configuration.outputs.zapboxlane }}
         run: |
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${MATCH_DEPLOY_KEY}"
