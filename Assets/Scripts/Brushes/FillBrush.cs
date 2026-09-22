@@ -38,6 +38,9 @@ namespace TiltBrush
     ///   PathFill.
     public class FillBrush : GeometryBrush
     {
+        // Separate brush descriptors opt in, so saved projected fills keep their geometry.
+        [SerializeField] private bool m_UseMembrane;
+
         /// Which regions count as inside when the loop crosses itself.
         [SerializeField] private PathFillRule m_FillRule;
 
@@ -118,7 +121,7 @@ namespace TiltBrush
         public override bool ShouldCurrentLineEnd()
         {
             // Reminder: it's ok for this method to be nondeterministic.
-            return m_knots.Count > MaxKnots || base.ShouldCurrentLineEnd();
+            return (!m_UseMembrane && m_knots.Count > MaxKnots) || base.ShouldCurrentLineEnd();
         }
 
         protected override void ControlPointsChanged(int iKnot0)
@@ -223,7 +226,9 @@ namespace TiltBrush
             if (m_ColorFromControlPoints) { options.PathColors = m_PathColors; }
 
             UnityEngine.Profiling.Profiler.BeginSample("Fill Path");
-            PathFill.Result fill = PathFill.Fill(m_PathPositions, options);
+            PathFill.Result fill = m_UseMembrane
+                ? MembraneFill.Fill(m_PathPositions, options)
+                : PathFill.Fill(m_PathPositions, options);
             UnityEngine.Profiling.Profiler.EndSample();
 
             // A fill needs at least three non-collinear points, so early in a stroke -- and
