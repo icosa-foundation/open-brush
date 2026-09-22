@@ -588,6 +588,40 @@ namespace TiltBrush
             return LoadScriptFromString(Path.GetFileNameWithoutExtension(filename), contents);
         }
 
+        internal void ReloadUserScript(StorageDocument document)
+        {
+            if (!m_IsInitialized || document == null || document.IsDirectory ||
+                !string.Equals(
+                    Path.GetExtension(document.DisplayName), ".lua",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            string scriptFilename = Path.GetFileNameWithoutExtension(document.DisplayName);
+            LuaApiCategory? category = TryGetCategoryFromScriptName(scriptFilename);
+            string scriptName = LoadScriptFromStorage(document);
+            if (!category.HasValue || scriptName == null) { return; }
+
+            // Loading replaces the registry entry. Reinitialize the active instance as well so
+            // a Drive update takes effect immediately, matching the local file-watcher path.
+            if (category == LuaApiCategory.BackgroundScript)
+            {
+                if (m_ActiveBackgroundScripts.TryGetValue(scriptName, out Script script))
+                {
+                    InitScript(script);
+                }
+                return;
+            }
+
+            string activeScriptName = GetActiveScriptName(category.Value);
+            ActiveScripts[category.Value] = GetScriptNames(category.Value).IndexOf(activeScriptName);
+            if (activeScriptName == scriptName)
+            {
+                InitScript(GetActiveScript(category.Value));
+            }
+        }
+
 
 
         private void LoadExampleScripts()

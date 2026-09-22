@@ -453,6 +453,29 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
         }
 
+        internal void ReloadUserScript(StorageDocument document)
+        {
+            if (document == null || document.IsDirectory) { return; }
+            try
+            {
+                RegisterUserScript(document.DisplayName, () =>
+                {
+                    using (Stream source = UserStorage.Backend.OpenRead(
+                               document.DocumentId, requireSeekable: false,
+                               CancellationToken.None))
+                    using (var reader = new StreamReader(source))
+                    {
+                        return reader.ReadToEnd();
+                    }
+                });
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning(
+                    $"SAF_SCRIPTS Could not refresh {document.DisplayName}: {e.Message}");
+            }
+        }
+
         private void RegisterUserScript(string name, Func<string> readText)
         {
             string extension = Path.GetExtension(name);
