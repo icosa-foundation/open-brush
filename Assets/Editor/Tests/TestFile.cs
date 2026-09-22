@@ -999,6 +999,44 @@ namespace TiltBrush
             }
         }
 
+        [Test]
+        public void SafApiImportReplacement_PreservesNameAndReplacesBytes()
+        {
+            string stagingRoot = Path.Combine(
+                Path.GetTempPath(), $"saf-import-replacement-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(stagingRoot);
+            string stagedPath = Path.Combine(stagingRoot, "image.png");
+            File.WriteAllBytes(stagedPath, new byte[] { 2 });
+            var backend = new FakeSafBackend();
+            backend.Add("image.png", new byte[] { 1 });
+            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(
+                    backend,
+                    StorageArea.MediaLibraryImages,
+                    "image.png",
+                    stagedPath,
+                    prepareLocalImport: false,
+                    out _,
+                    replaceDestination: true);
+
+                Assert.IsTrue(result.Success, result.Error);
+                Assert.IsFalse(backend.Contains("image (1).png"));
+                using Stream input = backend.OpenRead(
+                    backend.List(StorageArea.MediaLibraryImages, "", CancellationToken.None)
+                        .Documents.Single(document => document.DisplayName == "image.png").DocumentId,
+                    false,
+                    CancellationToken.None);
+                Assert.AreEqual(2, input.ReadByte());
+            }
+            finally
+            {
+                Directory.Delete(stagingRoot, true);
+                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
+            }
+        }
+
 
         [Test]
         public void SafStagedOutputPublisher_CommitsWholeDirectory()

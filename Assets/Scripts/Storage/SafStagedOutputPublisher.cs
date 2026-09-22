@@ -56,6 +56,7 @@ namespace TiltBrush
         public string StagedPath;
         public bool IsDirectory;
         public bool TransactionOwnsPayload;
+        public bool ReplaceExisting;
         public List<SafPublicationItem> Items = new List<SafPublicationItem>();
         public List<string> CompletedFiles = new List<string>();
         public string State = "Publishing";
@@ -230,13 +231,31 @@ namespace TiltBrush
                 cancellationToken);
         }
 
+        public static SafPublicationResult PublishReplacing(
+            IUserStorageBackend backend,
+            StorageArea area,
+            string destinationRelativePath,
+            string stagedPath,
+            bool transactionOwnsPayload,
+            CancellationToken cancellationToken)
+        {
+            return PublishBundle(
+                backend,
+                area,
+                new[] { new SafStagedPath(stagedPath, destinationRelativePath) },
+                transactionOwnsPayload,
+                cancellationToken,
+                replaceExisting: true);
+        }
+
         public static SafPublicationResult PublishBundle(
             IUserStorageBackend backend,
             StorageArea area,
             IEnumerable<SafStagedPath> stagedPaths,
             bool transactionOwnsPayload,
             CancellationToken cancellationToken,
-            Action onJournalPersisted = null)
+            Action onJournalPersisted = null,
+            bool replaceExisting = false)
         {
             if (backend == null ||
                 backend.Kind != StorageBackendKind.StorageAccessFramework ||
@@ -287,6 +306,7 @@ namespace TiltBrush
                 StagedPath = items[0].SourcePath,
                 IsDirectory = items[0].IsDirectory,
                 TransactionOwnsPayload = transactionOwnsPayload,
+                ReplaceExisting = replaceExisting,
                 Items = items,
                 CreatedUtc = DateTime.UtcNow.ToString("o"),
             };
@@ -460,6 +480,7 @@ namespace TiltBrush
                             ParseArea(record.Area),
                             destination,
                             sourcePath,
+                            record.ReplaceExisting,
                             cancellationToken);
                         if (!result.Success)
                         {
@@ -561,10 +582,35 @@ namespace TiltBrush
             StorageArea area,
             string destination,
             string sourcePath,
+            bool replaceExisting,
             CancellationToken cancellationToken)
         {
+            StorageDocumentId targetDocumentId = default;
+            if (replaceExisting)
+            {
+                string directory = Path.GetDirectoryName(destination)?.Replace('\\', '/') ?? "";
+                string filename = Path.GetFileName(destination);
+                StorageDirectoryResult listing = backend.List(area, directory, cancellationToken);
+                if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                {
+                    return new SafPublicationResult(listing.Code, listing.Error);
+                }
+                StorageDocument[] matches = listing.Documents.Where(document =>
+                    !document.IsDirectory && document.DisplayName.Equals(
+                        filename, StringComparison.OrdinalIgnoreCase)).ToArray();
+                if (matches.Length > 1)
+                {
+                    return new SafPublicationResult(StorageResultCode.Failed,
+                        $"More than one shared document matches replacement destination: {destination}");
+                }
+                if (matches.Length == 1)
+                {
+                    targetDocumentId = matches[0].DocumentId;
+                }
+            }
             using (IStorageWriteTransaction transaction = backend.BeginWrite(
-                area, destination, GuessMimeType(sourcePath), cancellationToken))
+                area, destination, GuessMimeType(sourcePath), cancellationToken,
+                targetDocumentId))
             {
                 using (Stream input = new FileStream(
                     sourcePath, FileMode.Open, FileAccess.Read, FileShare.Read))

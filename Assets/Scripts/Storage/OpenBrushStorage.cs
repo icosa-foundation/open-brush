@@ -514,7 +514,8 @@ namespace TiltBrush
 
         public static void PublishImportedMediaToSharedStorageAsync(
             string localPath, string sharedPath, string label, Action<bool, string> onComplete,
-            Action<string> onPublished = null, bool preserveDestination = false)
+            Action<string> onPublished = null, bool preserveDestination = false,
+            bool replaceDestination = false)
         {
             if (!TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
             {
@@ -524,7 +525,8 @@ namespace TiltBrush
             string publishedLocalPath = null;
             AndroidStorageManager.StartStorageOperation(label,
                 () => PublishImportedMedia(UserStorage.Backend, area, relativePath, localPath,
-                    onPublished != null, out publishedLocalPath, preserveDestination),
+                    onPublished != null, out publishedLocalPath, preserveDestination,
+                    replaceDestination),
                 (success, error) =>
                 {
                     onComplete?.Invoke(success, error);
@@ -534,24 +536,37 @@ namespace TiltBrush
 
         internal static SafPublicationResult PublishImportedMedia(
             IUserStorageBackend backend, StorageArea area, string relativePath, string localPath,
-            bool prepareLocalImport, out string publishedLocalPath, bool preserveDestination = false)
+            bool prepareLocalImport, out string publishedLocalPath,
+            bool preserveDestination = false, bool replaceDestination = false)
         {
             publishedLocalPath = null;
+            if (preserveDestination && replaceDestination)
+            {
+                throw new ArgumentException(
+                    "An imported-media publication cannot both reject and replace collisions.");
+            }
             // Serialize API name selection and publication, including delayed picker continuations.
             using (SafDestinationLocks.Acquire($"api-import:{backend.RootIdentity}:{area}", CancellationToken.None))
             {
                 string localDirectory = Path.GetDirectoryName(localPath);
-                string destination = GetUniqueImportPath(backend, area, relativePath,
-                    candidate => !string.Equals(candidate, Path.GetFileName(localPath),
-                        StringComparison.OrdinalIgnoreCase) &&
-                        File.Exists(Path.Combine(localDirectory, candidate)));
+                string destination = replaceDestination
+                    ? relativePath
+                    : GetUniqueImportPath(backend, area, relativePath,
+                        candidate => !string.Equals(candidate, Path.GetFileName(localPath),
+                            StringComparison.OrdinalIgnoreCase) &&
+                            File.Exists(Path.Combine(localDirectory, candidate)));
                 if (preserveDestination && !string.Equals(destination, relativePath, StringComparison.Ordinal))
                 {
                     return new SafPublicationResult(StorageResultCode.Failed,
                         $"The reserved import destination already exists: {relativePath}. Staged content was preserved.");
                 }
-                SafPublicationResult result = SafStagedOutputPublisher.Publish(backend, area, destination, localPath,
-                    transactionOwnsPayload: false, CancellationToken.None);
+                SafPublicationResult result = replaceDestination
+                    ? SafStagedOutputPublisher.PublishReplacing(
+                        backend, area, destination, localPath,
+                        transactionOwnsPayload: false, CancellationToken.None)
+                    : SafStagedOutputPublisher.Publish(
+                        backend, area, destination, localPath,
+                        transactionOwnsPayload: false, CancellationToken.None);
                 if (result.Success && prepareLocalImport)
                 {
                     // The importing widget needs both the final logical name and its local bytes.

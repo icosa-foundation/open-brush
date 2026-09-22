@@ -467,7 +467,7 @@ namespace TiltBrush
 
         internal static void _PublishApiMediaLibraryPathToSharedStorage(
             string localPath, bool preserveDestination = false,
-            Action<bool, string> onComplete = null)
+            Action<bool, string> onComplete = null, bool replaceDestination = false)
         {
             if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
                     localPath, out string relativePath))
@@ -480,7 +480,9 @@ namespace TiltBrush
                 relativePath,
                 "media file",
                 (path, label, complete) => OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
-                    path, relativePath, label, complete, preserveDestination: preserveDestination),
+                    path, relativePath, label, complete,
+                    preserveDestination: preserveDestination,
+                    replaceDestination: replaceDestination),
                 onComplete);
         }
 

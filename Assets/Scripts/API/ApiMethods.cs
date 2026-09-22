@@ -1772,6 +1772,10 @@ namespace TiltBrush
             File.WriteAllBytes(path, bytes);
             _PublishApiMediaLibraryPathToSharedStorage(
                 path,
+                // File.WriteAllBytes replaces this name on ordinary filesystems. Preserve that
+                // contract on SAF as well: silently publishing "foo (1).png" would make the
+                // returned logical path refer to an older image after the sketch is reopened.
+                replaceDestination: true,
                 onComplete: (success, _) =>
                 {
                     // SAF publications do not trigger the filesystem watcher that normally
