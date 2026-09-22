@@ -44,6 +44,15 @@ namespace TiltBrush
         public List<Color32?> m_OverrideColors;
         public ColorOverrideMode m_ColorOverrideMode = ColorOverrideMode.None;
 
+        // The strokes that a symmetry mode laid down together with this one, and the settings it
+        // used; null if this stroke wasn't drawn with symmetry. Held by reference so peers cost a
+        // field lookup rather than a registry search, and NonSerialized because the group refers
+        // back to its strokes (JsonUtility, used by multiplayer, can't walk cycles).
+        [NonSerialized] public SymmetryStrokeGroup m_SymmetryGroup;
+        // Which of the symmetry's pointers drew this stroke; 0 is the pointer the user controls.
+        // -1 when unknown, which is also the case for strokes with no symmetry group.
+        public int m_SymmetryPointerIndex = -1;
+
         // Reference the BrushStrokeCommand that created this stroke with a WeakReference.
         // This allows the garbage collector to collect the BrushStrokeCommand if it's no
         // longer in use elsewhere.
@@ -81,6 +90,9 @@ namespace TiltBrush
                 {
                     m_OverrideColors = existing.m_OverrideColors.ToList();
                 }
+
+                this.m_SymmetryGroup = existing.m_SymmetryGroup;
+                this.m_SymmetryPointerIndex = existing.m_SymmetryPointerIndex;
             }
         }
 

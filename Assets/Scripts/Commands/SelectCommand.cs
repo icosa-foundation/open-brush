@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -42,6 +43,11 @@ namespace TiltBrush
         private bool m_IsGrabbingGroup;
         private bool m_IsEndGrabbingGroup;
         private CanvasScript m_TargetCanvas; // Override original canvas as target for deselection.
+        // Strokes the symmetry drew alongside the ones being deselected, each with the transform
+        // that mirrors the selection's move onto it. Empty unless peer editing is on and this
+        // deselect is about to bake a move into the strokes.
+        private readonly List<Stroke> m_PeerStrokes = new List<Stroke>();
+        private readonly List<TrTransform> m_PeerTransforms = new List<TrTransform>();
 
         override public bool NeedsSave
         {
@@ -158,6 +164,50 @@ namespace TiltBrush
             m_IsGrabbingGroup = isGrabbingGroup;
             m_IsEndGrabbingGroup = isEndGrabbingGroup;
             m_TargetCanvas = targetCanvas;
+
+            GatherSymmetryPeers();
+        }
+
+        /// Deselecting is the point at which a moved selection is baked back into its strokes, so
+        /// it is also the point at which the symmetry peers of those strokes move to match. The
+        /// peers are worked out now, while the strokes are still where the move left them.
+        private void GatherSymmetryPeers()
+        {
+            // Peers shown following the selection are only being drawn elsewhere; they have to be
+            // back home before their move is worked out, and the deselect is what applies it.
+            SymmetryPeerPreview.Hide();
+
+            // Same condition as NeedsSave: nothing is baked into the strokes unless a deselect is
+            // carrying a transform.
+            if (!m_Deselect || m_InitialTransform == TrTransform.identity || m_Strokes == null)
+            {
+                return;
+            }
+
+            var handled = new HashSet<Stroke>(m_Strokes, new ReferenceComparer<Stroke>());
+            foreach (var stroke in m_Strokes)
+            {
+                // A stroke added to a selection that had already been moved has only moved by
+                // what the selection did after it joined.
+                TrTransform joined =
+                    SelectionManager.m_Instance.SelectionTransformWhenSelected(stroke);
+                TrTransform moved = m_InitialTransform * joined.inverse;
+                if (moved == TrTransform.identity) { continue; }
+
+                foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+                {
+                    if (!handled.Add(peer)) { continue; }
+                    // A peer that is still selected carries the selection's move itself, and will
+                    // bake it in when it is deselected in turn.
+                    if (SelectionManager.m_Instance.IsStrokeSelected(peer)) { continue; }
+                    if (SymmetryPeerEditing.TryGetPeerTransform(
+                            stroke, peer, moved, out TrTransform peerXf))
+                    {
+                        m_PeerStrokes.Add(peer);
+                        m_PeerTransforms.Add(peerXf);
+                    }
+                }
+            }
         }
 
         private static void AddSelectedGroup(
@@ -201,6 +251,8 @@ namespace TiltBrush
         {
             if (m_Deselect)
             {
+                // Peers must be in their own layers before the move is written into them.
+                SymmetryPeerPreview.Hide();
                 if (m_Strokes != null)
                 {
                     SelectionManager.m_Instance.DeselectStrokes(m_Strokes, m_TargetCanvas);
@@ -209,6 +261,7 @@ namespace TiltBrush
                 {
                     SelectionManager.m_Instance.DeselectWidgets(m_Widgets, m_TargetCanvas);
                 }
+                TransformItems.TransformEach(m_PeerStrokes, m_PeerTransforms);
             }
             else
             {
@@ -244,6 +297,9 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectionTransform = m_InitialTransform;
             if (m_Deselect)
             {
+                SymmetryPeerPreview.Hide();
+                TransformItems.TransformEach(
+                    m_PeerStrokes, m_PeerTransforms.Select(xf => xf.inverse).ToList());
                 if (m_Strokes != null)
                 {
                     SelectionManager.m_Instance.SelectStrokes(m_Strokes);

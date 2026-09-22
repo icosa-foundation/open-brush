@@ -75,6 +75,11 @@ namespace TiltBrush
             // we don't save out the group.
             Seed = 1 << 3, // int32; if not found then you get a random int.
             Layer = 1 << 4, // uint32;
+            // uint32, 1-based id of the stroke's symmetry group; 0 means none. The groups
+            // themselves, and the settings they were drawn with, are in the symmetry table that
+            // follows the strokes.
+            SymmetryGroup = 1 << 5,
+            SymmetryPointerIndex = 1 << 6, // int32, which of the symmetry's pointers drew this
             ControlPointColors = 1 << 16, // Variable-length: Color32[] + ColorControlMode; per-point colors
         }
 
@@ -84,6 +89,270 @@ namespace TiltBrush
             None = 0,
             Pressure = 1 << 0,  // float, 1.0 is nominal
             Timestamp = 1 << 1, // uint32, milliseconds
+        }
+
+        // Symmetry ------------------------------------------------------------------------- //
+        //
+        // Strokes drawn together by a symmetry mode carry 8 bytes each: the id of their symmetry
+        // group and which pointer drew them. The groups, and the settings they were drawn with,
+        // are written once in a table after the last stroke, where settings shared by several
+        // groups are stored once. Readers that don't know about the table stop at the last stroke
+        // and ignore it, and skip the two stroke fields as unknown single-word extensions.
+
+        private const uint SYMMETRY_TABLE_SENTINEL = 0x53594d54; // 'SYMT'
+        private const int SYMMETRY_TABLE_VERSION = 2;
+        private const uint kMaxSymmetrySettingsBytes = 64 * 1024;
+
+        /// Assigns file-local ids to the symmetry groups used by a set of strokes, and dedupes
+        /// the settings those groups share. Safe to build on the save thread: it only reads a
+        /// group's identity and its immutable settings, never its membership.
+        private class SymmetryTable
+        {
+            // Groups by identity, in id order (a group's id is its index + 1).
+            private readonly Dictionary<SymmetryStrokeGroup, uint> m_GroupIds =
+                new Dictionary<SymmetryStrokeGroup, uint>();
+            // Per group, the 1-based index of its settings in m_Settings; 0 if it has none.
+            private readonly List<uint> m_GroupSettings = new List<uint>();
+            // Per group, the 1-based index of its mirror in m_Mirrors; 0 if it has none.
+            private readonly List<uint> m_GroupMirrors = new List<uint>();
+            // The mirrors the groups were drawn under, by identity, in id order.
+            private readonly List<SymmetryMirror> m_Mirrors = new List<SymmetryMirror>();
+            private readonly Dictionary<SymmetryMirror, uint> m_MirrorIds =
+                new Dictionary<SymmetryMirror, uint>();
+            // Distinct settings, deduped by value.
+            private readonly List<SymmetrySettingsSnapshot> m_Settings =
+                new List<SymmetrySettingsSnapshot>();
+            private readonly Dictionary<SymmetrySettingsSnapshot, uint> m_SettingsIds =
+                new Dictionary<SymmetrySettingsSnapshot, uint>();
+
+            /// Returns null if none of the strokes were drawn with symmetry, in which case
+            /// nothing extra is written at all.
+            public static SymmetryTable Build(IList<AdjustedMemoryBrushStroke> strokeCopies)
+            {
+                SymmetryTable table = null;
+                foreach (var copy in strokeCopies)
+                {
+                    var group = copy.strokeData.m_SymmetryGroup;
+                    if (group == null) { continue; }
+                    table = table ?? new SymmetryTable();
+                    table.AddGroup(group);
+                }
+                return table;
+            }
+
+            private uint AddGroup(SymmetryStrokeGroup group)
+            {
+                if (m_GroupIds.TryGetValue(group, out uint id)) { return id; }
+                id = (uint)m_GroupSettings.Count + 1;
+                m_GroupIds[group] = id;
+                m_GroupSettings.Add(AddSettings(group.Settings));
+                m_GroupMirrors.Add(AddMirror(group.Mirror));
+                return id;
+            }
+
+            private uint AddSettings(SymmetrySettingsSnapshot settings)
+            {
+                if (settings == null) { return 0; }
+                if (m_SettingsIds.TryGetValue(settings, out uint id)) { return id; }
+                id = (uint)m_Settings.Count + 1;
+                m_SettingsIds[settings] = id;
+                m_Settings.Add(settings);
+                return id;
+            }
+
+            private uint AddMirror(SymmetryMirror mirror)
+            {
+                if (mirror == null) { return 0; }
+                if (m_MirrorIds.TryGetValue(mirror, out uint id)) { return id; }
+                id = (uint)m_Mirrors.Count + 1;
+                m_MirrorIds[mirror] = id;
+                m_Mirrors.Add(mirror);
+                return id;
+            }
+
+            /// The stroke's group id, or 0 if it wasn't drawn with symmetry.
+            public uint GetGroupId(StrokeData stroke)
+            {
+                var group = stroke.m_SymmetryGroup;
+                if (group == null) { return 0; }
+                m_GroupIds.TryGetValue(group, out uint id);
+                return id;
+            }
+
+            public void WriteTable(SketchBinaryWriter writer)
+            {
+                writer.UInt32(SYMMETRY_TABLE_SENTINEL);
+                writer.Int32(SYMMETRY_TABLE_VERSION);
+                writer.Int32(m_Settings.Count);
+                foreach (var settings in m_Settings)
+                {
+                    byte[] data = settings.ToBytes();
+                    writer.UInt32((uint)data.Length);
+                    writer.BaseStream.Write(data, 0, data.Length);
+                }
+                writer.Int32(m_GroupSettings.Count);
+                foreach (uint settingsId in m_GroupSettings)
+                {
+                    writer.UInt32(settingsId);
+                }
+
+                // Mirrors: the identity a group's strokes follow, which outlives any particular
+                // settings the mirror had. Each carries its current settings so that a sketch can
+                // offer it back to the user.
+                writer.Int32(m_Mirrors.Count);
+                foreach (var mirror in m_Mirrors)
+                {
+                    writer.Guid(mirror.Id);
+                    byte[] data = mirror.Settings != null
+                        ? mirror.Settings.ToBytes()
+                        : System.Array.Empty<byte>();
+                    writer.UInt32((uint)data.Length);
+                    if (data.Length > 0)
+                    {
+                        writer.BaseStream.Write(data, 0, data.Length);
+                    }
+                }
+                foreach (uint mirrorId in m_GroupMirrors)
+                {
+                    writer.UInt32(mirrorId);
+                }
+            }
+        }
+
+        /// A stroke's symmetry fields, held until the table at the end of the stream says what
+        /// group id 'groupId' refers to.
+        private struct PendingSymmetry
+        {
+            public Stroke stroke;
+            public uint groupId;
+            public int pointerIndex;
+        }
+
+        /// Rebuilds the symmetry groups of freshly-read strokes from the table that follows them.
+        /// The groups are new objects, so strokes merged into an existing sketch can't collide
+        /// with the groups already in it.
+        private static void ReadSymmetryTable(Stream stream, List<PendingSymmetry> pending)
+        {
+            if (pending.Count == 0) { return; }
+
+            var settings = new List<SymmetrySettingsSnapshot>();
+            var groupSettings = new List<uint>();
+            var mirrors = new List<SymmetryMirror>();
+            var groupMirrors = new List<uint>();
+
+            var buf = new byte[4];
+            if (ReadExactly(stream, buf, 4) &&
+                (uint)(buf[0] | buf[1] << 8 | buf[2] << 16 | buf[3] << 24) == SYMMETRY_TABLE_SENTINEL)
+            {
+                var reader = new SketchBinaryReader(stream);
+                // Version 1 had no mirrors; its groups load with their peers and settings intact
+                // and simply have no mirror to follow.
+                int version = reader.Int32();
+                if (version == 1 || version == SYMMETRY_TABLE_VERSION)
+                {
+                    // A stroke can reference at most one group, so a well-formed table is
+                    // bounded by the strokes that referenced it. Anything larger is corrupt.
+                    int numSettings = reader.Int32();
+                    for (int i = 0; i < numSettings && i < pending.Count; ++i)
+                    {
+                        uint size = reader.UInt32();
+                        if (size > kMaxSymmetrySettingsBytes) { break; }
+                        var data = new byte[size];
+                        if (!ReadExactly(stream, data, (int)size)) { break; }
+                        settings.Add(SymmetrySettingsSnapshot.FromBytes(data));
+                    }
+                    int numGroups = reader.Int32();
+                    for (int i = 0; i < numGroups && i < pending.Count; ++i)
+                    {
+                        groupSettings.Add(reader.UInt32());
+                    }
+
+                    int numMirrors = version >= 2 ? reader.Int32() : 0;
+                    for (int i = 0; i < numMirrors && i < pending.Count; ++i)
+                    {
+                        Guid mirrorGuid = reader.ReadGuid();
+                        uint size = reader.UInt32();
+                        SymmetrySettingsSnapshot mirrorSettings = null;
+                        if (size > 0 && size <= kMaxSymmetrySettingsBytes)
+                        {
+                            var data = new byte[size];
+                            if (!ReadExactly(stream, data, (int)size)) { break; }
+                            mirrorSettings = SymmetrySettingsSnapshot.FromBytes(data);
+                        }
+                        else if (size > 0)
+                        {
+                            break;
+                        }
+                        mirrors.Add(SymmetryMirrors.GetOrCreate(mirrorGuid, mirrorSettings));
+                    }
+                    if (mirrors.Count == numMirrors)
+                    {
+                        for (int i = 0; i < groupSettings.Count; ++i)
+                        {
+                            groupMirrors.Add(reader.UInt32());
+                        }
+                    }
+                }
+            }
+            // A missing or unreadable table costs the settings, not the peer links: the group
+            // ids on the strokes are enough to put the peers back together.
+
+            uint maxGroupId = 0;
+            foreach (var item in pending)
+            {
+                maxGroupId = Math.Max(maxGroupId, item.groupId);
+            }
+            if (maxGroupId > pending.Count)
+            {
+                Debug.LogWarning("Ignoring out-of-range symmetry group ids");
+                return;
+            }
+            var groups = new SymmetryStrokeGroup[maxGroupId];
+            for (uint i = 0; i < maxGroupId; ++i)
+            {
+                uint settingsId = i < groupSettings.Count ? groupSettings[(int)i] : 0;
+                var groupSnapshot = (settingsId > 0 && settingsId <= settings.Count)
+                    ? settings[(int)settingsId - 1]
+                    : null;
+                uint mirrorId = i < groupMirrors.Count ? groupMirrors[(int)i] : 0;
+                var groupMirror = (mirrorId > 0 && mirrorId <= mirrors.Count)
+                    ? mirrors[(int)mirrorId - 1]
+                    : null;
+                groups[i] = new SymmetryStrokeGroup(groupSnapshot, groupMirror);
+            }
+
+            foreach (var item in pending)
+            {
+                if (item.groupId == 0 || item.groupId > groups.Length) { continue; }
+                item.stroke.JoinSymmetryGroup(groups[item.groupId - 1], item.pointerIndex);
+            }
+
+            // A loaded sketch has no active mirror, so the widget would have nothing to carry
+            // with it. Adopt the one the newest symmetric strokes were drawn under.
+            if (SymmetryMirrors.Active == null)
+            {
+                for (int i = groups.Length - 1; i >= 0; --i)
+                {
+                    if (groups[i].Mirror != null)
+                    {
+                        SymmetryMirrors.Active = groups[i].Mirror;
+                        break;
+                    }
+                }
+            }
+        }
+
+        /// Fills buf with exactly count bytes; false if the stream ended first.
+        private static bool ReadExactly(Stream stream, byte[] buf, int count)
+        {
+            int read = 0;
+            while (read < count)
+            {
+                int n = stream.Read(buf, read, count - read);
+                if (n <= 0) { return false; }
+                read += n;
+            }
+            return true;
         }
 
         public struct AdjustedMemoryBrushStroke
@@ -209,6 +478,8 @@ namespace TiltBrush
             var brushMap = new Dictionary<Guid, int>(); // map from GUID to index
             brushList = new List<Guid>();               // GUID's by index
 
+            var symmetryTable = SymmetryTable.Build(strokeCopies);
+
             // strokes
             writer.Int32(strokeCopies.Count);
             foreach (AdjustedMemoryBrushStroke copy in strokeCopies)
@@ -233,6 +504,12 @@ namespace TiltBrush
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
                 if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
+                uint symmetryGroupId = symmetryTable?.GetGroupId(stroke) ?? 0;
+                if (symmetryGroupId != 0)
+                {
+                    strokeExtensionMask |= StrokeExtension.SymmetryGroup;
+                    strokeExtensionMask |= StrokeExtension.SymmetryPointerIndex;
+                }
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -256,6 +533,14 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
                 {
                     writer.UInt32(copy.layerIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.SymmetryGroup) != 0)
+                {
+                    writer.UInt32(symmetryGroupId);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.SymmetryPointerIndex) != 0)
+                {
+                    writer.Int32(stroke.m_SymmetryPointerIndex);
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
                 {
@@ -330,6 +615,8 @@ namespace TiltBrush
                     }
                 }
             }
+
+            symmetryTable?.WriteTable(writer);
         }
 
 
@@ -345,6 +632,8 @@ namespace TiltBrush
             writer.Int32(0); // reserved for header: must be 0
                              // Bump SKETCH_VERSION to >= 6 and remove this comment if non-zero data is written here
             writer.UInt32(0); // additional data size
+
+            var symmetryTable = SymmetryTable.Build(strokeCopies);
 
             // strokes
             writer.Int32(strokeCopies.Count);
@@ -363,6 +652,12 @@ namespace TiltBrush
                 if (stroke.Group != SketchGroupTag.None) { strokeExtensionMask |= StrokeExtension.Group; }
                 strokeExtensionMask |= StrokeExtension.Layer;
                 if (stroke.m_OverrideColors != null) { strokeExtensionMask |= StrokeExtension.ControlPointColors; }
+                uint symmetryGroupId = symmetryTable?.GetGroupId(stroke) ?? 0;
+                if (symmetryGroupId != 0)
+                {
+                    strokeExtensionMask |= StrokeExtension.SymmetryGroup;
+                    strokeExtensionMask |= StrokeExtension.SymmetryPointerIndex;
+                }
 
                 writer.UInt32((uint)strokeExtensionMask);
                 uint controlPointExtensionMask =
@@ -386,6 +681,14 @@ namespace TiltBrush
                 if ((uint)(strokeExtensionMask & StrokeExtension.Layer) != 0)
                 {
                     writer.UInt32(copy.layerIndex);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.SymmetryGroup) != 0)
+                {
+                    writer.UInt32(symmetryGroupId);
+                }
+                if ((uint)(strokeExtensionMask & StrokeExtension.SymmetryPointerIndex) != 0)
+                {
+                    writer.Int32(stroke.m_SymmetryPointerIndex);
                 }
                 if ((uint)(strokeExtensionMask & StrokeExtension.ControlPointColors) != 0)
                 {
@@ -460,6 +763,8 @@ namespace TiltBrush
                     }
                 }
             }
+
+            symmetryTable?.WriteTable(writer);
         }
 
 
@@ -574,6 +879,7 @@ namespace TiltBrush
             // strokes
             int iNumMemories = reader.Int32();
             var result = new List<Stroke>();
+            var pendingSymmetry = new List<PendingSymmetry>();
             for (int i = 0; i < iNumMemories; ++i)
             {
                 var stroke = new Stroke();
@@ -588,6 +894,8 @@ namespace TiltBrush
 
                 uint strokeExtensionMask = reader.UInt32();
                 uint controlPointExtensionMask = reader.UInt32();
+                uint symmetryGroupId = 0;
+                int symmetryPointerIndex = -1;
 
                 if ((strokeExtensionMask & (int)StrokeExtension.Seed) == 0)
                 {
@@ -676,6 +984,12 @@ namespace TiltBrush
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
+                        case StrokeExtension.SymmetryGroup:
+                            symmetryGroupId = reader.UInt32();
+                            break;
+                        case StrokeExtension.SymmetryPointerIndex:
+                            symmetryPointerIndex = reader.Int32();
+                            break;
                         default:
                             {
                                 // Skip unknown extension.
@@ -752,10 +1066,23 @@ namespace TiltBrush
                     }
                 }
 
+                if (symmetryGroupId != 0)
+                {
+                    pendingSymmetry.Add(new PendingSymmetry
+                    {
+                        stroke = stroke,
+                        groupId = symmetryGroupId,
+                        pointerIndex = symmetryPointerIndex,
+                    });
+                }
+
                 // Deserialized strokes are expected in timestamp order, yielding aggregate complexity
                 // of O(N) to populate the by-time linked list.
                 result.Add(stroke);
             }
+
+            // Reconnect the strokes with the peers their symmetry mode created them alongside.
+            ReadSymmetryTable(stream, pendingSymmetry);
 
             return result;
         }
@@ -788,6 +1115,7 @@ namespace TiltBrush
             // strokes
             int iNumMemories = reader.Int32();
             var result = new List<Stroke>();
+            var pendingSymmetry = new List<PendingSymmetry>();
             for (int i = 0; i < iNumMemories; ++i)
             {
                 var stroke = new Stroke();
@@ -801,6 +1129,8 @@ namespace TiltBrush
 
                 uint strokeExtensionMask = reader.UInt32();
                 uint controlPointExtensionMask = reader.UInt32();
+                uint symmetryGroupId = 0;
+                int symmetryPointerIndex = -1;
 
                 if ((strokeExtensionMask & (int)StrokeExtension.Seed) == 0)
                 {
@@ -885,6 +1215,12 @@ namespace TiltBrush
                         case StrokeExtension.Seed:
                             stroke.m_Seed = reader.Int32();
                             break;
+                        case StrokeExtension.SymmetryGroup:
+                            symmetryGroupId = reader.UInt32();
+                            break;
+                        case StrokeExtension.SymmetryPointerIndex:
+                            symmetryPointerIndex = reader.Int32();
+                            break;
                         default:
                             {
                                 // Skip unknown extension.
@@ -955,8 +1291,19 @@ namespace TiltBrush
                     }
                 }
 
+                if (symmetryGroupId != 0)
+                {
+                    pendingSymmetry.Add(new PendingSymmetry
+                    {
+                        stroke = stroke,
+                        groupId = symmetryGroupId,
+                        pointerIndex = symmetryPointerIndex,
+                    });
+                }
                 result.Add(stroke);
             }
+
+            ReadSymmetryTable(stream, pendingSymmetry);
             return result;
         }
 

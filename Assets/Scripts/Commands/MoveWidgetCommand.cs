@@ -167,6 +167,15 @@ namespace TiltBrush
                 }
                 return true;
             }
+            // Strokes drawn under a mirror are moved right after the mirror is, so that undoing
+            // the move of the mirror puts them back with it.
+            MoveMirrorStrokesCommand mirrorStrokes = other as MoveMirrorStrokesCommand;
+            if (mirrorStrokes != null && m_Type == Type.Symmetry)
+            {
+                m_Children.Add(mirrorStrokes);
+                m_Final = true;
+                return true;
+            }
             // Strokes are deleted right after a move if the SelectionWidget is tossed.
             DeleteSelectionCommand delete = other as DeleteSelectionCommand;
             if (delete != null && m_Type == Type.Selection)

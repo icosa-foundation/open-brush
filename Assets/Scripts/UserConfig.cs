@@ -145,6 +145,9 @@ namespace TiltBrush
             public bool ShowDroppedFrames;
             public bool LargeMeshSupport;
             public bool EnableMonoscopicMode;
+            // Edits to a stroke drawn with symmetry are applied to the strokes the symmetry
+            // created alongside it. See SymmetryPeerEditing.
+            public bool SymmetryPeerEditing;
             private bool m_ForceViewOnly;
             public bool ForceViewOnly
             {
