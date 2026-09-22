@@ -377,7 +377,8 @@ namespace TiltBrush
             var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryVideos, relative);
             return new ReferenceVideo(
                 relative, source.Identity, relative,
-                () => SafMediaHttpServer.GetUrl(StorageArea.MediaLibraryVideos, relative));
+                mediaUrl: () => SafMediaHttpServer.GetUrl(StorageArea.MediaLibraryVideos, relative),
+                openNetworkPointer: source.OpenRead);
         }
 
         internal static Model ResolveApiModel(string relativePath)
