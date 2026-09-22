@@ -56,12 +56,15 @@ namespace TiltBrush
             ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
         }
 
-        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts storage location")]
+        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on desktop")]
         public static void OpenUserScriptsFolder()
         {
             if (OpenBrushStorage.IsScopedStorageMode)
             {
-                AndroidStorageManager.ReselectSharedFolder();
+                // The SAF folder picker is only for the startup grant. This desktop-only command
+                // must never let a running session replace its storage root.
+                ControllerConsoleScript.m_Instance?.AddNewLine(
+                    "Open the selected Open Brush/Scripts folder in Android's Files app.");
                 return;
             }
             OpenUserFolder(ApiManager.Instance.UserScriptsPath());
