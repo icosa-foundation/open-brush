@@ -1,0 +1,91 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c71b2ac88638c5c41a0a0681f70d2512, type: 3}
+  m_Name: UnlitFill
+  m_EditorClassIdentifier: 
+  m_Guid:
+    m_storage: aec9a324-d80a-4f9e-8312-c42ec8f7c0e9
+  m_DurableName: UnlitFill
+  m_CreationVersion: 
+  m_ShaderVersion: 10.0
+  m_BrushPrefab: {fileID: 100000, guid: 781a1241ef6c42fb92a79d846b9a16c5, type: 3}
+  m_Tags:
+  - experimental
+  - fill
+  m_Nondeterministic: 0
+  m_Supersedes: {fileID: 0}
+  m_LooksIdentical: 0
+  m_ButtonTexture: {fileID: 2800000, guid: 005ab0f4241848dea38c2c0e50004e3c, type: 3}
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionExtra: Fills the closed loop traced by the stroke, unaffected by lighting
+  m_BrushAudioLayers:
+  - {fileID: 8300000, guid: 0f082b62c4d74774598f2c7b9f02e6f8, type: 3}
+  - {fileID: 8300000, guid: d1b667f3c6173f64c9d88199b87df686, type: 3}
+  - {fileID: 8300000, guid: 94afe03e5d4b40c448f558613cbd58f1, type: 3}
+  m_BrushAudioBasePitch: 1
+  m_BrushAudioMaxPitchShift: 0
+  m_BrushAudioMaxVolume: 1
+  m_BrushVolumeUpSpeed: 1.3
+  m_BrushVolumeDownSpeed: 1.4
+  m_VolumeVelocityRangeMultiplier: 1
+  m_AudioReactive: 0
+  m_ButtonAudio: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 5ae6d84f05f1b294db68b2919d5e1fb4, type: 2}
+  m_TestingMaterial: {fileID: 0}
+  m_OverlayMaterial: {fileID: 0}
+  m_TextureAtlasV: 1
+  m_TileRate: 0.01
+  m_UseBloomSwatchOnColorPicker: 0
+  m_BrushSizeRange: {x: 0.005, y: 1}
+  m_PressureSizeRange: {x: 0.1, y: 1}
+  m_SizeVariance: 0
+  m_PreviewPressureSizeMin: 0.001
+  m_Opacity: 1
+  m_PressureOpacityRange: {x: 1, y: 1}
+  m_ColorLuminanceMin: 0
+  m_ColorSaturationMax: 1
+  m_ParticleSpeed: 0
+  m_ParticleRate: 1
+  m_ParticleInitialRotationRange: 0
+  m_RandomizeAlpha: 0
+  m_SprayRateMultiplier: 1
+  m_RotationVariance: 360
+  m_PositionVariance: 0
+  m_SizeRatio: {x: 1, y: 1}
+  m_M11Compatibility: 1
+  m_SolidMinLengthMeters_PS: 0.002
+  m_TubeStoreRadiusInTexcoord0Z: 0
+  m_RenderBackfaces: 1
+  m_BackIsInvisible: 0
+  m_BackfaceHueShift: 0
+  m_BoundsPadding: 0
+  m_PlayBackAtStrokeGranularity: 1
+  m_BlendMode: 0
+  m_EmissiveFactor: 0
+  m_AllowExport: 1
+  m_SupportsSimplification: 0
+  m_HeadMinPoints: 1
+  m_HeadPointStep: 1
+  m_TailMinPoints: 1
+  m_TailPointStep: 1
+  m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []
