@@ -417,7 +417,7 @@ namespace TiltBrush
 
         private static string GetSafCatalogIdentity(IUserStorageBackend backend, StorageDocument document)
         {
-            return $"{backend.RootIdentity}|{document.DocumentId.Value}|{document.LastModified:o}|{document.Size}";
+            return OpenBrushStorage.GetMediaRevisionIdentity(backend.RootIdentity, document);
         }
 
         internal static SoundClip CreateSafSoundClip(IUserStorageBackend backend, StorageDocument document)

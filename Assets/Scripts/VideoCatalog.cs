@@ -481,7 +481,7 @@ namespace TiltBrush
                 }
 
                 string identity =
-                    $"{document.DocumentId.Value}|{document.LastModified:o}|{document.Size}";
+                    OpenBrushStorage.GetMediaRevisionIdentity(backend.RootIdentity, document);
                 if (oldVideos.TryGetValue(identity, out ReferenceVideo existing))
                 {
                     nextVideos.Add(existing);
