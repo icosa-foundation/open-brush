@@ -770,9 +770,8 @@ namespace TiltBrush
                     continue;
                 }
 
-                string identity =
-                    $"{record.Document.DocumentId.Value}|" +
-                    $"{record.Document.LastModified:o}|{record.Document.Size}";
+                string identity = OpenBrushStorage.GetMediaRevisionIdentity(
+                    backend.RootIdentity, record.Document);
                 if (!previousByIdentity.TryGetValue(identity, out Model model))
                 {
                     StorageDocumentId documentId = record.Document.DocumentId;
