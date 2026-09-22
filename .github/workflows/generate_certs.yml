@@ -49,6 +49,7 @@ jobs:
 
   generate_viewer_certs:
     name: Generate Viewer Apple Certs
+    needs: generate_certs
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: macos-latest
     steps:
