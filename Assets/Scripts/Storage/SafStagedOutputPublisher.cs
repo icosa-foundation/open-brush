@@ -101,10 +101,30 @@ namespace TiltBrush
                 rootId, StorageArea.Exports, cancellationToken);
             string destination = SelectExportDirectoryName(backend,
                 Path.GetFileName(stagedDirectory), reservedNames, cancellationToken);
-            return PublishBundle(backend, StorageArea.Exports,
-                new[] { new SafStagedPath(stagedDirectory, destination),
-                    new SafStagedPath(stagedReadme, "README.txt") },
-                transactionOwnsPayload: true, cancellationToken);
+            // Each recovery journal must own a distinct source. The canonical staging README is
+            // reused by later exports, so letting a successful journal delete it would strand any
+            // earlier failed publication that still names the same path.
+            string publicationReadme = Path.Combine(
+                Path.GetDirectoryName(stagedReadme),
+                $".ob-export-readme-{Guid.NewGuid():N}{Path.GetExtension(stagedReadme)}");
+            File.Copy(stagedReadme, publicationReadme, overwrite: false);
+            bool journalOwnsReadme = false;
+            try
+            {
+                return PublishBundle(backend, StorageArea.Exports,
+                    new[] { new SafStagedPath(stagedDirectory, destination),
+                        new SafStagedPath(publicationReadme, "README.txt") },
+                    transactionOwnsPayload: true,
+                    cancellationToken: cancellationToken,
+                    onJournalPersisted: () => journalOwnsReadme = true);
+            }
+            catch
+            {
+                // PublishBundle owns the copy after its journal is persisted. An exception before
+                // that handoff must not leave an unjournaled staging file behind.
+                if (!journalOwnsReadme) { File.Delete(publicationReadme); }
+                throw;
+            }
         }
 
         public static SafPublicationResult PublishUniqueDirectory(
@@ -215,7 +235,8 @@ namespace TiltBrush
             StorageArea area,
             IEnumerable<SafStagedPath> stagedPaths,
             bool transactionOwnsPayload,
-            CancellationToken cancellationToken)
+            CancellationToken cancellationToken,
+            Action onJournalPersisted = null)
         {
             if (backend == null ||
                 backend.Kind != StorageBackendKind.StorageAccessFramework ||
@@ -270,6 +291,7 @@ namespace TiltBrush
                 CreatedUtc = DateTime.UtcNow.ToString("o"),
             };
             Persist(record);
+            onJournalPersisted?.Invoke();
             return Resume(backend, record, cancellationToken);
         }
 
