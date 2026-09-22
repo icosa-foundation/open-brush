@@ -878,6 +878,38 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :LSApplicationCategoryType public.app-category.graphics-design" "$INFO_PLIST" || \
             /usr/libexec/PlistBuddy -c "Add :LSApplicationCategoryType string public.app-category.graphics-design" "$INFO_PLIST"
 
+          set_bundle_identifier() {
+            local bundle_path="$1"
+            local bundle_identifier="$2"
+            local bundle_plist="$bundle_path/Contents/Info.plist"
+
+            if [[ ! -f "$bundle_plist" ]]; then
+              echo "Expected bundle metadata at $bundle_plist."
+              exit 1
+            fi
+
+            if /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$bundle_plist" > /dev/null 2>&1; then
+              /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $bundle_identifier" "$bundle_plist"
+            else
+              /usr/libexec/PlistBuddy -c "Add :CFBundleIdentifier string $bundle_identifier" "$bundle_plist"
+            fi
+
+            local actual_identifier
+            actual_identifier=$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$bundle_plist")
+            if [[ "$actual_identifier" != "$bundle_identifier" ]]; then
+              echo "Expected bundle identifier $bundle_identifier, found $actual_identifier."
+              exit 1
+            fi
+          }
+
+          PLUGINS_PATH="$APP_PATH/Contents/Plugins"
+          set_bundle_identifier "$PLUGINS_PATH/phonon.bundle" \
+            "$MAC_BUNDLE_ID.phonon"
+          set_bundle_identifier "$PLUGINS_PATH/audioplugin_phonon.bundle" \
+            "$MAC_BUNDLE_ID.audioplugin-phonon"
+          set_bundle_identifier "$PLUGINS_PATH/steam_api.bundle" \
+            "$MAC_BUNDLE_ID.steam-api"
+
           # Sign native code from the inside out, then seal nested bundles and the app.
           while IFS= read -r -d '' native_file; do
             native_file_type="$(file -b "$native_file")"
