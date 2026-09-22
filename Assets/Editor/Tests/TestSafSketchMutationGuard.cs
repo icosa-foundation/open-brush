@@ -91,5 +91,35 @@ namespace TiltBrush
                 UserStorage.SetBackendForTests(previous);
             }
         }
+
+        [Test]
+        public void CommittedSceneUsesFreshProviderCapabilities()
+        {
+            var committed = new StorageDocument(
+                new StorageDocumentId("committed-id"),
+                new StorageDocumentId("parent-id"),
+                "Saved.tilt",
+                TiltFile.TILT_MIME_TYPE,
+                false,
+                123,
+                DateTime.UtcNow,
+                (1L << 2) | (1L << 6),
+                "Saved.tilt");
+            var backend = new CatalogTestBackend
+            {
+                Listing = () => StorageDirectoryResult.Succeeded(
+                    new[] { committed }),
+            };
+
+            StorageDocument resolved = SaveLoadScript.ResolveCommittedSafDocument(
+                backend,
+                StorageArea.Sketches,
+                committed.DocumentId,
+                committed.DisplayName,
+                previousDocument: null);
+
+            Assert.AreSame(committed, resolved);
+            Assert.IsTrue(resolved.SupportsReplacement);
+        }
     }
 }
