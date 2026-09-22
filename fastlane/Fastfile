@@ -126,8 +126,8 @@ platform :mac do
 
     bundle_id = ENV.fetch("MAC_BUNDLE_ID")
     team_id = ENV.fetch("APPLE_TEAM_ID")
-    profile_path = ENV.fetch("sigh_#{bundle_id}_appstore_profile-path")
-    app_identity = ENV["sigh_#{bundle_id}_appstore_certificate-name"]
+    profile_path = ENV.fetch("sigh_#{bundle_id}_appstore_macos_profile-path")
+    app_identity = ENV["sigh_#{bundle_id}_appstore_macos_certificate-name"]
     identities = sh("security find-identity -v", log: false)
 
     if app_identity.to_s.empty?
