@@ -610,9 +610,7 @@ jobs:
           du -mcsh Library/*
           find Library -size +50M -exec ls -altrh {} \;
           # chown all files, since some are owned by root after the docker run
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
-          fi
+          docker run -v $(pwd)/Library:/mnt alpine chown $(id -u):$(id -g) -R /mnt/
           # Keep only caches that are both safe to restore and useful to subsequent builds.
           library_cache="$RUNNER_TEMP/unity-library-cache"
           mkdir "$library_cache"
