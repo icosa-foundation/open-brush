@@ -194,15 +194,18 @@ namespace TiltBrush
         {
             private readonly IUserStorageBackend m_Backend;
             private readonly string m_Root;
+            private readonly string m_Identity;
             public StorageDocument Document { get; }
-            public string Identity =>
-                $"{m_Root}:{Document.DocumentId.Value}|{Document.LastModified:o}|{Document.Size}";
+            public string Identity => m_Identity;
+            public bool HasVerifiableRevision =>
+                Document.LastModified.HasValue || Document.Size.HasValue;
 
             public MediaSource(IUserStorageBackend backend, StorageArea area, string relativePath)
             {
                 m_Backend = backend;
                 m_Root = backend.RootIdentity;
                 Document = ResolveMediaDocument(backend, area, relativePath);
+                m_Identity = GetMediaRevisionIdentity(m_Root, Document);
                 CheckRoot();
             }
 
@@ -217,6 +220,23 @@ namespace TiltBrush
                 return m_Backend.OpenRead(Document.DocumentId, false, CancellationToken.None);
             }
 
+        }
+
+        internal static string GetMediaRevisionIdentity(
+            string rootIdentity, StorageDocument document)
+        {
+            string identity =
+                $"{rootIdentity}:{document.DocumentId.Value}|" +
+                $"{document.LastModified:o}|{document.Size}";
+            if (document.LastModified.HasValue || document.Size.HasValue)
+            {
+                return identity;
+            }
+
+            // DocumentsProvider permits both revision fields to be null. A durable document URI
+            // identifies the document, not its current contents, so it cannot safely validate an
+            // image cache by itself. The nonce deliberately prevents reuse across catalog queries.
+            return $"{identity}|unverifiable:{Guid.NewGuid():N}";
         }
 
         internal static StorageDocument ResolveMediaDocument(

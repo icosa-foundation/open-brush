@@ -149,6 +149,7 @@ namespace TiltBrush
         // Path relative to Catalog's HomeDirectory with forward slashes.
         public string RelativePath => m_PersistentPath ??
             $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\", "/");
+        internal bool HasVerifiableRevision { get; private set; } = true;
 
         public ReferenceImage(string path)
         {
@@ -161,7 +162,8 @@ namespace TiltBrush
             string catalogIdentity,
             Func<Stream> openRead,
             long? knownFileSize,
-            string persistentPath = null)
+            string persistentPath = null,
+            bool hasVerifiableRevision = true)
         {
             m_Path = displayPath;
             m_PersistentPath = persistentPath;
@@ -169,6 +171,7 @@ namespace TiltBrush
             m_CacheIdentity = catalogIdentity;
             m_OpenRead = openRead;
             m_KnownFileSize = knownFileSize;
+            HasVerifiableRevision = hasVerifiableRevision;
         }
 
         /// Returns a full-resolution Texture2D.

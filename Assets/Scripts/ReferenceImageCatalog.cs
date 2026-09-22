@@ -761,8 +761,8 @@ namespace TiltBrush
                     continue;
                 }
 
-                string catalogIdentity =
-                    $"{document.DocumentId.Value}|{document.LastModified:o}|{document.Size}";
+                string catalogIdentity = OpenBrushStorage.GetMediaRevisionIdentity(
+                    backend.RootIdentity, document);
                 if (oldImages.TryGetValue(catalogIdentity, out ReferenceImage existing))
                 {
                     nextImages.Add(existing);
@@ -779,7 +779,8 @@ namespace TiltBrush
                     () => backend.OpenRead(
                         documentId, requireSeekable: false, CancellationToken.None),
                     document.Size,
-                    $"./{Path.Combine(relativeDirectory, document.DisplayName).Replace("\\", "/")}"));
+                    $"./{Path.Combine(relativeDirectory, document.DisplayName).Replace("\\", "/")}",
+                    document.LastModified.HasValue || document.Size.HasValue));
             }
 
             foreach (ReferenceImage removed in oldImages.Values)
@@ -864,13 +865,22 @@ namespace TiltBrush
             {
                 // Saved sketches can refer to folders that the reference panel has never opened.
                 // Do not add these images to the panel's current-directory listing.
-                if (!m_UnlistedImages.TryGetValue(fullPath, out refImage))
+                if (!m_UnlistedImages.TryGetValue(fullPath, out refImage) ||
+                    !refImage.HasVerifiableRevision)
                 {
-                    refImage = ResolveSafImage(
+                    ReferenceImage replacement = ResolveSafImage(
                         UserStorage.Backend, StorageAreaKind, logicalPath);
-                    if (refImage != null)
+                    if (replacement != null)
                     {
+                        refImage?.Unload();
+                        refImage = replacement;
                         m_UnlistedImages[fullPath] = refImage;
+                    }
+                    else if (refImage != null)
+                    {
+                        refImage.Unload();
+                        m_UnlistedImages.Remove(fullPath);
+                        refImage = null;
                     }
                 }
                 return refImage;
@@ -901,7 +911,8 @@ namespace TiltBrush
                 return new ReferenceImage(
                     logicalPath, source.Identity, source.OpenRead,
                     source.Document.Size,
-                    $"./{logicalPath}");
+                    $"./{logicalPath}",
+                    source.HasVerifiableRevision);
             }
             catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
                                       e is ArgumentException)
