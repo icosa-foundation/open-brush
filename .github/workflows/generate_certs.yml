@@ -69,7 +69,7 @@ jobs:
         run: |
           eval "$(ssh-agent -s)"
           ssh-add - <<< "${MATCH_DEPLOY_KEY}"
-          bundle exec fastlane ios bootstrap_signing
+          bundle exec fastlane ios sync_certificates
           bundle exec fastlane mac bootstrap_signing
         env:
           APPLE_CONNECT_EMAIL: ${{ secrets.APPLE_CONNECT_EMAIL }}
