@@ -880,8 +880,16 @@ jobs:
 
           # Sign native code from the inside out, then seal nested bundles and the app.
           while IFS= read -r -d '' native_file; do
-            if file -b "$native_file" | grep -q 'Mach-O'; then
-              codesign --force --verify --verbose --timestamp --options runtime --sign "$MAC_APP_IDENTITY" "$native_file"
+            native_file_type="$(file -b "$native_file")"
+            if [[ "$native_file_type" == *"Mach-O"* ]]; then
+              if [[ "$native_file_type" == *"executable"* ]]; then
+                codesign --force --verify --verbose --timestamp --options runtime \
+                  --entitlements Support/macos/OpenBrushViewerAppStoreChild.entitlements \
+                  --sign "$MAC_APP_IDENTITY" "$native_file"
+              else
+                codesign --force --verify --verbose --timestamp --options runtime \
+                  --sign "$MAC_APP_IDENTITY" "$native_file"
+              fi
             fi
           done < <(find "$APP_PATH" -type f -print0)
 
