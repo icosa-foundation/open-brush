@@ -1137,6 +1137,40 @@ namespace TiltBrush
                 }
             }
         }
+
+        [Test]
+        public void SafGeneratedBundles_ClaimSameNamedCapturesIndependently()
+        {
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"claim-test-{Guid.NewGuid():N}");
+            string canonical = Path.Combine(stagingRoot, "snapshot.png");
+            Directory.CreateDirectory(stagingRoot);
+            try
+            {
+                File.WriteAllText(canonical, "first");
+                List<SafStagedPath> first = OpenBrushStorage.ClaimGeneratedFilesForPublication(
+                    new[] { new SafStagedPath(canonical, "snapshot.png") });
+
+                File.WriteAllText(canonical, "second");
+                List<SafStagedPath> second = OpenBrushStorage.ClaimGeneratedFilesForPublication(
+                    new[] { new SafStagedPath(canonical, "snapshot.png") });
+
+                Assert.AreNotEqual(first[0].SourcePath, second[0].SourcePath);
+                Assert.AreEqual("snapshot.png", first[0].DestinationRelativePath);
+                Assert.AreEqual("snapshot.png", second[0].DestinationRelativePath);
+                Assert.AreEqual("first", File.ReadAllText(first[0].SourcePath));
+                Assert.AreEqual("second", File.ReadAllText(second[0].SourcePath));
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, recursive: true);
+                }
+            }
+        }
+
         [TestCase("unchanged")]
         [TestCase("edited")]
         [TestCase("deleted")]

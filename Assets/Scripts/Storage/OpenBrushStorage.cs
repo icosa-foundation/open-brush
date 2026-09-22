@@ -435,6 +435,20 @@ namespace TiltBrush
                     bundleArea = area;
                     stagedPaths.Add(new SafStagedPath(localPath, areaRelativePath));
                 }
+                if (transactionOwnsPayload)
+                {
+                    try
+                    {
+                        stagedPaths = ClaimGeneratedFilesForPublication(stagedPaths);
+                    }
+                    catch (Exception e) when (
+                        e is IOException || e is UnauthorizedAccessException)
+                    {
+                        onComplete?.Invoke(false,
+                            $"Could not reserve generated output for publication: {e.Message}");
+                        return;
+                    }
+                }
                 AndroidStorageManager.StartStorageOperation(
                     label,
                     () => SafStagedOutputPublisher.PublishBundle(
@@ -473,6 +487,51 @@ namespace TiltBrush
                     });
             }
             PublishNext();
+        }
+
+        /// Moves a completed generated bundle to transaction-unique source names while retaining
+        /// its requested SAF destinations. Publication is asynchronous, so canonical staging names
+        /// can be reused by another capture before the first worker reads or deletes them.
+        ///
+        /// This is deliberately a rename within local staging, not another copy: these files are
+        /// generated output already awaiting publication, and no SAF input is being materialized.
+        internal static List<SafStagedPath> ClaimGeneratedFilesForPublication(
+            IReadOnlyList<SafStagedPath> stagedPaths)
+        {
+            var claimed = new List<(string original, string reserved)>();
+            try
+            {
+                var result = new List<SafStagedPath>(stagedPaths.Count);
+                foreach (SafStagedPath stagedPath in stagedPaths)
+                {
+                    string source = stagedPath.SourcePath;
+                    if (!File.Exists(source))
+                    {
+                        throw new FileNotFoundException(
+                            "Generated output does not exist.", source);
+                    }
+                    string reserved = Path.Combine(
+                        Path.GetDirectoryName(source),
+                        $".ob-publish-{Guid.NewGuid():N}-{Path.GetFileName(source)}");
+                    File.Move(source, reserved);
+                    claimed.Add((source, reserved));
+                    result.Add(new SafStagedPath(
+                        reserved, stagedPath.DestinationRelativePath));
+                }
+                return result;
+            }
+            catch
+            {
+                for (int i = claimed.Count - 1; i >= 0; --i)
+                {
+                    (string original, string reserved) = claimed[i];
+                    if (File.Exists(reserved) && !File.Exists(original))
+                    {
+                        File.Move(reserved, original);
+                    }
+                }
+                throw;
+            }
         }
 
 
