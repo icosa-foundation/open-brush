@@ -348,10 +348,9 @@ namespace TiltBrush
         public static void PublishGeneratedFileToSharedStorageAsync(
             string localPath, string label, Action<bool, string> onComplete)
         {
-            // A generated file is staged output: the transaction owns it and cleans it up.
-            PublishSinglePathAsync(
-                localPath, label, TryGetSharedGeneratedFileRelativePath,
-                transactionOwnsPayload: true, onComplete);
+            // Use the same ownership handoff as multi-file captures. A second capture may reuse
+            // this name while publication runs, so the worker must never read the canonical path.
+            PublishGeneratedFilesToSharedStorageAsync(new[] { localPath }, label, onComplete);
         }
 
         public static void PublishUserRootFileToSharedStorageAsync(
