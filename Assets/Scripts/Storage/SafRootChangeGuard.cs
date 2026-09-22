@@ -107,7 +107,6 @@ namespace TiltBrush
             "GooglePlayStorage.SeededDefaultReferenceImagesFdV1",
             "GooglePlayStorage.SeededDefaultModelsFdV1",
             "SeededDefaultSoundClips",
-            "QuillDefaults",
         };
 
         private static void TryDeleteDirectory(string path)
