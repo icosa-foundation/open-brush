@@ -47,7 +47,7 @@ namespace TiltBrush
         private readonly string m_RootIdentity;
         private StorageDocument m_Document;
         private readonly StorageArea m_Area;
-        private readonly TiltFile m_TiltFile;
+        private TiltFile m_TiltFile;
         private string m_AssetId;
         private string m_SourceId;
 
@@ -137,8 +137,35 @@ namespace TiltBrush
             {
                 return StaleRootMutationResult();
             }
-            return m_Backend.Rename(
+            StorageMutationResult result = m_Backend.Rename(
                 m_Document.DocumentId, displayName, CancellationToken.None);
+            if (result.Success)
+            {
+                // DocumentsContract.renameDocument may return a new URI. Refresh this object in
+                // place because SaveLoadScript and the sketch catalog can share it; retaining the
+                // old identity makes the next ordinary Save target a document that no longer
+                // exists. Do not "fix" this by searching by filename: the returned document URI
+                // is the provider's authoritative identity.
+                string relativePath = m_Document.RelativeDisplayPath ?? m_Document.DisplayName;
+                int separator = Math.Max(
+                    relativePath.LastIndexOf('/'), relativePath.LastIndexOf('\\'));
+                relativePath = separator < 0
+                    ? displayName
+                    : $"{relativePath.Substring(0, separator + 1)}{displayName}";
+                m_Document = new StorageDocument(
+                    result.DocumentId,
+                    m_Document.ParentDocumentId,
+                    displayName,
+                    m_Document.MimeType,
+                    m_Document.IsDirectory,
+                    m_Document.Size,
+                    m_Document.LastModified,
+                    m_Document.ProviderFlags,
+                    relativePath);
+                m_TiltFile = new TiltFile(
+                    new StorageReadStreamSource(m_Backend, result.DocumentId), relativePath);
+            }
+            return result;
         }
 
         private StorageMutationResult StaleRootMutationResult()

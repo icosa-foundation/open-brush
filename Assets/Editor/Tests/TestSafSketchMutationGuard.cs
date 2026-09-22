@@ -52,7 +52,11 @@ namespace TiltBrush
         public void CurrentSceneFileCanRenameAndDelete()
         {
             IUserStorageBackend previous = UserStorage.Backend;
-            var backend = new CatalogTestBackend { RootIdentity = "root-a" };
+            var backend = new CatalogTestBackend
+            {
+                RootIdentity = "root-a",
+                RenameResultDocumentId = new StorageDocumentId("renamed-id"),
+            };
             try
             {
                 UserStorage.SetBackendForTests(backend);
@@ -64,6 +68,9 @@ namespace TiltBrush
                 Assert.AreEqual(1, backend.DeleteCalls);
                 Assert.AreEqual(1, backend.RenameCalls);
                 Assert.IsTrue(file.Available);
+                Assert.AreEqual("renamed-id", file.StorageId);
+                Assert.AreEqual("Renamed", file.HumanName);
+                Assert.AreEqual("Renamed.tilt", file.Document.RelativeDisplayPath);
             }
             finally
             {
