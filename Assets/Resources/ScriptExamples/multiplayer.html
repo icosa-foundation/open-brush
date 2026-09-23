@@ -76,9 +76,12 @@
                             <input id="liveStrokeStreaming" class="form-check-input" type="checkbox">
                             <label for="liveStrokeStreaming" class="form-check-label">Live stroke streaming</label>
                         </div>
-                        <div class="form-check">
-                            <input id="useDefaultPhotonCloudPorts" class="form-check-input" type="checkbox" checked>
-                            <label for="useDefaultPhotonCloudPorts" class="form-check-label">Use default Photon cloud ports</label>
+                        <div>
+                            <label for="photonUdpPorts" class="form-label">Photon UDP ports</label>
+                            <select id="photonUdpPorts" class="form-select">
+                                <option value="Alternative">Alternative (27000–27002)</option>
+                                <option value="Default">Default (5058/5055/5056)</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -309,9 +312,8 @@
     function renderMultiplayerStatus(snapshot) {
         const canJoin = ["INITIALIZED", "DISCONNECTED", "IN_LOBBY"].includes(snapshot.state);
         if (!photonPortSettingInitialized &&
-            typeof snapshot.useDefaultPhotonCloudPorts === "boolean") {
-            document.getElementById("useDefaultPhotonCloudPorts").checked =
-                snapshot.useDefaultPhotonCloudPorts;
+            ["Default", "Alternative"].includes(snapshot.photonUdpPorts)) {
+            document.getElementById("photonUdpPorts").value = snapshot.photonUdpPorts;
             photonPortSettingInitialized = true;
         }
         connectionState.textContent = snapshot.state;
@@ -406,8 +408,8 @@
         ].join(",");
         sendCommands([
             {
-                command: "multiplayer.photondefaultports",
-                value: checkedValue("useDefaultPhotonCloudPorts")
+                command: "multiplayer.photonudpports",
+                value: fieldValue("photonUdpPorts")
             },
             { command: "multiplayer.join", value: parameters }
         ]);

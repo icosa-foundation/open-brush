@@ -22,6 +22,7 @@ using UnityEngine;
 using Fusion;
 using Fusion.Photon.Realtime;
 using Fusion.Sockets;
+using Photon.Realtime;
 using TiltBrush;
 using UnityEngine.SceneManagement;
 
@@ -66,6 +67,7 @@ namespace OpenBrush.Multiplayer
                 m_Runner.gameObject.AddComponent<NetworkSceneManagerDefault>();
                 m_Runner.ProvideInput = true;
                 m_Runner.AddCallbacks(this);
+                m_Runner.CloudAddressRewriter = RewritePhotonCloudAddress;
 
 
 
@@ -107,6 +109,41 @@ namespace OpenBrush.Multiplayer
 
         #region IConnectionHandler Methods
 
+        private static string RewritePhotonCloudAddress(string address, ServerConnection server)
+        {
+            if (App.UserConfig.Flags.PhotonUdpPorts != PhotonUdpPortSet.Default)
+            {
+                return address;
+            }
+
+            // Realtime 5 selects the alternative UDP ports by default. Leave non-UDP
+            // addresses (including the WSS name-server authentication) untouched.
+            int alternativePort;
+            int defaultPort;
+            switch (server)
+            {
+                case ServerConnection.NameServer:
+                    alternativePort = 27000;
+                    defaultPort = 5058;
+                    break;
+                case ServerConnection.MasterServer:
+                    alternativePort = 27001;
+                    defaultPort = 5055;
+                    break;
+                case ServerConnection.GameServer:
+                    alternativePort = 27002;
+                    defaultPort = 5056;
+                    break;
+                default:
+                    return address;
+            }
+
+            string suffix = $":{alternativePort}";
+            return address.EndsWith(suffix, StringComparison.Ordinal)
+                ? $"{address.Substring(0, address.Length - suffix.Length)}:{defaultPort}"
+                : address;
+        }
+
         public async Task<bool> Connect()
         {
             State = ConnectionState.CONNECTING;
@@ -115,8 +152,7 @@ namespace OpenBrush.Multiplayer
 
             var result = await m_Runner.JoinSessionLobby(
                 SessionLobby.Shared,
-                customAppSettings: m_PhotonAppSettings,
-                useDefaultCloudPorts: App.UserConfig.Flags.UseDefaultPhotonCloudPorts);
+                customAppSettings: m_PhotonAppSettings);
 
             if (result.Ok)
             {
@@ -155,7 +191,6 @@ namespace OpenBrush.Multiplayer
                 Scene = sceneInfo, // Pass the configured NetworkSceneInfo
                 IsOpen = true,
                 IsVisible = !roomCreateData.@private,
-                UseDefaultPhotonCloudPorts = App.UserConfig.Flags.UseDefaultPhotonCloudPorts,
             };
 
             var result = await m_Runner.StartGame(args);

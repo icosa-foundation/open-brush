@@ -30,11 +30,18 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
+    public enum PhotonUdpPortSet
+    {
+        Default,
+        Alternative,
+    }
+
 
     // Use "struct" instead of "class" to prohibit the use of default values,
     // which won't work the way you want. Use Nullable<> instead.
@@ -180,12 +187,8 @@ namespace TiltBrush
             public PluginWebRequestRule[] PluginWebRequestRules;
             public bool EnablePluginClipboardAccess;
 
-            private bool? m_UseDefaultPhotonCloudPorts;
-            public bool UseDefaultPhotonCloudPorts
-            {
-                get { return m_UseDefaultPhotonCloudPorts ?? true; }
-                set { m_UseDefaultPhotonCloudPorts = value; }
-            }
+            [JsonConverter(typeof(StringEnumConverter))]
+            public PhotonUdpPortSet PhotonUdpPorts = PhotonUdpPortSet.Alternative;
 
             bool? m_AdvancedKeyboardShortcuts;
             public bool AdvancedKeyboardShortcuts
