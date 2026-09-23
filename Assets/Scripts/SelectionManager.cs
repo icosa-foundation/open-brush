@@ -721,8 +721,11 @@ namespace TiltBrush
             // actually been moved: while the user is still picking strokes there is nothing to
             // follow, and parking peers costs about what selecting them does.
             TrTransform selectionXf = SelectionTransform;
-            bool wantPeerPreview = HasSelection && SymmetryPeerEditing.Enabled &&
-                selectionXf != TrTransform.identity;
+            bool wantPeerPreview = HasSelection && m_SelectedStrokes.Count > 0 &&
+                SymmetryPeerEditing.Enabled &&
+                (selectionXf != TrTransform.identity || SymmetryPeerPreview.IsShowing ||
+                 (m_bSelectionWidgetNeedsUpdate &&
+                  m_SelectionJoinTransforms.Values.Any(xf => xf != TrTransform.identity)));
             if (!wantPeerPreview)
             {
                 SymmetryPeerPreview.Hide();
@@ -845,6 +848,33 @@ namespace TiltBrush
                 : TrTransform.identity;
         }
 
+        /// Undo of deselection must restore when each stroke joined, rather than treating
+        /// every stroke as newly selected at the final widget transform.
+        internal void RestoreSelectionJoinTransforms(
+            IReadOnlyDictionary<Stroke, TrTransform> joinTransforms)
+        {
+            foreach (var pair in joinTransforms)
+            {
+                if (IsStrokeSelected(pair.Key))
+                {
+                    m_SelectionJoinTransforms[pair.Key] = pair.Value;
+                }
+            }
+        }
+
+        internal void RestoreSelectionSourceCanvases(
+            IReadOnlyDictionary<Stroke, CanvasScript> sourceCanvases)
+        {
+            foreach (var pair in sourceCanvases)
+            {
+                if (IsStrokeSelected(pair.Key) && pair.Value != null &&
+                    !App.Scene.IsLayerDeleted(pair.Value))
+                {
+                    pair.Key.m_PreviousCanvas = pair.Value;
+                }
+            }
+        }
+
         public void ForgetStrokesInSelectionCanvas()
         {
             SymmetryPeerPreview.Hide();
@@ -857,6 +887,7 @@ namespace TiltBrush
 
         public void SelectStrokes(IEnumerable<Stroke> strokes, bool preserveTool = false)
         {
+            SymmetryPeerPreview.Hide();
             foreach (var stroke in strokes)
             {
                 if (IsStrokeSelected(stroke))
@@ -890,6 +921,7 @@ namespace TiltBrush
 
         public void DeselectStrokes(IEnumerable<Stroke> strokes, CanvasScript targetCanvas = null)
         {
+            SymmetryPeerPreview.Hide();
             // Deselects to the canvas stored in m_PreviousCanvas for each stroke or widget
             // Pass in targetCanvas to override this.
 

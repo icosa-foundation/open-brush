@@ -153,6 +153,18 @@ namespace TiltBrush
             return peerXf_CS.IsFinite();
         }
 
+        /// A stroke selected after the widget has moved follows only the later movement.
+        /// Both selection preview and deselection baking use this canvas-space delta.
+        internal static TrTransform SelectionMovement(TrTransform selectionXf,
+            TrTransform joinXf) => selectionXf * joinXf.inverse;
+
+        internal static TrTransform PeerSelectionMovement(TrTransform toPeer,
+            TrTransform selectionXf, TrTransform joinXf)
+        {
+            var moved = SelectionMovement(selectionXf, joinXf);
+            return toPeer * moved * toPeer.inverse;
+        }
+
         /// The control points a peer should take when 'stroke' is reshaped to newControlPoints -
         /// what the reshape tool needs to sculpt a whole group at once.
         ///

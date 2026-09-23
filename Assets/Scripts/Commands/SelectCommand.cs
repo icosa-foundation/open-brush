@@ -48,6 +48,11 @@ namespace TiltBrush
         // deselect is about to bake a move into the strokes.
         private readonly List<Stroke> m_PeerStrokes = new List<Stroke>();
         private readonly List<TrTransform> m_PeerTransforms = new List<TrTransform>();
+        private readonly Dictionary<Stroke, TrTransform> m_JoinTransforms =
+            new Dictionary<Stroke, TrTransform>(new ReferenceComparer<Stroke>());
+        private readonly Dictionary<Stroke, CanvasScript> m_SourceCanvases =
+            new Dictionary<Stroke, CanvasScript>(new ReferenceComparer<Stroke>());
+        private bool m_MovedStrokeSinceJoin;
 
         override public bool NeedsSave
         {
@@ -56,7 +61,8 @@ namespace TiltBrush
                 // We only need to save if objects have been moved, and that only
                 // occurs when a transformed selection has been deselecting, which
                 // rebakes that object into the original canvas.
-                return m_Deselect && m_InitialTransform != TrTransform.identity;
+                return m_Deselect &&
+                    (m_InitialTransform != TrTransform.identity || m_MovedStrokeSinceJoin);
             }
         }
 
@@ -173,13 +179,9 @@ namespace TiltBrush
         /// peers are worked out now, while the strokes are still where the move left them.
         private void GatherSymmetryPeers()
         {
-            // Peers shown following the selection are only being drawn elsewhere; they have to be
-            // back home before their move is worked out, and the deselect is what applies it.
-            SymmetryPeerPreview.Hide();
-
-            // Same condition as NeedsSave: nothing is baked into the strokes unless a deselect is
-            // carrying a transform.
-            if (!m_Deselect || m_InitialTransform == TrTransform.identity || m_Strokes == null)
+            // Construction captures the movement but does not change sketch geometry. The
+            // selection interaction restores preview when the command is executed.
+            if (!m_Deselect || m_Strokes == null)
             {
                 return;
             }
@@ -191,8 +193,18 @@ namespace TiltBrush
                 // what the selection did after it joined.
                 TrTransform joined =
                     SelectionManager.m_Instance.SelectionTransformWhenSelected(stroke);
-                TrTransform moved = m_InitialTransform * joined.inverse;
+                m_JoinTransforms[stroke] = joined;
+                m_SourceCanvases[stroke] = stroke.m_PreviousCanvas;
+                TrTransform moved = SymmetryPeerEditing.SelectionMovement(m_InitialTransform, joined);
                 if (moved == TrTransform.identity) { continue; }
+                m_MovedStrokeSinceJoin = true;
+
+                // A stroke moved into a different canvas no longer has a shared canvas-space
+                // relationship with its peers. Undo can make that relationship active again.
+                if (m_TargetCanvas != null && m_TargetCanvas != stroke.m_PreviousCanvas)
+                {
+                    continue;
+                }
 
                 foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
                 {
@@ -200,9 +212,12 @@ namespace TiltBrush
                     // A peer that is still selected carries the selection's move itself, and will
                     // bake it in when it is deselected in turn.
                     if (SelectionManager.m_Instance.IsStrokeSelected(peer)) { continue; }
-                    if (SymmetryPeerEditing.TryGetPeerTransform(
-                            stroke, peer, moved, out TrTransform peerXf))
+                    if (SymmetryPeerEditing.TryGetPeerSymmetryTransform(
+                            stroke, peer, out TrTransform toPeer))
                     {
+                        TrTransform peerXf = SymmetryPeerEditing.PeerSelectionMovement(
+                            toPeer, m_InitialTransform, joined);
+                        if (!peerXf.IsFinite()) { continue; }
                         m_PeerStrokes.Add(peer);
                         m_PeerTransforms.Add(peerXf);
                     }
@@ -249,10 +264,10 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            SymmetryPeerPreview.Hide();
             if (m_Deselect)
             {
                 // Peers must be in their own layers before the move is written into them.
-                SymmetryPeerPreview.Hide();
                 if (m_Strokes != null)
                 {
                     SelectionManager.m_Instance.DeselectStrokes(m_Strokes, m_TargetCanvas);
@@ -290,6 +305,7 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            SymmetryPeerPreview.Hide();
             // In the future, we should check for a cleared selection that happen on a redo of this
             // command.
             m_CheckForClearedSelection = true;
@@ -297,12 +313,13 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectionTransform = m_InitialTransform;
             if (m_Deselect)
             {
-                SymmetryPeerPreview.Hide();
                 TransformItems.TransformEach(
                     m_PeerStrokes, m_PeerTransforms.Select(xf => xf.inverse).ToList());
                 if (m_Strokes != null)
                 {
                     SelectionManager.m_Instance.SelectStrokes(m_Strokes);
+                    SelectionManager.m_Instance.RestoreSelectionSourceCanvases(m_SourceCanvases);
+                    SelectionManager.m_Instance.RestoreSelectionJoinTransforms(m_JoinTransforms);
                 }
                 if (m_Widgets != null)
                 {

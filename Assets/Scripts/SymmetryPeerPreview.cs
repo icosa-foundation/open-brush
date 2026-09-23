@@ -33,6 +33,7 @@ namespace TiltBrush
         private static readonly List<Stroke> m_Strokes = new List<Stroke>();
         // Maps the stroke each peer is following onto that peer.
         private static readonly List<TrTransform> m_ToPeer = new List<TrTransform>();
+        private static readonly List<TrTransform> m_JoinTransforms = new List<TrTransform>();
         // Per peer, everything the preview has moved it by so far.
         private static readonly List<TrTransform> m_Applied = new List<TrTransform>();
 
@@ -64,6 +65,8 @@ namespace TiltBrush
                     }
                     m_Strokes.Add(peer);
                     m_ToPeer.Add(toPeer);
+                    m_JoinTransforms.Add(
+                        SelectionManager.m_Instance.SelectionTransformWhenSelected(stroke));
                     m_Applied.Add(TrTransform.identity);
                 }
             }
@@ -75,7 +78,8 @@ namespace TiltBrush
         {
             for (int i = 0; i < m_Strokes.Count; ++i)
             {
-                TrTransform target = m_ToPeer[i] * selectionXf * m_ToPeer[i].inverse;
+                TrTransform target = SymmetryPeerEditing.PeerSelectionMovement(
+                    m_ToPeer[i], selectionXf, m_JoinTransforms[i]);
                 if (!target.IsFinite()) { continue; }
                 TrTransform step = target * m_Applied[i].inverse;
                 if (step == TrTransform.identity) { continue; }
@@ -93,7 +97,22 @@ namespace TiltBrush
             {
                 if (m_Applied[i] != TrTransform.identity)
                 {
-                    m_Strokes[i].TransformGeometryInPlace(m_Applied[i].inverse);
+                    TrTransform inverse = m_Applied[i].inverse;
+                    if (!m_Strokes[i].TransformGeometryInPlace(inverse))
+                    {
+                        // A repaint can replace a batched stroke with an unbatched one while
+                        // previewing. Restore from its current points, preserving that edit.
+                        var stroke = m_Strokes[i];
+                        var points = (PointerManager.ControlPoint[])stroke.m_ControlPoints.Clone();
+                        for (int point = 0; point < points.Length; ++point)
+                        {
+                            var pose = inverse * TrTransform.TR(points[point].m_Pos,
+                                points[point].m_Orient);
+                            points[point].m_Pos = pose.translation;
+                            points[point].m_Orient = pose.rotation;
+                        }
+                        stroke.RestoreMirrorControlPoints(points, stroke.m_BrushScale * inverse.scale);
+                    }
                 }
             }
             Forget();
@@ -105,6 +124,7 @@ namespace TiltBrush
         {
             m_Strokes.Clear();
             m_ToPeer.Clear();
+            m_JoinTransforms.Clear();
             m_Applied.Clear();
         }
     }
