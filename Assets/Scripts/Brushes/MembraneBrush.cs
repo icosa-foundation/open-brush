@@ -18,52 +18,19 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    /// Fills the closed loop traced by the stroke, the way a 2D drawing app fills a closed
-    /// path. Structurally the sibling of <see cref="HullBrush"/>: the stroke's control
-    /// points are input to a whole-shape solver rather than to a ribbon, so all geometry is
-    /// rebuilt from scratch whenever the control points change and lives on a single knot.
-    /// Where Hull Brush wraps the points in their convex hull, Fill Brush spans them with a
-    /// surface that follows the path's concavities. See <see cref="PathFill"/> for the
-    /// algorithm and its limits.
-    ///
-    /// The stroke is treated as implicitly closed: the fill always spans the loop from the
-    /// last control point back to the first, so the shape resolves as you draw, exactly as
-    /// the hull does.
-    ///
-    /// TODO:
-    /// - Rebuilding is O(output vertices * boundary points) and runs on every control point
-    ///   change. The caps below keep it bounded; incremental update would be better.
-    /// - Interior control points contribute nothing to the fill but are still stored.
-    /// - Strongly non-planar loops are served badly; see the future work documented on
-    ///   PathFill.
-    public class FillBrush : GeometryBrush
+    /// Spans a closed stroke with a relaxed membrane. Geometry is rebuilt from the whole
+    /// path whenever its control points change.
+    public class MembraneBrush : GeometryBrush
     {
-        // Separate brush descriptors opt in, so saved projected fills keep their geometry.
-        [SerializeField] private bool m_UseMembrane;
+        [SerializeField, Range(1, 8)] private int m_MembraneFinalBoundarySubdivisions = 4;
 
-        /// Which regions count as inside when the loop crosses itself.
-        [SerializeField] private PathFillRule m_FillRule;
-
-        /// Boundary simplification tolerance, as a multiple of the brush's own size.
-        /// Anchoring it to the brush rather than to the stroke's bounding box keeps it
-        /// constant for the whole stroke, so the outline of what has already been drawn
-        /// stops shifting as the stroke grows -- and detail finer than the brush is not
-        /// visible anyway.
+        /// Minimum visible membrane width, as a multiple of the brush's size.
         [SerializeField] private float m_SimplifyTolerance;
-
-        /// Cap on boundary points after simplification. Drives the cost of every stage.
-        [SerializeField] private int m_MaxBoundaryPoints;
 
         /// Cap on generated vertices. Keep this comfortably below the soft vertex limit that
         /// GeometryBrush uses to end a stroke (9000), remembering that double-sided
         /// descriptors double the count.
         [SerializeField] private int m_MaxVertices;
-
-        /// How finely the fill is subdivided to carry the lift and shading normals.
-        [SerializeField] private int m_MaxRefinementPasses;
-
-        /// Stroke length limit, in control points.
-        [SerializeField] private int m_MaxKnots;
 
         /// If set, each triangle carries its own face normal for flat faceted shading,
         /// mirroring HullBrush's m_Faceted. Costs one vertex per index, so keep MaxVertices
@@ -74,32 +41,19 @@ namespace TiltBrush
         /// every vertex taking the current brush colour.
         [SerializeField] private bool m_ColorFromControlPoints;
 
-        /// If set, warn when a fill comes back malformed or too large to store. Logs only
-        /// when the reported numbers change, so it stays quiet unless something is wrong.
-        [SerializeField] private bool m_LogAnomalies;
-
-        private int m_LastLoggedDropped;
-        private int m_LastLoggedRepaired;
-        private int m_LastLoggedClamped;
-        private int m_LastLoggedOversize;
-
         /// Reused across rebuilds to keep per-frame allocation down.
         private List<Vector3> m_PathPositions;
         private List<Color32> m_PathColors;
 
-        /// Boundary simplification is repeated over the whole stroke on every control point
-        /// otherwise, which is the largest single cost on a long stroke.
-        private PathFillGeometry.SimplifyCache m_SimplifyCache;
         private readonly MembraneFill.Workspace m_MembraneWorkspace = new MembraneFill.Workspace();
 
-        public FillBrush()
+        public MembraneBrush()
             : base(bCanBatch: true,
                 upperBoundVertsPerKnot: 1,
                 bDoubleSided: false)
         {
             m_PathPositions = new List<Vector3>();
             m_PathColors = new List<Color32>();
-            m_SimplifyCache = new PathFillGeometry.SimplifyCache();
         }
 
         //
@@ -110,8 +64,7 @@ namespace TiltBrush
         {
             base.InitBrush(desc, localPointerXf);
             SetDoubleSided(desc);
-            m_SimplifyCache.Clear();
-            if (m_UseMembrane) { m_MembraneWorkspace.WarmUp(MakeFillOptions()); }
+            m_MembraneWorkspace.WarmUp(MakeFillOptions());
             m_geometry.Layout = GetVertexLayout(desc);
         }
 
@@ -120,22 +73,36 @@ namespace TiltBrush
             return m_Desc.m_SolidMinLengthMeters_PS * POINTER_TO_LOCAL * App.METERS_TO_UNITS;
         }
 
-        public override bool ShouldCurrentLineEnd()
-        {
-            // Reminder: it's ok for this method to be nondeterministic.
-            return (!m_UseMembrane && m_knots.Count > MaxKnots) || base.ShouldCurrentLineEnd();
-        }
-
         protected override void ControlPointsChanged(int iKnot0)
         {
             OnChanged_FrameKnots(iKnot0);
             OnChanged_MakeGeometry();
         }
 
+        public override BatchSubset FinalizeBatchedBrush()
+        {
+            FinalizeMembraneGeometry();
+            return base.FinalizeBatchedBrush();
+        }
+
+        public override void FinalizeSolitaryBrush()
+        {
+            FinalizeMembraneGeometry();
+            base.FinalizeSolitaryBrush();
+        }
+
+        private void FinalizeMembraneGeometry()
+        {
+            if (m_geometry == null) { return; }
+            // Both live drawing and reconstruction from saved control points finish here.
+            // Read the knots directly, including any final pending position/colour update.
+            OnChanged_MakeGeometry(finalQuality: true);
+            m_FirstChangedControlPoint = null;
+        }
+
         public override void ResetBrushForPreview(TrTransform localPointerXf)
         {
             base.ResetBrushForPreview(localPointerXf);
-            m_SimplifyCache.Clear();
             OnChanged_MakeGeometry();
         }
 
@@ -155,21 +122,15 @@ namespace TiltBrush
         // Geometry generation
         //
 
-        private int MaxKnots { get { return m_MaxKnots > 0 ? m_MaxKnots : 2048; } }
-
-        private PathFill.Options MakeFillOptions()
+        private MembraneFill.Options MakeFillOptions()
         {
-            PathFill.Options options = PathFill.Options.Default;
-            options.Rule = m_FillRule;
+            MembraneFill.Options options = MembraneFill.Options.Default;
             options.Faceted = m_Faceted;
-            options.Diagnostics = m_LogAnomalies;
-            options.Cache = m_SimplifyCache;
             if (m_SimplifyTolerance > 0f)
             {
                 options.SimplifyToleranceAbsolute =
                     m_SimplifyTolerance * m_BaseSize_PS * POINTER_TO_LOCAL;
             }
-            if (m_MaxBoundaryPoints > 0) { options.MaxBoundaryPoints = m_MaxBoundaryPoints; }
             if (m_MaxVertices > 0) { options.MaxVertices = m_MaxVertices; }
 
             // Overrunning GeometryBrush's soft vertex limit ends the stroke and starts a new
@@ -179,7 +140,6 @@ namespace TiltBrush
             // faceting turns each index into a vertex.
             int ceiling = Mathf.Max(64, (m_SoftVertexLimit * 4) / (5 * Mathf.Max(1, NS)));
             options.MaxVertices = Mathf.Min(options.MaxVertices, ceiling);
-            if (m_MaxRefinementPasses > 0) { options.MaxRefinementPasses = m_MaxRefinementPasses; }
             return options;
         }
 
@@ -200,7 +160,7 @@ namespace TiltBrush
 
         /// Rebuilds the whole fill. Like HullBrush, all geometry hangs off knot 1: the shape
         /// is a property of the stroke as a whole, not of any span between control points.
-        private void OnChanged_MakeGeometry()
+        private void OnChanged_MakeGeometry(bool finalQuality = false)
         {
             if (m_geometry == null) { return; }
             Knot knot = m_knots[1];
@@ -224,13 +184,17 @@ namespace TiltBrush
                 m_PathColors.Add(m_knots[i].color);
             }
 
-            PathFill.Options options = MakeFillOptions();
-            if (m_ColorFromControlPoints) { options.PathColors = m_PathColors; }
+            MembraneFill.Options options = MakeFillOptions();
+            if (m_ColorFromControlPoints)
+            {
+                options.PathColors = m_PathColors;
+            }
 
             UnityEngine.Profiling.Profiler.BeginSample("Fill Path");
-            PathFill.Result fill = m_UseMembrane
-                ? MembraneFill.Fill(m_PathPositions, options, m_MembraneWorkspace)
-                : PathFill.Fill(m_PathPositions, options);
+            MembraneFill.Result fill = finalQuality
+                ? MembraneFill.FillFinal(m_PathPositions, options, m_MembraneWorkspace,
+                    m_MembraneFinalBoundarySubdivisions)
+                : MembraneFill.Fill(m_PathPositions, options, m_MembraneWorkspace);
             UnityEngine.Profiling.Profiler.EndSample();
 
             // A fill needs at least three non-collinear points, so early in a stroke -- and
@@ -245,45 +209,18 @@ namespace TiltBrush
             m_knots[1] = knot;
         }
 
-        private void CreateGeometry(ref Knot knot, PathFill.Result fill)
+        private void CreateGeometry(ref Knot knot, MembraneFill.Result fill)
         {
             // Knot.nVert and Knot.nTri are 16-bit. Overflowing them does not throw; it wraps,
             // leaving the knot describing a range that has nothing to do with the geometry
             // actually in the pool, which draws as stray triangles stitched between unrelated
-            // vertices. PathFill caps its own output, but the brush must not rely on that
+            // vertices. MembraneFill caps its own output, but the brush must not rely on that
             // when the cap is configurable from the prefab.
             int vertsNeeded = fill.Vertices.Length * NS;
             int trisNeeded = (fill.Triangles.Length / 3) * NS;
             if (vertsNeeded > ushort.MaxValue || trisNeeded > ushort.MaxValue)
             {
-                if (m_LogAnomalies && m_LastLoggedOversize != vertsNeeded)
-                {
-                    m_LastLoggedOversize = vertsNeeded;
-                    Debug.LogWarning(
-                        $"FillBrush: fill needs {vertsNeeded} verts / {trisNeeded} tris, which " +
-                        $"does not fit a knot's 16-bit counts. Lower MaxVertices on the brush " +
-                        $"prefab. Skipping this rebuild.");
-                }
                 return;
-            }
-
-            if (m_LogAnomalies && fill.HasAnomalies &&
-                (fill.DroppedTriangles != m_LastLoggedDropped ||
-                 fill.RepairedVertices != m_LastLoggedRepaired ||
-                 fill.ClampedVertices != m_LastLoggedClamped))
-            {
-                m_LastLoggedDropped = fill.DroppedTriangles;
-                m_LastLoggedRepaired = fill.RepairedVertices;
-                m_LastLoggedClamped = fill.ClampedVertices;
-                Debug.LogWarning(
-                    $"FillBrush: {fill.DroppedTriangles} triangles dropped, " +
-                    $"{fill.RepairedVertices} vertices repaired, " +
-                    $"{fill.ClampedVertices}/{fill.Vertices.Length} vertices clamped to the " +
-                    $"boundary's range, {fill.ProjectedSelfIntersections} projected " +
-                    $"self-intersections, flatness {fill.Flatness:F3}, " +
-                    $"boundary {fill.Boundary.Length}. A self-overlapping or strongly " +
-                    $"non-planar path has no well-defined fill; the result is bounded but " +
-                    $"arbitrary.");
             }
 
             Color32 fallbackColor = m_knots[m_knots.Count - 1].color;

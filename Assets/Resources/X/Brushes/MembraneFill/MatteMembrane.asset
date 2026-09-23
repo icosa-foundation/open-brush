@@ -10,21 +10,21 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71b2ac88638c5c41a0a0681f70d2512, type: 3}
-  m_Name: ShinyFill
+  m_Name: MatteMembrane
   m_EditorClassIdentifier: 
   m_Guid:
-    m_storage: bd6a54be-ab90-43d5-891d-130ec4744415
-  m_DurableName: ShinyFill
+    m_storage: 528fc9e8-5b95-48f3-b3f0-67ac5236f010
+  m_DurableName: MatteMembrane
   m_CreationVersion: 
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 100000, guid: 781a1241ef6c42fb92a79d846b9a16c5, type: 3}
+  m_BrushPrefab: {fileID: 100000, guid: 306981493c914292aa6da41f3c0a5964, type: 3}
   m_Tags:
   - experimental
   - fill
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
-  m_ButtonTexture: {fileID: 2800000, guid: 7f8c0c4185444d4aba6beca9f225e29a, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: d04627fc75e14893b7ef33551d206706, type: 3}
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -34,20 +34,20 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionExtra: Fills the closed loop traced by the stroke, with a glossy surface
+  m_DescriptionExtra: Stretches a soft surface across your stroke
   m_BrushAudioLayers:
-  - {fileID: 8300000, guid: 15b5f6d2886398349b2f6221289deef0, type: 3}
-  - {fileID: 8300000, guid: 7f3c17c51669e2d48b29fd4056b713a4, type: 3}
-  - {fileID: 8300000, guid: 80f7380fb57f05b49bf3407ca40404fd, type: 3}
+  - {fileID: 8300000, guid: 103bfb4f4d70ddc4e8ca851eda9568f2, type: 3}
+  - {fileID: 8300000, guid: c7079dc05177e3944bed833a35ba7563, type: 3}
+  - {fileID: 8300000, guid: 9fcf67238fab1c44596f5390b5ee1957, type: 3}
   m_BrushAudioBasePitch: 1
   m_BrushAudioMaxPitchShift: 0
   m_BrushAudioMaxVolume: 1
-  m_BrushVolumeUpSpeed: 1.2
+  m_BrushVolumeUpSpeed: 1.7
   m_BrushVolumeDownSpeed: 1.5
   m_VolumeVelocityRangeMultiplier: 1.5
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: 6a81b9dffc0f06848be063699d4ca747, type: 2}
+  m_Material: {fileID: 2100000, guid: 62df3af3ef149504988da83c08cf7250, type: 2}
   m_TestingMaterial: {fileID: 0}
   m_OverlayMaterial: {fileID: 0}
   m_TextureAtlasV: 1

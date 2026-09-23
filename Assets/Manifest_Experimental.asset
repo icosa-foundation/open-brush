@@ -13,7 +13,6 @@ MonoBehaviour:
   m_Name: Manifest_Experimental
   m_EditorClassIdentifier: 
   Brushes:
-  - {fileID: 11400000, guid: c4b25e404b5a4c3883dcb41c41a51bca, type: 2}
   - {fileID: 11400000, guid: b24b145ee272a9345b7f0142039120ea, type: 2}
   - {fileID: 11400000, guid: daece1ae471373c41bd0ebe7f9e9ce4f, type: 2}
   - {fileID: 11400000, guid: 03a529e1f5193dd4582d2d5cd92c3f4f, type: 2}
@@ -65,11 +64,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b9280b7e789abdd49bd5d85c5554afd3, type: 2}
   - {fileID: 11400000, guid: 69fc4ed00cead5b47b3dd3fb4d6096c9, type: 2}
   - {fileID: 11400000, guid: d25091db0e878ba458b54227b23cad57, type: 2}
-  - {fileID: 11400000, guid: 79072972fd1f4f09a0d7e1c82b0f8bfc, type: 2}
-  - {fileID: 11400000, guid: d8d48ef15954476a83a925796d6ed853, type: 2}
-  - {fileID: 11400000, guid: 4ff171b7fe0e4c34966514039796cc13, type: 2}
-  - {fileID: 11400000, guid: b7a47bd6669745289b53ca250044f599, type: 2}
-  - {fileID: 11400000, guid: 6a0667510d4548af9e2597c1d09d1e2a, type: 2}
+  - {fileID: 11400000, guid: c4b25e404b5a4c3883dcb41c41a51bca, type: 2}
+  - {fileID: 11400000, guid: 188c94f0f5dcddc429bff17dca0ff36d, type: 2}
+  - {fileID: 11400000, guid: dcc9d62f427ef0542bbce4040a9c05a0, type: 2}
   Environments: []
   Locales: []
   CompatibilityBrushes: []

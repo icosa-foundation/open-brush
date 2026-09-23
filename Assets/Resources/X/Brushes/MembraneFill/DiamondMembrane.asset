@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71b2ac88638c5c41a0a0681f70d2512, type: 3}
-  m_Name: DiamondFill
+  m_Name: DiamondMembrane
   m_EditorClassIdentifier: 
   m_Guid:
-    m_storage: 286faadd-127a-41f4-b574-03ff8d80c5a9
-  m_DurableName: DiamondFill
+    m_storage: 4f070b71-da25-48c4-9322-e9216d921562
+  m_DurableName: DiamondMembrane
   m_CreationVersion: 
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 100000, guid: 781a1241ef6c42fb92a79d846b9a16c5, type: 3}
+  m_BrushPrefab: {fileID: 100000, guid: 306981493c914292aa6da41f3c0a5964, type: 3}
   m_Tags:
   - experimental
   - fill
@@ -34,17 +34,17 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionExtra: Fills the closed loop traced by the stroke, with a refractive surface
+  m_DescriptionExtra: Stretches a soft surface across your stroke
   m_BrushAudioLayers:
-  - {fileID: 8300000, guid: 9e903914bef26c24d9985e5420b0a7cd, type: 3}
-  - {fileID: 8300000, guid: f0a151f9fc421384f8f8c1cf5a8a81ba, type: 3}
-  - {fileID: 8300000, guid: 3ffaf2c2817c9fb4ebeb0b6cff0e5943, type: 3}
+  - {fileID: 8300000, guid: 103bfb4f4d70ddc4e8ca851eda9568f2, type: 3}
+  - {fileID: 8300000, guid: c7079dc05177e3944bed833a35ba7563, type: 3}
+  - {fileID: 8300000, guid: 9fcf67238fab1c44596f5390b5ee1957, type: 3}
   m_BrushAudioBasePitch: 1
   m_BrushAudioMaxPitchShift: 0
-  m_BrushAudioMaxVolume: 0.95
-  m_BrushVolumeUpSpeed: 1.4
-  m_BrushVolumeDownSpeed: 1.2
-  m_VolumeVelocityRangeMultiplier: 2
+  m_BrushAudioMaxVolume: 1
+  m_BrushVolumeUpSpeed: 1.7
+  m_BrushVolumeDownSpeed: 1.5
+  m_VolumeVelocityRangeMultiplier: 1.5
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
   m_Material: {fileID: 2100000, guid: d2e6bb39f4d2ac6499b22771a7e046eb, type: 2}
