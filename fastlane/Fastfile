@@ -1,6 +1,14 @@
 org, repo = (ENV["GITHUB_REPOSITORY"]||"").split("/")
 match_org, match_repo = (ENV["MATCH_REPOSITORY"]||"").split("/")
 
+def app_store_connect_key
+  app_store_connect_api_key(
+    key_id: ENV["APPSTORE_KEY_ID"],
+    issuer_id: ENV["APPSTORE_ISSUER_ID"],
+    key_content: ENV["APPSTORE_P8"]
+  )
+end
+
 platform :ios do
   lane :init_ci do
     github_action(
@@ -83,4 +91,94 @@ platform :ios do
     )
   end
 
+end
+
+platform :mac do
+  desc "Create any missing Mac App Store signing assets in the match repository"
+  lane :bootstrap_signing do
+    app_store_connect_key
+
+    match(
+      type: "appstore",
+      platform: "macos",
+      additional_cert_types: ["mac_installer_distribution"],
+      storage_mode: "git",
+      git_url: "git@github.com:#{match_org}/#{match_repo}.git",
+      app_identifier: ENV["MAC_BUNDLE_ID"],
+      readonly: false
+    )
+  end
+
+  desc "Install Mac App Store signing assets for CI"
+  lane :sync_certificates do
+    setup_ci
+    app_store_connect_key
+
+    match(
+      type: "appstore",
+      platform: "macos",
+      additional_cert_types: ["mac_installer_distribution"],
+      storage_mode: "git",
+      git_url: "git@github.com:#{match_org}/#{match_repo}.git",
+      app_identifier: ENV["MAC_BUNDLE_ID"],
+      readonly: true
+    )
+
+    bundle_id = ENV.fetch("MAC_BUNDLE_ID")
+    team_id = ENV.fetch("APPLE_TEAM_ID")
+    profile_path = ENV.fetch("sigh_#{bundle_id}_appstore_macos_profile-path")
+    app_identity = ENV["sigh_#{bundle_id}_appstore_macos_certificate-name"]
+    identities = sh("security find-identity -v", log: false)
+
+    if app_identity.to_s.empty?
+      app_identity_line = identities.lines.find do |line|
+        line.include?(team_id) &&
+          (line.include?("Apple Distribution:") ||
+           line.include?("3rd Party Mac Developer Application:") ||
+           line.include?("Mac App Distribution:"))
+      end
+      UI.user_error!("No Mac App Distribution signing identity was installed") unless app_identity_line
+      app_identity = app_identity_line[/"([^"]+)"/, 1]
+    end
+
+    installer_identity_line = identities.lines.find do |line|
+      line.include?(team_id) &&
+        (line.include?("Mac Installer Distribution:") ||
+         line.include?("3rd Party Mac Developer Installer:"))
+    end
+    UI.user_error!("No Mac Installer Distribution signing identity was installed") unless installer_identity_line
+    installer_identity = installer_identity_line[/\)\s+([0-9A-F]{40})\s+"/, 1]
+    UI.user_error!("Could not read the Mac Installer Distribution identity hash") unless installer_identity
+
+    File.open(ENV.fetch("GITHUB_ENV"), "a") do |github_env|
+      github_env.puts("MAC_PROVISIONING_PROFILE_PATH=#{profile_path}")
+      github_env.puts("MAC_APP_IDENTITY=#{app_identity}")
+      github_env.puts("MAC_INSTALLER_IDENTITY=#{installer_identity}")
+    end
+  end
+
+  desc "Upload a macOS beta build to TestFlight"
+  lane :beta do
+    api_key = app_store_connect_key
+    upload_to_testflight(
+      api_key: api_key,
+      pkg: ENV.fetch("MAC_PKG_PATH"),
+      skip_waiting_for_build_processing: true
+    )
+  end
+
+  desc "Upload a macOS release build to App Store Connect"
+  lane :release do
+    api_key = app_store_connect_key
+    upload_to_app_store(
+      api_key: api_key,
+      pkg: ENV.fetch("MAC_PKG_PATH"),
+      force: true,
+      skip_metadata: true,
+      skip_screenshots: true,
+      submit_for_review: false,
+      automatic_release: false,
+      precheck_include_in_app_purchases: false
+    )
+  end
 end

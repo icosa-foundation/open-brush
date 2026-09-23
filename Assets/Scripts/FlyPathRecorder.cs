@@ -192,6 +192,14 @@ namespace TiltBrush
             RecordedFrame frame = new RecordedFrame(currentPosition, currentRotation, currentTime, speed);
             m_RecordedFrames.Add(frame);
 
+            // The first frame is recorded before any movement has happened, so its measured
+            // speed is always zero.  Backfill it from the first real measurement, otherwise
+            // anything deriving speed from the frames sees a dead stop at the start.
+            if (m_RecordedFrames.Count == 2)
+            {
+                m_RecordedFrames[0].speed = speed;
+            }
+
             m_LastRecordTime = currentTime;
             m_LastRecordedPosition = currentPosition;
         }

@@ -111,6 +111,9 @@ static class BuildTiltBrush
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
+            // iOS has no Unity OpenXR loader. Keeping the OpenXR build mode preserves the normal
+            // UnityXR runtime path, which falls back to view-only mode when no loader initializes.
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.iOS),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.AndroidXR, BuildTarget.Android),
 
             // Zapbox
@@ -932,6 +935,14 @@ static class BuildTiltBrush
             m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
             m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Any);
 
+#if OPEN_BRUSH_VIEWER
+            if (m_Target == BuildTarget.iOS)
+            {
+                PlayerSettings.iOS.targetDevice = iOSTargetDevice.iPhoneAndiPad;
+                Debug.Log("Configured the Open Brush Viewer build for iPhone and iPad.");
+            }
+#endif
+
             if (m_Target == BuildTarget.Android && tiltOptions.AndroidTargetSdkVersion.HasValue)
             {
                 m_RestoreAndroidTargetSdkVersion = true;
@@ -1000,6 +1011,7 @@ static class BuildTiltBrush
             }
             AssetDatabase.SaveAssets();
         }
+
     }
 
     class TempSetScriptingBackend : IDisposable
@@ -1265,11 +1277,23 @@ static class BuildTiltBrush
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            if (targetSettings == null)
+            {
+                return;
+            }
             m_xrEnabled = targetSettings.InitManagerOnStart;
 
             switch (tiltOptions.XrSdk)
             {
                 case XrSdkMode.OpenXR:
+                    // Unity's OpenXR loader supports Standalone and Android, but not iOS.
+                    // An iOS Viewer build deliberately has no loader: it remains in the normal
+                    // UnityXR runtime mode and uses the existing no-HMD view-only fallback.
+                    if (tiltOptions.Target != BuildTarget.iOS)
+                    {
+                        targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                    }
+                    break;
                 case XrSdkMode.AndroidXR:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     break;
@@ -1308,6 +1332,10 @@ static class BuildTiltBrush
         public void Dispose()
         {
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            if (targetSettings == null)
+            {
+                return;
+            }
             targetSettings.InitManagerOnStart = m_xrEnabled;
 
             // Remove build loaders.
