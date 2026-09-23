@@ -363,7 +363,7 @@ namespace TiltBrush
             string relative = Path.GetRelativePath(App.ReferenceImagePath(), fullPath).Replace('\\', '/');
             var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryImages, relative);
             return new ReferenceImage(relative, source.Identity, source.OpenRead,
-                source.Document.Size, $"./{relative}");
+                source.Document.Size, $"./{relative}", source.HasVerifiableRevision);
         }
 
         internal static ReferenceVideo ResolveApiVideo(string fullPath)
@@ -377,7 +377,8 @@ namespace TiltBrush
             var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryVideos, relative);
             return new ReferenceVideo(
                 relative, source.Identity, relative,
-                () => SafMediaHttpServer.GetUrl(StorageArea.MediaLibraryVideos, relative));
+                mediaUrl: () => SafMediaHttpServer.GetUrl(StorageArea.MediaLibraryVideos, relative),
+                openNetworkPointer: source.OpenRead);
         }
 
         internal static Model ResolveApiModel(string relativePath)
@@ -466,7 +467,7 @@ namespace TiltBrush
 
         internal static void _PublishApiMediaLibraryPathToSharedStorage(
             string localPath, bool preserveDestination = false,
-            Action<bool, string> onComplete = null)
+            Action<bool, string> onComplete = null, bool replaceDestination = false)
         {
             if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
                     localPath, out string relativePath))
@@ -479,7 +480,9 @@ namespace TiltBrush
                 relativePath,
                 "media file",
                 (path, label, complete) => OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
-                    path, relativePath, label, complete, preserveDestination: preserveDestination),
+                    path, relativePath, label, complete,
+                    preserveDestination: preserveDestination,
+                    replaceDestination: replaceDestination),
                 onComplete);
         }
 

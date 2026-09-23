@@ -152,5 +152,21 @@ namespace TiltBrush
                 }
             }
         }
+
+        [TestCase("Sketch.tilt", false, true)]
+        [TestCase("Sketch.TILT", false, true)]
+        [TestCase("Sketch.TILT", true, false)]
+        [TestCase("Folder", true, false)]
+        [TestCase("Notes.txt", false, false)]
+        public void SafUserSketchbookIncludesOnlyTiltArchiveFiles(
+            string name, bool isDirectory, bool expected)
+        {
+            var document = new StorageDocument(
+                new StorageDocumentId(name), default, name, "application/octet-stream",
+                isDirectory, null, null, 0, name);
+
+            Assert.AreEqual(expected,
+                SafSketchSet.IsSupportedUserSketchDocument(document));
+        }
     }
 }

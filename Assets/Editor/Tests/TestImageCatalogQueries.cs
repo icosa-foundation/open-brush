@@ -30,6 +30,7 @@ namespace TiltBrush
         public bool IsReady => true;
         public string RootIdentity { get; set; } = "catalog-query-root";
         public Func<StorageDirectoryResult> Listing;
+        public StorageDocumentId RenameResultDocumentId;
         public int RenameCalls;
         public int DeleteCalls;
         public StorageDirectoryResult List(StorageArea area, string path, CancellationToken cancellationToken) => Listing();
@@ -41,7 +42,9 @@ namespace TiltBrush
         public StorageMutationResult Rename(StorageDocumentId documentId, string newDisplayName, CancellationToken cancellationToken)
         {
             ++RenameCalls;
-            return new StorageMutationResult(StorageResultCode.Success, documentId);
+            return new StorageMutationResult(
+                StorageResultCode.Success,
+                RenameResultDocumentId.IsValid ? RenameResultDocumentId : documentId);
         }
         public StorageMutationResult Delete(StorageDocumentId documentId, CancellationToken cancellationToken)
         {

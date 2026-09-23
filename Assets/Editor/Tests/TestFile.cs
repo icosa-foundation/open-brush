@@ -999,6 +999,44 @@ namespace TiltBrush
             }
         }
 
+        [Test]
+        public void SafApiImportReplacement_PreservesNameAndReplacesBytes()
+        {
+            string stagingRoot = Path.Combine(
+                Path.GetTempPath(), $"saf-import-replacement-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(stagingRoot);
+            string stagedPath = Path.Combine(stagingRoot, "image.png");
+            File.WriteAllBytes(stagedPath, new byte[] { 2 });
+            var backend = new FakeSafBackend();
+            backend.Add("image.png", new byte[] { 1 });
+            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(
+                    backend,
+                    StorageArea.MediaLibraryImages,
+                    "image.png",
+                    stagedPath,
+                    prepareLocalImport: false,
+                    out _,
+                    replaceDestination: true);
+
+                Assert.IsTrue(result.Success, result.Error);
+                Assert.IsFalse(backend.Contains("image (1).png"));
+                using Stream input = backend.OpenRead(
+                    backend.List(StorageArea.MediaLibraryImages, "", CancellationToken.None)
+                        .Documents.Single(document => document.DisplayName == "image.png").DocumentId,
+                    false,
+                    CancellationToken.None);
+                Assert.AreEqual(2, input.ReadByte());
+            }
+            finally
+            {
+                Directory.Delete(stagingRoot, true);
+                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
+            }
+        }
+
 
         [Test]
         public void SafStagedOutputPublisher_CommitsWholeDirectory()
@@ -1100,72 +1138,108 @@ namespace TiltBrush
             }
         }
 
-
-        [UnityEngine.TestTools.UnityTest]
-        public System.Collections.IEnumerator SafQuillDefaults_TrackFilesAndRootsAndPreserveDeletions()
+        [Test]
+        public void SafGeneratedBundles_ClaimSameNamedCapturesIndependently()
         {
-            var backend = new FakeSafBackend();
-            string firstRoot = backend.RootIdentity;
-            string secondRoot = $"fake-root-{Guid.NewGuid():N}";
-            string[] defaults = { "Defaults/example.imm" };
-            byte[] bytes = { 1, 2, 3 };
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"claim-test-{Guid.NewGuid():N}");
+            string canonical = Path.Combine(stagingRoot, "snapshot.png");
+            Directory.CreateDirectory(stagingRoot);
             try
             {
-                yield return QuillFileCatalog.SeedSafDefaults(backend, defaults, _ => bytes);
-                Assert.IsTrue(backend.Contains("example.imm"));
-                StorageDocument original = backend.List(StorageArea.MediaLibraryQuill, "", CancellationToken.None)
-                    .Documents.Single();
-                using (Stream input = backend.OpenRead(original.DocumentId, false, CancellationToken.None))
-                {
-                    Assert.AreEqual(1, input.ReadByte());
-                }
-                Assert.IsTrue(backend.Delete(original.DocumentId, CancellationToken.None).Success);
-                yield return QuillFileCatalog.SeedSafDefaults(backend, defaults,
-                    _ => throw new InvalidOperationException("Handled defaults must not be loaded again."));
-                Assert.IsFalse(backend.Contains("example.imm"));
+                File.WriteAllText(canonical, "first");
+                List<SafStagedPath> first = OpenBrushStorage.ClaimGeneratedFilesForPublication(
+                    new[] { new SafStagedPath(canonical, "snapshot.png") });
 
-                yield return QuillFileCatalog.SeedSafDefaults(backend,
-                    new[] { defaults[0], "Defaults/later.imm" }, _ => bytes);
-                Assert.IsTrue(backend.Contains("later.imm"));
-                Assert.IsFalse(backend.Contains("example.imm"));
+                File.WriteAllText(canonical, "second");
+                List<SafStagedPath> second = OpenBrushStorage.ClaimGeneratedFilesForPublication(
+                    new[] { new SafStagedPath(canonical, "snapshot.png") });
 
-                // Re-seeding after a folder change is no longer the preference key's job:
-                // SafRootChangeGuard clears the seeding records at startup when the root
-                // differs, so seeding then starts from nothing.
+                Assert.AreNotEqual(first[0].SourcePath, second[0].SourcePath);
+                Assert.AreEqual("snapshot.png", first[0].DestinationRelativePath);
+                Assert.AreEqual("snapshot.png", second[0].DestinationRelativePath);
+                Assert.AreEqual("first", File.ReadAllText(first[0].SourcePath));
+                Assert.AreEqual("second", File.ReadAllText(second[0].SourcePath));
             }
             finally
             {
-                foreach (string root in new[] { firstRoot, secondRoot })
+                if (Directory.Exists(stagingRoot))
                 {
-                    PlayerPrefs.DeleteKey("QuillDefaults.HandledFilesV1");
+                    Directory.Delete(stagingRoot, recursive: true);
                 }
-                PlayerPrefs.Save();
             }
         }
 
-        [UnityEngine.TestTools.UnityTest]
-        public System.Collections.IEnumerator SafQuillDefaults_PreserveExistingFilesAndRetryFailedWrites()
+        [Test]
+        public void SafGeneratedBundles_ClaimFrameDirectoryAndSidecar()
         {
-            var backend = new FakeSafBackend { FailCommitNumber = 1 };
-            StorageDocumentId existing = backend.Add("existing.imm", new byte[] { 9 });
-            string[] defaults = { "Defaults/existing.imm", "Defaults/new.imm" };
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"claim-frames-test-{Guid.NewGuid():N}");
+            string frameDirectory = Path.Combine(stagingRoot, "video_frames");
+            string metadataPath = Path.Combine(stagingRoot, "video_sequence.txt");
+            Directory.CreateDirectory(frameDirectory);
+            File.WriteAllText(Path.Combine(frameDirectory, "0001.png"), "frame");
+            File.WriteAllText(metadataPath, "metadata");
             try
             {
-                yield return QuillFileCatalog.SeedSafDefaults(backend, defaults, _ => new byte[] { 1 });
-                Assert.IsFalse(backend.Contains("new.imm"));
-                using (Stream input = backend.OpenRead(existing, false, CancellationToken.None))
-                {
-                    Assert.AreEqual(9, input.ReadByte());
-                }
-                backend.FailCommitNumber = 0;
-                yield return QuillFileCatalog.SeedSafDefaults(backend, defaults, _ => new byte[] { 1 });
-                Assert.IsTrue(backend.Contains("new.imm"));
-                Assert.AreEqual(1, backend.CommitCount);
+                List<SafStagedPath> claimed = OpenBrushStorage.ClaimGeneratedFilesForPublication(
+                    new[]
+                    {
+                        new SafStagedPath(frameDirectory, "video_frames"),
+                        new SafStagedPath(metadataPath, "video_sequence.txt"),
+                    });
+                Assert.IsFalse(Directory.Exists(frameDirectory));
+                Assert.IsFalse(File.Exists(metadataPath));
+                Assert.AreEqual("frame", File.ReadAllText(
+                    Path.Combine(claimed[0].SourcePath, "0001.png")));
+                Assert.AreEqual("metadata", File.ReadAllText(claimed[1].SourcePath));
+                Assert.AreEqual("video_frames", claimed[0].DestinationRelativePath);
             }
             finally
             {
-                PlayerPrefs.DeleteKey("QuillDefaults.HandledFilesV1");
-                PlayerPrefs.Save();
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, recursive: true);
+                }
+            }
+        }
+
+        [Test]
+        public void SafGeneratedBundles_RestoreFilesAndDirectoriesBeforeJournalHandoff()
+        {
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"restore-claim-test-{Guid.NewGuid():N}");
+            string frameDirectory = Path.Combine(stagingRoot, "video_frames");
+            string metadataPath = Path.Combine(stagingRoot, "video_sequence.txt");
+            Directory.CreateDirectory(frameDirectory);
+            File.WriteAllText(Path.Combine(frameDirectory, "0001.png"), "frame");
+            File.WriteAllText(metadataPath, "metadata");
+            try
+            {
+                var original = new[]
+                {
+                    new SafStagedPath(frameDirectory, "video_frames"),
+                    new SafStagedPath(metadataPath, "video_sequence.txt"),
+                };
+                List<SafStagedPath> claimed =
+                    OpenBrushStorage.ClaimGeneratedFilesForPublication(original);
+                Assert.IsNull(OpenBrushStorage.RestoreUnjournaledGeneratedFiles(
+                    original, claimed));
+                Assert.AreEqual("frame", File.ReadAllText(
+                    Path.Combine(frameDirectory, "0001.png")));
+                Assert.AreEqual("metadata", File.ReadAllText(metadataPath));
+                Assert.IsFalse(Directory.Exists(claimed[0].SourcePath));
+                Assert.IsFalse(File.Exists(claimed[1].SourcePath));
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, recursive: true);
+                }
             }
         }
 

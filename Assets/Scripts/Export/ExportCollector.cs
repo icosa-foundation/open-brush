@@ -101,21 +101,22 @@ namespace TiltBrush
                         if (ri.FileName.EndsWith(".svg"))
                         {
                             byte[] bytes = ri.FullSize.EncodeToPNG();
-                            string directory = Path.Combine(
-                                OpenBrushStorage.LocalReferenceImageExportStagingPath,
-                                Guid.NewGuid().ToString("N"));
-                            Directory.CreateDirectory(directory);
-                            string texturePath = Path.Combine(
-                                directory, $"{Path.GetFileName(ri.FileName)}.png");
-                            File.WriteAllBytes(texturePath, bytes);
-                            payload.OwnTemporaryFile(
-                                texturePath, ownContainingDirectory: true);
-                            var newRi = new ReferenceImage(texturePath);
-                            material = CreateImageQuadMaterial(payload, newRi);
+                            string textureName = $"{Path.GetFileName(ri.FileName)}.png";
+                            material = CreateImageQuadMaterial(ri, textureName);
+                            material.SetTextureSource(
+                                textureName, $"{ri.CatalogIdentity}:export-png",
+                                () => new MemoryStream(bytes, writable: false));
                         }
                         else
                         {
-                            material = CreateImageQuadMaterial(payload, ri);
+                            material = CreateImageQuadMaterial(ri, ri.FileName);
+                            if (ri.HasStreamSource)
+                            {
+                                // SAF documents have a logical display path, not a local file path.
+                                // Preserve the stream through the exporter instead of staging a copy.
+                                material.SetTextureSource(
+                                    ri.FileName, ri.CatalogIdentity, ri.OpenExportSource);
+                            }
                         }
                         foreach ((ImageWidget image, int idx) in group.WithIndex())
                         {
@@ -372,18 +373,17 @@ namespace TiltBrush
         }
 
         static DynamicExportableMaterial CreateImageQuadMaterial(
-            SceneStatePayload payload, ReferenceImage ri)
+            ReferenceImage ri, string textureName)
         {
             BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(kPbrTransparentGuid);
-            string sourcePath = ri.GetExportSourcePath(payload);
             return new DynamicExportableMaterial(
                 parent: desc,
                 // GetExportName() not totally guaranteed to be unique; maybe we should detect collisions?
                 durableName: $"image_{ri.GetExportName()}",
                 uniqueName: MakeDeterministicUniqueName(desc.m_Guid, ri, 0),
-                uriBase: Path.GetDirectoryName(sourcePath))
+                uriBase: Path.GetDirectoryName(ri.FileFullPath))
             {
-                BaseColorTex = Path.GetFileName(sourcePath),
+                BaseColorTex = textureName,
                 MetallicFactor = kRefimageMetallicFactor
             };
         }

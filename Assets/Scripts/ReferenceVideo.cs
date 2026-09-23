@@ -175,6 +175,9 @@ namespace TiltBrush
         // storage instead of being copied into app-private storage first. Large videos are the
         // main reason that copy was expensive.
         private readonly Func<string> m_MediaUrl;
+        // SAF network-video pointers are documents rather than filesystem paths. Keep their
+        // small text reads separate from m_MediaUrl, which serves the video bytes themselves.
+        private readonly Func<Stream> m_OpenNetworkPointer;
 
         /// Persistent path is relative to the Tilt Brush/Media Library/Videos directory, if it is a
         /// filename.
@@ -204,7 +207,8 @@ namespace TiltBrush
         public ReferenceVideo(
             string filePath, string catalogIdentity,
             string persistentPath = null,
-            Func<string> mediaUrl = null)
+            Func<string> mediaUrl = null,
+            Func<Stream> openNetworkPointer = null)
         {
             // Case-insensitively, because discovery accepts extensions in any case. A
             // .TXT pointer that classified as an ordinary video would be handed to
@@ -215,6 +219,7 @@ namespace TiltBrush
             PersistentPath = persistentPath ?? _GetPersistentPath(filePath);
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             m_MediaUrl = mediaUrl;
+            m_OpenNetworkPointer = openNetworkPointer;
         }
 
         /// A video inside the video library is identified by its path relative to that library.
@@ -299,7 +304,15 @@ namespace TiltBrush
                 m_VideoPlayer.playOnAwake = false;
                 if (NetworkVideo)
                 {
-                    if (System.IO.File.Exists(AbsolutePath))
+                    if (m_OpenNetworkPointer != null)
+                    {
+                        using (Stream stream = m_OpenNetworkPointer())
+                        using (var reader = new StreamReader(stream))
+                        {
+                            m_VideoPlayer.url = reader.ReadToEnd();
+                        }
+                    }
+                    else if (System.IO.File.Exists(AbsolutePath))
                     {
                         m_VideoPlayer.url = System.IO.File.ReadAllText(AbsolutePath);
                     }

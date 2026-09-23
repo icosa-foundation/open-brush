@@ -374,34 +374,41 @@ namespace TiltBrush
                 {
                     return StorageTreeResult.Failed(existing.Code, existing.Error);
                 }
-                // Match the local library: seed a new/empty library, not an existing user's library.
-                if (existing.Documents.Count == 0)
+                var existingNames = new HashSet<string>(
+                    existing.Documents
+                        .Where(document => !document.IsDirectory)
+                        .Select(document => document.DisplayName),
+                    StringComparer.OrdinalIgnoreCase);
+                foreach (var seed in defaults)
                 {
-                    foreach (var seed in defaults)
+                    if (existingNames.Contains(seed.Key))
                     {
-                        if (rootIdentity != backend.RootIdentity)
-                        {
-                            return StorageTreeResult.Failed(
-                                StorageResultCode.Cancelled, "The shared folder changed.");
-                        }
-                        using (IStorageWriteTransaction transaction = backend.BeginWrite(
-                            StorageArea.MediaLibrarySoundClips, seed.Key,
-                            StorageMimeTypes.ForPath(seed.Key), CancellationToken.None))
-                        {
-                            // A provider file may have appeared since the initial listing.
-                            if (backend.Kind == StorageBackendKind.StorageAccessFramework &&
-                                transaction.TargetDocumentId.IsValid)
-                            {
-                                continue;
-                            }
-                            using (Stream output = transaction.OpenWrite())
-                            {
-                                output.Write(seed.Value, 0, seed.Value.Length);
-                            }
-                            StorageMutationResult write = transaction.Commit();
-                            if (!write.Success) return StorageTreeResult.Failed(write.Code, write.Error);
-                        }
+                        continue;
                     }
+                    if (rootIdentity != backend.RootIdentity)
+                    {
+                        return StorageTreeResult.Failed(
+                            StorageResultCode.Cancelled, "The shared folder changed.");
+                    }
+                    using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                        StorageArea.MediaLibrarySoundClips, seed.Key,
+                        StorageMimeTypes.ForPath(seed.Key), CancellationToken.None))
+                    {
+                        // A provider file may have appeared since the initial listing.
+                        if (backend.Kind == StorageBackendKind.StorageAccessFramework &&
+                            transaction.TargetDocumentId.IsValid)
+                        {
+                            existingNames.Add(seed.Key);
+                            continue;
+                        }
+                        using (Stream output = transaction.OpenWrite())
+                        {
+                            output.Write(seed.Value, 0, seed.Value.Length);
+                        }
+                        StorageMutationResult write = transaction.Commit();
+                        if (!write.Success) return StorageTreeResult.Failed(write.Code, write.Error);
+                    }
+                    existingNames.Add(seed.Key);
                 }
             }
             return backend.EnumerateTree(StorageArea.MediaLibrarySoundClips, relativeDirectory,
@@ -410,7 +417,7 @@ namespace TiltBrush
 
         private static string GetSafCatalogIdentity(IUserStorageBackend backend, StorageDocument document)
         {
-            return $"{backend.RootIdentity}|{document.DocumentId.Value}|{document.LastModified:o}|{document.Size}";
+            return OpenBrushStorage.GetMediaRevisionIdentity(backend.RootIdentity, document);
         }
 
         internal static SoundClip CreateSafSoundClip(IUserStorageBackend backend, StorageDocument document)

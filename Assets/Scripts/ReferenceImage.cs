@@ -70,6 +70,7 @@ namespace TiltBrush
         public string FileName { get { return Path.GetFileName(m_Path); } }
         public string FileFullPath { get { return m_Path; } }
         internal string CatalogIdentity { get; }
+        internal bool HasStreamSource => m_OpenRead != null;
 
         // Aspect ratio of Icon (and of the fullres image, if applicable)
         public float ImageAspect
@@ -149,6 +150,7 @@ namespace TiltBrush
         // Path relative to Catalog's HomeDirectory with forward slashes.
         public string RelativePath => m_PersistentPath ??
             $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\", "/");
+        internal bool HasVerifiableRevision { get; private set; } = true;
 
         public ReferenceImage(string path)
         {
@@ -161,7 +163,8 @@ namespace TiltBrush
             string catalogIdentity,
             Func<Stream> openRead,
             long? knownFileSize,
-            string persistentPath = null)
+            string persistentPath = null,
+            bool hasVerifiableRevision = true)
         {
             m_Path = displayPath;
             m_PersistentPath = persistentPath;
@@ -169,6 +172,7 @@ namespace TiltBrush
             m_CacheIdentity = catalogIdentity;
             m_OpenRead = openRead;
             m_KnownFileSize = knownFileSize;
+            HasVerifiableRevision = hasVerifiableRevision;
         }
 
         /// Returns a full-resolution Texture2D.
@@ -939,44 +943,11 @@ namespace TiltBrush
             }
         }
 
-        /// Path-only exporters cannot consume the catalog's stream directly. Create a private
-        /// per-export copy owned by the payload while keeping the logical path used by sketch
-        /// persistence unchanged.
-        internal string GetExportSourcePath(ExportUtils.SceneStatePayload owner)
+        /// Opens the original image for export. SAF-backed images must be passed through this
+        /// stream directly to the final export output; do not turn them into temporary local files.
+        internal Stream OpenExportSource()
         {
-            if (m_OpenRead == null)
-            {
-                return FileFullPath;
-            }
-            if (owner == null)
-            {
-                throw new ArgumentNullException(nameof(owner));
-            }
-
-            string directory = Path.Combine(
-                OpenBrushStorage.LocalReferenceImageExportStagingPath,
-                Guid.NewGuid().ToString("N"));
-            string path = Path.Combine(directory, FileName);
-
-            Directory.CreateDirectory(directory);
-            string temporaryPath = path + ".tmp";
-            try
-            {
-                using (Stream source = m_OpenRead())
-                using (var destination = new FileStream(
-                    temporaryPath, FileMode.Create, FileAccess.Write, FileShare.None))
-                {
-                    source.CopyTo(destination);
-                }
-                File.Move(temporaryPath, path);
-                owner.OwnTemporaryFile(path, ownContainingDirectory: true);
-                return path;
-            }
-            catch
-            {
-                File.Delete(temporaryPath);
-                throw;
-            }
+            return m_OpenRead != null ? m_OpenRead() : File.OpenRead(FileFullPath);
         }
 
         private bool ValidateDimensions(int imageWidth, int imageHeight, int maxDimension)

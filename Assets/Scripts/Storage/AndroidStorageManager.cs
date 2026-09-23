@@ -27,12 +27,10 @@ namespace TiltBrush
     {
         // The Android SAF picker is modal, so at most one request is ever outstanding.
         private static bool m_RequestInProgress;
-        // Set once the startup grant is in place. A later re-selection is a recovery path that
-        // requires a restart rather than a hot swap, so it must not re-enter startup.
+        // Set once startup has accepted the grant. The picker must never be opened after this.
         private static bool m_StartupSelectionComplete;
         private static bool m_StartupStorageReady;
         private static bool m_StartupStorageCanceled;
-        private static string m_StorageStreamProbeRootIdentity;
         private static AndroidStorageManager m_Instance;
         private string[] m_PreexistingVideoStagingPaths = Array.Empty<string>();
 
@@ -123,30 +121,7 @@ namespace TiltBrush
 
             yield return null;
 
-            RunStorageStreamProbeOnce();
             yield return RecoverTransactions(null);
-        }
-
-        public static void ReselectSharedFolder()
-        {
-            if (!OpenBrushStorage.IsScopedStorageMode)
-            {
-                return;
-            }
-            if (m_RequestInProgress)
-            {
-                ControllerConsoleScript.m_Instance?.AddNewLine(
-                    "Open Brush folder selection is already in progress.");
-                return;
-            }
-
-            m_RequestInProgress = true;
-            if (!AndroidSafStorage.RequestOpenBrushFolder())
-            {
-                m_RequestInProgress = false;
-                ControllerConsoleScript.m_Instance?.AddNewLine(
-                    "The Android activity is not ready to open the folder picker. Try again.");
-            }
         }
 
         public void OnOpenBrushFolderSelected(string uriString)
@@ -154,36 +129,26 @@ namespace TiltBrush
             m_RequestInProgress = false;
             AndroidSafStorage.InvalidateReadiness();
 
+            if (m_StartupSelectionComplete)
+            {
+                // Only startup opens the picker. If an unexpected late callback changed the
+                // persisted root, existing catalogs and document IDs cannot be used safely.
+                Debug.LogError(
+                    "SAF_STORAGE A folder was selected after startup; quitting because the " +
+                    "active storage root may have changed.");
+                Application.Quit();
+                Debug.Break();
+                return;
+            }
+
             if (!AndroidSafStorage.HasOpenBrushFolder())
             {
-                if (!m_StartupSelectionComplete)
-                {
-                    CancelStartupForMissingStorage(
-                        "The selected provider did not grant persistent read and write access.");
-                }
-                else
-                {
-                    ControllerConsoleScript.m_Instance?.AddNewLine(
-                        "The selected Open Brush folder cannot be read and written. " +
-                        "Restart Open Brush and choose a writable folder.");
-                }
+                CancelStartupForMissingStorage(
+                    "The selected provider did not grant persistent read and write access.");
                 return;
             }
 
-            if (!m_StartupSelectionComplete)
-            {
-                // Startup is still waiting on this; it runs the probe and recovery itself.
-                return;
-            }
-
-            // A re-selection after startup is the recovery path for a revoked grant. The root is
-            // fixed for the lifetime of a run, so everything derived from it - catalogs, loaders,
-            // in-flight work - is stale. Restarting is the supported way to pick the new root up.
-            string message =
-                "Open Brush folder updated. Restart Open Brush to use the new folder.";
-            ControllerConsoleScript.m_Instance?.AddNewLine(message);
-            OutputWindowScript.m_Instance?.CreateInfoCardAtController(
-                InputManager.ControllerName.Brush, message, fPopScalar: 0.5f);
+            // Startup is still waiting on this; it runs the probe and recovery itself.
         }
 
         public void OnOpenBrushFolderCanceled(string unused)
@@ -211,31 +176,6 @@ namespace TiltBrush
             m_StartupStorageCanceled = true;
             Application.Quit();
             Debug.Break();
-        }
-
-        private static void RunStorageStreamProbeOnce()
-        {
-            string rootIdentity = AndroidSafStorage.GetSelectedRootIdentity();
-            if (!Debug.isDebugBuild ||
-                string.IsNullOrEmpty(rootIdentity) ||
-                string.Equals(
-                    m_StorageStreamProbeRootIdentity,
-                    rootIdentity,
-                    StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            m_StorageStreamProbeRootIdentity = rootIdentity;
-            bool success = AndroidSafStorage.RunStorageStreamProbe(out string report);
-            if (success)
-            {
-                Debug.Log($"SAF_STREAM {report}");
-            }
-            else
-            {
-                Debug.LogError($"SAF_STREAM {report}");
-            }
         }
 
         private IEnumerator RecoverTransactions(Action onComplete)

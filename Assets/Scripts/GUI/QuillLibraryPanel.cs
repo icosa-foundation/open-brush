@@ -279,7 +279,7 @@ namespace TiltBrush
         public void OnLoadButtonPressed()
         {
             if (m_SelectedFile == null) return;
-            _LoadFile(m_SelectedFile.GetLoadPath(), m_SelectedFile.SelectedChapterIndex);
+            _LoadFile(m_SelectedFile.FullPath, m_SelectedFile.SelectedChapterIndex);
         }
 
         private void _LoadFile(string filePath, int chapterIndex)
@@ -300,7 +300,7 @@ namespace TiltBrush
             try
             {
                 Quill.Load(
-                    m_SelectedFile.GetLoadPath(),
+                    m_SelectedFile.FullPath,
                     chapterIndex: m_SelectedFile.SelectedChapterIndex);
             }
             catch (System.Exception ex)

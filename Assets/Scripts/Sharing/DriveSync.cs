@@ -187,6 +187,7 @@ namespace TiltBrush
             public SyncItem Item { get; private set; }
             public TaskAndCts TaskAndCts { get; private set; }
             public long BytesTransferred { get; private set; }
+            public StorageDocument DownloadedDocument { get; set; }
             public Task Task => TaskAndCts.Task;
             public Transfer(DriveSync ds, SyncItem item)
             {
@@ -1398,6 +1399,10 @@ namespace TiltBrush
                 var toRemove = m_Transfers.Keys.Where(x => x.Task.IsCompleted).ToArray();
                 foreach (var transfer in toRemove)
                 {
+                    if (transfer.Task.Status == TaskStatus.RanToCompletion)
+                    {
+                        RefreshDownloadedScript(transfer);
+                    }
                     m_BytesTransferred += transfer.BytesTransferred;
                     m_Transfers.TryRemove(transfer, out _);
                 }
@@ -1415,6 +1420,32 @@ namespace TiltBrush
                     m_PreviousTotalBytesToTransfer = 0;
                     m_BytesTransferred = 0;
                 }
+            }
+        }
+
+        private static void RefreshDownloadedScript(Transfer transfer)
+        {
+            StorageDocument document = transfer.DownloadedDocument;
+            if (document == null ||
+                UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework ||
+                !string.Equals(
+                    transfer.Item.RootIdentity,
+                    UserStorage.Backend.RootIdentity,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            // SAF has no filesystem watcher. Run this from ManageTransfersAsync after its
+            // WaitForUpdate so Unity-owned registries are changed on the main thread only after
+            // the document and its sync ledger entry have both committed successfully.
+            if (transfer.Item.Area == StorageArea.Scripts)
+            {
+                ApiManager.Instance?.ReloadUserScript(document);
+            }
+            else if (transfer.Item.Area == StorageArea.Plugins)
+            {
+                LuaManager.Instance?.ReloadUserScript(document);
             }
         }
 
@@ -1685,6 +1716,7 @@ namespace TiltBrush
                     "Drive download committed but sync state could not be recorded.",
                     confirmationError);
             }
+            transfer.DownloadedDocument = committedDocument;
         }
 
         private async Task<StorageDocument> DownloadLocalItemAsync(

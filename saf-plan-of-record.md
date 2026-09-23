@@ -18,7 +18,7 @@ device disproved. They remain in this branch's history.
 
 ## 1. Status
 
-Last updated **2026-09-18**.
+Last updated **2026-09-22**.
 
 **In one line: the branch is code-complete for its scope; what remains is
 testing and the bugs it finds.** See §4 for the distinction between that and the
@@ -44,10 +44,10 @@ Everything else. In particular **no save has ever been performed on a device.**
 The write path — temp document, fsync, rename sequence — has only ever run in
 EditMode against fakes.
 
-`RunStorageStreamProbe` exercises the whole channel path at startup (write a
-Tilt archive, seek, validate, reopen by document URI, read every entry back,
-delete) but it is gated on `Debug.isDebugBuild`, so it needs a **Development**
-build. See §3.
+The former development-build startup stream probe was temporary bring-up
+instrumentation and has been removed. Verify the write path through the actual
+save workflow rather than creating and deleting a diagnostic document at every
+development-build startup.
 
 ### Fixed after that run, not yet re-tested
 
@@ -175,12 +175,6 @@ Three traps that will waste your time:
    `SAF_STORAGE`, `SAF_CATALOG`, `SAF_TRANSACTION`, `SAF_RECOVERY`,
    `SAF_SOUND`, `SAF_STREAM`.
 
-The line that confirms the design, on a Development build:
-
-```
-SAF_STREAM Channel-backed Tilt archive passed (N bytes)
-```
-
 ### Running the EditMode tests
 
 With the Editor open:
@@ -194,7 +188,7 @@ Do **not** pass `--filter_type class`; it silently matches nothing and reports
 
 The SAF suites and their runtimes: `TestSafDocumentStream` 17 (~13 s),
 `TestSafExportNaming` 10, `TestSafRecoverySweep` 5, `TestGaussianCapturePublication`
-4, `TestSafQuillCatalog` 3, `TestSafSketchMutationGuard` 2.
+4, `TestSafSketchMutationGuard` 2.
 
 A full EditMode run leaves ~443 failures, of which 416 are `Autodesk.Fbx`
 missing a native library and the rest pre-existing in untouched code. It also
@@ -301,15 +295,15 @@ stream or a URL.
 | `Model.cs:1141` | Model formats other than `.gltf`, `.glb`, `.gltf2`, `.obj` — so USD, FBX, PLY and Gaussian splats. Their importers open a path and shared storage has none to give. |
 | `SvgTextUtils.cs:31` | Custom fonts in SVG text. Unity offers no runtime route from bytes to a `Font`. |
 | `SketchControlsScript.cs:4155` | Bulk sketch export. |
+| `QuillFileCatalog.cs` | Quill projects and IMM files. Both loaders require filesystem paths; support stays disabled until they accept streams or resource resolvers. |
 
 That is the whole list. Earlier revisions of this document also claimed SVG
-reference images, Quill and IMM import, and OBJ export were disabled. **They are
-not** — that list was inherited from a superseded plan and never checked. OBJ is
-explicitly in the allowed import set, and Quill's only scoped-storage code
-*enables* SAF handling for its IMM source.
+reference images and OBJ export were disabled. **They are not** — that list was
+inherited from a superseded plan and never checked. OBJ is explicitly in the
+allowed import set.
 
-Reaching full parity (§5, decision 4) means reinstating the three above, and the
-first row is the substantial one.
+Reaching full parity (§5, decision 4) means reinstating the four above. The
+model-format and Quill/IMM rows require changes to path-only loaders.
 
 ### Future work, gated on evidence: a shared direct ByteBuffer
 

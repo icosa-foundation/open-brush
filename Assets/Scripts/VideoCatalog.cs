@@ -481,7 +481,7 @@ namespace TiltBrush
                 }
 
                 string identity =
-                    $"{document.DocumentId.Value}|{document.LastModified:o}|{document.Size}";
+                    OpenBrushStorage.GetMediaRevisionIdentity(backend.RootIdentity, document);
                 if (oldVideos.TryGetValue(identity, out ReferenceVideo existing))
                 {
                     nextVideos.Add(existing);
@@ -497,8 +497,10 @@ namespace TiltBrush
                     document.RelativeDisplayPath,
                     // Streamed from shared storage when the local handler is available; the device
                     // probe confirmed the descriptor is seekable, so scrubbing works over ranges.
-                    () => SafMediaHttpServer.GetUrl(
-                        StorageArea.MediaLibraryVideos, document.RelativeDisplayPath));
+                    mediaUrl: () => SafMediaHttpServer.GetUrl(
+                        StorageArea.MediaLibraryVideos, document.RelativeDisplayPath),
+                    openNetworkPointer: () => backend.OpenRead(
+                        documentId, requireSeekable: false, CancellationToken.None));
                 nextVideos.Add(video);
                 newVideos.Add(video);
             }
@@ -662,8 +664,9 @@ namespace TiltBrush
                         backend, StorageArea.MediaLibraryVideos, relativePath);
                     return new ReferenceVideo(
                         relativePath, source.Identity, relativePath,
-                        () => SafMediaHttpServer.GetUrl(
-                            StorageArea.MediaLibraryVideos, relativePath));
+                        mediaUrl: () => SafMediaHttpServer.GetUrl(
+                            StorageArea.MediaLibraryVideos, relativePath),
+                        openNetworkPointer: source.OpenRead);
                 }
                 return File.Exists(absolutePath)
                     ? new ReferenceVideo(absolutePath, absolutePath, relativePath) : null;

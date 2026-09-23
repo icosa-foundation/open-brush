@@ -96,10 +96,14 @@ namespace TiltBrush
             }
         }
 
-        private static StorageDocument OverwriteDocument(string id, string name, bool directory)
+        private const long kSupportsDeleteAndRename = (1L << 2) | (1L << 6);
+
+        private static StorageDocument OverwriteDocument(
+            string id, string name, bool directory,
+            long providerFlags = kSupportsDeleteAndRename)
         {
             return new StorageDocument(new StorageDocumentId(id), default, name,
-                "application/octet-stream", directory, null, null, 0, name);
+                "application/octet-stream", directory, null, null, providerFlags, name);
         }
 
         [TestCase(false)]
@@ -118,6 +122,16 @@ namespace TiltBrush
             StorageDocument file = OverwriteDocument("file", "target.bin", false);
             Assert.AreEqual(file.DocumentId, SafFileWriteTransaction.ResolveFileOverwriteTarget(
                 new[] { file }, explicitIdentity ? file.DocumentId : default, "target.bin"));
+        }
+
+        [TestCase(0)]
+        [TestCase(1L << 6)]
+        public void SafOverwrite_RejectsTargetsWithoutSafeBackupCleanup(long providerFlags)
+        {
+            StorageDocument file = OverwriteDocument(
+                "file", "target.bin", false, providerFlags);
+            Assert.Throws<IOException>(() => SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { file }, file.DocumentId, "target.bin"));
         }
 
         [TestCase(false)]
@@ -233,7 +247,7 @@ namespace TiltBrush
         }
 
         [Test]
-        public void SafImages_RemovePathOnlyExportSourceWithPayload()
+        public void SafImages_OpenProviderStreamWithoutMaterializingAFile()
         {
             byte[] bytes = { 1, 2, 3, 4 };
             var image = new ReferenceImage(
@@ -241,22 +255,14 @@ namespace TiltBrush
                 () => new MemoryStream(bytes, writable: false), bytes.Length,
                 "./Nested/image.png");
 
-            var payload = new ExportUtils.SceneStatePayload(AxisConvention.kUnity, null);
-            string source = image.GetExportSourcePath(payload);
-            string sourceDirectory = Path.GetDirectoryName(source);
-            try
+            using (Stream source = image.OpenExportSource())
             {
-                Assert.IsTrue(File.Exists(source));
-                CollectionAssert.AreEqual(bytes, File.ReadAllBytes(source));
+                CollectionAssert.AreEqual(
+                    bytes, ReferenceImage.ReadBytesWithLimit(source, bytes.Length));
                 Assert.AreEqual("Nested/image.png", image.FileFullPath);
                 Assert.AreEqual("./Nested/image.png", image.RelativePath);
             }
-            finally
-            {
-                payload.Destroy();
-            }
-            Assert.IsFalse(File.Exists(source));
-            Assert.IsFalse(Directory.Exists(sourceDirectory));
+            Assert.IsFalse(File.Exists(image.FileFullPath));
         }
 
         [Test]

@@ -553,6 +553,10 @@ namespace TiltBrush
                 }
                 if (target.IsDirectory)
                 {
+                    // SAF sketch saves intentionally produce single-file archives, and the user
+                    // sketch catalog excludes directory-format .tilt containers. Recovery can
+                    // validate file backups only, so accepting a directory here could strand the
+                    // original after an interrupted rename sequence.
                     throw new IOException("A SAF directory cannot be overwritten by a file.");
                 }
                 if (!string.Equals(
@@ -573,7 +577,7 @@ namespace TiltBrush
                     throw new IOException(
                         "Multiple SAF documents share the overwrite destination name.");
                 }
-                return target.DocumentId;
+                return ValidateOverwriteTarget(target);
             }
 
             List<StorageDocument> matches = documents.Where(document =>
@@ -592,9 +596,20 @@ namespace TiltBrush
             }
             if (matches.Count == 1)
             {
-                return matches[0].DocumentId;
+                return ValidateOverwriteTarget(matches[0]);
             }
             return default;
+        }
+
+        private static StorageDocumentId ValidateOverwriteTarget(StorageDocument target)
+        {
+            if (!target.SupportsReplacement)
+            {
+                throw new IOException(
+                    "The storage provider cannot safely replace this document because it " +
+                    "does not support both renaming and backup cleanup.");
+            }
+            return target.DocumentId;
         }
 
         private Stream OpenTemporaryRead()

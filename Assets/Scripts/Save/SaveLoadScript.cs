@@ -658,13 +658,17 @@ namespace TiltBrush
             {
                 string displayName = GetSafDestinationDisplayName(
                     backend, area, fileInfo);
+                SafSceneFileInfo previousSafFile = fileInfo as SafSceneFileInfo;
+                // SAF storage always writes one archive document. PreferredTiltFormat.Directory
+                // applies only to filesystem saves because the SAF transaction and recovery
+                // protocol is deliberately file-only.
                 using (IStorageWriteTransaction transaction = backend.BeginWrite(
                     area,
                     displayName,
                     TiltFile.TILT_MIME_TYPE,
                     default,
-                    fileInfo is SafSceneFileInfo safFileInfo
-                        ? safFileInfo.Document.DocumentId
+                    previousSafFile != null
+                        ? previousSafFile.Document.DocumentId
                         : default))
                 {
                     string writeError;
@@ -684,16 +688,9 @@ namespace TiltBrush
                         return new StorageWriteOutcome { Error = commit.Error };
                     }
 
-                    var document = new StorageDocument(
-                        commit.DocumentId,
-                        default,
-                        displayName,
-                        TiltFile.TILT_MIME_TYPE,
-                        false,
-                        null,
-                        DateTime.Now,
-                        (1L << 1) | (1L << 6),
-                        displayName);
+                    StorageDocument document = ResolveCommittedSafDocument(
+                        backend, area, commit.DocumentId, displayName,
+                        previousSafFile?.Document);
                     return new StorageWriteOutcome
                     {
                         FileInfo = new SafSceneFileInfo(backend, document),
@@ -707,6 +704,42 @@ namespace TiltBrush
             {
                 return new StorageWriteOutcome { Error = e.Message };
             }
+        }
+
+        internal static StorageDocument ResolveCommittedSafDocument(
+            IUserStorageBackend backend,
+            StorageArea area,
+            StorageDocumentId committedId,
+            string displayName,
+            StorageDocument previousDocument)
+        {
+            StorageDirectoryResult listing = backend.List(area, "", default);
+            if (listing.Success)
+            {
+                StorageDocument committed = listing.Documents.FirstOrDefault(document =>
+                    document.DocumentId.Equals(committedId));
+                if (committed != null)
+                {
+                    return committed;
+                }
+            }
+
+            // The save is already committed, so a metadata query failure must not be reported as
+            // a failed save. An overwrite can retain capabilities that were verified on the old
+            // document; a new save remains conservatively read-only until the catalog reopens it.
+            Debug.LogWarning(
+                $"SAF_STORAGE Could not refresh provider metadata for saved sketch " +
+                $"'{displayName}': {listing.Error ?? "document was not returned"}");
+            return new StorageDocument(
+                committedId,
+                previousDocument?.ParentDocumentId ?? default,
+                displayName,
+                TiltFile.TILT_MIME_TYPE,
+                false,
+                null,
+                DateTime.Now,
+                previousDocument?.ProviderFlags ?? 0,
+                displayName);
         }
 
         private static string GetSafDestinationDisplayName(

@@ -345,51 +345,6 @@ public class OpenBrushStorageBridge {
         }
     }
 
-    public static ChannelOpenResult createTemporaryChannel(
-            String relativeDirectory, String targetFileName, String mimeType) {
-        Context context = resolveContext();
-        String normalizedDirectory = normalize(relativeDirectory);
-        if (!isSafeRelativePath(normalizedDirectory)
-                || targetFileName == null
-                || targetFileName.length() == 0
-                || targetFileName.contains("/")
-                || targetFileName.contains("\\")) {
-            return new ChannelOpenResult(-1, -1, null, "Invalid temporary document path");
-        }
-
-        Uri parent = ensureDirectoryUri(context, normalizedDirectory);
-        if (parent == null) {
-            return new ChannelOpenResult(
-                    -1, -1, null, "Failed to open temporary document directory");
-        }
-
-        String temporaryName = "." + targetFileName + ".openbrush-fd-"
-                + NEXT_TEMP_FILE_ID.getAndIncrement() + ".tmp";
-        Uri temporary;
-        try {
-            temporary = DocumentsContract.createDocument(
-                    context.getContentResolver(),
-                    parent,
-                    mimeType == null || mimeType.length() == 0
-                            ? "application/octet-stream"
-                            : mimeType,
-                    temporaryName);
-        } catch (Exception e) {
-            return new ChannelOpenResult(-1, -1, null, formatProviderError(
-                    "Failed to create temporary document", e));
-        }
-        if (temporary == null) {
-            return new ChannelOpenResult(
-                    -1, -1, null, "Provider returned no temporary document");
-        }
-
-        ChannelOpenResult result = openChannel(context, temporary, "rwt");
-        if (result.handle < 0) {
-            deleteDocumentQuietly(context.getContentResolver(), temporary);
-        }
-        return result;
-    }
-
     public static ChannelOpenResult createNamedChannel(
             String relativeDirectory, String displayName, String mimeType) {
         Context context = resolveContext();
@@ -419,7 +374,7 @@ public class OpenBrushStorageBridge {
             }
             ChannelOpenResult result = openChannel(context, document, "rwt");
             if (result.handle < 0) {
-                deleteDocumentQuietly(context.getContentResolver(), document);
+                deleteDocumentQuietly(context, document, parent);
             }
             return new ChannelOpenResult(
                     result.handle, result.length, document, parent, result.error);
@@ -470,7 +425,7 @@ public class OpenBrushStorageBridge {
                 }
             }
             if (probe != null) {
-                deleteDocumentQuietly(context.getContentResolver(), probe);
+                deleteDocumentQuietly(context, probe, root);
             }
         }
     }
@@ -676,19 +631,6 @@ public class OpenBrushStorageBridge {
         }
     }
 
-    public static boolean deleteDocumentUri(String documentUri) {
-        Context context = resolveContext();
-        if (documentUri == null || documentUri.length() == 0) {
-            return false;
-        }
-        try {
-            return DocumentsContract.deleteDocument(
-                    context.getContentResolver(), Uri.parse(documentUri));
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     static void saveOpenBrushFolderUri(Context context, String uriString) {
         SharedPreferences prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE);
         prefs.edit().putString(OPEN_BRUSH_FOLDER_URI, uriString).apply();
@@ -779,9 +721,22 @@ public class OpenBrushStorageBridge {
         return current;
     }
 
-    private static void deleteDocumentQuietly(ContentResolver resolver, Uri document) {
+    private static void deleteDocumentQuietly(Context context, Uri document, Uri parent) {
         try {
-            DocumentsContract.deleteDocument(resolver, document);
+            FlagLookupResult capability = lookupDocumentFlags(context, document);
+            if (capability.error == null
+                    && (capability.flags
+                    & DocumentsContract.Document.FLAG_SUPPORTS_DELETE) == 0
+                    && (capability.flags
+                    & DocumentsContract.Document.FLAG_SUPPORTS_REMOVE) != 0
+                    && parent != null) {
+                DocumentsContract.removeDocument(
+                        context.getContentResolver(), document, parent);
+            } else {
+                // Preserve the original best-effort delete for providers that do not expose
+                // reliable flags, as well as the ordinary FLAG_SUPPORTS_DELETE case.
+                DocumentsContract.deleteDocument(context.getContentResolver(), document);
+            }
         } catch (Exception ignored) {
             // Best effort cleanup for temporary and backup documents.
         }

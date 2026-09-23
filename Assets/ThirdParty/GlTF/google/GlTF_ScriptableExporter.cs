@@ -433,7 +433,7 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
         fileRef = CreateExportFileReferenceFromHttp(textureUri);
       } else {
         fileRef = ExportFileReference.GetOrCreateSafeLocal(
-            G.m_disambiguationContext, textureUri, exportableMaterial.UriBase,
+            G.m_disambiguationContext, exportableMaterial, textureUri,
             $"{meshNamespace}_{Path.GetFileName(textureUri)}");
       }
 

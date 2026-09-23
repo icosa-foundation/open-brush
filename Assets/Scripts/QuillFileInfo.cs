@@ -30,7 +30,6 @@ namespace TiltBrush
         public long FileSizeBytes { get; }
         public DateTime LastWriteTimeUtc { get; }
         public QuillSourceType SourceType { get; }
-        private readonly Func<string> m_ResolveLoadPath;
 
         /// <summary>
         /// Chapter index to use when loading this file. -1 = default (first/only chapter).
@@ -43,18 +42,14 @@ namespace TiltBrush
         private DateTime? m_ChapterCountCacheTime;
 
         public QuillFileInfo(string fullPath, string displayName, long fileSizeBytes,
-            DateTime lastWriteTimeUtc, QuillSourceType sourceType,
-            Func<string> resolveLoadPath = null)
+            DateTime lastWriteTimeUtc, QuillSourceType sourceType)
         {
             FullPath = fullPath;
             DisplayName = displayName;
             FileSizeBytes = Math.Max(0, fileSizeBytes);
             LastWriteTimeUtc = lastWriteTimeUtc;
             SourceType = sourceType;
-            m_ResolveLoadPath = resolveLoadPath;
         }
-
-        public string GetLoadPath() => m_ResolveLoadPath?.Invoke() ?? FullPath;
 
         /// <summary>
         /// Number of chapters in this file. Queried lazily on first access.
@@ -75,12 +70,12 @@ namespace TiltBrush
                     if (SourceType == QuillSourceType.Imm)
                     {
                         m_ChapterCountCache =
-                            ImmStrokeReader.SharpQuillCompat.GetImmChapterCount(GetLoadPath());
+                            ImmStrokeReader.SharpQuillCompat.GetImmChapterCount(FullPath);
                     }
                     else
                     {
                         // Quill chapter detection is fast (just reads JSON)
-                        m_ChapterCountCache = Quill.GetQuillChapterCount(GetLoadPath());
+                        m_ChapterCountCache = Quill.GetQuillChapterCount(FullPath);
                     }
 
                     m_ChapterCountCacheTime = System.DateTime.UtcNow;

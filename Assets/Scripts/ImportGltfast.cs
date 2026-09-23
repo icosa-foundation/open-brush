@@ -70,9 +70,11 @@ namespace TiltBrush
             return sm_AsyncCoroutineHelper;
         }
 
-        private static GameObject _ImportUsingLegacyGltf(string localPath, string assetLocation)
+        private static GameObject _ImportUsingLegacyGltf(
+            string localPath, string assetLocation)
         {
-            var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
+            var loader = new TiltBrushUriLoader(
+                localPath, assetLocation, loadImages: false);
             var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
             var importOptions = new GltfImportOptions
             {
@@ -208,8 +210,20 @@ namespace TiltBrush
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to import using UnityGltf. Falling back to legacy import.\nUnityGltf Exception: {e}");
-                // Fall back to the older import code
+                if (TryGetStorageModelLocation(model, out _, out _, out _))
+                {
+                    // The legacy Tilt Brush importer opens the primary glTF by filename. Do not
+                    // copy a SAF model and its dependency tree into private storage to satisfy a
+                    // path-only API. Keep this fallback disabled until ImportGltf/GltfFileInfo
+                    // accepts the primary document as a stream; sidecars already use IUriLoader.
+                    Debug.LogError(
+                        $"Failed to import SAF model using UnityGltf. The path-only legacy " +
+                        $"fallback is deliberately disabled.\nUnityGltf Exception: {e}");
+                    throw;
+                }
+                Debug.LogError(
+                    $"Failed to import using UnityGltf. Falling back to legacy import.\n" +
+                    $"UnityGltf Exception: {e}");
                 GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);

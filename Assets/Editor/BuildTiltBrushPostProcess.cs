@@ -76,6 +76,24 @@ public class BuildTiltBrushPostProcess
                 var application = (XmlElement)doc.SelectSingleNode("/manifest/application");
                 application?.RemoveAttribute("requestLegacyExternalStorage", androidNamespaceURI);
             }
+            else
+            {
+                // Incremental Android builds can reuse the generated Gradle project and therefore
+                // the manifest that a preceding scoped-storage build stripped. Reassert the
+                // project manifest's non-scoped storage profile rather than relying on a merge
+                // that may not run again.
+                AddOrRemoveTag(doc,
+                    androidNamespaceURI,
+                    "/manifest",
+                    "uses-permission",
+                    "android.permission.MANAGE_EXTERNAL_STORAGE",
+                    true,
+                    true);
+
+                var application = (XmlElement)doc.SelectSingleNode("/manifest/application");
+                application?.SetAttribute(
+                    "requestLegacyExternalStorage", androidNamespaceURI, "true");
+            }
 
             ConfigureGameActivityLauncher(doc);
 

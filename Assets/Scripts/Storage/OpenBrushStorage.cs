@@ -157,12 +157,6 @@ namespace TiltBrush
         public static string LocalSplatPoseStagingPath =>
             Path.Combine(LocalStagingPath, "SplatPoses");
 
-        public static string LocalReferenceImageExportStagingPath =>
-            Path.Combine(LocalStagingPath, "ReferenceImageExports");
-
-        public static string LocalQuillMaterializationPath =>
-            Path.Combine(LocalStagingPath, "QuillImports");
-
         /// A logical anchor, not a directory: nothing is written here and nothing creates it.
         /// The media catalogs are written against local paths, so under scoped storage they are
         /// given this prefix and the SAF-relative directory is recovered by subtracting it again.
@@ -194,15 +188,18 @@ namespace TiltBrush
         {
             private readonly IUserStorageBackend m_Backend;
             private readonly string m_Root;
+            private readonly string m_Identity;
             public StorageDocument Document { get; }
-            public string Identity =>
-                $"{m_Root}:{Document.DocumentId.Value}|{Document.LastModified:o}|{Document.Size}";
+            public string Identity => m_Identity;
+            public bool HasVerifiableRevision =>
+                Document.LastModified.HasValue || Document.Size.HasValue;
 
             public MediaSource(IUserStorageBackend backend, StorageArea area, string relativePath)
             {
                 m_Backend = backend;
                 m_Root = backend.RootIdentity;
                 Document = ResolveMediaDocument(backend, area, relativePath);
+                m_Identity = GetMediaRevisionIdentity(m_Root, Document);
                 CheckRoot();
             }
 
@@ -217,6 +214,23 @@ namespace TiltBrush
                 return m_Backend.OpenRead(Document.DocumentId, false, CancellationToken.None);
             }
 
+        }
+
+        internal static string GetMediaRevisionIdentity(
+            string rootIdentity, StorageDocument document)
+        {
+            string identity =
+                $"{rootIdentity}:{document.DocumentId.Value}|" +
+                $"{document.LastModified:o}|{document.Size}";
+            if (document.LastModified.HasValue || document.Size.HasValue)
+            {
+                return identity;
+            }
+
+            // DocumentsProvider permits both revision fields to be null. A durable document URI
+            // identifies the document, not its current contents, so it cannot safely validate an
+            // image cache by itself. The nonce deliberately prevents reuse across catalog queries.
+            return $"{identity}|unverifiable:{Guid.NewGuid():N}";
         }
 
         internal static StorageDocument ResolveMediaDocument(
@@ -334,10 +348,9 @@ namespace TiltBrush
         public static void PublishGeneratedFileToSharedStorageAsync(
             string localPath, string label, Action<bool, string> onComplete)
         {
-            // A generated file is staged output: the transaction owns it and cleans it up.
-            PublishSinglePathAsync(
-                localPath, label, TryGetSharedGeneratedFileRelativePath,
-                transactionOwnsPayload: true, onComplete);
+            // Use the same ownership handoff as multi-file captures. A second capture may reuse
+            // this name while publication runs, so the worker must never read the canonical path.
+            PublishGeneratedFilesToSharedStorageAsync(new[] { localPath }, label, onComplete);
         }
 
         public static void PublishUserRootFileToSharedStorageAsync(
@@ -421,6 +434,22 @@ namespace TiltBrush
                     bundleArea = area;
                     stagedPaths.Add(new SafStagedPath(localPath, areaRelativePath));
                 }
+                List<SafStagedPath> originalPaths = stagedPaths;
+                if (transactionOwnsPayload)
+                {
+                    try
+                    {
+                        stagedPaths = ClaimGeneratedFilesForPublication(stagedPaths);
+                    }
+                    catch (Exception e) when (
+                        e is IOException || e is UnauthorizedAccessException)
+                    {
+                        onComplete?.Invoke(false,
+                            $"Could not reserve generated output for publication: {e.Message}");
+                        return;
+                    }
+                }
+                int journalPersisted = 0;
                 AndroidStorageManager.StartStorageOperation(
                     label,
                     () => SafStagedOutputPublisher.PublishBundle(
@@ -428,8 +457,26 @@ namespace TiltBrush
                         bundleArea.Value,
                         stagedPaths,
                         transactionOwnsPayload,
-                        CancellationToken.None),
-                    onComplete);
+                        CancellationToken.None,
+                        onJournalPersisted: () => Interlocked.Exchange(
+                            ref journalPersisted, 1)),
+                    (success, error) =>
+                    {
+                        if (!success && transactionOwnsPayload &&
+                            Volatile.Read(ref journalPersisted) == 0)
+                        {
+                            // The worker can fail before it creates a recovery record (or never
+                            // start). Give the generated output its original name back so the
+                            // application can retry. After journal handoff, recovery owns it.
+                            string restoreError = RestoreUnjournaledGeneratedFiles(
+                                originalPaths, stagedPaths);
+                            if (restoreError != null)
+                            {
+                                error = $"{error} {restoreError}";
+                            }
+                        }
+                        onComplete?.Invoke(success, error);
+                    });
                 return;
             }
 
@@ -459,6 +506,89 @@ namespace TiltBrush
                     });
             }
             PublishNext();
+        }
+
+        /// Moves a completed generated bundle to transaction-unique source names while retaining
+        /// its requested SAF destinations. Publication is asynchronous, so canonical staging names
+        /// can be reused by another capture before the first worker reads or deletes them.
+        ///
+        /// This is deliberately a rename within local staging, not another copy: these files are
+        /// generated output already awaiting publication, and no SAF input is being materialized.
+        internal static List<SafStagedPath> ClaimGeneratedFilesForPublication(
+            IReadOnlyList<SafStagedPath> stagedPaths)
+        {
+            var claimed = new List<(string original, string reserved, bool isDirectory)>();
+            try
+            {
+                var result = new List<SafStagedPath>(stagedPaths.Count);
+                foreach (SafStagedPath stagedPath in stagedPaths)
+                {
+                    string source = stagedPath.SourcePath;
+                    bool isDirectory = Directory.Exists(source);
+                    if (!isDirectory && !File.Exists(source))
+                    {
+                        throw new FileNotFoundException(
+                            "Generated output does not exist.", source);
+                    }
+                    string reserved = Path.Combine(
+                        Path.GetDirectoryName(source),
+                        $".ob-publish-{Guid.NewGuid():N}-{Path.GetFileName(source)}");
+                    if (isDirectory) { Directory.Move(source, reserved); }
+                    else { File.Move(source, reserved); }
+                    claimed.Add((source, reserved, isDirectory));
+                    result.Add(new SafStagedPath(
+                        reserved, stagedPath.DestinationRelativePath));
+                }
+                return result;
+            }
+            catch
+            {
+                for (int i = claimed.Count - 1; i >= 0; --i)
+                {
+                    (string original, string reserved, bool isDirectory) = claimed[i];
+                    if (isDirectory && Directory.Exists(reserved) && !Directory.Exists(original))
+                    {
+                        Directory.Move(reserved, original);
+                    }
+                    else if (!isDirectory && File.Exists(reserved) && !File.Exists(original))
+                    {
+                        File.Move(reserved, original);
+                    }
+                }
+                throw;
+            }
+        }
+
+        internal static string RestoreUnjournaledGeneratedFiles(
+            IReadOnlyList<SafStagedPath> originalPaths,
+            IReadOnlyList<SafStagedPath> claimedPaths)
+        {
+            var errors = new List<string>();
+            for (int i = 0; i < claimedPaths.Count; ++i)
+            {
+                string original = originalPaths[i].SourcePath;
+                string claimed = claimedPaths[i].SourcePath;
+                bool isDirectory = Directory.Exists(claimed);
+                if (!isDirectory && !File.Exists(claimed)) { continue; }
+                if (File.Exists(original) || Directory.Exists(original))
+                {
+                    // Another capture may already be using the original name. Never overwrite
+                    // it; retain the earlier generated output at its unique claimed path.
+                    errors.Add($"Generated output retained at {claimed} because {original} exists.");
+                    continue;
+                }
+                try
+                {
+                    if (isDirectory) { Directory.Move(claimed, original); }
+                    else { File.Move(claimed, original); }
+                }
+                catch (Exception e) when (
+                    e is IOException || e is UnauthorizedAccessException)
+                {
+                    errors.Add($"Generated output retained at {claimed}: {e.Message}");
+                }
+            }
+            return errors.Count == 0 ? null : string.Join(" ", errors);
         }
 
 
@@ -497,7 +627,8 @@ namespace TiltBrush
 
         public static void PublishImportedMediaToSharedStorageAsync(
             string localPath, string sharedPath, string label, Action<bool, string> onComplete,
-            Action<string> onPublished = null, bool preserveDestination = false)
+            Action<string> onPublished = null, bool preserveDestination = false,
+            bool replaceDestination = false)
         {
             if (!TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
             {
@@ -507,7 +638,8 @@ namespace TiltBrush
             string publishedLocalPath = null;
             AndroidStorageManager.StartStorageOperation(label,
                 () => PublishImportedMedia(UserStorage.Backend, area, relativePath, localPath,
-                    onPublished != null, out publishedLocalPath, preserveDestination),
+                    onPublished != null, out publishedLocalPath, preserveDestination,
+                    replaceDestination),
                 (success, error) =>
                 {
                     onComplete?.Invoke(success, error);
@@ -517,24 +649,37 @@ namespace TiltBrush
 
         internal static SafPublicationResult PublishImportedMedia(
             IUserStorageBackend backend, StorageArea area, string relativePath, string localPath,
-            bool prepareLocalImport, out string publishedLocalPath, bool preserveDestination = false)
+            bool prepareLocalImport, out string publishedLocalPath,
+            bool preserveDestination = false, bool replaceDestination = false)
         {
             publishedLocalPath = null;
+            if (preserveDestination && replaceDestination)
+            {
+                throw new ArgumentException(
+                    "An imported-media publication cannot both reject and replace collisions.");
+            }
             // Serialize API name selection and publication, including delayed picker continuations.
             using (SafDestinationLocks.Acquire($"api-import:{backend.RootIdentity}:{area}", CancellationToken.None))
             {
                 string localDirectory = Path.GetDirectoryName(localPath);
-                string destination = GetUniqueImportPath(backend, area, relativePath,
-                    candidate => !string.Equals(candidate, Path.GetFileName(localPath),
-                        StringComparison.OrdinalIgnoreCase) &&
-                        File.Exists(Path.Combine(localDirectory, candidate)));
+                string destination = replaceDestination
+                    ? relativePath
+                    : GetUniqueImportPath(backend, area, relativePath,
+                        candidate => !string.Equals(candidate, Path.GetFileName(localPath),
+                            StringComparison.OrdinalIgnoreCase) &&
+                            File.Exists(Path.Combine(localDirectory, candidate)));
                 if (preserveDestination && !string.Equals(destination, relativePath, StringComparison.Ordinal))
                 {
                     return new SafPublicationResult(StorageResultCode.Failed,
                         $"The reserved import destination already exists: {relativePath}. Staged content was preserved.");
                 }
-                SafPublicationResult result = SafStagedOutputPublisher.Publish(backend, area, destination, localPath,
-                    transactionOwnsPayload: false, CancellationToken.None);
+                SafPublicationResult result = replaceDestination
+                    ? SafStagedOutputPublisher.PublishReplacing(
+                        backend, area, destination, localPath,
+                        transactionOwnsPayload: false, CancellationToken.None)
+                    : SafStagedOutputPublisher.Publish(
+                        backend, area, destination, localPath,
+                        transactionOwnsPayload: false, CancellationToken.None);
                 if (result.Success && prepareLocalImport)
                 {
                     // The importing widget needs both the final logical name and its local bytes.

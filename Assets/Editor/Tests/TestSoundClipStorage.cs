@@ -84,17 +84,21 @@ namespace TiltBrush
         }
 
         [Test]
-        public void SoundDefaults_DoNotModifyExistingLibrary()
+        public void SoundDefaults_SeedMissingDefaultWithoutOverwritingExistingLibrary()
         {
             File.WriteAllText(Path.Combine(m_Root, "custom.wav"), "user audio");
+            File.WriteAllText(Path.Combine(m_Root, "existing.wav"), "existing default");
             var defaults = new Dictionary<string, byte[]> { ["default.wav"] = new byte[] { 1, 2 } };
+            defaults["existing.wav"] = new byte[] { 3, 4 };
 
             StorageTreeResult result = SoundClipCatalog.QuerySafSoundClips(
                 m_Backend, "", new[] { ".wav" }, defaults);
 
             Assert.IsTrue(result.Success, result.Error);
             Assert.AreEqual("user audio", File.ReadAllText(Path.Combine(m_Root, "custom.wav")));
-            Assert.IsFalse(File.Exists(Path.Combine(m_Root, "default.wav")));
+            Assert.AreEqual("existing default", File.ReadAllText(Path.Combine(m_Root, "existing.wav")));
+            CollectionAssert.AreEqual(defaults["default.wav"],
+                File.ReadAllBytes(Path.Combine(m_Root, "default.wav")));
         }
 
         [Test]

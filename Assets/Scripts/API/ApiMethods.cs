@@ -56,12 +56,15 @@ namespace TiltBrush
             ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
         }
 
-        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts storage location")]
+        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on desktop")]
         public static void OpenUserScriptsFolder()
         {
             if (OpenBrushStorage.IsScopedStorageMode)
             {
-                AndroidStorageManager.ReselectSharedFolder();
+                // The SAF folder picker is only for the startup grant. This desktop-only command
+                // must never let a running session replace its storage root.
+                ControllerConsoleScript.m_Instance?.AddNewLine(
+                    "Open the selected Open Brush/Scripts folder in Android's Files app.");
                 return;
             }
             OpenUserFolder(ApiManager.Instance.UserScriptsPath());
@@ -1770,7 +1773,21 @@ namespace TiltBrush
             var path = GetSafeReferenceImageWritePath(filename);
             Directory.CreateDirectory(Path.GetDirectoryName(path));
             File.WriteAllBytes(path, bytes);
-            _PublishApiMediaLibraryPathToSharedStorage(path);
+            _PublishApiMediaLibraryPathToSharedStorage(
+                path,
+                // File.WriteAllBytes replaces this name on ordinary filesystems. Preserve that
+                // contract on SAF as well: silently publishing "foo (1).png" would make the
+                // returned logical path refer to an older image after the sketch is reopened.
+                replaceDestination: true,
+                onComplete: (success, _) =>
+                {
+                    // SAF publications do not trigger the filesystem watcher that normally
+                    // refreshes reference images, so expose the new image after publication.
+                    if (success && OpenBrushStorage.IsScopedStorageMode)
+                    {
+                        ReferenceImageCatalog.m_Instance?.ForceCatalogScan();
+                    }
+                });
             return path;
         }
 
