@@ -26,23 +26,20 @@ namespace TiltBrush
     /// or to GatherPeerTransforms() (for edits that move strokes, where each peer needs the
     /// mirrored version of the transform).
     ///
-    /// Off by default. Turn it on in Open Brush.cfg with Flags.SymmetryPeerEditing, or at runtime
-    /// through the symmetry.peerediting API command.
+    /// Off by default. Toggle it in the mirror settings popup or through the
+    /// symmetry.peerediting API command. The setting lasts only for this run.
     public static class SymmetryPeerEditing
     {
-        private static bool? m_Enabled;
+        private static bool m_Enabled;
 
         public static bool Enabled
         {
-            get
+            get { return m_Enabled; }
+            set
             {
-                if (m_Enabled == null && App.UserConfig != null)
-                {
-                    m_Enabled = App.UserConfig.Flags.SymmetryPeerEditing;
-                }
-                return m_Enabled ?? false;
+                if (!value) { SymmetryMirrorMove.End(); }
+                m_Enabled = value;
             }
-            set { m_Enabled = value; }
         }
 
         /// The strokes the symmetry created alongside this one; empty when peer editing is off.

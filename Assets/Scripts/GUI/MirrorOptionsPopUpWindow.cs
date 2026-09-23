@@ -37,6 +37,7 @@ namespace TiltBrush
         public AdvancedSlider m_WallpaperSkewSliderY;
 
         public TextActionButton m_OptionsButtonHue;
+        public TextActionButton m_ButtonPeerEditing;
         public TextActionButton m_OptionsButtonSaturation;
         public TextActionButton m_OptionsButtonBrightness;
         public AdvancedSlider m_OptionsSliderAmp;
@@ -432,6 +433,13 @@ namespace TiltBrush
             m_ButtonShowPointControls.SetButtonSelected(false);
             m_ButtonShowWallpaperControls.SetButtonSelected(false);
             m_ButtonShowOptionsControls.SetButtonSelected(true);
+            m_ButtonPeerEditing.SetButtonSelected(SymmetryPeerEditing.Enabled);
+        }
+
+        public void HandlePeerEditingButton()
+        {
+            SymmetryPeerEditing.Enabled = !SymmetryPeerEditing.Enabled;
+            m_ButtonPeerEditing.SetButtonSelected(SymmetryPeerEditing.Enabled);
         }
 
         private void UpdateOptionsControlsToMatchValues()
