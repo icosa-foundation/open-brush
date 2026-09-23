@@ -428,15 +428,45 @@ namespace TiltBrush
         /// anything that rebuilds the stroke regenerates its geometry from its control points, so
         /// a stroke moved this way jumps back the moment another tool touches it. Only use it
         /// where nothing else can reach the stroke in the meantime.
+        internal bool CanTransformGeometryInPlace =>
+            m_Type == Type.BatchedBrushStroke && m_BatchSubset != null &&
+            m_BatchSubset.m_ParentBatch != null;
+
         public bool TransformGeometryInPlace(TrTransform leftTransform, bool updateControlPoints = true)
         {
-            if (m_Type != Type.BatchedBrushStroke || m_BatchSubset == null) { return false; }
+            if (!CanTransformGeometryInPlace) { return false; }
             m_BatchSubset.m_ParentBatch.TransformSubset(m_BatchSubset, leftTransform);
             if (updateControlPoints)
             {
                 LeftTransformControlPoints(leftTransform);
             }
             return true;
+        }
+
+        /// Endpoint restoration for mirror undo and failed live moves. Does not require a batch
+        /// and preserves erased/uncreated state. The caller supplies points in the current canvas.
+        internal void RestoreMirrorControlPoints(PointerManager.ControlPoint[] points, float brushScale)
+        {
+            bool hadGeometry = m_Type != Type.NotCreated;
+            bool wasEnabled = hadGeometry && IsGeometryEnabled;
+            if (hadGeometry) { Uncreate(); }
+            m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
+            m_BrushScale = brushScale;
+            InvalidateCopy();
+            if (hadGeometry)
+            {
+                Recreate();
+                // This is geometry replacement, not another eraser operation. Hide() would
+                // subtract from the tilt meter a second time for an already-erased stroke.
+                if (!wasEnabled && m_Type == Type.BatchedBrushStroke)
+                {
+                    m_BatchSubset.m_ParentBatch.DisableSubset(m_BatchSubset);
+                }
+                else if (!wasEnabled && m_Type == Type.BrushStroke)
+                {
+                    m_Object.GetComponent<BaseBrushScript>().HideBrush(true);
+                }
+            }
         }
 
         /// Set the parent canvas of this stroke, preserving the _canvas_-relative position.

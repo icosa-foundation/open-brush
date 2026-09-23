@@ -117,14 +117,23 @@ namespace TiltBrush
         {
             var copy = (SymmetrySettingsSnapshot)MemberwiseClone();
             copy.PointerTransforms = new List<TrTransform>(transforms);
-            var widget = PointerManager.m_Instance != null
-                ? PointerManager.m_Instance.SymmetryWidget
-                : null;
-            if (widget != null)
-            {
-                copy.WidgetTransform = App.Scene.AsScene[widget.transform];
-            }
             return copy;
+        }
+
+        /// Pointer indices must mean the same thing, not merely have the same count.
+        public bool HasCompatibleTopology(SymmetrySettingsSnapshot other)
+        {
+            if (other == null || Mode != other.Mode ||
+                PointerTransforms.Count != other.PointerTransforms.Count) { return false; }
+            if (Mode == PointerManager.SymmetryMode.SinglePlane) { return true; }
+            if (Mode != PointerManager.SymmetryMode.MultiMirror || CustomType != other.CustomType)
+            {
+                return false;
+            }
+            return CustomType == PointerManager.CustomSymmetryType.Wallpaper
+                ? WallpaperGroup == other.WallpaperGroup &&
+                  WallpaperRepeatX == other.WallpaperRepeatX && WallpaperRepeatY == other.WallpaperRepeatY
+                : PointFamily == other.PointFamily && PointOrder == other.PointOrder;
         }
 
         /// Restores these settings, so that new strokes are created the same way as the

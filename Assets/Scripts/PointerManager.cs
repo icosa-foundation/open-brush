@@ -1515,6 +1515,8 @@ namespace TiltBrush
             // Early out if we're already in the requested mode (but allow None for initial hide of widget)
             if (mode != SymmetryMode.None && m_CurrentSymmetryMode == mode) return;
 
+            SymmetryMirrorMove.End();
+
             if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
                 LuaManager.Instance.EndActiveScript(LuaApiCategory.SymmetryScript);

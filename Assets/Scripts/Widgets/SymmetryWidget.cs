@@ -316,10 +316,10 @@ namespace TiltBrush
 
         override protected void OnUserBeginInteracting()
         {
+            SymmetryMirrorMove.Begin();
             base.OnUserBeginInteracting();
             m_Home.gameObject.SetActive(true);
             m_Home.Reset();
-            SymmetryMirrorMove.Begin();
         }
 
         override protected void OnUserEndInteracting()

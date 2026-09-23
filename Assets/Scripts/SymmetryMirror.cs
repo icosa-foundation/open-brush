@@ -64,6 +64,7 @@ namespace TiltBrush
             get { return m_Active; }
             set
             {
+                if (!ReferenceEquals(m_Active, value)) { SymmetryMirrorMove.End(); }
                 if (value != null && !m_Mirrors.ContainsKey(value.Id))
                 {
                     m_Mirrors[value.Id] = value;
@@ -87,6 +88,7 @@ namespace TiltBrush
         /// behind: this is how a second symmetric object is begun without disturbing the first.
         public static SymmetryMirror Create(SymmetrySettingsSnapshot settings)
         {
+            SymmetryMirrorMove.End();
             var mirror = new SymmetryMirror(Guid.NewGuid(), settings);
             m_Mirrors[mirror.Id] = mirror;
             m_Order.Add(mirror);
@@ -140,6 +142,7 @@ namespace TiltBrush
 
         public static void Clear()
         {
+            SymmetryMirrorMove.Forget();
             m_Mirrors.Clear();
             m_Order.Clear();
             m_Active = null;

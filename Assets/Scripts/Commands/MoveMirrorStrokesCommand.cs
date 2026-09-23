@@ -16,69 +16,68 @@ using System.Collections.Generic;
 
 namespace TiltBrush
 {
-    /// Records strokes having followed their mirror, so that the move can be undone.
-    ///
-    /// The strokes are moved as the mirror is dragged, by SymmetryMirrorMove, so this command is
-    /// recorded rather than performed: it holds the total each stroke moved by, undoes it, and
-    /// puts it back on redo.
+    /// Owns a mirror drag from grab to release, including its final widget snap.
     public class MoveMirrorStrokesCommand : BaseCommand
     {
-        private readonly List<Stroke> m_Strokes;
-        private readonly List<TrTransform> m_Transforms;
-        private readonly List<SymmetryStrokeGroup> m_Groups;
-        private readonly List<SymmetrySettingsSnapshot> m_GroupSettingsBefore;
-        private readonly List<SymmetrySettingsSnapshot> m_GroupSettingsAfter;
-
+        private readonly SymmetryWidget m_Widget;
+        private readonly MoveWidgetCommand m_WidgetMove;
         private readonly SymmetryMirror m_Mirror;
-        private readonly SymmetrySettingsSnapshot m_MirrorSettingsBefore;
-        private readonly SymmetrySettingsSnapshot m_MirrorSettingsAfter;
+        private readonly SymmetrySettingsSnapshot m_Before;
+        private SymmetrySettingsSnapshot m_After;
+        private readonly List<SymmetryMirrorMove.GroupMove> m_Groups;
+        private bool m_Complete;
 
-        public MoveMirrorStrokesCommand(
-            SymmetryMirror mirror,
-            SymmetrySettingsSnapshot mirrorSettingsBefore,
-            SymmetrySettingsSnapshot mirrorSettingsAfter,
-            List<Stroke> strokes, List<TrTransform> transforms,
-            List<SymmetryStrokeGroup> groups,
-            List<SymmetrySettingsSnapshot> groupSettingsBefore,
-            List<SymmetrySettingsSnapshot> groupSettingsAfter,
-            BaseCommand parent = null) : base(parent)
+        internal MoveMirrorStrokesCommand(SymmetryWidget widget, SymmetryMirror mirror,
+            SymmetrySettingsSnapshot before, List<SymmetryMirrorMove.GroupMove> groups)
         {
+            m_Widget = widget;
+            m_WidgetMove = new MoveWidgetCommand(widget, widget.LocalTransform,
+                widget.CustomDimension, final: true);
             m_Mirror = mirror;
-            m_MirrorSettingsBefore = mirrorSettingsBefore;
-            m_MirrorSettingsAfter = mirrorSettingsAfter;
-            m_Strokes = strokes;
-            m_Transforms = transforms;
+            m_Before = before;
+            m_After = before;
             m_Groups = groups;
-            m_GroupSettingsBefore = groupSettingsBefore;
-            m_GroupSettingsAfter = groupSettingsAfter;
         }
 
-        public override bool NeedsSave { get { return true; } }
+        public override bool NeedsSave => true;
+
+        public override bool Merge(BaseCommand other)
+        {
+            if (base.Merge(other)) { return true; }
+            if (m_Complete) { return false; }
+            if (other is MoveWidgetCommand move && move.Widget == m_Widget)
+            {
+                m_WidgetMove.CopyMirrorEnd(move);
+                return true;
+            }
+            // Close before a different operation changes any of the captured state.
+            SymmetryMirrorMove.End();
+            return false;
+        }
+
+        internal void Complete(SymmetrySettingsSnapshot after)
+        {
+            if (m_Complete) { return; }
+            m_WidgetMove.UpdateMirrorEnd(m_Widget.LocalTransform, m_Widget.CustomDimension);
+            m_After = after;
+            foreach (var group in m_Groups) { group.Complete(); }
+            m_Complete = true;
+        }
 
         protected override void OnRedo()
         {
-            for (int i = 0; i < m_Strokes.Count; ++i)
-            {
-                m_Strokes[i].TransformGeometryInPlace(m_Transforms[i]);
-            }
-            for (int i = 0; i < m_Groups.Count; ++i)
-            {
-                m_Groups[i].Settings = m_GroupSettingsAfter[i];
-            }
-            m_Mirror.Settings = m_MirrorSettingsAfter;
+            foreach (var group in m_Groups) { group.Restore(after: true); }
+            m_WidgetMove.Redo();
+            m_Mirror.Settings = m_After;
         }
 
         protected override void OnUndo()
         {
-            for (int i = 0; i < m_Strokes.Count; ++i)
-            {
-                m_Strokes[i].TransformGeometryInPlace(m_Transforms[i].inverse);
-            }
-            for (int i = 0; i < m_Groups.Count; ++i)
-            {
-                m_Groups[i].Settings = m_GroupSettingsBefore[i];
-            }
-            m_Mirror.Settings = m_MirrorSettingsBefore;
+            // Undo may interrupt a held mirror.
+            if (!m_Complete) { SymmetryMirrorMove.End(); }
+            foreach (var group in m_Groups) { group.Restore(after: false); }
+            m_WidgetMove.Undo();
+            m_Mirror.Settings = m_Before;
         }
     }
 } // namespace TiltBrush

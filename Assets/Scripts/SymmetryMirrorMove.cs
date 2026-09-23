@@ -12,175 +12,292 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace TiltBrush
 {
-    /// Carries the strokes of the active mirror along as the user moves the mirror.
-    ///
-    /// The strokes follow live, every frame. Each one's geometry is transformed where it lies
-    /// inside its batch, which costs a pass over that stroke's vertices and a mesh update for the
-    /// batch it is in - no regeneration, no re-batching. Strokes drawn together share batches, so
-    /// the per-frame cost is closer to the number of batches involved than the number of strokes.
-    ///
-    /// The whole move is recorded as one command when the mirror is let go of. It is recorded
-    /// rather than performed, because the strokes have already moved.
-    ///
-    /// The symmetry transforms are read from PointerManager as the mirror moves rather than
-    /// derived here, so what the strokes follow is exactly what drawing would produce at each
-    /// pose. Only groups drawn under the same number of pointers as the mirror now has can
-    /// follow: a group drawn at a different order has no correspondence to the mirror's current
-    /// copies, and moving 6 strokes to 8 positions isn't a transform.
+    /// One undo owner per drag; one canvas-space movement basis per participating group.
+    /// Live updates use batches. Infrequent endpoint restoration may rebuild geometry.
     public static class SymmetryMirrorMove
     {
+        internal const string LogPrefix = "[SymmetryMove-M1]";
         private static SymmetryMirror m_Mirror;
-        private static SymmetrySettingsSnapshot m_MirrorSettingsAtStart;
-        // The symmetry transforms as of the last frame the strokes were moved to.
-        private static List<TrTransform> m_Previous;
+        private static SymmetrySettingsSnapshot m_Start;
+        private static MoveMirrorStrokesCommand m_Command;
+        private static List<GroupMove> m_Groups;
+        private static TrTransform m_TransformEach;
+        private static bool m_TransformEachAfter;
 
-        private static readonly List<Stroke> m_Strokes = new List<Stroke>();
-        private static readonly List<int> m_PointerIndices = new List<int>();
-        // Per stroke, everything it has moved by so far this drag.
-        private static readonly List<TrTransform> m_Applied = new List<TrTransform>();
-        private static readonly List<SymmetryStrokeGroup> m_Groups = new List<SymmetryStrokeGroup>();
-        private static readonly List<SymmetrySettingsSnapshot> m_GroupSettingsAtStart =
-            new List<SymmetrySettingsSnapshot>();
+        public static bool IsMoving => m_Command != null;
 
-        public static bool IsMoving => m_Mirror != null;
+        internal static TrTransform PointerDelta(TrTransform start_GS, TrTransform current_GS,
+            TrTransform canvasPose)
+        {
+            return canvasPose.inverse * current_GS * start_GS.inverse * canvasPose;
+        }
 
-        /// Call when the user takes hold of the mirror.
         public static void Begin()
         {
-            Forget();
-            if (!SymmetryPeerEditing.Enabled) { return; }
-
-            var mirror = SymmetryMirrors.Active;
-            if (mirror == null) { return; }
-            var transforms = PointerManager.m_Instance.GetSymmetryTransforms_CS();
-            if (transforms.Count == 0) { return; }
-
-            Gather(mirror, transforms.Count);
-            if (m_Strokes.Count == 0 && m_Groups.Count == 0) { return; }
-
-            m_Mirror = mirror;
-            m_MirrorSettingsAtStart = mirror.Settings;
-            m_Previous = transforms;
-        }
-
-        /// Call every frame while it is held.
-        public static void Update()
-        {
-            if (m_Mirror == null) { return; }
-            var now = PointerManager.m_Instance.GetSymmetryTransforms_CS();
-            if (now.Count != m_Previous.Count) { return; }
-
-            for (int i = 0; i < m_Strokes.Count; ++i)
-            {
-                int index = m_PointerIndices[i];
-                TrTransform step = now[index] * m_Previous[index].inverse;
-                if (!step.IsFinite() || step == TrTransform.identity) { continue; }
-                if (m_Strokes[i].TransformGeometryInPlace(step))
-                {
-                    m_Applied[i] = step * m_Applied[i];
-                }
-            }
-            m_Previous = now;
-        }
-
-        /// Call when the user lets go. Records what happened so that undo puts it back.
-        public static void End()
-        {
-            var mirror = m_Mirror;
-            if (mirror == null) { Forget(); return; }
-
-            Update();
-
-            var strokes = new List<Stroke>();
-            var transforms = new List<TrTransform>();
-            for (int i = 0; i < m_Strokes.Count; ++i)
-            {
-                if (m_Applied[i] == TrTransform.identity) { continue; }
-                strokes.Add(m_Strokes[i]);
-                transforms.Add(m_Applied[i]);
-            }
-
-            var settingsNow = SymmetrySettingsSnapshot.FromCurrentSettings();
-            mirror.Settings = settingsNow;
-
-            if (strokes.Count > 0)
-            {
-                // The groups' records have to say where their strokes are now, or a later edit
-                // mirrored onto a peer would be worked out from where they used to be.
-                var groupSettingsAfter = new List<SymmetrySettingsSnapshot>();
-                foreach (var group in m_Groups)
-                {
-                    groupSettingsAfter.Add(
-                        group.Settings.WithPointerTransforms(m_Previous));
-                }
-                for (int i = 0; i < m_Groups.Count; ++i)
-                {
-                    m_Groups[i].Settings = groupSettingsAfter[i];
-                }
-
-                SketchMemoryScript.m_Instance.RecordCommand(
-                    new MoveMirrorStrokesCommand(
-                        mirror, m_MirrorSettingsAtStart, settingsNow,
-                        strokes, transforms,
-                        new List<SymmetryStrokeGroup>(m_Groups),
-                        new List<SymmetrySettingsSnapshot>(m_GroupSettingsAtStart),
-                        groupSettingsAfter));
-            }
-            Forget();
-        }
-
-        /// The strokes that can follow this mirror, and the groups they belong to.
-        private static void Gather(SymmetryMirror mirror, int pointerCount)
-        {
-            var eligible = new HashSet<SymmetryStrokeGroup>();
-            var skipped = new HashSet<SymmetryStrokeGroup>();
+            End();
+            if (!SymmetryPeerEditing.Enabled || SymmetryMirrors.Active == null) { return; }
+            var pm = PointerManager.m_Instance;
+            m_Start = SymmetrySettingsSnapshot.FromCurrentSettings();
+            if (m_Start.Mode != PointerManager.SymmetryMode.SinglePlane &&
+                m_Start.Mode != PointerManager.SymmetryMode.MultiMirror) { return; }
+            m_Mirror = SymmetryMirrors.Active;
+            m_TransformEach = pm.m_SymmetryTransformEach;
+            m_TransformEachAfter = pm.m_SymmetryTransformEachAfter;
+            var worldTransforms = pm.GetSymmetriesForCurrentMode();
+            m_Groups = new List<GroupMove>();
+            var seen = new HashSet<SymmetryStrokeGroup>();
+            int skipped = 0;
             foreach (var stroke in SketchMemoryScript.AllStrokes())
             {
                 var group = stroke.SymmetryPeerGroup;
-                if (group == null || !ReferenceEquals(group.Mirror, mirror)) { continue; }
-                if (skipped.Contains(group)) { continue; }
-
-                if (!eligible.Contains(group))
+                if (group == null || !ReferenceEquals(group.Mirror, m_Mirror) || !seen.Add(group))
                 {
-                    var placement = group.Settings?.PointerTransforms;
-                    if (placement == null || placement.Count != pointerCount)
-                    {
-                        skipped.Add(group);
-                        continue;
-                    }
-                    eligible.Add(group);
-                    m_Groups.Add(group);
-                    m_GroupSettingsAtStart.Add(group.Settings);
+                    continue;
                 }
-
-                int index = stroke.SymmetryPointerIndex;
-                // Pointer 0 is the stroke the user drew: its transform is the identity at both
-                // ends of any move, so it stays put and the copies rearrange around it.
-                if (index <= 0 || index >= pointerCount) { continue; }
-                if (!stroke.IsGeometryEnabled) { continue; }
-                // A selected stroke is in the selection canvas being moved by something else.
-                if (SelectionManager.m_Instance.IsStrokeSelected(stroke)) { continue; }
-
-                m_Strokes.Add(stroke);
-                m_PointerIndices.Add(index);
-                m_Applied.Add(TrTransform.identity);
+                var move = GroupMove.TryCreate(group, m_Start, worldTransforms);
+                if (move == null) { ++skipped; }
+                else { m_Groups.Add(move); }
             }
+            // Empty/skipped groups still need matching widget and mirror-settings undo.
+            m_Command = new MoveMirrorStrokesCommand(pm.SymmetryWidget, m_Mirror, m_Start, m_Groups);
+            SketchMemoryScript.m_Instance.RecordCommand(m_Command);
+            Debug.Log($"{LogPrefix} Begin: {m_Groups.Count} groups eligible, {skipped} skipped.");
         }
 
-        private static void Forget()
+        public static void Update()
         {
+            if (!IsMoving) { return; }
+            var pm = PointerManager.m_Instance;
+            var current = SymmetrySettingsSnapshot.FromCurrentSettings();
+            if (!SymmetryPeerEditing.Enabled || !ReferenceEquals(m_Mirror, SymmetryMirrors.Active) ||
+                !m_Start.HasCompatibleTopology(current) || m_TransformEach != pm.m_SymmetryTransformEach ||
+                m_TransformEachAfter != pm.m_SymmetryTransformEachAfter)
+            {
+                // Freeze the completed part of the drag before accepting different inputs.
+                Finish(current);
+                return;
+            }
+            var worldTransforms = pm.GetSymmetriesForCurrentMode();
+            foreach (var group in m_Groups) { group.Update(worldTransforms); }
+        }
+
+        public static void End()
+        {
+            if (!IsMoving) { return; }
+            Update();
+            if (IsMoving) { Finish(SymmetrySettingsSnapshot.FromCurrentSettings()); }
+        }
+
+        private static void Finish(SymmetrySettingsSnapshot settings)
+        {
+            m_Command.Complete(settings);
+            m_Mirror.Settings = settings;
+            Debug.Log($"{LogPrefix} End: widget, stroke endpoints and placement recorded together.");
+            Forget();
+        }
+
+        // Only for teardown: the sketch and its command stack are being discarded.
+        public static void Forget()
+        {
+            m_Command = null;
             m_Mirror = null;
-            m_MirrorSettingsAtStart = null;
-            m_Previous = null;
-            m_Strokes.Clear();
-            m_PointerIndices.Clear();
-            m_Applied.Clear();
-            m_Groups.Clear();
-            m_GroupSettingsAtStart.Clear();
+            m_Start = null;
+            m_Groups = null;
+        }
+
+        internal sealed class GroupMove
+        {
+            private sealed class Member
+            {
+                internal Stroke Stroke;
+                internal int Index;
+                internal PointerManager.ControlPoint[] Before;
+                internal PointerManager.ControlPoint[] After;
+                internal float BeforeScale;
+                internal float AfterScale;
+            }
+
+            private readonly SymmetryStrokeGroup m_Group;
+            private readonly CanvasScript m_Canvas;
+            private readonly TrTransform m_CanvasPose;
+            private readonly SymmetrySettingsSnapshot m_Before;
+            private SymmetrySettingsSnapshot m_After;
+            private readonly List<Member> m_Members = new List<Member>();
+            private readonly TrTransform[] m_MirrorStart;
+            private readonly TrTransform[] m_Applied;
+            private readonly TrTransform[] m_Steps;
+            private bool m_Rejected;
+            private bool m_Changed;
+
+            private GroupMove(SymmetryStrokeGroup group, IList<TrTransform> worldTransforms)
+            {
+                m_Group = group;
+                m_Canvas = group.Strokes[0].Canvas;
+                m_CanvasPose = m_Canvas.Pose;
+                m_Before = group.Settings.WithPointerTransforms(group.Settings.PointerTransforms);
+                m_After = m_Before;
+                m_MirrorStart = new TrTransform[worldTransforms.Count];
+                m_Applied = new TrTransform[worldTransforms.Count];
+                m_Steps = new TrTransform[worldTransforms.Count];
+                for (int i = 0; i < worldTransforms.Count; ++i)
+                {
+                    m_MirrorStart[i] = worldTransforms[i];
+                    m_Applied[i] = TrTransform.identity;
+                }
+                foreach (var stroke in group.Strokes)
+                {
+                    m_Members.Add(new Member
+                    {
+                        Stroke = stroke,
+                        Index = stroke.SymmetryPointerIndex,
+                        Before = (PointerManager.ControlPoint[])stroke.m_ControlPoints.Clone(),
+                        BeforeScale = stroke.m_BrushScale
+                    });
+                }
+            }
+
+            internal static GroupMove TryCreate(SymmetryStrokeGroup group,
+                SymmetrySettingsSnapshot settings, IList<TrTransform> worldTransforms)
+            {
+                if (group.Count == 0 || group.Settings == null ||
+                    !group.Settings.HasCompatibleTopology(settings)) { return null; }
+                var canvas = group.Strokes[0].Canvas;
+                if (canvas == null || canvas == App.Scene.SelectionCanvas) { return null; }
+                var indices = new HashSet<int>();
+                foreach (var stroke in group.Strokes)
+                {
+                    int index = stroke.SymmetryPointerIndex;
+                    if (index < 0 || index >= worldTransforms.Count || !indices.Add(index) ||
+                        !Eligible(stroke, canvas) || !Invertible(worldTransforms[index]) ||
+                        !Invertible(group.Settings.PointerTransforms[index])) { return null; }
+                }
+                return Invertible(canvas.Pose) ? new GroupMove(group, worldTransforms) : null;
+            }
+
+            private static bool Invertible(TrTransform transform) =>
+                transform.IsFinite() && transform.scale != 0 && transform.inverse.IsFinite();
+
+            private static bool Eligible(Stroke stroke, CanvasScript canvas) =>
+                stroke.Canvas == canvas && stroke.CanTransformGeometryInPlace &&
+                stroke.IsGeometryEnabled && stroke.m_ControlPoints != null &&
+                !SelectionManager.m_Instance.IsStrokeSelected(stroke);
+
+            internal void Update(IList<TrTransform> worldTransforms)
+            {
+                if (m_Rejected) { return; }
+                // Preflight the entire group. The following application loop is synchronous
+                // and does not yield to selection or brush changes.
+                if (m_Canvas == null || m_Canvas.Pose != m_CanvasPose ||
+                    m_Group.Count != m_Members.Count)
+                {
+                    Reject();
+                    return;
+                }
+                bool changed = false;
+                foreach (var member in m_Members)
+                {
+                    int index = member.Index;
+                    if (!Eligible(member.Stroke, m_Canvas) ||
+                        !ReferenceEquals(member.Stroke.SymmetryPeerGroup, m_Group) ||
+                        member.Stroke.SymmetryPointerIndex != index)
+                    {
+                        Reject();
+                        return;
+                    }
+                    // Pointer zero remains stationary, including numerical noise.
+                    var target = index == 0 ? TrTransform.identity :
+                        PointerDelta(m_MirrorStart[index], worldTransforms[index], m_CanvasPose);
+                    m_Steps[index] = target * m_Applied[index].inverse;
+                    if (!Invertible(m_Steps[index])) { Reject(); return; }
+                    changed |= m_Steps[index] != TrTransform.identity;
+                }
+                if (!changed) { return; }
+                try
+                {
+                    foreach (var member in m_Members)
+                    {
+                        var step = m_Steps[member.Index];
+                        if (step == TrTransform.identity) { continue; }
+                        // Mark before the call so a geometry exception also restores this group.
+                        m_Changed = true;
+                        if (!member.Stroke.TransformGeometryInPlace(step))
+                        {
+                            Reject();
+                            return;
+                        }
+                        m_Applied[member.Index] = step * m_Applied[member.Index];
+                    }
+                    var bases = new List<TrTransform>(m_Before.PointerTransforms);
+                    foreach (var member in m_Members)
+                    {
+                        bases[member.Index] = m_Applied[member.Index] * bases[member.Index];
+                    }
+                    m_After = m_Before.WithPointerTransforms(bases);
+                    m_Group.Settings = m_After;
+                }
+                catch (Exception exception)
+                {
+                    Reject();
+                    Debug.LogError($"{LogPrefix} Group move rolled back: {exception}");
+                }
+            }
+
+            private void Reject()
+            {
+                // Roll back this group's whole drag and exclude it from subsequent updates.
+                // Restoration does not depend on the in-place batch operation that failed.
+                if (m_Changed)
+                {
+                    foreach (var member in m_Members)
+                    {
+                        if (member.Index != 0) { RestoreMember(member, after: false); }
+                    }
+                    m_Group.Settings = m_Before;
+                }
+                m_Rejected = true;
+                Debug.LogWarning($"{LogPrefix} Group no longer eligible; retained its drag-start placement.");
+            }
+
+            internal void Complete()
+            {
+                if (m_Rejected || !m_Changed) { return; }
+                foreach (var member in m_Members)
+                {
+                    member.After = (PointerManager.ControlPoint[])member.Stroke.m_ControlPoints.Clone();
+                    member.AfterScale = member.Stroke.m_BrushScale;
+                }
+            }
+
+            internal void Restore(bool after)
+            {
+                if (m_Rejected || !m_Changed) { return; }
+                foreach (var member in m_Members)
+                {
+                    if (member.Index != 0) { RestoreMember(member, after); }
+                }
+                m_Group.Settings = after ? m_After : m_Before;
+            }
+
+            private void RestoreMember(Member member, bool after)
+            {
+                var points = (PointerManager.ControlPoint[])(after ? member.After : member.Before).Clone();
+                float scale = after ? member.AfterScale : member.BeforeScale;
+                // Selection can temporarily reparent a stroke without a history entry.
+                var conversion = member.Stroke.Canvas.Pose.inverse * m_Canvas.Pose;
+                for (int i = 0; i < points.Length; ++i)
+                {
+                    var pose = conversion * TrTransform.TR(points[i].m_Pos, points[i].m_Orient);
+                    points[i].m_Pos = pose.translation;
+                    points[i].m_Orient = pose.rotation;
+                }
+                member.Stroke.RestoreMirrorControlPoints(points, scale * conversion.scale);
+            }
         }
     }
 } // namespace TiltBrush
