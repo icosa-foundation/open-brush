@@ -8,7 +8,7 @@ namespace TiltBrush
         [ApiEndpoint(
             "multiplayer.photonudpports",
             "Selects the Default or Alternative Photon Cloud UDP ports for future multiplayer connections. This changes the runtime setting without updating Open Brush.cfg.",
-            "Alternative")]
+            "Default")]
         public static string MultiplayerPhotonUdpPorts(string portSet)
         {
             if (!Enum.TryParse(portSet, true, out PhotonUdpPortSet parsed) ||
