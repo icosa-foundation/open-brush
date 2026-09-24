@@ -10,46 +10,51 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c71b2ac88638c5c41a0a0681f70d2512, type: 3}
-  m_Name: Taffy
+  m_Name: MatteMembrane
   m_EditorClassIdentifier: 
   m_Guid:
-    m_storage: 0077f88c-d93a-42f3-b59b-b31c50cdb414
-  m_DurableName: Taffy
-  m_CreationVersion: 0.0
+    m_storage: 528fc9e8-5b95-48f3-b3f0-67ac5236f010
+  m_DurableName: MatteMembrane
+  m_CreationVersion: 
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 100000, guid: 486c6801b0558714fa4a188e0747d682, type: 3}
-  m_Tags: []
+  m_BrushPrefab: {fileID: 100000, guid: 306981493c914292aa6da41f3c0a5964, type: 3}
+  m_Tags:
+  - experimental
+  - fill
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
-  m_ButtonTexture: {fileID: 0}
+  m_ButtonTexture: {fileID: 2800000, guid: d04627fc75e14893b7ef33551d206706, type: 3}
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableCollectionName: 
     m_TableEntryReference:
-      m_KeyId: 81207912810733568
+      m_KeyId: 0
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionExtra: 
-  m_BrushAudioLayers: []
-  m_BrushAudioBasePitch: 1.2
+  m_DescriptionExtra: Stretches a soft surface across your stroke
+  m_BrushAudioLayers:
+  - {fileID: 8300000, guid: 103bfb4f4d70ddc4e8ca851eda9568f2, type: 3}
+  - {fileID: 8300000, guid: c7079dc05177e3944bed833a35ba7563, type: 3}
+  - {fileID: 8300000, guid: 9fcf67238fab1c44596f5390b5ee1957, type: 3}
+  m_BrushAudioBasePitch: 1
   m_BrushAudioMaxPitchShift: 0
   m_BrushAudioMaxVolume: 1
-  m_BrushVolumeUpSpeed: 4
-  m_BrushVolumeDownSpeed: 4
-  m_VolumeVelocityRangeMultiplier: 1
+  m_BrushVolumeUpSpeed: 1.7
+  m_BrushVolumeDownSpeed: 1.5
+  m_VolumeVelocityRangeMultiplier: 1.5
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: f7b9f526c5678d840bf8378db87ae4d2, type: 2}
+  m_Material: {fileID: 2100000, guid: 62df3af3ef149504988da83c08cf7250, type: 2}
   m_TestingMaterial: {fileID: 0}
   m_OverlayMaterial: {fileID: 0}
-  m_TextureAtlasV: 4
-  m_TileRate: 1
+  m_TextureAtlasV: 1
+  m_TileRate: 0.01
   m_UseBloomSwatchOnColorPicker: 0
-  m_BrushSizeRange: {x: 0.2, y: 1}
-  m_PressureSizeRange: {x: 0.2, y: 1}
+  m_BrushSizeRange: {x: 0.005, y: 1}
+  m_PressureSizeRange: {x: 0.1, y: 1}
   m_SizeVariance: 0
   m_PreviewPressureSizeMin: 0.001
   m_Opacity: 1
@@ -64,18 +69,18 @@ MonoBehaviour:
   m_RotationVariance: 360
   m_PositionVariance: 0
   m_SizeRatio: {x: 1, y: 1}
-  m_M11Compatibility: 0
+  m_M11Compatibility: 1
   m_SolidMinLengthMeters_PS: 0.002
   m_TubeStoreRadiusInTexcoord0Z: 0
-  m_RenderBackfaces: 0
+  m_RenderBackfaces: 1
   m_BackIsInvisible: 0
   m_BackfaceHueShift: 0
   m_BoundsPadding: 0
-  m_PlayBackAtStrokeGranularity: 0
-  m_BlendMode: 1
+  m_PlayBackAtStrokeGranularity: 1
+  m_BlendMode: 0
   m_EmissiveFactor: 0
   m_AllowExport: 1
-  m_SupportsSimplification: 1
+  m_SupportsSimplification: 0
   m_HeadMinPoints: 1
   m_HeadPointStep: 1
   m_TailMinPoints: 1

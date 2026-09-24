@@ -42,6 +42,17 @@ namespace TiltBrush
     public class UserConfig
     {
         [Serializable]
+        public struct PostProcessingConfig
+        {
+            // Null leaves bloom at its default amount of 1 for every quality level.
+            public float? BloomAmount;
+            // Null uses the default bloom threshold of 1.05.
+            public float? BloomThreshold;
+        }
+
+        public PostProcessingConfig PostProcessing;
+
+        [Serializable]
         public struct PluginWebRequestRule
         {
             // Exact host, HTTP methods, and response categories documented in
