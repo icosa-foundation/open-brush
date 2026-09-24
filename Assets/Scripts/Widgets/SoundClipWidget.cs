@@ -185,8 +185,7 @@ namespace TiltBrush
 
             foreach (var gltfAudio in go.GetComponentsInChildren<GltfAudioSource>())
             {
-                var soundClipPath = CopyGltfAudioToSoundLibrary(gltfAudio.AbsoluteFilePath);
-                var soundClip = new SoundClip(soundClipPath);
+                var soundClip = CopyGltfAudioToSoundLibrary(gltfAudio.AbsoluteFilePath);
                 var widget = Object.Instantiate(WidgetManager.m_Instance.SoundClipWidgetPrefab);
                 widget.LoadingFromSketch = true;
                 widget.transform.parent = App.Instance.m_CanvasTransform;
@@ -212,7 +211,7 @@ namespace TiltBrush
             return soundClipWidgets;
         }
 
-        private static string CopyGltfAudioToSoundLibrary(string sourcePath)
+        private static SoundClip CopyGltfAudioToSoundLibrary(string sourcePath)
         {
             string soundClipLibraryPath = App.SoundClipLibraryPath();
             string fullSourcePath = Path.GetFullPath(sourcePath);
@@ -220,26 +219,16 @@ namespace TiltBrush
 
             if (fullSourcePath.StartsWith(fullLibraryPath + Path.DirectorySeparatorChar))
             {
-                return fullSourcePath;
+                return new SoundClip(fullSourcePath);
             }
 
-            Directory.CreateDirectory(fullLibraryPath);
-            string filename = Path.GetFileName(fullSourcePath);
-            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
-            {
-                filename = OpenBrushStorage.GetUniqueImportPath(
-                    UserStorage.Backend,
-                    StorageArea.MediaLibrarySoundClips,
-                    filename,
-                    candidate => File.Exists(Path.Combine(fullLibraryPath, candidate)));
-            }
-            string destinationPath = GetUniqueSoundClipPath(fullLibraryPath, filename);
-            File.Copy(fullSourcePath, destinationPath);
             if (OpenBrushStorage.IsScopedStorageMode)
             {
-                string sharedPath = $"Media Library/Sound Clips/{Path.GetFileName(destinationPath)}";
+                SoundClip soundClip = StageSafGltfAudio(
+                    UserStorage.Backend, fullSourcePath, fullLibraryPath);
+                string sharedPath = $"Media Library/Sound Clips/{soundClip.PersistentPath}";
                 OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
-                    destinationPath,
+                    soundClip.AbsolutePath,
                     sharedPath,
                     "glTF audio",
                     (success, error) =>
@@ -255,12 +244,34 @@ namespace TiltBrush
                         }
                     },
                     preserveDestination: true);
+                return soundClip;
             }
-            else
-            {
-                SoundClipCatalog.Instance.ForceCatalogScan();
-            }
-            return destinationPath;
+
+            Directory.CreateDirectory(fullLibraryPath);
+            string destinationPath = GetUniqueSoundClipPath(
+                fullLibraryPath, Path.GetFileName(fullSourcePath));
+            File.Copy(fullSourcePath, destinationPath);
+            SoundClipCatalog.Instance.ForceCatalogScan();
+            return new SoundClip(destinationPath);
+        }
+
+        internal static SoundClip StageSafGltfAudio(
+            IUserStorageBackend backend, string sourcePath, string libraryPath)
+        {
+            string fullLibraryPath = Path.GetFullPath(libraryPath);
+            string filename = OpenBrushStorage.GetUniqueImportPath(
+                backend, StorageArea.MediaLibrarySoundClips, Path.GetFileName(sourcePath),
+                candidate => File.Exists(Path.Combine(fullLibraryPath, candidate)) ||
+                    SafApiImportStaging.ContainsFile(fullLibraryPath, candidate));
+            string stagingDirectory = SafApiImportStaging.CreateDirectory(fullLibraryPath);
+            Directory.CreateDirectory(stagingDirectory);
+            string stagedPath = Path.Combine(stagingDirectory, filename);
+            File.Copy(sourcePath, stagedPath);
+
+            // Playback and export may still need these bytes after publication. Existing
+            // startup cleanup removes this owned staging directory after the session ends.
+            // Persist the shared filename, never the temporary import-* directory.
+            return new SoundClip(stagedPath, filename, stagedPath);
         }
 
         private static string GetUniqueSoundClipPath(string directory, string filename)

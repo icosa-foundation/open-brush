@@ -60,6 +60,17 @@ namespace TiltBrush
             }
         }
 
+        internal static bool ContainsFile(string parentDirectory, string filename)
+        {
+            lock (sm_Gate)
+            {
+                return sm_CurrentDirectories.Any(directory =>
+                    string.Equals(Path.GetDirectoryName(directory), parentDirectory,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    File.Exists(Path.Combine(directory, filename)));
+            }
+        }
+
         private static bool IsOwnedDirectory(string directory)
         {
             string name = Path.GetFileName(directory);

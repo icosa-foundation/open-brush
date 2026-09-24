@@ -189,6 +189,48 @@ namespace TiltBrush
         }
 
         [Test]
+        public void ExtractedSafAudioUsesOwnedStagingAndStableSharedNames()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"saf-gltf-audio-{Guid.NewGuid():N}");
+            string library = Path.Combine(root, "private", "Sound Clips");
+            string shared = Path.Combine(root, "shared");
+            Directory.CreateDirectory(shared);
+            string source = Path.Combine(root, "audio.wav");
+            byte[] audio = { 1, 2, 3, 4 };
+            File.WriteAllBytes(source, audio);
+            File.WriteAllText(Path.Combine(shared, "audio.wav"), "existing shared audio");
+            try
+            {
+                var backend = new LocalUserStorageBackend(_ => shared);
+                SoundClip first = SoundClipWidget.StageSafGltfAudio(backend, source, library);
+                SoundClip second = SoundClipWidget.StageSafGltfAudio(backend, source, library);
+
+                Assert.AreEqual("audio (1).wav", first.PersistentPath);
+                Assert.AreEqual("audio (2).wav", second.PersistentPath);
+                StringAssert.StartsWith("import-", Path.GetFileName(Path.GetDirectoryName(first.AbsolutePath)));
+                Assert.IsFalse(File.Exists(Path.Combine(library, first.PersistentPath)));
+                CollectionAssert.AreEqual(audio, File.ReadAllBytes(first.AbsolutePath));
+                CollectionAssert.AreEqual(audio, File.ReadAllBytes(second.AbsolutePath));
+
+                // Model an earlier session without registering its directory in this session.
+                string orphan = Path.Combine(library, $"import-{Guid.NewGuid():N}");
+                Directory.CreateDirectory(orphan);
+                File.Copy(source, Path.Combine(orphan, "old.wav"));
+                SafApiImportStaging.CleanupOrphans(library);
+
+                Assert.IsFalse(Directory.Exists(orphan));
+                Assert.IsTrue(File.Exists(first.AbsolutePath));
+                Assert.IsTrue(File.Exists(second.AbsolutePath));
+                Assert.IsTrue(File.Exists(source));
+                Assert.AreEqual("existing shared audio", File.ReadAllText(Path.Combine(shared, "audio.wav")));
+            }
+            finally
+            {
+                if (Directory.Exists(root)) { Directory.Delete(root, recursive: true); }
+            }
+        }
+
+        [Test]
         public void SafApiImports_PreserveCurrentSessionStagingDuringCleanup()
         {
             string root = Path.Combine(
