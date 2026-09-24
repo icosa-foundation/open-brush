@@ -639,14 +639,20 @@ namespace TiltBrush
             CancellationToken token, SceneFileInfo sceneFile = null,
             string sceneArchivedName = null)
         {
+            if (sceneFile != null && !(sceneFile is SafSceneFileInfo))
+            {
+                // Freeze the local sketch before ZIP creation yields. API saves can replace
+                // the original while other entries are copying into the archive.
+                string stagedSketch = Path.Combine(rootDir, sceneArchivedName);
+                File.Copy(sceneFile.FullPath, stagedSketch);
+                paths = paths.Append(stagedSketch).ToArray();
+                sceneFile = null;
+            }
+
             long totalLength = paths.Aggregate(0L, (acc, elt) => acc + new FileInfo(elt).Length);
             if (sceneFile is SafSceneFileInfo safScene)
             {
                 totalLength += safScene.Document.Size ?? 0;
-            }
-            else if (sceneFile != null)
-            {
-                totalLength += new FileInfo(sceneFile.FullPath).Length;
             }
             totalLength += 1;
             long read = 1;
