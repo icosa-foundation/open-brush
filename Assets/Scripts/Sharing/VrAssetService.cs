@@ -770,7 +770,7 @@ namespace TiltBrush
             // options.SetBackgroundColor(bgColor);
 
             SetUploadProgress(UploadStep.CreateTilt, 0);
-            var thumbnail = await CreateTiltForUploadAsync(fileInfo);
+            var (savedFile, thumbnail) = await CreateTiltForUploadAsync(fileInfo);
             token.ThrowIfCancellationRequested();
 
             // Save thumbnail as a png to temp path
@@ -795,7 +795,7 @@ namespace TiltBrush
 
             await CreateZipFileAsync(
                 zipName, tempUploadDir, filesToZip.ToArray(), token,
-                SaveLoadScript.m_Instance.SceneFile, $"{uploadName}.tilt");
+                savedFile, $"{uploadName}.tilt");
 
             // Collect remix IDs if this sketch is derived from another asset
             var remixIds = new List<string>();
@@ -846,14 +846,14 @@ namespace TiltBrush
             // TODO(b/146892613): we're not uploading this at the moment. Should we be?
             // If we don't, we can probably remove this step...?
             SetUploadProgress(UploadStep.CreateTilt, 0);
-            await CreateTiltForUploadAsync(fileInfo);
+            var savedSketch = await CreateTiltForUploadAsync(fileInfo);
             token.ThrowIfCancellationRequested();
 
             // Collect files into a .zip file, including the .tilt file.
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
             await CreateZipFileAsync(
                 zipName, tempUploadDir, exportResults.exportedFiles, token,
-                SaveLoadScript.m_Instance.SceneFile, "sketch.tilt");
+                savedSketch.File, "sketch.tilt");
             var uploadLength = new FileInfo(zipName).Length;
 
             var service = new SketchfabService(App.SketchfabIdentity);
@@ -1085,38 +1085,38 @@ namespace TiltBrush
         }
 
         /// Helper for UploadCurrentSketchXxxAsync
-        /// Writes the sketch to the passed fileInfo and returns a sketch thumbnail.
-        private async Task<byte[]> CreateTiltForUploadAsync(SceneFileInfo fileInfo)
+        /// Writes the sketch to the passed fileInfo and returns the committed file and thumbnail.
+        private async Task<(SceneFileInfo File, byte[] Thumbnail)> CreateTiltForUploadAsync(
+            SceneFileInfo fileInfo)
         {
             // Create and save snapshot.
             SetUploadProgress(UploadStep.CreateTilt, 0);
             SketchControlsScript.m_Instance.GenerateReplacementSaveIcon();
             SketchSnapshot snapshot = await SaveLoadScript.m_Instance.CreateSnapshotWithIconsAsync();
             snapshot.AssetId = fileInfo.AssetId; // FileInfo and snapshot must match
-            await SaveLoadScript.m_Instance.SaveSnapshot(fileInfo, snapshot: snapshot);
-            SceneFileInfo savedFile = SaveLoadScript.m_Instance.SceneFile;
-            if (!savedFile.Exists)
+            // A skipped or failed save can leave an existing cloud/local file in SceneFile.
+            // Only the completion result of this save identifies a valid upload source.
+            SceneFileInfo savedFile = null;
+            string saveError = "The sketch save did not complete.";
+            await SaveLoadScript.m_Instance.SaveSnapshot(
+                fileInfo, snapshot: snapshot, onCompleted: (committedFile, error) =>
+                {
+                    savedFile = committedFile;
+                    saveError = error;
+                });
+            if (savedFile == null || saveError != null)
             {
-                string exceptionMessage = "Internal error uploading .tilt.";
-                if (SaveLoadScript.m_Instance.LastWriteSnapshotError != null)
-                {
-                    exceptionMessage += " Error: " + SaveLoadScript.m_Instance.LastWriteSnapshotError;
-                }
-                else
-                {
-                    exceptionMessage += " No error message";
-                }
-
-                throw new VrAssetServiceException(exceptionMessage);
+                throw new VrAssetServiceException(
+                    $"Internal error uploading .tilt. {saveError ?? "No saved file was returned."}");
             }
 
-            byte[] thumbnail = SaveLoadScript.m_Instance.GetLastThumbnailBytes();
+            byte[] thumbnail = snapshot.Thumbnail;
             if (thumbnail == null)
             {
                 thumbnail = FileSketchSet.ReadThumbnail(savedFile) ?? new byte[0];
             }
 
-            return thumbnail;
+            return (savedFile, thumbnail);
         }
 
         public AssetGetter GetAsset(string assetId, VrAssetFormat[] assetTypes, string reason)
