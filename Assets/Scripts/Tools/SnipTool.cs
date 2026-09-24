@@ -188,7 +188,8 @@ namespace TiltBrush
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
                 var splitPoint = ClosestControlPoint(stroke);
-                if (splitPoint == 0 || splitPoint == stroke.m_ControlPoints.Length - 1) return;
+                if (splitPoint == 0 || splitPoint == stroke.m_ControlPoints.Length - 1 ||
+                    !SnipStrokeCommand.CanSnipPeers(stroke)) return;
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new SnipStrokeCommand(stroke, splitPoint)
                 );

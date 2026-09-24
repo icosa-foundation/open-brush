@@ -26,29 +26,71 @@ namespace TiltBrush
         private PointerManager.ControlPoint[] m_InitialCP;
         private PointerManager.ControlPoint[] m_SnippedCP1;
         private PointerManager.ControlPoint[] m_SnippedCP2;
+        private bool[] m_InitialDrops;
+        private bool[] m_SnippedDrops1;
+        private bool[] m_SnippedDrops2;
 
         private int m_SnipIndex;
 
         public SnipStrokeCommand(
-            Stroke stroke, int snipIndex, BaseCommand parent = null) : base(parent)
+            Stroke stroke, int snipIndex, BaseCommand parent = null)
+            : this(stroke, snipIndex, parent, null, true)
+        {
+        }
+
+        private SnipStrokeCommand(Stroke stroke, int snipIndex, BaseCommand parent,
+            SymmetryStrokeGroup newGroup, bool linkPeers) : base(parent)
         {
             m_InitialStroke = stroke;
             m_SnipIndex = snipIndex;
             m_InitialCP = (PointerManager.ControlPoint[])stroke.m_ControlPoints.Clone();
-            m_NewStroke = SketchMemoryScript.m_Instance.DuplicateStroke(m_InitialStroke, App.Scene.ActiveCanvas, null);
+            m_InitialDrops = (bool[])stroke.m_ControlPointsToDrop.Clone();
+            m_NewStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, stroke.Canvas, null);
             m_SnippedCP1 = m_InitialCP.Take(m_SnipIndex).ToArray();
             m_SnippedCP2 = m_InitialCP.Skip(m_SnipIndex).ToArray();
+            m_SnippedDrops1 = m_InitialDrops.Take(m_SnipIndex).ToArray();
+            m_SnippedDrops2 = m_InitialDrops.Skip(m_SnipIndex).ToArray();
+
+            if (newGroup != null)
+            {
+                m_NewStroke.JoinSymmetryGroup(newGroup, stroke.SymmetryPointerIndex);
+            }
+
+            if (linkPeers && SymmetryPeerEditing.Enabled && stroke.HasSymmetryPeers)
+            {
+                var group = stroke.SymmetryPeerGroup;
+                var splitGroup = new SymmetryStrokeGroup(group.Settings, group.Mirror);
+                m_NewStroke.JoinSymmetryGroup(splitGroup, stroke.SymmetryPointerIndex);
+                foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+                {
+                    new SnipStrokeCommand(peer, snipIndex, this, splitGroup, false);
+                }
+            }
+        }
+
+        public static bool CanSnipPeers(Stroke stroke)
+        {
+            if (!SymmetryPeerEditing.Enabled || !stroke.HasSymmetryPeers) { return true; }
+            foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+            {
+                if (peer.m_ControlPoints.Length != stroke.m_ControlPoints.Length ||
+                    !SymmetryPeerEditing.TryGetPeerSymmetryTransform(stroke, peer, out _))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         protected override void OnRedo()
         {
-            ModifyStroke(m_InitialStroke, m_SnippedCP1);
-            ModifyStroke(m_NewStroke, m_SnippedCP2);
+            ModifyStroke(m_InitialStroke, m_SnippedCP1, m_SnippedDrops1);
+            ModifyStroke(m_NewStroke, m_SnippedCP2, m_SnippedDrops2);
         }
 
         protected override void OnUndo()
         {
-            ModifyStroke(m_InitialStroke, m_InitialCP);
+            ModifyStroke(m_InitialStroke, m_InitialCP, m_InitialDrops);
 
             switch (m_NewStroke.m_Type)
             {
@@ -65,9 +107,11 @@ namespace TiltBrush
             }
         }
 
-        private void ModifyStroke(Stroke stroke, IEnumerable<PointerManager.ControlPoint> newControlPoints)
+        private void ModifyStroke(Stroke stroke, PointerManager.ControlPoint[] newControlPoints,
+            bool[] droppedPoints)
         {
-            stroke.m_ControlPoints = newControlPoints.ToArray();
+            stroke.m_ControlPoints = (PointerManager.ControlPoint[])newControlPoints.Clone();
+            stroke.m_ControlPointsToDrop = (bool[])droppedPoints.Clone();
             stroke.InvalidateCopy();
             stroke.Uncreate();
             stroke.Recreate();
