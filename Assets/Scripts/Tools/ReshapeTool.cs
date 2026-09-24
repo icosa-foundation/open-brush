@@ -542,18 +542,34 @@ namespace TiltBrush
                 }
             }
 
+            SymmetryPeerEditing.BrokenLink brokenLink = null;
+            var group = stroke.SymmetryPeerGroup;
+            if (group != null && (group.Count < 2 || peerEdits.Count != group.Count - 1))
+            {
+                brokenLink = new SymmetryPeerEditing.BrokenLink(group);
+                peerEdits.Clear();
+            }
+
             ModifyStrokePointsCommand cmd;
             if (undoParent == null)
             {
-                cmd = new ModifyStrokePointsCommand(stroke, newControlPoints);
+                var breakCommand = brokenLink != null
+                    ? new BreakSymmetryLinkCommand(brokenLink)
+                    : null;
+                cmd = new ModifyStrokePointsCommand(stroke, newControlPoints, breakCommand);
                 foreach (var edit in peerEdits)
                 {
                     new ModifyStrokePointsCommand(edit.stroke, edit.points, cmd);
                 }
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    breakCommand ?? (BaseCommand)cmd);
             }
             else
             {
+                if (brokenLink != null)
+                {
+                    new BreakSymmetryLinkCommand(brokenLink, undoParent).Redo();
+                }
                 if (!m_ActiveSculptCommands.TryGetValue(stroke, out cmd))
                 {
                     cmd = new ModifyStrokePointsCommand(stroke, newControlPoints, undoParent);

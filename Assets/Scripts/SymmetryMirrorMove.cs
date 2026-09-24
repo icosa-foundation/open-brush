@@ -14,11 +14,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    /// One undo owner per drag; one canvas-space movement basis per participating group.
+    /// One undo owner per drag; every participating group follows the same active mirror.
     /// Live updates use batches. Infrequent endpoint restoration may rebuild geometry.
     public static class SymmetryMirrorMove
     {
@@ -27,6 +28,7 @@ namespace TiltBrush
         private static SymmetrySettingsSnapshot m_Start;
         private static MoveMirrorStrokesCommand m_Command;
         private static List<GroupMove> m_Groups;
+        private static List<SymmetryPeerEditing.BrokenLink> m_SkippedLinks;
         private static TrTransform m_TransformEach;
         private static bool m_TransformEachAfter;
 
@@ -51,6 +53,7 @@ namespace TiltBrush
             m_TransformEachAfter = pm.m_SymmetryTransformEachAfter;
             var worldTransforms = pm.GetSymmetriesForCurrentMode();
             m_Groups = new List<GroupMove>();
+            m_SkippedLinks = new List<SymmetryPeerEditing.BrokenLink>();
             var seen = new HashSet<SymmetryStrokeGroup>();
             int skipped = 0;
             foreach (var stroke in SketchMemoryScript.AllStrokes())
@@ -61,11 +64,16 @@ namespace TiltBrush
                     continue;
                 }
                 var move = GroupMove.TryCreate(group, m_Start, worldTransforms);
-                if (move == null) { ++skipped; }
+                if (move == null)
+                {
+                    ++skipped;
+                    m_SkippedLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                }
                 else { m_Groups.Add(move); }
             }
             // Empty/skipped groups still need matching widget and mirror-settings undo.
-            m_Command = new MoveMirrorStrokesCommand(pm.SymmetryWidget, m_Mirror, m_Start, m_Groups);
+            m_Command = new MoveMirrorStrokesCommand(
+                pm.SymmetryWidget, m_Mirror, m_Start, m_Groups, m_SkippedLinks);
             SketchMemoryScript.m_Instance.RecordCommand(m_Command);
             Debug.Log($"{LogPrefix} Begin: {m_Groups.Count} groups eligible, {skipped} skipped.");
         }
@@ -96,7 +104,13 @@ namespace TiltBrush
 
         private static void Finish(SymmetrySettingsSnapshot settings)
         {
-            m_Command.Complete(settings);
+            bool moved = m_Start.WidgetTransform != settings.WidgetTransform ||
+                !m_Start.PointerTransforms.SequenceEqual(settings.PointerTransforms);
+            if (moved)
+            {
+                foreach (var link in m_SkippedLinks) { link.Break(); }
+            }
+            m_Command.Complete(settings, moved);
             m_Mirror.Settings = settings;
             Debug.Log($"{LogPrefix} End: widget, stroke endpoints and placement recorded together.");
             Forget();
@@ -109,6 +123,7 @@ namespace TiltBrush
             m_Mirror = null;
             m_Start = null;
             m_Groups = null;
+            m_SkippedLinks = null;
         }
 
         internal sealed class GroupMove
@@ -124,10 +139,9 @@ namespace TiltBrush
             }
 
             private readonly SymmetryStrokeGroup m_Group;
+            private readonly SymmetryPeerEditing.BrokenLink m_Link;
             private readonly CanvasScript m_Canvas;
             private readonly TrTransform m_CanvasPose;
-            private readonly SymmetrySettingsSnapshot m_Before;
-            private SymmetrySettingsSnapshot m_After;
             private readonly List<Member> m_Members = new List<Member>();
             private readonly TrTransform[] m_MirrorStart;
             private readonly TrTransform[] m_Applied;
@@ -138,10 +152,9 @@ namespace TiltBrush
             private GroupMove(SymmetryStrokeGroup group, IList<TrTransform> worldTransforms)
             {
                 m_Group = group;
-                m_Canvas = group.Strokes[0].Canvas;
+                m_Link = new SymmetryPeerEditing.BrokenLink(group);
+                m_Canvas = group.Mirror.Canvas;
                 m_CanvasPose = m_Canvas.Pose;
-                m_Before = group.Settings.WithPointerTransforms(group.Settings.PointerTransforms);
-                m_After = m_Before;
                 m_MirrorStart = new TrTransform[worldTransforms.Count];
                 m_Applied = new TrTransform[worldTransforms.Count];
                 m_Steps = new TrTransform[worldTransforms.Count];
@@ -165,17 +178,18 @@ namespace TiltBrush
             internal static GroupMove TryCreate(SymmetryStrokeGroup group,
                 SymmetrySettingsSnapshot settings, IList<TrTransform> worldTransforms)
             {
-                if (group.Count == 0 || group.Settings == null ||
-                    !group.Settings.HasCompatibleTopology(settings)) { return null; }
+                if (group.Count == 0 || group.Mirror?.Settings == null ||
+                    !group.Mirror.Settings.HasCompatibleTopology(settings)) { return null; }
                 var canvas = group.Strokes[0].Canvas;
-                if (canvas == null || canvas == App.Scene.SelectionCanvas) { return null; }
+                if (canvas == null || canvas == App.Scene.SelectionCanvas ||
+                    canvas != group.Mirror.Canvas) { return null; }
                 var indices = new HashSet<int>();
                 foreach (var stroke in group.Strokes)
                 {
                     int index = stroke.SymmetryPointerIndex;
                     if (index < 0 || index >= worldTransforms.Count || !indices.Add(index) ||
                         !Eligible(stroke, canvas) || !Invertible(worldTransforms[index]) ||
-                        !Invertible(group.Settings.PointerTransforms[index])) { return null; }
+                        !Invertible(group.Mirror.Settings.PointerTransforms[index])) { return null; }
                 }
                 return Invertible(canvas.Pose) ? new GroupMove(group, worldTransforms) : null;
             }
@@ -233,13 +247,6 @@ namespace TiltBrush
                         }
                         m_Applied[member.Index] = step * m_Applied[member.Index];
                     }
-                    var bases = new List<TrTransform>(m_Before.PointerTransforms);
-                    foreach (var member in m_Members)
-                    {
-                        bases[member.Index] = m_Applied[member.Index] * bases[member.Index];
-                    }
-                    m_After = m_Before.WithPointerTransforms(bases);
-                    m_Group.Settings = m_After;
                 }
                 catch (Exception exception)
                 {
@@ -258,10 +265,10 @@ namespace TiltBrush
                     {
                         if (member.Index != 0) { RestoreMember(member, after: false); }
                     }
-                    m_Group.Settings = m_Before;
                 }
+                m_Link.Break();
                 m_Rejected = true;
-                Debug.LogWarning($"{LogPrefix} Group no longer eligible; retained its drag-start placement.");
+                Debug.LogWarning($"{LogPrefix} Group no longer eligible; link broken after rollback.");
             }
 
             internal void Complete()
@@ -276,12 +283,17 @@ namespace TiltBrush
 
             internal void Restore(bool after)
             {
-                if (m_Rejected || !m_Changed) { return; }
+                if (m_Rejected)
+                {
+                    if (after) { m_Link.Break(); }
+                    else { m_Link.Restore(); }
+                    return;
+                }
+                if (!m_Changed) { return; }
                 foreach (var member in m_Members)
                 {
                     if (member.Index != 0) { RestoreMember(member, after); }
                 }
-                m_Group.Settings = after ? m_After : m_Before;
             }
 
             private void RestoreMember(Member member, bool after)

@@ -26,6 +26,10 @@ namespace TiltBrush
 
         private List<PointerManager.ControlPoint> m_InitialCP;
         private List<PointerManager.ControlPoint> m_NewCP;
+        private readonly SymmetryStrokeGroup m_GroupA;
+        private readonly SymmetryStrokeGroup m_GroupB;
+        private readonly int m_PointerA;
+        private readonly int m_PointerB;
 
         private enum JoinStrokeType
         {
@@ -36,16 +40,14 @@ namespace TiltBrush
         }
 
         public JoinStrokeCommand(
-            Stroke strokeA, Stroke strokeB, BaseCommand parent = null)
-            : this(strokeA, strokeB, parent, true)
-        {
-        }
-
-        private JoinStrokeCommand(Stroke strokeA, Stroke strokeB, BaseCommand parent,
-            bool joinPeers) : base(parent)
+            Stroke strokeA, Stroke strokeB, BaseCommand parent = null) : base(parent)
         {
             m_StrokeA = strokeA;
             m_StrokeB = strokeB;
+            m_GroupA = strokeA.SymmetryPeerGroup;
+            m_GroupB = strokeB.SymmetryPeerGroup;
+            m_PointerA = strokeA.SymmetryPointerIndex;
+            m_PointerB = strokeB.SymmetryPointerIndex;
             m_JoinType = JoinStrokeType.FirstFirst;
             m_InitialCP = strokeA.m_ControlPoints.ToList();
             m_NewCP = strokeA.m_ControlPoints.ToList();
@@ -92,53 +94,12 @@ namespace TiltBrush
                     break;
             }
 
-            if (joinPeers && SymmetryPeerEditing.Enabled &&
-                TryGetPeerPairs(strokeA, strokeB, out var pairs))
-            {
-                foreach (var pair in pairs)
-                {
-                    new JoinStrokeCommand(pair.a, pair.b, this, false);
-                }
-            }
-        }
-
-        public static bool CanJoinPeers(Stroke strokeA, Stroke strokeB) =>
-            !SymmetryPeerEditing.Enabled || TryGetPeerPairs(strokeA, strokeB, out _);
-
-        private static bool TryGetPeerPairs(Stroke strokeA, Stroke strokeB,
-            out List<(Stroke a, Stroke b)> pairs)
-        {
-            pairs = new List<(Stroke a, Stroke b)>();
-            if (!strokeA.HasSymmetryPeers && !strokeB.HasSymmetryPeers) { return true; }
-            var groupA = strokeA.SymmetryPeerGroup;
-            var groupB = strokeB.SymmetryPeerGroup;
-            if (groupA == null || groupB == null || ReferenceEquals(groupA, groupB) ||
-                strokeA.SymmetryPointerIndex != strokeB.SymmetryPointerIndex ||
-                strokeA.Canvas != strokeB.Canvas ||
-                !Equals(groupA.Settings, groupB.Settings) ||
-                !ReferenceEquals(groupA.Mirror, groupB.Mirror)) { return false; }
-
-            var peersB = new Dictionary<int, Stroke>();
-            foreach (var peerB in SymmetryPeerEditing.PeersOf(strokeB))
-            {
-                if (!peersB.TryAdd(peerB.SymmetryPointerIndex, peerB)) { return false; }
-            }
-            foreach (var peerA in SymmetryPeerEditing.PeersOf(strokeA))
-            {
-                if (!peersB.TryGetValue(peerA.SymmetryPointerIndex, out var peerB) ||
-                    !SymmetryPeerEditing.TryGetPeerSymmetryTransform(strokeA, peerA, out _) ||
-                    !SymmetryPeerEditing.TryGetPeerSymmetryTransform(strokeB, peerB, out _) ||
-                    peerA.Canvas != peerB.Canvas)
-                {
-                    return false;
-                }
-                pairs.Add((peerA, peerB));
-            }
-            return pairs.Count == peersB.Count && pairs.Count > 0;
         }
 
         protected override void OnRedo()
         {
+            m_StrokeA.LeaveSymmetryGroup();
+            m_StrokeB.LeaveSymmetryGroup();
             ModifyStroke(m_StrokeA, m_NewCP);
             m_StrokeB.Uncreate();
         }
@@ -147,6 +108,8 @@ namespace TiltBrush
         {
             ModifyStroke(m_StrokeA, m_InitialCP);
             m_StrokeB.Recreate();
+            if (m_GroupA != null) { m_StrokeA.JoinSymmetryGroup(m_GroupA, m_PointerA); }
+            if (m_GroupB != null) { m_StrokeB.JoinSymmetryGroup(m_GroupB, m_PointerB); }
         }
 
         private void ModifyStroke(Stroke stroke, IEnumerable<PointerManager.ControlPoint> newControlPoints)

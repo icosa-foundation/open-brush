@@ -25,10 +25,13 @@ namespace TiltBrush
         private readonly SymmetrySettingsSnapshot m_Before;
         private SymmetrySettingsSnapshot m_After;
         private readonly List<SymmetryMirrorMove.GroupMove> m_Groups;
+        private readonly List<SymmetryPeerEditing.BrokenLink> m_SkippedLinks;
+        private bool m_BrokeSkippedLinks;
         private bool m_Complete;
 
         internal MoveMirrorStrokesCommand(SymmetryWidget widget, SymmetryMirror mirror,
-            SymmetrySettingsSnapshot before, List<SymmetryMirrorMove.GroupMove> groups)
+            SymmetrySettingsSnapshot before, List<SymmetryMirrorMove.GroupMove> groups,
+            List<SymmetryPeerEditing.BrokenLink> skippedLinks)
         {
             m_Widget = widget;
             m_WidgetMove = new MoveWidgetCommand(widget, widget.LocalTransform,
@@ -37,6 +40,7 @@ namespace TiltBrush
             m_Before = before;
             m_After = before;
             m_Groups = groups;
+            m_SkippedLinks = skippedLinks;
         }
 
         public override bool NeedsSave => true;
@@ -55,17 +59,22 @@ namespace TiltBrush
             return false;
         }
 
-        internal void Complete(SymmetrySettingsSnapshot after)
+        internal void Complete(SymmetrySettingsSnapshot after, bool brokeSkippedLinks)
         {
             if (m_Complete) { return; }
             m_WidgetMove.UpdateMirrorEnd(m_Widget.LocalTransform, m_Widget.CustomDimension);
             m_After = after;
+            m_BrokeSkippedLinks = brokeSkippedLinks;
             foreach (var group in m_Groups) { group.Complete(); }
             m_Complete = true;
         }
 
         protected override void OnRedo()
         {
+            if (m_BrokeSkippedLinks)
+            {
+                foreach (var link in m_SkippedLinks) { link.Break(); }
+            }
             foreach (var group in m_Groups) { group.Restore(after: true); }
             m_WidgetMove.Redo();
             m_Mirror.Settings = m_After;
@@ -78,6 +87,10 @@ namespace TiltBrush
             foreach (var group in m_Groups) { group.Restore(after: false); }
             m_WidgetMove.Undo();
             m_Mirror.Settings = m_Before;
+            if (m_BrokeSkippedLinks)
+            {
+                foreach (var link in m_SkippedLinks) { link.Restore(); }
+            }
         }
     }
 } // namespace TiltBrush

@@ -29,9 +29,11 @@ namespace TiltBrush
     {
         public Guid Id { get; }
 
-        /// What the mirror is set to now. The settings a given group of strokes was drawn under
-        /// are recorded on the group, which is what lets the two drift apart.
+        /// The shared settings for every linked group belonging to this mirror.
         public SymmetrySettingsSnapshot Settings { get; set; }
+
+        /// Linked groups belonging to this mirror use one canvas-space transform basis.
+        public CanvasScript Canvas { get; internal set; }
 
         public SymmetryMirror(Guid id, SymmetrySettingsSnapshot settings)
         {
@@ -57,6 +59,14 @@ namespace TiltBrush
 
         public static int Count => m_Order.Count;
 
+        public static bool IsActiveForEditing(SymmetryMirror mirror)
+        {
+            var pm = PointerManager.m_Instance;
+            return mirror != null && ReferenceEquals(m_Active, mirror) && pm != null &&
+                pm.CurrentSymmetryMode != PointerManager.SymmetryMode.None &&
+                mirror.Settings?.Mode == pm.CurrentSymmetryMode;
+        }
+
         /// The mirror the widget is showing, which new strokes are linked to. Null only before
         /// anything has been drawn with symmetry.
         public static SymmetryMirror Active
@@ -64,7 +74,11 @@ namespace TiltBrush
             get { return m_Active; }
             set
             {
-                if (!ReferenceEquals(m_Active, value)) { SymmetryMirrorMove.End(); }
+                if (!ReferenceEquals(m_Active, value))
+                {
+                    SymmetryMirrorMove.End();
+                    SymmetryPeerPreview.Hide();
+                }
                 if (value != null && !m_Mirrors.ContainsKey(value.Id))
                 {
                     m_Mirrors[value.Id] = value;
@@ -77,10 +91,16 @@ namespace TiltBrush
         /// The active mirror, created from the symmetry settings in force if there isn't one.
         public static SymmetryMirror EnsureActive()
         {
-            if (m_Active == null)
+            var settings = SymmetrySettingsSnapshot.FromCurrentSettings();
+            var canvas = App.Scene.ActiveCanvas;
+            if (m_Active == null ||
+                (m_Active.Canvas != null && m_Active.Canvas != canvas) ||
+                m_Active.Settings == null ||
+                !CanShareSettings(m_Active.Settings, settings))
             {
-                Active = Create(SymmetrySettingsSnapshot.FromCurrentSettings());
+                Active = Create(settings);
             }
+            m_Active.Canvas ??= canvas;
             return m_Active;
         }
 
@@ -90,9 +110,10 @@ namespace TiltBrush
         {
             SymmetryMirrorMove.End();
             var mirror = new SymmetryMirror(Guid.NewGuid(), settings);
+            mirror.Canvas = App.Scene.ActiveCanvas;
             m_Mirrors[mirror.Id] = mirror;
             m_Order.Add(mirror);
-            m_Active = mirror;
+            Active = mirror;
             return mirror;
         }
 
@@ -107,7 +128,31 @@ namespace TiltBrush
         public static void NoteSettingsChanged()
         {
             if (m_Active == null) { return; }
-            m_Active.Settings = SymmetrySettingsSnapshot.FromCurrentSettings();
+            if (SymmetryMirrorMove.IsMoving) { return; }
+            var settings = SymmetrySettingsSnapshot.FromCurrentSettings();
+            if (m_Active.Settings == null || !CanShareSettings(m_Active.Settings, settings))
+            {
+                Create(settings);
+            }
+            else
+            {
+                m_Active.Settings = settings;
+            }
+        }
+
+        private static bool CanShareSettings(SymmetrySettingsSnapshot previous,
+            SymmetrySettingsSnapshot current)
+        {
+            if (previous.Mode != current.Mode) { return false; }
+            if (current.Mode != PointerManager.SymmetryMode.SinglePlane &&
+                current.Mode != PointerManager.SymmetryMode.MultiMirror) { return true; }
+            if (!previous.HasCompatibleTopology(current)) { return false; }
+            if (previous.PointerTransforms.Count != current.PointerTransforms.Count) { return false; }
+            for (int i = 0; i < previous.PointerTransforms.Count; ++i)
+            {
+                if (previous.PointerTransforms[i] != current.PointerTransforms[i]) { return false; }
+            }
+            return true;
         }
 
         public static SymmetryMirror Get(Guid id)
@@ -143,6 +188,7 @@ namespace TiltBrush
         public static void Clear()
         {
             SymmetryMirrorMove.Forget();
+            SymmetryPeerPreview.Hide();
             m_Mirrors.Clear();
             m_Order.Clear();
             m_Active = null;

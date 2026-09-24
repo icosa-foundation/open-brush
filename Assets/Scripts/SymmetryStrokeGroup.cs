@@ -19,8 +19,7 @@ namespace TiltBrush
     /// The set of strokes that a single pass of a symmetry mode laid down together: the stroke
     /// the user drew plus the copies the symmetry made of it.
     ///
-    /// The group is also the record of how those strokes were made, so a stroke drawn with
-    /// symmetry always has one, even in the rare case where it ends up being the only member.
+    /// A stroke drawn with symmetry has one even if it ends up being the only member.
     ///
     /// Strokes hold the group by reference, so peer lookup costs nothing and there is no
     /// registry to keep in sync; a group becomes garbage once its last stroke does. Identity is
@@ -30,23 +29,12 @@ namespace TiltBrush
     {
         private readonly List<Stroke> m_Strokes = new List<Stroke>();
 
-        /// The symmetry settings that were in place when this group was drawn; may be null for
-        /// groups loaded from a sketch that didn't record them. Immutable, and usually shared
-        /// with every other group drawn with the same settings.
-        ///
-        /// This is where the group's strokes actually sit. It is deliberately not the mirror's
-        /// current settings: the mirror can have moved or been changed since, and the difference
-        /// between the two is what moving the mirror applies to these strokes.
-        public SymmetrySettingsSnapshot Settings { get; internal set; }
+        /// The single settings owner for this group. Non-widget symmetry uses a mirror record
+        /// too, but has no fixed transform for spatial peer edits.
+        public SymmetryMirror Mirror { get; }
 
-        /// The mirror this group was drawn under, if it was drawn under one. Null for symmetry
-        /// that isn't the widget's - scripted symmetry, two-handed - which nothing can move
-        /// after the fact.
-        public SymmetryMirror Mirror { get; internal set; }
-
-        public SymmetryStrokeGroup(SymmetrySettingsSnapshot settings, SymmetryMirror mirror = null)
+        public SymmetryStrokeGroup(SymmetryMirror mirror)
         {
-            Settings = settings;
             Mirror = mirror;
         }
 
@@ -71,6 +59,7 @@ namespace TiltBrush
         /// Only called by Stroke.JoinSymmetryGroup, which guarantees a stroke joins once.
         internal void Add(Stroke stroke)
         {
+            Mirror.Canvas ??= stroke.Canvas;
             m_Strokes.Add(stroke);
         }
 

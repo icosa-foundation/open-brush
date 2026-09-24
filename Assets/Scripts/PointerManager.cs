@@ -226,12 +226,8 @@ namespace TiltBrush
         private int m_StraightEdgeControlPointIndex;
 
         private SymmetryMode m_CurrentSymmetryMode;
-        // Symmetry settings captured when the current line was started; null if the line isn't
-        // being drawn with symmetry.
-        private SymmetrySettingsSnapshot m_ActiveSymmetrySettings;
-        // The most recently captured settings, reused whenever nothing has changed since, so that
-        // a sketch holds one snapshot per distinct set of settings rather than one per stroke.
-        private SymmetrySettingsSnapshot m_LastSymmetrySettings;
+        // The mirror shared by the strokes of the current line.
+        private SymmetryMirror m_ActiveStrokeMirror;
         // The group the strokes of the current line join as they are recorded. Created lazily so
         // that discarded lines don't leave empty groups behind.
         private SymmetryStrokeGroup m_ActiveSymmetryStrokeGroup;
@@ -1516,6 +1512,7 @@ namespace TiltBrush
             if (mode != SymmetryMode.None && m_CurrentSymmetryMode == mode) return;
 
             SymmetryMirrorMove.End();
+            SymmetryPeerPreview.Hide();
 
             if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
@@ -2264,59 +2261,30 @@ namespace TiltBrush
             EndSymmetryStrokeGroup();
         }
 
-        /// When peer editing is enabled, takes a snapshot of the symmetry settings for the line
-        /// that's about to be drawn. Its strokes are linked as peers as they are recorded.
+        /// When peer editing is enabled, finds the mirror shared by the line's strokes.
         private void BeginSymmetryStrokeGroup()
         {
             m_ActiveSymmetryStrokeGroup = null;
-            if (!SymmetryModeEnabled || !SymmetryPeerEditing.Enabled)
-            {
-                m_ActiveSymmetrySettings = null;
-                return;
-            }
-
-            var settings = SymmetrySettingsSnapshot.FromCurrentSettings();
-            // Settings usually don't change from one stroke to the next, so keep sharing the
-            // snapshot we already have instead of holding a copy per group.
-            if (settings != null && settings.Equals(m_LastSymmetrySettings))
-            {
-                settings = m_LastSymmetrySettings;
-            }
-            m_LastSymmetrySettings = settings;
-            m_ActiveSymmetrySettings = settings;
+            m_ActiveStrokeMirror = SymmetryModeEnabled && SymmetryPeerEditing.Enabled
+                ? SymmetryMirrors.EnsureActive()
+                : null;
         }
 
         /// Links a freshly-recorded stroke to the other strokes of the line it belongs to.
         private void AddStrokeToActiveSymmetryGroup(Stroke stroke, int pointerIndex)
         {
-            if (stroke == null || m_ActiveSymmetrySettings == null ||
+            if (stroke == null || m_ActiveStrokeMirror == null ||
                 !SymmetryPeerEditing.Enabled) { return; }
             m_ActiveSymmetryStrokeGroup ??=
-                new SymmetryStrokeGroup(m_ActiveSymmetrySettings, GetMirrorForNewStrokes());
+                new SymmetryStrokeGroup(m_ActiveStrokeMirror);
             stroke.JoinSymmetryGroup(m_ActiveSymmetryStrokeGroup, pointerIndex);
         }
 
-        /// The mirror new strokes are linked to: the one the widget is showing. Symmetry that
-        /// the widget doesn't stand for - scripted, two-handed - has no mirror, so those strokes
-        /// keep their placement and are not moved when a mirror is.
-        private SymmetryMirror GetMirrorForNewStrokes()
-        {
-            switch (m_CurrentSymmetryMode)
-            {
-                case SymmetryMode.SinglePlane:
-                case SymmetryMode.MultiMirror:
-                    return SymmetryMirrors.EnsureActive();
-                default:
-                    return null;
-            }
-        }
-
-        /// Closes off the current line's symmetry group. A group that ended up with a single
-        /// stroke is kept: it carries that stroke's record of the symmetry settings.
+        /// Closes off the current line's symmetry group.
         private void EndSymmetryStrokeGroup()
         {
             m_ActiveSymmetryStrokeGroup = null;
-            m_ActiveSymmetrySettings = null;
+            m_ActiveStrokeMirror = null;
         }
 
         public void HandleColorJitter()

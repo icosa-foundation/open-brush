@@ -31,6 +31,7 @@ namespace TiltBrush
         private bool[] m_SnippedDrops2;
 
         private int m_SnipIndex;
+        private readonly SymmetryPeerEditing.BrokenLink m_BrokenLink;
 
         public SnipStrokeCommand(
             Stroke stroke, int snipIndex, BaseCommand parent = null)
@@ -56,34 +57,48 @@ namespace TiltBrush
                 m_NewStroke.JoinSymmetryGroup(newGroup, stroke.SymmetryPointerIndex);
             }
 
-            if (linkPeers && SymmetryPeerEditing.Enabled && stroke.HasSymmetryPeers)
+            if (linkPeers && stroke.SymmetryPeerGroup != null)
             {
                 var group = stroke.SymmetryPeerGroup;
-                var splitGroup = new SymmetryStrokeGroup(group.Settings, group.Mirror);
-                m_NewStroke.JoinSymmetryGroup(splitGroup, stroke.SymmetryPointerIndex);
-                foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+                if (SymmetryPeerEditing.Enabled && CanSnipPeers(stroke))
                 {
-                    new SnipStrokeCommand(peer, snipIndex, this, splitGroup, false);
+                    var splitGroup = new SymmetryStrokeGroup(group.Mirror);
+                    m_NewStroke.JoinSymmetryGroup(splitGroup, stroke.SymmetryPointerIndex);
+                    foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+                    {
+                        new SnipStrokeCommand(peer, snipIndex, this, splitGroup, false);
+                    }
+                }
+                else
+                {
+                    m_BrokenLink = new SymmetryPeerEditing.BrokenLink(group);
                 }
             }
         }
 
-        public static bool CanSnipPeers(Stroke stroke)
+        private static bool CanSnipPeers(Stroke stroke)
         {
-            if (!SymmetryPeerEditing.Enabled || !stroke.HasSymmetryPeers) { return true; }
+            var group = stroke.SymmetryPeerGroup;
+            if (group.Count < 2 || !SymmetryMirrors.IsActiveForEditing(group.Mirror))
+            {
+                return false;
+            }
+            int count = 0;
             foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
             {
+                ++count;
                 if (peer.m_ControlPoints.Length != stroke.m_ControlPoints.Length ||
                     !SymmetryPeerEditing.TryGetPeerSymmetryTransform(stroke, peer, out _))
                 {
                     return false;
                 }
             }
-            return true;
+            return count == group.Count - 1;
         }
 
         protected override void OnRedo()
         {
+            m_BrokenLink?.Break();
             ModifyStroke(m_InitialStroke, m_SnippedCP1, m_SnippedDrops1);
             ModifyStroke(m_NewStroke, m_SnippedCP2, m_SnippedDrops2);
         }
@@ -105,6 +120,7 @@ namespace TiltBrush
                     m_NewStroke.m_BatchSubset.m_ParentBatch.DisableSubset(m_NewStroke.m_BatchSubset);
                     break;
             }
+            m_BrokenLink?.Restore();
         }
 
         private void ModifyStroke(Stroke stroke, PointerManager.ControlPoint[] newControlPoints,

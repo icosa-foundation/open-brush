@@ -48,6 +48,8 @@ namespace TiltBrush
         // deselect is about to bake a move into the strokes.
         private readonly List<Stroke> m_PeerStrokes = new List<Stroke>();
         private readonly List<TrTransform> m_PeerTransforms = new List<TrTransform>();
+        private readonly List<SymmetryPeerEditing.BrokenLink> m_BrokenLinks =
+            new List<SymmetryPeerEditing.BrokenLink>();
         private readonly Dictionary<Stroke, TrTransform> m_JoinTransforms =
             new Dictionary<Stroke, TrTransform>(new ReferenceComparer<Stroke>());
         private readonly Dictionary<Stroke, CanvasScript> m_SourceCanvases =
@@ -62,7 +64,8 @@ namespace TiltBrush
                 // occurs when a transformed selection has been deselecting, which
                 // rebakes that object into the original canvas.
                 return m_Deselect &&
-                    (m_InitialTransform != TrTransform.identity || m_MovedStrokeSinceJoin);
+                    (m_InitialTransform != TrTransform.identity || m_MovedStrokeSinceJoin ||
+                     m_BrokenLinks.Count > 0);
             }
         }
 
@@ -187,6 +190,7 @@ namespace TiltBrush
             }
 
             var handled = new HashSet<Stroke>(m_Strokes, new ReferenceComparer<Stroke>());
+            var movedStrokes = new HashSet<Stroke>(new ReferenceComparer<Stroke>());
             foreach (var stroke in m_Strokes)
             {
                 // A stroke added to a selection that had already been moved has only moved by
@@ -196,12 +200,15 @@ namespace TiltBrush
                 m_JoinTransforms[stroke] = joined;
                 m_SourceCanvases[stroke] = stroke.m_PreviousCanvas;
                 TrTransform moved = SymmetryPeerEditing.SelectionMovement(m_InitialTransform, joined);
-                if (moved == TrTransform.identity) { continue; }
+                bool layerChanged = m_TargetCanvas != null &&
+                    m_TargetCanvas != stroke.m_PreviousCanvas;
+                if (moved == TrTransform.identity && !layerChanged) { continue; }
+                movedStrokes.Add(stroke);
                 m_MovedStrokeSinceJoin = true;
 
                 // A stroke moved into a different canvas no longer has a shared canvas-space
                 // relationship with its peers. Undo can make that relationship active again.
-                if (m_TargetCanvas != null && m_TargetCanvas != stroke.m_PreviousCanvas)
+                if (layerChanged)
                 {
                     continue;
                 }
@@ -220,6 +227,28 @@ namespace TiltBrush
                         if (!peerXf.IsFinite()) { continue; }
                         m_PeerStrokes.Add(peer);
                         m_PeerTransforms.Add(peerXf);
+                    }
+                }
+            }
+
+            var direct = movedStrokes;
+            var propagated = new HashSet<Stroke>(m_PeerStrokes);
+            var seen = new HashSet<SymmetryStrokeGroup>();
+            foreach (var stroke in direct)
+            {
+                var group = stroke.SymmetryPeerGroup;
+                if (group == null || !seen.Add(group)) { continue; }
+                bool layerChanged = m_TargetCanvas != null &&
+                    m_TargetCanvas != stroke.m_PreviousCanvas;
+                if (!layerChanged &&
+                    SymmetryPeerEditing.CanPreserveLink(group, direct, propagated)) { continue; }
+                m_BrokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                for (int i = m_PeerStrokes.Count - 1; i >= 0; --i)
+                {
+                    if (ReferenceEquals(m_PeerStrokes[i].SymmetryPeerGroup, group))
+                    {
+                        m_PeerStrokes.RemoveAt(i);
+                        m_PeerTransforms.RemoveAt(i);
                     }
                 }
             }
@@ -267,6 +296,7 @@ namespace TiltBrush
             SymmetryPeerPreview.Hide();
             if (m_Deselect)
             {
+                foreach (var link in m_BrokenLinks) { link.Break(); }
                 // Peers must be in their own layers before the move is written into them.
                 if (m_Strokes != null)
                 {
@@ -325,6 +355,7 @@ namespace TiltBrush
                 {
                     SelectionManager.m_Instance.SelectWidgets(m_Widgets);
                 }
+                foreach (var link in m_BrokenLinks) { link.Restore(); }
             }
             else
             {

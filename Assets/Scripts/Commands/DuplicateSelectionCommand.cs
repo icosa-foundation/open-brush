@@ -104,23 +104,18 @@ namespace TiltBrush
                     xfSymmetriesCS[i] = xfCSfromGS * xfSymmetriesGS[i] * xfGSfromCS;
                 }
 
-                // Each selected stroke produces its own new set of symmetry peers. Use the
-                // transforms actually applied to these copies (including the duplicate offset)
-                // as their placement basis, rather than linking them to the source's old group.
+                // Each selected stroke produces its own new set of symmetry peers under the
+                // active mirror, rather than joining the source's group.
                 var mode = PointerManager.m_Instance.CurrentSymmetryMode;
                 bool linkMirrorCopies = SymmetryPeerEditing.Enabled && m_SelectedStrokes.Count > 0 &&
                     (mode == PointerManager.SymmetryMode.SinglePlane ||
                      mode == PointerManager.SymmetryMode.MultiMirror);
-                var settings = linkMirrorCopies
-                    ? SymmetrySettingsSnapshot.FromCurrentSettings()
-                        .WithPointerTransforms(xfSymmetriesCS)
-                    : null;
                 var mirror = linkMirrorCopies ? SymmetryMirrors.EnsureActive() : null;
 
                 // Duplicate strokes.
                 foreach (var stroke in m_SelectedStrokes)
                 {
-                    var group = linkMirrorCopies ? new SymmetryStrokeGroup(settings, mirror) : null;
+                    var group = linkMirrorCopies ? new SymmetryStrokeGroup(mirror) : null;
                     for (int i = 0; i < xfSymmetriesCS.Count; i++)
                     {
                         var duplicate = SketchMemoryScript.m_Instance.DuplicateStroke(

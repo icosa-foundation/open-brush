@@ -30,6 +30,52 @@ namespace TiltBrush
     /// symmetry.peerediting API command. The setting lasts only for this run.
     public static class SymmetryPeerEditing
     {
+        /// Captures a group's membership so an independent spatial edit can break its links
+        /// without making Undo lose them.
+        internal sealed class BrokenLink
+        {
+            private readonly SymmetryStrokeGroup m_Group;
+            private readonly List<(Stroke stroke, int index)> m_Members;
+
+            internal SymmetryStrokeGroup Group => m_Group;
+
+            internal BrokenLink(SymmetryStrokeGroup group)
+            {
+                m_Group = group;
+                m_Members = new List<(Stroke stroke, int index)>();
+                foreach (var stroke in group.Strokes)
+                {
+                    m_Members.Add((stroke, stroke.SymmetryPointerIndex));
+                }
+            }
+
+            internal void Break() => m_Group.Disband();
+
+            internal void Restore()
+            {
+                foreach (var member in m_Members)
+                {
+                    member.stroke.JoinSymmetryGroup(m_Group, member.index);
+                }
+            }
+        }
+
+        /// A spatial edit preserves a group only when one member was edited directly and every
+        /// other member received the corresponding peer edit under the active mirror.
+        internal static bool CanPreserveLink(SymmetryStrokeGroup group,
+            HashSet<Stroke> direct, HashSet<Stroke> propagated)
+        {
+            if (group == null || group.Count < 2 ||
+                !SymmetryMirrors.IsActiveForEditing(group.Mirror)) { return false; }
+            int directCount = 0;
+            foreach (var stroke in group.Strokes)
+            {
+                if (direct.Contains(stroke)) { ++directCount; }
+                else if (!propagated.Contains(stroke)) { return false; }
+            }
+            return directCount == 1;
+        }
+
         private static bool m_Enabled;
 
         public static bool Enabled
@@ -48,7 +94,11 @@ namespace TiltBrush
         /// geometry, moving a stroke between canvases - would bring one back.
         public static IEnumerable<Stroke> PeersOf(Stroke stroke)
         {
-            if (!Enabled || stroke == null) { yield break; }
+            if (!Enabled || stroke?.SymmetryPeerGroup?.Mirror == null ||
+                !SymmetryMirrors.IsActiveForEditing(stroke.SymmetryPeerGroup.Mirror))
+            {
+                yield break;
+            }
             foreach (var peer in stroke.SymmetryPeers)
             {
                 if (peer.IsGeometryEnabled) { yield return peer; }
@@ -117,7 +167,9 @@ namespace TiltBrush
         {
             toPeer = TrTransform.identity;
             var group = stroke?.SymmetryPeerGroup;
-            if (group == null || peer == null || !ReferenceEquals(group, peer.SymmetryPeerGroup))
+            if (group == null || peer == null ||
+                !SymmetryMirrors.IsActiveForEditing(group.Mirror) ||
+                !ReferenceEquals(group, peer.SymmetryPeerGroup))
             {
                 return false;
             }
@@ -125,8 +177,9 @@ namespace TiltBrush
             // The transforms describe the strokes as they were drawn, in the canvas they were
             // drawn into. If they no longer share a canvas, that relationship no longer holds.
             if (EffectiveCanvas(stroke) != EffectiveCanvas(peer)) { return false; }
+            if (EffectiveCanvas(stroke) != group.Mirror.Canvas) { return false; }
 
-            var transforms = group.Settings?.PointerTransforms;
+            var transforms = group.Mirror.Settings?.PointerTransforms;
             int from = stroke.SymmetryPointerIndex;
             int to = peer.SymmetryPointerIndex;
             if (transforms == null || from < 0 || to < 0 ||
@@ -410,5 +463,20 @@ namespace TiltBrush
                 }
             }
         }
+    }
+
+    internal sealed class BreakSymmetryLinkCommand : BaseCommand
+    {
+        private readonly SymmetryPeerEditing.BrokenLink m_Link;
+
+        internal BreakSymmetryLinkCommand(SymmetryPeerEditing.BrokenLink link,
+            BaseCommand parent = null) : base(parent)
+        {
+            m_Link = link;
+        }
+
+        public override bool NeedsSave => true;
+        protected override void OnRedo() => m_Link.Break();
+        protected override void OnUndo() => m_Link.Restore();
     }
 } // namespace TiltBrush

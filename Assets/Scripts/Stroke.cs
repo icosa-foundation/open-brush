@@ -82,7 +82,7 @@ namespace TiltBrush
 
         /// The symmetry settings that were in place when this stroke was created;
         /// null if it wasn't drawn with symmetry.
-        public SymmetrySettingsSnapshot SymmetrySettings => m_SymmetryGroup?.Settings;
+        public SymmetrySettingsSnapshot SymmetrySettings => m_SymmetryGroup?.Mirror?.Settings;
 
         /// The other strokes that were created alongside this one by a symmetry mode.
         /// Empty if the stroke wasn't drawn with symmetry.
@@ -95,6 +95,10 @@ namespace TiltBrush
         public void JoinSymmetryGroup(SymmetryStrokeGroup group, int pointerIndex)
         {
             if (group == null || ReferenceEquals(m_SymmetryGroup, group)) { return; }
+            var canvas = Canvas == App.Scene.SelectionCanvas && m_PreviousCanvas != null
+                ? m_PreviousCanvas : Canvas;
+            if (group.Mirror == null ||
+                (group.Mirror.Canvas != null && group.Mirror.Canvas != canvas)) { return; }
             if (m_SymmetryGroup != null)
             {
                 LeaveSymmetryGroup();

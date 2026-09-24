@@ -80,7 +80,13 @@ namespace TiltBrush
                 ScriptName = "",
             };
 
-            snapshot.PointerTransforms = pm.GetSymmetryTransforms_CS();
+            // Scripted and two-handed pointers do not have one stable mirror transform.
+            // Their groups still share a mirror for membership-based edits.
+            if (snapshot.Mode == PointerManager.SymmetryMode.SinglePlane ||
+                snapshot.Mode == PointerManager.SymmetryMode.MultiMirror)
+            {
+                snapshot.PointerTransforms = pm.GetSymmetryTransforms_CS();
+            }
 
             var widget = pm.SymmetryWidget;
             if (widget != null)
@@ -138,7 +144,7 @@ namespace TiltBrush
 
         /// Restores these settings, so that new strokes are created the same way as the
         /// stroke this snapshot came from. Does not restore the active symmetry script.
-        public void ApplyToCurrentSettings()
+        public void ApplyToCurrentSettings(bool recordCommand = true)
         {
             var pm = PointerManager.m_Instance;
             if (pm == null) { return; }
@@ -161,7 +167,7 @@ namespace TiltBrush
                 App.Scene.AsScene[widget.transform] = WidgetTransform;
             }
 
-            pm.SetSymmetryMode(Mode);
+            pm.SetSymmetryMode(Mode, recordCommand);
         }
 
         // -------------------------------------------------------------------------------------- //
