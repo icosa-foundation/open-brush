@@ -58,7 +58,7 @@ namespace TiltBrush
         private bool m_CurrentFxaa;
         private AppQualitySettingLevels.BloomMode m_CurrentBloomMode =
             AppQualitySettingLevels.BloomMode.None;
-        private float m_MobileBloomAmount = 1f;
+        private float m_BloomAmount = 1f;
         private readonly HashSet<Camera> m_ExplicitCaptureCameras = new HashSet<Camera>();
 
         public VolumeProfile MainProfile => m_RuntimeMainProfile;
@@ -92,6 +92,12 @@ namespace TiltBrush
         {
             EnsureProfiles();
             EnsureGlobalVolume();
+            float? bloomAmount = App.UserConfig.PostProcessing.BloomAmount;
+            if (bloomAmount.HasValue && !float.IsNaN(bloomAmount.Value) &&
+                !float.IsInfinity(bloomAmount.Value))
+            {
+                SetBloomAmount(bloomAmount.Value);
+            }
             RefreshCameras();
             DisableCompositionLayerEditorEmulationIfUnused();
             StartCoroutine(DisableCompositionLayerEditorEmulationAfterStartup());
@@ -211,16 +217,16 @@ namespace TiltBrush
             Debug.Log($"{kLogPrefix} Capture post-processing default set to {enabled}.");
         }
 
-        public void SetMobileBloomAmount(float amount)
+        public void SetBloomAmount(float amount)
         {
             EnsureProfilesIfNeeded();
-            m_MobileBloomAmount = Mathf.Clamp01(amount);
+            m_BloomAmount = Mathf.Clamp01(amount);
             if (m_Bloom == null)
             {
                 return;
             }
 
-            if (m_CurrentBloomMode == AppQualitySettingLevels.BloomMode.Mobile && m_CurrentHdr)
+            if (m_CurrentBloomMode != AppQualitySettingLevels.BloomMode.None && m_CurrentHdr)
             {
                 ApplyBloomMode(m_CurrentBloomMode, m_CurrentHdr);
             }
@@ -386,7 +392,11 @@ namespace TiltBrush
             }
             m_Bloom.active = true;
             m_Bloom.threshold.overrideState = true;
-            m_Bloom.threshold.value = 1.05f;
+            float? configuredThreshold = App.UserConfig.PostProcessing.BloomThreshold;
+            m_Bloom.threshold.value = configuredThreshold.HasValue &&
+                !float.IsNaN(configuredThreshold.Value) && !float.IsInfinity(configuredThreshold.Value)
+                ? Mathf.Max(0f, configuredThreshold.Value)
+                : 1.05f;
             m_Bloom.intensity.overrideState = true;
             m_Bloom.intensity.value = kFullBloomIntensity;
             m_Bloom.scatter.overrideState = true;
@@ -444,7 +454,8 @@ namespace TiltBrush
         {
             EnsureProfilesIfNeeded();
 
-            bool enabled = bloomMode != AppQualitySettingLevels.BloomMode.None && hdrEnabled;
+            bool enabled = bloomMode != AppQualitySettingLevels.BloomMode.None && hdrEnabled &&
+                m_BloomAmount > 0f;
             m_Bloom.active = enabled;
 
             if (!enabled)
@@ -464,7 +475,7 @@ namespace TiltBrush
                     break;
 
                 case AppQualitySettingLevels.BloomMode.Mobile:
-                    m_Bloom.intensity.value = kMobileBloomIntensity * m_MobileBloomAmount;
+                    m_Bloom.intensity.value = kMobileBloomIntensity;
                     m_Bloom.scatter.value = kMobileBloomScatter;
                     m_Bloom.highQualityFiltering.value = false;
                     m_Bloom.downscale.value = BloomDownscaleMode.Quarter;
@@ -480,6 +491,7 @@ namespace TiltBrush
                     m_Bloom.maxIterations.value = 6;
                     break;
             }
+            m_Bloom.intensity.value *= m_BloomAmount;
         }
 
         public void DisableLegacyPostProcessing()
