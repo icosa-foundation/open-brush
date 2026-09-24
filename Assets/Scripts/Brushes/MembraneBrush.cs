@@ -178,10 +178,29 @@ namespace TiltBrush
 
             m_PathPositions.Clear();
             m_PathColors.Clear();
+            // The idle pointer preview is a short, open, constantly changing trail.
+            // Closing it into a membrane creates tiny folded surfaces with unstable
+            // lighting. A real stroke (and a complete Tool Script preview) is not in
+            // preview mode and still generates its full membrane.
+            if (m_PreviewMode)
+            {
+                m_knots[1] = knot;
+                return;
+            }
+
             for (int i = 0; i < m_knots.Count; ++i)
             {
                 m_PathPositions.Add(m_knots[i].point.m_Pos);
                 m_PathColors.Add(m_knots[i].color);
+            }
+
+            // The first non-collinear live samples can form a millimetre-scale
+            // membrane whose lighting produces a single bright startup flash.
+            // Wait for a visible footprint, but still allow tiny finished strokes.
+            if (!finalQuality && !HasLivePreviewFootprint())
+            {
+                m_knots[1] = knot;
+                return;
             }
 
             MembraneFill.Options options = MakeFillOptions();
@@ -207,6 +226,24 @@ namespace TiltBrush
             }
 
             m_knots[1] = knot;
+        }
+
+        private bool HasLivePreviewFootprint()
+        {
+            // The final knot may be a duplicate of the current pointer position.
+            if (m_PathPositions.Count < 5) { return false; }
+
+            Vector3 min = m_PathPositions[0];
+            Vector3 max = min;
+            for (int i = 1; i < m_PathPositions.Count; ++i)
+            {
+                min = Vector3.Min(min, m_PathPositions[i]);
+                max = Vector3.Max(max, m_PathPositions[i]);
+            }
+
+            float minimumSpan = Mathf.Max(5f * GetSpawnInterval(1f),
+                0.1f * m_BaseSize_PS * POINTER_TO_LOCAL);
+            return (max - min).sqrMagnitude >= minimumSpan * minimumSpan;
         }
 
         private void CreateGeometry(ref Knot knot, MembraneFill.Result fill)
