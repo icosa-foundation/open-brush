@@ -1680,6 +1680,31 @@ namespace TiltBrush
             }
         }
 
+        [TestCase(StorageBackendKind.Local, false)]
+        [TestCase(StorageBackendKind.StorageAccessFramework, true)]
+        public void DriveSync_CaseDistinctNamesUseBackendSemantics(
+            StorageBackendKind kind, bool ignoreCase)
+        {
+            StringComparer comparer = DriveSync.GetSyncNameComparer(kind);
+            var names = new Dictionary<string, int>(comparer) { { "a.lua", 1 } };
+            Assert.AreEqual(!ignoreCase, names.TryAdd("A.lua", 2));
+
+            var item = new DriveSync.SyncItem
+            {
+                Area = StorageArea.Plugins,
+                RelativeDirectory = "folder",
+                Name = "a.lua",
+            };
+            Assert.IsTrue(DriveSync.IsSameStoragePath(
+                item, StorageArea.Plugins, "folder", "a.lua", kind));
+            Assert.AreEqual(ignoreCase, DriveSync.IsSameStoragePath(
+                item, StorageArea.Plugins, "folder", "A.lua", kind));
+            Assert.AreEqual(ignoreCase, DriveSync.IsSameStoragePath(
+                item, StorageArea.Plugins, "Folder", "a.lua", kind));
+            Assert.IsFalse(DriveSync.IsSameStoragePath(
+                item, StorageArea.Scripts, "folder", "a.lua", kind));
+        }
+
         [TestCase("opaque/document:ABC", StorageBackendKind.StorageAccessFramework, true)]
         [TestCase("opaque/document:abc", StorageBackendKind.StorageAccessFramework, false)]
         [TestCase("different-document", StorageBackendKind.StorageAccessFramework, false)]

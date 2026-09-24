@@ -793,6 +793,7 @@ namespace TiltBrush
                 throw new IOException("User storage is unavailable for Google Drive sync.");
             }
             string rootIdentity = backend.RootIdentity;
+            StringComparer nameComparer = GetSyncNameComparer(backend.Kind);
 
             if (folder.Drive == null && folder.Upload)
             {
@@ -845,7 +846,7 @@ namespace TiltBrush
                 }
             }
             var localFiles = new Dictionary<string, StorageDocument>(
-                StringComparer.OrdinalIgnoreCase);
+                nameComparer);
             foreach (StorageDocument document in localContents.Where(
                 document => !document.IsDirectory))
             {
@@ -861,20 +862,20 @@ namespace TiltBrush
                 .ToDictionary(
                     document => document.DisplayName,
                     document => document,
-                    StringComparer.OrdinalIgnoreCase);
+                    nameComparer);
             driveFiles = driveFiles.Values
                 .Where(file => FolderIncludesFile(folder, file.Name))
                 .ToDictionary(
                     file => file.Name,
                     file => file,
-                    StringComparer.OrdinalIgnoreCase);
+                    nameComparer);
             var localSet = new HashSet<string>(
-                localFiles.Keys, StringComparer.OrdinalIgnoreCase);
+                localFiles.Keys, nameComparer);
             var driveSet = new HashSet<string>(
-                driveFiles.Keys, StringComparer.OrdinalIgnoreCase);
+                driveFiles.Keys, nameComparer);
 
             var allFileNames = new HashSet<string>(
-                localSet.Concat(driveSet), StringComparer.OrdinalIgnoreCase);
+                localSet.Concat(driveSet), nameComparer);
             foreach (string fileName in allFileNames)
             {
                 localFiles.TryGetValue(fileName, out StorageDocument localFile);
@@ -924,7 +925,8 @@ namespace TiltBrush
                     transfer.Item,
                     folder.Area,
                     folder.RelativeDirectory,
-                    destinationName)))
+                    destinationName,
+                    backend.Kind)))
                 {
                     continue;
                 }
@@ -966,16 +968,16 @@ namespace TiltBrush
 
             var driveFolders = driveContents
                 .Where(x => x.MimeType == "application/vnd.google-apps.folder")
-                .ToDictionary(x => x.Name, x => x, StringComparer.OrdinalIgnoreCase);
+                .ToDictionary(x => x.Name, x => x, nameComparer);
             var localFolders = localContents
                 .Where(document => document.IsDirectory)
                 .ToDictionary(
                     document => document.DisplayName,
                     document => document,
-                    StringComparer.OrdinalIgnoreCase);
+                    nameComparer);
             var folderNames = new HashSet<string>(
                 driveFolders.Keys.Concat(localFolders.Keys),
-                StringComparer.OrdinalIgnoreCase);
+                nameComparer);
             foreach (var subFolderName in folderNames)
             {
                 bool OnDrive = driveFolders.ContainsKey(subFolderName);
@@ -1001,6 +1003,15 @@ namespace TiltBrush
                 };
                 await EnumerateFolderTransfersAsync(subfolder, token);
             }
+        }
+
+        internal static StringComparer GetSyncNameComparer(StorageBackendKind backendKind)
+        {
+            // Local sync historically compared names exactly, including names returned by Drive
+            // on Windows. Only SAF uses case-insensitive logical document names.
+            return backendKind == StorageBackendKind.StorageAccessFramework
+                ? StringComparer.OrdinalIgnoreCase
+                : StringComparer.Ordinal;
         }
 
         private static bool FolderIncludesFile(SyncedFolder folder, string displayName)
@@ -1348,19 +1359,17 @@ namespace TiltBrush
             ControllerConsoleScript.m_Instance?.AddNewLine(message, bNotify: true);
         }
 
-        private static bool IsSameStoragePath(
+        internal static bool IsSameStoragePath(
             SyncItem item,
             StorageArea area,
             string relativeDirectory,
-            string displayName)
+            string displayName,
+            StorageBackendKind backendKind)
         {
+            StringComparer nameComparer = GetSyncNameComparer(backendKind);
             return item.Area == area &&
-                string.Equals(
-                    item.RelativeDirectory,
-                    relativeDirectory,
-                    StringComparison.OrdinalIgnoreCase) &&
-                string.Equals(
-                    item.Name, displayName, StringComparison.OrdinalIgnoreCase);
+                nameComparer.Equals(item.RelativeDirectory, relativeDirectory) &&
+                nameComparer.Equals(item.Name, displayName);
         }
 
         private static string CombineLogicalPath(string directory, string name)
@@ -1837,11 +1846,9 @@ namespace TiltBrush
                     return byId;
                 }
             }
+            StringComparer nameComparer = GetSyncNameComparer(backend.Kind);
             return listing.Documents.FirstOrDefault(document =>
-                string.Equals(
-                    document.DisplayName,
-                    displayName,
-                    StringComparison.OrdinalIgnoreCase));
+                nameComparer.Equals(document.DisplayName, displayName));
         }
 
         /// A transfer must still be running against the live backend; the root behind it is
