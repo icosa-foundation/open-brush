@@ -26091,8 +26091,6 @@ MonoBehaviour:
   m_BaseMaterial: {fileID: 2100000, guid: 38df2c5efb0a54849ae6b317d82aa405, type: 2}
   m_ActiveMaterial: {fileID: 2100000, guid: eeeb6bc3749b2ea4390a4fc0d377d4f9, type: 2}
   m_ActiveMaterialBorderPercent: 0.115
-  m_CatalogPath: AtlasCatalog
-  m_ExperimentalCatalogPath: AtlasCatalog Experimental
 --- !u!4 &1796800572
 Transform:
   m_ObjectHideFlags: 0
