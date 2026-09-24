@@ -45,7 +45,8 @@ namespace TiltBrush
         public ColorOverrideMode m_ColorOverrideMode = ColorOverrideMode.None;
 
         // The strokes that a symmetry mode laid down together with this one, and the settings it
-        // used; null if this stroke wasn't drawn with symmetry. Held by reference so peers cost a
+        // used; null if symmetry wasn't used or peer editing was off when this stroke was drawn.
+        // Held by reference so peers cost a
         // field lookup rather than a registry search, and NonSerialized because the group refers
         // back to its strokes (JsonUtility, used by multiplayer, can't walk cycles).
         [NonSerialized] public SymmetryStrokeGroup m_SymmetryGroup;

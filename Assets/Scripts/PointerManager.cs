@@ -2264,12 +2264,12 @@ namespace TiltBrush
             EndSymmetryStrokeGroup();
         }
 
-        /// Takes a snapshot of the symmetry settings for the line that's about to be drawn.
-        /// The strokes of that line are linked together as symmetry peers as they are recorded.
+        /// When peer editing is enabled, takes a snapshot of the symmetry settings for the line
+        /// that's about to be drawn. Its strokes are linked as peers as they are recorded.
         private void BeginSymmetryStrokeGroup()
         {
             m_ActiveSymmetryStrokeGroup = null;
-            if (!SymmetryModeEnabled)
+            if (!SymmetryModeEnabled || !SymmetryPeerEditing.Enabled)
             {
                 m_ActiveSymmetrySettings = null;
                 return;
@@ -2289,7 +2289,8 @@ namespace TiltBrush
         /// Links a freshly-recorded stroke to the other strokes of the line it belongs to.
         private void AddStrokeToActiveSymmetryGroup(Stroke stroke, int pointerIndex)
         {
-            if (stroke == null || m_ActiveSymmetrySettings == null) { return; }
+            if (stroke == null || m_ActiveSymmetrySettings == null ||
+                !SymmetryPeerEditing.Enabled) { return; }
             m_ActiveSymmetryStrokeGroup ??=
                 new SymmetryStrokeGroup(m_ActiveSymmetrySettings, GetMirrorForNewStrokes());
             stroke.JoinSymmetryGroup(m_ActiveSymmetryStrokeGroup, pointerIndex);
