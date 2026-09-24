@@ -316,8 +316,19 @@ namespace TiltBrush
             IUserStorageBackend backend, string relativePath, string localPath,
             long? maxBytes = null)
         {
+            // TODO: Define a consistent skybox memory policy across backends and formats.
+            // Preserve the uncapped non-SAF read so this storage change does not reject existing
+            // local skyboxes. Local HDR decoding below also bypasses the encoded-byte limit.
+            // SAF keeps that limit to bound buffering of provider streams, but encoded file size
+            // does not bound decoded texture memory. A shared policy should consider decoded
+            // dimensions and texture allocations, including HDR, rather than just file size.
+            if (backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return File.ReadAllBytes(localPath);
+            }
+
             Stream source;
-            if (File.Exists(localPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
+            if (File.Exists(localPath))
             {
                 source = File.OpenRead(localPath);
             }
