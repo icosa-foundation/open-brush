@@ -628,18 +628,19 @@ namespace TiltBrush
             Assert.AreEqual("Sketch_04.png", Reserve());
         }
 
-        [Test]
-        public void SafSkybox_ReadsSharedBytesWithoutMaterializationCache()
+        [TestCase(3)]
+        [TestCase(20 * 1024 * 1024 + 1)]
+        public void SafSkybox_ReadsSharedBytesWithoutMaterializationCache(int byteCount)
         {
             var backend = new FakeSafBackend();
-            backend.Add("sky.png", new byte[] { 4, 5, 6 });
+            var expected = new byte[byteCount];
+            expected[0] = 4;
+            expected[byteCount - 1] = 6;
+            backend.Add("sky.png", expected);
             string missingCache = Path.Combine(Path.GetTempPath(), $"missing-skybox-{Guid.NewGuid():N}.png");
-            CollectionAssert.AreEqual(new byte[] { 4, 5, 6 },
-                SceneSettings.ReadSkyboxBytes(backend, "Nested/sky.png", missingCache));
+            byte[] actual = SceneSettings.ReadSkyboxBytes(backend, "Nested/sky.png", missingCache);
+            Assert.IsTrue(expected.SequenceEqual(actual));
             Assert.IsFalse(File.Exists(missingCache));
-            Assert.Throws<IOException>(() =>
-                SceneSettings.ReadSkyboxBytes(
-                    backend, "Nested/sky.png", missingCache, maxBytes: 2));
             Assert.Throws<ArgumentException>(() =>
                 OpenBrushStorage.ResolveMediaDocument(backend, StorageArea.MediaLibraryBackgroundImages, "../sky.png"));
         }

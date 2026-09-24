@@ -313,36 +313,25 @@ namespace TiltBrush
         }
 
         internal static byte[] ReadSkyboxBytes(
-            IUserStorageBackend backend, string relativePath, string localPath,
-            long? maxBytes = null)
+            IUserStorageBackend backend, string relativePath, string localPath)
         {
-            // TODO: Define a consistent skybox memory policy across backends and formats.
-            // Preserve the uncapped non-SAF read so this storage change does not reject existing
-            // local skyboxes. Local HDR decoding below also bypasses the encoded-byte limit.
-            // SAF keeps that limit to bound buffering of provider streams, but encoded file size
-            // does not bound decoded texture memory. A shared policy should consider decoded
-            // dimensions and texture allocations, including HDR, rather than just file size.
-            if (backend.Kind != StorageBackendKind.StorageAccessFramework)
+            // TODO: Establish a skybox memory policy covering all formats and storage modes,
+            // accounting for both file buffering and decoded texture allocations. Encoded file
+            // size alone does not bound texture memory. Keep file-size acceptance consistent
+            // across SAF and local storage; the existing decoder dimension checks still apply.
+            if (File.Exists(localPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
                 return File.ReadAllBytes(localPath);
             }
 
-            Stream source;
-            if (File.Exists(localPath))
+            StorageDocument document = OpenBrushStorage.ResolveMediaDocument(
+                backend, StorageArea.MediaLibraryBackgroundImages, relativePath);
+            using (Stream source = backend.OpenRead(
+                       document.DocumentId, false, System.Threading.CancellationToken.None))
+            using (var bytes = new MemoryStream())
             {
-                source = File.OpenRead(localPath);
-            }
-            else
-            {
-                StorageDocument document = OpenBrushStorage.ResolveMediaDocument(
-                    backend, StorageArea.MediaLibraryBackgroundImages, relativePath);
-                source = backend.OpenRead(
-                    document.DocumentId, false, System.Threading.CancellationToken.None);
-            }
-            using (source)
-            {
-                return ReferenceImage.ReadBytesWithLimit(
-                    source, maxBytes ?? App.PlatformConfig.ReferenceImagesMaxFileSize);
+                source.CopyTo(bytes);
+                return bytes.ToArray();
             }
         }
 
