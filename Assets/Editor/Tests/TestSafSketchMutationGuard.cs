@@ -62,15 +62,76 @@ namespace TiltBrush
                 UserStorage.SetBackendForTests(backend);
                 var file = new SafSceneFileInfo(backend, MakeDocument());
                 Assert.AreEqual(StorageResultCode.Success,
-                    file.DeleteFromCurrentRoot().Code);
-                Assert.AreEqual(StorageResultCode.Success,
                     file.RenameInCurrentRoot("Renamed.tilt").Code);
-                Assert.AreEqual(1, backend.DeleteCalls);
                 Assert.AreEqual(1, backend.RenameCalls);
                 Assert.IsTrue(file.Available);
                 Assert.AreEqual("renamed-id", file.StorageId);
                 Assert.AreEqual("Renamed", file.HumanName);
                 Assert.AreEqual("Renamed.tilt", file.Document.RelativeDisplayPath);
+                Assert.AreEqual(StorageResultCode.Success,
+                    file.DeleteFromCurrentRoot().Code);
+                Assert.AreEqual(1, backend.DeleteCalls);
+                Assert.IsFalse(file.Valid);
+                Assert.IsFalse(file.Exists);
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previous);
+            }
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void DeleteUpdatesSeparateActiveIdentityOnlyOnSuccess(bool success)
+        {
+            IUserStorageBackend previous = UserStorage.Backend;
+            var backend = new CatalogTestBackend
+            {
+                DeleteResultCode = success ? StorageResultCode.Success : StorageResultCode.Failed,
+            };
+            try
+            {
+                UserStorage.SetBackendForTests(backend);
+                var catalogFile = new SafSceneFileInfo(backend, MakeDocument());
+                var activeFile = new SafSceneFileInfo(backend, MakeDocument());
+
+                Assert.AreEqual(success, catalogFile.DeleteFromCurrentRoot(activeFile).Success);
+                Assert.AreEqual(!success, catalogFile.Valid);
+                Assert.AreEqual(!success, activeFile.Valid);
+                Assert.AreEqual(!success, activeFile.Exists);
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previous);
+            }
+        }
+
+        [TestCase("document")]
+        [TestCase("root")]
+        public void DeleteDoesNotInvalidateAnUnrelatedActiveSketch(string difference)
+        {
+            IUserStorageBackend previous = UserStorage.Backend;
+            var backend = new CatalogTestBackend { RootIdentity = "old-root" };
+            try
+            {
+                UserStorage.SetBackendForTests(backend);
+                var activeFile = new SafSceneFileInfo(backend, MakeDocument());
+                if (difference == "root")
+                {
+                    backend.RootIdentity = "new-root";
+                }
+                var document = MakeDocument();
+                if (difference == "document")
+                {
+                    document = new StorageDocument(
+                        new StorageDocumentId("other-sketch-id"), default, "Sketch.tilt",
+                        TiltFile.TILT_MIME_TYPE, false, null, DateTime.UtcNow, 0, "Sketch.tilt");
+                }
+                var catalogFile = new SafSceneFileInfo(backend, document);
+
+                Assert.IsTrue(catalogFile.DeleteFromCurrentRoot(activeFile).Success);
+                Assert.IsFalse(catalogFile.Valid);
+                Assert.IsTrue(activeFile.Valid);
             }
             finally
             {

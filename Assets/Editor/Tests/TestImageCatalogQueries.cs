@@ -33,6 +33,7 @@ namespace TiltBrush
         public StorageDocumentId RenameResultDocumentId;
         public int RenameCalls;
         public int DeleteCalls;
+        public StorageResultCode DeleteResultCode = StorageResultCode.Success;
         public StorageDirectoryResult List(StorageArea area, string path, CancellationToken cancellationToken) => Listing();
         public StorageTreeResult EnumerateTree(StorageArea area, string path, StorageTreeQuery query, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Stream OpenRead(StorageArea area, string relativePath, bool requireSeekable, CancellationToken cancellationToken) => throw new NotSupportedException();
@@ -49,7 +50,7 @@ namespace TiltBrush
         public StorageMutationResult Delete(StorageDocumentId documentId, CancellationToken cancellationToken)
         {
             ++DeleteCalls;
-            return new StorageMutationResult(StorageResultCode.Success, documentId);
+            return new StorageMutationResult(DeleteResultCode, documentId);
         }
     }
 

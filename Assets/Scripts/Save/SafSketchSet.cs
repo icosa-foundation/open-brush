@@ -50,12 +50,13 @@ namespace TiltBrush
         private TiltFile m_TiltFile;
         private string m_AssetId;
         private string m_SourceId;
+        private bool m_Deleted;
 
         public FileInfoType InfoType => FileInfoType.Disk;
         public string HumanName =>
             Path.GetFileNameWithoutExtension(SaveLoadScript.RemoveMd5Suffix(
                 m_Document.DisplayName));
-        public bool Valid => m_Document.DocumentId.IsValid;
+        public bool Valid => !m_Deleted && m_Document.DocumentId.IsValid;
         public bool Available => Valid && IsCurrentStorageRoot;
         public string FullPath => null;
         public string StorageId => m_Document.DocumentId.Value;
@@ -86,7 +87,8 @@ namespace TiltBrush
 
         public void Delete()
         {
-            StorageMutationResult result = DeleteFromCurrentRoot();
+            StorageMutationResult result = DeleteFromCurrentRoot(
+                SaveLoadScript.m_Instance?.SceneFile as SafSceneFileInfo);
             if (!result.Success)
             {
                 Debug.LogWarning(
@@ -110,13 +112,29 @@ namespace TiltBrush
             return result.DocumentId.Value;
         }
 
-        internal StorageMutationResult DeleteFromCurrentRoot()
+        internal StorageMutationResult DeleteFromCurrentRoot(SafSceneFileInfo activeSceneFile = null)
         {
             if (!IsCurrentStorageRoot)
             {
                 return StaleRootMutationResult();
             }
-            return m_Backend.Delete(m_Document.DocumentId, CancellationToken.None);
+            StorageMutationResult result = m_Backend.Delete(
+                m_Document.DocumentId, CancellationToken.None);
+            if (result.Success)
+            {
+                m_Deleted = true;
+                // A save or catalog refresh can create separate objects for the same document.
+                // Only an explicit successful delete should make the next Save choose a new file.
+                if (activeSceneFile != null &&
+                    ReferenceEquals(m_Backend, activeSceneFile.m_Backend) &&
+                    m_RootIdentity == activeSceneFile.m_RootIdentity &&
+                    m_Area == activeSceneFile.m_Area &&
+                    m_Document.DocumentId.Equals(activeSceneFile.m_Document.DocumentId))
+                {
+                    activeSceneFile.m_Deleted = true;
+                }
+            }
+            return result;
         }
 
         internal Stream OpenRawReadStream(
@@ -426,7 +444,8 @@ namespace TiltBrush
                     "The selected storage provider does not allow this document to be deleted.");
                 return;
             }
-            StorageMutationResult result = fileInfo.DeleteFromCurrentRoot();
+            StorageMutationResult result = fileInfo.DeleteFromCurrentRoot(
+                SaveLoadScript.m_Instance?.SceneFile as SafSceneFileInfo);
             if (result.Success)
             {
                 RequestRefresh();
