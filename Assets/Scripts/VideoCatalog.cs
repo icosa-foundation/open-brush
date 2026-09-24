@@ -394,7 +394,9 @@ namespace TiltBrush
                     CatalogChanged?.Invoke();
                     nextRefresh = DateTime.Now + interval;
                 }
-                yield return videoRef.Initialize();
+                yield return videoRef.Initialize(() =>
+                    generation == m_ScanGeneration &&
+                    string.Equals(directory, m_CurrentVideoDirectory, StringComparison.Ordinal));
                 if (generation != m_ScanGeneration ||
                     !string.Equals(directory, m_CurrentVideoDirectory,
                         StringComparison.Ordinal))
@@ -520,7 +522,9 @@ namespace TiltBrush
                     CatalogChanged?.Invoke();
                     nextRefresh = DateTime.Now + interval;
                 }
-                yield return video.Initialize();
+                yield return video.Initialize(() => CatalogScanGuard.IsCurrent(
+                    generation, m_ScanGeneration, backend, UserStorage.Backend,
+                    directory, m_CurrentVideoDirectory, pathComparer));
                 if (!CatalogScanGuard.IsCurrent(
                         generation, m_ScanGeneration, backend, UserStorage.Backend,
                         directory, m_CurrentVideoDirectory, pathComparer))

@@ -337,13 +337,21 @@ namespace TiltBrush
                 yield break;
             }
 
-            while (!m_VideoPlayer.isPrepared)
+            // Thumbnail cancellation may dispose the last controller while preparation is still
+            // pending. Retire this coroutine as well, without touching a later player's instance.
+            VideoPlayer preparingPlayer = m_VideoPlayer;
+            while (preparingPlayer != null && preparingPlayer == m_VideoPlayer &&
+                   !preparingPlayer.isPrepared)
             {
                 if (Error != null)
                 {
                     yield break;
                 }
                 yield return null;
+            }
+            if (preparingPlayer == null || preparingPlayer != m_VideoPlayer)
+            {
+                yield break;
             }
 
             // This code is *super* useful for testing the reference video panel, and I've written it at
@@ -377,48 +385,46 @@ namespace TiltBrush
             Error = error;
         }
 
-        public IEnumerator<Null> Initialize()
+        public IEnumerator<Null> Initialize(Func<bool> isCurrent = null)
         {
-            Controller thumbnailExtractor = CreateController();
-            while (!thumbnailExtractor.Initialized)
+            if (isCurrent?.Invoke() == false) { yield break; }
+            // The catalog owns only this thumbnail controller. A stale scan must release it
+            // while leaving any widget's playback controller alive.
+            using (Controller thumbnailExtractor = CreateController())
             {
-                if (Error != null)
+                // Check navigation during both preparation and the wait for a decoded frame.
+                // Checking only after Initialize returns leaves the scan gate held indefinitely
+                // when a video never prepares or produces its first frame.
+                while (true)
                 {
-                    thumbnailExtractor.Dispose();
-                    yield break;
+                    if (Error != null || isCurrent?.Invoke() == false) { yield break; }
+                    if (thumbnailExtractor.Initialized && m_VideoPlayer.frame >= 1) { break; }
+                    yield return null;
                 }
-                yield return null;
+                int width, height;
+                if (Aspect > 1)
+                {
+                    width = 128;
+                    height = Mathf.RoundToInt(width / Aspect);
+                }
+                else
+                {
+                    height = 128;
+                    width = Mathf.RoundToInt(height * Aspect);
+                }
+                // Because the Thumbnail needs to be a Texture2D, we need to do the little dance of copying
+                // the rendertexture over to the Texture2D.
+                var rt = RenderTexture.GetTemporary(width, height, 0);
+                Graphics.Blit(m_VideoPlayer.texture, rt);
+                Thumbnail = new Texture2D(width, height, TextureFormat.RGB24, false);
+                var oldActive = RenderTexture.active;
+                RenderTexture.active = rt;
+                Thumbnail.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                RenderTexture.active = oldActive;
+                Thumbnail.Apply(false);
+                RenderTexture.ReleaseTemporary(rt);
+                IsInitialized = true;
             }
-            int width, height;
-            if (Aspect > 1)
-            {
-                width = 128;
-                height = Mathf.RoundToInt(width / Aspect);
-            }
-            else
-            {
-                height = 128;
-                width = Mathf.RoundToInt(height * Aspect);
-            }
-            // A frame does not always seem to be immediately available, so wait until we've hit at least
-            // the second frame before continuing.
-            while (m_VideoPlayer.frame < 1)
-            {
-                yield return null;
-            }
-            // Because the Thumbnail needs to be a Texture2D, we need to do the little dance of copying
-            // the rendertexture over to the Texture2D.
-            var rt = RenderTexture.GetTemporary(width, height, 0);
-            Graphics.Blit(m_VideoPlayer.texture, rt);
-            Thumbnail = new Texture2D(width, height, TextureFormat.RGB24, false);
-            var oldActive = RenderTexture.active;
-            RenderTexture.active = rt;
-            Thumbnail.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            RenderTexture.active = oldActive;
-            Thumbnail.Apply(false);
-            RenderTexture.ReleaseTemporary(rt);
-            thumbnailExtractor.Dispose();
-            IsInitialized = true;
         }
 
         public void Dispose()
