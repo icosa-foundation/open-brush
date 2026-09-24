@@ -1475,9 +1475,14 @@ namespace TiltBrush
                 Name = item.Name,
                 Parents = new[] { item.ParentId },
             };
-            if (item.LastModified != DateTime.MinValue)
+            // Local files may have changed while queued. Match the timestamp to the
+            // file being uploaded, rather than the earlier directory enumeration.
+            DateTime modified = backend.Kind == StorageBackendKind.Local
+                ? new FileInfo(item.DocumentId.Value).LastWriteTime
+                : item.LastModified;
+            if (modified != DateTime.MinValue)
             {
-                metadata.ModifiedTime = item.LastModified;
+                metadata.ModifiedTime = modified;
             }
             switch (Path.GetExtension(item.Name))
             {
