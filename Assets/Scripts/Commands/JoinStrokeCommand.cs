@@ -36,7 +36,13 @@ namespace TiltBrush
         }
 
         public JoinStrokeCommand(
-            Stroke strokeA, Stroke strokeB, BaseCommand parent = null) : base(parent)
+            Stroke strokeA, Stroke strokeB, BaseCommand parent = null)
+            : this(strokeA, strokeB, parent, true)
+        {
+        }
+
+        private JoinStrokeCommand(Stroke strokeA, Stroke strokeB, BaseCommand parent,
+            bool joinPeers) : base(parent)
         {
             m_StrokeA = strokeA;
             m_StrokeB = strokeB;
@@ -85,6 +91,50 @@ namespace TiltBrush
                     m_NewCP.AddRange(strokeB.m_ControlPoints.Reverse());
                     break;
             }
+
+            if (joinPeers && SymmetryPeerEditing.Enabled &&
+                TryGetPeerPairs(strokeA, strokeB, out var pairs))
+            {
+                foreach (var pair in pairs)
+                {
+                    new JoinStrokeCommand(pair.a, pair.b, this, false);
+                }
+            }
+        }
+
+        public static bool CanJoinPeers(Stroke strokeA, Stroke strokeB) =>
+            !SymmetryPeerEditing.Enabled || TryGetPeerPairs(strokeA, strokeB, out _);
+
+        private static bool TryGetPeerPairs(Stroke strokeA, Stroke strokeB,
+            out List<(Stroke a, Stroke b)> pairs)
+        {
+            pairs = new List<(Stroke a, Stroke b)>();
+            if (!strokeA.HasSymmetryPeers && !strokeB.HasSymmetryPeers) { return true; }
+            var groupA = strokeA.SymmetryPeerGroup;
+            var groupB = strokeB.SymmetryPeerGroup;
+            if (groupA == null || groupB == null || ReferenceEquals(groupA, groupB) ||
+                strokeA.SymmetryPointerIndex != strokeB.SymmetryPointerIndex ||
+                strokeA.Canvas != strokeB.Canvas ||
+                !Equals(groupA.Settings, groupB.Settings) ||
+                !ReferenceEquals(groupA.Mirror, groupB.Mirror)) { return false; }
+
+            var peersB = new Dictionary<int, Stroke>();
+            foreach (var peerB in SymmetryPeerEditing.PeersOf(strokeB))
+            {
+                if (!peersB.TryAdd(peerB.SymmetryPointerIndex, peerB)) { return false; }
+            }
+            foreach (var peerA in SymmetryPeerEditing.PeersOf(strokeA))
+            {
+                if (!peersB.TryGetValue(peerA.SymmetryPointerIndex, out var peerB) ||
+                    !SymmetryPeerEditing.TryGetPeerSymmetryTransform(strokeA, peerA, out _) ||
+                    !SymmetryPeerEditing.TryGetPeerSymmetryTransform(strokeB, peerB, out _) ||
+                    peerA.Canvas != peerB.Canvas)
+                {
+                    return false;
+                }
+                pairs.Add((peerA, peerB));
+            }
+            return pairs.Count == peersB.Count && pairs.Count > 0;
         }
 
         protected override void OnRedo()

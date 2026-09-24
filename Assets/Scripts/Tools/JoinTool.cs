@@ -205,6 +205,7 @@ namespace TiltBrush
                 }
                 else
                 {
+                    if (!JoinStrokeCommand.CanJoinPeers(m_StrokeA, strokeB)) return;
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                         new JoinStrokeCommand(m_StrokeA, strokeB)
                     );
