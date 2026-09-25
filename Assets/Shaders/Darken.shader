@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-Shader "Brush/Multiplicative" {
+Shader "Brush/Darken" {
 Properties {
   _MainTex ("Texture", 2D) = "white" {}
   _Opacity ("Opacity", Range(0, 1)) = 1
