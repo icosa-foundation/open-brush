@@ -2380,7 +2380,8 @@ namespace TiltBrush
                 AppExit();
             }
 
-            if (!OpenBrushStorage.IsScopedStorageMode)
+            if (!OpenBrushStorage.IsScopedStorageMode ||
+                (!StartupError && AndroidStorageManager.CanClearAutosaveOnExit))
             {
                 AutosaveRestoreFileExists = false;
             }
