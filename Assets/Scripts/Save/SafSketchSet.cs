@@ -102,7 +102,8 @@ namespace TiltBrush
                 SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase)
                 ? newName
                 : $"{newName}{SaveLoadScript.TILT_SUFFIX}";
-            StorageMutationResult result = RenameInCurrentRoot(displayName);
+            StorageMutationResult result = RenameInCurrentRoot(
+                displayName, SaveLoadScript.m_Instance?.SceneFile as SafSceneFileInfo);
             if (!result.Success)
             {
                 Debug.LogWarning(
@@ -125,16 +126,19 @@ namespace TiltBrush
                 m_Deleted = true;
                 // A save or catalog refresh can create separate objects for the same document.
                 // Only an explicit successful delete should make the next Save choose a new file.
-                if (activeSceneFile != null &&
-                    ReferenceEquals(m_Backend, activeSceneFile.m_Backend) &&
-                    m_RootIdentity == activeSceneFile.m_RootIdentity &&
-                    m_Area == activeSceneFile.m_Area &&
-                    m_Document.DocumentId.Equals(activeSceneFile.m_Document.DocumentId))
+                if (RefersToSameDocument(activeSceneFile))
                 {
                     activeSceneFile.m_Deleted = true;
                 }
             }
             return result;
+        }
+
+        private bool RefersToSameDocument(SafSceneFileInfo other)
+        {
+            return other != null && ReferenceEquals(m_Backend, other.m_Backend) &&
+                m_RootIdentity == other.m_RootIdentity && m_Area == other.m_Area &&
+                m_Document.DocumentId.Equals(other.m_Document.DocumentId);
         }
 
         internal Stream OpenRawReadStream(
@@ -149,7 +153,8 @@ namespace TiltBrush
                 m_Document.DocumentId, requireSeekable, cancellationToken);
         }
 
-        internal StorageMutationResult RenameInCurrentRoot(string displayName)
+        internal StorageMutationResult RenameInCurrentRoot(
+            string displayName, SafSceneFileInfo activeSceneFile = null)
         {
             if (!IsCurrentStorageRoot)
             {
@@ -159,6 +164,7 @@ namespace TiltBrush
                 m_Document.DocumentId, displayName, CancellationToken.None);
             if (result.Success)
             {
+                bool updateActiveScene = RefersToSameDocument(activeSceneFile);
                 // DocumentsContract.renameDocument may return a new URI. Refresh this object in
                 // place because SaveLoadScript and the sketch catalog can share it; retaining the
                 // old identity makes the next ordinary Save target a document that no longer
@@ -182,6 +188,14 @@ namespace TiltBrush
                     relativePath);
                 m_TiltFile = new TiltFile(
                     new StorageReadStreamSource(m_Backend, result.DocumentId), relativePath);
+                // Saving and catalog refresh can leave the active scene with a separate object.
+                // Match its old identity before replacing it with the URI returned by rename.
+                if (updateActiveScene && !ReferenceEquals(this, activeSceneFile))
+                {
+                    activeSceneFile.m_Document = m_Document;
+                    activeSceneFile.m_TiltFile = new TiltFile(
+                        new StorageReadStreamSource(m_Backend, result.DocumentId), relativePath);
+                }
             }
             return result;
         }
@@ -482,7 +496,8 @@ namespace TiltBrush
                 SaveLoadScript.TILT_SUFFIX, StringComparison.OrdinalIgnoreCase)
                 ? newName
                 : $"{newName}{SaveLoadScript.TILT_SUFFIX}";
-            StorageMutationResult result = fileInfo.RenameInCurrentRoot(displayName);
+            StorageMutationResult result = fileInfo.RenameInCurrentRoot(
+                displayName, SaveLoadScript.m_Instance?.SceneFile as SafSceneFileInfo);
             if (result.Success)
             {
                 RequestRefresh();

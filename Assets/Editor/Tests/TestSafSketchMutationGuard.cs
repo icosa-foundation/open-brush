@@ -5,10 +5,11 @@ namespace TiltBrush
 {
     public class TestSafSketchMutationGuard
     {
-        private static StorageDocument MakeDocument(long providerFlags = (1L << 2) | (1L << 6))
+        private static StorageDocument MakeDocument(
+            long providerFlags = (1L << 2) | (1L << 6), string documentId = "sketch-id")
         {
             return new StorageDocument(
-                new StorageDocumentId("sketch-id"), default, "Sketch.tilt",
+                new StorageDocumentId(documentId), default, "Sketch.tilt",
                 TiltFile.TILT_MIME_TYPE, false, null, DateTime.UtcNow,
                 providerFlags, "Sketch.tilt");
         }
@@ -73,6 +74,43 @@ namespace TiltBrush
                 Assert.AreEqual(1, backend.DeleteCalls);
                 Assert.IsFalse(file.Valid);
                 Assert.IsFalse(file.Exists);
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previous);
+            }
+        }
+
+        [TestCase(true, true, true)]
+        [TestCase(true, true, false)]
+        [TestCase(false, true, true)]
+        [TestCase(true, false, true)]
+        public void RenameUpdatesOnlyMatchingActiveIdentityOnSuccess(
+            bool success, bool matchingActive, bool changesUri)
+        {
+            IUserStorageBackend previous = UserStorage.Backend;
+            string returnedId = changesUri ? "renamed-id" : "sketch-id";
+            var backend = new CatalogTestBackend
+            {
+                RenameResultCode = success ? StorageResultCode.Success : StorageResultCode.Failed,
+                RenameResultDocumentId = new StorageDocumentId(returnedId),
+            };
+            try
+            {
+                UserStorage.SetBackendForTests(backend);
+                var catalogFile = new SafSceneFileInfo(backend, MakeDocument());
+                string activeId = matchingActive ? "sketch-id" : "other-id";
+                var activeFile = new SafSceneFileInfo(backend, MakeDocument(documentId: activeId));
+
+                Assert.AreEqual(success,
+                    catalogFile.RenameInCurrentRoot("Renamed.tilt", activeFile).Success);
+                Assert.AreEqual(success ? returnedId : "sketch-id", catalogFile.StorageId);
+                bool updated = success && matchingActive;
+                Assert.AreEqual(updated ? returnedId : activeId, activeFile.StorageId);
+                Assert.AreEqual(updated ? "Renamed" : "Sketch", activeFile.HumanName);
+                Assert.AreEqual(updated ? "Renamed.tilt" : "Sketch.tilt",
+                    activeFile.Document.RelativeDisplayPath);
+                Assert.IsTrue(activeFile.Valid);
             }
             finally
             {
