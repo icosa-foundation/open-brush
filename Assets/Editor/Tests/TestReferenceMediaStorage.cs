@@ -7,6 +7,36 @@ namespace TiltBrush
 {
     internal class TestReferenceMediaStorage
     {
+        [TestCase(true)]
+        [TestCase(false)]
+        public void GltfStorageRoutingExcludesIcosaModels(bool saf)
+        {
+            IUserStorageBackend previous = UserStorage.Backend;
+            try
+            {
+                UserStorage.SetBackendForTests(saf
+                    ? (IUserStorageBackend)new CatalogTestBackend()
+                    : new LocalUserStorageBackend(_ => Path.GetTempPath()));
+                var remote = new Model("asset-id", "cache/model.glb");
+                Assert.IsFalse(NewGltfImporter.TryGetStorageModelLocation(
+                    remote, out _, out _, out _));
+
+                var local = new Model("nested/model.gltf");
+                Assert.AreEqual(saf, NewGltfImporter.TryGetStorageModelLocation(
+                    local, out StorageArea area, out string directory, out string fileName));
+                if (saf)
+                {
+                    Assert.AreEqual(StorageArea.MediaLibraryModels, area);
+                    Assert.AreEqual("nested", directory);
+                    Assert.AreEqual("model.gltf", fileName);
+                }
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previous);
+            }
+        }
+
         [TestCase("stream.txt", true)]
         [TestCase("stream.TXT", true)]
         [TestCase("clip.mp4", false)]
