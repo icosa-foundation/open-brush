@@ -10239,6 +10239,8 @@ MonoBehaviour:
   - {fileID: 2800000, guid: 20b076a1d91c04a0a8880683b317bac4, type: 3}
   - {fileID: 2800000, guid: ff5316b1de05b694397fd3576833045a, type: 3}
   m_MeterYOffset: 0.75
+  m_EndpointSnapDistance: 0.2
+  m_EndpointHistoryLength: 16
 --- !u!4 &635119618 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4237745945251962, guid: f158162c2f61e2142b099443643a1f93, type: 3}
@@ -26089,8 +26091,6 @@ MonoBehaviour:
   m_BaseMaterial: {fileID: 2100000, guid: 38df2c5efb0a54849ae6b317d82aa405, type: 2}
   m_ActiveMaterial: {fileID: 2100000, guid: eeeb6bc3749b2ea4390a4fc0d377d4f9, type: 2}
   m_ActiveMaterialBorderPercent: 0.115
-  m_CatalogPath: AtlasCatalog
-  m_ExperimentalCatalogPath: AtlasCatalog Experimental
 --- !u!4 &1796800572
 Transform:
   m_ObjectHideFlags: 0

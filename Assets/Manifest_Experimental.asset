@@ -65,7 +65,9 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 69fc4ed00cead5b47b3dd3fb4d6096c9, type: 2}
   - {fileID: 11400000, guid: d25091db0e878ba458b54227b23cad57, type: 2}
   - {fileID: 11400000, guid: a43b1f18075bcca4e9471fd4c1cedf85, type: 2}
-  Environments:
+  - {fileID: 11400000, guid: c4b25e404b5a4c3883dcb41c41a51bca, type: 2}
+  - {fileID: 11400000, guid: 188c94f0f5dcddc429bff17dca0ff36d, type: 2}
+  - {fileID: 11400000, guid: dcc9d62f427ef0542bbce4040a9c05a0, type: 2}
   Environments: []
   Locales: []
   CompatibilityBrushes: []

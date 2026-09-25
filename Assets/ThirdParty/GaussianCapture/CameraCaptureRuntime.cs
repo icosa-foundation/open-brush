@@ -16,6 +16,8 @@ public class CameraCaptureRuntime : MonoBehaviour
 {
     private const int kVolumeViewsPerCell = 18;
 
+    private const int kMaxCameraPathSamples = 4096;
+
     private const float kCaptureOverlayFadeDuration = 0.25f;
 
     public static CameraCaptureRuntime m_Instance;
@@ -55,6 +57,12 @@ public class CameraCaptureRuntime : MonoBehaviour
     [Header("Volume Capture")]
     public Vector3 volumeCenter = Vector3.zero;
     public Vector3 volumeSize = new Vector3(5, 5, 5);
+
+    [Header("Camera Path Capture")]
+    [Tooltip("Capture points per camera path position knot.  Knot density already tracks " +
+             "how long the camera lingered when the path was recorded by flying, so 1 is a " +
+             "good default there.  Raise it for hand-drawn paths, which have far fewer knots.")]
+    public float cameraPathSamplesPerKnot = 1f;
 
     [Header("Background")]
     [Tooltip("Render skybox and environment as background (default). Disable to get transparent background for COLMAP masking.")]
@@ -113,6 +121,14 @@ public class CameraCaptureRuntime : MonoBehaviour
         public int SubdivX;
         public int SubdivY;
         public int SubdivZ;
+        public string FilePrefix;
+    }
+
+    // A capture target defined by an explicit list of world-space poses rather than by a
+    // shape the poses are derived from. Used for camera path capture.
+    private struct PoseCaptureTarget
+    {
+        public List<(Vector3 position, Quaternion rotation)> Poses;
         public string FilePrefix;
     }
 
@@ -295,6 +311,94 @@ public class CameraCaptureRuntime : MonoBehaviour
         return (int)Math.Min(int.MaxValue, cellCount * kVolumeViewsPerCell);
     }
 
+    // Local-space rotations for the six axis-aligned views captured at each camera path
+    // sample. Composed with the path rotation so the views are relative to the path camera.
+    private static readonly Quaternion[] kSixAxisViewRotations =
+    {
+        Quaternion.identity,
+        Quaternion.Euler(0f, 180f, 0f),
+        Quaternion.Euler(0f, -90f, 0f),
+        Quaternion.Euler(0f, 90f, 0f),
+        Quaternion.Euler(-90f, 0f, 0f),
+        Quaternion.Euler(90f, 0f, 0f),
+    };
+
+    // Returns world-space camera poses sampled evenly along a camera path, six axis-aligned
+    // views per sample. Does not perform any capture.
+    //
+    // Samples are spaced uniformly in PathT, which puts one at each position knot when
+    // samplesPerKnot is 1.  Knot density is the sampling signal rather than playback speed:
+    // a fly-recorded path already places knots at a fixed time interval and skips them
+    // entirely when the camera is not moving, so lingering earns extra coverage and a
+    // stationary camera earns none.  Sampling by playback time instead would spend hundreds
+    // of near-identical poses on the dead air at the end of a recording, and being relative
+    // to the path's own knots keeps this independent of sketch and scene scale.
+    public List<(Vector3 position, Quaternion rotation)> GetCameraPathPoses(
+        CameraPathWidget pathWidget,
+        float samplesPerKnot)
+    {
+        var poses = new List<(Vector3, Quaternion)>();
+        var path = pathWidget == null ? null : pathWidget.Path;
+        if (path == null || path.NumPositionKnots < 2)
+        {
+            return poses;
+        }
+
+        int knotCount = path.NumPositionKnots;
+        int sampleCount = Mathf.Clamp(
+            Mathf.CeilToInt(knotCount * Mathf.Max(0f, samplesPerKnot)), 2, kMaxCameraPathSamples);
+
+        // PathT runs over [0, knotCount - 1], so this spans the whole path inclusive of
+        // both ends and lands exactly on the knots when sampleCount == knotCount.
+        float maxT = knotCount - 1;
+        float step = maxT / (sampleCount - 1);
+
+        for (int sample = 0; sample < sampleCount; ++sample)
+        {
+            var pathT = new PathT(sample * step);
+            pathT.Clamp(knotCount);
+
+            Vector3 position = path.GetPosition(pathT);
+            Quaternion rotation = path.GetRotation(pathT);
+            foreach (var viewRotation in kSixAxisViewRotations)
+            {
+                poses.Add((position, rotation * viewRotation));
+            }
+        }
+
+        return poses;
+    }
+
+    private List<PoseCaptureTarget> GetActiveCameraPathTargets()
+    {
+        var targets = new List<PoseCaptureTarget>();
+        var widgetManager = TiltBrush.WidgetManager.m_Instance;
+        if (widgetManager == null || !widgetManager.CameraPathsVisible)
+        {
+            return targets;
+        }
+
+        var pathData = widgetManager.GetCurrentCameraPath();
+        var pathWidget = pathData == null ? null : pathData.WidgetScript;
+        if (pathWidget == null || !pathWidget.gameObject.activeInHierarchy)
+        {
+            return targets;
+        }
+
+        var poses = GetCameraPathPoses(pathWidget, cameraPathSamplesPerKnot);
+        if (poses.Count == 0)
+        {
+            return targets;
+        }
+
+        targets.Add(new PoseCaptureTarget
+        {
+            Poses = poses,
+            FilePrefix = BuildCaptureFilePrefix("campath", 0, pathWidget.name)
+        });
+        return targets;
+    }
+
     [ContextMenu("Start Dome Capture")]
     public void StartDomeCapture()
     {
@@ -305,18 +409,22 @@ public class CameraCaptureRuntime : MonoBehaviour
             return;
         }
         var domeTargets = GetActiveDomeCaptureTargets();
-        if (domeTargets.Count == 0)
+        var pathTargets = GetActiveCameraPathTargets();
+        if (domeTargets.Count == 0 && pathTargets.Count == 0)
         {
             Debug.LogError("[GaussianCapture] No GaussianCapture sphere, ellipsoid, or hemisphere widget found in scene. Place one to define the dome capture volume.");
             return;
         }
-        this.target = domeTargets[0].Transform;
-        this.radius = domeTargets[0].Radii.Max();
+        if (domeTargets.Count > 0)
+        {
+            this.target = domeTargets[0].Transform;
+            this.radius = domeTargets[0].Radii.Max();
+        }
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
         StartCaptureInCompositor(runtimeSequence
-            ? RuntimeSequenceCoroutine(domeTargets, null, captureOutputFolder)
+            ? RuntimeSequenceCoroutine(domeTargets, null, pathTargets, captureOutputFolder)
             : CaptureTargetsAndExportColmap(
-                domeTargets, null, captureOutputFolder, outAdd: ""));
+                domeTargets, null, pathTargets, captureOutputFolder, outAdd: ""));
     }
 
     [ContextMenu("Start Volume Capture")]
@@ -329,20 +437,24 @@ public class CameraCaptureRuntime : MonoBehaviour
             return;
         }
         var volumeTargets = GetActiveVolumeCaptureTargets();
-        if (volumeTargets.Count == 0)
+        var pathTargets = GetActiveCameraPathTargets();
+        if (volumeTargets.Count == 0 && pathTargets.Count == 0)
         {
             Debug.LogError("[GaussianCapture] No GaussianCaptureBoxWidget found in scene. Place one to define the volume capture area.");
             return;
         }
-        m_VolumeTransform = volumeTargets[0].Transform;
-        this.volumeCenter = volumeTargets[0].Transform.position;
-        this.volumeSize = volumeTargets[0].Transform.lossyScale;
+        if (volumeTargets.Count > 0)
+        {
+            m_VolumeTransform = volumeTargets[0].Transform;
+            this.volumeCenter = volumeTargets[0].Transform.position;
+            this.volumeSize = volumeTargets[0].Transform.lossyScale;
+        }
 
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
         StartCaptureInCompositor(runtimeSequence
-            ? RuntimeSequenceCoroutine(null, volumeTargets, captureOutputFolder)
+            ? RuntimeSequenceCoroutine(null, volumeTargets, pathTargets, captureOutputFolder)
             : CaptureTargetsAndExportColmap(
-                null, volumeTargets, captureOutputFolder, outAdd: ""));
+                null, volumeTargets, pathTargets, captureOutputFolder, outAdd: ""));
     }
 
     [ContextMenu("Start All Capture")]
@@ -357,9 +469,10 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         var domeTargets = GetActiveDomeCaptureTargets();
         var volumeTargets = GetActiveVolumeCaptureTargets();
-        if (domeTargets.Count == 0 && volumeTargets.Count == 0)
+        var pathTargets = GetActiveCameraPathTargets();
+        if (domeTargets.Count == 0 && volumeTargets.Count == 0 && pathTargets.Count == 0)
         {
-            Debug.LogError("[GaussianCapture] No GaussianCapture widgets found in scene. Place sphere, ellipsoid, hemisphere, or box capture widgets to define capture areas.");
+            Debug.LogError("[GaussianCapture] No GaussianCapture widgets or visible camera path found in scene. Place sphere, ellipsoid, hemisphere, or box capture widgets to define capture areas.");
             return;
         }
 
@@ -377,9 +490,9 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
         StartCaptureInCompositor(runtimeSequence
-            ? RuntimeSequenceCoroutine(domeTargets, volumeTargets, captureOutputFolder)
+            ? RuntimeSequenceCoroutine(domeTargets, volumeTargets, pathTargets, captureOutputFolder)
             : CaptureTargetsAndExportColmap(
-                domeTargets, volumeTargets, captureOutputFolder, outAdd: ""));
+                domeTargets, volumeTargets, pathTargets, captureOutputFolder, outAdd: ""));
     }
 
     [ContextMenu("Cancel")]
@@ -441,6 +554,7 @@ public class CameraCaptureRuntime : MonoBehaviour
     private IEnumerator RuntimeSequenceCoroutine(
         List<DomeCaptureTarget> domeTargets,
         List<VolumeCaptureTarget> volumeTargets,
+        List<PoseCaptureTarget> pathTargets,
         string captureOutputFolder)
     {
         int totalFrames = Mathf.Max(1, Mathf.RoundToInt(duration * Mathf.Max(1, fbs)));
@@ -453,7 +567,7 @@ public class CameraCaptureRuntime : MonoBehaviour
             ReportProgress((float)i / totalFrames, $"Runtime sequence {i + 1}/{totalFrames}");
             string outAdd = "/" + i + "/";
             yield return StartCoroutine(CaptureTargetsAndExportColmap(
-                domeTargets, volumeTargets, captureOutputFolder, outAdd));
+                domeTargets, volumeTargets, pathTargets, captureOutputFolder, outAdd));
             isRunning = true;
             yield return new WaitForSecondsRealtime(frameDt);
         }
@@ -520,22 +634,25 @@ public class CameraCaptureRuntime : MonoBehaviour
     public IEnumerator CaptureViewsAndExportColmap(string outAdd)
     {
         var domeTargets = GetActiveDomeCaptureTargets();
+        var pathTargets = GetActiveCameraPathTargets();
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
         yield return StartCoroutine(CaptureTargetsAndExportColmap(
-            domeTargets, null, captureOutputFolder, outAdd));
+            domeTargets, null, pathTargets, captureOutputFolder, outAdd));
     }
 
     public IEnumerator CaptureVolumeViewsAndExportColmap(string outAdd)
     {
         var volumeTargets = GetActiveVolumeCaptureTargets();
+        var pathTargets = GetActiveCameraPathTargets();
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
         yield return StartCoroutine(CaptureTargetsAndExportColmap(
-            null, volumeTargets, captureOutputFolder, outAdd));
+            null, volumeTargets, pathTargets, captureOutputFolder, outAdd));
     }
 
     private IEnumerator CaptureTargetsAndExportColmap(
         List<DomeCaptureTarget> domeTargets,
         List<VolumeCaptureTarget> volumeTargets,
+        List<PoseCaptureTarget> pathTargets,
         string captureOutputFolder,
         string outAdd)
     {
@@ -585,9 +702,22 @@ public class CameraCaptureRuntime : MonoBehaviour
                 List<Vector3> directions = GenerateCustomSphericalDirections();
                 if (domeTargets == null) { domeTargets = new List<DomeCaptureTarget>(); }
                 if (volumeTargets == null) { volumeTargets = new List<VolumeCaptureTarget>(); }
+                if (pathTargets == null) { pathTargets = new List<PoseCaptureTarget>(); }
+
+                // Dome and camera path targets are both just lists of poses, so capture them
+                // through a single loop.
+                var poseTargets = domeTargets
+                    .Select(x => new PoseCaptureTarget
+                    {
+                        Poses = GetDomeCameraPoses(
+                            x.Transform, x.Radii, x.NumRings, x.ViewsPerRing, x.ShapeType),
+                        FilePrefix = x.FilePrefix
+                    })
+                    .Concat(pathTargets)
+                    .ToList();
+
                 int totalImages =
-                    domeTargets.Sum(x => GetDomeCameraPoses(
-                        x.Transform, x.Radii, x.NumRings, x.ViewsPerRing, x.ShapeType).Count) +
+                    poseTargets.Sum(x => x.Poses.Count) +
                     volumeTargets.Sum(x => GetVolumeCameraGridCenters(
                         x.Transform, x.SubdivX, x.SubdivY, x.SubdivZ).Count * directions.Count);
                 int currentImage = 0;
@@ -610,15 +740,9 @@ public class CameraCaptureRuntime : MonoBehaviour
 
                     BakeSkinnedMeshColliders();
 
-                    foreach (var domeTarget in domeTargets)
+                    foreach (var poseTarget in poseTargets)
                     {
-                        var poses = GetDomeCameraPoses(
-                            domeTarget.Transform,
-                            domeTarget.Radii,
-                            domeTarget.NumRings,
-                            domeTarget.ViewsPerRing,
-                            domeTarget.ShapeType);
-                        foreach (var (position, rotation) in poses)
+                        foreach (var (position, rotation) in poseTarget.Poses)
                         {
                             if (cancel) { CleanupRT(ref cameraToUse, ref rt, ref resolvedRt, ref tex); isRunning = false; yield break; }
 
@@ -633,7 +757,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                             Quaternion q = QuaternionFromMatrix(R);
                             Vector3 t = new Vector3(colmapMatrix.m03, colmapMatrix.m13, colmapMatrix.m23);
 
-                            string imageName = $"{domeTarget.FilePrefix}_view_{imageId:D4}.png";
+                            string imageName = $"{poseTarget.FilePrefix}_view_{imageId:D4}.png";
                             string imagePath = Path.Combine(folderPath, imageName);
                             SetupCaptureCamera();
                             Texture2D capturedOpaqueDepth =
