@@ -129,6 +129,7 @@ namespace TiltBrush
         [NonSerialized] public bool PointerScriptsEnabled;
         [NonSerialized] public bool VisualizerScriptingEnabled;
         [NonSerialized] public bool BackgroundScriptsEnabled;
+        public bool IsGuideSnappingForcedOff { get; private set; }
         private List<string> m_ScriptPathsToUpdate;
         private Dictionary<string, Script> m_ActiveBackgroundScripts;
         private Dictionary<string, Dictionary<string, ScriptWidgetConfig>> m_WidgetConfigs;
@@ -762,6 +763,10 @@ namespace TiltBrush
         {
             var script = GetActiveScript(category);
             EndScript(script);
+            if (category == LuaApiCategory.PointerScript)
+            {
+                ForceGuideSnappingOff(false);
+            }
         }
 
         public void EndScript(Script script)
@@ -928,8 +933,16 @@ namespace TiltBrush
 
         private void _EndPreviousScript(LuaApiCategory category)
         {
-            var previousScript = GetActiveScript(category);
-            EndScript(previousScript);
+            EndActiveScript(category);
+        }
+
+        public void ForceGuideSnappingOff(bool active)
+        {
+            IsGuideSnappingForcedOff = active;
+            if (active && WidgetManager.m_Instance != null)
+            {
+                WidgetManager.m_Instance.ClearActiveStencil();
+            }
         }
 
         private void _SetActiveScript(LuaApiCategory category, int index)
@@ -1024,6 +1037,7 @@ namespace TiltBrush
             RegisterApiClass(script, "GroupList", typeof(GroupListApiWrapper));
             RegisterApiClass(script, "Guide", typeof(GuideApiWrapper));
             RegisterApiClass(script, "GuideList", typeof(GuideListApiWrapper));
+            RegisterApiClass(script, "SDFPrimitive", typeof(SdfPrimitiveApiWrapper));
             RegisterApiClass(script, "Headset", typeof(HeadsetApiWrapper));
             RegisterApiClass(script, "Image", typeof(ImageApiWrapper));
             RegisterApiClass(script, "ImageList", typeof(ImageListApiWrapper));
@@ -1590,6 +1604,7 @@ namespace TiltBrush
         public void DeInitialize()
         {
             if (!m_IsInitialized) return;
+            ForceGuideSnappingOff(false);
             m_WebRequests.Clear();
             m_TransformBuffers = null;
             m_ScriptPathsToUpdate.Clear();

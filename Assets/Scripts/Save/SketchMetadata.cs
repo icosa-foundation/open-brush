@@ -471,6 +471,90 @@ namespace TiltBrush
             // Group ID for widget. 0 for ungrouped items. Added in M22.
             public uint GroupId { get; set; }
             public int LayerId { get; set; }
+
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+            public SdfGuideState Sdf { get; set; }
+        }
+
+        [Serializable]
+        public class SdfGuideState
+        {
+            public SdfPrimitiveState[] Primitives { get; set; }
+        }
+
+        [Serializable]
+        public class SdfPrimitiveState
+        {
+            private Vector4 m_Geometry;
+            private TrTransform m_Transform;
+            private float m_Blend;
+            private bool m_Flip;
+
+            public string Type { get; set; }
+
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+            public SdfMeshState Mesh { get; set; }
+
+            public Vector4 Geometry
+            {
+                get { return m_Geometry; }
+                set
+                {
+                    m_Geometry = value;
+                    HasGeometry = true;
+                }
+            }
+
+            public TrTransform Transform
+            {
+                get { return m_Transform; }
+                set
+                {
+                    m_Transform = value;
+                    HasTransform = true;
+                }
+            }
+
+            public string Operation { get; set; }
+
+            public float Blend
+            {
+                get { return m_Blend; }
+                set
+                {
+                    m_Blend = value;
+                    HasBlend = true;
+                }
+            }
+
+            public bool Flip
+            {
+                get { return m_Flip; }
+                set
+                {
+                    m_Flip = value;
+                    HasFlip = true;
+                }
+            }
+
+            [JsonIgnore] public bool HasGeometry { get; private set; }
+            [JsonIgnore] public bool HasTransform { get; private set; }
+            [JsonIgnore] public bool HasBlend { get; private set; }
+            [JsonIgnore] public bool HasFlip { get; private set; }
+        }
+
+        [Serializable]
+        public class SdfMeshState
+        {
+            public int Size { get; set; }
+            public float Padding { get; set; }
+            public Vector3 MinBounds { get; set; }
+            public Vector3 MaxBounds { get; set; }
+
+            // Json.NET writes byte arrays as base64 rather than millions of JSON numbers. The
+            // enclosing .tilt archive then compresses the data further.
+            public byte[] Samples { get; set; }
+            public byte[] PackedUvs { get; set; }
         }
 
         // This is the accessor used by Json.NET for reading/writing the "Type" field.
