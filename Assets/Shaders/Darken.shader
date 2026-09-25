@@ -14,13 +14,20 @@
 
 Shader "Brush/Darken" {
 Properties {
+  // Unused by this shader, but required by BrushDescriptor.HasExportTexture().
   _MainTex ("Texture", 2D) = "white" {}
   _Opacity ("Opacity", Range(0, 1)) = 1
+  // Multiplies vertex alpha, so it can push the stroke past the alpha the geometry produces.
+  // Above 1 the darkening saturates towards full strength.
+  _AlphaMultiply ("Alpha Multiply", Range(0, 4)) = 1
   _SoftMultiply ("Softness", Range(0,1)) = 0.1
+  // Read by App.cs and the Lua API; see Stroke.SetShaderClipping.
   _Dissolve ("Dissolve", Range(0, 1)) = 1
-	_ClipStart("Clip Start", Float) = 0
-	_ClipEnd("Clip End", Float) = -1
-	_EdgeFadeoff ("Edge Fadeoff", Range(0, 1)) = 0.1
+  _ClipStart ("Clip Start", Float) = 0
+  _ClipEnd ("Clip End", Float) = -1
+  // Width-direction fade, measured across the ribbon. The along-stroke fade is baked into vertex
+  // alpha by the brush script (LineWithFadeBrush), so this handles the other axis.
+  _EdgeFadeoff ("Edge Fadeoff", Range(0, 1)) = 0.1
 }
 
 Category {
@@ -42,8 +49,6 @@ Category {
       #include "UnityCG.cginc"
       #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
-      sampler2D _MainTex;
-
       struct appdata_t {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
@@ -58,17 +63,16 @@ Category {
         float4 vertex : POSITION;
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
-        uint id : TEXCOORD2;
+        float2 id : TEXCOORD2;
 
         UNITY_VERTEX_OUTPUT_STEREO
       };
-
-      float4 _MainTex_ST;
 
       uniform half _ClipStart;
       uniform half _ClipEnd;
       uniform half _Dissolve;
       uniform half _Opacity;
+      uniform half _AlphaMultiply;
       uniform half _SoftMultiply;
       uniform half _EdgeFadeoff;
 
@@ -83,8 +87,8 @@ Category {
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
         o.vertex = UnityObjectToClipPos(v.vertex);
-        o.texcoord = TRANSFORM_TEX(v.texcoord,_MainTex);
-                                o.color = v.color;
+        o.texcoord = v.texcoord;
+        o.color = v.color;
         o.id = (float2)v.id;
         return o;
       }
@@ -96,19 +100,19 @@ Category {
         if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
         #endif
 
-        half4 c = tex2D(_MainTex, i.texcoord );
-        c = i.color;
+        // Vertex alpha carries the along-stroke fades baked in by the brush.
+        half4 c = i.color;
 
-        // Calculate edge fadeoff based on UV coordinates
+        // Fade off across the ribbon's width, using v as the across-width coordinate.
         half edgeFade = 1.0;
         if (_EdgeFadeoff > 0) {
             half distFromEdgeV = min(i.texcoord.y, 1.0 - i.texcoord.y);
             edgeFade = saturate(distFromEdgeV / _EdgeFadeoff);
         }
 
-        half k = saturate(c.a * _Opacity * _SoftMultiply * edgeFade);
+        half k = saturate(c.a * _Opacity * _AlphaMultiply * _SoftMultiply * edgeFade);
         c = lerp(1, c, k);
-        c.a *= _Opacity;
+        c.a = saturate(c.a * _Opacity * _AlphaMultiply);
         return c;
       }
       ENDCG
