@@ -48,6 +48,10 @@ namespace TiltBrush
             }
         }
 
+        bool needsBrushSizeUI =
+    VrStylusHandler.m_Instance?.CurrentState?.isActive == true ||
+    AndroidXRHandBridge.HandTrackingActive;
+
         private void UpdateSliderToMatchCurrentSize()
         {
             m_BrushSizeSlider.SetInitialValueAndUpdate(

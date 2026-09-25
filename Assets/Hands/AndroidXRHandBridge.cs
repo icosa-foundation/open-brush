@@ -94,6 +94,31 @@ namespace TiltBrush
         private float menuTouchRadius = 0.012f;
 
         [Tooltip(
+            "Larger radius used to KEEP an already-pressed UI button captured. " +
+            "Must be larger than menuTouchRadius to provide touch hysteresis.")]
+        [SerializeField]
+        private float menuTouchReleaseRadius = 0.025f;
+
+        [Tooltip(
+            "How long a pressed button may temporarily disappear from fingertip overlap " +
+            "before it is considered genuinely released.")]
+        [SerializeField]
+        private float menuTouchReleaseGrace = 0.10f;
+
+        [Tooltip(
+            "After a direct UI press, the fingertip must remain completely clear of UI " +
+            "for this long before another direct UI press can be armed.")]
+        [SerializeField]
+        private float menuTouchRearmClearTime = 0.20f;
+
+        [Tooltip(
+            "Minimum physical fingertip travel from the original press point before the " +
+            "direct UI system can re-arm. Prevents moving UI from re-triggering under a " +
+            "stationary finger.")]
+        [SerializeField]
+        private float menuTouchRearmFingerTravel = 0.030f;
+
+        [Tooltip(
             "When the fingertip contacts UI, place Open Brush's pointer ray origin " +
             "this far behind the fingertip along the poke direction. This keeps the " +
             "ray origin outside the button collider so Open Brush can register hover/click.")]
@@ -185,6 +210,12 @@ namespace TiltBrush
         [SerializeField]
         private float debugStateInterval = 1.0f;
 
+        [Header("Open Brush Tutorial")]
+[SerializeField]
+private bool skipOpenBrushIntroTutorialForHands = true;
+
+private bool m_TutorialBypassApplied;
+
 
         // --------------------------------------------------------------------
         // Runtime state
@@ -234,6 +265,24 @@ namespace TiltBrush
         private BaseButton m_MenuTouchComponent;
         private BaseButton m_ActiveMenuTouchComponent;
 
+        // Stable direct-touch capture / re-arm state.
+        //
+        // A direct UI press is allowed only while armed. Once a press occurs,
+        // the system stays disarmed until the fingertip has been clear of UI
+        // for a short time AND has physically moved away from the original
+        // press point. This prevents a moving/rotating panel from producing a
+        // false release followed immediately by a second press.
+        private bool m_MenuTouchArmed = true;
+        private float m_MenuTouchMissSince = -1.0f;
+        private float m_MenuTouchClearSince = -1.0f;
+        // Press point stored relative to a stable left-Wand reference transform.
+        // Comparing in Wand-local space prevents tracking-origin/world-space jumps
+        // and UI motion from being mistaken for a deliberate finger withdrawal.
+        private Transform m_MenuTouchPressReference;
+        private Vector3 m_MenuTouchPressFingerPositionLocal;
+        private Vector3 m_MenuTouchPressFingerPositionWorldFallback;
+        private bool m_MenuTouchHasPressFingerPosition;
+
         // Open Brush Trigger is reserved for painting while hand input is active:
         //   pinch -> drawing
         //   poke  -> direct UIComponent press/release (never a paint trigger)
@@ -254,6 +303,8 @@ namespace TiltBrush
         // Convenience diagnostics: true when both currently selected hand
         // sources are gripping at once.
         private bool m_SwimModeHeld;
+private bool m_SwimModeDown;
+private bool m_SwimModeUp;
 
 
         private enum InputSourceKind
@@ -275,6 +326,36 @@ namespace TiltBrush
                 device.added &&
                 device.enabled;
         }
+
+   private void EnsureTutorialBypass()
+{
+    if (!skipOpenBrushIntroTutorialForHands)
+        return;
+
+    if (TutorialManager.m_Instance == null)
+        return;
+
+    // Important:
+    // Open Brush can change IntroState during startup after this bridge has
+    // already initialized. Therefore don't rely on a one-shot flag.
+    if (TutorialManager.m_Instance.TutorialActive())
+    {
+        TutorialManager.m_Instance.IntroState =
+            IntroTutorialState.Done;
+
+        if (InputManager.m_Instance != null)
+        {
+            TutorialManager.m_Instance.DisableControllerTutorial(
+                InputManager.ControllerName.Brush);
+
+            TutorialManager.m_Instance.DisableControllerTutorial(
+                InputManager.ControllerName.Wand);
+        }
+
+        Debug.Log(
+            "ANDROIDXR_HAND: forced Open Brush intro tutorial to DONE");
+    }
+}
 
 
         private sealed class HandInteractionBinding
@@ -356,6 +437,14 @@ namespace TiltBrush
             Instance != null &&
             (Instance.m_LeftSource == InputSourceKind.Hand ||
              Instance.m_RightSource == InputSourceKind.Hand);
+
+
+        /// <summary>
+        /// Compatibility property used by UI such as BrushSettingsTray.
+        /// True while Open Brush is currently routing at least one controller side
+        /// through Android XR hand tracking.
+        /// </summary>
+        public static bool HandTrackingActive => Active;
 
 
         /// <summary>
@@ -448,53 +537,69 @@ namespace TiltBrush
         /// Hand grasp maps to Grip independently per side. This mirrors physical
         /// controller behaviour and allows mixed controller+hand swimming.
         /// </summary>
-        public static bool Grip(bool isBrush)
-        {
-            if (!UseHand(isBrush))
-                return false;
+       public static bool Grip(bool isBrush)
+{
+    if (Instance == null)
+        return false;
 
-            return isBrush
-                ? Instance.m_RightGripHeld
-                : Instance.m_LeftGripHeld;
-        }
+    // Hand swimming is strictly two-handed.
+    // Do not expose either virtual Grip until BOTH hands are gripping.
+    if (!UseHand(false) ||
+        !UseHand(true) ||
+        !Instance.m_SwimModeHeld)
+    {
+        return false;
+    }
 
-
-        public static bool GripDown(bool isBrush)
-        {
-            if (!UseHand(isBrush))
-                return false;
-
-            return isBrush
-                ? Instance.m_RightGripDown
-                : Instance.m_LeftGripDown;
-        }
+    return true;
+}
 
 
-        public static bool GripUp(bool isBrush)
-        {
-            if (!UseHand(isBrush))
-                return false;
+       public static bool GripDown(bool isBrush)
+{
+    if (Instance == null ||
+        !UseHand(false) ||
+        !UseHand(true))
+    {
+        return false;
+    }
 
-            return isBrush
-                ? Instance.m_RightGripUp
-                : Instance.m_LeftGripUp;
-        }
+    // Both virtual controllers receive GripDown simultaneously
+    // when the SECOND fist completes the two-hand swimming gesture.
+    return Instance.m_SwimModeDown;
+}
 
 
-        public static float GripValue(bool isBrush)
-        {
-            if (!UseHand(isBrush))
-                return 0.0f;
+       public static bool GripUp(bool isBrush)
+{
+    if (Instance == null ||
+        !UseHand(false) ||
+        !UseHand(true))
+    {
+        return false;
+    }
 
-            HandState state =
-                isBrush
-                    ? Instance.m_Right
-                    : Instance.m_Left;
+    // Releasing EITHER fist releases both virtual grips.
+    return Instance.m_SwimModeUp;
+}
 
-            return state.tracked
-                ? state.graspValue
-                : 0.0f;
-        }
+
+      public static float GripValue(bool isBrush)
+{
+    if (Instance == null ||
+        !UseHand(false) ||
+        !UseHand(true) ||
+        !Instance.m_SwimModeHeld)
+    {
+        return 0.0f;
+    }
+
+    // Combined two-hand confidence.
+    // The weaker hand determines the effective grip value.
+    return Mathf.Min(
+        Instance.m_Left.graspValue,
+        Instance.m_Right.graspValue);
+}
 
 
         public static float FingerDistance(bool isBrush)
@@ -703,6 +808,7 @@ namespace TiltBrush
             }
 
             EnsureOpenBrushHandMode();
+            EnsureTutorialBypass();
 
             if (!m_OpenBrushHandModeInitialized)
             {
@@ -746,7 +852,7 @@ namespace TiltBrush
 
             // Right-hand UI contact is meaningful only while the right side is
             // actually routed to the hand.
-            if (UseHand(true))
+            if (UseHand(true) && !m_RightGripHeld)
             {
                 UpdateMenuTouchState();
 
@@ -1905,9 +2011,21 @@ namespace TiltBrush
                 ref m_RightGripDown,
                 ref m_RightGripUp);
 
-            m_SwimModeHeld =
-                m_LeftGripHeld &&
-                m_RightGripHeld;
+           bool wasSwimModeHeld = m_SwimModeHeld;
+
+m_SwimModeHeld =
+    UseHand(false) &&
+    UseHand(true) &&
+    m_LeftGripHeld &&
+    m_RightGripHeld;
+
+m_SwimModeDown =
+    !wasSwimModeHeld &&
+    m_SwimModeHeld;
+
+m_SwimModeUp =
+    wasSwimModeHeld &&
+    !m_SwimModeHeld;
         }
 
 
@@ -1994,37 +2112,56 @@ namespace TiltBrush
 
         private void UpdateMenuTouchState()
         {
-            bool previousTouch =
-                m_MenuTouchHeld;
-
-            BaseButton previousComponent =
+            BaseButton previousActive =
                 m_ActiveMenuTouchComponent;
 
-            m_MenuTouchHeld = false;
             m_MenuTouchDown = false;
             m_MenuTouchUp = false;
             m_MenuTouchCollider = null;
             m_MenuTouchComponent = null;
 
 
+            // ------------------------------------------------------------
+            // Tracking/source lost: cancel and fully reset.
+            // ------------------------------------------------------------
+
             if (!m_Right.tracked ||
                 !UseHand(true))
             {
-                if (previousComponent != null)
+                bool wasHeld =
+                    m_MenuTouchHeld;
+
+                if (previousActive != null)
                 {
                     ReleaseDirectUiComponent(
-                        previousComponent);
+                        previousActive);
                 }
 
+                m_MenuTouchHeld = false;
                 m_ActiveMenuTouchComponent = null;
-                m_MenuTouchUp = previousTouch;
+
+                m_MenuTouchDown = false;
+                m_MenuTouchUp = wasHeld;
+
+                ResetMenuTouchLatch();
+
                 return;
             }
 
 
+            Vector3 fingertip =
+                m_Right.indexTipPose.position;
+
+
+            // ------------------------------------------------------------
+            // RAW ENTER TEST
+            //
+            // Use the smaller radius only for discovering a new button.
+            // ------------------------------------------------------------
+
             int hitCount =
                 Physics.OverlapSphereNonAlloc(
-                    m_Right.indexTipPose.position,
+                    fingertip,
                     Mathf.Max(
                         0.001f,
                         menuTouchRadius),
@@ -2033,8 +2170,12 @@ namespace TiltBrush
                     menuTouchQueryTriggerInteraction);
 
 
+            BaseButton rawComponent = null;
+            Collider rawCollider = null;
+
             float closestDistanceSquared =
                 float.PositiveInfinity;
+
 
             for (int i = 0;
                  i < hitCount;
@@ -2081,12 +2222,12 @@ namespace TiltBrush
 
                 Vector3 closestPoint =
                     componentCollider.ClosestPoint(
-                        m_Right.indexTipPose.position);
+                        fingertip);
 
                 float distanceSquared =
                     (
                         closestPoint -
-                        m_Right.indexTipPose.position
+                        fingertip
                     )
                     .sqrMagnitude;
 
@@ -2097,82 +2238,431 @@ namespace TiltBrush
                     closestDistanceSquared =
                         distanceSquared;
 
-                    m_MenuTouchCollider =
+                    rawCollider =
                         componentCollider;
 
-                    m_MenuTouchComponent =
+                    rawComponent =
                         component;
                 }
             }
 
 
-            m_MenuTouchHeld =
-                m_MenuTouchComponent != null;
-
-            bool targetChanged =
-                previousComponent !=
-                m_MenuTouchComponent;
+            bool rawTouch =
+                rawComponent != null;
 
 
-            if (targetChanged &&
-                previousComponent != null)
+            // ------------------------------------------------------------
+            // EXISTING CAPTURED BUTTON
+            //
+            // Once a button has been pressed, lock to that button until a
+            // genuine withdrawal. Do not retarget merely because another
+            // collider becomes closest after the UI moves.
+            // ------------------------------------------------------------
+
+            if (previousActive != null)
             {
-                ReleaseDirectUiComponent(
-                    previousComponent);
-            }
+                Collider activeCollider =
+                    previousActive.GetCollider();
+
+                bool rawStillSameButton =
+                    rawComponent ==
+                    previousActive;
+
+                bool physicallyStillNearButton =
+                    IsFingerWithinButtonReleaseRadius(
+                        activeCollider,
+                        fingertip);
 
 
-            if (m_MenuTouchHeld)
-            {
-                if (targetChanged)
+                if (rawStillSameButton ||
+                    physicallyStillNearButton)
                 {
-                    PressDirectUiComponent(
-                        m_MenuTouchComponent);
+                    // Stable contact: keep the original button captured.
+                    m_MenuTouchMissSince =
+                        -1.0f;
+
+                    m_MenuTouchClearSince =
+                        -1.0f;
+
+                    m_MenuTouchHeld =
+                        true;
+
+                    m_MenuTouchComponent =
+                        previousActive;
+
+                    m_MenuTouchCollider =
+                        activeCollider;
 
                     m_ActiveMenuTouchComponent =
-                        m_MenuTouchComponent;
-                }
-                else
-                {
+                        previousActive;
+
                     HoldDirectUiComponent(
-                        m_MenuTouchComponent);
+                        previousActive);
+
+                    return;
                 }
+
+
+                // We are outside both the small enter overlap and the larger
+                // release radius. XR finger joints can jitter briefly, so do
+                // not release on the first missing frame.
+                if (m_MenuTouchMissSince < 0.0f)
+                {
+                    m_MenuTouchMissSince =
+                        Time.unscaledTime;
+                }
+
+
+                if (Time.unscaledTime -
+                        m_MenuTouchMissSince <
+                    Mathf.Max(
+                        0.0f,
+                        menuTouchReleaseGrace))
+                {
+                    // Grace period: still treat the original button as held.
+                    m_MenuTouchHeld =
+                        true;
+
+                    m_MenuTouchComponent =
+                        previousActive;
+
+                    m_MenuTouchCollider =
+                        activeCollider;
+
+                    m_ActiveMenuTouchComponent =
+                        previousActive;
+
+                    return;
+                }
+
+
+                // Genuine release.
+                ReleaseDirectUiComponent(
+                    previousActive);
+
+                m_ActiveMenuTouchComponent =
+                    null;
+
+                m_MenuTouchMissSince =
+                    -1.0f;
+
+                m_MenuTouchHeld =
+                    rawTouch;
+
+                m_MenuTouchComponent =
+                    rawComponent;
+
+                m_MenuTouchCollider =
+                    rawCollider;
+
+                m_MenuTouchUp =
+                    true;
+
+                if (debugLogging)
+                {
+                    Debug.Log(
+                        "ANDROIDXR_MENU_TOUCH " +
+                        $"held={m_MenuTouchHeld} " +
+                        $"down={m_MenuTouchDown} " +
+                        $"up={m_MenuTouchUp} " +
+                        $"armed={m_MenuTouchArmed} " +
+                        $"event=RELEASE " +
+                        $"collider=" +
+                        $"{(m_MenuTouchCollider != null ? m_MenuTouchCollider.name : "none")} " +
+                        $"component=" +
+                        $"{(m_MenuTouchComponent != null ? m_MenuTouchComponent.GetType().Name : "none")} " +
+                        $"object=" +
+                        $"{(m_MenuTouchComponent != null ? m_MenuTouchComponent.gameObject.name : "none")}");
+                }
+
+                // IMPORTANT:
+                // Do NOT re-arm here. A collider exit is not a new-poke signal.
             }
             else
             {
-                m_ActiveMenuTouchComponent =
-                    null;
+                m_MenuTouchHeld =
+                    rawTouch;
+
+                m_MenuTouchComponent =
+                    rawComponent;
+
+                m_MenuTouchCollider =
+                    rawCollider;
             }
 
 
-            m_MenuTouchDown =
-                (!previousTouch &&
-                 m_MenuTouchHeld) ||
-                (targetChanged &&
-                 m_MenuTouchHeld);
+            // ------------------------------------------------------------
+            // RE-ARMING
+            //
+            // After any press, a new press is allowed only after:
+            //
+            //   1. fingertip touches no UI,
+            //   2. it remains clear for a short time,
+            //   3. it physically moves away from the original press point.
+            //
+            // Therefore a rotating/moving UI cannot re-trigger itself merely
+            // by moving its collider away from and back under the finger.
+            // ------------------------------------------------------------
 
-            m_MenuTouchUp =
-                previousTouch &&
-                !m_MenuTouchHeld;
-
-
-            if (debugLogging &&
-                (m_MenuTouchDown ||
-                 m_MenuTouchUp ||
-                 targetChanged))
+            if (!m_MenuTouchArmed)
             {
-                Debug.Log(
-                    "ANDROIDXR_MENU_TOUCH " +
-                    $"held={m_MenuTouchHeld} " +
-                    $"down={m_MenuTouchDown} " +
-                    $"up={m_MenuTouchUp} " +
-                    $"collider=" +
-                    $"{(m_MenuTouchCollider != null ? m_MenuTouchCollider.name : "none")} " +
-                    $"component=" +
-                    $"{(m_MenuTouchComponent != null ? m_MenuTouchComponent.GetType().Name : "none")} " +
-                    $"object=" +
-                    $"{(m_MenuTouchComponent != null ? m_MenuTouchComponent.gameObject.name : "none")}");
+                if (rawTouch)
+                {
+                    // Still touching some UI: remain disarmed.
+                    m_MenuTouchClearSince =
+                        -1.0f;
+
+                    return;
+                }
+
+
+                if (m_MenuTouchClearSince < 0.0f)
+                {
+                    m_MenuTouchClearSince =
+                        Time.unscaledTime;
+                }
+
+
+                bool clearLongEnough =
+                    Time.unscaledTime -
+                        m_MenuTouchClearSince >=
+                    Mathf.Max(
+                        0.0f,
+                        menuTouchRearmClearTime);
+
+
+                float fingerTravel =
+                    GetMenuTouchRearmFingerTravel(
+                        fingertip);
+
+                bool fingerMovedEnough =
+                    !m_MenuTouchHasPressFingerPosition ||
+                    fingerTravel >=
+                    Mathf.Max(
+                        0.001f,
+                        menuTouchRearmFingerTravel);
+
+
+                if (clearLongEnough &&
+                    fingerMovedEnough)
+                {
+                    float clearDuration =
+                        Time.unscaledTime -
+                        m_MenuTouchClearSince;
+
+                    m_MenuTouchArmed =
+                        true;
+
+                    m_MenuTouchClearSince =
+                        -1.0f;
+
+                    m_MenuTouchHasPressFingerPosition =
+                        false;
+
+                    if (debugLogging)
+                    {
+                        Debug.Log(
+                            "ANDROIDXR_DIRECT_UI REARM " +
+                            $"fingerTravelLocal={fingerTravel:F4} " +
+                            $"clearTime={clearDuration:F3}");
+                    }
+                }
+
+                return;
             }
+
+
+            // ------------------------------------------------------------
+            // FRESH PRESS
+            //
+            // This is the ONLY place where a new direct UI press begins.
+            // ------------------------------------------------------------
+
+            if (rawTouch)
+            {
+                m_MenuTouchHeld =
+                    true;
+
+                // Set DOWN before invoking the component. Hand-only buttons
+                // can use MenuTouchDown as a strict rising-edge guard.
+                m_MenuTouchDown =
+                    true;
+
+                m_MenuTouchUp =
+                    false;
+
+                m_ActiveMenuTouchComponent =
+                    rawComponent;
+
+                m_MenuTouchComponent =
+                    rawComponent;
+
+                m_MenuTouchCollider =
+                    rawCollider;
+
+
+                // Disarm BEFORE executing the button action. If the button
+                // rotates/moves the UI immediately, that movement cannot
+                // accidentally create a second press.
+                m_MenuTouchArmed =
+                    false;
+
+                m_MenuTouchMissSince =
+                    -1.0f;
+
+                m_MenuTouchClearSince =
+                    -1.0f;
+
+                CaptureMenuTouchPressPosition(
+                    fingertip);
+
+                m_MenuTouchHasPressFingerPosition =
+                    true;
+
+
+                PressDirectUiComponent(
+                    rawComponent);
+
+
+                if (debugLogging)
+                {
+                    Debug.Log(
+                        "ANDROIDXR_MENU_TOUCH " +
+                        $"held={m_MenuTouchHeld} " +
+                        $"down={m_MenuTouchDown} " +
+                        $"up={m_MenuTouchUp} " +
+                        $"armed={m_MenuTouchArmed} " +
+                        $"event=PRESS " +
+                        $"collider=" +
+                        $"{(m_MenuTouchCollider != null ? m_MenuTouchCollider.name : "none")} " +
+                        $"component=" +
+                        $"{(m_MenuTouchComponent != null ? m_MenuTouchComponent.GetType().Name : "none")} " +
+                        $"object=" +
+                        $"{(m_MenuTouchComponent != null ? m_MenuTouchComponent.gameObject.name : "none")}");
+                }
+            }
+        }
+
+
+        private bool IsFingerWithinButtonReleaseRadius(
+            Collider collider,
+            Vector3 fingertip)
+        {
+            if (collider == null ||
+                !collider.enabled ||
+                !collider.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            Vector3 closestPoint =
+                collider.ClosestPoint(
+                    fingertip);
+
+            float distance =
+                Vector3.Distance(
+                    closestPoint,
+                    fingertip);
+
+            return distance <=
+                Mathf.Max(
+                    menuTouchRadius,
+                    menuTouchReleaseRadius);
+        }
+
+
+        private Transform GetMenuTouchReferenceTransform()
+        {
+            // All direct-touch Wand UI is positioned from this anchor, so this
+            // is the correct frame in which to decide whether the right finger
+            // actually withdrew from a press.
+            if (InputManager.Wand != null)
+            {
+                ControllerGeometry geometry =
+                    InputManager.Wand.Geometry;
+
+                if (geometry != null &&
+                    geometry.MainAxisAttachPoint != null)
+                {
+                    return geometry.MainAxisAttachPoint;
+                }
+            }
+
+            // Fallback for startup/recreation frames.
+            return trackingOrigin;
+        }
+
+
+        private void CaptureMenuTouchPressPosition(
+            Vector3 fingertipWorld)
+        {
+            m_MenuTouchPressReference =
+                GetMenuTouchReferenceTransform();
+
+            if (m_MenuTouchPressReference != null)
+            {
+                m_MenuTouchPressFingerPositionLocal =
+                    m_MenuTouchPressReference.InverseTransformPoint(
+                        fingertipWorld);
+            }
+            else
+            {
+                m_MenuTouchPressFingerPositionWorldFallback =
+                    fingertipWorld;
+            }
+        }
+
+
+        private float GetMenuTouchRearmFingerTravel(
+            Vector3 fingertipWorld)
+        {
+            if (!m_MenuTouchHasPressFingerPosition)
+            {
+                return float.PositiveInfinity;
+            }
+
+            Transform currentReference =
+                GetMenuTouchReferenceTransform();
+
+            // Only compare local coordinates when the reference frame is the
+            // same Transform that was used at press time. If Open Brush rebuilt
+            // the Wand hierarchy, do NOT treat that frame swap as finger travel.
+            if (m_MenuTouchPressReference != null)
+            {
+                if (currentReference !=
+                    m_MenuTouchPressReference)
+                {
+                    return 0.0f;
+                }
+
+                Vector3 fingertipLocal =
+                    m_MenuTouchPressReference.InverseTransformPoint(
+                        fingertipWorld);
+
+                return Vector3.Distance(
+                    fingertipLocal,
+                    m_MenuTouchPressFingerPositionLocal);
+            }
+
+            // Startup fallback when there was no usable reference transform.
+            if (currentReference != null)
+            {
+                return 0.0f;
+            }
+
+            return Vector3.Distance(
+                fingertipWorld,
+                m_MenuTouchPressFingerPositionWorldFallback);
+        }
+
+
+        private void ResetMenuTouchLatch()
+        {
+            m_MenuTouchArmed = true;
+            m_MenuTouchMissSince = -1.0f;
+            m_MenuTouchClearSince = -1.0f;
+            m_MenuTouchPressReference = null;
+            m_MenuTouchHasPressFingerPosition = false;
         }
 
 
@@ -2246,6 +2736,8 @@ namespace TiltBrush
             m_MenuTouchCollider = null;
             m_MenuTouchComponent = null;
             m_ActiveMenuTouchComponent = null;
+
+            ResetMenuTouchLatch();
         }
 
 
@@ -2378,6 +2870,26 @@ namespace TiltBrush
 
             Transform pointer =
                 behavior.PointerAttachPoint;
+
+
+            /*
+             * While Grip is held, the Brush must behave like a grabbed physical
+             * controller, not like a fingertip pointer.  Using IndexTip /
+             * IndexDistal while the hand closes into a fist makes the virtual
+             * controller move and rotate simply because the finger curls, which
+             * Open Brush would interpret as world translation / rotation / scale.
+             *
+             * Switch to the stable palm pose BEFORE Open Brush consumes the Grip
+             * down state.  AndroidXRHandBridge executes very early, so the palm
+             * pose becomes the baseline transform for world grabbing/swimming.
+             */
+            if (m_RightGripHeld)
+            {
+                DriveBrushGripPose(
+                    root,
+                    hand);
+                return;
+            }
 
 
             /*
@@ -2529,6 +3041,53 @@ namespace TiltBrush
         }
 
 
+        /// <summary>
+        /// Stable controller pose used while the right hand is gripping.
+        /// Swimming/world manipulation should follow the hand/palm as a rigid
+        /// body rather than the curling index fingertip.
+        /// </summary>
+        private void DriveBrushGripPose(
+            Transform root,
+            HandState hand)
+        {
+            if (root == null)
+                return;
+
+            Quaternion desiredRotation =
+                hand.palmPose.rotation;
+
+            Vector3 desiredPosition =
+                hand.palmPose.position;
+
+            if (!useExactRestoredPose)
+            {
+                desiredRotation *=
+                    Quaternion.Euler(
+                        brushRotationOffset);
+
+                desiredPosition +=
+                    desiredRotation *
+                    brushPositionOffset;
+            }
+
+            root.rotation =
+                desiredRotation;
+
+            root.position =
+                desiredPosition;
+
+            if (debugLogging &&
+                Time.frameCount % 120 == 0)
+            {
+                Debug.Log(
+                    "ANDROIDXR_BRUSH_GRIP_POSE " +
+                    $"source={(hand.xrHandsSpatialValid ? "XRHANDS_PALM" : "HAND_INTERACTION_FALLBACK")} " +
+                    $"pos={desiredPosition:F3} " +
+                    $"rotEuler={desiredRotation.eulerAngles:F1}");
+            }
+        }
+
+
         // --------------------------------------------------------------------
         // Left hand -> Wand
         // --------------------------------------------------------------------
@@ -2666,6 +3225,49 @@ namespace TiltBrush
                 Mathf.Max(
                     0.1f,
                     debugStateInterval);
+                    
+                    string grabWidget = "none";
+bool tutorialActive = false;
+
+if (SketchControlsScript.m_Instance != null)
+{
+    var widget = SketchControlsScript.m_Instance.CurrentGrabWidget;
+
+    grabWidget = widget != null
+        ? widget.name + "/" + widget.GetType().Name
+        : "none";
+}
+
+if (TutorialManager.m_Instance != null)
+{
+    tutorialActive =
+        TutorialManager.m_Instance.TutorialActive();
+}
+
+
+            bool obWandGrip =
+    InputManager.Wand != null &&
+    InputManager.Wand.GetControllerGrip();
+
+bool obBrushGrip =
+    InputManager.Brush != null &&
+    InputManager.Brush.GetControllerGrip();
+
+bool obGrabWorld =
+    SketchControlsScript.m_Instance != null &&
+    SketchControlsScript.m_Instance.IsUserGrabbingWorld();
+
+bool obTransformWorld =
+    SketchControlsScript.m_Instance != null &&
+    SketchControlsScript.m_Instance.IsUserTransformingWorld();
+
+bool obBrushGrabWorld =
+    SketchControlsScript.m_Instance != null &&
+    SketchControlsScript.m_Instance.IsUserGrabbingWorldWithBrushHand();
+
+bool obGrabStable =
+    SketchControlsScript.m_Instance != null &&
+    SketchControlsScript.m_Instance.IsGrabWorldStateStable();
 
 
             string wandValid =
@@ -2690,6 +3292,14 @@ namespace TiltBrush
                 $"rightDevice={DescribeBinding(m_RightBinding)} " +
                 $"initialized={m_OpenBrushHandModeInitialized} " +
                 $"prepared={m_ControllersPrepared} " +
+                $" OBgripL={obWandGrip}" +
+$" OBgripR={obBrushGrip}" +
+$" OBgrab={obGrabWorld}" +
+$" OBbrushGrab={obBrushGrabWorld}" +
+$" OBtransform={obTransformWorld}" +
+$" OBstable={obGrabStable}"+
+$" currentGrabWidget={grabWidget}" +
+$" tutorial={tutorialActive}" +
                 $"L={m_Left.tracked} " +
                 $"R={m_Right.tracked} " +
                 $"pinch={m_Right.pinchValue:F3} " +

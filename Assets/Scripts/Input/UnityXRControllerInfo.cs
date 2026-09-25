@@ -25,8 +25,8 @@ namespace TiltBrush
     /// Android XR hand mode:
     ///   - Left tracked hand  -> Open Brush Wand
     ///   - Right tracked hand -> Open Brush Brush
-    ///   - AndroidXRHandBridge supplies Brush trigger state
-    ///   - Controller-only inputs are suppressed while hand mode is active
+    ///   - AndroidXRHandBridge supplies Brush trigger and per-side Grip state
+    ///   - Hand/controller routing is independent on each side
     /// </summary>
     public class UnityXRControllerInfo : ControllerInfo, IDisposable
     {
@@ -194,7 +194,7 @@ namespace TiltBrush
         {
             get
             {
-                if (AndroidXRHandBridge.Active)
+                if (AndroidXRHandBridge.UseHand(isBrush))
                 {
                     // AndroidXRHandBridge owns hand assignment:
                     // false = Wand/left hand, true = Brush/right hand.
@@ -216,7 +216,7 @@ namespace TiltBrush
 
         public override Vector2 GetPadValue()
         {
-            if (AndroidXRHandBridge.Active)
+            if (AndroidXRHandBridge.UseHand(isBrush))
                 return Vector2.zero;
 
             InputAction action = FindAction("PadAxis");
@@ -225,7 +225,7 @@ namespace TiltBrush
 
         public override Vector2 GetThumbStickValue()
         {
-            if (AndroidXRHandBridge.Active)
+            if (AndroidXRHandBridge.UseHand(isBrush))
                 return Vector2.zero;
 
             InputAction action = FindAction("ThumbAxis");
@@ -237,7 +237,7 @@ namespace TiltBrush
             base.Update();
 
             // Hands have no controller touchpad; don't query controller actions.
-            if (AndroidXRHandBridge.Active)
+            if (AndroidXRHandBridge.UseHand(isBrush))
             {
                 padAxisPrevious = Vector2.zero;
                 return;
@@ -259,7 +259,7 @@ namespace TiltBrush
 
         public override Vector2 GetPadValueDelta()
         {
-            if (AndroidXRHandBridge.Active)
+            if (AndroidXRHandBridge.UseHand(isBrush))
                 return Vector2.zero;
 
             InputAction thumbAction = FindAction("ThumbAxis");
@@ -313,10 +313,11 @@ namespace TiltBrush
 
         public override float GetGripValue()
         {
-            // Both fists are exposed by AndroidXRHandBridge as virtual Grip
-            // on both the Wand and Brush controllers.
-            if (AndroidXRHandBridge.Active)
-                return AndroidXRHandBridge.Grip(isBrush) ? 1.0f : 0.0f;
+            // Preserve the raw OpenXR graspValue for Open Brush's analogue
+            // grip processing.  VrInput.Grip below uses the bridge's hysteresis
+            // state for a stable pressed/released button interpretation.
+            if (AndroidXRHandBridge.UseHand(isBrush))
+                return AndroidXRHandBridge.GripValue(isBrush);
 
             if (IsStylusActive())
             {
@@ -338,7 +339,7 @@ namespace TiltBrush
 
         public override float GetTriggerValue()
         {
-            if (AndroidXRHandBridge.Active)
+            if (AndroidXRHandBridge.UseHand(isBrush))
             {
                 // Only the Brush/right hand has a draw trigger in hand mode.
                 return AndroidXRHandBridge.Trigger(isBrush) ? 1.0f : 0.0f;
@@ -362,7 +363,7 @@ namespace TiltBrush
         private bool MapVrTouch(VrInput input)
         {
             // There are no controller capacitive touch controls in custom hand mode yet.
-            if (AndroidXRHandBridge.Active)
+            if (AndroidXRHandBridge.UseHand(isBrush))
                 return false;
 
             switch (input)
@@ -399,9 +400,9 @@ namespace TiltBrush
 
         private bool MapVrInput(VrInput input)
         {
-            // Android XR hand mode exposes the virtual Brush trigger plus
-            // virtual Grip on both controllers while both hands are fists.
-            if (AndroidXRHandBridge.Active)
+            // Android XR hand mode exposes the virtual Brush trigger and an
+            // independent virtual Grip for whichever side is currently a hand.
+            if (AndroidXRHandBridge.UseHand(isBrush))
             {
                 if (input == VrInput.Trigger)
                 {
@@ -469,9 +470,9 @@ namespace TiltBrush
 
         private bool MapVrInputPerFrame(VrInput input, bool down)
         {
-            // Android XR hand mode supplies per-frame edges for both the
-            // virtual Brush trigger and the two-hand virtual Grip.
-            if (AndroidXRHandBridge.Active)
+            // Android XR hand mode supplies per-frame edges for the Brush
+            // trigger and the independent virtual Grip on this hand side.
+            if (AndroidXRHandBridge.UseHand(isBrush))
             {
                 if (input == VrInput.Trigger)
                 {
@@ -560,7 +561,7 @@ namespace TiltBrush
         public override void TriggerControllerHaptics(float seconds)
         {
             // Tracked hands don't provide controller haptics through this path.
-            if (AndroidXRHandBridge.Active)
+            if (AndroidXRHandBridge.UseHand(isBrush))
                 return;
 
             if (!device.isValid)
