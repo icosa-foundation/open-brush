@@ -42,6 +42,15 @@ public class BuildTiltBrushPostProcess
             XmlDocument doc = new XmlDocument();
             doc.Load(file);
 
+            if (BuildTiltBrush.IsScopedStorageBuildActive)
+            {
+                UnityEngine.Debug.Log("Apply Google Play Android storage manifest profile");
+            }
+            ConfigureStoragePermissions(
+                doc, BuildTiltBrush.IsScopedStorageBuildActive,
+                PlayerSettings.Android.forceSDCardPermission,
+                PlayerSettings.Android.useAPKExpansionFiles);
+
             ConfigureGameActivityLauncher(doc);
 
 #if USE_QUEST_PACKAGE_NAME
@@ -60,6 +69,110 @@ public class BuildTiltBrushPostProcess
         {
             UnityEngine.Debug.LogException(e);
             throw;
+        }
+    }
+
+    internal static void ConfigureStoragePermissions(
+        XmlDocument doc, bool scopedStorage, bool forceSDCardPermission, bool useExpansionFiles)
+    {
+        XmlElement element = (XmlElement)doc.SelectSingleNode("/manifest");
+        var androidNamespaceURI = element.GetAttribute("xmlns:android");
+
+        if (scopedStorage)
+        {
+            AddOrRemoveTag(doc,
+                androidNamespaceURI,
+                "/manifest/application",
+                "meta-data",
+                "unityplayer.SkipPermissionsDialog",
+                true,
+                true,
+                "value", "true"
+            );
+
+            foreach (string permission in new[]
+            {
+                "android.permission.MANAGE_EXTERNAL_STORAGE",
+                "android.permission.WRITE_EXTERNAL_STORAGE",
+                "android.permission.READ_EXTERNAL_STORAGE",
+                "android.permission.READ_MEDIA_AUDIO",
+                "android.permission.READ_MEDIA_IMAGES",
+                "android.permission.READ_MEDIA_VIDEO",
+                "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+            })
+            {
+                RemovePermissionTags(doc, androidNamespaceURI, permission);
+            }
+
+            var application = (XmlElement)doc.SelectSingleNode("/manifest/application");
+            application?.RemoveAttribute("requestLegacyExternalStorage", androidNamespaceURI);
+        }
+        else
+        {
+            // Incremental Android builds can reuse the generated Gradle project and therefore
+            // the manifest that a preceding scoped-storage build stripped. Reassert the
+            // project manifest's non-scoped storage profile rather than relying on a merge
+            // that may not run again.
+            AddOrRemoveTag(doc,
+                androidNamespaceURI,
+                "/manifest",
+                "uses-permission",
+                "android.permission.MANAGE_EXTERNAL_STORAGE",
+                true,
+                true);
+
+            // Match Unity's generated legacy permissions. A reused SAF manifest has had
+            // these removed, even when the non-SAF build settings require them again.
+            if (forceSDCardPermission)
+            {
+                EnsureLegacyStoragePermission(doc, androidNamespaceURI,
+                    "android.permission.WRITE_EXTERNAL_STORAGE");
+            }
+            if (useExpansionFiles)
+            {
+                EnsureLegacyStoragePermission(doc, androidNamespaceURI,
+                    "android.permission.READ_EXTERNAL_STORAGE");
+            }
+
+            var application = (XmlElement)doc.SelectSingleNode("/manifest/application");
+            application?.SetAttribute(
+                "requestLegacyExternalStorage", androidNamespaceURI, "true");
+        }
+    }
+
+    private static void EnsureLegacyStoragePermission(
+        XmlDocument doc, string androidNamespace, string permission)
+    {
+        // Preserve declarations supplied by Unity or plugins, including SDK-qualified
+        // forms and attributes. Only recreate a declaration when it is missing.
+        foreach (XmlElement element in doc.SelectNodes(
+            "/manifest/uses-permission | /manifest/uses-permission-sdk-23"))
+        {
+            if (element.GetAttribute("name", androidNamespace) == permission)
+            {
+                return;
+            }
+        }
+        AddOrRemoveTag(doc, androidNamespace, "/manifest", "uses-permission",
+            permission, true, false);
+    }
+
+    private static void RemovePermissionTags(XmlDocument doc, string @namespace, string permission)
+    {
+        RemoveTags(doc, @namespace, "/manifest", "uses-permission", permission);
+        RemoveTags(doc, @namespace, "/manifest", "uses-permission-sdk-23", permission);
+    }
+
+    private static void RemoveTags(XmlDocument doc, string @namespace, string path, string elementName, string name)
+    {
+        var nodes = doc.SelectNodes(path + "/" + elementName);
+        for (int i = nodes.Count - 1; i >= 0; --i)
+        {
+            XmlElement element = nodes[i] as XmlElement;
+            if (element != null && (name == null || name == element.GetAttribute("name", @namespace)))
+            {
+                element.ParentNode?.RemoveChild(element);
+            }
         }
     }
 
@@ -93,9 +206,24 @@ public class BuildTiltBrushPostProcess
             namespaceManager) as XmlElement;
         if (launcherActivity == null)
         {
+            // Already converted. An incremental build reuses the generated Gradle project, so
+            // this runs against a manifest a previous build already rewrote: there is no
+            // PlayerActivity left because it is now the GameActivity launcher. Treating that as
+            // a failure made local builds fail on every second run, each one leaving the
+            // previous APK in place to be installed and mistaken for the new one.
+            var converted = doc.SelectSingleNode(
+                "/manifest/application/activity[@android:name='" + kGameActivity + "']" +
+                "[intent-filter/action[@android:name='android.intent.action.MAIN']]" +
+                "[intent-filter/category[@android:name='android.intent.category.LAUNCHER']]",
+                namespaceManager) as XmlElement;
+            if (converted != null)
+            {
+                return;
+            }
             throw new BuildTiltBrush.BuildFailedException(
                 "The generated Android manifest has no PlayerActivity launcher to convert " +
-                "for the selected GameActivity entry point.");
+                "for the selected GameActivity entry point, and no GameActivity launcher " +
+                "either - the manifest has neither entry point.");
         }
 
         // Preserve Unity's generated launch mode, configuration changes, orientation, and other

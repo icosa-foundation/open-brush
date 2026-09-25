@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 
 namespace TiltBrush
@@ -81,6 +82,15 @@ namespace TiltBrush
         Dictionary<string, float> FloatParams { get; }
         Dictionary<string, Vector3> VectorParams { get; }
         Dictionary<string, Color> ColorParams { get; }
+    }
+
+    /// Optional texture source used when an export texture is not backed by a filesystem path.
+    /// SAF documents must stay as streams all the way to the final export output; do not satisfy
+    /// path-only exporter code by copying provider content into a temporary local file.
+    public interface IExportableMaterialTextureSource
+    {
+        bool TryGetTextureSource(
+            string textureUri, out string sourceIdentity, out Func<Stream> openRead);
     }
 
 } // namespace TiltBrush

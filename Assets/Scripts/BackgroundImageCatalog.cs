@@ -20,6 +20,8 @@ namespace TiltBrush
 
     public class BackgroundImageCatalog : ReferenceImageCatalog
     {
+        private const string kSafSeedPreference =
+            "GooglePlayStorage.SeededDefaultBackgroundImagesFdV1";
         static public new BackgroundImageCatalog m_Instance;
         protected string m_CurrentBackgroundImagesDirectory;
         public string CurrentBackgroundImagesDirectory => m_CurrentBackgroundImagesDirectory;
@@ -29,8 +31,11 @@ namespace TiltBrush
             m_Instance = this;
             m_RequestedLoads = new Stack<int>();
 
-            App.InitMediaLibraryPath();
-            App.InitBackgroundImagesPath(m_DefaultImages);
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                App.InitMediaLibraryPath();
+                App.InitBackgroundImagesPath(m_DefaultImages);
+            }
             ChangeDirectory(HomeDirectory);
         }
 
@@ -39,20 +44,31 @@ namespace TiltBrush
             // This override does not call base, so it has to do the base's cleanup itself.
             StopWatchingCurrentDirectory();
             m_CurrentBackgroundImagesDirectory = newPath;
-            if (Directory.Exists(m_CurrentBackgroundImagesDirectory))
-            {
-                m_FileWatcher = new FileWatcher(m_CurrentBackgroundImagesDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnChanged;
-                m_FileWatcher.FileCreated += OnChanged;
-                m_FileWatcher.FileDeleted += OnChanged;
-                m_FileWatcher.EnableRaisingEvents = true;
-            }
-            m_Images = new List<ReferenceImage>();
-            ProcessReferenceDirectory(userOverlay: false);
+            base.ChangeDirectory(newPath);
         }
 
         public override string HomeDirectory => App.BackgroundImagesLibraryPath();
+        protected override StorageArea StorageAreaKind =>
+            StorageArea.MediaLibraryBackgroundImages;
+        protected override string SafSeedPreferenceKey => kSafSeedPreference;
+
+        protected override byte[] LoadSafDefaultBytes(string resourcePath)
+        {
+            UnityEngine.TextAsset resource =
+                UnityEngine.Resources.Load<UnityEngine.TextAsset>(resourcePath);
+            if (resource == null)
+            {
+                return null;
+            }
+            try
+            {
+                return resource.bytes;
+            }
+            finally
+            {
+                UnityEngine.Resources.UnloadAsset(resource);
+            }
+        }
         public override bool IsHomeDirectory() => m_CurrentBackgroundImagesDirectory == HomeDirectory;
 
         public override bool IsSubDirectoryOfHome()

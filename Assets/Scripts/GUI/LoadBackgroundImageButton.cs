@@ -58,7 +58,10 @@ namespace TiltBrush
             // TODO we had problems with seams when using the cached image.
             // Likely related to mipmaps but I couldn't track down the cause.
             // SceneSettings.m_Instance.LoadCustomSkyboxFromCache(ReferenceImage.FilePath);
-            SceneSettings.m_Instance.LoadCustomSkybox(Path.GetFileName(ReferenceImage.FilePath));
+            string logicalPath = UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework
+                ? ReferenceImage.RelativePath
+                : Path.GetRelativePath(App.BackgroundImagesLibraryPath(), ReferenceImage.FileFullPath);
+            SceneSettings.m_Instance.LoadCustomSkybox(logicalPath);
         }
 
         override public void ResetState()

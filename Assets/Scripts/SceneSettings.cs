@@ -219,73 +219,131 @@ namespace TiltBrush
 
         public void LoadCustomSkybox(string filename)
         {
-            m_CustomSkyboxTextureName = filename;
             int loadVersion = ++m_CustomSkyboxLoadVersion;
             Texture2D tex = null;
             var path = ApiMethods.GetSafeRelativePathInDirectory(
                 App.BackgroundImagesLibraryPath(), filename, "skybox path");
-            if (File.Exists(path))
+            string relativePath = Path.GetRelativePath(
+                App.BackgroundImagesLibraryPath(), path).Replace('\\', '/');
+            m_CustomSkyboxTextureName = relativePath;
+            bool localFileExists = File.Exists(path);
+            if (!localFileExists &&
+                UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
-                if (HdrTextureLoader.IsSupportedFile(path))
+                Debug.LogError($"Could not find skybox image: {path}");
+                return;
+            }
+
+            if (HdrTextureLoader.IsSupportedFile(path))
+            {
+                if (localFileExists)
                 {
                     tex = ImageCache.LoadImageCache(path);
-                    if (tex == null)
-                    {
-                        StartCoroutine(LoadCustomHdrSkybox(path, filename, loadVersion));
-                        return;
-                    }
                 }
-                else
+                if (tex == null)
                 {
-                    var fileData = File.ReadAllBytes(path);
-                    if (ImageUtils.IsJpeg(fileData) && VrJpegMetadata.IsVrJpeg(fileData))
+                    byte[] encodedImage = null;
+                    if (!localFileExists)
                     {
                         try
                         {
-                            RawImage rawImage = ImageUtils.FromVrJpeg(
-                                fileData, filename,
-                                App.PlatformConfig.ReferenceImagesMaxDimension,
-                                App.PlatformConfig.ReferenceImagesResizeDimension);
-                            tex = new Texture2D(
-                                rawImage.ColorWidth, rawImage.ColorHeight,
-                                TextureFormat.RGBA32, true);
-                            tex.SetPixels32(rawImage.ColorData);
-                            tex.Apply();
+                            encodedImage = ReadSkyboxBytes(
+                                UserStorage.Backend, relativePath, path);
                         }
-                        catch (ImageLoadError e)
+                        catch (IOException e)
                         {
-                            Debug.LogWarning(
-                                $"VR JPEG decode failed for {filename}; loading it as a flat JPEG: {e.Message}");
-                        }
-                    }
-                    if (tex == null)
-                    {
-                        tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
-                        if (!tex.LoadImage(fileData))
-                        {
-                            Debug.LogError($"Failed to load skybox image: {path}");
+                            Debug.LogError(
+                                $"[SAF_REVIEW_SKYBOX] Could not load skybox {filename}: {e.Message}");
                             return;
                         }
                     }
+                    StartCoroutine(LoadCustomHdrSkybox(
+                        path, relativePath, loadVersion, encodedImage));
+                    return;
                 }
-
-                float aspectRatio = (float)tex.width / tex.height;
-                SetCustomSkybox(tex, aspectRatio);
             }
             else
             {
-                Debug.LogError($"Could not find skybox image: {path}");
+                byte[] fileData;
+                try
+                {
+                    fileData = ReadSkyboxBytes(
+                        UserStorage.Backend, relativePath, path);
+                }
+                catch (IOException e)
+                {
+                    Debug.LogError(
+                        $"[SAF_REVIEW_SKYBOX] Could not load skybox {filename}: {e.Message}");
+                    return;
+                }
+                if (ImageUtils.IsJpeg(fileData) && VrJpegMetadata.IsVrJpeg(fileData))
+                {
+                    try
+                    {
+                        RawImage rawImage = ImageUtils.FromVrJpeg(
+                            fileData, filename,
+                            App.PlatformConfig.ReferenceImagesMaxDimension,
+                            App.PlatformConfig.ReferenceImagesResizeDimension);
+                        tex = new Texture2D(
+                            rawImage.ColorWidth, rawImage.ColorHeight,
+                            TextureFormat.RGBA32, true);
+                        tex.SetPixels32(rawImage.ColorData);
+                        tex.Apply();
+                    }
+                    catch (ImageLoadError e)
+                    {
+                        Debug.LogWarning(
+                            $"VR JPEG decode failed for {filename}; loading it as a flat JPEG: {e.Message}");
+                    }
+                }
+                if (tex == null)
+                {
+                    tex = new Texture2D(2, 2, TextureFormat.RGB24, false);
+                    if (!tex.LoadImage(fileData))
+                    {
+                        Debug.LogError($"Failed to load skybox image: {path}");
+                        Destroy(tex);
+                        return;
+                    }
+                }
+            }
+
+            float aspectRatio = (float)tex.width / tex.height;
+            SetCustomSkybox(tex, aspectRatio);
+        }
+
+        internal static byte[] ReadSkyboxBytes(
+            IUserStorageBackend backend, string relativePath, string localPath)
+        {
+            // TODO: Establish a skybox memory policy covering all formats and storage modes,
+            // accounting for both file buffering and decoded texture allocations. Encoded file
+            // size alone does not bound texture memory. Keep file-size acceptance consistent
+            // across SAF and local storage; the existing decoder dimension checks still apply.
+            if (File.Exists(localPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return File.ReadAllBytes(localPath);
+            }
+
+            StorageDocument document = OpenBrushStorage.ResolveMediaDocument(
+                backend, StorageArea.MediaLibraryBackgroundImages, relativePath);
+            using (Stream source = backend.OpenRead(
+                       document.DocumentId, false, System.Threading.CancellationToken.None))
+            using (var bytes = new MemoryStream())
+            {
+                source.CopyTo(bytes);
+                return bytes.ToArray();
             }
         }
 
         private IEnumerator LoadCustomHdrSkybox(
-            string path, string filename, int loadVersion)
+            string path, string filename, int loadVersion, byte[] encodedImage)
         {
             int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
             int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
             var reader = new Future<HdrTextureLoader.DecodedImage>(
                 () => HdrTextureLoader.Decode(
-                    File.ReadAllBytes(path), path, maxDimension, resizeDimension),
+                    encodedImage ?? File.ReadAllBytes(path),
+                    path, maxDimension, resizeDimension),
                 longRunning: true);
             HdrTextureLoader.DecodedImage decoded = null;
             Exception decodeError = null;
@@ -320,7 +378,10 @@ namespace TiltBrush
             try
             {
                 texture = HdrTextureLoader.CreateTexture(decoded);
-                ImageCache.SaveImageCache(texture, path);
+                if (encodedImage == null)
+                {
+                    ImageCache.SaveImageCache(texture, path);
+                }
                 float aspectRatio = (float)texture.width / texture.height;
                 SetCustomSkybox(texture, aspectRatio);
                 texture = null;

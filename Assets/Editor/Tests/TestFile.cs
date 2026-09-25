@@ -13,7 +13,11 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 using NUnit.Framework;
 
@@ -22,6 +26,265 @@ namespace TiltBrush
 
     internal class TestFile
     {
+        private sealed class MemoryReadStreamSource : IReopenableReadStream
+        {
+            private readonly byte[] m_Data;
+
+            public MemoryReadStreamSource(byte[] data)
+            {
+                m_Data = data;
+            }
+
+            public Stream Open()
+            {
+                return new MemoryStream(m_Data, writable: false);
+            }
+        }
+
+        private sealed class FakeSafBackend : IUserStorageBackend
+        {
+            private sealed class Entry
+            {
+                public StorageDocumentId Id;
+                public string Name;
+                public byte[] Data;
+            }
+
+            private readonly Dictionary<StorageDocumentId, Entry> m_Entries =
+                new Dictionary<StorageDocumentId, Entry>();
+            public int CommitCount { get; private set; }
+            public int FailCommitNumber { get; set; }
+            public string RootAfterFirstCommit { get; set; }
+            public string RootAfterFirstRead { get; set; }
+            public StorageResultCode? ListFailureCode { get; set; }
+            public DateTime DocumentLastModified { get; set; } = DateTime.UtcNow;
+            public byte[] CreateBeforeNextWriteData { get; set; }
+            public int ReadCount { get; private set; }
+            public string LastListedDirectory { get; private set; }
+            public StorageArea LastListedArea { get; private set; }
+            public List<string> CommittedNames { get; } = new List<string>();
+
+            private sealed class WriteTransaction : IStorageWriteTransaction
+            {
+                private readonly FakeSafBackend m_Backend;
+                private readonly string m_Name;
+                private readonly MemoryStream m_Stream = new MemoryStream();
+                private bool m_Finished;
+
+                public StorageDocumentId TargetDocumentId { get; private set; }
+                public StorageDocumentId TemporaryDocumentId { get; } =
+                    new StorageDocumentId(Guid.NewGuid().ToString("N"));
+
+                public WriteTransaction(FakeSafBackend backend, string relativePath)
+                {
+                    m_Backend = backend;
+                    m_Name = Path.GetFileName(relativePath);
+                    TargetDocumentId = backend.Find(m_Name)?.Id ?? default;
+                }
+
+                public Stream OpenWrite()
+                {
+                    return m_Stream;
+                }
+
+                public StorageMutationResult Commit()
+                {
+                    int commitNumber = m_Backend.CommitCount + 1;
+                    if (m_Backend.FailCommitNumber == commitNumber)
+                    {
+                        m_Finished = true;
+                        return new StorageMutationResult(
+                            StorageResultCode.Failed,
+                            TargetDocumentId,
+                            "Injected publication failure.");
+                    }
+                    TargetDocumentId = m_Backend.AddOrReplace(m_Name, m_Stream.ToArray());
+                    m_Backend.CommitCount = commitNumber;
+                    m_Backend.CommittedNames.Add(m_Name);
+                    if (m_Backend.RootAfterFirstCommit != null &&
+                        commitNumber == 1)
+                    {
+                        m_Backend.RootIdentity = m_Backend.RootAfterFirstCommit;
+                    }
+                    m_Finished = true;
+                    return new StorageMutationResult(
+                        StorageResultCode.Success, TargetDocumentId);
+                }
+
+                public void Rollback()
+                {
+                    m_Finished = true;
+                }
+
+                public void Dispose()
+                {
+                    if (!m_Finished)
+                    {
+                        Rollback();
+                    }
+                    m_Stream.Dispose();
+                }
+            }
+
+            public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
+            public bool IsReady => true;
+            public string RootIdentity { get; set; } = $"fake-root-{Guid.NewGuid():N}";
+
+            public StorageDocumentId Add(string name, byte[] data)
+            {
+                var entry = new Entry
+                {
+                    Id = new StorageDocumentId(Guid.NewGuid().ToString("N")),
+                    Name = name,
+                    Data = data,
+                };
+                m_Entries.Add(entry.Id, entry);
+                return entry.Id;
+            }
+
+            private StorageDocumentId AddOrReplace(string name, byte[] data)
+            {
+                foreach (Entry entry in m_Entries.Values)
+                {
+                    if (entry.Name == name)
+                    {
+                        entry.Data = data;
+                        return entry.Id;
+                    }
+                }
+                return Add(name, data);
+            }
+
+            private Entry Find(string name)
+            {
+                return m_Entries.Values.FirstOrDefault(
+                    entry => string.Equals(
+                        entry.Name, name, StringComparison.OrdinalIgnoreCase));
+            }
+
+            public StorageDocumentId Replace(string name, byte[] data)
+            {
+                return AddOrReplace(name, data);
+            }
+
+            public bool Contains(string name)
+            {
+                foreach (Entry entry in m_Entries.Values)
+                {
+                    if (entry.Name == name)
+                    {
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            public StorageDirectoryResult List(
+                StorageArea area, string relativeDirectory, CancellationToken cancellationToken)
+            {
+                LastListedDirectory = relativeDirectory;
+                LastListedArea = area;
+                if (ListFailureCode.HasValue)
+                {
+                    return StorageDirectoryResult.Failed(
+                        ListFailureCode.Value, "Injected directory query failure.");
+                }
+                var documents = new List<StorageDocument>();
+                foreach (Entry entry in m_Entries.Values)
+                {
+                    documents.Add(new StorageDocument(
+                        entry.Id,
+                        default,
+                        entry.Name,
+                        TiltFile.TILT_MIME_TYPE,
+                        false,
+                        entry.Data.Length,
+                        DocumentLastModified,
+                        0,
+                        entry.Name));
+                }
+                return StorageDirectoryResult.Succeeded(documents);
+            }
+
+            public StorageTreeResult EnumerateTree(
+                StorageArea area,
+                string relativeDirectory,
+                StorageTreeQuery query,
+                CancellationToken cancellationToken)
+            {
+                return StorageTreeEnumerator.Enumerate(
+                    this, area, relativeDirectory, query, cancellationToken);
+            }
+
+            public Stream OpenRead(
+                StorageArea area,
+                string relativePath,
+                bool requireSeekable,
+                CancellationToken cancellationToken)
+            {
+                throw new NotSupportedException();
+            }
+
+            public bool Exists(StorageArea area, string relativePath) => false;
+
+            public Stream OpenRead(
+                StorageDocumentId documentId,
+                bool requireSeekable,
+                CancellationToken cancellationToken)
+            {
+                byte[] data = m_Entries[documentId].Data;
+                ++ReadCount;
+                if (ReadCount == 1 && RootAfterFirstRead != null)
+                {
+                    RootIdentity = RootAfterFirstRead;
+                }
+                return new MemoryStream(data, writable: false);
+            }
+
+            public IStorageWriteTransaction BeginWrite(
+                StorageArea area,
+                string relativePath,
+                string mimeType,
+                CancellationToken cancellationToken,
+                StorageDocumentId targetDocumentId = default)
+            {
+                if (CreateBeforeNextWriteData != null)
+                {
+                    AddOrReplace(
+                        Path.GetFileName(relativePath), CreateBeforeNextWriteData);
+                    CreateBeforeNextWriteData = null;
+                }
+                return new WriteTransaction(this, relativePath);
+            }
+
+            public StorageMutationResult Rename(
+                StorageDocumentId documentId,
+                string newDisplayName,
+                CancellationToken cancellationToken)
+            {
+                foreach (Entry candidate in m_Entries.Values)
+                {
+                    if (candidate.Name == newDisplayName)
+                    {
+                        return new StorageMutationResult(
+                            StorageResultCode.Failed, documentId, "Name already exists.");
+                    }
+                }
+                m_Entries[documentId].Name = newDisplayName;
+                return new StorageMutationResult(StorageResultCode.Success, documentId);
+            }
+
+            public StorageMutationResult Delete(
+                StorageDocumentId documentId, CancellationToken cancellationToken)
+            {
+                return m_Entries.Remove(documentId)
+                    ? new StorageMutationResult(StorageResultCode.Success, documentId)
+                    : new StorageMutationResult(StorageResultCode.NotFound, documentId);
+            }
+
+
+        }
+
         private Stream GetReadStream(string zipfile, string subfile, bool useSharpZipLib)
         {
             if (useSharpZipLib)
@@ -31,6 +294,60 @@ namespace TiltBrush
             else
             {
                 return new ZipSubfileReader_DotNetZip(zipfile, subfile);
+            }
+        }
+
+        [TestCase("shared")]
+        [TestCase("missing")]
+        [TestCase("provider-failure")]
+        [TestCase("root-changed")]
+        public void SharedConfig_PreservesFilesAndFallsBackSafely(string scenario)
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-config-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(root);
+            string localPath = Path.Combine(root, "Open Brush.cfg");
+            const string localText = "{\"local\":true}";
+            const string sharedText = "{\"custom\":true}";
+            try
+            {
+                File.WriteAllText(localPath, localText);
+                var backend = new FakeSafBackend();
+                StorageDocumentId sharedId = default;
+                if (scenario != "missing")
+                {
+                    sharedId = backend.Add("Open Brush.cfg", System.Text.Encoding.UTF8.GetBytes(sharedText));
+                }
+                if (scenario == "provider-failure")
+                {
+                    backend.ListFailureCode = StorageResultCode.ProviderUnavailable;
+                }
+                if (scenario == "root-changed")
+                {
+                    backend.RootAfterFirstRead = "different-root";
+                }
+                int errors = 0;
+                string result = SharedUserConfig.ReadText(backend, localPath, _ => ++errors);
+                Assert.AreEqual(scenario == "shared" ? sharedText : localText, result);
+                Assert.AreEqual(scenario == "provider-failure" || scenario == "root-changed" ? 1 : 0, errors);
+                Assert.AreEqual(localText, File.ReadAllText(localPath));
+                Assert.AreEqual(0, backend.CommitCount);
+                if (sharedId.IsValid)
+                {
+                    using (var reader = new StreamReader(backend.OpenRead(sharedId, false, CancellationToken.None)))
+                    {
+                        Assert.AreEqual(sharedText, reader.ReadToEnd());
+                    }
+                }
+                File.Delete(localPath);
+                if (scenario == "missing")
+                {
+                    Assert.IsNull(SharedUserConfig.ReadText(backend, localPath, null));
+                }
+            }
+            finally
+            {
+                if (File.Exists(localPath)) File.Delete(localPath);
+                Directory.Delete(root);
             }
         }
 
@@ -126,6 +443,1451 @@ namespace TiltBrush
                 WriteBuf(bw, b5000);
 
                 Assert.AreEqual(astr.ToArray(), bstr.ToArray());
+            }
+        }
+
+        [Test]
+        public void TiltArchiveWriter_WritesReadableStreamArchive()
+        {
+            byte[] expected = { 1, 2, 3, 4, 5 };
+            byte[] archive;
+            using (var output = new MemoryStream())
+            {
+                using (var writer = new TiltFile.ArchiveWriter(
+                    output, ownsOutputStream: false))
+                {
+                    using (Stream entry = writer.GetWriteStream(TiltFile.FN_SKETCH))
+                    {
+                        entry.Write(expected, 0, expected.Length);
+                    }
+                    writer.Complete();
+                }
+
+                Assert.IsTrue(output.CanWrite);
+                archive = output.ToArray();
+            }
+
+            using (var archiveStream = new MemoryStream(archive, writable: false))
+            {
+                Assert.IsTrue(TiltFile.IsHeaderValid(archiveStream));
+            }
+
+            using (var reader = new ZipSubfileReader_SharpZipLib(
+                new MemoryStream(archive, writable: false), TiltFile.FN_SKETCH))
+            using (var copy = new MemoryStream())
+            {
+                reader.CopyTo(copy);
+                Assert.AreEqual(expected, copy.ToArray());
+            }
+        }
+
+        [Test]
+        public void TiltArchiveValidation_RejectsTruncatedArchive()
+        {
+            byte[] archive = CreateMinimalTiltArchive();
+            Array.Resize(ref archive, archive.Length - 8);
+            using (var stream = new MemoryStream(archive, writable: false))
+            {
+                Assert.IsFalse(TiltFile.IsArchiveValid(stream, testData: true));
+            }
+        }
+
+        [Test]
+        public void TiltFile_ReadsEntriesFromReopenableStream()
+        {
+            byte[] expected = { 9, 8, 7 };
+            byte[] archive;
+            using (var output = new MemoryStream())
+            {
+                using (var writer = new TiltFile.ArchiveWriter(
+                    output, ownsOutputStream: false))
+                using (Stream entry = writer.GetWriteStream(TiltFile.FN_THUMBNAIL))
+                {
+                    entry.Write(expected, 0, expected.Length);
+                }
+                archive = output.ToArray();
+            }
+
+            var tiltFile = new TiltFile(new MemoryReadStreamSource(archive), "memory.tilt");
+            Assert.IsTrue(tiltFile.IsHeaderValid());
+            using (Stream reader = tiltFile.GetReadStream(TiltFile.FN_THUMBNAIL))
+            using (var copy = new MemoryStream())
+            {
+                Assert.IsNotNull(reader);
+                reader.CopyTo(copy);
+                Assert.AreEqual(expected, copy.ToArray());
+            }
+        }
+
+        [Test]
+        public void LocalStorageBackend_ListsAndMutatesByDocumentIdentity()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-storage-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(root);
+            try
+            {
+                var backend = new LocalUserStorageBackend(_ => root);
+                using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                    StorageArea.Sketches,
+                    "one.tilt",
+                    TiltFile.TILT_MIME_TYPE,
+                    CancellationToken.None))
+                {
+                    using (Stream stream = transaction.OpenWrite())
+                    {
+                        stream.WriteByte(42);
+                    }
+                    Assert.IsTrue(transaction.Commit().Success);
+                }
+
+                StorageDirectoryResult listing = backend.List(
+                    StorageArea.Sketches, "", CancellationToken.None);
+                Assert.IsTrue(listing.Success);
+                Assert.AreEqual(1, listing.Documents.Count);
+                StorageDocument document = listing.Documents[0];
+                Assert.AreEqual("one.tilt", document.DisplayName);
+                using (Stream stream = backend.OpenRead(
+                    document.DocumentId, requireSeekable: true, CancellationToken.None))
+                {
+                    Assert.AreEqual(42, stream.ReadByte());
+                }
+
+                StorageMutationResult renamed = backend.Rename(
+                    document.DocumentId, "two.tilt", CancellationToken.None);
+                Assert.IsTrue(renamed.Success);
+                Assert.IsTrue(backend.Delete(renamed.DocumentId, CancellationToken.None).Success);
+                Assert.AreEqual(0, backend.List(
+                    StorageArea.Sketches, "", CancellationToken.None).Documents.Count);
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [Test]
+        public void LocalStorageBackend_RejectsPathsOutsideLogicalArea()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-storage-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(root);
+            try
+            {
+                var backend = new LocalUserStorageBackend(_ => root);
+                Assert.Throws<ArgumentException>(() => backend.BeginWrite(
+                    StorageArea.Sketches,
+                    Path.Combine("..", "outside.tilt"),
+                    TiltFile.TILT_MIME_TYPE,
+                    CancellationToken.None));
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
+        [Test]
+        public void StorageDocument_ReportsSafMutationCapabilities()
+        {
+            const long supportsWrite = 1L << 1;
+            const long supportsDelete = 1L << 2;
+            const long supportsRename = 1L << 6;
+            const long supportsRemove = 1L << 10;
+            var document = new StorageDocument(
+                new StorageDocumentId("opaque"),
+                new StorageDocumentId("parent"),
+                "test.tilt",
+                TiltFile.TILT_MIME_TYPE,
+                false,
+                1,
+                DateTime.Now,
+                supportsWrite | supportsDelete | supportsRename | supportsRemove,
+                "test.tilt");
+
+            Assert.IsTrue(document.SupportsWrite);
+            Assert.IsTrue(document.SupportsDelete);
+            Assert.IsTrue(document.SupportsRename);
+            Assert.IsTrue(document.SupportsRemove);
+        }
+
+
+
+        [Test]
+        public void SafCaptureReservation_AccountsForSharedBundlesAndPendingCaptures()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("Sketch_00.png", new byte[] { 1 });
+            backend.Add("Sketch_01_depth.exr", new byte[] { 1 });
+            backend.Add("Sketch_02_frames", new byte[] { 1 });
+            string Reserve() => OpenBrushStorage.ReserveCaptureName(backend, StorageArea.Snapshots,
+                "", "Sketch_{0:00}.png", name => name == "Sketch_03.png");
+            Assert.AreEqual("Sketch_04.png", Reserve());
+            Assert.AreEqual("Sketch_05.png", Reserve()); // No staging payload is needed to retain a reservation.
+            backend.RootIdentity = $"other-root-{Guid.NewGuid():N}";
+            Assert.AreEqual("Sketch_04.png", Reserve());
+        }
+
+        [TestCase(3)]
+        [TestCase(20 * 1024 * 1024 + 1)]
+        public void SafSkybox_ReadsSharedBytesWithoutMaterializationCache(int byteCount)
+        {
+            var backend = new FakeSafBackend();
+            var expected = new byte[byteCount];
+            expected[0] = 4;
+            expected[byteCount - 1] = 6;
+            backend.Add("sky.png", expected);
+            string missingCache = Path.Combine(Path.GetTempPath(), $"missing-skybox-{Guid.NewGuid():N}.png");
+            byte[] actual = SceneSettings.ReadSkyboxBytes(backend, "Nested/sky.png", missingCache);
+            Assert.IsTrue(expected.SequenceEqual(actual));
+            Assert.IsFalse(File.Exists(missingCache));
+            Assert.Throws<ArgumentException>(() =>
+                OpenBrushStorage.ResolveMediaDocument(backend, StorageArea.MediaLibraryBackgroundImages, "../sky.png"));
+        }
+
+        [TestCase(StorageArea.MediaLibraryImages)]
+        [TestCase(StorageArea.MediaLibraryVideos)]
+        [TestCase(StorageArea.MediaLibraryModels)]
+        public void SafFilenameImport_ResolvesUnscannedDirectoriesAndGuardsRootChanges(
+            StorageArea area)
+        {
+            var backend = new FakeSafBackend();
+            StorageDocumentId id = backend.Add("asset.bin", new byte[] { 7 });
+            var source = new OpenBrushStorage.MediaSource(backend, area, "Nested/asset.bin");
+            Assert.AreEqual("Nested", backend.LastListedDirectory);
+            Assert.AreEqual(area, backend.LastListedArea);
+            Assert.AreEqual(id, source.Document.DocumentId);
+            using (Stream input = source.OpenRead()) { Assert.AreEqual(7, input.ReadByte()); }
+            backend.RootIdentity = "different-root";
+            Assert.Throws<IOException>(() => source.OpenRead());
+        }
+
+        private static void SetModelCatalogField(ModelCatalog catalog, string name, object value)
+        {
+            typeof(ModelCatalog).GetField(name,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+                .SetValue(catalog, value);
+        }
+
+        [TestCase("success")]
+        [TestCase("cleared")]
+        [TestCase("not_found")]
+        [TestCase("superseded")]
+        public async Task SafModelRestore_WaitsForIndexAndRejectsStaleResults(string outcome)
+        {
+            IUserStorageBackend previousBackend = UserStorage.Backend;
+            var backend = new FakeSafBackend();
+            var owner = new GameObject("SafModelRestoreTest");
+            owner.SetActive(false); // Do not run catalog Awake/App initialization.
+            try
+            {
+                var catalog = owner.AddComponent<ModelCatalog>();
+                catalog.m_ModelsByRelativePath = new Dictionary<string, Model>();
+                SetModelCatalogField(catalog, "m_MissingModelsByRelativePath", new Dictionary<string, TrTransform[]>());
+                SetModelCatalogField(catalog, "m_MissingNormalizedModelsByRelativePath", new Dictionary<string, TrTransform[]>());
+                SetModelCatalogField(catalog, "m_CurrentModelsDirectory", "unrelated-panel-folder");
+                SetModelCatalogField(catalog, "m_SafScanInProgress", true);
+                SetModelCatalogField(catalog, "m_SafCatalogScanned", true);
+                var scan = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                SetModelCatalogField(catalog, "m_SafScanCompletion", scan);
+                UserStorage.SetBackendForTests(backend);
+                Task<Model> lookup = catalog.GetModelAsync("Nested/model.obj");
+                Assert.IsFalse(lookup.IsCompleted);
+                if (outcome == "superseded")
+                {
+                    var replacement = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                    SetModelCatalogField(catalog, "m_SafScanCompletion", replacement);
+                    scan.SetResult(false);
+                    // Let the lookup observe the first completion; it must still await replacement.
+                    await Task.Yield();
+                    Assert.IsFalse(lookup.IsCompleted);
+                    scan = replacement;
+                }
+                var model = new Model("Nested/model.obj");
+                if (outcome != "not_found") catalog.m_ModelsByRelativePath.Add("Nested/model.obj", model);
+                if (outcome == "cleared") catalog.ClearMissingModels();
+                SetModelCatalogField(catalog, "m_SafScanInProgress", false);
+                scan.SetResult(outcome != "not_found");
+                Model result = await lookup;
+                if (outcome == "success" || outcome == "superseded") Assert.AreSame(model, result);
+                else Assert.IsNull(result);
+                Assert.AreEqual("unrelated-panel-folder", catalog.CurrentModelsDirectory);
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previousBackend);
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void ModelRestore_RetainsCompleteMissingMetadataAndInvalidatesOldLoads()
+        {
+            IUserStorageBackend previousBackend = UserStorage.Backend;
+            var backend = new FakeSafBackend();
+            var owner = new GameObject("ModelRestoreMetadataTest");
+            owner.SetActive(false);
+            try
+            {
+                var catalog = owner.AddComponent<ModelCatalog>();
+                UserStorage.SetBackendForTests(backend);
+                SetModelCatalogField(catalog, "m_MissingModelsByRelativePath", new Dictionary<string, TrTransform[]>());
+                SetModelCatalogField(catalog, "m_MissingNormalizedModelsByRelativePath", new Dictionary<string, TrTransform[]>());
+                var data = new TiltModels75
+                {
+                    FilePath = "Nested/model.obj", RawTransforms = new[] { TrTransform.identity },
+                    Subtrees = new[] { "part" }, PinStates = new[] { false }, LayerIds = new[] { 2 },
+                    GroupIds = new uint[] { 3 }, SplitMeshPaths = new List<string> { "split" }
+                };
+                catalog.AddMissingModel(data);
+                Assert.AreSame(data, catalog.MissingModels.Single());
+                Func<bool> current = catalog.CaptureModelRestoreValidation();
+                Func<bool> sceneCurrent = catalog.CaptureModelRestoreSceneValidation();
+                Assert.IsTrue(current());
+                // The root no longer changes under a run, so validation turns on the catalog
+                // generation and the backend instance rather than on the selected folder.
+                Assert.IsTrue(sceneCurrent(), "A source change must not discard pending scene metadata.");
+                Assert.AreSame(data, catalog.MissingModels.Single());
+                catalog.ClearMissingModels();
+                Assert.IsFalse(current());
+                Assert.IsFalse(sceneCurrent());
+                Assert.IsEmpty(catalog.MissingModels);
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previousBackend);
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [TestCase("/sdcard/Blocks/OfflineModels")]
+        [TestCase("/sdcard/Documents/Blocks/OfflineModels")]
+        [TestCase("/Users/example/Documents/Blocks/OfflineModels")]
+        public void BlocksDirectory_ConvertsPathsFromActualRoot(string root)
+        {
+            Assert.AreEqual("project/model.obj", WidgetManager.GetBlocksModelSubpath(
+                $"{root}/project/model.obj", root));
+            Assert.AreEqual("project/model.obj", WidgetManager.GetBlocksModelSubpath(
+                $"{root}/project/../project/model.obj", $"{root}/"));
+            Assert.AreEqual("", WidgetManager.GetBlocksModelSubpath(root, root));
+            Assert.IsNull(WidgetManager.GetBlocksModelSubpath($"{root}-other/model.obj", root));
+            Assert.IsNull(WidgetManager.GetBlocksModelSubpath($"{root}/../outside/model.obj", root));
+        }
+
+        [Test]
+        public void BlocksDirectory_RejectsUnrootedModelPath()
+        {
+            Assert.Throws<ArgumentException>(() =>
+                WidgetManager.GetBlocksModelSubpath("project/model.obj", "/sdcard/Blocks/OfflineModels"));
+        }
+
+        [TestCase(false, "/sdcard/Blocks/OfflineModels")]
+        [TestCase(true, "/sdcard/Documents/Blocks/OfflineModels")]
+        public void BlocksDirectory_AndroidRootIsIndependentOfPrivateUserCache(
+            bool runningUnderLepton, string expected)
+        {
+            foreach (string userPath in new[] { "/sdcard/Open Brush",
+                         "/private/OpenBrushWorkingCache/Open Brush" })
+            {
+                Assert.AreEqual(expected, App.GetBlocksModelLibraryPath(
+                    userPath, true, runningUnderLepton).Replace('\\', '/'));
+            }
+        }
+
+        [Test]
+        public void BlocksDirectory_DesktopKeepsTheSharedSiblingLocation()
+        {
+            string documents = Path.Combine(Path.GetTempPath(), "Documents");
+            Assert.AreEqual(Path.Combine(documents, "Blocks", "OfflineModels"),
+                App.GetBlocksModelLibraryPath(Path.Combine(documents, "Open Brush"), false, false));
+        }
+
+        [Test]
+        public void BlocksDirectory_WatchesExistingSourceWithoutCreatingIt()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-blocks-test-{Guid.NewGuid():N}");
+            string models = Path.Combine(root, "Open Brush", "Media Library", "Models");
+            string blocks = Path.Combine(root, "Blocks", "OfflineModels");
+            try
+            {
+                Assert.IsFalse(ModelCatalog.PrepareModelWatchDirectory(blocks, models));
+                Assert.IsFalse(Directory.Exists(root), "An absent Blocks tree must not be created.");
+                Assert.IsTrue(ModelCatalog.PrepareModelWatchDirectory(models, models));
+                Assert.IsTrue(Directory.Exists(models));
+                Directory.CreateDirectory(blocks);
+                Assert.IsTrue(ModelCatalog.PrepareModelWatchDirectory(blocks, models));
+            }
+            finally
+            {
+                if (Directory.Exists(root)) { Directory.Delete(root, recursive: true); }
+            }
+        }
+
+
+        [Test]
+        public void SafMediaIdentity_ChangesWithMetadataButNotRepeatedLookups()
+        {
+            var backend = new FakeSafBackend();
+            StorageDocumentId id = backend.Add("image.png", new byte[] { 1 });
+            string Identity() => new OpenBrushStorage.MediaSource(
+                backend, StorageArea.MediaLibraryImages, "image.png").Identity;
+            string original = Identity();
+            Assert.AreEqual(original, Identity());
+            Assert.AreEqual(id, backend.Replace("image.png", new byte[] { 1, 2 }));
+            string resized = Identity();
+            Assert.AreNotEqual(original, resized);
+            Assert.AreEqual(id, backend.Replace("image.png", new byte[] { 3, 4 }));
+            backend.DocumentLastModified = backend.DocumentLastModified.AddSeconds(1);
+            Assert.AreNotEqual(resized, Identity());
+            Assert.AreEqual(Identity(), Identity());
+        }
+
+        [Test]
+        public void VideoRestore_ResolvesSafPathsLazilyWithoutUsingOldCacheFiles()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-saf-video-restore-{Guid.NewGuid():N}");
+            var backend = new FakeSafBackend();
+            backend.Add("first.mp4", new byte[] { 1 });
+            backend.Add("second.mp4", new byte[] { 2 });
+            var first = VideoCatalog.ResolveVideoByPersistentPath(backend, root, "A/first.mp4", new[] { ".mp4" });
+            Assert.IsNotNull(first);
+            Assert.AreEqual("A", backend.LastListedDirectory);
+            Assert.AreEqual(StorageArea.MediaLibraryVideos, backend.LastListedArea);
+            var second = VideoCatalog.ResolveVideoByPersistentPath(backend, root, "B/second.mp4", new[] { ".mp4" });
+            Assert.IsNotNull(second);
+            Assert.AreEqual("B", backend.LastListedDirectory);
+            Assert.AreEqual("A/first.mp4", first.PersistentPath);
+            Assert.AreEqual("B/second.mp4", second.PersistentPath);
+            Assert.IsFalse(first.IsInitialized);
+            Assert.AreEqual(0, backend.ReadCount);
+
+            Directory.CreateDirectory(root);
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "stale.mp4"), "old local cache");
+                Assert.IsNull(VideoCatalog.ResolveVideoByPersistentPath(backend, root, "stale.mp4", new[] { ".mp4" }));
+                backend.ListFailureCode = StorageResultCode.PermissionDenied;
+                Assert.IsNull(VideoCatalog.ResolveVideoByPersistentPath(backend, root, "A/first.mp4", new[] { ".mp4" }));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [TestCase("subdir/image.png")]
+        [TestCase("import-123/image.png")]
+        public void SafSavedImage_ResolvesOutsideTheActiveDirectory(string relativePath)
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("image.png", new byte[] { 7 });
+            ReferenceImage image = ReferenceImageCatalog.ResolveSafImage(
+                backend, StorageArea.MediaLibraryImages, relativePath);
+            Assert.IsNotNull(image);
+            Assert.AreEqual($"./{relativePath}", image.RelativePath);
+            Assert.AreEqual(Path.GetDirectoryName(relativePath), backend.LastListedDirectory);
+            Assert.AreEqual(StorageArea.MediaLibraryImages, backend.LastListedArea);
+            Assert.AreEqual(0, backend.ReadCount, "Resolving a saved image must not eagerly read its pixels.");
+        }
+
+        [TestCase("subdir/missing.png")]
+        [TestCase("../image.png")]
+        public void SafSavedImage_MissingOrInvalidPathsRemainMissing(string relativePath)
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("image.png", new byte[] { 7 });
+            Assert.IsNull(ReferenceImageCatalog.ResolveSafImage(
+                backend, StorageArea.MediaLibraryImages, relativePath));
+        }
+
+        [Test]
+        public void SafImports_AvoidSharedAndLocalNames()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("Picture.png", new byte[] { 1 });
+            backend.Add("Picture (1).png", new byte[] { 2 });
+            Assert.AreEqual("Picture (3).png", OpenBrushStorage.GetUniqueImportPath(
+                backend, StorageArea.MediaLibraryImages, "Picture.png",
+                name => name == "Picture (2).png"));
+            Assert.IsTrue(backend.Contains("Picture.png"));
+        }
+
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        [TestCase(true, true)]
+        public void SafImports_ReturnPublishedNameAndMatchingLocalBytes(bool collision, bool failCommit)
+        {
+            string stagingRoot = Path.Combine(
+                Path.GetTempPath(), $"open-brush-import-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(stagingRoot);
+            string stagedPath = Path.Combine(stagingRoot, "Picture.png");
+            byte[] importedBytes = { 3, 4, 5 };
+            File.WriteAllBytes(stagedPath, importedBytes);
+            var backend = new FakeSafBackend { FailCommitNumber = failCommit ? 1 : 0 };
+            StorageDocumentId originalId = default;
+            if (collision)
+            {
+                originalId = backend.Add("Picture.png", new byte[] { 1 });
+                File.WriteAllBytes(Path.Combine(stagingRoot, "Picture (1).png"), new byte[] { 2 });
+            }
+            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(
+                    backend, StorageArea.MediaLibraryImages, "Picture.png", stagedPath,
+                    prepareLocalImport: true, out string publishedPath);
+                Assert.AreEqual(!failCommit, result.Success, result.Error);
+                if (failCommit)
+                {
+                    Assert.IsNull(publishedPath);
+                }
+                else
+                {
+                    string expectedName = collision ? "Picture (2).png" : "Picture.png";
+                    Assert.AreEqual(Path.Combine(stagingRoot, expectedName), publishedPath);
+                    CollectionAssert.AreEqual(importedBytes, File.ReadAllBytes(publishedPath));
+                    CollectionAssert.Contains(backend.CommittedNames, expectedName);
+                }
+                CollectionAssert.AreEqual(importedBytes, File.ReadAllBytes(stagedPath));
+                if (collision)
+                {
+                    CollectionAssert.AreEqual(new byte[] { 2 },
+                        File.ReadAllBytes(Path.Combine(stagingRoot, "Picture (1).png")));
+                    using Stream original = backend.OpenRead(
+                        originalId, false, CancellationToken.None);
+                    Assert.AreEqual(1, original.ReadByte());
+                }
+            }
+            finally
+            {
+                Directory.Delete(stagingRoot, true);
+                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafReviewImport_NeverRenamesAnAlreadyReturnedWidgetPath(bool collision)
+        {
+            string stagingRoot = Path.Combine(Path.GetTempPath(), $"saf-import-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(stagingRoot);
+            string stagedPath = Path.Combine(stagingRoot, "image.png");
+            File.WriteAllBytes(stagedPath, new byte[] { 2 });
+            var backend = new FakeSafBackend();
+            StorageDocumentId original = default;
+            if (collision) { original = backend.Add("image.png", new byte[] { 1 }); }
+            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(backend,
+                    StorageArea.MediaLibraryImages, "image.png", stagedPath,
+                    prepareLocalImport: false, out _, preserveDestination: true);
+                Assert.AreEqual(!collision, result.Success);
+                Assert.IsFalse(backend.Contains("image (1).png"));
+                Assert.IsTrue(File.Exists(stagedPath));
+                Assert.AreEqual(collision ? 0 : 1, backend.CommitCount);
+                if (collision)
+                {
+                    using Stream input = backend.OpenRead(original, false, CancellationToken.None);
+                    Assert.AreEqual(1, input.ReadByte());
+                }
+                else { CollectionAssert.Contains(backend.CommittedNames, "image.png"); }
+            }
+            finally
+            {
+                Directory.Delete(stagingRoot, true);
+                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
+            }
+        }
+
+        [Test]
+        public void SafApiImportReplacement_PreservesNameAndReplacesBytes()
+        {
+            string stagingRoot = Path.Combine(
+                Path.GetTempPath(), $"saf-import-replacement-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(stagingRoot);
+            string stagedPath = Path.Combine(stagingRoot, "image.png");
+            File.WriteAllBytes(stagedPath, new byte[] { 2 });
+            var backend = new FakeSafBackend();
+            backend.Add("image.png", new byte[] { 1 });
+            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(
+                    backend,
+                    StorageArea.MediaLibraryImages,
+                    "image.png",
+                    stagedPath,
+                    prepareLocalImport: false,
+                    out _,
+                    replaceDestination: true);
+
+                Assert.IsTrue(result.Success, result.Error);
+                Assert.IsFalse(backend.Contains("image (1).png"));
+                using Stream input = backend.OpenRead(
+                    backend.List(StorageArea.MediaLibraryImages, "", CancellationToken.None)
+                        .Documents.Single(document => document.DisplayName == "image.png").DocumentId,
+                    false,
+                    CancellationToken.None);
+                Assert.AreEqual(2, input.ReadByte());
+            }
+            finally
+            {
+                Directory.Delete(stagingRoot, true);
+                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
+            }
+        }
+
+
+        [Test]
+        public void SafStagedOutputPublisher_CommitsWholeDirectory()
+        {
+            string stagingRoot = Path.Combine(
+                Path.GetTempPath(), $"open-brush-publication-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(Path.Combine(stagingRoot, "nested"));
+            File.WriteAllText(Path.Combine(stagingRoot, "one.txt"), "one");
+            File.WriteAllBytes(Path.Combine(stagingRoot, "nested", "two.bin"), new byte[] { 2 });
+            var backend = new FakeSafBackend();
+            string recoveryRoot =
+                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = SafStagedOutputPublisher.Publish(
+                    backend,
+                    StorageArea.Exports,
+                    "Test Export",
+                    stagingRoot,
+                    transactionOwnsPayload: false,
+                    CancellationToken.None);
+                Assert.IsTrue(result.Success, result.Error);
+                Assert.IsTrue(backend.Contains("one.txt"));
+                Assert.IsTrue(backend.Contains("two.bin"));
+                string publicationDirectory = Path.Combine(recoveryRoot, "publications");
+                Assert.IsFalse(Directory.Exists(publicationDirectory) &&
+                    Directory.GetFiles(publicationDirectory, "*.json").Length > 0);
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, true);
+                }
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
+        [Test]
+        public void SafStagedOutputPublisher_RejectsRootedDestination()
+        {
+            string stagedFile = Path.GetTempFileName();
+            try
+            {
+                var backend = new FakeSafBackend();
+                Assert.Throws<ArgumentException>(() =>
+                    SafStagedOutputPublisher.Publish(
+                        backend,
+                        StorageArea.Exports,
+                        Path.GetFullPath("outside.txt"),
+                        stagedFile,
+                        transactionOwnsPayload: false,
+                        CancellationToken.None));
+            }
+            finally
+            {
+                File.Delete(stagedFile);
+            }
+        }
+
+        [Test]
+        public void SafStagedOutputPublisher_RemovesCommittedOwnedPayload()
+        {
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"publication-test-{Guid.NewGuid():N}");
+            string stagedFile = Path.Combine(stagingRoot, "snapshot.png");
+            Directory.CreateDirectory(stagingRoot);
+            File.WriteAllBytes(stagedFile, new byte[] { 1, 2, 3 });
+            var backend = new FakeSafBackend();
+            string recoveryRoot =
+                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = SafStagedOutputPublisher.Publish(
+                    backend,
+                    StorageArea.Snapshots,
+                    "snapshot.png",
+                    stagedFile,
+                    transactionOwnsPayload: true,
+                    CancellationToken.None);
+                Assert.IsTrue(result.Success, result.Error);
+                Assert.IsFalse(File.Exists(stagedFile));
+                Assert.IsTrue(backend.Contains("snapshot.png"));
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, true);
+                }
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
+        [Test]
+        public void SafGeneratedBundles_ClaimSameNamedCapturesIndependently()
+        {
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"claim-test-{Guid.NewGuid():N}");
+            string canonical = Path.Combine(stagingRoot, "snapshot.png");
+            Directory.CreateDirectory(stagingRoot);
+            try
+            {
+                File.WriteAllText(canonical, "first");
+                List<SafStagedPath> first = OpenBrushStorage.ClaimGeneratedFilesForPublication(
+                    new[] { new SafStagedPath(canonical, "snapshot.png") });
+
+                File.WriteAllText(canonical, "second");
+                List<SafStagedPath> second = OpenBrushStorage.ClaimGeneratedFilesForPublication(
+                    new[] { new SafStagedPath(canonical, "snapshot.png") });
+
+                Assert.AreNotEqual(first[0].SourcePath, second[0].SourcePath);
+                Assert.AreEqual("snapshot.png", first[0].DestinationRelativePath);
+                Assert.AreEqual("snapshot.png", second[0].DestinationRelativePath);
+                Assert.AreEqual("first", File.ReadAllText(first[0].SourcePath));
+                Assert.AreEqual("second", File.ReadAllText(second[0].SourcePath));
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, recursive: true);
+                }
+            }
+        }
+
+        [Test]
+        public void SafGeneratedBundles_ClaimFrameDirectoryAndSidecar()
+        {
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"claim-frames-test-{Guid.NewGuid():N}");
+            string frameDirectory = Path.Combine(stagingRoot, "video_frames");
+            string metadataPath = Path.Combine(stagingRoot, "video_sequence.txt");
+            Directory.CreateDirectory(frameDirectory);
+            File.WriteAllText(Path.Combine(frameDirectory, "0001.png"), "frame");
+            File.WriteAllText(metadataPath, "metadata");
+            try
+            {
+                List<SafStagedPath> claimed = OpenBrushStorage.ClaimGeneratedFilesForPublication(
+                    new[]
+                    {
+                        new SafStagedPath(frameDirectory, "video_frames"),
+                        new SafStagedPath(metadataPath, "video_sequence.txt"),
+                    });
+                Assert.IsFalse(Directory.Exists(frameDirectory));
+                Assert.IsFalse(File.Exists(metadataPath));
+                Assert.AreEqual("frame", File.ReadAllText(
+                    Path.Combine(claimed[0].SourcePath, "0001.png")));
+                Assert.AreEqual("metadata", File.ReadAllText(claimed[1].SourcePath));
+                Assert.AreEqual("video_frames", claimed[0].DestinationRelativePath);
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, recursive: true);
+                }
+            }
+        }
+
+        [Test]
+        public void SafGeneratedBundles_RestoreFilesAndDirectoriesBeforeJournalHandoff()
+        {
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"restore-claim-test-{Guid.NewGuid():N}");
+            string frameDirectory = Path.Combine(stagingRoot, "video_frames");
+            string metadataPath = Path.Combine(stagingRoot, "video_sequence.txt");
+            Directory.CreateDirectory(frameDirectory);
+            File.WriteAllText(Path.Combine(frameDirectory, "0001.png"), "frame");
+            File.WriteAllText(metadataPath, "metadata");
+            try
+            {
+                var original = new[]
+                {
+                    new SafStagedPath(frameDirectory, "video_frames"),
+                    new SafStagedPath(metadataPath, "video_sequence.txt"),
+                };
+                List<SafStagedPath> claimed =
+                    OpenBrushStorage.ClaimGeneratedFilesForPublication(original);
+                Assert.IsNull(OpenBrushStorage.RestoreUnjournaledGeneratedFiles(
+                    original, claimed));
+                Assert.AreEqual("frame", File.ReadAllText(
+                    Path.Combine(frameDirectory, "0001.png")));
+                Assert.AreEqual("metadata", File.ReadAllText(metadataPath));
+                Assert.IsFalse(Directory.Exists(claimed[0].SourcePath));
+                Assert.IsFalse(File.Exists(claimed[1].SourcePath));
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, recursive: true);
+                }
+            }
+        }
+
+        [TestCase("unchanged")]
+        [TestCase("edited")]
+        [TestCase("deleted")]
+        public void SafPublicationRecovery_PreservesCompletedFiles(string change)
+        {
+            string stagingRoot = Path.Combine(Path.GetTempPath(), $"saf-recovery-test-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(stagingRoot);
+            string first = Path.Combine(stagingRoot, "first.txt");
+            string second = Path.Combine(stagingRoot, "second.txt");
+            File.WriteAllText(first, "original");
+            File.WriteAllText(second, "second");
+            var backend = new FakeSafBackend { FailCommitNumber = 2 };
+            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                Assert.IsFalse(SafStagedOutputPublisher.PublishBundle(backend, StorageArea.Exports,
+                    new[] { new SafStagedPath(first, "first.txt"), new SafStagedPath(second, "second.txt") },
+                    transactionOwnsPayload: false, CancellationToken.None).Success);
+                backend.FailCommitNumber = 0;
+                StorageDocument original = backend.List(StorageArea.Exports, "", CancellationToken.None)
+                    .Documents.Single(document => document.DisplayName == "first.txt");
+                if (change == "edited")
+                {
+                    using IStorageWriteTransaction edit = backend.BeginWrite(
+                        StorageArea.Exports, "first.txt", "text/plain", CancellationToken.None);
+                    using (var writer = new StreamWriter(edit.OpenWrite())) { writer.Write("user edit"); }
+                    Assert.IsTrue(edit.Commit().Success);
+                }
+                else if (change == "deleted")
+                {
+                    Assert.IsTrue(backend.Delete(original.DocumentId, CancellationToken.None).Success);
+                }
+                int commitsBeforeRecovery = backend.CommitCount;
+                SafRecoveryReport report = SafStagedOutputPublisher.RecoverAll(backend, CancellationToken.None);
+                Assert.AreEqual(change == "unchanged" ? 1 : 0, report.Recovered);
+                Assert.AreEqual(change == "unchanged" ? 0 : 1, report.Pending);
+                Assert.AreEqual(commitsBeforeRecovery + (change == "unchanged" ? 1 : 0), backend.CommitCount);
+                Assert.AreEqual(change == "unchanged", backend.Contains("second.txt"));
+                if (change == "deleted") { Assert.IsFalse(backend.Contains("first.txt")); }
+                else
+                {
+                    using var reader = new StreamReader(backend.OpenRead(original.DocumentId, false, CancellationToken.None));
+                    Assert.AreEqual(change == "edited" ? "user edit" : "original", reader.ReadToEnd());
+                }
+            }
+            finally
+            {
+                Directory.Delete(stagingRoot, true);
+                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
+            }
+        }
+
+        [Test]
+        public void SafStagedOutputPublisher_RetainsOwnedPayloadAfterFailure()
+        {
+            string stagingRoot = Path.Combine(
+                OpenBrushStorage.LocalStagingPath,
+                $"publication-test-{Guid.NewGuid():N}");
+            string stagedFile = Path.Combine(stagingRoot, "snapshot.png");
+            Directory.CreateDirectory(stagingRoot);
+            File.WriteAllBytes(stagedFile, new byte[] { 1, 2, 3 });
+            var backend = new FakeSafBackend { FailCommitNumber = 1 };
+            string recoveryRoot =
+                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = SafStagedOutputPublisher.Publish(
+                    backend,
+                    StorageArea.Snapshots,
+                    "snapshot.png",
+                    stagedFile,
+                    transactionOwnsPayload: true,
+                    CancellationToken.None);
+
+                Assert.IsFalse(result.Success);
+                Assert.IsTrue(File.Exists(stagedFile));
+                Assert.AreEqual(
+                    1,
+                    Directory.GetFiles(
+                        Path.Combine(recoveryRoot, "publications"), "*.json").Length);
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, true);
+                }
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
+        [Test]
+        public void SafStagedOutputPublisher_CommitsFrameMetadataLast()
+        {
+            string stagingRoot = Path.Combine(
+                Path.GetTempPath(), $"open-brush-publication-test-{Guid.NewGuid():N}");
+            string frames = Path.Combine(stagingRoot, "frames");
+            Directory.CreateDirectory(frames);
+            File.WriteAllText(Path.Combine(frames, "0001.png"), "one");
+            File.WriteAllText(Path.Combine(frames, "0002.png"), "two");
+            string metadata = Path.Combine(stagingRoot, "sequence.txt");
+            File.WriteAllText(metadata, "complete");
+            var backend = new FakeSafBackend();
+            string recoveryRoot =
+                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
+            try
+            {
+                SafPublicationResult result = SafStagedOutputPublisher.PublishBundle(
+                    backend,
+                    StorageArea.Videos,
+                    new[]
+                    {
+                        new SafStagedPath(frames, "frames"),
+                        new SafStagedPath(metadata, "sequence.txt"),
+                    },
+                    transactionOwnsPayload: false,
+                    CancellationToken.None);
+
+                Assert.IsTrue(result.Success, result.Error);
+                Assert.AreEqual(
+                    "sequence.txt",
+                    backend.CommittedNames[backend.CommittedNames.Count - 1]);
+            }
+            finally
+            {
+                if (Directory.Exists(stagingRoot))
+                {
+                    Directory.Delete(stagingRoot, true);
+                }
+                if (Directory.Exists(recoveryRoot))
+                {
+                    Directory.Delete(recoveryRoot, true);
+                }
+            }
+        }
+
+        [Test]
+        public void StorageTreeEnumerator_RecursesAndFiltersFiles()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-storage-tree-test-{Guid.NewGuid():N}");
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, "nested", "deeper"));
+                File.WriteAllText(Path.Combine(root, "top.lua"), "top");
+                File.WriteAllText(Path.Combine(root, "ignored.txt"), "ignored");
+                File.WriteAllText(Path.Combine(root, "nested", "child.LUA"), "child");
+                File.WriteAllText(Path.Combine(root, "nested", "deeper", "last.lua"), "last");
+                var backend = new LocalUserStorageBackend(_ => root);
+
+                StorageTreeResult result = backend.EnumerateTree(
+                    StorageArea.Plugins,
+                    "",
+                    new StorageTreeQuery(
+                        recursive: true,
+                        includeDirectories: false,
+                        includeExtensions: new[] { ".lua" }),
+                    CancellationToken.None);
+
+                Assert.IsTrue(result.Success, result.Error);
+                CollectionAssert.AreEqual(
+                    new[] { "nested/child.LUA", "nested/deeper/last.lua", "top.lua" },
+                    result.Entries.Select(entry => entry.RelativeDisplayPath).ToArray());
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
+                }
+            }
+        }
+
+        [Test]
+        public void StorageTreeEnumerator_MissingAreaIsSuccessfulEmptyTree()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-storage-tree-test-{Guid.NewGuid():N}");
+            var backend = new LocalUserStorageBackend(_ => root);
+
+            StorageTreeResult result = backend.EnumerateTree(
+                StorageArea.Scripts,
+                "",
+                new StorageTreeQuery(),
+                CancellationToken.None);
+
+            Assert.IsTrue(result.Success, result.Error);
+            Assert.IsEmpty(result.Entries);
+        }
+
+        [Test]
+        public void StorageTreeEnumerator_FailsInsteadOfTruncatingAtDepthLimit()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-storage-tree-test-{Guid.NewGuid():N}");
+            try
+            {
+                Directory.CreateDirectory(Path.Combine(root, "nested"));
+                File.WriteAllText(Path.Combine(root, "nested", "child.lua"), "child");
+                var backend = new LocalUserStorageBackend(_ => root);
+
+                StorageTreeResult result = backend.EnumerateTree(
+                    StorageArea.Plugins,
+                    "",
+                    new StorageTreeQuery(recursive: true, maximumDepth: 0),
+                    CancellationToken.None);
+
+                Assert.IsFalse(result.Success);
+                StringAssert.Contains("depth limit", result.Error);
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
+                }
+            }
+        }
+
+
+
+
+
+
+        [Test]
+        public void RuntimeContentSeeder_WritesOnlyMissingFiles()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("existing.lua", System.Text.Encoding.UTF8.GetBytes("user"));
+            var seeds = new[]
+            {
+                new RuntimeContentSeed(
+                    StorageArea.Plugins,
+                    "existing.lua",
+                    "text/x-lua",
+                    System.Text.Encoding.UTF8.GetBytes("default")),
+                new RuntimeContentSeed(
+                    StorageArea.Plugins,
+                    "missing.lua",
+                    "text/x-lua",
+                    System.Text.Encoding.UTF8.GetBytes("seed")),
+            };
+
+            RuntimeContentSeedResult first = RuntimeContentSeeder.SeedMissing(
+                backend, seeds, CancellationToken.None);
+            RuntimeContentSeedResult second = RuntimeContentSeeder.SeedMissing(
+                backend, seeds, CancellationToken.None);
+
+            Assert.IsTrue(first.Success, first.Error);
+            Assert.AreEqual(1, first.SeededCount);
+            Assert.IsTrue(second.Success, second.Error);
+            Assert.AreEqual(0, second.SeededCount);
+            Assert.AreEqual(1, backend.CommitCount);
+            StorageDocument existing = backend.List(
+                StorageArea.Plugins, "", CancellationToken.None).Documents
+                .Single(document => document.DisplayName == "existing.lua");
+            using (var reader = new StreamReader(backend.OpenRead(
+                existing.DocumentId, false, CancellationToken.None)))
+            {
+                Assert.AreEqual("user", reader.ReadToEnd());
+            }
+        }
+
+        [Test]
+        public void RuntimeContentSeeder_DoesNotOverwriteFileCreatedAfterListing()
+        {
+            var backend = new FakeSafBackend
+            {
+                CreateBeforeNextWriteData =
+                    System.Text.Encoding.UTF8.GetBytes("user"),
+            };
+            var seed = new RuntimeContentSeed(
+                StorageArea.Plugins,
+                "appeared.lua",
+                "text/x-lua",
+                System.Text.Encoding.UTF8.GetBytes("default"));
+
+            RuntimeContentSeedResult result = RuntimeContentSeeder.SeedMissing(
+                backend, new[] { seed }, CancellationToken.None);
+
+            Assert.IsTrue(result.Success, result.Error);
+            Assert.AreEqual(0, result.SeededCount);
+            Assert.AreEqual(0, backend.CommitCount);
+            StorageDocument appeared = backend.List(
+                StorageArea.Plugins, "", CancellationToken.None).Documents.Single();
+            using (var reader = new StreamReader(backend.OpenRead(
+                appeared.DocumentId, false, CancellationToken.None)))
+            {
+                Assert.AreEqual("user", reader.ReadToEnd());
+            }
+        }
+
+        [Test]
+        public void RuntimeContentSeeder_OverwritesOnlyExplicitlyReplaceableContent()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("__autocomplete.lua", System.Text.Encoding.UTF8.GetBytes("old api"));
+            backend.Add("user-module.lua", System.Text.Encoding.UTF8.GetBytes("user edit"));
+            var seeds = new[]
+            {
+                new RuntimeContentSeed(
+                    StorageArea.Plugins,
+                    "__autocomplete.lua",
+                    "text/x-lua",
+                    System.Text.Encoding.UTF8.GetBytes("current api"),
+                    overwriteExisting: true),
+                new RuntimeContentSeed(
+                    StorageArea.Plugins,
+                    "user-module.lua",
+                    "text/x-lua",
+                    System.Text.Encoding.UTF8.GetBytes("bundled default")),
+            };
+
+            RuntimeContentSeedResult result = RuntimeContentSeeder.SeedMissing(
+                backend, seeds, CancellationToken.None);
+
+            Assert.IsTrue(result.Success, result.Error);
+            Assert.AreEqual(1, result.SeededCount);
+            Assert.AreEqual(1, backend.CommitCount);
+            StorageDirectoryResult listing = backend.List(
+                StorageArea.Plugins, "", CancellationToken.None);
+            StorageDocument autocomplete = listing.Documents.Single(
+                document => document.DisplayName == "__autocomplete.lua");
+            StorageDocument userModule = listing.Documents.Single(
+                document => document.DisplayName == "user-module.lua");
+            using (var reader = new StreamReader(backend.OpenRead(
+                autocomplete.DocumentId, false, CancellationToken.None)))
+            {
+                Assert.AreEqual("current api", reader.ReadToEnd());
+            }
+            using (var reader = new StreamReader(backend.OpenRead(
+                userModule.DocumentId, false, CancellationToken.None)))
+            {
+                Assert.AreEqual("user edit", reader.ReadToEnd());
+            }
+        }
+
+
+        [Test]
+        public void DepthCapturePublication_CoversEveryWrittenSidecar()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-depth-files-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(root);
+            try
+            {
+                string imagePath = Path.Combine(root, "snapshot.v2.PNG");
+                var depth = new ScreenshotManager.DepthCaptureFiles
+                {
+                    normalizedDepthPng = new byte[] { 1 },
+                    linearDepth16Png = new byte[] { 2 },
+                    linearDepthExr = new byte[] { 3 },
+                    metadataJson = new byte[] { 4 },
+                };
+                ScreenshotManager.SaveDepthCaptureFiles(imagePath, depth);
+                string[] publishedPaths = ScreenshotManager.GetDepthCaptureFilePaths(imagePath);
+
+                Assert.AreEqual(4, publishedPaths.Length);
+                CollectionAssert.AreEquivalent(Directory.GetFiles(root), publishedPaths);
+                CollectionAssert.AreEqual(depth.normalizedDepthPng, File.ReadAllBytes(publishedPaths[0]));
+                CollectionAssert.AreEqual(depth.linearDepth16Png, File.ReadAllBytes(publishedPaths[1]));
+                CollectionAssert.AreEqual(depth.linearDepthExr, File.ReadAllBytes(publishedPaths[2]));
+                CollectionAssert.AreEqual(depth.metadataJson, File.ReadAllBytes(publishedPaths[3]));
+            }
+            finally
+            {
+                Assert.IsTrue(Path.GetFullPath(root).StartsWith(
+                    Path.Combine(Path.GetTempPath(), "open-brush-depth-files-"), StringComparison.Ordinal));
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Test]
+        public void SafSavedStrokes_ReadAndWriteTheEstablishedMediaLibraryDirectory()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-saf-strokes-{Guid.NewGuid():N}");
+            string establishedDirectory = Path.Combine(root, "Media Library", "Saved Strokes");
+            Directory.CreateDirectory(establishedDirectory);
+            try
+            {
+                File.WriteAllText(Path.Combine(establishedDirectory, "existing.tilt"), "existing strokes");
+                var backend = new LocalUserStorageBackend(
+                    area => Path.Combine(root, SafUserStorageBackend.GetAreaPath(area)));
+
+                StorageDirectoryResult listing = backend.List(StorageArea.SavedStrokes, "", CancellationToken.None);
+                Assert.IsTrue(listing.Success, listing.Error);
+                Assert.AreEqual("existing.tilt", listing.Documents.Single().DisplayName);
+                using (var transaction = backend.BeginWrite(
+                    StorageArea.SavedStrokes, "new.tilt", TiltFile.TILT_MIME_TYPE, CancellationToken.None))
+                {
+                    using (var writer = new StreamWriter(transaction.OpenWrite())) writer.Write("new strokes");
+                    Assert.IsTrue(transaction.Commit().Success);
+                }
+                Assert.AreEqual("new strokes", File.ReadAllText(Path.Combine(establishedDirectory, "new.tilt")));
+                Assert.IsFalse(Directory.Exists(Path.Combine(root, "Saved Strokes")));
+
+                var resolve = typeof(OpenBrushStorage).GetMethod("TryResolveStorageDestination",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                object[] args = { "Media Library/Saved Strokes/new.tilt", default(StorageArea), null };
+                Assert.IsTrue((bool)resolve.Invoke(null, args));
+                Assert.AreEqual(StorageArea.SavedStrokes, args[1]);
+                Assert.AreEqual("new.tilt", args[2]);
+            }
+            finally
+            {
+                Assert.IsTrue(Path.GetFullPath(root).StartsWith(
+                    Path.Combine(Path.GetTempPath(), "open-brush-saf-strokes-"), StringComparison.Ordinal));
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Test]
+        public void SoundDefaults_PreserveFileCreatedAfterListing()
+        {
+            var backend = new FakeSafBackend
+            {
+                CreateBeforeNextWriteData = System.Text.Encoding.UTF8.GetBytes("user audio"),
+            };
+            var defaults = new Dictionary<string, byte[]>
+            {
+                ["default.wav"] = new byte[] { 1, 2 },
+            };
+
+            StorageTreeResult result = SoundClipCatalog.QuerySafSoundClips(
+                backend, "", new[] { ".wav" }, defaults);
+
+            Assert.IsTrue(result.Success, result.Error);
+            Assert.AreEqual(0, backend.CommitCount);
+            using (var reader = new StreamReader(backend.OpenRead(
+                result.Entries.Single().DocumentId, false, CancellationToken.None)))
+            {
+                Assert.AreEqual("user audio", reader.ReadToEnd());
+            }
+        }
+
+        [TestCase(StorageBackendKind.Local, false)]
+        [TestCase(StorageBackendKind.StorageAccessFramework, true)]
+        public void DriveSync_CaseDistinctNamesUseBackendSemantics(
+            StorageBackendKind kind, bool ignoreCase)
+        {
+            StringComparer comparer = DriveSync.GetSyncNameComparer(kind);
+            var names = new Dictionary<string, int>(comparer) { { "a.lua", 1 } };
+            Assert.AreEqual(!ignoreCase, names.TryAdd("A.lua", 2));
+
+            var item = new DriveSync.SyncItem
+            {
+                Area = StorageArea.Plugins,
+                RelativeDirectory = "folder",
+                Name = "a.lua",
+            };
+            Assert.IsTrue(DriveSync.IsSameStoragePath(
+                item, StorageArea.Plugins, "folder", "a.lua", kind));
+            Assert.AreEqual(ignoreCase, DriveSync.IsSameStoragePath(
+                item, StorageArea.Plugins, "folder", "A.lua", kind));
+            Assert.AreEqual(ignoreCase, DriveSync.IsSameStoragePath(
+                item, StorageArea.Plugins, "Folder", "a.lua", kind));
+            Assert.IsFalse(DriveSync.IsSameStoragePath(
+                item, StorageArea.Scripts, "folder", "a.lua", kind));
+        }
+
+        [TestCase("opaque/document:ABC", StorageBackendKind.StorageAccessFramework, true)]
+        [TestCase("opaque/document:abc", StorageBackendKind.StorageAccessFramework, false)]
+        [TestCase("different-document", StorageBackendKind.StorageAccessFramework, false)]
+        [TestCase("opaque/document:abc", StorageBackendKind.Local, true)]
+        public void SafReviewTransfer_MatchesDocumentIdentity(
+            string storageId, StorageBackendKind kind, bool expected)
+        {
+            var item = new DriveSync.SyncItem
+            {
+                Name = "Sketch.tilt",
+                DocumentId = new StorageDocumentId("opaque/document:ABC"),
+            };
+            Assert.AreEqual(expected, DriveSync.MatchesTransferDocument(item, storageId, kind));
+        }
+
+        [Test]
+        public void SafReviewTransfer_RejectsAReplacementStorageRoot()
+        {
+            var backend = new FakeSafBackend { RootIdentity = "root-b" };
+            var item = new DriveSync.SyncItem { RootIdentity = "root-a" };
+
+            Assert.IsFalse(DriveSync.TransferRootMatches(item, backend));
+            item.RootIdentity = "root-b";
+            Assert.IsTrue(DriveSync.TransferRootMatches(item, backend));
+        }
+
+        [Test]
+        public void SafNamedSketchLoad_ResolvesTheSharedDocument()
+        {
+            var backend = new FakeSafBackend();
+            backend.Add("Named Sketch.tilt", Array.Empty<byte>());
+
+            SceneFileInfo file = SketchControlsScript.ResolveNamedSceneFile(
+                backend, Path.Combine(App.UserSketchPath(), "named sketch.TILT"));
+
+            Assert.IsInstanceOf<SafSceneFileInfo>(file);
+            Assert.AreEqual("Named Sketch", file.HumanName);
+            Assert.AreEqual(StorageArea.Sketches, backend.LastListedArea);
+            Assert.AreEqual("", backend.LastListedDirectory);
+        }
+
+        [Test]
+        public void DriveSyncLedger_RecognizesConfirmedStorageAndDriveVersions()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-drive-ledger-test-{Guid.NewGuid():N}");
+            try
+            {
+                var ledger = new DriveSyncLedger(
+                    "account", "drive-root", root);
+                DateTime modified = DateTime.UtcNow;
+                var document = new StorageDocument(
+                    new StorageDocumentId("document-one"),
+                    default,
+                    "plugin.lua",
+                    "text/x-lua",
+                    false,
+                    7,
+                    modified,
+                    0,
+                    "plugin.lua");
+                var driveFile = new Google.Apis.Drive.v3.Data.File
+                {
+                    Id = "drive-one",
+                    Name = "plugin.lua",
+                    Size = 7,
+                    ModifiedTime = modified,
+                    Md5Checksum = "local-md5",
+                    Version = 3,
+                };
+                ledger.Confirm(
+                    StorageArea.Plugins,
+                    "plugin.lua",
+                    document,
+                    "local-sha",
+                    "local-md5",
+                    driveFile,
+                    "Upload");
+
+                DriveSyncLedger.Entry entry =
+                    ledger.Get(StorageArea.Plugins, "plugin.lua");
+
+                Assert.IsTrue(ledger.StorageMatches(
+                    entry, document, () => "unexpected"));
+                Assert.IsTrue(ledger.DriveMatches(entry, driveFile));
+                driveFile.Version = 4;
+                Assert.IsFalse(ledger.DriveMatches(entry, driveFile));
+                var replacementDocument = new StorageDocument(
+                    new StorageDocumentId("document-two"),
+                    default,
+                    "plugin.lua",
+                    "text/x-lua",
+                    false,
+                    7,
+                    modified.AddMinutes(1),
+                    0,
+                    "plugin.lua");
+                Assert.IsTrue(ledger.StorageMatches(
+                    entry, replacementDocument, () => "local-sha"));
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
+                }
+            }
+        }
+
+        [Test]
+        public void DriveSyncLedger_RetainsUnknownVersion()
+        {
+            string root = Path.Combine(
+                Path.GetTempPath(), $"open-brush-drive-ledger-test-{Guid.NewGuid():N}");
+            try
+            {
+                var ledger = new DriveSyncLedger(
+                    "account", "drive-root", root);
+                var document = new StorageDocument(
+                    new StorageDocumentId("document"),
+                    default,
+                    "plugin.lua",
+                    "text/x-lua",
+                    false,
+                    1,
+                    DateTime.UtcNow,
+                    0,
+                    "plugin.lua");
+                var driveFile = new Google.Apis.Drive.v3.Data.File
+                {
+                    Id = "drive",
+                    Size = 1,
+                    ModifiedTime = DateTime.UtcNow,
+                    Version = 1,
+                };
+                ledger.Confirm(
+                    StorageArea.Plugins,
+                    "plugin.lua",
+                    document,
+                    "sha",
+                    "md5",
+                    driveFile,
+                    "Upload");
+                string ledgerPath = Directory.GetFiles(
+                    root, "*.json", SearchOption.AllDirectories).Single();
+                string unknown = File.ReadAllText(ledgerPath)
+                    .Replace("\"Version\": 1", "\"Version\": 999");
+                File.WriteAllText(ledgerPath, unknown);
+                var reloaded = new DriveSyncLedger(
+                    "account", "drive-root", root);
+
+                Assert.Throws<IOException>(
+                    () => reloaded.Get(StorageArea.Plugins, "plugin.lua"));
+                StringAssert.Contains("\"Version\": 999", File.ReadAllText(ledgerPath));
+            }
+            finally
+            {
+                if (Directory.Exists(root))
+                {
+                    Directory.Delete(root, true);
+                }
+            }
+        }
+
+        private static byte[] CreateMinimalTiltArchive()
+        {
+            using (var output = new MemoryStream())
+            {
+                using (var writer = new TiltFile.ArchiveWriter(
+                    output, ownsOutputStream: false))
+                {
+                    using (Stream entry = writer.GetWriteStream(TiltFile.FN_SKETCH))
+                    {
+                        entry.WriteByte(1);
+                    }
+                    using (Stream entry = writer.GetWriteStream(TiltFile.FN_METADATA))
+                    {
+                        entry.WriteByte((byte)'{');
+                        entry.WriteByte((byte)'}');
+                    }
+                }
+                return output.ToArray();
             }
         }
     }

@@ -83,7 +83,10 @@ namespace TiltBrush
             if (bShowConfigEx)
             {
                 AddLine("Check config file:");
-                AddLine(TiltBrush.App.ConfigPath(), m_Blue, "</color>");
+                string configLocation = OpenBrushStorage.IsScopedStorageMode
+                    ? $"{App.kConfigFileName} in your selected Open Brush folder"
+                    : App.ConfigPath();
+                AddLine(configLocation, m_Blue, "</color>");
                 AddLine("Syntax example:");
                 AddLine("{");
                 AddLine("  \"YouTube\": {");

@@ -30,6 +30,25 @@ namespace TiltBrush
 
     internal class TestVrAssetService : MathTestUtils
     {
+        private sealed class UploadSceneFileInfo : SceneFileInfo
+        {
+            public FileInfoType InfoType { get; set; }
+            public bool Valid { get; set; }
+            public bool ReadOnly { get; set; }
+            public string HumanName => "test";
+            public bool Available => true;
+            public string FullPath => null;
+            public string StorageId => "test-id";
+            public bool Exists => true;
+            public string AssetId => null;
+            public string SourceId => null;
+            public int? TriangleCount => null;
+            public void Delete() { }
+            public string Rename(string newName) => newName;
+            public bool IsHeaderValid() => true;
+            public Stream GetReadStream(string subfileName) => Stream.Null;
+        }
+
         // Sketchfab asset created at Google
         const string kSketchfabTb2Published = "2b544da19f8049f0ad27a0202b437621";
 
@@ -156,6 +175,33 @@ namespace TiltBrush
             TrTransform xfFwdToRt_Z = xfFwdToRt_U.TransformBy(zFromU);
             AssertAlmostEqual(kZRight, xfFwdToRt_Z * kZForward);
             AssertAlmostEqual(kZUp, xfFwdToRt_Z * kZUp);
+        }
+
+        [Test]
+        public void UploadsReuseWritableProviderBackedSceneFiles()
+        {
+            var providerFile = new UploadSceneFileInfo
+            {
+                InfoType = FileInfoType.Disk,
+                Valid = true,
+                ReadOnly = false,
+            };
+            var readOnlyFile = new UploadSceneFileInfo
+            {
+                InfoType = FileInfoType.Disk,
+                Valid = true,
+                ReadOnly = true,
+            };
+            var cloudFile = new UploadSceneFileInfo
+            {
+                InfoType = FileInfoType.Cloud,
+                Valid = true,
+                ReadOnly = false,
+            };
+
+            Assert.IsTrue(VrAssetService.CanReuseSceneFileForUpload(providerFile));
+            Assert.IsFalse(VrAssetService.CanReuseSceneFileForUpload(readOnlyFile));
+            Assert.IsFalse(VrAssetService.CanReuseSceneFileForUpload(cloudFile));
         }
 
         [UnityTest]
