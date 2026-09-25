@@ -392,6 +392,17 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public string[] Subtrees { get; set; }
 
+        // One embedded VOX subfile per editable widget, aligned with RawTransforms and
+        // the other per-widget arrays. When present, these bytes are authoritative;
+        // FilePath is only the model's source/location label, not a reload dependency.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string[] EditableVoxPaths { get; set; }
+
+        // Whether each embedded VOX payload retains imported source chunks. Generated
+        // documents reload as extensible documents; imported documents retain source data.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool[] EditableVoxPreserveSource { get; set; }
+
         /// Prior to M13, always null.
         /// Post M13, never null or empty; but an empty array is allowed on read.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

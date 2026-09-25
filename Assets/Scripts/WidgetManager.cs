@@ -169,6 +169,7 @@ namespace TiltBrush
         public event Action RefreshPinAndUnpinAction;
 
         private TiltModels75[] m_loadingTiltModels75;
+        private SceneFileInfo m_loadingModelSceneFileInfo;
         private TiltLights[] m_loadingTiltLights;
         private TiltImages75[] m_loadingTiltImages75;
         private TiltVideo[] m_loadingTiltVideos;
@@ -870,9 +871,10 @@ namespace TiltBrush
         }
 
         // Used only at .tilt-loading time
-        public void SetModelDataFromTilt(TiltModels75[] value)
+        public void SetModelDataFromTilt(TiltModels75[] value, SceneFileInfo fileInfo)
         {
             m_loadingTiltModels75 = value;
+            m_loadingModelSceneFileInfo = fileInfo;
         }
 
         // Used only at .tilt-loading time
@@ -1767,7 +1769,8 @@ namespace TiltBrush
 
                 for (int i = 0; i < m_loadingTiltModels75.Length; i++)
                 {
-                    Task createTask = ModelWidget.CreateModelFromSaveData(m_loadingTiltModels75[i]);
+                    Task createTask = ModelWidget.CreateModelFromSaveData(
+                        m_loadingTiltModels75[i], m_loadingModelSceneFileInfo);
                     using (IEnumerator<Null> createCoroutine = createTask.AsIeNull())
                     {
                         while (createCoroutine.MoveNext())
@@ -1780,6 +1783,7 @@ namespace TiltBrush
                 }
                 OverlayManager.m_Instance.RefuseProgressBarChanges(false);
                 m_loadingTiltModels75 = null;
+                m_loadingModelSceneFileInfo = null;
             }
 
             ModelCatalog.m_Instance.PrintMissingModelWarnings();

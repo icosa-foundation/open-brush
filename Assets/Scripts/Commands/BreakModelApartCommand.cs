@@ -162,6 +162,11 @@ namespace TiltBrush
 
         public BreakModelApartCommand(ModelWidget initialWidget, BaseCommand parent = null) : base(parent)
         {
+            if (initialWidget.EditableVoxDocument != null)
+            {
+                throw new InvalidOperationException(
+                    "Editable VOX widgets cannot be broken apart.");
+            }
             m_InitialWidget = initialWidget;
             m_NewModelWidgets = new List<ModelWidget>();
             m_NewLightWidgets = new List<LightWidget>();

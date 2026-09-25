@@ -46,23 +46,29 @@ namespace TiltBrush
 
         public int GetNumVertsInMeshes()
         {
-            if (m_NumVertsInMeshes <= 0)
+            if (m_NumVertsInMeshes < 0)
             {
+                int vertexCount = 0;
                 MeshFilter[] meshChildren = MeshChildren;
                 SkinnedMeshRenderer[] skinnedMeshChildren = SkinnedMeshChildren;
                 for (int i = 0; i < meshChildren.Length; ++i)
                 {
-                    m_NumVertsInMeshes += meshChildren[i].sharedMesh.vertexCount;
+                    vertexCount += meshChildren[i].sharedMesh.vertexCount;
                 }
                 for (int i = 0; i < skinnedMeshChildren.Length; ++i)
                 {
-                    m_NumVertsInMeshes += skinnedMeshChildren[i].sharedMesh.vertexCount;
+                    vertexCount += skinnedMeshChildren[i].sharedMesh.vertexCount;
                 }
 
                 m_NumVertsInMeshes = Mathf.Max(1,
-                    (int)(m_NumVertsInMeshes * WidgetManager.m_Instance.ModelVertCountScalar));
+                    (int)(vertexCount * WidgetManager.m_Instance.ModelVertCountScalar));
             }
             return m_NumVertsInMeshes;
+        }
+
+        public void InvalidateMeshVertexCount()
+        {
+            m_NumVertsInMeshes = -1;
         }
 
         private static void GetAllMeshes(List<MeshFilter> filters, List<SkinnedMeshRenderer> smrs, Transform t, bool isRoot)
