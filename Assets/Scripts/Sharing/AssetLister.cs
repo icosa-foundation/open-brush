@@ -140,5 +140,57 @@ namespace TiltBrush
             }
             m_PageToken = json["nextPageToken"]?.ToString();
         }
+
+        public IEnumerator<Null> NextPageCollections(List<IcosaAssetCatalog.CollectionDetails> collections)
+        {
+            string uri = m_PageToken == null ? m_Uri : $"{m_Uri}pageToken={m_PageToken}&";
+
+            WebRequest request = new WebRequest(uri, App.Instance.IcosaToken);
+            using (var cr = request.SendAsync().AsIeNull())
+            {
+                while (!request.Done)
+                {
+                    try
+                    {
+                        cr.MoveNext();
+                    }
+                    catch (VrAssetServiceException e)
+                    {
+                        e.UserFriendly = m_ErrorMessage;
+                        throw;
+                    }
+                    yield return cr.Current;
+                }
+            }
+            Future<JObject> f = new Future<JObject>(() => JObject.Parse(request.Result));
+            JObject json;
+            while (!f.TryGetResult(out json)) { yield return null; }
+
+            if (json.Count == 0) { yield break; }
+
+            JToken lastCollection = null;
+            var collectionResults = json["collections"] as JArray;
+            if (collectionResults == null)
+            {
+                Debug.LogError("[ICOSA_COLLECTIONS] Response did not contain a collections array.");
+                yield break;
+            }
+
+            foreach (JObject collection in collectionResults)
+            {
+                try
+                {
+                    lastCollection = collection;
+                    collections.Add(new IcosaAssetCatalog.CollectionDetails(collection));
+                }
+                catch (NullReferenceException)
+                {
+                    Debug.LogError($"[ICOSA_COLLECTIONS] Failed to load collection: " +
+                        $"{lastCollection?.ToString() ?? "\"NULL\""}");
+                }
+                yield return null;
+            }
+            m_PageToken = json["nextPageToken"]?.ToString();
+        }
     }
 } // namespace TiltBrush
