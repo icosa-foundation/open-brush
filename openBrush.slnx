@@ -1,0 +1,16 @@
+﻿<Solution>
+  <Project Path="Assembly-CSharp.csproj" />
+  <Project Path="Assembly-CSharp-Editor.csproj" />
+  <Project Path="FbxUnitTests.csproj" />
+  <Project Path="Autodesk.Fbx.csproj" />
+  <Project Path="AsyncAwaitUtil.csproj" />
+  <Project Path="Unity.XR.Hands.Samples.VisualizerSample.csproj" />
+  <Project Path="FbxUseCaseTests.csproj" />
+  <Project Path="Org.OpenAPITools.csproj" />
+  <Project Path="Assembly-CSharp-firstpass.csproj" />
+  <Project Path="PerformanceTests.csproj" />
+  <Project Path="FbxBuildTests.csproj" />
+  <Project Path="PlayModeTests.csproj" />
+  <Project Path="Autodesk.Fbx.Editor.csproj" />
+  <Project Path="FbxBuildTestAssets.csproj" />
+</Solution>

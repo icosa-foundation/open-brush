@@ -2032,10 +2032,21 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
-                    m_UserPath = SteamManager.RunningUnderLepton
-                        ? "/sdcard/Documents"
-                        : "/sdcard/";
-                    m_OldUserPath = Application.persistentDataPath;
+                    // TODO: Remove this local Android testing override and always use the
+                    // shared-storage path below once private-storage testing is complete.
+                    const bool usePrivateStorageForLocalTesting = true;
+                    if (usePrivateStorageForLocalTesting)
+                    {
+                        m_UserPath = Application.persistentDataPath;
+                        m_OldUserPath = null;
+                    }
+                    else
+                    {
+                        m_UserPath = SteamManager.RunningUnderLepton
+                            ? "/sdcard/Documents"
+                            : "/sdcard/";
+                        m_OldUserPath = Application.persistentDataPath;
+                    }
                     break;
                 case RuntimePlatform.IPhonePlayer:
                 default:

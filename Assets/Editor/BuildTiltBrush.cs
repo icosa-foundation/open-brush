@@ -1136,7 +1136,6 @@ static class BuildTiltBrush
         {
             enabledFeatures = new();
             requiredFeatures = new();
-
             m_targetGroup = TargetToGroup(tiltOptions.Target);
 
             // The Quest APK uses OpenXR; AndroidXR is the separate Google Play build option.
@@ -1172,6 +1171,8 @@ static class BuildTiltBrush
                 }
             }
 
+            EnableSharedAndroidOpenXrFeatures(settings);
+
             if (tiltOptions.XrSdk == XrSdkMode.AndroidXR)
             {
                 EnableAndroidXrFeatures(settings);
@@ -1180,6 +1181,16 @@ static class BuildTiltBrush
             // Meta store builds use OpenXR too, but must enable Meta's build hooks explicitly.
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
 #endif
+
+        }
+
+        void EnableSharedAndroidOpenXrFeatures(
+            UnityEngine.XR.OpenXR.OpenXRSettings settings)
+        {
+            // Android OpenXR, Android Viewer OpenXR, Android Meta Quest, Android AndroidXR,
+            // and Android Viewer AndroidXR all support hands through the same XR Hands API.
+            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
+            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
         }
 
         void EnableAndroidXrFeatures(UnityEngine.XR.OpenXR.OpenXRSettings settings)
@@ -1195,6 +1206,16 @@ static class BuildTiltBrush
             EnableRequiredFeature<OpenXR.Extensions.OpenXRAndroidSettings>(settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRSupportFeature>(
                 settings);
+            // AndroidXRBuildProfileFeature is internal in com.unity.xr.androidxr-openxr 1.4.1,
+            // so locate it by runtime type name instead of referencing the inaccessible type.
+            EnableRequiredFeatureByTypeName(settings,
+                "UnityEngine.XR.OpenXR.Features.Android.AndroidXRBuildProfileFeature");
+
+            // Foveated rendering currently crashes Android AndroidXR and Android Viewer
+            // AndroidXR. AR Face is not used by Open Brush. Keep main's serialized defaults
+            // unchanged and override both features only for these builds.
+            DisableFeature<UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature>(settings);
+            DisableFeature<UnityEngine.XR.OpenXR.Features.Android.ARFaceFeature>(settings);
 
             // Android XR's AR Foundation providers and display helpers are part of the tested
             // cross-device configuration. Unsupported extensions are negotiated by each runtime.
@@ -1202,7 +1223,6 @@ static class BuildTiltBrush
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARBoundingBoxFeature>(
                 settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARCameraFeature>(settings);
-            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARFaceFeature>(settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AROcclusionFeature>(
                 settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARPlaneFeature>(settings);
@@ -1211,12 +1231,10 @@ static class BuildTiltBrush
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.DisplayUtilitiesFeature>(
                 settings);
 
-            // Hand mesh data is used by Android XR, while XR Hands and Meta's aim extension keep
-            // the same AndroidXR artifact usable with hand tracking on other OpenXR runtimes.
-            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
+            // Hand mesh data is specific to Android XR. Shared XR Hands features are enabled for
+            // every Android OpenXR build by EnableSharedAndroidOpenXrFeatures.
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRHandMeshData>(
                 settings);
-            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
 
             // These vendor-neutral/vendor-extension features are also part of the configuration
             // tested on Quest and Pico. Meta Quest Support supplies Quest's loader initialization;
@@ -1244,6 +1262,42 @@ static class BuildTiltBrush
             requiredFeatures.Add(feature);
             feature.enabled = true;
             Debug.Log($"Enabled required OpenXR feature {typeof(T).FullName} for " +
+                $"this {m_targetGroup} build.");
+        }
+
+        void EnableRequiredFeatureByTypeName(
+            UnityEngine.XR.OpenXR.OpenXRSettings settings, string featureTypeName)
+        {
+            var features = new List<UnityEngine.XR.OpenXR.Features.OpenXRFeature>();
+            settings.GetFeatures(features);
+            var feature = features.Find(candidate =>
+                candidate.GetType().FullName == featureTypeName);
+            if (feature == null)
+            {
+                throw new BuildFailedException(
+                    $"Could not find required OpenXR feature {featureTypeName}. " +
+                    "Is its package installed?");
+            }
+
+            requiredFeatures.Add(feature);
+            feature.enabled = true;
+            Debug.Log($"Enabled required OpenXR feature {featureTypeName} for " +
+                $"this {m_targetGroup} build.");
+        }
+
+        void DisableFeature<T>(UnityEngine.XR.OpenXR.OpenXRSettings settings)
+            where T : UnityEngine.XR.OpenXR.Features.OpenXRFeature
+        {
+            var feature = settings.GetFeature<T>();
+            if (feature == null)
+            {
+                throw new BuildFailedException(
+                    $"Could not find OpenXR feature {typeof(T).FullName} to disable. " +
+                    "Is its package installed?");
+            }
+
+            feature.enabled = false;
+            Debug.Log($"Disabled OpenXR feature {typeof(T).FullName} for " +
                 $"this {m_targetGroup} build.");
         }
 
