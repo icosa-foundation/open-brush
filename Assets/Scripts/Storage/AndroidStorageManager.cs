@@ -37,6 +37,7 @@ namespace TiltBrush
         public static bool StartupStorageReady =>
             !OpenBrushStorage.IsScopedStorageMode || m_StartupStorageReady;
         public static bool StartupStorageCanceled => m_StartupStorageCanceled;
+        public static bool StartupRecoveryComplete { get; private set; }
         public static bool CanClearAutosaveOnExit { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -61,6 +62,7 @@ namespace TiltBrush
         private void Awake()
         {
             m_Instance = this;
+            StartupRecoveryComplete = false;
             CanClearAutosaveOnExit = false;
             // This instance is created before LoadingScene can admit Main. Capture only payloads
             // left by an earlier process so delayed recovery never removes a current recording.
@@ -264,6 +266,7 @@ namespace TiltBrush
             }
             yield return RefreshRuntimeContent();
             RefreshSharedCatalogs();
+            StartupRecoveryComplete = true;
             ApiManager.Instance?.RunStartupScriptIfReady();
             if (App.DriveSync?.SyncEnabled == true)
             {
