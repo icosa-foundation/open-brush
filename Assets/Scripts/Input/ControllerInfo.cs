@@ -300,6 +300,8 @@ namespace TiltBrush
                 case SketchCommands.ToggleReshape:
                 case SketchCommands.ToggleTintColor:
                     return GetVrInputDown(VrInput.Button04);
+                case SketchCommands.ToggleSculpt:
+                    return GetVrInputDown(VrInput.Button04);
             }
             return false;
         }
