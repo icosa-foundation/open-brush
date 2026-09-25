@@ -43,6 +43,7 @@
       }
     ],
     "EnablePluginClipboardAccess": false,
+    "PhotonUdpPorts": "Default",
   },
   "Export": {
   },
