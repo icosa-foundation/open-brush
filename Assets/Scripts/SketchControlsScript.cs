@@ -5491,6 +5491,12 @@ namespace TiltBrush
                 OutputWindowScript.Error("Failed to load sketch", e.Message);
                 return;
             }
+            LoadSketchWithMetadata(fileInfo, quickload, additive);
+        }
+
+        internal void LoadSketchWithMetadata(
+            SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        {
             if (fileInfo is SafSceneFileInfo safFileInfo)
             {
                 safFileInfo.ReadMetadata();
