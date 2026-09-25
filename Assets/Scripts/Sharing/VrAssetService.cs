@@ -1326,9 +1326,17 @@ namespace TiltBrush
                     yield break;
                 }
 
-                // This download is a local temporary file, even when named sketches use SAF.
-                // Keep its identity instead of looking up its filename in the shared folder.
-                SketchControlsScript.m_Instance.LoadSketchWithMetadata(new DiskSceneFileInfo(path));
+                if (OpenBrushStorage.IsScopedStorageMode)
+                {
+                    // This download is a local temporary file, even when named sketches use SAF.
+                    // Keep its identity instead of looking up its filename in the shared folder.
+                    SketchControlsScript.m_Instance.LoadSketchWithMetadata(new DiskSceneFileInfo(path));
+                }
+                else
+                {
+                    SketchControlsScript.m_Instance.IssueGlobalCommand(
+                        SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+                }
                 loadIssued = true;
                 onProgress?.Invoke(1.0f);
             }
