@@ -160,6 +160,9 @@ namespace TiltBrush
 
         override protected void OnUpdate()
         {
+            // While the mirror is held, its strokes follow it.
+            SymmetryMirrorMove.Update();
+
             bool moved = m_UserInteracting;
 
             // Drive the top of the mirror towards room-space up, to keep the text readable
@@ -313,6 +316,7 @@ namespace TiltBrush
 
         override protected void OnUserBeginInteracting()
         {
+            SymmetryMirrorMove.Begin();
             base.OnUserBeginInteracting();
             m_Home.gameObject.SetActive(true);
             m_Home.Reset();
@@ -326,6 +330,8 @@ namespace TiltBrush
             {
                 ResetToHome();
             }
+            // After any snap, so the strokes follow the mirror to where it ends up.
+            SymmetryMirrorMove.End();
         }
 
         public Mirror ToMirror()

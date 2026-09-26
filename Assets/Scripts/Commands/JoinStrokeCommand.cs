@@ -26,6 +26,10 @@ namespace TiltBrush
 
         private List<PointerManager.ControlPoint> m_InitialCP;
         private List<PointerManager.ControlPoint> m_NewCP;
+        private readonly SymmetryStrokeGroup m_GroupA;
+        private readonly SymmetryStrokeGroup m_GroupB;
+        private readonly int m_PointerA;
+        private readonly int m_PointerB;
 
         private enum JoinStrokeType
         {
@@ -40,6 +44,10 @@ namespace TiltBrush
         {
             m_StrokeA = strokeA;
             m_StrokeB = strokeB;
+            m_GroupA = strokeA.SymmetryPeerGroup;
+            m_GroupB = strokeB.SymmetryPeerGroup;
+            m_PointerA = strokeA.SymmetryPointerIndex;
+            m_PointerB = strokeB.SymmetryPointerIndex;
             m_JoinType = JoinStrokeType.FirstFirst;
             m_InitialCP = strokeA.m_ControlPoints.ToList();
             m_NewCP = strokeA.m_ControlPoints.ToList();
@@ -85,10 +93,13 @@ namespace TiltBrush
                     m_NewCP.AddRange(strokeB.m_ControlPoints.Reverse());
                     break;
             }
+
         }
 
         protected override void OnRedo()
         {
+            m_StrokeA.LeaveSymmetryGroup();
+            m_StrokeB.LeaveSymmetryGroup();
             ModifyStroke(m_StrokeA, m_NewCP);
             m_StrokeB.Uncreate();
         }
@@ -97,6 +108,8 @@ namespace TiltBrush
         {
             ModifyStroke(m_StrokeA, m_InitialCP);
             m_StrokeB.Recreate();
+            if (m_GroupA != null) { m_StrokeA.JoinSymmetryGroup(m_GroupA, m_PointerA); }
+            if (m_GroupB != null) { m_StrokeB.JoinSymmetryGroup(m_GroupB, m_PointerB); }
         }
 
         private void ModifyStroke(Stroke stroke, IEnumerable<PointerManager.ControlPoint> newControlPoints)

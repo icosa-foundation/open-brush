@@ -243,6 +243,8 @@ namespace TiltBrush
 
         public static Stroke JoinStrokes(Stroke stroke1, Stroke stroke2)
         {
+            stroke1.LeaveSymmetryGroup();
+            stroke2.LeaveSymmetryGroup();
             MergeJoinedStrokeColors(new[] { stroke2, stroke1 }, stroke2);
             stroke2.m_ControlPoints = stroke2.m_ControlPoints.Concat(stroke1.m_ControlPoints).ToArray();
             stroke2.Uncreate();
@@ -261,6 +263,7 @@ namespace TiltBrush
         {
             var strokesToJoin = SketchMemoryScript.GetStrokesBetween(from, to);
             var firstStroke = strokesToJoin[0];
+            foreach (var stroke in strokesToJoin) { stroke.LeaveSymmetryGroup(); }
             MergeJoinedStrokeColors(strokesToJoin, firstStroke);
             firstStroke.m_ControlPoints = strokesToJoin.SelectMany(x => x.m_ControlPoints).ToArray();
             for (int i = 1; i < strokesToJoin.Count; i++)

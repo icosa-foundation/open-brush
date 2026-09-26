@@ -226,6 +226,11 @@ namespace TiltBrush
         private int m_StraightEdgeControlPointIndex;
 
         private SymmetryMode m_CurrentSymmetryMode;
+        // The mirror shared by the strokes of the current line.
+        private SymmetryMirror m_ActiveStrokeMirror;
+        // The group the strokes of the current line join as they are recorded. Created lazily so
+        // that discarded lines don't leave empty groups behind.
+        private SymmetryStrokeGroup m_ActiveSymmetryStrokeGroup;
         private SymmetryWidget m_SymmetryWidgetScript;
         private bool m_UseSymmetryWidget = false;
         public Color m_lastChosenColor { get; private set; }
@@ -1305,6 +1310,7 @@ namespace TiltBrush
                 }
 
                 Stroke stroke = pointer.DetachLine(false, null, flags, isFinalStroke);
+                AddStrokeToActiveSymmetryGroup(stroke, pointerIndex);
                 if (m_StraightEdgeEnabled &&
                     m_StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line)
                 {
@@ -1505,6 +1511,9 @@ namespace TiltBrush
             // Early out if we're already in the requested mode (but allow None for initial hide of widget)
             if (mode != SymmetryMode.None && m_CurrentSymmetryMode == mode) return;
 
+            SymmetryMirrorMove.End();
+            SymmetryPeerPreview.Hide();
+
             if (m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
                 LuaManager.Instance.EndActiveScript(LuaApiCategory.SymmetryScript);
@@ -1658,6 +1667,9 @@ namespace TiltBrush
             CalculateMirrorMatrices();
             CalculateMirrorColors();
             CalculateMirrorPointers();
+            // Every symmetry setting is changed through here, so this is where the active mirror
+            // finds out that what it stands for has changed.
+            SymmetryMirrors.NoteSettingsChanged();
         }
 
         private void CalculateMirrorMatrices()
@@ -2175,6 +2187,8 @@ namespace TiltBrush
         // stopped and started a new one.
         void InitiateLine(bool isContinue = false)
         {
+            BeginSymmetryStrokeGroup();
+
             if (!isContinue && m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
                 ResetScriptedPointerStrokeContinuationState();
@@ -2243,6 +2257,34 @@ namespace TiltBrush
                 DetachPointerStroke(i, discard, ref groupStart, ref groupStartTime, isFinalStroke,
                     forceGroupContinue: forceGroupContinue);
             }
+
+            EndSymmetryStrokeGroup();
+        }
+
+        /// When peer editing is enabled, finds the mirror shared by the line's strokes.
+        private void BeginSymmetryStrokeGroup()
+        {
+            m_ActiveSymmetryStrokeGroup = null;
+            m_ActiveStrokeMirror = SymmetryModeEnabled && SymmetryPeerEditing.Enabled
+                ? SymmetryMirrors.EnsureActive()
+                : null;
+        }
+
+        /// Links a freshly-recorded stroke to the other strokes of the line it belongs to.
+        private void AddStrokeToActiveSymmetryGroup(Stroke stroke, int pointerIndex)
+        {
+            if (stroke == null || m_ActiveStrokeMirror == null ||
+                !SymmetryPeerEditing.Enabled) { return; }
+            m_ActiveSymmetryStrokeGroup ??=
+                new SymmetryStrokeGroup(m_ActiveStrokeMirror);
+            stroke.JoinSymmetryGroup(m_ActiveSymmetryStrokeGroup, pointerIndex);
+        }
+
+        /// Closes off the current line's symmetry group.
+        private void EndSymmetryStrokeGroup()
+        {
+            m_ActiveSymmetryStrokeGroup = null;
+            m_ActiveStrokeMirror = null;
         }
 
         public void HandleColorJitter()
@@ -2253,6 +2295,31 @@ namespace TiltBrush
                 // Size is jittered in PointerScript. Should we also do color there?
                 ChangeAllPointerColorsDirectly(GenerateJitteredColor(MainPointer.CurrentBrush.m_ColorLuminanceMin));
             }
+        }
+
+        /// The transforms that map the stroke drawn by the main pointer onto the stroke drawn by
+        /// each symmetry pointer, indexed by pointer index, in the canvas space of the canvas
+        /// being drawn into - the space a stroke's control points live in, and the space edits to
+        /// them are expressed in. Empty for modes whose pointers have no fixed relationship to
+        /// the main one, such as TwoHanded.
+        ///
+        /// This is what lets an edit to one stroke be mirrored onto its symmetry peers: peer j's
+        /// version of a transform T applied to peer i is C * T * C.inverse, where C is
+        /// Mj * Mi.inverse.
+        public List<TrTransform> GetSymmetryTransforms_CS()
+        {
+            if (CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
+            {
+                // Already canvas space. Re-running the script here would advance any state it
+                // keeps, so take the transforms the current line is using.
+                return GetScriptedTransforms(update: false);
+            }
+
+            var xfCanvas = App.Scene.ActiveCanvas.Pose; // canvas -> global
+            var xfCanvasInverse = xfCanvas.inverse;
+            return GetSymmetriesForCurrentMode()
+                .Select(xf_GS => xfCanvasInverse * xf_GS * xfCanvas)
+                .ToList();
         }
 
         public List<TrTransform> GetSymmetriesForCurrentMode()

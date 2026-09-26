@@ -39,6 +39,19 @@ namespace TiltBrush
                 m_Widgets.AddRange(widgets);
             }
             m_InitialSelectionTransform = SelectionManager.m_Instance.SelectionTransform;
+
+            // Strokes the symmetry drew alongside the selected ones aren't in the selection, so
+            // they are deleted by child commands rather than as part of this one.
+            if (m_Strokes != null)
+            {
+                foreach (var peer in SymmetryPeerEditing.PeersOutside(m_Strokes))
+                {
+                    if (peer.IsGeometryEnabled)
+                    {
+                        new DeleteStrokeCommand(peer, this);
+                    }
+                }
+            }
         }
 
         public override bool NeedsSave { get { return true; } }

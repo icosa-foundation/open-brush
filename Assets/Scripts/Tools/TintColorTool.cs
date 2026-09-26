@@ -173,10 +173,29 @@ namespace TiltBrush
             {
                 PlayModifyStrokeSound();
                 var undoParent = ApiManager.Instance.ActiveUndo;
+
+                // Work out what the symmetry peers become before the stroke itself changes: the
+                // peers' colours are relative to the stroke's, as it is now.
+                var peerEdits = new List<(Stroke stroke, List<Color32?> colors, ColorOverrideMode mode)>();
+                foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+                {
+                    if (SymmetryPeerEditing.TryGetPeerPointColors(
+                            stroke, peer, newOverrideColors, targetMode,
+                            out List<Color32?> peerColors, out ColorOverrideMode peerMode))
+                    {
+                        peerEdits.Add((peer, peerColors, peerMode));
+                    }
+                }
+
                 ModifyStrokePointColorsCommand cmd;
                 if (undoParent == null)
                 {
                     cmd = new ModifyStrokePointColorsCommand(stroke, newOverrideColors, targetMode);
+                    foreach (var edit in peerEdits)
+                    {
+                        new ModifyStrokePointColorsCommand(
+                            edit.stroke, edit.colors, edit.mode, cmd);
+                    }
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 }
                 else
@@ -193,6 +212,23 @@ namespace TiltBrush
                     }
                     // Apply changes immediately while keeping this command inside the active undo group.
                     cmd.Redo();
+
+                    // A peer painted over directly later in the drag keeps the same command, so
+                    // the two never fight over the stroke.
+                    foreach (var edit in peerEdits)
+                    {
+                        if (!m_ActiveTintCommands.TryGetValue(edit.stroke, out var peerCmd))
+                        {
+                            peerCmd = new ModifyStrokePointColorsCommand(
+                                edit.stroke, edit.colors, edit.mode, undoParent);
+                            m_ActiveTintCommands.Add(edit.stroke, peerCmd);
+                        }
+                        else
+                        {
+                            peerCmd.UpdateEndState(edit.colors, edit.mode);
+                        }
+                        peerCmd.Redo();
+                    }
                 }
                 InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
             }

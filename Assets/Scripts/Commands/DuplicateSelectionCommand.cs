@@ -104,14 +104,27 @@ namespace TiltBrush
                     xfSymmetriesCS[i] = xfCSfromGS * xfSymmetriesGS[i] * xfGSfromCS;
                 }
 
+                // Each selected stroke produces its own new set of symmetry peers under the
+                // active mirror, rather than joining the source's group.
+                var mode = PointerManager.m_Instance.CurrentSymmetryMode;
+                bool linkMirrorCopies = SymmetryPeerEditing.Enabled && m_SelectedStrokes.Count > 0 &&
+                    (mode == PointerManager.SymmetryMode.SinglePlane ||
+                     mode == PointerManager.SymmetryMode.MultiMirror);
+                var mirror = linkMirrorCopies ? SymmetryMirrors.EnsureActive() : null;
+
                 // Duplicate strokes.
                 foreach (var stroke in m_SelectedStrokes)
                 {
+                    var group = linkMirrorCopies ? new SymmetryStrokeGroup(mirror) : null;
                     for (int i = 0; i < xfSymmetriesCS.Count; i++)
                     {
-                        m_DuplicatedStrokes.Add(
-                            SketchMemoryScript.m_Instance.DuplicateStroke(
-                                stroke, m_CurrentCanvas, xfSymmetriesCS[i], absoluteScale: true));
+                        var duplicate = SketchMemoryScript.m_Instance.DuplicateStroke(
+                            stroke, m_CurrentCanvas, xfSymmetriesCS[i], absoluteScale: true);
+                        if (linkMirrorCopies)
+                        {
+                            duplicate.JoinSymmetryGroup(group, i);
+                        }
+                        m_DuplicatedStrokes.Add(duplicate);
                     }
                 }
 

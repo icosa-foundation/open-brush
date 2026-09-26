@@ -73,6 +73,54 @@ namespace TiltBrush
         /// Which control points on the stroke should be dropped due to simplification
         public bool[] m_ControlPointsToDrop;
 
+        /// The symmetry group this stroke belongs to, or null if it wasn't drawn with symmetry.
+        public SymmetryStrokeGroup SymmetryPeerGroup => m_SymmetryGroup;
+
+        /// Which of the symmetry's pointers drew this stroke; 0 is the pointer the user controls,
+        /// -1 if unknown.
+        public int SymmetryPointerIndex => m_SymmetryPointerIndex;
+
+        /// The symmetry settings that were in place when this stroke was created;
+        /// null if it wasn't drawn with symmetry.
+        public SymmetrySettingsSnapshot SymmetrySettings => m_SymmetryGroup?.Mirror?.Settings;
+
+        /// The other strokes that were created alongside this one by a symmetry mode.
+        /// Empty if the stroke wasn't drawn with symmetry.
+        public IEnumerable<Stroke> SymmetryPeers =>
+            m_SymmetryGroup?.PeersOf(this) ?? Enumerable.Empty<Stroke>();
+
+        public bool HasSymmetryPeers => m_SymmetryGroup != null && m_SymmetryGroup.Count > 1;
+
+        /// Makes this stroke a member of the passed symmetry group.
+        public void JoinSymmetryGroup(SymmetryStrokeGroup group, int pointerIndex)
+        {
+            if (group == null || ReferenceEquals(m_SymmetryGroup, group)) { return; }
+            var canvas = Canvas == App.Scene.SelectionCanvas && m_PreviousCanvas != null
+                ? m_PreviousCanvas : Canvas;
+            if (group.Mirror == null ||
+                (group.Mirror.Canvas != null && group.Mirror.Canvas != canvas)) { return; }
+            if (m_SymmetryGroup != null)
+            {
+                LeaveSymmetryGroup();
+            }
+            m_SymmetryGroup = group;
+            m_SymmetryPointerIndex = pointerIndex;
+            group.Add(this);
+            InvalidateCopy();
+        }
+
+        /// Removes this stroke from its symmetry group, along with its record of the symmetry
+        /// settings, which the group owns.
+        public void LeaveSymmetryGroup()
+        {
+            if (m_SymmetryGroup == null) { return; }
+            var group = m_SymmetryGroup;
+            m_SymmetryGroup = null;
+            m_SymmetryPointerIndex = -1;
+            group.Remove(this);
+            InvalidateCopy();
+        }
+
         /// The canvas this stroke is a part of.
         public CanvasScript Canvas
         {
@@ -189,6 +237,11 @@ namespace TiltBrush
 
             if (existing.m_Guid != null)
                 m_Guid = Guid.NewGuid();
+
+            // A copy is not a peer of the strokes the original was drawn with, and the record of
+            // the symmetry settings belongs to that group, so the copy has neither.
+            m_SymmetryGroup = null;
+            m_SymmetryPointerIndex = -1;
         }
 
         /// Makes a copy of stroke, if one has not already been made.
@@ -217,6 +270,7 @@ namespace TiltBrush
         /// - Stroke will never become garbage because of the Batch -> Subset -> Stroke link
         public void DestroyStroke()
         {
+            LeaveSymmetryGroup();
             Uncreate();
             // The object is still in a valid state; we should probably purposely vandalize it,
             // but some code might still erroneously use Destroy() when they mean Uncreate()
@@ -365,6 +419,58 @@ namespace TiltBrush
 
             m_BrushScale *= Mathf.Abs(leftTransform.lossyScale.x);
             InvalidateCopy();
+        }
+
+        /// Moves this stroke's geometry where it lies, keeping its control points in step.
+        ///
+        /// Cheap enough to do every frame: it transforms the vertices this stroke already owns
+        /// inside its batch, rather than regenerating the geometry or copying it to another
+        /// canvas. Only works for batched strokes; returns false for anything else, and for a
+        /// stroke with no geometry yet.
+        ///
+        /// Pass updateControlPoints: false to move only what is drawn. Be careful with this:
+        /// anything that rebuilds the stroke regenerates its geometry from its control points, so
+        /// a stroke moved this way jumps back the moment another tool touches it. Only use it
+        /// where nothing else can reach the stroke in the meantime.
+        internal bool CanTransformGeometryInPlace =>
+            m_Type == Type.BatchedBrushStroke && m_BatchSubset != null &&
+            m_BatchSubset.m_ParentBatch != null;
+
+        public bool TransformGeometryInPlace(TrTransform leftTransform, bool updateControlPoints = true)
+        {
+            if (!CanTransformGeometryInPlace) { return false; }
+            m_BatchSubset.m_ParentBatch.TransformSubset(m_BatchSubset, leftTransform);
+            if (updateControlPoints)
+            {
+                LeftTransformControlPoints(leftTransform);
+            }
+            return true;
+        }
+
+        /// Endpoint restoration for mirror undo and failed live moves. Does not require a batch
+        /// and preserves erased/uncreated state. The caller supplies points in the current canvas.
+        internal void RestoreMirrorControlPoints(PointerManager.ControlPoint[] points, float brushScale)
+        {
+            bool hadGeometry = m_Type != Type.NotCreated;
+            bool wasEnabled = hadGeometry && IsGeometryEnabled;
+            if (hadGeometry) { Uncreate(); }
+            m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
+            m_BrushScale = brushScale;
+            InvalidateCopy();
+            if (hadGeometry)
+            {
+                Recreate();
+                // This is geometry replacement, not another eraser operation. Hide() would
+                // subtract from the tilt meter a second time for an already-erased stroke.
+                if (!wasEnabled && m_Type == Type.BatchedBrushStroke)
+                {
+                    m_BatchSubset.m_ParentBatch.DisableSubset(m_BatchSubset);
+                }
+                else if (!wasEnabled && m_Type == Type.BrushStroke)
+                {
+                    m_Object.GetComponent<BaseBrushScript>().HideBrush(true);
+                }
+            }
         }
 
         /// Set the parent canvas of this stroke, preserving the _canvas_-relative position.

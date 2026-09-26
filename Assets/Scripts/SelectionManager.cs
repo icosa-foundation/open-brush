@@ -354,6 +354,8 @@ namespace TiltBrush
         public float SnappingGridSize => m_snappingGridSize;
 
         // Mainly stored for use in scripts
+        private Dictionary<Stroke, TrTransform> m_SelectionJoinTransforms;
+
         private Stroke m_LastSelectedStroke;
         private Stroke m_LastStroke;
 
@@ -578,6 +580,7 @@ namespace TiltBrush
         {
             m_Instance = this;
             m_SelectedStrokes = new HashSet<Stroke>();
+            m_SelectionJoinTransforms = new Dictionary<Stroke, TrTransform>(new ReferenceComparer<Stroke>());
             m_SelectedWidgets = new HashSet<GrabWidget>();
             m_AngleSnaps = new[] { 0f, 15f, 30f, 45f, 60f, 75f, 90f };
             m_GridSnaps = new[] { 0f, .1f, .25f, .5f, 1f, 2f, 3f, 5f };
@@ -714,6 +717,29 @@ namespace TiltBrush
 
         public void ResolveChanges()
         {
+            // Show the symmetry peers of the selection following it, but only once it has
+            // actually been moved: while the user is still picking strokes there is nothing to
+            // follow, and parking peers costs about what selecting them does.
+            TrTransform selectionXf = SelectionTransform;
+            bool wantPeerPreview = HasSelection && m_SelectedStrokes.Count > 0 &&
+                SymmetryPeerEditing.Enabled &&
+                (selectionXf != TrTransform.identity || SymmetryPeerPreview.IsShowing ||
+                 (m_bSelectionWidgetNeedsUpdate &&
+                  m_SelectionJoinTransforms.Values.Any(xf => xf != TrTransform.identity)));
+            if (!wantPeerPreview)
+            {
+                SymmetryPeerPreview.Hide();
+            }
+            else if (!SymmetryPeerPreview.IsShowing || m_bSelectionWidgetNeedsUpdate)
+            {
+                // Rebuilt only when the selection itself changes; a drag doesn't change it.
+                SymmetryPeerPreview.Show(m_SelectedStrokes);
+            }
+            if (SymmetryPeerPreview.IsShowing)
+            {
+                SymmetryPeerPreview.UpdateTransform(selectionXf);
+            }
+
             if (m_bSelectionWidgetNeedsUpdate)
             {
                 m_SelectionWidget.SelectionTransform = SelectionTransformToScene(SelectionTransform);
@@ -769,6 +795,10 @@ namespace TiltBrush
 
         public void ClearActiveSelection()
         {
+            // The deselect below is what writes the move into the peers, so they have to be back
+            // in their own layers before it is worked out.
+            SymmetryPeerPreview.Hide();
+
             // Make sure we don't have a selection active.
             if (HasSelection)
             {
@@ -808,9 +838,48 @@ namespace TiltBrush
         /// This should only be called when we're clearing the scene and need to quickly
         /// forget our selection, knowing that the selection canvas will soon be cleared
         /// anyway.
+        /// The selection transform each selected stroke joined the selection under. A stroke
+        /// added to a selection that has already been moved has only moved by the difference
+        /// between this and the transform in force when it is deselected.
+        public TrTransform SelectionTransformWhenSelected(Stroke stroke)
+        {
+            return m_SelectionJoinTransforms.TryGetValue(stroke, out TrTransform xf)
+                ? xf
+                : TrTransform.identity;
+        }
+
+        /// Undo of deselection must restore when each stroke joined, rather than treating
+        /// every stroke as newly selected at the final widget transform.
+        internal void RestoreSelectionJoinTransforms(
+            IReadOnlyDictionary<Stroke, TrTransform> joinTransforms)
+        {
+            foreach (var pair in joinTransforms)
+            {
+                if (IsStrokeSelected(pair.Key))
+                {
+                    m_SelectionJoinTransforms[pair.Key] = pair.Value;
+                }
+            }
+        }
+
+        internal void RestoreSelectionSourceCanvases(
+            IReadOnlyDictionary<Stroke, CanvasScript> sourceCanvases)
+        {
+            foreach (var pair in sourceCanvases)
+            {
+                if (IsStrokeSelected(pair.Key) && pair.Value != null &&
+                    !App.Scene.IsLayerDeleted(pair.Value))
+                {
+                    pair.Key.m_PreviousCanvas = pair.Value;
+                }
+            }
+        }
+
         public void ForgetStrokesInSelectionCanvas()
         {
+            SymmetryPeerPreview.Hide();
             m_SelectedStrokes.Clear();
+            m_SelectionJoinTransforms.Clear();
             m_SelectedWidgets.Clear();
             SelectionTransform = TrTransform.identity;
             UpdateSelectionWidget();
@@ -818,6 +887,7 @@ namespace TiltBrush
 
         public void SelectStrokes(IEnumerable<Stroke> strokes, bool preserveTool = false)
         {
+            SymmetryPeerPreview.Hide();
             foreach (var stroke in strokes)
             {
                 if (IsStrokeSelected(stroke))
@@ -829,6 +899,7 @@ namespace TiltBrush
                 stroke.m_PreviousCanvas = stroke.Canvas;
                 stroke.SetParentKeepWorldPosition(App.Scene.SelectionCanvas, SelectionTransform.inverse);
                 m_SelectedStrokes.Add(stroke);
+                m_SelectionJoinTransforms[stroke] = SelectionTransform;
 
                 if (!m_GroupToSelectedStrokes.TryGetValue(stroke.Group, out var groupStrokes))
                 {
@@ -850,6 +921,7 @@ namespace TiltBrush
 
         public void DeselectStrokes(IEnumerable<Stroke> strokes, CanvasScript targetCanvas = null)
         {
+            SymmetryPeerPreview.Hide();
             // Deselects to the canvas stored in m_PreviousCanvas for each stroke or widget
             // Pass in targetCanvas to override this.
 
@@ -863,6 +935,7 @@ namespace TiltBrush
                 var destination = ChooseDestinationCanvas(targetCanvas, stroke.m_PreviousCanvas);
                 stroke.SetParentKeepWorldPosition(destination, SelectionTransform);
                 m_SelectedStrokes.Remove(stroke);
+                m_SelectionJoinTransforms.Remove(stroke);
 
                 var groupStrokes = m_GroupToSelectedStrokes[stroke.Group];
                 groupStrokes.Remove(stroke);
@@ -989,6 +1062,7 @@ namespace TiltBrush
             foreach (var stroke in strokes)
             {
                 m_SelectedStrokes.Remove(stroke);
+                m_SelectionJoinTransforms.Remove(stroke);
                 RemoveFromGroupToSelectedStrokes(stroke.Group, stroke);
             }
             UpdateSelectionWidget();

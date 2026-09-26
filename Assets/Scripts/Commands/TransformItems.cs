@@ -36,6 +36,26 @@ namespace TiltBrush
             App.Scene.DestroyLayer(tempLayer);
         }
 
+        /// Applies a separate canvas-space transform to each stroke, about the canvas origin.
+        /// Unlike TransformList, the transforms are not relative to each stroke's own position,
+        /// which is what mirroring an edit onto symmetry peers needs. One temp layer serves the
+        /// whole batch.
+        public static void TransformEach(IList<Stroke> strokes, IList<TrTransform> xforms)
+        {
+            if (strokes == null || strokes.Count == 0) { return; }
+            var tempLayer = App.Scene.AddLayerNow();
+            for (int i = 0; i < strokes.Count && i < xforms.Count; ++i)
+            {
+                var stroke = strokes[i];
+                var layer = stroke.Canvas;
+                stroke.SetParentKeepWorldPosition(tempLayer);
+                tempLayer.Pose = xforms[i];
+                stroke.SetParentKeepWorldPosition(layer, tempLayer.Pose);
+                tempLayer.Pose = TrTransform.identity;
+            }
+            App.Scene.DestroyLayer(tempLayer);
+        }
+
         public static void TransformSelected(Vector3 mPivot, TrTransform xf)
         {
             var tempLayer = App.Scene.AddLayerNow();

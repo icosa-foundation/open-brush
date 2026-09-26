@@ -71,19 +71,47 @@ namespace TiltBrush
 
         private static List<Stroke> CropStrokes(StrokeCropVolume volume, IEnumerable<Stroke> strokes, bool keepInside)
         {
-            var originals = (strokes ?? SketchMemoryScript.AllStrokes())
+            var requested = (strokes ?? SketchMemoryScript.AllStrokes())
                 .Where(stroke => stroke != null && stroke.IsGeometryEnabled).Distinct().ToArray();
+            var targets = new List<(Stroke stroke, TrTransform toVolume)>();
+            var seen = new HashSet<Stroke>();
+            var unmirroredGroups = new HashSet<SymmetryStrokeGroup>();
+            foreach (var stroke in requested)
+            {
+                if (!seen.Add(stroke)) { continue; }
+                var canvas = stroke.Canvas;
+                var toVolume = canvas != null ? volume.Pose.inverse * canvas.Pose :
+                    TrTransform.identity;
+                targets.Add((stroke, toVolume));
+                foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+                {
+                    if (seen.Contains(peer)) { continue; }
+                    if (SymmetryPeerEditing.TryGetPeerSymmetryTransform(stroke, peer,
+                        out TrTransform toPeer))
+                    {
+                        seen.Add(peer);
+                        targets.Add((peer, toVolume * toPeer.inverse));
+                    }
+                    else
+                    {
+                        // No valid mirrored crop exists; leave the peer alone and break the link.
+                        unmirroredGroups.Add(stroke.SymmetryPeerGroup);
+                    }
+                }
+            }
+            var originals = targets.Select(target => target.stroke).ToArray();
             var replacements = new Dictionary<Stroke, List<Stroke>>();
             var result = new List<Stroke>();
-            foreach (var stroke in originals)
+            foreach (var target in targets)
             {
+                var stroke = target.stroke;
                 var canvas = stroke.Canvas;
                 if (canvas == null || stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length == 0)
                 {
                     result.Add(stroke);
                     continue;
                 }
-                var toVolume = volume.Pose.inverse * canvas.Pose;
+                var toVolume = target.toVolume;
                 if (keepInside && stroke.m_ControlPoints.All(cp => volume.Contains(toVolume * cp.m_Pos)))
                 {
                     // A convex volume contains every segment if it contains every endpoint.
@@ -127,9 +155,39 @@ namespace TiltBrush
             }
             if (replacements.Count == 0) return strokes as List<Stroke> ?? result;
 
+            var brokenLinks = new List<SymmetryPeerEditing.BrokenLink>();
+            var replacementGroups = new List<(Stroke stroke, SymmetryStrokeGroup group, int index)>();
+            var affectedGroups = replacements.Keys.Select(stroke => stroke.SymmetryPeerGroup)
+                .Where(group => group != null).Distinct();
+            foreach (var group in affectedGroups)
+            {
+                var members = group.Strokes.ToArray();
+                bool matching = SymmetryPeerEditing.Enabled &&
+                    SymmetryMirrors.IsActiveForEditing(group.Mirror) &&
+                    !unmirroredGroups.Contains(group) &&
+                    members.All(member => replacements.ContainsKey(member)) &&
+                    replacements[members[0]].Count > 0 &&
+                    members.All(member => replacements[member].Count == replacements[members[0]].Count);
+                if (!matching)
+                {
+                    brokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                    continue;
+                }
+                for (int piece = 0; piece < replacements[members[0]].Count; ++piece)
+                {
+                    var newGroup = new SymmetryStrokeGroup(group.Mirror);
+                    foreach (var member in members)
+                    {
+                        replacementGroups.Add((replacements[member][piece], newGroup,
+                            member.SymmetryPointerIndex));
+                    }
+                }
+            }
+
             var parent = ApiManager.Instance != null ? ApiManager.Instance.ActiveUndo : null;
             var liveList = strokes as List<Stroke> ?? result;
-            var command = new CropStrokesCommand(originals, replacements, result, liveList, parent);
+            var command = new CropStrokesCommand(originals, replacements, result, liveList,
+                brokenLinks, replacementGroups, parent);
             if (parent == null) SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             else command.Redo(); // Apply now; the tool/API undo group records its children on completion.
             return liveList;
