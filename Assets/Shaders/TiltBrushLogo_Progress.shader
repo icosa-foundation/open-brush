@@ -21,7 +21,8 @@ Shader "Custom/TiltBrushLogo_Progress" {
   SubShader {
     Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "RenderType"="Transparent" }
-    Blend SrcAlpha OneMinusSrcAlpha
+    // Blend the logo's transparency without lowering eye-buffer alpha and revealing passthrough.
+    Blend SrcAlpha OneMinusSrcAlpha, Zero One
     LOD 100
     Pass {
       HLSLPROGRAM
