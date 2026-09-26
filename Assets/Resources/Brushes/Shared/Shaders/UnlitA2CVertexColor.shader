@@ -18,6 +18,8 @@ Shader "Brush/UnlitA2CVertexColor"
             Tags { "LightMode"="UniversalForward" }
             AlphaToMask On
             Blend Off
+            // Keep alpha for coverage, but preserve eye-buffer alpha to avoid revealing passthrough.
+            ColorMask RGB
             ZWrite On
             Cull Off
 
