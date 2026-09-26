@@ -10,17 +10,17 @@ Shader "Brush/UnlitA2CVertexColor"
     }
     SubShader
     {
-        Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="TransparentCutout" "Queue"="AlphaTest" "IgnoreProjector"="True" }
+        Tags { "RenderPipeline"="UniversalPipeline" "RenderType"="Transparent" "Queue"="Transparent" "IgnoreProjector"="True" }
         LOD 100
 
         Pass
         {
             Tags { "LightMode"="UniversalForward" }
-            AlphaToMask On
-            Blend Off
-            // Keep alpha for coverage, but preserve eye-buffer alpha to avoid revealing passthrough.
-            ColorMask RGB
-            ZWrite On
+            // Apply opacity once through blending, not again through sample coverage.
+            AlphaToMask Off
+            // Composite opacity over passthrough while keeping opaque destinations opaque.
+            Blend SrcAlpha OneMinusSrcAlpha, One OneMinusSrcAlpha
+            ZWrite Off
             Cull Off
 
             HLSLPROGRAM
