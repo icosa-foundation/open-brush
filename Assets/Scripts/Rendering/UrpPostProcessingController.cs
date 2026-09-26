@@ -16,8 +16,10 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.XR;
 
 namespace TiltBrush
 {
@@ -30,6 +32,7 @@ namespace TiltBrush
     public class UrpPostProcessingController : MonoBehaviour
     {
         private const string kLogPrefix = "[OB_URP_POST]";
+        private const string kMsaaLogPrefix = "[OB_QUILL_MSAA_20260926]";
         private const string kRuntimeVolumeName = "OpenBrush URP Runtime Global Volume";
         private const float kDisabledBloomIntensity = 0f;
         private const float kFastBloomIntensity = 0.1f;
@@ -56,6 +59,10 @@ namespace TiltBrush
         private Vignette m_CaptureVignette;
         private bool m_CurrentHdr = true;
         private bool m_CurrentFxaa;
+        private int m_CurrentMsaa = 1;
+        private UniversalRenderPipelineAsset m_MsaaPipelineAsset;
+        private int m_PreviousPipelineMsaa;
+        private bool m_LogMsaaOnNextCameraRender;
         private AppQualitySettingLevels.BloomMode m_CurrentBloomMode =
             AppQualitySettingLevels.BloomMode.None;
         private float m_BloomAmount = 1f;
@@ -86,6 +93,7 @@ namespace TiltBrush
             Instance = this;
             DisableLegacyPostProcessing();
             CameraConfig.PostEffectsChanged += OnPostEffectsChanged;
+            RenderPipelineManager.endCameraRendering += LogMsaaRenderTarget;
         }
 
         private void Start()
@@ -116,6 +124,8 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            RestorePipelineMsaa();
+            RenderPipelineManager.endCameraRendering -= LogMsaaRenderTarget;
             if (Instance == this)
             {
                 Instance = null;
@@ -329,6 +339,7 @@ namespace TiltBrush
             m_CurrentFxaa = settings.Fxaa;
             m_CurrentBloomMode = settings.Bloom;
 
+            ApplyMsaa(QualityControls.m_Instance.MSAALevel);
             ApplyBloomMode(settings.Bloom, settings.Hdr);
             RefreshCameras();
             Debug.Log(
@@ -336,7 +347,74 @@ namespace TiltBrush
                 $"bloomActive={m_Bloom.active} intensity={m_Bloom.intensity.value} " +
                 $"scatter={m_Bloom.scatter.value} hq={m_Bloom.highQualityFiltering.value} " +
                 $"downscale={m_Bloom.downscale.value} maxIterations={m_Bloom.maxIterations.value} " +
-                $"hdr={settings.Hdr} fxaa={settings.Fxaa} msaa={settings.MsaaLevel}.");
+                $"hdr={settings.Hdr} fxaa={settings.Fxaa} msaa={m_CurrentMsaa}.");
+            Debug.Log($"{kMsaaLogPrefix} quality={qualityLevel} requested={QualityControls.m_Instance.MSAALevel} pipeline={m_MsaaPipelineAsset?.msaaSampleCount}.");
+        }
+
+        private void ApplyMsaa(int requestedSamples)
+        {
+#if UNITY_IOS && ZAPBOX_SUPPORTED
+            // Preserve the existing Zapbox policy of disabling MSAA.
+            requestedSamples = 1;
+#endif
+            m_CurrentMsaa = requestedSamples == 0 ? 1 : requestedSamples;
+            if (m_CurrentMsaa != 1 && m_CurrentMsaa != 2 &&
+                m_CurrentMsaa != 4 && m_CurrentMsaa != 8)
+            {
+                Debug.LogWarning($"{kMsaaLogPrefix} Invalid MSAA {requestedSamples}; disabling MSAA.");
+                m_CurrentMsaa = 1;
+            }
+
+            var pipelineAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (pipelineAsset != m_MsaaPipelineAsset)
+            {
+                RestorePipelineMsaa();
+                m_MsaaPipelineAsset = pipelineAsset;
+                if (pipelineAsset != null)
+                {
+                    m_PreviousPipelineMsaa = pipelineAsset.msaaSampleCount;
+                }
+            }
+
+            if (pipelineAsset != null)
+            {
+                pipelineAsset.msaaSampleCount = m_CurrentMsaa;
+                // Request the XR surface resize during the quality update, before URP
+                // constructs its eye passes. Leaving this to URP's Render method can
+                // change the native view layout while a frame is being rendered.
+                XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
+                m_LogMsaaOnNextCameraRender = true;
+            }
+        }
+
+        private void RestorePipelineMsaa()
+        {
+            if (m_MsaaPipelineAsset != null)
+            {
+                m_MsaaPipelineAsset.msaaSampleCount = m_PreviousPipelineMsaa;
+                XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
+                m_MsaaPipelineAsset = null;
+            }
+        }
+
+        private void LogMsaaRenderTarget(ScriptableRenderContext context, Camera camera)
+        {
+            if (!m_LogMsaaOnNextCameraRender || IsCaptureCamera(camera))
+            {
+                return;
+            }
+            m_LogMsaaOnNextCameraRender = false;
+
+            var displays = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetInstances(displays);
+            foreach (var display in displays)
+            {
+                if (display.running && display.GetRenderPassCount() > 0)
+                {
+                    display.GetRenderPass(0, out var pass);
+                    Debug.Log($"{kMsaaLogPrefix} target camera={camera.name} samples={pass.renderTargetDesc.msaaSamples} foveation={display.foveatedRenderingLevel:F2} fps={QualityControls.m_Instance?.FramesInLastSecond}.");
+                }
+            }
         }
 
         private void OnPostEffectsChanged()
@@ -357,6 +435,7 @@ namespace TiltBrush
             if (!isCapture)
             {
                 camera.allowHDR = m_CurrentHdr;
+                camera.allowMSAA = m_CurrentMsaa > 1;
                 cameraData.antialiasing = m_CurrentFxaa
                     ? AntialiasingMode.FastApproximateAntialiasing
                     : AntialiasingMode.None;

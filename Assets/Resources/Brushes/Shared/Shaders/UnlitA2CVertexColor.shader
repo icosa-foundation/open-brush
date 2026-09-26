@@ -16,6 +16,8 @@ Shader "Brush/UnlitA2CVertexColor"
         Pass
         {
             Tags { "LightMode"="UniversalForward" }
+            // Normal rendering uses the original hardware alpha-to-coverage path.
+            // The compositor variant supplies its own coverage and opaque sample alpha.
             AlphaToMask On
             Blend Off
             ZWrite On
@@ -24,6 +26,9 @@ Shader "Brush/UnlitA2CVertexColor"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma target 3.5
+            #pragma target 4.5 QUILL_COMPOSITOR_ALPHA
+            #pragma multi_compile __ QUILL_COMPOSITOR_ALPHA
             #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -48,6 +53,14 @@ Shader "Brush/UnlitA2CVertexColor"
                 half4 color : COLOR;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
+            };
+
+            struct FragmentOutput
+            {
+                half4 color : SV_Target;
+#if defined(QUILL_COMPOSITOR_ALPHA)
+                uint coverage : SV_Coverage;
+#endif
             };
 
             Varyings Vert(Attributes input)
@@ -101,7 +114,36 @@ Shader "Brush/UnlitA2CVertexColor"
                 return frac(sin(h) * 43758.5453);
             }
 
-            half4 Frag(Varyings input) : SV_Target
+#if defined(QUILL_COMPOSITOR_ALPHA)
+            uint OpacityCoverageMask(float alpha, float phase)
+            {
+                // Bit-reversed sample ranks stratify each 1/2/4/8-sample prefix.
+                // Bits beyond the target's sample count are ignored by the rasterizer.
+                uint mask = 0;
+                [unroll]
+                for (uint sampleIndex = 0; sampleIndex < 8; ++sampleIndex)
+                {
+                    uint rank = ((sampleIndex & 1u) << 2) |
+                                (sampleIndex & 2u) |
+                                ((sampleIndex & 4u) >> 2);
+                    float threshold = frac(phase + rank * 0.125);
+                    mask |= alpha > threshold ? (1u << sampleIndex) : 0u;
+                }
+                return mask;
+            }
+
+            float CoveragePhase(float2 pixelPos)
+            {
+                uint2 pixel = uint2(pixelPos);
+                uint hash = (pixel.x * 0x8da6b343u) ^ (pixel.y * 0xd8163841u);
+                hash ^= hash >> 16;
+                hash *= 0x7feb352du;
+                hash ^= hash >> 15;
+                return (hash >> 8) * (1.0 / 16777216.0);
+            }
+#endif
+
+            FragmentOutput Frag(Varyings input)
             {
                 UNITY_SETUP_INSTANCE_ID(input);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
@@ -117,7 +159,17 @@ Shader "Brush/UnlitA2CVertexColor"
                 float dither = lerp(ditherNoise, ditherOrdered, step(0.5, _OrderedDither));
 
                 alpha = saturate(alpha + (dither - 0.5) * _DitherStrength);
-                return half4(c.rgb, alpha);
+
+                FragmentOutput output;
+#if defined(QUILL_COMPOSITOR_ALPHA)
+                // Decorrelate sample quantization from the opacity jitter above.
+                float coveragePhase = CoveragePhase(pixelPos);
+                output.coverage = OpacityCoverageMask(alpha, coveragePhase);
+                output.color = half4(c.rgb, 1);
+#else
+                output.color = half4(c.rgb, alpha);
+#endif
+                return output;
             }
             ENDHLSL
         }

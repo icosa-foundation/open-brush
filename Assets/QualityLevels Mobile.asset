@@ -16,7 +16,7 @@ MonoBehaviour:
   - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
-    m_MsaaLevel: 2
+    m_MsaaLevel: 4
     m_MaxLod: 200
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
@@ -31,7 +31,7 @@ MonoBehaviour:
   - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
-    m_MsaaLevel: 2
+    m_MsaaLevel: 4
     m_MaxLod: 200
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
@@ -46,7 +46,7 @@ MonoBehaviour:
   - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
-    m_MsaaLevel: 2
+    m_MsaaLevel: 4
     m_MaxLod: 200
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
@@ -61,7 +61,7 @@ MonoBehaviour:
   - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
-    m_MsaaLevel: 2
+    m_MsaaLevel: 4
     m_MaxLod: 200
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
@@ -76,7 +76,7 @@ MonoBehaviour:
   - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
-    m_MsaaLevel: 2
+    m_MsaaLevel: 4
     m_MaxLod: 200
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
@@ -91,7 +91,7 @@ MonoBehaviour:
   - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
-    m_MsaaLevel: 2
+    m_MsaaLevel: 4
     m_MaxLod: 200
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
@@ -106,7 +106,7 @@ MonoBehaviour:
   - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
-    m_MsaaLevel: 2
+    m_MsaaLevel: 8
     m_MaxLod: 200
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
