@@ -141,6 +141,7 @@ namespace TiltBrush
 
         void Awake()
         {
+            Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
             bool forceMonoscopic =
                 App.UserConfig.Flags.EnableMonoscopicMode ||
                 Keyboard.current[Key.M].isPressed;
@@ -247,6 +248,7 @@ namespace TiltBrush
 
         void OnDestroy()
         {
+            Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 Application.onBeforeRender -= OnNewPoses;
@@ -299,6 +301,14 @@ namespace TiltBrush
         private void SetPassthroughStrategy()
         {
             PassthroughMode = DeterminePassthroughStrategy();
+            if (PassthroughMode != PassthroughMode.None)
+            {
+                Shader.EnableKeyword("QUILL_COMPOSITOR_ALPHA");
+            }
+            else
+            {
+                Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
+            }
             Debug.Log($"[Passthrough] Strategy: {PassthroughMode}");
         }
 

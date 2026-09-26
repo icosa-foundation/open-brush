@@ -16,8 +16,9 @@ Shader "Brush/UnlitA2CVertexColor"
         Pass
         {
             Tags { "LightMode"="UniversalForward" }
-            // Coverage is explicit so covered samples can store opaque compositor alpha.
-            AlphaToMask Off
+            // Normal rendering uses the original hardware alpha-to-coverage path.
+            // The compositor variant supplies its own coverage and opaque sample alpha.
+            AlphaToMask On
             Blend Off
             ZWrite On
             Cull Off
@@ -25,7 +26,9 @@ Shader "Brush/UnlitA2CVertexColor"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Frag
-            #pragma target 4.5
+            #pragma target 3.5
+            #pragma target 4.5 QUILL_COMPOSITOR_ALPHA
+            #pragma multi_compile __ QUILL_COMPOSITOR_ALPHA
             #pragma multi_compile_instancing
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -55,7 +58,9 @@ Shader "Brush/UnlitA2CVertexColor"
             struct FragmentOutput
             {
                 half4 color : SV_Target;
+#if defined(QUILL_COMPOSITOR_ALPHA)
                 uint coverage : SV_Coverage;
+#endif
             };
 
             Varyings Vert(Attributes input)
@@ -109,6 +114,7 @@ Shader "Brush/UnlitA2CVertexColor"
                 return frac(sin(h) * 43758.5453);
             }
 
+#if defined(QUILL_COMPOSITOR_ALPHA)
             uint OpacityCoverageMask(float alpha, float phase)
             {
                 // Bit-reversed sample ranks stratify each 1/2/4/8-sample prefix.
@@ -135,6 +141,7 @@ Shader "Brush/UnlitA2CVertexColor"
                 hash ^= hash >> 15;
                 return (hash >> 8) * (1.0 / 16777216.0);
             }
+#endif
 
             FragmentOutput Frag(Varyings input)
             {
@@ -153,11 +160,15 @@ Shader "Brush/UnlitA2CVertexColor"
 
                 alpha = saturate(alpha + (dither - 0.5) * _DitherStrength);
 
+                FragmentOutput output;
+#if defined(QUILL_COMPOSITOR_ALPHA)
                 // Decorrelate sample quantization from the opacity jitter above.
                 float coveragePhase = CoveragePhase(pixelPos);
-                FragmentOutput output;
                 output.coverage = OpacityCoverageMask(alpha, coveragePhase);
                 output.color = half4(c.rgb, 1);
+#else
+                output.color = half4(c.rgb, alpha);
+#endif
                 return output;
             }
             ENDHLSL
