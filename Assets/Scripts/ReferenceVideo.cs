@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Video;
@@ -170,6 +171,13 @@ namespace TiltBrush
 
         private VideoPlayer m_VideoPlayer;
         private HashSet<Controller> m_Controllers = new HashSet<Controller>();
+        // When set, a URL VideoPlayer can open directly, so the video is streamed from shared
+        // storage instead of being copied into app-private storage first. Large videos are the
+        // main reason that copy was expensive.
+        private readonly Func<string> m_MediaUrl;
+        // SAF network-video pointers are documents rather than filesystem paths. Keep their
+        // small text reads separate from m_MediaUrl, which serves the video bytes themselves.
+        private readonly Func<Stream> m_OpenNetworkPointer;
 
         /// Persistent path is relative to the Tilt Brush/Media Library/Videos directory, if it is a
         /// filename.
@@ -177,6 +185,7 @@ namespace TiltBrush
         public string AbsolutePath { get; }
         public bool NetworkVideo { get; }
         public string HumanName { get; }
+        internal string CatalogIdentity { get; }
 
         public Texture2D Thumbnail { get; private set; }
 
@@ -193,14 +202,24 @@ namespace TiltBrush
         public string Error { get; private set; }
 
         public ReferenceVideo(string filePath)
+            : this(filePath, filePath) { }
+
+        public ReferenceVideo(
+            string filePath, string catalogIdentity,
+            string persistentPath = null,
+            Func<string> mediaUrl = null,
+            Func<Stream> openNetworkPointer = null)
         {
             // Case-insensitively, because discovery accepts extensions in any case. A
             // .TXT pointer that classified as an ordinary video would be handed to
             // VideoPlayer as the text file itself rather than the URL it contains.
-            NetworkVideo = filePath.EndsWith(".txt", System.StringComparison.OrdinalIgnoreCase);
-            PersistentPath = _GetPersistentPath(filePath);
-            HumanName = System.IO.Path.GetFileName(PersistentPath);
+            NetworkVideo = filePath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
             AbsolutePath = filePath;
+            CatalogIdentity = catalogIdentity;
+            PersistentPath = persistentPath ?? _GetPersistentPath(filePath);
+            HumanName = System.IO.Path.GetFileName(PersistentPath);
+            m_MediaUrl = mediaUrl;
+            m_OpenNetworkPointer = openNetworkPointer;
         }
 
         /// A video inside the video library is identified by its path relative to that library.
@@ -273,6 +292,10 @@ namespace TiltBrush
         public IEnumerator<Null> PrepareVideoPlayer(Action onCompletion)
         {
             Error = null;
+            // A network video's AbsolutePath names a .txt holding the real URL, so it never
+            // streams from storage.
+            string streamedUrl = NetworkVideo ? null : m_MediaUrl?.Invoke();
+
             var gobj = new GameObject(HumanName);
             gobj.transform.SetParent(VideoCatalog.Instance.gameObject.transform);
             try
@@ -281,7 +304,15 @@ namespace TiltBrush
                 m_VideoPlayer.playOnAwake = false;
                 if (NetworkVideo)
                 {
-                    if (System.IO.File.Exists(AbsolutePath))
+                    if (m_OpenNetworkPointer != null)
+                    {
+                        using (Stream stream = m_OpenNetworkPointer())
+                        using (var reader = new StreamReader(stream))
+                        {
+                            m_VideoPlayer.url = reader.ReadToEnd();
+                        }
+                    }
+                    else if (System.IO.File.Exists(AbsolutePath))
                     {
                         m_VideoPlayer.url = System.IO.File.ReadAllText(AbsolutePath);
                     }
@@ -290,7 +321,7 @@ namespace TiltBrush
                 {
                     // AbsolutePath is the path this video was found at, which is not necessarily
                     // VideoLibraryPath + PersistentPath. The network branch above already uses it.
-                    m_VideoPlayer.url = $"{AbsolutePath}";
+                    m_VideoPlayer.url = streamedUrl ?? $"{AbsolutePath}";
                 }
                 m_VideoPlayer.isLooping = true;
                 m_VideoPlayer.renderMode = VideoRenderMode.APIOnly;
@@ -402,9 +433,16 @@ namespace TiltBrush
                     controller.Dispose();
                 }
             }
+            ReleaseThumbnail();
+        }
+
+        // The catalog owns the thumbnail; widget controllers own playback independently.
+        internal void ReleaseThumbnail()
+        {
             if (Thumbnail != null)
             {
                 UnityEngine.Object.Destroy(Thumbnail);
+                Thumbnail = null;
             }
         }
 
