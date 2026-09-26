@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.XR;
@@ -92,7 +93,7 @@ namespace TiltBrush
             Instance = this;
             DisableLegacyPostProcessing();
             CameraConfig.PostEffectsChanged += OnPostEffectsChanged;
-            RenderPipelineManager.beginCameraRendering += LogMsaaRenderTarget;
+            RenderPipelineManager.endCameraRendering += LogMsaaRenderTarget;
         }
 
         private void Start()
@@ -124,7 +125,7 @@ namespace TiltBrush
         private void OnDestroy()
         {
             RestorePipelineMsaa();
-            RenderPipelineManager.beginCameraRendering -= LogMsaaRenderTarget;
+            RenderPipelineManager.endCameraRendering -= LogMsaaRenderTarget;
             if (Instance == this)
             {
                 Instance = null;
@@ -378,6 +379,10 @@ namespace TiltBrush
             if (pipelineAsset != null)
             {
                 pipelineAsset.msaaSampleCount = m_CurrentMsaa;
+                // Request the XR surface resize during the quality update, before URP
+                // constructs its eye passes. Leaving this to URP's Render method can
+                // change the native view layout while a frame is being rendered.
+                XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
                 m_LogMsaaOnNextCameraRender = true;
             }
         }
@@ -387,6 +392,7 @@ namespace TiltBrush
             if (m_MsaaPipelineAsset != null)
             {
                 m_MsaaPipelineAsset.msaaSampleCount = m_PreviousPipelineMsaa;
+                XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
                 m_MsaaPipelineAsset = null;
             }
         }
