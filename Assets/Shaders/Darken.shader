@@ -35,7 +35,9 @@ Category {
         // TODO: investigate different blend mode that allows us to remove blend in the frag
   Blend DstColor Zero
   AlphaTest Greater .01
-  ColorMask RGBA
+  // RGB only: writing alpha would multiply the framebuffer alpha down, and on Quest the
+  // compositor treats eye-buffer alpha < 1 as a hole showing passthrough.
+  ColorMask RGB
   Cull Off Lighting Off ZWrite Off Fog { Color (0,0,0,0) }
 
   SubShader {
