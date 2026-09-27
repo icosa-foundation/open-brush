@@ -331,6 +331,8 @@ namespace TiltBrush
         void SetQualityLevel(int value)
         {
             AppQualitySettingLevels settingLevels = AppQualityLevels;
+            if (settingLevels != null && (value < 0 || value >= settingLevels.Length))
+                throw new ArgumentOutOfRangeException(nameof(value));
             var settings = new AppQualitySettingLevels.AppQualitySettings();
             if (settingLevels == null)
             {

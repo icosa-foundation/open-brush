@@ -26,8 +26,8 @@ namespace TiltBrush
             base.Awake();
 
             //divide the slider in to steps
-            int iNumQualitySettings = Mathf.Max(QualitySettings.names.Length, 2);
-            float fStepInterval = 1.0f / (float)(iNumQualitySettings - 1);
+            int iNumQualitySettings = Mathf.Max(QualityControls.m_Instance.AppQualityLevels.Length, 1);
+            float fStepInterval = 1.0f / Mathf.Max(iNumQualitySettings - 1, 1);
             m_Steps = new float[iNumQualitySettings];
             for (int i = 0; i < iNumQualitySettings; ++i)
             {
@@ -41,8 +41,7 @@ namespace TiltBrush
 
         void PositionNobAtCurrentQuality()
         {
-            int iCurrentQuality = QualitySettings.GetQualityLevel();
-            QualityControls.m_Instance.QualityLevel = iCurrentQuality;
+            int iCurrentQuality = Mathf.Clamp(QualityControls.m_Instance.QualityLevel, 0, m_Steps.Length - 1);
             Vector3 vLocalPos = m_Nob.transform.localPosition;
             vLocalPos.x = Mathf.Clamp(m_Steps[iCurrentQuality] - 0.5f, -0.5f, 0.5f) * m_MeshScale.x;
             m_Nob.transform.localPosition = vLocalPos;
@@ -64,7 +63,7 @@ namespace TiltBrush
             }
 
             //switch quality setting if needed
-            int iCurrentQuality = QualitySettings.GetQualityLevel();
+            int iCurrentQuality = Mathf.Clamp(QualityControls.m_Instance.QualityLevel, 0, m_Steps.Length - 1);
             if (iNearestIndex != iCurrentQuality)
             {
                 //only make one step at a time
@@ -87,7 +86,7 @@ namespace TiltBrush
 
         string GetDescriptionExtraText()
         {
-            int iCurrentQuality = QualitySettings.GetQualityLevel();
+            int iCurrentQuality = Mathf.Clamp(QualityControls.m_Instance.QualityLevel, 0, m_Steps.Length - 1);
             return QualitySettings.names[iCurrentQuality];
         }
     }
