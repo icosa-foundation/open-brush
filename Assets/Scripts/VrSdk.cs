@@ -18,6 +18,8 @@ using System.Linq;
 using OpenXR.Extensions;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.XR;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
@@ -142,6 +144,8 @@ namespace TiltBrush
         void Awake()
         {
             Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
+            RenderPipelineManager.beginCameraRendering += BeginQuillCameraRendering;
+            RenderPipelineManager.endCameraRendering += EndQuillCameraRendering;
             bool forceMonoscopic =
                 App.UserConfig.Flags.EnableMonoscopicMode ||
                 Keyboard.current[Key.M].isPressed;
@@ -256,6 +260,8 @@ namespace TiltBrush
 
         void OnDestroy()
         {
+            RenderPipelineManager.beginCameraRendering -= BeginQuillCameraRendering;
+            RenderPipelineManager.endCameraRendering -= EndQuillCameraRendering;
             Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
@@ -306,17 +312,36 @@ namespace TiltBrush
         // Feature Methods
         // -------------------------------------------------------------------------------------------- //
 
+        private readonly Stack<bool> m_QuillCameraKeywordStates = new Stack<bool>();
+
+        private void BeginQuillCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            m_QuillCameraKeywordStates.Push(Shader.IsKeywordEnabled("QUILL_COMPOSITOR_ALPHA"));
+            var cameraData = camera.GetComponent<UniversalAdditionalCameraData>();
+            // Captures use their own target, commonly without MSAA. Their alpha
+            // must retain the normal A2C shader path instead of eye-buffer coverage.
+            bool compositorCamera = PassthroughMode != PassthroughMode.None &&
+                camera.targetTexture == null && camera.stereoEnabled &&
+                cameraData != null && cameraData.allowXRRendering;
+            SetQuillCompositorKeyword(compositorCamera);
+        }
+
+        private void EndQuillCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            SetQuillCompositorKeyword(m_QuillCameraKeywordStates.Count > 0 &&
+                m_QuillCameraKeywordStates.Pop());
+        }
+
+        private static void SetQuillCompositorKeyword(bool enabled)
+        {
+            if (enabled) Shader.EnableKeyword("QUILL_COMPOSITOR_ALPHA");
+            else Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
+        }
+
         private void SetPassthroughStrategy()
         {
             PassthroughMode = DeterminePassthroughStrategy();
-            if (PassthroughMode != PassthroughMode.None)
-            {
-                Shader.EnableKeyword("QUILL_COMPOSITOR_ALPHA");
-            }
-            else
-            {
-                Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
-            }
+            Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
             Debug.Log($"[Passthrough] Strategy: {PassthroughMode}");
         }
 
