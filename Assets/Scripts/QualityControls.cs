@@ -70,6 +70,7 @@ namespace TiltBrush
         private int? m_RuntimeLowerFrames;
         private int? m_RuntimeHigherFrames;
         private int? m_PreparedInitialQualityLevel;
+        private bool m_QualityInitialized;
         public bool AutomaticQualityEnabled { get; set; } = true;
 
         public void ConfigureQualityLevel(int level, int msaa, int foveation)
@@ -182,6 +183,10 @@ namespace TiltBrush
         {
             int requestedLevel = InitialQualityLevel;
             m_PreparedInitialQualityLevel = GetAutomaticQualityLevel(requestedLevel, rendering);
+            // VrSdk can prepare XR after Awake has already applied the requested
+            // level. Apply its supported fallback too, so quality and eye MSAA agree.
+            if (m_QualityInitialized && QualityLevel != m_PreparedInitialQualityLevel.Value)
+                SetQualityLevel(m_PreparedInitialQualityLevel.Value);
             Debug.Log($"[OB_QUALITY_TUNING_20260927] startup requestedLevel={requestedLevel} selectedLevel={m_PreparedInitialQualityLevel.Value}.");
         }
 
@@ -214,6 +219,7 @@ namespace TiltBrush
 
             // Apply the quality level.
             QualityLevel = InitialQualityLevel;
+            m_QualityInitialized = true;
             SimplificationLevel = 0.0f;
         }
 
