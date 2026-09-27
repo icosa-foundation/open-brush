@@ -573,7 +573,18 @@ namespace TiltBrush
         public static string ConfigureQualityLevel(int level, int msaa, int foveation)
         {
             if (QualityControls.m_Instance == null) return "QualityControls is not available.";
-            QualityControls.m_Instance.ConfigureQualityLevel(level, msaa, foveation);
+            try
+            {
+                QualityControls.m_Instance.ConfigureQualityLevel(level, msaa, foveation);
+            }
+            catch (System.ArgumentException e)
+            {
+                return $"error: {e.Message}";
+            }
+            catch (System.InvalidOperationException e)
+            {
+                return $"error: {e.Message}";
+            }
             return $"Configured level={level} msaa={msaa} foveation={foveation} for this session.";
         }
 
@@ -582,7 +593,14 @@ namespace TiltBrush
             int lowerFrames, int higherFrames)
         {
             if (QualityControls.m_Instance == null) return "QualityControls is not available.";
-            QualityControls.m_Instance.ConfigureQualityThresholds(lowerFps, higherFps, lowerFrames, higherFrames);
+            try
+            {
+                QualityControls.m_Instance.ConfigureQualityThresholds(lowerFps, higherFps, lowerFrames, higherFrames);
+            }
+            catch (System.ArgumentException e)
+            {
+                return $"error: {e.Message}";
+            }
             return $"Configured lower={lowerFps}/{lowerFrames} higher={higherFps}/{higherFrames} for this session.";
         }
 
