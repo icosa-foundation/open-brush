@@ -64,6 +64,8 @@ namespace TiltBrush
         private int m_PreviousPipelineMsaa;
         private int m_PreviousUnityMsaa;
         private bool m_LogMsaaOnNextCameraRender;
+        private int m_XrTargetTraceBudget;
+        private readonly List<XRDisplaySubsystem> m_XrTraceDisplays = new List<XRDisplaySubsystem>();
         private AppQualitySettingLevels.BloomMode m_CurrentBloomMode =
             AppQualitySettingLevels.BloomMode.None;
         private float m_BloomAmount = 1f;
@@ -99,6 +101,12 @@ namespace TiltBrush
 
         private void Start()
         {
+            if (App.UserConfig.Profiling.XrRenderTargetDiagnostics)
+            {
+                m_XrTargetTraceBudget = 64;
+                RenderPipelineManager.beginContextRendering += TraceXrContext;
+                RenderPipelineManager.beginCameraRendering += TraceXrCamera;
+            }
             EnsureProfiles();
             EnsureGlobalVolume();
             float? bloomAmount = App.UserConfig.PostProcessing.BloomAmount;
@@ -127,6 +135,8 @@ namespace TiltBrush
         {
             RestorePipelineMsaa();
             RenderPipelineManager.endCameraRendering -= LogMsaaRenderTarget;
+            RenderPipelineManager.beginContextRendering -= TraceXrContext;
+            RenderPipelineManager.beginCameraRendering -= TraceXrCamera;
             if (Instance == this)
             {
                 Instance = null;
@@ -467,6 +477,64 @@ namespace TiltBrush
                 XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
                 m_MsaaPipelineAsset = null;
             }
+        }
+
+        private void TraceXrContext(ScriptableRenderContext context, List<Camera> cameras)
+        {
+            TraceXrTargets("before layout", null);
+        }
+
+        private void TraceXrCamera(ScriptableRenderContext context, Camera camera)
+        {
+            if (!IsCaptureCamera(camera))
+            {
+                TraceXrTargets("before reconfigure", camera);
+            }
+        }
+
+        private void TraceXrTargets(string phase, Camera camera)
+        {
+            if (m_XrTargetTraceBudget <= 0)
+            {
+                return;
+            }
+            --m_XrTargetTraceBudget;
+            SubsystemManager.GetInstances(m_XrTraceDisplays);
+            foreach (var display in m_XrTraceDisplays)
+            {
+                if (!display.running)
+                {
+                    continue;
+                }
+                for (int index = 0; index < display.GetRenderPassCount(); ++index)
+                {
+                    display.GetRenderPass(index, out var pass);
+                    var desc = pass.renderTargetDesc;
+                    var color = display.GetRenderTextureForRenderPass(index);
+                    var depth = display.GetSharedDepthTextureForRenderPass(index);
+                    Debug.Log($"[OB_XR_TEXTURE_TRACE_20260927] frame={Time.frameCount} phase={phase} camera={camera?.name} pass={index} target={pass.renderTarget} views={pass.GetRenderParameterCount()} requested={m_CurrentMsaa} descriptor={desc.width}x{desc.height}/{desc.dimension}/{desc.volumeDepth}/samples={desc.msaaSamples}/color={desc.graphicsFormat}/depth={desc.depthStencilFormat} submitDepth={pass.shouldFillOutDepth} colorTexture=({DescribeXrTexture(color)}) depthTexture=({DescribeXrTexture(depth)}).");
+                    if (camera != null && XRSystem.currentLayout != null)
+                    {
+                        foreach (var (passCamera, xrPass) in XRSystem.currentLayout.GetActivePasses())
+                        {
+                            if (passCamera == camera)
+                            {
+                                Debug.Log($"[OB_XR_TEXTURE_TRACE_20260927] frame={Time.frameCount} cachedPass={xrPass.multipassId} views={xrPass.viewCount} target={xrPass.renderTarget} slices={xrPass.renderTargetDesc.volumeDepth} samples={xrPass.renderTargetDesc.msaaSamples}.");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static string DescribeXrTexture(RenderTexture texture)
+        {
+            if (texture == null)
+            {
+                return "null";
+            }
+            var desc = texture.descriptor;
+            return $"id={texture.GetEntityId()} created={texture.IsCreated()} {desc.width}x{desc.height}/{desc.dimension}/{desc.volumeDepth}/samples={desc.msaaSamples}/color={desc.graphicsFormat}/depth={desc.depthStencilFormat}";
         }
 
         private void LogMsaaRenderTarget(ScriptableRenderContext context, Camera camera)

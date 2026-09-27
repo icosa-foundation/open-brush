@@ -815,6 +815,7 @@ namespace TiltBrush
             public float EyeTextureScaling { get; set; }
             public int GlobalMaximumLOD { get; set; }
             public int MsaaLevel { get; set; }
+            public bool XrRenderTargetDiagnostics { get; set; }
             public bool TakeScreenshot { get; set; }
             private int? m_screenshotResolution;
 
