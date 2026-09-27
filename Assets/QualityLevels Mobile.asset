@@ -16,7 +16,7 @@ MonoBehaviour:
   - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
-    m_MsaaLevel: 4
+    m_MsaaLevel: 2
     m_MaxLod: 200
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
@@ -26,7 +26,7 @@ MonoBehaviour:
     m_TargetMaxControlPoints: 50000
     m_MaxSimplification: 50
     m_MaxSimplificationUserStrokes: 2
-    m_GpuLevel: 5
+    m_GpuLevel: 4
     m_FixedFoveationLevel: 2
   - m_Bloom: 0
     m_Hdr: 0
@@ -41,23 +41,8 @@ MonoBehaviour:
     m_TargetMaxControlPoints: 50000
     m_MaxSimplification: 50
     m_MaxSimplificationUserStrokes: 2
-    m_GpuLevel: 5
-    m_FixedFoveationLevel: 1
-  - m_Bloom: 0
-    m_Hdr: 0
-    m_Fxaa: 0
-    m_MsaaLevel: 4
-    m_MaxLod: 200
-    m_Anisotropic: 0
-    m_BloomLevels: 2,3,3
-    m_ViewportScale: 1
-    m_EyeTextureScale: 1
-    m_StrokeSimplification: 0
-    m_TargetMaxControlPoints: 50000
-    m_MaxSimplification: 50
-    m_MaxSimplificationUserStrokes: 2
-    m_GpuLevel: 5
-    m_FixedFoveationLevel: 0
+    m_GpuLevel: 4
+    m_FixedFoveationLevel: 2
   - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
@@ -72,41 +57,11 @@ MonoBehaviour:
     m_MaxSimplification: 50
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 4
-    m_FixedFoveationLevel: 0
+    m_FixedFoveationLevel: 1
   - m_Bloom: 0
     m_Hdr: 0
     m_Fxaa: 0
     m_MsaaLevel: 4
-    m_MaxLod: 200
-    m_Anisotropic: 0
-    m_BloomLevels: 2,3,3
-    m_ViewportScale: 1
-    m_EyeTextureScale: 1
-    m_StrokeSimplification: 0
-    m_TargetMaxControlPoints: 50000
-    m_MaxSimplification: 50
-    m_MaxSimplificationUserStrokes: 2
-    m_GpuLevel: 3
-    m_FixedFoveationLevel: 0
-  - m_Bloom: 0
-    m_Hdr: 0
-    m_Fxaa: 0
-    m_MsaaLevel: 4
-    m_MaxLod: 200
-    m_Anisotropic: 0
-    m_BloomLevels: 2,3,3
-    m_ViewportScale: 1
-    m_EyeTextureScale: 1
-    m_StrokeSimplification: 0
-    m_TargetMaxControlPoints: 50000
-    m_MaxSimplification: 50
-    m_MaxSimplificationUserStrokes: 2
-    m_GpuLevel: 5
-    m_FixedFoveationLevel: 0
-  - m_Bloom: 0
-    m_Hdr: 0
-    m_Fxaa: 0
-    m_MsaaLevel: 8
     m_MaxLod: 200
     m_Anisotropic: 0
     m_BloomLevels: 2,3,3
