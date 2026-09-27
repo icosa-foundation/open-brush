@@ -69,6 +69,7 @@ namespace TiltBrush
         private float? m_RuntimeHigherFps;
         private int? m_RuntimeLowerFrames;
         private int? m_RuntimeHigherFrames;
+        private int? m_PreparedInitialQualityLevel;
         public bool AutomaticQualityEnabled { get; set; } = true;
 
         public void ConfigureQualityLevel(int level, int msaa, int foveation)
@@ -99,7 +100,7 @@ namespace TiltBrush
             Debug.Log($"[OB_QUALITY_TUNING_20260927] thresholds lower={lowerFps}/{lowerFrames} higher={higherFps}/{higherFrames}.");
         }
 
-        /// A number from 0 (mobile, lowest) to 3 (future, highest)
+        /// Index into the active platform's quality ladder, from lowest to highest.
         public int QualityLevel
         {
             get { return QualitySettings.GetQualityLevel(); }
@@ -165,11 +166,40 @@ namespace TiltBrush
         {
             get
             {
+                if (m_PreparedInitialQualityLevel.HasValue)
+                    return m_PreparedInitialQualityLevel.Value;
                 int defaultLevel = App.Config.IsMobileHardware ? AppQualityLevels.Length - 1 : 2;
                 int configuredLevel = App.UserConfig.Profiling.QualityLevel;
                 return configuredLevel >= 0 && configuredLevel < AppQualityLevels.Length
                     ? configuredLevel : defaultLevel;
             }
+        }
+
+        public void PrepareInitialQualityLevel(UrpPostProcessingController rendering)
+        {
+            int requestedLevel = InitialQualityLevel;
+            m_PreparedInitialQualityLevel = GetAutomaticQualityLevel(requestedLevel, rendering);
+            Debug.Log($"[OB_QUALITY_TUNING_20260927] startup requestedLevel={requestedLevel} selectedLevel={m_PreparedInitialQualityLevel.Value}.");
+        }
+
+        private int GetAutomaticQualityLevel(int desiredLevel,
+            UrpPostProcessingController rendering = null)
+        {
+            rendering = rendering != null ? rendering : UrpPostProcessingController.Instance;
+            // Explicit MSAA overrides are test settings and apply across the ladder.
+            if (!App.Config.IsMobileHardware || rendering == null || App.UserConfig.Profiling.MsaaLevel > 0)
+                return desiredLevel;
+            while (desiredLevel > 0)
+            {
+                var settings = AppQualityLevels[desiredLevel];
+                int samples = m_RuntimeQualityOverrides.TryGetValue(desiredLevel, out var runtime)
+                    ? runtime.msaa : settings.MsaaLevel;
+                samples = samples == 0 ? 1 : samples;
+                if (rendering.GetSupportedMsaa(samples, settings.Hdr) == samples)
+                    break;
+                desiredLevel--;
+            }
+            return desiredLevel;
         }
 
         void Awake()
@@ -261,7 +291,7 @@ namespace TiltBrush
             {
                 if (QualityLevel > 0)
                 {
-                    QualityLevel--;
+                    QualityLevel = GetAutomaticQualityLevel(QualityLevel - 1);
                 }
                 m_NumFramesFpsTooLow = 0;
             }
@@ -271,7 +301,8 @@ namespace TiltBrush
             {
                 if (QualityLevel < AppQualityLevels.Length - 1)
                 {
-                    QualityLevel++;
+                    int nextLevel = GetAutomaticQualityLevel(QualityLevel + 1);
+                    if (nextLevel > QualityLevel) QualityLevel = nextLevel;
                 }
                 m_NumFramesFpsHighEnough = 0;
             }

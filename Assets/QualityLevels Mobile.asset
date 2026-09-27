@@ -73,6 +73,21 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 4
     m_FixedFoveationLevel: 0
+  - m_Bloom: 0
+    m_Hdr: 0
+    m_Fxaa: 0
+    m_MsaaLevel: 8
+    m_MaxLod: 200
+    m_Anisotropic: 0
+    m_BloomLevels: 2,3,3
+    m_ViewportScale: 1
+    m_EyeTextureScale: 1
+    m_StrokeSimplification: 0
+    m_TargetMaxControlPoints: 50000
+    m_MaxSimplification: 50
+    m_MaxSimplificationUserStrokes: 2
+    m_GpuLevel: 4
+    m_FixedFoveationLevel: 0
   m_tiltMeterWeights:
   - Brush: {fileID: 11400000, guid: f15499e689c21834283473d09b16eb4a, type: 2}
     Weight: 2

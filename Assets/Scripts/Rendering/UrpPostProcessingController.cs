@@ -357,6 +357,7 @@ namespace TiltBrush
             {
                 return;
             }
+            quality.PrepareInitialQualityLevel(this);
             var settings = quality.AppQualityLevels[quality.InitialQualityLevel];
             m_CurrentHdr = settings.Hdr;
             int requestedSamples = App.UserConfig.Profiling.MsaaLevel > 0
@@ -379,7 +380,7 @@ namespace TiltBrush
                 m_CurrentMsaa = 1;
             }
 
-            int supportedSamples = GetSupportedMsaa(m_CurrentMsaa);
+            int supportedSamples = GetSupportedMsaa(m_CurrentMsaa, m_CurrentHdr);
             if (supportedSamples != m_CurrentMsaa)
             {
                 Debug.LogWarning($"{kMsaaLogPrefix} Requested {m_CurrentMsaa}x MSAA is unsupported; using {supportedSamples}x.");
@@ -408,11 +409,11 @@ namespace TiltBrush
             }
         }
 
-        private int GetSupportedMsaa(int requestedSamples)
+        public int GetSupportedMsaa(int requestedSamples, bool hdr)
         {
             var descriptor = new RenderTextureDescriptor(
                 Mathf.Max(1, Screen.width), Mathf.Max(1, Screen.height),
-                m_CurrentHdr ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, 24);
+                hdr ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, 24);
             var displays = new List<XRDisplaySubsystem>();
             SubsystemManager.GetInstances(displays);
             foreach (var display in displays)
