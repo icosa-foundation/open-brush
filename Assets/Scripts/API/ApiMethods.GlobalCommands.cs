@@ -555,7 +555,9 @@ namespace TiltBrush
                 as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
             return $"Quality level={quality.QualityLevel} levels={quality.AppQualityLevels.Length} " +
                 $"automatic={quality.AutomaticQualityEnabled} fps={quality.FramesInLastSecond} " +
-                $"requestedMsaa={quality.MSAALevel} pipelineMsaa={pipeline?.msaaSampleCount}.";
+                $"requestedMsaa={quality.MSAALevel} pipelineMsaa={pipeline?.msaaSampleCount} " +
+                $"unityMsaa={UnityEngine.QualitySettings.antiAliasing} " +
+                $"xrCachedMsaa={UnityEngine.Experimental.Rendering.XRSystem.GetDisplayMSAASamples()}.";
         }
 
         [ApiEndpoint("quality.auto", "Enables or pauses automatic quality changes for testing", "false")]

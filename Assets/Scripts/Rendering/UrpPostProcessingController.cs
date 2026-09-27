@@ -62,6 +62,7 @@ namespace TiltBrush
         private int m_CurrentMsaa = 1;
         private UniversalRenderPipelineAsset m_MsaaPipelineAsset;
         private int m_PreviousPipelineMsaa;
+        private int m_PreviousUnityMsaa;
         private bool m_LogMsaaOnNextCameraRender;
         private AppQualitySettingLevels.BloomMode m_CurrentBloomMode =
             AppQualitySettingLevels.BloomMode.None;
@@ -362,7 +363,7 @@ namespace TiltBrush
                 $"scatter={m_Bloom.scatter.value} hq={m_Bloom.highQualityFiltering.value} " +
                 $"downscale={m_Bloom.downscale.value} maxIterations={m_Bloom.maxIterations.value} " +
                 $"hdr={settings.Hdr} fxaa={settings.Fxaa} msaa={m_CurrentMsaa}.");
-            Debug.Log($"{kMsaaLogPrefix} quality={qualityLevel} requested={QualityControls.m_Instance.MSAALevel} pipeline={m_MsaaPipelineAsset?.msaaSampleCount}.");
+            Debug.Log($"{kMsaaLogPrefix} quality={qualityLevel} requested={QualityControls.m_Instance.MSAALevel} pipeline={m_MsaaPipelineAsset?.msaaSampleCount} unity={QualitySettings.antiAliasing} xrCached={XRSystem.GetDisplayMSAASamples()}.");
         }
 
         public void PrepareXrStartup(QualityControls quality)
@@ -409,12 +410,16 @@ namespace TiltBrush
                 if (pipelineAsset != null)
                 {
                     m_PreviousPipelineMsaa = pipelineAsset.msaaSampleCount;
+                    m_PreviousUnityMsaa = QualitySettings.antiAliasing;
                 }
             }
 
             if (pipelineAsset != null)
             {
                 pipelineAsset.msaaSampleCount = m_CurrentMsaa;
+                // SetQualityLevel reloads the Unity preset's antiAliasing value. Keep
+                // the engine configuration in sync with URP, as URP does at creation.
+                QualitySettings.antiAliasing = m_CurrentMsaa;
                 // Request the XR surface resize during the quality update, before URP
                 // constructs its eye passes. Leaving this to URP's Render method can
                 // change the native view layout while a frame is being rendered.
@@ -458,6 +463,7 @@ namespace TiltBrush
             if (m_MsaaPipelineAsset != null)
             {
                 m_MsaaPipelineAsset.msaaSampleCount = m_PreviousPipelineMsaa;
+                QualitySettings.antiAliasing = m_PreviousUnityMsaa;
                 XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
                 m_MsaaPipelineAsset = null;
             }
@@ -478,7 +484,7 @@ namespace TiltBrush
                 if (display.running && display.GetRenderPassCount() > 0)
                 {
                     display.GetRenderPass(0, out var pass);
-                    Debug.Log($"{kMsaaLogPrefix} target camera={camera.name} samples={pass.renderTargetDesc.msaaSamples} nativeViews={pass.GetRenderParameterCount()} dimension={pass.renderTargetDesc.dimension} slices={pass.renderTargetDesc.volumeDepth} format={pass.renderTargetDesc.graphicsFormat} foveation={display.foveatedRenderingLevel:F2} fps={QualityControls.m_Instance?.FramesInLastSecond}.");
+                    Debug.Log($"{kMsaaLogPrefix} target camera={camera.name} samples={pass.renderTargetDesc.msaaSamples} unity={QualitySettings.antiAliasing} xrCached={XRSystem.GetDisplayMSAASamples()} nativeViews={pass.GetRenderParameterCount()} dimension={pass.renderTargetDesc.dimension} slices={pass.renderTargetDesc.volumeDepth} format={pass.renderTargetDesc.graphicsFormat} foveation={display.foveatedRenderingLevel:F2} fps={QualityControls.m_Instance?.FramesInLastSecond}.");
                     var layout = XRSystem.currentLayout;
                     if (layout != null)
                     {
