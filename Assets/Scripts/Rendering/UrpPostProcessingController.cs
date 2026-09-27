@@ -463,7 +463,18 @@ namespace TiltBrush
                 if (display.running && display.GetRenderPassCount() > 0)
                 {
                     display.GetRenderPass(0, out var pass);
-                    Debug.Log($"{kMsaaLogPrefix} target camera={camera.name} samples={pass.renderTargetDesc.msaaSamples} foveation={display.foveatedRenderingLevel:F2} fps={QualityControls.m_Instance?.FramesInLastSecond}.");
+                    Debug.Log($"{kMsaaLogPrefix} target camera={camera.name} samples={pass.renderTargetDesc.msaaSamples} nativeViews={pass.GetRenderParameterCount()} dimension={pass.renderTargetDesc.dimension} slices={pass.renderTargetDesc.volumeDepth} format={pass.renderTargetDesc.graphicsFormat} foveation={display.foveatedRenderingLevel:F2} fps={QualityControls.m_Instance?.FramesInLastSecond}.");
+                    var layout = XRSystem.currentLayout;
+                    if (layout != null)
+                    {
+                        foreach (var (passCamera, xrPass) in layout.GetActivePasses())
+                        {
+                            if (passCamera == camera)
+                            {
+                                Debug.Log($"{kMsaaLogPrefix} cached eye pass={xrPass.multipassId} views={xrPass.viewCount} singlePass={xrPass.singlePassEnabled} samples={xrPass.renderTargetDesc.msaaSamples} dimension={xrPass.renderTargetDesc.dimension} slices={xrPass.renderTargetDesc.volumeDepth}.");
+                            }
+                        }
+                    }
                 }
             }
         }
