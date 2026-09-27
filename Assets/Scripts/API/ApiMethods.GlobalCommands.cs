@@ -550,7 +550,38 @@ namespace TiltBrush
                 return "QualityControls is not available.";
             }
 
-            return $"Quality level is {QualityControls.m_Instance.QualityLevel}.";
+            var quality = QualityControls.m_Instance;
+            var pipeline = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline
+                as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+            return $"Quality level={quality.QualityLevel} levels={quality.AppQualityLevels.Length} " +
+                $"automatic={quality.AutomaticQualityEnabled} fps={quality.FramesInLastSecond} " +
+                $"requestedMsaa={quality.MSAALevel} pipelineMsaa={pipeline?.msaaSampleCount}.";
+        }
+
+        [ApiEndpoint("quality.auto", "Enables or pauses automatic quality changes for testing", "false")]
+        public static string SetAutomaticQuality(bool enabled)
+        {
+            if (QualityControls.m_Instance == null) return "QualityControls is not available.";
+            QualityControls.m_Instance.AutomaticQualityEnabled = enabled;
+            UnityEngine.Debug.Log($"[OB_QUALITY_TUNING_20260927] automatic={enabled}.");
+            return GetQualityLevel();
+        }
+
+        [ApiEndpoint("quality.configure", "Sets a level's MSAA and foveation for this session", "3,4,0")]
+        public static string ConfigureQualityLevel(int level, int msaa, int foveation)
+        {
+            if (QualityControls.m_Instance == null) return "QualityControls is not available.";
+            QualityControls.m_Instance.ConfigureQualityLevel(level, msaa, foveation);
+            return $"Configured level={level} msaa={msaa} foveation={foveation} for this session.";
+        }
+
+        [ApiEndpoint("quality.thresholds", "Sets lower/higher FPS and frame counts for this session", "65,70,30,45")]
+        public static string ConfigureQualityThresholds(float lowerFps, float higherFps,
+            int lowerFrames, int higherFrames)
+        {
+            if (QualityControls.m_Instance == null) return "QualityControls is not available.";
+            QualityControls.m_Instance.ConfigureQualityThresholds(lowerFps, higherFps, lowerFrames, higherFrames);
+            return $"Configured lower={lowerFps}/{lowerFrames} higher={higherFps}/{higherFrames} for this session.";
         }
 
         [ApiEndpoint("quality.set", "Sets the current quality level by index", "2")]

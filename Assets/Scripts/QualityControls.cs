@@ -63,6 +63,41 @@ namespace TiltBrush
 
         private int m_NumFramesFpsTooLow;
         private int m_NumFramesFpsHighEnough;
+        private readonly Dictionary<int, (int msaa, int foveation)> m_RuntimeQualityOverrides =
+            new Dictionary<int, (int msaa, int foveation)>();
+        private float? m_RuntimeLowerFps;
+        private float? m_RuntimeHigherFps;
+        private int? m_RuntimeLowerFrames;
+        private int? m_RuntimeHigherFrames;
+        public bool AutomaticQualityEnabled { get; set; } = true;
+
+        public void ConfigureQualityLevel(int level, int msaa, int foveation)
+        {
+            if (level < 0 || level >= AppQualityLevels.Length)
+                throw new ArgumentOutOfRangeException(nameof(level));
+            if (msaa != 1 && msaa != 2 && msaa != 4 && msaa != 8)
+                throw new ArgumentOutOfRangeException(nameof(msaa));
+            if (foveation < 0 || foveation > 3)
+                throw new ArgumentOutOfRangeException(nameof(foveation));
+            m_RuntimeQualityOverrides[level] = (msaa, foveation);
+            if (level == QualityLevel) SetQualityLevel(level);
+            Debug.Log($"[OB_QUALITY_TUNING_20260927] level={level} msaa={msaa} foveation={foveation}.");
+        }
+
+        public void ConfigureQualityThresholds(float lowerFps, float higherFps,
+            int lowerFrames, int higherFrames)
+        {
+            if (float.IsNaN(lowerFps) || float.IsInfinity(lowerFps) || lowerFps <= 0 ||
+                float.IsNaN(higherFps) || float.IsInfinity(higherFps) || higherFps <= lowerFps ||
+                lowerFrames < 1 || higherFrames < 1)
+                throw new ArgumentException("Use positive FPS thresholds with higher > lower, and frame counts >= 1.");
+            m_RuntimeLowerFps = lowerFps;
+            m_RuntimeHigherFps = higherFps;
+            m_RuntimeLowerFrames = lowerFrames;
+            m_RuntimeHigherFrames = higherFrames;
+            m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+            Debug.Log($"[OB_QUALITY_TUNING_20260927] thresholds lower={lowerFps}/{lowerFrames} higher={higherFps}/{higherFrames}.");
+        }
 
         /// A number from 0 (mobile, lowest) to 3 (future, highest)
         public int QualityLevel
@@ -186,10 +221,16 @@ namespace TiltBrush
                 m_FramesInLastSecond--;
             }
 
+            if (!AutomaticQualityEnabled)
+            {
+                m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+                return;
+            }
+
             // Update the frame counts. There is no cross-platform GPU load signal,
             // so the scaler runs on framerate alone; see LlmDocs/openxr-perf-migration.md.
             int fps = m_FramesInLastSecond;
-            if (fps <= AppQualityLevels.LowerQualityFpsTrigger)
+            if (fps <= (m_RuntimeLowerFps ?? AppQualityLevels.LowerQualityFpsTrigger))
             {
                 m_NumFramesFpsTooLow++;
             }
@@ -198,7 +239,7 @@ namespace TiltBrush
                 m_NumFramesFpsTooLow = 0;
             }
 
-            if (fps >= AppQualityLevels.HigherQualityFpsTrigger)
+            if (fps >= (m_RuntimeHigherFps ?? AppQualityLevels.HigherQualityFpsTrigger))
             {
                 m_NumFramesFpsHighEnough++;
             }
@@ -215,7 +256,7 @@ namespace TiltBrush
             }
 
             // Update quality level if needed
-            int limit = AppQualityLevels.FramesForLowerQuality;
+            int limit = m_RuntimeLowerFrames ?? AppQualityLevels.FramesForLowerQuality;
             if (m_NumFramesFpsTooLow >= limit)
             {
                 if (QualityLevel > 0)
@@ -225,7 +266,7 @@ namespace TiltBrush
                 m_NumFramesFpsTooLow = 0;
             }
 
-            limit = AppQualityLevels.FramesForHigherQuality;
+            limit = m_RuntimeHigherFrames ?? AppQualityLevels.FramesForHigherQuality;
             if (m_NumFramesFpsHighEnough >= limit)
             {
                 if (QualityLevel < AppQualityLevels.Length - 1)
@@ -293,6 +334,13 @@ namespace TiltBrush
                 m_msaaLevel = App.UserConfig.Profiling.MsaaLevel;
             }
 
+            int foveation = settings.FixedFoveationLevel;
+            if (m_RuntimeQualityOverrides.TryGetValue(value, out var runtimeSettings))
+            {
+                m_msaaLevel = runtimeSettings.msaa;
+                foveation = runtimeSettings.foveation;
+            }
+
             UnityEngine.XR.XRSettings.renderViewportScale = viewportScale;
             UnityEngine.XR.XRSettings.eyeTextureResolutionScale = eyeScale;
 
@@ -307,7 +355,7 @@ namespace TiltBrush
             }
 
             App.VrSdk.SetGpuClockLevel(AppQualitySettings.GpuLevel);
-            App.VrSdk.SetFixedFoveation(AppQualitySettings.FixedFoveationLevel);
+            App.VrSdk.SetFixedFoveation(foveation);
 
             QualitySettings.SetQualityLevel(value, applyExpensiveChanges: !App.Config.IsMobileHardware);
 
