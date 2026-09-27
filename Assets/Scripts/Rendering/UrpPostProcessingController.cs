@@ -351,6 +351,20 @@ namespace TiltBrush
             Debug.Log($"{kMsaaLogPrefix} quality={qualityLevel} requested={QualityControls.m_Instance.MSAALevel} pipeline={m_MsaaPipelineAsset?.msaaSampleCount}.");
         }
 
+        public void PrepareXrStartup(QualityControls quality)
+        {
+            if (!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset))
+            {
+                return;
+            }
+            var settings = quality.AppQualityLevels[quality.InitialQualityLevel];
+            m_CurrentHdr = settings.Hdr;
+            int requestedSamples = App.UserConfig.Profiling.MsaaLevel > 0
+                ? App.UserConfig.Profiling.MsaaLevel : settings.MsaaLevel;
+            ApplyMsaa(requestedSamples);
+            Debug.Log($"{kMsaaLogPrefix} before XR start requested={requestedSamples} applied={m_CurrentMsaa}.");
+        }
+
         private void ApplyMsaa(int requestedSamples)
         {
 #if UNITY_IOS && ZAPBOX_SUPPORTED

@@ -126,26 +126,25 @@ namespace TiltBrush
             get { return AppQualityLevels[QualityLevel]; }
         }
 
+        public int InitialQualityLevel
+        {
+            get
+            {
+                int defaultLevel = App.Config.IsMobileHardware ? AppQualityLevels.Length - 1 : 2;
+                int configuredLevel = App.UserConfig.Profiling.QualityLevel;
+                return configuredLevel >= 0 && configuredLevel < AppQualityLevels.Length
+                    ? configuredLevel : defaultLevel;
+            }
+        }
+
         void Awake()
         {
             m_Instance = this;
 
             m_Cameras = new List<Camera>();
 
-            // Simple desktop vs. mobile quality for now.  May need more control if e.g.
-            // we need to set this differently for Win vs. Linux, or mobile level fragments
-            // into bloom and non-bloom variants.
-            int newLevel = App.Config.IsMobileHardware ? AppQualityLevels.Length - 1 : 2;
-
-            // Override from user config, if valid.
-            int configQuality = App.UserConfig.Profiling.QualityLevel;
-            if (configQuality >= 0 && configQuality <= AppQualityLevels.Length)
-            {
-                newLevel = configQuality;
-            }
-
             // Apply the quality level.
-            QualityLevel = newLevel;
+            QualityLevel = InitialQualityLevel;
             SimplificationLevel = 0.0f;
         }
 

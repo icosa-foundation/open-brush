@@ -167,6 +167,14 @@ namespace TiltBrush
 
                 if (XRGeneralSettings.Instance?.Manager?.activeLoader != null)
                 {
+                    // Configure supported eye-buffer MSAA before the first XR surfaces
+                    // are allocated, rather than resizing them during startup rendering.
+                    var quality = FindFirstObjectByType<QualityControls>();
+                    var rendering = FindFirstObjectByType<UrpPostProcessingController>();
+                    if (quality != null && rendering != null)
+                    {
+                        rendering.PrepareXrStartup(quality);
+                    }
                     XRGeneralSettings.Instance?.Manager?.StartSubsystems();
                 }
             }
