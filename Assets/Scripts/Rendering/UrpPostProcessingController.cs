@@ -365,6 +365,13 @@ namespace TiltBrush
                 m_CurrentMsaa = 1;
             }
 
+            int supportedSamples = GetSupportedMsaa(m_CurrentMsaa);
+            if (supportedSamples != m_CurrentMsaa)
+            {
+                Debug.LogWarning($"{kMsaaLogPrefix} Requested {m_CurrentMsaa}x MSAA is unsupported; using {supportedSamples}x.");
+                m_CurrentMsaa = supportedSamples;
+            }
+
             var pipelineAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
             if (pipelineAsset != m_MsaaPipelineAsset)
             {
@@ -385,6 +392,36 @@ namespace TiltBrush
                 XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
                 m_LogMsaaOnNextCameraRender = true;
             }
+        }
+
+        private int GetSupportedMsaa(int requestedSamples)
+        {
+            var descriptor = new RenderTextureDescriptor(
+                Mathf.Max(1, Screen.width), Mathf.Max(1, Screen.height),
+                m_CurrentHdr ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, 24);
+            var displays = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetInstances(displays);
+            foreach (var display in displays)
+            {
+                if (display.running && display.GetRenderPassCount() > 0)
+                {
+                    display.GetRenderPass(0, out var pass);
+                    descriptor = pass.renderTargetDesc;
+                    break;
+                }
+            }
+
+            // Probe downward explicitly: an unsupported request can report 1x even
+            // when an intermediate sample count is supported by the target format.
+            for (int samples = requestedSamples; samples > 1; samples /= 2)
+            {
+                descriptor.msaaSamples = samples;
+                if (SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor) == samples)
+                {
+                    return samples;
+                }
+            }
+            return 1;
         }
 
         private void RestorePipelineMsaa()
