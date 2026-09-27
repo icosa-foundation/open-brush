@@ -149,7 +149,14 @@ namespace TiltBrush
 
             foreach (Camera camera in cameras)
             {
-                if (camera == null || camera.CompareTag("Ignore"))
+                if (camera == null)
+                {
+                    continue;
+                }
+
+                bool isCapture = IsCaptureCamera(camera);
+                bool allowXr = !isCapture && camera.stereoTargetEye != StereoTargetEyeMask.None;
+                if (camera.CompareTag("Ignore") && allowXr)
                 {
                     continue;
                 }
@@ -162,7 +169,14 @@ namespace TiltBrush
                     Debug.Log($"{kLogPrefix} Added UniversalAdditionalCameraData to camera {camera.name}.");
                 }
 
-                bool isCapture = IsCaptureCamera(camera);
+                // URP uses allowXRRendering when it builds eye passes, rather than
+                // Camera.stereoTargetEye. Mono/capture cameras must not join those passes,
+                // including cameras excluded from our post-processing policy.
+                cameraData.allowXRRendering = allowXr;
+                if (camera.CompareTag("Ignore"))
+                {
+                    continue;
+                }
                 ApplyCameraBaseline(camera, cameraData, isCapture);
 
                 if (isCapture)
