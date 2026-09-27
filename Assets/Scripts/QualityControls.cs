@@ -80,6 +80,9 @@ namespace TiltBrush
                 throw new ArgumentOutOfRangeException(nameof(msaa));
             if (foveation < 0 || foveation > 3)
                 throw new ArgumentOutOfRangeException(nameof(foveation));
+            var fixedSamples = UrpPostProcessingController.Instance?.FixedXrMsaaLevel;
+            if (fixedSamples.HasValue && msaa != fixedSamples.Value)
+                throw new InvalidOperationException($"XR session MSAA is fixed at {fixedSamples.Value}x; restart to change it.");
             m_RuntimeQualityOverrides[level] = (msaa, foveation);
             if (level == QualityLevel) SetQualityLevel(level);
             Debug.Log($"[OB_QUALITY_TUNING_20260927] level={level} msaa={msaa} foveation={foveation}.");
@@ -132,7 +135,7 @@ namespace TiltBrush
 
         public int MSAALevel
         {
-            get { return m_msaaLevel; }
+            get { return UrpPostProcessingController.Instance?.FixedXrMsaaLevel ?? m_msaaLevel; }
         }
 
         public int FramesInLastSecond => m_FramesInLastSecond;
@@ -187,7 +190,8 @@ namespace TiltBrush
         {
             rendering = rendering != null ? rendering : UrpPostProcessingController.Instance;
             // Explicit MSAA overrides are test settings and apply across the ladder.
-            if (!App.Config.IsMobileHardware || rendering == null || App.UserConfig.Profiling.MsaaLevel > 0)
+            if (!App.Config.IsMobileHardware || rendering == null || rendering.UsesFixedXrMsaa ||
+                App.UserConfig.Profiling.MsaaLevel > 0)
                 return desiredLevel;
             while (desiredLevel > 0)
             {

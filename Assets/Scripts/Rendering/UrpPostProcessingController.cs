@@ -376,23 +376,40 @@ namespace TiltBrush
             Debug.Log($"{kMsaaLogPrefix} quality={qualityLevel} requested={QualityControls.m_Instance.MSAALevel} pipeline={m_MsaaPipelineAsset?.msaaSampleCount} unity={QualitySettings.antiAliasing} xrCached={XRSystem.GetDisplayMSAASamples()}.");
         }
 
+        public bool UsesFixedXrMsaa { get; private set; }
+        public int? FixedXrMsaaLevel { get; private set; }
+
         public void PrepareXrStartup(QualityControls quality)
         {
             if (!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset))
             {
                 return;
             }
+#if UNITY_ANDROID
+            // Changing sample count with submitted depth can invalidate the native
+            // stereo color target on Quest. Select it before starting the loader.
+            UsesFixedXrMsaa = App.Config.IsMobileHardware &&
+                UnityEngine.XR.OpenXR.OpenXRSettings.Instance != null &&
+                UnityEngine.XR.OpenXR.OpenXRSettings.Instance.depthSubmissionMode !=
+                    UnityEngine.XR.OpenXR.OpenXRSettings.DepthSubmissionMode.None;
+#endif
             quality.PrepareInitialQualityLevel(this);
             var settings = quality.AppQualityLevels[quality.InitialQualityLevel];
             m_CurrentHdr = settings.Hdr;
             int requestedSamples = App.UserConfig.Profiling.MsaaLevel > 0
                 ? App.UserConfig.Profiling.MsaaLevel : settings.MsaaLevel;
             ApplyMsaa(requestedSamples);
+            if (UsesFixedXrMsaa)
+            {
+                FixedXrMsaaLevel = m_CurrentMsaa;
+                Debug.Log($"{kMsaaLogPrefix} fixed XR session MSAA={m_CurrentMsaa}; quality adapts viewport and foveation.");
+            }
             Debug.Log($"{kMsaaLogPrefix} before XR start requested={requestedSamples} applied={m_CurrentMsaa}.");
         }
 
         private void ApplyMsaa(int requestedSamples)
         {
+            requestedSamples = FixedXrMsaaLevel ?? requestedSamples;
 #if UNITY_IOS && ZAPBOX_SUPPORTED
             // Preserve the existing Zapbox policy of disabling MSAA.
             requestedSamples = 1;
@@ -405,7 +422,7 @@ namespace TiltBrush
                 m_CurrentMsaa = 1;
             }
 
-            int supportedSamples = GetSupportedMsaa(m_CurrentMsaa, m_CurrentHdr);
+            int supportedSamples = FixedXrMsaaLevel ?? GetSupportedMsaa(m_CurrentMsaa, m_CurrentHdr);
             if (supportedSamples != m_CurrentMsaa)
             {
                 Debug.LogWarning($"{kMsaaLogPrefix} Requested {m_CurrentMsaa}x MSAA is unsupported; using {supportedSamples}x.");
