@@ -17247,6 +17247,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7654252711925058874, guid: dedd7823645ca60468aca5f2ff1b9a7f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -25466,7 +25470,7 @@ MonoBehaviour:
   m_WandRadius: 0.85
   m_AdminPanelWandRadius: 0.6
   m_TransitionSpeed: 8
-  m_SketchbookOffset: {x: 0, y: -0.3, z: 0.4}
+  m_SketchbookOffset: {x: 0, y: -0.3, z: 0.6}
   m_SketchbookRotation: {x: 90, y: 0, z: 0}
   m_WandPanelsInitialSketchLoadOriginAngle: 0
   m_WandPanelsDefaultOriginAngle: 120
