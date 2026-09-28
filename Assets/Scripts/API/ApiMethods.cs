@@ -837,7 +837,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "spectator.mode",
-            "Sets the spectator camera mode to one of stationary, slowFollow, wobble, circular",
+            "Sets the spectator camera mode to one of stationary, slowFollow, wobble, circular or camerapath",
             "stationary")]
         public static void SpectatorMode(string mode)
         {

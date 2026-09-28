@@ -30,7 +30,7 @@
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1"
       },
-      "hash": "5e6ee762c5e3f7c81b0e73b512228307d79be5da"
+      "hash": "36a8161f01616640642caff5f7c3fcba36c6328a"
     },
     "com.icosa.unitytinyexr": {
       "version": "https://github.com/icosa-mirror/UnityTinyEXR.git#7d86cd3109a02be80a91846d69c59802dba05665",

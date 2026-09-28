@@ -771,7 +771,7 @@ namespace TiltBrush
             }
             try
             {
-                change.value = Convert.ChangeType(value, memberType);
+                change.value = Convert.ChangeType(value, Nullable.GetUnderlyingType(memberType) ?? memberType);
             }
             catch (Exception)
             {

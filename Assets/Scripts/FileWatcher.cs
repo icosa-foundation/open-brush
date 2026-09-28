@@ -59,6 +59,16 @@ namespace TiltBrush
             {
                 if (FileDeleted != null) { FileDeleted(this, args); }
             };
+            m_InternalFileWatcher.Renamed += (sender, args) =>
+            {
+                // Consumers already understand delete/create pairs, and a rename is one.
+                // Forward both identities so a renamed file or directory removes its old
+                // entry as well as adding the new one.
+                FileDeleted?.Invoke(this, new FileSystemEventArgs(WatcherChangeTypes.Deleted,
+                    Path.GetDirectoryName(args.OldFullPath), Path.GetFileName(args.OldFullPath)));
+                FileCreated?.Invoke(this, new FileSystemEventArgs(WatcherChangeTypes.Created,
+                    Path.GetDirectoryName(args.FullPath), Path.GetFileName(args.FullPath)));
+            };
         }
 
         // Wrap any FileSystemWatcher members that need to be accessed.

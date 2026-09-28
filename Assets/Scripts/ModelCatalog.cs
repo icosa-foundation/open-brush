@@ -326,7 +326,7 @@ namespace TiltBrush
                         null,
                         null,
                         null);
-                    m_MissingModelsByRelativePath.Remove(relativePath);
+                    m_MissingNormalizedModelsByRelativePath.Remove(relativePath);
                 }
             }
             if (CatalogChanged != null)
