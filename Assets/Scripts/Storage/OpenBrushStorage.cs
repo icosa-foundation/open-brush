@@ -1,0 +1,1006 @@
+// Copyright 2026 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using UnityEngine;
+
+namespace TiltBrush
+{
+    internal static class SafApiImportStaging
+    {
+        private static readonly object sm_Gate = new object();
+        private static readonly HashSet<string> sm_CurrentDirectories =
+            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        public static string CreateDirectory(string parentDirectory)
+        {
+            lock (sm_Gate)
+            {
+                string directory = Path.Combine(
+                    parentDirectory, $"import-{Guid.NewGuid():N}");
+                sm_CurrentDirectories.Add(directory);
+                return directory;
+            }
+        }
+
+        internal static void CleanupOrphans(string rootDirectory)
+        {
+            if (!Directory.Exists(rootDirectory)) { return; }
+            try
+            {
+                // Deepest first in case a future import layout nests owned directories.
+                foreach (string directory in Directory.EnumerateDirectories(
+                             rootDirectory, "import-*", SearchOption.AllDirectories)
+                         .Where(IsOwnedDirectory)
+                         .OrderByDescending(path => path.Length)
+                         .ToList())
+                {
+                    if (!IsCurrentDirectory(directory)) { DeleteBestEffort(directory); }
+                }
+            }
+            catch (Exception e) when (
+                e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"SAF_IMPORT Could not scan stale API imports: {e.Message}");
+            }
+        }
+
+        internal static bool ContainsFile(string parentDirectory, string filename)
+        {
+            lock (sm_Gate)
+            {
+                return sm_CurrentDirectories.Any(directory =>
+                    string.Equals(Path.GetDirectoryName(directory), parentDirectory,
+                        StringComparison.OrdinalIgnoreCase) &&
+                    File.Exists(Path.Combine(directory, filename)));
+            }
+        }
+
+        private static bool IsOwnedDirectory(string directory)
+        {
+            string name = Path.GetFileName(directory);
+            return name.StartsWith("import-", StringComparison.Ordinal) &&
+                Guid.TryParseExact(name.Substring("import-".Length), "N", out _);
+        }
+
+        private static bool IsCurrentDirectory(string directory)
+        {
+            lock (sm_Gate) { return sm_CurrentDirectories.Contains(directory); }
+        }
+
+        private static void DeleteBestEffort(string directory)
+        {
+            try
+            {
+                if (Directory.Exists(directory)) { Directory.Delete(directory, recursive: true); }
+            }
+            catch (Exception e) when (
+                e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning(
+                    $"SAF_IMPORT Could not remove API import staging '{directory}': {e.Message}");
+            }
+        }
+    }
+
+    public static class OpenBrushStorage
+    {
+        public static bool IsScopedStorageMode
+        {
+            get
+            {
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+                return Application.platform == RuntimePlatform.Android;
+#else
+                return false;
+#endif
+            }
+        }
+
+        private static string sm_PersistentDataPath;
+        private static string sm_TemporaryCachePath;
+
+        /// Unity application paths are main-thread only, and storage paths are wanted from worker
+        /// threads - transaction recovery hit exactly that and failed with "can only be called
+        /// from the main thread". The values are fixed for the process, so they are captured before
+        /// the scene loads and read from the cache thereafter.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void CaptureApplicationPaths()
+        {
+            sm_PersistentDataPath = Application.persistentDataPath;
+            sm_TemporaryCachePath = Application.temporaryCachePath;
+        }
+
+        public static string PersistentDataPath
+        {
+            get
+            {
+                // A test or an editor path can reach this before the hook has run.
+                return sm_PersistentDataPath ??= Application.persistentDataPath;
+            }
+        }
+
+        public static string LocalUserPathRoot
+        {
+            get
+            {
+                return Path.Combine(OpenBrushStorage.PersistentDataPath, "OpenBrushWorkingCache");
+            }
+        }
+
+        public static string LocalExportStagingPath
+        {
+            get
+            {
+                return Path.Combine(LocalStagingPath, "Exports");
+            }
+        }
+
+        public static string LocalStagingPath =>
+            Path.Combine(
+                sm_TemporaryCachePath ??= Application.temporaryCachePath,
+                "OpenBrushSafStaging");
+
+        public static string LocalSnapshotStagingPath =>
+            Path.Combine(LocalStagingPath, "Snapshots");
+
+        public static string LocalVideoStagingPath =>
+            Path.Combine(LocalStagingPath, "Videos");
+
+        public static string LocalVrVideoStagingPath =>
+            Path.Combine(LocalStagingPath, "VRVideos");
+
+        public static string LocalSplatPoseStagingPath =>
+            Path.Combine(LocalStagingPath, "SplatPoses");
+
+        /// A logical anchor, not a directory: nothing is written here and nothing creates it.
+        /// The media catalogs are written against local paths, so under scoped storage they are
+        /// given this prefix and the SAF-relative directory is recovered by subtracting it again.
+        ///
+        /// Deliberately not scoped by root. It used to embed a hash of the root identity, left
+        /// over from when media really was materialized per root. That made the anchor change the
+        /// moment a folder was granted - before the grant the identity is empty, so the prefix
+        /// hashed the empty string - and every directory captured beforehand then failed to match
+        /// it, leaving each catalog reporting its own home as "outside its storage area". The
+        /// root is fixed for the life of an installation and SafRootChangeGuard discards derived
+        /// state if it ever is not, so there is nothing for the scoping to protect.
+        public static string MediaLibraryAnchorPath
+        {
+            get
+            {
+                return Path.Combine(
+                    OpenBrushStorage.PersistentDataPath,
+                    "OpenBrushSafMediaLibrary",
+                    "Media Library");
+            }
+        }
+
+        public static string SharedExportDisplayPath
+        {
+            get { return "Open Brush/Exports"; }
+        }
+
+        internal sealed class MediaSource
+        {
+            private readonly IUserStorageBackend m_Backend;
+            private readonly string m_Root;
+            private readonly string m_Identity;
+            public StorageDocument Document { get; }
+            public string Identity => m_Identity;
+            public bool HasVerifiableRevision =>
+                Document.LastModified.HasValue || Document.Size.HasValue;
+
+            public MediaSource(IUserStorageBackend backend, StorageArea area, string relativePath)
+            {
+                m_Backend = backend;
+                m_Root = backend.RootIdentity;
+                Document = ResolveMediaDocument(backend, area, relativePath);
+                m_Identity = GetMediaRevisionIdentity(m_Root, Document);
+                CheckRoot();
+            }
+
+            private void CheckRoot()
+            {
+                if (m_Root != m_Backend.RootIdentity) { throw new IOException("Selected media folder changed."); }
+            }
+
+            public Stream OpenRead()
+            {
+                CheckRoot();
+                return m_Backend.OpenRead(Document.DocumentId, false, CancellationToken.None);
+            }
+
+        }
+
+        internal static string GetMediaRevisionIdentity(
+            string rootIdentity, StorageDocument document)
+        {
+            string identity =
+                $"{rootIdentity}:{document.DocumentId.Value}|" +
+                $"{document.LastModified:o}|{document.Size}";
+            if (document.LastModified.HasValue || document.Size.HasValue)
+            {
+                return identity;
+            }
+
+            // DocumentsProvider permits both revision fields to be null. A durable document URI
+            // identifies the document, not its current contents, so it cannot safely validate an
+            // image cache by itself. The nonce deliberately prevents reuse across catalog queries.
+            return $"{identity}|unverifiable:{Guid.NewGuid():N}";
+        }
+
+        internal static StorageDocument ResolveMediaDocument(
+            IUserStorageBackend backend, StorageArea area, string relativePath)
+        {
+            string normalized = (relativePath ?? "").Replace('\\', '/');
+            if (Path.IsPathRooted(normalized) || normalized.Split('/').Any(part => part == "..") ||
+                normalized.Contains(":"))
+            {
+                throw new ArgumentException($"Invalid media path: {relativePath}");
+            }
+            normalized = string.Join("/", normalized.Split('/').Where(part => part != "." && part.Length != 0));
+            if (normalized.Length == 0) { throw new ArgumentException("A media filename is required."); }
+            string root = backend.RootIdentity;
+            StorageDirectoryResult listing = backend.List(area,
+                Path.GetDirectoryName(normalized)?.Replace('\\', '/') ?? "", CancellationToken.None);
+            if (!listing.Success) { throw new IOException($"Could not resolve {relativePath}: {listing.Error}"); }
+            StorageDocument document = listing.Documents.SingleOrDefault(item => !item.IsDirectory &&
+                item.DisplayName.Equals(Path.GetFileName(normalized), StringComparison.OrdinalIgnoreCase));
+            if (root != backend.RootIdentity) { throw new IOException("Selected media folder changed."); }
+            return document ?? throw new FileNotFoundException($"Media file not found: {relativePath}");
+        }
+
+        private static readonly Dictionary<string, HashSet<string>> sm_CaptureReservations =
+            new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+
+        internal static string ReserveCaptureName(IUserStorageBackend backend, StorageArea area,
+            string directory, string format, Func<string, bool> localExists)
+        {
+            lock (sm_CaptureReservations)
+            {
+                string key = $"{backend.RootIdentity}\n{area}\n{directory}";
+                if (!sm_CaptureReservations.TryGetValue(key, out var names))
+                {
+                    names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                    sm_CaptureReservations.Add(key, names);
+                }
+                if (backend.IsReady)
+                {
+                    StorageDirectoryResult listing = backend.List(area, directory, CancellationToken.None);
+                    if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+                    {
+                        throw new IOException($"Could not reserve capture name: {listing.Error}");
+                    }
+                    foreach (StorageDocument document in listing.Documents) { names.Add(document.DisplayName); }
+                }
+                for (int index = 0; ; ++index)
+                {
+                    string candidate = string.Format(format, index);
+                    string stem = Path.GetFileNameWithoutExtension(candidate);
+                    bool used = localExists(candidate);
+                    foreach (string name in names)
+                    {
+                        if (Path.GetFileNameWithoutExtension(name).Equals(stem, StringComparison.OrdinalIgnoreCase) ||
+                            name.StartsWith($"{stem}_", StringComparison.OrdinalIgnoreCase)) { used = true; break; }
+                    }
+                    if (used) { continue; }
+                    names.Add(candidate);
+                    return candidate;
+                }
+            }
+        }
+
+        public static bool TryGetSharedGeneratedFileRelativePath(
+            string localPath, out string relativePath)
+        {
+            relativePath = null;
+
+            if (string.IsNullOrEmpty(localPath))
+            {
+                return false;
+            }
+
+            if (TryGetRelativePath(App.SnapshotPath(), localPath, out string snapshotPath))
+            {
+                relativePath = Path.Combine("Snapshots", snapshotPath);
+                return true;
+            }
+
+            if (TryGetRelativePath(App.VideosPath(), localPath, out string videoPath))
+            {
+                relativePath = Path.Combine("Videos", videoPath);
+                return true;
+            }
+
+            if (TryGetRelativePath(App.VrVideosPath(), localPath, out string vrVideoPath))
+            {
+                relativePath = Path.Combine("VRVideos", vrVideoPath);
+                return true;
+            }
+
+            return false;
+        }
+
+        public static bool TryGetSharedMediaLibraryRelativePath(
+            string localPath, out string relativePath)
+        {
+            relativePath = null;
+
+            if (string.IsNullOrEmpty(localPath))
+            {
+                return false;
+            }
+
+            if (TryGetRelativePath(App.MediaLibraryPath(), localPath, out string mediaPath))
+            {
+                relativePath = Path.Combine("Media Library", mediaPath);
+                return true;
+            }
+
+            return false;
+        }
+
+
+        public static void PublishGeneratedFileToSharedStorageAsync(
+            string localPath, string label, Action<bool, string> onComplete)
+        {
+            // Use the same ownership handoff as multi-file captures. A second capture may reuse
+            // this name while publication runs, so the worker must never read the canonical path.
+            PublishGeneratedFilesToSharedStorageAsync(new[] { localPath }, label, onComplete);
+        }
+
+        public static void PublishUserRootFileToSharedStorageAsync(
+            string localPath, string displayName, string label,
+            Action<bool, string> onComplete)
+        {
+            if (!IsScopedStorageMode)
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                onComplete?.Invoke(false, "SAF storage backend is unavailable.");
+                return;
+            }
+            AndroidStorageManager.StartStorageOperation(
+                label,
+                () => SafStagedOutputPublisher.Publish(
+                    UserStorage.Backend,
+                    StorageArea.UserRoot,
+                    displayName,
+                    localPath,
+                    transactionOwnsPayload: true,
+                    CancellationToken.None),
+                onComplete);
+        }
+
+        /// Resolves a local path to its shared destination and publishes it, or reports success
+        /// when there is nothing to publish. The resolver decides which tree the path belongs to.
+        private static void PublishSinglePathAsync(
+            string localPath,
+            string label,
+            TryResolveSharedPath resolve,
+            bool transactionOwnsPayload,
+            Action<bool, string> onComplete)
+        {
+            if (!IsScopedStorageMode || !resolve(localPath, out string relativePath))
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+            PublishPathToSharedStorageAsync(
+                relativePath, localPath, label, transactionOwnsPayload, onComplete);
+        }
+
+        private delegate bool TryResolveSharedPath(string localPath, out string relativePath);
+
+        public static void PublishGeneratedFilesToSharedStorageAsync(
+            IReadOnlyList<string> localPaths,
+            string label,
+            Action<bool, string> onComplete,
+            bool transactionOwnsPayload = true)
+        {
+            if (!IsScopedStorageMode || localPaths == null || localPaths.Count == 0)
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                StorageArea? bundleArea = null;
+                var stagedPaths = new List<SafStagedPath>();
+                foreach (string localPath in localPaths)
+                {
+                    if (!TryGetSharedGeneratedFileRelativePath(
+                            localPath, out string sharedRelativePath) ||
+                        !TryResolveStorageDestination(
+                            sharedRelativePath, out StorageArea area, out string areaRelativePath))
+                    {
+                        onComplete?.Invoke(
+                            false, $"Unsupported generated output path: {localPath}");
+                        return;
+                    }
+                    if (bundleArea.HasValue && bundleArea.Value != area)
+                    {
+                        onComplete?.Invoke(
+                            false, "Generated output bundle spans multiple storage areas.");
+                        return;
+                    }
+                    bundleArea = area;
+                    stagedPaths.Add(new SafStagedPath(localPath, areaRelativePath));
+                }
+                List<SafStagedPath> originalPaths = stagedPaths;
+                if (transactionOwnsPayload)
+                {
+                    try
+                    {
+                        stagedPaths = ClaimGeneratedFilesForPublication(stagedPaths);
+                    }
+                    catch (Exception e) when (
+                        e is IOException || e is UnauthorizedAccessException)
+                    {
+                        onComplete?.Invoke(false,
+                            $"Could not reserve generated output for publication: {e.Message}");
+                        return;
+                    }
+                }
+                int journalPersisted = 0;
+                AndroidStorageManager.StartStorageOperation(
+                    label,
+                    () => SafStagedOutputPublisher.PublishBundle(
+                        UserStorage.Backend,
+                        bundleArea.Value,
+                        stagedPaths,
+                        transactionOwnsPayload,
+                        CancellationToken.None,
+                        onJournalPersisted: () => Interlocked.Exchange(
+                            ref journalPersisted, 1)),
+                    (success, error) =>
+                    {
+                        if (!success && transactionOwnsPayload &&
+                            Volatile.Read(ref journalPersisted) == 0)
+                        {
+                            // The worker can fail before it creates a recovery record (or never
+                            // start). Give the generated output its original name back so the
+                            // application can retry. After journal handoff, recovery owns it.
+                            string restoreError = RestoreUnjournaledGeneratedFiles(
+                                originalPaths, stagedPaths);
+                            if (restoreError != null)
+                            {
+                                error = $"{error} {restoreError}";
+                            }
+                        }
+                        onComplete?.Invoke(success, error);
+                    });
+                return;
+            }
+
+            int index = 0;
+            void PublishNext()
+            {
+                if (index >= localPaths.Count)
+                {
+                    onComplete?.Invoke(true, null);
+                    return;
+                }
+                PublishSinglePathAsync(
+                    localPaths[index++],
+                    label,
+                    TryGetSharedGeneratedFileRelativePath,
+                    transactionOwnsPayload,
+                    (success, error) =>
+                    {
+                        if (success)
+                        {
+                            PublishNext();
+                        }
+                        else
+                        {
+                            onComplete?.Invoke(false, error);
+                        }
+                    });
+            }
+            PublishNext();
+        }
+
+        /// Moves a completed generated bundle to transaction-unique source names while retaining
+        /// its requested SAF destinations. Publication is asynchronous, so canonical staging names
+        /// can be reused by another capture before the first worker reads or deletes them.
+        ///
+        /// This is deliberately a rename within local staging, not another copy: these files are
+        /// generated output already awaiting publication, and no SAF input is being materialized.
+        internal static List<SafStagedPath> ClaimGeneratedFilesForPublication(
+            IReadOnlyList<SafStagedPath> stagedPaths)
+        {
+            var claimed = new List<(string original, string reserved, bool isDirectory)>();
+            try
+            {
+                var result = new List<SafStagedPath>(stagedPaths.Count);
+                foreach (SafStagedPath stagedPath in stagedPaths)
+                {
+                    string source = stagedPath.SourcePath;
+                    bool isDirectory = Directory.Exists(source);
+                    if (!isDirectory && !File.Exists(source))
+                    {
+                        throw new FileNotFoundException(
+                            "Generated output does not exist.", source);
+                    }
+                    string reserved = Path.Combine(
+                        Path.GetDirectoryName(source),
+                        $".ob-publish-{Guid.NewGuid():N}-{Path.GetFileName(source)}");
+                    if (isDirectory) { Directory.Move(source, reserved); }
+                    else { File.Move(source, reserved); }
+                    claimed.Add((source, reserved, isDirectory));
+                    result.Add(new SafStagedPath(
+                        reserved, stagedPath.DestinationRelativePath));
+                }
+                return result;
+            }
+            catch
+            {
+                for (int i = claimed.Count - 1; i >= 0; --i)
+                {
+                    (string original, string reserved, bool isDirectory) = claimed[i];
+                    if (isDirectory && Directory.Exists(reserved) && !Directory.Exists(original))
+                    {
+                        Directory.Move(reserved, original);
+                    }
+                    else if (!isDirectory && File.Exists(reserved) && !File.Exists(original))
+                    {
+                        File.Move(reserved, original);
+                    }
+                }
+                throw;
+            }
+        }
+
+        internal static string RestoreUnjournaledGeneratedFiles(
+            IReadOnlyList<SafStagedPath> originalPaths,
+            IReadOnlyList<SafStagedPath> claimedPaths)
+        {
+            var errors = new List<string>();
+            for (int i = 0; i < claimedPaths.Count; ++i)
+            {
+                string original = originalPaths[i].SourcePath;
+                string claimed = claimedPaths[i].SourcePath;
+                bool isDirectory = Directory.Exists(claimed);
+                if (!isDirectory && !File.Exists(claimed)) { continue; }
+                if (File.Exists(original) || Directory.Exists(original))
+                {
+                    // Another capture may already be using the original name. Never overwrite
+                    // it; retain the earlier generated output at its unique claimed path.
+                    errors.Add($"Generated output retained at {claimed} because {original} exists.");
+                    continue;
+                }
+                try
+                {
+                    if (isDirectory) { Directory.Move(claimed, original); }
+                    else { File.Move(claimed, original); }
+                }
+                catch (Exception e) when (
+                    e is IOException || e is UnauthorizedAccessException)
+                {
+                    errors.Add($"Generated output retained at {claimed}: {e.Message}");
+                }
+            }
+            return errors.Count == 0 ? null : string.Join(" ", errors);
+        }
+
+
+        public static void PublishMediaLibraryPathToSharedStorageAsync(
+            string localPath, string label, Action<bool, string> onComplete)
+        {
+            // Media-library content stays where it is locally; the copy is additive.
+            PublishSinglePathAsync(
+                localPath, label, TryGetSharedMediaLibraryRelativePath,
+                transactionOwnsPayload: false, onComplete);
+        }
+
+        internal static string GetUniqueImportPath(IUserStorageBackend backend, StorageArea area,
+            string relativePath, Func<string, bool> localExists = null)
+        {
+            string directory = (Path.GetDirectoryName(relativePath) ?? "").Replace('\\', '/');
+            StorageDirectoryResult listing = backend.List(area, directory, CancellationToken.None);
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                throw new IOException($"Could not check imported media destination: {listing.Error}");
+            }
+            var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (listing.Success)
+            {
+                foreach (StorageDocument document in listing.Documents) { names.Add(document.DisplayName); }
+            }
+            string filename = Path.GetFileName(relativePath);
+            string candidate = filename;
+            int version = 0;
+            while (names.Contains(candidate) || (localExists?.Invoke(candidate) ?? false))
+            {
+                candidate = $"{Path.GetFileNameWithoutExtension(filename)} ({++version}){Path.GetExtension(filename)}";
+            }
+            return string.IsNullOrEmpty(directory) ? candidate : $"{directory}/{candidate}";
+        }
+
+        public static void PublishImportedMediaToSharedStorageAsync(
+            string localPath, string sharedPath, string label, Action<bool, string> onComplete,
+            Action<string> onPublished = null, bool preserveDestination = false,
+            bool replaceDestination = false)
+        {
+            if (!TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
+            {
+                onComplete?.Invoke(false, "Unsupported media import destination.");
+                return;
+            }
+            string publishedLocalPath = null;
+            AndroidStorageManager.StartStorageOperation(label,
+                () => PublishImportedMedia(UserStorage.Backend, area, relativePath, localPath,
+                    onPublished != null, out publishedLocalPath, preserveDestination,
+                    replaceDestination),
+                (success, error) =>
+                {
+                    onComplete?.Invoke(success, error);
+                    if (success) { onPublished?.Invoke(publishedLocalPath); }
+                });
+        }
+
+        internal static SafPublicationResult PublishImportedMedia(
+            IUserStorageBackend backend, StorageArea area, string relativePath, string localPath,
+            bool prepareLocalImport, out string publishedLocalPath,
+            bool preserveDestination = false, bool replaceDestination = false)
+        {
+            publishedLocalPath = null;
+            if (preserveDestination && replaceDestination)
+            {
+                throw new ArgumentException(
+                    "An imported-media publication cannot both reject and replace collisions.");
+            }
+            // Serialize API name selection and publication, including delayed picker continuations.
+            using (SafDestinationLocks.Acquire($"api-import:{backend.RootIdentity}:{area}", CancellationToken.None))
+            {
+                string localDirectory = Path.GetDirectoryName(localPath);
+                string destination = replaceDestination
+                    ? relativePath
+                    : GetUniqueImportPath(backend, area, relativePath,
+                        candidate => !string.Equals(candidate, Path.GetFileName(localPath),
+                            StringComparison.OrdinalIgnoreCase) &&
+                            File.Exists(Path.Combine(localDirectory, candidate)));
+                if (preserveDestination && !string.Equals(destination, relativePath, StringComparison.Ordinal))
+                {
+                    return new SafPublicationResult(StorageResultCode.Failed,
+                        $"The reserved import destination already exists: {relativePath}. Staged content was preserved.");
+                }
+                SafPublicationResult result = replaceDestination
+                    ? SafStagedOutputPublisher.PublishReplacing(
+                        backend, area, destination, localPath,
+                        transactionOwnsPayload: false, CancellationToken.None)
+                    : SafStagedOutputPublisher.Publish(
+                        backend, area, destination, localPath,
+                        transactionOwnsPayload: false, CancellationToken.None);
+                if (result.Success && prepareLocalImport)
+                {
+                    // The importing widget needs both the final logical name and its local bytes.
+                    publishedLocalPath = Path.Combine(localDirectory, Path.GetFileName(destination));
+                    if (!string.Equals(localPath, publishedLocalPath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        File.Copy(localPath, publishedLocalPath);
+                    }
+                }
+                return result;
+            }
+        }
+
+
+        public static void PublishVideoCaptureToSharedStorageAsync(
+            string localVideoPath, string label, Action<bool, string> onComplete,
+            bool retainLocalPayload = false)
+        {
+            if (!IsScopedStorageMode ||
+                !TryGetSharedGeneratedFileRelativePath(localVideoPath, out _))
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+
+            string directory = Path.GetDirectoryName(localVideoPath);
+            string basename = Path.GetFileNameWithoutExtension(localVideoPath);
+            string frameDirectory = Path.Combine(directory, basename + "_frames");
+            string metadataPath = Path.Combine(directory, basename + "_sequence.txt");
+            string cameraPath = Path.ChangeExtension(localVideoPath, ".usda");
+            var stagedPaths = new List<string>();
+
+            if (File.Exists(localVideoPath))
+            {
+                stagedPaths.Add(localVideoPath);
+            }
+            else if (Directory.Exists(frameDirectory))
+            {
+                stagedPaths.Add(frameDirectory);
+                if (File.Exists(metadataPath))
+                {
+                    stagedPaths.Add(metadataPath);
+                }
+            }
+            else
+            {
+                onComplete?.Invoke(false, "Local video capture output does not exist: " + localVideoPath);
+                return;
+            }
+            if (File.Exists(cameraPath))
+            {
+                stagedPaths.Add(cameraPath);
+            }
+            PublishGeneratedFilesToSharedStorageAsync(
+                stagedPaths,
+                label,
+                onComplete,
+                transactionOwnsPayload: !retainLocalPayload);
+        }
+
+        internal static void DeleteRetainedVideoCapture(string localVideoPath)
+        {
+            if (!TryGetSharedGeneratedFileRelativePath(localVideoPath, out _))
+            {
+                return;
+            }
+            string directory = Path.GetDirectoryName(localVideoPath);
+            string basename = Path.GetFileNameWithoutExtension(localVideoPath);
+            foreach (string path in new[]
+            {
+                localVideoPath,
+                Path.Combine(directory, basename + "_sequence.txt"),
+                Path.ChangeExtension(localVideoPath, ".usda"),
+            })
+            {
+                File.Delete(path);
+            }
+            string frameDirectory = Path.Combine(directory, basename + "_frames");
+            if (Directory.Exists(frameDirectory))
+            {
+                Directory.Delete(frameDirectory, recursive: true);
+            }
+        }
+
+        /// Captures the top-level video payloads that exist before Main can start a recording.
+        internal static string[] GetExistingVideoStagingPaths()
+        {
+            string videoStagingPath = LocalVideoStagingPath;
+            try
+            {
+                return Directory.Exists(videoStagingPath)
+                    ? Directory.GetFileSystemEntries(videoStagingPath)
+                    : Array.Empty<string>();
+            }
+            catch (Exception e) when (
+                e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"SAF_VIDEO_RECOVERY Could not inspect stale video staging '{videoStagingPath}': {e.Message}");
+                return Array.Empty<string>();
+            }
+        }
+
+        /// Removes video payloads captured before the current process admitted Main. Recovery
+        /// must finish first so an interrupted publication can still read its payload.
+        internal static void CleanupRecoveredVideoStaging(IEnumerable<string> stalePaths)
+        {
+            string videoStagingPath = Path.GetFullPath(LocalVideoStagingPath)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            foreach (string path in stalePaths)
+            {
+                string fullPath = Path.GetFullPath(path);
+                string parent = Path.GetDirectoryName(fullPath)?.TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                if (!string.Equals(
+                        parent, videoStagingPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+                try
+                {
+                    if (Directory.Exists(fullPath))
+                    {
+                        Directory.Delete(fullPath, recursive: true);
+                    }
+                    else
+                    {
+                        File.Delete(fullPath);
+                    }
+                }
+                catch (Exception e) when (
+                    e is IOException || e is UnauthorizedAccessException)
+                {
+                    Debug.LogWarning($"SAF_VIDEO_RECOVERY Could not remove stale video staging '{fullPath}': {e.Message}");
+                }
+            }
+        }
+
+        public static void PublishExportToSharedStorageAsync(
+            string localExportDirectory,
+            string localReadmePath,
+            Action<bool, string> onComplete)
+        {
+            if (!IsScopedStorageMode)
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+
+            string exportName = Path.GetFileName(localExportDirectory);
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                IUserStorageBackend backend = UserStorage.Backend;
+                AndroidStorageManager.StartStorageOperation(
+                    $"export {exportName}",
+                    () => SafStagedOutputPublisher.PublishExport(
+                        backend, localExportDirectory, localReadmePath,
+                        CancellationToken.None),
+                    onComplete);
+                return;
+            }
+
+            string relativeExportPath = Path.Combine("Exports", exportName);
+            PublishPathToSharedStorageAsync(
+                relativeExportPath,
+                localExportDirectory,
+                "export " + exportName,
+                transactionOwnsPayload: true,
+                (exportCopied, exportError) =>
+                {
+                    if (!exportCopied)
+                    {
+                        onComplete?.Invoke(false, exportError);
+                        return;
+                    }
+
+                    PublishPathToSharedStorageAsync(
+                        Path.Combine("Exports", "README.txt"),
+                        localReadmePath,
+                        "export README",
+                        transactionOwnsPayload: true,
+                        onComplete);
+                });
+        }
+
+        public static void PublishGaussianCaptureToSharedStorageAsync(
+            string localCaptureDirectory, Action<bool, string> onComplete)
+        {
+            if (!IsScopedStorageMode)
+            {
+                onComplete?.Invoke(true, null);
+                return;
+            }
+            string captureName = Path.GetFileName(localCaptureDirectory);
+            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                IUserStorageBackend backend = UserStorage.Backend;
+                AndroidStorageManager.StartStorageOperation(
+                    $"Gaussian capture {captureName}",
+                    () => SafStagedOutputPublisher.PublishUniqueDirectory(
+                        backend, StorageArea.SplatPoses, localCaptureDirectory,
+                        transactionOwnsPayload: true, CancellationToken.None),
+                    onComplete);
+                return;
+            }
+            PublishPathToSharedStorageAsync(
+                Path.Combine("SplatPoses", captureName),
+                localCaptureDirectory,
+                $"Gaussian capture {captureName}",
+                transactionOwnsPayload: true,
+                onComplete);
+        }
+
+        private static void PublishPathToSharedStorageAsync(
+            string relativePath,
+            string localPath,
+            string label,
+            bool transactionOwnsPayload,
+            Action<bool, string> onComplete)
+        {
+            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                onComplete?.Invoke(false, "SAF storage backend is unavailable.");
+                return;
+            }
+            if (!TryResolveStorageDestination(
+                    relativePath, out StorageArea area, out string areaRelativePath))
+            {
+                onComplete?.Invoke(
+                    false, $"Unsupported shared-storage destination: {relativePath}");
+                return;
+            }
+            AndroidStorageManager.StartStorageOperation(
+                label,
+                () => SafStagedOutputPublisher.Publish(
+                    UserStorage.Backend,
+                    area,
+                    areaRelativePath,
+                    localPath,
+                    transactionOwnsPayload,
+                    CancellationToken.None),
+                onComplete);
+        }
+
+
+        internal static bool TryResolveStorageDestination(
+            string sharedRelativePath,
+            out StorageArea area,
+            out string areaRelativePath)
+        {
+            string normalized = (sharedRelativePath ?? "").Replace('\\', '/').Trim('/');
+            (string prefix, StorageArea area)[] mappings =
+            {
+                ("Media Library/BackgroundImages", StorageArea.MediaLibraryBackgroundImages),
+                ("Media Library/Images", StorageArea.MediaLibraryImages),
+                ("Media Library/Models", StorageArea.MediaLibraryModels),
+                ("Media Library/Videos", StorageArea.MediaLibraryVideos),
+                ("Media Library/Sound Clips", StorageArea.MediaLibrarySoundClips),
+                ("Media Library/Quill", StorageArea.MediaLibraryQuill),
+                ("Music", StorageArea.Music),
+                ("Media Library/Saved Strokes", StorageArea.SavedStrokes),
+                ("Sketches", StorageArea.Sketches),
+                ("Snapshots", StorageArea.Snapshots),
+                ("VRVideos", StorageArea.VrVideos),
+                ("Videos", StorageArea.Videos),
+                ("Exports", StorageArea.Exports),
+                ("SplatPoses", StorageArea.SplatPoses),
+            };
+            foreach ((string prefix, StorageArea mappedArea) in mappings)
+            {
+                if (normalized == prefix)
+                {
+                    area = mappedArea;
+                    areaRelativePath = "";
+                    return true;
+                }
+                string prefixWithSeparator = $"{prefix}/";
+                if (normalized.StartsWith(
+                        prefixWithSeparator, StringComparison.OrdinalIgnoreCase))
+                {
+                    area = mappedArea;
+                    areaRelativePath = normalized.Substring(prefixWithSeparator.Length);
+                    return true;
+                }
+            }
+            area = default;
+            areaRelativePath = null;
+            return false;
+        }
+
+        private static bool TryGetRelativePath(string root, string path, out string relativePath)
+        {
+            relativePath = null;
+
+            string fullRoot = Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string fullPath = Path.GetFullPath(path);
+            if (fullPath == fullRoot)
+            {
+                relativePath = "";
+                return true;
+            }
+
+            string rootWithSeparator = fullRoot + Path.DirectorySeparatorChar;
+            if (!fullPath.StartsWith(rootWithSeparator))
+            {
+                return false;
+            }
+
+            relativePath = fullPath.Substring(rootWithSeparator.Length);
+            return true;
+        }
+
+    }
+}

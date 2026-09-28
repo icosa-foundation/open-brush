@@ -132,7 +132,8 @@ namespace TiltBrush
         [LuaDocsDescription("Encodes the image as a form")]
         [LuaDocsExample(@"formdata = myImage:FormEncode()")]
         [LuaDocsReturnValue("The encoded image so it can be submitted as a response to a HTML form")]
-        public string FormEncode() => Convert.ToBase64String(File.ReadAllBytes(_ImageWidget.ReferenceImage.FileFullPath));
+        public string FormEncode() => Convert.ToBase64String(
+            _ImageWidget.ReferenceImage.ReadEncodedBytes());
 
         [LuaDocsDescription("Saves an image as a png based on base64 data")]
         [LuaDocsExample(@"Image:SaveBase64(someData, ""image.png"")")]

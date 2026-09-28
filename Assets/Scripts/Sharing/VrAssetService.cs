@@ -134,6 +134,10 @@ namespace TiltBrush
             {
                 SetWrapped(File.OpenRead(filename), ownsStream: true);
             }
+            public StreamWithReadProgress(Stream stream)
+            {
+                SetWrapped(stream, ownsStream: true);
+            }
             public override int Read(byte[] buffer, int offset, int count)
             {
                 var amountRead = base.Read(buffer, offset, count);
@@ -589,31 +593,22 @@ namespace TiltBrush
         }
 
         /// Returns a writable SceneFileInfo
-        private DiskSceneFileInfo GetWritableFile()
+        private SceneFileInfo GetWritableFile()
         {
             // hermetic gltf files currently don't work with AccessLevel.PRIVATE
             SceneFileInfo currentFileInfo = SaveLoadScript.m_Instance.SceneFile;
 
-            DiskSceneFileInfo fileInfo;
-            if (currentFileInfo.Valid)
+            if (CanReuseSceneFileForUpload(currentFileInfo))
             {
-                if (currentFileInfo is DiskSceneFileInfo)
-                {
-                    fileInfo = (DiskSceneFileInfo)currentFileInfo;
-                }
-                else
-                {
-                    // This is a cloud sketch not saved before
-                    fileInfo = SaveLoadScript.m_Instance.GetNewNameSceneFileInfo();
-                }
+                return currentFileInfo;
             }
-            else
-            {
-                // Save as a new file
-                fileInfo = SaveLoadScript.m_Instance.GetNewNameSceneFileInfo();
-            }
-            return fileInfo;
+            // Cloud, read-only and unsaved sketches need a new writable destination.
+            return SaveLoadScript.m_Instance.GetNewNameSceneFileInfo();
         }
+
+        internal static bool CanReuseSceneFileForUpload(SceneFileInfo fileInfo) =>
+            fileInfo != null && fileInfo.Valid && !fileInfo.ReadOnly &&
+            fileInfo.InfoType == FileInfoType.Disk;
 
         /// Returns a relative path R such that Join(fromDir, R) refers to toFile, or null on error.
         /// Does not handle ".." paths.
@@ -641,9 +636,25 @@ namespace TiltBrush
 
         private async Task CreateZipFileAsync(
             string zipName, string rootDir, string[] paths,
-            CancellationToken token)
+            CancellationToken token, SceneFileInfo sceneFile = null,
+            string sceneArchivedName = null)
         {
-            long totalLength = paths.Aggregate(0L, (acc, elt) => acc + new FileInfo(elt).Length) + 1;
+            if (sceneFile != null && !(sceneFile is SafSceneFileInfo))
+            {
+                // Freeze the local sketch before ZIP creation yields. API saves can replace
+                // the original while other entries are copying into the archive.
+                string stagedSketch = Path.Combine(rootDir, sceneArchivedName);
+                File.Copy(sceneFile.FullPath, stagedSketch);
+                paths = paths.Append(stagedSketch).ToArray();
+                sceneFile = null;
+            }
+
+            long totalLength = paths.Aggregate(0L, (acc, elt) => acc + new FileInfo(elt).Length);
+            if (sceneFile is SafSceneFileInfo safScene)
+            {
+                totalLength += safScene.Document.Size ?? 0;
+            }
+            totalLength += 1;
             long read = 1;
 
             using (var zip = File.OpenWrite(zipName))
@@ -676,8 +687,38 @@ namespace TiltBrush
                             }
                         }
                     }
+                    if (sceneFile != null)
+                    {
+                        ZipArchiveEntry entry = archive.CreateEntry(
+                            sceneArchivedName.Replace('\\', '/'));
+                        using (Stream writer = entry.Open())
+                        using (var reader = new StreamWithReadProgress(
+                            OpenSceneFileReadStream(sceneFile, token)))
+                        {
+                            var task = reader.CopyToAsync(writer, 0x1_0000, token);
+                            while (!task.IsCompleted)
+                            {
+                                long prev = reader.TotalRead;
+                                await Awaiters.NextFrame;
+                                read += reader.TotalRead - prev;
+                                SetUploadProgress(
+                                    UploadStep.ZipElements, read / (double)totalLength);
+                            }
+                            await task;
+                        }
+                    }
                 }
             }
+        }
+
+        private static Stream OpenSceneFileReadStream(
+            SceneFileInfo source, CancellationToken token)
+        {
+            if (source is SafSceneFileInfo safSource)
+            {
+                return safSource.OpenRawReadStream(requireSeekable: false, token);
+            }
+            return File.OpenRead(source.FullPath);
         }
 
         // TODO: Refactor. This is largely the same as UploadCurrentSketchSketchFabAsync aside from a few url changes and the response.
@@ -692,7 +733,7 @@ namespace TiltBrush
             //bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);
             bool publishLegacyGltf = false;
 
-            DiskSceneFileInfo fileInfo = GetWritableFile();
+            SceneFileInfo fileInfo = GetWritableFile();
 
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
             string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
@@ -735,18 +776,13 @@ namespace TiltBrush
             // options.SetBackgroundColor(bgColor);
 
             SetUploadProgress(UploadStep.CreateTilt, 0);
-            var thumbnail = await CreateTiltForUploadAsync(fileInfo);
+            var (savedFile, thumbnail) = await CreateTiltForUploadAsync(fileInfo);
             token.ThrowIfCancellationRequested();
-
-            // Create a copy of the .tilt file in tempUploadDir.
-            string tempTiltPath = Path.Combine(tempUploadDir, $"{uploadName}.tilt");
-            File.Copy(fileInfo.FullPath, tempTiltPath);
 
             // Save thumbnail as a png to temp path
             string tempThumbnailPath = Path.Combine(tempUploadDir, "thumbnail.png");
             File.WriteAllBytes(tempThumbnailPath, thumbnail);
 
-            filesToZip.Add(tempTiltPath);
             filesToZip.Add(tempThumbnailPath);
 
             // Always use new glb if we're not publishing legacy glTF.
@@ -763,7 +799,9 @@ namespace TiltBrush
                 filesToZip.Add(newGlbPath);
             }
 
-            await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
+            await CreateZipFileAsync(
+                zipName, tempUploadDir, filesToZip.ToArray(), token,
+                savedFile, $"{uploadName}.tilt");
 
             // Collect remix IDs if this sketch is derived from another asset
             var remixIds = new List<string>();
@@ -788,7 +826,7 @@ namespace TiltBrush
         private async Task<(string, long)> UploadCurrentSketchSketchfabAsync(
             CancellationToken token, string tempUploadDir, bool _)
         {
-            DiskSceneFileInfo fileInfo = GetWritableFile();
+            SceneFileInfo fileInfo = GetWritableFile();
 
             SetUploadProgress(UploadStep.CreateGltf, 0);
             // Do the glTF straight away as it relies on the meshes, not the stroke descriptions.
@@ -814,17 +852,14 @@ namespace TiltBrush
             // TODO(b/146892613): we're not uploading this at the moment. Should we be?
             // If we don't, we can probably remove this step...?
             SetUploadProgress(UploadStep.CreateTilt, 0);
-            await CreateTiltForUploadAsync(fileInfo);
+            var savedSketch = await CreateTiltForUploadAsync(fileInfo);
             token.ThrowIfCancellationRequested();
-
-            // Create a copy of the .tilt file in tempUploadDir.
-            string tempTiltPath = Path.Combine(tempUploadDir, "sketch.tilt");
-            File.Copy(fileInfo.FullPath, tempTiltPath);
 
             // Collect files into a .zip file, including the .tilt file.
             string zipName = Path.Combine(tempUploadDir, "archive.zip");
-            var filesToZip = exportResults.exportedFiles.ToList().Append(tempTiltPath);
-            await CreateZipFileAsync(zipName, tempUploadDir, filesToZip.ToArray(), token);
+            await CreateZipFileAsync(
+                zipName, tempUploadDir, exportResults.exportedFiles, token,
+                savedSketch.File, "sketch.tilt");
             var uploadLength = new FileInfo(zipName).Length;
 
             var service = new SketchfabService(App.SketchfabIdentity);
@@ -846,7 +881,7 @@ namespace TiltBrush
                     CancellationToken token, string tempUploadDir, bool isDemoUpload)
         {
             bool publishLegacyGltf = false;
-            DiskSceneFileInfo fileInfo = GetWritableFile();
+            SceneFileInfo fileInfo = GetWritableFile();
             var currentScene = SaveLoadScript.m_Instance.SceneFile;
             string uploadName = currentScene.Valid ? currentScene.HumanName : kDefaultName;
 
@@ -1056,37 +1091,38 @@ namespace TiltBrush
         }
 
         /// Helper for UploadCurrentSketchXxxAsync
-        /// Writes the sketch to the passed fileInfo and returns a sketch thumbnail.
-        private async Task<byte[]> CreateTiltForUploadAsync(DiskSceneFileInfo fileInfo)
+        /// Writes the sketch to the passed fileInfo and returns the committed file and thumbnail.
+        private async Task<(SceneFileInfo File, byte[] Thumbnail)> CreateTiltForUploadAsync(
+            SceneFileInfo fileInfo)
         {
             // Create and save snapshot.
             SetUploadProgress(UploadStep.CreateTilt, 0);
             SketchControlsScript.m_Instance.GenerateReplacementSaveIcon();
             SketchSnapshot snapshot = await SaveLoadScript.m_Instance.CreateSnapshotWithIconsAsync();
             snapshot.AssetId = fileInfo.AssetId; // FileInfo and snapshot must match
-            await SaveLoadScript.m_Instance.SaveSnapshot(fileInfo, snapshot: snapshot);
-            if (!File.Exists(fileInfo.FullPath))
+            // A skipped or failed save can leave an existing cloud/local file in SceneFile.
+            // Only the completion result of this save identifies a valid upload source.
+            SceneFileInfo savedFile = null;
+            string saveError = "The sketch save did not complete.";
+            await SaveLoadScript.m_Instance.SaveSnapshot(
+                fileInfo, snapshot: snapshot, onCompleted: (committedFile, error) =>
+                {
+                    savedFile = committedFile;
+                    saveError = error;
+                });
+            if (savedFile == null || saveError != null)
             {
-                string exceptionMessage = "Internal error uploading .tilt.";
-                if (SaveLoadScript.m_Instance.LastWriteSnapshotError != null)
-                {
-                    exceptionMessage += " Error: " + SaveLoadScript.m_Instance.LastWriteSnapshotError;
-                }
-                else
-                {
-                    exceptionMessage += " No error message";
-                }
-
-                throw new VrAssetServiceException(exceptionMessage);
+                throw new VrAssetServiceException(
+                    $"Internal error uploading .tilt. {saveError ?? "No saved file was returned."}");
             }
 
-            byte[] thumbnail = SaveLoadScript.m_Instance.GetLastThumbnailBytes();
+            byte[] thumbnail = snapshot.Thumbnail;
             if (thumbnail == null)
             {
-                thumbnail = FileSketchSet.ReadThumbnail(fileInfo) ?? new byte[0];
+                thumbnail = FileSketchSet.ReadThumbnail(savedFile) ?? new byte[0];
             }
 
-            return thumbnail;
+            return (savedFile, thumbnail);
         }
 
         public AssetGetter GetAsset(string assetId, VrAssetFormat[] assetTypes, string reason)
@@ -1290,8 +1326,17 @@ namespace TiltBrush
                     yield break;
                 }
 
-                SketchControlsScript.m_Instance.IssueGlobalCommand(
-                    SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+                if (OpenBrushStorage.IsScopedStorageMode)
+                {
+                    // This download is a local temporary file, even when named sketches use SAF.
+                    // Keep its identity instead of looking up its filename in the shared folder.
+                    SketchControlsScript.m_Instance.LoadSketchWithMetadata(new DiskSceneFileInfo(path));
+                }
+                else
+                {
+                    SketchControlsScript.m_Instance.IssueGlobalCommand(
+                        SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+                }
                 loadIssued = true;
                 onProgress?.Invoke(1.0f);
             }

@@ -61,9 +61,8 @@ namespace TiltBrush
             };
             m_InternalFileWatcher.Renamed += (sender, args) =>
             {
-                // Consumers already understand delete/create pairs, and a rename is one.
-                // Forward both identities so a renamed file or directory removes its old
-                // entry as well as adding the new one.
+                // Catalog consumers already understand delete/create pairs. Forward both
+                // identities so renaming a file or directory removes its old entry too.
                 FileDeleted?.Invoke(this, new FileSystemEventArgs(WatcherChangeTypes.Deleted,
                     Path.GetDirectoryName(args.OldFullPath), Path.GetFileName(args.OldFullPath)));
                 FileCreated?.Invoke(this, new FileSystemEventArgs(WatcherChangeTypes.Created,

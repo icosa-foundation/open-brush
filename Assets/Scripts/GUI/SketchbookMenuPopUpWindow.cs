@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.IO;
 using UnityEngine;
 
 namespace TiltBrush
@@ -59,13 +58,9 @@ namespace TiltBrush
 
         public void SetInitialKeyboardText(KeyboardPopupButton btn)
         {
-            var sceneFileInfo = GetSceneFileInfo(btn.m_CommandParam, m_SketchSetType);
-            var currentName = Path.GetFileName(sceneFileInfo.FullPath);
-            if (currentName.EndsWith(SaveLoadScript.TILT_SUFFIX))
-            {
-                currentName = currentName.Substring(0, currentName.Length - SaveLoadScript.TILT_SUFFIX.Length);
-            }
-            KeyboardPopUpWindow.m_InitialText = currentName;
+            SketchSetType sketchSetType = (SketchSetType)btn.m_CommandParam2;
+            var sceneFileInfo = GetSceneFileInfo(btn.m_CommandParam, sketchSetType);
+            KeyboardPopUpWindow.m_InitialText = sceneFileInfo.HumanName;
         }
 
         private SceneFileInfo GetSceneFileInfo(int commandParam, SketchSetType sketchSetType)
