@@ -32,7 +32,6 @@ namespace TiltBrush
     public class UrpPostProcessingController : MonoBehaviour
     {
         private const string kLogPrefix = "[OB_URP_POST]";
-        private const string kMsaaLogPrefix = "[OB_QUILL_MSAA_20260926]";
         private const string kRuntimeVolumeName = "OpenBrush URP Runtime Global Volume";
         private const float kDisabledBloomIntensity = 0f;
         private const float kFastBloomIntensity = 0.1f;
@@ -360,7 +359,6 @@ namespace TiltBrush
                 $"scatter={m_Bloom.scatter.value} hq={m_Bloom.highQualityFiltering.value} " +
                 $"downscale={m_Bloom.downscale.value} maxIterations={m_Bloom.maxIterations.value} " +
                 $"hdr={settings.Hdr} fxaa={settings.Fxaa} msaa={m_CurrentMsaa}.");
-            Debug.Log($"{kMsaaLogPrefix} quality={qualityLevel} requested={QualityControls.m_Instance.MSAALevel} pipeline={m_MsaaPipelineAsset?.msaaSampleCount} unity={QualitySettings.antiAliasing} xrCached={XRSystem.GetDisplayMSAASamples()}.");
         }
 
         public bool UsesFixedXrMsaa { get; private set; }
@@ -389,9 +387,8 @@ namespace TiltBrush
             if (UsesFixedXrMsaa)
             {
                 FixedXrMsaaLevel = m_CurrentMsaa;
-                Debug.Log($"{kMsaaLogPrefix} fixed XR session MSAA={m_CurrentMsaa}; quality adapts viewport and foveation.");
+                Debug.Log($"{kLogPrefix} Fixed XR session MSAA={m_CurrentMsaa}; quality adapts viewport and foveation.");
             }
-            Debug.Log($"{kMsaaLogPrefix} before XR start requested={requestedSamples} applied={m_CurrentMsaa}.");
         }
 
         private void ApplyMsaa(int requestedSamples)
@@ -405,14 +402,14 @@ namespace TiltBrush
             if (m_CurrentMsaa != 1 && m_CurrentMsaa != 2 &&
                 m_CurrentMsaa != 4 && m_CurrentMsaa != 8)
             {
-                Debug.LogWarning($"{kMsaaLogPrefix} Invalid MSAA {requestedSamples}; disabling MSAA.");
+                Debug.LogWarning($"{kLogPrefix} Invalid MSAA {requestedSamples}; disabling MSAA.");
                 m_CurrentMsaa = 1;
             }
 
             int supportedSamples = FixedXrMsaaLevel ?? GetSupportedMsaa(m_CurrentMsaa, m_CurrentHdr);
             if (supportedSamples != m_CurrentMsaa)
             {
-                Debug.LogWarning($"{kMsaaLogPrefix} Requested {m_CurrentMsaa}x MSAA is unsupported; using {supportedSamples}x.");
+                Debug.LogWarning($"{kLogPrefix} Requested {m_CurrentMsaa}x MSAA is unsupported; using {supportedSamples}x.");
                 m_CurrentMsaa = supportedSamples;
             }
 

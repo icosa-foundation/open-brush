@@ -565,7 +565,6 @@ namespace TiltBrush
         {
             if (QualityControls.m_Instance == null) return "QualityControls is not available.";
             QualityControls.m_Instance.AutomaticQualityEnabled = enabled;
-            UnityEngine.Debug.Log($"[OB_QUALITY_TUNING_20260927] automatic={enabled}.");
             return GetQualityLevel();
         }
 

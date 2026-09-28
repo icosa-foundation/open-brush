@@ -86,7 +86,6 @@ namespace TiltBrush
                 throw new InvalidOperationException($"XR session MSAA is fixed at {fixedSamples.Value}x; restart to change it.");
             m_RuntimeQualityOverrides[level] = (msaa, foveation);
             if (level == QualityLevel) SetQualityLevel(level);
-            Debug.Log($"[OB_QUALITY_TUNING_20260927] level={level} msaa={msaa} foveation={foveation}.");
         }
 
         public void ConfigureQualityThresholds(float lowerFps, float higherFps,
@@ -101,7 +100,6 @@ namespace TiltBrush
             m_RuntimeLowerFrames = lowerFrames;
             m_RuntimeHigherFrames = higherFrames;
             m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
-            Debug.Log($"[OB_QUALITY_TUNING_20260927] thresholds lower={lowerFps}/{lowerFrames} higher={higherFps}/{higherFrames}.");
         }
 
         /// Index into the active platform's quality ladder, from lowest to highest.
@@ -190,7 +188,6 @@ namespace TiltBrush
             // level. Apply its supported fallback too, so quality and eye MSAA agree.
             if (m_QualityInitialized && QualityLevel != m_PreparedInitialQualityLevel.Value)
                 SetQualityLevel(m_PreparedInitialQualityLevel.Value);
-            Debug.Log($"[OB_QUALITY_TUNING_20260927] startup requestedLevel={requestedLevel} selectedLevel={m_PreparedInitialQualityLevel.Value}.");
         }
 
         private int GetAutomaticQualityLevel(int desiredLevel,
