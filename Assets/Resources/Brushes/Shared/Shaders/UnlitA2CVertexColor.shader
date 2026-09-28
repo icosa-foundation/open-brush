@@ -40,6 +40,11 @@ Shader "Brush/UnlitA2CVertexColor"
             float _AlphaPower;
             CBUFFER_END
 
+#if defined(QUILL_COMPOSITOR_ALPHA)
+            // Shared by both eyes and all Quill strokes for this rendered frame.
+            float _QuillDitherFrame;
+#endif
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -152,6 +157,11 @@ Shader "Brush/UnlitA2CVertexColor"
                 float alpha = saturate(pow(saturate(c.a + _AlphaBias), _AlphaPower));
 
                 float2 pixelPos = input.positionHCS.xy;
+#if defined(QUILL_COMPOSITOR_ALPHA)
+                // Move both the opacity noise and coverage pattern each frame so
+                // they do not appear as a stationary layer of dirt over the view.
+                pixelPos += _QuillDitherFrame * float2(17, 29);
+#endif
                 float seed = ObjectSeed();
                 pixelPos += seed * 4096.0;
                 float ditherOrdered = OrderedDither4x4(pixelPos);

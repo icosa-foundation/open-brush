@@ -323,6 +323,12 @@ namespace TiltBrush
             bool compositorCamera = PassthroughMode != PassthroughMode.None &&
                 camera.targetTexture == null && camera.stereoEnabled &&
                 cameraData != null && cameraData.allowXRRendering;
+            if (compositorCamera)
+            {
+                // A bounded integer keeps shader hashing precise. Use frame count,
+                // rather than elapsed time, so both eyes receive the same pattern.
+                Shader.SetGlobalFloat("_QuillDitherFrame", Time.frameCount % 1024);
+            }
             SetQuillCompositorKeyword(compositorCamera);
         }
 
