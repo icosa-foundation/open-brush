@@ -122,16 +122,19 @@ namespace TiltBrush
             get { return (StrokeSimplifier == null) ? 0.0f : StrokeSimplifier.Level; }
             set
             {
-                float level = value;
-                if (App.UserConfig.Profiling.HasStrokeSimplification)
-                {
-                    level = App.UserConfig.Profiling.StrokeSimplification;
-                    Debug.LogFormat("Simplification overridden to be: {0}.", level);
-                }
-                StrokeSimplifier = new RdpStrokeSimplifier(level);
-                UserStrokeSimplifier = new RdpStrokeSimplifier(
-                    Mathf.Min(level, AppQualityLevels[QualityLevel].MaxSimplificationUserStrokes));
+                SetSimplificationLevel(value, AppQualityLevels[QualityLevel].MaxSimplificationUserStrokes);
             }
+        }
+
+        private void SetSimplificationLevel(float level, float maxUserStrokeLevel)
+        {
+            if (App.UserConfig.Profiling.HasStrokeSimplification)
+            {
+                level = App.UserConfig.Profiling.StrokeSimplification;
+                Debug.Log($"Simplification overridden to be: {level}.");
+            }
+            StrokeSimplifier = new RdpStrokeSimplifier(level);
+            UserStrokeSimplifier = new RdpStrokeSimplifier(Mathf.Min(level, maxUserStrokeLevel));
         }
 
         public int MSAALevel
@@ -355,7 +358,7 @@ namespace TiltBrush
             Shader.globalMaximumLOD = settings.MaxLod;
             m_msaaLevel = settings.MsaaLevel;
             QualitySettings.anisotropicFiltering = settings.Anisotropic;
-            SimplificationLevel = settings.StrokeSimplification;
+            SetSimplificationLevel(settings.StrokeSimplification, settings.MaxSimplificationUserStrokes);
             m_targetMaxControlPoints = settings.TargetMaxControlPoints;
             m_maxLoadingSimplification = settings.MaxSimplification;
 
@@ -397,7 +400,7 @@ namespace TiltBrush
                 m_lastQualityLevel = value;
             }
 
-            App.VrSdk.SetGpuClockLevel(AppQualitySettings.GpuLevel);
+            App.VrSdk.SetGpuClockLevel(settings.GpuLevel);
             App.VrSdk.SetFixedFoveation(foveation);
 
             QualitySettings.SetQualityLevel(value, applyExpensiveChanges: !App.Config.IsMobileHardware);
