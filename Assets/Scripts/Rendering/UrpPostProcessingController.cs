@@ -370,14 +370,14 @@ namespace TiltBrush
             {
                 return;
             }
-#if UNITY_ANDROID
             // Changing sample count with submitted depth can invalidate the native
-            // stereo color target on Quest. Select it before starting the loader.
-            UsesFixedXrMsaa = App.Config.IsMobileHardware &&
+            // stereo color target on both Quest and Windows OpenXR. Select it before
+            // starting the subsystems and retain it across quality changes.
+            UsesFixedXrMsaa = UnityEngine.XR.Management.XRGeneralSettings.Instance?.Manager?.activeLoader
+                is UnityEngine.XR.OpenXR.OpenXRLoader &&
                 UnityEngine.XR.OpenXR.OpenXRSettings.Instance != null &&
                 UnityEngine.XR.OpenXR.OpenXRSettings.Instance.depthSubmissionMode !=
                     UnityEngine.XR.OpenXR.OpenXRSettings.DepthSubmissionMode.None;
-#endif
             quality.PrepareInitialQualityLevel(this);
             var settings = quality.AppQualityLevels[quality.InitialQualityLevel];
             m_CurrentHdr = settings.Hdr;
@@ -387,7 +387,7 @@ namespace TiltBrush
             if (UsesFixedXrMsaa)
             {
                 FixedXrMsaaLevel = m_CurrentMsaa;
-                Debug.Log($"{kLogPrefix} Fixed XR session MSAA={m_CurrentMsaa}; quality adapts viewport and foveation.");
+                Debug.Log($"{kLogPrefix} Fixed XR session MSAA={m_CurrentMsaa}.");
             }
         }
 
