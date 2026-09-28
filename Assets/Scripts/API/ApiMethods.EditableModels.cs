@@ -53,8 +53,14 @@ namespace TiltBrush
                 ? Path.Combine(uri.Host, $"import-{Guid.NewGuid():N}") : uri.Host;
             string fullLocalPath = GetSafeRelativePathInDirectory(
                 App.ModelLibraryPath(), modelDirectory, "model import directory");
+            // SAF model loaders read the shared document, so the staged download alone is
+            // not enough. The glTF branch below already waits for its whole dependency tree.
+            bool waitForPublication = OpenBrushStorage.IsScopedStorageMode && ext != "gltf";
             string filename = _DownloadMediaFileFromUrlToDirectory(
-                uri, fullLocalPath, allowRedirects: true, publish: ext != "gltf");
+                uri, fullLocalPath, allowRedirects: true, publish: ext != "gltf",
+                onPublished: waitForPublication
+                    ? publishedFilename => ImportModel(Path.Combine(modelDirectory, publishedFilename))
+                    : null);
             if (filename == null) { return; }
             if (ext == "gltf")
             {
@@ -92,7 +98,10 @@ namespace TiltBrush
                     });
                 return;
             }
-            ImportModel(Path.Combine(modelDirectory, filename));
+            if (!waitForPublication)
+            {
+                ImportModel(Path.Combine(modelDirectory, filename));
+            }
         }
 
         internal static IEnumerable<string> GetGltfExternalFiles(JObject gltf)
