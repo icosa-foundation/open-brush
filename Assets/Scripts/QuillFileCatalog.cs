@@ -40,7 +40,6 @@ namespace TiltBrush
         private bool m_DirectoryScanRequired;
         private bool m_IsScanningDirectory;
         private string m_SearchText = "";
-
         public int ItemCount => m_Files.Count;
         public bool IsScanning => m_IsScanningDirectory;
         public string HomeDirectory => GetDirectoryForSource(m_SourceDirectory);
@@ -71,7 +70,10 @@ namespace TiltBrush
             Instance = this;
 
             App.InitMediaLibraryPath();
-            App.InitQuillMediaLibraryPath(m_DefaultQuillFiles);
+            if (!OpenBrushStorage.IsScopedStorageMode)
+            {
+                App.InitQuillMediaLibraryPath(m_DefaultQuillFiles);
+            }
             SetSourceDirectory(m_SourceDirectory);
         }
 
@@ -118,6 +120,7 @@ namespace TiltBrush
 
         public void ForceCatalogScan()
         {
+            m_DirectoryScanRequired = true;
             if (!m_IsScanningDirectory)
             {
                 m_DirectoryScanRequired = false;
@@ -136,7 +139,8 @@ namespace TiltBrush
             m_Files.Clear();
 
             // Quill's external project folder is only discovered, never created by Open Brush.
-            if (m_SourceDirectory == SourceDirectory.Imm && !Directory.Exists(m_CurrentDirectory))
+            if (!OpenBrushStorage.IsScopedStorageMode &&
+                m_SourceDirectory == SourceDirectory.Imm && !Directory.Exists(m_CurrentDirectory))
             {
                 App.InitDirectoryAtPath(m_CurrentDirectory);
             }
@@ -169,7 +173,7 @@ namespace TiltBrush
         {
             StopWatchingCurrentDirectory();
 
-            if (!Directory.Exists(m_CurrentDirectory))
+            if (OpenBrushStorage.IsScopedStorageMode || !Directory.Exists(m_CurrentDirectory))
             {
                 return;
             }
@@ -211,8 +215,32 @@ namespace TiltBrush
             }
 
             m_IsScanningDirectory = true;
+            try
+            {
+                using (var scan = ScanDirectoryImpl())
+                {
+                    while (scan.MoveNext()) { yield return scan.Current; }
+                }
+            }
+            finally
+            {
+                m_IsScanningDirectory = false;
+            }
+        }
 
+        private IEnumerator<object> ScanDirectoryImpl()
+        {
             var files = new List<QuillFileInfo>();
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                // Quill projects and IMM files are both consumed by path-only loaders. Shared
+                // storage has no filesystem path, and copying whole projects into app-private
+                // storage recreates the materialization layer this branch deliberately removed.
+                // Keep them disabled until those loaders accept streams/resource resolvers.
+                m_Files.Clear();
+                CatalogChanged?.Invoke();
+                yield break;
+            }
             if (Directory.Exists(m_CurrentDirectory))
             {
                 foreach (string path in Directory.GetFiles(m_CurrentDirectory, "*.imm", SearchOption.TopDirectoryOnly))
@@ -254,7 +282,6 @@ namespace TiltBrush
                 .ThenBy(x => x.DisplayName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            m_IsScanningDirectory = false;
             CatalogChanged?.Invoke();
         }
 

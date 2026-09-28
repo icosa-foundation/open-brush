@@ -51,9 +51,10 @@ public class ScriptUiNavMultiple : MonoBehaviour
         UpdateUi();
     }
 
-    public void HandleCopyScriptToUserScriptFolder()
+    public async void HandleCopyScriptToUserScriptFolder()
     {
-        var copied = LuaManager.Instance.CopyActiveScriptToUserScriptFolder(LuaApiCategory.BackgroundScript);
+        var copied = await LuaManager.Instance.CopyActiveScriptToUserScriptFolderAsync(
+            LuaApiCategory.BackgroundScript);
         m_CopyToUserScriptsFolder.gameObject.SetActive(copied);
     }
 

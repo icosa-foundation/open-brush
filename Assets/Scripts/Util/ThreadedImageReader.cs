@@ -67,6 +67,20 @@ namespace TiltBrush
         {
         }
 
+        public ThreadedImageReader(
+            Func<Stream> openRead,
+            string identifier = "",
+            int maxDimension = -1,
+            int abortDimension = -1,
+            long maxFileSize = -1)
+            : base(
+                computation: () => ThreadProc(
+                    openRead, identifier ?? "", maxDimension, abortDimension, maxFileSize),
+                cleanupFunction: null,
+                longRunning: true)
+        {
+        }
+
         /// identifier is optional, and only used to report back the source of the image
         /// if there is an error. Can be null.
         /// maxDimension and abortDimension are in texels.
@@ -99,6 +113,46 @@ namespace TiltBrush
             }
 
             return ThreadProc(rawData, filename, maxDimension, abortDimension);
+        }
+
+        static private RawImage ThreadProc(
+            Func<Stream> openRead,
+            string identifier,
+            int maxDimension = -1,
+            int abortDimension = -1,
+            long maxFileSize = -1)
+        {
+            byte[] rawData;
+            try
+            {
+                using (Stream input = openRead())
+                using (var bytes = new MemoryStream())
+                {
+                    var buffer = new byte[81920];
+                    while (true)
+                    {
+                        int read = input.Read(buffer, 0, buffer.Length);
+                        if (read == 0)
+                        {
+                            break;
+                        }
+                        if (maxFileSize >= 0 && bytes.Length + read > maxFileSize)
+                        {
+                            throw new ImageLoadError(
+                                $"{identifier} is too large and could not be loaded.");
+                        }
+                        bytes.Write(buffer, 0, read);
+                    }
+                    rawData = bytes.ToArray();
+                }
+            }
+            catch (IOException e)
+            {
+                Debug.LogError($"Load {identifier}: {e}");
+                return null;
+            }
+
+            return ThreadProc(rawData, identifier, maxDimension, abortDimension);
         }
 
         static private RawImage ThreadProc(byte[] rawData, string identifier,

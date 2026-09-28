@@ -485,6 +485,11 @@ namespace TiltBrush
             m_FileWatcher.NotifyChanged(fullpath);
         }
 
+        public void NotifySketchDeleted(string fullpath)
+        {
+            m_FileWatcher.NotifyDelete(fullpath);
+        }
+
         public void RequestRefresh()
         {
             if (m_Type == SketchSetType.SavedStrokes) { Interlocked.Exchange(ref m_RefreshRequested, 1); }

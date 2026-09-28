@@ -44,91 +44,98 @@ namespace TiltBrush
             UnityEngine.Profiling.Profiler.BeginSample("GetSceneStatePayload");
 
             var payload = new SceneStatePayload(axes, temporaryDirectory);
-
-            BuildGenerator(payload);
-            BuildEnvironment(payload);
-            BuildLights(payload);
-
-            UnityEngine.Profiling.Profiler.BeginSample("BuildBrushMeshes");
-            BuildBrushMeshes(payload);
-            UnityEngine.Profiling.Profiler.EndSample();
-
+            try
             {
-                bool IsModelExportable(ModelWidget w)
-                {
-                    if (!w.Model.AllowExport) { return false; }
-                    if (w.Model.GetLocation().GetLocationType() == Model.Location.Type.LocalFile)
-                    {
-                        return includeLocalMediaContent && App.Config.m_EnableReferenceModelExport;
-                    }
-                    else
-                    {
-                        return true;
-                    }
-                }
-                UnityEngine.Profiling.Profiler.BeginSample("BuildModelMeshes");
-                // TODO: inactive ModelWidgets should be fixed in WidgetManager.
-                var (exportable, notExportable) = WidgetManager.m_Instance.ModelWidgets
-                    .Where(w => w.Model != null && w.isActiveAndEnabled)
-                    .Partition(IsModelExportable);
-                BuildModelsAsModelMeshes(payload, exportable);
-                BuildEmptyXforms(payload, notExportable);
+                BuildGenerator(payload);
+                BuildEnvironment(payload);
+                BuildLights(payload);
+
+                UnityEngine.Profiling.Profiler.BeginSample("BuildBrushMeshes");
+                BuildBrushMeshes(payload);
                 UnityEngine.Profiling.Profiler.EndSample();
-            }
 
+                {
+                    bool IsModelExportable(ModelWidget w)
+                    {
+                        if (!w.Model.AllowExport) { return false; }
+                        if (w.Model.GetLocation().GetLocationType() == Model.Location.Type.LocalFile)
+                        {
+                            return includeLocalMediaContent && App.Config.m_EnableReferenceModelExport;
+                        }
+                        else
+                        {
+                            return true;
+                        }
+                    }
+                    UnityEngine.Profiling.Profiler.BeginSample("BuildModelMeshes");
+                    // TODO: inactive ModelWidgets should be fixed in WidgetManager.
+                    var (exportable, notExportable) = WidgetManager.m_Instance.ModelWidgets
+                        .Where(w => w.Model != null && w.isActiveAndEnabled)
+                        .Partition(IsModelExportable);
+                    BuildModelsAsModelMeshes(payload, exportable);
+                    BuildEmptyXforms(payload, notExportable);
+                    UnityEngine.Profiling.Profiler.EndSample();
+                }
+
+                {
+                    bool IsImageExportable(ImageWidget w)
+                    {
+                        return (includeLocalMediaContent && w.ReferenceImage != null);
+                    }
+                    var media2dWidgets = WidgetManager.m_Instance.MediaWidgets
+                        .Select(grab => grab.m_WidgetScript as Media2dWidget)
+                        .Where(w => w != null && w.isActiveAndEnabled);
+                    var (images, notImages) = media2dWidgets.Partition(w => w is ImageWidget);
+                    var (exportable, notExportable) = images.Cast<ImageWidget>().Partition(IsImageExportable);
+
+                    foreach (var group in exportable.GroupBy(widget => widget.ReferenceImage))
+                    {
+                        ReferenceImage ri = group.Key;
+                        if (ri == null)
+                        {
+                            Debug.Assert(false, "Empty ImageWidgets");
+                            continue;
+                        }
+
+                        DynamicExportableMaterial material;
+                        if (ri.FileName.EndsWith(".svg"))
+                        {
+                            byte[] bytes = ri.FullSize.EncodeToPNG();
+                            string textureName = $"{Path.GetFileName(ri.FileName)}.png";
+                            material = CreateImageQuadMaterial(ri, textureName);
+                            material.SetTextureSource(
+                                textureName, $"{ri.CatalogIdentity}:export-png",
+                                () => new MemoryStream(bytes, writable: false));
+                        }
+                        else
+                        {
+                            material = CreateImageQuadMaterial(ri, ri.FileName);
+                            if (ri.HasStreamSource)
+                            {
+                                // SAF documents have a logical display path, not a local file path.
+                                // Preserve the stream through the exporter instead of staging a copy.
+                                material.SetTextureSource(
+                                    ri.FileName, ri.CatalogIdentity, ri.OpenExportSource);
+                            }
+                        }
+                        foreach ((ImageWidget image, int idx) in group.WithIndex())
+                        {
+                            payload.imageQuads.Add(BuildImageQuadPayload(payload, image, material, idx));
+                        }
+                    }
+
+                    BuildEmptyXforms(payload, notImages);
+                    BuildEmptyXforms(payload, notExportable);
+                }
+
+                UnityEngine.Profiling.Profiler.EndSample();
+                return payload;
+            }
+            catch
             {
-                bool IsImageExportable(ImageWidget w)
-                {
-                    return (includeLocalMediaContent && w.ReferenceImage != null);
-                }
-                var media2dWidgets = WidgetManager.m_Instance.MediaWidgets
-                    .Select(grab => grab.m_WidgetScript as Media2dWidget)
-                    .Where(w => w != null && w.isActiveAndEnabled);
-                var (images, notImages) = media2dWidgets.Partition(w => w is ImageWidget);
-                var (exportable, notExportable) = images.Cast<ImageWidget>().Partition(IsImageExportable);
-
-                foreach (var group in exportable.GroupBy(widget => widget.ReferenceImage))
-                {
-                    ReferenceImage ri = group.Key;
-                    if (ri == null)
-                    {
-                        Debug.Assert(false, "Empty ImageWidgets");
-                        continue;
-                    }
-
-                    DynamicExportableMaterial material;
-                    if (ri.FileName.EndsWith(".svg"))
-                    {
-                        byte[] bytes = ri.FullSize.EncodeToPNG();
-                        if (temporaryDirectory == null)
-                        {
-                            temporaryDirectory = Application.temporaryCachePath;
-                        }
-                        if (!Directory.Exists(temporaryDirectory))
-                        {
-                            Directory.CreateDirectory(temporaryDirectory);
-                        }
-                        string texturePath = $"{temporaryDirectory}/{Path.GetFileName(ri.FileName)}.png";
-                        File.WriteAllBytes(texturePath, bytes);
-                        var newRi = new ReferenceImage(texturePath);
-                        material = CreateImageQuadMaterial(newRi);
-                    }
-                    else
-                    {
-                        material = CreateImageQuadMaterial(ri);
-                    }
-                    foreach ((ImageWidget image, int idx) in group.WithIndex())
-                    {
-                        payload.imageQuads.Add(BuildImageQuadPayload(payload, image, material, idx));
-                    }
-                }
-
-                BuildEmptyXforms(payload, notImages);
-                BuildEmptyXforms(payload, notExportable);
+                payload.Destroy();
+                throw;
             }
-
-            UnityEngine.Profiling.Profiler.EndSample();
-            return payload;
         }
 
         // Unused and untested
@@ -365,7 +372,8 @@ namespace TiltBrush
             return GuidUtils.Uuid5(descriptor, string.Format("{0}_{1}", ri.FileFullPath, id));
         }
 
-        static DynamicExportableMaterial CreateImageQuadMaterial(ReferenceImage ri)
+        static DynamicExportableMaterial CreateImageQuadMaterial(
+            ReferenceImage ri, string textureName)
         {
             BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(kPbrTransparentGuid);
             return new DynamicExportableMaterial(
@@ -375,7 +383,7 @@ namespace TiltBrush
                 uniqueName: MakeDeterministicUniqueName(desc.m_Guid, ri, 0),
                 uriBase: Path.GetDirectoryName(ri.FileFullPath))
             {
-                BaseColorTex = Path.GetFileName(ri.FileFullPath),
+                BaseColorTex = textureName,
                 MetallicFactor = kRefimageMetallicFactor
             };
         }
