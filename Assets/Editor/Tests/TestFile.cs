@@ -1681,6 +1681,22 @@ namespace TiltBrush
             }
         }
 
+        [Test]
+        public void DriveSync_FindsCaseCollisionsWithoutRejectingUnrelatedOrExactDuplicateNames()
+        {
+            var collisions = DriveSync.FindCaseCollidingDriveNames(new[]
+            {
+                "Logo.png", "logo.png", "Models", "models", "other.png", "same.png", "same.png",
+            });
+
+            Assert.AreEqual(2, collisions.Count);
+            Assert.IsTrue(collisions.Contains("Logo.png"));
+            Assert.IsTrue(collisions.Contains("logo.png"));
+            Assert.IsTrue(collisions.Contains("MODELS"));
+            Assert.IsFalse(collisions.Contains("other.png"));
+            Assert.IsFalse(collisions.Contains("same.png"));
+        }
+
         [TestCase(StorageBackendKind.Local, false)]
         [TestCase(StorageBackendKind.StorageAccessFramework, true)]
         public void DriveSync_CaseDistinctNamesUseBackendSemantics(
