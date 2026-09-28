@@ -30,11 +30,18 @@
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
+    public enum PhotonUdpPortSet
+    {
+        Default,
+        Alternative,
+    }
+
 
     // Use "struct" instead of "class" to prohibit the use of default values,
     // which won't work the way you want. Use Nullable<> instead.
@@ -190,6 +197,9 @@ namespace TiltBrush
             public bool EnablePluginWebRequests;
             public PluginWebRequestRule[] PluginWebRequestRules;
             public bool EnablePluginClipboardAccess;
+
+            [JsonConverter(typeof(StringEnumConverter))]
+            public PhotonUdpPortSet PhotonUdpPorts = PhotonUdpPortSet.Default;
 
             bool? m_AdvancedKeyboardShortcuts;
             public bool AdvancedKeyboardShortcuts
@@ -484,6 +494,23 @@ namespace TiltBrush
             public string Author;
         }
         public IdentityConfig User;
+
+        [Serializable]
+        public struct MultiplayerConfig
+        {
+            private int? m_MaxStreamedPointers;
+            public int MaxStreamedPointers
+            {
+                get
+                {
+                    return m_MaxStreamedPointers > 0
+                        ? m_MaxStreamedPointers.Value
+                        : Mathf.Max(1, App.PlatformConfig.MaxStreamedPointers);
+                }
+                set { m_MaxStreamedPointers = value; }
+            }
+        }
+        public MultiplayerConfig Multiplayer;
 
         [Serializable]
         public struct VideoConfig

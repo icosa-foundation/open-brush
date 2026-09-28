@@ -32,6 +32,7 @@ namespace TiltBrush
         private SelectCommand m_SelectLoadedStrokesCommand;
 
         private List<Stroke> m_LoadedStrokes;
+        private StrokeTimeSessionMetadata[] m_ImportedStrokeTimeSessions;
         private SketchGroupTag m_Group;
         private bool m_LoadAttempted;
         private bool m_LoadSucceeded;
@@ -41,6 +42,8 @@ namespace TiltBrush
 
         protected override void OnDispose()
         {
+            SketchMemoryScript.m_Instance.RemoveStrokeTimeSessions(
+                m_ImportedStrokeTimeSessions);
             if (m_LoadedStrokes != null)
             {
                 foreach (var stroke in m_LoadedStrokes)
@@ -92,7 +95,8 @@ namespace TiltBrush
                     m_SavedStrokeFile.FileInfo,
                     bAdditive: true,
                     m_TargetLayerIndex,
-                    out m_LoadedStrokes);
+                    out m_LoadedStrokes,
+                    out m_ImportedStrokeTimeSessions);
 
                 if (!m_LoadSucceeded)
                 {
@@ -127,6 +131,9 @@ namespace TiltBrush
             else if (!m_StrokesVisible)
             {
                 // Redo after undo
+                SketchMemoryScript.m_Instance.RestoreStrokeTimeSessions(
+                    m_ImportedStrokeTimeSessions);
+
                 // Manually deselect previous before showing strokes
                 if (m_DeselectPreviousCommand != null)
                 {
@@ -152,6 +159,9 @@ namespace TiltBrush
             }
 
             // Note: m_SelectLoadedStrokesCommand.Undo() will be called automatically by base class first
+
+            SketchMemoryScript.m_Instance.RemoveStrokeTimeSessions(
+                m_ImportedStrokeTimeSessions);
 
             foreach (var stroke in m_LoadedStrokes)
             {

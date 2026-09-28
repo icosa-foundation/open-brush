@@ -20,6 +20,7 @@ using UnityEditor;
 using UnityEngine;
 using NUnit.Framework;
 using UnityEngine.TestTools;
+using OpenBrush.Multiplayer;
 using static TiltBrush.AsyncTestUtils;
 
 namespace TiltBrush
@@ -27,6 +28,68 @@ namespace TiltBrush
 
     internal class TestMisc
     {
+        [TestCase(5, 30000, 30)]
+        [TestCase(45, 30000, 45)]
+        public void TestCalculateSynchronizedSketchTime(
+            double localSketchTime, uint sourceSketchTimeMs, double expectedSketchTime)
+        {
+            Assert.AreEqual(
+                expectedSketchTime,
+                MultiplayerManager.CalculateSynchronizedSketchTime(
+                    localSketchTime, sourceSketchTimeMs),
+                0.000001);
+        }
+
+        [TestCase(true, true, true)]
+        [TestCase(true, false, false)]
+        [TestCase(false, true, false)]
+        [TestCase(false, false, false)]
+        public void TestCalculateInitialRoomVoiceEnabled(
+            bool isRoomOwner, bool requestedRoomVoiceEnabled, bool expectedEnabled)
+        {
+            Assert.AreEqual(
+                expectedEnabled,
+                MultiplayerManager.CalculateInitialRoomVoiceEnabled(
+                    isRoomOwner, requestedRoomVoiceEnabled));
+        }
+
+        [TestCase(1.25, 1250)]
+        [TestCase(-1.25, -1250)]
+        public void TestConvertSketchTimeToMilliseconds(
+            double sketchTimeSeconds, long expectedMilliseconds)
+        {
+            Assert.AreEqual(
+                expectedMilliseconds,
+                ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(sketchTimeSeconds));
+        }
+
+        [Test]
+        public void TestConvertSketchTimeToMillisecondsClampsLargeValues()
+        {
+            Assert.AreEqual(
+                long.MaxValue,
+                ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(float.MaxValue));
+            Assert.AreEqual(
+                long.MinValue,
+                ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(-float.MaxValue));
+        }
+
+        [TestCase(30, 0, 30)]
+        [TestCase(30, 5, 25)]
+        [TestCase(30, 30, 0)]
+        [TestCase(-5, 0, 0)]
+        public void TestCalculateSuspensionAdjustmentSeconds(
+            double wallElapsed, double unityElapsed, double expectedAdjustment)
+        {
+            var suspendUtc = new DateTimeOffset(2026, 1, 1, 0, 0, 0, TimeSpan.Zero);
+            var resumeUtc = suspendUtc.AddSeconds(wallElapsed);
+
+            double adjustment = App.CalculateSuspensionAdjustmentSeconds(
+                suspendUtc, 100, resumeUtc, 100 + unityElapsed);
+
+            Assert.AreEqual(expectedAdjustment, adjustment, 0.000001);
+        }
+
         [Test]
         public void TestBrushMaterialsDeclareRenderType()
         {
