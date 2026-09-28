@@ -21,6 +21,13 @@ namespace TiltBrush
     {
         protected override void OnButtonPressed()
         {
+            if (m_Command == SketchControlsScript.GlobalCommands.EditSelectedSdf)
+            {
+                GetComponentInParent<SelectionTray>()?.OpenSdfEditor();
+                ResetState();
+                return;
+            }
+
             // Require user confirmation if a mesh split will be performed
             m_RequiresPopup = !SelectionManager.m_Instance.SelectionIsMultipleNodes && SelectionManager.m_Instance.SelectionIsMeshSplittable;
             base.OnButtonPressed();

@@ -208,6 +208,27 @@ namespace TiltBrush
             LoadQuillConfirmUnsaved = 13000,
             LoadQuillFile = 13001,
             OpenQuillPanelSearchPopup = 13002,
+            ConvertSelectionToSdf = 14000,
+            EditSelectedSdf = 14001,
+            SdfPreviousComponent = 14002,
+            SdfNextComponent = 14003,
+            SdfMoveComponentUp = 14004,
+            SdfMoveComponentDown = 14005,
+            SdfCycleComponentOperation = 14006,
+            SdfRemoveComponent = 14007,
+            SdfEditorNextPage = 14008,
+            SdfAddPrimitive = 14009,
+            SdfNextPrimitiveDimension = 14010,
+            SdfAdjustPrimitiveDimension = 14011,
+            SdfAdjustComponentBlend = 14012,
+            SdfToggleComponentHandles = 14013,
+            CreateGuideFromSelectedModel = 14014,
+            SdfSetPrimitiveDimension = 14015,
+            SdfSetComponentBlend = 14016,
+            SdfNextTransformValue = 14017,
+            SdfSetTransformValue = 14018,
+            SdfToggleComponentFlip = 14019,
+            SdfDuplicateComponent = 14020,
         }
 
         public enum ControlsType
@@ -5094,6 +5115,35 @@ namespace TiltBrush
                     SelectionManager.m_Instance.ToggleGroupSelectedStrokesAndWidgets();
                     EatToolScaleInput();
                     break;
+                case GlobalCommands.ConvertSelectionToSdf:
+                    SelectionManager.m_Instance.ConvertSelectedGuidesToSdf();
+                    EatToolScaleInput();
+                    break;
+                case GlobalCommands.CreateGuideFromSelectedModel:
+                    SelectionManager.m_Instance.CreateGuideFromSelectedModel();
+                    EatToolScaleInput();
+                    break;
+                case GlobalCommands.SdfPreviousComponent:
+                case GlobalCommands.SdfNextComponent:
+                case GlobalCommands.SdfMoveComponentUp:
+                case GlobalCommands.SdfMoveComponentDown:
+                case GlobalCommands.SdfCycleComponentOperation:
+                case GlobalCommands.SdfRemoveComponent:
+                case GlobalCommands.SdfEditorNextPage:
+                case GlobalCommands.SdfAddPrimitive:
+                case GlobalCommands.SdfNextPrimitiveDimension:
+                case GlobalCommands.SdfAdjustPrimitiveDimension:
+                case GlobalCommands.SdfAdjustComponentBlend:
+                case GlobalCommands.SdfToggleComponentHandles:
+                case GlobalCommands.SdfSetPrimitiveDimension:
+                case GlobalCommands.SdfSetComponentBlend:
+                case GlobalCommands.SdfNextTransformValue:
+                case GlobalCommands.SdfSetTransformValue:
+                case GlobalCommands.SdfToggleComponentFlip:
+                case GlobalCommands.SdfDuplicateComponent:
+                    SdfEditorPopup.Active?.Handle(rEnum, iParam1);
+                    EatToolScaleInput();
+                    break;
                 case GlobalCommands.SaveModel:
                     SaveModel();
                     break;
@@ -5514,6 +5564,28 @@ namespace TiltBrush
                         && PointerManager.m_Instance.StraightEdgeGuide.CurrentShape == (StraightEdgeGuideScript.Shape)iParam);
                 case GlobalCommands.Disco: return LightsControlScript.m_Instance.DiscoMode;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.UngroupingAllowed;
+                case GlobalCommands.ConvertSelectionToSdf: return false;
+                case GlobalCommands.CreateGuideFromSelectedModel: return false;
+                case GlobalCommands.EditSelectedSdf: return false;
+                case GlobalCommands.SdfPreviousComponent:
+                case GlobalCommands.SdfNextComponent:
+                case GlobalCommands.SdfMoveComponentUp:
+                case GlobalCommands.SdfMoveComponentDown:
+                case GlobalCommands.SdfCycleComponentOperation:
+                case GlobalCommands.SdfRemoveComponent:
+                case GlobalCommands.SdfEditorNextPage:
+                case GlobalCommands.SdfAddPrimitive:
+                case GlobalCommands.SdfNextPrimitiveDimension:
+                case GlobalCommands.SdfAdjustPrimitiveDimension:
+                case GlobalCommands.SdfAdjustComponentBlend:
+                case GlobalCommands.SdfToggleComponentHandles:
+                case GlobalCommands.SdfSetPrimitiveDimension:
+                case GlobalCommands.SdfSetComponentBlend:
+                case GlobalCommands.SdfNextTransformValue:
+                case GlobalCommands.SdfSetTransformValue:
+                case GlobalCommands.SdfToggleComponentFlip:
+                case GlobalCommands.SdfDuplicateComponent:
+                    return false;
                 case GlobalCommands.ToggleProfiling: return UnityEngine.Profiling.Profiler.enabled;
                 case GlobalCommands.ToggleCameraPostEffects: return CameraConfig.PostEffects;
                 case GlobalCommands.ToggleWatermark: return CameraConfig.Watermark;
@@ -5658,6 +5730,32 @@ namespace TiltBrush
                 case GlobalCommands.ResetAllPanels: return m_PanelManager.PanelsHaveBeenCustomized();
                 case GlobalCommands.Duplicate: return ClipboardManager.Instance.CanCopy;
                 case GlobalCommands.ToggleGroupStrokesAndWidgets: return SelectionManager.m_Instance.SelectionCanBeGrouped;
+                case GlobalCommands.ConvertSelectionToSdf:
+                    return SelectionManager.m_Instance.SelectionCanConvertGuidesToSdf;
+                case GlobalCommands.CreateGuideFromSelectedModel:
+                    return SelectionManager.m_Instance.SelectionCanCreateGuideFromModel;
+                case GlobalCommands.EditSelectedSdf:
+                    return SelectionManager.m_Instance.SelectedSdfGuide != null;
+                case GlobalCommands.SdfPreviousComponent:
+                case GlobalCommands.SdfNextComponent:
+                case GlobalCommands.SdfMoveComponentUp:
+                case GlobalCommands.SdfMoveComponentDown:
+                case GlobalCommands.SdfCycleComponentOperation:
+                case GlobalCommands.SdfRemoveComponent:
+                case GlobalCommands.SdfEditorNextPage:
+                case GlobalCommands.SdfAddPrimitive:
+                case GlobalCommands.SdfNextPrimitiveDimension:
+                case GlobalCommands.SdfAdjustPrimitiveDimension:
+                case GlobalCommands.SdfAdjustComponentBlend:
+                case GlobalCommands.SdfToggleComponentHandles:
+                case GlobalCommands.SdfSetPrimitiveDimension:
+                case GlobalCommands.SdfSetComponentBlend:
+                case GlobalCommands.SdfNextTransformValue:
+                case GlobalCommands.SdfSetTransformValue:
+                case GlobalCommands.SdfToggleComponentFlip:
+                case GlobalCommands.SdfDuplicateComponent:
+                    return SdfEditorPopup.Active != null &&
+                        SdfEditorPopup.Active.CanHandle(rEnum, iParam);
                 case GlobalCommands.SaveModel:
                 case GlobalCommands.SaveSelected:
                     return SelectionManager.m_Instance.HasSelection;

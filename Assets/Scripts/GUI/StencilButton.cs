@@ -19,6 +19,7 @@ namespace TiltBrush
     public class StencilButton : BaseButton
     {
         [SerializeField] private StencilType m_Type;
+        [SerializeField] private bool m_IsSdf;
 
         override protected void OnButtonPressed()
         {
@@ -26,12 +27,19 @@ namespace TiltBrush
             {
                 WidgetManager.m_Instance.StencilsDisabled = false;
             }
+            StencilWidget stencilPrefab = m_IsSdf
+                ? WidgetManager.m_Instance.SdfStencilPrefab
+                : WidgetManager.m_Instance.GetStencilPrefab(m_Type);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new CreateWidgetCommand(
-                WidgetManager.m_Instance.GetStencilPrefab(m_Type), TrTransform.FromTransform(transform), null,
+                stencilPrefab, TrTransform.FromTransform(transform), null,
                 false, SelectionManager.m_Instance.SnappingGridSize, SelectionManager.m_Instance.SnappingAngle
             ));
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
+            if (GetComponentInParent<PopUpWindow>() != null)
+            {
+                m_Manager?.GetPanelForPopUps()?.CloseActivePopUp(true);
+            }
         }
     }
 } // namespace TiltBrush

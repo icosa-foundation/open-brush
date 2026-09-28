@@ -96,6 +96,15 @@ namespace TiltBrush
         public Vector3 GetReticleBounds() { return m_ReticleBounds; }
         public bool IsLongPressPopUp() { return m_IsLongPressPopUp; }
         public bool BlockUndoRedo() { return m_BlockUndoRedo; }
+        public void SetPersistent(bool persistent) { m_Persistent = persistent; }
+
+        public void SetWindowText(string text)
+        {
+            if (m_WindowText != null)
+            {
+                m_WindowText.text = text;
+            }
+        }
 
         void Awake()
         {
