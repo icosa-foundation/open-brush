@@ -419,9 +419,12 @@ namespace TiltBrush
 
         /// Save a snapshot directly to a location.
         /// The snapshot's AssetId is the source of truth
-        public IEnumerator<Timeslice> SaveSnapshot(SceneFileInfo fileInfo, SketchSnapshot snapshot)
+        /// onCompleted receives the committed file on success, or null and an error on failure.
+        public IEnumerator<Timeslice> SaveSnapshot(
+            SceneFileInfo fileInfo, SketchSnapshot snapshot,
+            Action<SceneFileInfo, string> onCompleted = null)
         {
-            return SaveLow(fileInfo, false, snapshot);
+            return SaveLow(fileInfo, false, snapshot, onCompleted: onCompleted);
         }
 
         /// Save, overwriting current file name
@@ -461,7 +464,7 @@ namespace TiltBrush
         /// SaveIconTool.ProgrammaticCaptureSaveIcon() does both of these things
         private IEnumerator<Timeslice> SaveLow(
             SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false,
-            bool saveToLocalCacheOnly = false)
+            bool saveToLocalCacheOnly = false, Action<SceneFileInfo, string> onCompleted = null)
         {
             bool directSafSave =
                 !saveToLocalCacheOnly &&
@@ -484,6 +487,7 @@ namespace TiltBrush
                 : FileUtils.CheckDiskSpaceWithError(m_SaveDir);
             if (!haveSpace)
             {
+                onCompleted?.Invoke(null, "Out of disk space!");
                 return new List<Timeslice>().GetEnumerator();
             }
 
@@ -498,7 +502,8 @@ namespace TiltBrush
                 selectedOnly,
                 bNotify,
                 snapshot,
-                directSafWrite: directSafSave);
+                directSafWrite: directSafSave,
+                onCompleted: onCompleted);
             return m_SaveCoroutine;
         }
 
@@ -512,7 +517,8 @@ namespace TiltBrush
             SceneFileInfo fileInfo, bool selectedOnly,
             bool bNotify = true,
             SketchSnapshot snapshot = null,
-            bool directSafWrite = false)
+            bool directSafWrite = false,
+            Action<SceneFileInfo, string> onCompleted = null)
         {
             // Cancel any pending transfers of this file. The key has to match
             // SyncItem.DocumentId, which is only ever the *local* document identity. StorageId is
@@ -645,6 +651,7 @@ namespace TiltBrush
                 App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
             }
             m_SuppressNotify = false;
+            onCompleted?.Invoke(error == null ? fileInfo : null, error);
         }
 
         private StorageWriteOutcome WriteSnapshotToSaf(

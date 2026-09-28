@@ -37,6 +37,8 @@ namespace TiltBrush
         public static bool StartupStorageReady =>
             !OpenBrushStorage.IsScopedStorageMode || m_StartupStorageReady;
         public static bool StartupStorageCanceled => m_StartupStorageCanceled;
+        public static bool StartupRecoveryComplete { get; private set; }
+        public static bool CanClearAutosaveOnExit { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void CreateInstance()
@@ -60,6 +62,8 @@ namespace TiltBrush
         private void Awake()
         {
             m_Instance = this;
+            StartupRecoveryComplete = false;
+            CanClearAutosaveOnExit = false;
             // This instance is created before LoadingScene can admit Main. Capture only payloads
             // left by an earlier process so delayed recovery never removes a current recording.
             m_PreexistingVideoStagingPaths =
@@ -187,6 +191,8 @@ namespace TiltBrush
                 yield break;
             }
 
+            bool autosaveNeedsRecovery = App.Config.m_AutosaveRestoreEnabled &&
+                App.Instance.AutosaveRestoreFileExists;
             bool publicationRecoveryComplete = false;
             var future = new Future<SafRecoveryReport>(
                 () =>
@@ -260,11 +266,16 @@ namespace TiltBrush
             }
             yield return RefreshRuntimeContent();
             RefreshSharedCatalogs();
+            StartupRecoveryComplete = true;
             ApiManager.Instance?.RunStartupScriptIfReady();
             if (App.DriveSync?.SyncEnabled == true)
             {
                 App.DriveSync.SyncLocalFilesAsync().AsAsyncVoid();
             }
+            // A clean exit discards this session's unsaved work. Preserve the marker if
+            // startup was interrupted or an earlier session's autosave could not be recovered.
+            CanClearAutosaveOnExit = !autosaveNeedsRecovery ||
+                (report != null && report.AutosaveRecovered);
             onComplete?.Invoke();
         }
 

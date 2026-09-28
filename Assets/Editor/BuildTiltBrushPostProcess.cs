@@ -42,58 +42,14 @@ public class BuildTiltBrushPostProcess
             XmlDocument doc = new XmlDocument();
             doc.Load(file);
 
-            XmlElement element = (XmlElement)doc.SelectSingleNode("/manifest");
-            var androidNamespaceURI = element.GetAttribute("xmlns:android");
-
-
             if (BuildTiltBrush.IsScopedStorageBuildActive)
             {
                 UnityEngine.Debug.Log("Apply Google Play Android storage manifest profile");
-                AddOrRemoveTag(doc,
-                    androidNamespaceURI,
-                    "/manifest/application",
-                    "meta-data",
-                    "unityplayer.SkipPermissionsDialog",
-                    true,
-                    true,
-                    "value", "true"
-                );
-
-                foreach (string permission in new[]
-                {
-                    "android.permission.MANAGE_EXTERNAL_STORAGE",
-                    "android.permission.WRITE_EXTERNAL_STORAGE",
-                    "android.permission.READ_EXTERNAL_STORAGE",
-                    "android.permission.READ_MEDIA_AUDIO",
-                    "android.permission.READ_MEDIA_IMAGES",
-                    "android.permission.READ_MEDIA_VIDEO",
-                    "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
-                })
-                {
-                    RemovePermissionTags(doc, androidNamespaceURI, permission);
-                }
-
-                var application = (XmlElement)doc.SelectSingleNode("/manifest/application");
-                application?.RemoveAttribute("requestLegacyExternalStorage", androidNamespaceURI);
             }
-            else
-            {
-                // Incremental Android builds can reuse the generated Gradle project and therefore
-                // the manifest that a preceding scoped-storage build stripped. Reassert the
-                // project manifest's non-scoped storage profile rather than relying on a merge
-                // that may not run again.
-                AddOrRemoveTag(doc,
-                    androidNamespaceURI,
-                    "/manifest",
-                    "uses-permission",
-                    "android.permission.MANAGE_EXTERNAL_STORAGE",
-                    true,
-                    true);
-
-                var application = (XmlElement)doc.SelectSingleNode("/manifest/application");
-                application?.SetAttribute(
-                    "requestLegacyExternalStorage", androidNamespaceURI, "true");
-            }
+            ConfigureStoragePermissions(
+                doc, BuildTiltBrush.IsScopedStorageBuildActive,
+                PlayerSettings.Android.forceSDCardPermission,
+                PlayerSettings.Android.useAPKExpansionFiles);
 
             ConfigureGameActivityLauncher(doc);
 
@@ -114,6 +70,91 @@ public class BuildTiltBrushPostProcess
             UnityEngine.Debug.LogException(e);
             throw;
         }
+    }
+
+    internal static void ConfigureStoragePermissions(
+        XmlDocument doc, bool scopedStorage, bool forceSDCardPermission, bool useExpansionFiles)
+    {
+        XmlElement element = (XmlElement)doc.SelectSingleNode("/manifest");
+        var androidNamespaceURI = element.GetAttribute("xmlns:android");
+
+        if (scopedStorage)
+        {
+            AddOrRemoveTag(doc,
+                androidNamespaceURI,
+                "/manifest/application",
+                "meta-data",
+                "unityplayer.SkipPermissionsDialog",
+                true,
+                true,
+                "value", "true"
+            );
+
+            foreach (string permission in new[]
+            {
+                "android.permission.MANAGE_EXTERNAL_STORAGE",
+                "android.permission.WRITE_EXTERNAL_STORAGE",
+                "android.permission.READ_EXTERNAL_STORAGE",
+                "android.permission.READ_MEDIA_AUDIO",
+                "android.permission.READ_MEDIA_IMAGES",
+                "android.permission.READ_MEDIA_VIDEO",
+                "android.permission.READ_MEDIA_VISUAL_USER_SELECTED",
+            })
+            {
+                RemovePermissionTags(doc, androidNamespaceURI, permission);
+            }
+
+            var application = (XmlElement)doc.SelectSingleNode("/manifest/application");
+            application?.RemoveAttribute("requestLegacyExternalStorage", androidNamespaceURI);
+        }
+        else
+        {
+            // Incremental Android builds can reuse the generated Gradle project and therefore
+            // the manifest that a preceding scoped-storage build stripped. Reassert the
+            // project manifest's non-scoped storage profile rather than relying on a merge
+            // that may not run again.
+            AddOrRemoveTag(doc,
+                androidNamespaceURI,
+                "/manifest",
+                "uses-permission",
+                "android.permission.MANAGE_EXTERNAL_STORAGE",
+                true,
+                true);
+
+            // Match Unity's generated legacy permissions. A reused SAF manifest has had
+            // these removed, even when the non-SAF build settings require them again.
+            if (forceSDCardPermission)
+            {
+                EnsureLegacyStoragePermission(doc, androidNamespaceURI,
+                    "android.permission.WRITE_EXTERNAL_STORAGE");
+            }
+            if (useExpansionFiles)
+            {
+                EnsureLegacyStoragePermission(doc, androidNamespaceURI,
+                    "android.permission.READ_EXTERNAL_STORAGE");
+            }
+
+            var application = (XmlElement)doc.SelectSingleNode("/manifest/application");
+            application?.SetAttribute(
+                "requestLegacyExternalStorage", androidNamespaceURI, "true");
+        }
+    }
+
+    private static void EnsureLegacyStoragePermission(
+        XmlDocument doc, string androidNamespace, string permission)
+    {
+        // Preserve declarations supplied by Unity or plugins, including SDK-qualified
+        // forms and attributes. Only recreate a declaration when it is missing.
+        foreach (XmlElement element in doc.SelectNodes(
+            "/manifest/uses-permission | /manifest/uses-permission-sdk-23"))
+        {
+            if (element.GetAttribute("name", androidNamespace) == permission)
+            {
+                return;
+            }
+        }
+        AddOrRemoveTag(doc, androidNamespace, "/manifest", "uses-permission",
+            permission, true, false);
     }
 
     private static void RemovePermissionTags(XmlDocument doc, string @namespace, string permission)

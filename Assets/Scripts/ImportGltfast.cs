@@ -89,13 +89,14 @@ namespace TiltBrush
         /// A model in the shared media library can be read without being copied out of it. Returns
         /// false for every other source - Icosa downloads, bundled content, non-SAF platforms -
         /// which keep the ordinary filesystem route.
-        private static bool TryGetStorageModelLocation(
+        internal static bool TryGetStorageModelLocation(
             Model model, out StorageArea area, out string directory, out string fileName)
         {
             area = StorageArea.MediaLibraryModels;
             directory = null;
             fileName = null;
             if (model == null ||
+                model.GetLocation().GetLocationType() != Model.Location.Type.LocalFile ||
                 UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
                 return false;

@@ -3,6 +3,10 @@
   },
   "Brushes": {
   },
+  "PostProcessing": {
+    "BloomAmount": 1,
+    "BloomThreshold": 1.05
+  },
   "Splats": {
   },
   "Video": {

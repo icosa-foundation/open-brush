@@ -628,18 +628,19 @@ namespace TiltBrush
             Assert.AreEqual("Sketch_04.png", Reserve());
         }
 
-        [Test]
-        public void SafSkybox_ReadsSharedBytesWithoutMaterializationCache()
+        [TestCase(3)]
+        [TestCase(20 * 1024 * 1024 + 1)]
+        public void SafSkybox_ReadsSharedBytesWithoutMaterializationCache(int byteCount)
         {
             var backend = new FakeSafBackend();
-            backend.Add("sky.png", new byte[] { 4, 5, 6 });
+            var expected = new byte[byteCount];
+            expected[0] = 4;
+            expected[byteCount - 1] = 6;
+            backend.Add("sky.png", expected);
             string missingCache = Path.Combine(Path.GetTempPath(), $"missing-skybox-{Guid.NewGuid():N}.png");
-            CollectionAssert.AreEqual(new byte[] { 4, 5, 6 },
-                SceneSettings.ReadSkyboxBytes(backend, "Nested/sky.png", missingCache));
+            byte[] actual = SceneSettings.ReadSkyboxBytes(backend, "Nested/sky.png", missingCache);
+            Assert.IsTrue(expected.SequenceEqual(actual));
             Assert.IsFalse(File.Exists(missingCache));
-            Assert.Throws<IOException>(() =>
-                SceneSettings.ReadSkyboxBytes(
-                    backend, "Nested/sky.png", missingCache, maxBytes: 2));
             Assert.Throws<ArgumentException>(() =>
                 OpenBrushStorage.ResolveMediaDocument(backend, StorageArea.MediaLibraryBackgroundImages, "../sky.png"));
         }
@@ -1678,6 +1679,31 @@ namespace TiltBrush
             {
                 Assert.AreEqual("user audio", reader.ReadToEnd());
             }
+        }
+
+        [TestCase(StorageBackendKind.Local, false)]
+        [TestCase(StorageBackendKind.StorageAccessFramework, true)]
+        public void DriveSync_CaseDistinctNamesUseBackendSemantics(
+            StorageBackendKind kind, bool ignoreCase)
+        {
+            StringComparer comparer = DriveSync.GetSyncNameComparer(kind);
+            var names = new Dictionary<string, int>(comparer) { { "a.lua", 1 } };
+            Assert.AreEqual(!ignoreCase, names.TryAdd("A.lua", 2));
+
+            var item = new DriveSync.SyncItem
+            {
+                Area = StorageArea.Plugins,
+                RelativeDirectory = "folder",
+                Name = "a.lua",
+            };
+            Assert.IsTrue(DriveSync.IsSameStoragePath(
+                item, StorageArea.Plugins, "folder", "a.lua", kind));
+            Assert.AreEqual(ignoreCase, DriveSync.IsSameStoragePath(
+                item, StorageArea.Plugins, "folder", "A.lua", kind));
+            Assert.AreEqual(ignoreCase, DriveSync.IsSameStoragePath(
+                item, StorageArea.Plugins, "Folder", "a.lua", kind));
+            Assert.IsFalse(DriveSync.IsSameStoragePath(
+                item, StorageArea.Scripts, "folder", "a.lua", kind));
         }
 
         [TestCase("opaque/document:ABC", StorageBackendKind.StorageAccessFramework, true)]

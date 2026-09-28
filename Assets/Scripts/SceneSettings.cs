@@ -313,25 +313,25 @@ namespace TiltBrush
         }
 
         internal static byte[] ReadSkyboxBytes(
-            IUserStorageBackend backend, string relativePath, string localPath,
-            long? maxBytes = null)
+            IUserStorageBackend backend, string relativePath, string localPath)
         {
-            Stream source;
+            // TODO: Establish a skybox memory policy covering all formats and storage modes,
+            // accounting for both file buffering and decoded texture allocations. Encoded file
+            // size alone does not bound texture memory. Keep file-size acceptance consistent
+            // across SAF and local storage; the existing decoder dimension checks still apply.
             if (File.Exists(localPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
-                source = File.OpenRead(localPath);
+                return File.ReadAllBytes(localPath);
             }
-            else
+
+            StorageDocument document = OpenBrushStorage.ResolveMediaDocument(
+                backend, StorageArea.MediaLibraryBackgroundImages, relativePath);
+            using (Stream source = backend.OpenRead(
+                       document.DocumentId, false, System.Threading.CancellationToken.None))
+            using (var bytes = new MemoryStream())
             {
-                StorageDocument document = OpenBrushStorage.ResolveMediaDocument(
-                    backend, StorageArea.MediaLibraryBackgroundImages, relativePath);
-                source = backend.OpenRead(
-                    document.DocumentId, false, System.Threading.CancellationToken.None);
-            }
-            using (source)
-            {
-                return ReferenceImage.ReadBytesWithLimit(
-                    source, maxBytes ?? App.PlatformConfig.ReferenceImagesMaxFileSize);
+                source.CopyTo(bytes);
+                return bytes.ToArray();
             }
         }
 

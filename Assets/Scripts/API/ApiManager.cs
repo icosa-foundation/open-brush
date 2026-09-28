@@ -198,6 +198,12 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 return;
             }
+            // Standard can be reached while SAF recovery is still running. The storage
+            // manager retries after recovery; if it finishes first, the state callback retries.
+            if (OpenBrushStorage.IsScopedStorageMode && !AndroidStorageManager.StartupRecoveryComplete)
+            {
+                return;
+            }
             string[] lines = null;
             if (UsesStorageBackend)
             {
