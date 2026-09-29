@@ -555,20 +555,22 @@ namespace TiltBrush
                 as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
             return $"Quality level={quality.QualityLevel} levels={quality.AppQualityLevels.Length} " +
                 $"automatic={quality.AutomaticQualityEnabled} fps={quality.FramesInLastSecond} " +
-                $"requestedMsaa={quality.MSAALevel} pipelineMsaa={pipeline?.msaaSampleCount} " +
+                $"sessionMsaa={quality.MSAALevel} pipelineMsaa={pipeline?.msaaSampleCount} " +
                 $"unityMsaa={UnityEngine.QualitySettings.antiAliasing} " +
                 $"xrCachedMsaa={UnityEngine.Experimental.Rendering.XRSystem.GetDisplayMSAASamples()}.";
         }
 
-        [ApiEndpoint("quality.auto", "Enables or pauses automatic quality changes for testing", "false")]
+        [ApiEndpoint("quality.auto", "Enables or pauses automatic quality on mobile hardware", "false")]
         public static string SetAutomaticQuality(bool enabled)
         {
             if (QualityControls.m_Instance == null) return "QualityControls is not available.";
+            if (enabled && !QualityControls.m_Instance.SupportsAutomaticQuality)
+                return "error: Automatic quality is only available on mobile hardware.";
             QualityControls.m_Instance.AutomaticQualityEnabled = enabled;
             return GetQualityLevel();
         }
 
-        [ApiEndpoint("quality.configure", "Sets a level's MSAA and foveation for this session", "3,4,0")]
+        [ApiEndpoint("quality.configure", "Sets a level's foveation; MSAA must match the fixed session value", "3,4,0")]
         public static string ConfigureQualityLevel(int level, int msaa, int foveation)
         {
             if (QualityControls.m_Instance == null) return "QualityControls is not available.";
@@ -584,7 +586,7 @@ namespace TiltBrush
             {
                 return $"error: {e.Message}";
             }
-            return $"Configured level={level} msaa={msaa} foveation={foveation} for this session.";
+            return $"Configured level={level} foveation={foveation}; session MSAA remains {msaa}x.";
         }
 
         [ApiEndpoint("quality.thresholds", "Sets lower/higher FPS and frame counts for this session", "65,70,30,45")]
@@ -617,6 +619,7 @@ namespace TiltBrush
                 return $"Quality level {level} is out of range 0..{maxLevel}.";
             }
 
+            QualityControls.m_Instance.AutomaticQualityEnabled = false;
             QualityControls.m_Instance.QualityLevel = level;
             return $"Quality level set to {QualityControls.m_Instance.QualityLevel}.";
         }

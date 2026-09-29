@@ -63,15 +63,25 @@ namespace TiltBrush
 
         private int m_NumFramesFpsTooLow;
         private int m_NumFramesFpsHighEnough;
-        private readonly Dictionary<int, (int msaa, int foveation)> m_RuntimeQualityOverrides =
-            new Dictionary<int, (int msaa, int foveation)>();
+        private readonly Dictionary<int, int> m_RuntimeFoveationOverrides = new Dictionary<int, int>();
         private float? m_RuntimeLowerFps;
         private float? m_RuntimeHigherFps;
         private int? m_RuntimeLowerFrames;
         private int? m_RuntimeHigherFrames;
-        private int? m_PreparedInitialQualityLevel;
-        private bool m_QualityInitialized;
-        public bool AutomaticQualityEnabled { get; set; } = true;
+        private bool m_SessionRenderingPrepared;
+        private bool m_AutomaticQualityEnabled = true;
+        public bool SupportsAutomaticQuality => App.Config.IsMobileHardware;
+        public bool AutomaticQualityEnabled
+        {
+            get => SupportsAutomaticQuality && m_AutomaticQualityEnabled;
+            set
+            {
+                if (value && !SupportsAutomaticQuality)
+                    throw new InvalidOperationException("Automatic quality is only available on mobile hardware.");
+                m_AutomaticQualityEnabled = value;
+                m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+            }
+        }
 
         public void ConfigureQualityLevel(int level, int msaa, int foveation)
         {
@@ -81,10 +91,9 @@ namespace TiltBrush
                 throw new ArgumentOutOfRangeException(nameof(msaa));
             if (foveation < 0 || foveation > 3)
                 throw new ArgumentOutOfRangeException(nameof(foveation));
-            var fixedSamples = UrpPostProcessingController.Instance?.FixedXrMsaaLevel;
-            if (fixedSamples.HasValue && msaa != fixedSamples.Value)
-                throw new InvalidOperationException($"XR session MSAA is fixed at {fixedSamples.Value}x; restart to change it.");
-            m_RuntimeQualityOverrides[level] = (msaa, foveation);
+            if (msaa != MSAALevel)
+                throw new InvalidOperationException($"Session MSAA is fixed at {MSAALevel}x; set Profiling.MsaaLevel and restart to change it.");
+            m_RuntimeFoveationOverrides[level] = foveation;
             if (level == QualityLevel) SetQualityLevel(level);
         }
 
@@ -137,8 +146,10 @@ namespace TiltBrush
 
         public int MSAALevel
         {
-            get { return UrpPostProcessingController.Instance?.FixedXrMsaaLevel ?? m_msaaLevel; }
+            get { return UrpPostProcessingController.Instance?.SessionMsaaLevel ?? m_msaaLevel; }
         }
+
+        public bool SessionHdr => m_enableHdr;
 
         public int FramesInLastSecond => m_FramesInLastSecond;
 
@@ -171,8 +182,6 @@ namespace TiltBrush
         {
             get
             {
-                if (m_PreparedInitialQualityLevel.HasValue)
-                    return m_PreparedInitialQualityLevel.Value;
                 int defaultLevel = App.Config.IsMobileHardware ? AppQualityLevels.Length - 1 : 2;
                 int configuredLevel = App.UserConfig.Profiling.QualityLevel;
                 return configuredLevel >= 0 && configuredLevel < AppQualityLevels.Length
@@ -180,35 +189,16 @@ namespace TiltBrush
             }
         }
 
-        public void PrepareInitialQualityLevel(UrpPostProcessingController rendering)
+        public void PrepareSessionRendering()
         {
-            int requestedLevel = InitialQualityLevel;
-            m_PreparedInitialQualityLevel = GetAutomaticQualityLevel(requestedLevel, rendering);
-            // VrSdk can prepare XR after Awake has already applied the requested
-            // level. Apply its supported fallback too, so quality and eye MSAA agree.
-            if (m_QualityInitialized && QualityLevel != m_PreparedInitialQualityLevel.Value)
-                SetQualityLevel(m_PreparedInitialQualityLevel.Value);
-        }
-
-        private int GetAutomaticQualityLevel(int desiredLevel,
-            UrpPostProcessingController rendering = null)
-        {
-            rendering = rendering != null ? rendering : UrpPostProcessingController.Instance;
-            // Explicit MSAA overrides are test settings and apply across the ladder.
-            if (!App.Config.IsMobileHardware || rendering == null || rendering.UsesFixedXrMsaa ||
-                App.UserConfig.Profiling.MsaaLevel > 0)
-                return desiredLevel;
-            while (desiredLevel > 0)
-            {
-                var settings = AppQualityLevels[desiredLevel];
-                int samples = m_RuntimeQualityOverrides.TryGetValue(desiredLevel, out var runtime)
-                    ? runtime.msaa : settings.MsaaLevel;
-                samples = samples == 0 ? 1 : samples;
-                if (rendering.GetSupportedMsaa(samples, settings.Hdr) == samples)
-                    break;
-                desiredLevel--;
-            }
-            return desiredLevel;
+            if (m_SessionRenderingPrepared) return;
+            m_SessionRenderingPrepared = true;
+            m_enableHdr = AppQualityLevels.Hdr;
+            m_msaaLevel = App.UserConfig.Profiling.MsaaLevel > 0
+                ? App.UserConfig.Profiling.MsaaLevel : AppQualityLevels.MsaaLevel;
+            float eyeScale = App.UserConfig.Profiling.EyeTextureScaling > 0
+                ? App.UserConfig.Profiling.EyeTextureScaling : AppQualityLevels.EyeTextureScale;
+            UnityEngine.XR.XRSettings.eyeTextureResolutionScale = eyeScale;
         }
 
         void Awake()
@@ -218,8 +208,8 @@ namespace TiltBrush
             m_Cameras = new List<Camera>();
 
             // Apply the quality level.
+            PrepareSessionRendering();
             QualityLevel = InitialQualityLevel;
-            m_QualityInitialized = true;
             SimplificationLevel = 0.0f;
         }
 
@@ -301,7 +291,7 @@ namespace TiltBrush
             {
                 if (QualityLevel > 0)
                 {
-                    QualityLevel = GetAutomaticQualityLevel(QualityLevel - 1);
+                    QualityLevel--;
                 }
                 m_NumFramesFpsTooLow = 0;
             }
@@ -311,8 +301,7 @@ namespace TiltBrush
             {
                 if (QualityLevel < AppQualityLevels.Length - 1)
                 {
-                    int nextLevel = GetAutomaticQualityLevel(QualityLevel + 1);
-                    if (nextLevel > QualityLevel) QualityLevel = nextLevel;
+                    QualityLevel++;
                 }
                 m_NumFramesFpsHighEnough = 0;
             }
@@ -350,10 +339,9 @@ namespace TiltBrush
             }
 
             SetBloomMode(settings.Bloom);
-            EnableHDR(settings.Hdr);
+            EnableHDR(SessionHdr);
             EnableFxaa(settings.Fxaa);
             Shader.globalMaximumLOD = settings.MaxLod;
-            m_msaaLevel = settings.MsaaLevel;
             QualitySettings.anisotropicFiltering = settings.Anisotropic;
             SetSimplificationLevel(settings.StrokeSimplification, settings.MaxSimplificationUserStrokes);
             m_targetMaxControlPoints = settings.TargetMaxControlPoints;
@@ -363,44 +351,31 @@ namespace TiltBrush
                 App.UserConfig.Profiling.ViewportScaling :
                 settings.ViewportScale;
 
-            float eyeScale = App.UserConfig.Profiling.EyeTextureScaling > 0 ?
-                App.UserConfig.Profiling.EyeTextureScaling :
-                settings.EyeTextureScale;
-
             if (App.UserConfig.Profiling.GlobalMaximumLOD > 0)
             {
                 Shader.globalMaximumLOD = App.UserConfig.Profiling.GlobalMaximumLOD;
             }
 
-            if (App.UserConfig.Profiling.MsaaLevel > 0)
-            {
-                m_msaaLevel = App.UserConfig.Profiling.MsaaLevel;
-            }
-
             int foveation = settings.FixedFoveationLevel;
-            if (m_RuntimeQualityOverrides.TryGetValue(value, out var runtimeSettings))
-            {
-                m_msaaLevel = runtimeSettings.msaa;
-                foveation = runtimeSettings.foveation;
-            }
+            if (m_RuntimeFoveationOverrides.TryGetValue(value, out var runtimeFoveation))
+                foveation = runtimeFoveation;
 
             UnityEngine.XR.XRSettings.renderViewportScale = viewportScale;
-            UnityEngine.XR.XRSettings.eyeTextureResolutionScale = eyeScale;
 
             if (value != m_lastQualityLevel && Debug.isDebugBuild && App.UserConfig.Profiling.AutoProfile)
             {
-                Debug.Log("Profile: Quality Level: " + value
-                    + " renderViewportScale: " + viewportScale
-                    + " eyeTexture scale: " + eyeScale
-                    + " MSAA: " + m_msaaLevel
-                    + " GlobalMaximumLOD: " + Shader.globalMaximumLOD);
+                Debug.Log($"Profile: Quality Level: {value} renderViewportScale: {viewportScale} " +
+                    $"MSAA: {MSAALevel} GlobalMaximumLOD: {Shader.globalMaximumLOD}");
                 m_lastQualityLevel = value;
             }
 
             App.VrSdk.SetGpuClockLevel(settings.GpuLevel);
             App.VrSdk.SetFixedFoveation(foveation);
 
-            QualitySettings.SetQualityLevel(value, applyExpensiveChanges: !App.Config.IsMobileHardware);
+            // Render-buffer settings belong to the session, not Unity's quality presets.
+            QualitySettings.SetQualityLevel(value, applyExpensiveChanges: false);
+            if (UrpPostProcessingController.Instance?.SessionMsaaLevel != null)
+                QualitySettings.antiAliasing = MSAALevel;
 
             if (OnQualityLevelChange != null)
             {

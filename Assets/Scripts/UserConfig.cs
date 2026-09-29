@@ -814,6 +814,7 @@ namespace TiltBrush
             public float ViewportScaling { get; set; }
             public float EyeTextureScaling { get; set; }
             public int GlobalMaximumLOD { get; set; }
+            // Startup override. Runtime quality changes keep this sample count fixed.
             public int MsaaLevel { get; set; }
             public bool TakeScreenshot { get; set; }
             private int? m_screenshotResolution;

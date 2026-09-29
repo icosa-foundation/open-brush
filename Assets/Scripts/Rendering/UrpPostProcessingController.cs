@@ -62,6 +62,7 @@ namespace TiltBrush
         private UniversalRenderPipelineAsset m_MsaaPipelineAsset;
         private int m_PreviousPipelineMsaa;
         private int m_PreviousUnityMsaa;
+        private float m_PreviousRenderScale;
         private AppQualitySettingLevels.BloomMode m_CurrentBloomMode =
             AppQualitySettingLevels.BloomMode.None;
         private float m_BloomAmount = 1f;
@@ -110,6 +111,7 @@ namespace TiltBrush
 
             if (QualityControls.m_Instance != null)
             {
+                PrepareSession(QualityControls.m_Instance);
                 QualityControls.m_Instance.OnQualityLevelChange += ApplyQuality;
                 ApplyQuality(QualityControls.m_Instance.QualityLevel);
             }
@@ -346,54 +348,42 @@ namespace TiltBrush
 
             AppQualitySettingLevels.AppQualitySettings settings =
                 QualityControls.m_Instance.AppQualityLevels[qualityLevel];
-            m_CurrentHdr = settings.Hdr;
+            m_CurrentHdr = QualityControls.m_Instance.SessionHdr;
             m_CurrentFxaa = settings.Fxaa;
             m_CurrentBloomMode = settings.Bloom;
 
-            ApplyMsaa(QualityControls.m_Instance.MSAALevel);
-            ApplyBloomMode(settings.Bloom, settings.Hdr);
+            // Scale the viewport in XR; scale URP's internal target in desktop view mode.
+            var displays = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetInstances(displays);
+            if (!displays.Exists(display => display.running) && m_MsaaPipelineAsset != null)
+            {
+                float scale = App.UserConfig.Profiling.ViewportScaling > 0
+                    ? App.UserConfig.Profiling.ViewportScaling : settings.ViewportScale;
+                m_MsaaPipelineAsset.renderScale = m_PreviousRenderScale * scale;
+            }
+            ApplyBloomMode(settings.Bloom, m_CurrentHdr);
             RefreshCameras();
-            Debug.Log(
-                $"{kLogPrefix} Applied quality={qualityLevel} bloom={settings.Bloom} " +
-                $"bloomActive={m_Bloom.active} intensity={m_Bloom.intensity.value} " +
-                $"scatter={m_Bloom.scatter.value} hq={m_Bloom.highQualityFiltering.value} " +
-                $"downscale={m_Bloom.downscale.value} maxIterations={m_Bloom.maxIterations.value} " +
-                $"hdr={settings.Hdr} fxaa={settings.Fxaa} msaa={m_CurrentMsaa}.");
         }
 
-        public bool UsesFixedXrMsaa { get; private set; }
-        public int? FixedXrMsaaLevel { get; private set; }
+        public int? SessionMsaaLevel { get; private set; }
 
-        public void PrepareXrStartup(QualityControls quality)
+        public void PrepareSession(QualityControls quality)
         {
+            if (SessionMsaaLevel.HasValue) return;
             if (!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset))
             {
                 return;
             }
-            // Changing sample count with submitted depth can invalidate the native
-            // stereo color target on both Quest and Windows OpenXR. Select it before
-            // starting the subsystems and retain it across quality changes.
-            UsesFixedXrMsaa = UnityEngine.XR.Management.XRGeneralSettings.Instance?.Manager?.activeLoader
-                is UnityEngine.XR.OpenXR.OpenXRLoader &&
-                UnityEngine.XR.OpenXR.OpenXRSettings.Instance != null &&
-                UnityEngine.XR.OpenXR.OpenXRSettings.Instance.depthSubmissionMode !=
-                    UnityEngine.XR.OpenXR.OpenXRSettings.DepthSubmissionMode.None;
-            quality.PrepareInitialQualityLevel(this);
-            var settings = quality.AppQualityLevels[quality.InitialQualityLevel];
-            m_CurrentHdr = settings.Hdr;
-            int requestedSamples = App.UserConfig.Profiling.MsaaLevel > 0
-                ? App.UserConfig.Profiling.MsaaLevel : settings.MsaaLevel;
-            ApplyMsaa(requestedSamples);
-            if (UsesFixedXrMsaa)
-            {
-                FixedXrMsaaLevel = m_CurrentMsaa;
-                Debug.Log($"{kLogPrefix} Fixed XR session MSAA={m_CurrentMsaa}.");
-            }
+            // Buffer formats and sample count are startup settings on every platform.
+            // In XR this must run before StartSubsystems allocates the eye surfaces.
+            quality.PrepareSessionRendering();
+            m_CurrentHdr = quality.SessionHdr;
+            ApplyMsaa(quality.MSAALevel);
+            SessionMsaaLevel = m_CurrentMsaa;
         }
 
         private void ApplyMsaa(int requestedSamples)
         {
-            requestedSamples = FixedXrMsaaLevel ?? requestedSamples;
 #if UNITY_IOS && ZAPBOX_SUPPORTED
             // Preserve the existing Zapbox policy of disabling MSAA.
             requestedSamples = 1;
@@ -406,7 +396,7 @@ namespace TiltBrush
                 m_CurrentMsaa = 1;
             }
 
-            int supportedSamples = FixedXrMsaaLevel ?? GetSupportedMsaa(m_CurrentMsaa, m_CurrentHdr);
+            int supportedSamples = GetSupportedMsaa(m_CurrentMsaa, m_CurrentHdr);
             if (supportedSamples != m_CurrentMsaa)
             {
                 Debug.LogWarning($"{kLogPrefix} Requested {m_CurrentMsaa}x MSAA is unsupported; using {supportedSamples}x.");
@@ -422,18 +412,15 @@ namespace TiltBrush
                 {
                     m_PreviousPipelineMsaa = pipelineAsset.msaaSampleCount;
                     m_PreviousUnityMsaa = QualitySettings.antiAliasing;
+                    m_PreviousRenderScale = pipelineAsset.renderScale;
                 }
             }
 
             if (pipelineAsset != null)
             {
                 pipelineAsset.msaaSampleCount = m_CurrentMsaa;
-                // SetQualityLevel reloads the Unity preset's antiAliasing value. Keep
-                // the engine configuration in sync with URP, as URP does at creation.
                 QualitySettings.antiAliasing = m_CurrentMsaa;
-                // Request the XR surface resize during the quality update, before URP
-                // constructs its eye passes. Leaving this to URP's Render method can
-                // change the native view layout while a frame is being rendered.
+                // Configure the native sample count once, before XR starts rendering.
                 XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
             }
         }
@@ -473,8 +460,12 @@ namespace TiltBrush
             if (m_MsaaPipelineAsset != null)
             {
                 m_MsaaPipelineAsset.msaaSampleCount = m_PreviousPipelineMsaa;
+                m_MsaaPipelineAsset.renderScale = m_PreviousRenderScale;
                 QualitySettings.antiAliasing = m_PreviousUnityMsaa;
-                XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
+                var displays = new List<XRDisplaySubsystem>();
+                SubsystemManager.GetInstances(displays);
+                if (!displays.Exists(display => display.running))
+                    XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
                 m_MsaaPipelineAsset = null;
             }
         }

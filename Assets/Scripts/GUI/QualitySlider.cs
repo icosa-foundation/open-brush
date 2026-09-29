@@ -34,7 +34,7 @@ namespace TiltBrush
 
             // Mobile supports dynamic quality. Its first position selects Auto,
             // followed by one position per manual level in the active app ladder.
-            m_HasAutomaticStep = App.Config.IsMobileHardware;
+            m_HasAutomaticStep = QualityControls.m_Instance.SupportsAutomaticQuality;
             int iNumQualitySettings = Mathf.Max(QualityControls.m_Instance.AppQualityLevels.Length, 1) +
                 (m_HasAutomaticStep ? 1 : 0);
             float fStepInterval = 1.0f / Mathf.Max(iNumQualitySettings - 1, 1);

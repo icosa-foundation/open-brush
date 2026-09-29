@@ -177,7 +177,7 @@ namespace TiltBrush
                     var rendering = FindFirstObjectByType<UrpPostProcessingController>();
                     if (quality != null && rendering != null)
                     {
-                        rendering.PrepareXrStartup(quality);
+                        rendering.PrepareSession(quality);
                     }
                     XRGeneralSettings.Instance?.Manager?.StartSubsystems();
                 }
