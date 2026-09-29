@@ -210,12 +210,6 @@ namespace TiltBrush
                 return;
             }
 
-            if (GraphicsSettings.currentRenderPipeline == null)
-            {
-                camera.stereoTargetEye = StereoTargetEyeMask.None;
-                return;
-            }
-
             UniversalAdditionalCameraData cameraData =
                 camera.GetComponent<UniversalAdditionalCameraData>();
             if (cameraData == null)
