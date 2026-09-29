@@ -143,7 +143,7 @@ namespace TiltBrush
 
         void Awake()
         {
-            Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
+            UseHardwareQuillA2C = false;
             RenderPipelineManager.beginCameraRendering += BeginQuillCameraRendering;
             RenderPipelineManager.endCameraRendering += EndQuillCameraRendering;
             bool forceMonoscopic =
@@ -262,7 +262,7 @@ namespace TiltBrush
         {
             RenderPipelineManager.beginCameraRendering -= BeginQuillCameraRendering;
             RenderPipelineManager.endCameraRendering -= EndQuillCameraRendering;
-            Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
+            UseHardwareQuillA2C = false;
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 Application.onBeforeRender -= OnNewPoses;
@@ -312,42 +312,40 @@ namespace TiltBrush
         // Feature Methods
         // -------------------------------------------------------------------------------------------- //
 
-        private readonly Stack<bool> m_QuillCameraKeywordStates = new Stack<bool>();
+        // Explicit coverage is shared by desktop, XR and captures. The legacy path is
+        // retained for comparison, but does not preserve transparent-target alpha.
+        public bool UseHardwareQuillA2C
+        {
+            get => Shader.IsKeywordEnabled("QUILL_HARDWARE_A2C");
+            set
+            {
+                if (value) Shader.EnableKeyword("QUILL_HARDWARE_A2C");
+                else Shader.DisableKeyword("QUILL_HARDWARE_A2C");
+            }
+        }
+
+        private readonly Stack<float> m_QuillCameraDitherFrames = new Stack<float>();
 
         private void BeginQuillCameraRendering(ScriptableRenderContext context, Camera camera)
         {
-            m_QuillCameraKeywordStates.Push(Shader.IsKeywordEnabled("QUILL_COMPOSITOR_ALPHA"));
-            var cameraData = camera.GetComponent<UniversalAdditionalCameraData>();
-            // Captures use their own target, commonly without MSAA. Their alpha
-            // must retain the normal A2C shader path instead of eye-buffer coverage.
-            bool compositorCamera = PassthroughMode != PassthroughMode.None &&
-                camera.targetTexture == null && camera.stereoEnabled &&
-                cameraData != null && cameraData.allowXRRendering;
-            if (compositorCamera)
-            {
-                // A bounded integer keeps shader hashing precise. Use frame count,
-                // rather than elapsed time, so both eyes receive the same pattern.
-                Shader.SetGlobalFloat("_QuillDitherFrame", Time.frameCount % 1024);
-            }
-            SetQuillCompositorKeyword(compositorCamera);
+            m_QuillCameraDitherFrames.Push(Shader.GetGlobalFloat("_QuillDitherFrame"));
+            // Both eyes share a bounded frame index. Offscreen captures freeze the
+            // pattern so repeated exports do not depend on the capture's timing.
+            Shader.SetGlobalFloat("_QuillDitherFrame",
+                camera.targetTexture == null ? Time.frameCount % 1024 : 0);
         }
 
         private void EndQuillCameraRendering(ScriptableRenderContext context, Camera camera)
         {
-            SetQuillCompositorKeyword(m_QuillCameraKeywordStates.Count > 0 &&
-                m_QuillCameraKeywordStates.Pop());
-        }
-
-        private static void SetQuillCompositorKeyword(bool enabled)
-        {
-            if (enabled) Shader.EnableKeyword("QUILL_COMPOSITOR_ALPHA");
-            else Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
+            if (m_QuillCameraDitherFrames.Count > 0)
+            {
+                Shader.SetGlobalFloat("_QuillDitherFrame", m_QuillCameraDitherFrames.Pop());
+            }
         }
 
         private void SetPassthroughStrategy()
         {
             PassthroughMode = DeterminePassthroughStrategy();
-            Shader.DisableKeyword("QUILL_COMPOSITOR_ALPHA");
             Debug.Log($"[Passthrough] Strategy: {PassthroughMode}");
         }
 
