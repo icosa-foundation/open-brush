@@ -40,7 +40,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 4
     m_FixedFoveationLevel: 2
-  - m_Bloom: 0
+  - m_Bloom: 3
     m_Fxaa: 0
     m_MaxLod: 200
     m_Anisotropic: 0
@@ -52,7 +52,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 4
     m_FixedFoveationLevel: 2
-  - m_Bloom: 0
+  - m_Bloom: 1
     m_Fxaa: 0
     m_MaxLod: 200
     m_Anisotropic: 0
@@ -64,7 +64,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 4
     m_FixedFoveationLevel: 1
-  - m_Bloom: 0
+  - m_Bloom: 2
     m_Fxaa: 0
     m_MaxLod: 200
     m_Anisotropic: 0

@@ -21,7 +21,7 @@ MonoBehaviour:
     m_MaxLod: 150
     m_Anisotropic: 1
     m_BloomLevels: 2,2,2
-    m_ViewportScale: 1
+    m_ViewportScale: 0.8
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 100000
     m_MaxSimplification: 150
@@ -33,14 +33,14 @@ MonoBehaviour:
     m_MaxLod: 99999999
     m_Anisotropic: 1
     m_BloomLevels: 2,2,2
-    m_ViewportScale: 1
+    m_ViewportScale: 0.9
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 500000
     m_MaxSimplification: 150
     m_MaxSimplificationUserStrokes: 10
     m_GpuLevel: 4
     m_FixedFoveationLevel: 0
-  - m_Bloom: 2
+  - m_Bloom: 1
     m_Fxaa: 1
     m_MaxLod: 99999999
     m_Anisotropic: 1
