@@ -489,14 +489,7 @@ namespace TiltBrush
         private static RenderTexture CreatePreviewRenderTexture(
             int width, int height, RenderTextureFormat format)
         {
-            var descriptor = new RenderTextureDescriptor(width, height, format, 24)
-            {
-                dimension = TextureDimension.Tex2D,
-                volumeDepth = 1,
-                msaaSamples = 1,
-                useDynamicScale = false,
-                vrUsage = VRTextureUsage.None
-            };
+            var descriptor = CaptureColorUtils.CreateDescriptor(width, height, format);
             return new RenderTexture(descriptor);
         }
 
@@ -525,12 +518,11 @@ namespace TiltBrush
             RenderTextureFormat format = usePostProcessing
                 ? RenderTextureFormat.ARGBFloat
                 : CameraFormat();
-            int depth = 24;
 
             // Use a temporary rather than rendering to rTexture because we don't know
             // what format rTexture is... it may not be the correct format.
             RenderTexture targetA = RenderTexture.GetTemporary(
-                rTexture.width, rTexture.height, depthBuffer: depth, format: format);
+                CaptureColorUtils.CreateDescriptor(rTexture.width, rTexture.height, format));
 
             try
             {
@@ -544,6 +536,7 @@ namespace TiltBrush
                 CameraClearFlags prevClearFlags = camera.clearFlags;
                 Color prevBackgroundColor = camera.backgroundColor;
                 int prevCullingMask = camera.cullingMask;
+                bool prevAllowMsaa = camera.allowMSAA;
                 StereoTargetEyeMask prevStereoTargetEye = StereoTargetEyeMask.None;
                 bool restoreStereoTargetEye = GraphicsSettings.currentRenderPipeline == null;
                 if (restoreStereoTargetEye)
@@ -557,6 +550,7 @@ namespace TiltBrush
                         camera.stereoTargetEye = StereoTargetEyeMask.None;
                     }
                     camera.targetTexture = targetA;
+                    camera.allowMSAA = targetA.antiAliasing > 1;
                     if (removeBackground)
                     {
                         camera.clearFlags = CameraClearFlags.SolidColor;
@@ -571,6 +565,7 @@ namespace TiltBrush
                     camera.backgroundColor = prevBackgroundColor;
                     camera.cullingMask = prevCullingMask;
                     camera.targetTexture = prev;
+                    camera.allowMSAA = prevAllowMsaa;
                     if (restoreStereoTargetEye)
                     {
                         camera.stereoTargetEye = prevStereoTargetEye;
@@ -578,7 +573,7 @@ namespace TiltBrush
                     EndCapturePostProcessing(postProcessingState);
                 }
 
-                Graphics.Blit(targetA, rTexture);
+                CaptureColorUtils.Resolve(targetA, rTexture, removeBackground);
             }
             finally
             {
@@ -743,9 +738,10 @@ namespace TiltBrush
             RenderEncodedDepthNormalsToTexture(rTexture);
         }
 
-        static public void Save(Stream outf, RenderTexture rTextureToSave, bool bSaveAsPng)
+        static public void Save(Stream outf, RenderTexture rTextureToSave, bool bSaveAsPng,
+            bool preserveAlpha = false)
         {
-            var buffer = SaveToMemory(rTextureToSave, bSaveAsPng);
+            var buffer = SaveToMemory(rTextureToSave, bSaveAsPng, preserveAlpha);
             outf.Write(buffer, 0, buffer.Length);
         }
 
@@ -826,30 +822,35 @@ namespace TiltBrush
             outf.Write(buffer, 0, buffer.Length);
         }
 
-        static public byte[] SaveToMemory(RenderTexture rTextureToSave, bool bSaveAsPng)
+        static public byte[] SaveToMemory(RenderTexture rTextureToSave, bool bSaveAsPng,
+            bool preserveAlpha = false)
         {
-            // Copy out of the RenderTexture
-            Texture2D rNoAlphaTexture;
+            // CPU readback needs resolved pixels, even when the caller renders directly
+            // into an MSAA target (rather than through RenderToTexture).
+            RenderTexture resolved = null;
+            Texture2D texture = null;
+            RenderTexture previous = RenderTexture.active;
+            try
             {
-                RenderTexture prev = RenderTexture.active;
-                RenderTexture.active = rTextureToSave;
-                rNoAlphaTexture = new Texture2D(rTextureToSave.width, rTextureToSave.height, TextureFormat.RGB24, false);
-                rNoAlphaTexture.ReadPixels(new Rect(0, 0, rTextureToSave.width, rTextureToSave.height), 0, 0);
-                RenderTexture.active = prev;
+                bool exportAlpha = bSaveAsPng && preserveAlpha;
+                if (rTextureToSave.antiAliasing > 1)
+                {
+                    resolved = RenderTexture.GetTemporary(rTextureToSave.width,
+                        rTextureToSave.height, 0, RenderTextureFormat.ARGB32);
+                    CaptureColorUtils.Resolve(rTextureToSave, resolved, exportAlpha);
+                }
+                RenderTexture.active = resolved != null ? resolved : rTextureToSave;
+                var format = exportAlpha ? TextureFormat.RGBA32 : TextureFormat.RGB24;
+                texture = new Texture2D(rTextureToSave.width, rTextureToSave.height, format, false);
+                texture.ReadPixels(new Rect(0, 0, rTextureToSave.width, rTextureToSave.height), 0, 0);
+                return bSaveAsPng ? texture.EncodeToPNG() : texture.EncodeToJPG();
             }
-
-            byte[] bytes = null;
-            if (bSaveAsPng)
+            finally
             {
-                bytes = rNoAlphaTexture.EncodeToPNG();
+                RenderTexture.active = previous;
+                if (texture != null) Destroy(texture);
+                if (resolved != null) RenderTexture.ReleaseTemporary(resolved);
             }
-            else
-            {
-                bytes = rNoAlphaTexture.EncodeToJPG();
-            }
-            Destroy(rNoAlphaTexture);
-
-            return bytes;
         }
 
         static public byte[] SaveDepthToMemory(RenderTexture depthTexture)
@@ -1217,7 +1218,7 @@ namespace TiltBrush
                         includePostProcessing: includePostProcessing);
                     using (var fs = new FileStream(path, FileMode.Create))
                     {
-                        Save(fs, tmp, bSaveAsPng: saveAsPng);
+                        Save(fs, tmp, bSaveAsPng: saveAsPng, preserveAlpha: removeBackground);
                     }
 
                 }

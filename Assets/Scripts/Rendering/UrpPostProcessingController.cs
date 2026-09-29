@@ -220,6 +220,7 @@ namespace TiltBrush
             cameraData.allowXRRendering = false;
             cameraData.renderType = CameraRenderType.Base;
             cameraData.cameraStack.Clear();
+            camera.allowMSAA = true;
         }
 
         public void SetRecordingPostProcessing(Camera camera, bool enabled)
