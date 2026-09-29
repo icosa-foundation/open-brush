@@ -688,12 +688,9 @@ public class CameraCaptureRuntime : MonoBehaviour
                 imgWriter.WriteLine("# IMAGE_ID, QW, QX, QY, QZ, TX, TY, TZ, CAMERA_ID, IMAGE_NAME");
                 imgWriter.WriteLine("# POINTS2D[] as X, Y, POINT3D_ID");
 
-                // A multisampled depth attachment cannot be sampled portably. The default
-                // opaque path copies the native depth buffer from the RGB render, so use a
-                // single-sample target there. Transparent-inclusive replacement capture can
-                // retain the configured MSAA level.
-                RenderTexture rt = CreateCaptureRenderTexture(
-                    multisampled: includeTransparentsAndParticles);
+                // Colour uses coverage samples; the capture pass resolves native depth
+                // into a separate single-sample data target without rerendering geometry.
+                RenderTexture rt = CreateCaptureRenderTexture(multisampled: true);
                 RenderTexture resolvedRt = CreateCaptureRenderTexture(multisampled: false);
                 Texture2D tex = new Texture2D(width, height, CaptureTextureFormat, false);
 
@@ -1067,8 +1064,11 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     private RenderTexture CreateCaptureRenderTexture(bool multisampled)
     {
-        var rt = new RenderTexture(width, height, 32, RenderTextureFormat.Default, RenderTextureReadWrite.sRGB);
-        rt.antiAliasing = multisampled ? GetCaptureMsaaSamples() : 1;
+        var descriptor = TiltBrush.CaptureColorUtils.CreateDescriptor(
+            width, height, RenderTextureFormat.ARGB32, 32,
+            multisampled ? GetCaptureMsaaSamples() : 1);
+        descriptor.sRGB = true;
+        var rt = new RenderTexture(descriptor);
         rt.Create();
         return rt;
     }
@@ -1087,7 +1087,6 @@ public class CameraCaptureRuntime : MonoBehaviour
         FXAA fxaa = cameraToUse.GetComponent<FXAA>();
         bool fxaaWasEnabled = fxaa != null && fxaa.enabled;
         RenderTexture linearDepthRt = null;
-        CommandBuffer depthCopyCommand = null;
         Texture2D capturedOpaqueDepth = null;
 
         try
@@ -1136,21 +1135,10 @@ public class CameraCaptureRuntime : MonoBehaviour
                     GL.Clear(false, true, new Color(cameraToUse.farClipPlane, 0f, 0f, 1f));
                     RenderTexture.active = depthPreviousActive;
 
-                    depthCopyCommand = new CommandBuffer
-                    {
-                        name = "GaussianNativeDepthCopy"
-                    };
-                    depthCopyCommand.SetGlobalTexture(
-                        "_CaptureNativeDepth", BuiltinRenderTextureType.Depth);
-                    depthCopyCommand.Blit(
-                        BuiltinRenderTextureType.CurrentActive,
-                        linearDepthRt,
-                        m_NativeDepthMaterial);
-                    // At this event the original opaque and alpha-tested shaders have written
-                    // their actual, potentially vertex-deformed geometry, but the transparent
-                    // queue has not yet contributed.
-                    cameraToUse.AddCommandBuffer(
-                        CameraEvent.BeforeForwardAlpha, depthCopyCommand);
+                    m_NativeDepthMaterial.SetVector("_CaptureClipPlanes", new Vector4(
+                        cameraToUse.nearClipPlane, cameraToUse.farClipPlane,
+                        cameraToUse.orthographic ? 1 : 0, SystemInfo.usesReversedZBuffer ? 1 : 0));
+                    UrpCaptureDepthRendererFeature.BeginCapture(cameraToUse, linearDepthRt, m_NativeDepthMaterial);
                 }
             }
 
@@ -1158,6 +1146,9 @@ public class CameraCaptureRuntime : MonoBehaviour
 
             if (linearDepthRt != null)
             {
+                if (!UrpCaptureDepthRendererFeature.HasCapturedDepth(cameraToUse))
+                    throw new InvalidOperationException(
+                        "[GaussianNativeDepth] Capture depth feature did not run on this camera's URP renderer.");
                 RenderTexture depthPreviousActive = RenderTexture.active;
                 RenderTexture.active = linearDepthRt;
                 TextureFormat depthTextureFormat = linearDepthRt.format == RenderTextureFormat.RFloat
@@ -1201,7 +1192,12 @@ public class CameraCaptureRuntime : MonoBehaviour
                 }
             }
 
-            if (fxaaWasEnabled)
+            if (transparentBackground)
+            {
+                // FXAA writes opaque alpha; transparent exports resolve to straight alpha.
+                TiltBrush.CaptureColorUtils.Resolve(sceneRt, resolvedRt, transparent: true);
+            }
+            else if (fxaaWasEnabled)
             {
                 EnsureFxaMaterial(fxaa);
                 if (fxaa.mat != null)
@@ -1228,12 +1224,9 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
         finally
         {
-            if (depthCopyCommand != null)
-            {
-                cameraToUse.RemoveCommandBuffer(
-                    CameraEvent.BeforeForwardAlpha, depthCopyCommand);
-                depthCopyCommand.Release();
-            }
+            cameraToUse.targetTexture = originalTarget;
+            cameraToUse.allowMSAA = originalAllowMsaa;
+            UrpCaptureDepthRendererFeature.EndCapture(cameraToUse);
             if (linearDepthRt != null)
             {
                 RenderTexture.ReleaseTemporary(linearDepthRt);
@@ -1242,8 +1235,6 @@ public class CameraCaptureRuntime : MonoBehaviour
             {
                 fxaa.enabled = fxaaWasEnabled;
             }
-            cameraToUse.targetTexture = originalTarget;
-            cameraToUse.allowMSAA = originalAllowMsaa;
         }
     }
 
