@@ -37,6 +37,7 @@ namespace TiltBrush
         private const float kFastBloomIntensity = 0.1f;
         private const float kFullBloomIntensity = 0.14f;
         private const float kMobileBloomIntensity = 0.1f;
+        private const float kLdrBloomIntensityScale = 10f;
         private const float kFastBloomScatter = 0.45f;
         private const float kFullBloomScatter = 0.55f;
         private const float kMobileBloomScatter = 0.35f;
@@ -244,10 +245,7 @@ namespace TiltBrush
                 return;
             }
 
-            if (m_CurrentBloomMode != AppQualitySettingLevels.BloomMode.None && m_CurrentHdr)
-            {
-                ApplyBloomMode(m_CurrentBloomMode, m_CurrentHdr);
-            }
+            ApplyBloomMode(m_CurrentBloomMode, m_CurrentHdr);
         }
 
         public CameraPostProcessingState BeginCapturePostProcessing(
@@ -583,7 +581,7 @@ namespace TiltBrush
             }
 
             // LDR clips colour to one before bloom, so its threshold must be below one.
-            return hdrEnabled ? 1.05f : 0.8f;
+            return hdrEnabled ? 1.05f : 0.5f;
         }
 
         private void ApplyBloomMode(AppQualitySettingLevels.BloomMode bloomMode, bool hdrEnabled)
@@ -628,7 +626,8 @@ namespace TiltBrush
                     m_Bloom.maxIterations.value = 6;
                     break;
             }
-            m_Bloom.intensity.value *= m_BloomAmount;
+            // LDR clips the emissive input before bloom; HDR's small gain is barely visible.
+            m_Bloom.intensity.value *= m_BloomAmount * (hdrEnabled ? 1f : kLdrBloomIntensityScale);
         }
 
         public void DisableLegacyPostProcessing()
