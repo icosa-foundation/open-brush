@@ -70,8 +70,14 @@ namespace TiltBrush
                 var resources = frameData.Get<UniversalResourceData>();
                 var depth = resources.activeDepthTexture;
                 var target = graph.ImportTexture(m_Request.target);
-                bool multisampled = graph.GetTextureDesc(depth).msaaSamples != MSAASamples.None;
-                if (multisampled) m_Request.material.EnableKeyword("CAPTURE_DEPTH_MSAA");
+                var depthDescriptor = graph.GetTextureDesc(depth);
+                // Match URP's CopyDepthPass: only sample individual samples when the
+                // attachment is bound as MSAA and the platform supports that binding.
+                // A resolved binding retains the attachment's original sample count.
+                bool sampleMultisampledDepth =
+                    depthDescriptor.msaaSamples != MSAASamples.None &&
+                    depthDescriptor.bindTextureMS && SystemInfo.supportsMultisampledTextures != 0;
+                if (sampleMultisampledDepth) m_Request.material.EnableKeyword("CAPTURE_DEPTH_MSAA");
                 else m_Request.material.DisableKeyword("CAPTURE_DEPTH_MSAA");
 
                 using var builder = graph.AddUnsafePass<PassData>("Open Brush capture depth", out var data);
