@@ -519,11 +519,7 @@ namespace TiltBrush
             }
             m_Bloom.active = true;
             m_Bloom.threshold.overrideState = true;
-            float? configuredThreshold = App.UserConfig.PostProcessing.BloomThreshold;
-            m_Bloom.threshold.value = configuredThreshold.HasValue &&
-                !float.IsNaN(configuredThreshold.Value) && !float.IsInfinity(configuredThreshold.Value)
-                ? Mathf.Max(0f, configuredThreshold.Value)
-                : 1.05f;
+            m_Bloom.threshold.value = GetBloomThreshold(m_CurrentHdr);
             m_Bloom.intensity.overrideState = true;
             m_Bloom.intensity.value = kFullBloomIntensity;
             m_Bloom.scatter.overrideState = true;
@@ -577,11 +573,25 @@ namespace TiltBrush
             Debug.Log($"{kLogPrefix} Runtime global Volume created with baseline profile.");
         }
 
+        private float GetBloomThreshold(bool hdrEnabled)
+        {
+            float? configuredThreshold = App.UserConfig.PostProcessing.BloomThreshold;
+            if (configuredThreshold.HasValue && !float.IsNaN(configuredThreshold.Value) &&
+                !float.IsInfinity(configuredThreshold.Value))
+            {
+                return Mathf.Max(0f, configuredThreshold.Value);
+            }
+
+            // LDR clips colour to one before bloom, so its threshold must be below one.
+            return hdrEnabled ? 1.05f : 0.8f;
+        }
+
         private void ApplyBloomMode(AppQualitySettingLevels.BloomMode bloomMode, bool hdrEnabled)
         {
             EnsureProfilesIfNeeded();
 
-            bool enabled = bloomMode != AppQualitySettingLevels.BloomMode.None && hdrEnabled &&
+            m_Bloom.threshold.value = GetBloomThreshold(hdrEnabled);
+            bool enabled = bloomMode != AppQualitySettingLevels.BloomMode.None &&
                 m_BloomAmount > 0f;
             m_Bloom.active = enabled;
 
