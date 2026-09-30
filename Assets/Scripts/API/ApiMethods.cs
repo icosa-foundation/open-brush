@@ -528,7 +528,7 @@ namespace TiltBrush
 
             RenderTexture target = RenderTexture.GetTemporary(CaptureColorUtils.CreateDescriptor(
                 width, height,
-                includePostProcessing ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGB32));
+                CaptureColorUtils.GetFormat(camera)));
             RenderTexture previousTarget = camera.targetTexture;
             bool previousAllowMsaa = camera.allowMSAA;
             UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;

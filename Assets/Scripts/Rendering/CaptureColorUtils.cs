@@ -6,6 +6,14 @@ namespace TiltBrush
     /// Colour is rendered with sample coverage, then resolved for display or export.
     public static class CaptureColorUtils
     {
+        public static RenderTextureFormat GetFormat(Camera camera)
+        {
+            bool hdr = UrpPostProcessingController.Instance != null
+                ? UrpPostProcessingController.Instance.SessionHdr
+                : camera.allowHDR;
+            return hdr ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGB32;
+        }
+
         public static RenderTextureDescriptor CreateDescriptor(
             int width, int height, RenderTextureFormat format, int depthBits = 24,
             int requestedSamples = 4)

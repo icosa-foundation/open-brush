@@ -71,6 +71,7 @@ namespace TiltBrush
 
         public VolumeProfile MainProfile => m_RuntimeMainProfile;
         public VolumeProfile CaptureProfile => m_RuntimeCaptureProfile;
+        public bool SessionHdr => m_CurrentHdr;
 
         public struct CameraPostProcessingState
         {
@@ -276,7 +277,7 @@ namespace TiltBrush
             state.volumeLayerMask = cameraData.volumeLayerMask;
             state.volumeTrigger = cameraData.volumeTrigger;
 
-            camera.allowHDR = true;
+            camera.allowHDR = m_CurrentHdr;
             ConfigureCaptureCamera(camera, enablePostProcessing, m_RuntimeCaptureProfile);
             Debug.Log(
                 $"{kLogPrefix} Capture override camera={camera.name} " +
@@ -477,10 +478,10 @@ namespace TiltBrush
             cameraData.volumeTrigger = camera.transform;
             cameraData.renderPostProcessing =
                 !isCapture && m_EnablePostProcessingOnMainCameras && CameraConfig.PostEffects;
+            camera.allowHDR = m_CurrentHdr;
 
             if (!isCapture)
             {
-                camera.allowHDR = m_CurrentHdr;
                 camera.allowMSAA = m_CurrentMsaa > 1;
                 cameraData.antialiasing = m_CurrentFxaa
                     ? AntialiasingMode.FastApproximateAntialiasing

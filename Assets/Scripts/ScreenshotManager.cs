@@ -435,9 +435,7 @@ namespace TiltBrush
 
         RenderTextureFormat CameraFormat()
         {
-            return GetComponent<Camera>().allowHDR
-                ? RenderTextureFormat.ARGBFloat
-                : RenderTextureFormat.ARGB32;
+            return CaptureColorUtils.GetFormat(GetComponent<Camera>());
         }
 
         void UpdateCameraAspect()
@@ -515,9 +513,7 @@ namespace TiltBrush
             bool includePostProcessing = false)
         {
             bool usePostProcessing = includePostProcessing && !removeBackground;
-            RenderTextureFormat format = usePostProcessing
-                ? RenderTextureFormat.ARGBFloat
-                : CameraFormat();
+            RenderTextureFormat format = CameraFormat();
 
             // Use a temporary rather than rendering to rTexture because we don't know
             // what format rTexture is... it may not be the correct format.

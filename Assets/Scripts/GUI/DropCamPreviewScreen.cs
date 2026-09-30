@@ -165,9 +165,7 @@ namespace TiltBrush
 
         RenderTextureFormat CameraFormat()
         {
-            return m_Camera.allowHDR
-                ? RenderTextureFormat.ARGBFloat
-                : RenderTextureFormat.ARGB32;
+            return CaptureColorUtils.GetFormat(m_Camera);
         }
 
         void CreateDisplayRenderTextures()
