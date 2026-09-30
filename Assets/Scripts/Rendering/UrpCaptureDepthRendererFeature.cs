@@ -42,8 +42,7 @@ namespace TiltBrush
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
-            if (m_DepthShader != null &&
-                s_Requests.TryGetValue(renderingData.cameraData.camera, out var request))
+            if (s_Requests.TryGetValue(renderingData.cameraData.camera, out var request))
                 renderer.EnqueuePass(new CaptureDepthPass(request));
         }
 
