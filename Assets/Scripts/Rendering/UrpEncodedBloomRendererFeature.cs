@@ -66,7 +66,13 @@ namespace TiltBrush
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             var controller = UrpPostProcessingController.Instance;
-            if (BloomBenchmark.Enabled && BloomBenchmark.Settings.Opaque && controller != null &&
+            var scene = SceneSettings.m_Instance;
+            // Keep alpha during passthrough, including transitions into and out of it.
+            bool opaqueEnvironment = scene != null && scene.CurrentEnvironment != null &&
+                scene.GetDesiredPreset() != null && !scene.CurrentEnvironment.isPassthrough &&
+                !scene.GetDesiredPreset().isPassthrough;
+            bool useOpaqueHdr = BloomBenchmark.Enabled ? BloomBenchmark.Settings.Opaque : opaqueEnvironment;
+            if (useOpaqueHdr && controller != null &&
                 controller.SessionHdr && renderingData.cameraData.cameraType == CameraType.Game &&
                 renderingData.cameraData.camera.targetTexture == null)
             {

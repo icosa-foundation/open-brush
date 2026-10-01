@@ -3,6 +3,17 @@
 One APK contains encoded mobile bloom, optional alternate-eye reuse, rotation
 reprojection, native URP comparison profiles, and runtime diagnostics.
 
+Normal mobile and desktop sessions use native URP bloom with HDR. Mobile uses
+4x MSAA and the quarter-resolution, two-iteration Mobile bloom preset at enabled
+quality levels; the lowest two levels still disable bloom. The Editor uses its
+normal HDR quality setting. Encoded bloom is enabled only by an explicit
+benchmark profile.
+
+Normal opaque environments use a supported B10G11R11 HDR camera target. Alpha is
+retained for passthrough (including environment transitions) and cameras rendering
+to a target texture. Consequently, passthrough performance can differ from the
+opaque HDR32 benchmark. No global post-processing alpha setting is disabled.
+
 ## Run
 
 1. Save any current sketch before starting: the runner restarts the app.
