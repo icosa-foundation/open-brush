@@ -379,8 +379,8 @@ def main():
             if scene.get("load") not in ("load.named", "load.user", "load.featured", "load.liked", "load.drive") or "value" not in scene:
                 p.error("each scene requires a supported load endpoint and value")
             for command in scene.get("view", []):
-                if command.get("key") not in ("scene.scale.to", "user.move.to", "user.turn.y") or "value" not in command:
-                    p.error("scene view supports scene.scale.to, user.move.to, user.turn.y")
+                if command.get("key") not in ("scene.scale.to", "user.move.to", "user.turn.y", "user.look.at") or "value" not in command:
+                    p.error("scene view supports scene.scale.to, user.move.to, user.turn.y, user.look.at")
         args.fixtures = ["scene"]
     if args.repeats < 1 or args.quality < 0:
         p.error("repeats must be positive and quality non-negative")
