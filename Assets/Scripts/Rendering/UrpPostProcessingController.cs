@@ -68,11 +68,25 @@ namespace TiltBrush
             AppQualitySettingLevels.BloomMode.None;
         private float m_BloomAmount = 1f;
         private float? m_RuntimeBloomThreshold;
+        private bool m_PreviousSimpleHdr;
+        private bool m_PreviousEmulatedHdr;
         private readonly HashSet<Camera> m_ExplicitCaptureCameras = new HashSet<Camera>();
 
         public VolumeProfile MainProfile => m_RuntimeMainProfile;
         public VolumeProfile CaptureProfile => m_RuntimeCaptureProfile;
         public bool SessionHdr => m_CurrentHdr;
+        public bool UsesEncodedBloom { get; private set; }
+        public float EncodedBloomAmount => m_CurrentBloomMode == AppQualitySettingLevels.BloomMode.None
+            ? 0f : m_BloomAmount;
+        public float EncodedBloomThreshold
+        {
+            get
+            {
+                float threshold = m_RuntimeBloomThreshold ??
+                    App.UserConfig.PostProcessingFx.BloomThreshold ?? 0f;
+                return float.IsNaN(threshold) || float.IsInfinity(threshold) ? 0f : Mathf.Max(0f, threshold);
+            }
+        }
 
         public struct CameraPostProcessingState
         {
@@ -127,6 +141,13 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            if (UsesEncodedBloom)
+            {
+                if (m_PreviousSimpleHdr) Shader.EnableKeyword("HDR_SIMPLE");
+                else Shader.DisableKeyword("HDR_SIMPLE");
+                if (m_PreviousEmulatedHdr) Shader.EnableKeyword("HDR_EMULATED");
+                else Shader.DisableKeyword("HDR_EMULATED");
+            }
             RestorePipelineMsaa();
             if (Instance == this)
             {
@@ -375,7 +396,7 @@ namespace TiltBrush
         public void PrepareSession(QualityControls quality)
         {
             if (SessionMsaaLevel.HasValue) return;
-            if (!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset))
+            if (!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset pipeline))
             {
                 return;
             }
@@ -383,6 +404,15 @@ namespace TiltBrush
             // In XR this must run before StartSubsystems allocates the eye surfaces.
             quality.PrepareSessionRendering();
             m_CurrentHdr = quality.SessionHdr;
+            UsesEncodedBloom = !m_CurrentHdr && UrpEncodedBloomRendererFeature.IsConfigured(pipeline);
+            if (UsesEncodedBloom)
+            {
+                m_PreviousSimpleHdr = Shader.IsKeywordEnabled("HDR_SIMPLE");
+                m_PreviousEmulatedHdr = Shader.IsKeywordEnabled("HDR_EMULATED");
+                Shader.EnableKeyword("HDR_SIMPLE");
+                Shader.DisableKeyword("HDR_EMULATED");
+                Debug.Log($"[OB_ENCODED_BLOOM] Legacy brush encoding enabled for the LDR session.");
+            }
             ApplyMsaa(quality.MSAALevel);
             SessionMsaaLevel = m_CurrentMsaa;
         }
@@ -603,7 +633,7 @@ namespace TiltBrush
 
             m_Bloom.threshold.value = GetBloomThreshold(hdrEnabled);
             bool enabled = bloomMode != AppQualitySettingLevels.BloomMode.None &&
-                m_BloomAmount > 0f;
+                m_BloomAmount > 0f && !UsesEncodedBloom;
             m_Bloom.active = enabled;
 
             if (!enabled)
