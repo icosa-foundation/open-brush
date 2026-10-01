@@ -97,7 +97,7 @@ namespace TiltBrush
                 var desc = graph.GetTextureDesc(resources.activeColorTexture);
                 BloomBenchmark.Instance.RecordTarget(camera, new BloomBenchmark.TextureDescInfo {
                     format = desc.format.ToString(), width = desc.width, height = desc.height,
-                    slices = desc.slices, msaa = (int)desc.msaaSamples
+                    slices = desc.slices, msaa = (int)desc.msaaSamples, vrUsage = desc.vrUsage.ToString()
                 });
             }
         }
@@ -192,6 +192,8 @@ namespace TiltBrush
                         {
                             graphicsFormat = GraphicsFormat.R8G8B8A8_UNorm,
                             dimension = TextureDimension.Tex2DArray, volumeDepth = 2,
+                            // Preserve the source's XR usage so Vulkan multiview writes both slices.
+                            vrUsage = sourceDesc.vrUsage,
                             msaaSamples = 1, depthBufferBits = 0
                         };
                         history.texture = RTHandles.Alloc(descriptor, filterMode: FilterMode.Bilinear,

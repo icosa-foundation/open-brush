@@ -248,11 +248,11 @@ namespace TiltBrush
         public void RecordTarget(Camera camera, TextureDescInfo info)
         {
             m_Targets[camera] = new {
-                camera = camera.name, format = info.format, info.width, info.height, info.slices, info.msaa
+                camera = camera.name, format = info.format, info.width, info.height, info.slices, info.msaa, info.vrUsage
             };
         }
 
-        public struct TextureDescInfo { public string format; public int width, height, slices, msaa; }
+        public struct TextureDescInfo { public string format, vrUsage; public int width, height, slices, msaa; }
 
         private void LateUpdate()
         {
