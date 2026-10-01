@@ -101,7 +101,7 @@ namespace TiltBrush
         {
             EnsureProfiles();
             EnsureGlobalVolume();
-            float? bloomAmount = App.UserConfig.PostProcessing.BloomAmount;
+            float? bloomAmount = App.UserConfig.PostProcessingFx.BloomAmount;
             if (bloomAmount.HasValue && !float.IsNaN(bloomAmount.Value) &&
                 !float.IsInfinity(bloomAmount.Value))
             {
@@ -574,7 +574,7 @@ namespace TiltBrush
 
         private float GetBloomThreshold(bool hdrEnabled)
         {
-            float? configuredThreshold = App.UserConfig.PostProcessing.BloomThreshold;
+            float? configuredThreshold = App.UserConfig.PostProcessingFx.BloomThreshold;
             if (configuredThreshold.HasValue && !float.IsNaN(configuredThreshold.Value) &&
                 !float.IsInfinity(configuredThreshold.Value))
             {

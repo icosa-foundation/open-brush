@@ -3,7 +3,7 @@
   },
   "Brushes": {
   },
-  "PostProcessing": {
+  "PostProcessingFx": {
   },
   "Splats": {
   },
