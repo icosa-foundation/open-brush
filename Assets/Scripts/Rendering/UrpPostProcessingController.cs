@@ -68,6 +68,7 @@ namespace TiltBrush
             AppQualitySettingLevels.BloomMode.None;
         private float m_BloomAmount = 1f;
         private float? m_RuntimeBloomThreshold;
+        private HDRColorBufferPrecision m_PreviousHdrPrecision;
         private bool m_PreviousSimpleHdr;
         private bool m_PreviousEmulatedHdr;
         private readonly HashSet<Camera> m_ExplicitCaptureCameras = new HashSet<Camera>();
@@ -77,7 +78,7 @@ namespace TiltBrush
         public bool SessionHdr => m_CurrentHdr;
         public bool UsesEncodedBloom { get; private set; }
         public float EncodedBloomAmount => m_CurrentBloomMode == AppQualitySettingLevels.BloomMode.None
-            ? 0f : m_BloomAmount;
+            || (BloomBenchmark.Enabled && BloomBenchmark.Settings.Off) ? 0f : m_BloomAmount;
         public float EncodedBloomThreshold
         {
             get
@@ -141,7 +142,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
-            if (UsesEncodedBloom)
+            if (UsesEncodedBloom || BloomBenchmark.Enabled)
             {
                 if (m_PreviousSimpleHdr) Shader.EnableKeyword("HDR_SIMPLE");
                 else Shader.DisableKeyword("HDR_SIMPLE");
@@ -268,6 +269,15 @@ namespace TiltBrush
                 return;
             }
 
+            ApplyBloomMode(m_CurrentBloomMode, m_CurrentHdr);
+        }
+
+        public void ApplyBenchmarkSettings()
+        {
+            if (!BloomBenchmark.Enabled) return;
+            m_CurrentBloomMode = AppQualitySettingLevels.BloomMode.Mobile;
+            m_BloomAmount = BloomBenchmark.Settings.Amount;
+            m_RuntimeBloomThreshold = BloomBenchmark.Settings.Threshold;
             ApplyBloomMode(m_CurrentBloomMode, m_CurrentHdr);
         }
 
@@ -404,11 +414,18 @@ namespace TiltBrush
             // In XR this must run before StartSubsystems allocates the eye surfaces.
             quality.PrepareSessionRendering();
             m_CurrentHdr = quality.SessionHdr;
-            UsesEncodedBloom = !m_CurrentHdr && UrpEncodedBloomRendererFeature.IsConfigured(pipeline);
+            UsesEncodedBloom = !m_CurrentHdr && (!BloomBenchmark.Enabled || BloomBenchmark.Settings.Encoded) &&
+                UrpEncodedBloomRendererFeature.IsConfigured(pipeline);
+            // Save keyword state for every benchmark backend, including native LDR.
+            m_PreviousSimpleHdr = Shader.IsKeywordEnabled("HDR_SIMPLE");
+            m_PreviousEmulatedHdr = Shader.IsKeywordEnabled("HDR_EMULATED");
+            if (BloomBenchmark.Enabled && !UsesEncodedBloom)
+            {
+                Shader.DisableKeyword("HDR_SIMPLE");
+                Shader.DisableKeyword("HDR_EMULATED");
+            }
             if (UsesEncodedBloom)
             {
-                m_PreviousSimpleHdr = Shader.IsKeywordEnabled("HDR_SIMPLE");
-                m_PreviousEmulatedHdr = Shader.IsKeywordEnabled("HDR_EMULATED");
                 Shader.EnableKeyword("HDR_SIMPLE");
                 Shader.DisableKeyword("HDR_EMULATED");
                 Debug.Log($"[OB_ENCODED_BLOOM] Legacy brush encoding enabled for the LDR session.");
@@ -448,11 +465,15 @@ namespace TiltBrush
                     m_PreviousPipelineMsaa = pipelineAsset.msaaSampleCount;
                     m_PreviousUnityMsaa = QualitySettings.antiAliasing;
                     m_PreviousRenderScale = pipelineAsset.renderScale;
+                    m_PreviousHdrPrecision = pipelineAsset.hdrColorBufferPrecision;
                 }
             }
 
             if (pipelineAsset != null)
             {
+                if (BloomBenchmark.Enabled)
+                    pipelineAsset.hdrColorBufferPrecision = BloomBenchmark.Settings.Precision == 64
+                        ? HDRColorBufferPrecision._64Bits : HDRColorBufferPrecision._32Bits;
                 pipelineAsset.msaaSampleCount = m_CurrentMsaa;
                 QualitySettings.antiAliasing = m_CurrentMsaa;
                 // Configure the native sample count once, before XR starts rendering.
@@ -496,6 +517,7 @@ namespace TiltBrush
             {
                 m_MsaaPipelineAsset.msaaSampleCount = m_PreviousPipelineMsaa;
                 m_MsaaPipelineAsset.renderScale = m_PreviousRenderScale;
+                m_MsaaPipelineAsset.hdrColorBufferPrecision = m_PreviousHdrPrecision;
                 QualitySettings.antiAliasing = m_PreviousUnityMsaa;
                 var displays = new List<XRDisplaySubsystem>();
                 SubsystemManager.GetInstances(displays);
@@ -633,7 +655,7 @@ namespace TiltBrush
 
             m_Bloom.threshold.value = GetBloomThreshold(hdrEnabled);
             bool enabled = bloomMode != AppQualitySettingLevels.BloomMode.None &&
-                m_BloomAmount > 0f && !UsesEncodedBloom;
+                m_BloomAmount > 0f && !UsesEncodedBloom && !(BloomBenchmark.Enabled && BloomBenchmark.Settings.Off);
             m_Bloom.active = enabled;
 
             if (!enabled)
@@ -668,6 +690,18 @@ namespace TiltBrush
                     m_Bloom.downscale.value = BloomDownscaleMode.Half;
                     m_Bloom.maxIterations.value = 6;
                     break;
+            }
+            if (BloomBenchmark.Enabled)
+            {
+                var settings = BloomBenchmark.Settings;
+                m_Bloom.maxIterations.value = settings.NativeIterations;
+                m_Bloom.downscale.value = settings.NativeQuarter ? BloomDownscaleMode.Quarter : BloomDownscaleMode.Half;
+                m_Bloom.highQualityFiltering.value = settings.NativeHighQuality;
+                m_Bloom.scatter.value = settings.NativeScatter;
+                m_Bloom.intensity.value = settings.NativeIntensity;
+                // Benchmark intensity is explicitly specified, independent of platform presets.
+                m_Bloom.intensity.value *= m_BloomAmount;
+                return;
             }
             // LDR clips the emissive input before bloom; HDR's small gain is barely visible.
             m_Bloom.intensity.value *= m_BloomAmount * (hdrEnabled ? 1f : kLdrBloomIntensityScale);

@@ -12,6 +12,15 @@ Shader "Hidden/Open Brush/URP Encoded Bloom"
         float4 _EncodedBloomTexelSize;
         float _EncodedBloomAmount;
         float _EncodedBloomThreshold;
+        float _EncodedBloomUpdateEye;
+        float4x4 _EncodedBloomLeftWarp;
+        float4x4 _EncodedBloomRightWarp;
+
+        void SelectUpdateEye()
+        {
+            if (_EncodedBloomUpdateEye >= 0)
+                clip(0.5 - abs((float)unity_StereoEyeIndex - _EncodedBloomUpdateEye));
+        }
 
         float3 DecodeGlow(float2 uv)
         {
@@ -36,6 +45,7 @@ Shader "Hidden/Open Brush/URP Encoded Bloom"
         half4 Extract(Varyings input) : SV_Target
         {
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            SelectUpdateEye();
             float2 offset = _EncodedBloomTexelSize.xy;
             float2 uv = input.texcoord;
             float3 glow = DecodeGlow(uv + offset * float2(-1, -1));
@@ -48,6 +58,7 @@ Shader "Hidden/Open Brush/URP Encoded Bloom"
         half4 Blur(Varyings input) : SV_Target
         {
             UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            SelectUpdateEye();
             float2 offset = _EncodedBloomTexelSize.xy;
             float2 uv = input.texcoord;
             float3 glow = SampleGlow(uv + offset * float2(-1, -1));
@@ -55,6 +66,27 @@ Shader "Hidden/Open Brush/URP Encoded Bloom"
             glow += SampleGlow(uv + offset * float2(-1, 1));
             glow += SampleGlow(uv + offset * float2(1, 1));
             return half4(glow * (0.25 * _EncodedBloomAmount), 0);
+        }
+        half4 Composite(Varyings input) : SV_Target
+        {
+            UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
+            float2 uv = input.texcoord;
+            float2 clipXY = uv * 2 - 1;
+            #if UNITY_UV_STARTS_AT_TOP
+            clipXY.y = -clipXY.y;
+            #endif
+            float4 position = float4(clipXY, 0.5, 1);
+            float4 history = unity_StereoEyeIndex == 0
+                ? mul(_EncodedBloomLeftWarp, position) : mul(_EncodedBloomRightWarp, position);
+            if (history.w <= 0) return 0;
+            uv = history.xy / history.w;
+            #if UNITY_UV_STARTS_AT_TOP
+            uv.y = -uv.y;
+            #endif
+            uv = uv * 0.5 + 0.5;
+            if (any(uv < 0) || any(uv > 1)) return 0;
+            input.texcoord = uv;
+            return Blur(input);
         }
         ENDHLSL
 
@@ -82,6 +114,16 @@ Shader "Hidden/Open Brush/URP Encoded Bloom"
             HLSLPROGRAM
             #pragma vertex Vert
             #pragma fragment Blur
+            ENDHLSL
+        }
+        Pass
+        {
+            Name "Composite history"
+            Blend One One
+            ColorMask RGB
+            HLSLPROGRAM
+            #pragma vertex Vert
+            #pragma fragment Composite
             ENDHLSL
         }
     }
