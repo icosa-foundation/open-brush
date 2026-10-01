@@ -17,6 +17,8 @@ BASELINES = {
 
 
 def summarize(root):
+    plan = json.loads((root / "plan.json").read_text(encoding="utf-8"))
+    cases = {case["token"]: case for case in plan["cases"]}
     groups = defaultdict(list)
     invalid = []
     by_repeat = {}
@@ -39,18 +41,20 @@ def summarize(root):
             invalid.append(dict(run=directory.name, profile=profile, issues=sorted(set(issues))))
             continue
         # The plan supplies repeat and requested pyramid settings; reports supply actual settings.
-        groups[profile].append((directory.name, report))
+        case = cases[directory.name]
+        group = (profile, case["fixture"], case["levels"], case["downsample"])
+        groups[group].append((directory.name, report))
         for target in metadata.get("targets", []):
-            formats[profile].add(f"{target['format']} {target['width']}x{target['height']} slices={target['slices']} MSAA={target['msaa']}")
-    plan = json.loads((root / "plan.json").read_text(encoding="utf-8"))
-    cases = {case["token"]: case for case in plan["cases"]}
-    for profile, runs in groups.items():
+            formats[group].add(f"{target['format']} {target['width']}x{target['height']} slices={target['slices']} MSAA={target['msaa']}")
+    for group, runs in groups.items():
+        profile = group[0]
         for token, report in runs:
             case = cases[token]
             # Do not combine different pyramid/fixture settings when subtracting baselines.
             by_repeat[(profile, case["repeat"], case["fixture"])] = report["appGpu"]["mean"]
     output = []
-    for profile, runs in sorted(groups.items()):
+    for group, runs in sorted(groups.items()):
+        profile, fixture, levels, downsample = group
         means = [report["appGpu"]["mean"] for _, report in runs]
         deltas = []
         for token, report in runs:
@@ -58,10 +62,10 @@ def summarize(root):
             baseline = by_repeat.get((BASELINES.get(profile), case["repeat"], case["fixture"]))
             if baseline is not None:
                 deltas.append(report["appGpu"]["mean"] - baseline)
-        output.append(dict(profile=profile, runs=len(runs), meanAppGpuMs=statistics.mean(means),
+        output.append(dict(profile=profile, fixture=fixture, levels=levels, downsample=downsample, runs=len(runs), meanAppGpuMs=statistics.mean(means),
                            minRunMeanMs=min(means), maxRunMeanMs=max(means),
                            meanBaselineDeltaMs=statistics.mean(deltas) if deltas else None,
-                           baselinePairs=len(deltas), actualTargets=sorted(formats[profile])))
+                           baselinePairs=len(deltas), actualTargets=sorted(formats[group])))
     return dict(profiles=output, invalidRuns=invalid, plannedRuns=len(plan["cases"]),
                 completedRuns=sum(len(runs) for runs in groups.values()) + len(invalid),
                 note="Total application GPU timing reported by XR; samples may repeat. Different visual bloom shapes are not matched quality.")
@@ -77,7 +81,7 @@ def main():
     for row in result["profiles"]:
         delta = row["meanBaselineDeltaMs"]
         suffix = f", baseline delta {delta:.3f} ms ({row['baselinePairs']} pairs)" if delta is not None else ""
-        print(f"{row['profile']}: {row['meanAppGpuMs']:.3f} ms, {row['runs']} runs{suffix}")
+        print(f"{row['profile']} {row['fixture']} L{row['levels']}/D{row['downsample']}: {row['meanAppGpuMs']:.3f} ms, {row['runs']} runs{suffix}")
     for row in result["invalidRuns"]:
         print(f"Excluded {row['run']} {row['profile']}: {', '.join(row['issues'])}")
 
