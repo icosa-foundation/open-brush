@@ -78,14 +78,16 @@ class Device:
             raise RuntimeError(status["error"])
         return status
 
-    def restart(self):
+    def restart(self, expected_profile=None):
         self.run("shell", "am", "force-stop", self.args.package)
         if self.args.activity:
             self.run("shell", "am", "start", "-n", self.args.activity)
         else:
             self.run("shell", "monkey", "-p", self.args.package,
                      "-c", "android.intent.category.LAUNCHER", "1")
-        return self.wait(lambda s: s.get("state") == "idle" and s.get("ready"),
+        return self.wait(lambda s: s.get("state") == "idle" and s.get("ready") and
+                         s.get("token") == "" and
+                         (expected_profile is None or s.get("active", {}).get("Profile") == expected_profile),
                          self.args.launch_timeout)
 
 
@@ -169,9 +171,7 @@ def run(args, plan):
             configure_token = f"configure{token}"
             device.command("bloom.benchmark.configure",
                            [case["profile"], args.msaa, args.eye_scale, configure_token], configure_token)
-            status = device.restart()
-            if status["active"]["Profile"] != case["profile"]:
-                raise RuntimeError("Persisted profile did not activate after restart.")
+            status = device.restart(case["profile"])
             if status.get("qualityLevels", 0) <= args.quality:
                 raise RuntimeError(f"Quality {args.quality} is not available.")
             tune_token = f"tune{token}"
@@ -243,7 +243,7 @@ def run(args, plan):
                 token = "restoreprofile"
                 device.command("bloom.benchmark.configure",
                                [pending["Profile"], pending["Msaa"], pending["EyeScale"], token], token)
-                device.restart()
+                device.restart(pending["Profile"])
         except Exception as error:
             (out / "RESTORE-FAILED.txt").write_text(
                 f"{error}\nRun bloom.benchmark.configure=default,4,1,restore and restart to clear the override.\n",
