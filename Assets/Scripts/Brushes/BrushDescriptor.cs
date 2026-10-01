@@ -357,9 +357,6 @@ namespace TiltBrush
             }
         }
 
-        /// The shipping material, independent of the Editor testing-material option.
-        public Material NormalMaterial => m_Material;
-
         /// Return non-instantiated material
         public Material Material
         {

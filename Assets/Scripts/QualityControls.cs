@@ -198,13 +198,6 @@ namespace TiltBrush
                 ? App.UserConfig.Profiling.MsaaLevel : AppQualityLevels.MsaaLevel;
             float eyeScale = App.UserConfig.Profiling.EyeTextureScaling > 0
                 ? App.UserConfig.Profiling.EyeTextureScaling : AppQualityLevels.EyeTextureScale;
-            if (BloomBenchmark.Enabled)
-            {
-                m_enableHdr = BloomBenchmark.Settings.Hdr;
-                m_msaaLevel = BloomBenchmark.Settings.Msaa;
-                eyeScale = BloomBenchmark.Settings.EyeScale;
-                m_AutomaticQualityEnabled = false;
-            }
             UnityEngine.XR.XRSettings.eyeTextureResolutionScale = eyeScale;
         }
 

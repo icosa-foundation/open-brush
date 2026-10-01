@@ -117,13 +117,10 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e678ce3b53bf941418b16b9b6a388baf, type: 3}
-  m_Name: Open Brush encoded mobile bloom
-  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpEncodedBloomRendererFeature
+  m_Name: Open Brush HDR targets
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpHdrRendererFeature
   m_Active: 1
-  m_Shader: {fileID: 4800000, guid: e94185618b201be4ebc5a98b5d7020bf, type: 3}
-  m_BlurLevels: 3
-  m_Downsample: 2
-  m_Intensity: 1
+
 --- !u!114 &6111700951782917469
 MonoBehaviour:
   m_ObjectHideFlags: 1

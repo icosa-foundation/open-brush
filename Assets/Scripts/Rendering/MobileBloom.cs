@@ -43,22 +43,6 @@ public class MobileBloom : MonoBehaviour
         set { m_BloomAmount = value; }
     }
 
-    // Reuse the old camera-specific background fade without its Built-in command buffers.
-    public float EvaluateBloomAmount(float amount)
-    {
-        float totalBloom = m_AlwaysOn ? 1 : amount;
-        if (SceneSettings.m_Instance != null && SceneSettings.m_Instance.InGradient)
-        {
-            Vector3 gradUp = App.Scene.Pose.rotation * SceneSettings.m_Instance.GradientOrientation *
-                Vector3.up;
-            float gradRatio = Mathf.Acos(Vector3.Dot(gradUp, ViewpointScript.Gaze.direction)) / Mathf.PI;
-            Color averageSky = Color.Lerp(SceneSettings.m_Instance.SkyColorB,
-                SceneSettings.m_Instance.SkyColorA, gradRatio);
-            totalBloom = m_BackgroundBrightnessToBloom.Evaluate(averageSky.grayscale) * amount;
-        }
-        return totalBloom;
-    }
-
     private Material[] m_bloomMaterial;
 
     private Pose m_PreviousPose = Pose.identity;
@@ -241,7 +225,16 @@ public class MobileBloom : MonoBehaviour
         Shader.DisableKeyword("HDR_EMULATED");
 
         // Fade out the bloom with very bright backgrounds
-        float totalBloom = EvaluateBloomAmount(m_BloomAmount);
+        float totalBloom = m_AlwaysOn ? 1 : m_BloomAmount;
+        if (SceneSettings.m_Instance != null && SceneSettings.m_Instance.InGradient)
+        {
+            Vector3 gradUp = App.Scene.Pose.rotation * SceneSettings.m_Instance.GradientOrientation *
+                Vector3.up;
+            float gradRatio = Mathf.Acos(Vector3.Dot(gradUp, ViewpointScript.Gaze.direction)) / Mathf.PI;
+            Color averageSky = Color.Lerp(SceneSettings.m_Instance.SkyColorB,
+                SceneSettings.m_Instance.SkyColorA, gradRatio);
+            totalBloom = m_BackgroundBrightnessToBloom.Evaluate(averageSky.grayscale) * m_BloomAmount;
+        }
 
         for (int i = 0; i < 2; ++i)
         {

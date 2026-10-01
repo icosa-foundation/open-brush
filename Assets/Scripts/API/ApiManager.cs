@@ -706,10 +706,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
             if (commandPair.Length < 1) return null;
             switch (commandPair[0])
             {
-                case "query.bloom.benchmark.status":
-                    return BloomBenchmark.StatusJson;
-                case "query.bloom.benchmark.result":
-                    return BloomBenchmark.ResultJson;
                 case "query.queue":
                     return m_OutgoingCommandQueue.Count.ToString();
                 case "query.quill.stats":
