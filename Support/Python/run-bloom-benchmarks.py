@@ -101,28 +101,32 @@ class Device:
                          self.args.launch_timeout)
 
     def load_scene(self, scene):
+        print(f"Loading {scene['name']}", flush=True)
         self.request(scene["load"], scene["value"])
-        # A command acknowledgement is not a completed download or sketch load.
-        # Require an observed loading state, then several stable ready observations.
+        # A quick load can block the main thread and finish between cached status
+        # publications. Queue a harmless main-thread marker after the load rather
+        # than requiring an observable busy transition. Then wait for stable readiness.
+        marker = f"loaded{int(time.monotonic()*1000)}"
+        self.command("bloom.benchmark.stop", [marker], marker, self.args.scene_timeout)
         deadline = time.monotonic() + self.args.scene_timeout
-        saw_loading = False
         ready_since = None
         while time.monotonic() < deadline:
             status = self.status()
             if not status.get("ready"):
-                saw_loading = True
                 ready_since = None
-            elif saw_loading:
+            else:
                 ready_since = ready_since or time.monotonic()
                 if time.monotonic() - ready_since >= 3:
                     break
             time.sleep(0.25)
         else:
-            raise TimeoutError(f"Scene {scene['name']} did not complete an observed load; refusing to benchmark an unverified scene.")
+            raise TimeoutError(f"Scene {scene['name']} did not reach stable readiness after the load command.")
         for command in scene.get("view", []):
             self.request(command["key"], command["value"])
         time.sleep(self.args.scene_settle)
-        return self.wait(lambda s: s.get("ready"), self.args.scene_timeout)
+        status = self.wait(lambda s: s.get("ready"), self.args.scene_timeout)
+        print(f"Ready: {scene['name']}", flush=True)
+        return status
 
 
 def write_json(path, data):
