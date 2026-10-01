@@ -44,6 +44,10 @@ Pass --scenes-json with an array such as:
 
 The runner reloads each scene after every profile restart. An optional view array
 contains key/value commands: user.move.to, user.look.at, user.turn.y or scene.scale.to.
+For offsets derived from a saved thumbnail, set compensateHeadPosition to true:
+the runner subtracts the tracked head's room position from user.move.to coordinates.
+It reads this through the inactive spectator without adding a rendering camera and
+records the applied coordinates in scene-view.json.
 Verify the viewpoint in loaded-scene.png. minimumColoredPixels requires Pillow and
 rejects empty views of colorful scenes; omit it for monochrome scenes. This check
 does not establish visual parity between bloom implementations.
