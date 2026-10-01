@@ -96,7 +96,7 @@ HDR benchmark profile overrides it.
 ## Reports and traces
 
 Each run saves raw JSON, thermal snapshots, logcat, screenshot and validation
-issues. Summary CSV contains GPU mean/median/p95, wall-frame p95, GPU coverage,
+issues. With optional Pillow installed, synthetic-fixture screenshots also get\na stereo halo-balance check to flag missing-eye glow. Summary CSV contains GPU mean/median/p95, wall-frame p95, GPU coverage,
 refresh rate and dropped-frame delta. XR GPU timing may be unavailable: null,
 never fake zero. Unity Frame Timing statistics are enabled, with fallback CPU/GPU
 samples retained separately. Timing samples may repeat; wall time includes pacing.

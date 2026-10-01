@@ -69,7 +69,8 @@ class Device:
             except (OSError, ValueError):
                 pass
             time.sleep(1)
-        raise TimeoutError(f"API did not reach expected state. Last status: {last}")
+        details = {key: last.get(key) for key in ("state", "ready", "token", "error", "active")} if last else None
+        raise TimeoutError(f"API did not reach expected state. Last status: {details}")
 
     def command(self, command, arguments, token, timeout=30):
         self.request(command, ",".join(str(x).lower() if isinstance(x, bool) else str(x) for x in arguments))
@@ -128,6 +129,32 @@ def validate_result(result, case):
     if metadata.get("sessionMsaa") != case["msaa"]:
         problems.append("MSAA request fell back")
     return problems
+
+
+
+def stereo_halo_check(path, metadata):
+    # Optional Pillow analysis happens after sampling and never modifies the image.
+    # Synthetic fixtures have white cores and saturated halos on a black background.
+    if metadata.get("fixture") == "scene":
+        return {"available": False, "reason": "scene fixture cannot assume equal eye content"}
+    if not any(target.get("slices") == 2 for target in metadata.get("targets", [])):
+        return {"available": False, "reason": "not a two-eye target"}
+    try:
+        from PIL import Image, ImageChops
+    except ImportError:
+        return {"available": False, "reason": "install Pillow or inspect screenshots manually"}
+    with Image.open(path) as image:
+        counts = []
+        for eye in range(2):
+            crop = image.crop((eye * image.width // 2, 0,
+                               (eye + 1) * image.width // 2, image.height)).convert("HSV")
+            _, saturation, value = crop.split()
+            mask = ImageChops.multiply(saturation.point(lambda x: 255 if x > 96 else 0),
+                                       value.point(lambda x: 255 if x > 32 else 0))
+            counts.append(sum(mask.histogram()[1:]))
+    ratio = min(counts) / max(counts) if max(counts) else None
+    return {"available": True, "coloredHaloPixels": counts, "eyeBalance": ratio,
+            "missingEye": max(counts) > 50 and ratio < 0.15}
 
 
 def summary_row(result, case, problems):
@@ -216,6 +243,11 @@ def run(args, plan):
                     capture_text(device, directory / "logcat.txt", "logcat", "-d", f"--pid={pid}", "-v", "threadtime")
                 measured_case = dict(case, msaa=args.msaa, eye_scale=args.eye_scale)
                 problems = validate_result(result, measured_case)
+                if not args.no_screenshots:
+                    stereo = stereo_halo_check(directory / "screenshot.png", result["metadata"])
+                    write_json(directory / "stereo.json", stereo)
+                    if stereo.get("missingEye"):
+                        problems.append("stereo glow missing from one eye")
                 rows.append(summary_row(result, measured_case, problems))
                 write_json(directory / "validation.json", dict(issues=problems))
                 with (out / "summary.csv").open("w", newline="", encoding="utf-8") as handle:
