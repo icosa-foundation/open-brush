@@ -124,8 +124,26 @@ class Device:
             time.sleep(0.25)
         else:
             raise TimeoutError(f"Scene {scene['name']} did not reach stable readiness after the load command.")
+        head = None
+        if scene.get("compensateHeadPosition"):
+            # Resetting an inactive spectator to slow-follow copies the tracked
+            # head transform without enabling another rendering camera.
+            self.request("spectator.mode", "slowFollow")
+            time.sleep(0.25)
+            head = [float(x) for x in re.findall(r"[-+]?\d+(?:\.\d+)?", self.request("query.spectator.position"))]
+            if len(head) != 3:
+                raise RuntimeError("Could not read tracked head position for the scene viewpoint.")
+        applied = []
         for command in scene.get("view", []):
-            self.request(command["key"], command["value"])
+            value = command["value"]
+            if head is not None and command["key"] == "user.move.to":
+                offset = [float(x) for x in str(value).split(",")]
+                if len(offset) != 3:
+                    raise ValueError("Head-compensated positions require three coordinates.")
+                value = ",".join(f"{offset[i]-head[i]:.6f}" for i in range(3))
+            self.request(command["key"], value)
+            applied.append(dict(key=command["key"], value=value))
+        self.scene_view = dict(headPosition=head, applied=applied)
         time.sleep(self.args.scene_settle)
         status = self.wait(lambda s: s.get("ready"), self.args.scene_timeout)
         print(f"Ready: {scene['name']}", flush=True)
@@ -260,6 +278,7 @@ def run(args, plan):
                 scene = next(item for item in args.scenes if item["name"] == case["scene"])
                 status = device.load_scene(scene)
                 write_json(directory / "scene.json", scene)
+                write_json(directory / "scene-view.json", device.scene_view)
                 verify_scene_view(device, scene, directory)
             if status.get("qualityLevels", 0) <= args.quality:
                 raise RuntimeError(f"Quality {args.quality} is not available.")
