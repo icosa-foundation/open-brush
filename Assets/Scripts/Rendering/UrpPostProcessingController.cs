@@ -142,7 +142,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
-            if (UsesEncodedBloom || BloomBenchmark.Enabled)
+            if (SessionMsaaLevel.HasValue)
             {
                 if (m_PreviousSimpleHdr) Shader.EnableKeyword("HDR_SIMPLE");
                 else Shader.DisableKeyword("HDR_SIMPLE");
@@ -414,12 +414,12 @@ namespace TiltBrush
             // In XR this must run before StartSubsystems allocates the eye surfaces.
             quality.PrepareSessionRendering();
             m_CurrentHdr = quality.SessionHdr;
-            UsesEncodedBloom = !m_CurrentHdr && (!BloomBenchmark.Enabled || BloomBenchmark.Settings.Encoded) &&
+            UsesEncodedBloom = !m_CurrentHdr && BloomBenchmark.Enabled && BloomBenchmark.Settings.Encoded &&
                 UrpEncodedBloomRendererFeature.IsConfigured(pipeline);
             // Save keyword state for every benchmark backend, including native LDR.
             m_PreviousSimpleHdr = Shader.IsKeywordEnabled("HDR_SIMPLE");
             m_PreviousEmulatedHdr = Shader.IsKeywordEnabled("HDR_EMULATED");
-            if (BloomBenchmark.Enabled && !UsesEncodedBloom)
+            if (!UsesEncodedBloom)
             {
                 Shader.DisableKeyword("HDR_SIMPLE");
                 Shader.DisableKeyword("HDR_EMULATED");

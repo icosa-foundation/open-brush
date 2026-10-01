@@ -12,8 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 834d4fddb4ee8a74c9458f52562d8a65, type: 3}
   m_Name: QualityLevels Mobile
   m_EditorClassIdentifier: 
-  m_MsaaLevel: 8
-  m_Hdr: 0
+  m_MsaaLevel: 4
+  m_Hdr: 1
   m_EyeTextureScale: 1
   m_qualityLevels:
   - m_Bloom: 0
@@ -52,7 +52,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 4
     m_FixedFoveationLevel: 2
-  - m_Bloom: 1
+  - m_Bloom: 3
     m_Fxaa: 0
     m_MaxLod: 200
     m_Anisotropic: 0
@@ -64,7 +64,7 @@ MonoBehaviour:
     m_MaxSimplificationUserStrokes: 2
     m_GpuLevel: 4
     m_FixedFoveationLevel: 1
-  - m_Bloom: 2
+  - m_Bloom: 3
     m_Fxaa: 0
     m_MaxLod: 200
     m_Anisotropic: 0

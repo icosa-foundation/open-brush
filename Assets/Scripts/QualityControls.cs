@@ -194,11 +194,6 @@ namespace TiltBrush
             if (m_SessionRenderingPrepared) return;
             m_SessionRenderingPrepared = true;
             m_enableHdr = AppQualityLevels.Hdr;
-#if UNITY_EDITOR
-            // Temporary LDR override for tuning mobile bloom in desktop Play mode.
-            m_enableHdr = false;
-            Debug.Log("[OB_EDITOR_LDR] HDR disabled for mobile bloom tuning.");
-#endif
             m_msaaLevel = App.UserConfig.Profiling.MsaaLevel > 0
                 ? App.UserConfig.Profiling.MsaaLevel : AppQualityLevels.MsaaLevel;
             float eyeScale = App.UserConfig.Profiling.EyeTextureScaling > 0
