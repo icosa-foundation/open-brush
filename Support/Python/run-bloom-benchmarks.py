@@ -79,6 +79,9 @@ class Device:
         return status
 
     def restart(self, expected_profile=None):
+        # Android can acknowledge a preferences save before its disk write settles.
+        # Do not kill the process immediately after the configure acknowledgement.
+        time.sleep(2)
         self.run("shell", "am", "force-stop", self.args.package)
         if self.args.activity:
             self.run("shell", "am", "start", "-n", self.args.activity)
