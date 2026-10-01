@@ -1097,6 +1097,7 @@ namespace TiltBrush
             var comm = m_OperationStack.Pop();
             comm.Undo();
             m_RedoStack.Push(comm);
+            SymmetryMirrors.SyncActiveToCurrentSettings();
             OperationStackChanged?.Invoke();
 
             if (invoke)
@@ -1110,6 +1111,7 @@ namespace TiltBrush
             var comm = m_RedoStack.Pop();
             comm.Redo();
             m_OperationStack.Push(comm);
+            SymmetryMirrors.SyncActiveToCurrentSettings();
             OperationStackChanged?.Invoke();
 
             if (invoke)
