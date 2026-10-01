@@ -65,12 +65,17 @@ def summarize(root):
                 deltas.append(report["appGpu"]["mean"] - baseline)
         dropped = []
         refresh = []
+        delivered_fps = []
+        cpu = []
         for _, report in runs:
             samples = report.get("samples", [])
             counts = [s["droppedFrames"] for s in samples if s.get("droppedFrames") is not None]
             if len(counts) > 1:
                 dropped.append(max(0, counts[-1] - counts[0]))
             refresh += [s["refreshHz"] for s in samples if s.get("refreshHz")]
+            if len(samples) > 1 and samples[-1]["elapsed"] > samples[0]["elapsed"]:
+                delivered_fps.append((len(samples)-1) / (samples[-1]["elapsed"]-samples[0]["elapsed"]))
+            cpu += [s["cpuFrameMs"] for s in samples if s.get("cpuFrameMs")]
         hz = statistics.mean(refresh) if refresh else None
         mean = statistics.mean(means)
         output.append(dict(profile=profile, fixture=fixture, levels=levels, downsample=downsample, runs=len(runs), meanAppGpuMs=mean,
@@ -78,6 +83,8 @@ def summarize(root):
                            meanBaselineDeltaMs=statistics.mean(deltas) if deltas else None,
                            baselinePairs=len(deltas), actualTargets=sorted(formats[group]),
                            refreshHz=hz, meanGpuHeadroomMs=1000 / hz - mean if hz else None,
+                           meanApplicationFps=statistics.mean(delivered_fps) if delivered_fps else None,
+                           meanCpuFrameMs=statistics.mean(cpu) if cpu else None,
                            droppedFrames=sum(dropped) if dropped else None,
                            droppedFrameCoverage=len(dropped)))
     return dict(profiles=output, invalidRuns=invalid, plannedRuns=len(plan["cases"]),
