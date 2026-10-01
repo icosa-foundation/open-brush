@@ -32,6 +32,32 @@ Defaults: 20s warmup, 30s sampling, 15s cooldown, three repeats, sparse/dense/wh
 fixtures, recorded randomized ordering. The output directory must be new.
 The same installed app restarts for startup changes; no rebuild is needed.
 
+## Gallery scenes
+
+Download each gallery sketch's original TILT format and put a uniquely named copy
+in the headset's Open Brush/Sketches folder. This preserves the original brushes.
+Pass --scenes-json with an array such as:
+
+~~~json
+[{"name":"Galactic Cat","assetId":"5OP5JSQZZn-","load":"load.named","value":"Benchmark_Galactic_Cat","minimumColoredPixels":20000}]
+~~~
+
+The runner reloads each scene after every profile restart. An optional view array
+contains key/value commands: user.move.to, user.look.at, user.turn.y or scene.scale.to.
+Verify the viewpoint in loaded-scene.png. minimumColoredPixels requires Pillow and
+rejects empty views of colorful scenes; omit it for monochrome scenes. This check
+does not establish visual parity between bloom implementations.
+
+~~~powershell
+python Support/Python/run-bloom-benchmarks.py --serial DEVICE_SERIAL --package PACKAGE --scenes-json scenes.json --profiles encoded-off encoded-both off-hdr32-opaque native-hdr32-opaque --quality 4 --repeats 2
+~~~
+
+Choose an available quality level explicitly. In the current mobile settings,
+level 4 uses full viewport resolution without fixed foveation; level 0 uses an
+80% viewport scale and medium fixed foveation. Automatic quality is disabled during
+capture. Summaries keep scenes separate and report GPU headroom, actual application
+frame rate and dropped frames. CPU frame timing can include waits for the GPU.
+
 ## Profiles
 
 | Profile | Buffers | Bloom |
@@ -49,7 +75,9 @@ The same installed app restarts for startup changes; no rebuild is needed.
 
 Compare encoded modes with encoded-off; native modes with their matching off
 baseline. HDR precision is a request: Unity's alpha requirements may change the
-format. The opaque HDR32 profiles configure the public camera target descriptor as\nR11G11B10 with alpha output disabled, when that format supports the session MSAA.\nThese profiles are for opaque VR output. Normal app settings are unaffected. Reports record actual targets, dimensions, slices, MSAA, viewport/pipeline
+format. The opaque HDR32 profiles configure the public camera target descriptor as
+R11G11B10 with alpha output disabled, when that format supports the session MSAA.
+These profiles are for opaque VR output. Normal app settings are unaffected. Reports record actual targets, dimensions, slices, MSAA, viewport/pipeline
 scale, shader LOD and refresh rate. Quality is frozen during sampling.
 
 Native defaults: two iterations, quarter resolution, low-quality filtering,
@@ -65,7 +93,7 @@ The old desktop bloom is not ported and cannot be measured in this series.
 
 Fixtures use shipping materials independently of m_TestingMaterial and deterministic
 camera-relative quads on unused layer 31. White uses Flat, other fixtures use Light.
-Scene uses the currently loaded sketch; configure a startup sketch for repeatability.
+Scene uses the loaded sketch; use --scenes-json to reload it for repeatability.
 Stop restores camera masks, clear settings and quality. No sketches are saved.
 
 ## Runtime HTTP API
@@ -97,7 +125,8 @@ HDR benchmark profile overrides it.
 ## Reports and traces
 
 Each run saves raw JSON, thermal snapshots, logcat, screenshot and validation
-issues. With optional Pillow installed, synthetic-fixture screenshots also get\na stereo halo-balance check to flag missing-eye glow. Summary CSV contains GPU mean/median/p95, wall-frame p95, GPU coverage,
+issues. With optional Pillow installed, synthetic-fixture screenshots also get
+a stereo halo-balance check to flag missing-eye glow. Summary CSV contains GPU mean/median/p95, wall-frame p95, GPU coverage,
 refresh rate and dropped-frame delta. XR GPU timing may be unavailable: null,
 never fake zero. Unity Frame Timing statistics are enabled, with fallback CPU/GPU
 samples retained separately. Timing samples may repeat; wall time includes pacing.
