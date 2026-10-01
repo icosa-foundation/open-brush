@@ -25,7 +25,8 @@ namespace TiltBrush
             public bool NativeQuarter = true, NativeHighQuality;
             public float Amount = 1, Threshold, NativeScatter = 0.35f, NativeIntensity = 1;
             [JsonIgnore] public bool Hdr => Profile.StartsWith("native-hdr") || Profile.StartsWith("off-hdr");
-            [JsonIgnore] public int Precision => Profile.EndsWith("64") ? 64 : 32;
+            [JsonIgnore] public int Precision => Profile.Contains("hdr64") ? 64 : 32;
+            [JsonIgnore] public bool Opaque => Profile.EndsWith("-opaque");
             [JsonIgnore] public bool Encoded => Profile.StartsWith("encoded");
             [JsonIgnore] public bool Off => Profile.StartsWith("off") || Profile == "encoded-off";
         }
@@ -40,7 +41,8 @@ namespace TiltBrush
         public static volatile string ResultJson = "{\"state\":\"no result\"}";
         private static readonly string[] kProfiles = {
             "default", "off-ldr", "encoded-off", "encoded-both", "encoded-alternate", "encoded-reproject",
-            "native-ldr", "off-hdr32", "native-hdr32", "off-hdr64", "native-hdr64"
+            "native-ldr", "off-hdr32", "native-hdr32", "off-hdr64", "native-hdr64",
+            "off-hdr32-opaque", "native-hdr32-opaque"
         };
         private string m_State = "idle", m_Token = "", m_Error = "";
         private double m_Start, m_LastPublish;
@@ -248,11 +250,11 @@ namespace TiltBrush
         public void RecordTarget(Camera camera, TextureDescInfo info)
         {
             m_Targets[camera] = new {
-                camera = camera.name, format = info.format, info.width, info.height, info.slices, info.msaa, info.vrUsage
+                camera = camera.name, format = info.format, info.width, info.height, info.slices, info.msaa, info.vrUsage, info.alphaOutput
             };
         }
 
-        public struct TextureDescInfo { public string format, vrUsage; public int width, height, slices, msaa; }
+        public struct TextureDescInfo { public string format, vrUsage; public int width, height, slices, msaa; public bool alphaOutput; }
 
         private void LateUpdate()
         {
@@ -316,7 +318,8 @@ namespace TiltBrush
                     ? UrpEncodedBloomRendererFeature.LastPassCount : 0,
                 targets = m_Targets.Values.ToArray(), eyeScale = XRSettings.eyeTextureResolutionScale,
                 viewportScale = XRSettings.renderViewportScale, pipelineScale = pipeline?.renderScale,
-                hdrPrecision = pipeline?.hdrColorBufferPrecision.ToString(), quality = QualityControls.m_Instance?.QualityLevel,
+                hdrPrecision = pipeline?.hdrColorBufferPrecision.ToString(),
+                postProcessAlpha = pipeline?.allowPostProcessAlphaOutput, opaqueBenchmark = Settings.Opaque, quality = QualityControls.m_Instance?.QualityLevel,
                 qualityLevels = QualityControls.m_Instance?.AppQualityLevels.Length,
                 automaticQuality = QualityControls.m_Instance?.AutomaticQualityEnabled,
                 actualEncodedAmount = controller?.EncodedBloomAmount, actualEncodedThreshold = controller?.EncodedBloomThreshold,

@@ -13,6 +13,7 @@ BASELINES = {
     "native-ldr": "off-ldr",
     "native-hdr32": "off-hdr32",
     "native-hdr64": "off-hdr64",
+    "native-hdr32-opaque": "off-hdr32-opaque",
 }
 
 

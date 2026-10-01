@@ -44,11 +44,12 @@ The same installed app restarts for startup changes; no rebuild is needed.
 | native-ldr | LDR | Native URP |
 | off-hdr32 / off-hdr64 | Requested HDR precision | Disabled |
 | native-hdr32 / native-hdr64 | Requested HDR precision | Native URP |
+| off-hdr32-opaque / native-hdr32-opaque | HDR32 with post alpha disabled | Disabled / Native URP |
 | default | Normal settings | Removes benchmark startup override |
 
 Compare encoded modes with encoded-off; native modes with their matching off
 baseline. HDR precision is a request: Unity's alpha requirements may change the
-format. Reports record actual targets, dimensions, slices, MSAA, viewport/pipeline
+format. The opaque HDR32 profiles configure the public camera target descriptor as\nR11G11B10 with alpha output disabled, when that format supports the session MSAA.\nThese profiles are for opaque VR output. Normal app settings are unaffected. Reports record actual targets, dimensions, slices, MSAA, viewport/pipeline
 scale, shader LOD and refresh rate. Quality is frozen during sampling.
 
 Native defaults: two iterations, quarter resolution, low-quality filtering,

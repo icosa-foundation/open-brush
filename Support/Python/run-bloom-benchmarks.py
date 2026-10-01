@@ -17,6 +17,7 @@ from pathlib import Path
 PROFILES = [
     "off-ldr", "encoded-off", "encoded-both", "encoded-alternate", "encoded-reproject", "native-ldr",
     "off-hdr32", "native-hdr32", "off-hdr64", "native-hdr64",
+    "off-hdr32-opaque", "native-hdr32-opaque",
 ]
 
 
@@ -115,6 +116,9 @@ def validate_result(result, case):
     expected_hdr = "hdr" in case["profile"]
     if metadata.get("sessionHdr") != expected_hdr:
         problems.append("HDR mismatch")
+    if case["profile"].endswith("-opaque") and not any(
+            target.get("format") == "B10G11R11_UFloatPack32" for target in metadata.get("targets", [])):
+        problems.append("opaque HDR32 format unavailable")
     if metadata.get("automaticQuality"):
         problems.append("automatic quality enabled")
     encoded = case["profile"].startswith("encoded")

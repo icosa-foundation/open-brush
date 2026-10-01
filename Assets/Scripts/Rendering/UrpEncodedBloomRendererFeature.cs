@@ -66,6 +66,21 @@ namespace TiltBrush
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             var controller = UrpPostProcessingController.Instance;
+            if (BloomBenchmark.Enabled && BloomBenchmark.Settings.Opaque && controller != null &&
+                controller.SessionHdr && renderingData.cameraData.cameraType == CameraType.Game &&
+                renderingData.cameraData.camera.targetTexture == null)
+            {
+                // Configure the public camera descriptor before URP allocates RenderGraph targets.
+                // Framebuffer-alpha preservation otherwise forces HDR32 requests into RGBA16F.
+                var descriptor = renderingData.cameraData.cameraTargetDescriptor;
+                descriptor.graphicsFormat = GraphicsFormat.B10G11R11_UFloatPack32;
+                if (SystemInfo.IsFormatSupported(descriptor.graphicsFormat, GraphicsFormatUsage.Blend) &&
+                    SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor) == descriptor.msaaSamples)
+                {
+                    renderingData.cameraData.cameraTargetDescriptor = descriptor;
+                    renderingData.cameraData.isAlphaOutputEnabled = false;
+                }
+            }
             if (BloomBenchmark.Enabled && controller != null && !renderingData.cameraData.isSceneViewCamera)
                 renderer.EnqueuePass(m_Diagnostics);
             if (controller == null || !controller.UsesEncodedBloom || m_Material == null ||
@@ -97,7 +112,8 @@ namespace TiltBrush
                 var desc = graph.GetTextureDesc(resources.activeColorTexture);
                 BloomBenchmark.Instance.RecordTarget(camera, new BloomBenchmark.TextureDescInfo {
                     format = desc.format.ToString(), width = desc.width, height = desc.height,
-                    slices = desc.slices, msaa = (int)desc.msaaSamples, vrUsage = desc.vrUsage.ToString()
+                    slices = desc.slices, msaa = (int)desc.msaaSamples, vrUsage = desc.vrUsage.ToString(),
+                    alphaOutput = frameData.Get<UniversalCameraData>().isAlphaOutputEnabled
                 });
             }
         }
