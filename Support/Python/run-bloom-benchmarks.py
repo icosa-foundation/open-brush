@@ -95,10 +95,13 @@ class Device:
         else:
             self.run("shell", "monkey", "-p", self.args.package,
                      "-c", "android.intent.category.LAUNCHER", "1")
-        return self.wait(lambda s: s.get("state") == "idle" and s.get("ready") and
+        self.wait(lambda s: s.get("state") == "idle" and s.get("ready") and
                          s.get("token") == "" and
                          (expected_profile is None or s.get("active", {}).get("Profile") == expected_profile),
                          self.args.launch_timeout)
+        # Initial scene setup can still be deferred after the first ready publication.
+        time.sleep(self.args.startup_settle)
+        return self.wait(lambda s: s.get("ready"), self.args.launch_timeout)
 
     def load_scene(self, scene):
         print(f"Loading {scene['name']}", flush=True)
@@ -138,6 +141,20 @@ def capture_text(device, path, *arguments):
         path.write_text(device.run(*arguments), encoding="utf-8")
     except (subprocess.SubprocessError, OSError) as error:
         path.write_text(f"Unavailable: {error}", encoding="utf-8")
+
+
+def verify_scene_view(device, scene, directory):
+    image_path = directory / "loaded-scene.png"
+    image_path.write_bytes(device.run("exec-out", "screencap", "-p", binary=True))
+    minimum = scene.get("minimumColoredPixels")
+    if minimum is None:
+        return
+    from PIL import Image
+    with Image.open(image_path) as shot:
+        colored = sum(s > 96 and v > 64 for h, s, v in shot.convert("HSV").getdata())
+    write_json(directory / "scene-view-check.json", dict(coloredPixels=colored, minimum=minimum))
+    if colored < minimum:
+        raise RuntimeError(f"{scene['name']} view has {colored} colored pixels, below {minimum}; refusing an empty or misplaced scene capture.")
 
 
 def validate_result(result, case):
@@ -243,6 +260,7 @@ def run(args, plan):
                 scene = next(item for item in args.scenes if item["name"] == case["scene"])
                 status = device.load_scene(scene)
                 write_json(directory / "scene.json", scene)
+                verify_scene_view(device, scene, directory)
             if status.get("qualityLevels", 0) <= args.quality:
                 raise RuntimeError(f"Quality {args.quality} is not available.")
             tune_token = f"tune{token}"
@@ -350,6 +368,7 @@ def parser():
     p.add_argument("--duration", type=float, default=30)
     p.add_argument("--cooldown", type=float, default=15)
     p.add_argument("--launch-timeout", type=float, default=180)
+    p.add_argument("--startup-settle", type=float, default=5)
     p.add_argument("--quality", type=int, default=0)
     p.add_argument("--msaa", type=int, choices=[1, 2, 4, 8], default=4)
     p.add_argument("--eye-scale", type=float, default=1)
@@ -390,7 +409,7 @@ def main():
         p.error("repeats must be positive and quality non-negative")
     for name, low, high in [("warmup", 0, 300), ("duration", 1, 300), ("cooldown", 0, 3600),
                            ("eye_scale", 0.25, 2), ("amount", 0, 1), ("native_scatter", 0, 1),
-                           ("scene_timeout", 5, 1800), ("scene_settle", 0, 300)]:
+                           ("scene_timeout", 5, 1800), ("scene_settle", 0, 300), ("startup_settle", 0, 60)]:
         value = getattr(args, name)
         if not math.isfinite(value) or not low <= value <= high:
             p.error(f"{name} must be finite in {low}..{high}")
