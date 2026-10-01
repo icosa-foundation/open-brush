@@ -18,16 +18,16 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    /// Opt-in editing of symmetry peers: when a stroke drawn with symmetry is edited, the strokes
-    /// the symmetry created alongside it are edited to match.
+    /// Editing of symmetry peers: when a stroke owned by a linked mirror is edited, the other
+    /// members of its group are edited to match.
     ///
     /// This is the one place tools ask about peers, so that adding peer awareness to a tool is a
     /// call to WithPeers() (for edits that treat strokes as a set, like deletion or recolouring)
     /// or to GatherPeerTransforms() (for edits that move strokes, where each peer needs the
     /// mirrored version of the transform).
     ///
-    /// Off by default. Toggle it in the mirror settings popup or through the
-    /// symmetry.peerediting API command. The setting lasts only for this run.
+    /// There is no switch: a stroke has peers exactly when a linked mirror owns it, and strokes
+    /// drawn with plain symmetry have none. See SymmetryMirrors.
     public static class SymmetryPeerEditing
     {
         /// Captures a group's membership so an independent spatial edit can break its links
@@ -61,12 +61,11 @@ namespace TiltBrush
         }
 
         /// A spatial edit preserves a group only when one member was edited directly and every
-        /// other member received the corresponding peer edit under the active mirror.
+        /// other member received the corresponding peer edit.
         internal static bool CanPreserveLink(SymmetryStrokeGroup group,
             HashSet<Stroke> direct, HashSet<Stroke> propagated)
         {
-            if (group == null || group.Count < 2 ||
-                !SymmetryMirrors.IsActiveForEditing(group.Mirror)) { return false; }
+            if (group == null || group.Count < 2 || group.Mirror == null) { return false; }
             int directCount = 0;
             foreach (var stroke in group.Strokes)
             {
@@ -76,29 +75,17 @@ namespace TiltBrush
             return directCount == 1;
         }
 
-        private static bool m_Enabled;
+        /// True when a linked mirror owns this stroke, so edits to it reach its peers.
+        public static bool IsLinked(Stroke stroke) => stroke?.SymmetryPeerGroup?.Mirror != null;
 
-        public static bool Enabled
-        {
-            get { return m_Enabled; }
-            set
-            {
-                if (!value) { SymmetryMirrorMove.End(); }
-                m_Enabled = value;
-            }
-        }
-
-        /// The strokes the symmetry created alongside this one; empty when peer editing is off.
+        /// The other members of this stroke's group; empty for a stroke no linked mirror owns.
+        /// Works whichever mirror is active: a mirror's own settings say how its strokes relate.
         ///
         /// Erased strokes are left out. They are invisible, and the edits tools make - recreating
         /// geometry, moving a stroke between canvases - would bring one back.
         public static IEnumerable<Stroke> PeersOf(Stroke stroke)
         {
-            if (!Enabled || stroke?.SymmetryPeerGroup?.Mirror == null ||
-                !SymmetryMirrors.IsActiveForEditing(stroke.SymmetryPeerGroup.Mirror))
-            {
-                yield break;
-            }
+            if (!IsLinked(stroke)) { yield break; }
             foreach (var peer in stroke.SymmetryPeers)
             {
                 if (peer.IsGeometryEnabled) { yield return peer; }
@@ -106,7 +93,7 @@ namespace TiltBrush
         }
 
         /// The passed strokes plus their symmetry peers, without duplicates. Returns the strokes
-        /// unchanged when peer editing is off, so callers can use it unconditionally.
+        /// unchanged for strokes no linked mirror owns, so callers can use it unconditionally.
         public static List<Stroke> WithPeers(IEnumerable<Stroke> strokes)
         {
             var result = new List<Stroke>();
@@ -120,7 +107,7 @@ namespace TiltBrush
         }
 
         /// The symmetry peers of the passed strokes that aren't themselves in the set, for edits
-        /// that already handle the strokes they were given. Empty when peer editing is off.
+        /// that already handle the strokes they were given. Empty for unlinked strokes.
         public static List<Stroke> PeersOutside(IEnumerable<Stroke> strokes)
         {
             var all = new List<Stroke>();
@@ -167,8 +154,7 @@ namespace TiltBrush
         {
             toPeer = TrTransform.identity;
             var group = stroke?.SymmetryPeerGroup;
-            if (group == null || peer == null ||
-                !SymmetryMirrors.IsActiveForEditing(group.Mirror) ||
+            if (group?.Mirror == null || peer == null ||
                 !ReferenceEquals(group, peer.SymmetryPeerGroup))
             {
                 return false;
@@ -396,7 +382,7 @@ namespace TiltBrush
 
         /// For every peer outside the passed set, the repaint values that keep it consistent with
         /// the stroke it belongs with. The four out lists are parallel, and all are left empty
-        /// when peer editing is off.
+        /// for strokes no linked mirror owns.
         ///
         /// The value lists are parallel to 'strokes', as RepaintStrokeCommand takes them.
         public static void GatherPeerRepaints(
@@ -408,7 +394,6 @@ namespace TiltBrush
             outColors.Clear();
             outGuids.Clear();
             outSizes.Clear();
-            if (!Enabled) { return; }
 
             var handled = new HashSet<Stroke>(new ReferenceComparer<Stroke>());
             foreach (var stroke in strokes)
@@ -435,15 +420,14 @@ namespace TiltBrush
         /// that it mirrors xf_CS being applied to the stroke it belongs with. Strokes in the
         /// passed set are skipped: an edit already moves those directly.
         ///
-        /// outPeers and outTransforms are parallel, and both are left empty when peer editing is
-        /// off, so callers can gather unconditionally and apply what they get.
+        /// outPeers and outTransforms are parallel, and both are left empty for strokes no linked
+        /// mirror owns, so callers can gather unconditionally and apply what they get.
         public static void GatherPeerTransforms(
             IEnumerable<Stroke> strokes, TrTransform xf_CS,
             List<Stroke> outPeers, List<TrTransform> outTransforms)
         {
             outPeers.Clear();
             outTransforms.Clear();
-            if (!Enabled) { return; }
 
             var handled = new HashSet<Stroke>(new ReferenceComparer<Stroke>());
             foreach (var stroke in strokes)

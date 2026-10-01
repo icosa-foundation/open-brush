@@ -722,7 +722,6 @@ namespace TiltBrush
             // follow, and parking peers costs about what selecting them does.
             TrTransform selectionXf = SelectionTransform;
             bool wantPeerPreview = HasSelection && m_SelectedStrokes.Count > 0 &&
-                SymmetryPeerEditing.Enabled &&
                 (selectionXf != TrTransform.identity || SymmetryPeerPreview.IsShowing ||
                  (m_bSelectionWidgetNeedsUpdate &&
                   m_SelectionJoinTransforms.Values.Any(xf => xf != TrTransform.identity)));

@@ -44,7 +44,6 @@ namespace TiltBrush
         public static void Show(IEnumerable<Stroke> strokes)
         {
             Hide();
-            if (!SymmetryPeerEditing.Enabled) { return; }
 
             var handled = new HashSet<Stroke>(new ReferenceComparer<Stroke>());
             foreach (var stroke in strokes)

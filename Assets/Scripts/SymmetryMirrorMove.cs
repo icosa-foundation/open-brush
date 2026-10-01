@@ -43,9 +43,10 @@ namespace TiltBrush
         public static void Begin()
         {
             End();
-            if (!SymmetryPeerEditing.Enabled || SymmetryMirrors.Active == null) { return; }
+            // A linked mirror always carries its strokes; plain symmetry has none to carry.
+            if (SymmetryMirrors.Showing == null) { return; }
             var pm = PointerManager.m_Instance;
-            m_Start = SymmetrySettingsSnapshot.FromCurrentSettings();
+            m_Start = SymmetrySettingsSnapshot.FromCurrentSettings(SymmetryMirrors.Showing.Canvas);
             if (m_Start.Mode != PointerManager.SymmetryMode.SinglePlane &&
                 m_Start.Mode != PointerManager.SymmetryMode.MultiMirror) { return; }
             m_Mirror = SymmetryMirrors.Active;
@@ -82,8 +83,8 @@ namespace TiltBrush
         {
             if (!IsMoving) { return; }
             var pm = PointerManager.m_Instance;
-            var current = SymmetrySettingsSnapshot.FromCurrentSettings();
-            if (!SymmetryPeerEditing.Enabled || !ReferenceEquals(m_Mirror, SymmetryMirrors.Active) ||
+            var current = SymmetrySettingsSnapshot.FromCurrentSettings(m_Mirror.Canvas);
+            if (!ReferenceEquals(m_Mirror, SymmetryMirrors.Active) ||
                 !m_Start.HasCompatibleTopology(current) || m_TransformEach != pm.m_SymmetryTransformEach ||
                 m_TransformEachAfter != pm.m_SymmetryTransformEachAfter)
             {
@@ -99,7 +100,7 @@ namespace TiltBrush
         {
             if (!IsMoving) { return; }
             Update();
-            if (IsMoving) { Finish(SymmetrySettingsSnapshot.FromCurrentSettings()); }
+            if (IsMoving) { Finish(SymmetrySettingsSnapshot.FromCurrentSettings(m_Mirror.Canvas)); }
         }
 
         private static void Finish(SymmetrySettingsSnapshot settings)

@@ -60,7 +60,7 @@ namespace TiltBrush
             if (linkPeers && stroke.SymmetryPeerGroup != null)
             {
                 var group = stroke.SymmetryPeerGroup;
-                if (SymmetryPeerEditing.Enabled && CanSnipPeers(stroke))
+                if (CanSnipPeers(stroke))
                 {
                     var splitGroup = new SymmetryStrokeGroup(group.Mirror);
                     m_NewStroke.JoinSymmetryGroup(splitGroup, stroke.SymmetryPointerIndex);
@@ -79,7 +79,7 @@ namespace TiltBrush
         private static bool CanSnipPeers(Stroke stroke)
         {
             var group = stroke.SymmetryPeerGroup;
-            if (group.Count < 2 || !SymmetryMirrors.IsActiveForEditing(group.Mirror))
+            if (group.Count < 2 || group.Mirror == null)
             {
                 return false;
             }

@@ -269,23 +269,12 @@ namespace TiltBrush
                 item.stroke.JoinSymmetryGroup(groups[item.groupId - 1], item.pointerIndex);
             }
 
-            // Restore the mirror that was active when saved; older/incomplete tables fall back
-            // to the newest linked mirror.
-            if (SymmetryMirrors.Active == null)
+            // Restore the mirror that was active when saved. None means the sketch was saved
+            // with plain symmetry, and an additive load keeps whatever is active already.
+            if (SymmetryMirrors.Active == null &&
+                activeMirrorId > 0 && activeMirrorId <= mirrors.Count)
             {
-                if (activeMirrorId > 0 && activeMirrorId <= mirrors.Count)
-                {
-                    SymmetryMirrors.Active = mirrors[(int)activeMirrorId - 1];
-                    return;
-                }
-                for (int i = groups.Length - 1; i >= 0; --i)
-                {
-                    if (groups[i].Mirror != null)
-                    {
-                        SymmetryMirrors.Active = groups[i].Mirror;
-                        break;
-                    }
-                }
+                SymmetryMirrors.Active = mirrors[(int)activeMirrorId - 1];
             }
         }
 

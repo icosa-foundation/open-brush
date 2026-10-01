@@ -162,8 +162,7 @@ namespace TiltBrush
             foreach (var group in affectedGroups)
             {
                 var members = group.Strokes.ToArray();
-                bool matching = SymmetryPeerEditing.Enabled &&
-                    SymmetryMirrors.IsActiveForEditing(group.Mirror) &&
+                bool matching = group.Mirror != null &&
                     !unmirroredGroups.Contains(group) &&
                     members.All(member => replacements.ContainsKey(member)) &&
                     replacements[members[0]].Count > 0 &&

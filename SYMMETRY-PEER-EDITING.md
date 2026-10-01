@@ -14,15 +14,16 @@ editor by the project owner (see *Verification status*). Treat the rest as unpro
 
 ## Turning it on
 
-Off by default. The *linking data* is always recorded; only the *editing behaviour* is
-opt-in, so enabling it later still works on strokes drawn earlier.
+There is no switch. Linking comes from the mirror: strokes drawn with a **linked mirror**
+are linked, strokes drawn with **plain** symmetry are ordinary strokes. See
+*Design decisions* below.
 
-- `Open Brush.cfg`: `"Flags": { "SymmetryPeerEditing": true }`
-- At runtime: `http://localhost:40074/api/v1?symmetry.peerediting=true`
-- In code: `SymmetryPeerEditing.Enabled`
-
-Related commands: `symmetry.mirror.new` (fork a mirror), `symmetry.mirror.recall=<n>`
-(bring an earlier one back, oldest first).
+- In VR: the "New linked mirror" button in the mirror options popup (`GlobalCommands.NewLinkedMirror`, 6008).
+- API: `symmetry.mirror.new` (create a linked mirror), `symmetry.mirror.recall=<n>`
+  (an earlier one, oldest first), `symmetry.mirror.fromselection` (the mirror owning the
+  last selected stroke), `symmetry.mirror.plain` (back to plain).
+- In code: `SymmetryMirrors.NewLinked/Recall/RecallFromStroke/UsePlain`. Each records an
+  `ActivateMirrorCommand`, so undo restores the active mirror and the widget.
 
 ---
 
@@ -47,11 +48,14 @@ pointer's stroke, **in the canvas space the strokes were drawn in**. Immutable a
 interned by value, so a sketch holds one per distinct configuration, not one per stroke.
 On a group it means *where these strokes actually are*; a mirror move rewrites it.
 
-**`SymmetryMirror`** — the thing the widget stands for, with a `Guid` that outlives any
-settings it happens to have. `SymmetryMirrors` is the registry: `Active` (what the widget
-shows, what new strokes link to), `All` (oldest first, kept forever — no deletion),
-`Create` (fork), `Recall` (make active + restore its settings, moves nothing),
-`NoteSettingsChanged` (called from `PointerManager.CalculateMirrors`).
+**`SymmetryMirror`** — a linked mirror: created only by explicit user action, with a
+`Guid` that outlives any settings it happens to have. Its `Settings` are its current state;
+changing them changes this mirror and carries its strokes, never forks a new one.
+`SymmetryMirrors` is the registry: `Active` (what the widget stands for, null = plain),
+`Showing` (Active, if the current mode is the mirror's), `LinkingMirror` (Showing, if
+drawing into its canvas), `All` (oldest first), and `NoteSettingsChanged` (called from
+`PointerManager.CalculateMirrors`: moves strokes for a count-preserving change, rebuilds
+groups for a count-changing one).
 
 Scripted and two-handed symmetry get a group but **no mirror** — the widget doesn't stand
 for them, so nothing can move them after the fact.
@@ -215,8 +219,15 @@ right, the core maths is right.
 ## Design decisions
 
 Answered by the project owner on 2026-10-01; these replace the open questions that stood here.
-**The implementation described above predates them** and still decides mirror identity by
-comparing settings, with a global peer-editing toggle. Rework it to match.
+
+**Implementation status.** First pass done (not yet compiled): explicit creation, plain as
+"no active mirror", peers from ownership alone (no active-mirror or mode gating), undoable
+activation, settings changes moving or regenerating a linked mirror's strokes, and Bring to
+User / Reset to Home carrying them. Still to do: the mirror list UI (with its "Plain" entry)
+and activating a mirror from a stroke in VR — both need prefab work, and are API-only
+for now; spin; replacing "detach independent edits" (decision 6); per-pointer colours when
+regenerating (copies take the source stroke's colour). Sections above that describe the
+global toggle or settings-based forking are out of date.
 
 ### Principle
 

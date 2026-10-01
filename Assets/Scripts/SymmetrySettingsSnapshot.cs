@@ -58,7 +58,9 @@ namespace TiltBrush
         public List<TrTransform> PointerTransforms = new List<TrTransform>();
 
         /// Takes a snapshot of the symmetry settings currently in effect.
-        public static SymmetrySettingsSnapshot FromCurrentSettings()
+        /// PointerTransforms are expressed in 'canvas', the active canvas by default. A linked
+        /// mirror passes its own canvas, which need not be the one being drawn into.
+        public static SymmetrySettingsSnapshot FromCurrentSettings(CanvasScript canvas = null)
         {
             var pm = PointerManager.m_Instance;
             if (pm == null) { return null; }
@@ -85,7 +87,7 @@ namespace TiltBrush
             if (snapshot.Mode == PointerManager.SymmetryMode.SinglePlane ||
                 snapshot.Mode == PointerManager.SymmetryMode.MultiMirror)
             {
-                snapshot.PointerTransforms = pm.GetSymmetryTransforms_CS();
+                snapshot.PointerTransforms = pm.GetSymmetryTransforms_CS(canvas);
             }
 
             var widget = pm.SymmetryWidget;
@@ -140,6 +142,26 @@ namespace TiltBrush
                 ? WallpaperGroup == other.WallpaperGroup &&
                   WallpaperRepeatX == other.WallpaperRepeatX && WallpaperRepeatY == other.WallpaperRepeatY
                 : PointFamily == other.PointFamily && PointOrder == other.PointOrder;
+        }
+
+        /// The settings other than where the widget is. Pose is compared by the mirror move
+        /// itself: recomputing it through the canvas pose isn't exact.
+        public bool SameParameters(SymmetrySettingsSnapshot other)
+        {
+            return other != null &&
+                Mode == other.Mode &&
+                CustomType == other.CustomType &&
+                PointFamily == other.PointFamily &&
+                PointOrder == other.PointOrder &&
+                WallpaperGroup == other.WallpaperGroup &&
+                WallpaperRepeatX == other.WallpaperRepeatX &&
+                WallpaperRepeatY == other.WallpaperRepeatY &&
+                WallpaperScale == other.WallpaperScale &&
+                WallpaperScaleX == other.WallpaperScaleX &&
+                WallpaperScaleY == other.WallpaperScaleY &&
+                WallpaperSkewX == other.WallpaperSkewX &&
+                WallpaperSkewY == other.WallpaperSkewY &&
+                ScriptName == other.ScriptName;
         }
 
         /// Restores these settings, so that new strokes are created the same way as the
