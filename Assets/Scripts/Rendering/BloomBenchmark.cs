@@ -203,6 +203,7 @@ namespace TiltBrush
             {
                 if (!Enabled) throw new InvalidOperationException("Configure a benchmark profile and restart first.");
                 if (m_State == "warmup" || m_State == "sampling") throw new InvalidOperationException("Capture is running.");
+                if (!Ready) throw new InvalidOperationException("Wait for the drawing scene and active VR camera.");
                 Check(warmup, 0, 300, "warmup seconds");
                 Check(duration, 1, 300, "sample seconds");
                 if (!new[] { "scene", "sparse", "dense", "white" }.Contains(fixture))
@@ -288,6 +289,11 @@ namespace TiltBrush
             if (now - m_LastPublish >= 1) { m_LastPublish = now; Publish(); }
         }
 
+        private static bool Ready => App.Instance != null && App.VrSdk != null &&
+            App.CurrentState == App.AppState.Standard && QualityControls.m_Instance != null &&
+            UrpPostProcessingController.Instance?.SessionMsaaLevel != null &&
+            App.VrSdk.GetVrCamera() != null && App.VrSdk.GetVrCamera().isActiveAndEnabled;
+
         private object Snapshot()
         {
             var controller = UrpPostProcessingController.Instance;
@@ -295,7 +301,7 @@ namespace TiltBrush
             Bloom native = null;
             controller?.MainProfile?.TryGet(out native);
             return new {
-                schema = 1, state = m_State, token = m_Token, error = m_Error,
+                schema = 1, ready = Ready, state = m_State, token = m_Token, error = m_Error,
                 active = Settings, pending = s_Pending, restartRequired = s_Pending != null &&
                     (s_Pending.Profile != Settings.Profile || s_Pending.Msaa != Settings.Msaa || s_Pending.EyeScale != Settings.EyeScale),
                 profiles = kProfiles, samples = m_Samples.Count, fixture = m_Fixture,
