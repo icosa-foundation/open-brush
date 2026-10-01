@@ -212,17 +212,62 @@ right, the core maths is right.
 
 ---
 
-## Open design questions (for the project owner, not to be guessed at)
+## Design decisions
 
-1. **When does a mirror fork?** Today: explicit `symmetry.mirror.new`, plus one created
-   lazily on the first symmetric stroke. Everything else edits the active mirror. The trap:
-   draw an object, turn symmetry off, turn it on elsewhere, move the widget — and the first
-   object is dragged along. Candidates discussed: fork when symmetry is turned off and back
-   on (one session = one mirror); fork on a structural settings change; or a per-move
-   modifier that moves the widget without dragging strokes. Owner leaned toward "immediate,
-   but open to debate".
-2. **Count-changing settings** — regeneration is a separate feature with its own question:
-   what happens to copies the user has since edited by hand?
+Answered by the project owner on 2026-10-01; these replace the open questions that stood here.
+**The implementation described above predates them** and still decides mirror identity by
+comparing settings, with a global peer-editing toggle. Rework it to match.
+
+### Principle
+
+Mirror creation is controlled only by explicit user action; everything else follows from that.
+A mirror has a persistent identity and owns the peer groups drawn with it. Peer relationships
+come from that ownership, never from comparing symmetry settings. Peer editing is not a global
+setting: it is a property of the mirror (linked vs plain).
+
+- **Plain mirror:** today's symmetry. Strokes drawn with it are ordinary strokes.
+- **Linked mirror:** owns its strokes. Edits propagate across each group, and moving the mirror
+  moves its strokes.
+
+### Decisions
+
+1. **What creates a linked mirror:** a dedicated "New linked mirror" button. It always creates
+   a fresh linked mirror, even while another linked mirror is active. Nothing creates one
+   implicitly (drawing, widget moves, settings changes, navigation and undo never do).
+
+2. **Returning to plain symmetry:** the mirror list in the popup has a "Plain" entry alongside
+   the linked mirrors. Choosing it switches the widget to a plain mirror; linked mirrors keep
+   their strokes.
+
+3. **Getting back to an earlier linked mirror:** both routes:
+   - the mirror list in the mirror popup, and
+   - activating a mirror from one of its strokes.
+
+   Either makes that mirror active and moves the widget to its pose.
+
+4. **Turning symmetry off and on:** turning symmetry off only hides the mirror. Turning it back
+   on resumes the same linked mirror.
+
+5. **Settings that change the number of copies** (point order, wallpaper group, repeat counts)
+   on a linked mirror that already owns strokes: **regenerate the copies** to the new count.
+
+6. **Hand edits and regeneration:** within a linked group, every edit to one member always
+   applies to all other members. Copies are therefore always exact symmetric images of each
+   other, so regeneration simply rebuilds the group from one member under the new settings.
+   (Implication: the current "detach independent edits" behaviour, which breaks a link when an
+   edit can't be propagated, does not fit this model and should be revisited.)
+
+### Consequences agreed in discussion
+
+- Peer edits use the owning mirror's own current state, so they work whether or not that
+  mirror is active or in the current symmetry mode.
+- While a linked mirror is active, every widget move is a mirror move (including Bring to User,
+  snap home and spin). A plain mirror's widget moves freely.
+- Creating a mirror, switching the active mirror and moving a mirror are undoable commands;
+  undo restores recorded state rather than inferring it.
+- Old sketches load as plain. The saved mirror record gains a "linked" flag.
+- Revert d8b7fab "Reactivate the matching symmetry mirror after undo and redo"
+  (settings matching and tolerance), which this design supersedes.
 
 ---
 
