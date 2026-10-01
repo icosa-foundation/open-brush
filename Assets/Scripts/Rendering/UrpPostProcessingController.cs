@@ -67,6 +67,7 @@ namespace TiltBrush
         private AppQualitySettingLevels.BloomMode m_CurrentBloomMode =
             AppQualitySettingLevels.BloomMode.None;
         private float m_BloomAmount = 1f;
+        private float? m_RuntimeBloomThreshold;
         private readonly HashSet<Camera> m_ExplicitCaptureCameras = new HashSet<Camera>();
 
         public VolumeProfile MainProfile => m_RuntimeMainProfile;
@@ -246,6 +247,16 @@ namespace TiltBrush
                 return;
             }
 
+            ApplyBloomMode(m_CurrentBloomMode, m_CurrentHdr);
+        }
+
+        public void SetBloomThreshold(float threshold)
+        {
+            if (float.IsNaN(threshold) || float.IsInfinity(threshold) || threshold < 0f)
+            {
+                throw new ArgumentException("Bloom threshold must be finite and non-negative.", nameof(threshold));
+            }
+            m_RuntimeBloomThreshold = threshold;
             ApplyBloomMode(m_CurrentBloomMode, m_CurrentHdr);
         }
 
@@ -574,7 +585,8 @@ namespace TiltBrush
 
         private float GetBloomThreshold(bool hdrEnabled)
         {
-            float? configuredThreshold = App.UserConfig.PostProcessingFx.BloomThreshold;
+            float? configuredThreshold = m_RuntimeBloomThreshold ??
+                App.UserConfig.PostProcessingFx.BloomThreshold;
             if (configuredThreshold.HasValue && !float.IsNaN(configuredThreshold.Value) &&
                 !float.IsInfinity(configuredThreshold.Value))
             {

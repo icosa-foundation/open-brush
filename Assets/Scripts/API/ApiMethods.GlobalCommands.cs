@@ -542,6 +542,34 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         // }
 
+        [ApiEndpoint("bloom.amount", "Sets bloom amount from 0 (off) to 1 for this session", "1")]
+        public static string SetBloomAmount(float amount)
+        {
+            if (UrpPostProcessingController.Instance == null)
+                return "error: URP post-processing is not available.";
+            if (float.IsNaN(amount) || float.IsInfinity(amount) || amount < 0f || amount > 1f)
+                return "error: Bloom amount must be finite and between 0 and 1.";
+
+            UrpPostProcessingController.Instance.SetBloomAmount(amount);
+            return $"Bloom amount={amount}.";
+        }
+
+        [ApiEndpoint("bloom.threshold", "Sets a non-negative bloom threshold for this session", "0.5")]
+        public static string SetBloomThreshold(float threshold)
+        {
+            if (UrpPostProcessingController.Instance == null)
+                return "error: URP post-processing is not available.";
+            try
+            {
+                UrpPostProcessingController.Instance.SetBloomThreshold(threshold);
+            }
+            catch (System.ArgumentException e)
+            {
+                return $"error: {e.Message}";
+            }
+            return $"Bloom threshold={threshold}.";
+        }
+
         [ApiEndpoint("quality.get", "Returns the current quality level")]
         public static string GetQualityLevel()
         {
