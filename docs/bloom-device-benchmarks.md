@@ -116,3 +116,11 @@ python Support/Python/run-bloom-benchmarks.py --serial DEVICE_SERIAL --profiles 
 Trace output is saved per run. Compare traced cases with traced cases, and retain
 an untraced primary series. Keep headset wear, movement, charging/battery state
 and thermal conditions consistent.
+
+Summarize completed runs with:
+~~~powershell
+python Support/Python/summarize-bloom-benchmarks.py Temp/bloom-quest-results
+~~~
+This writes comparison.json with mean GPU costs, same-repeat baseline differences,
+actual targets and excluded invalid runs. GPU times are reported application costs,
+not isolated per-pass timestamps. Compare equal visual quality before choosing a mode.
