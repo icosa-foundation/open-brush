@@ -14,7 +14,6 @@
 
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 
 namespace TiltBrush
 {
@@ -141,36 +140,6 @@ namespace TiltBrush
             }
         }
 
-        /// Undo and redo can put the widget back where an earlier mirror had it - undoing a
-        /// widget move or a mode change - without anything telling the mirrors. Makes the newest
-        /// mirror that matches the current settings active again, so its strokes are linked once
-        /// more. Never creates a mirror; does nothing if the active one already matches.
-        public static void SyncActiveToCurrentSettings()
-        {
-            if (SymmetryMirrorMove.IsMoving) { return; }
-            var pm = PointerManager.m_Instance;
-            if (pm == null || pm.CurrentSymmetryMode == PointerManager.SymmetryMode.None) { return; }
-            var settings = SymmetrySettingsSnapshot.FromCurrentSettings();
-            var canvas = App.Scene.ActiveCanvas;
-            if (settings == null || Matches(m_Active, settings, canvas)) { return; }
-            for (int i = m_Order.Count - 1; i >= 0; --i)
-            {
-                if (Matches(m_Order[i], settings, canvas))
-                {
-                    Active = m_Order[i];
-                    return;
-                }
-            }
-        }
-
-        private static bool Matches(SymmetryMirror mirror, SymmetrySettingsSnapshot settings,
-            CanvasScript canvas)
-        {
-            return mirror?.Settings != null &&
-                (mirror.Canvas == null || mirror.Canvas == canvas) &&
-                CanShareSettings(mirror.Settings, settings);
-        }
-
         private static bool CanShareSettings(SymmetrySettingsSnapshot previous,
             SymmetrySettingsSnapshot current)
         {
@@ -181,23 +150,9 @@ namespace TiltBrush
             if (previous.PointerTransforms.Count != current.PointerTransforms.Count) { return false; }
             for (int i = 0; i < previous.PointerTransforms.Count; ++i)
             {
-                if (!SamePlacement(previous.PointerTransforms[i], current.PointerTransforms[i]))
-                {
-                    return false;
-                }
+                if (previous.PointerTransforms[i] != current.PointerTransforms[i]) { return false; }
             }
             return true;
-        }
-
-        /// Pointer transforms are recomputed through the canvas pose, so moving the scene or
-        /// restoring the widget by undo gives back the same placement only up to float noise.
-        private static bool SamePlacement(TrTransform a, TrTransform b)
-        {
-            const float kEpsilon = 1e-4f;
-            float distanceScale = Mathf.Max(1f, a.translation.magnitude);
-            return (a.translation - b.translation).magnitude <= kEpsilon * distanceScale &&
-                Mathf.Abs(Quaternion.Dot(a.rotation, b.rotation)) >= 1f - 1e-6f &&
-                Mathf.Abs(a.scale - b.scale) <= kEpsilon * Mathf.Max(1f, Mathf.Abs(a.scale));
         }
 
         public static SymmetryMirror Get(Guid id)

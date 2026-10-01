@@ -76,10 +76,8 @@ namespace TiltBrush
                 foreach (var link in m_SkippedLinks) { link.Break(); }
             }
             foreach (var group in m_Groups) { group.Restore(after: true); }
-            m_Mirror.Settings = m_After;
             m_WidgetMove.Redo();
-            // The widget stands for this mirror again, whatever was made active since.
-            SymmetryMirrors.Active = m_Mirror;
+            m_Mirror.Settings = m_After;
         }
 
         protected override void OnUndo()
@@ -87,13 +85,12 @@ namespace TiltBrush
             // Undo may interrupt a held mirror.
             if (!m_Complete) { SymmetryMirrorMove.End(); }
             foreach (var group in m_Groups) { group.Restore(after: false); }
-            m_Mirror.Settings = m_Before;
             m_WidgetMove.Undo();
+            m_Mirror.Settings = m_Before;
             if (m_BrokeSkippedLinks)
             {
                 foreach (var link in m_SkippedLinks) { link.Restore(); }
             }
-            SymmetryMirrors.Active = m_Mirror;
         }
     }
 } // namespace TiltBrush
