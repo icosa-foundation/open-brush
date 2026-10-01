@@ -43,7 +43,7 @@ def summarize(root):
             continue
         # The plan supplies repeat and requested pyramid settings; reports supply actual settings.
         case = cases[directory.name]
-        group = (profile, case["fixture"], case["levels"], case["downsample"])
+        group = (profile, case.get("scene", case["fixture"]), case["levels"], case["downsample"])
         groups[group].append((directory.name, report))
         for target in metadata.get("targets", []):
             formats[group].add(f"{target['format']} {target['width']}x{target['height']} slices={target['slices']} MSAA={target['msaa']}")
@@ -52,7 +52,7 @@ def summarize(root):
         for token, report in runs:
             case = cases[token]
             # Do not combine different pyramid/fixture settings when subtracting baselines.
-            by_repeat[(profile, case["repeat"], case["fixture"])] = report["appGpu"]["mean"]
+            by_repeat[(profile, case["repeat"], case.get("scene", case["fixture"]))] = report["appGpu"]["mean"]
     output = []
     for group, runs in sorted(groups.items()):
         profile, fixture, levels, downsample = group
@@ -60,13 +60,26 @@ def summarize(root):
         deltas = []
         for token, report in runs:
             case = cases[token]
-            baseline = by_repeat.get((BASELINES.get(profile), case["repeat"], case["fixture"]))
+            baseline = by_repeat.get((BASELINES.get(profile), case["repeat"], case.get("scene", case["fixture"])))
             if baseline is not None:
                 deltas.append(report["appGpu"]["mean"] - baseline)
-        output.append(dict(profile=profile, fixture=fixture, levels=levels, downsample=downsample, runs=len(runs), meanAppGpuMs=statistics.mean(means),
+        dropped = []
+        refresh = []
+        for _, report in runs:
+            samples = report.get("samples", [])
+            counts = [s["droppedFrames"] for s in samples if s.get("droppedFrames") is not None]
+            if len(counts) > 1:
+                dropped.append(max(0, counts[-1] - counts[0]))
+            refresh += [s["refreshHz"] for s in samples if s.get("refreshHz")]
+        hz = statistics.mean(refresh) if refresh else None
+        mean = statistics.mean(means)
+        output.append(dict(profile=profile, fixture=fixture, levels=levels, downsample=downsample, runs=len(runs), meanAppGpuMs=mean,
                            minRunMeanMs=min(means), maxRunMeanMs=max(means),
                            meanBaselineDeltaMs=statistics.mean(deltas) if deltas else None,
-                           baselinePairs=len(deltas), actualTargets=sorted(formats[group])))
+                           baselinePairs=len(deltas), actualTargets=sorted(formats[group]),
+                           refreshHz=hz, meanGpuHeadroomMs=1000 / hz - mean if hz else None,
+                           droppedFrames=sum(dropped) if dropped else None,
+                           droppedFrameCoverage=len(dropped)))
     return dict(profiles=output, invalidRuns=invalid, plannedRuns=len(plan["cases"]),
                 completedRuns=sum(len(runs) for runs in groups.values()) + len(invalid),
                 note="Total application GPU timing reported by XR; samples may repeat. Different visual bloom shapes are not matched quality.")

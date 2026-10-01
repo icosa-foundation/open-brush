@@ -28,7 +28,12 @@ def make_plan(args):
         settings = itertools.product(args.levels, args.downsample) if profile in ("encoded-both", "encoded-alternate", "encoded-reproject") else [(3, 2)]
         for levels, downsample in settings:
             for fixture in args.fixtures:
-                cases.append(dict(profile=profile, levels=levels, downsample=downsample, fixture=fixture))
+                scenes = args.scenes if fixture == "scene" and args.scenes else [None]
+                for scene in scenes:
+                    case = dict(profile=profile, levels=levels, downsample=downsample, fixture=fixture)
+                    if scene:
+                        case["scene"] = scene["name"]
+                    cases.append(case)
     plan = []
     for repeat in range(args.repeats):
         order = cases.copy()
@@ -94,6 +99,30 @@ class Device:
                          s.get("token") == "" and
                          (expected_profile is None or s.get("active", {}).get("Profile") == expected_profile),
                          self.args.launch_timeout)
+
+    def load_scene(self, scene):
+        self.request(scene["load"], scene["value"])
+        # A command acknowledgement is not a completed download or sketch load.
+        # Require an observed loading state, then several stable ready observations.
+        deadline = time.monotonic() + self.args.scene_timeout
+        saw_loading = False
+        ready_since = None
+        while time.monotonic() < deadline:
+            status = self.status()
+            if not status.get("ready"):
+                saw_loading = True
+                ready_since = None
+            elif saw_loading:
+                ready_since = ready_since or time.monotonic()
+                if time.monotonic() - ready_since >= 3:
+                    break
+            time.sleep(0.25)
+        else:
+            raise TimeoutError(f"Scene {scene['name']} did not complete an observed load; refusing to benchmark an unverified scene.")
+        for command in scene.get("view", []):
+            self.request(command["key"], command["value"])
+        time.sleep(self.args.scene_settle)
+        return self.wait(lambda s: s.get("ready"), self.args.scene_timeout)
 
 
 def write_json(path, data):
@@ -206,6 +235,10 @@ def run(args, plan):
             device.command("bloom.benchmark.configure",
                            [case["profile"], args.msaa, args.eye_scale, configure_token], configure_token)
             status = device.restart(case["profile"])
+            if case.get("scene"):
+                scene = next(item for item in args.scenes if item["name"] == case["scene"])
+                status = device.load_scene(scene)
+                write_json(directory / "scene.json", scene)
             if status.get("qualityLevels", 0) <= args.quality:
                 raise RuntimeError(f"Quality {args.quality} is not available.")
             tune_token = f"tune{token}"
@@ -258,7 +291,7 @@ def run(args, plan):
                     writer = csv.DictWriter(handle, fieldnames=list(rows[0]))
                     writer.writeheader()
                     writer.writerows(rows)
-                print(f"{number}/{len(plan)} {token} {case['profile']} {case['fixture']}: "
+                print(f"{number}/{len(plan)} {token} {case['profile']} {case.get('scene', case['fixture'])}: "
                       f"GPU mean={rows[-1]['gpu_mean_ms']} ms"
                       f"{'; '+', '.join(problems) if problems else ''}", flush=True)
                 stop_token = f"stop{token}"
@@ -302,6 +335,9 @@ def parser():
     p.add_argument("--port", type=int, default=40075, help="Unused local port forwarding to device port 40074")
     p.add_argument("--profiles", nargs="+", choices=PROFILES, default=PROFILES)
     p.add_argument("--fixtures", nargs="+", choices=["scene", "sparse", "dense", "white"], default=["sparse", "dense", "white"])
+    p.add_argument("--scenes-json", type=str, help="JSON array of named scenes: name, load (load.named/user/featured/liked/drive), value, optional view [{key,value}]. Reloaded after every profile restart.")
+    p.add_argument("--scene-timeout", type=float, default=300)
+    p.add_argument("--scene-settle", type=float, default=10, help="Seconds to settle after the sketch finishes loading")
     p.add_argument("--levels", nargs="+", type=int, choices=range(1, 6), default=[3])
     p.add_argument("--downsample", nargs="+", type=int, choices=[2, 3, 4], default=[2])
     p.add_argument("--repeats", type=int, default=3)
@@ -330,10 +366,27 @@ def parser():
 def main():
     p = parser()
     args = p.parse_args()
+    args.scenes = []
+    if args.scenes_json:
+        args.scenes = json.loads(Path(args.scenes_json).read_text(encoding="utf-8-sig"))
+        if not isinstance(args.scenes, list) or not args.scenes:
+            p.error("scenes-json must contain a nonempty array")
+        names = set()
+        for scene in args.scenes:
+            if not isinstance(scene, dict) or not isinstance(scene.get("name"), str) or not scene["name"] or scene["name"] in names:
+                p.error("each scene requires a unique nonempty name")
+            names.add(scene["name"])
+            if scene.get("load") not in ("load.named", "load.user", "load.featured", "load.liked", "load.drive") or "value" not in scene:
+                p.error("each scene requires a supported load endpoint and value")
+            for command in scene.get("view", []):
+                if command.get("key") not in ("scene.scale.to", "user.move.to", "user.turn.y") or "value" not in command:
+                    p.error("scene view supports scene.scale.to, user.move.to, user.turn.y")
+        args.fixtures = ["scene"]
     if args.repeats < 1 or args.quality < 0:
         p.error("repeats must be positive and quality non-negative")
     for name, low, high in [("warmup", 0, 300), ("duration", 1, 300), ("cooldown", 0, 3600),
-                           ("eye_scale", 0.25, 2), ("amount", 0, 1), ("native_scatter", 0, 1)]:
+                           ("eye_scale", 0.25, 2), ("amount", 0, 1), ("native_scatter", 0, 1),
+                           ("scene_timeout", 5, 1800), ("scene_settle", 0, 300)]:
         value = getattr(args, name)
         if not math.isfinite(value) or not low <= value <= high:
             p.error(f"{name} must be finite in {low}..{high}")
