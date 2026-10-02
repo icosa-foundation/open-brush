@@ -227,7 +227,8 @@ User / Reset to Home carrying them. A linked mirror can't spin or drift: release
 where it was let go (tossing it away to hide it still works), and `Spin` is ignored. Spinning
 would need strokes following a mirror in continuous motion, with no point to record a move. Still to do: the mirror list UI (with its "Plain" entry)
 and activating a mirror from a stroke in VR — both need prefab work, and are API-only
-for now; replacing "detach independent edits" (decision 6); per-pointer colours when
+for now; the canonical-stroke model (decisions 7-12), which replaces "detach independent
+edits"; per-pointer colours when
 regenerating (copies take the source stroke's colour). Sections above that describe the
 global toggle or settings-based forking are out of date.
 
@@ -267,8 +268,54 @@ setting: it is a property of the mirror (linked vs plain).
 6. **Hand edits and regeneration:** within a linked group, every edit to one member always
    applies to all other members. Copies are therefore always exact symmetric images of each
    other, so regeneration simply rebuilds the group from one member under the new settings.
-   (Implication: the current "detach independent edits" behaviour, which breaks a link when an
-   edit can't be propagated, does not fit this model and should be revisited.)
+   (Superseded in mechanism by decisions 7-12: copies are derived from one canonical stroke.)
+
+### Edits and links (2026-10-02)
+
+Background: links were broken as a side effect when an edit couldn't be mirrored (reshape
+with mismatched point counts, snip, crop, multi-copy selection moves, layer moves, mirror
+moves over partly-selected groups, join). That kept the shared mirror transforms truthful in
+the old model, where peer editing could be off and groups drift. With edits always applying
+to every member, it silently breaks the promise that a linked group stays symmetric.
+
+7. **One canonical stroke per group.** A linked group stores a single canonical stroke; every
+   other copy is an *instance*: a transform plus an optional colour override. Edits apply
+   once, to the canonical stroke, so links can't break as a side effect and there is nothing
+   to propagate. Per-copy jitter is carried by the instance (colour jitter in the colour
+   override, size jitter in the transform's scale, position jitter in its translation).
+
+8. **Runtime representation: derived now, instancing later.** Copies remain real `Stroke`
+   objects generated from the canonical stroke and their instance data, so tools, exporters,
+   Lua and multiplayer keep working. They are read-only: an edit aimed at a copy is redirected
+   to the canonical stroke through that copy's transform, and the copies are re-derived. Live
+   tools (drags) may update copies cheaply per frame and re-derive once on release. GPU
+   instancing is a later rendering optimisation behind the same data model.
+
+9. **File format: canonical + instances, and expanded copies.** The trailer stores the
+   canonical stroke's group and each instance (transform + colour override). Every copy is
+   also written as an ordinary stroke, marked as derived, so older readers and other .tilt
+   consumers see the full sketch. The loader discards the written copies and re-derives them.
+
+10. **Several copies of one group in a selection:** one copy drives. Selecting a second copy
+    of a group selects the group; the first-selected copy drives the move, the canonical
+    stroke follows it, and every copy moves as its mirror image would.
+
+11. **Moving a linked copy to another layer:** the whole group moves to that layer, under a
+    new linked mirror created there. (This is a mirror created as a consequence of a user
+    action rather than by "New linked mirror" — an intended exception to decision 1.)
+
+12. **Join:** depends on the pair.
+    - Two strokes from different groups of the same mirror: every pair of copies joins,
+      giving one linked group.
+    - A copy joined to another copy of the same group (across the mirror): the result is one
+      self-symmetric stroke, which leaves the group.
+    - Anything else (linked with unlinked, or different mirrors): refused.
+
+**Postponed:** an explicit "Unlink" action (per group or per copy), as a later expansion once
+the basics are complete and consistent.
+
+**Assumed, not yet asked:** the canonical stroke is the copy at pointer index 0 (the one the
+user drew); a duplicated or regenerated group's canonical stroke is its index-0 copy.
 
 ### Consequences agreed in discussion
 
