@@ -80,7 +80,6 @@ namespace TiltBrush
             }
         }
 
-
         [LuaDocsDescription("The current symmetry settings")]
         public static SymmetrySettingsApiWrapper current
         {
@@ -405,8 +404,8 @@ namespace TiltBrush
         public static TransformApiWrapper ApplyPoseAction(
             TransformApiWrapper pose, TransformApiWrapper frame, TransformApiWrapper action)
         {
-            var worldAction = action._TrTransform.TransformBy(frame._TrTransform);
-            return new TransformApiWrapper(worldAction * pose._TrTransform);
+            var frameAction = action._TrTransform.TransformBy(frame._TrTransform);
+            return new TransformApiWrapper(frameAction * pose._TrTransform);
         }
 
         [LuaDocsDescription("Reflects a pointer pose across a frame's local YZ plane")]

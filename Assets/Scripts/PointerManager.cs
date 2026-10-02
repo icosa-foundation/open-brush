@@ -1431,12 +1431,7 @@ namespace TiltBrush
             }
 
             bNeedsDummyPointer = true;
-            MatrixListApiWrapper matList = null;
-
-            if (result._Space == ScriptCoordSpace.Widget || result._Space == ScriptCoordSpace.Canvas)
-            {
-                matList = result as MatrixListApiWrapper;
-            }
+            MatrixListApiWrapper matList = result as MatrixListApiWrapper;
 
             for (var i = 0; i < transforms.Count; i++)
             {
