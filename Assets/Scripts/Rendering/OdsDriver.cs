@@ -192,7 +192,7 @@ namespace TiltBrush
                         proc.StartInfo.FileName = Path.GetFullPath(TiltBrush.FfmpegPipe.GetFfmpegExe());
                         proc.StartInfo.Arguments = System.String.Format(
                             @"-y -framerate {0} -f image2 -i ""{1}_%06d.png"" " +
-                            @"-c:v " + FfmpegPipe.GetVideoEncoder() + @" -r {0} -pix_fmt yuv420p ""{2}""",
+                            @"-c:v " + FfmpegPipe.GetVideoEncoder(offline: true) + @" -r {0} -pix_fmt yuv420p ""{2}""",
                             m_fps,
                             m_imagesPath,
                             m_videoPath);

@@ -280,7 +280,7 @@ namespace TiltBrush
                           bool blocking)
         {
             m_outputFile = "";
-            if (!LaunchEncoder(source, outputFile, width, height, sampleRate))
+            if (!LaunchEncoder(source, outputFile, width, height, sampleRate, blocking))
             {
                 // ffmpeg failed to launch
                 return false;
@@ -329,14 +329,20 @@ namespace TiltBrush
             return true;
         }
 
-        public static string GetVideoEncoder()
+        // offline: true when encode speed doesn't need to keep up with real time.
+        public static string GetVideoEncoder(bool offline)
         {
-            string friendlyName = App.UserConfig.Video.Encoder;
-            switch (friendlyName.ToLower())
+            var config = App.UserConfig.Video;
+            string preset = config.GetPreset(offline);
+            int crf = config.Quality;
+            switch (config.Encoder.ToLower())
             {
+                case "h.265":
+                    // hvc1 tag is required for playback in QuickTime and on Apple devices.
+                    return $"libx265 -preset {preset} -crf {crf} -tag:v hvc1 -x265-params log-level=error";
                 case "h.264":
                 default:
-                    return "libx264 -preset faster -crf 23";
+                    return $"libx264 -preset {preset} -crf {crf}";
             }
         }
 
@@ -344,7 +350,8 @@ namespace TiltBrush
                                    string outputFile,
                                    int width,
                                    int height,
-                                   float sampleRate)
+                                   float sampleRate,
+                                   bool offline)
         {
             string streamInput = @"-y -r {4} -f rawvideo -codec rawvideo -s {0}x{1} " +
                 @"-pixel_format rgba -i {2} ";
@@ -354,7 +361,7 @@ namespace TiltBrush
             // Helpful references:
             //  * https://trac.ffmpeg.org/wiki/Encode/H.264
             //  * https://trac.ffmpeg.org/wiki/Encode/YouTube
-            string streamOutput = @"-r {4} -threads 8 -c:v " + GetVideoEncoder() + " -pix_fmt yuv420p " +
+            string streamOutput = @"-r {4} -threads 8 -c:v " + GetVideoEncoder(offline) + " -pix_fmt yuv420p " +
                 @" ""{3}""";
 
             bool isReading = false;
