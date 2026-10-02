@@ -57,6 +57,10 @@ local function configurePointers()
     configuredBranches = Parameters.branches
 end
 
+function Start()
+    configuredBranches = -1
+end
+
 function Main()
     if Brush.triggerPressedThisFrame or not Brush.triggerIsPressed then
         reset()
