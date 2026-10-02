@@ -154,7 +154,9 @@ namespace TiltBrush
             exeName = "ffmpeg.exe";
 #endif
 #if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
-            exeName = "ffmpeg";
+            // A universal binary would exceed GitHub's file size limit, so we ship one per architecture.
+            exeName = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==
+                System.Runtime.InteropServices.Architecture.Arm64 ? "ffmpeg-arm64" : "ffmpeg-x86_64";
 #endif
 
             var combinedPath = Path.Combine(
