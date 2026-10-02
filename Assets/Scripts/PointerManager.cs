@@ -2279,10 +2279,22 @@ namespace TiltBrush
         {
             PointerScript groupStart = null;
             uint groupStartTime = 0;
+            int finalStrokeIndex = -1;
+            if (!discard)
+            {
+                for (int i = 0; i < m_NumActivePointers; ++i)
+                {
+                    var pointer = m_Pointers[i].m_Script;
+                    if (pointer.IsCreatingStroke() && !pointer.ShouldDiscardCurrentLine())
+                    {
+                        finalStrokeIndex = i;
+                    }
+                }
+            }
             //discard or solidify every pointer's active line
             for (int i = 0; i < m_NumActivePointers; ++i)
             {
-                bool isFinalStroke = (i == m_NumActivePointers - 1);
+                bool isFinalStroke = (i == finalStrokeIndex);
                 bool forceGroupContinue =
                     !discard &&
                     m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode &&
