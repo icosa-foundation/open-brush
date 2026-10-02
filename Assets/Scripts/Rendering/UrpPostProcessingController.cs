@@ -530,7 +530,7 @@ namespace TiltBrush
             }
             m_Bloom.active = true;
             m_Bloom.threshold.overrideState = true;
-            m_Bloom.threshold.value = GetBloomThreshold(m_CurrentHdr);
+            m_Bloom.threshold.value = GetBloomThreshold();
             m_Bloom.intensity.overrideState = true;
             m_Bloom.intensity.value = kFullBloomIntensity;
             m_Bloom.scatter.overrideState = true;
