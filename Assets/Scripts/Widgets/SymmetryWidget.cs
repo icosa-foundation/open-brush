@@ -76,10 +76,38 @@ namespace TiltBrush
             }
         }
 
+        /// A linked mirror can't spin or drift: its strokes follow it only through a recorded
+        /// move, and a mirror in continuous motion has no point at which to record one.
+        public static bool CanMoveFreely => SymmetryMirrors.Showing == null;
+
         public void Spin(float xSpeed, float ySpeed, float zSpeed)
         {
+            if (!CanMoveFreely) { return; }
             AngularVelocity_GS = App.Scene.Pose.rotation * new Vector3(xSpeed, ySpeed, zSpeed);
             m_IsSpinningFreely = true;
+        }
+
+        /// Released while linked, the mirror stays where it was let go. Tossing it away to hide
+        /// it still works.
+        public override void SetVelocities(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
+        {
+            if (!CanMoveFreely && !IsHideToss(vLinVel, vAngVel, vPivot))
+            {
+                vLinVel = Vector3.zero;
+                vAngVel = Vector3.zero;
+            }
+            base.SetVelocities(vLinVel, vAngVel, vPivot);
+        }
+
+        /// Stops a spin or drift that started before the mirror became linked.
+        public void HaltIfLinked()
+        {
+            if (!CanMoveFreely && !m_UserInteracting && !IsTossed() &&
+                (m_IsSpinningFreely || IsMoving()))
+            {
+                m_IsSpinningFreely = false;
+                HaltDrift();
+            }
         }
 
         public Vector3 GetSpin()
@@ -92,8 +120,9 @@ namespace TiltBrush
             get { return m_AngularVelocity_LS; }
             set
             {
-                m_AngularVelocity_LS = value;
-                m_IsSpinningFreely = value.magnitude > m_AngVelDampThreshold;
+                // Undo and redo restore the spin here.
+                m_AngularVelocity_LS = CanMoveFreely ? value : Vector3.zero;
+                m_IsSpinningFreely = m_AngularVelocity_LS.magnitude > m_AngVelDampThreshold;
             }
         }
 
@@ -162,6 +191,7 @@ namespace TiltBrush
         {
             // While the mirror is held, its strokes follow it.
             SymmetryMirrorMove.Update();
+            HaltIfLinked();
 
             bool moved = m_UserInteracting;
 

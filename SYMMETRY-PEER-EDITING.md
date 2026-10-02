@@ -223,9 +223,11 @@ Answered by the project owner on 2026-10-01; these replace the open questions th
 **Implementation status.** First pass done (not yet compiled): explicit creation, plain as
 "no active mirror", peers from ownership alone (no active-mirror or mode gating), undoable
 activation, settings changes moving or regenerating a linked mirror's strokes, and Bring to
-User / Reset to Home carrying them. Still to do: the mirror list UI (with its "Plain" entry)
+User / Reset to Home carrying them. A linked mirror can't spin or drift: released, it stays
+where it was let go (tossing it away to hide it still works), and `Spin` is ignored. Spinning
+would need strokes following a mirror in continuous motion, with no point to record a move. Still to do: the mirror list UI (with its "Plain" entry)
 and activating a mirror from a stroke in VR — both need prefab work, and are API-only
-for now; spin; replacing "detach independent edits" (decision 6); per-pointer colours when
+for now; replacing "detach independent edits" (decision 6); per-pointer colours when
 regenerating (copies take the source stroke's colour). Sections above that describe the
 global toggle or settings-based forking are out of date.
 

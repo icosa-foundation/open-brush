@@ -52,6 +52,12 @@ namespace TiltBrush
             SymmetryMirrors.Active = m_Previous;
             if (MovesWidget) { SymmetryMirrors.ApplySettingsUnrecorded(m_PreviousSettings); }
             if (m_Created) { SymmetryMirrors.Unregister(m_Target); }
+            // A linked mirror stops any spin; back to plain, it spins as it did before.
+            var spin = m_PreviousSettings?.Spin ?? Vector3.zero;
+            if (m_Previous == null && spin != Vector3.zero)
+            {
+                PointerManager.m_Instance.SymmetryWidget.Spin(spin.x, spin.y, spin.z);
+            }
         }
     }
 
