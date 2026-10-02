@@ -69,6 +69,17 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class SymmetryApiWrapper
     {
+        [LuaDocsDescription("The current physical brush pointer pose in the active canvas")]
+        public static TransformApiWrapper pointerPose
+        {
+            get
+            {
+                var pose_GS = TrTransform.FromTransform(PointerManager.m_Instance.MainPointer.transform);
+                pose_GS.scale = 1;
+                return new TransformApiWrapper(App.Scene.ActiveCanvas.Pose.inverse * pose_GS);
+            }
+        }
+
 
         [LuaDocsDescription("The current symmetry settings")]
         public static SymmetrySettingsApiWrapper current
@@ -386,11 +397,11 @@ namespace TiltBrush
             PointerManager.m_Instance.ForceScriptedPointerNewStroke(pointerIndex);
         }
 
-        [LuaDocsDescription("Applies an action expressed in a frame to a world-space pointer pose")]
-        [LuaDocsParameter("pose", "The world-space pointer pose")]
-        [LuaDocsParameter("frame", "The world-space frame in which the action is expressed")]
+        [LuaDocsDescription("Applies an action expressed in a frame to a pointer pose")]
+        [LuaDocsParameter("pose", "The pointer pose")]
+        [LuaDocsParameter("frame", "The frame in which the action is expressed, in the same space as the pose")]
         [LuaDocsParameter("action", "The local translation, rotation and scale to apply")]
-        [LuaDocsReturnValue("The transformed world-space pointer pose")]
+        [LuaDocsReturnValue("The transformed pointer pose in the same space")]
         public static TransformApiWrapper ApplyPoseAction(
             TransformApiWrapper pose, TransformApiWrapper frame, TransformApiWrapper action)
         {
@@ -398,9 +409,9 @@ namespace TiltBrush
             return new TransformApiWrapper(worldAction * pose._TrTransform);
         }
 
-        [LuaDocsDescription("Reflects a world-space pointer pose across a frame's local YZ plane")]
-        [LuaDocsParameter("pose", "The world-space pointer pose")]
-        [LuaDocsParameter("frame", "The world-space frame defining the reflection plane")]
+        [LuaDocsDescription("Reflects a pointer pose across a frame's local YZ plane")]
+        [LuaDocsParameter("pose", "The pointer pose")]
+        [LuaDocsParameter("frame", "The frame defining the reflection plane, in the same space as the pose")]
         [LuaDocsReturnValue("The reflected pose with its handedness preserved")]
         public static TransformApiWrapper ReflectPose(
             TransformApiWrapper pose, TransformApiWrapper frame)

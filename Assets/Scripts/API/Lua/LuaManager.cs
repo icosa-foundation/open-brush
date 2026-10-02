@@ -37,7 +37,6 @@ namespace TiltBrush
         Canvas,
         Polar,
         Widget,
-        World,
     }
 
     public enum LuaApiCategory

@@ -1,6 +1,6 @@
 Settings = {
     description = "Nested twisting strands based on the old CandyCane parent brush",
-    space = "world"
+    space = "canvas"
 }
 
 Parameters = {
@@ -13,6 +13,7 @@ Parameters = {
 }
 
 local frames = require "parentBrushFrame"
+local matrices = require "parentBrushMatrices"
 local root = frames.new()
 local bundles = {}
 local colors = {Color:New(1, 0.118, 0.118), Color:New(0.902, 0.784, 0.784),
@@ -39,14 +40,15 @@ function Main()
         bundles = {}
     end
 
-    local pose = Transform:New(Brush.position, Brush.rotation)
+    local pose = Symmetry.pointerPose
+    local canvasSize = Brush.size * pose.scale
     local rootFrame = frames.update(root, pose.position, pose.rotation)
     local pointers = Path:New()
     local pointerColors = {}
 
     for bundle = 0, Parameters.bundles - 1 do
         local gross = twistedChild(pose, rootFrame, root.distance, bundle,
-            Parameters.bundles, Parameters.grossRadius, Parameters.grossTurns, Brush.size)
+            Parameters.bundles, Parameters.grossRadius, Parameters.grossTurns, canvasSize)
         local bundleState = bundles[bundle]
         if bundleState == nil then
             bundleState = frames.new()
@@ -55,15 +57,15 @@ function Main()
         local bundleFrame = frames.update(bundleState, gross.position, gross.rotation)
         for strand = 0, 2 do
             local fine = twistedChild(gross, bundleFrame, bundleState.distance, strand,
-                3, Parameters.fineRadius, Parameters.fineTurns, Brush.size)
-            fine.scale = Parameters.strandSize
+                3, Parameters.fineRadius, Parameters.fineTurns, canvasSize)
+            fine.scale = pose.scale * Parameters.strandSize
             pointers:Insert(fine)
             pointerColors[#pointerColors + 1] = colors[strand + 1]
         end
     end
 
     Symmetry:SetColors(pointerColors)
-    return pointers
+    return matrices.fromPoses(pointers, pose)
 end
 
 function End()

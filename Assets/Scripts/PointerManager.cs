@@ -1433,7 +1433,7 @@ namespace TiltBrush
             bNeedsDummyPointer = true;
             MatrixListApiWrapper matList = null;
 
-            if (result._Space == ScriptCoordSpace.Widget)
+            if (result._Space == ScriptCoordSpace.Widget || result._Space == ScriptCoordSpace.Canvas)
             {
                 matList = result as MatrixListApiWrapper;
             }
@@ -1476,22 +1476,34 @@ namespace TiltBrush
                         break;
                     case ScriptCoordSpace.Canvas:
                         {
-                            bNeedsDummyPointer = false;
-                            newTr_CS = TrTransform.T(tr.translation);
-                            break;
-                        }
-                    case ScriptCoordSpace.World:
-                        {
-                            // The script supplied a complete world-space pointer pose. The
-                            // scripted pointer update later multiplies this by pointer0_GS,
-                            // so convert the pose to a transform relative to that pointer.
-                            if ((tr.translation - LuaManager.Instance.GetPastBrushPos(0)).sqrMagnitude
-                                < 1e-8f)
+                            if (matList == null)
+                            {
+                                // Existing Path results are world-space translation offsets.
+                                bNeedsDummyPointer = false;
+                                newTr_CS = TrTransform.T(tr.translation);
+                                break;
+                            }
+
+                            // MatrixList results are actions in the active canvas frame.
+                            // Apply them to the unscaled physical pointer pose so the
+                            // previous frame's scripted pointer scale cannot accumulate.
+                            var mat = matList[i]._Matrix;
+                            var canvas_GS = App.Scene.ActiveCanvas.Pose;
+                            var action_GS = canvas_GS * tr * canvas_GS.inverse;
+                            var pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
+                            var basePointer_GS = pointer0_GS;
+                            basePointer_GS.scale = 1;
+                            var fixTr = TrTransform.identity;
+                            if (mat.lossyScale.x < 0 || mat.lossyScale.y < 0 || mat.lossyScale.z < 0)
+                            {
+                                fixTr = new Plane(Vector3.right, 0).ToTrTransform();
+                            }
+                            var target_GS = action_GS * basePointer_GS * fixTr;
+                            if ((target_GS.translation - basePointer_GS.translation).sqrMagnitude < 1e-8f)
                             {
                                 bNeedsDummyPointer = false;
                             }
-                            var pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
-                            newTr_CS = tr * pointer0_GS.inverse;
+                            newTr_CS = target_GS * pointer0_GS.inverse;
                             break;
                         }
                     case ScriptCoordSpace.Pointer:

@@ -1,6 +1,6 @@
 Settings = {
     description = "Growing trunk, branches, fronds and lights based on the old HolidayTree brush",
-    space = "world"
+    space = "canvas"
 }
 
 Parameters = {
@@ -12,6 +12,7 @@ Parameters = {
 }
 
 local frames = require "parentBrushFrame"
+local matrices = require "parentBrushMatrices"
 local root = frames.new()
 local branches = {}
 local branchCount = 0
@@ -62,7 +63,8 @@ function Main()
     end
     configurePointers()
 
-    local pose = Transform:New(Brush.position, Brush.rotation)
+    local pose = Symmetry.pointerPose
+    local canvasSize = Brush.size * pose.scale
     local rootFrame = frames.update(root, pose.position, pose.rotation)
     if Brush.triggerIsPressed and branchCount < Parameters.branches and
         root.distance - lastBranchDistance >= Parameters.branchSpacing then
@@ -89,7 +91,7 @@ function Main()
             local action = Transform:New(Vector3.zero, rotation,
                 Parameters.branchGrowth * growth)
             branchPose = Symmetry:ApplyPoseAction(pose, branch.anchor, action)
-            branchPose.scale = 1
+            branchPose.scale = pose.scale
             branchFrame = frames.update(branch.frame, branchPose.position,
                 branchPose.rotation)
             if branch.events < 4 and branch.frame.distance -
@@ -100,7 +102,7 @@ function Main()
             end
         end
         emit(pointers, modes,
-            Transform:New(branchPose.position, branchPose.rotation, 0.4),
+            Transform:New(branchPose.position, branchPose.rotation, pose.scale * 0.4),
             branch ~= nil)
 
         for event = 1, 4 do
@@ -114,15 +116,15 @@ function Main()
                         Rotation:New(0, angle, 0), Parameters.frondGrowth)
                     frondPose = Symmetry:ApplyPoseAction(branchPose,
                         branch.fronds[event], action)
-                    frondPose.scale = 0.16
+                    frondPose.scale = pose.scale * 0.16
 
                     local twist = branch.frame.distance * 1800 * 0.1
                     local rotation = Rotation:New(0, 0, twist)
                     local offset = Rotation:RotateVector(rotation,
-                        Vector3:New(Brush.size * 0.1, 0, 0))
+                        Vector3:New(canvasSize * 0.1, 0, 0))
                     lightPose = Symmetry:ApplyPoseAction(branchPose, branchFrame,
                         Transform:New(offset, rotation))
-                    lightPose.scale = 0.16
+                    lightPose.scale = pose.scale * 0.16
                 end
                 emit(pointers, modes, frondPose, active)
                 emit(pointers, modes, lightPose, active)
@@ -131,7 +133,7 @@ function Main()
     end
 
     Symmetry:SetPointerPaintModes(modes)
-    return pointers
+    return matrices.fromPoses(pointers, pose)
 end
 
 function End()

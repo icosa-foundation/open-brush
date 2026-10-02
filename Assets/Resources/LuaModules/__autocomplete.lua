@@ -1984,6 +1984,7 @@ function Svg:DrawDocument(svg, tr, includeColors) end
 
 ---@class Symmetry
 ---@field current SymmetrySettings The current symmetry settings
+---@field pointerPose Transform The current physical brush pointer pose in the active canvas
 ---@field brushOffset Vector3 | number[] Gets the offset between the current brush position and the symmetry widget
 ---@field wandOffset Vector3 | number[] Gets the offset between the current wand position and the symmetry widget
 Symmetry = {}
@@ -2088,14 +2089,14 @@ function Symmetry:StopPointer(pointerIndex) end
 ---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
 function Symmetry:ForcePointerNewStroke(pointerIndex) end
 
----@param pose Transform The world-space pointer pose
----@param frame Transform The world-space frame in which the action is expressed
+---@param pose Transform The pointer pose
+---@param frame Transform The frame in which the action is expressed, in the same space as the pose
 ---@param action Transform The local translation, rotation and scale to apply
----@return Transform # The transformed world-space pointer pose
+---@return Transform # The transformed pointer pose in the same space
 function Symmetry:ApplyPoseAction(pose, frame, action) end
 
----@param pose Transform The world-space pointer pose
----@param frame Transform The world-space frame defining the reflection plane
+---@param pose Transform The pointer pose
+---@param frame Transform The frame defining the reflection plane, in the same space as the pose
 ---@return Transform # The reflected pose with handedness preserved
 function Symmetry:ReflectPose(pose, frame) end
 

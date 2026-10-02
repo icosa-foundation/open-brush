@@ -1,6 +1,6 @@
 Settings = {
     description = "Braided strands following the drawn line, based on the old Plait brush",
-    space = "world"
+    space = "canvas"
 }
 
 Parameters = {
@@ -12,6 +12,7 @@ Parameters = {
 }
 
 local frames = require "parentBrushFrame"
+local matrices = require "parentBrushMatrices"
 local states = {}
 local colors = {Color:New(1, 0.118, 0.118), Color:New(0.902, 0.784, 0.784),
                 Color:New(0.078, 0.706, 0.078)}
@@ -20,19 +21,21 @@ function Start()
     Symmetry:SetBrushes({"Icing"})
 end
 
-local function strandPose(pose, frame, distance, strand, size)
-    local cycle = Parameters.cycles * distance / Math:Max(Brush.size * size, 0.0001)
+local function strandPose(pose, frame, distance, strand, size, canvasSize)
+    local cycle = Parameters.cycles * distance * 0.1 /
+        Math:Max(canvasSize * size, 0.0001)
     local t = cycle + strand / Parameters.strands
     local x = Math:Sin(2 * Math.pi * t)
     local yFrequency = Parameters.strands % 2 == 0 and 1.5 or 2
     local y = Math:Sin(2 * Math.pi * t * yFrequency)
-    local amplitude = Brush.size * size * Brush.pressure / 2
+    local amplitude = canvasSize * size * Brush.pressure / 2
     local action = Transform:New(Vector3:New(x * amplitude, y * amplitude, 0),
         Rotation:New(0, 0, cycle * Parameters.rotations * 360))
     return Symmetry:ApplyPoseAction(pose, frame, action)
 end
 
-local function addLevel(pose, key, level, size, pointers, pointerColors)
+local function addLevel(pose, key, level, size, canvasSize, rootScale,
+                        pointers, pointerColors)
     local state = states[key]
     if state == nil then
         state = frames.new()
@@ -43,15 +46,15 @@ local function addLevel(pose, key, level, size, pointers, pointerColors)
         3 + Parameters.recursion - level or Parameters.strands
 
     for strand = 0, count - 1 do
-        local child = strandPose(pose, frame, state.distance, strand, size)
+        local child = strandPose(pose, frame, state.distance, strand, size, canvasSize)
         local childSize = level < Parameters.recursion and
             0.7 * Parameters.strandSize / count or Parameters.strandSize / count
         if level < Parameters.recursion then
-            child.scale = 1
+            child.scale = rootScale
             addLevel(child, key .. "." .. strand, level + 1,
-                size * childSize, pointers, pointerColors)
+                size * childSize, canvasSize, rootScale, pointers, pointerColors)
         else
-            child.scale = size * childSize
+            child.scale = rootScale * size * childSize
             pointers:Insert(child)
             pointerColors[#pointerColors + 1] = colors[strand % #colors + 1]
         end
@@ -64,10 +67,11 @@ function Main()
     end
     local pointers = Path:New()
     local pointerColors = {}
-    addLevel(Transform:New(Brush.position, Brush.rotation), "root", 0, 1,
+    local pose = Symmetry.pointerPose
+    addLevel(pose, "root", 0, 1, Brush.size * pose.scale, pose.scale,
         pointers, pointerColors)
     Symmetry:SetColors(pointerColors)
-    return pointers
+    return matrices.fromPoses(pointers, pose)
 end
 
 function End()

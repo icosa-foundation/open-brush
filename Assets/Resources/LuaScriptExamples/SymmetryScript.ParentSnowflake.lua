@@ -1,6 +1,6 @@
 Settings = {
     description = "Six-fold reflected strokes based on the old Snowflake parent brush",
-    space = "world"
+    space = "canvas"
 }
 
 Parameters = {
@@ -11,13 +11,14 @@ Parameters = {
 
 local origin = nil
 local initialHsv = nil
+local matrices = require "parentBrushMatrices"
 
 function Start()
     Symmetry:SetBrushes({"Icing"})
 end
 
 function Main()
-    local pose = Transform:New(Brush.position, Brush.rotation)
+    local pose = Symmetry.pointerPose
     if origin == nil or Brush.triggerPressedThisFrame or not Brush.triggerIsPressed then
         origin = pose
         initialHsv = Brush.colorHsv
@@ -47,7 +48,7 @@ function Main()
     end
 
     Symmetry:SetColors(colors)
-    return pointers
+    return matrices.fromPoses(pointers, pose)
 end
 
 function End()
