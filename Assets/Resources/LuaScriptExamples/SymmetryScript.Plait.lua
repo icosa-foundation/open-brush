@@ -1,5 +1,5 @@
 Settings = {
-    description = "Braided strands following the drawn line, based on the old Plait brush",
+    description = "Braided strands following the drawn line",
     space = "canvas"
 }
 

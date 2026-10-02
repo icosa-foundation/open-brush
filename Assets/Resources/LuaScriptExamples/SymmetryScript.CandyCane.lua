@@ -1,5 +1,5 @@
 Settings = {
-    description = "Nested twisting strands based on the old CandyCane parent brush",
+    description = "Nested twisting strands",
     space = "canvas"
 }
 

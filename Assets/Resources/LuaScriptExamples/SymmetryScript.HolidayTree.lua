@@ -1,5 +1,5 @@
 Settings = {
-    description = "Growing trunk, branches, fronds and lights based on the old HolidayTree brush",
+    description = "Growing trunk, branches, fronds and lights",
     space = "canvas"
 }
 

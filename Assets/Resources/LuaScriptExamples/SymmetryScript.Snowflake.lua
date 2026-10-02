@@ -1,5 +1,5 @@
 Settings = {
-    description = "Six-fold reflected strokes based on the old Snowflake parent brush",
+    description = "Reflected strokes with adjustable radial symmetry",
     space = "canvas"
 }
 
