@@ -1554,6 +1554,9 @@ namespace TiltBrush
             {
                 LuaManager.Instance.EndActiveScript(LuaApiCategory.SymmetryScript);
                 ResetScriptedPointerPaintData();
+                // Scripted matrices may scale pointer 0. The physical pointer starts
+                // subsequent symmetry modes at its normal room-space scale.
+                m_MainPointerData.m_Script.transform.SetUniformScale(1);
             }
 
             int active = m_NumActivePointers;
