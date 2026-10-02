@@ -21,12 +21,12 @@ function Start()
     Symmetry:SetBrushes({"Icing"})
 end
 
-local function strandPose(pose, frame, distance, strand, size, canvasSize)
+local function strandPose(pose, frame, distance, strand, count, size, canvasSize)
     local cycle = Parameters.cycles * distance * 0.1 /
         Math:Max(canvasSize * size, 0.0001)
-    local t = cycle + strand / Parameters.strands
+    local t = cycle + strand / count
     local x = Math:Sin(2 * Math.pi * t)
-    local yFrequency = Parameters.strands % 2 == 0 and 1.5 or 2
+    local yFrequency = count % 2 == 0 and 1.5 or 2
     local y = Math:Sin(2 * Math.pi * t * yFrequency)
     local amplitude = canvasSize * size * Brush.pressure / 2
     local action = Transform:New(Vector3:New(x * amplitude, y * amplitude, 0),
@@ -46,7 +46,7 @@ local function addLevel(pose, key, level, size, canvasSize, rootScale,
         3 + Parameters.recursion - level or Parameters.strands
 
     for strand = 0, count - 1 do
-        local child = strandPose(pose, frame, state.distance, strand, size, canvasSize)
+        local child = strandPose(pose, frame, state.distance, strand, count, size, canvasSize)
         local childSize = level < Parameters.recursion and
             0.7 * Parameters.strandSize / count or Parameters.strandSize / count
         if level < Parameters.recursion then
