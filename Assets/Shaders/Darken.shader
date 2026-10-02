@@ -99,7 +99,7 @@ Category {
       {
         #ifdef SHADER_SCRIPTING_ON
         if (_ClipEnd > 0 && !(i.id.x > _ClipStart && i.id.x < _ClipEnd)) discard;
-        if (_Dissolve < 1 && Dither8x8(i.pos.xy) >= _Dissolve) discard;
+        if (_Dissolve < 1 && Dither8x8(i.vertex.xy) >= _Dissolve) discard;
         #endif
 
         // Vertex alpha carries the along-stroke fades baked in by the brush.

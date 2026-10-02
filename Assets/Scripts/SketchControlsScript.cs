@@ -5834,21 +5834,17 @@ namespace TiltBrush
                 GameObject camObj = new GameObject("ScreenShotter");
                 Camera cam = camObj.AddComponent<Camera>();
                 cam.CopyFrom(App.VrSdk.GetVrCamera());
-                cam.stereoTargetEye = StereoTargetEyeMask.None;
+                UrpPostProcessingController.ConfigureOffscreenCaptureCamera(cam);
                 cam.clearFlags = CameraClearFlags.SolidColor;
                 camPose.ToTransform(camObj.transform);
                 int res = App.UserConfig.Profiling.ScreenshotResolution;
-                RenderTexture renderTexture = RenderTexture.GetTemporary(res, res, 24);
+                RenderTexture renderTexture = RenderTexture.GetTemporary(
+                    CaptureColorUtils.CreateDescriptor(res, res, RenderTextureFormat.ARGB32));
                 try
                 {
                     cam.targetTexture = renderTexture;
                     cam.Render();
-                    RenderTexture prev = RenderTexture.active;
-                    RenderTexture.active = renderTexture;
-                    var texture = new Texture2D(res, res, TextureFormat.RGB24, false);
-                    texture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
-                    RenderTexture.active = prev;
-                    byte[] jpegBytes = texture.EncodeToJPG();
+                    byte[] jpegBytes = ScreenshotManager.SaveToMemory(renderTexture, bSaveAsPng: false);
                     string filename =
                         Path.GetFileNameWithoutExtension(SaveLoadScript.m_Instance.SceneFile.FullPath);
                     File.WriteAllBytes(Path.Combine(App.UserPath(), filename + ".jpg"), jpegBytes);

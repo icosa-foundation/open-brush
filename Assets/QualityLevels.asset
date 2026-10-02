@@ -12,16 +12,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 834d4fddb4ee8a74c9458f52562d8a65, type: 3}
   m_Name: QualityLevels
   m_EditorClassIdentifier: 
+  m_MsaaLevel: 4
+  m_Hdr: 1
+  m_EyeTextureScale: 1
   m_qualityLevels:
   - m_Bloom: 0
-    m_Hdr: 0
     m_Fxaa: 0
-    m_MsaaLevel: 1
     m_MaxLod: 150
     m_Anisotropic: 1
     m_BloomLevels: 2,2,2
-    m_ViewportScale: 1
-    m_EyeTextureScale: 1
+    m_ViewportScale: 0.8
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 100000
     m_MaxSimplification: 150
@@ -29,29 +29,23 @@ MonoBehaviour:
     m_GpuLevel: 4
     m_FixedFoveationLevel: 0
   - m_Bloom: 1
-    m_Hdr: 1
     m_Fxaa: 1
-    m_MsaaLevel: 1
     m_MaxLod: 99999999
     m_Anisotropic: 1
     m_BloomLevels: 2,2,2
-    m_ViewportScale: 1
-    m_EyeTextureScale: 1
+    m_ViewportScale: 0.9
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 500000
     m_MaxSimplification: 150
     m_MaxSimplificationUserStrokes: 10
     m_GpuLevel: 4
     m_FixedFoveationLevel: 0
-  - m_Bloom: 2
-    m_Hdr: 1
+  - m_Bloom: 1
     m_Fxaa: 1
-    m_MsaaLevel: 1
     m_MaxLod: 99999999
     m_Anisotropic: 1
     m_BloomLevels: 2,2,2
     m_ViewportScale: 1
-    m_EyeTextureScale: 1
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 2500000
     m_MaxSimplification: 150
@@ -59,14 +53,11 @@ MonoBehaviour:
     m_GpuLevel: 4
     m_FixedFoveationLevel: 0
   - m_Bloom: 2
-    m_Hdr: 1
     m_Fxaa: 1
-    m_MsaaLevel: 4
     m_MaxLod: 99999999
     m_Anisotropic: 1
     m_BloomLevels: 2,2,2
     m_ViewportScale: 1
-    m_EyeTextureScale: 1
     m_StrokeSimplification: 0
     m_TargetMaxControlPoints: 10000000
     m_MaxSimplification: 150
