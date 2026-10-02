@@ -93,6 +93,9 @@ namespace TiltBrush
 
         // Scriptable render pipeline capture: readbacks of the camera target, oldest first.
         Queue<AsyncGPUReadbackRequest> m_pendingReadbacks = new Queue<AsyncGPUReadbackRequest>();
+        // Post-processing (CameraConfig.PostEffects) is applied to the camera while capturing, as the
+        // built-in pipeline's image effects (e.g. bloom) were applied before capture.
+        UrpPostProcessingController.CameraPostProcessingState? m_capturePostProcessingState;
 
         class StereoBuffer
         {
@@ -542,6 +545,13 @@ namespace TiltBrush
             m_frameTimer = new Stopwatch();
             m_frameTimer.Start();
 
+            if (GraphicsSettings.currentRenderPipeline != null && UrpPostProcessingController.Instance != null)
+            {
+                m_capturePostProcessingState =
+                    UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                        cam, CameraConfig.PostEffects);
+            }
+
             // Since audio capture is asynchronous, these *must* be set as the last step.
             m_isCapturing = true;
 
@@ -660,6 +670,16 @@ namespace TiltBrush
                     m_isSaving = false;
                     throw;
                 }
+            }
+
+            if (m_capturePostProcessingState.HasValue)
+            {
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    UrpPostProcessingController.Instance.EndCapturePostProcessing(
+                        m_capturePostProcessingState.Value);
+                }
+                m_capturePostProcessingState = null;
             }
 
             m_isCapturing = false;
