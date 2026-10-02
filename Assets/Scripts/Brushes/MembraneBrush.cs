@@ -300,7 +300,16 @@ namespace TiltBrush
                 Vector3 tangent = boundary[(i + 1) % count] - boundary[(i + count - 1) % count];
                 if (tangent.sqrMagnitude < 1e-12f)
                 {
-                    return;
+                    tangent = boundary[(i + 1) % count] - boundary[i];
+                    if (tangent.sqrMagnitude < 1e-12f)
+                    {
+                        tangent = boundary[i] - boundary[(i + count - 1) % count];
+                    }
+                    if (tangent.sqrMagnitude < 1e-12f && previousFrame.HasValue)
+                    {
+                        tangent = previousFrame.Value * Vector3.forward;
+                    }
+                    if (tangent.sqrMagnitude < 1e-12f) { return; }
                 }
                 previousFrame = MathUtils.ComputeMinimalRotationFrame(
                     tangent.normalized, previousFrame, orientation);
