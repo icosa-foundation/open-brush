@@ -62,6 +62,13 @@ namespace TiltBrush
                 var group = stroke.SymmetryPeerGroup;
                 if (CanSnipPeers(stroke))
                 {
+                    // Copies that no longer match the stroke point for point are derived from it
+                    // first, so the same snip index cuts every copy at the same place. This runs
+                    // now because the peer snips below record the copies as they are.
+                    if (!PointCountsMatch(stroke))
+                    {
+                        new RederiveSymmetryGroupCommand(stroke, this).Redo();
+                    }
                     var splitGroup = new SymmetryStrokeGroup(group.Mirror);
                     m_NewStroke.JoinSymmetryGroup(splitGroup, stroke.SymmetryPointerIndex);
                     foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
@@ -71,11 +78,14 @@ namespace TiltBrush
                 }
                 else
                 {
+                    // Only a group whose members aren't all in the mirror's canvas gets here.
                     m_BrokenLink = new SymmetryPeerEditing.BrokenLink(group);
                 }
             }
         }
 
+        /// Every visible copy can be snipped with the stroke: the mirror relates them all.
+        /// Erased copies are left as they are.
         private static bool CanSnipPeers(Stroke stroke)
         {
             var group = stroke.SymmetryPeerGroup;
@@ -83,17 +93,23 @@ namespace TiltBrush
             {
                 return false;
             }
-            int count = 0;
             foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
             {
-                ++count;
-                if (peer.m_ControlPoints.Length != stroke.m_ControlPoints.Length ||
-                    !SymmetryPeerEditing.TryGetPeerSymmetryTransform(stroke, peer, out _))
+                if (!SymmetryPeerEditing.TryGetPeerSymmetryTransform(stroke, peer, out _))
                 {
                     return false;
                 }
             }
-            return count == group.Count - 1;
+            return true;
+        }
+
+        private static bool PointCountsMatch(Stroke stroke)
+        {
+            foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+            {
+                if (peer.m_ControlPoints.Length != stroke.m_ControlPoints.Length) { return false; }
+            }
+            return true;
         }
 
         protected override void OnRedo()

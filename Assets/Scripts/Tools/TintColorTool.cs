@@ -177,8 +177,10 @@ namespace TiltBrush
                 // Work out what the symmetry peers become before the stroke itself changes: the
                 // peers' colours are relative to the stroke's, as it is now.
                 var peerEdits = new List<(Stroke stroke, List<Color32?> colors, ColorOverrideMode mode)>();
+                int peerCount = 0;
                 foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
                 {
+                    ++peerCount;
                     if (SymmetryPeerEditing.TryGetPeerPointColors(
                             stroke, peer, newOverrideColors, targetMode,
                             out List<Color32?> peerColors, out ColorOverrideMode peerMode))
@@ -186,6 +188,12 @@ namespace TiltBrush
                         peerEdits.Add((peer, peerColors, peerMode));
                     }
                 }
+
+                // A copy that doesn't line up with the stroke point for point is derived from it
+                // once tinted, rather than left behind. Afterwards they line up again.
+                bool rederive = stroke.SymmetryPeerGroup?.Mirror != null &&
+                    peerEdits.Count != peerCount;
+                if (rederive) { peerEdits.Clear(); }
 
                 ModifyStrokePointColorsCommand cmd;
                 if (undoParent == null)
@@ -196,6 +204,7 @@ namespace TiltBrush
                         new ModifyStrokePointColorsCommand(
                             edit.stroke, edit.colors, edit.mode, cmd);
                     }
+                    if (rederive) { new RederiveSymmetryGroupCommand(stroke, cmd); }
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
                 }
                 else
@@ -212,6 +221,7 @@ namespace TiltBrush
                     }
                     // Apply changes immediately while keeping this command inside the active undo group.
                     cmd.Redo();
+                    if (rederive) { new RederiveSymmetryGroupCommand(stroke, undoParent).Redo(); }
 
                     // A peer painted over directly later in the drag keeps the same command, so
                     // the two never fight over the stroke.

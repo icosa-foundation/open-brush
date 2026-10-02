@@ -94,7 +94,7 @@ namespace TiltBrush
                     }
                     else
                     {
-                        // No valid mirrored crop exists; leave the peer alone and break the link.
+                        // The peer isn't in the mirror's canvas: no mirrored crop exists.
                         unmirroredGroups.Add(stroke.SymmetryPeerGroup);
                     }
                 }
@@ -153,26 +153,53 @@ namespace TiltBrush
                 replacements.Add(stroke, clipped);
                 result.AddRange(clipped);
             }
-            if (replacements.Count == 0) return strokes as List<Stroke> ?? result;
-
+            // A linked group is cropped once, through its source stroke; the other copies take
+            // that stroke's pieces through the mirror, so the group stays an exact symmetric set
+            // even where clipping each copy separately would come out differently.
             var brokenLinks = new List<SymmetryPeerEditing.BrokenLink>();
             var replacementGroups = new List<(Stroke stroke, SymmetryStrokeGroup group, int index)>();
-            var affectedGroups = replacements.Keys.Select(stroke => stroke.SymmetryPeerGroup)
-                .Where(group => group != null).Distinct();
+            var affectedGroups = targets.Select(target => target.stroke.SymmetryPeerGroup)
+                .Where(group => group?.Mirror != null).Distinct().ToList();
             foreach (var group in affectedGroups)
             {
-                var members = group.Strokes.ToArray();
-                bool matching = group.Mirror != null &&
-                    !unmirroredGroups.Contains(group) &&
-                    members.All(member => replacements.ContainsKey(member)) &&
-                    replacements[members[0]].Count > 0 &&
-                    members.All(member => replacements[member].Count == replacements[members[0]].Count);
-                if (!matching)
+                var members = group.Strokes.Where(member => member.IsGeometryEnabled).ToArray();
+                if (!members.Any(member => replacements.ContainsKey(member))) { continue; }
+                var source = members.OrderBy(member => member.SymmetryPointerIndex).First();
+                var toPeers = new Dictionary<Stroke, TrTransform>();
+                bool mirrored = !unmirroredGroups.Contains(group);
+                foreach (var member in members)
                 {
+                    if (member == source) { continue; }
+                    if (SymmetryPeerEditing.TryGetPeerSymmetryTransform(source, member,
+                        out TrTransform toPeer))
+                    {
+                        toPeers[member] = toPeer;
+                    }
+                    else
+                    {
+                        mirrored = false;
+                    }
+                }
+                if (!mirrored)
+                {
+                    // Only a group split across canvases gets here.
                     brokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
                     continue;
                 }
-                for (int piece = 0; piece < replacements[members[0]].Count; ++piece)
+                if (!replacements.TryGetValue(source, out var pieces))
+                {
+                    // The source came through whole, so every copy does.
+                    foreach (var member in members) { replacements.Remove(member); }
+                    continue;
+                }
+                foreach (var member in members)
+                {
+                    if (member == source) { continue; }
+                    replacements[member] = pieces
+                        .Select(piece => DeriveCropPiece(source, piece, member, toPeers[member]))
+                        .ToList();
+                }
+                for (int piece = 0; piece < pieces.Count; ++piece)
                 {
                     var newGroup = new SymmetryStrokeGroup(group.Mirror);
                     foreach (var member in members)
@@ -182,7 +209,14 @@ namespace TiltBrush
                     }
                 }
             }
+            if (replacements.Count == 0) return strokes as List<Stroke> ?? result;
 
+            result.Clear();
+            foreach (var target in targets)
+            {
+                if (replacements.TryGetValue(target.stroke, out var parts)) result.AddRange(parts);
+                else result.Add(target.stroke);
+            }
             var parent = ApiManager.Instance != null ? ApiManager.Instance.ActiveUndo : null;
             var liveList = strokes as List<Stroke> ?? result;
             var command = new CropStrokesCommand(originals, replacements, result, liveList,
@@ -190,6 +224,39 @@ namespace TiltBrush
             if (parent == null) SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             else command.Redo(); // Apply now; the tool/API undo group records its children on completion.
             return liveList;
+        }
+
+        /// A copy's version of a piece cropped from its group's source stroke: the piece carried
+        /// through the mirror, keeping the copy's own colour and size relationship.
+        private static Stroke DeriveCropPiece(Stroke source, Stroke piece, Stroke member,
+            TrTransform toPeer)
+        {
+            var points = (PointerManager.ControlPoint[])piece.m_ControlPoints.Clone();
+            for (int i = 0; i < points.Length; ++i)
+            {
+                var pose = toPeer * TrTransform.TR(points[i].m_Pos, points[i].m_Orient);
+                points[i].m_Pos = pose.translation;
+                points[i].m_Orient = pose.rotation;
+            }
+            var copy = new Stroke(member)
+            {
+                m_ControlPoints = points,
+                m_ControlPointsToDrop = new bool[points.Length],
+                m_IntendedCanvas = member.Canvas,
+                m_PreviousCanvas = member.m_PreviousCanvas,
+                m_Type = Stroke.Type.NotCreated
+            };
+            copy.m_BrushScale = piece.m_BrushScale * Mathf.Abs(toPeer.scale);
+            copy.m_ColorOverrideMode = piece.m_ColorOverrideMode;
+            copy.m_OverrideColors = piece.m_OverrideColors?.Select(color =>
+            {
+                if (!color.HasValue) { return (Color32?)null; }
+                Color32 shifted = SymmetryPeerEditing.OffsetColorLike(
+                    color.Value, source.m_Color, member.m_Color);
+                shifted.a = color.Value.a;
+                return shifted;
+            }).ToList();
+            return copy;
         }
 
         internal static List<PointerManager.ControlPoint[]> ClipStrokeToVolume(

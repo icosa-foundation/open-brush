@@ -227,10 +227,31 @@ User / Reset to Home carrying them. A linked mirror can't spin or drift: release
 where it was let go (tossing it away to hide it still works), and `Spin` is ignored. Spinning
 would need strokes following a mirror in continuous motion, with no point to record a move. Still to do: the mirror list UI (with its "Plain" entry)
 and activating a mirror from a stroke in VR — both need prefab work, and are API-only
-for now; the canonical-stroke model (decisions 7-12), which replaces "detach independent
-edits"; per-pointer colours when
+for now; the rest of the canonical-stroke model (below); per-pointer colours when
 regenerating (copies take the source stroke's colour). Sections above that describe the
 global toggle or settings-based forking are out of date.
+
+**Canonical-stroke model, first step (not yet compiled).** `RederiveSymmetryGroupCommand`
+makes every other member of a group an exact copy of one member again (geometry through the
+mirror, point colours shifted by each copy's own colour offset; erased members stay erased).
+`SymmetryStrokeGroup.Canonical` is the lowest pointer index. Edits that used to break links
+now fall back to it:
+- reshape and tint where a copy doesn't line up point for point (applied, then derived);
+  in a reshape drag, the first member touched drives its group;
+- snip (copies are derived first so one index cuts them all);
+- crop (the source is cropped; copies take its pieces through the mirror);
+- transform and selection bake when several members moved, or one couldn't take the
+  mirrored move (the first moved member drives);
+- mirror moves and count-preserving settings changes, for groups that can't follow in place
+  (unbatched brushes, erased members, a failed in-place move): derived from the canonical
+  stroke under the new settings.
+
+Still breaking links: a group split across layers (decision 11 not done); a partial deselect
+leaving other members selected (decision 10's group selection not done); a mirror move or
+settings change while a member is selected; a count-changing settings change over a group
+that can't be rebuilt; join (decision 12 not done). Erased copies don't follow reshape, tint or
+snip. Not started: copies as read-only derived strokes with edits redirected to the canonical
+stroke, instance data in the file trailer (decisions 7-9).
 
 ### Principle
 

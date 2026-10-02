@@ -234,15 +234,29 @@ namespace TiltBrush
             var direct = movedStrokes;
             var propagated = new HashSet<Stroke>(m_PeerStrokes);
             var seen = new HashSet<SymmetryStrokeGroup>();
-            foreach (var stroke in direct)
+            // In selection order, so the first moved member of a group is the one that drives it.
+            foreach (var stroke in m_Strokes)
             {
+                if (!direct.Contains(stroke)) { continue; }
                 var group = stroke.SymmetryPeerGroup;
-                if (group == null || !seen.Add(group)) { continue; }
+                if (group == null || group.Count < 2 || !seen.Add(group)) { continue; }
                 bool layerChanged = m_TargetCanvas != null &&
                     m_TargetCanvas != stroke.m_PreviousCanvas;
                 if (!layerChanged &&
                     SymmetryPeerEditing.CanPreserveLink(group, direct, propagated)) { continue; }
-                m_BrokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                // Several members moved with the selection, or one couldn't take the mirrored
+                // move: once the strokes are baked, the others are derived from this one. A
+                // group moved to another layer, or with members left in the selection, still
+                // comes apart for now.
+                if (!layerChanged && !HasMemberStillSelected(group) &&
+                    RederiveSymmetryGroupCommand.CanDerive(stroke))
+                {
+                    new RederiveSymmetryGroupCommand(stroke, this);
+                }
+                else
+                {
+                    m_BrokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                }
                 for (int i = m_PeerStrokes.Count - 1; i >= 0; --i)
                 {
                     if (ReferenceEquals(m_PeerStrokes[i].SymmetryPeerGroup, group))
@@ -252,6 +266,20 @@ namespace TiltBrush
                     }
                 }
             }
+        }
+
+        /// A member of the group that this deselect leaves in the selection.
+        private bool HasMemberStillSelected(SymmetryStrokeGroup group)
+        {
+            foreach (var member in group.Strokes)
+            {
+                if (SelectionManager.m_Instance.IsStrokeSelected(member) &&
+                    !m_Strokes.Contains(member))
+                {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private static void AddSelectedGroup(

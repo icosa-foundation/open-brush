@@ -64,8 +64,8 @@ namespace TiltBrush
     /// Helpers shared by the commands that carry a mirror's strokes through a settings change.
     internal static class MirrorStrokeEdits
     {
-        /// Groups that can't follow the mirror: partly selected, in another canvas, or with no
-        /// visible members. Their links are broken (undoably) rather than left inconsistent.
+        /// Groups that can be carried member by member: none selected, all in the mirror's
+        /// canvas, at least one visible.
         internal static bool IsEligible(SymmetryStrokeGroup group, SymmetryMirror mirror,
             int pointerCount)
         {
@@ -114,6 +114,30 @@ namespace TiltBrush
             stroke.RestoreMirrorControlPoints(points, brushScale * conversion.scale);
         }
 
+        /// For a group that can't be carried member by member: derive it from its canonical
+        /// stroke once the mirror has its new settings, or, where even that can't be done (a
+        /// member selected or outside the mirror's canvas), break its link undoably.
+        internal static void AddFallback(SymmetryStrokeGroup group,
+            List<RederiveSymmetryGroupCommand> rederives,
+            List<SymmetryPeerEditing.BrokenLink> brokenLinks)
+        {
+            var canonical = group.Canonical;
+            bool anySelected = false;
+            foreach (var stroke in group.Strokes)
+            {
+                anySelected |= SelectionManager.m_Instance.IsStrokeSelected(stroke);
+            }
+            if (canonical != null && !anySelected &&
+                RederiveSymmetryGroupCommand.CanDerive(canonical))
+            {
+                rederives.Add(new RederiveSymmetryGroupCommand(canonical));
+            }
+            else
+            {
+                brokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+            }
+        }
+
         /// Hides a stroke made by a command's constructor, without touching the tilt meter: the
         /// command's first redo shows it, and counts it then.
         internal static void HideUncounted(Stroke stroke)
@@ -152,6 +176,8 @@ namespace TiltBrush
         private readonly List<Member> m_Members = new List<Member>();
         private readonly List<SymmetryPeerEditing.BrokenLink> m_BrokenLinks =
             new List<SymmetryPeerEditing.BrokenLink>();
+        private readonly List<RederiveSymmetryGroupCommand> m_Rederives =
+            new List<RederiveSymmetryGroupCommand>();
         private bool m_Applied;
 
         internal MoveMirrorSettingsCommand(SymmetryMirror mirror,
@@ -166,7 +192,7 @@ namespace TiltBrush
             {
                 if (!MirrorStrokeEdits.IsEligible(group, mirror, count))
                 {
-                    m_BrokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                    MirrorStrokeEdits.AddFallback(group, m_Rederives, m_BrokenLinks);
                     continue;
                 }
                 foreach (var stroke in group.Strokes)
@@ -217,10 +243,12 @@ namespace TiltBrush
             m_Applied = true;
             m_Mirror.Settings = m_After;
             SymmetryMirrors.ApplySettingsUnrecorded(m_After);
+            foreach (var rederive in m_Rederives) { rederive.Redo(); }
         }
 
         protected override void OnUndo()
         {
+            for (int i = m_Rederives.Count - 1; i >= 0; --i) { m_Rederives[i].Undo(); }
             foreach (var member in m_Members)
             {
                 MirrorStrokeEdits.RestorePoints(

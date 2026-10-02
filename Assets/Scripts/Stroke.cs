@@ -451,11 +451,35 @@ namespace TiltBrush
         /// and preserves erased/uncreated state. The caller supplies points in the current canvas.
         internal void RestoreMirrorControlPoints(PointerManager.ControlPoint[] points, float brushScale)
         {
+            RebuildPreservingVisibility(() =>
+            {
+                m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
+                m_BrushScale = brushScale;
+            });
+        }
+
+        /// Replaces everything that shapes and colours a stroke's geometry, for a symmetry copy
+        /// being derived from another member of its group. Like RestoreMirrorControlPoints, it
+        /// preserves erased state.
+        internal void ReplaceDerivedData(PointerManager.ControlPoint[] points, bool[] drops,
+            float brushScale, List<Color32?> overrideColors, ColorOverrideMode overrideMode)
+        {
+            RebuildPreservingVisibility(() =>
+            {
+                m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
+                m_ControlPointsToDrop = (bool[])drops.Clone();
+                m_BrushScale = brushScale;
+                m_OverrideColors = overrideColors?.ToList();
+                m_ColorOverrideMode = overrideMode;
+            });
+        }
+
+        private void RebuildPreservingVisibility(Action replaceData)
+        {
             bool hadGeometry = m_Type != Type.NotCreated;
             bool wasEnabled = hadGeometry && IsGeometryEnabled;
             if (hadGeometry) { Uncreate(); }
-            m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
-            m_BrushScale = brushScale;
+            replaceData();
             InvalidateCopy();
             if (hadGeometry)
             {

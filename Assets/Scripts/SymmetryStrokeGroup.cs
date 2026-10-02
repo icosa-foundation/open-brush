@@ -44,6 +44,26 @@ namespace TiltBrush
 
         public int Count => m_Strokes.Count;
 
+        /// The member the others are copies of: the stroke the user drew, at pointer index 0
+        /// (or the lowest index present). Copies are derived from it by their pointer's
+        /// transform, so the group stays an exact symmetric set.
+        public Stroke Canonical
+        {
+            get
+            {
+                Stroke canonical = null;
+                foreach (var stroke in m_Strokes)
+                {
+                    if (canonical == null ||
+                        stroke.SymmetryPointerIndex < canonical.SymmetryPointerIndex)
+                    {
+                        canonical = stroke;
+                    }
+                }
+                return canonical;
+            }
+        }
+
         /// The strokes in the group other than the passed one.
         public IEnumerable<Stroke> PeersOf(Stroke stroke)
         {

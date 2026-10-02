@@ -54,9 +54,20 @@ namespace TiltBrush
                 foreach (var stroke in m_Strokes)
                 {
                     var group = stroke.SymmetryPeerGroup;
-                    if (group == null || !seen.Add(group) ||
+                    if (group == null || group.Count < 2 || !seen.Add(group) ||
                         SymmetryPeerEditing.CanPreserveLink(group, direct, propagated)) { continue; }
-                    m_BrokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                    // Several members moved directly, or one couldn't take the mirrored move
+                    // (it is erased, say): the first member moved drives, and the others are
+                    // derived from it once it has moved. Only a group split across canvases
+                    // can't be derived, and comes apart instead.
+                    if (RederiveSymmetryGroupCommand.CanDerive(stroke))
+                    {
+                        new RederiveSymmetryGroupCommand(stroke, this);
+                    }
+                    else
+                    {
+                        m_BrokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                    }
                     for (int i = m_PeerStrokes.Count - 1; i >= 0; --i)
                     {
                         if (ReferenceEquals(m_PeerStrokes[i].SymmetryPeerGroup, group))

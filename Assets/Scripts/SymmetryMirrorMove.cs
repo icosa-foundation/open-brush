@@ -28,7 +28,8 @@ namespace TiltBrush
         private static SymmetrySettingsSnapshot m_Start;
         private static MoveMirrorStrokesCommand m_Command;
         private static List<GroupMove> m_Groups;
-        private static List<SymmetryPeerEditing.BrokenLink> m_SkippedLinks;
+        // Groups of the mirror that can't be moved in place while it is dragged.
+        private static List<SymmetryStrokeGroup> m_Skipped;
         private static TrTransform m_TransformEach;
         private static bool m_TransformEachAfter;
 
@@ -54,7 +55,7 @@ namespace TiltBrush
             m_TransformEachAfter = pm.m_SymmetryTransformEachAfter;
             var worldTransforms = pm.GetSymmetriesForCurrentMode();
             m_Groups = new List<GroupMove>();
-            m_SkippedLinks = new List<SymmetryPeerEditing.BrokenLink>();
+            m_Skipped = new List<SymmetryStrokeGroup>();
             var seen = new HashSet<SymmetryStrokeGroup>();
             int skipped = 0;
             foreach (var stroke in SketchMemoryScript.AllStrokes())
@@ -68,13 +69,13 @@ namespace TiltBrush
                 if (move == null)
                 {
                     ++skipped;
-                    m_SkippedLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                    m_Skipped.Add(group);
                 }
                 else { m_Groups.Add(move); }
             }
             // Empty/skipped groups still need matching widget and mirror-settings undo.
             m_Command = new MoveMirrorStrokesCommand(
-                pm.SymmetryWidget, m_Mirror, m_Start, m_Groups, m_SkippedLinks);
+                pm.SymmetryWidget, m_Mirror, m_Start, m_Groups);
             SketchMemoryScript.m_Instance.RecordCommand(m_Command);
             Debug.Log($"{LogPrefix} Begin: {m_Groups.Count} groups eligible, {skipped} skipped.");
         }
@@ -107,12 +108,39 @@ namespace TiltBrush
         {
             bool moved = m_Start.WidgetTransform != settings.WidgetTransform ||
                 !m_Start.PointerTransforms.SequenceEqual(settings.PointerTransforms);
+            m_Mirror.Settings = settings;
+
+            // Groups that couldn't follow live - unbatched brushes, erased members, a failed
+            // in-place move - are derived from their canonical stroke under the new settings.
+            // Only a group with members selected or outside the mirror's canvas comes apart.
+            var rederives = new List<RederiveSymmetryGroupCommand>();
+            var brokenLinks = new List<SymmetryPeerEditing.BrokenLink>();
             if (moved)
             {
-                foreach (var link in m_SkippedLinks) { link.Break(); }
+                var fallback = new List<SymmetryStrokeGroup>(m_Skipped);
+                foreach (var group in m_Groups)
+                {
+                    if (group.IsRejected) { fallback.Add(group.Group); }
+                }
+                foreach (var group in fallback)
+                {
+                    var canonical = group.Canonical;
+                    if (canonical != null && !HasSelectedMember(group) &&
+                        RederiveSymmetryGroupCommand.CanDerive(canonical))
+                    {
+                        var rederive = new RederiveSymmetryGroupCommand(canonical);
+                        rederive.Redo();
+                        rederives.Add(rederive);
+                    }
+                    else
+                    {
+                        var link = new SymmetryPeerEditing.BrokenLink(group);
+                        link.Break();
+                        brokenLinks.Add(link);
+                    }
+                }
             }
-            m_Command.Complete(settings, moved);
-            m_Mirror.Settings = settings;
+            m_Command.Complete(settings, rederives, brokenLinks);
             Debug.Log($"{LogPrefix} End: widget, stroke endpoints and placement recorded together.");
             Forget();
         }
@@ -124,7 +152,16 @@ namespace TiltBrush
             m_Mirror = null;
             m_Start = null;
             m_Groups = null;
-            m_SkippedLinks = null;
+            m_Skipped = null;
+        }
+
+        private static bool HasSelectedMember(SymmetryStrokeGroup group)
+        {
+            foreach (var stroke in group.Strokes)
+            {
+                if (SelectionManager.m_Instance.IsStrokeSelected(stroke)) { return true; }
+            }
+            return false;
         }
 
         internal sealed class GroupMove
@@ -140,7 +177,6 @@ namespace TiltBrush
             }
 
             private readonly SymmetryStrokeGroup m_Group;
-            private readonly SymmetryPeerEditing.BrokenLink m_Link;
             private readonly CanvasScript m_Canvas;
             private readonly TrTransform m_CanvasPose;
             private readonly List<Member> m_Members = new List<Member>();
@@ -153,7 +189,6 @@ namespace TiltBrush
             private GroupMove(SymmetryStrokeGroup group, IList<TrTransform> worldTransforms)
             {
                 m_Group = group;
-                m_Link = new SymmetryPeerEditing.BrokenLink(group);
                 m_Canvas = group.Mirror.Canvas;
                 m_CanvasPose = m_Canvas.Pose;
                 m_MirrorStart = new TrTransform[worldTransforms.Count];
@@ -267,10 +302,12 @@ namespace TiltBrush
                         if (member.Index != 0) { RestoreMember(member, after: false); }
                     }
                 }
-                m_Link.Break();
                 m_Rejected = true;
-                Debug.LogWarning($"{LogPrefix} Group no longer eligible; link broken after rollback.");
+                Debug.LogWarning($"{LogPrefix} Group no longer eligible; rolled back, derived at end.");
             }
+
+            internal bool IsRejected => m_Rejected;
+            internal SymmetryStrokeGroup Group => m_Group;
 
             internal void Complete()
             {
@@ -284,13 +321,8 @@ namespace TiltBrush
 
             internal void Restore(bool after)
             {
-                if (m_Rejected)
-                {
-                    if (after) { m_Link.Break(); }
-                    else { m_Link.Restore(); }
-                    return;
-                }
-                if (!m_Changed) { return; }
+                // A rejected group is handled by the command's rederive instead.
+                if (m_Rejected || !m_Changed) { return; }
                 foreach (var member in m_Members)
                 {
                     if (member.Index != 0) { RestoreMember(member, after); }

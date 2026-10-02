@@ -16,7 +16,8 @@ using System.Collections.Generic;
 
 namespace TiltBrush
 {
-    /// Owns a mirror drag from grab to release, including its final widget snap.
+    /// Owns a mirror drag from grab to release, including its final widget snap. Groups that
+    /// couldn't follow the drag live are derived from their canonical stroke when it ends.
     public class MoveMirrorStrokesCommand : BaseCommand
     {
         private readonly SymmetryWidget m_Widget;
@@ -25,13 +26,14 @@ namespace TiltBrush
         private readonly SymmetrySettingsSnapshot m_Before;
         private SymmetrySettingsSnapshot m_After;
         private readonly List<SymmetryMirrorMove.GroupMove> m_Groups;
-        private readonly List<SymmetryPeerEditing.BrokenLink> m_SkippedLinks;
-        private bool m_BrokeSkippedLinks;
+        private List<RederiveSymmetryGroupCommand> m_Rederives =
+            new List<RederiveSymmetryGroupCommand>();
+        private List<SymmetryPeerEditing.BrokenLink> m_BrokenLinks =
+            new List<SymmetryPeerEditing.BrokenLink>();
         private bool m_Complete;
 
         internal MoveMirrorStrokesCommand(SymmetryWidget widget, SymmetryMirror mirror,
-            SymmetrySettingsSnapshot before, List<SymmetryMirrorMove.GroupMove> groups,
-            List<SymmetryPeerEditing.BrokenLink> skippedLinks)
+            SymmetrySettingsSnapshot before, List<SymmetryMirrorMove.GroupMove> groups)
         {
             m_Widget = widget;
             m_WidgetMove = new MoveWidgetCommand(widget, widget.LocalTransform,
@@ -40,7 +42,6 @@ namespace TiltBrush
             m_Before = before;
             m_After = before;
             m_Groups = groups;
-            m_SkippedLinks = skippedLinks;
         }
 
         public override bool NeedsSave => true;
@@ -59,38 +60,39 @@ namespace TiltBrush
             return false;
         }
 
-        internal void Complete(SymmetrySettingsSnapshot after, bool brokeSkippedLinks)
+        /// 'rederives' and 'brokenLinks' have already been applied.
+        internal void Complete(SymmetrySettingsSnapshot after,
+            List<RederiveSymmetryGroupCommand> rederives,
+            List<SymmetryPeerEditing.BrokenLink> brokenLinks)
         {
             if (m_Complete) { return; }
             m_WidgetMove.UpdateMirrorEnd(m_Widget.LocalTransform, m_Widget.CustomDimension);
             m_After = after;
-            m_BrokeSkippedLinks = brokeSkippedLinks;
+            m_Rederives = rederives;
+            m_BrokenLinks = brokenLinks;
             foreach (var group in m_Groups) { group.Complete(); }
             m_Complete = true;
         }
 
         protected override void OnRedo()
         {
-            if (m_BrokeSkippedLinks)
-            {
-                foreach (var link in m_SkippedLinks) { link.Break(); }
-            }
+            foreach (var link in m_BrokenLinks) { link.Break(); }
             foreach (var group in m_Groups) { group.Restore(after: true); }
             m_WidgetMove.Redo();
             m_Mirror.Settings = m_After;
+            // Derived under the mirror's new settings.
+            foreach (var rederive in m_Rederives) { rederive.Redo(); }
         }
 
         protected override void OnUndo()
         {
             // Undo may interrupt a held mirror.
             if (!m_Complete) { SymmetryMirrorMove.End(); }
+            for (int i = m_Rederives.Count - 1; i >= 0; --i) { m_Rederives[i].Undo(); }
             foreach (var group in m_Groups) { group.Restore(after: false); }
             m_WidgetMove.Undo();
             m_Mirror.Settings = m_Before;
-            if (m_BrokeSkippedLinks)
-            {
-                foreach (var link in m_SkippedLinks) { link.Restore(); }
-            }
+            foreach (var link in m_BrokenLinks) { link.Restore(); }
         }
     }
 } // namespace TiltBrush

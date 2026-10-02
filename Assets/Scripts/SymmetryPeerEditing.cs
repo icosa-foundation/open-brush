@@ -276,7 +276,7 @@ namespace TiltBrush
 
         /// newColor, moved by the offset that takes sourceColor to peerColor. Hue wraps, the rest
         /// clamps, and the new colour's alpha is kept as picked.
-        private static Color OffsetColorLike(Color newColor, Color sourceColor, Color peerColor)
+        internal static Color OffsetColorLike(Color newColor, Color sourceColor, Color peerColor)
         {
             Color.RGBToHSV(newColor, out float hNew, out float sNew, out float vNew);
             Color.RGBToHSV(sourceColor, out float hSource, out float sSource, out float vSource);
@@ -447,20 +447,5 @@ namespace TiltBrush
                 }
             }
         }
-    }
-
-    internal sealed class BreakSymmetryLinkCommand : BaseCommand
-    {
-        private readonly SymmetryPeerEditing.BrokenLink m_Link;
-
-        internal BreakSymmetryLinkCommand(SymmetryPeerEditing.BrokenLink link,
-            BaseCommand parent = null) : base(parent)
-        {
-            m_Link = link;
-        }
-
-        public override bool NeedsSave => true;
-        protected override void OnRedo() => m_Link.Break();
-        protected override void OnUndo() => m_Link.Restore();
     }
 } // namespace TiltBrush
