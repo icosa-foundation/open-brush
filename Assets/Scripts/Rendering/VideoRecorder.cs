@@ -16,6 +16,7 @@
 
 using UnityEngine;
 using UnityEngine.Rendering;
+using Unity.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -28,7 +29,8 @@ namespace TiltBrush
     ///
     ///  * Start an encoder process (ffmpeg) and launch two threads to manage piped I/O.
     ///  * Use a background garbage collector to avoid hitches due to Unity memory allocation.
-    ///  * Use the post effect render hook, OnRenderImage(), to capture frames.
+    ///  * Use the post effect render hook, OnRenderImage(), to capture frames. Under a scriptable
+    ///    render pipeline, capture the camera target in endCameraRendering via AsyncGPUReadback.
     ///  * Send captured frames are to background input thread for processing.
     ///  * Report a log from the output thread when capture is complete.
     ///
@@ -88,6 +90,9 @@ namespace TiltBrush
         const long kMaxQueueSizeBytes = 8L * 1024L * 1024L * 1024L;
 
         private bool m_forcedCaptureFramerate;
+
+        // Scriptable render pipeline capture: readbacks of the camera target, oldest first.
+        Queue<AsyncGPUReadbackRequest> m_pendingReadbacks = new Queue<AsyncGPUReadbackRequest>();
 
         class StereoBuffer
         {
@@ -393,6 +398,16 @@ namespace TiltBrush
             m_blitToCompute = new Material(App.Config.m_BlitToComputeShader);
         }
 
+        private void OnEnable()
+        {
+            RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
+        }
+
+        private void OnDisable()
+        {
+            RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+        }
+
         // Start background threads.
         private void Start()
         {
@@ -553,6 +568,9 @@ namespace TiltBrush
 #if ENABLE_AUDIO_DEBUG
     m_audioBuffer.WriteLog();
 #endif
+
+            // Collect frames still in flight on the GPU so the end of the video isn't truncated.
+            ProcessReadbacks(waitForCompletion: true);
 
             m_videoFramePool.Clear();
             m_ffmpegVideo.ReleaseFrame -= ReturnFrameToPool;
@@ -887,6 +905,7 @@ namespace TiltBrush
 
         void Update()
         {
+            ProcessReadbacks(waitForCompletion: false);
             PostCapture();
 
             if (m_playbackRequested && !m_isSaving && !m_isCapturing)
@@ -898,8 +917,6 @@ namespace TiltBrush
 
         void PostCapture()
         {
-            long kPixelSizeBytes = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Color32));
-
             bool isReady = m_ffmpegVideo.IsReadyForInput;
 
             if (!m_isCapturing || !m_frameBuffered)
@@ -931,7 +948,15 @@ namespace TiltBrush
             // readability of this code and avoids the need for synchronization primitives.
             Color32[] frame = m_currentFrameBuffer;
             m_currentFrameBuffer = null;
+            m_frameBuffered = false;
 
+            EnqueueFrame(frame);
+        }
+
+        // Buffer a captured frame and, if the encoder is ready, pass the oldest buffered frame along.
+        private void EnqueueFrame(Color32[] frame)
+        {
+            long kPixelSizeBytes = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Color32));
             long usedBufferBytes = frame.Length * kPixelSizeBytes * m_bufferedVideoFrames.Count;
 
             if (usedBufferBytes < kMaxQueueSizeBytes)
@@ -943,14 +968,68 @@ namespace TiltBrush
                 System.Console.WriteLine("Dropped frame [{0}], buffer overflow", m_videoFrameCount);
             }
 
-            m_frameBuffered = false;
-
-            // If the encoder is ready to accept another frame, pass it along and increment the expected
-            // frame count.
-            if (isReady)
+            if (m_ffmpegVideo.IsReadyForInput && m_bufferedVideoFrames.Count > 0)
             {
                 Color32Bytable c = new Color32Bytable(m_bufferedVideoFrames.Dequeue());
                 m_ffmpegVideo.QueueFrame(c);
+            }
+        }
+
+        // Allocate a frame buffer, reusing one the encoder has finished with if possible.
+        private Color32[] GetPooledFrame(int length)
+        {
+            lock (m_videoFramePool)
+            {
+                while (m_videoFramePool.Count > 0)
+                {
+                    Color32[] frame = m_videoFramePool.Dequeue();
+                    if (frame.Length == length)
+                    {
+                        return frame;
+                    }
+                }
+            }
+            return new Color32[length];
+        }
+
+        // Move completed GPU readbacks into the encoder queue, in capture order.
+        private void ProcessReadbacks(bool waitForCompletion)
+        {
+            while (m_pendingReadbacks.Count > 0)
+            {
+                AsyncGPUReadbackRequest request = m_pendingReadbacks.Peek();
+                if (waitForCompletion)
+                {
+                    request.WaitForCompletion();
+                }
+                else if (!request.done)
+                {
+                    return;
+                }
+                m_pendingReadbacks.Dequeue();
+
+                if (!m_isCapturing)
+                {
+                    continue;
+                }
+                if (request.hasError)
+                {
+                    UnityEngine.Debug.LogWarning("VideoRecorder: GPU readback failed, frame dropped.");
+                    continue;
+                }
+
+                NativeArray<Color32> data = request.GetData<Color32>();
+                if (data.Length != m_width * m_height)
+                {
+                    UnityEngine.Debug.LogWarning(
+                        $"VideoRecorder: frame size {request.width}x{request.height} does not match " +
+                        $"{m_width}x{m_height}, frame dropped.");
+                    continue;
+                }
+
+                Color32[] frame = GetPooledFrame(data.Length);
+                data.CopyTo(frame);
+                EnqueueFrame(frame);
             }
         }
 
@@ -968,17 +1047,7 @@ namespace TiltBrush
 
                 // Allocate a new frame buffer for the next frame, since the current buffer may be queued
                 // for later encoding (e.g. when the encoder is running slower than capture).
-                lock (m_videoFramePool)
-                {
-                    if (m_videoFramePool.Count > 0)
-                    {
-                        m_currentFrameBuffer = m_videoFramePool.Dequeue();
-                    }
-                    else
-                    {
-                        m_currentFrameBuffer = new Color32[m_captureBuffer.count];
-                    }
-                }
+                m_currentFrameBuffer = GetPooledFrame(m_captureBuffer.count);
 
                 m_captureBuffer.GetData(m_currentFrameBuffer);
                 UnityEngine.Profiling.Profiler.EndSample();
@@ -1017,42 +1086,86 @@ namespace TiltBrush
             }
             else
             {
-                Color32Bytable b = null;
-
-                if (m_playbackCurFrame >= RealTimeFrameCount)
-                {
-                    return;
-                }
-
-                m_ffmpegVideoReader.GetFrame(ref b);
-
-                if (b == null)
-                {
-                    return;
-                }
-
-                Color32[] c = b.GetArray() as Color32[];
-                if (c == null || c.Length == 0)
-                {
-                    // Should never happen.
-                    UnityEngine.Debug.LogWarning("No data.");
-                    return;
-                }
-
-                RenderTexture trg = destination;
-                if (!m_playbackTexture
-                    || m_playbackTexture.width != trg.width
-                    || m_playbackTexture.height != trg.height)
-                {
-                    m_playbackTexture = new Texture2D(trg.width, trg.height, TextureFormat.ARGB32, false);
-                }
-
-                m_playbackCurFrame++;
-                m_playbackTexture.SetPixels32(c);
-                m_playbackTexture.Apply();
-
-                Graphics.Blit(m_playbackTexture, destination);
+                BlitPlaybackFrame(destination);
             }
+        }
+
+        // Scriptable render pipeline equivalent of OnRenderImage. The camera renders into its target
+        // texture, which we read back for capture or overwrite with the playback preview.
+        void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            if (camera.gameObject != gameObject)
+            {
+                return;
+            }
+            RenderTexture target = camera.targetTexture;
+            if (target == null)
+            {
+                return;
+            }
+
+            if (m_isPlayingBack && m_ffmpegVideoReader.DidExit)
+            {
+                StartPlaybackReader();
+            }
+
+            if (m_isPlayingBack)
+            {
+                BlitPlaybackFrame(target);
+                return;
+            }
+            if (!m_isCapturing)
+            {
+                return;
+            }
+
+            bool doCapture = ShouldCapture();
+            m_lastVideoFrame = RealTimeFrameCount;
+            if (doCapture)
+            {
+                m_pendingReadbacks.Enqueue(AsyncGPUReadback.Request(target, 0, TextureFormat.RGBA32));
+                // The captured frame count increases regardless of buffering or queuing.
+                m_videoFrameCount++;
+            }
+        }
+
+        private void BlitPlaybackFrame(RenderTexture destination)
+        {
+            Color32Bytable b = null;
+
+            if (m_playbackCurFrame >= RealTimeFrameCount)
+            {
+                return;
+            }
+
+            m_ffmpegVideoReader.GetFrame(ref b);
+
+            if (b == null)
+            {
+                return;
+            }
+
+            Color32[] c = b.GetArray() as Color32[];
+            if (c == null || c.Length == 0)
+            {
+                // Should never happen.
+                UnityEngine.Debug.LogWarning("No data.");
+                return;
+            }
+
+            RenderTexture trg = destination;
+            if (!m_playbackTexture
+                || m_playbackTexture.width != trg.width
+                || m_playbackTexture.height != trg.height)
+            {
+                m_playbackTexture = new Texture2D(trg.width, trg.height, TextureFormat.ARGB32, false);
+            }
+
+            m_playbackCurFrame++;
+            m_playbackTexture.SetPixels32(c);
+            m_playbackTexture.Apply();
+
+            Graphics.Blit(m_playbackTexture, destination);
         }
 
         // Return a no-longer-used frame to the pool
