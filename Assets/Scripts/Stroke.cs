@@ -99,13 +99,21 @@ namespace TiltBrush
                 ? m_PreviousCanvas : Canvas;
             if (group.Mirror == null ||
                 (group.Mirror.Canvas != null && group.Mirror.Canvas != canvas)) { return; }
+            SetSymmetryGroup(group, pointerIndex);
+        }
+
+        /// Puts this stroke in a group without checking that it is in the group's canvas: for
+        /// undo restoring a membership while strokes are still on their way back.
+        internal void SetSymmetryGroup(SymmetryStrokeGroup group, int pointerIndex)
+        {
+            if (ReferenceEquals(m_SymmetryGroup, group)) { return; }
             if (m_SymmetryGroup != null)
             {
                 LeaveSymmetryGroup();
             }
             m_SymmetryGroup = group;
             m_SymmetryPointerIndex = pointerIndex;
-            group.Add(this);
+            group?.Add(this);
             InvalidateCopy();
         }
 

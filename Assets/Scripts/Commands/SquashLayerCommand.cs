@@ -45,6 +45,19 @@ namespace TiltBrush
                 .Where(x => x.Canvas == m_SquashedLayer).ToArray();
             SquashedLayerWasActive = App.Scene.ActiveCanvas == m_SquashedLayer;
             m_ActiveWidgets = m_SquashedLayer.GetComponentsInChildren<GrabWidget>();
+
+            // Linked groups drawn in the squashed layer go with their strokes, under a new
+            // mirror in the destination layer.
+            var linkedGroups = m_OriginalStrokes
+                .Select(stroke => stroke.SymmetryPeerGroup)
+                .Where(group => group?.Mirror != null && group.Mirror.Canvas == m_SquashedLayer)
+                .Distinct()
+                .ToList();
+            if (linkedGroups.Count > 0)
+            {
+                new MoveSymmetryGroupsToLayerCommand(
+                    linkedGroups, m_DestinationLayer, this, moveStrokes: false);
+            }
         }
 
         public override bool NeedsSave { get { return true; } }

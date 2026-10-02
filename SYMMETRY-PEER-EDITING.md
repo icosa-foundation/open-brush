@@ -253,7 +253,15 @@ nothing; deselecting any copy deselects the group. Enforced in `SelectionManager
 (so API, Lua and invert-selection paths follow it), `SelectCommand` and `SelectionTool`. The
 following copies aren't drawn with the selection highlight.
 
-Still breaking links: a group split across layers (decision 11 not done); a mirror move or
+**Layer moves (decision 11).** `MoveSymmetryGroupsToLayerCommand` takes whole groups into
+another layer: every copy goes (erased ones stay erased), and the groups are re-homed under a
+new linked mirror there, made from the old one with its transforms re-expressed in the new
+layer's space (one new mirror per old mirror per move). The new mirror is registered but not
+made active. Used when a selection is moved to another layer (the driving copy's peers get the
+mirrored move first, then go with it) and when a layer is squashed into another. Lua's
+`stroke.layer` and `group:Add` still move single strokes without their group.
+
+Still breaking links: a mirror move or
 settings change while a member is selected; a count-changing settings change over a group
 that can't be rebuilt; join (decision 12 not done). Erased copies don't follow reshape, tint or
 snip. Not started: copies as read-only derived strokes with edits redirected to the canonical

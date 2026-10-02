@@ -210,13 +210,8 @@ namespace TiltBrush
                 movedStrokes.Add(stroke);
                 m_MovedStrokeSinceJoin = true;
 
-                // A stroke moved into a different canvas no longer has a shared canvas-space
-                // relationship with its peers. Undo can make that relationship active again.
-                if (layerChanged)
-                {
-                    continue;
-                }
-
+                // A stroke moved into another layer still gets its peers' mirrored moves here;
+                // the whole group then follows it into that layer (see below).
                 foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
                 {
                     if (!handled.Add(peer)) { continue; }
@@ -246,21 +241,32 @@ namespace TiltBrush
                 if (group == null || group.Count < 2 || !seen.Add(group)) { continue; }
                 bool layerChanged = m_TargetCanvas != null &&
                     m_TargetCanvas != stroke.m_PreviousCanvas;
-                if (!layerChanged &&
-                    SymmetryPeerEditing.CanPreserveLink(group, direct, propagated)) { continue; }
-                // Several members moved with the selection, or one couldn't take the mirrored
-                // move: once the strokes are baked, the others are derived from this one. Only
-                // one copy of a group is normally selected (see KeepOneCopyPerSymmetryGroup);
-                // several can be if registered directly by another command. A group moved to
-                // another layer, or with members left in the selection, comes apart for now.
-                if (!layerChanged && !HasMemberStillSelected(group) &&
-                    RederiveSymmetryGroupCommand.CanDerive(stroke))
+                bool mirrored = SymmetryPeerEditing.CanPreserveLink(group, direct, propagated);
+                if (!layerChanged && mirrored) { continue; }
+
+                // Only one copy of a group is normally selected (see KeepOneCopyPerSymmetryGroup);
+                // several can be if registered directly by another command. A group with copies
+                // left in the selection can't be moved as a whole, and comes apart.
+                if (HasMemberStillSelected(group) ||
+                    (!mirrored && !RederiveSymmetryGroupCommand.CanDerive(stroke)))
                 {
-                    new RederiveSymmetryGroupCommand(stroke, this);
+                    m_BrokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
                 }
                 else
                 {
-                    m_BrokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                    // Moved to another layer: once baked, the whole group follows the stroke
+                    // there under a new mirror in that layer (decision 11).
+                    if (layerChanged)
+                    {
+                        new MoveSymmetryGroupsToLayerCommand(new[] { group }, m_TargetCanvas, this);
+                    }
+                    // Several members moved with the selection, or one couldn't take the
+                    // mirrored move: the others are derived from this one, after any layer move.
+                    if (!mirrored)
+                    {
+                        new RederiveSymmetryGroupCommand(stroke, this);
+                    }
+                    if (mirrored) { continue; }
                 }
                 for (int i = m_PeerStrokes.Count - 1; i >= 0; --i)
                 {
