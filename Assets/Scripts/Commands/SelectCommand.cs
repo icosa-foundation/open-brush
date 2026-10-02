@@ -161,6 +161,10 @@ namespace TiltBrush
             m_Strokes = new List<Stroke>();
             m_Strokes.AddRange(strokesGrouped);
             m_Strokes.AddRange(strokesNotGrouped);
+            if (!deselect)
+            {
+                KeepOneCopyPerSymmetryGroup(m_Strokes);
+            }
 
             m_Widgets = new List<GrabWidget>();
             m_Widgets.AddRange(widgetsGrouped);
@@ -245,9 +249,10 @@ namespace TiltBrush
                 if (!layerChanged &&
                     SymmetryPeerEditing.CanPreserveLink(group, direct, propagated)) { continue; }
                 // Several members moved with the selection, or one couldn't take the mirrored
-                // move: once the strokes are baked, the others are derived from this one. A
-                // group moved to another layer, or with members left in the selection, still
-                // comes apart for now.
+                // move: once the strokes are baked, the others are derived from this one. Only
+                // one copy of a group is normally selected (see KeepOneCopyPerSymmetryGroup);
+                // several can be if registered directly by another command. A group moved to
+                // another layer, or with members left in the selection, comes apart for now.
                 if (!layerChanged && !HasMemberStillSelected(group) &&
                     RederiveSymmetryGroupCommand.CanDerive(stroke))
                 {
@@ -266,6 +271,24 @@ namespace TiltBrush
                     }
                 }
             }
+        }
+
+        /// A linked group is selected through one copy, the first one picked, which drives it;
+        /// the others follow as its mirror images. Matches SelectionManager.SelectStrokes, so
+        /// this command records exactly the strokes it selects.
+        private static void KeepOneCopyPerSymmetryGroup(List<Stroke> strokes)
+        {
+            var claimed = new HashSet<SymmetryStrokeGroup>();
+            strokes.RemoveAll(stroke =>
+            {
+                var group = stroke.SymmetryPeerGroup;
+                if (group?.Mirror == null || SelectionManager.m_Instance.IsStrokeSelected(stroke))
+                {
+                    return false;
+                }
+                return !claimed.Add(group) ||
+                    SelectionManager.m_Instance.IsSymmetryGroupSelectedByOther(stroke);
+            });
         }
 
         /// A member of the group that this deselect leaves in the selection.

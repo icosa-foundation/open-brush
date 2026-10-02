@@ -246,8 +246,14 @@ now fall back to it:
   (unbatched brushes, erased members, a failed in-place move): derived from the canonical
   stroke under the new settings.
 
-Still breaking links: a group split across layers (decision 11 not done); a partial deselect
-leaving other members selected (decision 10's group selection not done); a mirror move or
+**Group selection (decision 10).** A linked group is selected through one copy, the first
+picked, which drives it; the other copies are never selected themselves and follow it live as
+its mirror images (`SymmetryPeerPreview`). Selecting another copy of a selected group does
+nothing; deselecting any copy deselects the group. Enforced in `SelectionManager.SelectStrokes`
+(so API, Lua and invert-selection paths follow it), `SelectCommand` and `SelectionTool`. The
+following copies aren't drawn with the selection highlight.
+
+Still breaking links: a group split across layers (decision 11 not done); a mirror move or
 settings change while a member is selected; a count-changing settings change over a group
 that can't be rebuilt; join (decision 12 not done). Erased copies don't follow reshape, tint or
 snip. Not started: copies as read-only derived strokes with edits redirected to the canonical
