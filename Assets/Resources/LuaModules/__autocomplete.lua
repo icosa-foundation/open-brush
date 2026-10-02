@@ -142,6 +142,7 @@ function Bounds:Contains(point) end
 ---@field rotation Rotation | number[] The 3D orientation of the Brush Controller's tip
 ---@field direction Vector3 | number[] The vector representing the forward direction of the brush
 ---@field size number The current brush size
+---@field sizeAbsolute number The brush size in absolute room-space units
 ---@field pressure number Brush pressure is determined by how far the trigger is pressed in
 ---@field type string The current brush type
 ---@field types string[] All brush types available via the UI

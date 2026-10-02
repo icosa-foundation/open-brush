@@ -18,6 +18,8 @@ local branches = {}
 local branchCount = 0
 local lastBranchDistance = 0
 local configuredBranches = -1
+local selectedBrush = nil
+local selectedSize = nil
 
 local trunkColor = Color:New(0.272, 0.175, 0.03)
 local branchColor = Color:New(0.691, 0.403, 0.142)
@@ -58,6 +60,8 @@ local function configurePointers()
 end
 
 function Start()
+    selectedBrush = Brush.type
+    selectedSize = Brush.sizeAbsolute
     configuredBranches = -1
 end
 
@@ -144,4 +148,6 @@ function End()
     Symmetry:SetPointerPaintModes({})
     Symmetry:ClearBrushes()
     Symmetry:ClearColors()
+    if selectedBrush ~= nil then Brush.type = selectedBrush end
+    if selectedSize ~= nil then Brush.sizeAbsolute = selectedSize end
 end

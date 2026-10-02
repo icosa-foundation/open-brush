@@ -11,9 +11,13 @@ Parameters = {
 
 local origin = nil
 local initialHsv = nil
+local selectedBrush = nil
+local selectedSize = nil
 local matrices = require "parentBrushMatrices"
 
 function Start()
+    selectedBrush = Brush.type
+    selectedSize = Brush.sizeAbsolute
     Symmetry:SetBrushes({"Icing"})
 end
 
@@ -54,4 +58,6 @@ end
 function End()
     Symmetry:ClearBrushes()
     Symmetry:ClearColors()
+    if selectedBrush ~= nil then Brush.type = selectedBrush end
+    if selectedSize ~= nil then Brush.sizeAbsolute = selectedSize end
 end

@@ -14,12 +14,16 @@ Parameters = {
 
 local frames = require "parentBrushFrame"
 local matrices = require "parentBrushMatrices"
+local selectedBrush = nil
+local selectedSize = nil
 local root = frames.new()
 local bundles = {}
 local colors = {Color:New(1, 0.118, 0.118), Color:New(0.902, 0.784, 0.784),
                 Color:New(0.078, 0.706, 0.078)}
 
 function Start()
+    selectedBrush = Brush.type
+    selectedSize = Brush.sizeAbsolute
     Symmetry:SetBrushes({"Icing"})
 end
 
@@ -71,4 +75,6 @@ end
 function End()
     Symmetry:ClearBrushes()
     Symmetry:ClearColors()
+    if selectedBrush ~= nil then Brush.type = selectedBrush end
+    if selectedSize ~= nil then Brush.sizeAbsolute = selectedSize end
 end
