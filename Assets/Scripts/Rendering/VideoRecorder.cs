@@ -29,8 +29,7 @@ namespace TiltBrush
     ///
     ///  * Start an encoder process (ffmpeg) and launch two threads to manage piped I/O.
     ///  * Use a background garbage collector to avoid hitches due to Unity memory allocation.
-    ///  * Use the post effect render hook, OnRenderImage(), to capture frames. Under a scriptable
-    ///    render pipeline, capture the camera target in endCameraRendering via AsyncGPUReadback.
+    ///  * Capture the camera target in endCameraRendering via AsyncGPUReadback.
     ///  * Send captured frames are to background input thread for processing.
     ///  * Report a log from the output thread when capture is complete.
     ///
@@ -46,15 +45,9 @@ namespace TiltBrush
         private bool m_isSaving = false;
         private bool m_isCapturingAudio = false;
 
-        private bool m_frameBuffered = false;
-        private bool m_texBuffered = false;
-
         private bool m_isPortrait = false;
 
         private Texture2D m_playbackTexture;
-        private ComputeBuffer m_captureBuffer;
-        private Color32[] m_currentFrameBuffer;
-        private Material m_blitToCompute;
 
         private System.Diagnostics.Stopwatch m_frameTimer;
 
@@ -91,7 +84,7 @@ namespace TiltBrush
 
         private bool m_forcedCaptureFramerate;
 
-        // Scriptable render pipeline capture: readbacks of the camera target, oldest first.
+        // Readbacks of the camera target, oldest first.
         Queue<AsyncGPUReadbackRequest> m_pendingReadbacks = new Queue<AsyncGPUReadbackRequest>();
         // Post-processing (CameraConfig.PostEffects) is applied to the camera while capturing, as the
         // built-in pipeline's image effects (e.g. bloom) were applied before capture.
@@ -396,11 +389,6 @@ namespace TiltBrush
         // Private startup and shutdown
         // -------------------------------------------------------------------------------------------- //
 
-        private void Awake()
-        {
-            m_blitToCompute = new Material(App.Config.m_BlitToComputeShader);
-        }
-
         private void OnEnable()
         {
             RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
@@ -471,8 +459,6 @@ namespace TiltBrush
 
             m_filePath = filePath;
 
-            m_frameBuffered = false;
-            m_texBuffered = false;
             m_videoFrameCount = 0;
             m_bufferedVideoFrames.Clear();
 
@@ -516,25 +502,7 @@ namespace TiltBrush
             // Give the encoder a means to return used frames
             m_ffmpegVideo.ReleaseFrame += ReturnFrameToPool;
 
-            //
-            // Init capture and playback buffers.
-            //
             m_playbackTexture = new Texture2D(width, height, TextureFormat.ARGB32, false);
-            long kPixelSizeBytes = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Color32));
-            m_captureBuffer = new ComputeBuffer(width * height, (int)kPixelSizeBytes);
-
-            var tempInitBuffer = new Color32[width * height];
-            m_captureBuffer.SetData(tempInitBuffer);
-            m_currentFrameBuffer = null;
-
-            // Save the temp buffer for reuse later.
-            m_videoFramePool.Enqueue(tempInitBuffer);
-
-            m_blitToCompute.SetBuffer("_CaptureBuffer", m_captureBuffer);
-
-            // Note, UAV register must match shader register (e.g. register(u1)).
-            const int uavRegister = 1;
-            Graphics.SetRandomWriteTarget(uavRegister, m_captureBuffer, true);
 
             //
             // Finalize local state setup.
@@ -545,7 +513,7 @@ namespace TiltBrush
             m_frameTimer = new Stopwatch();
             m_frameTimer.Start();
 
-            if (GraphicsSettings.currentRenderPipeline != null && UrpPostProcessingController.Instance != null)
+            if (UrpPostProcessingController.Instance != null)
             {
                 m_capturePostProcessingState =
                     UrpPostProcessingController.Instance.BeginCapturePostProcessing(
@@ -627,14 +595,8 @@ namespace TiltBrush
             // Clear the Stopwatch
             m_frameTimer.Reset();
 
-            m_captureBuffer.Dispose();
-            m_captureBuffer = null;
-
             Texture2D.Destroy(m_playbackTexture);
             m_playbackTexture = null;
-
-            m_frameBuffered = false;
-            m_texBuffered = false;
 
             if (!save)
             {
@@ -813,12 +775,8 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Frame Capture
         // -------------------------------------------------------------------------------------------- //
-        // Capture and PostCapture must be called at different points in the render cycle, so they must be
-        // split into two different functions. The sequence of events has been labeled in comments as
-        // "Step N:" etc.
-        //
-        // Note that these steps have been explicitly pipelined due to the fact that each step will block
-        // and potentially stall the GPU. The steps will also intentionally overlap.
+        // Frames are requested with AsyncGPUReadback at the end of camera rendering and collected in
+        // Update once the GPU has finished, so capture doesn't stall the GPU.
 
         public bool ShouldCapture()
         {
@@ -886,30 +844,6 @@ namespace TiltBrush
             }
         }
 
-        private bool Capture(RenderTexture source, RenderTexture dest)
-        {
-            // Should we capture this frame?
-            bool doCapture = ShouldCapture();
-            m_lastVideoFrame = RealTimeFrameCount;
-
-            if (!doCapture)
-            {
-                return false;
-            }
-
-            {
-                // Step 1: Blt the image and wait for the next frame.
-                // Blit and copy each frame in the background while the next frame renders.
-                Graphics.Blit(source, dest, m_blitToCompute);
-                m_texBuffered = true;
-
-                // The captured frame count increases regardless of buffering or queuing.
-                m_videoFrameCount++;
-            }
-
-            return true;
-        }
-
         // Start playback as soon as possible, but will wait for any existing files currently in flight to
         // finish recording first.
         public void RequestPlayback()
@@ -926,7 +860,7 @@ namespace TiltBrush
         void Update()
         {
             ProcessReadbacks(waitForCompletion: false);
-            PostCapture();
+            DrainBufferedFrame();
 
             if (m_playbackRequested && !m_isSaving && !m_isCapturing)
             {
@@ -935,45 +869,20 @@ namespace TiltBrush
             }
         }
 
-        void PostCapture()
+        // Even when no frame was captured this update, there may be buffered frames to push to the
+        // encoder. This lets the buffer drain between captured frames, assuming the encoder can keep up.
+        void DrainBufferedFrame()
         {
-            bool isReady = m_ffmpegVideo.IsReadyForInput;
-
-            if (!m_isCapturing || !m_frameBuffered)
+            if (m_ffmpegVideo.IsReadyForInput && m_bufferedVideoFrames.Count > 0)
             {
-                // Even though there is no fame to capture or capture is disabled, there may be frames to push
-                // to the encoder. This also allows the buffer to drain between captured frames, assuming the
-                // encoder can keep up.
-                if (isReady && m_bufferedVideoFrames.Count > 0)
-                {
-                    Color32Bytable c = new Color32Bytable(m_bufferedVideoFrames.Dequeue());
-                    m_ffmpegVideo.QueueFrame(c);
-                }
-
-                return;
+                Color32Bytable c = new Color32Bytable(m_bufferedVideoFrames.Dequeue());
+                m_ffmpegVideo.QueueFrame(c);
             }
-
-            //
-            // Step 3: Read the actual pixel buffer from the texture, one frame after it was copied.
-            //
-
-            // It may be more efficient to skip enqueuing the frame to m_bufferedVideoFrames if the queue is
-            // empty, however the logic below is considerably more readable if we ignore that optimization.
-            // Considering we are running the garbage collector in the background right after this, the
-            // extra queuing operation is highly likely in the noise and will be cleaned up during that
-            // collection pass.
-            //
-            // Similarly, the m_bufferedVideoFrames queue is intentionally managed in this thread, which
-            // implies a single background worker. Until we need multiple workers, this design improves the
-            // readability of this code and avoids the need for synchronization primitives.
-            Color32[] frame = m_currentFrameBuffer;
-            m_currentFrameBuffer = null;
-            m_frameBuffered = false;
-
-            EnqueueFrame(frame);
         }
 
         // Buffer a captured frame and, if the encoder is ready, pass the oldest buffered frame along.
+        // The m_bufferedVideoFrames queue is intentionally managed on the main thread, which implies a
+        // single background worker and avoids the need for synchronization primitives.
         private void EnqueueFrame(Color32[] frame)
         {
             long kPixelSizeBytes = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Color32));
@@ -1053,65 +962,12 @@ namespace TiltBrush
             }
         }
 
-        // This really shouldn't be a public function, but for performance reasons it must be called from
-        // SteamVR.
-        public void ReadbackCapture()
-        {
-            // Step 2: Collect the blt'd image, ideally this will be called when the GPU is idle.
-            if (m_texBuffered)
-            {
-                // Always expect m_currentFrameBuffer == null, otherwise we're overwriting a pending frame.
-                UnityEngine.Debug.Assert(m_currentFrameBuffer == null);
-
-                UnityEngine.Profiling.Profiler.BeginSample("Read Compute Buffer");
-
-                // Allocate a new frame buffer for the next frame, since the current buffer may be queued
-                // for later encoding (e.g. when the encoder is running slower than capture).
-                m_currentFrameBuffer = GetPooledFrame(m_captureBuffer.count);
-
-                m_captureBuffer.GetData(m_currentFrameBuffer);
-                UnityEngine.Profiling.Profiler.EndSample();
-                m_texBuffered = false;
-                m_frameBuffered = true;
-            }
-        }
-
         // -------------------------------------------------------------------------------------------- //
-        // PostEffect Render Hook
+        // Render Hook
         // -------------------------------------------------------------------------------------------- //
 
-        void OnRenderImage(RenderTexture source, RenderTexture destination)
-        {
-            if (GraphicsSettings.currentRenderPipeline != null)
-            {
-                Graphics.Blit(source, destination);
-                return;
-            }
-
-            // Loop playback. We intentionally don't buffer the entire video, which means we have to run
-            // FFMPEG in a loop until we're done previewing.
-            if (m_isPlayingBack && m_ffmpegVideoReader.DidExit)
-            {
-                StartPlaybackReader();
-            }
-
-            if (!m_isPlayingBack)
-            {
-                // If capturing, grab the current frame from the source buffer.
-                if (!m_isCapturing || !Capture(source, destination))
-                {
-                    // For whatever reason, Capture decided not to capture, so blit.
-                    Graphics.Blit(source, destination);
-                }
-            }
-            else
-            {
-                BlitPlaybackFrame(destination);
-            }
-        }
-
-        // Scriptable render pipeline equivalent of OnRenderImage. The camera renders into its target
-        // texture, which we read back for capture or overwrite with the playback preview.
+        // The camera renders into its target texture, which we read back for capture or overwrite with
+        // the playback preview.
         void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
         {
             if (camera.gameObject != gameObject)
@@ -1124,6 +980,8 @@ namespace TiltBrush
                 return;
             }
 
+            // Loop playback. We intentionally don't buffer the entire video, which means we have to run
+            // FFMPEG in a loop until we're done previewing.
             if (m_isPlayingBack && m_ffmpegVideoReader.DidExit)
             {
                 StartPlaybackReader();

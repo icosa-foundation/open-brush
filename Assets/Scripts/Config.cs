@@ -207,9 +207,6 @@ namespace TiltBrush
         public bool m_DebugWebRequest;
         public bool m_ToggleProfileOnAppButton = false;
 
-        [Header("Global Shaders")]
-        public Shader m_BlitToComputeShader;
-
         [Header("Upload and Export")]
         // Some brushes put a birth time in the vertex attributes; because we export
         // this data (we really shouldn't) it's helpful to disable it when one needs
