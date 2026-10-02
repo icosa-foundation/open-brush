@@ -511,7 +511,8 @@ namespace TiltBrush
                 "h.264", "h.265",
             };
 
-            // x264 constant rate factor: lower is higher quality. 18 is close to visually lossless.
+            // x264/x265 constant rate factor: lower is higher quality. 18 is close to visually lossless
+            // for x264; x265 at the same value is higher quality still.
             private const int kDefaultQuality = 18;
             private const int kMinQuality = 0;
             private const int kMaxQuality = 51;
