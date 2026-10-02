@@ -37,6 +37,7 @@ namespace TiltBrush
         Canvas,
         Polar,
         Widget,
+        World,
     }
 
     public enum LuaApiCategory
@@ -1073,6 +1074,7 @@ namespace TiltBrush
             RegisterApiEnum(script, "SymmetryMode", typeof(SymmetryMode));
             RegisterApiEnum(script, "SymmetryPointType", typeof(SymmetryPointType));
             RegisterApiEnum(script, "SymmetryWallpaperType", typeof(SymmetryWallpaperType));
+            RegisterApiEnum(script, "SymmetryPointerPaintMode", typeof(SymmetryPointerPaintMode));
             RegisterApiEnum(script, "ColorOverrideMode", typeof(ColorOverrideMode));
 
         }

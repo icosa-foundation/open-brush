@@ -1711,6 +1711,11 @@ function Rotation:SlerpUnclamped(a, b, t) end
 ---@return Rotation # The rotation that represents applying both rotations in turn
 function Rotation:Multiply(other) end
 
+---@param rotation Rotation The rotation to apply
+---@param vector Vector3 The vector to rotate
+---@return Vector3 # The rotated vector
+function Rotation:RotateVector(rotation, vector) end
+
 ---@param other Rotation The rotation to compare
 ---@return boolean # true if this rotation is not equal to the specified rotation; otherwise, false
 function Rotation:NotEquals(other) end
@@ -2071,6 +2076,9 @@ function Symmetry:GetPointerPaintMode(pointerIndex) end
 ---@return System.Collections.Generic.List`1[SymmetryPointerPaintMode] # 
 function Symmetry:GetPointerPaintModes() end
 
+---@param modes SymmetryPointerPaintMode[] One painting mode per returned pointer transform
+function Symmetry:SetPointerPaintModes(modes) end
+
 ---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
 function Symmetry:StartPointer(pointerIndex) end
 
@@ -2079,6 +2087,17 @@ function Symmetry:StopPointer(pointerIndex) end
 
 ---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
 function Symmetry:ForcePointerNewStroke(pointerIndex) end
+
+---@param pose Transform The world-space pointer pose
+---@param frame Transform The world-space frame in which the action is expressed
+---@param action Transform The local translation, rotation and scale to apply
+---@return Transform # The transformed world-space pointer pose
+function Symmetry:ApplyPoseAction(pose, frame, action) end
+
+---@param pose Transform The world-space pointer pose
+---@param frame Transform The world-space frame defining the reflection plane
+---@return Transform # The reflected pose with handedness preserved
+function Symmetry:ReflectPose(pose, frame) end
 
 ---@param path Path The path to duplicate
 ---@return PathList # 
@@ -3010,6 +3029,12 @@ SymmetryWallpaperType.pgg = nil
 SymmetryWallpaperType.pmg = nil
 SymmetryWallpaperType.pmm = nil
 SymmetryWallpaperType.cmm = nil
+
+---@class SymmetryPointerPaintMode
+SymmetryPointerPaintMode = {}
+SymmetryPointerPaintMode.Inherit = nil
+SymmetryPointerPaintMode.ForcedOn = nil
+SymmetryPointerPaintMode.ForcedOff = nil
 
 
 

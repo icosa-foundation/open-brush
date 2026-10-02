@@ -200,6 +200,7 @@ namespace TiltBrush
         private List<TrTransform> m_ScriptedTrFixes; // Fixes for reflection transforms
 
         private List<PointerPaintingOverride> m_ScriptedPointerPaintOverrides;
+        private List<PointerPaintingOverride> m_ScriptedPointerRequestedPaintModes;
         private List<bool> m_ScriptedPointerHasRecordedStrokeThisLine;
         private HashSet<int> m_ScriptedPointerForceNewStrokeRequests;
         private bool m_ScriptedPointersNeedMainStrokeMerge;
@@ -1006,6 +1007,7 @@ namespace TiltBrush
         private void ResetScriptedPointerPaintData()
         {
             m_ScriptedPointerPaintOverrides?.Clear();
+            m_ScriptedPointerRequestedPaintModes = null;
             m_ScriptedPointerHasRecordedStrokeThisLine?.Clear();
             m_ScriptedPointerForceNewStrokeRequests?.Clear();
             m_ScriptedPointersNeedMainStrokeMerge = false;
@@ -1079,6 +1081,17 @@ namespace TiltBrush
             {
                 m_ScriptedPointerForceNewStrokeRequests.Remove(index);
             }
+        }
+
+        public void SetScriptedPointerPaintModes(List<PointerPaintingOverride> modes)
+        {
+            if (m_CurrentSymmetryMode != SymmetryMode.ScriptedSymmetryMode)
+            {
+                return;
+            }
+            // Main() runs before its returned pointer count is applied. Keep the
+            // requested modes until UpdateScriptedTransforms has resized the pool.
+            m_ScriptedPointerRequestedPaintModes = modes;
         }
 
         public void ForceScriptedPointerNewStroke(int index)
@@ -1405,6 +1418,17 @@ namespace TiltBrush
             }
 
             EnsureScriptedPointerPaintData(m_NumActivePointers);
+            if (m_ScriptedPointerRequestedPaintModes != null)
+            {
+                for (int i = 0; i < m_NumActivePointers; ++i)
+                {
+                    m_ScriptedPointerPaintOverrides[i] =
+                        i < m_ScriptedPointerRequestedPaintModes.Count
+                            ? m_ScriptedPointerRequestedPaintModes[i]
+                            : PointerPaintingOverride.Inherit;
+                }
+                m_ScriptedPointerRequestedPaintModes = null;
+            }
 
             bNeedsDummyPointer = true;
             MatrixListApiWrapper matList = null;
@@ -1454,6 +1478,20 @@ namespace TiltBrush
                         {
                             bNeedsDummyPointer = false;
                             newTr_CS = TrTransform.T(tr.translation);
+                            break;
+                        }
+                    case ScriptCoordSpace.World:
+                        {
+                            // The script supplied a complete world-space pointer pose. The
+                            // scripted pointer update later multiplies this by pointer0_GS,
+                            // so convert the pose to a transform relative to that pointer.
+                            if ((tr.translation - LuaManager.Instance.GetPastBrushPos(0)).sqrMagnitude
+                                < 1e-8f)
+                            {
+                                bNeedsDummyPointer = false;
+                            }
+                            var pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
+                            newTr_CS = tr * pointer0_GS.inverse;
                             break;
                         }
                     case ScriptCoordSpace.Pointer:
@@ -2211,7 +2249,10 @@ namespace TiltBrush
             CanvasScript canvas = App.Scene.ActiveCanvas;
             for (int i = 0; i < m_NumActivePointers; ++i)
             {
-                StartPointerStroke(i, canvas);
+                if (ShouldPointerPaint(i))
+                {
+                    StartPointerStroke(i, canvas);
+                }
             }
         }
 
