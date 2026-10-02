@@ -311,8 +311,26 @@ namespace TiltBrush
                     }
                     if (tangent.sqrMagnitude < 1e-12f) { return; }
                 }
-                previousFrame = MathUtils.ComputeMinimalRotationFrame(
-                    tangent.normalized, previousFrame, orientation);
+                tangent.Normalize();
+                if (previousFrame.HasValue)
+                {
+                    previousFrame = MathUtils.ComputeMinimalRotationFrame(
+                        tangent, previousFrame, orientation);
+                }
+                else
+                {
+                    Vector3 up = orientation * Vector3.up;
+                    Vector3 right = orientation * Vector3.right;
+                    Vector3 forward = orientation * Vector3.forward;
+                    Vector3 bootstrap = Mathf.Abs(Vector3.Dot(up, tangent))
+                        < Mathf.Abs(Vector3.Dot(right, tangent)) ? up : right;
+                    if (Mathf.Abs(Vector3.Dot(forward, tangent))
+                        < Mathf.Abs(Vector3.Dot(bootstrap, tangent)))
+                    {
+                        bootstrap = forward;
+                    }
+                    previousFrame = Quaternion.LookRotation(tangent, bootstrap);
+                }
                 m_OutlineFrames.Add(previousFrame.Value);
             }
 
