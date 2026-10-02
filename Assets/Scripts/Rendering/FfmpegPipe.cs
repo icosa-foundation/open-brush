@@ -329,20 +329,36 @@ namespace TiltBrush
             return true;
         }
 
+        // Frames above this many pixels (larger than 4K UHD) get fewer encoder threads and a shorter
+        // lookahead. With the defaults, x264 runs out of memory on e.g. 8000x8000 360 renders, since
+        // every thread and lookahead frame holds a full-size frame.
+        private const long kLargeFramePixels = 3840L * 2160L;
+
+        public static bool IsLargeFrame(int width, int height)
+        {
+            return (long)width * height > kLargeFramePixels;
+        }
+
         // offline: true when encode speed doesn't need to keep up with real time.
-        public static string GetVideoEncoder(bool offline)
+        public static string GetVideoEncoder(bool offline, int width, int height)
         {
             var config = App.UserConfig.Video;
             string preset = config.GetPreset(offline);
             int crf = config.Quality;
+            bool large = IsLargeFrame(width, height);
             switch (config.Encoder.ToLower())
             {
                 case "h.265":
                     // hvc1 tag is required for playback in QuickTime and on Apple devices.
-                    return $"libx265 -preset {preset} -crf {crf} -tag:v hvc1 -x265-params log-level=error";
+                    string x265Params = large
+                        ? "log-level=error:frame-threads=2:rc-lookahead=20"
+                        : "log-level=error";
+                    return $"libx265 -preset {preset} -crf {crf} -tag:v hvc1 -x265-params {x265Params}";
                 case "h.264":
                 default:
-                    return $"libx264 -preset {preset} -crf {crf}";
+                    return large
+                        ? $"libx264 -preset {preset} -crf {crf} -threads 4 -x264-params rc-lookahead=20"
+                        : $"libx264 -preset {preset} -crf {crf}";
             }
         }
 
@@ -361,7 +377,10 @@ namespace TiltBrush
             // Helpful references:
             //  * https://trac.ffmpeg.org/wiki/Encode/H.264
             //  * https://trac.ffmpeg.org/wiki/Encode/YouTube
-            string streamOutput = @"-r {4} -threads 8 -c:v " + GetVideoEncoder(offline) + " -pix_fmt yuv420p " +
+            // Large frames set their own thread count in the encoder arguments.
+            string threads = IsLargeFrame(width, height) ? "" : "-threads 8 ";
+            string streamOutput = @"-r {4} " + threads + "-c:v " + GetVideoEncoder(offline, width, height) +
+                " -pix_fmt yuv420p " +
                 @" ""{3}""";
 
             bool isReading = false;

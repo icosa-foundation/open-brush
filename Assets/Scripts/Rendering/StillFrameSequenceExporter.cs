@@ -191,7 +191,7 @@ namespace TiltBrush
                     writer.WriteLine("Status: Recording");
                     writer.WriteLine("");
                     writer.WriteLine("To convert to video, use a tool like ffmpeg:");
-                    writer.WriteLine($"ffmpeg -framerate {m_FPS} -i \"{m_BaseFileName}_frame_%06d.{FilenameExtension}\" -c:v {FfmpegPipe.GetVideoEncoder(offline: true)} -pix_fmt yuv420p \"../{m_BaseFileName}.mp4\"");
+                    writer.WriteLine($"ffmpeg -framerate {m_FPS} -i \"{m_BaseFileName}_frame_%06d.{FilenameExtension}\" -c:v {FfmpegPipe.GetVideoEncoder(offline: true, m_Width, m_Height)} -pix_fmt yuv420p \"../{m_BaseFileName}.mp4\"");
                     writer.WriteLine("");
                     writer.WriteLine("(Run this command from inside the frames folder, or adjust paths accordingly)");
                 }
