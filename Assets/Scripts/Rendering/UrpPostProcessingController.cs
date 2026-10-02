@@ -640,9 +640,6 @@ namespace TiltBrush
                     break;
             }
             m_Bloom.intensity.value *= m_BloomAmount;
-                return;
-            }
-            m_Bloom.intensity.value *= m_BloomAmount;
         }
 
         public void DisableLegacyPostProcessing()
