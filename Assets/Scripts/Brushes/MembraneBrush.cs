@@ -41,9 +41,12 @@ namespace TiltBrush
         /// every vertex taking the current brush colour.
         [SerializeField] private bool m_ColorFromControlPoints;
 
+        [SerializeField, Range(0f, 0.5f)] private float m_OutlineWidth;
+
         /// Reused across rebuilds to keep per-frame allocation down.
         private List<Vector3> m_PathPositions;
         private List<Color32> m_PathColors;
+        private readonly List<Quaternion> m_OutlineFrames = new List<Quaternion>();
 
         private readonly MembraneFill.Workspace m_MembraneWorkspace = new MembraneFill.Workspace();
 
@@ -139,6 +142,10 @@ namespace TiltBrush
             // says, remembering that a double-sided descriptor doubles every vertex and that
             // faceting turns each index into a vertex.
             int ceiling = Mathf.Max(64, (m_SoftVertexLimit * 4) / (5 * Mathf.Max(1, NS)));
+            if (m_OutlineWidth > 0f && m_Faceted)
+            {
+                ceiling = Mathf.Max(64, ceiling - 8 * (4 * 24 * 4 + 1));
+            }
             options.MaxVertices = Mathf.Min(options.MaxVertices, ceiling);
             return options;
         }
@@ -212,7 +219,9 @@ namespace TiltBrush
             UnityEngine.Profiling.Profiler.BeginSample("Fill Path");
             MembraneFill.Result fill = finalQuality
                 ? MembraneFill.FillFinal(m_PathPositions, options, m_MembraneWorkspace,
-                    m_MembraneFinalBoundarySubdivisions)
+                    m_OutlineWidth > 0f
+                        ? Mathf.Min(m_MembraneFinalBoundarySubdivisions, 4)
+                        : m_MembraneFinalBoundarySubdivisions)
                 : MembraneFill.Fill(m_PathPositions, options, m_MembraneWorkspace);
             UnityEngine.Profiling.Profiler.EndSample();
 
@@ -222,6 +231,7 @@ namespace TiltBrush
             {
                 UnityEngine.Profiling.Profiler.BeginSample("Create Geometry");
                 CreateGeometry(ref knot, fill);
+                if (m_OutlineWidth > 0f) { CreateOutline(ref knot, fill); }
                 UnityEngine.Profiling.Profiler.EndSample();
             }
 
@@ -270,6 +280,130 @@ namespace TiltBrush
             {
                 AppendTri(ref knot, fill.Triangles[i], fill.Triangles[i + 1], fill.Triangles[i + 2]);
             }
+        }
+
+        private void CreateOutline(ref Knot knot, MembraneFill.Result fill)
+        {
+            Vector3[] boundary = fill.Boundary;
+            int count = boundary.Length;
+            if (count < 3 || knot.nVert + (count + 1) * 8 * NS > ushort.MaxValue
+                || knot.nTri + count * 8 * NS > ushort.MaxValue)
+            {
+                return;
+            }
+
+            m_OutlineFrames.Clear();
+            Quaternion? previousFrame = null;
+            Quaternion orientation = m_knots[1].point.m_Orient;
+            for (int i = 0; i < count; ++i)
+            {
+                Vector3 tangent = boundary[(i + 1) % count] - boundary[(i + count - 1) % count];
+                if (tangent.sqrMagnitude < 1e-12f)
+                {
+                    tangent = boundary[(i + 1) % count] - boundary[i];
+                    if (tangent.sqrMagnitude < 1e-12f)
+                    {
+                        tangent = boundary[i] - boundary[(i + count - 1) % count];
+                    }
+                    if (tangent.sqrMagnitude < 1e-12f && previousFrame.HasValue)
+                    {
+                        tangent = previousFrame.Value * Vector3.forward;
+                    }
+                    if (tangent.sqrMagnitude < 1e-12f) { return; }
+                }
+                tangent.Normalize();
+                if (previousFrame.HasValue)
+                {
+                    previousFrame = MathUtils.ComputeMinimalRotationFrame(
+                        tangent, previousFrame, orientation);
+                }
+                else
+                {
+                    Vector3 up = orientation * Vector3.up;
+                    Vector3 right = orientation * Vector3.right;
+                    Vector3 forward = orientation * Vector3.forward;
+                    Vector3 bootstrap = Mathf.Abs(Vector3.Dot(up, tangent))
+                        < Mathf.Abs(Vector3.Dot(right, tangent)) ? up : right;
+                    if (Mathf.Abs(Vector3.Dot(forward, tangent))
+                        < Mathf.Abs(Vector3.Dot(bootstrap, tangent)))
+                    {
+                        bootstrap = forward;
+                    }
+                    previousFrame = Quaternion.LookRotation(tangent, bootstrap);
+                }
+                m_OutlineFrames.Add(previousFrame.Value);
+            }
+
+            Vector3 firstTangent = m_OutlineFrames[0] * Vector3.forward;
+            Quaternion closedFrame = MathUtils.ComputeMinimalRotationFrame(
+                firstTangent, previousFrame, orientation);
+            float closureAngle = Vector3.SignedAngle(
+                closedFrame * Vector3.up, m_OutlineFrames[0] * Vector3.up, firstTangent);
+            int firstVertex = knot.nVert / NS;
+            float radius = m_OutlineWidth * m_BaseSize_PS * POINTER_TO_LOCAL;
+            double[] lengths = m_MembraneWorkspace.Lengths;
+            double perimeter = lengths[m_PathPositions.Count];
+            int segment = 0;
+            for (int i = 0; i <= count; ++i)
+            {
+                int sample = i % count;
+                Quaternion sampleFrame = i == count ? closedFrame : m_OutlineFrames[sample];
+                Quaternion frame = Quaternion.AngleAxis(closureAngle * i / count,
+                    sampleFrame * Vector3.forward) * sampleFrame;
+                Vector3 up = frame * Vector3.up;
+                Vector3 right = frame * Vector3.right;
+                Color32 color = m_knots[m_knots.Count - 1].color;
+                if (m_ColorFromControlPoints)
+                {
+                    double distance = perimeter * i / count;
+                    while (segment < m_PathPositions.Count - 1 && lengths[segment + 1] <= distance)
+                    {
+                        ++segment;
+                    }
+                    double segmentLength = lengths[segment + 1] - lengths[segment];
+                    float blend = segmentLength > 0
+                        ? (float)((distance - lengths[segment]) / segmentLength) : 0f;
+                    color = Color.Lerp(m_PathColors[segment],
+                        m_PathColors[(segment + 1) % m_PathColors.Count], blend);
+                }
+                color = TintOutlineColor(color);
+                for (int corner = 0; corner < 4; ++corner)
+                {
+                    float angle = corner * Mathf.PI * 0.5f;
+                    Vector3 direction = -Mathf.Cos(angle) * up - Mathf.Sin(angle) * right;
+                    Vector3 previousNormal = -Mathf.Cos(angle - Mathf.PI * 0.25f) * up
+                        - Mathf.Sin(angle - Mathf.PI * 0.25f) * right;
+                    Vector3 nextNormal = -Mathf.Cos(angle + Mathf.PI * 0.25f) * up
+                        - Mathf.Sin(angle + Mathf.PI * 0.25f) * right;
+                    Vector3 vertex = boundary[sample] + radius * direction;
+                    AppendVert(ref knot, vertex, previousNormal,
+                        new Vector2((float)i / count, corner == 0 ? 1f : (float)corner / 4), color);
+                    AppendVert(ref knot, vertex, nextNormal,
+                        new Vector2((float)i / count, (float)corner / 4), color);
+                }
+            }
+            for (int i = 0; i < count; ++i)
+            {
+                int ring = firstVertex + i * 8;
+                int nextRing = firstVertex + (i + 1) * 8;
+                for (int side = 0; side < 4; ++side)
+                {
+                    int start = side * 2 + 1;
+                    int end = ((side + 1) % 4) * 2;
+                    AppendTri(ref knot, ring + start, nextRing + start, nextRing + end);
+                    AppendTri(ref knot, ring + start, nextRing + end, ring + end);
+                }
+            }
+        }
+
+        private static Color32 TintOutlineColor(Color32 color)
+        {
+            Color source = color;
+            Color.RGBToHSV(source, out float hue, out float saturation, out float value);
+            value = value >= 0.5f ? value * 0.5f : (value + 1f) * 0.5f;
+            Color tinted = Color.HSVToRGB(hue, saturation, value);
+            tinted.a = source.a;
+            return tinted;
         }
 
         private void AppendVert(ref Knot k, Vector3 v, Vector3 n, Vector2 uv, Color32 color)
