@@ -366,6 +366,7 @@ namespace TiltBrush
                     color = Color.Lerp(m_PathColors[segment],
                         m_PathColors[(segment + 1) % m_PathColors.Count], blend);
                 }
+                color = TintOutlineColor(color);
                 for (int corner = 0; corner < 4; ++corner)
                 {
                     float angle = corner * Mathf.PI * 0.5f;
@@ -393,6 +394,16 @@ namespace TiltBrush
                     AppendTri(ref knot, ring + start, nextRing + end, ring + end);
                 }
             }
+        }
+
+        private static Color32 TintOutlineColor(Color32 color)
+        {
+            Color source = color;
+            Color.RGBToHSV(source, out float hue, out float saturation, out float value);
+            value = value >= 0.5f ? value * 0.5f : (value + 1f) * 0.5f;
+            Color tinted = Color.HSVToRGB(hue, saturation, value);
+            tinted.a = source.a;
+            return tinted;
         }
 
         private void AppendVert(ref Knot k, Vector3 v, Vector3 n, Vector2 uv, Color32 color)
