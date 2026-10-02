@@ -486,6 +486,10 @@ namespace TiltBrush
             info.camera.targetTexture = info.renderTexture;
         }
 
+        // Anti-aliasing for colour captures (video, frame sequences, snapshots). Capture cameras have no
+        // post-process AA, so without this edges are aliased.
+        private const int kCaptureMsaaSamples = 4;
+
         private static RenderTexture CreatePreviewRenderTexture(
             int width, int height, RenderTextureFormat format)
         {
@@ -493,7 +497,7 @@ namespace TiltBrush
             {
                 dimension = TextureDimension.Tex2D,
                 volumeDepth = 1,
-                msaaSamples = 1,
+                msaaSamples = kCaptureMsaaSamples,
                 useDynamicScale = false,
                 vrUsage = VRTextureUsage.None
             };
@@ -530,7 +534,8 @@ namespace TiltBrush
             // Use a temporary rather than rendering to rTexture because we don't know
             // what format rTexture is... it may not be the correct format.
             RenderTexture targetA = RenderTexture.GetTemporary(
-                rTexture.width, rTexture.height, depthBuffer: depth, format: format);
+                rTexture.width, rTexture.height, depth, format, RenderTextureReadWrite.Default,
+                kCaptureMsaaSamples);
 
             try
             {
