@@ -126,7 +126,7 @@ function Main()
                     local rotation = Rotation:New(0, 0, twist)
                     local offset = Rotation:RotateVector(rotation,
                         Vector3:New(canvasSize * 0.1, 0, 0))
-                    lightPose = Symmetry:ApplyPoseAction(branchPose, branchFrame,
+                    lightPose = Symmetry:ApplyPoseAction(frondPose, branch.fronds[event],
                         Transform:New(offset, rotation))
                     lightPose.scale = pose.scale * 0.16
                 end
