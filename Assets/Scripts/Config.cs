@@ -406,7 +406,7 @@ namespace TiltBrush
                     {
                         throw new ApplicationException("Invalid prefix argument, name expected");
                     }
-                    m_OdsOutputPrefix = args[i];
+                    m_OdsOutputPrefix = args[++i];
                     Debug.LogFormat("ODS Output Prefix: {0}", args[i]);
 
                 }
