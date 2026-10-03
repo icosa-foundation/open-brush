@@ -25,6 +25,14 @@ namespace TiltBrush
 
         private List<Stroke> m_DuplicatedStrokes;
         private List<GrabWidget> m_DuplicatedWidgets;
+        // A selected copy stands for its linked group. Duplicating it duplicates the group: these
+        // are the duplicates of its other copies, which are placed but never selected.
+        private readonly List<Stroke> m_DuplicatedCopies = new List<Stroke>();
+        // The original groups' other copies, baked with the selection's move as a deselect
+        // would bake them. Held here rather than as children: Merge expects its only child to
+        // be the stamp's selection move.
+        private readonly List<TransformSymmetryCopiesCommand> m_OriginalCopyMoves =
+            new List<TransformSymmetryCopiesCommand>();
 
         private TrTransform m_OriginTransform;
         private TrTransform m_DuplicateTransform;
@@ -62,12 +70,22 @@ namespace TiltBrush
                 // sorry.
                 m_NoSymmetrySpecialCase = true;
 
+                // The copies the preview displaces go back to rest, so their duplicates can be
+                // placed from where they really are.
+                SymmetryPeerPreview.Hide();
+
                 // Duplicate strokes.
+                var duplicatedGroups = new HashSet<SymmetryStrokeGroup>();
                 foreach (var stroke in m_SelectedStrokes)
                 {
-                    m_DuplicatedStrokes.Add(
-                        SketchMemoryScript.m_Instance.DuplicateStroke(
-                            stroke, App.Scene.SelectionCanvas, null));
+                    var duplicate = SketchMemoryScript.m_Instance.DuplicateStroke(
+                        stroke, App.Scene.SelectionCanvas, null);
+                    m_DuplicatedStrokes.Add(duplicate);
+                    if (SymmetryPeerEditing.IsLinked(stroke) &&
+                        duplicatedGroups.Add(stroke.SymmetryPeerGroup))
+                    {
+                        DuplicateLinkedGroup(stroke, duplicate);
+                    }
                 }
 
                 // Duplicate widgets.
@@ -108,6 +126,24 @@ namespace TiltBrush
                 // symmetry peers under it, rather than joining the source's group.
                 var mirror = SymmetryMirrors.LinkingMirror;
                 bool linkMirrorCopies = mirror != null && m_SelectedStrokes.Count > 0;
+
+                // With plain symmetry, a selected copy's linked partners are duplicated through
+                // the symmetry too, as if they had been selected. They aren't in the selection
+                // canvas, so their transforms start from their own canvas. Only for a duplicate
+                // made in place: a moved duplicate would need each partner's mirrored move.
+                if (!linkMirrorCopies && m_DupeInPlace)
+                {
+                    var xfCSfromGSPartners = m_CurrentCanvas.Pose.inverse;
+                    foreach (var copy in SymmetryPeerEditing.PeersOutside(m_SelectedStrokes))
+                    {
+                        for (int i = 0; i < xfSymmetriesGS.Count; i++)
+                        {
+                            var xfCopy = xfCSfromGSPartners * xfSymmetriesGS[i] * copy.Canvas.Pose;
+                            m_DuplicatedStrokes.Add(SketchMemoryScript.m_Instance.DuplicateStroke(
+                                copy, m_CurrentCanvas, xfCopy, absoluteScale: true));
+                        }
+                    }
+                }
 
                 // Duplicate strokes.
                 foreach (var stroke in m_SelectedStrokes)
@@ -161,7 +197,39 @@ namespace TiltBrush
                 }
             }
 
-            GroupManager.MoveStrokesToNewGroups(m_DuplicatedStrokes, null);
+            GroupManager.MoveStrokesToNewGroups(
+                m_DuplicatedStrokes.Concat(m_DuplicatedCopies).ToList(), null);
+        }
+
+        /// Duplicates the rest of a selected copy's linked group as a new linked group under the
+        /// same mirror. The duplicate of the selected copy is selected with no join transform, so
+        /// the preview moves its partners by the whole selection transform; they therefore start
+        /// where the selected copy's selection-space points mirror to: each original partner
+        /// carried by C·J⁻¹·C⁻¹ (J the selection transform when the original was selected).
+        private void DuplicateLinkedGroup(Stroke selected, Stroke duplicate)
+        {
+            var group = selected.SymmetryPeerGroup;
+            TrTransform joined = SelectionManager.m_Instance.SelectionTransformWhenSelected(selected);
+            var newGroup = new SymmetryStrokeGroup(group.Mirror);
+            duplicate.JoinSymmetryGroup(newGroup, selected.SymmetryPointerIndex);
+            foreach (var copy in group.Strokes)
+            {
+                if (ReferenceEquals(copy, selected) || !copy.IsGeometryEnabled ||
+                    SelectionManager.m_Instance.IsStrokeSelected(copy) ||
+                    !SymmetryPeerEditing.TryGetPeerSymmetryTransform(selected, copy, out var toCopy))
+                {
+                    continue;
+                }
+                var copyDuplicate = SketchMemoryScript.m_Instance.DuplicateStroke(copy, copy.Canvas, null);
+                MirrorStrokeEdits.ApplyLeftTransform(copyDuplicate, toCopy * joined.inverse * toCopy.inverse);
+                copyDuplicate.JoinSymmetryGroup(newGroup, copy.SymmetryPointerIndex);
+                m_DuplicatedCopies.Add(copyDuplicate);
+            }
+            newGroup.CaptureInstances();
+
+            // The original stays where the selection put it, so its partners take the move.
+            m_OriginalCopyMoves.Add(new TransformSymmetryCopiesCommand(
+                selected, SymmetryPeerEditing.SelectionMovement(m_OriginTransform, joined)));
         }
 
         public override bool NeedsSave { get { return true; } }
@@ -169,7 +237,7 @@ namespace TiltBrush
         protected override void OnRedo()
         {
             // Place duplicated strokes.
-            foreach (var stroke in m_DuplicatedStrokes)
+            foreach (var stroke in m_DuplicatedStrokes.Concat(m_DuplicatedCopies))
             {
                 switch (stroke.m_Type)
                 {
@@ -206,6 +274,7 @@ namespace TiltBrush
                 {
                     SelectionManager.m_Instance.DeselectStrokes(m_SelectedStrokes, m_CurrentCanvas);
                 }
+                foreach (var copyMove in m_OriginalCopyMoves) { copyMove.Redo(); }
 
                 if (m_SelectedWidgets != null)
                 {
@@ -223,8 +292,10 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            for (int i = m_OriginalCopyMoves.Count - 1; i >= 0; --i) { m_OriginalCopyMoves[i].Undo(); }
+
             // Remove duplicated strokes.
-            foreach (var stroke in m_DuplicatedStrokes)
+            foreach (var stroke in m_DuplicatedStrokes.Concat(m_DuplicatedCopies))
             {
                 switch (stroke.m_Type)
                 {

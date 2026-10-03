@@ -102,8 +102,10 @@ namespace TiltBrush
             IEnumerable<Stroke> strokes;
             if (m_SelectedOnly)
             {
-                strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
-                SelectionManager.m_Instance.DeselectStrokes(strokes, App.ActiveCanvas);
+                var selected = SelectionManager.m_Instance.SelectedStrokes.ToList();
+                SelectionManager.m_Instance.DeselectStrokes(selected, App.ActiveCanvas);
+                // A selected copy stands for its linked group: save the group's other copies too.
+                strokes = selected.Concat(SymmetryPeerEditing.PeersOutside(selected)).ToList();
             }
             else
             {

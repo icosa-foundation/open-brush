@@ -1196,8 +1196,12 @@ namespace TiltBrush
                 bool selectionIsInOneGroup = SelectionIsInOneGroup;
                 SketchGroupTag? targetGroup =
                     selectionIsInOneGroup ? SketchGroupTag.None : (SketchGroupTag?)null;
+                // A selected copy stands for its linked group, so the group's other copies are
+                // grouped with it.
+                var strokesToGroup = m_SelectedStrokes
+                    .Concat(SymmetryPeerEditing.PeersOutside(m_SelectedStrokes)).ToList();
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new GroupStrokesAndWidgetsCommand(m_SelectedStrokes, m_SelectedWidgets, targetGroup: targetGroup));
+                    new GroupStrokesAndWidgetsCommand(strokesToGroup, m_SelectedWidgets, targetGroup: targetGroup));
 
                 OutputWindowScript.m_Instance.CreateInfoCardAtController(
                     InputManager.ControllerName.Brush, selectionIsInOneGroup ? "Ungrouped!" : "Grouped!");

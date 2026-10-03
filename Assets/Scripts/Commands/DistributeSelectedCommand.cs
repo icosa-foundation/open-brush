@@ -32,6 +32,17 @@ namespace TiltBrush
             m_BoundsType = boundsType;
             GetObjectList();
             CalcTransforms();
+
+            // Linked copies of the selected strokes follow them.
+            var strokeEdits = new List<(Stroke, TrTransform)>();
+            for (int i = 0; i < m_ObjectList.Count; i++)
+            {
+                if (m_ObjectList[i].Item2 is Stroke stroke)
+                {
+                    strokeEdits.Add((stroke, m_NewTransforms[i]));
+                }
+            }
+            TransformSymmetryCopiesCommand.ForSelectionEdit(strokeEdits, this);
         }
 
         private void GetObjectList()

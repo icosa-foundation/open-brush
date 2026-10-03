@@ -43,7 +43,9 @@ namespace TiltBrush
             if (!SymmetryPeerEditing.IsLinked(driver)) { return; }
             foreach (var copy in driver.SymmetryPeerGroup.Strokes)
             {
+                // A selected copy is moved by whatever moves the selection.
                 if (ReferenceEquals(copy, driver) ||
+                    SelectionManager.m_Instance.IsStrokeSelected(copy) ||
                     !SymmetryPeerEditing.TryGetPeerSymmetryTransform(driver, copy, out var toCopy))
                 {
                     continue;
@@ -57,6 +59,30 @@ namespace TiltBrush
         }
 
         public override bool NeedsSave => m_Copies.Count > 0;
+
+        /// For edits that move selected strokes within the selection - each stroke's control
+        /// points changing by its own left transform L, in selection-canvas space - rather than
+        /// by moving the selection itself, which the preview and the deselect bake already
+        /// follow. A selected stroke's resting place moves by S·L·S⁻¹ in canvas space (S the
+        /// selection transform), and its unselected copies by their mirrored version of that,
+        /// applied where they are: the preview's own displacement of them stays valid.
+        /// Adds one child command per linked group to 'parent'.
+        public static void ForSelectionEdit(IEnumerable<(Stroke stroke, TrTransform local)> edits,
+            BaseCommand parent)
+        {
+            TrTransform selection = SelectionManager.m_Instance.SelectionTransform;
+            var seen = new HashSet<SymmetryStrokeGroup>();
+            foreach (var (stroke, local) in edits)
+            {
+                if (local == TrTransform.identity || !SymmetryPeerEditing.IsLinked(stroke) ||
+                    !seen.Add(stroke.SymmetryPeerGroup))
+                {
+                    continue;
+                }
+                new TransformSymmetryCopiesCommand(
+                    stroke, selection * local * selection.inverse, null, parent);
+            }
+        }
 
         /// Takes over copies the selection preview has already moved by their step, so the
         /// next redo leaves them where they are. Call before the preview is hidden.
