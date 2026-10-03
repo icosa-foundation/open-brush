@@ -95,6 +95,15 @@ namespace TiltBrush
                 m_Tools[i].gameObject.SetActive(false);
             }
 
+            if (GetToolOfType(BaseTool.ToolType.VoxelTool) == null)
+            {
+                var toolObject = new GameObject("VoxelTool");
+                toolObject.transform.SetParent(transform, false);
+                var voxelTool = toolObject.AddComponent<VoxelTool>();
+                voxelTool.m_Type = BaseTool.ToolType.VoxelTool;
+                RegisterRuntimeTool(voxelTool);
+            }
+
             m_ToolHideRequested = false;
         }
 

@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using System.Linq;
 using System.Threading.Tasks;
@@ -31,6 +32,11 @@ namespace TiltBrush
         [SerializeField] private float m_MaxBloat;
 
         private Model m_Model;
+        private RuntimeVoxDocument m_EditableVoxDocument;
+        private readonly HashSet<Mesh> m_OwnedVoxMeshes = new HashSet<Mesh>();
+        private readonly HashSet<Material> m_OwnedVoxMaterials = new HashSet<Material>();
+        private bool m_HasEditableVoxVisuals;
+        private bool m_EditableVoxOptimized = true;
         private bool m_PreserveCustomSize;
 
 
@@ -91,6 +97,13 @@ namespace TiltBrush
                     m_Model.ReleaseUsage();
                 }
                 m_Model = value;
+                // A broken-apart model widget represents only one imported hierarchy subtree,
+                // while an editable VOX document owns the complete file. Keep legacy split VOX
+                // widgets on the ordinary mesh-model path rather than attaching a document that
+                // cannot be refreshed without recreating the omitted subtrees.
+                m_EditableVoxDocument = string.IsNullOrEmpty(Subtree)
+                    ? m_Model?.CreateEditableVoxDocument()
+                    : null;
                 // Increment usage count on new model.
                 if (m_Model != null)
                 {
@@ -100,6 +113,23 @@ namespace TiltBrush
                 m_SyncHierarchyPending = m_Model != null && !string.IsNullOrEmpty(Subtree);
                 LoadModel();
             }
+        }
+
+        // Owned by this widget. Never shared with the catalog Model or another widget.
+        public RuntimeVoxDocument EditableVoxDocument => m_EditableVoxDocument;
+
+        internal void AdoptEditableVoxDocument(RuntimeVoxDocument document)
+        {
+            if (document == null || !IsVoxModel())
+            {
+                throw new InvalidOperationException("Only VOX model widgets can adopt an editable document.");
+            }
+            if (!string.IsNullOrEmpty(Subtree))
+            {
+                throw new InvalidOperationException(
+                    "A split model subtree cannot adopt a complete editable VOX document.");
+            }
+            m_EditableVoxDocument = document;
         }
 
         protected override Vector3 HomeSnapOffset
@@ -114,7 +144,7 @@ namespace TiltBrush
         protected override Vector3 GetHomeSnapLocation(Quaternion snapOrient)
         {
             return base.GetHomeSnapLocation(snapOrient) -
-                snapOrient * (App.Scene.Pose.scale * m_Size * m_Model.m_MeshBounds.center);
+                snapOrient * (App.Scene.Pose.scale * m_Size * MeshBounds.center);
         }
 
         public override float MaxAxisScale
@@ -183,10 +213,20 @@ namespace TiltBrush
             clone.transform.rotation = rotation;
             clone.m_Subtree = m_Subtree;
             clone.Model = Model;
+            if (m_EditableVoxDocument != null)
+            {
+                clone.m_EditableVoxDocument = RuntimeVoxDocument.FromBytes(
+                    m_EditableVoxDocument.ToVoxBytes(),
+                    m_EditableVoxDocument.HasPreservedSourceData);
+            }
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
+            if (m_HasEditableVoxVisuals)
+            {
+                clone.RefreshEditableVoxMeshes(m_EditableVoxOptimized);
+            }
             clone.AddSceneLightGizmos();
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
@@ -281,6 +321,8 @@ namespace TiltBrush
         void LoadModel()
         {
             // Clean up existing model
+            ReleaseOwnedVoxMeshes();
+            ReleaseOwnedVoxMaterials();
             if (m_ModelInstance != null)
             {
                 GameObject.Destroy(m_ModelInstance.gameObject);
@@ -389,8 +431,279 @@ namespace TiltBrush
             }
         }
 
+        // Explicit refresh keeps a painting gesture free to defer expensive mesh rebuilds.
+        // Only this widget's cloned hierarchy is modified; the catalog Model remains shared.
+        public void RefreshEditableVoxMeshes(bool optimized = true)
+        {
+            if (m_EditableVoxDocument == null || m_ModelInstance == null || m_ObjModelScript == null)
+            {
+                throw new InvalidOperationException("This widget has no loaded editable VOX model.");
+            }
+            if (!string.IsNullOrEmpty(Subtree))
+            {
+                throw new NotSupportedException(
+                    "Editable VOX mesh refresh for a split model subtree is not supported yet.");
+            }
+
+            var builder = new VoxMeshBuilder();
+            var materialSet = new VoxMaterialSet(
+                m_EditableVoxDocument,
+                ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial);
+            var replacementMeshes = new List<Mesh>(m_EditableVoxDocument.Models.Count);
+            var previousAssignments = new List<(MeshFilter filter, Mesh mesh)>();
+            var previousMaterials = new List<(MeshRenderer renderer, Material[] materials)>();
+            try
+            {
+                foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
+                {
+                    replacementMeshes.Add(optimized
+                        ? builder.GenerateOptimizedMesh(
+                            model,
+                            m_EditableVoxDocument.Palette,
+                            materialSet.PaletteSubmeshIndices,
+                            materialSet.Materials.Count)
+                        : builder.GenerateSeparateCubesMesh(
+                            model,
+                            m_EditableVoxDocument.Palette,
+                            materialSet.PaletteSubmeshIndices,
+                            materialSet.Materials.Count));
+                }
+
+                for (int i = 0; i < m_EditableVoxDocument.Models.Count; i++)
+                {
+                    RuntimeVoxDocument.RuntimeModel model = m_EditableVoxDocument.Models[i];
+                    MeshFilter visibleFilter = GetOrCreateVoxModelFilter(
+                        m_ModelInstance,
+                        i,
+                        model,
+                        ghost: false);
+                    previousAssignments.Add((visibleFilter, visibleFilter.sharedMesh));
+                    visibleFilter.sharedMesh = replacementMeshes[i];
+                    MeshRenderer visibleRenderer = visibleFilter.GetComponent<MeshRenderer>();
+                    previousMaterials.Add((visibleRenderer, visibleRenderer.sharedMaterials));
+                    visibleRenderer.sharedMaterials = materialSet.Materials.ToArray();
+
+                    if (m_SnapGhost != null)
+                    {
+                        MeshFilter ghostFilter = GetOrCreateVoxModelFilter(
+                            m_SnapGhost,
+                            i,
+                            model,
+                            ghost: true);
+                        previousAssignments.Add((ghostFilter, ghostFilter.sharedMesh));
+                        ghostFilter.sharedMesh = replacementMeshes[i];
+                        MeshRenderer ghostRenderer = ghostFilter.GetComponent<MeshRenderer>();
+                        previousMaterials.Add((ghostRenderer, ghostRenderer.sharedMaterials));
+                        ghostRenderer.sharedMaterials = Enumerable
+                            .Repeat(m_SnapGhostMaterial, materialSet.Materials.Count)
+                            .ToArray();
+                    }
+                }
+            }
+            catch
+            {
+                foreach ((MeshFilter filter, Mesh mesh) in previousAssignments)
+                {
+                    if (filter != null)
+                    {
+                        filter.sharedMesh = mesh;
+                    }
+                }
+                foreach ((MeshRenderer renderer, Material[] materials) in previousMaterials)
+                {
+                    if (renderer != null)
+                    {
+                        renderer.sharedMaterials = materials;
+                    }
+                }
+                foreach (Mesh mesh in replacementMeshes)
+                {
+                    DestroyOwnedVoxMesh(mesh);
+                }
+                foreach (Material material in materialSet.OwnedMaterials)
+                {
+                    DestroyOwnedVoxMaterial(material);
+                }
+                throw;
+            }
+
+            ReleaseOwnedVoxMeshes();
+            ReleaseOwnedVoxMaterials();
+            foreach (Mesh mesh in replacementMeshes)
+            {
+                m_OwnedVoxMeshes.Add(mesh);
+            }
+            foreach (Material material in materialSet.OwnedMaterials)
+            {
+                m_OwnedVoxMaterials.Add(material);
+            }
+            m_HasEditableVoxVisuals = true;
+            m_EditableVoxOptimized = optimized;
+
+            int previousTiltMeterCost = GetTiltMeterCost();
+            m_ObjModelScript.UpdateAllMeshChildren();
+            int currentTiltMeterCost = GetTiltMeterCost();
+            if (currentTiltMeterCost != previousTiltMeterCost)
+            {
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(previousTiltMeterCost, up: false);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(currentTiltMeterCost, up: true);
+            }
+            WidgetManager.m_Instance.AdjustModelVertCount(-m_NumVertsTrackedByWidgetManager);
+            m_ObjModelScript.InvalidateMeshVertexCount();
+            m_NumVertsTrackedByWidgetManager = m_ObjModelScript.GetNumVertsInMeshes();
+            WidgetManager.m_Instance.AdjustModelVertCount(m_NumVertsTrackedByWidgetManager);
+
+            RecalculateColliderBounds();
+        }
+
+        private MeshFilter GetOrCreateVoxModelFilter(
+            Transform hierarchyRoot,
+            int modelIndex,
+            RuntimeVoxDocument.RuntimeModel model,
+            bool ghost)
+        {
+            string prefix = $"Model_{modelIndex}_";
+            Transform modelTransform = null;
+            foreach (Transform child in hierarchyRoot)
+            {
+                if (child.name.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    modelTransform = child;
+                    break;
+                }
+            }
+
+            if (modelTransform == null)
+            {
+                var modelObject = new GameObject($"{prefix}{model.Name}");
+                modelTransform = modelObject.transform;
+                modelTransform.SetParent(hierarchyRoot, false);
+            }
+
+            TrTransform modelPose = VoxMeshBuilder.GetModelTransform(model);
+            modelTransform.localPosition = modelPose.translation;
+            modelTransform.localRotation = modelPose.rotation;
+            modelTransform.gameObject.SetActive(model.IsVisible);
+            MeshFilter filter = modelTransform.GetComponent<MeshFilter>();
+            if (filter == null)
+            {
+                filter = modelTransform.gameObject.AddComponent<MeshFilter>();
+            }
+
+            MeshRenderer renderer = modelTransform.GetComponent<MeshRenderer>();
+            if (renderer == null)
+            {
+                renderer = modelTransform.gameObject.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = ghost
+                    ? m_SnapGhostMaterial
+                    : ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial;
+            }
+            if (ghost)
+            {
+                modelTransform.gameObject.layer = LayerMask.NameToLayer("Panels");
+                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+            }
+            return filter;
+        }
+
+        private Bounds GetEditableVoxModelBounds()
+        {
+            var bounds = new Bounds();
+            bool first = true;
+            foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
+            {
+                if (!model.IsVisible)
+                {
+                    continue;
+                }
+                TrTransform modelTransform = VoxMeshBuilder.GetModelTransform(model);
+                foreach (Vector3Int voxel in model.Voxels.Keys)
+                {
+                    for (int x = 0; x < 2; x++)
+                        for (int y = 0; y < 2; y++)
+                            for (int z = 0; z < 2; z++)
+                            {
+                                var corner = new Vector3(
+                                    voxel.x + (x == 0 ? -0.5f : 0.5f),
+                                    voxel.y + (y == 0 ? -0.5f : 0.5f),
+                                    voxel.z + (z == 0 ? -0.5f : 0.5f));
+                                Vector3 position = modelTransform * corner;
+                                if (first)
+                                {
+                                    bounds = new Bounds(position, Vector3.zero);
+                                    first = false;
+                                }
+                                else
+                                {
+                                    bounds.Encapsulate(position);
+                                }
+                            }
+                }
+            }
+            return bounds;
+        }
+
+        private void ReleaseOwnedVoxMeshes()
+        {
+            foreach (Mesh mesh in m_OwnedVoxMeshes)
+            {
+                DestroyOwnedVoxMesh(mesh);
+            }
+            m_OwnedVoxMeshes.Clear();
+            m_HasEditableVoxVisuals = false;
+        }
+
+        private static void DestroyOwnedVoxMesh(Mesh mesh)
+        {
+            if (mesh == null)
+            {
+                return;
+            }
+            if (Application.isPlaying)
+            {
+                UnityEngine.Object.Destroy(mesh);
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(mesh);
+            }
+        }
+
+        private void ReleaseOwnedVoxMaterials()
+        {
+            foreach (Material material in m_OwnedVoxMaterials)
+            {
+                DestroyOwnedVoxMaterial(material);
+            }
+            m_OwnedVoxMaterials.Clear();
+        }
+
+        private static void DestroyOwnedVoxMaterial(Material material)
+        {
+            if (material == null)
+            {
+                return;
+            }
+            if (Application.isPlaying)
+            {
+                UnityEngine.Object.Destroy(material);
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(material);
+            }
+        }
+
         public bool HasMultipleNodes()
         {
+            // VOX internal models remain document implementation details. Exposing the generic
+            // model Break Apart operation would create subtree widgets that no longer own a
+            // complete editable document.
+            if (m_EditableVoxDocument != null)
+            {
+                return false;
+            }
+
             // TODO test all other 3d model formats work with "break apart" command
             // Currently we assume that they do
 
@@ -412,6 +725,11 @@ namespace TiltBrush
 
         public bool MeshSplitPossible()
         {
+            if (m_EditableVoxDocument != null)
+            {
+                return false;
+            }
+
             // Unsplit models initially always have the possibility of being split.
             // We only return false if we're already tried to split this mesh
             bool hasBeenSplit = false;
@@ -567,6 +885,14 @@ namespace TiltBrush
 
         public void RecalculateColliderBounds()
         {
+            if (m_HasEditableVoxVisuals)
+            {
+                m_MeshBounds = GetEditableVoxModelBounds();
+                m_BoxCollider.transform.localPosition = m_MeshBounds.center;
+                m_BoxCollider.size = m_MeshBounds.size + m_ContainerBloat;
+                return;
+            }
+
             var widgetTransform = m_ObjModelScript.transform.parent;
 
             // Save the widget's original transform
@@ -748,11 +1074,11 @@ namespace TiltBrush
         {
             get
             {
-                if (string.IsNullOrEmpty(m_Subtree))
+                if (m_HasEditableVoxVisuals || !string.IsNullOrEmpty(m_Subtree))
                 {
-                    return m_Model.m_MeshBounds;
+                    return m_MeshBounds;
                 }
-                return m_MeshBounds;
+                return m_Model.m_MeshBounds;
             }
         }
 
@@ -900,7 +1226,8 @@ namespace TiltBrush
 
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
-        public static async Task CreateModelFromSaveData(TiltModels75 modelDatas)
+        public static async Task CreateModelFromSaveData(
+            TiltModels75 modelDatas, SceneFileInfo fileInfo)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
@@ -908,7 +1235,11 @@ namespace TiltBrush
                 "InSet should have been removed at load time");
 
             bool ok;
-            if (modelDatas.FilePath != null)
+            if (modelDatas.EditableVoxPaths != null)
+            {
+                ok = CreateEmbeddedVoxWidgetsFromSaveData(modelDatas, fileInfo);
+            }
+            else if (modelDatas.FilePath != null)
             {
 
                 Task<bool> okTask = CreateModelsFromRelativePath(
@@ -948,6 +1279,85 @@ namespace TiltBrush
             {
                 ModelCatalog.m_Instance.AddMissingModel(
                     modelDatas.FilePath, modelDatas.Transforms, modelDatas.RawTransforms);
+            }
+        }
+
+        private static bool CreateEmbeddedVoxWidgetsFromSaveData(
+            TiltModels75 modelDatas, SceneFileInfo fileInfo)
+        {
+            TrTransform[] transforms = modelDatas.RawTransforms;
+            string[] paths = modelDatas.EditableVoxPaths;
+            bool[] preserveSource = modelDatas.EditableVoxPreserveSource;
+            if (fileInfo == null || transforms == null || paths.Length != transforms.Length ||
+                (preserveSource != null && preserveSource.Length != paths.Length) ||
+                paths.Any(path => string.IsNullOrEmpty(path) ||
+                    !path.StartsWith("vox/widgets/", StringComparison.Ordinal) ||
+                    !path.EndsWith(".vox", StringComparison.OrdinalIgnoreCase) ||
+                    path.Contains("..") || path.Contains("\\")))
+            {
+                Debug.LogWarning("VOXWIDGET-PERSIST: Invalid embedded VOX widget index.");
+                return false;
+            }
+
+            var models = new List<Model>(paths.Length);
+            try
+            {
+                foreach (string path in paths)
+                {
+                    byte[] bytes;
+                    using (Stream source = fileInfo.GetReadStream(path))
+                    using (var copy = new MemoryStream())
+                    {
+                        source.CopyTo(copy);
+                        bytes = copy.ToArray();
+                    }
+                    Model model = Model.CreateEditableVoxModelFromBytes(
+                        bytes, modelDatas.FilePath);
+                    if (model == null)
+                    {
+                        throw new InvalidDataException($"Could not import embedded VOX '{path}'.");
+                    }
+                    models.Add(model);
+                    model.SetMeshSplitData(
+                        modelDatas.SplitMeshPaths, modelDatas.NotSplittableMeshPaths);
+                    model.InitMeshSplits();
+                }
+
+                for (int i = 0; i < models.Count; i++)
+                {
+                    bool pin = modelDatas.PinStates != null && i < modelDatas.PinStates.Length &&
+                        modelDatas.PinStates[i];
+                    uint groupId = modelDatas.GroupIds != null && i < modelDatas.GroupIds.Length
+                        ? modelDatas.GroupIds[i] : 0;
+                    int layerId = modelDatas.LayerIds != null && i < modelDatas.LayerIds.Length
+                        ? modelDatas.LayerIds[i] : 0;
+                    string subtree = modelDatas.Subtrees != null && i < modelDatas.Subtrees.Length
+                        ? modelDatas.Subtrees[i] : null;
+                    byte[] bytes;
+                    using (Stream source = fileInfo.GetReadStream(paths[i]))
+                    using (var copy = new MemoryStream())
+                    {
+                        source.CopyTo(copy);
+                        bytes = copy.ToArray();
+                    }
+                    bool preserveImportedSource = preserveSource == null || preserveSource[i];
+                    CreateModel(models[i], subtree, transforms[i], pin,
+                        isNonRawTransform: false, groupId, layerId,
+                        editableDocument: RuntimeVoxDocument.FromBytes(bytes, preserveImportedSource));
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"VOXWIDGET-PERSIST: Failed to restore embedded VOX widgets: {e.Message}");
+                return false;
+            }
+            finally
+            {
+                foreach (Model model in models)
+                {
+                    model.ReleaseFromCatalog();
+                }
             }
         }
 
@@ -1003,13 +1413,18 @@ namespace TiltBrush
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
-                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
+                                bool isNonRawTransform, uint groupId, int layerId,
+                                string assetId = null, RuntimeVoxDocument editableDocument = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
             modelWidget.m_Subtree = subtree;
             modelWidget.Model = model;
+            if (editableDocument != null)
+            {
+                modelWidget.AdoptEditableVoxDocument(editableDocument);
+            }
             modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
             if (isNonRawTransform)
@@ -1104,7 +1519,7 @@ namespace TiltBrush
 
         override public bool CanSnapToHome()
         {
-            return m_Model.m_MeshBounds.center == Vector3.zero;
+            return MeshBounds.center == Vector3.zero;
         }
 
         private bool IsVoxModel()

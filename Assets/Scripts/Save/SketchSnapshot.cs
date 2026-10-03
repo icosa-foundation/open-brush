@@ -34,6 +34,7 @@ namespace TiltBrush
         private TrTransform m_LastThumbnail_SS;
         private List<SketchWriter.AdjustedMemoryBrushStroke> m_Strokes;
         private SketchMetadata m_Metadata;
+        private MetadataUtils.EditableVoxSavePayload[] m_EditableVoxPayloads;
 
         private JsonSerializer m_JsonSerializer;
         private SaveIconCaptureScript m_SaveIconCapture;
@@ -133,6 +134,8 @@ namespace TiltBrush
 
         public SketchMetadata GetSketchMetadata()
         {
+            TiltModels75[] modelIndex = MetadataUtils.GetTiltModels(
+                m_GroupIdMapping, out m_EditableVoxPayloads);
             // Note: This assumes Room space == Global space.
             TrTransform xfThumbnail_RS = SketchControlsScript.m_Instance.GetSaveIconTool()
                 .LastSaveCameraRigState.GetLossyTrTransform();
@@ -146,7 +149,7 @@ namespace TiltBrush
                 AudioPreset = null,
                 ThumbnailCameraTransformInRoomSpace = xfThumbnail_RS,
                 Authors = hasAuthor ? new[] { App.UserConfig.User.Author } : null,
-                ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping),
+                ModelIndex = modelIndex,
                 LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping),
                 ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping),
                 Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping),
@@ -270,6 +273,16 @@ namespace TiltBrush
                         zip.CloseEntry();
                     }
 
+                    if (m_EditableVoxPayloads != null)
+                    {
+                        foreach (MetadataUtils.EditableVoxSavePayload payload in m_EditableVoxPayloads)
+                        {
+                            zip.PutNextEntry(new ZipEntry(payload.FilePath));
+                            zip.Write(payload.VoxBytes, 0, payload.VoxBytes.Length);
+                            zip.CloseEntry();
+                        }
+                    }
+
                     // Add other necessary files as needed
                 }
 
@@ -312,6 +325,17 @@ namespace TiltBrush
                         SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
+
+                    if (m_EditableVoxPayloads != null)
+                    {
+                        foreach (MetadataUtils.EditableVoxSavePayload payload in m_EditableVoxPayloads)
+                        {
+                            using (var stream = tiltWriter.GetWriteStream(payload.FilePath))
+                            {
+                                stream.Write(payload.VoxBytes, 0, payload.VoxBytes.Length);
+                            }
+                        }
+                    }
 
                     using (var jsonWriter = new CustomJsonWriter(new StreamWriter(
                         tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))
