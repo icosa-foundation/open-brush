@@ -68,6 +68,18 @@ namespace TiltBrush
             set => ApiMethods.BrushSizeSet(value);
         }
 
+        [LuaDocsDescription("The brush size in absolute room-space units")]
+        public static float sizeAbsolute
+        {
+            get => PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+            set
+            {
+                var pointer = PointerManager.m_Instance.MainPointer;
+                pointer.BrushSizeAbsolute = value;
+                pointer.MarkBrushSizeUsed();
+            }
+        }
+
         [LuaDocsDescription("Brush pressure is determined by how far the trigger is pressed in")]
         public static float pressure
         {

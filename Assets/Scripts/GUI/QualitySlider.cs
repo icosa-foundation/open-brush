@@ -20,14 +20,24 @@ namespace TiltBrush
     public class QualitySlider : BaseSlider
     {
         private float[] m_Steps;
+        private bool m_HasAutomaticStep;
+        private int m_DisplayedStep = -1;
+
+        private int SelectedStep => m_HasAutomaticStep && QualityControls.m_Instance.AutomaticQualityEnabled
+            ? 0
+            : Mathf.Clamp(QualityControls.m_Instance.QualityLevel, 0,
+                QualityControls.m_Instance.AppQualityLevels.Length - 1) + (m_HasAutomaticStep ? 1 : 0);
 
         override protected void Awake()
         {
             base.Awake();
 
-            //divide the slider in to steps
-            int iNumQualitySettings = Mathf.Max(QualitySettings.names.Length, 2);
-            float fStepInterval = 1.0f / (float)(iNumQualitySettings - 1);
+            // Mobile supports dynamic quality. Its first position selects Auto,
+            // followed by one position per manual level in the active app ladder.
+            m_HasAutomaticStep = QualityControls.m_Instance.SupportsAutomaticQuality;
+            int iNumQualitySettings = Mathf.Max(QualityControls.m_Instance.AppQualityLevels.Length, 1) +
+                (m_HasAutomaticStep ? 1 : 0);
+            float fStepInterval = 1.0f / Mathf.Max(iNumQualitySettings - 1, 1);
             m_Steps = new float[iNumQualitySettings];
             for (int i = 0; i < iNumQualitySettings; ++i)
             {
@@ -36,16 +46,27 @@ namespace TiltBrush
 
             //figure out where to initialize the position of the slider
             PositionNobAtCurrentQuality();
-            SetDescriptionText(m_DescriptionText, GetDescriptionExtraText());
+        }
+
+        private void LateUpdate()
+        {
+            // API changes can switch mode or level while the panel is open.
+            if (SelectedStep != m_DisplayedStep)
+                PositionNobAtCurrentQuality();
         }
 
         void PositionNobAtCurrentQuality()
         {
-            int iCurrentQuality = QualitySettings.GetQualityLevel();
-            QualityControls.m_Instance.QualityLevel = iCurrentQuality;
+            int selectedStep = SelectedStep;
+            m_CurrentValue = m_Steps[selectedStep];
             Vector3 vLocalPos = m_Nob.transform.localPosition;
-            vLocalPos.x = Mathf.Clamp(m_Steps[iCurrentQuality] - 0.5f, -0.5f, 0.5f) * m_MeshScale.x;
+            vLocalPos.x = Mathf.Clamp(m_CurrentValue - 0.5f, -0.5f, 0.5f) * m_MeshScale.x;
             m_Nob.transform.localPosition = vLocalPos;
+            if (selectedStep != m_DisplayedStep)
+            {
+                SetDescriptionText(m_DescriptionText, GetDescriptionExtraText());
+                m_DisplayedStep = selectedStep;
+            }
         }
 
         override public void UpdateValue(float fValue)
@@ -64,21 +85,21 @@ namespace TiltBrush
             }
 
             //switch quality setting if needed
-            int iCurrentQuality = QualitySettings.GetQualityLevel();
-            if (iNearestIndex != iCurrentQuality)
+            if (iNearestIndex != SelectedStep)
             {
-                //only make one step at a time
-                if (iNearestIndex < iCurrentQuality)
+                if (!m_HasAutomaticStep)
+                    iNearestIndex = Mathf.Clamp(iNearestIndex, SelectedStep - 1, SelectedStep + 1);
+                var quality = QualityControls.m_Instance;
+                if (m_HasAutomaticStep && iNearestIndex == 0)
                 {
-                    iNearestIndex = iCurrentQuality - 1;
+                    quality.AutomaticQualityEnabled = true;
                 }
                 else
                 {
-                    iNearestIndex = iCurrentQuality + 1;
+                    // A manual choice is held for this session until Auto is selected.
+                    if (m_HasAutomaticStep) quality.AutomaticQualityEnabled = false;
+                    quality.QualityLevel = iNearestIndex - (m_HasAutomaticStep ? 1 : 0);
                 }
-
-                QualityControls.m_Instance.QualityLevel = iNearestIndex;
-                SetDescriptionText(m_DescriptionText, GetDescriptionExtraText());
                 AudioManager.m_Instance.PlaySliderSound(m_Nob.transform.position);
             }
 
@@ -87,8 +108,12 @@ namespace TiltBrush
 
         string GetDescriptionExtraText()
         {
-            int iCurrentQuality = QualitySettings.GetQualityLevel();
-            return QualitySettings.names[iCurrentQuality];
+            if (m_HasAutomaticStep)
+            {
+                return SelectedStep == 0 ? "Automatic" :
+                    $"Manual level {SelectedStep} of {QualityControls.m_Instance.AppQualityLevels.Length}";
+            }
+            return QualitySettings.names[SelectedStep];
         }
     }
 } // namespace TiltBrush
