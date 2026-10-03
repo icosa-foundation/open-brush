@@ -248,11 +248,13 @@ namespace TiltBrush
             };
             copy.m_BrushScale = piece.m_BrushScale * Mathf.Abs(toPeer.scale);
             copy.m_ColorOverrideMode = piece.m_ColorOverrideMode;
+            var group = source.SymmetryPeerGroup;
+            Vector3 colorShift = group.InstanceOf(member).ColorShift -
+                group.InstanceOf(source).ColorShift;
             copy.m_OverrideColors = piece.m_OverrideColors?.Select(color =>
             {
                 if (!color.HasValue) { return (Color32?)null; }
-                Color32 shifted = SymmetryPeerEditing.OffsetColorLike(
-                    color.Value, source.m_Color, member.m_Color);
+                Color32 shifted = SymmetryDerivation.Shift(color.Value, colorShift);
                 shifted.a = color.Value.a;
                 return shifted;
             }).ToList();

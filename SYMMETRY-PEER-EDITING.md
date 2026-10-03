@@ -231,20 +231,24 @@ for now; the rest of the canonical-stroke model (below); per-pointer colours whe
 regenerating (copies take the source stroke's colour). Sections above that describe the
 global toggle or settings-based forking are out of date.
 
-**Canonical-stroke model, first step (not yet compiled).** `RederiveSymmetryGroupCommand`
-makes every other member of a group an exact copy of one member again (geometry through the
-mirror, point colours shifted by each copy's own colour offset; erased members stay erased).
-`SymmetryStrokeGroup.Canonical` is the lowest pointer index. Edits that used to break links
-now fall back to it:
-- reshape and tint where a copy doesn't line up point for point (applied, then derived);
-  in a reshape drag, the first member touched drives its group;
-- snip (copies are derived first so one index cuts them all);
-- crop (the source is cropped; copies take its pieces through the mirror);
-- transform and selection bake when several members moved, or one couldn't take the
-  mirrored move (the first moved member drives);
-- mirror moves and count-preserving settings changes, for groups that can't follow in place
-  (unbatched brushes, erased members, a failed in-place move): derived from the canonical
-  stroke under the new settings.
+**Canonical-stroke model (decisions 7-8).** Each group records per-member instance data
+(`SymmetryStrokeGroup.Instance`: an HSV colour shift and a size ratio relative to the canonical
+stroke, the lowest pointer index); position comes from the mirror. `RederiveSymmetryGroupCommand`
+makes every other member an exact copy of one member - geometry through the mirror, appearance
+(colour, point colours, brush, size) through the instance data - keeping erased members erased.
+`RederiveSymmetryGroupCommand.Appearance` derives appearance only, which works on selected or
+preview-displaced copies. Every edit to a linked stroke is made to the copy touched and the group
+is derived from it; tools no longer mirror their own edits:
+- repaint (selection and tool sweep), tint and reshape: the first copy a drag or sweep touches
+  drives its group, refreshed as the drag goes;
+- transform and the selection bake: the first moved copy drives (after any layer move);
+- snip (copies derived first so one index cuts them all), crop (the source is cropped, copies
+  take its pieces), join (pairwise, then derived);
+- mirror moves and settings changes move strokes in place, falling back to derivation from a
+  visible member moved with its own pointer.
+
+Checked with Roslyn semantic analysis against Unity's engine assemblies (no errors in changed
+files); not yet built or run in Unity.
 
 **Group selection (decision 10).** A linked group is selected through one copy, the first
 picked, which drives it; the other copies are never selected themselves and follow it live as

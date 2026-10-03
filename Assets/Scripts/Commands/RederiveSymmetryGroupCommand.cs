@@ -50,10 +50,18 @@ namespace TiltBrush
                 BrushSize = stroke.m_BrushSize,
             };
 
-            internal void ApplyTo(Stroke stroke)
+            internal void ApplyTo(Stroke stroke) => ApplyTo(stroke, Parts.All);
+
+            /// Without Geometry, the stroke keeps the geometry it has now rather than any this
+            /// shape recorded: it may have moved since (the selection preview moves strokes).
+            internal void ApplyTo(Stroke stroke, Parts parts)
             {
-                stroke.ReplaceDerivedData(Points, Drops, BrushScale, OverrideColors, OverrideMode,
-                    Color, BrushGuid, BrushSize);
+                bool geometry = (parts & Parts.Geometry) != 0;
+                stroke.ReplaceDerivedData(
+                    geometry ? Points : (PointerManager.ControlPoint[])stroke.m_ControlPoints.Clone(),
+                    geometry ? Drops : DropsOf(stroke),
+                    geometry ? BrushScale : stroke.m_BrushScale,
+                    OverrideColors, OverrideMode, Color, BrushGuid, BrushSize);
             }
         }
 
@@ -73,36 +81,74 @@ namespace TiltBrush
             return result;
         }
 
-        /// The stroke 'target' becomes as a copy of 'source', two members of one linked group.
-        /// False when the mirror has no transform for either pointer, or the two aren't both in
-        /// the mirror's canvas (a selected stroke is staged in another canvas).
+        /// Which parts of a stroke a derivation replaces.
+        [Flags]
+        internal enum Parts
+        {
+            /// Control points and the geometric brush scale, through the mirror.
+            Geometry = 1,
+            /// Colour, point colours, brush and size, through the instance data.
+            Appearance = 2,
+            All = Geometry | Appearance,
+        }
+
+        /// The stroke 'target' becomes as a copy of 'source', two members of one linked group;
+        /// parts not derived are kept from the target. Deriving geometry is false when the mirror
+        /// has no transform for either pointer, or the two aren't both in the mirror's canvas (a
+        /// selected stroke is staged in another canvas). Appearance needs neither.
         internal static bool TryDerive(Stroke source, Stroke target, out Shape shape)
+            => TryDerive(source, target, Parts.All, out shape);
+
+        internal static bool TryDerive(Stroke source, Stroke target, Parts parts, out Shape shape)
         {
             shape = null;
             var group = source.SymmetryPeerGroup;
             var mirror = group?.Mirror;
-            if (mirror?.Settings == null || !ReferenceEquals(group, target.SymmetryPeerGroup) ||
-                source.Canvas != mirror.Canvas || target.Canvas != mirror.Canvas)
+            if (mirror == null || !ReferenceEquals(group, target.SymmetryPeerGroup))
             {
                 return false;
             }
-            var transforms = mirror.Settings.PointerTransforms;
-            int from = source.SymmetryPointerIndex;
-            int to = target.SymmetryPointerIndex;
-            if (transforms == null || from < 0 || to < 0 ||
-                from >= transforms.Count || to >= transforms.Count)
-            {
-                return false;
-            }
-            TrTransform xf = transforms[to] * transforms[from].inverse;
-            if (!xf.IsFinite()) { return false; }
 
-            var points = (PointerManager.ControlPoint[])source.m_ControlPoints.Clone();
-            for (int i = 0; i < points.Length; ++i)
+            var keep = Shape.Of(target);
+            var points = keep.Points;
+            var drops = keep.Drops;
+            float brushScale = keep.BrushScale;
+            if ((parts & Parts.Geometry) != 0)
             {
-                var pose = xf * TrTransform.TR(points[i].m_Pos, points[i].m_Orient);
-                points[i].m_Pos = pose.translation;
-                points[i].m_Orient = pose.rotation;
+                if (mirror.Settings == null ||
+                    source.Canvas != mirror.Canvas || target.Canvas != mirror.Canvas)
+                {
+                    return false;
+                }
+                var transforms = mirror.Settings.PointerTransforms;
+                int from = source.SymmetryPointerIndex;
+                int to = target.SymmetryPointerIndex;
+                if (transforms == null || from < 0 || to < 0 ||
+                    from >= transforms.Count || to >= transforms.Count)
+                {
+                    return false;
+                }
+                TrTransform xf = transforms[to] * transforms[from].inverse;
+                if (!xf.IsFinite()) { return false; }
+
+                points = (PointerManager.ControlPoint[])source.m_ControlPoints.Clone();
+                for (int i = 0; i < points.Length; ++i)
+                {
+                    var pose = xf * TrTransform.TR(points[i].m_Pos, points[i].m_Orient);
+                    points[i].m_Pos = pose.translation;
+                    points[i].m_Orient = pose.rotation;
+                }
+                drops = DropsOf(source);
+                // m_BrushScale is the geometric part of the size, which the transform carries.
+                brushScale = source.m_BrushScale * Mathf.Abs(xf.scale);
+            }
+            if ((parts & Parts.Appearance) == 0)
+            {
+                shape = keep;
+                shape.Points = points;
+                shape.Drops = drops;
+                shape.BrushScale = brushScale;
+                return true;
             }
 
             // The target's own relationship to the group, relative to the source's.
@@ -113,8 +159,16 @@ namespace TiltBrush
                 ? 1f
                 : toInstance.SizeRatio / fromInstance.SizeRatio;
 
+            // Point colours go point for point, so only onto a copy with the same points.
             List<Color32?> overrides = null;
-            if (source.m_OverrideColors != null)
+            var overrideMode = source.m_ColorOverrideMode;
+            if (source.m_OverrideColors != null &&
+                source.m_OverrideColors.Count != points.Length)
+            {
+                overrides = keep.OverrideColors;
+                overrideMode = keep.OverrideMode;
+            }
+            else if (source.m_OverrideColors != null)
             {
                 overrides = new List<Color32?>(source.m_OverrideColors.Count);
                 foreach (var color in source.m_OverrideColors)
@@ -131,16 +185,15 @@ namespace TiltBrush
                 }
             }
 
-            // m_BrushScale is the geometric part of the size, which the transform carries.
             var brush = BrushCatalog.m_Instance.GetBrush(source.m_BrushGuid);
             Color baseColor = Shift(source.m_Color, colorShift);
             shape = new Shape
             {
                 Points = points,
-                Drops = DropsOf(source),
-                BrushScale = source.m_BrushScale * Mathf.Abs(xf.scale),
+                Drops = drops,
+                BrushScale = brushScale,
                 OverrideColors = overrides,
-                OverrideMode = source.m_ColorOverrideMode,
+                OverrideMode = overrideMode,
                 Color = brush != null
                     ? ColorPickerUtils.ClampLuminance(baseColor, brush.m_ColorLuminanceMin)
                     : baseColor,
@@ -161,6 +214,7 @@ namespace TiltBrush
     public class RederiveSymmetryGroupCommand : BaseCommand
     {
         private readonly Stroke m_Source;
+        private readonly SymmetryDerivation.Parts m_Parts;
         private readonly List<Stroke> m_Targets = new List<Stroke>();
         private readonly List<SymmetryDerivation.Shape> m_Before =
             new List<SymmetryDerivation.Shape>();
@@ -175,13 +229,30 @@ namespace TiltBrush
         {
         }
 
+        /// Derives only the copies' colour, point colours, brush and size: for edits that
+        /// don't move anything, which works wherever the copies are (selected, or displaced by
+        /// the selection preview).
+        internal static RederiveSymmetryGroupCommand Appearance(Stroke source,
+            BaseCommand parent = null)
+        {
+            return new RederiveSymmetryGroupCommand(source, null, parent,
+                SymmetryDerivation.Parts.Appearance);
+        }
+
         /// 'sourceStep' is a canvas-space move applied to the source before the others are
         /// derived from it: when the mirror's settings change, every pointer but the first moves,
         /// so a source drawn by another pointer has to move with its pointer first.
         public RederiveSymmetryGroupCommand(Stroke source, TrTransform? sourceStep,
-            BaseCommand parent = null) : base(parent)
+            BaseCommand parent = null)
+            : this(source, sourceStep, parent, SymmetryDerivation.Parts.All)
+        {
+        }
+
+        private RederiveSymmetryGroupCommand(Stroke source, TrTransform? sourceStep,
+            BaseCommand parent, SymmetryDerivation.Parts parts) : base(parent)
         {
             m_Source = source;
+            m_Parts = parts;
             if (sourceStep.HasValue && sourceStep.Value != TrTransform.identity)
             {
                 m_SourceStep = sourceStep;
@@ -271,13 +342,13 @@ namespace TiltBrush
                 m_After = new List<SymmetryDerivation.Shape>(m_Targets.Count);
                 foreach (var target in m_Targets)
                 {
-                    SymmetryDerivation.TryDerive(m_Source, target, out var shape);
+                    SymmetryDerivation.TryDerive(m_Source, target, m_Parts, out var shape);
                     m_After.Add(shape);
                 }
             }
             for (int i = 0; i < m_Targets.Count; ++i)
             {
-                m_After[i]?.ApplyTo(m_Targets[i]);
+                m_After[i]?.ApplyTo(m_Targets[i], m_Parts);
             }
         }
 
@@ -287,7 +358,7 @@ namespace TiltBrush
             {
                 for (int i = 0; i < m_Targets.Count; ++i)
                 {
-                    if (m_After[i] != null) { m_Before[i].ApplyTo(m_Targets[i]); }
+                    if (m_After[i] != null) { m_Before[i].ApplyTo(m_Targets[i], m_Parts); }
                 }
             }
             m_SourceBefore?.ApplyTo(m_Source);

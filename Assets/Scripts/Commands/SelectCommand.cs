@@ -43,13 +43,6 @@ namespace TiltBrush
         private bool m_IsGrabbingGroup;
         private bool m_IsEndGrabbingGroup;
         private CanvasScript m_TargetCanvas; // Override original canvas as target for deselection.
-        // Strokes the symmetry drew alongside the ones being deselected, each with the transform
-        // that mirrors the selection's move onto it. Empty unless peer editing is on and this
-        // deselect is about to bake a move into the strokes.
-        private readonly List<Stroke> m_PeerStrokes = new List<Stroke>();
-        private readonly List<TrTransform> m_PeerTransforms = new List<TrTransform>();
-        private readonly List<SymmetryPeerEditing.BrokenLink> m_BrokenLinks =
-            new List<SymmetryPeerEditing.BrokenLink>();
         private readonly Dictionary<Stroke, TrTransform> m_JoinTransforms =
             new Dictionary<Stroke, TrTransform>(new ReferenceComparer<Stroke>());
         private readonly Dictionary<Stroke, CanvasScript> m_SourceCanvases =
@@ -64,8 +57,7 @@ namespace TiltBrush
                 // occurs when a transformed selection has been deselecting, which
                 // rebakes that object into the original canvas.
                 return m_Deselect &&
-                    (m_InitialTransform != TrTransform.identity || m_MovedStrokeSinceJoin ||
-                     m_BrokenLinks.Count > 0);
+                    (m_InitialTransform != TrTransform.identity || m_MovedStrokeSinceJoin);
             }
         }
 
@@ -182,19 +174,19 @@ namespace TiltBrush
         }
 
         /// Deselecting is the point at which a moved selection is baked back into its strokes, so
-        /// it is also the point at which the symmetry peers of those strokes move to match. The
-        /// peers are worked out now, while the strokes are still where the move left them.
+        /// it is also the point at which the rest of each moved linked group follows: once a
+        /// selected copy is baked, the other copies are derived from it (child commands, redone
+        /// after the bake and undone before it). Until then the preview shows them following.
         private void GatherSymmetryPeers()
         {
-            // Construction captures the movement but does not change sketch geometry. The
-            // selection interaction restores preview when the command is executed.
+            // Construction captures the movement but does not change sketch geometry.
             if (!m_Deselect || m_Strokes == null)
             {
                 return;
             }
 
-            var handled = new HashSet<Stroke>(m_Strokes, new ReferenceComparer<Stroke>());
-            var movedStrokes = new HashSet<Stroke>(new ReferenceComparer<Stroke>());
+            var seen = new HashSet<SymmetryStrokeGroup>();
+            // In selection order, so the first moved copy of a group is the one that drives it.
             foreach (var stroke in m_Strokes)
             {
                 // A stroke added to a selection that had already been moved has only moved by
@@ -207,75 +199,20 @@ namespace TiltBrush
                 bool layerChanged = m_TargetCanvas != null &&
                     m_TargetCanvas != stroke.m_PreviousCanvas;
                 if (moved == TrTransform.identity && !layerChanged) { continue; }
-                movedStrokes.Add(stroke);
                 m_MovedStrokeSinceJoin = true;
 
-                // A stroke moved into another layer still gets its peers' mirrored moves here;
-                // the whole group then follows it into that layer (see below).
-                foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+                if (!SymmetryPeerEditing.IsLinked(stroke) || !seen.Add(stroke.SymmetryPeerGroup))
                 {
-                    if (!handled.Add(peer)) { continue; }
-                    // A peer that is still selected carries the selection's move itself, and will
-                    // bake it in when it is deselected in turn.
-                    if (SelectionManager.m_Instance.IsStrokeSelected(peer)) { continue; }
-                    if (SymmetryPeerEditing.TryGetPeerSymmetryTransform(
-                            stroke, peer, out TrTransform toPeer))
-                    {
-                        TrTransform peerXf = SymmetryPeerEditing.PeerSelectionMovement(
-                            toPeer, m_InitialTransform, joined);
-                        if (!peerXf.IsFinite()) { continue; }
-                        m_PeerStrokes.Add(peer);
-                        m_PeerTransforms.Add(peerXf);
-                    }
+                    continue;
                 }
-            }
-
-            var direct = movedStrokes;
-            var propagated = new HashSet<Stroke>(m_PeerStrokes);
-            var seen = new HashSet<SymmetryStrokeGroup>();
-            // In selection order, so the first moved member of a group is the one that drives it.
-            foreach (var stroke in m_Strokes)
-            {
-                if (!direct.Contains(stroke)) { continue; }
-                var group = stroke.SymmetryPeerGroup;
-                if (group == null || group.Count < 2 || !seen.Add(group)) { continue; }
-                bool layerChanged = m_TargetCanvas != null &&
-                    m_TargetCanvas != stroke.m_PreviousCanvas;
-                bool mirrored = SymmetryPeerEditing.CanPreserveLink(group, direct, propagated);
-                if (!layerChanged && mirrored) { continue; }
-
-                // Only one copy of a group is normally selected (see KeepOneCopyPerSymmetryGroup);
-                // several can be if registered directly by another command. A group with copies
-                // left in the selection can't be moved as a whole, and comes apart.
-                if (HasMemberStillSelected(group) ||
-                    (!mirrored && !RederiveSymmetryGroupCommand.CanDerive(stroke)))
+                // Moved to another layer: the whole group follows the stroke there under a new
+                // mirror in that layer (decision 11), before being derived from it.
+                if (layerChanged)
                 {
-                    m_BrokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                    new MoveSymmetryGroupsToLayerCommand(
+                        new[] { stroke.SymmetryPeerGroup }, m_TargetCanvas, this);
                 }
-                else
-                {
-                    // Moved to another layer: once baked, the whole group follows the stroke
-                    // there under a new mirror in that layer (decision 11).
-                    if (layerChanged)
-                    {
-                        new MoveSymmetryGroupsToLayerCommand(new[] { group }, m_TargetCanvas, this);
-                    }
-                    // Several members moved with the selection, or one couldn't take the
-                    // mirrored move: the others are derived from this one, after any layer move.
-                    if (!mirrored)
-                    {
-                        new RederiveSymmetryGroupCommand(stroke, this);
-                    }
-                    if (mirrored) { continue; }
-                }
-                for (int i = m_PeerStrokes.Count - 1; i >= 0; --i)
-                {
-                    if (ReferenceEquals(m_PeerStrokes[i].SymmetryPeerGroup, group))
-                    {
-                        m_PeerStrokes.RemoveAt(i);
-                        m_PeerTransforms.RemoveAt(i);
-                    }
-                }
+                new RederiveSymmetryGroupCommand(stroke, this);
             }
         }
 
@@ -295,20 +232,6 @@ namespace TiltBrush
                 return !claimed.Add(group) ||
                     SelectionManager.m_Instance.IsSymmetryGroupSelectedByOther(stroke);
             });
-        }
-
-        /// A member of the group that this deselect leaves in the selection.
-        private bool HasMemberStillSelected(SymmetryStrokeGroup group)
-        {
-            foreach (var member in group.Strokes)
-            {
-                if (SelectionManager.m_Instance.IsStrokeSelected(member) &&
-                    !m_Strokes.Contains(member))
-                {
-                    return true;
-                }
-            }
-            return false;
         }
 
         private static void AddSelectedGroup(
@@ -353,8 +276,6 @@ namespace TiltBrush
             SymmetryPeerPreview.Hide();
             if (m_Deselect)
             {
-                foreach (var link in m_BrokenLinks) { link.Break(); }
-                // Peers must be in their own layers before the move is written into them.
                 if (m_Strokes != null)
                 {
                     SelectionManager.m_Instance.DeselectStrokes(m_Strokes, m_TargetCanvas);
@@ -363,7 +284,6 @@ namespace TiltBrush
                 {
                     SelectionManager.m_Instance.DeselectWidgets(m_Widgets, m_TargetCanvas);
                 }
-                TransformItems.TransformEach(m_PeerStrokes, m_PeerTransforms);
             }
             else
             {
@@ -400,8 +320,6 @@ namespace TiltBrush
             SelectionManager.m_Instance.SelectionTransform = m_InitialTransform;
             if (m_Deselect)
             {
-                TransformItems.TransformEach(
-                    m_PeerStrokes, m_PeerTransforms.Select(xf => xf.inverse).ToList());
                 if (m_Strokes != null)
                 {
                     SelectionManager.m_Instance.SelectStrokes(m_Strokes);
@@ -412,7 +330,6 @@ namespace TiltBrush
                 {
                     SelectionManager.m_Instance.SelectWidgets(m_Widgets);
                 }
-                foreach (var link in m_BrokenLinks) { link.Restore(); }
             }
             else
             {

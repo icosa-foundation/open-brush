@@ -26,12 +26,6 @@ namespace TiltBrush
         private List<Stroke> m_Strokes;
         private IEnumerable<GrabWidget> m_Widgets;
         private CanvasScript m_Layer;
-        // Strokes the symmetry drew alongside m_Strokes, each with the transform that mirrors this
-        // command's onto it. Empty unless peer editing is on.
-        private List<Stroke> m_PeerStrokes = new List<Stroke>();
-        private List<TrTransform> m_PeerTransforms = new List<TrTransform>();
-        private readonly List<SymmetryPeerEditing.BrokenLink> m_BrokenLinks =
-            new List<SymmetryPeerEditing.BrokenLink>();
 
         public TransformItemsCommand(IEnumerable<Stroke> strokes, IEnumerable<GrabWidget> widgets,
                                      TrTransform xf, Vector3 pivot, BaseCommand parent = null) : base(parent)
@@ -41,40 +35,16 @@ namespace TiltBrush
             m_Strokes = strokes?.ToList() ?? new List<Stroke>();
             m_Widgets = widgets ?? new List<GrabWidget>();
 
-            // What the strokes actually undergo, pivot included; that is what the peers mirror.
-            TrTransform xfAboutPivot =
-                TrTransform.T(m_Pivot) * m_Transform * TrTransform.T(-m_Pivot);
-            SymmetryPeerEditing.GatherPeerTransforms(
-                m_Strokes, xfAboutPivot, m_PeerStrokes, m_PeerTransforms);
-            if (xfAboutPivot != TrTransform.identity)
+            // A linked group follows the first of its copies this moves: once it has moved, the
+            // others are derived from it, whether or not they were in the list themselves.
+            if (m_Transform != TrTransform.identity)
             {
-                var direct = new HashSet<Stroke>(m_Strokes);
-                var propagated = new HashSet<Stroke>(m_PeerStrokes);
                 var seen = new HashSet<SymmetryStrokeGroup>();
                 foreach (var stroke in m_Strokes)
                 {
-                    var group = stroke.SymmetryPeerGroup;
-                    if (group == null || group.Count < 2 || !seen.Add(group) ||
-                        SymmetryPeerEditing.CanPreserveLink(group, direct, propagated)) { continue; }
-                    // Several members moved directly, or one couldn't take the mirrored move
-                    // (it is erased, say): the first member moved drives, and the others are
-                    // derived from it once it has moved. Only a group split across canvases
-                    // can't be derived, and comes apart instead.
-                    if (RederiveSymmetryGroupCommand.CanDerive(stroke))
+                    if (SymmetryPeerEditing.IsLinked(stroke) && seen.Add(stroke.SymmetryPeerGroup))
                     {
                         new RederiveSymmetryGroupCommand(stroke, this);
-                    }
-                    else
-                    {
-                        m_BrokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
-                    }
-                    for (int i = m_PeerStrokes.Count - 1; i >= 0; --i)
-                    {
-                        if (ReferenceEquals(m_PeerStrokes[i].SymmetryPeerGroup, group))
-                        {
-                            m_PeerStrokes.RemoveAt(i);
-                            m_PeerTransforms.RemoveAt(i);
-                        }
                     }
                 }
             }
@@ -84,17 +54,12 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            foreach (var link in m_BrokenLinks) { link.Break(); }
             TransformItems.Transform(m_Strokes, m_Widgets, m_Pivot, m_Transform);
-            TransformItems.TransformEach(m_PeerStrokes, m_PeerTransforms);
         }
 
         protected override void OnUndo()
         {
             TransformItems.Transform(m_Strokes, m_Widgets, m_Pivot, m_Transform.inverse);
-            TransformItems.TransformEach(
-                m_PeerStrokes, m_PeerTransforms.Select(xf => xf.inverse).ToList());
-            foreach (var link in m_BrokenLinks) { link.Restore(); }
         }
 
     }

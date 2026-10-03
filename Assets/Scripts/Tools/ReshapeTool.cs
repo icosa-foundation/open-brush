@@ -41,8 +41,8 @@ namespace TiltBrush
 
         private bool m_OwnsUndoGroup;
         private readonly Dictionary<Stroke, ModifyStrokePointsCommand> m_ActiveSculptCommands = new();
-        // Per linked group, the rederive a drag fell back to once its copies couldn't be
-        // reshaped point for point. Kept for the rest of the drag so it stays the last word.
+        // Per linked group in the current drag, the derivation that carries the driving copy's
+        // reshape to the other copies.
         private readonly Dictionary<SymmetryStrokeGroup, RederiveSymmetryGroupCommand> m_ActiveRederives = new();
         // Per linked group, the first member a drag touched. It drives the group for the rest of
         // the drag; the other members follow it, even where the tool touches them directly.
@@ -554,41 +554,14 @@ namespace TiltBrush
 
             PlayModifyStrokeSound();
 
-            // Work out how the symmetry peers move before the stroke itself does: each peer's
-            // points move by its own version of how the stroke's points moved.
-            var peerEdits = new List<(Stroke stroke, PointerManager.ControlPoint[] points)>();
-            int peerCount = 0;
-            foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
-            {
-                ++peerCount;
-                if (SymmetryPeerEditing.TryGetPeerControlPoints(
-                        stroke, peer, newControlPoints,
-                        out PointerManager.ControlPoint[] peerPoints))
-                {
-                    peerEdits.Add((peer, peerPoints));
-                }
-            }
-
-            // Copies that can't take the edit point for point (a sub-tool that changes the
-            // point count, say) are derived from the edited stroke afterwards instead: the group
-            // stays an exact symmetric set rather than coming apart.
-            var group = stroke.SymmetryPeerGroup;
-            bool rederive = group?.Mirror != null &&
-                (peerEdits.Count != peerCount || m_ActiveRederives.ContainsKey(group));
-            if (rederive) { peerEdits.Clear(); }
+            // The rest of a linked group is derived from the reshaped copy once it moves.
+            var group = SymmetryPeerEditing.IsLinked(stroke) ? stroke.SymmetryPeerGroup : null;
 
             ModifyStrokePointsCommand cmd;
             if (undoParent == null)
             {
                 cmd = new ModifyStrokePointsCommand(stroke, newControlPoints);
-                foreach (var edit in peerEdits)
-                {
-                    new ModifyStrokePointsCommand(edit.stroke, edit.points, cmd);
-                }
-                if (rederive)
-                {
-                    new RederiveSymmetryGroupCommand(stroke, cmd);
-                }
+                if (group != null) { new RederiveSymmetryGroupCommand(stroke, cmd); }
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             }
             else
@@ -602,37 +575,14 @@ namespace TiltBrush
                 {
                     cmd.UpdateEndPoints(newControlPoints);
                 }
+                // Created after the copy's own command, so it is redone after it.
+                if (group != null && !m_ActiveRederives.ContainsKey(group))
+                {
+                    m_ActiveRederives.Add(group, new RederiveSymmetryGroupCommand(stroke, undoParent));
+                }
                 // Apply immediately while keeping this command in the active undo group.
                 cmd.Redo();
-
-                foreach (var edit in peerEdits)
-                {
-                    if (!m_ActiveSculptCommands.TryGetValue(edit.stroke, out var peerCmd))
-                    {
-                        peerCmd = new ModifyStrokePointsCommand(
-                            edit.stroke, edit.points, undoParent);
-                        m_ActiveSculptCommands.Add(edit.stroke, peerCmd);
-                    }
-                    else
-                    {
-                        peerCmd.UpdateEndPoints(edit.points);
-                    }
-                    peerCmd.Redo();
-                }
-
-                if (rederive)
-                {
-                    if (!m_ActiveRederives.TryGetValue(group, out var derive))
-                    {
-                        derive = new RederiveSymmetryGroupCommand(stroke, undoParent);
-                        m_ActiveRederives.Add(group, derive);
-                        derive.Redo();
-                    }
-                    else
-                    {
-                        derive.Refresh();
-                    }
-                }
+                if (group != null) { m_ActiveRederives[group].Refresh(); }
             }
         }
 
