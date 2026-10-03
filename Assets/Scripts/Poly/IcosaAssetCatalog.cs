@@ -225,10 +225,12 @@ namespace TiltBrush
         static VrAssetFormat[] GetSupportedIcosaFormats()
         {
             // Note: FBX and USD are not included as they're only supported for local files, not Icosa assets.
-            // VOX, GLTF2, GLTF are highest priority, followed by OBJ variants and PLY.
+            // Native Blocks files remain editable, so prefer them over rendered interchange formats.
+            // VOX, GLTF2, GLTF follow, then OBJ variants and PLY.
             // OBJ_NGON is an OBJ file with n-gon faces (faces with >3 vertices).
             return new[]
             {
+                VrAssetFormat.BLOCKS,
                 VrAssetFormat.VOX,
                 VrAssetFormat.GLTF2,
                 VrAssetFormat.GLTF,
@@ -728,7 +730,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.ANY,
                     OrderBy = OrderByChoices.NEWEST,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.BLOCKS, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -742,7 +744,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.LIKED_TIME,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.BLOCKS, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -757,7 +759,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.BEST,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.BLOCKS, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.TRUE,
                     Category = CategoryChoices.ANY
                 }
@@ -772,7 +774,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.DISPLAY_NAME,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.BLOCKS, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -1590,6 +1592,9 @@ namespace TiltBrush
 
             string[] preferredExtensions =
             {
+                ".blocks",
+                ".poly",
+                ".peltzer",
                 ".vox",
                 ".gltf2",
                 ".gltf",

@@ -51,6 +51,7 @@ namespace TiltBrush
             ReshapeTool = 5100,
             TintColorTool = 5101,
             ManualColocationTool = 1022,
+            PolyhydraTool = 5000,
             ScriptedTool = 6001,
             SnipTool = 11000,
             JoinTool = 11001

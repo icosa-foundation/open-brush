@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -25,8 +26,17 @@ namespace TiltBrush
         private float m_yClamp = 85f;
         private Vector3 m_cameraRotation;
 
+        private bool offsetFixed = false;
+
         void Update()
         {
+            // TODO Fix properly by figuring out what triggers
+            if (!offsetFixed)
+            {
+                transform.parent.localPosition = new(0, 1.36144f, 0);
+                offsetFixed = true;
+            }
+
             // Use mouse position to control camera rotation.
             if (InputManager.m_Instance.GetKeyboardShortcut(
                 InputManager.KeyboardShortcut.PositionMonoCamera))
