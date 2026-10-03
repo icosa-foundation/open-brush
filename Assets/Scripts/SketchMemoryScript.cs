@@ -140,11 +140,9 @@ namespace TiltBrush
         // Non-null if there are strokes that should be repainted this frame.
         // TODO: give this the same treatment as m_DeleteStrokes?
         private BaseCommand m_RepaintStrokeParent;
-        /// Strokes already repainted in the batch m_RepaintStrokeParent is collecting. A stroke the
-        /// user paints over directly wins over the same stroke being repainted as someone's peer,
-        /// which is what happens when a tool is swept across several strokes of one group.
-        private HashSet<Stroke> m_RepaintStrokeBatch =
-            new HashSet<Stroke>(new ReferenceComparer<Stroke>());
+        /// Linked groups already repainted in the batch m_RepaintStrokeParent is collecting. The
+        /// first copy a sweep reaches drives its group; the others are derived from it.
+        private HashSet<SymmetryStrokeGroup> m_RepaintGroupBatch = new HashSet<SymmetryStrokeGroup>();
 
         private TrTransform m_xfSketchInitial_RS;
 
@@ -412,7 +410,7 @@ namespace TiltBrush
                 {
                     PerformAndRecordCommand(m_RepaintStrokeParent);
                     m_RepaintStrokeParent = null;
-                    m_RepaintStrokeBatch.Clear();
+                    m_RepaintGroupBatch.Clear();
                 }
                 OperationStackChanged?.Invoke();
             }
@@ -743,23 +741,19 @@ namespace TiltBrush
                 newSizes.Add(newSize);
             }
 
-            // Strokes the symmetry drew alongside the selected ones follow them, keeping whatever
-            // colour, brush or size relationship the symmetry gave them.
-            var peers = new List<Stroke>();
-            var peerColors = new List<Color>();
-            var peerGuids = new List<Guid>();
-            var peerSizes = new List<float>();
-            SymmetryPeerEditing.GatherPeerRepaints(
-                strokes, newColors, newGuids, newSizes,
-                peers, peerColors, peerGuids, peerSizes);
-            strokes.AddRange(peers);
-            newColors.AddRange(peerColors);
-            newGuids.AddRange(peerGuids);
-            newSizes.AddRange(peerSizes);
-
-            PerformAndRecordCommand(
-                new RepaintStrokeCommand(strokes, newColors, newGuids, newSizes)
-            );
+            // A selected copy carries its linked group: the other copies are derived from it once
+            // it is repainted. Nothing runs before the command is recorded, so the group's
+            // instance data is still recorded from before the repaint.
+            var repaint = new RepaintStrokeCommand(strokes, newColors, newGuids, newSizes);
+            var groups = new HashSet<SymmetryStrokeGroup>();
+            foreach (var stroke in strokes)
+            {
+                if (SymmetryPeerEditing.IsLinked(stroke) && groups.Add(stroke.SymmetryPeerGroup))
+                {
+                    RederiveSymmetryGroupCommand.Appearance(stroke, repaint);
+                }
+            }
+            PerformAndRecordCommand(repaint);
         }
 
 
@@ -809,9 +803,14 @@ namespace TiltBrush
                 if (m_RepaintStrokeParent == null)
                 {
                     m_RepaintStrokeParent = new BaseCommand();
-                    m_RepaintStrokeBatch.Clear();
+                    m_RepaintGroupBatch.Clear();
                 }
-                m_RepaintStrokeBatch.Add(stroke);
+                var group = SymmetryPeerEditing.IsLinked(stroke) ? stroke.SymmetryPeerGroup : null;
+                if (group != null && !m_RepaintGroupBatch.Add(group))
+                {
+                    // Another copy of this group is being repainted; this one follows it.
+                    return true;
+                }
 
                 GetRepaintParams(
                     stroke,
@@ -836,16 +835,19 @@ namespace TiltBrush
 
                 new RepaintStrokeCommand(stroke, newColor, newGuid, newSize, m_RepaintStrokeParent);
 
-                // Peers follow, relative to the stroke as it is now: the commands are performed
-                // at the end of the frame, so nothing has been repainted yet.
-                foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+                // The rest of the group is derived from the repainted copy, after it. Nothing in
+                // the batch runs until the end of the frame, so the group's instance data is
+                // still recorded from before the repaint.
+                if (group != null)
                 {
-                    if (!m_RepaintStrokeBatch.Add(peer)) { continue; }
-                    SymmetryPeerEditing.GetPeerRepaintParams(
-                        stroke, peer, newColor, newGuid, newSize,
-                        out Color peerColor, out Guid peerGuid, out float peerSize);
-                    new RepaintStrokeCommand(
-                        peer, peerColor, peerGuid, peerSize, m_RepaintStrokeParent);
+                    if (positionJitter > 0)
+                    {
+                        new RederiveSymmetryGroupCommand(stroke, m_RepaintStrokeParent);
+                    }
+                    else
+                    {
+                        RederiveSymmetryGroupCommand.Appearance(stroke, m_RepaintStrokeParent);
+                    }
                 }
                 return true;
             }

@@ -44,7 +44,6 @@ namespace TiltBrush
         public static void Show(IEnumerable<Stroke> strokes)
         {
             Hide();
-            if (!SymmetryPeerEditing.Enabled) { return; }
 
             var handled = new HashSet<Stroke>(new ReferenceComparer<Stroke>());
             foreach (var stroke in strokes)
@@ -88,6 +87,32 @@ namespace TiltBrush
                     m_Applied[i] = target;
                 }
             }
+        }
+
+        /// Hands a previewed peer over to the command that bakes the move, if the preview has
+        /// moved it by exactly 'expected': it then stays where it is, its control points already
+        /// moved, and is no longer the preview's to put back.
+        public static bool TryCommit(Stroke peer, TrTransform expected)
+        {
+            for (int i = 0; i < m_Strokes.Count; ++i)
+            {
+                if (!ReferenceEquals(m_Strokes[i], peer)) { continue; }
+                if (!SamePlacement(m_Applied[i], expected)) { return false; }
+                m_Strokes.RemoveAt(i);
+                m_ToPeer.RemoveAt(i);
+                m_JoinTransforms.RemoveAt(i);
+                m_Applied.RemoveAt(i);
+                return true;
+            }
+            return false;
+        }
+
+        private static bool SamePlacement(TrTransform a, TrTransform b)
+        {
+            float tolerance = 1e-4f * UnityEngine.Mathf.Max(1f, a.translation.magnitude);
+            return (a.translation - b.translation).magnitude <= tolerance &&
+                UnityEngine.Mathf.Abs(UnityEngine.Quaternion.Dot(a.rotation, b.rotation)) >= 0.99999f &&
+                UnityEngine.Mathf.Abs(a.scale - b.scale) <= 1e-4f * UnityEngine.Mathf.Max(1f, UnityEngine.Mathf.Abs(a.scale));
         }
 
         /// Puts every peer back exactly where it was. The deselect is what moves them for real.

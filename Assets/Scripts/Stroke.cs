@@ -99,13 +99,21 @@ namespace TiltBrush
                 ? m_PreviousCanvas : Canvas;
             if (group.Mirror == null ||
                 (group.Mirror.Canvas != null && group.Mirror.Canvas != canvas)) { return; }
+            SetSymmetryGroup(group, pointerIndex);
+        }
+
+        /// Puts this stroke in a group without checking that it is in the group's canvas: for
+        /// undo restoring a membership while strokes are still on their way back.
+        internal void SetSymmetryGroup(SymmetryStrokeGroup group, int pointerIndex)
+        {
+            if (ReferenceEquals(m_SymmetryGroup, group)) { return; }
             if (m_SymmetryGroup != null)
             {
                 LeaveSymmetryGroup();
             }
             m_SymmetryGroup = group;
             m_SymmetryPointerIndex = pointerIndex;
-            group.Add(this);
+            group?.Add(this);
             InvalidateCopy();
         }
 
@@ -451,11 +459,39 @@ namespace TiltBrush
         /// and preserves erased/uncreated state. The caller supplies points in the current canvas.
         internal void RestoreMirrorControlPoints(PointerManager.ControlPoint[] points, float brushScale)
         {
+            RebuildPreservingVisibility(() =>
+            {
+                m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
+                m_BrushScale = brushScale;
+            });
+        }
+
+        /// Replaces everything that shapes and colours a stroke's geometry, for a symmetry copy
+        /// being derived from another member of its group. Like RestoreMirrorControlPoints, it
+        /// preserves erased state.
+        internal void ReplaceDerivedData(PointerManager.ControlPoint[] points, bool[] drops,
+            float brushScale, List<Color32?> overrideColors, ColorOverrideMode overrideMode,
+            Color color, Guid brushGuid, float brushSize)
+        {
+            RebuildPreservingVisibility(() =>
+            {
+                m_Color = color;
+                m_BrushGuid = brushGuid;
+                m_BrushSize = brushSize;
+                m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
+                m_ControlPointsToDrop = (bool[])drops.Clone();
+                m_BrushScale = brushScale;
+                m_OverrideColors = overrideColors?.ToList();
+                m_ColorOverrideMode = overrideMode;
+            });
+        }
+
+        private void RebuildPreservingVisibility(Action replaceData)
+        {
             bool hadGeometry = m_Type != Type.NotCreated;
             bool wasEnabled = hadGeometry && IsGeometryEnabled;
             if (hadGeometry) { Uncreate(); }
-            m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
-            m_BrushScale = brushScale;
+            replaceData();
             InvalidateCopy();
             if (hadGeometry)
             {

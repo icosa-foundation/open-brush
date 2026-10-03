@@ -722,7 +722,6 @@ namespace TiltBrush
             // follow, and parking peers costs about what selecting them does.
             TrTransform selectionXf = SelectionTransform;
             bool wantPeerPreview = HasSelection && m_SelectedStrokes.Count > 0 &&
-                SymmetryPeerEditing.Enabled &&
                 (selectionXf != TrTransform.identity || SymmetryPeerPreview.IsShowing ||
                  (m_bSelectionWidgetNeedsUpdate &&
                   m_SelectionJoinTransforms.Values.Any(xf => xf != TrTransform.identity)));
@@ -795,9 +794,7 @@ namespace TiltBrush
 
         public void ClearActiveSelection()
         {
-            // The deselect below is what writes the move into the peers, so they have to be back
-            // in their own layers before it is worked out.
-            SymmetryPeerPreview.Hide();
+            // The preview is left showing: the deselect keeps the copies it has moved into place.
 
             // Make sure we don't have a selection active.
             if (HasSelection)
@@ -885,11 +882,37 @@ namespace TiltBrush
             UpdateSelectionWidget();
         }
 
+        /// True if another copy of this stroke's linked group is selected. A linked group is
+        /// selected through one copy, which drives it; the others follow it as its mirror
+        /// images (see SymmetryPeerPreview), so they are never selected themselves.
+        public bool IsSymmetryGroupSelectedByOther(Stroke stroke)
+        {
+            var copy = SelectedSymmetryCopyOf(stroke);
+            return copy != null && !ReferenceEquals(copy, stroke);
+        }
+
+        /// The copy through which this stroke's linked group is selected, if it is; may be the
+        /// stroke itself. Null for an unlinked stroke or an unselected group.
+        public Stroke SelectedSymmetryCopyOf(Stroke stroke)
+        {
+            var group = stroke?.SymmetryPeerGroup;
+            if (group?.Mirror == null) { return null; }
+            foreach (var member in group.Strokes)
+            {
+                if (IsStrokeSelected(member)) { return member; }
+            }
+            return null;
+        }
+
         public void SelectStrokes(IEnumerable<Stroke> strokes, bool preserveTool = false)
         {
             SymmetryPeerPreview.Hide();
+            Stroke lastSelected = null;
             foreach (var stroke in strokes)
             {
+                // Selecting a second copy of a linked group: the group is already selected.
+                if (IsSymmetryGroupSelectedByOther(stroke)) { continue; }
+                lastSelected = stroke;
                 if (IsStrokeSelected(stroke))
                 {
                     Debug.LogWarning("Attempted to select stroke that is already selected.");
@@ -908,7 +931,7 @@ namespace TiltBrush
                 Debug.Assert(!groupStrokes.Contains(stroke));
                 groupStrokes.Add(stroke);
             }
-            if (strokes.Any()) LastSelectedStroke = strokes.Last();
+            if (lastSelected != null) LastSelectedStroke = lastSelected;
 
             // If the manager is tasked to select strokes, make sure the SelectionTool is active.
             // b/64029485 In the event that the user does not have the SelectionTool active and presses
@@ -929,7 +952,12 @@ namespace TiltBrush
             {
                 if (!IsStrokeSelected(stroke))
                 {
-                    Debug.LogWarning("Attempted to deselect stroke that is not selected.");
+                    // Copies of a linked group are left out of the selection, so callers
+                    // undoing a selection of them may pass them back here.
+                    if (!SymmetryPeerEditing.IsLinked(stroke))
+                    {
+                        Debug.LogWarning("Attempted to deselect stroke that is not selected.");
+                    }
                     continue;
                 }
                 var destination = ChooseDestinationCanvas(targetCanvas, stroke.m_PreviousCanvas);
@@ -1168,8 +1196,12 @@ namespace TiltBrush
                 bool selectionIsInOneGroup = SelectionIsInOneGroup;
                 SketchGroupTag? targetGroup =
                     selectionIsInOneGroup ? SketchGroupTag.None : (SketchGroupTag?)null;
+                // A selected copy stands for its linked group, so the group's other copies are
+                // grouped with it.
+                var strokesToGroup = m_SelectedStrokes
+                    .Concat(SymmetryPeerEditing.PeersOutside(m_SelectedStrokes)).ToList();
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new GroupStrokesAndWidgetsCommand(m_SelectedStrokes, m_SelectedWidgets, targetGroup: targetGroup));
+                    new GroupStrokesAndWidgetsCommand(strokesToGroup, m_SelectedWidgets, targetGroup: targetGroup));
 
                 OutputWindowScript.m_Instance.CreateInfoCardAtController(
                     InputManager.ControllerName.Brush, selectionIsInOneGroup ? "Ungrouped!" : "Grouped!");

@@ -543,7 +543,7 @@ namespace TiltBrush
         }
 
         /// Returns true if we think the user intends to throw this thing away
-        bool IsHideToss(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
+        protected bool IsHideToss(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
         {
             if (m_Pinned || !m_AllowHideWithToss)
             {
@@ -635,7 +635,7 @@ namespace TiltBrush
         // vLinVel: units/s
         // vAngVel: degrees/s
         // vPivot: world-space position about which the angular velocity is applied
-        public void SetVelocities(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
+        public virtual void SetVelocities(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
         {
             if (IsHideToss(vLinVel, vAngVel, vPivot))
             {

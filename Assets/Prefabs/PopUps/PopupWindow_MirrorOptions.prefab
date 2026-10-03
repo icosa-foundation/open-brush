@@ -365,7 +365,7 @@ MonoBehaviour:
   m_ButtonTexture: {fileID: 2800000, guid: ae726261e9135b949960e30cad75ad98, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
-  m_LongPressReleaseButton: 1
+  m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 0
   m_ZAdjustHover: -0.04
   m_ZAdjustClick: -0.04
@@ -491,7 +491,7 @@ MonoBehaviour:
   m_Persistent: 0
   m_AudioOnOpen: 1
   m_BlockUndoRedo: 0
-  m_IsLongPressPopUp: 1
+  m_IsLongPressPopUp: 0
   m_OrderedPageButtons: []
   m_PrevButton: {fileID: 0}
   m_NextButton: {fileID: 0}
@@ -660,7 +660,7 @@ MonoBehaviour:
   m_ButtonTexture: {fileID: 2800000, guid: 112c47f188ade1148a55663283d47c60, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
-  m_LongPressReleaseButton: 1
+  m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 0
   m_ZAdjustHover: -0.04
   m_ZAdjustClick: -0.04
@@ -826,7 +826,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Toggle editing of symmetry peers
+  m_DescriptionText: Linked mirror
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -851,7 +851,7 @@ MonoBehaviour:
   m_ButtonTexture: {fileID: 2800000, guid: 342cbde45e0e65b418f9323d0dfdf3b3, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 1
-  m_LongPressReleaseButton: 1
+  m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 0
   m_ZAdjustHover: -0.04
   m_ZAdjustClick: -0.04

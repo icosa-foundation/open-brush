@@ -17,14 +17,14 @@ using System.Collections.Generic;
 
 namespace TiltBrush
 {
-    /// A mirror the user draws with: the thing the symmetry widget stands for.
+    /// A linked mirror: a mirror the user created explicitly, which owns the strokes drawn with it.
     ///
-    /// A mirror has an identity of its own, separate from its settings. Strokes are linked to the
-    /// mirror they were drawn under, not to the values it happened to have at the time, so moving
-    /// a mirror can carry its strokes with it however much its settings have changed since.
+    /// A mirror has an identity of its own, separate from its settings. The settings are the
+    /// mirror's current state - where it is and how many copies it makes - and changing them
+    /// changes this mirror, carrying its strokes along; it never makes a different one. Strokes
+    /// drawn with it are grouped, and an edit to one member of a group applies to all of them.
     ///
-    /// One mirror is active at a time - the one the widget is showing - but a sketch keeps the
-    /// ones it has finished with, so they can be recalled and their strokes edited again.
+    /// Plain symmetry has no mirror object at all: strokes drawn with it are ordinary strokes.
     public class SymmetryMirror
     {
         public Guid Id { get; }
@@ -44,7 +44,11 @@ namespace TiltBrush
         public override string ToString() => $"Mirror {Id.ToString().Substring(0, 8)} ({Settings})";
     }
 
-    /// The mirrors in the current sketch, and which one the widget is showing.
+    /// The linked mirrors in the current sketch, and which one the widget is showing.
+    ///
+    /// Mirrors are only ever created by the user asking for one (NewLinked). Drawing, moving the
+    /// widget, changing settings and undo never create or switch mirrors on their own; every
+    /// change of the active mirror goes through ActivateMirrorCommand, so undo restores it.
     public static class SymmetryMirrors
     {
         private static readonly Dictionary<Guid, SymmetryMirror> m_Mirrors =
@@ -52,107 +56,193 @@ namespace TiltBrush
         // The same mirrors, oldest first, so that recalling one by position is stable.
         private static readonly List<SymmetryMirror> m_Order = new List<SymmetryMirror>();
         private static SymmetryMirror m_Active;
+        // Set while a command is putting settings back, so the change isn't recorded again.
+        private static bool m_ApplyingSettings;
 
-        /// Mirrors are kept even when nothing references them, so that a sketch can offer them
-        /// back to the user. Oldest first.
+        /// The linked mirrors, oldest first.
         public static IReadOnlyList<SymmetryMirror> All => m_Order;
 
         public static int Count => m_Order.Count;
 
-        public static bool IsActiveForEditing(SymmetryMirror mirror)
-        {
-            var pm = PointerManager.m_Instance;
-            return mirror != null && ReferenceEquals(m_Active, mirror) && pm != null &&
-                pm.CurrentSymmetryMode != PointerManager.SymmetryMode.None &&
-                mirror.Settings?.Mode == pm.CurrentSymmetryMode;
-        }
-
-        /// The mirror the widget is showing, which new strokes are linked to. Null only before
-        /// anything has been drawn with symmetry.
+        /// The linked mirror the widget is showing, or null for plain symmetry.
+        ///
+        /// Only commands and loading set this; user actions go through the methods below so that
+        /// they can be undone.
         public static SymmetryMirror Active
         {
             get { return m_Active; }
-            set
+            internal set
             {
                 if (!ReferenceEquals(m_Active, value))
                 {
                     SymmetryMirrorMove.End();
                     SymmetryPeerPreview.Hide();
                 }
-                if (value != null && !m_Mirrors.ContainsKey(value.Id))
-                {
-                    m_Mirrors[value.Id] = value;
-                    m_Order.Add(value);
-                }
+                if (value != null) { Register(value); }
                 m_Active = value;
             }
         }
 
-        /// The active mirror, created from the symmetry settings in force if there isn't one.
-        public static SymmetryMirror EnsureActive()
+        /// The active linked mirror if the widget is currently showing it, else null. Turning
+        /// symmetry off leaves the mirror active, so turning it back on resumes it; switching to
+        /// a different symmetry mode leaves it dormant until that mode returns.
+        public static SymmetryMirror Showing
         {
-            var settings = SymmetrySettingsSnapshot.FromCurrentSettings();
-            var canvas = App.Scene.ActiveCanvas;
-            if (m_Active == null ||
-                (m_Active.Canvas != null && m_Active.Canvas != canvas) ||
-                m_Active.Settings == null ||
-                !CanShareSettings(m_Active.Settings, settings))
+            get
             {
-                Active = Create(settings);
+                var pm = PointerManager.m_Instance;
+                if (m_Active?.Settings == null || pm == null ||
+                    !IsSpatial(pm.CurrentSymmetryMode) ||
+                    m_Active.Settings.Mode != pm.CurrentSymmetryMode)
+                {
+                    return null;
+                }
+                return m_Active;
             }
-            m_Active.Canvas ??= canvas;
-            return m_Active;
         }
 
-        /// Starts a new mirror and makes it active, leaving the strokes of the previous one
-        /// behind: this is how a second symmetric object is begun without disturbing the first.
-        public static SymmetryMirror Create(SymmetrySettingsSnapshot settings)
+        /// The mirror new symmetric strokes join, or null if they should be ordinary strokes.
+        /// A mirror's transforms are in its own canvas, so drawing into another layer is plain.
+        public static SymmetryMirror LinkingMirror
         {
-            SymmetryMirrorMove.End();
-            var mirror = new SymmetryMirror(Guid.NewGuid(), settings);
-            mirror.Canvas = App.Scene.ActiveCanvas;
-            m_Mirrors[mirror.Id] = mirror;
-            m_Order.Add(mirror);
-            Active = mirror;
+            get
+            {
+                var mirror = Showing;
+                if (mirror == null) { return null; }
+                mirror.Canvas ??= App.Scene.ActiveCanvas;
+                return mirror.Canvas == App.Scene.ActiveCanvas ? mirror : null;
+            }
+        }
+
+        internal static bool IsSpatial(PointerManager.SymmetryMode mode) =>
+            mode == PointerManager.SymmetryMode.SinglePlane ||
+            mode == PointerManager.SymmetryMode.MultiMirror;
+
+        // ---- User actions; each records an undoable command --------------------------------- //
+
+        /// Creates a new linked mirror from the current settings and makes it active. Always a
+        /// fresh mirror, even while another linked mirror is active.
+        public static SymmetryMirror NewLinked()
+        {
+            var settings = SymmetrySettingsSnapshot.FromCurrentSettings();
+            if (settings == null || !IsSpatial(settings.Mode)) { return null; }
+            var mirror = new SymmetryMirror(Guid.NewGuid(), settings)
+            {
+                Canvas = App.Scene.ActiveCanvas
+            };
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ActivateMirrorCommand(mirror, created: true));
             return mirror;
         }
 
-        /// Keeps the active mirror's record in step with the settings, since the active mirror is
-        /// by definition whatever the widget is currently set to. The stored copy is what recall
-        /// brings back and what the sketch saves, so it can't be left behind when the user
-        /// changes the order or the wallpaper group.
-        ///
-        /// This records the change; it does not move any strokes. Strokes follow a change of pose
-        /// (see SymmetryMirrorMove), but a change that alters how many copies there are isn't a
-        /// transform of the strokes that exist.
-        public static void NoteSettingsChanged()
+        /// Makes an earlier linked mirror active again and puts the widget where it has it.
+        public static void Recall(SymmetryMirror mirror)
+        {
+            if (mirror == null || ReferenceEquals(mirror, m_Active)) { return; }
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ActivateMirrorCommand(mirror, created: false));
+        }
+
+        /// Makes the mirror that owns this stroke active.
+        public static void RecallFromStroke(Stroke stroke)
+        {
+            Recall(stroke?.SymmetryPeerGroup?.Mirror);
+        }
+
+        /// Switches to plain symmetry. Linked mirrors keep their strokes.
+        public static void UsePlain()
         {
             if (m_Active == null) { return; }
-            if (SymmetryMirrorMove.IsMoving) { return; }
-            var settings = SymmetrySettingsSnapshot.FromCurrentSettings();
-            if (m_Active.Settings == null || !CanShareSettings(m_Active.Settings, settings))
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ActivateMirrorCommand(null, created: false));
+        }
+
+        // ---- Settings ----------------------------------------------------------------------- //
+
+        /// Called whenever a symmetry setting changes (PointerManager.CalculateMirrors). The
+        /// widget is the active mirror, so a change to its settings changes that mirror and its
+        /// strokes follow: a change that keeps the number of copies moves them, and one that
+        /// doesn't rebuilds each group from one of its members. Pose changes arrive through
+        /// SymmetryMirrorMove instead, so only the parameters are compared here.
+        public static void NoteSettingsChanged()
+        {
+            if (m_ApplyingSettings || SymmetryMirrorMove.IsMoving) { return; }
+            var mirror = Showing;
+            if (mirror == null) { return; }
+            var settings = SymmetrySettingsSnapshot.FromCurrentSettings(mirror.Canvas);
+            if (settings == null || mirror.Settings.SameParameters(settings)) { return; }
+            EndSelectionOwnedBy(mirror);
+
+            BaseCommand command = mirror.Settings.HasCompatibleTopology(settings)
+                ? (BaseCommand)new MoveMirrorSettingsCommand(mirror, mirror.Settings, settings)
+                : new RegenerateMirrorStrokesCommand(mirror, mirror.Settings, settings);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+        }
+
+        /// Ends the selection (baking any move into its strokes) if it holds a copy owned by
+        /// 'mirror'. A selected copy is staged in the selection canvas with its peers displaced
+        /// by the live preview, so a mirror move or settings change can't carry it; committing
+        /// the selection first gives both operations a settled group to work on.
+        internal static void EndSelectionOwnedBy(SymmetryMirror mirror)
+        {
+            var selection = SelectionManager.m_Instance;
+            if (mirror == null || selection == null || !selection.HasSelection) { return; }
+            bool owned = false;
+            foreach (var stroke in selection.SelectedStrokes)
             {
-                Create(settings);
+                owned |= ReferenceEquals(stroke.SymmetryPeerGroup?.Mirror, mirror);
             }
-            else
+            if (owned) { selection.ClearActiveSelection(); }
+        }
+
+        /// Puts the symmetry settings and widget back as a snapshot has them without the change
+        /// being recorded or carrying any strokes; for commands restoring an earlier state.
+        internal static void ApplySettingsUnrecorded(SymmetrySettingsSnapshot settings)
+        {
+            if (settings == null) { return; }
+            m_ApplyingSettings = true;
+            try
             {
-                m_Active.Settings = settings;
+                settings.ApplyToCurrentSettings(recordCommand: false);
+                PointerManager.m_Instance.CalculateMirrors();
+            }
+            finally
+            {
+                m_ApplyingSettings = false;
             }
         }
 
-        private static bool CanShareSettings(SymmetrySettingsSnapshot previous,
-            SymmetrySettingsSnapshot current)
+        /// The groups currently owned by a mirror.
+        internal static List<SymmetryStrokeGroup> GroupsOf(SymmetryMirror mirror)
         {
-            if (previous.Mode != current.Mode) { return false; }
-            if (current.Mode != PointerManager.SymmetryMode.SinglePlane &&
-                current.Mode != PointerManager.SymmetryMode.MultiMirror) { return true; }
-            if (!previous.HasCompatibleTopology(current)) { return false; }
-            if (previous.PointerTransforms.Count != current.PointerTransforms.Count) { return false; }
-            for (int i = 0; i < previous.PointerTransforms.Count; ++i)
+            var groups = new List<SymmetryStrokeGroup>();
+            var seen = new HashSet<SymmetryStrokeGroup>();
+            foreach (var stroke in SketchMemoryScript.AllStrokes())
             {
-                if (previous.PointerTransforms[i] != current.PointerTransforms[i]) { return false; }
+                var group = stroke.SymmetryPeerGroup;
+                if (group != null && ReferenceEquals(group.Mirror, mirror) && seen.Add(group))
+                {
+                    groups.Add(group);
+                }
             }
-            return true;
+            return groups;
+        }
+
+        // ---- Registry ----------------------------------------------------------------------- //
+
+        internal static void Register(SymmetryMirror mirror)
+        {
+            if (mirror == null || m_Mirrors.ContainsKey(mirror.Id)) { return; }
+            m_Mirrors[mirror.Id] = mirror;
+            m_Order.Add(mirror);
+        }
+
+        /// Undoing the creation of a mirror takes it out of the list again.
+        internal static void Unregister(SymmetryMirror mirror)
+        {
+            if (mirror == null || !m_Mirrors.Remove(mirror.Id)) { return; }
+            m_Order.Remove(mirror);
+            if (ReferenceEquals(m_Active, mirror)) { Active = null; }
         }
 
         public static SymmetryMirror Get(Guid id)
@@ -169,20 +259,9 @@ namespace TiltBrush
             if (!m_Mirrors.TryGetValue(id, out var mirror))
             {
                 mirror = new SymmetryMirror(id, settings);
-                m_Mirrors[id] = mirror;
-                m_Order.Add(mirror);
+                Register(mirror);
             }
             return mirror;
-        }
-
-        /// Makes a mirror active and puts the symmetry settings back the way it has them, so the
-        /// widget shows it again. Moves no strokes: recalling a mirror only changes what the
-        /// user is drawing and editing with.
-        public static void Recall(SymmetryMirror mirror)
-        {
-            if (mirror == null) { return; }
-            Active = mirror;
-            mirror.Settings?.ApplyToCurrentSettings();
         }
 
         public static void Clear()

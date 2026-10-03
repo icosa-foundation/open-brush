@@ -1588,14 +1588,19 @@ namespace TiltBrush
             App.Switchboard.TriggerMirrorVisibilityChanged();
         }
 
+        // The widget is the active mirror, so a linked mirror's strokes come with it.
         public void ResetSymmetryToHome()
         {
+            SymmetryMirrorMove.Begin();
             m_SymmetryWidgetScript.ResetToHome();
+            SymmetryMirrorMove.End();
         }
 
         public void BringSymmetryToUser()
         {
+            SymmetryMirrorMove.Begin();
             m_SymmetryWidgetScript.BringToUser();
+            SymmetryMirrorMove.End();
         }
 
         /// Given the position of a main pointer, find a corresponding symmetry position.
@@ -2265,16 +2270,13 @@ namespace TiltBrush
         private void BeginSymmetryStrokeGroup()
         {
             m_ActiveSymmetryStrokeGroup = null;
-            m_ActiveStrokeMirror = SymmetryModeEnabled && SymmetryPeerEditing.Enabled
-                ? SymmetryMirrors.EnsureActive()
-                : null;
+            m_ActiveStrokeMirror = SymmetryModeEnabled ? SymmetryMirrors.LinkingMirror : null;
         }
 
         /// Links a freshly-recorded stroke to the other strokes of the line it belongs to.
         private void AddStrokeToActiveSymmetryGroup(Stroke stroke, int pointerIndex)
         {
-            if (stroke == null || m_ActiveStrokeMirror == null ||
-                !SymmetryPeerEditing.Enabled) { return; }
+            if (stroke == null || m_ActiveStrokeMirror == null) { return; }
             m_ActiveSymmetryStrokeGroup ??=
                 new SymmetryStrokeGroup(m_ActiveStrokeMirror);
             stroke.JoinSymmetryGroup(m_ActiveSymmetryStrokeGroup, pointerIndex);
@@ -2283,6 +2285,8 @@ namespace TiltBrush
         /// Closes off the current line's symmetry group.
         private void EndSymmetryStrokeGroup()
         {
+            // Each copy's colour and size relationship to the group, as drawn.
+            m_ActiveSymmetryStrokeGroup?.CaptureInstances();
             m_ActiveSymmetryStrokeGroup = null;
             m_ActiveStrokeMirror = null;
         }
@@ -2306,7 +2310,7 @@ namespace TiltBrush
         /// This is what lets an edit to one stroke be mirrored onto its symmetry peers: peer j's
         /// version of a transform T applied to peer i is C * T * C.inverse, where C is
         /// Mj * Mi.inverse.
-        public List<TrTransform> GetSymmetryTransforms_CS()
+        public List<TrTransform> GetSymmetryTransforms_CS(CanvasScript canvas = null)
         {
             if (CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
             {
@@ -2315,7 +2319,7 @@ namespace TiltBrush
                 return GetScriptedTransforms(update: false);
             }
 
-            var xfCanvas = App.Scene.ActiveCanvas.Pose; // canvas -> global
+            var xfCanvas = (canvas ?? App.Scene.ActiveCanvas).Pose; // canvas -> global
             var xfCanvasInverse = xfCanvas.inverse;
             return GetSymmetriesForCurrentMode()
                 .Select(xf_GS => xfCanvasInverse * xf_GS * xfCanvas)
