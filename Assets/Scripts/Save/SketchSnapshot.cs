@@ -21,6 +21,7 @@ using UnityEngine;
 using Newtonsoft.Json;
 using Unity.SharpZipLib.Zip;
 using static TiltBrush.SketchWriter;
+using TiltBrush.FrameAnimation;
 
 namespace TiltBrush
 {
@@ -94,40 +95,55 @@ namespace TiltBrush
 
         private IEnumerator<Timeslice> TimeslicedConstructor()
         {
-            System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-            stopwatch.Start();
-            long maxTicks =
-                (System.Diagnostics.Stopwatch.Frequency * kNanoSecondsPerSnapshotSlice) / 1000000;
+            using AnimationPerformanceStats.OperationTimer operationTimer =
+                AnimationPerformanceStats.MeasureOperation("saveSnapshot");
+            IDisposable animationDrawingLease = null;
+            try
+            {
+                System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
+                stopwatch.Start();
+                long maxTicks =
+                    (System.Diagnostics.Stopwatch.Frequency * kNanoSecondsPerSnapshotSlice) / 1000000;
 
-            IEnumerable<Stroke> strokes;
-            if (m_SelectedOnly)
-            {
-                strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
-                SelectionManager.m_Instance.DeselectStrokes(strokes, App.ActiveCanvas);
-            }
-            else
-            {
-                strokes = SketchMemoryScript.AllStrokes();
-            }
-            m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
-            foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
-            {
-                if (stopwatch.ElapsedTicks > maxTicks)
+                IEnumerable<Stroke> strokes;
+                if (m_SelectedOnly)
                 {
-                    stopwatch.Reset();
-                    yield return null;
-                    stopwatch.Start();
+                    strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
+                    SelectionManager.m_Instance.DeselectStrokes(strokes, App.ActiveCanvas);
                 }
-                m_Strokes.Add(strokeSnapshot);
-            }
-            stopwatch.Stop();
+                else
+                {
+                    strokes = SketchMemoryScript.AllStrokes().ToList();
+                }
+                animationDrawingLease = App.Scene?.animationUI_manager?
+                    .RetainTimelineDrawingsForSave(strokes.Select(stroke =>
+                        stroke.Canvas == App.Scene.SelectionCanvas
+                            ? stroke.m_PreviousCanvas
+                            : stroke.Canvas));
+                m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
+                foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
+                {
+                    if (stopwatch.ElapsedTicks > maxTicks)
+                    {
+                        stopwatch.Reset();
+                        yield return null;
+                        stopwatch.Start();
+                    }
+                    m_Strokes.Add(strokeSnapshot);
+                }
+                stopwatch.Stop();
 
-            m_Metadata = GetSketchMetadata();
-            if (m_SelectedOnly)
+                m_Metadata = GetSketchMetadata();
+                if (m_SelectedOnly)
+                {
+                    // Reselect strokes
+                    SelectionManager.m_Instance.SelectionTransform = TrTransform.identity;
+                    SelectionManager.m_Instance.SelectStrokes(strokes, true);
+                }
+            }
+            finally
             {
-                // Reselect strokes
-                SelectionManager.m_Instance.SelectionTransform = TrTransform.identity;
-                SelectionManager.m_Instance.SelectStrokes(strokes, true);
+                animationDrawingLease?.Dispose();
             }
         }
 
@@ -165,6 +181,8 @@ namespace TiltBrush
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
                 CameraPaths = MetadataUtils.GetCameraPaths(),
                 Layers = MetadataUtils.GetLayers(),
+                AnimationTracks = MetadataUtils.GetAnimationTracks(),
+                AnimationPaths = MetadataUtils.GetAnimationPaths(),
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
@@ -309,6 +327,7 @@ namespace TiltBrush
                     List<Guid> brushGuids;
                     using (var stream = tiltWriter.GetWriteStream(TiltFile.FN_SKETCH))
                     {
+                        Console.WriteLine("WRITE DATA ");
                         SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
@@ -316,6 +335,7 @@ namespace TiltBrush
                     using (var jsonWriter = new CustomJsonWriter(new StreamWriter(
                         tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))
                     {
+                        Console.WriteLine("WRITE JSON ");
                         m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
                     }
 
