@@ -114,23 +114,27 @@ namespace TiltBrush
             stroke.RestoreMirrorControlPoints(points, brushScale * conversion.scale);
         }
 
-        /// For a group that can't be carried member by member: derive it from its canonical
-        /// stroke once the mirror has its new settings, or, where even that can't be done (a
-        /// member selected or outside the mirror's canvas), break its link undoably.
+        /// For a group that can't be carried member by member: once the mirror has its new
+        /// settings, move one visible member with its pointer and derive the rest from it; or,
+        /// where even that can't be done (a member selected or outside the mirror's canvas),
+        /// break its link undoably.
         internal static void AddFallback(SymmetryStrokeGroup group,
+            SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after, bool holdFirstPointer,
             List<RederiveSymmetryGroupCommand> rederives,
             List<SymmetryPeerEditing.BrokenLink> brokenLinks)
         {
-            var canonical = group.Canonical;
+            var source = group.DerivationSource;
             bool anySelected = false;
             foreach (var stroke in group.Strokes)
             {
                 anySelected |= SelectionManager.m_Instance.IsStrokeSelected(stroke);
             }
-            if (canonical != null && !anySelected &&
-                RederiveSymmetryGroupCommand.CanDerive(canonical))
+            if (source != null && !anySelected &&
+                RederiveSymmetryGroupCommand.CanDerive(source))
             {
-                rederives.Add(new RederiveSymmetryGroupCommand(canonical));
+                rederives.Add(new RederiveSymmetryGroupCommand(
+                    source,
+                    RederiveSymmetryGroupCommand.StepFor(source, before, after, holdFirstPointer)));
             }
             else
             {
@@ -192,7 +196,8 @@ namespace TiltBrush
             {
                 if (!MirrorStrokeEdits.IsEligible(group, mirror, count))
                 {
-                    MirrorStrokeEdits.AddFallback(group, m_Rederives, m_BrokenLinks);
+                    MirrorStrokeEdits.AddFallback(group, before, after, holdFirstPointer: false,
+                        m_Rederives, m_BrokenLinks);
                     continue;
                 }
                 foreach (var stroke in group.Strokes)

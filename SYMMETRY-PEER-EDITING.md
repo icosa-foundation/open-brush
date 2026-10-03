@@ -261,6 +261,12 @@ made active. Used when a selection is moved to another layer (the driving copy's
 mirrored move first, then go with it) and when a layer is squashed into another. Lua's
 `stroke.layer` and `group:Add` still move single strokes without their group.
 
+**Erased copies.** Edits skip erased copies, which is safe: an erased copy only comes back
+through undo, after every later edit has been undone. What isn't safe is rebuilding from one,
+so rebuilds use `SymmetryStrokeGroup.DerivationSource` (the lowest visible pointer index).
+When a mirror move or settings change rebuilds a group from a source other than pointer 0,
+`RederiveSymmetryGroupCommand` first moves the source by its own pointer's change.
+
 **Join (decision 12).** `JoinStrokeCommand.ClassifySymmetryJoin` decides. Two strokes from
 different groups of one mirror: every copy of A joins its counterpart in B's group (the copy at
 the pointer whose transform is P[j]·P[a]⁻¹·P[b]), A's group becomes the joined group, and it is
@@ -270,8 +276,7 @@ The range join `strokes.join` still unlinks what it joins.
 
 Still breaking links: a mirror move or
 settings change while a member is selected; a count-changing settings change over a group
-that can't be rebuilt; the range join `strokes.join`. Erased copies don't follow reshape, tint or
-snip. Not started: copies as read-only derived strokes with edits redirected to the canonical
+that can't be rebuilt; the range join `strokes.join`. Not started: copies as read-only derived strokes with edits redirected to the canonical
 stroke, instance data in the file trailer (decisions 7-9).
 
 ### Principle

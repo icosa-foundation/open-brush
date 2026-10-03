@@ -64,6 +64,27 @@ namespace TiltBrush
             }
         }
 
+        /// The member to rebuild the others from: the canonical stroke if it is visible, else
+        /// the visible member with the lowest pointer index. An erased member has missed every
+        /// edit made since it was erased (edits skip erased copies; undo brings it back only
+        /// after undoing them), so it is never a source while any member is visible.
+        public Stroke DerivationSource
+        {
+            get
+            {
+                Stroke source = null;
+                foreach (var stroke in m_Strokes)
+                {
+                    if (stroke.IsGeometryEnabled &&
+                        (source == null || stroke.SymmetryPointerIndex < source.SymmetryPointerIndex))
+                    {
+                        source = stroke;
+                    }
+                }
+                return source ?? Canonical;
+            }
+        }
+
         /// The strokes in the group other than the passed one.
         public IEnumerable<Stroke> PeersOf(Stroke stroke)
         {

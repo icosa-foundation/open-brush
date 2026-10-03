@@ -111,8 +111,8 @@ namespace TiltBrush
             m_Mirror.Settings = settings;
 
             // Groups that couldn't follow live - unbatched brushes, erased members, a failed
-            // in-place move - are derived from their canonical stroke under the new settings.
-            // Only a group with members selected or outside the mirror's canvas comes apart.
+            // in-place move - are derived from a visible member under the new settings. Only a
+            // group with members selected or outside the mirror's canvas comes apart.
             var rederives = new List<RederiveSymmetryGroupCommand>();
             var brokenLinks = new List<SymmetryPeerEditing.BrokenLink>();
             if (moved)
@@ -124,21 +124,11 @@ namespace TiltBrush
                 }
                 foreach (var group in fallback)
                 {
-                    var canonical = group.Canonical;
-                    if (canonical != null && !HasSelectedMember(group) &&
-                        RederiveSymmetryGroupCommand.CanDerive(canonical))
-                    {
-                        var rederive = new RederiveSymmetryGroupCommand(canonical);
-                        rederive.Redo();
-                        rederives.Add(rederive);
-                    }
-                    else
-                    {
-                        var link = new SymmetryPeerEditing.BrokenLink(group);
-                        link.Break();
-                        brokenLinks.Add(link);
-                    }
+                    MirrorStrokeEdits.AddFallback(group, m_Start, settings, holdFirstPointer: true,
+                        rederives, brokenLinks);
                 }
+                foreach (var rederive in rederives) { rederive.Redo(); }
+                foreach (var link in brokenLinks) { link.Break(); }
             }
             m_Command.Complete(settings, rederives, brokenLinks);
             Debug.Log($"{LogPrefix} End: widget, stroke endpoints and placement recorded together.");
@@ -155,14 +145,7 @@ namespace TiltBrush
             m_Skipped = null;
         }
 
-        private static bool HasSelectedMember(SymmetryStrokeGroup group)
-        {
-            foreach (var stroke in group.Strokes)
-            {
-                if (SelectionManager.m_Instance.IsStrokeSelected(stroke)) { return true; }
-            }
-            return false;
-        }
+
 
         internal sealed class GroupMove
         {

@@ -132,11 +132,27 @@ namespace TiltBrush
         private readonly List<SymmetryDerivation.Shape> m_Before =
             new List<SymmetryDerivation.Shape>();
         private List<SymmetryDerivation.Shape> m_After;
+        // Moves the source first, for a mirror whose settings changed under the group.
+        private readonly TrTransform? m_SourceStep;
+        private SymmetryDerivation.Shape m_SourceBefore;
+        private SymmetryDerivation.Shape m_SourceAfter;
 
         public RederiveSymmetryGroupCommand(Stroke source, BaseCommand parent = null)
-            : base(parent)
+            : this(source, null, parent)
+        {
+        }
+
+        /// 'sourceStep' is a canvas-space move applied to the source before the others are
+        /// derived from it: when the mirror's settings change, every pointer but the first moves,
+        /// so a source drawn by another pointer has to move with its pointer first.
+        public RederiveSymmetryGroupCommand(Stroke source, TrTransform? sourceStep,
+            BaseCommand parent = null) : base(parent)
         {
             m_Source = source;
+            if (sourceStep.HasValue && sourceStep.Value != TrTransform.identity)
+            {
+                m_SourceStep = sourceStep;
+            }
             var group = source.SymmetryPeerGroup;
             if (group == null) { return; }
             foreach (var stroke in group.Strokes)
@@ -173,8 +189,40 @@ namespace TiltBrush
             OnRedo();
         }
 
+        /// The move a mirror settings change gives 'source', from the pointer transforms before
+        /// and after; null if it doesn't move or the transforms don't cover its pointer. A mirror
+        /// drag holds the first pointer's strokes still (holdFirstPointer); a settings change
+        /// moves every pointer by its own change.
+        public static TrTransform? StepFor(Stroke source,
+            SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after, bool holdFirstPointer)
+        {
+            int index = source.SymmetryPointerIndex;
+            var from = before?.PointerTransforms;
+            var to = after?.PointerTransforms;
+            if (index < 0 || (holdFirstPointer && index == 0) || from == null || to == null ||
+                index >= from.Count || index >= to.Count)
+            {
+                return null;
+            }
+            TrTransform step = to[index] * from[index].inverse;
+            return step.IsFinite() ? step : (TrTransform?)null;
+        }
+
         protected override void OnRedo()
         {
+            if (m_SourceStep.HasValue)
+            {
+                if (m_SourceAfter == null)
+                {
+                    m_SourceBefore = SymmetryDerivation.Shape.Of(m_Source);
+                    MirrorStrokeEdits.ApplyLeftTransform(m_Source, m_SourceStep.Value);
+                    m_SourceAfter = SymmetryDerivation.Shape.Of(m_Source);
+                }
+                else
+                {
+                    m_SourceAfter.ApplyTo(m_Source);
+                }
+            }
             if (m_Before.Count == 0)
             {
                 foreach (var target in m_Targets)
@@ -199,11 +247,14 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
-            if (m_After == null) { return; }
-            for (int i = 0; i < m_Targets.Count; ++i)
+            if (m_After != null)
             {
-                if (m_After[i] != null) { m_Before[i].ApplyTo(m_Targets[i]); }
+                for (int i = 0; i < m_Targets.Count; ++i)
+                {
+                    if (m_After[i] != null) { m_Before[i].ApplyTo(m_Targets[i]); }
+                }
             }
+            m_SourceBefore?.ApplyTo(m_Source);
         }
     }
 } // namespace TiltBrush
