@@ -48,6 +48,10 @@ namespace TiltBrush
         private readonly Dictionary<Stroke, CanvasScript> m_SourceCanvases =
             new Dictionary<Stroke, CanvasScript>(new ReferenceComparer<Stroke>());
         private bool m_MovedStrokeSinceJoin;
+        // Per moved linked group, the mirrored move of its other copies. The preview has usually
+        // made it already; those copies are adopted where they are rather than moved again.
+        private readonly List<TransformSymmetryCopiesCommand> m_CopyMoves =
+            new List<TransformSymmetryCopiesCommand>();
 
         override public bool NeedsSave
         {
@@ -174,9 +178,9 @@ namespace TiltBrush
         }
 
         /// Deselecting is the point at which a moved selection is baked back into its strokes, so
-        /// it is also the point at which the rest of each moved linked group follows: once a
-        /// selected copy is baked, the other copies are derived from it (child commands, redone
-        /// after the bake and undone before it). Until then the preview shows them following.
+        /// it is also the point at which the rest of each moved linked group follows: each other
+        /// copy takes the mirrored move (child commands, redone after the bake and undone before
+        /// it). The preview has already shown them following, and what it moved is kept.
         private void GatherSymmetryPeers()
         {
             // Construction captures the movement but does not change sketch geometry.
@@ -205,14 +209,15 @@ namespace TiltBrush
                 {
                     continue;
                 }
-                // Moved to another layer: the whole group follows the stroke there under a new
-                // mirror in that layer (decision 11), before being derived from it.
+                // The other copies take the mirrored move where they lie, then, if the stroke went
+                // to another layer, the whole group follows it there under a new mirror in that
+                // layer (decision 11).
+                m_CopyMoves.Add(new TransformSymmetryCopiesCommand(stroke, moved, null, this));
                 if (layerChanged)
                 {
                     new MoveSymmetryGroupsToLayerCommand(
                         new[] { stroke.SymmetryPeerGroup }, m_TargetCanvas, this);
                 }
-                new RederiveSymmetryGroupCommand(stroke, this);
             }
         }
 
@@ -273,6 +278,11 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            // Copies the preview already moved into place stay there; the rest go back first.
+            if (m_Deselect)
+            {
+                foreach (var copyMove in m_CopyMoves) { copyMove.AdoptFromPreview(); }
+            }
             SymmetryPeerPreview.Hide();
             if (m_Deselect)
             {

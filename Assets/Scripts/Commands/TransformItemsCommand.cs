@@ -35,16 +35,21 @@ namespace TiltBrush
             m_Strokes = strokes?.ToList() ?? new List<Stroke>();
             m_Widgets = widgets ?? new List<GrabWidget>();
 
-            // A linked group follows the first of its copies this moves: once it has moved, the
-            // others are derived from it, whether or not they were in the list themselves.
+            // A linked group follows the first of its copies this moves, each other copy taking
+            // the mirrored move where it lies (no rebuild). Copies that were in the list too
+            // have already had the plain move, and get only the correction.
             if (m_Transform != TrTransform.identity)
             {
+                // What the strokes actually undergo, pivot included.
+                TrTransform xfAboutPivot =
+                    TrTransform.T(m_Pivot) * m_Transform * TrTransform.T(-m_Pivot);
+                var moved = new HashSet<Stroke>(m_Strokes, new ReferenceComparer<Stroke>());
                 var seen = new HashSet<SymmetryStrokeGroup>();
                 foreach (var stroke in m_Strokes)
                 {
                     if (SymmetryPeerEditing.IsLinked(stroke) && seen.Add(stroke.SymmetryPeerGroup))
                     {
-                        new RederiveSymmetryGroupCommand(stroke, this);
+                        new TransformSymmetryCopiesCommand(stroke, xfAboutPivot, moved, this);
                     }
                 }
             }

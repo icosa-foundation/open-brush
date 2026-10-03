@@ -794,9 +794,7 @@ namespace TiltBrush
 
         public void ClearActiveSelection()
         {
-            // The deselect below is what writes the move into the peers, so they have to be back
-            // in their own layers before it is worked out.
-            SymmetryPeerPreview.Hide();
+            // The preview is left showing: the deselect keeps the copies it has moved into place.
 
             // Make sure we don't have a selection active.
             if (HasSelection)

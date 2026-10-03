@@ -241,7 +241,13 @@ preview-displaced copies. Every edit to a linked stroke is made to the copy touc
 is derived from it; tools no longer mirror their own edits:
 - repaint (selection and tool sweep), tint and reshape: the first copy a drag or sweep touches
   drives its group, refreshed as the drag goes;
-- transform and the selection bake: the first moved copy drives (after any layer move);
+- transform and the selection bake: rigid moves don't rebuild. `TransformSymmetryCopiesCommand`
+  moves each other copy by C·xf·C⁻¹ where it lies (in place for batched copies, control points
+  plus rebuild otherwise); undo applies the inverse. The bake adopts the copies the selection
+  preview has already moved (`SymmetryPeerPreview.TryCommit`), so release costs nothing for
+  them. Copies in the moved list themselves get only the correction to their mirrored move.
+  Repeated in-place moves can drift by float error; the next rebuilding edit makes the group
+  exact again;
 - snip (copies derived first so one index cuts them all), crop (the source is cropped, copies
   take its pieces), join (pairwise, then derived);
 - mirror moves and settings changes move strokes in place, falling back to derivation from a
