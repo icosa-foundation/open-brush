@@ -261,9 +261,16 @@ made active. Used when a selection is moved to another layer (the driving copy's
 mirrored move first, then go with it) and when a layer is squashed into another. Lua's
 `stroke.layer` and `group:Add` still move single strokes without their group.
 
+**Join (decision 12).** `JoinStrokeCommand.ClassifySymmetryJoin` decides. Two strokes from
+different groups of one mirror: every copy of A joins its counterpart in B's group (the copy at
+the pointer whose transform is P[j]·P[a]⁻¹·P[b]), A's group becomes the joined group, and it is
+derived from A afterwards. Two copies of one group: the joined stroke leaves the group, as
+before. Linked with unlinked, or different mirrors: refused by the join tool and `stroke.join`.
+The range join `strokes.join` still unlinks what it joins.
+
 Still breaking links: a mirror move or
 settings change while a member is selected; a count-changing settings change over a group
-that can't be rebuilt; join (decision 12 not done). Erased copies don't follow reshape, tint or
+that can't be rebuilt; the range join `strokes.join`. Erased copies don't follow reshape, tint or
 snip. Not started: copies as read-only derived strokes with edits redirected to the canonical
 stroke, instance data in the file trailer (decisions 7-9).
 

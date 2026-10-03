@@ -30,6 +30,40 @@ namespace TiltBrush
         private readonly SymmetryStrokeGroup m_GroupB;
         private readonly int m_PointerA;
         private readonly int m_PointerB;
+        // Joining two groups of one mirror: stroke A keeps its place in its group, which becomes
+        // the joined group, and stroke B (now part of A) leaves its own.
+        private readonly bool m_KeepGroupA;
+
+        /// What joining two strokes means for their symmetry links.
+        public enum SymmetryJoin
+        {
+            /// Neither stroke is linked.
+            Unlinked,
+            /// Two copies of one linked group, across the mirror: the result is one
+            /// self-symmetric stroke, which leaves the group.
+            SameGroup,
+            /// Strokes from two groups of the same mirror: every pair of copies joins, and the
+            /// result is one linked group.
+            PeerGroups,
+            /// Linked with unlinked, or linked under different mirrors.
+            Refused,
+        }
+
+        public static SymmetryJoin ClassifySymmetryJoin(Stroke strokeA, Stroke strokeB)
+        {
+            var groupA = strokeA.SymmetryPeerGroup?.Mirror != null ? strokeA.SymmetryPeerGroup : null;
+            var groupB = strokeB.SymmetryPeerGroup?.Mirror != null ? strokeB.SymmetryPeerGroup : null;
+            if (groupA == null && groupB == null) { return SymmetryJoin.Unlinked; }
+            if (groupA == null || groupB == null ||
+                !ReferenceEquals(groupA.Mirror, groupB.Mirror))
+            {
+                return SymmetryJoin.Refused;
+            }
+            return ReferenceEquals(groupA, groupB) ? SymmetryJoin.SameGroup : SymmetryJoin.PeerGroups;
+        }
+
+        public static bool CanJoin(Stroke strokeA, Stroke strokeB) =>
+            ClassifySymmetryJoin(strokeA, strokeB) != SymmetryJoin.Refused;
 
         private enum JoinStrokeType
         {
@@ -40,8 +74,64 @@ namespace TiltBrush
         }
 
         public JoinStrokeCommand(
-            Stroke strokeA, Stroke strokeB, BaseCommand parent = null) : base(parent)
+            Stroke strokeA, Stroke strokeB, BaseCommand parent = null)
+            : this(strokeA, strokeB, parent,
+                ClassifySymmetryJoin(strokeA, strokeB) == SymmetryJoin.PeerGroups)
         {
+            if (!m_KeepGroupA) { return; }
+
+            // Every other copy of A joins its counterpart in B's group: the copy that is to B what
+            // it is to A. Afterwards the whole group is derived from A, so it stays an exact
+            // symmetric set even where a copy had no partner (an erased one, say).
+            foreach (var peerA in SymmetryPeerEditing.PeersOf(strokeA))
+            {
+                var peerB = Counterpart(strokeA, strokeB, peerA);
+                if (peerB != null)
+                {
+                    new JoinStrokeCommand(peerA, peerB, this, keepGroupA: true);
+                }
+            }
+            new RederiveSymmetryGroupCommand(strokeA, this);
+        }
+
+        /// The visible copy in B's group that peerA's pointer would have drawn from B: with
+        /// pointer transforms P, A at index a and B at index b, peerA (index j) pairs with the
+        /// copy at the index k for which P[k] = P[j] · P[a]⁻¹ · P[b].
+        private static Stroke Counterpart(Stroke strokeA, Stroke strokeB, Stroke peerA)
+        {
+            var transforms = strokeA.SymmetryPeerGroup.Mirror.Settings?.PointerTransforms;
+            int a = strokeA.SymmetryPointerIndex;
+            int b = strokeB.SymmetryPointerIndex;
+            int j = peerA.SymmetryPointerIndex;
+            if (transforms == null || !InRange(a) || !InRange(b) || !InRange(j)) { return null; }
+            TrTransform wanted = transforms[j] * transforms[a].inverse * transforms[b];
+            foreach (var peerB in strokeB.SymmetryPeerGroup.Strokes)
+            {
+                int k = peerB.SymmetryPointerIndex;
+                if (!ReferenceEquals(peerB, strokeB) && peerB.IsGeometryEnabled && InRange(k) &&
+                    SamePlacement(transforms[k], wanted))
+                {
+                    return peerB;
+                }
+            }
+            return null;
+
+            bool InRange(int index) => index >= 0 && index < transforms.Count;
+        }
+
+        /// Equal up to float noise; a rotation and its negated quaternion count as the same.
+        private static bool SamePlacement(TrTransform x, TrTransform y)
+        {
+            float tolerance = 1e-3f * Mathf.Max(1f, x.translation.magnitude);
+            return (x.translation - y.translation).magnitude <= tolerance &&
+                Mathf.Abs(Quaternion.Dot(x.rotation, y.rotation)) >= 0.9999f &&
+                Mathf.Abs(x.scale - y.scale) <= 1e-3f * Mathf.Max(1f, Mathf.Abs(x.scale));
+        }
+
+        private JoinStrokeCommand(
+            Stroke strokeA, Stroke strokeB, BaseCommand parent, bool keepGroupA) : base(parent)
+        {
+            m_KeepGroupA = keepGroupA;
             m_StrokeA = strokeA;
             m_StrokeB = strokeB;
             m_GroupA = strokeA.SymmetryPeerGroup;
@@ -98,7 +188,7 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            m_StrokeA.LeaveSymmetryGroup();
+            if (!m_KeepGroupA) { m_StrokeA.LeaveSymmetryGroup(); }
             m_StrokeB.LeaveSymmetryGroup();
             ModifyStroke(m_StrokeA, m_NewCP);
             m_StrokeB.Uncreate();
@@ -108,8 +198,8 @@ namespace TiltBrush
         {
             ModifyStroke(m_StrokeA, m_InitialCP);
             m_StrokeB.Recreate();
-            if (m_GroupA != null) { m_StrokeA.JoinSymmetryGroup(m_GroupA, m_PointerA); }
-            if (m_GroupB != null) { m_StrokeB.JoinSymmetryGroup(m_GroupB, m_PointerB); }
+            if (m_GroupA != null) { m_StrokeA.SetSymmetryGroup(m_GroupA, m_PointerA); }
+            if (m_GroupB != null) { m_StrokeB.SetSymmetryGroup(m_GroupB, m_PointerB); }
         }
 
         private void ModifyStroke(Stroke stroke, IEnumerable<PointerManager.ControlPoint> newControlPoints)

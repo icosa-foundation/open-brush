@@ -243,6 +243,18 @@ namespace TiltBrush
 
         public static Stroke JoinStrokes(Stroke stroke1, Stroke stroke2)
         {
+            switch (JoinStrokeCommand.ClassifySymmetryJoin(stroke2, stroke1))
+            {
+                case JoinStrokeCommand.SymmetryJoin.Refused:
+                    ControllerConsoleScript.m_Instance.AddNewLine(
+                        "A linked stroke can only be joined to strokes of the same linked mirror");
+                    return stroke2;
+                case JoinStrokeCommand.SymmetryJoin.PeerGroups:
+                    // Every pair of copies joins, as the join tool does.
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                        new JoinStrokeCommand(stroke2, stroke1));
+                    return stroke2;
+            }
             stroke1.LeaveSymmetryGroup();
             stroke2.LeaveSymmetryGroup();
             MergeJoinedStrokeColors(new[] { stroke2, stroke1 }, stroke2);
