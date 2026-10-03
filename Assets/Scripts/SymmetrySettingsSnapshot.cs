@@ -31,7 +31,8 @@ namespace TiltBrush
         /// Bumped if the serialized layout changes. Readers refuse blobs they don't understand
         /// rather than mis-parsing them; the rest of the stroke is unaffected because the blob
         /// is length-prefixed.
-        private const int kSerializedVersion = 1;
+        // 2: adds TransformEach and TransformEachAfter. Version 1 still reads.
+        private const int kSerializedVersion = 2;
 
         public PointerManager.SymmetryMode Mode;
         public PointerManager.CustomSymmetryType CustomType;
@@ -51,6 +52,10 @@ namespace TiltBrush
         public Vector3 Spin;
         /// Name of the active symmetry script. Only meaningful for ScriptedSymmetryMode.
         public string ScriptName;
+        /// Multimirror's transform-each, spread across the copies (PointerManager.
+        /// m_SymmetryTransformEach), and whether it applies after each copy's own transform.
+        public TrTransform TransformEach = TrTransform.identity;
+        public bool TransformEachAfter;
         /// The transform that maps the main pointer's stroke onto each symmetry pointer's stroke,
         /// indexed by pointer index, in the canvas space the strokes were drawn into. Empty for
         /// modes whose pointers have no fixed relationship to the main one, in which case an edit
@@ -80,6 +85,8 @@ namespace TiltBrush
                 WallpaperSkewX = pm.m_WallpaperSymmetrySkewX,
                 WallpaperSkewY = pm.m_WallpaperSymmetrySkewY,
                 ScriptName = "",
+                TransformEach = pm.m_SymmetryTransformEach,
+                TransformEachAfter = pm.m_SymmetryTransformEachAfter,
             };
 
             // Scripted and two-handed pointers do not have one stable mirror transform.
@@ -161,7 +168,9 @@ namespace TiltBrush
                 WallpaperScaleY == other.WallpaperScaleY &&
                 WallpaperSkewX == other.WallpaperSkewX &&
                 WallpaperSkewY == other.WallpaperSkewY &&
-                ScriptName == other.ScriptName;
+                ScriptName == other.ScriptName &&
+                TransformEach == other.TransformEach &&
+                TransformEachAfter == other.TransformEachAfter;
         }
 
         /// Restores these settings, so that new strokes are created the same way as the
@@ -182,6 +191,8 @@ namespace TiltBrush
             pm.m_WallpaperSymmetryScaleY = WallpaperScaleY;
             pm.m_WallpaperSymmetrySkewX = WallpaperSkewX;
             pm.m_WallpaperSymmetrySkewY = WallpaperSkewY;
+            pm.m_SymmetryTransformEach = TransformEach;
+            pm.m_SymmetryTransformEachAfter = TransformEachAfter;
 
             var widget = pm.SymmetryWidget;
             if (widget != null)
@@ -236,6 +247,10 @@ namespace TiltBrush
                             writer.Float(xf.scale);
                         }
                     }
+                    writer.Vec3(TransformEach.translation);
+                    writer.Quaternion(TransformEach.rotation);
+                    writer.Float(TransformEach.scale);
+                    writer.Int32(TransformEachAfter ? 1 : 0);
                 }
                 return stream.ToArray();
             }
@@ -251,7 +266,7 @@ namespace TiltBrush
                 using (var reader = new SketchBinaryReader(stream))
                 {
                     int version = reader.Int32();
-                    if (version != kSerializedVersion) { return null; }
+                    if (version < 1 || version > kSerializedVersion) { return null; }
                     var snapshot = new SymmetrySettingsSnapshot
                     {
                         Mode = (PointerManager.SymmetryMode)reader.Int32(),
@@ -295,6 +310,13 @@ namespace TiltBrush
                         Quaternion r = reader.Quaternion();
                         snapshot.PointerTransforms.Add(TrTransform.TRS(t, r, reader.Float()));
                     }
+                    if (version >= 2)
+                    {
+                        Vector3 eachT = reader.Vec3();
+                        Quaternion eachR = reader.Quaternion();
+                        snapshot.TransformEach = TrTransform.TRS(eachT, eachR, reader.Float());
+                        snapshot.TransformEachAfter = reader.Int32() != 0;
+                    }
                     return snapshot;
                 }
             }
@@ -328,6 +350,8 @@ namespace TiltBrush
                 WidgetTransform == other.WidgetTransform &&
                 Spin == other.Spin &&
                 ScriptName == other.ScriptName &&
+                TransformEach == other.TransformEach &&
+                TransformEachAfter == other.TransformEachAfter &&
                 SameTransforms(PointerTransforms, other.PointerTransforms);
         }
 
@@ -358,6 +382,8 @@ namespace TiltBrush
                 hash = (hash * 397) ^ WallpaperSkewX.GetHashCode();
                 hash = (hash * 397) ^ WidgetTransform.GetHashCode();
                 hash = (hash * 397) ^ (ScriptName?.GetHashCode() ?? 0);
+                hash = (hash * 397) ^ TransformEach.GetHashCode();
+                hash = (hash * 397) ^ TransformEachAfter.GetHashCode();
                 hash = (hash * 397) ^ (PointerTransforms?.Count ?? 0);
                 return hash;
             }
