@@ -268,6 +268,7 @@ namespace TiltBrush
                 if (item.groupId == 0 || item.groupId > groups.Length) { continue; }
                 item.stroke.JoinSymmetryGroup(groups[item.groupId - 1], item.pointerIndex);
             }
+            foreach (var group in groups) { group.CaptureInstances(); }
 
             // Restore the mirror that was active when saved. None means the sketch was saved
             // with plain symmetry, and an additive load keeps whatever is active already.

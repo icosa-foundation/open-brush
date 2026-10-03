@@ -12,17 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    /// Copies in a linked group are derived: each is one member's geometry carried through the
-    /// mirror's transform for its pointer. Only the copy's own colour and size relationship to
-    /// the group (a mirror colour shift, jitter) is its own, and that is kept as it is.
+    /// Copies in a linked group are derived: each is one member carried through the mirror's
+    /// transform for its pointer, with the colour shift and size ratio recorded for it on the
+    /// group (SymmetryStrokeGroup.Instance). Geometry, point colours, colour, size and brush all
+    /// come from the member derived from; nothing else about a copy is its own.
     internal static class SymmetryDerivation
     {
-        /// Everything about a stroke's geometry that derivation replaces.
+        /// Everything about a stroke that derivation replaces.
         internal sealed class Shape
         {
             internal PointerManager.ControlPoint[] Points;
@@ -30,6 +32,9 @@ namespace TiltBrush
             internal float BrushScale;
             internal List<Color32?> OverrideColors;
             internal ColorOverrideMode OverrideMode;
+            internal Color Color;
+            internal Guid BrushGuid;
+            internal float BrushSize;
 
             internal static Shape Of(Stroke stroke) => new Shape
             {
@@ -40,11 +45,15 @@ namespace TiltBrush
                     ? new List<Color32?>(stroke.m_OverrideColors)
                     : null,
                 OverrideMode = stroke.m_ColorOverrideMode,
+                Color = stroke.m_Color,
+                BrushGuid = stroke.m_BrushGuid,
+                BrushSize = stroke.m_BrushSize,
             };
 
             internal void ApplyTo(Stroke stroke)
             {
-                stroke.ReplaceDerivedData(Points, Drops, BrushScale, OverrideColors, OverrideMode);
+                stroke.ReplaceDerivedData(Points, Drops, BrushScale, OverrideColors, OverrideMode,
+                    Color, BrushGuid, BrushSize);
             }
         }
 
@@ -53,7 +62,18 @@ namespace TiltBrush
                 ? (bool[])stroke.m_ControlPointsToDrop.Clone()
                 : new bool[stroke.m_ControlPoints.Length];
 
-        /// The shape 'target' takes as a copy of 'source', two members of one linked group.
+        /// 'color' moved by an HSV shift: hue wraps, saturation and value clamp, alpha is kept.
+        internal static Color Shift(Color color, Vector3 shift)
+        {
+            if (shift == Vector3.zero) { return color; }
+            Color.RGBToHSV(color, out float h, out float s, out float v);
+            Color result = Color.HSVToRGB(
+                Mathf.Repeat(h + shift.x, 1f), Mathf.Clamp01(s + shift.y), Mathf.Clamp01(v + shift.z));
+            result.a = color.a;
+            return result;
+        }
+
+        /// The stroke 'target' becomes as a copy of 'source', two members of one linked group.
         /// False when the mirror has no transform for either pointer, or the two aren't both in
         /// the mirror's canvas (a selected stroke is staged in another canvas).
         internal static bool TryDerive(Stroke source, Stroke target, out Shape shape)
@@ -85,7 +105,14 @@ namespace TiltBrush
                 points[i].m_Orient = pose.rotation;
             }
 
-            // Point colours follow the source, offset by how the two strokes' colours differ.
+            // The target's own relationship to the group, relative to the source's.
+            var fromInstance = group.InstanceOf(source);
+            var toInstance = group.InstanceOf(target);
+            Vector3 colorShift = toInstance.ColorShift - fromInstance.ColorShift;
+            float sizeRatio = Mathf.Approximately(fromInstance.SizeRatio, 0f)
+                ? 1f
+                : toInstance.SizeRatio / fromInstance.SizeRatio;
+
             List<Color32?> overrides = null;
             if (source.m_OverrideColors != null)
             {
@@ -97,15 +124,16 @@ namespace TiltBrush
                         overrides.Add(null);
                         continue;
                     }
-                    Color32 shifted = SymmetryPeerEditing.OffsetColorLike(
-                        color.Value, source.m_Color, target.m_Color);
+                    // Per-vertex alpha (QuillFlatBrush opacity) follows the source unchanged.
+                    Color32 shifted = Shift(color.Value, colorShift);
                     shifted.a = color.Value.a;
                     overrides.Add(shifted);
                 }
             }
 
-            // The copy keeps its own brush size relationship; m_BrushScale is the geometric
-            // part, which the transform carries.
+            // m_BrushScale is the geometric part of the size, which the transform carries.
+            var brush = BrushCatalog.m_Instance.GetBrush(source.m_BrushGuid);
+            Color baseColor = Shift(source.m_Color, colorShift);
             shape = new Shape
             {
                 Points = points,
@@ -113,6 +141,11 @@ namespace TiltBrush
                 BrushScale = source.m_BrushScale * Mathf.Abs(xf.scale),
                 OverrideColors = overrides,
                 OverrideMode = source.m_ColorOverrideMode,
+                Color = brush != null
+                    ? ColorPickerUtils.ClampLuminance(baseColor, brush.m_ColorLuminanceMin)
+                    : baseColor,
+                BrushGuid = source.m_BrushGuid,
+                BrushSize = source.m_BrushSize * sizeRatio,
             };
             return true;
         }
@@ -153,6 +186,9 @@ namespace TiltBrush
             {
                 m_SourceStep = sourceStep;
             }
+            // Before any edit this command follows: each copy keeps its relationship to the
+            // group as it was.
+            source.SymmetryPeerGroup?.CaptureInstances();
             var group = source.SymmetryPeerGroup;
             if (group == null) { return; }
             foreach (var stroke in group.Strokes)

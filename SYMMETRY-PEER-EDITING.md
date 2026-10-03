@@ -345,6 +345,11 @@ to every member, it silently breaks the promise that a linked group stays symmet
    tools (drags) may update copies cheaply per frame and re-derive once on release. GPU
    instancing is a later rendering optimisation behind the same data model.
 
+   *Clarified 2026-10-03:* edits are made to whichever copy was touched, not redirected to
+   the canonical stroke; the group is then derived from that copy. Only the canonical stroke
+   and the instance data are authoritative, so the result is the same, but a selection stays
+   where the user grabbed it.
+
 9. **File format: canonical + instances, and expanded copies.** The trailer stores the
    canonical stroke's group and each instance (transform + colour override). Every copy is
    also written as an ordinary stroke, marked as derived, so older readers and other .tilt

@@ -2285,6 +2285,8 @@ namespace TiltBrush
         /// Closes off the current line's symmetry group.
         private void EndSymmetryStrokeGroup()
         {
+            // Each copy's colour and size relationship to the group, as drawn.
+            m_ActiveSymmetryStrokeGroup?.CaptureInstances();
             m_ActiveSymmetryStrokeGroup = null;
             m_ActiveStrokeMirror = null;
         }

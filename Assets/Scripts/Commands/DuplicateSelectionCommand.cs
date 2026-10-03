@@ -123,6 +123,7 @@ namespace TiltBrush
                         }
                         m_DuplicatedStrokes.Add(duplicate);
                     }
+                    group?.CaptureInstances();
                 }
 
                 // Duplicate widgets.

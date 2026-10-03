@@ -470,10 +470,14 @@ namespace TiltBrush
         /// being derived from another member of its group. Like RestoreMirrorControlPoints, it
         /// preserves erased state.
         internal void ReplaceDerivedData(PointerManager.ControlPoint[] points, bool[] drops,
-            float brushScale, List<Color32?> overrideColors, ColorOverrideMode overrideMode)
+            float brushScale, List<Color32?> overrideColors, ColorOverrideMode overrideMode,
+            Color color, Guid brushGuid, float brushSize)
         {
             RebuildPreservingVisibility(() =>
             {
+                m_Color = color;
+                m_BrushGuid = brushGuid;
+                m_BrushSize = brushSize;
                 m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
                 m_ControlPointsToDrop = (bool[])drops.Clone();
                 m_BrushScale = brushScale;
