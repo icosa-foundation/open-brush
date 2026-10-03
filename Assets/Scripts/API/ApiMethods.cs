@@ -526,12 +526,11 @@ namespace TiltBrush
         {
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
 
-            RenderTexture target = RenderTexture.GetTemporary(
-                width,
-                height,
-                24,
-                includePostProcessing ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGB32);
+            RenderTexture target = RenderTexture.GetTemporary(CaptureColorUtils.CreateDescriptor(
+                width, height,
+                CaptureColorUtils.GetFormat(camera)));
             RenderTexture previousTarget = camera.targetTexture;
+            bool previousAllowMsaa = camera.allowMSAA;
             UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
             try
             {
@@ -543,6 +542,7 @@ namespace TiltBrush
                 }
 
                 camera.targetTexture = target;
+                camera.allowMSAA = target.antiAliasing > 1;
                 camera.Render();
                 using (var fs = new FileStream(fullPath, FileMode.Create))
                 {
@@ -552,6 +552,7 @@ namespace TiltBrush
             finally
             {
                 camera.targetTexture = previousTarget;
+                camera.allowMSAA = previousAllowMsaa;
                 if (UrpPostProcessingController.Instance != null)
                 {
                     UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);

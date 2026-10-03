@@ -568,6 +568,11 @@ namespace TiltBrush
         public void UpdateLineFromObject()
         {
             var xf_LS = GetTransformForLine(m_CurrentLine.transform, Coords.AsRoom[transform]);
+            if (PointerManager.m_Instance.CurrentSymmetryMode ==
+                PointerManager.SymmetryMode.ScriptedSymmetryMode)
+            {
+                xf_LS.scale = m_CurrentLine.StrokeScale;
+            }
 
             if (!PointerManager.m_Instance.IsMainPointerProcessingLine() && m_CurrentCreator != null)
             {
@@ -583,6 +588,11 @@ namespace TiltBrush
                     TrTransform xfSymmetry_RS = PointerManager.m_Instance.GetSymmetryTransformFor(
                         this, xfMain_RS);
                     xf_LS = GetTransformForLine(m_CurrentLine.transform, xfSymmetry_RS);
+                    if (PointerManager.m_Instance.CurrentSymmetryMode ==
+                        PointerManager.SymmetryMode.ScriptedSymmetryMode)
+                    {
+                        xf_LS.scale = m_CurrentLine.StrokeScale;
+                    }
                 }
 
                 m_ControlPoints.Clear();
