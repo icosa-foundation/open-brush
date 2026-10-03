@@ -205,6 +205,8 @@ namespace TiltBrush
                 }
                 else
                 {
+                    // A linked stroke joins only strokes linked to the same mirror.
+                    if (!JoinStrokeCommand.CanJoin(m_StrokeA, strokeB)) { return; }
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                         new JoinStrokeCommand(m_StrokeA, strokeB)
                     );

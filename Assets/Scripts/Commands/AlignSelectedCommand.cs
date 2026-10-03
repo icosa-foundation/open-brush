@@ -46,6 +46,10 @@ namespace TiltBrush
 
             m_PreviousStrokeTransforms = m_NewStrokeTransforms.Select(tr => tr.inverse).ToList();
             m_PreviousWidgetTransforms = m_NewWidgetTransforms.Select(tr => tr.inverse).ToList();
+
+            // Linked copies of the selected strokes follow them.
+            TransformSymmetryCopiesCommand.ForSelectionEdit(
+                m_SelectedStrokes.Zip(m_NewStrokeTransforms, (stroke, xf) => (stroke, xf)), this);
         }
 
         private TrTransform CalcTransform(Stroke stroke, float anchorValue)

@@ -872,6 +872,8 @@ namespace TiltBrush
                     {
                         PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
                     }
+                    // The saved active mirror owns the settings for its linked groups.
+                    SymmetryMirrors.Active?.Settings?.ApplyToCurrentSettings(recordCommand: false);
                     if (jsonData.CameraPaths != null)
                     {
                         WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);

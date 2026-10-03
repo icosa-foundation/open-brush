@@ -84,6 +84,19 @@ namespace TiltBrush
         public override bool NeedsSave { get { return true; } }
         public bool IsFinal => m_Final;
 
+        // A mirror drag owns its widget movement explicitly, including its final snap.
+        // Updating that owned command must not depend on Merge accepting a final command.
+        internal void UpdateMirrorEnd(TrTransform transform, Vector3 dimension)
+        {
+            m_EndTransform = transform;
+            m_CustomDimension.endState = dimension;
+        }
+
+        internal void CopyMirrorEnd(MoveWidgetCommand move)
+        {
+            UpdateMirrorEnd(move.m_EndTransform, move.m_CustomDimension.endState);
+        }
+
         protected override void OnRedo()
         {
             m_Widget.LocalTransform = m_EndTransform;

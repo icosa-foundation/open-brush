@@ -195,6 +195,7 @@ namespace TiltBrush
             OpenScriptParametersPopup = 6005,
             SaveAs = 6006,
             OpenPluginDocs = 6007,
+            ToggleLinkedMirror = 6008,
             SaveSelected = 6500,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
@@ -4703,6 +4704,12 @@ namespace TiltBrush
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
                     break;
+                case GlobalCommands.ToggleLinkedMirror:
+                    // On: a fresh linked mirror. Off: plain symmetry; the linked mirror keeps
+                    // its strokes. Both undoable.
+                    if (SymmetryMirrors.Active != null) { SymmetryMirrors.UsePlain(); }
+                    else { SymmetryMirrors.NewLinked(); }
+                    break;
                 case GlobalCommands.SymmetryTwoHanded:
                     if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.TwoHanded)
                     {
@@ -5490,6 +5497,7 @@ namespace TiltBrush
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.SinglePlane;
                 case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror;
+                case GlobalCommands.ToggleLinkedMirror: return SymmetryMirrors.Active != null;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.TwoHanded;
                 case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
