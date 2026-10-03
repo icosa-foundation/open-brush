@@ -303,13 +303,33 @@ namespace TiltBrush
                 TrTransform fromSource =
                     before.PointerTransforms[source.SymmetryPointerIndex].inverse;
                 var newGroup = new SymmetryStrokeGroup(mirror);
-                for (int i = 0; i < after.PointerTransforms.Count; ++i)
+
+                // Each copy keeps its own appearance: a pointer index that survives keeps its
+                // instance data; a new one gets what the mirror's colour shift gives a copy there.
+                group.CaptureInstances();
+                var sourceInstance = group.InstanceOf(source);
+                var instances = new Dictionary<int, SymmetryStrokeGroup.Instance>();
+                foreach (var member in group.Strokes)
+                {
+                    instances[member.SymmetryPointerIndex] = group.InstanceOf(member);
+                }
+                int count = after.PointerTransforms.Count;
+                for (int i = 0; i < count; ++i)
                 {
                     TrTransform xf = after.PointerTransforms[i] * fromSource;
                     var copy = SketchMemoryScript.m_Instance.DuplicateStroke(
                         source, source.Canvas,
                         xf == TrTransform.identity ? (TrTransform?)null : xf,
                         absoluteScale: true);
+                    if (!instances.TryGetValue(i, out var instance))
+                    {
+                        instance = NewCopyInstance(group.Canonical ?? source, i, count);
+                    }
+                    SymmetryDerivation.ApplyAppearance(copy, source,
+                        instance.ColorShift - sourceInstance.ColorShift,
+                        Mathf.Approximately(sourceInstance.SizeRatio, 0f)
+                            ? 1f
+                            : instance.SizeRatio / sourceInstance.SizeRatio);
                     MirrorStrokeEdits.HideUncounted(copy);
                     copy.JoinSymmetryGroup(newGroup, i);
                     m_NewStrokes.Add(copy);
@@ -319,6 +339,23 @@ namespace TiltBrush
                     if (stroke.IsGeometryEnabled) { m_OldStrokes.Add(stroke); }
                 }
             }
+        }
+
+        /// The appearance a newly added pointer index gets: the colour the mirror's colour shift
+        /// gives a copy at that index of a group whose canonical stroke is 'canonical'.
+        private static SymmetryStrokeGroup.Instance NewCopyInstance(Stroke canonical, int index,
+            int count)
+        {
+            Color shifted = PointerManager.m_Instance.CalcColorShift(
+                canonical.m_Color, index / (float)count);
+            Color.RGBToHSV(canonical.m_Color, out float h0, out float s0, out float v0);
+            Color.RGBToHSV(shifted, out float h1, out float s1, out float v1);
+            return new SymmetryStrokeGroup.Instance
+            {
+                ColorShift = new Vector3(Mathf.DeltaAngle(h0 * 360f, h1 * 360f) / 360f,
+                    s1 - s0, v1 - v0),
+                SizeRatio = 1f,
+            };
         }
 
         /// The member the group is rebuilt from: the one the user drew if it is still there.

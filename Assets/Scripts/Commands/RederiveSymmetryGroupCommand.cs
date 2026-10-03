@@ -92,6 +92,33 @@ namespace TiltBrush
             All = Geometry | Appearance,
         }
 
+        /// Gives 'target' (a fresh copy of 'source') the source's appearance moved by an HSV
+        /// colour shift and a size ratio, keeping its geometry. Erased state is kept.
+        internal static void ApplyAppearance(Stroke target, Stroke source, Vector3 colorShift,
+            float sizeRatio)
+        {
+            if (colorShift == Vector3.zero && Mathf.Approximately(sizeRatio, 1f)) { return; }
+            var shape = Shape.Of(target);
+            var brush = BrushCatalog.m_Instance.GetBrush(source.m_BrushGuid);
+            Color baseColor = Shift(source.m_Color, colorShift);
+            shape.Color = brush != null
+                ? ColorPickerUtils.ClampLuminance(baseColor, brush.m_ColorLuminanceMin)
+                : baseColor;
+            shape.BrushSize = source.m_BrushSize * sizeRatio;
+            if (source.m_OverrideColors != null)
+            {
+                shape.OverrideColors = new List<Color32?>(source.m_OverrideColors.Count);
+                foreach (var color in source.m_OverrideColors)
+                {
+                    if (!color.HasValue) { shape.OverrideColors.Add(null); continue; }
+                    Color32 shifted = Shift(color.Value, colorShift);
+                    shifted.a = color.Value.a;
+                    shape.OverrideColors.Add(shifted);
+                }
+            }
+            shape.ApplyTo(target);
+        }
+
         /// The stroke 'target' becomes as a copy of 'source', two members of one linked group;
         /// parts not derived are kept from the target. Deriving geometry is false when the mirror
         /// has no transform for either pointer, or the two aren't both in the mirror's canvas (a
