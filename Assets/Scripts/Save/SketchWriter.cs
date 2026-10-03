@@ -117,6 +117,12 @@ namespace TiltBrush
             // (just created, or all their strokes deleted); a save of selected strokes keeps only
             // the mirrors those strokes use.
             internal bool IncludeUnreferenced;
+            // Write no symmetry table at all: the strokes go out unlinked.
+            internal bool Unlinked;
+
+            /// For strokes sent over the network. Linked mirrors aren't supported in multiplayer
+            /// (it runs in beginner mode), so remote strokes always arrive unlinked.
+            public static SymmetrySaveState None() => new SymmetrySaveState { Unlinked = true };
 
             public static SymmetrySaveState Capture(bool includeUnreferenced = true)
             {
@@ -158,6 +164,7 @@ namespace TiltBrush
                 SymmetrySaveState state)
             {
                 state ??= SymmetrySaveState.Capture();
+                if (state.Unlinked) { return null; }
                 var table = new SymmetryTable { m_State = state };
                 if (state.IncludeUnreferenced)
                 {
@@ -248,8 +255,7 @@ namespace TiltBrush
         /// The groups are new objects, so strokes merged into an existing sketch can't collide
         /// with the groups already in it.
         /// Read even when no stroke was linked: a sketch can hold linked mirrors with no strokes.
-        /// An additive load (importing into an open sketch, or strokes arriving over the network)
-        /// gives every mirror a fresh identity - reusing an existing one would bind the imported
+        /// An additive load (importing into an open sketch) gives every mirror a fresh identity - reusing an existing one would bind the imported
         /// groups to that mirror's canvas and settings - and leaves the active mirror alone.
         private static void ReadSymmetryTable(Stream stream, List<PendingSymmetry> pending,
             bool additive)
@@ -1312,8 +1318,8 @@ namespace TiltBrush
                 result.Add(stroke);
             }
 
-            // Strokes arriving over the network are added to an open sketch.
-            ReadSymmetryTable(stream, pendingSymmetry, additive: true);
+            // Strokes arriving over the network stay unlinked: linked mirrors aren't supported in
+            // multiplayer, and the network writer sends no table.
             return result;
         }
 
