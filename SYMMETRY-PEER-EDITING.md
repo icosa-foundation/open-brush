@@ -258,8 +258,8 @@ another layer: every copy goes (erased ones stay erased), and the groups are re-
 new linked mirror there, made from the old one with its transforms re-expressed in the new
 layer's space (one new mirror per old mirror per move). The new mirror is registered but not
 made active. Used when a selection is moved to another layer (the driving copy's peers get the
-mirrored move first, then go with it) and when a layer is squashed into another. Lua's
-`stroke.layer` and `group:Add` still move single strokes without their group.
+mirrored move first, then go with it), when a layer is squashed into another, and by Lua's
+`stroke.layer` and `group:Add` (unrecorded, as Lua edits are).
 
 **Erased copies.** Edits skip erased copies, which is safe: an erased copy only comes back
 through undo, after every later edit has been undone. What isn't safe is rebuilding from one,
@@ -274,9 +274,16 @@ derived from A afterwards. Two copies of one group: the joined stroke leaves the
 before. Linked with unlinked, or different mirrors: refused by the join tool and `stroke.join`.
 The range join `strokes.join` still unlinks what it joins.
 
-Still breaking links: a mirror move or
-settings change while a member is selected; a count-changing settings change over a group
-that can't be rebuilt; the range join `strokes.join`. Not started: copies as read-only derived strokes with edits redirected to the canonical
+**Selection and mirror changes.** A mirror move or settings change on a mirror that owns a
+selected copy ends the selection first (`SymmetryMirrors.EndSelectionOwnedBy`), baking it;
+the two are separate undo steps.
+
+**Range join.** `strokes.join` joins unlinked strokes, or copies of one group (the result
+leaves it); a range mixing groups or mirrors is refused.
+
+Links now break only where a group has no visible member to rebuild from during a
+count-changing settings change (it is invisible, and undo restores the link with it) or where
+something outside these paths splits a group across canvases. Not started: copies as read-only derived strokes with edits redirected to the canonical
 stroke, instance data in the file trailer (decisions 7-9).
 
 ### Principle

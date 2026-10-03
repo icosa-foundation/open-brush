@@ -275,6 +275,20 @@ namespace TiltBrush
         {
             var strokesToJoin = SketchMemoryScript.GetStrokesBetween(from, to);
             var firstStroke = strokesToJoin[0];
+            // As with joining two strokes: unlinked strokes, or copies of one linked group (whose
+            // result leaves the group). Mixing groups or mirrors would break their links.
+            var linkedGroups = strokesToJoin
+                .Select(stroke => stroke.SymmetryPeerGroup)
+                .Where(group => group?.Mirror != null)
+                .Distinct()
+                .ToList();
+            if (linkedGroups.Count > 1 || (linkedGroups.Count == 1 &&
+                strokesToJoin.Any(stroke => stroke.SymmetryPeerGroup != linkedGroups[0])))
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    "Strokes from different linked groups can't be joined as a range");
+                return firstStroke;
+            }
             foreach (var stroke in strokesToJoin) { stroke.LeaveSymmetryGroup(); }
             MergeJoinedStrokeColors(strokesToJoin, firstStroke);
             firstStroke.m_ControlPoints = strokesToJoin.SelectMany(x => x.m_ControlPoints).ToArray();

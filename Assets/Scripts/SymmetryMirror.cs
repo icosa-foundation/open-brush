@@ -171,11 +171,28 @@ namespace TiltBrush
             if (mirror == null) { return; }
             var settings = SymmetrySettingsSnapshot.FromCurrentSettings(mirror.Canvas);
             if (settings == null || mirror.Settings.SameParameters(settings)) { return; }
+            EndSelectionOwnedBy(mirror);
 
             BaseCommand command = mirror.Settings.HasCompatibleTopology(settings)
                 ? (BaseCommand)new MoveMirrorSettingsCommand(mirror, mirror.Settings, settings)
                 : new RegenerateMirrorStrokesCommand(mirror, mirror.Settings, settings);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+        }
+
+        /// Ends the selection (baking any move into its strokes) if it holds a copy owned by
+        /// 'mirror'. A selected copy is staged in the selection canvas with its peers displaced
+        /// by the live preview, so a mirror move or settings change can't carry it; committing
+        /// the selection first gives both operations a settled group to work on.
+        internal static void EndSelectionOwnedBy(SymmetryMirror mirror)
+        {
+            var selection = SelectionManager.m_Instance;
+            if (mirror == null || selection == null || !selection.HasSelection) { return; }
+            bool owned = false;
+            foreach (var stroke in selection.SelectedStrokes)
+            {
+                owned |= ReferenceEquals(stroke.SymmetryPeerGroup?.Mirror, mirror);
+            }
+            if (owned) { selection.ClearActiveSelection(); }
         }
 
         /// Puts the symmetry settings and widget back as a snapshot has them without the change

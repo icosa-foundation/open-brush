@@ -46,6 +46,7 @@ namespace TiltBrush
             End();
             // A linked mirror always carries its strokes; plain symmetry has none to carry.
             if (SymmetryMirrors.Showing == null) { return; }
+            SymmetryMirrors.EndSelectionOwnedBy(SymmetryMirrors.Showing);
             var pm = PointerManager.m_Instance;
             m_Start = SymmetrySettingsSnapshot.FromCurrentSettings(SymmetryMirrors.Showing.Canvas);
             if (m_Start.Mode != PointerManager.SymmetryMode.SinglePlane &&
