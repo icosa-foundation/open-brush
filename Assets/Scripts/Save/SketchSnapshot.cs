@@ -38,6 +38,8 @@ namespace TiltBrush
         private JsonSerializer m_JsonSerializer;
         private SaveIconCaptureScript m_SaveIconCapture;
         private GroupIdMapping m_GroupIdMapping;
+        // The linked mirrors and their settings, captured with the strokes on the main thread.
+        private SketchWriter.SymmetrySaveState m_SymmetryState;
 
         private bool m_SelectedOnly;
 
@@ -111,6 +113,7 @@ namespace TiltBrush
             {
                 strokes = SketchMemoryScript.AllStrokes();
             }
+            m_SymmetryState = SketchWriter.SymmetrySaveState.Capture(includeUnreferenced: !m_SelectedOnly);
             m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
             foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
             {
@@ -311,7 +314,8 @@ namespace TiltBrush
                     List<Guid> brushGuids;
                     using (var stream = tiltWriter.GetWriteStream(TiltFile.FN_SKETCH))
                     {
-                        SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
+                        SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids,
+                            m_SymmetryState);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
 

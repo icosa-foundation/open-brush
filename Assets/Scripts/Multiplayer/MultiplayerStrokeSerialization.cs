@@ -46,7 +46,9 @@ namespace OpenBrush.Multiplayer
                 var strokeSnapshots = SketchWriter.EnumerateAdjustedSnapshots(strokeList).ToList();
                 using (var memoryStream = new MemoryStream())
                 {
-                    SketchWriter.WriteMemory(memoryStream, strokeSnapshots, new GroupIdMapping());
+                    // Only the mirrors these strokes use travel with them.
+                    SketchWriter.WriteMemory(memoryStream, strokeSnapshots, new GroupIdMapping(),
+                        SketchWriter.SymmetrySaveState.Capture(includeUnreferenced: false));
                     Debug.Log($"Serialization complete. Serialized data size: {memoryStream.Length} bytes.");
                     return memoryStream.ToArray();
                 }
