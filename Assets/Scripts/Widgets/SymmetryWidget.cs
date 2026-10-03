@@ -37,6 +37,11 @@ namespace TiltBrush
         [SerializeField] private Renderer m_LeftRightMesh;
         [SerializeField] private Renderer m_FrontBackMesh;
         [SerializeField] private TextMeshPro m_TitleText;
+        // The title shows whether the widget stands for a linked mirror.
+        private static readonly Color kLinkedTitleColor = new Color(0.45f, 0.9f, 1f);
+        private string m_PlainTitle;
+        private bool m_ShowingLinked;
+        private bool m_TitleActive;
         [SerializeField] private GameObject m_HintText;
         [SerializeField] private GrabWidgetHome m_Home;
 
@@ -192,6 +197,7 @@ namespace TiltBrush
             // While the mirror is held, its strokes follow it.
             SymmetryMirrorMove.Update();
             HaltIfLinked();
+            if (m_ShowingLinked != (SymmetryMirrors.Active != null)) { UpdateTitle(); }
 
             bool moved = m_UserInteracting;
 
@@ -327,7 +333,28 @@ namespace TiltBrush
                 }
             }
             m_HintText.SetActive(bActive);
-            m_TitleText.color = bActive ? Color.white : Color.grey;
+            m_TitleActive = bActive;
+            UpdateTitle();
+        }
+
+        /// "Mirror", or "Mirror / Linked" in a distinct colour while a linked mirror is active,
+        /// so the mode is visible on the widget itself.
+        private void UpdateTitle()
+        {
+            if (m_TitleText == null) { return; }
+            m_PlainTitle ??= m_TitleText.text;
+            m_ShowingLinked = SymmetryMirrors.Active != null;
+            m_TitleText.text = m_ShowingLinked ? "Mirror\nLinked" : m_PlainTitle;
+            if (!m_ShowingLinked)
+            {
+                m_TitleText.color = m_TitleActive ? Color.white : Color.grey;
+            }
+            else
+            {
+                Color dim = kLinkedTitleColor * 0.6f;
+                dim.a = 1f;
+                m_TitleText.color = m_TitleActive ? kLinkedTitleColor : dim;
+            }
         }
 
         Vector3 GetBeamDirection(BeamDirection rDir)

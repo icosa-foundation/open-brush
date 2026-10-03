@@ -18,7 +18,9 @@ There is no switch. Linking comes from the mirror: strokes drawn with a **linked
 are linked, strokes drawn with **plain** symmetry are ordinary strokes. See
 *Design decisions* below.
 
-- In VR: the "New linked mirror" button in the mirror options popup (`GlobalCommands.NewLinkedMirror`, 6008).
+- In VR: the "Linked mirror" toggle in the mirror options popup (`GlobalCommands.ToggleLinkedMirror`,
+  6008). On starts a fresh linked mirror; off switches to plain. The widget's title reads
+  "Mirror / Linked" in light cyan while a linked mirror is active.
 - API: `symmetry.mirror.new` (create a linked mirror), `symmetry.mirror.recall=<n>`
   (an earlier one, oldest first), `symmetry.mirror.fromselection` (the mirror owning the
   last selected stroke), `symmetry.mirror.plain` (back to plain).

@@ -826,7 +826,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: New linked mirror
+  m_DescriptionText: Linked mirror
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -850,7 +850,7 @@ MonoBehaviour:
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 342cbde45e0e65b418f9323d0dfdf3b3, type: 3}
   m_AtlasTexture: 0
-  m_ToggleButton: 0
+  m_ToggleButton: 1
   m_LongPressReleaseButton: 1
   m_ButtonHasPressedAudio: 0
   m_ZAdjustHover: -0.04
