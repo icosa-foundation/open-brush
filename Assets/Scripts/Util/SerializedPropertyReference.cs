@@ -64,7 +64,9 @@ namespace TiltBrush
 
         private void Resolve()
         {
-            if (m_Target != null && !string.IsNullOrEmpty(m_PropertyName))
+            // Unity can invoke serialization callbacks from a worker thread. Avoid UnityEngine.Object's
+            // overloaded null check here because it calls EnsureRunningOnMainThread.
+            if (!ReferenceEquals(m_Target, null) && !string.IsNullOrEmpty(m_PropertyName))
             {
                 m_Property = m_Target.GetType().GetProperty(m_PropertyName);
             }

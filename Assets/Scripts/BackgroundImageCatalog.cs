@@ -36,6 +36,8 @@ namespace TiltBrush
 
         public override void ChangeDirectory(string newPath)
         {
+            // This override does not call base, so it has to do the base's cleanup itself.
+            StopWatchingCurrentDirectory();
             m_CurrentBackgroundImagesDirectory = newPath;
             if (Directory.Exists(m_CurrentBackgroundImagesDirectory))
             {
@@ -60,7 +62,7 @@ namespace TiltBrush
 
         protected override bool ValidExtension(string ext)
         {
-            return ext == ".jpg" || ext == ".jpeg" || ext == ".png" || ext == ".hdr";
+            return ext != ".svg" && base.ValidExtension(ext);
         }
 
         protected override void ProcessReferenceDirectory(bool userOverlay = true)

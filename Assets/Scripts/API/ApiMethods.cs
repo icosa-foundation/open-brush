@@ -25,6 +25,8 @@ namespace TiltBrush
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
+        private const float kMinLookDistance_RS = 0.001f;
+
         private static readonly HashSet<string> kSupportedReferenceImageExtensions =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -32,6 +34,7 @@ namespace TiltBrush
                 ".jpeg",
                 ".png",
                 ".hdr",
+                ".exr",
                 ".svg"
             };
 
@@ -164,6 +167,39 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "capture.snapshot360",
+            "Queues a stereo 360 snapshot (top/bottom equirectangular) to the user's Snapshots folder",
+            "snapshot360.png,4096,true"
+        )]
+        public static string CaptureSnapshot360(
+            string filename,
+            int width = 4096,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            if (width <= 0 || width > ODS.HybridCamera.MaxImageWidth)
+            {
+                Debug.LogError(
+                    $"{logPrefix} Width must be between 1 and {ODS.HybridCamera.MaxImageWidth}; received {width}.");
+                return null;
+            }
+
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "snapshot360");
+
+            MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
+            if (cam == null)
+            {
+                return null;
+            }
+
+            string fullPath = BuildCapturePath(filename, "snapshot360.png", ".png");
+            return cam.CaptureSnapshot360ForApi(fullPath, width, usePostProcessing);
+        }
+
+        [ApiEndpoint(
             "capture.autogif",
             "Queues an Auto GIF capture to the user's Snapshots folder",
             "autogif.gif,true"
@@ -263,11 +299,15 @@ namespace TiltBrush
             string fullPath = BuildCapturePath(filename, "dropcam.png", ".png");
             DropCamWidget dropCam = null;
             bool wasActive = false;
+            Vector3 previousPosition = default;
+            Quaternion previousRotation = default;
             bool shouldRestoreDropCam = false;
             try
             {
                 dropCam = SketchControlsScript.m_Instance.GetDropCampWidget();
                 wasActive = dropCam.gameObject.activeSelf;
+                previousPosition = dropCam.transform.position;
+                previousRotation = dropCam.transform.rotation;
                 shouldRestoreDropCam = true;
                 dropCam.ShowInstantly(true);
 
@@ -295,6 +335,11 @@ namespace TiltBrush
                 if (shouldRestoreDropCam && dropCam != null)
                 {
                     dropCam.ShowInstantly(wasActive);
+                    if (!wasActive)
+                    {
+                        dropCam.transform.SetPositionAndRotation(
+                            previousPosition, previousRotation);
+                    }
                 }
             }
         }
@@ -514,12 +559,11 @@ namespace TiltBrush
         {
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
 
-            RenderTexture target = RenderTexture.GetTemporary(
-                width,
-                height,
-                24,
-                includePostProcessing ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGB32);
+            RenderTexture target = RenderTexture.GetTemporary(CaptureColorUtils.CreateDescriptor(
+                width, height,
+                CaptureColorUtils.GetFormat(camera)));
             RenderTexture previousTarget = camera.targetTexture;
+            bool previousAllowMsaa = camera.allowMSAA;
             UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
             try
             {
@@ -531,6 +575,7 @@ namespace TiltBrush
                 }
 
                 camera.targetTexture = target;
+                camera.allowMSAA = target.antiAliasing > 1;
                 camera.Render();
                 using (var fs = new FileStream(fullPath, FileMode.Create))
                 {
@@ -540,6 +585,7 @@ namespace TiltBrush
             finally
             {
                 camera.targetTexture = previousTarget;
+                camera.allowMSAA = previousAllowMsaa;
                 if (UrpPostProcessingController.Instance != null)
                 {
                     UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
@@ -741,9 +787,20 @@ namespace TiltBrush
         )]
         public static void UserDirection(Vector3 direction)
         {
+            if (App.VrSdk.GetHmdDof() != VrSdk.DoF.None)
+            {
+                return;
+            }
             TrTransform lookPose = App.Scene.Pose;
+            Vector3 userPosition = lookPose.inverse * ViewpointScript.Head.position;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-            lookPose.rotation = qNewRotation;
+            lookPose.rotation = ViewpointScript.Head.rotation * Quaternion.Inverse(qNewRotation);
+            lookPose.translation = ViewpointScript.Head.position -
+                lookPose.rotation * (lookPose.scale * userPosition);
+            if (Vector3.Dot(lookPose.rotation * Vector3.up, Vector3.up) < 1.0f - 1e-6f)
+            {
+                App.Scene.disableTiltProtection = true;
+            }
             App.Scene.Pose = lookPose;
         }
 
@@ -763,17 +820,58 @@ namespace TiltBrush
             "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)",
             "1,2,3"
         )]
-        public static void UserLookAt(Vector3 direction)
+        public static void UserLookAt(Vector3 position)
         {
             TrTransform lookPose = App.Scene.Pose;
-            Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-            lookPose.rotation = qNewRotation;
+            Vector3 userPosition = lookPose.inverse * ViewpointScript.Head.position;
+            Vector3 direction = position - userPosition;
+            if ((direction * lookPose.scale).sqrMagnitude <
+                kMinLookDistance_RS * kMinLookDistance_RS)
+            {
+                return;
+            }
+            bool isVr = App.VrSdk.GetHmdDof() != VrSdk.DoF.None;
+            Quaternion headRotation = ViewpointScript.Head.rotation;
+            Vector3 up = Vector3.up;
+            if (isVr)
+            {
+                direction.y = 0;
+                if ((direction * lookPose.scale).sqrMagnitude <
+                    kMinLookDistance_RS * kMinLookDistance_RS)
+                {
+                    return;
+                }
+                Vector3 headDirection = ViewpointScript.Head.forward;
+                headDirection.y = 0;
+                if (headDirection.sqrMagnitude < 1e-6f)
+                {
+                    Vector3 headRight = ViewpointScript.Head.right;
+                    headRight.y = 0;
+                    headDirection = Vector3.Cross(headRight, Vector3.up);
+                }
+                headRotation = Quaternion.LookRotation(headDirection, Vector3.up);
+            }
+            direction.Normalize();
+            if (!isVr && Vector3.Cross(direction, up).sqrMagnitude < 1e-6f)
+            {
+                up = Vector3.forward;
+            }
+            lookPose.rotation = headRotation *
+                Quaternion.Inverse(Quaternion.LookRotation(direction, up));
+            lookPose.translation = ViewpointScript.Head.position -
+                lookPose.rotation * (lookPose.scale * userPosition);
+
+            if (!isVr &&
+                Vector3.Dot(lookPose.rotation * Vector3.up, Vector3.up) < 1.0f - 1e-6f)
+            {
+                App.Scene.disableTiltProtection = true;
+            }
             App.Scene.Pose = lookPose;
         }
 
         [ApiEndpoint(
             "spectator.mode",
-            "Sets the spectator camera mode to one of stationary, slowFollow, wobble, circular",
+            "Sets the spectator camera mode to one of stationary, slowFollow, wobble, circular or camerapath",
             "stationary")]
         public static void SpectatorMode(string mode)
         {
@@ -918,9 +1016,19 @@ namespace TiltBrush
             "Changes the brush direction to look at the specified point",
             "1,2,3"
         )]
-        public static void BrushLookAt(Vector3 direction)
+        public static void BrushLookAt(Vector3 position)
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(direction, Vector3.up);
+            Vector3 direction = position - ApiManager.Instance.BrushPosition;
+            if ((direction * App.Scene.ActiveCanvas.Pose.scale).sqrMagnitude <
+                kMinLookDistance_RS * kMinLookDistance_RS)
+            {
+                return;
+            }
+            direction.Normalize();
+            Vector3 up = Vector3.Cross(direction, Vector3.up).sqrMagnitude < 1e-6f
+                ? Vector3.forward
+                : Vector3.up;
+            ApiManager.Instance.BrushRotation.SetLookRotation(direction, up);
         }
 
         [ApiEndpoint(
@@ -933,13 +1041,13 @@ namespace TiltBrush
         [ApiEndpoint("brush.look.up", "Changes the brush direction to look upwards")]
         public static void BrushLookUp()
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.up, Vector3.up);
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.up, Vector3.forward);
         }
 
         [ApiEndpoint("brush.look.down", "Changes the brush direction to look downwards")]
         public static void BrushLookDown()
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.down, Vector3.up);
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.down, Vector3.forward);
         }
 
         [ApiEndpoint("brush.look.left", "Changes the brush direction to look to the left")]
@@ -1651,7 +1759,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "image.base64Decode",
-            "Saves base64-encoded PNG, JPEG, HDR, or SVG data to the user's Reference Images folder. The filename must not contain a path, and an explicit extension must match the decoded image data"
+            "Saves base64-encoded PNG, JPEG, HDR, EXR, or SVG data to the user's Reference Images folder. The filename must not contain a path, and an explicit extension must match the decoded image data"
         )]
         public static string SaveBase64(string base64, string filename)
         {
@@ -1659,7 +1767,7 @@ namespace TiltBrush
             string imageExtension = GetReferenceImageExtension(bytes);
             if (imageExtension == null)
             {
-                throw new ArgumentException("image.base64Decode only supports PNG, JPEG, HDR, and SVG image data.");
+                throw new ArgumentException("image.base64Decode only supports PNG, JPEG, HDR, EXR, and SVG image data.");
             }
 
             string extension = Path.GetExtension(filename);
@@ -1667,7 +1775,7 @@ namespace TiltBrush
             {
                 filename += imageExtension;
             }
-            else if (!kSupportedReferenceImageExtensions.Contains(extension))
+            else if (!ReferenceImageFormat.IsSupportedExtension(extension))
             {
                 throw new ArgumentException($"Unsupported image filename extension: {extension}");
             }
@@ -1697,6 +1805,10 @@ namespace TiltBrush
                 (StartsWithAscii(bytes, "#?RADIANCE") || StartsWithAscii(bytes, "#?RGBE")))
             {
                 return ".hdr";
+            }
+            if (HdrTextureLoader.IsExrData(bytes))
+            {
+                return ".exr";
             }
             string text = System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
             if (text.StartsWith("<svg", StringComparison.OrdinalIgnoreCase) ||

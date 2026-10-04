@@ -73,5 +73,69 @@ namespace TiltBrush
                 isPreviewExecution: true, previewInterval: 0.1f,
                 currentTime: 1f, nextPreviewTime: 1f));
         }
+
+        [TestCase(0f)]
+        [TestCase(-1f)]
+        public void ToolScriptStrokePreviewRejectsNonPositiveScale(float strokeScale)
+        {
+            Assert.IsFalse(PointerScript.IsValidToolScriptPreviewScale(strokeScale));
+        }
+
+        [Test]
+        public void ToolScriptStrokePreviewRejectsNonFiniteScale()
+        {
+            Assert.IsFalse(PointerScript.IsValidToolScriptPreviewScale(float.NaN));
+            Assert.IsFalse(PointerScript.IsValidToolScriptPreviewScale(float.PositiveInfinity));
+            Assert.IsFalse(PointerScript.IsValidToolScriptPreviewScale(float.NegativeInfinity));
+        }
+
+        [Test]
+        public void ToolScriptStrokePreviewAcceptsPositiveScale()
+        {
+            Assert.IsTrue(PointerScript.IsValidToolScriptPreviewScale(0.000001f));
+            Assert.IsTrue(PointerScript.IsValidToolScriptPreviewScale(1f));
+        }
+
+        [Test]
+        public void ToolScriptStrokePreviewIsIdleOutsideGesture()
+        {
+            Assert.AreEqual(
+                ScriptedTool.StrokePreviewExecutionPhase.Idle,
+                ScriptedTool.GetStrokePreviewExecutionPhase(
+                    strokePreviewRequested: true, gestureIsActive: false,
+                    triggerIsHeld: false));
+        }
+
+        [Test]
+        public void ToolScriptStrokePreviewUsesPreviewPhaseWhileHeld()
+        {
+            Assert.AreEqual(
+                ScriptedTool.StrokePreviewExecutionPhase.Preview,
+                ScriptedTool.GetStrokePreviewExecutionPhase(
+                    strokePreviewRequested: true, gestureIsActive: true,
+                    triggerIsHeld: true));
+        }
+
+        [Test]
+        public void ToolScriptStrokePreviewUsesFinalPhaseWhenGestureEnds()
+        {
+            Assert.AreEqual(
+                ScriptedTool.StrokePreviewExecutionPhase.Final,
+                ScriptedTool.GetStrokePreviewExecutionPhase(
+                    strokePreviewRequested: true, gestureIsActive: true,
+                    triggerIsHeld: false));
+        }
+
+        [TestCase(ScriptCoordSpace.Default, true)]
+        [TestCase(ScriptCoordSpace.Pointer, true)]
+        [TestCase(ScriptCoordSpace.Canvas, false)]
+        public void ToolScriptAngleSnapOnlyAppliesToPlacedSpaces(
+            ScriptCoordSpace space, bool expected)
+        {
+            Assert.AreEqual(
+                expected,
+                LuaManager.ShouldApplyToolScriptAngleSnap(
+                    angleSnapEnabled: true, space: space));
+        }
     }
 }

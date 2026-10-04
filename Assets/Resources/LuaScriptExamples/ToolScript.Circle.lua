@@ -1,6 +1,7 @@
 Settings = {
     description="Draws a circle",
-    previewType="stroke"
+    previewType="stroke",
+    previewInterval=0.05
 }
 
 local function buildCircle()
@@ -16,7 +17,5 @@ local function buildCircle()
 end
 
 function Main()
-    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
-        return buildCircle()
-    end
+    return buildCircle()
 end

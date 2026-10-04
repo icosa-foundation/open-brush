@@ -14,7 +14,6 @@ Parameters = {
 }
 
 function Main()
-    if Brush.triggerIsPressed or Brush.triggerReleasedThisFrame then
         local path = Path:New()
         local R = Parameters.outerRadius -- Fixed outer circle radius
         local r = Parameters.innerRadius -- Rolling circle radius
@@ -50,8 +49,8 @@ function Main()
             -- weave in a third dimension in an mathemarically interesting way
             local z = Math:Sin(t) * Math:Cos(t) * Math:Cos((R - r) / r * t) * Parameters.depth
 
-            
-            
+
+
             local position = Vector3:New(x, y, z)
             path:Insert(Transform:New(position))
         end
@@ -59,5 +58,4 @@ function Main()
         -- Normalize path to fit within the canvas
         path:Normalize(2)
         return path
-    end
 end

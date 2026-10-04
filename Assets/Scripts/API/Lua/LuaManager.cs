@@ -931,6 +931,10 @@ namespace TiltBrush
         {
             var previousScript = GetActiveScript(category);
             EndScript(previousScript);
+            if (category == LuaApiCategory.SymmetryScript && IsCategoryActive(category))
+            {
+                PointerManager.m_Instance.MainPointer.transform.SetUniformScale(1);
+            }
         }
 
         private void _SetActiveScript(LuaApiCategory category, int index)
@@ -1074,6 +1078,7 @@ namespace TiltBrush
             RegisterApiEnum(script, "SymmetryMode", typeof(SymmetryMode));
             RegisterApiEnum(script, "SymmetryPointType", typeof(SymmetryPointType));
             RegisterApiEnum(script, "SymmetryWallpaperType", typeof(SymmetryWallpaperType));
+            RegisterApiEnum(script, "SymmetryPointerPaintMode", typeof(SymmetryPointerPaintMode));
             RegisterApiEnum(script, "ColorOverrideMode", typeof(ColorOverrideMode));
 
         }
@@ -1426,7 +1431,7 @@ namespace TiltBrush
                     break;
             }
 
-            if (angleSnapEnabled)
+            if (ShouldApplyToolScriptAngleSnap(angleSnapEnabled, pathWrapper._Space))
             {
                 tr_CS.rotation = selectionManager.CurrentSnapAngleIndex != 0
                     ? selectionManager.QuantizeAngle_CS(tr_CS.rotation)
@@ -1485,6 +1490,13 @@ namespace TiltBrush
             return new ToolScriptExecutionResult(
                 pathWrapper, pathWrapper._Space, tr_CS, previewTransforms,
                 previewControlPointPaths, previewColors, previewStrokeScale);
+        }
+
+        internal static bool ShouldApplyToolScriptAngleSnap(
+            bool angleSnapEnabled, ScriptCoordSpace space)
+        {
+            return angleSnapEnabled &&
+                (space == ScriptCoordSpace.Default || space == ScriptCoordSpace.Pointer);
         }
 
         internal static int FindFirstDrawableToolScriptPathIndex(

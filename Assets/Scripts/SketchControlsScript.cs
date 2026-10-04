@@ -4072,10 +4072,9 @@ namespace TiltBrush
             multiCam.StartVideoCapture(MultiCamTool.GetSaveName(MultiCamStyle.Video), offlineRender: true);
             App.Instance.FrameCountDisplay.gameObject.SetActive(true);
             App.Instance.FrameCountDisplay.SetFramesTotal(VideoRecorderUtils.NumFramesInUsdSerializer);
-            while (VideoRecorderUtils.ActiveVideoRecording != null)
+            while (VideoRecorderUtils.IsCapturing)
             {
-                App.Instance.FrameCountDisplay.SetCurrentFrame(
-                    VideoRecorderUtils.ActiveVideoRecording.FrameCount);
+                App.Instance.FrameCountDisplay.SetCurrentFrame(VideoRecorderUtils.ActiveCaptureFrameCount);
                 yield return null;
             }
             ssMgr.SetScreenshotResolution(App.UserConfig.Video.Resolution);
@@ -4499,6 +4498,7 @@ namespace TiltBrush
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
             {
+                PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
                 // the order of these two lines are important as ExitIntroSketch is setting the
@@ -5550,6 +5550,7 @@ namespace TiltBrush
             SelectionManager.m_Instance.RemoveFromSelection(false);
             PointerManager.m_Instance.ResetSymmetryToHome();
             PointerManager.m_Instance.FinalizeLine(false, true);
+            PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
             App.Scene.ResetLayers(notify: true);
             ApiManager.Instance.ResetBrushTransform();
             ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
@@ -5833,21 +5834,17 @@ namespace TiltBrush
                 GameObject camObj = new GameObject("ScreenShotter");
                 Camera cam = camObj.AddComponent<Camera>();
                 cam.CopyFrom(App.VrSdk.GetVrCamera());
-                cam.stereoTargetEye = StereoTargetEyeMask.None;
+                UrpPostProcessingController.ConfigureOffscreenCaptureCamera(cam);
                 cam.clearFlags = CameraClearFlags.SolidColor;
                 camPose.ToTransform(camObj.transform);
                 int res = App.UserConfig.Profiling.ScreenshotResolution;
-                RenderTexture renderTexture = RenderTexture.GetTemporary(res, res, 24);
+                RenderTexture renderTexture = RenderTexture.GetTemporary(
+                    CaptureColorUtils.CreateDescriptor(res, res, RenderTextureFormat.ARGB32));
                 try
                 {
                     cam.targetTexture = renderTexture;
                     cam.Render();
-                    RenderTexture prev = RenderTexture.active;
-                    RenderTexture.active = renderTexture;
-                    var texture = new Texture2D(res, res, TextureFormat.RGB24, false);
-                    texture.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0);
-                    RenderTexture.active = prev;
-                    byte[] jpegBytes = texture.EncodeToJPG();
+                    byte[] jpegBytes = ScreenshotManager.SaveToMemory(renderTexture, bSaveAsPng: false);
                     string filename =
                         Path.GetFileNameWithoutExtension(SaveLoadScript.m_Instance.SceneFile.FullPath);
                     File.WriteAllBytes(Path.Combine(App.UserPath(), filename + ".jpg"), jpegBytes);

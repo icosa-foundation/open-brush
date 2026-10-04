@@ -142,6 +142,7 @@ function Bounds:Contains(point) end
 ---@field rotation Rotation | number[] The 3D orientation of the Brush Controller's tip
 ---@field direction Vector3 | number[] The vector representing the forward direction of the brush
 ---@field size number The current brush size
+---@field sizeAbsolute number The brush size in absolute room-space units
 ---@field pressure number Brush pressure is determined by how far the trigger is pressed in
 ---@field type string The current brush type
 ---@field types string[] All brush types available via the UI
@@ -1711,6 +1712,11 @@ function Rotation:SlerpUnclamped(a, b, t) end
 ---@return Rotation # The rotation that represents applying both rotations in turn
 function Rotation:Multiply(other) end
 
+---@param rotation Rotation The rotation to apply
+---@param vector Vector3 The vector to rotate
+---@return Vector3 # The rotated vector
+function Rotation:RotateVector(rotation, vector) end
+
 ---@param other Rotation The rotation to compare
 ---@return boolean # true if this rotation is not equal to the specified rotation; otherwise, false
 function Rotation:NotEquals(other) end
@@ -1979,6 +1985,7 @@ function Svg:DrawDocument(svg, tr, includeColors) end
 
 ---@class Symmetry
 ---@field current SymmetrySettings The current symmetry settings
+---@field pointerPose Transform The current physical brush pointer pose in the active canvas
 ---@field brushOffset Vector3 | number[] Gets the offset between the current brush position and the symmetry widget
 ---@field wandOffset Vector3 | number[] Gets the offset between the current wand position and the symmetry widget
 Symmetry = {}
@@ -2071,6 +2078,9 @@ function Symmetry:GetPointerPaintMode(pointerIndex) end
 ---@return System.Collections.Generic.List`1[SymmetryPointerPaintMode] # 
 function Symmetry:GetPointerPaintModes() end
 
+---@param modes SymmetryPointerPaintMode[] One painting mode per returned pointer transform
+function Symmetry:SetPointerPaintModes(modes) end
+
 ---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
 function Symmetry:StartPointer(pointerIndex) end
 
@@ -2079,6 +2089,17 @@ function Symmetry:StopPointer(pointerIndex) end
 
 ---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
 function Symmetry:ForcePointerNewStroke(pointerIndex) end
+
+---@param pose Transform The pointer pose
+---@param frame Transform The frame in which the action is expressed, in the same space as the pose
+---@param action Transform The local translation, rotation and scale to apply
+---@return Transform # The transformed pointer pose in the same space
+function Symmetry:ApplyPoseAction(pose, frame, action) end
+
+---@param pose Transform The pointer pose
+---@param frame Transform The frame defining the reflection plane, in the same space as the pose
+---@return Transform # The reflected pose with handedness preserved
+function Symmetry:ReflectPose(pose, frame) end
 
 ---@param path Path The path to duplicate
 ---@return PathList # 
@@ -3011,6 +3032,12 @@ SymmetryWallpaperType.pmg = nil
 SymmetryWallpaperType.pmm = nil
 SymmetryWallpaperType.cmm = nil
 
+---@class SymmetryPointerPaintMode
+SymmetryPointerPaintMode = {}
+SymmetryPointerPaintMode.Inherit = nil
+SymmetryPointerPaintMode.ForcedOn = nil
+SymmetryPointerPaintMode.ForcedOff = nil
+
 
 
 ---@class ColorOverrideMode
@@ -3023,11 +3050,13 @@ ColorOverrideMode.Add = nil
 
 
 ---@class Tool
+---@field latestControlPoints ControlPointList Control points for the single path selected by the active Tool Script stroke preview
+---@field latestControlPointSpace ScriptCoordSpace The coordinate space for the latest Tool Script control points
 ---@field startPoint Transform The position and orientation of the point where the trigger was pressed
 ---@field endPoint Transform The position and full controller orientation of the point where the trigger was released. Use endPoint.rotation to match the scripted tool preview orientation.
 ---@field vector Vector3 The vector from startPoint to endPoint
 ---@field rotation Vector3 Legacy controller-up vector at release. Use endPoint.rotation for full release orientation.
----@field isPreview boolean True while a stroke-preview Tool Script is generating a live preview; false when generating the final path on release.
+---@field isPreview boolean True for a live stroke-preview invocation and false for the single final invocation. Tool Scripts using previewType=stroke are invoked only during those phases.
 Tool = {}
 
 ---@class json

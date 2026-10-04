@@ -79,7 +79,6 @@ namespace TiltBrush
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
         private readonly List<ToolScriptStrokeCreator> m_ToolScriptStrokeCreators = new();
         private readonly List<BaseBrushScript> m_ToolScriptPreviewLines = new();
-        private readonly List<float> m_ToolScriptPreviewBaseScales = new();
         private readonly List<Color?> m_ToolScriptPreviewColors = new();
         private bool m_ToolScriptPreviewDirty;
 
@@ -347,8 +346,8 @@ namespace TiltBrush
 
         void Update()
         {
-            //update brush audio
-            if (m_AudioSources.Length > 0)
+            //update brush audio (no brush is assigned until the pointer is first set up)
+            if (m_AudioSources.Length > 0 && m_CurrentBrush != null)
             {
                 //smooth volume and pitch out a bit from frame to frame
                 float fFadeStepUp = m_BrushAudioAdjustSpeedUp * Time.deltaTime;
@@ -565,6 +564,11 @@ namespace TiltBrush
         public void UpdateLineFromObject()
         {
             var xf_LS = GetTransformForLine(m_CurrentLine.transform, Coords.AsRoom[transform]);
+            if (PointerManager.m_Instance.CurrentSymmetryMode ==
+                PointerManager.SymmetryMode.ScriptedSymmetryMode)
+            {
+                xf_LS.scale = m_CurrentLine.StrokeScale;
+            }
 
             if (!PointerManager.m_Instance.IsMainPointerProcessingLine() && m_CurrentCreator != null)
             {
@@ -580,6 +584,11 @@ namespace TiltBrush
                     TrTransform xfSymmetry_RS = PointerManager.m_Instance.GetSymmetryTransformFor(
                         this, xfMain_RS);
                     xf_LS = GetTransformForLine(m_CurrentLine.transform, xfSymmetry_RS);
+                    if (PointerManager.m_Instance.CurrentSymmetryMode ==
+                        PointerManager.SymmetryMode.ScriptedSymmetryMode)
+                    {
+                        xf_LS.scale = m_CurrentLine.StrokeScale;
+                    }
                 }
 
                 m_ControlPoints.Clear();
@@ -746,7 +755,8 @@ namespace TiltBrush
             BaseBrushScript line = BaseBrushScript.Create(
                 canvasTransform, xf_LS, m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
             line.gameObject.name = $"Tool Script Preview {m_CurrentBrush.Description}";
-            line.SetPreviewMode();
+            // Match the committed stroke, including randomized brush geometry.
+            line.RandomSeed = 0;
             line.SetPreviewProperties(previewColor ?? m_CurrentColor, m_CurrentBrushSize);
             return line;
         }
@@ -762,7 +772,6 @@ namespace TiltBrush
                     break;
                 }
                 m_ToolScriptPreviewLines.Add(line);
-                m_ToolScriptPreviewBaseScales.Add(line.StrokeScale);
             }
 
             for (int i = 0; i < m_ToolScriptPreviewLines.Count; ++i)
@@ -784,19 +793,19 @@ namespace TiltBrush
                         continue;
                     }
                     m_ToolScriptPreviewLines[i] = line;
-                    m_ToolScriptPreviewBaseScales[i] = line.StrokeScale;
                 }
 
                 UpdateToolScriptPreviewLine(
-                    line, m_ToolScriptStrokeCreators[i], m_ToolScriptPreviewBaseScales[i]);
+                    line, m_ToolScriptStrokeCreators[i]);
             }
         }
 
         private static void UpdateToolScriptPreviewLine(
-            BaseBrushScript line, ToolScriptStrokeCreator strokeCreator, float baseScale)
+            BaseBrushScript line, ToolScriptStrokeCreator strokeCreator)
         {
             var controlPoints = strokeCreator.ControlPoints;
-            float scale = baseScale * strokeCreator.StrokeScale;
+            // This scale already includes the pointer-to-canvas conversion.
+            float scale = strokeCreator.StrokeScale;
             var first = controlPoints[0];
             line.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
             for (int i = 0; i < controlPoints.Count; ++i)
@@ -1009,7 +1018,8 @@ namespace TiltBrush
                 })
                 .Where(entry => entry.Path != null && entry.Path.Count > 1)
                 .ToList();
-            if (previewEntries == null || previewEntries.Count == 0)
+            if (previewEntries == null || previewEntries.Count == 0 ||
+                !IsValidToolScriptPreviewScale(strokeScale))
             {
                 ClearToolScriptPreview();
                 return;
@@ -1049,6 +1059,12 @@ namespace TiltBrush
             ResetPreviewProperties();
         }
 
+        internal static bool IsValidToolScriptPreviewScale(float strokeScale)
+        {
+            // Reject collapsed and non-finite scales before rebuilding brush geometry.
+            return strokeScale > 0f && !float.IsInfinity(strokeScale);
+        }
+
         public void ClearToolScriptPreview()
         {
             m_ToolScriptStrokeCreators.Clear();
@@ -1068,7 +1084,6 @@ namespace TiltBrush
                     Destroy(line.gameObject);
                 }
                 m_ToolScriptPreviewLines.RemoveAt(i);
-                m_ToolScriptPreviewBaseScales.RemoveAt(i);
             }
         }
 
@@ -1161,12 +1176,13 @@ namespace TiltBrush
         // During playback, rMemoryObjectForPlayback is non-null, and strokeFlags should not be passed.
         // otherwise, rMemoryObjectForPlayback is null, and strokeFlags should be valid.
         // When non-null, rMemoryObjectForPlayback corresponds to the current line.
-        public void DetachLine(
+        public Stroke DetachLine(
             bool bDiscard,
             Stroke rMemoryObjectForPlayback,
             SketchMemoryScript.StrokeFlags strokeFlags = SketchMemoryScript.StrokeFlags.None,
             bool isFinalStroke = false)
         {
+            Stroke detachedStroke = null;
 
             if (rMemoryObjectForPlayback != null)
             {
@@ -1240,6 +1256,7 @@ namespace TiltBrush
                         m_ControlPointColors,
                         CurrentColorOverrideMode
                     );
+                    detachedStroke = subset.m_Stroke;
                 }
                 else
                 {
@@ -1281,6 +1298,7 @@ namespace TiltBrush
                         m_ControlPointColors,
                         CurrentColorOverrideMode
                     );
+                    detachedStroke = m_CurrentLine.Stroke;
                 }
                 else
                 {
@@ -1307,6 +1325,7 @@ namespace TiltBrush
             m_CurrentCreator = null;
             m_ControlPoints.Clear();
             m_ControlPointColors = null;
+            return detachedStroke;
         }
 
         public bool ShouldCurrentLineEnd()

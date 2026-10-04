@@ -134,9 +134,18 @@ namespace TiltBrush
 
         public void ShowInstantly(bool bShow)
         {
+            bool wasActive = gameObject.activeSelf;
             gameObject.SetActive(bShow);
-            m_CurrentState = bShow ? State.Showing : State.Hiding;
+            m_CurrentState = bShow ? State.Visible : State.Invisible;
+            m_ShowTimer = bShow ? m_ShowDuration : 0.0f;
+            m_IntroAnimState = bShow ? IntroAnimState.On : IntroAnimState.Off;
+            m_IntroAnimValue = bShow ? 1.0f : 0.0f;
+            if (bShow && !wasActive)
+            {
+                ResetCam();
+            }
             ConfigureSpectatorCamera(GetComponentInChildren<Camera>(includeInactive: true));
+            RefreshRenderers();
         }
 
         override protected void OnShow()
@@ -356,9 +365,7 @@ namespace TiltBrush
 
             if (currentPathWidget != null && currentPathWidget.Path.NumPositionKnots > 1)
             {
-                float speed = Mathf.Max(currentPathWidget.Path.GetSpeed(pathT),
-                    CameraPathSpeedKnot.kMinSpeed);
-                bool completed = currentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
+                bool completed = currentPathWidget.Path.MoveAlongPathByTime(Time.deltaTime,
                     pathT, out pathT);
                 if (completed)
                 {
