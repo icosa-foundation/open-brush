@@ -200,6 +200,9 @@ namespace TiltBrush
         private List<TrTransform> m_ScriptedTrFixes; // Fixes for reflection transforms
 
         private List<PointerPaintingOverride> m_ScriptedPointerPaintOverrides;
+        private readonly Dictionary<int, PointerPaintingOverride> m_PendingScriptedPointerPaintOverrides =
+            new Dictionary<int, PointerPaintingOverride>();
+        private bool m_EvaluatingScriptedTransforms;
         private List<bool> m_ScriptedPointerHasRecordedStrokeThisLine;
         private HashSet<int> m_ScriptedPointerForceNewStrokeRequests;
         private bool m_ScriptedPointersNeedMainStrokeMerge;
@@ -1005,6 +1008,7 @@ namespace TiltBrush
 
         private void ResetScriptedPointerPaintData()
         {
+            m_PendingScriptedPointerPaintOverrides.Clear();
             m_ScriptedPointerPaintOverrides?.Clear();
             m_ScriptedPointerHasRecordedStrokeThisLine?.Clear();
             m_ScriptedPointerForceNewStrokeRequests?.Clear();
@@ -1068,6 +1072,14 @@ namespace TiltBrush
 
         public void SetScriptedPointerPaintOverride(int index, PointerPaintingOverride mode)
         {
+            // Main returns the new pointer count only after setting this frame's overrides.
+            // Defer validation until that count has been applied.
+            if (m_EvaluatingScriptedTransforms)
+            {
+                m_PendingScriptedPointerPaintOverrides[index] = mode;
+                return;
+            }
+
             if (!IsValidScriptedPointerIndex(index))
             {
                 return;
@@ -1367,7 +1379,17 @@ namespace TiltBrush
         {
             Transform rAttachPoint_GS = InputManager.m_Instance.GetBrushControllerAttachPoint();
 
-            var result = LuaManager.Instance.CallActiveSymmetryScript(LuaNames.Main);
+            m_PendingScriptedPointerPaintOverrides.Clear();
+            IPathApiWrapper result;
+            m_EvaluatingScriptedTransforms = true;
+            try
+            {
+                result = LuaManager.Instance.CallActiveSymmetryScript(LuaNames.Main);
+            }
+            finally
+            {
+                m_EvaluatingScriptedTransforms = false;
+            }
 
             if (result == null)
             {
@@ -1407,6 +1429,11 @@ namespace TiltBrush
             EnsureScriptedPointerPaintData(m_NumActivePointers);
 
             bNeedsDummyPointer = true;
+            foreach (var entry in m_PendingScriptedPointerPaintOverrides)
+            {
+                SetScriptedPointerPaintOverride(entry.Key, entry.Value);
+            }
+            m_PendingScriptedPointerPaintOverrides.Clear();
             MatrixListApiWrapper matList = null;
 
             if (result._Space == ScriptCoordSpace.Widget)

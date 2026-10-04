@@ -1088,6 +1088,7 @@ namespace TiltBrush
             RegisterApiEnum(script, "SymmetryPointType", typeof(SymmetryPointType));
             RegisterApiEnum(script, "SymmetryWallpaperType", typeof(SymmetryWallpaperType));
             RegisterApiEnum(script, "ColorOverrideMode", typeof(ColorOverrideMode));
+            RegisterApiEnum(script, "SymmetryPointerPaintMode", typeof(SymmetryPointerPaintMode));
 
         }
 
