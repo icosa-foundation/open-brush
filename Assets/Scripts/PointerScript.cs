@@ -77,9 +77,10 @@ namespace TiltBrush
         private BaseBrushScript m_CurrentLine;
         private ParametricStrokeCreator m_CurrentCreator;
         private float m_ParametricCreatorBackupStrokeSize; // In pointer aka room space
-        private ToolScriptStrokeCreator m_ToolScriptStrokeCreator;
+        private readonly List<ToolScriptStrokeCreator> m_ToolScriptStrokeCreators = new();
+        private readonly List<BaseBrushScript> m_ToolScriptPreviewLines = new();
+        private readonly List<Color?> m_ToolScriptPreviewColors = new();
         private bool m_ToolScriptPreviewDirty;
-        private Color? m_ToolScriptPreviewColor;
 
         private float m_AudioVolumeDesired;
         private float m_CurrentTotalVolume; // Brush audio volume before being divided between layers
@@ -516,16 +517,11 @@ namespace TiltBrush
             }
             else if (m_PreviewLineEnabled && m_CurrentBrush != null)
             {
-                if (m_ToolScriptStrokeCreator != null)
+                if (m_ToolScriptStrokeCreators.Count > 0)
                 {
-                    if (m_PreviewLine == null)
+                    if (m_ToolScriptPreviewDirty)
                     {
-                        CreatePreviewLine();
-                    }
-
-                    if (m_PreviewLine != null && m_ToolScriptPreviewDirty)
-                    {
-                        UpdateToolScriptPreviewLine();
+                        UpdateToolScriptPreviewLines();
                         m_ToolScriptPreviewDirty = false;
                     }
                 }
@@ -718,32 +714,17 @@ namespace TiltBrush
                 // yet, but we can assume that the line transform == the canvas transform,
                 // since the line is parented to the canvas with an identity local transform.
                 // See also the TODO in GetTransformForLine; fixing that will resolve this wart.
-                Transform previewCanvas = m_ToolScriptStrokeCreator != null
-                    ? App.Scene.ActiveCanvas.transform
-                    : App.Instance.m_CanvasTransform;
-                TrTransform xf_LS = GetTransformForLine(previewCanvas);
+                Transform notReallyTheLineTransformButCloseEnough = App.Instance.m_CanvasTransform;
+                TrTransform xf_LS = GetTransformForLine(notReallyTheLineTransformButCloseEnough);
                 BaseBrushScript line = BaseBrushScript.Create(
-                    previewCanvas,
+                    App.Instance.m_CanvasTransform,
                     xf_LS,
                     m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
 
                 line.gameObject.name = string.Format("Preview {0}", m_CurrentBrush.Description);
-                if (m_ToolScriptStrokeCreator == null)
-                {
-                    line.SetPreviewMode();
-                }
-                else
-                {
-                    // A Tool Script preview replays a complete candidate stroke. Ordinary
-                    // pointer previews use preview mode to taper the initial knot to zero
-                    // pressure and relax other drawing behavior, which makes their mesh differ
-                    // from the committed stroke. Use the same deterministic seed as
-                    // DrawNestedTrList as well, so randomized brush geometry remains stable.
-                    line.RandomSeed = 0;
-                }
+                line.SetPreviewMode();
 
                 m_PreviewLine = line;
-                m_ToolScriptPreviewDirty = m_ToolScriptStrokeCreator != null;
                 ResetPreviewProperties();
 
                 m_PreviewControlPoints.Clear();
@@ -762,61 +743,100 @@ namespace TiltBrush
             }
         }
 
-        private void UpdateToolScriptPreviewLine()
+        private BaseBrushScript CreateToolScriptPreviewLine(Color? previewColor)
         {
-            if (m_PreviewLine == null)
+            if (m_CurrentBrush.m_BrushPrefab == null)
             {
-                return;
+                return null;
             }
 
-            var controlPoints = m_ToolScriptStrokeCreator?.ControlPoints;
-            if (controlPoints == null || controlPoints.Count < 2)
-            {
-                ClearToolScriptPreview();
-                return;
-            }
+            Transform canvasTransform = App.Scene.ActiveCanvas.transform;
+            TrTransform xf_LS = GetTransformForLine(canvasTransform);
+            BaseBrushScript line = BaseBrushScript.Create(
+                canvasTransform, xf_LS, m_CurrentBrush, m_CurrentColor, m_CurrentBrushSize);
+            line.gameObject.name = $"Tool Script Preview {m_CurrentBrush.Description}";
+            // Match the committed stroke, including randomized brush geometry.
+            line.RandomSeed = 0;
+            line.SetPreviewProperties(previewColor ?? m_CurrentColor, m_CurrentBrushSize);
+            return line;
+        }
 
-            // Decay-based preview brushes retain their existing knots and geometry when reset.
-            // Tool previews replay the complete scripted path each frame, so start those brushes
-            // from a fresh instance rather than appending another copy of the path.
-            if (!m_PreviewLine.AlwaysRebuildPreviewBrush())
+        private void UpdateToolScriptPreviewLines()
+        {
+            while (m_ToolScriptPreviewLines.Count < m_ToolScriptStrokeCreators.Count)
             {
-                DisablePreviewLine();
-                CreatePreviewLine();
-                if (m_PreviewLine == null)
+                int previewIndex = m_ToolScriptPreviewLines.Count;
+                var line = CreateToolScriptPreviewLine(m_ToolScriptPreviewColors[previewIndex]);
+                if (line == null)
                 {
-                    return;
+                    break;
                 }
+                m_ToolScriptPreviewLines.Add(line);
             }
 
-            // StrokeScale is the exact scale that DrawToolScriptResult stores on the committed
-            // stroke. It already includes any pointer-to-canvas conversion, so applying the
-            // preview line's initial scale as well would scale twice when the scene is not 1.0.
-            float scale = m_ToolScriptStrokeCreator.StrokeScale;
+            for (int i = 0; i < m_ToolScriptPreviewLines.Count; ++i)
+            {
+                var line = m_ToolScriptPreviewLines[i];
+                bool recreateLine = line == null ||
+                    line.transform.parent != App.Scene.ActiveCanvas.transform ||
+                    !line.AlwaysRebuildPreviewBrush();
+                if (recreateLine)
+                {
+                    if (line != null)
+                    {
+                        line.DestroyMesh();
+                        Destroy(line.gameObject);
+                    }
+                    line = CreateToolScriptPreviewLine(m_ToolScriptPreviewColors[i]);
+                    if (line == null)
+                    {
+                        continue;
+                    }
+                    m_ToolScriptPreviewLines[i] = line;
+                }
+
+                UpdateToolScriptPreviewLine(
+                    line, m_ToolScriptStrokeCreators[i]);
+            }
+        }
+
+        private static void UpdateToolScriptPreviewLine(
+            BaseBrushScript line, ToolScriptStrokeCreator strokeCreator)
+        {
+            var controlPoints = strokeCreator.ControlPoints;
+            // This scale already includes the pointer-to-canvas conversion.
+            float scale = strokeCreator.StrokeScale;
             var first = controlPoints[0];
-            m_PreviewLine.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
+            line.ResetBrushForPreview(TrTransform.TRS(first.m_Pos, first.m_Orient, scale));
             for (int i = 0; i < controlPoints.Count; ++i)
             {
-                if (m_PreviewLine.IsOutOfVerts())
+                if (line.IsOutOfVerts())
                 {
                     break;
                 }
 
                 var cp = controlPoints[i];
-                m_PreviewLine.UpdatePosition_LS(TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
+                line.UpdatePosition_LS(
+                    TrTransform.TRS(cp.m_Pos, cp.m_Orient, scale), cp.m_Pressure);
             }
 
-            m_PreviewLine.ApplyChangesToVisuals();
+            line.ApplyChangesToVisuals();
         }
 
         void ResetPreviewProperties()
         {
             if (m_PreviewLine)
             {
-                Color previewColor = m_ToolScriptStrokeCreator != null
-                    ? m_ToolScriptPreviewColor ?? m_CurrentColor
-                    : m_CurrentColor;
-                m_PreviewLine.SetPreviewProperties(previewColor, m_CurrentBrushSize);
+                m_PreviewLine.SetPreviewProperties(m_CurrentColor, m_CurrentBrushSize);
+            }
+            for (int i = 0; i < m_ToolScriptPreviewLines.Count; ++i)
+            {
+                var line = m_ToolScriptPreviewLines[i];
+                if (line != null)
+                {
+                    line.SetPreviewProperties(
+                        m_ToolScriptPreviewColors[i] ?? m_CurrentColor, m_CurrentBrushSize);
+                }
             }
             if (m_PreviewLight)
             {
@@ -985,49 +1005,85 @@ namespace TiltBrush
         }
 
         public void SetToolScriptPreview(
-            IReadOnlyList<PointerManager.ControlPoint> controlPoints, float strokeScale,
-            Color? previewColor)
+            IReadOnlyList<List<PointerManager.ControlPoint>> controlPointPaths,
+            IReadOnlyList<Color?> previewColors, float strokeScale)
         {
-            if (controlPoints == null || controlPoints.Count < 2 ||
+            var previewEntries = controlPointPaths?
+                .Select((path, index) => new
+                {
+                    Path = path,
+                    Color = previewColors != null && index < previewColors.Count
+                        ? previewColors[index]
+                        : null
+                })
+                .Where(entry => entry.Path != null && entry.Path.Count > 1)
+                .ToList();
+            if (previewEntries == null || previewEntries.Count == 0 ||
                 !IsValidToolScriptPreviewScale(strokeScale))
             {
                 ClearToolScriptPreview();
                 return;
             }
 
-            if (m_ToolScriptStrokeCreator == null)
+            if (m_ToolScriptStrokeCreators.Count == 0)
             {
-                // An ordinary pointer preview is parented to the preview canvas and its stroke
-                // scale is initialized for that space. Tool Script control points are in the
-                // active canvas, so recreate the line there before drawing the scripted path.
                 DisablePreviewLine();
-                m_ToolScriptStrokeCreator = new ToolScriptStrokeCreator(controlPoints, strokeScale);
             }
-            else
+
+            for (int i = 0; i < previewEntries.Count; ++i)
             {
-                m_ToolScriptStrokeCreator.SetControlPoints(controlPoints, strokeScale);
+                if (i < m_ToolScriptStrokeCreators.Count)
+                {
+                    m_ToolScriptStrokeCreators[i].SetControlPoints(
+                        previewEntries[i].Path, strokeScale);
+                    m_ToolScriptPreviewColors[i] = previewEntries[i].Color;
+                }
+                else
+                {
+                    m_ToolScriptStrokeCreators.Add(
+                        new ToolScriptStrokeCreator(previewEntries[i].Path, strokeScale));
+                    m_ToolScriptPreviewColors.Add(previewEntries[i].Color);
+                }
             }
-            m_ToolScriptPreviewColor = previewColor;
+            if (m_ToolScriptStrokeCreators.Count > previewEntries.Count)
+            {
+                m_ToolScriptStrokeCreators.RemoveRange(
+                    previewEntries.Count,
+                    m_ToolScriptStrokeCreators.Count - previewEntries.Count);
+                m_ToolScriptPreviewColors.RemoveRange(
+                    previewEntries.Count,
+                    m_ToolScriptPreviewColors.Count - previewEntries.Count);
+            }
+            RemoveToolScriptPreviewLines(previewEntries.Count);
             m_ToolScriptPreviewDirty = true;
             ResetPreviewProperties();
         }
 
         internal static bool IsValidToolScriptPreviewScale(float strokeScale)
         {
-            // Pointer-space previews have zero scale on the trigger-down frame. Passing that
-            // through to QuadStripBrush collapses its movement threshold to zero and allows
-            // coincident points to reach a zero-length direction normalization.
+            // Reject collapsed and non-finite scales before rebuilding brush geometry.
             return strokeScale > 0f && !float.IsInfinity(strokeScale);
         }
 
         public void ClearToolScriptPreview()
         {
-            m_ToolScriptStrokeCreator = null;
-            m_ToolScriptPreviewColor = null;
+            m_ToolScriptStrokeCreators.Clear();
+            m_ToolScriptPreviewColors.Clear();
             m_ToolScriptPreviewDirty = false;
-            if (m_PreviewLine != null)
+            RemoveToolScriptPreviewLines(0);
+        }
+
+        private void RemoveToolScriptPreviewLines(int remainingCount)
+        {
+            for (int i = m_ToolScriptPreviewLines.Count - 1; i >= remainingCount; --i)
             {
-                DisablePreviewLine();
+                var line = m_ToolScriptPreviewLines[i];
+                if (line != null)
+                {
+                    line.DestroyMesh();
+                    Destroy(line.gameObject);
+                }
+                m_ToolScriptPreviewLines.RemoveAt(i);
             }
         }
 

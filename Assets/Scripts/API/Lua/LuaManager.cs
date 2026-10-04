@@ -176,26 +176,27 @@ namespace TiltBrush
                 ScriptCoordSpace space,
                 TrTransform baseTransformCs,
                 List<List<TrTransform>> canvasTransforms,
-                List<PointerManager.ControlPoint> previewControlPoints,
-                float previewStrokeScale,
-                Color? previewColor)
+                List<List<PointerManager.ControlPoint>> previewControlPointPaths,
+                List<Color?> previewColors,
+                float previewStrokeScale)
             {
                 PathList = pathList;
                 Space = space;
                 BaseTransformCs = baseTransformCs;
                 CanvasTransforms = canvasTransforms;
-                PreviewControlPoints = previewControlPoints ?? new List<PointerManager.ControlPoint>();
+                PreviewControlPointPaths = previewControlPointPaths ??
+                    new List<List<PointerManager.ControlPoint>>();
+                PreviewColors = previewColors ?? new List<Color?>();
                 PreviewStrokeScale = previewStrokeScale;
-                PreviewColor = previewColor;
             }
 
             public PathListApiWrapper PathList { get; }
             public ScriptCoordSpace Space { get; }
             public TrTransform BaseTransformCs { get; }
             public List<List<TrTransform>> CanvasTransforms { get; }
-            public List<PointerManager.ControlPoint> PreviewControlPoints { get; }
+            public List<List<PointerManager.ControlPoint>> PreviewControlPointPaths { get; }
+            public List<Color?> PreviewColors { get; }
             public float PreviewStrokeScale { get; }
-            public Color? PreviewColor { get; }
         }
 
         public IReadOnlyList<PointerManager.ControlPoint> GetLatestToolScriptControlPoints()
@@ -1438,21 +1439,36 @@ namespace TiltBrush
                         tr_CS.rotation, 90f, useEnabledAxes: false);
             }
 
-            List<PointerManager.ControlPoint> previewControlPoints = new();
+            List<List<PointerManager.ControlPoint>> previewControlPointPaths = new();
+            List<Color?> previewColors = new();
             var rawPaths = pathWrapper.AsMultiTrList();
-            // "stroke" deliberately previews one path. The future "strokes" mode owns
-            // all-path preview behavior, so select only the first path that can render.
-            int firstPathIndex = FindFirstDrawableToolScriptPathIndex(rawPaths);
-            var firstPath = firstPathIndex >= 0 ? rawPaths[firstPathIndex] : null;
-            Color? previewColor = pathWrapper._Colors != null &&
-                firstPathIndex >= 0 && firstPathIndex < pathWrapper._Colors.Count
-                ? pathWrapper._Colors[firstPathIndex]
-                : null;
-            if (firstPath != null)
+            var previewType = GetSettingForActiveScript(
+                LuaApiCategory.ToolScript, LuaNames.ToolPreviewType)?.String;
+            IEnumerable<int> previewPathIndices;
+            if (string.Equals(previewType, "strokes", StringComparison.OrdinalIgnoreCase))
             {
+                previewPathIndices = Enumerable.Range(0, rawPaths?.Count ?? 0);
+            }
+            else
+            {
+                // "stroke" deliberately previews only the first path that can render.
+                int firstPathIndex = FindFirstDrawableToolScriptPathIndex(rawPaths);
+                previewPathIndices = firstPathIndex >= 0
+                    ? new[] { firstPathIndex }
+                    : Enumerable.Empty<int>();
+            }
+
+            foreach (int pathIndex in previewPathIndices)
+            {
+                var rawPath = rawPaths[pathIndex];
+                if (rawPath == null || rawPath.Count < 3)
+                {
+                    continue;
+                }
+
                 // DrawNestedTrList treats the last transform as a terminal point and does
                 // not emit it as a control point, so the preview must do the same.
-                IEnumerable<TrTransform> previewPath = firstPath.Take(firstPath.Count - 1);
+                IEnumerable<TrTransform> previewPath = rawPath.Take(rawPath.Count - 1);
                 if (pathWrapper._Space == ScriptCoordSpace.Default || pathWrapper._Space == ScriptCoordSpace.Pointer)
                 {
                     previewPath = previewPath.Select(tr =>
@@ -1462,14 +1478,18 @@ namespace TiltBrush
                         return transformed;
                     });
                 }
-                previewControlPoints = ConvertTransformsToControlPoints(previewPath);
+                previewControlPointPaths.Add(ConvertTransformsToControlPoints(previewPath));
+                previewColors.Add(pathWrapper._Colors != null && pathIndex < pathWrapper._Colors.Count
+                    ? pathWrapper._Colors[pathIndex]
+                    : null);
             }
 
-            SetLatestToolScriptControlPoints(previewControlPoints, ScriptCoordSpace.Canvas);
+            SetLatestToolScriptControlPoints(
+                previewControlPointPaths.FirstOrDefault(), ScriptCoordSpace.Canvas);
 
             return new ToolScriptExecutionResult(
                 pathWrapper, pathWrapper._Space, tr_CS, previewTransforms,
-                previewControlPoints, previewStrokeScale, previewColor);
+                previewControlPointPaths, previewColors, previewStrokeScale);
         }
 
         internal static bool ShouldApplyToolScriptAngleSnap(

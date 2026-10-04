@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -157,7 +158,9 @@ namespace TiltBrush
             var previewTypeVal = LuaManager.Instance.GetSettingForActiveScript(
                 LuaApiCategory.ToolScript, LuaNames.ToolPreviewType);
             bool strokePreviewRequested = string.Equals(
-                previewTypeVal?.String, "stroke", StringComparison.OrdinalIgnoreCase);
+                previewTypeVal?.String, "stroke", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(
+                    previewTypeVal?.String, "strokes", StringComparison.OrdinalIgnoreCase);
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
@@ -316,12 +319,12 @@ namespace TiltBrush
                         LuaManager.Instance.DrawToolScriptResult(executionResult);
                     }
                 }
-                else if (scriptExecuted && executionResult?.PreviewControlPoints != null &&
-                    executionResult.PreviewControlPoints.Count > 1)
+                else if (scriptExecuted && executionResult?.PreviewControlPointPaths != null &&
+                    executionResult.PreviewControlPointPaths.Any(path => path.Count > 1))
                 {
                     PointerManager.m_Instance.MainPointer.SetToolScriptPreview(
-                        executionResult.PreviewControlPoints, executionResult.PreviewStrokeScale,
-                        executionResult.PreviewColor);
+                        executionResult.PreviewControlPointPaths,
+                        executionResult.PreviewColors, executionResult.PreviewStrokeScale);
                 }
                 else if (scriptExecuted)
                 {
