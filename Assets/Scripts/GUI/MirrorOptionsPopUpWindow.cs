@@ -59,7 +59,6 @@ namespace TiltBrush
         public Transform m_WallpaperSkewControls;
 
         private static int m_LastActiveTab;
-        private bool m_MirrorState;
 
         [NonSerialized] public PointerManager.ColorShiftComponent m_currentSelectedColorComponent;
         public enum SymmetryTransformAxis { X, Y, Z };
@@ -71,8 +70,6 @@ namespace TiltBrush
         public override void Init(GameObject rParent, string sText)
         {
             base.Init(rParent, sText);
-            // Store mirror state as the long press button misbehaves sometimes
-            m_MirrorState = GetParentButton().IsButtonActive();
 
             switch (m_LastActiveTab)
             {
@@ -103,20 +100,6 @@ namespace TiltBrush
             return m_ParentPanel.GetComponentsInChildren<LongPressButton>().First(
                 b => b.m_Command == SketchControlsScript.GlobalCommands.MultiMirror
             );
-        }
-
-        public override bool RequestClose(bool bForceClose = false)
-        {
-            bool close = base.RequestClose(bForceClose);
-            if (close)
-            {
-                // Restore mirror state as the long press button misbehaves sometimes
-                if (GetParentButton().IsButtonActive() != m_MirrorState)
-                {
-                    SketchControlsScript.m_Instance.IssueGlobalCommand(SketchControlsScript.GlobalCommands.MultiMirror);
-                }
-            }
-            return close;
         }
 
         public void HandleWallpaperControlsRepeatsButton()

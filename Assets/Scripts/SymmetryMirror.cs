@@ -85,7 +85,7 @@ namespace TiltBrush
 
         /// The active linked mirror if the widget is currently showing it, else null. Turning
         /// symmetry off leaves the mirror active, so turning it back on resumes it; switching to
-        /// a different symmetry mode leaves it dormant until that mode returns.
+        /// a different symmetry mode goes back to plain symmetry (PointerManager.SetSymmetryMode).
         public static SymmetryMirror Showing
         {
             get
