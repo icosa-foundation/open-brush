@@ -16,8 +16,10 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
+using UnityEngine.XR;
 
 namespace TiltBrush
 {
@@ -56,14 +58,20 @@ namespace TiltBrush
         private Vignette m_CaptureVignette;
         private bool m_CurrentHdr = true;
         private bool m_CurrentFxaa;
+        private int m_CurrentMsaa = 1;
+        private UniversalRenderPipelineAsset m_MsaaPipelineAsset;
+        private int m_PreviousPipelineMsaa;
+        private int m_PreviousUnityMsaa;
+        private float m_PreviousRenderScale;
         private AppQualitySettingLevels.BloomMode m_CurrentBloomMode =
             AppQualitySettingLevels.BloomMode.None;
-        private float m_MobileBloomAmount = 1f;
+        private float m_BloomAmount = 1f;
+        private float? m_RuntimeBloomThreshold;
         private readonly HashSet<Camera> m_ExplicitCaptureCameras = new HashSet<Camera>();
 
         public VolumeProfile MainProfile => m_RuntimeMainProfile;
         public VolumeProfile CaptureProfile => m_RuntimeCaptureProfile;
-
+        public bool SessionHdr => m_CurrentHdr;
         public struct CameraPostProcessingState
         {
             public Camera camera;
@@ -92,24 +100,32 @@ namespace TiltBrush
         {
             EnsureProfiles();
             EnsureGlobalVolume();
+            float? bloomAmount = App.UserConfig.PostProcessingFx.BloomAmount;
+            if (bloomAmount.HasValue && !float.IsNaN(bloomAmount.Value) &&
+                !float.IsInfinity(bloomAmount.Value))
+            {
+                SetBloomAmount(bloomAmount.Value);
+            }
             RefreshCameras();
             DisableCompositionLayerEditorEmulationIfUnused();
             StartCoroutine(DisableCompositionLayerEditorEmulationAfterStartup());
 
             if (QualityControls.m_Instance != null)
             {
+                PrepareSession(QualityControls.m_Instance);
                 QualityControls.m_Instance.OnQualityLevelChange += ApplyQuality;
                 ApplyQuality(QualityControls.m_Instance.QualityLevel);
             }
             else
             {
                 m_CurrentBloomMode = AppQualitySettingLevels.BloomMode.Full;
-                ApplyBloomMode(m_CurrentBloomMode, hdrEnabled: true);
+                ApplyBloomMode(m_CurrentBloomMode);
             }
         }
 
         private void OnDestroy()
         {
+            RestorePipelineMsaa();
             if (Instance == this)
             {
                 Instance = null;
@@ -133,7 +149,14 @@ namespace TiltBrush
 
             foreach (Camera camera in cameras)
             {
-                if (camera == null || camera.CompareTag("Ignore"))
+                if (camera == null)
+                {
+                    continue;
+                }
+
+                bool isCapture = IsCaptureCamera(camera);
+                bool allowXr = !isCapture && camera.stereoTargetEye != StereoTargetEyeMask.None;
+                if (camera.CompareTag("Ignore") && allowXr)
                 {
                     continue;
                 }
@@ -146,7 +169,14 @@ namespace TiltBrush
                     Debug.Log($"{kLogPrefix} Added UniversalAdditionalCameraData to camera {camera.name}.");
                 }
 
-                bool isCapture = IsCaptureCamera(camera);
+                // URP uses allowXRRendering when it builds eye passes, rather than
+                // Camera.stereoTargetEye. Mono/capture cameras must not join those passes,
+                // including cameras excluded from our post-processing policy.
+                cameraData.allowXRRendering = allowXr;
+                if (camera.CompareTag("Ignore"))
+                {
+                    continue;
+                }
                 ApplyCameraBaseline(camera, cameraData, isCapture);
 
                 if (isCapture)
@@ -181,12 +211,6 @@ namespace TiltBrush
                 return;
             }
 
-            if (GraphicsSettings.currentRenderPipeline == null)
-            {
-                camera.stereoTargetEye = StereoTargetEyeMask.None;
-                return;
-            }
-
             UniversalAdditionalCameraData cameraData =
                 camera.GetComponent<UniversalAdditionalCameraData>();
             if (cameraData == null)
@@ -197,6 +221,7 @@ namespace TiltBrush
             cameraData.allowXRRendering = false;
             cameraData.renderType = CameraRenderType.Base;
             cameraData.cameraStack.Clear();
+            camera.allowMSAA = true;
         }
 
         public void SetRecordingPostProcessing(Camera camera, bool enabled)
@@ -211,19 +236,26 @@ namespace TiltBrush
             Debug.Log($"{kLogPrefix} Capture post-processing default set to {enabled}.");
         }
 
-        public void SetMobileBloomAmount(float amount)
+        public void SetBloomAmount(float amount)
         {
             EnsureProfilesIfNeeded();
-            m_MobileBloomAmount = Mathf.Clamp01(amount);
+            m_BloomAmount = Mathf.Clamp01(amount);
             if (m_Bloom == null)
             {
                 return;
             }
 
-            if (m_CurrentBloomMode == AppQualitySettingLevels.BloomMode.Mobile && m_CurrentHdr)
+            ApplyBloomMode(m_CurrentBloomMode);
+        }
+
+        public void SetBloomThreshold(float threshold)
+        {
+            if (float.IsNaN(threshold) || float.IsInfinity(threshold) || threshold < 0f)
             {
-                ApplyBloomMode(m_CurrentBloomMode, m_CurrentHdr);
+                throw new ArgumentException("Bloom threshold must be finite and non-negative.", nameof(threshold));
             }
+            m_RuntimeBloomThreshold = threshold;
+            ApplyBloomMode(m_CurrentBloomMode);
         }
 
         public CameraPostProcessingState BeginCapturePostProcessing(
@@ -254,7 +286,7 @@ namespace TiltBrush
             state.volumeLayerMask = cameraData.volumeLayerMask;
             state.volumeTrigger = cameraData.volumeTrigger;
 
-            camera.allowHDR = true;
+            camera.allowHDR = m_CurrentHdr;
             ConfigureCaptureCamera(camera, enablePostProcessing, m_RuntimeCaptureProfile);
             Debug.Log(
                 $"{kLogPrefix} Capture override camera={camera.name} " +
@@ -313,24 +345,135 @@ namespace TiltBrush
             if (QualityControls.m_Instance == null)
             {
                 m_CurrentBloomMode = AppQualitySettingLevels.BloomMode.Full;
-                ApplyBloomMode(m_CurrentBloomMode, hdrEnabled: true);
+                ApplyBloomMode(m_CurrentBloomMode);
                 return;
             }
 
             AppQualitySettingLevels.AppQualitySettings settings =
                 QualityControls.m_Instance.AppQualityLevels[qualityLevel];
-            m_CurrentHdr = settings.Hdr;
+            m_CurrentHdr = QualityControls.m_Instance.SessionHdr;
             m_CurrentFxaa = settings.Fxaa;
             m_CurrentBloomMode = settings.Bloom;
 
-            ApplyBloomMode(settings.Bloom, settings.Hdr);
+            // Scale the viewport in XR; scale URP's internal target in desktop view mode.
+            var displays = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetInstances(displays);
+            if (!displays.Exists(display => display.running) && m_MsaaPipelineAsset != null)
+            {
+                float scale = App.UserConfig.Profiling.ViewportScaling > 0
+                    ? App.UserConfig.Profiling.ViewportScaling : settings.ViewportScale;
+                m_MsaaPipelineAsset.renderScale = m_PreviousRenderScale * scale;
+            }
+            ApplyBloomMode(settings.Bloom);
             RefreshCameras();
-            Debug.Log(
-                $"{kLogPrefix} Applied quality={qualityLevel} bloom={settings.Bloom} " +
-                $"bloomActive={m_Bloom.active} intensity={m_Bloom.intensity.value} " +
-                $"scatter={m_Bloom.scatter.value} hq={m_Bloom.highQualityFiltering.value} " +
-                $"downscale={m_Bloom.downscale.value} maxIterations={m_Bloom.maxIterations.value} " +
-                $"hdr={settings.Hdr} fxaa={settings.Fxaa} msaa={settings.MsaaLevel}.");
+        }
+
+        public int? SessionMsaaLevel { get; private set; }
+
+        public void PrepareSession(QualityControls quality)
+        {
+            if (SessionMsaaLevel.HasValue) return;
+            if (!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset pipeline))
+            {
+                return;
+            }
+            // Buffer formats and sample count are startup settings on every platform.
+            // In XR this must run before StartSubsystems allocates the eye surfaces.
+            quality.PrepareSessionRendering();
+            m_CurrentHdr = quality.SessionHdr;
+            // Native HDR colours must reach URP bloom without legacy brush encoding.
+            Shader.DisableKeyword("HDR_SIMPLE");
+            Shader.DisableKeyword("HDR_EMULATED");
+            ApplyMsaa(quality.MSAALevel);
+            SessionMsaaLevel = m_CurrentMsaa;
+        }
+
+        private void ApplyMsaa(int requestedSamples)
+        {
+#if UNITY_IOS && ZAPBOX_SUPPORTED
+            // Preserve the existing Zapbox policy of disabling MSAA.
+            requestedSamples = 1;
+#endif
+            m_CurrentMsaa = requestedSamples == 0 ? 1 : requestedSamples;
+            if (m_CurrentMsaa != 1 && m_CurrentMsaa != 2 &&
+                m_CurrentMsaa != 4 && m_CurrentMsaa != 8)
+            {
+                Debug.LogWarning($"{kLogPrefix} Invalid MSAA {requestedSamples}; disabling MSAA.");
+                m_CurrentMsaa = 1;
+            }
+
+            int supportedSamples = GetSupportedMsaa(m_CurrentMsaa, m_CurrentHdr);
+            if (supportedSamples != m_CurrentMsaa)
+            {
+                Debug.LogWarning($"{kLogPrefix} Requested {m_CurrentMsaa}x MSAA is unsupported; using {supportedSamples}x.");
+                m_CurrentMsaa = supportedSamples;
+            }
+
+            var pipelineAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            if (pipelineAsset != m_MsaaPipelineAsset)
+            {
+                RestorePipelineMsaa();
+                m_MsaaPipelineAsset = pipelineAsset;
+                if (pipelineAsset != null)
+                {
+                    m_PreviousPipelineMsaa = pipelineAsset.msaaSampleCount;
+                    m_PreviousUnityMsaa = QualitySettings.antiAliasing;
+                    m_PreviousRenderScale = pipelineAsset.renderScale;
+                }
+            }
+
+            if (pipelineAsset != null)
+            {
+                pipelineAsset.msaaSampleCount = m_CurrentMsaa;
+                QualitySettings.antiAliasing = m_CurrentMsaa;
+                // Configure the native sample count once, before XR starts rendering.
+                XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
+            }
+        }
+
+        public int GetSupportedMsaa(int requestedSamples, bool hdr)
+        {
+            var descriptor = new RenderTextureDescriptor(
+                Mathf.Max(1, Screen.width), Mathf.Max(1, Screen.height),
+                hdr ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, 24);
+            var displays = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetInstances(displays);
+            foreach (var display in displays)
+            {
+                if (display.running && display.GetRenderPassCount() > 0)
+                {
+                    display.GetRenderPass(0, out var pass);
+                    descriptor = pass.renderTargetDesc;
+                    break;
+                }
+            }
+
+            // Probe downward explicitly: an unsupported request can report 1x even
+            // when an intermediate sample count is supported by the target format.
+            for (int samples = requestedSamples; samples > 1; samples /= 2)
+            {
+                descriptor.msaaSamples = samples;
+                if (SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor) == samples)
+                {
+                    return samples;
+                }
+            }
+            return 1;
+        }
+
+        private void RestorePipelineMsaa()
+        {
+            if (m_MsaaPipelineAsset != null)
+            {
+                m_MsaaPipelineAsset.msaaSampleCount = m_PreviousPipelineMsaa;
+                m_MsaaPipelineAsset.renderScale = m_PreviousRenderScale;
+                QualitySettings.antiAliasing = m_PreviousUnityMsaa;
+                var displays = new List<XRDisplaySubsystem>();
+                SubsystemManager.GetInstances(displays);
+                if (!displays.Exists(display => display.running))
+                    XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
+                m_MsaaPipelineAsset = null;
+            }
         }
 
         private void OnPostEffectsChanged()
@@ -347,10 +490,11 @@ namespace TiltBrush
             cameraData.volumeTrigger = camera.transform;
             cameraData.renderPostProcessing =
                 !isCapture && m_EnablePostProcessingOnMainCameras && CameraConfig.PostEffects;
+            camera.allowHDR = m_CurrentHdr;
 
             if (!isCapture)
             {
-                camera.allowHDR = m_CurrentHdr;
+                camera.allowMSAA = m_CurrentMsaa > 1;
                 cameraData.antialiasing = m_CurrentFxaa
                     ? AntialiasingMode.FastApproximateAntialiasing
                     : AntialiasingMode.None;
@@ -386,7 +530,7 @@ namespace TiltBrush
             }
             m_Bloom.active = true;
             m_Bloom.threshold.overrideState = true;
-            m_Bloom.threshold.value = 1.05f;
+            m_Bloom.threshold.value = GetBloomThreshold();
             m_Bloom.intensity.overrideState = true;
             m_Bloom.intensity.value = kFullBloomIntensity;
             m_Bloom.scatter.overrideState = true;
@@ -440,11 +584,26 @@ namespace TiltBrush
             Debug.Log($"{kLogPrefix} Runtime global Volume created with baseline profile.");
         }
 
-        private void ApplyBloomMode(AppQualitySettingLevels.BloomMode bloomMode, bool hdrEnabled)
+        private float GetBloomThreshold()
+        {
+            float? configuredThreshold = m_RuntimeBloomThreshold ??
+                App.UserConfig.PostProcessingFx.BloomThreshold;
+            if (configuredThreshold.HasValue && !float.IsNaN(configuredThreshold.Value) &&
+                !float.IsInfinity(configuredThreshold.Value))
+            {
+                return Mathf.Max(0f, configuredThreshold.Value);
+            }
+
+            return 1.05f;
+        }
+
+        private void ApplyBloomMode(AppQualitySettingLevels.BloomMode bloomMode)
         {
             EnsureProfilesIfNeeded();
 
-            bool enabled = bloomMode != AppQualitySettingLevels.BloomMode.None && hdrEnabled;
+            m_Bloom.threshold.value = GetBloomThreshold();
+            bool enabled = bloomMode != AppQualitySettingLevels.BloomMode.None &&
+                m_BloomAmount > 0f;
             m_Bloom.active = enabled;
 
             if (!enabled)
@@ -464,7 +623,7 @@ namespace TiltBrush
                     break;
 
                 case AppQualitySettingLevels.BloomMode.Mobile:
-                    m_Bloom.intensity.value = kMobileBloomIntensity * m_MobileBloomAmount;
+                    m_Bloom.intensity.value = kMobileBloomIntensity;
                     m_Bloom.scatter.value = kMobileBloomScatter;
                     m_Bloom.highQualityFiltering.value = false;
                     m_Bloom.downscale.value = BloomDownscaleMode.Quarter;
@@ -480,6 +639,7 @@ namespace TiltBrush
                     m_Bloom.maxIterations.value = 6;
                     break;
             }
+            m_Bloom.intensity.value *= m_BloomAmount;
         }
 
         public void DisableLegacyPostProcessing()
