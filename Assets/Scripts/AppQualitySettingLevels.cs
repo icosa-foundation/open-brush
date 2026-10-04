@@ -36,16 +36,13 @@ namespace TiltBrush
         public class AppQualitySettings
         {
             [SerializeField] private BloomMode m_Bloom = BloomMode.None;
-            [SerializeField] private bool m_Hdr = false;
             [SerializeField] private bool m_Fxaa = true;
-            [SerializeField] private int m_MsaaLevel = 1;
             [SerializeField] private int m_MaxLod = 99999999;
             [SerializeField] private AnisotropicFiltering m_Anisotropic = AnisotropicFiltering.Enable;
             [Header("Mobile Bloom Settings")]
             [SerializeField] private string m_BloomLevels = "2,2,2";
             [Header("Render Buffer Scale")]
             [SerializeField] private float m_ViewportScale = 1.0f;
-            [SerializeField] private float m_EyeTextureScale = 1.0f;
             [Header("Stroke Simplification Settings")]
             [SerializeField] private float m_StrokeSimplification = 0;
             [SerializeField] private int m_TargetMaxControlPoints = 500000;
@@ -61,15 +58,12 @@ namespace TiltBrush
             [NonSerialized] private int[] m_BloomLevelsAsInts = null;
 
             public BloomMode Bloom { get { return m_Bloom; } }
-            public bool Hdr { get { return m_Hdr; } }
             public bool Fxaa { get { return m_Fxaa; } }
-            public int MsaaLevel { get { return m_MsaaLevel; } }
             public int MaxLod { get { return m_MaxLod; } }
             public AnisotropicFiltering Anisotropic { get { return m_Anisotropic; } }
             public int FixedFoveationLevel { get { return m_FixedFoveationLevel; } }
             public int GpuLevel { get { return m_GpuLevel; } }
             public float ViewportScale { get { return m_ViewportScale; } }
-            public float EyeTextureScale { get { return m_EyeTextureScale; } }
 
             public int[] BloomLevels
             {
@@ -95,6 +89,15 @@ namespace TiltBrush
             public BrushDescriptor Brush;
             public float Weight;
         }
+
+        [Header("Session Render Buffers (restart required)")]
+        [SerializeField] private int m_MsaaLevel = 4;
+        [SerializeField] private bool m_Hdr = true;
+        [SerializeField] private float m_EyeTextureScale = 1.0f;
+
+        public int MsaaLevel => m_MsaaLevel;
+        public bool Hdr => m_Hdr;
+        public float EyeTextureScale => m_EyeTextureScale;
 
         [SerializeField] private AppQualitySettings[] m_qualityLevels;
         [SerializeField] private TiltMeterPair[] m_tiltMeterWeights;

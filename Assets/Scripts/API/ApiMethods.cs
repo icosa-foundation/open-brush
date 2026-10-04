@@ -175,6 +175,39 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "capture.snapshot360",
+            "Queues a stereo 360 snapshot (top/bottom equirectangular) to the user's Snapshots folder",
+            "snapshot360.png,4096,true"
+        )]
+        public static string CaptureSnapshot360(
+            string filename,
+            int width = 4096,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            if (width <= 0 || width > ODS.HybridCamera.MaxImageWidth)
+            {
+                Debug.LogError(
+                    $"{logPrefix} Width must be between 1 and {ODS.HybridCamera.MaxImageWidth}; received {width}.");
+                return null;
+            }
+
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "snapshot360");
+
+            MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
+            if (cam == null)
+            {
+                return null;
+            }
+
+            string fullPath = BuildCapturePath(filename, "snapshot360.png", ".png");
+            return cam.CaptureSnapshot360ForApi(fullPath, width, usePostProcessing);
+        }
+
+        [ApiEndpoint(
             "capture.autogif",
             "Queues an Auto GIF capture to the user's Snapshots folder",
             "autogif.gif,true"
@@ -534,12 +567,11 @@ namespace TiltBrush
         {
             Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
 
-            RenderTexture target = RenderTexture.GetTemporary(
-                width,
-                height,
-                24,
-                includePostProcessing ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGB32);
+            RenderTexture target = RenderTexture.GetTemporary(CaptureColorUtils.CreateDescriptor(
+                width, height,
+                CaptureColorUtils.GetFormat(camera)));
             RenderTexture previousTarget = camera.targetTexture;
+            bool previousAllowMsaa = camera.allowMSAA;
             UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
             try
             {
@@ -551,6 +583,7 @@ namespace TiltBrush
                 }
 
                 camera.targetTexture = target;
+                camera.allowMSAA = target.antiAliasing > 1;
                 camera.Render();
                 using (var fs = new FileStream(fullPath, FileMode.Create))
                 {
@@ -560,6 +593,7 @@ namespace TiltBrush
             finally
             {
                 camera.targetTexture = previousTarget;
+                camera.allowMSAA = previousAllowMsaa;
                 if (UrpPostProcessingController.Instance != null)
                 {
                     UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
@@ -845,7 +879,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "spectator.mode",
-            "Sets the spectator camera mode to one of stationary, slowFollow, wobble, circular",
+            "Sets the spectator camera mode to one of stationary, slowFollow, wobble, circular or camerapath",
             "stationary")]
         public static void SpectatorMode(string mode)
         {

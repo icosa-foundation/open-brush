@@ -21,7 +21,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "57914048d176a06829bcf72ec63cddd7ce819e5f"
+      "hash": "8163316eb52b519d5c12dcf246447dc48ce16f53"
     },
     "com.immersive-foundation.imm-stroke-reader": {
       "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
@@ -30,7 +30,7 @@
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1"
       },
-      "hash": "5e6ee762c5e3f7c81b0e73b512228307d79be5da"
+      "hash": "0c747b344715e878f26744069324ef617957da02"
     },
     "com.endel.nativewebsocket": {
       "version": "https://github.com/endel/NativeWebSocket.git#upm",
