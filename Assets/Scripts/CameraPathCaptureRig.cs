@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Localization;
 
@@ -112,6 +113,32 @@ namespace TiltBrush
         public void RecordPath()
         {
             // See README.md section # Video support and # Camera path support.
+            // Recording via the API or Lua can happen while camera paths are hidden, which leaves this
+            // rig (and its video camera) inactive. Showing the paths activates it.
+            bool wasActive = m_Object.activeInHierarchy;
+            WidgetManager.m_Instance.CameraPathsVisible = true;
+            if (!WidgetManager.m_Instance.CanRecordCurrentCameraPath())
+            {
+                Debug.LogWarning("CameraPathCaptureRig: no recordable camera path is active.");
+                return;
+            }
+            if (!wasActive)
+            {
+                // The camera's render target and the recorder are set up in Start, which runs next frame.
+                StartCoroutine(RecordPathNextFrame());
+                return;
+            }
+            StartRecordingPath();
+        }
+
+        private IEnumerator RecordPathNextFrame()
+        {
+            yield return null;
+            StartRecordingPath();
+        }
+
+        private void StartRecordingPath()
+        {
             m_Widget.ResetToPathStart();
             m_Widget.TintForRecording(true);
             UpdateCameraTransform(m_Widget.transform);
