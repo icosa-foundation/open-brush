@@ -1,0 +1,888 @@
+// Copyright 2026 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using NUnit.Framework;
+using System;
+using System.IO;
+using System.Reflection;
+using System.Text;
+using UnityEngine;
+
+namespace TiltBrush
+{
+    internal class TestRuntimeVoxDocument
+    {
+        [Test]
+        public void RuntimeModel_AddMoveSetRemoveVoxel_Works()
+        {
+            var document = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel model = document.CreateModel("test", new Vector3Int(4, 4, 4));
+
+            Assert.IsTrue(model.AddOrUpdateVoxel(new Vector3Int(0, 0, 0), 1));
+            Assert.IsTrue(model.TryGetPaletteIndex(new Vector3Int(0, 0, 0), out byte paletteIndex));
+            Assert.AreEqual(1, paletteIndex);
+
+            Assert.IsTrue(model.MoveVoxel(new Vector3Int(0, 0, 0), new Vector3Int(1, 0, 0)));
+            Assert.IsFalse(model.TryGetPaletteIndex(new Vector3Int(0, 0, 0), out _));
+
+            Assert.IsTrue(model.SetVoxelColor(new Vector3Int(1, 0, 0), 2));
+            Assert.IsTrue(model.TryGetPaletteIndex(new Vector3Int(1, 0, 0), out byte movedPaletteIndex));
+            Assert.AreEqual(2, movedPaletteIndex);
+
+            Assert.IsTrue(model.RemoveVoxel(new Vector3Int(1, 0, 0)));
+            Assert.IsFalse(model.TryGetPaletteIndex(new Vector3Int(1, 0, 0), out _));
+        }
+
+        [Test]
+        public void RuntimeModel_RejectsOutOfBoundsAndZeroPaletteIndex()
+        {
+            var document = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel model = document.CreateModel("test", new Vector3Int(2, 2, 2));
+
+            Assert.IsFalse(model.AddOrUpdateVoxel(new Vector3Int(-1, 0, 0), 1));
+            Assert.IsFalse(model.AddOrUpdateVoxel(new Vector3Int(2, 0, 0), 1));
+            Assert.IsFalse(model.AddOrUpdateVoxel(new Vector3Int(0, 0, 0), 0));
+        }
+
+        [Test]
+        public void RuntimeModel_AcceptsMaximumVoxDimensions()
+        {
+            var document = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel model = document.CreateModel(
+                "maximum",
+                new Vector3Int(
+                    RuntimeVoxDocument.MaxModelDimension,
+                    RuntimeVoxDocument.MaxModelDimension,
+                    RuntimeVoxDocument.MaxModelDimension));
+
+            Assert.IsTrue(model.AddOrUpdateVoxel(new Vector3Int(255, 255, 255), 1));
+
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(document.ToVoxBytes());
+            Assert.AreEqual(model.Size, reloaded.Models[0].Size);
+            Assert.IsTrue(reloaded.Models[0].TryGetPaletteIndex(
+                new Vector3Int(255, 255, 255),
+                out byte paletteIndex));
+            Assert.AreEqual(1, paletteIndex);
+        }
+
+        [TestCase(257, 1, 1)]
+        [TestCase(1, 257, 1)]
+        [TestCase(1, 1, 257)]
+        public void RuntimeModel_RejectsDimensionsLargerThanVoxCoordinates(int x, int y, int z)
+        {
+            var document = new RuntimeVoxDocument();
+
+            Assert.Throws<ArgumentOutOfRangeException>(() =>
+                document.CreateModel("too-large", new Vector3Int(x, y, z)));
+        }
+
+        [Test]
+        public void VoxMeshBuilder_BuildsFromRuntimeModel()
+        {
+            var document = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel model = document.CreateModel("mesh", new Vector3Int(4, 4, 4));
+            document.ReplacePaletteEntry(1, new Color32(255, 0, 0, 255));
+
+            model.AddOrUpdateVoxel(new Vector3Int(0, 0, 0), 1);
+            model.AddOrUpdateVoxel(new Vector3Int(1, 0, 0), 1);
+
+            var builder = new VoxMeshBuilder();
+            Mesh optimized = builder.GenerateOptimizedMesh(model, document.Palette);
+            Mesh cubes = builder.GenerateSeparateCubesMesh(model, document.Palette);
+
+            Assert.NotNull(optimized);
+            Assert.NotNull(cubes);
+            Assert.AreEqual(24, optimized.vertexCount);
+            Assert.AreEqual(36, optimized.triangles.Length);
+            Assert.AreEqual(48, cubes.vertexCount);
+            Assert.AreEqual(72, cubes.triangles.Length);
+        }
+
+        [Test]
+        public void VoxMeshBuilder_AssignsMaterialGroupsToSubmeshes()
+        {
+            var document = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel model = document.CreateModel(
+                "materials",
+                new Vector3Int(2, 1, 1));
+            document.ReplacePaletteEntry(1, new Color32(255, 0, 0, 255));
+            document.ReplacePaletteEntry(2, new Color32(0, 0, 255, 255));
+            model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            model.AddOrUpdateVoxel(Vector3Int.right, 2);
+            var paletteSubmeshIndices = new int[256];
+            paletteSubmeshIndices[1] = 1;
+
+            Mesh mesh = new VoxMeshBuilder().GenerateOptimizedMesh(
+                model,
+                document.Palette,
+                paletteSubmeshIndices,
+                2);
+            try
+            {
+                Assert.AreEqual(2, mesh.subMeshCount);
+                Assert.AreEqual(30, mesh.GetTriangles(0).Length);
+                Assert.AreEqual(30, mesh.GetTriangles(1).Length);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(mesh);
+            }
+        }
+
+        [TestCase(10, 0, 0)]
+        [TestCase(0, 7, 0)]
+        [TestCase(0, 0, 5)]
+        [TestCase(10, 7, 5)]
+        public void VoxMeshBuilder_OptimizedMeshPreservesVoxelTranslation(int x, int y, int z)
+        {
+            var document = new RuntimeVoxDocument();
+            var shift = new Vector3Int(x, y, z);
+            var size = new Vector3Int(16, 16, 16);
+            var original = document.CreateModel("original", size);
+            var shifted = document.CreateModel("shifted", size);
+            foreach (var position in new[] { Vector3Int.zero, Vector3Int.right })
+            {
+                Assert.IsTrue(original.AddOrUpdateVoxel(position, 1));
+                Assert.IsTrue(shifted.AddOrUpdateVoxel(position + shift, 1));
+            }
+
+            var builder = new VoxMeshBuilder();
+            Mesh originalMesh = builder.GenerateOptimizedMesh(original, document.Palette);
+            Mesh shiftedMesh = builder.GenerateOptimizedMesh(shifted, document.Palette);
+            try
+            {
+                Assert.AreEqual(originalMesh.bounds.min + (Vector3)shift, shiftedMesh.bounds.min);
+                Assert.AreEqual(originalMesh.bounds.max + (Vector3)shift, shiftedMesh.bounds.max);
+                Assert.AreEqual(originalMesh.bounds.size, shiftedMesh.bounds.size);
+                CollectionAssert.AreEqual(originalMesh.triangles, shiftedMesh.triangles);
+                Vector3[] originalVertices = originalMesh.vertices;
+                Vector3[] shiftedVertices = shiftedMesh.vertices;
+                Assert.AreEqual(originalVertices.Length, shiftedVertices.Length);
+                for (int i = 0; i < originalVertices.Length; i++)
+                {
+                    Assert.AreEqual(originalVertices[i] + (Vector3)shift, shiftedVertices[i]);
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(originalMesh);
+                UnityEngine.Object.DestroyImmediate(shiftedMesh);
+            }
+        }
+
+        [Test]
+        public void VoxMeshBuilder_AppliesSceneRotationAndCellCenteredPlacement()
+        {
+            var rotation = new VoxReader.Matrix3(new[,]
+            {
+                { 0, -1, 0 },
+                { 1, 0, 0 },
+                { 0, 0, 1 },
+            });
+            var sourceModel = new VoxReader.Model(
+                id: 0,
+                name: "rotated",
+                voxels: Array.Empty<VoxReader.Voxel>(),
+                isCopy: false,
+                // VoxReader exposes the center index of the transformed bounds here.
+                position: new VoxReader.Vector3(9, 20, 30),
+                localPosition: new VoxReader.Vector3(10, 20, 30),
+                rotation: rotation,
+                localRotation: rotation,
+                localSize: new VoxReader.Vector3(4, 3, 2));
+
+            Vector3 origin = RuntimeVoxDocument.GetTransformOffset(sourceModel);
+            Assert.AreEqual(new Vector3(10, 18, 29), origin);
+
+            TrTransform transform = VoxMeshBuilder.GetModelTransform(sourceModel);
+            Vector3 localVoxel = new Vector3(3, 2, 1);
+            Vector3 expectedVoxWorld = new Vector3(8, 21, 30);
+            Assert.That(
+                Vector3.Distance(
+                    VoxMeshBuilder.ModelRotation * expectedVoxWorld,
+                    transform * localVoxel),
+                Is.LessThan(0.0001f));
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_AppliesNodeAndLayerVisibility()
+        {
+            var source = new RuntimeVoxDocument();
+            for (int i = 0; i < 3; i++)
+            {
+                RuntimeVoxDocument.RuntimeModel model = source.CreateModel(
+                    $"model_{i}",
+                    new Vector3Int(4, 4, 4));
+                model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            }
+
+            byte[] bytes = source.ToVoxBytes();
+            bytes = ReplaceMainChildContent(
+                bytes,
+                "nTRN",
+                occurrence: 1,
+                BuildTransformContent(10, 1000, -1, hidden: true));
+            bytes = ReplaceMainChildContent(
+                bytes,
+                "nTRN",
+                occurrence: 2,
+                BuildTransformContent(11, 1001, 7, hidden: false));
+            bytes = AppendMainChild(bytes, "LAYR", BuildLayerContent(7, hidden: true));
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(bytes);
+
+            Assert.IsFalse(loaded.Models[0].IsVisible);
+            Assert.IsFalse(loaded.Models[1].IsVisible);
+            Assert.IsTrue(loaded.Models[2].IsVisible);
+
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(loaded.ToVoxBytes());
+            Assert.IsFalse(reloaded.Models[0].IsVisible);
+            Assert.IsFalse(reloaded.Models[1].IsVisible);
+            Assert.IsTrue(reloaded.Models[2].IsVisible);
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_RoundTripsThroughVoxBytes()
+        {
+            var source = new RuntimeVoxDocument();
+            source.ReplacePaletteEntry(1, new Color32(255, 0, 0, 255));
+            source.ReplacePaletteEntry(2, new Color32(0, 255, 0, 255));
+
+            RuntimeVoxDocument.RuntimeModel model = source.CreateModel("roundtrip", new Vector3Int(8, 8, 8));
+            model.AddOrUpdateVoxel(new Vector3Int(0, 0, 0), 1);
+            model.AddOrUpdateVoxel(new Vector3Int(1, 2, 3), 2);
+
+            byte[] bytes = source.ToVoxBytes();
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(bytes);
+
+            Assert.AreEqual(1, reloaded.Models.Count);
+            RuntimeVoxDocument.RuntimeModel reloadedModel = reloaded.Models[0];
+            Assert.AreEqual("roundtrip", reloadedModel.Name);
+            Assert.AreEqual(2, reloadedModel.Voxels.Count);
+            Assert.IsTrue(reloadedModel.TryGetPaletteIndex(new Vector3Int(0, 0, 0), out byte firstColor));
+            Assert.IsTrue(reloadedModel.TryGetPaletteIndex(new Vector3Int(1, 2, 3), out byte secondColor));
+            Assert.AreEqual(1, firstColor);
+            Assert.AreEqual(2, secondColor);
+            Assert.AreEqual(new Color32(255, 0, 0, 255), reloaded.Palette[0]);
+            Assert.AreEqual(new Color32(0, 255, 0, 255), reloaded.Palette[1]);
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_GeneratedBytesRemainExtensibleWhenRequested()
+        {
+            var source = new RuntimeVoxDocument();
+            source.CreateModel("generated", new Vector3Int(4, 4, 4));
+
+            RuntimeVoxDocument restored = RuntimeVoxDocument.FromBytes(
+                source.ToVoxBytes(), preserveSourceData: false);
+
+            Assert.IsFalse(restored.HasPreservedSourceData);
+            Assert.DoesNotThrow(() => restored.CreateModel("second", new Vector3Int(2, 2, 2)));
+            Assert.AreEqual(2, restored.Models.Count);
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_RoundTripsMultipleModelsThroughVoxBytes()
+        {
+            var source = new RuntimeVoxDocument();
+            source.ReplacePaletteEntry(1, new Color32(255, 0, 0, 255));
+            source.ReplacePaletteEntry(2, new Color32(0, 255, 0, 255));
+
+            RuntimeVoxDocument.RuntimeModel a = source.CreateModel("a", new Vector3Int(8, 8, 8));
+            RuntimeVoxDocument.RuntimeModel b = source.CreateModel("b", new Vector3Int(8, 8, 8));
+            a.AddOrUpdateVoxel(new Vector3Int(0, 0, 0), 1);
+            b.AddOrUpdateVoxel(new Vector3Int(1, 2, 3), 2);
+
+            byte[] bytes = source.ToVoxBytes();
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(bytes);
+
+            Assert.AreEqual(2, reloaded.Models.Count);
+            Assert.AreEqual(1, reloaded.Models[0].Voxels.Count);
+            Assert.AreEqual(1, reloaded.Models[1].Voxels.Count);
+        }
+
+        [TestCase(1.8f, -2.8f, 3.2f, 2, -3, 3)]
+        [TestCase(-1.2f, 2.2f, -3.8f, -1, 2, -4)]
+        [TestCase(1.5f, -2.5f, 3.5f, 2, -2, 4)]
+        [TestCase(2f, -3f, 4f, 2, -3, 4)]
+        public void RuntimeVoxDocument_ExportRoundsTransformOffsets(
+            float x, float y, float z, int expectedX, int expectedY, int expectedZ)
+        {
+            for (int modelCount = 1; modelCount <= 2; modelCount++)
+            {
+                var source = new RuntimeVoxDocument();
+                var model = source.CreateModel("translated", new Vector3Int(8, 8, 8));
+                model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+                model.TransformOffset = new Vector3(x, y, z);
+                if (modelCount == 2)
+                {
+                    source.CreateModel("other", new Vector3Int(8, 8, 8))
+                        .AddOrUpdateVoxel(Vector3Int.zero, 1);
+                }
+
+                RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(source.ToVoxBytes());
+
+                Assert.AreEqual(modelCount, reloaded.Models.Count);
+                Assert.AreEqual(new Vector3(expectedX, expectedY, expectedZ),
+                    reloaded.Models[0].TransformOffset, $"Model count: {modelCount}");
+                Assert.AreEqual(new Vector3(x, y, z), model.TransformOffset);
+            }
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_LoadsFromStreamAndReadOnlyMemory()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel model = source.CreateModel("stream", new Vector3Int(8, 8, 8));
+            model.AddOrUpdateVoxel(new Vector3Int(2, 2, 2), 1);
+            byte[] bytes = source.ToVoxBytes();
+
+            RuntimeVoxDocument fromMemory = RuntimeVoxDocument.FromBytes(new System.ReadOnlyMemory<byte>(bytes));
+            RuntimeVoxDocument fromStream;
+            using (var stream = new MemoryStream(bytes))
+            {
+                fromStream = RuntimeVoxDocument.FromStream(stream);
+            }
+
+            Assert.AreEqual(1, fromMemory.Models.Count);
+            Assert.AreEqual(1, fromStream.Models.Count);
+            Assert.AreEqual(1, fromMemory.Models[0].Voxels.Count);
+            Assert.AreEqual(1, fromStream.Models[0].Voxels.Count);
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_PreservesSourceChunksWhileEditingVoxels()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "preserved",
+                new Vector3Int(8, 8, 8));
+            sourceModel.TransformOffset = new Vector3(2, 3, 4);
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            source.ReplacePaletteEntry(1, new Color32(200, 10, 20, 255));
+            source.ReplacePaletteEntry(2, new Color32(20, 30, 200, 255));
+
+            byte[] metadata = { 9, 8, 7, 6, 5 };
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "META", metadata);
+            var indexMap = new byte[256];
+            for (int i = 0; i < byte.MaxValue; i++)
+            {
+                indexMap[i] = (byte)(i + 1);
+            }
+            indexMap[0] = 2;
+            indexMap[1] = 3;
+            indexMap[2] = 1;
+            sourceBytes = AppendMainChild(sourceBytes, "IMAP", indexMap);
+            byte[] originalRootTransform = FindMainChildContent(sourceBytes, "nTRN", 0);
+            byte[] originalModelTransform = FindMainChildContent(sourceBytes, "nTRN", 1);
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+            Assert.IsTrue(loaded.HasPreservedSourceData);
+            Assert.IsTrue(loaded.Models[0].TryGetPaletteIndex(Vector3Int.zero, out byte originalColor));
+            Assert.AreEqual(3, originalColor);
+            Assert.IsTrue(loaded.Models[0].AddOrUpdateVoxel(new Vector3Int(1, 2, 3), 2));
+            loaded.ReplacePaletteEntry(2, new Color32(12, 34, 56, 255));
+
+            byte[] editedBytes = loaded.ToVoxBytes();
+            CollectionAssert.AreEqual(metadata, FindMainChildContent(editedBytes, "META", 0));
+            CollectionAssert.AreEqual(indexMap, FindMainChildContent(editedBytes, "IMAP", 0));
+            CollectionAssert.AreEqual(
+                originalRootTransform,
+                FindMainChildContent(editedBytes, "nTRN", 0));
+            CollectionAssert.AreEqual(
+                originalModelTransform,
+                FindMainChildContent(editedBytes, "nTRN", 1));
+
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(editedBytes);
+            Assert.IsTrue(reloaded.Models[0].TryGetPaletteIndex(new Vector3Int(1, 2, 3), out byte color));
+            Assert.AreEqual(2, color);
+            Assert.AreEqual(new Color32(12, 34, 56, 255), reloaded.Palette[1]);
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_AppendsRgbaInStoredOrderWhenImapIsPresent()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "mapped-default-palette",
+                new Vector3Int(8, 8, 8));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 1);
+
+            byte[] sourceBytes = RemoveMainChild(source.ToVoxBytes(), "RGBA");
+            var indexMap = new byte[256];
+            for (int i = 0; i < byte.MaxValue; i++)
+            {
+                indexMap[i] = (byte)(i + 1);
+            }
+            indexMap[0] = 2;
+            indexMap[1] = 3;
+            indexMap[2] = 1;
+            sourceBytes = AppendMainChild(sourceBytes, "IMAP", indexMap);
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+            Assert.IsTrue(loaded.Models[0].TryGetPaletteIndex(Vector3Int.zero, out byte colorIndex));
+            Assert.AreEqual(3, colorIndex);
+            var editedColor = new Color32(12, 34, 56, 255);
+            loaded.ReplacePaletteEntry(colorIndex, editedColor);
+
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(loaded.ToVoxBytes());
+            Assert.IsTrue(reloaded.Models[0].TryGetPaletteIndex(Vector3Int.zero, out colorIndex));
+            Assert.AreEqual(3, colorIndex);
+            Assert.AreEqual(editedColor, reloaded.Palette[colorIndex - 1]);
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_PreservesUnknownChunksWhileEditingVoxels()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "future",
+                new Vector3Int(8, 8, 8));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 1);
+
+            byte[] futureData = { 2, 7, 1, 8, 2, 8 };
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "FUTR", futureData);
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+            Assert.IsTrue(loaded.Models[0].AddOrUpdateVoxel(new Vector3Int(1, 2, 3), 2));
+
+            byte[] editedBytes = loaded.ToVoxBytes();
+            CollectionAssert.AreEqual(futureData, FindMainChildContent(editedBytes, "FUTR", 0));
+
+            RuntimeVoxDocument reloaded = RuntimeVoxDocument.FromBytes(editedBytes);
+            Assert.IsTrue(reloaded.Models[0].TryGetPaletteIndex(new Vector3Int(1, 2, 3), out _));
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_ReadsAndPreservesMaterialProperties()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "material",
+                new Vector3Int(2, 2, 2));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 7);
+            byte[] materialContent = BuildMaterialContent(
+                7,
+                new[]
+                {
+                    ("_type", "_glass"),
+                    ("_weight", "0.75"),
+                    ("_rough", "0.2"),
+                    ("_spec", "0.6"),
+                    ("_ior", "1.45"),
+                    ("_att", "0.3"),
+                    ("_flux", "2.5"),
+                    ("_plastic", "1"),
+                    ("_future", "retained"),
+                });
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "MATL", materialContent);
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+
+            Assert.IsTrue(loaded.Materials.TryGetValue(
+                7,
+                out RuntimeVoxDocument.RuntimeMaterial material));
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Glass, material.Type);
+            Assert.AreEqual(0.75f, material.Weight);
+            Assert.AreEqual(0.2f, material.Roughness);
+            Assert.AreEqual(0.6f, material.Specular);
+            Assert.AreEqual(1.45f, material.IndexOfRefraction);
+            Assert.AreEqual(0.3f, material.Attenuation);
+            Assert.AreEqual(2.5f, material.Flux);
+            Assert.IsTrue(material.Plastic);
+            Assert.AreEqual("retained", material.Properties["_future"]);
+            CollectionAssert.AreEqual(
+                materialContent,
+                FindMainChildContent(loaded.ToVoxBytes(), "MATL", 0));
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_RemapMaterialPaletteIndexThroughImap()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "mapped-material",
+                new Vector3Int(2, 2, 2));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 1);
+
+            var indexMap = new byte[256];
+            for (int i = 0; i < byte.MaxValue; i++)
+            {
+                indexMap[i] = (byte)(i + 1);
+            }
+            indexMap[0] = 2;
+            indexMap[1] = 3;
+            indexMap[2] = 1;
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "IMAP", indexMap);
+            sourceBytes = AppendMainChild(
+                sourceBytes,
+                "MATL",
+                BuildMaterialContent(1, new[] { ("_type", "_glass") }));
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+
+            Assert.IsTrue(loaded.Models[0].TryGetPaletteIndex(Vector3Int.zero, out byte paletteIndex));
+            Assert.AreEqual(3, paletteIndex);
+            Assert.IsTrue(loaded.Materials.TryGetValue(
+                paletteIndex,
+                out RuntimeVoxDocument.RuntimeMaterial material));
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Glass, material.Type);
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_RestoreSnapshotPreservesDocumentAndModelIdentity()
+        {
+            var document = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel model = document.CreateModel(
+                "undoable",
+                new Vector3Int(4, 4, 4));
+            model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            byte[] before = document.ToVoxBytes();
+            model.AddOrUpdateVoxel(Vector3Int.one, 2);
+
+            var documentWrapper = new VoxDocumentApiWrapper(document);
+            VoxModelApiWrapper modelWrapper = documentWrapper.Model();
+            document.RestoreFromBytes(before, preserveSourceData: false);
+
+            Assert.AreSame(document, documentWrapper._Document);
+            Assert.AreSame(model, modelWrapper._Model);
+            Assert.AreEqual(1, modelWrapper.voxelCount);
+            Assert.IsTrue(modelWrapper.SetVoxel(2, 2, 2, 3));
+            Assert.IsTrue(model.Voxels.ContainsKey(new Vector3Int(2, 2, 2)));
+        }
+
+        [Test]
+        public void RuntimeVoxDocument_ReadsAndPreservesLegacyMaterialProperties()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "legacy-material",
+                new Vector3Int(2, 2, 2));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 9);
+            byte[] materialContent = BuildLegacyMaterialContent(
+                9,
+                type: 1,
+                weight: 0.8f,
+                propertyBits: 0b1010,
+                propertyValues: new[] { 0.25f, 1.4f });
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "MATT", materialContent);
+
+            RuntimeVoxDocument loaded = RuntimeVoxDocument.FromBytes(sourceBytes);
+
+            RuntimeVoxDocument.RuntimeMaterial material = loaded.Materials[9];
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Metal, material.Type);
+            Assert.AreEqual(0.8f, material.Weight);
+            Assert.AreEqual(0.25f, material.Roughness);
+            Assert.AreEqual(1.4f, material.IndexOfRefraction);
+            CollectionAssert.AreEqual(
+                materialContent,
+                FindMainChildContent(loaded.ToVoxBytes(), "MATT", 0));
+        }
+
+        [Test]
+        public void Model_CreatesIndependentEditableVoxDocuments()
+        {
+            var source = new RuntimeVoxDocument();
+            RuntimeVoxDocument.RuntimeModel sourceModel = source.CreateModel(
+                "source",
+                new Vector3Int(8, 8, 8));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            byte[] metadata = { 3, 1, 4, 1, 5 };
+            byte[] sourceBytes = AppendMainChild(source.ToVoxBytes(), "META", metadata);
+
+            var model = new Model("editable-source.vox");
+            MethodInfo setSource = typeof(Model).GetMethod(
+                "SetEditableVoxSource",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            MethodInfo createDocument = typeof(Model).GetMethod(
+                "CreateEditableVoxDocument",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(setSource);
+            Assert.IsNotNull(createDocument);
+            setSource.Invoke(model, new object[] { sourceBytes });
+
+            var first = (RuntimeVoxDocument)createDocument.Invoke(model, null);
+            var second = (RuntimeVoxDocument)createDocument.Invoke(model, null);
+            Assert.IsNotNull(first);
+            Assert.IsNotNull(second);
+            Assert.AreNotSame(first, second);
+            CollectionAssert.AreEqual(
+                metadata,
+                FindMainChildContent(first.ToVoxBytes(), "META", 0));
+            CollectionAssert.AreEqual(
+                metadata,
+                FindMainChildContent(second.ToVoxBytes(), "META", 0));
+
+            Assert.IsTrue(first.Models[0].AddOrUpdateVoxel(new Vector3Int(1, 2, 3), 2));
+            Assert.IsFalse(second.Models[0].TryGetPaletteIndex(new Vector3Int(1, 2, 3), out _));
+
+            sourceBytes[0] = 0;
+            var third = (RuntimeVoxDocument)createDocument.Invoke(model, null);
+            Assert.IsNotNull(third);
+            Assert.IsTrue(third.Models[0].TryGetPaletteIndex(Vector3Int.zero, out byte paletteIndex));
+            Assert.AreEqual(1, paletteIndex);
+        }
+
+        [Test]
+        public void Model_WithoutVoxSourceHasNoEditableDocument()
+        {
+            var model = new Model("ordinary.obj");
+            MethodInfo createDocument = typeof(Model).GetMethod(
+                "CreateEditableVoxDocument",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(createDocument);
+            Assert.IsNull(createDocument.Invoke(model, null));
+        }
+
+        private static byte[] AppendMainChild(byte[] source, string id, byte[] content)
+        {
+            int childrenLength = BitConverter.ToInt32(source, 16);
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(source);
+                writer.Write(Encoding.ASCII.GetBytes(id));
+                writer.Write(content.Length);
+                writer.Write(0);
+                writer.Write(content);
+                writer.Flush();
+
+                byte[] result = stream.ToArray();
+                byte[] newChildrenLength = BitConverter.GetBytes(childrenLength + 12 + content.Length);
+                Buffer.BlockCopy(newChildrenLength, 0, result, 16, sizeof(int));
+                return result;
+            }
+        }
+
+        private static byte[] ReplaceMainChildContent(
+            byte[] source,
+            string wantedId,
+            int occurrence,
+            byte[] replacementContent)
+        {
+            int mainContentLength = BitConverter.ToInt32(source, 12);
+            int mainChildrenLength = BitConverter.ToInt32(source, 16);
+            int offset = 20 + mainContentLength;
+            int end = offset + mainChildrenLength;
+            while (offset < end)
+            {
+                string id = Encoding.ASCII.GetString(source, offset, 4);
+                int contentLength = BitConverter.ToInt32(source, offset + 4);
+                int childrenLength = BitConverter.ToInt32(source, offset + 8);
+                int chunkLength = 12 + contentLength + childrenLength;
+                if (id == wantedId)
+                {
+                    if (occurrence == 0)
+                    {
+                        int replacementLength = 12 + replacementContent.Length + childrenLength;
+                        int delta = replacementLength - chunkLength;
+                        var result = new byte[source.Length + delta];
+                        Buffer.BlockCopy(source, 0, result, 0, offset);
+                        Buffer.BlockCopy(Encoding.ASCII.GetBytes(id), 0, result, offset, 4);
+                        Buffer.BlockCopy(
+                            BitConverter.GetBytes(replacementContent.Length),
+                            0,
+                            result,
+                            offset + 4,
+                            sizeof(int));
+                        Buffer.BlockCopy(
+                            BitConverter.GetBytes(childrenLength),
+                            0,
+                            result,
+                            offset + 8,
+                            sizeof(int));
+                        Buffer.BlockCopy(
+                            replacementContent,
+                            0,
+                            result,
+                            offset + 12,
+                            replacementContent.Length);
+                        Buffer.BlockCopy(
+                            source,
+                            offset + 12 + contentLength,
+                            result,
+                            offset + 12 + replacementContent.Length,
+                            childrenLength);
+                        Buffer.BlockCopy(
+                            source,
+                            offset + chunkLength,
+                            result,
+                            offset + replacementLength,
+                            source.Length - offset - chunkLength);
+                        Buffer.BlockCopy(
+                            BitConverter.GetBytes(mainChildrenLength + delta),
+                            0,
+                            result,
+                            16,
+                            sizeof(int));
+                        return result;
+                    }
+                    occurrence--;
+                }
+                offset += chunkLength;
+            }
+            Assert.Fail($"Could not find VOX chunk '{wantedId}'.");
+            return null;
+        }
+
+        private static byte[] BuildTransformContent(
+            int nodeId,
+            int childNodeId,
+            int layerId,
+            bool hidden)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(nodeId);
+                WriteDictionary(writer, hidden ? new[] { ("_hidden", "1") } : Array.Empty<(string, string)>());
+                writer.Write(childNodeId);
+                writer.Write(-1);
+                writer.Write(layerId);
+                writer.Write(1);
+                WriteDictionary(writer, Array.Empty<(string, string)>());
+                return stream.ToArray();
+            }
+        }
+
+        private static byte[] BuildLayerContent(int layerId, bool hidden)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(layerId);
+                WriteDictionary(writer, hidden ? new[] { ("_hidden", "1") } : Array.Empty<(string, string)>());
+                writer.Write(-1);
+                return stream.ToArray();
+            }
+        }
+
+        private static byte[] BuildMaterialContent(
+            int paletteIndex,
+            (string key, string value)[] properties)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(paletteIndex);
+                WriteDictionary(writer, properties);
+                return stream.ToArray();
+            }
+        }
+
+        private static byte[] BuildLegacyMaterialContent(
+            int paletteIndex,
+            int type,
+            float weight,
+            int propertyBits,
+            float[] propertyValues)
+        {
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                writer.Write(paletteIndex);
+                writer.Write(type);
+                writer.Write(weight);
+                writer.Write(propertyBits);
+                foreach (float value in propertyValues)
+                {
+                    writer.Write(value);
+                }
+                return stream.ToArray();
+            }
+        }
+
+        private static void WriteDictionary(
+            BinaryWriter writer,
+            (string key, string value)[] entries)
+        {
+            writer.Write(entries.Length);
+            foreach ((string key, string value) in entries)
+            {
+                WriteString(writer, key);
+                WriteString(writer, value);
+            }
+        }
+
+        private static void WriteString(BinaryWriter writer, string value)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(value);
+            writer.Write(bytes.Length);
+            writer.Write(bytes);
+        }
+
+        private static byte[] RemoveMainChild(byte[] source, string wantedId)
+        {
+            int mainContentLength = BitConverter.ToInt32(source, 12);
+            int mainChildrenLength = BitConverter.ToInt32(source, 16);
+            int offset = 20 + mainContentLength;
+            int end = offset + mainChildrenLength;
+            while (offset < end)
+            {
+                string id = Encoding.ASCII.GetString(source, offset, 4);
+                int contentLength = BitConverter.ToInt32(source, offset + 4);
+                int childrenLength = BitConverter.ToInt32(source, offset + 8);
+                int chunkLength = 12 + contentLength + childrenLength;
+                if (id == wantedId)
+                {
+                    var result = new byte[source.Length - chunkLength];
+                    Buffer.BlockCopy(source, 0, result, 0, offset);
+                    Buffer.BlockCopy(
+                        source,
+                        offset + chunkLength,
+                        result,
+                        offset,
+                        source.Length - offset - chunkLength);
+                    Buffer.BlockCopy(
+                        BitConverter.GetBytes(mainChildrenLength - chunkLength),
+                        0,
+                        result,
+                        16,
+                        sizeof(int));
+                    return result;
+                }
+                offset += chunkLength;
+            }
+            Assert.Fail($"Could not find VOX chunk '{wantedId}'.");
+            return null;
+        }
+
+        private static byte[] FindMainChildContent(byte[] source, string wantedId, int occurrence)
+        {
+            int mainContentLength = BitConverter.ToInt32(source, 12);
+            int mainChildrenLength = BitConverter.ToInt32(source, 16);
+            int offset = 20 + mainContentLength;
+            int end = offset + mainChildrenLength;
+            while (offset < end)
+            {
+                string id = Encoding.ASCII.GetString(source, offset, 4);
+                int contentLength = BitConverter.ToInt32(source, offset + 4);
+                int childrenLength = BitConverter.ToInt32(source, offset + 8);
+                if (id == wantedId)
+                {
+                    if (occurrence == 0)
+                    {
+                        var content = new byte[contentLength];
+                        Buffer.BlockCopy(source, offset + 12, content, 0, contentLength);
+                        return content;
+                    }
+                    occurrence--;
+                }
+                offset += 12 + contentLength + childrenLength;
+            }
+            Assert.Fail($"Could not find VOX chunk '{wantedId}'.");
+            return null;
+        }
+    }
+}

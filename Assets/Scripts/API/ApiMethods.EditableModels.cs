@@ -194,6 +194,11 @@ namespace TiltBrush
         public static void BreakApartModel(int index)
         {
             var model = _GetActiveModel(index);
+            if (model.EditableVoxDocument != null)
+            {
+                throw new InvalidOperationException(
+                    "Editable VOX widgets cannot be broken apart.");
+            }
             var cmd = new BreakModelApartCommand(model);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
         }

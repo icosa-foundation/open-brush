@@ -818,7 +818,7 @@ namespace TiltBrush
 
                     if (jsonData.ModelIndex != null)
                     {
-                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex);
+                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex, fileInfo);
                     }
 
                     if (jsonData.LightIndex != null)
