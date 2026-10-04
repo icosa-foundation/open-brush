@@ -15,6 +15,7 @@
 #if USD_SUPPORTED
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using UnityEngine;
@@ -777,7 +778,9 @@ namespace TiltBrush
             }
 
             // Unity is left handed (DX), USD is right handed (GL)
-            var payload = ExportCollector.GetExportPayload(AxisConvention.kUsd);
+            var payload = ExportCollector.GetExportPayload(
+                AxisConvention.kUsd,
+                outputDirectory: Path.GetDirectoryName(outputFile));
             var brushCatalog = BrushCatalog.m_Instance;
 
             // The Scene object provids serialization methods arbitrary C# objects to USD.
