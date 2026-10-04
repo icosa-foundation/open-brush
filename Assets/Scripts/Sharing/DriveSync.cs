@@ -828,6 +828,23 @@ namespace TiltBrush
                 throw new OperationCanceledException(
                     "User storage changed while Google Drive transfers were being enumerated.");
             }
+            if (backend.Kind == StorageBackendKind.StorageAccessFramework)
+            {
+                var ambiguousNames = FindCaseCollidingDriveNames(driveContents.Select(item => item.Name));
+                if (ambiguousNames.Count > 0)
+                {
+                    foreach (string name in ambiguousNames)
+                    {
+                        Debug.LogWarning(
+                            $"SAF_DRIVE_SYNC Skipped '{folder.Name}/{name}': Drive names differ only by case.");
+                    }
+                    // Exclude both sides, including directories, so an ambiguous Drive name
+                    // cannot become a new upload or an arbitrarily selected download.
+                    driveContents.RemoveAll(item => ambiguousNames.Contains(item.Name));
+                    localContents = localContents.Where(
+                        document => !ambiguousNames.Contains(document.DisplayName)).ToArray();
+                }
+            }
             var driveFiles = new Dictionary<string, DriveData.File>();
             foreach (var item in driveContents
                 .Where(x => x.MimeType != "application/vnd.google-apps.folder"))
@@ -1003,6 +1020,16 @@ namespace TiltBrush
                 };
                 await EnumerateFolderTransfersAsync(subfolder, token);
             }
+        }
+
+        internal static HashSet<string> FindCaseCollidingDriveNames(IEnumerable<string> names)
+        {
+            // Exact duplicates retain the existing newest-file policy. Only distinct spellings
+            // collide here; SAF cannot safely represent them as separate logical names.
+            return new HashSet<string>(names
+                .GroupBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .Where(group => group.Distinct(StringComparer.Ordinal).Skip(1).Any())
+                .Select(group => group.Key), StringComparer.OrdinalIgnoreCase);
         }
 
         internal static StringComparer GetSyncNameComparer(StorageBackendKind backendKind)

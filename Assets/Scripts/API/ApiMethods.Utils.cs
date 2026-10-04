@@ -262,7 +262,8 @@ namespace TiltBrush
             string absoluteDestinationPath,
             bool allowRedirects,
             string requiredContentTypePrefix = null,
-            bool publish = true)
+            bool publish = true,
+            Action<string> onPublished = null)
         {
             string requestedDirectory = absoluteDestinationPath;
             bool preserveDestination = publish && OpenBrushStorage.IsScopedStorageMode;
@@ -346,7 +347,15 @@ namespace TiltBrush
                 }
                 if (publish)
                 {
-                    _PublishApiMediaLibraryPathToSharedStorage(fullDestinationPath, preserveDestination);
+                    _PublishApiMediaLibraryPathToSharedStorage(
+                        fullDestinationPath, preserveDestination,
+                        onComplete: onPublished == null ? null : (success, _) =>
+                        {
+                            if (success)
+                            {
+                                onPublished(Path.GetRelativePath(requestedDirectory, fullDestinationPath));
+                            }
+                        });
                 }
                 return Path.GetRelativePath(requestedDirectory, fullDestinationPath);
             }
