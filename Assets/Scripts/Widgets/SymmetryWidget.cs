@@ -197,7 +197,7 @@ namespace TiltBrush
             // While the mirror is held, its strokes follow it.
             SymmetryMirrorMove.Update();
             HaltIfLinked();
-            if (m_ShowingLinked != (SymmetryMirrors.Active != null)) { UpdateTitle(); }
+            if (m_ShowingLinked != (SymmetryMirrors.Showing != null)) { UpdateTitle(); }
 
             bool moved = m_UserInteracting;
 
@@ -343,7 +343,7 @@ namespace TiltBrush
         {
             if (m_TitleText == null) { return; }
             m_PlainTitle ??= m_TitleText.text;
-            m_ShowingLinked = SymmetryMirrors.Active != null;
+            m_ShowingLinked = SymmetryMirrors.Showing != null;
             m_TitleText.text = m_ShowingLinked ? "Mirror\nLinked" : m_PlainTitle;
             if (!m_ShowingLinked)
             {
