@@ -200,6 +200,7 @@ namespace TiltBrush
         private List<TrTransform> m_ScriptedTrFixes; // Fixes for reflection transforms
 
         private List<PointerPaintingOverride> m_ScriptedPointerPaintOverrides;
+        private List<PointerPaintingOverride> m_ScriptedPointerRequestedPaintModes;
         private List<bool> m_ScriptedPointerHasRecordedStrokeThisLine;
         private HashSet<int> m_ScriptedPointerForceNewStrokeRequests;
         private bool m_ScriptedPointersNeedMainStrokeMerge;
@@ -649,6 +650,7 @@ namespace TiltBrush
 
                 // Snap endpoint while actively drawing
                 Vector3 pointerPosition = MainPointer.transform.position;
+                bool endpointSnapped = false;
                 if (StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line &&
                     m_StraightEdgeGuide.TryGetEndpointSnap(pointerPosition, out Vector3 snappedEndpoint))
                 {
@@ -658,10 +660,11 @@ namespace TiltBrush
                     {
                         SetMainPointerPosition(snappedEndpoint);
                         pointerPosition = snappedEndpoint;
+                        endpointSnapped = true;
                     }
                 }
 
-                endpointSnapActive = m_StraightEdgeGuide.UpdateTarget(pointerPosition);
+                endpointSnapActive = m_StraightEdgeGuide.UpdateTarget(pointerPosition, endpointSnapped);
             }
 
             // Preview endpoint snapping when not actively drawing
@@ -1004,6 +1007,7 @@ namespace TiltBrush
         private void ResetScriptedPointerPaintData()
         {
             m_ScriptedPointerPaintOverrides?.Clear();
+            m_ScriptedPointerRequestedPaintModes = null;
             m_ScriptedPointerHasRecordedStrokeThisLine?.Clear();
             m_ScriptedPointerForceNewStrokeRequests?.Clear();
             m_ScriptedPointersNeedMainStrokeMerge = false;
@@ -1077,6 +1081,17 @@ namespace TiltBrush
             {
                 m_ScriptedPointerForceNewStrokeRequests.Remove(index);
             }
+        }
+
+        public void SetScriptedPointerPaintModes(List<PointerPaintingOverride> modes)
+        {
+            if (m_CurrentSymmetryMode != SymmetryMode.ScriptedSymmetryMode)
+            {
+                return;
+            }
+            // Main() runs before its returned pointer count is applied. Keep the
+            // requested modes until UpdateScriptedTransforms has resized the pool.
+            m_ScriptedPointerRequestedPaintModes = modes;
         }
 
         public void ForceScriptedPointerNewStroke(int index)
@@ -1398,14 +1413,20 @@ namespace TiltBrush
             }
 
             EnsureScriptedPointerPaintData(m_NumActivePointers);
+            if (m_ScriptedPointerRequestedPaintModes != null)
+            {
+                for (int i = 0; i < m_NumActivePointers; ++i)
+                {
+                    m_ScriptedPointerPaintOverrides[i] =
+                        i < m_ScriptedPointerRequestedPaintModes.Count
+                            ? m_ScriptedPointerRequestedPaintModes[i]
+                            : PointerPaintingOverride.Inherit;
+                }
+                m_ScriptedPointerRequestedPaintModes = null;
+            }
 
             bNeedsDummyPointer = true;
-            MatrixListApiWrapper matList = null;
-
-            if (result._Space == ScriptCoordSpace.Widget)
-            {
-                matList = result as MatrixListApiWrapper;
-            }
+            MatrixListApiWrapper matList = result as MatrixListApiWrapper;
 
             for (var i = 0; i < transforms.Count; i++)
             {
@@ -1445,8 +1466,34 @@ namespace TiltBrush
                         break;
                     case ScriptCoordSpace.Canvas:
                         {
-                            bNeedsDummyPointer = false;
-                            newTr_CS = TrTransform.T(tr.translation);
+                            if (matList == null)
+                            {
+                                // Existing Path results are world-space translation offsets.
+                                bNeedsDummyPointer = false;
+                                newTr_CS = TrTransform.T(tr.translation);
+                                break;
+                            }
+
+                            // MatrixList results are actions in the active canvas frame.
+                            // Apply them to the unscaled physical pointer pose so the
+                            // previous frame's scripted pointer scale cannot accumulate.
+                            var mat = matList[i]._Matrix;
+                            var canvas_GS = App.Scene.ActiveCanvas.Pose;
+                            var action_GS = canvas_GS * tr * canvas_GS.inverse;
+                            var pointer0_GS = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
+                            var basePointer_GS = pointer0_GS;
+                            basePointer_GS.scale = 1;
+                            var fixTr = TrTransform.identity;
+                            if (mat.lossyScale.x < 0 || mat.lossyScale.y < 0 || mat.lossyScale.z < 0)
+                            {
+                                fixTr = new Plane(Vector3.right, 0).ToTrTransform();
+                            }
+                            var target_GS = action_GS * basePointer_GS * fixTr;
+                            if ((target_GS.translation - basePointer_GS.translation).sqrMagnitude < 1e-8f)
+                            {
+                                bNeedsDummyPointer = false;
+                            }
+                            newTr_CS = target_GS * pointer0_GS.inverse;
                             break;
                         }
                     case ScriptCoordSpace.Pointer:
@@ -1502,6 +1549,9 @@ namespace TiltBrush
             {
                 LuaManager.Instance.EndActiveScript(LuaApiCategory.SymmetryScript);
                 ResetScriptedPointerPaintData();
+                // Scripted matrices may scale pointer 0. The physical pointer starts
+                // subsequent symmetry modes at its normal room-space scale.
+                m_MainPointerData.m_Script.transform.SetUniformScale(1);
             }
 
             int active = m_NumActivePointers;
@@ -2204,7 +2254,10 @@ namespace TiltBrush
             CanvasScript canvas = App.Scene.ActiveCanvas;
             for (int i = 0; i < m_NumActivePointers; ++i)
             {
-                StartPointerStroke(i, canvas);
+                if (ShouldPointerPaint(i))
+                {
+                    StartPointerStroke(i, canvas);
+                }
             }
         }
 
@@ -2224,10 +2277,22 @@ namespace TiltBrush
         {
             PointerScript groupStart = null;
             uint groupStartTime = 0;
+            int finalStrokeIndex = -1;
+            if (!discard)
+            {
+                for (int i = 0; i < m_NumActivePointers; ++i)
+                {
+                    var pointer = m_Pointers[i].m_Script;
+                    if (pointer.IsCreatingStroke() && !pointer.ShouldDiscardCurrentLine())
+                    {
+                        finalStrokeIndex = i;
+                    }
+                }
+            }
             //discard or solidify every pointer's active line
             for (int i = 0; i < m_NumActivePointers; ++i)
             {
-                bool isFinalStroke = (i == m_NumActivePointers - 1);
+                bool isFinalStroke = (i == finalStrokeIndex);
                 bool forceGroupContinue =
                     !discard &&
                     m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode &&

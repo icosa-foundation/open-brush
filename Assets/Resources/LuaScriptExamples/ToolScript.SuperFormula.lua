@@ -1,6 +1,7 @@
 Settings = {
     description="Like a superellipse but capable of drawing concave shapes as well",
-    previewType="quad"
+    previewType="stroke",
+    previewInterval=0.1
 }
 
 Parameters = {
@@ -12,9 +13,9 @@ Parameters = {
 
 
 function Main()
-    if Brush.triggerReleasedThisFrame then
-    points = Path:New()
-        for i = 0.0, Math.pi * 2, 0.01 do
+        points = Path:New()
+        local angleStep = Tool.isPreview and 0.04 or 0.01
+        for i = 0.0, Math.pi * 2, angleStep do
             angle = Parameters.sym * i / 4.0
             term1 = Math:Pow(Math:Abs(Math:Cos(angle)), Parameters.n2)
             term2 = Math:Pow(Math:Abs(Math:Sin(angle)), Parameters.n3)
@@ -27,5 +28,4 @@ function Main()
         end
         points:Insert(points[0]) -- Close the loop
         return points
-    end
 end
