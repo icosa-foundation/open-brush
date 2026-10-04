@@ -4072,10 +4072,9 @@ namespace TiltBrush
             multiCam.StartVideoCapture(MultiCamTool.GetSaveName(MultiCamStyle.Video), offlineRender: true);
             App.Instance.FrameCountDisplay.gameObject.SetActive(true);
             App.Instance.FrameCountDisplay.SetFramesTotal(VideoRecorderUtils.NumFramesInUsdSerializer);
-            while (VideoRecorderUtils.ActiveVideoRecording != null)
+            while (VideoRecorderUtils.IsCapturing)
             {
-                App.Instance.FrameCountDisplay.SetCurrentFrame(
-                    VideoRecorderUtils.ActiveVideoRecording.FrameCount);
+                App.Instance.FrameCountDisplay.SetCurrentFrame(VideoRecorderUtils.ActiveCaptureFrameCount);
                 yield return null;
             }
             ssMgr.SetScreenshotResolution(App.UserConfig.Video.Resolution);
