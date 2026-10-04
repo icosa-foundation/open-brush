@@ -3485,7 +3485,6 @@ MonoBehaviour:
   m_AllowWidgetPinning: 1
   m_DebugWebRequest: 0
   m_ToggleProfileOnAppButton: 0
-  m_BlitToComputeShader: {fileID: 4800000, guid: 9bebe0dce4e97b54ab3958f7fc3198be, type: 3}
   m_ForceDeterministicBirthTimeForExport: 0
   m_EnableReferenceModelExport: 1
   m_EnableGlbVersion2: 1

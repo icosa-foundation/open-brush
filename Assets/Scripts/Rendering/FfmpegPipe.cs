@@ -154,7 +154,9 @@ namespace TiltBrush
             exeName = "ffmpeg.exe";
 #endif
 #if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
-            exeName = "ffmpeg";
+            // A universal binary would exceed GitHub's file size limit, so we ship one per architecture.
+            exeName = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==
+                System.Runtime.InteropServices.Architecture.Arm64 ? "ffmpeg-arm64" : "ffmpeg-x86_64";
 #endif
 
             var combinedPath = Path.Combine(
@@ -278,7 +280,7 @@ namespace TiltBrush
                           bool blocking)
         {
             m_outputFile = "";
-            if (!LaunchEncoder(source, outputFile, width, height, sampleRate))
+            if (!LaunchEncoder(source, outputFile, width, height, sampleRate, blocking))
             {
                 // ffmpeg failed to launch
                 return false;
@@ -327,14 +329,36 @@ namespace TiltBrush
             return true;
         }
 
-        public static string GetVideoEncoder()
+        // Frames above this many pixels (larger than 4K UHD) get fewer encoder threads and a shorter
+        // lookahead. With the defaults, x264 runs out of memory on e.g. 8000x8000 360 renders, since
+        // every thread and lookahead frame holds a full-size frame.
+        private const long kLargeFramePixels = 3840L * 2160L;
+
+        public static bool IsLargeFrame(int width, int height)
         {
-            string friendlyName = App.UserConfig.Video.Encoder;
-            switch (friendlyName.ToLower())
+            return (long)width * height > kLargeFramePixels;
+        }
+
+        // offline: true when encode speed doesn't need to keep up with real time.
+        public static string GetVideoEncoder(bool offline, int width, int height)
+        {
+            var config = App.UserConfig.Video;
+            string preset = config.GetPreset(offline);
+            int crf = config.Quality;
+            bool large = IsLargeFrame(width, height);
+            switch (config.Encoder.ToLower())
             {
+                case "h.265":
+                    // hvc1 tag is required for playback in QuickTime and on Apple devices.
+                    string x265Params = large
+                        ? "log-level=error:frame-threads=2:rc-lookahead=20"
+                        : "log-level=error";
+                    return $"libx265 -preset {preset} -crf {crf} -tag:v hvc1 -x265-params {x265Params}";
                 case "h.264":
                 default:
-                    return "libx264 -preset faster -crf 23";
+                    return large
+                        ? $"libx264 -preset {preset} -crf {crf} -threads 4 -x264-params rc-lookahead=20"
+                        : $"libx264 -preset {preset} -crf {crf}";
             }
         }
 
@@ -342,7 +366,8 @@ namespace TiltBrush
                                    string outputFile,
                                    int width,
                                    int height,
-                                   float sampleRate)
+                                   float sampleRate,
+                                   bool offline)
         {
             string streamInput = @"-y -r {4} -f rawvideo -codec rawvideo -s {0}x{1} " +
                 @"-pixel_format rgba -i {2} ";
@@ -352,7 +377,10 @@ namespace TiltBrush
             // Helpful references:
             //  * https://trac.ffmpeg.org/wiki/Encode/H.264
             //  * https://trac.ffmpeg.org/wiki/Encode/YouTube
-            string streamOutput = @"-r {4} -threads 8 -c:v " + GetVideoEncoder() + " -pix_fmt yuv420p " +
+            // Large frames set their own thread count in the encoder arguments.
+            string threads = IsLargeFrame(width, height) ? "" : "-threads 8 ";
+            string streamOutput = @"-r {4} " + threads + "-c:v " + GetVideoEncoder(offline, width, height) +
+                " -pix_fmt yuv420p " +
                 @" ""{3}""";
 
             bool isReading = false;

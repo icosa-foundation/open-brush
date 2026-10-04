@@ -17,7 +17,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.Rendering;
 using Debug = UnityEngine.Debug;
 
 namespace TiltBrush
@@ -115,7 +114,7 @@ namespace TiltBrush
                 if (m_UsdPathSerializer != null && !m_UsdPathSerializer.IsRecording)
                 {
                     return Mathf.CeilToInt((float)m_UsdPathSerializer.Duration *
-                        (int)m_ActiveVideoRecording.FPS);
+                        (int)ActiveCaptureFPS);
                 }
                 return 0;
             }
@@ -165,6 +164,12 @@ namespace TiltBrush
                     m_ActiveStillFrameExporter.CaptureFrame(currentTime);
                 }
             }
+            else if (m_UsdPathSerializer != null && m_UsingStillFrameFallback &&
+                m_ActiveStillFrameExporter != null)
+            {
+                // Offline render: the camera has been moved along the path for this frame.
+                m_ActiveStillFrameExporter.CaptureFrame((float)m_UsdPathSerializer.Time);
+            }
         }
 
         static public bool StartVideoCapture(string filePath, VideoRecorder recorder,
@@ -188,14 +193,12 @@ namespace TiltBrush
             // No ffmpeg binary on mobile, so always do still frame capture.
             bool stillFrameCapture = true;
 #else
-            bool stillFrameCapture =
-                App.UserConfig.Video.ForceFrameSequenceRender ||
-                GraphicsSettings.currentRenderPipeline != null;
+            bool stillFrameCapture = App.UserConfig.Video.ForceFrameSequenceRender;
 #endif
 
             if (stillFrameCapture)
             {
-                return StartStillFrameSequenceCapture(filePath, recorder, usdPathSerializer);
+                return StartStillFrameSequenceCapture(filePath, recorder, usdPathSerializer, offlineRender);
             }
 
             // Vertical video is disabled.
@@ -269,7 +272,8 @@ namespace TiltBrush
         }
 
         static private bool StartStillFrameSequenceCapture(string filePath, VideoRecorder recorder,
-                                                          UsdPathSerializer usdPathSerializer)
+                                                          UsdPathSerializer usdPathSerializer,
+                                                          bool offlineRender)
         {
             // Get or create the still frame exporter component
             StillFrameSequenceExporter exporter = recorder.gameObject.GetComponent<StillFrameSequenceExporter>();
@@ -278,9 +282,10 @@ namespace TiltBrush
                 exporter = recorder.gameObject.AddComponent<StillFrameSequenceExporter>();
             }
 
-            float fps = App.UserConfig.Video.FPS;
+            float fps = offlineRender ? App.UserConfig.Video.OfflineFPS : App.UserConfig.Video.FPS;
 
-            if (!exporter.StartCapture(filePath, fps))
+            // Offline renders step time by exactly one frame per update, so every update is a frame.
+            if (!exporter.StartCapture(filePath, fps, captureEveryFrame: offlineRender))
             {
                 OutputWindowScript.ReportFileSaved("Failed to start still frame sequence capture!", null,
                     OutputWindowScript.InfoCardSpawnPos.Brush);
@@ -305,8 +310,25 @@ namespace TiltBrush
                 wrapper.SuperSampling = m_SuperSampling;
             }
 
-            // Handle USD path serialization for camera path recording
+            // Handle USD path serialization: play back the path for offline renders, record it otherwise.
             m_UsdPathSerializer = usdPathSerializer;
+            if (offlineRender)
+            {
+                recorder.SetCaptureFramerate(Mathf.RoundToInt(fps));
+                m_UsdPath = null;
+                if (m_UsdPathSerializer != null && m_UsdPathSerializer.Load(App.Config.m_VideoPathToRender))
+                {
+                    m_UsdPathSerializer.StartPlayback();
+                }
+                else
+                {
+                    Debug.LogWarning("USD Path Serializer failed to load camera path for offline render");
+                    UnityEngine.Object.Destroy(m_UsdPathSerializer);
+                    m_UsdPathSerializer = null;
+                }
+                return true;
+            }
+
             m_UsdPath = SaveLoadScript.m_Instance.SceneFile.Valid ?
                 Path.ChangeExtension(filePath, "usda") : null;
             m_RecordingStopwatch = new System.Diagnostics.Stopwatch();
@@ -335,6 +357,13 @@ namespace TiltBrush
             {
                 // Stop still frame sequence capture
                 m_ActiveStillFrameExporter.StopCapture(saveCapture);
+
+                // Undo the fixed capture framerate set for offline renders.
+                var recorder = m_ActiveStillFrameExporter.gameObject.GetComponent<VideoRecorder>();
+                if (recorder != null)
+                {
+                    recorder.SetCaptureFramerate(0);
+                }
 
                 // Reset render wrapper if it exists
                 var wrapper = m_ActiveStillFrameExporter.gameObject.GetComponent<RenderWrapper>();

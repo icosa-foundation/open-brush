@@ -164,6 +164,12 @@ namespace TiltBrush
         public void ResetToPathStart()
         {
             m_PathT.Zero();
+            // The cache is normally refreshed in OnUpdate, which hasn't run if the widget was inactive.
+            CacheCurrentPathWidget();
+            if (m_CurrentPathWidget == null)
+            {
+                return;
+            }
             transform.position = m_CurrentPathWidget.Path.GetPosition(m_PathT);
             if (m_CurrentPathWidget.Path.RotationKnots.Count > 0)
             {

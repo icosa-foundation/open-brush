@@ -556,6 +556,20 @@ namespace TiltBrush
                 "h.264", "h.265",
             };
 
+            // x264/x265 constant rate factor: lower is higher quality. 18 is close to visually lossless
+            // for x264; x265 at the same value is higher quality still.
+            private const int kDefaultQuality = 18;
+            private const int kMinQuality = 0;
+            private const int kMaxQuality = 51;
+            // Live capture must encode in real time, offline renders can afford a slower preset.
+            private const string kDefaultLivePreset = "faster";
+            private const string kDefaultOfflinePreset = "slow";
+            private static readonly List<string> kSupportedPresets = new List<string>
+            {
+                "ultrafast", "superfast", "veryfast", "faster", "fast",
+                "medium", "slow", "slower", "veryslow",
+            };
+
             private const float kDefaultSmoothing = 0.98f;
             private const float kDefaultOdsPoleCollapsing = 1.0f;
 
@@ -692,6 +706,47 @@ namespace TiltBrush
                             string.Format("Supported: {0}.\nContainer type set to {1}.",
                                 string.Join(", ", kSupportedVideoEncoders.ToArray()),
                                 kDefaultVideoEncoder));
+                    }
+                }
+            }
+
+            int? m_Quality;
+            public int Quality
+            {
+                get { return m_Quality ?? kDefaultQuality; }
+                set
+                {
+                    m_Quality = UnityEngine.Mathf.Clamp(value, kMinQuality, kMaxQuality);
+                    if (m_Quality != value)
+                    {
+                        OutputWindowScript.Error($"Video Quality of '{value}' not supported.",
+                            $"Quality (CRF) must be between {kMinQuality} and {kMaxQuality}.\nQuality set to {m_Quality}.");
+                    }
+                }
+            }
+
+            string m_Preset;
+            public string GetPreset(bool offline)
+            {
+                return m_Preset ?? (offline ? kDefaultOfflinePreset : kDefaultLivePreset);
+            }
+            public string Preset
+            {
+                get { return m_Preset; }
+                set
+                {
+                    string lowered = value.ToLowerInvariant();
+                    if (kSupportedPresets.Contains(lowered))
+                    {
+                        m_Preset = lowered;
+                    }
+                    else
+                    {
+                        m_Preset = null;
+                        OutputWindowScript.Error(
+                            $"Video Preset '{lowered}' not supported in {App.kConfigFileName}",
+                            $"Supported: {string.Join(", ", kSupportedPresets)}.\n" +
+                            $"Preset set to {kDefaultLivePreset} (live) / {kDefaultOfflinePreset} (offline).");
                     }
                 }
             }

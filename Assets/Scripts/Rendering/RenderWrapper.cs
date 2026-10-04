@@ -241,11 +241,6 @@ namespace TiltBrush
                 ReadBackTextures();
             }
 
-            if (m_isRecorder && m_isRecording && m_readbackTextureFrame != Time.frameCount)
-            {
-                GetComponent<VideoRecorder>().ReadbackCapture();
-            }
-
             m_readbackTextureFrame = Time.frameCount;
         }
 
