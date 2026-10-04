@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using System.IO;
 
 namespace TiltBrush
@@ -66,6 +67,9 @@ namespace TiltBrush
 
         /// Get a stream for a specific part of the file.  Subfilenames are defined in TiltFile.
         Stream GetReadStream(string subfileName);
+
+        /// Get a list of all the subfiles at a path in the file. Empty string is root.
+        IEnumerable<string> GetContentsAt(string path);
     }
 
-} // namespace TiltBrush
+}  // namespace TiltBrush

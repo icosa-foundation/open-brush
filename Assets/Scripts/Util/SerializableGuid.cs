@@ -67,6 +67,21 @@ namespace TiltBrush
         [SerializeField]
         private string m_storage;
 
+        public SerializableGuid(string guid)
+        {
+            m_storage = guid;
+        }
+
+        public SerializableGuid(System.Guid guid)
+        {
+            m_storage = guid.ToString();
+        }
+
+        public override int GetHashCode()
+        {
+            return m_storage.GetHashCode();
+        }
+
         public static implicit operator SerializableGuid(System.Guid rhs)
         {
             return new SerializableGuid { m_storage = rhs.ToString("D") };
@@ -98,6 +113,25 @@ namespace TiltBrush
         {
             return ((System.Guid)this).ToString(format);
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj == null)
+            {
+                return false;
+            }
+            return m_storage.Equals(obj.ToString());
+        }
+
+        public static bool operator ==(SerializableGuid lhs, SerializableGuid rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+
+        public static bool operator !=(SerializableGuid lhs, SerializableGuid rhs)
+        {
+            return !lhs.Equals(rhs);
+        }
     }
 
-} // namespace TiltBrush
+}  // namespace TiltBrush
