@@ -1,5 +1,19 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-5352823065678073211
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e5c559f0d2ea804bb8171fd6b11d590, type: 3}
+  m_Name: Open Brush capture depth
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpCaptureDepthRendererFeature
+  m_Active: 1
+  m_DepthShader: {fileID: 4800000, guid: 5f2e1d3cb8944e9b8f657386a6b6e5ce, type: 3}
 --- !u!114 &-5112751337474582183
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -42,7 +56,9 @@ MonoBehaviour:
   - {fileID: -5112751337474582183}
   - {fileID: 3323140472985962428}
   - {fileID: 6111700951782917469}
-  m_RendererFeatureMap: 5999ec40bfdb0bb9bc470d47a72a1e2e5d05706ca21fd154l
+  - {fileID: -5352823065678073211}
+  - {fileID: 5937264514657144174}
+  m_RendererFeatureMap: 5999ec40bfdb0bb9bc470d47a72a1e2e5d05706ca21fd15485b2bd40c8f3b6b56ecdab7d9e666552l
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   m_AssetVersion: 3
@@ -91,6 +107,20 @@ MonoBehaviour:
   m_MobileCompositeMode: 0
   m_UseAdaptiveMobileCompositeMode: 1
   m_AdaptiveMobileLowFps: 72
+--- !u!114 &5937264514657144174
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e678ce3b53bf941418b16b9b6a388baf, type: 3}
+  m_Name: Open Brush HDR targets
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpHdrRendererFeature
+  m_Active: 1
+
 --- !u!114 &6111700951782917469
 MonoBehaviour:
   m_ObjectHideFlags: 1
