@@ -3486,7 +3486,6 @@ MonoBehaviour:
   m_AllowWidgetPinning: 1
   m_DebugWebRequest: 0
   m_ToggleProfileOnAppButton: 0
-  m_BlitToComputeShader: {fileID: 4800000, guid: 9bebe0dce4e97b54ab3958f7fc3198be, type: 3}
   m_ForceDeterministicBirthTimeForExport: 0
   m_EnableReferenceModelExport: 1
   m_EnableGlbVersion2: 1
@@ -17959,6 +17958,10 @@ PrefabInstance:
       propertyPath: m_MobileSelectionSolidObject
       value: 
       objectReference: {fileID: 2100000, guid: 0dfc862a0e6de274ba2e73ff1c3abd51, type: 2}
+    - target: {fileID: 7654252711925058874, guid: dedd7823645ca60468aca5f2ff1b9a7f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects:
@@ -26504,7 +26507,7 @@ MonoBehaviour:
   m_WandRadius: 0.85
   m_AdminPanelWandRadius: 0.6
   m_TransitionSpeed: 8
-  m_SketchbookOffset: {x: 0, y: -0.3, z: 0.4}
+  m_SketchbookOffset: {x: 0, y: -0.3, z: 0.6}
   m_SketchbookRotation: {x: 90, y: 0, z: 0}
   m_WandPanelsInitialSketchLoadOriginAngle: 0
   m_WandPanelsDefaultOriginAngle: 120

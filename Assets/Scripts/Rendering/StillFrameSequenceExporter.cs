@@ -29,6 +29,9 @@ namespace TiltBrush
         private ScreenshotManager m_ScreenshotManager;
         private float m_LastCaptureTime;
         private float m_FrameInterval;
+        private bool m_CaptureEveryFrame;
+        private int m_Width;
+        private int m_Height;
 
         public string FilePath => m_FilePath;
         public int FrameCount => m_FrameCount;
@@ -53,7 +56,9 @@ namespace TiltBrush
             }
         }
 
-        public bool StartCapture(string filePath, float fps)
+        // captureEveryFrame: capture on every call rather than pacing by time, for offline renders
+        // where each update already advances time by exactly one frame.
+        public bool StartCapture(string filePath, float fps, bool captureEveryFrame = false)
         {
             if (m_IsCapturing)
             {
@@ -68,6 +73,11 @@ namespace TiltBrush
             m_FrameCount = 0;
             m_FrameInterval = 1.0f / fps;
             m_LastCaptureTime = 0f;
+            m_CaptureEveryFrame = captureEveryFrame;
+            // The capture camera's configured resolution (Video.Resolution, or Video.OfflineResolution
+            // for offline renders).
+            m_Width = m_ScreenshotManager.m_DisplayWidth;
+            m_Height = m_ScreenshotManager.m_DisplayHeight;
 
             // Ensure directory exists
             if (!FileUtils.InitializeDirectoryWithUserError(
@@ -93,7 +103,7 @@ namespace TiltBrush
                 return false;
             }
 
-            return currentTime >= m_LastCaptureTime + m_FrameInterval;
+            return m_CaptureEveryFrame || currentTime >= m_LastCaptureTime + m_FrameInterval;
         }
 
         public void CaptureFrame(float currentTime)
@@ -114,9 +124,7 @@ namespace TiltBrush
             string frameFilePath = Path.Combine(m_DirectoryPath, frameFileName);
 
             // Create a render texture for the screenshot
-            RenderTexture renderTexture = m_ScreenshotManager.CreateTemporaryTargetForSave(
-                App.UserConfig.Video.Resolution,
-                (App.UserConfig.Video.Resolution * 9) / 16); // 16:9 aspect ratio
+            RenderTexture renderTexture = m_ScreenshotManager.CreateTemporaryTargetForSave(m_Width, m_Height);
 
             try
             {
@@ -178,12 +186,12 @@ namespace TiltBrush
                     writer.WriteLine($"Base Name: {m_BaseFileName}");
                     writer.WriteLine($"Frame Rate: {m_FPS} fps");
                     writer.WriteLine($"Format: {FilenameExtension}");
-                    writer.WriteLine($"Resolution: {App.UserConfig.Video.Resolution}x{(App.UserConfig.Video.Resolution * 9) / 16}");
+                    writer.WriteLine($"Resolution: {m_Width}x{m_Height}");
                     writer.WriteLine($"Start Time: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}");
                     writer.WriteLine("Status: Recording");
                     writer.WriteLine("");
                     writer.WriteLine("To convert to video, use a tool like ffmpeg:");
-                    writer.WriteLine($"ffmpeg -r {m_FPS} -i \"{m_BaseFileName}_frame_%06d.{FilenameExtension}\" -c:v libx264 -pix_fmt yuv420p \"../{m_BaseFileName}.mp4\"");
+                    writer.WriteLine($"ffmpeg -framerate {m_FPS} -i \"{m_BaseFileName}_frame_%06d.{FilenameExtension}\" -c:v {FfmpegPipe.GetVideoEncoder(offline: true, m_Width, m_Height)} -pix_fmt yuv420p \"../{m_BaseFileName}.mp4\"");
                     writer.WriteLine("");
                     writer.WriteLine("(Run this command from inside the frames folder, or adjust paths accordingly)");
                 }

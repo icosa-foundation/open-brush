@@ -133,7 +133,8 @@ static class BuildTiltBrush
         {
             omitForAndroid = true
         },
-        new CopyRequest(FfmpegPipe.kFfmpegDir) { omitForAndroid = true },
+        // ffmpeg binaries are added per platform by FfmpegCopyRequests().
+        new CopyRequest($"{FfmpegPipe.kFfmpegDir}/licenses") { omitForAndroid = true },
         new CopyRequest("Support/tiltasaurus.json"),
         new CopyRequest("Support/README.txt") { omitForAndroid = true },
         new CopyRequest("Support/exportManifest.json"),
@@ -143,6 +144,22 @@ static class BuildTiltBrush
         // No longer needed, now that these are hosted
         // new CopyRequest("Support/GlTFShaders"),
     };
+
+    // Only ship the ffmpeg binaries the target platform can run (see FfmpegPipe.GetFfmpegExe).
+    static IEnumerable<CopyRequest> FfmpegCopyRequests(BuildTarget target)
+    {
+        string bin = $"{FfmpegPipe.kFfmpegDir}/bin";
+        switch (target)
+        {
+            case BuildTarget.StandaloneWindows64:
+                yield return new CopyRequest($"{bin}/ffmpeg.exe") { omitForAndroid = true };
+                break;
+            case BuildTarget.StandaloneOSX:
+                yield return new CopyRequest($"{bin}/ffmpeg-arm64") { omitForAndroid = true };
+                yield return new CopyRequest($"{bin}/ffmpeg-x86_64") { omitForAndroid = true };
+                break;
+        }
+    }
 
     // Used to transfer information from DoBuild() to the post-build callback
     class PostBuildInfo
@@ -1729,6 +1746,7 @@ static class BuildTiltBrush
             options == BuildOptions.None ? "None" : options.ToString());
 
         var copyRequests = new List<CopyRequest>(kToCopy);
+        copyRequests.AddRange(FfmpegCopyRequests(target));
 
         // It's important here for Main.unity (currently scenes[1]) to be the last scene
         // "temp modified".  TempModifyScene opens the scene and if Main.unity is not the open
