@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -23,6 +24,8 @@ namespace TiltBrush
         [SerializeField] private float m_SnapDisabledDelay = 0.1f;
         [SerializeField] private Texture2D[] m_ShapeTextures;
         [SerializeField] private float m_MeterYOffset = 0.75f;
+        [SerializeField] private float m_EndpointSnapDistance = 0.05f;
+        [SerializeField] private int m_EndpointHistoryLength = 16;
 
         public enum Shape
         {
@@ -39,11 +42,25 @@ namespace TiltBrush
         private Vector3 m_TargetPos_CS;
         private float m_SnapEnabledTimeStamp;
         private bool m_SnapActive;
+        private bool m_EndpointSnapActive;
+        private bool m_EndpointSnappingEnabled = false;
         private Shape m_CurrentShape;
         private Shape m_TempShape;
+        // Straight-edge line strokes created during this sketch session, oldest first. Keeping the
+        // stroke rather than copied endpoints lets snapping follow visibility, canvas, and transforms.
+        private readonly List<Stroke> m_LineHistory = new List<Stroke>();
+        private readonly HashSet<Stroke> m_LineHistorySet = new HashSet<Stroke>();
 
         public Shape CurrentShape { get { return m_CurrentShape; } }
         public Shape TempShape { get { return m_TempShape; } }
+        public bool EndpointSnappingEnabled
+        {
+            get { return m_EndpointSnappingEnabled; }
+            set { m_EndpointSnappingEnabled = value; }
+        }
+
+        // Returns origin pos in Canvas space
+        public Vector3 GetOriginPos() { return m_vOrigin_CS; }
 
         // Returns target pos in Canvas space
         public Vector3 GetTargetPos() { return m_TargetPos_CS; }
@@ -77,6 +94,16 @@ namespace TiltBrush
         {
             m_MeterDisplay = GetComponentInChildren<TMPro.TextMeshPro>();
             HideGuide();
+            ClearEndpointHistory();
+        }
+
+        public void RegisterLineStroke(Stroke stroke)
+        {
+            if (stroke != null && stroke.m_ControlPoints != null &&
+                stroke.m_ControlPoints.Length >= 2 && m_LineHistorySet.Add(stroke))
+            {
+                m_LineHistory.Add(stroke);
+            }
         }
 
         public void ShowGuide(Vector3 vOrigin)
@@ -85,7 +112,13 @@ namespace TiltBrush
             m_SnapActive = false;
 
             // Place widgets at the origin
-            m_vOrigin_CS = Coords.CanvasPose.inverse * vOrigin;
+            Vector3 origin = vOrigin;
+            if (m_CurrentShape == Shape.Line &&
+                TryGetEndpointSnap(vOrigin, out Vector3 snappedOrigin))
+            {
+                origin = snappedOrigin;
+            }
+            m_vOrigin_CS = Coords.CanvasPose.inverse * origin;
         }
 
         public void HideGuide()
@@ -207,7 +240,7 @@ namespace TiltBrush
         }
 
         // Pass pointer position in room space
-        public void UpdateTarget(Vector3 vPointer)
+        public bool UpdateTarget(Vector3 vPointer, bool endpointSnapped = false)
         {
             // Everything is done in room coordinates, so the _RS suffixes are omitted
             TrTransform xfWorldFromCanvas = Coords.CanvasPose;
@@ -217,9 +250,20 @@ namespace TiltBrush
             // Optionally snap target pos.
             // TODO: Make this work with non-line shapes.
             m_SnapActive = SnapEnabled;
-            if (m_SnapActive && m_CurrentShape == Shape.Line)
+            if (!endpointSnapped && m_SnapActive && m_CurrentShape == Shape.Line)
             {
                 vTarget = vOrigin + ApplySnap(vTarget - vOrigin);
+            }
+
+            if (!endpointSnapped && m_CurrentShape == Shape.Line &&
+                TryGetEndpointSnap(vTarget, out Vector3 snappedTarget))
+            {
+                // Avoid snapping to the origin which can create degenerate strokes.
+                if ((snappedTarget - vOrigin).sqrMagnitude > 1e-6f)
+                {
+                    vTarget = snappedTarget;
+                    endpointSnapped = true;
+                }
             }
 
             if (m_ShowMeter)
@@ -228,6 +272,93 @@ namespace TiltBrush
             }
 
             m_TargetPos_CS = xfWorldFromCanvas.inverse * vTarget;
+            return endpointSnapped;
+        }
+
+        public void UpdateEndpointSnapHaptics(bool endpointSnapActive)
+        {
+            if (endpointSnapActive && !m_EndpointSnapActive)
+            {
+                InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.05f);
+            }
+
+            m_EndpointSnapActive = endpointSnapActive;
+        }
+
+
+        public bool TryGetEndpointSnap(Vector3 position_WS, out Vector3 snapped_WS)
+        {
+            if (!m_EndpointSnappingEnabled)
+            {
+                snapped_WS = position_WS;
+                return false;
+            }
+
+            // Snap distance must be in world space to be consistent regardless of canvas scale/rotation
+            float maxDistanceSqr = m_EndpointSnapDistance * m_EndpointSnapDistance;
+            float closestDistanceSqr = maxDistanceSqr;
+            bool found = false;
+            Vector3 closest_WS = Vector3.zero;
+
+            int eligibleLineCount = 0;
+            for (int i = m_LineHistory.Count - 1;
+                 i >= 0 && eligibleLineCount < m_EndpointHistoryLength;
+                 --i)
+            {
+                Stroke stroke = m_LineHistory[i];
+
+                // A stroke removed from memory can no longer be redone. Prune it lazily so the
+                // history does not retain disposed strokes indefinitely.
+                if (stroke == null || stroke.m_NodeByTime == null || stroke.m_NodeByTime.List == null)
+                {
+                    m_LineHistory.RemoveAt(i);
+                    if (stroke != null)
+                    {
+                        m_LineHistorySet.Remove(stroke);
+                    }
+                    continue;
+                }
+
+                CanvasScript canvas = stroke.Canvas;
+                if (!stroke.IsGeometryEnabled || canvas == null || canvas != App.Scene.ActiveCanvas ||
+                    !App.Scene.IsLayerVisible(canvas) || stroke.m_ControlPoints == null ||
+                    stroke.m_ControlPoints.Length < 2)
+                {
+                    continue;
+                }
+
+                ++eligibleLineCount;
+
+                // Check origin
+                Vector3 origin_WS = canvas.Pose * stroke.m_ControlPoints[0].m_Pos;
+                float distSqr = (origin_WS - position_WS).sqrMagnitude;
+                if (distSqr <= closestDistanceSqr)
+                {
+                    closestDistanceSqr = distSqr;
+                    closest_WS = origin_WS;
+                    found = true;
+                }
+
+                // Check target
+                Vector3 target_WS = canvas.Pose *
+                    stroke.m_ControlPoints[stroke.m_ControlPoints.Length - 1].m_Pos;
+                distSqr = (target_WS - position_WS).sqrMagnitude;
+                if (distSqr <= closestDistanceSqr)
+                {
+                    closestDistanceSqr = distSqr;
+                    closest_WS = target_WS;
+                    found = true;
+                }
+            }
+
+            snapped_WS = found ? closest_WS : position_WS;
+            return found;
+        }
+
+        public void ClearEndpointHistory()
+        {
+            m_LineHistory.Clear();
+            m_LineHistorySet.Clear();
         }
     }
 } // namespace TiltBrush

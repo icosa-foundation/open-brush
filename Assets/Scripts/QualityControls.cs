@@ -63,8 +63,55 @@ namespace TiltBrush
 
         private int m_NumFramesFpsTooLow;
         private int m_NumFramesFpsHighEnough;
+        private readonly Dictionary<int, int> m_RuntimeFoveationOverrides = new Dictionary<int, int>();
+        private float? m_RuntimeLowerFps;
+        private float? m_RuntimeHigherFps;
+        private int? m_RuntimeLowerFrames;
+        private int? m_RuntimeHigherFrames;
+        private bool m_SessionRenderingPrepared;
+        private bool m_AutomaticQualityEnabled = true;
+        public bool SupportsAutomaticQuality => App.Config.IsMobileHardware;
+        public bool AutomaticQualityEnabled
+        {
+            get => SupportsAutomaticQuality && m_AutomaticQualityEnabled;
+            set
+            {
+                if (value && !SupportsAutomaticQuality)
+                    throw new InvalidOperationException("Automatic quality is only available on mobile hardware.");
+                m_AutomaticQualityEnabled = value;
+                m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+            }
+        }
 
-        /// A number from 0 (mobile, lowest) to 3 (future, highest)
+        public void ConfigureQualityLevel(int level, int msaa, int foveation)
+        {
+            if (level < 0 || level >= AppQualityLevels.Length)
+                throw new ArgumentOutOfRangeException(nameof(level));
+            if (msaa != 1 && msaa != 2 && msaa != 4 && msaa != 8)
+                throw new ArgumentOutOfRangeException(nameof(msaa));
+            if (foveation < 0 || foveation > 3)
+                throw new ArgumentOutOfRangeException(nameof(foveation));
+            if (msaa != MSAALevel)
+                throw new InvalidOperationException($"Session MSAA is fixed at {MSAALevel}x; set Profiling.MsaaLevel and restart to change it.");
+            m_RuntimeFoveationOverrides[level] = foveation;
+            if (level == QualityLevel) SetQualityLevel(level);
+        }
+
+        public void ConfigureQualityThresholds(float lowerFps, float higherFps,
+            int lowerFrames, int higherFrames)
+        {
+            if (float.IsNaN(lowerFps) || float.IsInfinity(lowerFps) || lowerFps <= 0 ||
+                float.IsNaN(higherFps) || float.IsInfinity(higherFps) || higherFps <= lowerFps ||
+                lowerFrames < 1 || higherFrames < 1)
+                throw new ArgumentException("Use positive FPS thresholds with higher > lower, and frame counts >= 1.");
+            m_RuntimeLowerFps = lowerFps;
+            m_RuntimeHigherFps = higherFps;
+            m_RuntimeLowerFrames = lowerFrames;
+            m_RuntimeHigherFrames = higherFrames;
+            m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+        }
+
+        /// Index into the active platform's quality ladder, from lowest to highest.
         public int QualityLevel
         {
             get { return QualitySettings.GetQualityLevel(); }
@@ -82,22 +129,27 @@ namespace TiltBrush
             get { return (StrokeSimplifier == null) ? 0.0f : StrokeSimplifier.Level; }
             set
             {
-                float level = value;
-                if (App.UserConfig.Profiling.HasStrokeSimplification)
-                {
-                    level = App.UserConfig.Profiling.StrokeSimplification;
-                    Debug.LogFormat("Simplification overridden to be: {0}.", level);
-                }
-                StrokeSimplifier = new RdpStrokeSimplifier(level);
-                UserStrokeSimplifier = new RdpStrokeSimplifier(
-                    Mathf.Min(level, AppQualityLevels[QualityLevel].MaxSimplificationUserStrokes));
+                SetSimplificationLevel(value, AppQualityLevels[QualityLevel].MaxSimplificationUserStrokes);
             }
+        }
+
+        private void SetSimplificationLevel(float level, float maxUserStrokeLevel)
+        {
+            if (App.UserConfig.Profiling.HasStrokeSimplification)
+            {
+                level = App.UserConfig.Profiling.StrokeSimplification;
+                Debug.Log($"Simplification overridden to be: {level}.");
+            }
+            StrokeSimplifier = new RdpStrokeSimplifier(level);
+            UserStrokeSimplifier = new RdpStrokeSimplifier(Mathf.Min(level, maxUserStrokeLevel));
         }
 
         public int MSAALevel
         {
-            get { return m_msaaLevel; }
+            get { return UrpPostProcessingController.Instance?.SessionMsaaLevel ?? m_msaaLevel; }
         }
+
+        public bool SessionHdr => m_enableHdr;
 
         public int FramesInLastSecond => m_FramesInLastSecond;
 
@@ -126,26 +178,38 @@ namespace TiltBrush
             get { return AppQualityLevels[QualityLevel]; }
         }
 
+        public int InitialQualityLevel
+        {
+            get
+            {
+                int defaultLevel = App.Config.IsMobileHardware ? AppQualityLevels.Length - 1 : 2;
+                int configuredLevel = App.UserConfig.Profiling.QualityLevel;
+                return configuredLevel >= 0 && configuredLevel < AppQualityLevels.Length
+                    ? configuredLevel : defaultLevel;
+            }
+        }
+
+        public void PrepareSessionRendering()
+        {
+            if (m_SessionRenderingPrepared) return;
+            m_SessionRenderingPrepared = true;
+            m_enableHdr = AppQualityLevels.Hdr;
+            m_msaaLevel = App.UserConfig.Profiling.MsaaLevel > 0
+                ? App.UserConfig.Profiling.MsaaLevel : AppQualityLevels.MsaaLevel;
+            float eyeScale = App.UserConfig.Profiling.EyeTextureScaling > 0
+                ? App.UserConfig.Profiling.EyeTextureScaling : AppQualityLevels.EyeTextureScale;
+            UnityEngine.XR.XRSettings.eyeTextureResolutionScale = eyeScale;
+        }
+
         void Awake()
         {
             m_Instance = this;
 
             m_Cameras = new List<Camera>();
 
-            // Simple desktop vs. mobile quality for now.  May need more control if e.g.
-            // we need to set this differently for Win vs. Linux, or mobile level fragments
-            // into bloom and non-bloom variants.
-            int newLevel = App.Config.IsMobileHardware ? AppQualityLevels.Length - 1 : 2;
-
-            // Override from user config, if valid.
-            int configQuality = App.UserConfig.Profiling.QualityLevel;
-            if (configQuality >= 0 && configQuality <= AppQualityLevels.Length)
-            {
-                newLevel = configQuality;
-            }
-
             // Apply the quality level.
-            QualityLevel = newLevel;
+            PrepareSessionRendering();
+            QualityLevel = InitialQualityLevel;
             SimplificationLevel = 0.0f;
         }
 
@@ -187,10 +251,16 @@ namespace TiltBrush
                 m_FramesInLastSecond--;
             }
 
+            if (!AutomaticQualityEnabled)
+            {
+                m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+                return;
+            }
+
             // Update the frame counts. There is no cross-platform GPU load signal,
             // so the scaler runs on framerate alone; see LlmDocs/openxr-perf-migration.md.
             int fps = m_FramesInLastSecond;
-            if (fps <= AppQualityLevels.LowerQualityFpsTrigger)
+            if (fps <= (m_RuntimeLowerFps ?? AppQualityLevels.LowerQualityFpsTrigger))
             {
                 m_NumFramesFpsTooLow++;
             }
@@ -199,7 +269,7 @@ namespace TiltBrush
                 m_NumFramesFpsTooLow = 0;
             }
 
-            if (fps >= AppQualityLevels.HigherQualityFpsTrigger)
+            if (fps >= (m_RuntimeHigherFps ?? AppQualityLevels.HigherQualityFpsTrigger))
             {
                 m_NumFramesFpsHighEnough++;
             }
@@ -216,7 +286,7 @@ namespace TiltBrush
             }
 
             // Update quality level if needed
-            int limit = AppQualityLevels.FramesForLowerQuality;
+            int limit = m_RuntimeLowerFrames ?? AppQualityLevels.FramesForLowerQuality;
             if (m_NumFramesFpsTooLow >= limit)
             {
                 if (QualityLevel > 0)
@@ -226,7 +296,7 @@ namespace TiltBrush
                 m_NumFramesFpsTooLow = 0;
             }
 
-            limit = AppQualityLevels.FramesForHigherQuality;
+            limit = m_RuntimeHigherFrames ?? AppQualityLevels.FramesForHigherQuality;
             if (m_NumFramesFpsHighEnough >= limit)
             {
                 if (QualityLevel < AppQualityLevels.Length - 1)
@@ -256,6 +326,8 @@ namespace TiltBrush
         void SetQualityLevel(int value)
         {
             AppQualitySettingLevels settingLevels = AppQualityLevels;
+            if (settingLevels != null && (value < 0 || value >= settingLevels.Length))
+                throw new ArgumentOutOfRangeException(nameof(value));
             var settings = new AppQualitySettingLevels.AppQualitySettings();
             if (settingLevels == null)
             {
@@ -267,12 +339,11 @@ namespace TiltBrush
             }
 
             SetBloomMode(settings.Bloom);
-            EnableHDR(settings.Hdr);
+            EnableHDR(SessionHdr);
             EnableFxaa(settings.Fxaa);
             Shader.globalMaximumLOD = settings.MaxLod;
-            m_msaaLevel = settings.MsaaLevel;
             QualitySettings.anisotropicFiltering = settings.Anisotropic;
-            SimplificationLevel = settings.StrokeSimplification;
+            SetSimplificationLevel(settings.StrokeSimplification, settings.MaxSimplificationUserStrokes);
             m_targetMaxControlPoints = settings.TargetMaxControlPoints;
             m_maxLoadingSimplification = settings.MaxSimplification;
 
@@ -280,37 +351,31 @@ namespace TiltBrush
                 App.UserConfig.Profiling.ViewportScaling :
                 settings.ViewportScale;
 
-            float eyeScale = App.UserConfig.Profiling.EyeTextureScaling > 0 ?
-                App.UserConfig.Profiling.EyeTextureScaling :
-                settings.EyeTextureScale;
-
             if (App.UserConfig.Profiling.GlobalMaximumLOD > 0)
             {
                 Shader.globalMaximumLOD = App.UserConfig.Profiling.GlobalMaximumLOD;
             }
 
-            if (App.UserConfig.Profiling.MsaaLevel > 0)
-            {
-                m_msaaLevel = App.UserConfig.Profiling.MsaaLevel;
-            }
+            int foveation = settings.FixedFoveationLevel;
+            if (m_RuntimeFoveationOverrides.TryGetValue(value, out var runtimeFoveation))
+                foveation = runtimeFoveation;
 
             UnityEngine.XR.XRSettings.renderViewportScale = viewportScale;
-            UnityEngine.XR.XRSettings.eyeTextureResolutionScale = eyeScale;
 
             if (value != m_lastQualityLevel && Debug.isDebugBuild && App.UserConfig.Profiling.AutoProfile)
             {
-                Debug.Log("Profile: Quality Level: " + value
-                    + " renderViewportScale: " + viewportScale
-                    + " eyeTexture scale: " + eyeScale
-                    + " MSAA: " + m_msaaLevel
-                    + " GlobalMaximumLOD: " + Shader.globalMaximumLOD);
+                Debug.Log($"Profile: Quality Level: {value} renderViewportScale: {viewportScale} " +
+                    $"MSAA: {MSAALevel} GlobalMaximumLOD: {Shader.globalMaximumLOD}");
                 m_lastQualityLevel = value;
             }
 
-            App.VrSdk.SetGpuClockLevel(AppQualitySettings.GpuLevel);
-            App.VrSdk.SetFixedFoveation(AppQualitySettings.FixedFoveationLevel);
+            App.VrSdk.SetGpuClockLevel(settings.GpuLevel);
+            App.VrSdk.SetFixedFoveation(foveation);
 
-            QualitySettings.SetQualityLevel(value, applyExpensiveChanges: !App.Config.IsMobileHardware);
+            // Render-buffer settings belong to the session, not Unity's quality presets.
+            QualitySettings.SetQualityLevel(value, applyExpensiveChanges: false);
+            if (UrpPostProcessingController.Instance?.SessionMsaaLevel != null)
+                QualitySettings.antiAliasing = MSAALevel;
 
             if (OnQualityLevelChange != null)
             {
