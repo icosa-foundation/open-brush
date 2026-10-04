@@ -33,7 +33,7 @@ namespace TiltBrush
         public event Action CatalogChanged;
         private int m_TexturesCreatedThisFrame;
 
-        protected FileWatcher m_FileWatcher;
+        protected List<FileWatcher> m_FileWatchers = new List<FileWatcher>();
         protected string m_CurrentImagesDirectory;
         public string CurrentImagesDirectory => m_CurrentImagesDirectory;
 
@@ -82,21 +82,26 @@ namespace TiltBrush
 
         public virtual void ChangeDirectory(string newPath)
         {
-            StopWatchingCurrentDirectory();
             m_CurrentImagesDirectory = newPath;
-
-            if (Directory.Exists(m_CurrentImagesDirectory))
-            {
-                m_FileWatcher = new FileWatcher(m_CurrentImagesDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnChanged;
-                m_FileWatcher.FileCreated += OnChanged;
-                m_FileWatcher.FileDeleted += OnChanged;
-                m_FileWatcher.EnableRaisingEvents = true;
-            }
-
+            SetUpFileWatchers(m_CurrentImagesDirectory);
             m_Images = new List<ReferenceImage>();
             ProcessReferenceDirectory(userOverlay: false);
+        }
+
+        /// Watches every directory a scan of currentDirectory covers.
+        protected void SetUpFileWatchers(string currentDirectory)
+        {
+            StopWatchingCurrentDirectory();
+            foreach (var directory in ScanDirectories(currentDirectory))
+            {
+                var fileWatcher = new FileWatcher(directory);
+                fileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                fileWatcher.FileChanged += OnChanged;
+                fileWatcher.FileCreated += OnChanged;
+                fileWatcher.FileDeleted += OnChanged;
+                fileWatcher.EnableRaisingEvents = true;
+                m_FileWatchers.Add(fileWatcher);
+            }
         }
 
         protected virtual void OnDestroy()
@@ -104,21 +109,33 @@ namespace TiltBrush
             StopWatchingCurrentDirectory();
         }
 
-        /// Releases the watcher for the previous folder. Navigating away must not leave a
-        /// live watcher behind: its callbacks would keep firing, and would drive scans of
-        /// the folder now on screen.
-        /// Protected because BackgroundImageCatalog overrides ChangeDirectory without
-        /// calling base, and needs the same cleanup: replacing m_FileWatcher without
-        /// disposing the old one leaks a native watcher on every navigation.
+        /// Releases all watchers when navigating away or destroying the catalog.
+        /// BackgroundImageCatalog also calls this because it overrides ChangeDirectory.
         protected void StopWatchingCurrentDirectory()
         {
-            if (m_FileWatcher == null) { return; }
-            m_FileWatcher.EnableRaisingEvents = false;
-            m_FileWatcher.FileChanged -= OnChanged;
-            m_FileWatcher.FileCreated -= OnChanged;
-            m_FileWatcher.FileDeleted -= OnChanged;
-            m_FileWatcher.Dispose();
-            m_FileWatcher = null;
+            foreach (var fileWatcher in m_FileWatchers)
+            {
+                fileWatcher.EnableRaisingEvents = false;
+                fileWatcher.FileChanged -= OnChanged;
+                fileWatcher.FileCreated -= OnChanged;
+                fileWatcher.FileDeleted -= OnChanged;
+                fileWatcher.Dispose();
+            }
+            m_FileWatchers.Clear();
+        }
+
+        /// The roots this catalog draws from at the top level, in priority order.
+        public virtual List<string> AllRoots() => App.GetAllImageRoots();
+
+        /// The directories a scan covers: at the top level that is every configured root,
+        /// otherwise just the directory the user has browsed into. Roots that do not exist on this
+        /// machine are skipped, so a config shared between machines does not have to match them all.
+        protected List<string> ScanDirectories(string currentDirectory)
+        {
+            var directories = currentDirectory == HomeDirectory
+                ? AllRoots()
+                : new List<string> { currentDirectory };
+            return directories.Where(Directory.Exists).ToList();
         }
 
         public virtual string HomeDirectory => App.ReferenceImagePath();
@@ -427,25 +444,28 @@ namespace TiltBrush
             m_RequestedLoads.Clear();
 
             //look for .jpg or .png files
-            try
+            foreach (var directory in ScanDirectories(imageDir))
             {
-                // GetFiles returns full paths, surprisingly enough.
-                foreach (var filePath in Directory.GetFiles(imageDir))
+                try
                 {
-                    string ext = Path.GetExtension(filePath).ToLower();
-                    if (!ValidExtension(ext)) { continue; }
-                    try
+                    // GetFiles returns full paths, surprisingly enough.
+                    foreach (var filePath in Directory.GetFiles(directory))
                     {
-                        m_Images.Add(oldImagesByPath[filePath]);
-                        oldImagesByPath.Remove(filePath);
-                    }
-                    catch (KeyNotFoundException)
-                    {
-                        m_Images.Add(new ReferenceImage(filePath));
+                        string ext = Path.GetExtension(filePath).ToLower();
+                        if (!ValidExtension(ext)) { continue; }
+                        try
+                        {
+                            m_Images.Add(oldImagesByPath[filePath]);
+                            oldImagesByPath.Remove(filePath);
+                        }
+                        catch (KeyNotFoundException)
+                        {
+                            m_Images.Add(new ReferenceImage(filePath));
+                        }
                     }
                 }
+                catch (DirectoryNotFoundException) { }
             }
-            catch (DirectoryNotFoundException) { }
 
             if (oldImagesByPath.Count > 0)
             {
@@ -488,27 +508,60 @@ namespace TiltBrush
             return ReferenceImageFormat.IsSupportedExtension(ext);
         }
 
+        /// Resolves a sketch's stored image path against the configured roots, in priority order.
+        /// A path that escapes a root is not searched under that root, so a sketch cannot reach
+        /// files outside the directories the user has opted in to. Returns null if the path
+        /// escapes every root.
         public ReferenceImage RelativePathToImage(string relativePath)
         {
-            // Protect against path traversal below HomeDirectory
-            string fullPath = Path.GetFullPath(Path.Combine(HomeDirectory, relativePath));
-            if (!fullPath.StartsWith(HomeDirectory, StringComparison.OrdinalIgnoreCase)) return null;
-
-            // TODO change to a dictionary to avoid O(n) lookup
-            var refImage = m_Images.FirstOrDefault(x => x.FileFullPath == fullPath);
-            if (refImage == null)
+            string fallbackPath = null;
+            foreach (var root in AllRoots())
             {
-                // Kept out of m_Images: that list is the panel's listing of the folder on
-                // screen, and a saved sketch can reference an image in a folder the panel has
-                // never opened, so restoring one must not change what is displayed. It is
-                // cached here instead so it has an owner and is not decoded twice.
-                if (!m_UnlistedImages.TryGetValue(fullPath, out refImage))
+                string rootPath = Path.GetFullPath(root);
+                string fullPath;
+                try
                 {
-                    refImage = new ReferenceImage(fullPath);
-                    m_UnlistedImages[fullPath] = refImage;
+                    fullPath = Path.GetFullPath(Path.Combine(rootPath, relativePath));
                 }
+                catch (Exception)
+                {
+                    continue;
+                }
+
+                // Protect against path traversal below the root
+                string rootPathWithSeparator = rootPath.TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
+                    Path.DirectorySeparatorChar;
+                if (!fullPath.StartsWith(rootPathWithSeparator, App.MediaPathComparison)) { continue; }
+
+                // TODO change to a dictionary to avoid O(n) lookup
+                var refImage = m_Images.FirstOrDefault(x => x.FileFullPath == fullPath);
+                if (refImage != null) { return refImage; }
+
+                if (File.Exists(fullPath))
+                {
+                    return GetUnlistedImage(fullPath);
+                }
+                fallbackPath ??= fullPath;
             }
-            return refImage;
+
+            if (fallbackPath == null) { return null; }
+
+            // Nothing on disk anywhere. Keep the old behaviour of handing back an image under the
+            // default root, so the widget reports a missing file rather than vanishing.
+            return GetUnlistedImage(fallbackPath);
+        }
+
+        // Saved sketches can reference folders the panel has never opened. Cache these
+        // images separately so restoring a sketch does not change the panel's listing.
+        private ReferenceImage GetUnlistedImage(string fullPath)
+        {
+            if (!m_UnlistedImages.TryGetValue(fullPath, out var image))
+            {
+                image = new ReferenceImage(fullPath);
+                m_UnlistedImages[fullPath] = image;
+            }
+            return image;
         }
 
         // Pass a file name with no path components. Matching is purely based on name.

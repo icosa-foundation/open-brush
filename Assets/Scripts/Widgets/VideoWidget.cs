@@ -178,7 +178,7 @@ namespace TiltBrush
             {
                 video = ReferenceVideo.CreateDummyVideo();
                 ControllerConsoleScript.m_Instance.AddNewLine(
-                    $"Could not find video {App.VideoLibraryPath()}\\{tiltVideo.FilePath}.");
+                    $"Could not find video {tiltVideo.FilePath} in any video folder.");
             }
             videoWidget.SetVideo(video);
             videoWidget.m_InitialState = new VideoState

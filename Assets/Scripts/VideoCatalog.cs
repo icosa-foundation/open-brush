@@ -26,7 +26,7 @@ namespace TiltBrush
         [SerializeField] private bool m_DebugOutput;
         [SerializeField] private string[] m_supportedVideoExtensions;
 
-        private FileWatcher m_FileWatcher;
+        private List<FileWatcher> m_FileWatchers = new List<FileWatcher>();
         private string m_CurrentVideoDirectory;
         public string CurrentVideoDirectory => m_CurrentVideoDirectory;
         private List<ReferenceVideo> m_Videos;
@@ -52,22 +52,47 @@ namespace TiltBrush
 
         public void ChangeDirectory(string newPath)
         {
-            DisposeFileWatcher();
+            DisposeFileWatchers();
             m_CurrentVideoDirectory = newPath;
             m_Videos = new List<ReferenceVideo>();
             m_ChangedFiles = new HashSet<string>();
 
             StartCoroutine(ScanReferenceDirectory());
 
-            if (Directory.Exists(m_CurrentVideoDirectory))
+            foreach (var directory in ScanDirectories())
             {
-                m_FileWatcher = new FileWatcher(m_CurrentVideoDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
-                m_FileWatcher.FileChanged += OnDirectoryChanged;
-                m_FileWatcher.FileCreated += OnDirectoryChanged;
-                m_FileWatcher.FileDeleted += OnDirectoryChanged;
-                m_FileWatcher.EnableRaisingEvents = true;
+                var fileWatcher = new FileWatcher(directory);
+                fileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                fileWatcher.FileChanged += OnDirectoryChanged;
+                fileWatcher.FileCreated += OnDirectoryChanged;
+                fileWatcher.FileDeleted += OnDirectoryChanged;
+                fileWatcher.EnableRaisingEvents = true;
+                m_FileWatchers.Add(fileWatcher);
             }
+        }
+
+        /// The directories a scan covers: at the top level that is every configured video root,
+        /// otherwise just the directory the user has browsed into. Roots that do not exist on this
+        /// machine are skipped, so a config shared between machines does not have to match them all.
+        private List<string> ScanDirectories()
+        {
+            var directories = IsHomeDirectory()
+                ? App.GetAllVideoRoots()
+                : new List<string> { m_CurrentVideoDirectory };
+            return directories.Where(Directory.Exists).ToList();
+        }
+
+        private void DisposeFileWatchers()
+        {
+            foreach (var fileWatcher in m_FileWatchers)
+            {
+                fileWatcher.EnableRaisingEvents = false;
+                fileWatcher.FileChanged -= OnDirectoryChanged;
+                fileWatcher.FileCreated -= OnDirectoryChanged;
+                fileWatcher.FileDeleted -= OnDirectoryChanged;
+                fileWatcher.Dispose();
+            }
+            m_FileWatchers.Clear();
         }
 
         public string HomeDirectory => App.VideoLibraryPath();
@@ -95,21 +120,7 @@ namespace TiltBrush
             {
                 video.Dispose();
             }
-            DisposeFileWatcher();
-        }
-
-        /// Releases the watcher for the previous folder. Navigating away must not leave a
-        /// live watcher behind: its callbacks would keep firing, and would drive scans of
-        /// the folder now on screen.
-        private void DisposeFileWatcher()
-        {
-            if (m_FileWatcher == null) return;
-            m_FileWatcher.EnableRaisingEvents = false;
-            m_FileWatcher.FileChanged -= OnDirectoryChanged;
-            m_FileWatcher.FileCreated -= OnDirectoryChanged;
-            m_FileWatcher.FileDeleted -= OnDirectoryChanged;
-            m_FileWatcher.Dispose();
-            m_FileWatcher = null;
+            DisposeFileWatchers();
         }
 
         public ReferenceVideo GetVideoAtIndex(int index)
@@ -177,31 +188,31 @@ namespace TiltBrush
                 }
 
                 var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath));
-                HashSet<string> detected;
-                try
+                var detected = new HashSet<string>();
+                foreach (var directory in ScanDirectories())
                 {
-                    detected = new HashSet<string>(
-                        Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
-                }
-                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
-                                          e is ArgumentException || e is NotSupportedException)
-                {
-                    // An unreadable or missing folder gives an empty catalog rather than
-                    // ending the scan, so the panel stays usable and recovers by itself.
-                    Debug.LogWarning(
-                        $"CATALOG_SCAN Could not scan video folder {m_CurrentVideoDirectory}: {e.Message}");
-                    detected = new HashSet<string>();
+                    try
+                    {
+                        detected.UnionWith(
+                            Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories).Where(
+                                x => m_supportedVideoExtensions.Contains(
+                                    Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
+                    }
+                    catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                                              e is ArgumentException || e is NotSupportedException)
+                    {
+                        // An unavailable root must not prevent the other roots being scanned.
+                        Debug.LogWarning(
+                            $"CATALOG_SCAN Could not scan video folder {directory}: {e.Message}");
+                    }
                 }
                 StringComparer pathComparer = Path.DirectorySeparatorChar == '\\'
                     ? StringComparer.OrdinalIgnoreCase
                     : StringComparer.Ordinal;
-                // The watcher covers subdirectories and reports files of any type, so a changed
-                // path is only a member of this folder's catalog if it is a direct child of the
-                // folder being shown and is a supported video that still exists.
+                // Only changed files found by this scan can be re-created. This also filters
+                // unsupported files and events from directories the panel has left behind.
                 var changedDetected = CatalogChangeSet.GetChangedDetectedPaths(
-                    changedSet.Where(x => IsDirectChildSupportedPath(
-                        m_CurrentVideoDirectory, x, m_supportedVideoExtensions)),
-                    detected, pathComparer);
+                    changedSet, detected, pathComparer);
                 var toDelete = existing.Except(detected, pathComparer)
                     .Concat(changedDetected).Distinct(pathComparer).ToArray();
                 var toScan = detected.Except(existing, pathComparer)
@@ -209,7 +220,7 @@ namespace TiltBrush
 
                 // Remove deleted videos from the list. Currently playing videos may continue to play, but will
                 // not appear in the reference panel.
-                m_Videos.RemoveAll(x => toDelete.Contains(x.AbsolutePath));
+                m_Videos.RemoveAll(x => toDelete.Contains(x.AbsolutePath, pathComparer));
 
                 var newVideos = new List<ReferenceVideo>();
                 foreach (var filePath in toScan)
@@ -277,9 +288,8 @@ namespace TiltBrush
 
         /// Gets a video from the catalog, given its saved library-relative path.
         ///
-        /// Falls back to resolving the path against the library root. The catalog only
-        /// lists the folder the panel is showing, but a sketch records where its videos
-        /// are relative to the library, so restoring one must not depend on panel state.
+        /// Falls back to the configured roots in priority order. Restoring a sketch must
+        /// not depend on the folder currently shown in the panel.
         public ReferenceVideo GetVideoByPersistentPath(string path)
         {
             // The listed entry is only preferred while its file is still there. The catalog
@@ -290,8 +300,12 @@ namespace TiltBrush
             {
                 return listed;
             }
-            return ResolveVideoByPersistentPath(
-                HomeDirectory, path, m_supportedVideoExtensions);
+            foreach (var root in App.GetAllVideoRoots())
+            {
+                var video = ResolveVideoByPersistentPath(root, path, m_supportedVideoExtensions);
+                if (video != null) { return video; }
+            }
+            return null;
         }
 
         /// Resolves a saved library path independently of the folder shown in the panel.
