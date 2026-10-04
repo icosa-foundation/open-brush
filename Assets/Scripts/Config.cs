@@ -207,9 +207,6 @@ namespace TiltBrush
         public bool m_DebugWebRequest;
         public bool m_ToggleProfileOnAppButton = false;
 
-        [Header("Global Shaders")]
-        public Shader m_BlitToComputeShader;
-
         [Header("Upload and Export")]
         // Some brushes put a birth time in the vertex attributes; because we export
         // this data (we really shouldn't) it's helpful to disable it when one needs
@@ -409,7 +406,7 @@ namespace TiltBrush
                     {
                         throw new ApplicationException("Invalid prefix argument, name expected");
                     }
-                    m_OdsOutputPrefix = args[i];
+                    m_OdsOutputPrefix = args[++i];
                     Debug.LogFormat("ODS Output Prefix: {0}", args[i]);
 
                 }
@@ -771,7 +768,7 @@ namespace TiltBrush
             }
             try
             {
-                change.value = Convert.ChangeType(value, memberType);
+                change.value = Convert.ChangeType(value, Nullable.GetUnderlyingType(memberType) ?? memberType);
             }
             catch (Exception)
             {
