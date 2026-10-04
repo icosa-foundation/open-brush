@@ -930,6 +930,10 @@ namespace TiltBrush
         {
             var previousScript = GetActiveScript(category);
             EndScript(previousScript);
+            if (category == LuaApiCategory.SymmetryScript && IsCategoryActive(category))
+            {
+                PointerManager.m_Instance.MainPointer.transform.SetUniformScale(1);
+            }
         }
 
         private void _SetActiveScript(LuaApiCategory category, int index)
@@ -1074,6 +1078,7 @@ namespace TiltBrush
             RegisterApiEnum(script, "SymmetryMode", typeof(SymmetryMode));
             RegisterApiEnum(script, "SymmetryPointType", typeof(SymmetryPointType));
             RegisterApiEnum(script, "SymmetryWallpaperType", typeof(SymmetryWallpaperType));
+            RegisterApiEnum(script, "SymmetryPointerPaintMode", typeof(SymmetryPointerPaintMode));
             RegisterApiEnum(script, "ColorOverrideMode", typeof(ColorOverrideMode));
 
         }
