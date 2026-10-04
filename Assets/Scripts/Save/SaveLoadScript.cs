@@ -161,7 +161,7 @@ namespace TiltBrush
             get
             {
                 return !m_AutosaveFailed &&
-                    App.PlatformConfig.EnableAutosave &&
+                    UserConfig.PerformanceOverrides.EnableAutosave &&
                     !App.UserConfig.Flags.DisableAutosave;
             }
         }
