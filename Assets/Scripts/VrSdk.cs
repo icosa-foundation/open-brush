@@ -18,6 +18,8 @@ using System.Linq;
 using OpenXR.Extensions;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.XR;
 using UnityEngine.XR.Management;
 using UnityEngine.XR.OpenXR;
@@ -147,6 +149,9 @@ namespace TiltBrush
 
         void Awake()
         {
+            UseHardwareQuillA2C = false;
+            RenderPipelineManager.beginCameraRendering += BeginQuillCameraRendering;
+            RenderPipelineManager.endCameraRendering += EndQuillCameraRendering;
             bool forceMonoscopic =
                 App.UserConfig.Flags.EnableMonoscopicMode ||
                 Keyboard.current[Key.M].isPressed;
@@ -172,6 +177,14 @@ namespace TiltBrush
 
                 if (XRGeneralSettings.Instance?.Manager?.activeLoader != null)
                 {
+                    // Configure supported eye-buffer MSAA before the first XR surfaces
+                    // are allocated, rather than resizing them during startup rendering.
+                    var quality = FindFirstObjectByType<QualityControls>();
+                    var rendering = FindFirstObjectByType<UrpPostProcessingController>();
+                    if (quality != null && rendering != null)
+                    {
+                        rendering.PrepareSession(quality);
+                    }
                     XRGeneralSettings.Instance?.Manager?.StartSubsystems();
                 }
             }
@@ -269,6 +282,9 @@ namespace TiltBrush
 
         void OnDestroy()
         {
+            RenderPipelineManager.beginCameraRendering -= BeginQuillCameraRendering;
+            RenderPipelineManager.endCameraRendering -= EndQuillCameraRendering;
+            UseHardwareQuillA2C = false;
             if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 Application.onBeforeRender -= OnNewPoses;
@@ -317,6 +333,37 @@ namespace TiltBrush
         // -------------------------------------------------------------------------------------------- //
         // Feature Methods
         // -------------------------------------------------------------------------------------------- //
+
+        // Explicit coverage is shared by desktop, XR and captures. The legacy path is
+        // retained for comparison, but does not preserve transparent-target alpha.
+        public bool UseHardwareQuillA2C
+        {
+            get => Shader.IsKeywordEnabled("QUILL_HARDWARE_A2C");
+            set
+            {
+                if (value) Shader.EnableKeyword("QUILL_HARDWARE_A2C");
+                else Shader.DisableKeyword("QUILL_HARDWARE_A2C");
+            }
+        }
+
+        private readonly Stack<float> m_QuillCameraDitherFrames = new Stack<float>();
+
+        private void BeginQuillCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            m_QuillCameraDitherFrames.Push(Shader.GetGlobalFloat("_QuillDitherFrame"));
+            // Both eyes share a bounded frame index. Offscreen captures freeze the
+            // pattern so repeated exports do not depend on the capture's timing.
+            Shader.SetGlobalFloat("_QuillDitherFrame",
+                camera.targetTexture == null ? Time.frameCount % 1024 : 0);
+        }
+
+        private void EndQuillCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            if (m_QuillCameraDitherFrames.Count > 0)
+            {
+                Shader.SetGlobalFloat("_QuillDitherFrame", m_QuillCameraDitherFrames.Pop());
+            }
+        }
 
         private void SetPassthroughStrategy()
         {
