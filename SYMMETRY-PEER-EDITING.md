@@ -1,101 +1,121 @@
 # Symmetry stroke linking and peer editing — handoff notes
 
-Branch: `claude/symmetry-stroke-linking-6na5p8` (14 commits, `9d8e50f`..`2472efa`).
+Branch: `ccr-177bbb3d-nv3tl6` (based on `main`; the earlier work came from
+`claude/symmetry-stroke-linking-6na5p8`).
 
 Strokes drawn with symmetry had no relationship to each other: deleting or editing one
-left its copies untouched. This branch gives them one, records how they were made, and
-makes edits propagate. It then goes further: mirrors become things with an identity, and
-moving a mirror carries its strokes.
+left its copies untouched. This branch adds **linked mirrors**. A linked mirror is a thing
+with an identity that owns the strokes drawn with it. An edit to any copy carries to every
+copy, and moving the mirror carries its strokes. Plain symmetry is unchanged.
 
-**Nothing here has been compiled by the author.** One part has been confirmed in the
-editor by the project owner (see *Verification status*). Treat the rest as unproven.
+**Not yet built as a player.** Changed files pass a Roslyn semantic check against Unity's
+engine assemblies. The project owner has tried parts in the editor (see *Verification
+status*). Treat everything else as unproven.
 
 ---
 
 ## Turning it on
 
-There is no switch. Linking comes from the mirror: strokes drawn with a **linked mirror**
-are linked, strokes drawn with **plain** symmetry are ordinary strokes. See
+There is no global switch. Linking comes from the mirror: strokes drawn with a **linked
+mirror** are linked, and strokes drawn with **plain** symmetry are ordinary strokes. See
 *Design decisions* below.
 
-- In VR: the "Linked mirror" toggle in the mirror options popup (`GlobalCommands.ToggleLinkedMirror`,
-  6008). On starts a fresh linked mirror; off switches to plain. The widget's title reads
-  "Mirror / Linked" in light cyan while a linked mirror is active.
-- API: `symmetry.mirror.new` (create a linked mirror), `symmetry.mirror.recall=<n>`
-  (an earlier one, oldest first), `symmetry.mirror.fromselection` (the mirror owning the
-  last selected stroke), `symmetry.mirror.plain` (back to plain).
-- In code: `SymmetryMirrors.NewLinked/Recall/RecallFromStroke/UsePlain`. Each records an
+- **In VR:** the "Linked mirror" toggle in the mirror options popup
+  (`GlobalCommands.ToggleLinkedMirror`, 6008).
+  - On starts a fresh linked mirror; off switches to plain.
+  - The toggle and the widget title ("Mirror / Linked" in light cyan) follow
+    `SymmetryMirrors.Showing`. So they read "on" only when new strokes would actually link.
+  - The popup is an ordinary popup, not a long-press one. It stays open while you use it.
+- **API:**
+  - `symmetry.mirror.new` creates a linked mirror.
+  - `symmetry.mirror.recall=<n>` recalls an earlier one, oldest first.
+  - `symmetry.mirror.fromselection` recalls the mirror owning the last selected stroke.
+  - `symmetry.mirror.plain` goes back to plain.
+- **In code:** `SymmetryMirrors.NewLinked/Recall/RecallFromStroke/UsePlain`. Each records an
   `ActivateMirrorCommand`, so undo restores the active mirror and the widget.
+- **Mode switches:** switching to another symmetry mode goes back to plain, in the same undo
+  step (`PointerManager.SetSymmetryMode`). Turning symmetry off keeps the linked mirror, so
+  turning it on again resumes it.
+- **Multiplayer:** runs in beginner mode, so linked mirrors aren't supported there. Strokes go
+  over the network unlinked (`SymmetrySaveState.None()`).
 
 ---
 
 ## Data model
 
 ```
-Stroke ─┬─ m_SymmetryGroup ──→ SymmetryStrokeGroup ─┬─ Settings  (placement + settings AS DRAWN)
-        └─ m_SymmetryPointerIndex                   └─ Mirror   ──→ SymmetryMirror ── Settings (LIVE)
+Stroke ─┬─ m_SymmetryGroup ──→ SymmetryStrokeGroup ─┬─ Instances (per copy: colour shift, size ratio)
+        └─ m_SymmetryPointerIndex                   └─ Mirror ──→ SymmetryMirror ── Settings (live)
 ```
 
-**`SymmetryStrokeGroup`** — one per draw burst: the stroke the user drew plus the copies
-the symmetry made. Strokes hold it by reference, so peer lookup is a field access. There
-is no registry; a group dies with its strokes. Ids exist only inside a saved file.
+**`SymmetryMirror`.** A linked mirror is created only by explicit user action. It has a
+`Guid` that outlives any settings it happens to have. Its `Settings` are its current state.
+Changing them changes this mirror and carries its strokes; it never forks a new mirror. It
+also records the `Canvas` (layer) its transforms are expressed in.
 
-**`SymmetryPointerIndex`** — which of the symmetry's pointers drew this stroke. Index 0 is
-the pointer the user controls. This is the only asymmetry in a group; there is no "master
-stroke" concept and none is needed (see *Rules*).
+**`SymmetryMirrors`** is the registry:
+- `Active`: what the widget stands for (null means plain).
+- `Showing`: Active, if the current mode is the mirror's.
+- `LinkingMirror`: Showing, if drawing into the mirror's canvas.
+- `All`: the mirrors, oldest first.
+- `NoteSettingsChanged`: called from `PointerManager.CalculateMirrors`.
+  - A change that keeps the copy count runs `MoveMirrorSettingsCommand`. Slider drags merge
+    into one undo step.
+  - A change that alters the copy count runs `RegenerateMirrorStrokesCommand`.
 
-**`SymmetrySettingsSnapshot`** — mode, point/wallpaper parameters, widget pose, spin,
-script name, and `PointerTransforms`: the transform mapping the drawn stroke onto each
-pointer's stroke, **in the canvas space the strokes were drawn in**. Immutable and
-interned by value, so a sketch holds one per distinct configuration, not one per stroke.
-On a group it means *where these strokes actually are*; a mirror move rewrites it.
+**`SymmetryStrokeGroup`.** One per draw burst: the stroke the user drew plus the copies the
+mirror made. Strokes hold it by reference, there is no registry, and a group dies with its
+strokes. Ids exist only inside a saved file.
+- `Canonical` is the lowest pointer index.
+- `DerivationSource` is the lowest *visible* pointer index, used for rebuilds.
+- `Instance` holds per-copy appearance relative to the canonical stroke: an HSV
+  `ColorShift` and a `SizeRatio`. Position comes from the mirror.
+- `CaptureInstances` measures the instances. It runs when a group is drawn, loaded or
+  duplicated.
 
-**`SymmetryMirror`** — a linked mirror: created only by explicit user action, with a
-`Guid` that outlives any settings it happens to have. Its `Settings` are its current state;
-changing them changes this mirror and carries its strokes, never forks a new one.
-`SymmetryMirrors` is the registry: `Active` (what the widget stands for, null = plain),
-`Showing` (Active, if the current mode is the mirror's), `LinkingMirror` (Showing, if
-drawing into its canvas), `All` (oldest first), and `NoteSettingsChanged` (called from
-`PointerManager.CalculateMirrors`: moves strokes for a count-preserving change, rebuilds
-groups for a count-changing one).
+**`SymmetryPointerIndex`.** Which of the mirror's pointers drew this stroke. Index 0 is the
+pointer the user controls.
 
-Scripted and two-handed symmetry get a group but **no mirror** — the widget doesn't stand
-for them, so nothing can move them after the fact.
+**`SymmetrySettingsSnapshot`.** Records:
+- mode, point/wallpaper parameters, widget pose, spin and script name;
+- transform-each (`TransformEach`, `TransformEachAfter`);
+- `PointerTransforms`: the transform mapping pointer 0's stroke onto each pointer's stroke,
+  in the mirror's canvas space.
+
+Snapshots are replaced, never changed in place.
+
+Only linked mirrors make groups. Plain, scripted and two-handed symmetry produce ordinary
+strokes.
 
 ---
 
 ## Rules that must not be broken
 
-1. **Edits are relative, never absolute.** A peer gets the *mirrored delta* of what
-   happened to the stroke, not placement onto an ideal mirror image. Colour keeps its HSV
-   offset, size its ratio, position its displacement. So a peer that has drifted from
-   perfect symmetry keeps its drift, and a group that matched stays matching. Snapping
-   peers onto exact symmetry would destroy deliberate work.
+1. **Edit the copy that was touched, then derive the rest from it** (decision 8 as
+   clarified). Tools no longer mirror their own edits. `RederiveSymmetryGroupCommand`
+   rebuilds the other copies from the edited one:
+   - geometry goes through the mirror;
+   - appearance (colour, point colours, brush, size) goes through the instance data.
 
-2. **Point *i* maps to point *i*.** Peers are drawn point for point alongside each other.
-   Tint and reshape rely on this and bail when the counts differ (a stroke the simplifier
-   treated differently, or a scripted pointer that started a new stroke mid-line).
-
-3. **Index 0 stays put.** For a mirror move, stroke *j* moves by `Mj_new · Mj_old⁻¹`.
-   Index 0's transform is the identity at both ends, so the drawn stroke holds still and
-   the copies rearrange around it. This falls out of the maths — don't add a master.
-
-4. **Count-preserving vs count-changing.** Pose, wallpaper scale and skew are transforms
-   of existing strokes. Order, wallpaper group, repeat counts and mode changes are not —
-   moving 6 strokes to 8 positions needs regeneration. `MoveMirrorStrokesCommand` and
-   `SymmetryMirrorMove` skip groups whose pointer count differs from the mirror's current
-   count, so a group drawn at order 6 keeps behaving as order 6.
-
-5. **Control points move with geometry.** `Stroke.TransformGeometryInPlace` has an
-   `updateControlPoints: false` mode. Anything that rebuilds a stroke regenerates geometry
-   *from control points*, so a stroke moved without them jumps back the moment another
-   tool touches it. This caused a real bug (see *Traps*). Only use that mode where nothing
-   else can reach the stroke.
-
-6. **Peers that are erased, selected, or in another canvas are skipped.** Recreating
-   geometry or reparenting would resurrect an erased stroke; a selected stroke is being
-   moved by something else; the canvas-space transforms don't hold across canvases.
-   `SymmetryPeerEditing.PeersOf` filters erased centrally.
+   Each copy keeps its own colour shift and size ratio.
+2. **Rigid moves don't rebuild.** When copy s moves by xf, copy j moves by C·xf·C⁻¹, where
+   C is the mirror transform from s to j (`TransformSymmetryCopiesCommand`). Batched copies
+   move in place. Others get their control points moved and are rebuilt. Repeated in-place
+   moves can drift by float error; the next rebuilding edit makes the group exact again.
+3. **Point *i* maps to point *i*.** Copies are drawn point for point alongside each other.
+   Derivation relies on this.
+4. **Control points move with geometry.** Anything that rebuilds a stroke regenerates it
+   from control points, so a stroke moved without them jumps back. Only use
+   `TransformGeometryInPlace(updateControlPoints: false)` where nothing else can reach the
+   stroke.
+5. **Erased copies stay erased, and are never a source.** Edits skip erased copies. Rebuilds
+   use `DerivationSource`. When a mirror change rebuilds from a source other than pointer 0,
+   the source first moves by its own pointer's change.
+6. **Selected copies are moved by the selection.** Only one copy of a group is ever selected
+   (decision 10). The others follow it live through `SymmetryPeerPreview`. The deselect bake
+   adopts what the preview already moved.
+7. **A mirror change ends a selection that holds one of its copies** before it applies
+   (`SymmetryMirrors.EndSelectionOwnedBy`).
 
 ---
 
@@ -103,44 +123,53 @@ for them, so nothing can move them after the fact.
 
 | File | What it holds |
 |---|---|
-| `SymmetryStrokeGroup.cs` | The group: peers, placement snapshot, mirror |
-| `SymmetrySettingsSnapshot.cs` | Settings + `PointerTransforms`, value equality, binary blob |
 | `SymmetryMirror.cs` | Mirror identity + `SymmetryMirrors` registry |
-| `SymmetryPeerEditing.cs` | **The one place tools ask about peers.** Every rule above lives here |
-| `SymmetryPeerPreview.cs` | Peers following a selection live |
-| `SymmetryMirrorMove.cs` | Strokes following the mirror live |
+| `SymmetryStrokeGroup.cs` | The group: members, canonical/derivation source, instance data |
+| `SymmetrySettingsSnapshot.cs` | Settings + `PointerTransforms`, value equality, binary blob (v2) |
+| `SymmetryPeerEditing.cs` | Peer queries: `IsLinked`, `PeersOf`, `PeersOutside`, `TryGetPeerSymmetryTransform` |
+| `SymmetryPeerPreview.cs` | Unselected copies following a selection live; `TryCommit` |
+| `SymmetryMirrorMove.cs` | Strokes following the mirror live while the widget is held |
+| `Commands/SymmetryMirrorCommands.cs` | `ActivateMirrorCommand`, `MoveMirrorSettingsCommand`, `RegenerateMirrorStrokesCommand`, `MirrorStrokeEdits` |
+| `Commands/RederiveSymmetryGroupCommand.cs` | `SymmetryDerivation` + derive a group from one copy |
+| `Commands/TransformSymmetryCopiesCommand.cs` | Rigid copy moves; `ForSelectionEdit` |
+| `Commands/MoveSymmetryGroupsToLayerCommand.cs` | Whole groups to another layer under a new mirror |
 | `Commands/MoveMirrorStrokesCommand.cs` | Records a mirror move (recorded, not performed) |
-| `Stroke.cs` / `StrokeData.cs` | Peer API, `TransformGeometryInPlace` |
-| `Batching/Batch.cs` | `TransformSubset` — in-place geometry move |
-| `Save/SketchWriter.cs` | Stroke extensions + the symmetry table |
-
-`SymmetryPeerEditing` is the extension point. Teaching a new tool about peers should be
-one call to `WithPeers`/`PeersOutside` (set-shaped edits) or one of the
-`TryGetPeer*`/`GatherPeer*` helpers (edits that transform or recolour).
+| `Stroke.cs` / `StrokeData.cs` | Group membership, `ReplaceDerivedData`, `TransformGeometryInPlace` |
+| `Batching/Batch.cs` | `TransformSubset`: in-place geometry move |
+| `Save/SketchWriter.cs` | Stroke extensions, `SymmetrySaveState`, the symmetry table |
+| `Widgets/SymmetryWidget.cs` | No spin/drift while linked; linked title |
+| `GUI/MirrorOptionsPopUpWindow.cs`, `Prefabs/PopUps/PopupWindow_MirrorOptions.prefab` | Linked toggle |
 
 ---
 
 ## File format
 
-Per stroke, two **single-word** extensions — older readers skip each with a 4-byte read:
+Per stroke, two **single-word** extensions. Older readers skip each with a 4-byte read:
 
-- `StrokeExtension.SymmetryGroup = 1 << 5` — uint32, dense file-local group id, 0 = none
-- `StrokeExtension.SymmetryPointerIndex = 1 << 6` — int32
+- `StrokeExtension.SymmetryGroup = 1 << 5`: uint32, dense file-local group id, 0 = none.
+- `StrokeExtension.SymmetryPointerIndex = 1 << 6`: int32.
 
-After the last stroke, a **trailer** older readers never reach:
+After the last stroke comes a **trailer** that older readers never reach:
 
 ```
 uint32 'SYMT' (0x53594d54)
-int32  version (2)
-int32  settingsCount,  [uint32 len + blob] *   (deduped by value)
-int32  groupCount,     [uint32 settingsIndex] *   (group id = index + 1)
-int32  mirrorCount,    [Guid + uint32 len + blob] *
-                       [uint32 mirrorIndex] *      (one per group)
+int32  version (3)
+int32  mirrorCount,  [Guid + uint32 len + settings blob] *
+int32  groupCount,   [uint32 mirrorIndex] *        (group id = index + 1, mirror index 1-based)
+uint32 activeMirror                                 (1-based, 0 = plain)
 ```
 
-Version 1 (no mirrors) still loads. Group ids are file-local, so an additive load cannot
-collide. **Multiplayer uses the same binary stream** (`MultiplayerStrokeSerialization`),
-which is why the table lives here and not in the metadata JSON.
+How it is written and read:
+- **Capture.** `SymmetrySaveState.Capture` runs on the main thread together with the stroke
+  copies. The background save thread therefore never reads live mirrors.
+- **What is saved.** A whole-sketch save keeps every registered mirror, even ones with no
+  strokes. Saving selected strokes keeps only the mirrors they use, and includes the
+  selected copies' peers.
+- **Additive loads** give every mirror a fresh identity and leave the active mirror alone.
+- **Old tables.** Other trailer versions are ignored, so their strokes load plain.
+- **Instance data isn't stored.** It is re-measured on load (decision 9's trailer is not
+  done).
+- **Multiplayer** uses the same stroke stream but writes no table.
 
 ---
 
@@ -148,42 +177,37 @@ which is why the table lives here and not in the metadata JSON.
 
 | Edit | Hook |
 |---|---|
-| Eraser | `SketchMemoryScript.MemorizeDeleteSelection` |
-| Delete selection | `DeleteSelectionCommand` ctor → child `DeleteStrokeCommand`s |
-| Transform (+ `strokes.move/rotate/scale` API) | `TransformItemsCommand` ctor + `TransformItems.TransformEach` |
-| Repaint / recolor / rebrush / resize | `SketchMemoryScript.RepaintSelected` and `MemorizeStrokeRepaint` |
-| Tint | `TintColorTool.HandleIntersectionWithBatchedStroke` |
-| Reshape (all sub-tools) | `ReshapeTool.ApplyStrokeModification` |
-| Selection grab | `SymmetryPeerPreview` (live) + `SelectCommand` deselect bake |
-| Mirror move | `SymmetryWidget.OnUserBegin/Update/EndInteracting` → `SymmetryMirrorMove` |
+| Eraser / delete selection | `SketchMemoryScript.MemorizeDeleteSelection`, `DeleteSelectionCommand` |
+| Transform (+ `strokes.move/rotate/scale` API) | `TransformItemsCommand` → `TransformSymmetryCopiesCommand` |
+| Selection grab + bake | `SymmetryPeerPreview` (live), `SelectCommand` (`m_CopyMoves`, adopted from the preview) |
+| Selection-wide ops (transform/align/distribute) | `TransformSymmetryCopiesCommand.ForSelectionEdit` |
+| Duplicate | `DuplicateSelectionCommand.DuplicateLinkedGroup` (new linked group) |
+| Repaint / recolour / rebrush / resize | `SketchMemoryScript` → appearance rederive (first copy touched drives) |
+| Tint | `TintColorTool` → appearance rederive |
+| Reshape (all sub-tools) | `ReshapeTool` → geometry rederive, refreshed during the drag |
+| Snip / crop / join | `SnipStrokeCommand`, `StrokeCropping.DeriveCropPiece`, `JoinStrokeCommand.ClassifySymmetryJoin` |
+| Layer move / squash | `MoveSymmetryGroupsToLayerCommand` (selection, `SquashLayerCommand`, Lua) |
+| Mirror move | `SymmetryWidget` interaction → `SymmetryMirrorMove`; Bring to User / Reset to Home too |
+| Settings change | `PointerManager.CalculateMirrors` → `SymmetryMirrors.NoteSettingsChanged` |
 
 Two non-obvious ones:
 
-- **The deselect is where a selection move becomes real.** Strokes ride the selection
-  canvas and are only rewritten on deselect, so `SelectCommand` (deselect) is the
-  undoable moment, not `MoveWidgetCommand`. `SelectionTransform` is already in canvas
-  space — no conversion needed. `SelectionManager` records the transform each stroke
-  joined the selection under, so a stroke added to an already-moved selection mirrors only
-  what happened after it joined.
-- **A mirror move is applied live and *recorded* afterwards.** `SketchMemoryScript.RecordCommand`
-  puts a command on the stack without executing it, which is what "already applied" needs.
+- **The deselect is where a selection move becomes real.** Strokes ride the selection canvas
+  and are only rewritten on deselect, so `SelectCommand` (deselect) is the undoable moment.
+- **A mirror move is applied live and *recorded* afterwards.** `RecordCommand` puts a
+  command on the stack without executing it.
 
 ---
 
 ## Performance
 
-Per-frame geometry moves are cheap if done in place. `GeometryPool.ApplyTransform` already
-transforms a vertex range, so `Batch.TransformSubset` moves a stroke where it sits: a pass
-over its own vertices plus a mesh update the batch would do anyway. No regeneration, no
-re-batching, no allocation.
+Per-frame geometry moves are cheap if done in place. `Batch.TransformSubset` moves a stroke
+where it sits: one pass over its vertices plus a mesh update. Cost scales with the number
+of **batches touched**. Avoid `Uncreate`/`Recreate` and reparenting between canvases in
+anything that runs every frame. That is why rigid edits take the in-place path and only
+shape and appearance edits rederive.
 
-Cost scales with **batches touched**, not strokes touched — one dirty stroke dirties its
-whole batch, and strokes drawn together share batches, which is exactly what symmetry
-produces. The expensive paths to avoid per frame are `Uncreate`/`Recreate` (regenerates
-from control points) and reparenting between canvases (copies subsets).
-
-This was measured only qualitatively: the owner confirmed dragging a mirror "works great".
-Nobody has profiled it on a sketch with thousands of mirrored strokes.
+Nobody has profiled this on a sketch with thousands of mirrored strokes.
 
 ---
 
@@ -191,30 +215,34 @@ Nobody has profiled it on a sketch with thousands of mirrored strokes.
 
 | | |
 |---|---|
-| Confirmed in the editor | Mirror move following strokes live |
-| Fixed, needs retest | Tint after a move scattering peers (`2472efa`) |
-| Never exercised | Everything else — delete, transforms, repaint, tint, reshape, selection preview, save/load round-trip, undo/redo |
+| Confirmed in the editor | Mirror move following strokes live; selection move, release and undo on linked copies |
+| Fixed, needs retest | Linked toggle initial state and mode switching (`feb1b36`) |
+| Never exercised | Repaint/tint/reshape rederive, snip/crop/join, layer moves, duplicate, settings changes (move and regenerate), save/load round trip, additive load |
 
-First thing worth doing: a compile, then a two-way mirror with one drawn stroke — move the
-widget, confirm the drawn stroke holds still and only the reflection moves. If that's
-right, the core maths is right.
+Changed files pass the Roslyn semantic check. Editor tests exist
+(`Assets/Editor/Tests/TestSymmetryMirrorMove.cs`, `TestSymmetryPeerSelection.cs`) but
+haven't been run here.
 
 ---
 
 ## Traps found the hard way
 
-- **Geometry-only preview.** Moving a peer's geometry without its control points looked
-  tidier (data never lies about an uncommitted move) but broke as soon as another tool
-  rebuilt the stroke: it snapped back, and the preview still owed it an inverse transform
-  that would have displaced it permanently. Rule 5 exists because of this.
-- **Settings as identity.** Linking strokes to a snapshot of the settings dissolves the
-  link exactly when it matters — move the mirror and the values no longer match. Hence
+- **Geometry-only preview.** Moving a peer's geometry without its control points broke as
+  soon as another tool rebuilt the stroke. Rule 4 exists because of this.
+- **Settings as identity.** Linking strokes to a snapshot of the settings dissolves the link
+  exactly when it matters: move the mirror and the values no longer match. Hence
   `SymmetryMirror`.
-- **Sweeping a tool across a group.** Repaint and tint queue both a direct edit and a peer
-  edit for the same stroke in one frame; the later one won arbitrarily. Both now track
-  the strokes already handled in the batch, and a direct edit wins.
-- **Erased peers.** Repaint/tint/reshape recreate geometry and transforms reparent — both
-  resurrect an erased stroke. Filtered centrally in `PeersOf`.
+- **Sweeping a tool across a group.** Repaint, tint and reshape can touch several copies of
+  one group in a frame. The first copy touched drives the group for that sweep, and the
+  others are ignored.
+- **Erased peers.** Recreating geometry or reparenting resurrects an erased stroke. Rule 5.
+- **Rebuilding every move.** Deriving geometry for translations was too slow; hence rule 2.
+- **Popup restore.** The mirror popup used to re-issue MultiMirror on close, to undo a
+  long-press glitch. That workaround fought deliberate mode changes once the popup stayed
+  open, so it was removed.
+- **Active but not showing.** A linked mirror from another mode used to stay active, so the
+  toggle read "on" while strokes were plain. UI state now uses `Showing`, and mode switches
+  go plain.
 
 ---
 
@@ -222,16 +250,13 @@ right, the core maths is right.
 
 Answered by the project owner on 2026-10-01; these replace the open questions that stood here.
 
-**Implementation status.** First pass done (not yet compiled): explicit creation, plain as
-"no active mirror", peers from ownership alone (no active-mirror or mode gating), undoable
-activation, settings changes moving or regenerating a linked mirror's strokes, and Bring to
-User / Reset to Home carrying them. A linked mirror can't spin or drift: released, it stays
-where it was let go (tossing it away to hide it still works), and `Spin` is ignored. Spinning
-would need strokes following a mirror in continuous motion, with no point to record a move. Still to do: the mirror list UI (with its "Plain" entry)
-and activating a mirror from a stroke in VR — both need prefab work, and are API-only
-for now; the rest of the canonical-stroke model (below); per-pointer colours when
-regenerating (copies take the source stroke's colour). Sections above that describe the
-global toggle or settings-based forking are out of date.
+**Implementation status.** Decisions 1, 3 (API only), 4, 5, 7-8 (as clarified), 10, 11 and
+12 are implemented. Decision 2's "Plain" entry and decision 3's VR routes wait on the mirror
+list UI. For now the popup has a single linked/plain toggle. Decision 9 (instance data in the
+file trailer) is not started. A linked mirror can't spin or drift: when released, it stays
+where it was let go. Tossing it away to hide it still works, and `Spin` is ignored. Spinning
+would need strokes following a mirror in continuous motion, with no point at which to record
+a move.
 
 **Canonical-stroke model (decisions 7-8).** Each group records per-member instance data
 (`SymmetryStrokeGroup.Instance`: an HSV colour shift and a size ratio relative to the canonical
@@ -253,7 +278,11 @@ is derived from it; tools no longer mirror their own edits:
 - snip (copies derived first so one index cuts them all), crop (the source is cropped, copies
   take its pieces), join (pairwise, then derived);
 - mirror moves and settings changes move strokes in place, falling back to derivation from a
-  visible member moved with its own pointer.
+  visible member moved with its own pointer;
+- copy-count changes regenerate each group from its derivation source. Each pointer keeps its
+  instance appearance, and new pointers get the mirror's colour shift for their index
+  (`RegenerateMirrorStrokesCommand.NewCopyInstance`);
+- selection-wide operations (transform, align, distribute, duplicate) carry whole groups.
 
 Checked with Roslyn semantic analysis against Unity's engine assemblies (no errors in changed
 files); not yet built or run in Unity.
@@ -295,8 +324,9 @@ leaves it); a range mixing groups or mirrors is refused.
 
 Links now break only where a group has no visible member to rebuild from during a
 count-changing settings change (it is invisible, and undo restores the link with it) or where
-something outside these paths splits a group across canvases. Not started: copies as read-only derived strokes with edits redirected to the canonical
-stroke, instance data in the file trailer (decisions 7-9).
+something outside these paths splits a group across canvases. Not started: instance data in
+the file trailer (decision 9). Lua and some API stroke edits still bypass derivation (see
+*Next steps*).
 
 ### Principle
 
@@ -326,7 +356,9 @@ setting: it is a property of the mirror (linked vs plain).
    Either makes that mirror active and moves the widget to its pose.
 
 4. **Turning symmetry off and on:** turning symmetry off only hides the mirror. Turning it back
-   on resumes the same linked mirror.
+   on resumes the same linked mirror. *(Implementation, 2026-10-04: switching to a different
+   symmetry mode goes back to plain, undoably, so the toggle never shows a linked mirror that
+   isn't linking.)*
 
 5. **Settings that change the number of copies** (point order, wallpaper group, repeat counts)
    on a linked mirror that already owns strokes: **regenerate the copies** to the new count.
@@ -385,8 +417,9 @@ to every member, it silently breaks the promise that a linked group stays symmet
 **Postponed:** an explicit "Unlink" action (per group or per copy), as a later expansion once
 the basics are complete and consistent.
 
-**Assumed, not yet asked:** the canonical stroke is the copy at pointer index 0 (the one the
-user drew); a duplicated or regenerated group's canonical stroke is its index-0 copy.
+**Assumed, not yet asked:** the canonical stroke is the lowest pointer index in the group,
+normally 0 (the one the user drew). A duplicated or regenerated group's canonical stroke is
+chosen the same way.
 
 ### Consequences agreed in discussion
 
@@ -396,27 +429,30 @@ user drew); a duplicated or regenerated group's canonical stroke is its index-0 
   snap home and spin). A plain mirror's widget moves freely.
 - Creating a mirror, switching the active mirror and moving a mirror are undoable commands;
   undo restores recorded state rather than inferring it.
-- Old sketches load as plain. The saved mirror record gains a "linked" flag.
-- Revert d8b7fab "Reactivate the matching symmetry mirror after undo and redo"
-  (settings matching and tolerance), which this design supersedes.
+- Old sketches load as plain. Only linked mirrors are saved, so no "linked" flag is needed.
+- d8b7fab "Reactivate the matching symmetry mirror after undo and redo" (settings matching and
+  tolerance) was reverted; this design supersedes it.
 
 ---
 
 ## Next steps, in order
 
-1. **Compile, and retest tint after a move.** Nothing else matters until the branch builds.
-2. **Count-preserving settings changes should move strokes** (wallpaper scale/skew).
-   Same `Begin`/`Update`/`End` shape as `SymmetryMirrorMove`, hooked at
-   `PointerManager.CalculateMirrors` (already the settings-changed choke point, already
-   calls into `SymmetryMirrors`). Needs a drag begin/end signal from the panel, or command
-   merging, so a slider doesn't emit a command per frame.
-3. **VR UI for new/recall mirror.** Only API commands exist. Without a control binding the
-   fork trap above is unavoidable in normal use. Requires prefab/scene work.
-4. **Undo pairing for mirror moves.** `MoveWidgetCommand.Merge` adopts
-   `MoveMirrorStrokesCommand` as a child, but refuses all merges once `m_Final`, which is
-   usually the case on release — so undo can take two steps.
-5. **Smaller gaps:** `BringToUser` and command-driven `ResetToHome` don't carry strokes
-   (only a real grab does); `m_SymmetryTransformEach`/`m_SymmetryTransformEachAfter` are
-   not recorded in the snapshot, so API-set per-copy transforms won't reproduce;
-   `TransformGeometryInPlace` only handles batched strokes, so unbatched brushes don't
-   follow live (they still follow the bake).
+1. **Retest in the editor.** Start with the linked toggle and mode switching, then
+   everything still listed as never exercised under *Verification status*.
+2. **Lua and API edits that bypass derivation:**
+   - Lua stroke setters;
+   - API `strokes.delete` by index;
+   - `_ModifyStrokeControlPoints`.
+
+   Each should edit the touched copy and rederive, as the tools do.
+3. **Copy-count change rough edges.** Groups that can't be regenerated (no visible member)
+   become invisible rather than unlinked. Check undo through a regenerate.
+4. **Drift.** Repeated in-place rigid moves accumulate float error until the next rebuild.
+   Consider rederiving on save or after N moves.
+5. **Non-batched brushes during a mirror drag.** `TransformGeometryInPlace` only handles
+   batched strokes, so these follow on release rather than live.
+6. **Mirror registry clutter.** Every "on" press makes a mirror, and empty mirrors are saved.
+   Decide when unused mirrors are pruned.
+7. **Recall UI.** The mirror list (with a "Plain" entry) and activating a mirror from a
+   stroke in VR. Needs prefab work.
+8. **Decision 9's file trailer:** instance data and derived-copy markers.
