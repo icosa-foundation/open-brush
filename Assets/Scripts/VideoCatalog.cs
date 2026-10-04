@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ namespace TiltBrush
         public string CurrentVideoDirectory => m_CurrentVideoDirectory;
         private List<ReferenceVideo> m_Videos;
         private bool m_ScanningDirectory;
+        private int m_ScanGeneration;
         private bool m_DirectoryScanRequired;
         private HashSet<string> m_ChangedFiles;
 
@@ -51,13 +52,13 @@ namespace TiltBrush
 
         public void ChangeDirectory(string newPath)
         {
+            DisposeFileWatchers();
             m_CurrentVideoDirectory = newPath;
             m_Videos = new List<ReferenceVideo>();
             m_ChangedFiles = new HashSet<string>();
 
             StartCoroutine(ScanReferenceDirectory());
 
-            DisposeFileWatchers();
             foreach (var directory in ScanDirectories())
             {
                 var fileWatcher = new FileWatcher(directory);
@@ -86,6 +87,9 @@ namespace TiltBrush
             foreach (var fileWatcher in m_FileWatchers)
             {
                 fileWatcher.EnableRaisingEvents = false;
+                fileWatcher.FileChanged -= OnDirectoryChanged;
+                fileWatcher.FileCreated -= OnDirectoryChanged;
+                fileWatcher.FileDeleted -= OnDirectoryChanged;
                 fileWatcher.Dispose();
             }
             m_FileWatchers.Clear();
@@ -166,51 +170,91 @@ namespace TiltBrush
 
         private IEnumerator<object> ScanReferenceDirectory()
         {
+            // Numbered so a scan only ever clears the flag it set. ChangeDirectory can start a
+            // replacement while this one is still running, and an unconditional clear in the
+            // finally below would release the flag on the newer scan's behalf - permitting
+            // overlapping rescans and reporting completion before the replacement had finished.
+            int generation = ++m_ScanGeneration;
             m_ScanningDirectory = true;
-            HashSet<string> changedSet = null;
-            // We do a switcheroo on the changed list here so that there isn't a conflict with it
-            // if a filewatch callback happens.
-            lock (m_ChangedFiles)
+            try
             {
-                changedSet = m_ChangedFiles;
-                m_ChangedFiles = new HashSet<string>();
-            }
-
-            var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath));
-            var detected = new HashSet<string>(
-                ScanDirectories()
-                    .SelectMany(x => Directory.GetFiles(x, "*.*", SearchOption.AllDirectories))
-                    .Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x))));
-            var toDelete = existing.Except(detected).Concat(changedSet).ToArray();
-            var toScan = detected.Except(existing).Concat(changedSet).ToArray();
-
-            // Remove deleted videos from the list. Currently playing videos may continue to play, but will
-            // not appear in the reference panel.
-            m_Videos.RemoveAll(x => toDelete.Contains(x.AbsolutePath));
-
-            var newVideos = new List<ReferenceVideo>();
-            foreach (var filePath in toScan)
-            {
-                ReferenceVideo videoRef = new ReferenceVideo(filePath);
-                newVideos.Add(videoRef);
-                m_Videos.Add(videoRef);
-            }
-
-            // If we have a lot of videos, they may take a while to create thumbnails. Make sure we refresh
-            // every few seconds so the user sees progress if they go straight to the reference panel.
-            TimeSpan interval = TimeSpan.FromSeconds(4);
-            DateTime nextRefresh = DateTime.Now + interval;
-            foreach (var videoRef in newVideos)
-            {
-                if (DateTime.Now > nextRefresh)
+                HashSet<string> changedSet = null;
+                // We do a switcheroo on the changed list here so that there isn't a conflict with it
+                // if a filewatch callback happens.
+                lock (m_ChangedFiles)
                 {
-                    CatalogChanged?.Invoke();
-                    nextRefresh = DateTime.Now + interval;
+                    changedSet = m_ChangedFiles;
+                    m_ChangedFiles = new HashSet<string>();
                 }
-                yield return videoRef.Initialize();
+
+                var existing = new HashSet<string>(m_Videos.Select(x => x.AbsolutePath));
+                var detected = new HashSet<string>();
+                foreach (var directory in ScanDirectories())
+                {
+                    try
+                    {
+                        detected.UnionWith(
+                            Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories).Where(
+                                x => m_supportedVideoExtensions.Contains(
+                                    Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
+                    }
+                    catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                                              e is ArgumentException || e is NotSupportedException)
+                    {
+                        // An unavailable root must not prevent the other roots being scanned.
+                        Debug.LogWarning(
+                            $"CATALOG_SCAN Could not scan video folder {directory}: {e.Message}");
+                    }
+                }
+                StringComparer pathComparer = Path.DirectorySeparatorChar == '\\'
+                    ? StringComparer.OrdinalIgnoreCase
+                    : StringComparer.Ordinal;
+                // Only changed files found by this scan can be re-created. This also filters
+                // unsupported files and events from directories the panel has left behind.
+                var changedDetected = CatalogChangeSet.GetChangedDetectedPaths(
+                    changedSet, detected, pathComparer);
+                var toDelete = existing.Except(detected, pathComparer)
+                    .Concat(changedDetected).Distinct(pathComparer).ToArray();
+                var toScan = detected.Except(existing, pathComparer)
+                    .Concat(changedDetected).Distinct(pathComparer).ToArray();
+
+                // Remove deleted videos from the list. Currently playing videos may continue to play, but will
+                // not appear in the reference panel.
+                m_Videos.RemoveAll(x => toDelete.Contains(x.AbsolutePath, pathComparer));
+
+                var newVideos = new List<ReferenceVideo>();
+                foreach (var filePath in toScan)
+                {
+                    ReferenceVideo videoRef = new ReferenceVideo(filePath);
+                    newVideos.Add(videoRef);
+                    m_Videos.Add(videoRef);
+                }
+
+                // If we have a lot of videos, they may take a while to create thumbnails. Make sure we refresh
+                // every few seconds so the user sees progress if they go straight to the reference panel.
+                TimeSpan interval = TimeSpan.FromSeconds(4);
+                DateTime nextRefresh = DateTime.Now + interval;
+                foreach (var videoRef in newVideos)
+                {
+                    if (DateTime.Now > nextRefresh)
+                    {
+                        CatalogChanged?.Invoke();
+                        nextRefresh = DateTime.Now + interval;
+                    }
+                    yield return videoRef.Initialize();
+                }
+            }
+            finally
+            {
+                // Rescans are gated on this flag, so it must be cleared however the scan
+                // ends. Leaving it set stops the catalog refreshing for the rest of the
+                // session. Only the current scan may clear it; see the generation above.
+                if (generation == m_ScanGeneration)
+                {
+                    m_ScanningDirectory = false;
+                }
             }
 
-            m_ScanningDirectory = false;
             CatalogChanged?.Invoke();
             if (m_DebugOutput)
             {
@@ -218,39 +262,85 @@ namespace TiltBrush
             }
         }
 
-        /// Gets a video form the catalog, given its filename. Returns null if no such video is found.
-        ///
-        /// A sketch can name a video the catalog has not got to yet, either because the scan is
-        /// still running or because the file sits in a configured root below a directory the user
-        /// has browsed away from. Rather than report it missing, resolve it against the roots and
-        /// adopt it into the catalog if the file is really there.
-        public ReferenceVideo GetVideoByPersistentPath(string path)
+        /// True when path is a direct child of directory and has a supported video
+        /// extension. Changed paths come from a watcher that covers subdirectories and
+        /// every file type, so they need this before joining a folder's catalog.
+        internal static bool IsDirectChildSupportedPath(
+            string directory, string path, IEnumerable<string> supportedExtensions)
         {
-            var video = m_Videos.FirstOrDefault(x => x.PersistentPath == path);
-            if (video != null) { return video; }
-
-            if (string.IsNullOrEmpty(path)) { return null; }
-            string resolvedPath;
             try
             {
-                resolvedPath = App.ResolveMediaPath(App.GetAllVideoRoots(), path);
+                string fullDirectory = Path.GetFullPath(directory).TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                string fullPath = Path.GetFullPath(path);
+                return string.Equals(Path.GetDirectoryName(fullPath), fullDirectory,
+                        Path.DirectorySeparatorChar == '\\'
+                            ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal) &&
+                    supportedExtensions.Contains(Path.GetExtension(fullPath),
+                        StringComparer.OrdinalIgnoreCase);
             }
-            catch (Exception)
+            catch (Exception e) when (e is ArgumentException || e is NotSupportedException ||
+                e is PathTooLongException)
+            {
+                return false;
+            }
+        }
+
+        /// Gets a video from the catalog, given its saved library-relative path.
+        ///
+        /// Falls back to the configured roots in priority order. Restoring a sketch must
+        /// not depend on the folder currently shown in the panel.
+        public ReferenceVideo GetVideoByPersistentPath(string path)
+        {
+            // The listed entry is only preferred while its file is still there. The catalog
+            // can outlive a deletion, and returning a stale entry here would bypass the
+            // validating resolver below rather than falling through to it.
+            ReferenceVideo listed = m_Videos.FirstOrDefault(x => x.PersistentPath == path);
+            if (listed != null && File.Exists(listed.AbsolutePath))
+            {
+                return listed;
+            }
+            foreach (var root in App.GetAllVideoRoots())
+            {
+                var video = ResolveVideoByPersistentPath(root, path, m_supportedVideoExtensions);
+                if (video != null) { return video; }
+            }
+            return null;
+        }
+
+        /// Resolves a saved library path independently of the folder shown in the panel.
+        /// Returns null when the path escapes the library, is not a supported video, or
+        /// does not exist.
+        internal static ReferenceVideo ResolveVideoByPersistentPath(
+            string libraryPath, string path, IEnumerable<string> supportedExtensions)
+        {
+            if (string.IsNullOrWhiteSpace(path)) { return null; }
+            try
+            {
+                string normalized = path.Replace('\\', '/');
+                if (Path.IsPathRooted(normalized) || normalized.Contains(":")) { return null; }
+                string root = Path.GetFullPath(libraryPath);
+                string absolutePath = Path.GetFullPath(Path.Combine(root, normalized));
+                string prefix = $"{root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)}{Path.DirectorySeparatorChar}";
+                StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
+                if (!absolutePath.StartsWith(prefix, comparison) ||
+                    !supportedExtensions.Contains(
+                        Path.GetExtension(absolutePath), StringComparer.OrdinalIgnoreCase))
+                {
+                    // Matched the way discovery matches. Comparing case-sensitively here
+                    // made a nested clip.MP4 visible in the panel but impossible to restore.
+                    return null;
+                }
+
+                return File.Exists(absolutePath) ? new ReferenceVideo(absolutePath) : null;
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
+                                      e is ArgumentException || e is NotSupportedException)
             {
                 return null;
             }
-            if (!File.Exists(resolvedPath)) { return null; }
-
-            video = new ReferenceVideo(resolvedPath);
-            m_Videos.Add(video);
-            StartCoroutine(InitializeAdoptedVideo(video));
-            return video;
-        }
-
-        private IEnumerator<object> InitializeAdoptedVideo(ReferenceVideo video)
-        {
-            yield return video.Initialize();
-            CatalogChanged?.Invoke();
         }
 
 

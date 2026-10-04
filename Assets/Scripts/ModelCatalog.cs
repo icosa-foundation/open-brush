@@ -342,7 +342,7 @@ namespace TiltBrush
                 {
                     _ = ModelWidget.CreateModelsFromRelativePath(
                         relativePath, null, m_MissingNormalizedModelsByRelativePath[relativePath], null, null, null, null, null, null);
-                    m_MissingModelsByRelativePath.Remove(relativePath);
+                    m_MissingNormalizedModelsByRelativePath.Remove(relativePath);
                 }
             }
             if (CatalogChanged != null)

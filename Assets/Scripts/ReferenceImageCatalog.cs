@@ -38,6 +38,13 @@ namespace TiltBrush
         public string CurrentImagesDirectory => m_CurrentImagesDirectory;
 
         protected List<ReferenceImage> m_Images;
+
+        /// Images resolved for a saved sketch that live outside the folder the panel is
+        /// showing. They deliberately stay out of m_Images, which is the panel's listing, but
+        /// they still need an owner: nothing else calls Unload on them, and without this every
+        /// lookup would build another ReferenceImage and decode the file again.
+        private readonly Dictionary<string, ReferenceImage> m_UnlistedImages =
+            new Dictionary<string, ReferenceImage>(StringComparer.OrdinalIgnoreCase);
         protected Stack<int> m_RequestedLoads; // it's okay if this contains duplicates
         private bool m_DirNeedsProcessing;
         private string m_ChangedFile;
@@ -84,7 +91,7 @@ namespace TiltBrush
         /// Watches every directory a scan of currentDirectory covers.
         protected void SetUpFileWatchers(string currentDirectory)
         {
-            DisposeFileWatchers();
+            StopWatchingCurrentDirectory();
             foreach (var directory in ScanDirectories(currentDirectory))
             {
                 var fileWatcher = new FileWatcher(directory);
@@ -97,11 +104,21 @@ namespace TiltBrush
             }
         }
 
-        protected void DisposeFileWatchers()
+        protected virtual void OnDestroy()
+        {
+            StopWatchingCurrentDirectory();
+        }
+
+        /// Releases all watchers when navigating away or destroying the catalog.
+        /// BackgroundImageCatalog also calls this because it overrides ChangeDirectory.
+        protected void StopWatchingCurrentDirectory()
         {
             foreach (var fileWatcher in m_FileWatchers)
             {
                 fileWatcher.EnableRaisingEvents = false;
+                fileWatcher.FileChanged -= OnChanged;
+                fileWatcher.FileCreated -= OnChanged;
+                fileWatcher.FileDeleted -= OnChanged;
                 fileWatcher.Dispose();
             }
             m_FileWatchers.Clear();
@@ -268,6 +285,10 @@ namespace TiltBrush
             for (int i = 0; i < m_Images.Count; ++i)
             {
                 m_Images[i].Unload();
+            }
+            foreach (ReferenceImage image in m_UnlistedImages.Values)
+            {
+                image.Unload();
             }
             Resources.UnloadUnusedAssets();
 
@@ -519,9 +540,7 @@ namespace TiltBrush
 
                 if (File.Exists(fullPath))
                 {
-                    refImage = new ReferenceImage(fullPath);
-                    m_Images.Add(refImage);
-                    return refImage;
+                    return GetUnlistedImage(fullPath);
                 }
                 fallbackPath ??= fullPath;
             }
@@ -530,9 +549,19 @@ namespace TiltBrush
 
             // Nothing on disk anywhere. Keep the old behaviour of handing back an image under the
             // default root, so the widget reports a missing file rather than vanishing.
-            var missingImage = new ReferenceImage(fallbackPath);
-            m_Images.Add(missingImage);
-            return missingImage;
+            return GetUnlistedImage(fallbackPath);
+        }
+
+        // Saved sketches can reference folders the panel has never opened. Cache these
+        // images separately so restoring a sketch does not change the panel's listing.
+        private ReferenceImage GetUnlistedImage(string fullPath)
+        {
+            if (!m_UnlistedImages.TryGetValue(fullPath, out var image))
+            {
+                image = new ReferenceImage(fullPath);
+                m_UnlistedImages[fullPath] = image;
+            }
+            return image;
         }
 
         // Pass a file name with no path components. Matching is purely based on name.
