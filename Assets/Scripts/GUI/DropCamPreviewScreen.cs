@@ -165,9 +165,7 @@ namespace TiltBrush
 
         RenderTextureFormat CameraFormat()
         {
-            return m_Camera.allowHDR
-                ? RenderTextureFormat.ARGBFloat
-                : RenderTextureFormat.ARGB32;
+            return CaptureColorUtils.GetFormat(m_Camera);
         }
 
         void CreateDisplayRenderTextures()
@@ -206,14 +204,7 @@ namespace TiltBrush
         private static RenderTexture CreatePreviewRenderTexture(
             int width, int height, RenderTextureFormat format)
         {
-            var descriptor = new RenderTextureDescriptor(width, height, format, 24)
-            {
-                dimension = TextureDimension.Tex2D,
-                volumeDepth = 1,
-                msaaSamples = 1,
-                useDynamicScale = false,
-                vrUsage = VRTextureUsage.None
-            };
+            var descriptor = CaptureColorUtils.CreateDescriptor(width, height, format);
             return new RenderTexture(descriptor);
         }
     }
