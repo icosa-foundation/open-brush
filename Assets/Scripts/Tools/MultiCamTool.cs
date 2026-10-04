@@ -1985,7 +1985,8 @@ namespace TiltBrush
         // Snapshot
         //
 
-        public IEnumerator TakeScreenshotAsync(string saveName, MultiCamStyle style)
+        // widthOverride: capture width in pixels, or 0 to use the configured snapshot width.
+        public IEnumerator TakeScreenshotAsync(string saveName, MultiCamStyle style, int widthOverride = 0)
         {
             if (m_SnapshotCaptureInProgress)
             {
@@ -2014,7 +2015,7 @@ namespace TiltBrush
                 }
 
                 IEnumerator capture = TakeScreenshotInternalAsync(
-                    saveName, style, odsCamera, odsCaptureRoot?.transform);
+                    saveName, style, odsCamera, odsCaptureRoot?.transform, widthOverride);
                 if (style == MultiCamStyle.Snapshot360)
                 {
                     yield return OverlayManager.m_Instance.RunInCompositor(
@@ -2066,7 +2067,7 @@ namespace TiltBrush
 
         private IEnumerator TakeScreenshotInternalAsync(
             string saveName, MultiCamStyle style, HybridCamera odsCamera,
-            Transform odsCaptureTransform)
+            Transform odsCaptureTransform, int widthOverride)
         {
             saveName = RevalidateCaptureName(saveName, style);
             // There are multiple expensive bits here, the most expensive of which
@@ -2098,6 +2099,10 @@ namespace TiltBrush
                 int snapshotHeight = (App.UserConfig.Flags.SnapshotHeight > 0) ?
                     App.UserConfig.Flags.SnapshotHeight :
                     m_ScreenshotHeight;
+                if (widthOverride > 0)
+                {
+                    snapshotWidth = widthOverride;
+                }
 
                 if (style == MultiCamStyle.Snapshot360)
                 {
@@ -2150,7 +2155,7 @@ namespace TiltBrush
                         if (odsCamera != null)
                         {
                             odsCamera.imageWidth = snapshotWidth;
-                            odsCamera.includePostProcessing = CameraConfig.PostEffects;
+                            odsCamera.includePostProcessing = CapturePostProcessingEnabled();
                             float timeScaleRestore = Time.timeScale;
                             try
                             {
@@ -2166,7 +2171,7 @@ namespace TiltBrush
                         else
                         {
                             rMgr.RenderToTexture(
-                                tmp, includePostProcessing: CameraConfig.PostEffects);
+                                tmp, includePostProcessing: CapturePostProcessingEnabled());
                         }
                         if (style == MultiCamStyle.Depth)
                         {
@@ -2328,6 +2333,44 @@ namespace TiltBrush
             App.Instance.StartCoroutine(CaptureTimeGifForApiCoroutine(saveName, includePostProcessing));
             Debug.Log($"{logPrefix} Queued Time GIF capture path={saveName} post={includePostProcessing}.");
             return saveName;
+        }
+
+        public string CaptureSnapshot360ForApi(string saveName, int width, bool includePostProcessing)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            if (m_SnapshotCaptureInProgress)
+            {
+                Debug.LogWarning($"{logPrefix} 360 snapshot skipped because a snapshot is in progress.");
+                return null;
+            }
+
+            App.Instance.StartCoroutine(
+                CaptureSnapshot360ForApiCoroutine(saveName, width, includePostProcessing));
+            Debug.Log($"{logPrefix} Queued 360 snapshot path={saveName} width={width} " +
+                $"post={includePostProcessing}.");
+            return saveName;
+        }
+
+        IEnumerator CaptureSnapshot360ForApiCoroutine(string saveName, int width, bool includePostProcessing)
+        {
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            bool initialObjectActive = rig.IsCaptureObjectEnabled(MultiCamStyle.Snapshot360);
+            bool? previousCapturePostProcessingOverride = m_CapturePostProcessingOverride;
+            try
+            {
+                rig.gameObject.SetActive(true);
+                rig.EnableCaptureObject(MultiCamStyle.Snapshot360, true);
+                m_CapturePostProcessingOverride = includePostProcessing;
+                yield return TakeScreenshotAsync(saveName, MultiCamStyle.Snapshot360, width);
+            }
+            finally
+            {
+                m_CapturePostProcessingOverride = previousCapturePostProcessingOverride;
+                rig.EnableCaptureObject(MultiCamStyle.Snapshot360, initialObjectActive);
+                rig.gameObject.SetActive(initialRigActive);
+            }
         }
 
         IEnumerator CaptureAutoGifForApiCoroutine(string saveName, bool includePostProcessing)
