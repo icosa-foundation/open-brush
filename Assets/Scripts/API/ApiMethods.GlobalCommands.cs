@@ -542,6 +542,34 @@ namespace TiltBrush
         //     SketchControlsScript.m_Instance.IssueGlobalCommand(rEnum);
         // }
 
+        [ApiEndpoint("bloom.amount", "Sets bloom amount from 0 (off) to 1 for this session", "1")]
+        public static string SetBloomAmount(float amount)
+        {
+            if (UrpPostProcessingController.Instance == null)
+                return "error: URP post-processing is not available.";
+            if (float.IsNaN(amount) || float.IsInfinity(amount) || amount < 0f || amount > 1f)
+                return "error: Bloom amount must be finite and between 0 and 1.";
+
+            UrpPostProcessingController.Instance.SetBloomAmount(amount);
+            return $"Bloom amount={amount}.";
+        }
+
+        [ApiEndpoint("bloom.threshold", "Sets a non-negative bloom threshold for this session", "0.5")]
+        public static string SetBloomThreshold(float threshold)
+        {
+            if (UrpPostProcessingController.Instance == null)
+                return "error: URP post-processing is not available.";
+            try
+            {
+                UrpPostProcessingController.Instance.SetBloomThreshold(threshold);
+            }
+            catch (System.ArgumentException e)
+            {
+                return $"error: {e.Message}";
+            }
+            return $"Bloom threshold={threshold}.";
+        }
+
         [ApiEndpoint("quality.get", "Returns the current quality level")]
         public static string GetQualityLevel()
         {
@@ -550,7 +578,59 @@ namespace TiltBrush
                 return "QualityControls is not available.";
             }
 
-            return $"Quality level is {QualityControls.m_Instance.QualityLevel}.";
+            var quality = QualityControls.m_Instance;
+            var pipeline = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline
+                as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+            return $"Quality level={quality.QualityLevel} levels={quality.AppQualityLevels.Length} " +
+                $"automatic={quality.AutomaticQualityEnabled} fps={quality.FramesInLastSecond} " +
+                $"sessionMsaa={quality.MSAALevel} pipelineMsaa={pipeline?.msaaSampleCount} " +
+                $"unityMsaa={UnityEngine.QualitySettings.antiAliasing} " +
+                $"xrCachedMsaa={UnityEngine.Experimental.Rendering.XRSystem.GetDisplayMSAASamples()}.";
+        }
+
+        [ApiEndpoint("quality.auto", "Enables or pauses automatic quality on mobile hardware", "false")]
+        public static string SetAutomaticQuality(bool enabled)
+        {
+            if (QualityControls.m_Instance == null) return "QualityControls is not available.";
+            if (enabled && !QualityControls.m_Instance.SupportsAutomaticQuality)
+                return "error: Automatic quality is only available on mobile hardware.";
+            QualityControls.m_Instance.AutomaticQualityEnabled = enabled;
+            return GetQualityLevel();
+        }
+
+        [ApiEndpoint("quality.configure", "Sets a level's foveation; MSAA must match the fixed session value", "3,4,0")]
+        public static string ConfigureQualityLevel(int level, int msaa, int foveation)
+        {
+            if (QualityControls.m_Instance == null) return "QualityControls is not available.";
+            try
+            {
+                QualityControls.m_Instance.ConfigureQualityLevel(level, msaa, foveation);
+            }
+            catch (System.ArgumentException e)
+            {
+                return $"error: {e.Message}";
+            }
+            catch (System.InvalidOperationException e)
+            {
+                return $"error: {e.Message}";
+            }
+            return $"Configured level={level} foveation={foveation}; session MSAA remains {msaa}x.";
+        }
+
+        [ApiEndpoint("quality.thresholds", "Sets lower/higher FPS and frame counts for this session", "65,70,30,45")]
+        public static string ConfigureQualityThresholds(float lowerFps, float higherFps,
+            int lowerFrames, int higherFrames)
+        {
+            if (QualityControls.m_Instance == null) return "QualityControls is not available.";
+            try
+            {
+                QualityControls.m_Instance.ConfigureQualityThresholds(lowerFps, higherFps, lowerFrames, higherFrames);
+            }
+            catch (System.ArgumentException e)
+            {
+                return $"error: {e.Message}";
+            }
+            return $"Configured lower={lowerFps}/{lowerFrames} higher={higherFps}/{higherFrames} for this session.";
         }
 
         [ApiEndpoint("quality.set", "Sets the current quality level by index", "2")]
@@ -567,6 +647,7 @@ namespace TiltBrush
                 return $"Quality level {level} is out of range 0..{maxLevel}.";
             }
 
+            QualityControls.m_Instance.AutomaticQualityEnabled = false;
             QualityControls.m_Instance.QualityLevel = level;
             return $"Quality level set to {QualityControls.m_Instance.QualityLevel}.";
         }
