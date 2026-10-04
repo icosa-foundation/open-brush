@@ -66,7 +66,7 @@ PlayerSettings:
   allowedAutorotateToLandscapeLeft: 1
   useOSAutorotation: 1
   use32BitDisplayBuffer: 1
-  preserveFramebufferAlpha: 0
+  preserveFramebufferAlpha: 1
   adjustIOSFPSUsingThermalState: 1
   thermalStateSeriousIOSFPS: 30
   thermalStateCriticalIOSFPS: 15
