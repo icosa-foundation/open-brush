@@ -257,6 +257,9 @@ namespace TiltBrush
         [LuaDocsDescription("The number of primitives in this SDF guide")]
         public int primitiveCount => GetSdfStencil().PrimitiveCount;
 
+        [LuaDocsDescription("The number of components in this SDF guide, including mesh operands")]
+        public int componentCount => GetSdfStencil().ComponentCount;
+
         [LuaDocsDescription("Adds a primitive to this SDF guide")]
         [LuaDocsExample("primitive = myGuide:AddPrimitive(\"sphere\", Vector4:New(1, 0, 0, 0), Transform:New(0, 0, 0), \"union\", 0)")]
         [LuaDocsParameter("primitiveType", "sphere, torus, cuboid, boxframe, or cylinder")]

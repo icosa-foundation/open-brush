@@ -68,7 +68,7 @@ namespace TiltBrush
                 transform, SdfStencil.ParseOperation(operation), blend);
         }
 
-        [LuaDocsDescription("The zero-based position of this primitive in the SDF evaluation order")]
+        [LuaDocsDescription("The zero-based index of this primitive in the analytic primitive list")]
         public int index
         {
             get
@@ -77,6 +77,23 @@ namespace TiltBrush
                 for (int i = 0; i < primitives.Count; ++i)
                 {
                     if (primitives[i] == Primitive)
+                    {
+                        return i;
+                    }
+                }
+                throw new InvalidOperationException("The SDF primitive is no longer part of its guide.");
+            }
+        }
+
+        [LuaDocsDescription("The zero-based position of this primitive in the complete SDF component evaluation order, including mesh operands")]
+        public int componentIndex
+        {
+            get
+            {
+                var components = m_Stencil.GetComponents();
+                for (int i = 0; i < components.Count; ++i)
+                {
+                    if (components[i] == Primitive)
                     {
                         return i;
                     }
