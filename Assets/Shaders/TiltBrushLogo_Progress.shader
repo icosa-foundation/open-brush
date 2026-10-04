@@ -21,7 +21,8 @@ Shader "Custom/TiltBrushLogo_Progress" {
   SubShader {
     Tags { "RenderPipeline"="UniversalPipeline" }
     Tags { "RenderType"="Transparent" }
-    Blend SrcAlpha OneMinusSrcAlpha
+    // Composite logo opacity over passthrough while keeping opaque destinations opaque.
+    Blend SrcAlpha OneMinusSrcAlpha, One OneMinusSrcAlpha
     LOD 100
     Pass {
       HLSLPROGRAM

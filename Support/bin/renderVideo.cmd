@@ -40,6 +40,7 @@ ECHO 5) Omnidirectional Stereo 360, 4k x 4k 30 FPS
 ECHO 6) Omnidirectional Stereo 360, 4k x 4k 30 FPS, no quick load
 ECHO 7) [Fast,Low Quality] Omnidirectional Stereo 360, 1k x 1k 30 FPS
 ECHO 8) [Fast,Low Quality] Omnidirectional Stereo 360, 1k x 1k 30 FPS, no quick load
+ECHO 9) Omnidirectional Stereo 360, 8k x 8k 30 FPS
 ECHO.
 
 SET /P selItem=Select an option: 
@@ -73,22 +74,27 @@ IF "%selItem%"=="4" (
 )
 IF "%selItem%"=="5" (
   ECHO Rendering 360 stereo omnidirecitonal stereo 4k x 4k 30fps 360 stereo
-  "%exePath%" --renderCameraPath "%usdaPath%" --captureOds "%sketchPath%"
+  "%exePath%" --renderCameraPath "%usdaPath%" --Video.OfflineResolution 4096 --fps 30 --captureOds "%sketchPath%"
   GOTO End
 )
 IF "%selItem%"=="6" (
   ECHO Rendering 360 stereo omnidirecitonal stereo 4k x 4k 30fps 360 stereo, no quick load
-  "%exePath%" --noQuickLoad --renderCameraPath "%usdaPath%" --captureOds "%sketchPath%"
+  "%exePath%" --noQuickLoad --renderCameraPath "%usdaPath%" --Video.OfflineResolution 4096 --fps 30 --captureOds "%sketchPath%"
   GOTO End
 )
 IF "%selItem%"=="7" (
   ECHO Rendering [Fast,Low Quality] 360 stereo omnidirecitonal stereo 1k x 1k 30fps 360 stereo
-  "%exePath%" --preview --renderCameraPath "%usdaPath%" --captureOds "%sketchPath%"
+  "%exePath%" --preview --renderCameraPath "%usdaPath%" --fps 30 --captureOds "%sketchPath%"
   GOTO End
 )
 IF "%selItem%"=="8" (
   ECHO Rendering [Fast,Low Quality] 360 stereo omnidirecitonal stereo 1k x 1k 30fps 360 stereo, no quick load
-  "%exePath%" --preview --noQuickLoad --renderCameraPath "%usdaPath%" --captureOds "%sketchPath%"
+  "%exePath%" --preview --noQuickLoad --renderCameraPath "%usdaPath%" --fps 30 --captureOds "%sketchPath%"
+  GOTO End
+)
+IF "%selItem%"=="9" (
+  ECHO Rendering 360 stereo omnidirectional stereo 8k x 8k 30fps 360 stereo
+  "%exePath%" --renderCameraPath "%usdaPath%" --Video.OfflineResolution 8000 --fps 30 --captureOds "%sketchPath%"
   GOTO End
 )
 

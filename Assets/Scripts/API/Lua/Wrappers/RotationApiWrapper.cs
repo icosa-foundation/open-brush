@@ -254,6 +254,12 @@ namespace TiltBrush
         [LuaDocsReturnValue(@"The rotation that represents applying both rotations in turn")]
         public Quaternion Multiply(Quaternion other) => _Quaternion * other;
 
+        [LuaDocsDescription("Rotates a vector by a rotation")]
+        [LuaDocsParameter("rotation", "The rotation to apply")]
+        [LuaDocsParameter("vector", "The vector to rotate")]
+        [LuaDocsReturnValue("The rotated vector")]
+        public static Vector3 RotateVector(Quaternion rotation, Vector3 vector) => rotation * vector;
+
         [LuaDocsDescription(@"Are two rotations the same?")]
         [LuaDocsExample(@"if myRotation:Equals(otherRotation) then print(""Equal!"") end")]
         [LuaDocsParameter("other", "The rotation to comapre to")]

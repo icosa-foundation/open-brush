@@ -111,6 +111,9 @@ static class BuildTiltBrush
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.Android),
+            // iOS has no Unity OpenXR loader. Keeping the OpenXR build mode preserves the normal
+            // UnityXR runtime path, which falls back to view-only mode when no loader initializes.
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.iOS),
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.AndroidXR, BuildTarget.Android),
 
             // Zapbox
@@ -127,7 +130,8 @@ static class BuildTiltBrush
         {
             omitForAndroid = true
         },
-        new CopyRequest(FfmpegPipe.kFfmpegDir) { omitForAndroid = true },
+        // ffmpeg binaries are added per platform by FfmpegCopyRequests().
+        new CopyRequest($"{FfmpegPipe.kFfmpegDir}/licenses") { omitForAndroid = true },
         new CopyRequest("Support/tiltasaurus.json"),
         new CopyRequest("Support/README.txt") { omitForAndroid = true },
         new CopyRequest("Support/exportManifest.json"),
@@ -137,6 +141,22 @@ static class BuildTiltBrush
         // No longer needed, now that these are hosted
         // new CopyRequest("Support/GlTFShaders"),
     };
+
+    // Only ship the ffmpeg binaries the target platform can run (see FfmpegPipe.GetFfmpegExe).
+    static IEnumerable<CopyRequest> FfmpegCopyRequests(BuildTarget target)
+    {
+        string bin = $"{FfmpegPipe.kFfmpegDir}/bin";
+        switch (target)
+        {
+            case BuildTarget.StandaloneWindows64:
+                yield return new CopyRequest($"{bin}/ffmpeg.exe") { omitForAndroid = true };
+                break;
+            case BuildTarget.StandaloneOSX:
+                yield return new CopyRequest($"{bin}/ffmpeg-arm64") { omitForAndroid = true };
+                yield return new CopyRequest($"{bin}/ffmpeg-x86_64") { omitForAndroid = true };
+                break;
+        }
+    }
 
     // Used to transfer information from DoBuild() to the post-build callback
     class PostBuildInfo
@@ -932,6 +952,14 @@ static class BuildTiltBrush
             m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
             m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Any);
 
+#if OPEN_BRUSH_VIEWER
+            if (m_Target == BuildTarget.iOS)
+            {
+                PlayerSettings.iOS.targetDevice = iOSTargetDevice.iPhoneAndiPad;
+                Debug.Log("Configured the Open Brush Viewer build for iPhone and iPad.");
+            }
+#endif
+
             if (m_Target == BuildTarget.Android && tiltOptions.AndroidTargetSdkVersion.HasValue)
             {
                 m_RestoreAndroidTargetSdkVersion = true;
@@ -1000,6 +1028,7 @@ static class BuildTiltBrush
             }
             AssetDatabase.SaveAssets();
         }
+
     }
 
     class TempSetScriptingBackend : IDisposable
@@ -1265,11 +1294,23 @@ static class BuildTiltBrush
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            if (targetSettings == null)
+            {
+                return;
+            }
             m_xrEnabled = targetSettings.InitManagerOnStart;
 
             switch (tiltOptions.XrSdk)
             {
                 case XrSdkMode.OpenXR:
+                    // Unity's OpenXR loader supports Standalone and Android, but not iOS.
+                    // An iOS Viewer build deliberately has no loader: it remains in the normal
+                    // UnityXR runtime mode and uses the existing no-HMD view-only fallback.
+                    if (tiltOptions.Target != BuildTarget.iOS)
+                    {
+                        targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                    }
+                    break;
                 case XrSdkMode.AndroidXR:
                     targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     break;
@@ -1308,6 +1349,10 @@ static class BuildTiltBrush
         public void Dispose()
         {
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
+            if (targetSettings == null)
+            {
+                return;
+            }
             targetSettings.InitManagerOnStart = m_xrEnabled;
 
             // Remove build loaders.
@@ -1602,6 +1647,7 @@ static class BuildTiltBrush
             options == BuildOptions.None ? "None" : options.ToString());
 
         var copyRequests = new List<CopyRequest>(kToCopy);
+        copyRequests.AddRange(FfmpegCopyRequests(target));
 
         // It's important here for Main.unity (currently scenes[1]) to be the last scene
         // "temp modified".  TempModifyScene opens the scene and if Main.unity is not the open
