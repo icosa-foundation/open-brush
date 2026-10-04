@@ -112,6 +112,15 @@ namespace TiltBrush
             }
         }
 
+        /// True if this stroke should be in the snap hash.
+        /// A stroke should be in the hash if it:
+        /// - Has the CreatedWithStraightEdge flag
+        /// - Has geometry (not NotCreated)
+        /// - Is not hidden
+        private bool ShouldBeInSnapHash =>
+            (m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0
+            && IsGeometryEnabled;
+
         /// True if this stroke should be displayed on playback (i.e. not an erased or undone stroke).
         /// TODO: the setter is never used -- is that a bug, or should we remove the field?
         public bool IsVisibleForPlayback { get; /*set;*/ } = true;
@@ -254,6 +263,9 @@ namespace TiltBrush
             }
 
             m_Type = Type.NotCreated;
+
+            // Synchronize snap hash state (will remove if geometry is gone)
+            RefreshSnapHash();
         }
 
         /// Like Recreate except the translation are interpreted as a destination point relative to the canvas
@@ -297,6 +309,9 @@ namespace TiltBrush
                 // needs to go through a pointer.
                 var pointer = PointerManager.m_Instance.GetTransientPointer(5);
                 pointer.RecreateLineFromMemory(this);
+
+                // Synchronize snap hash state (will add if geometry exists and not hidden)
+                RefreshSnapHash();
             }
             else if (canvas != null)
             {
@@ -332,11 +347,21 @@ namespace TiltBrush
             m_Object = null;
             m_IntendedCanvas = null;
             m_Type = Type.BatchedBrushStroke;
+
+            // Synchronize snap hash state (will add if geometry exists and not hidden)
+            RefreshSnapHash();
         }
 
         // TODO: Possibly could optimize this in C++ for 11.5% of time in selection.
         private void LeftTransformControlPoints(TrTransform leftTransform, bool absoluteScale = false)
         {
+            bool updateSnapHash =
+                (m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0;
+            if (updateSnapHash)
+            {
+                StraightEdgeGuideScript.m_Instance?.RemoveStrokeFromHash(this);
+            }
+
             for (int i = 0; i < m_ControlPoints.Length; i++)
             {
                 var point = m_ControlPoints[i];
@@ -350,11 +375,24 @@ namespace TiltBrush
             m_BrushScale *= absoluteScale
                 ? Mathf.Abs(leftTransform.scale)
                 : leftTransform.scale;
+
+            if (updateSnapHash)
+            {
+                RefreshSnapHash();
+            }
+
             InvalidateCopy();
         }
 
         private void LeftTransformControlPoints(Matrix4x4 leftTransform)
         {
+            bool updateSnapHash =
+                (m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) != 0;
+            if (updateSnapHash)
+            {
+                StraightEdgeGuideScript.m_Instance?.RemoveStrokeFromHash(this);
+            }
+
             for (int i = 0; i < m_ControlPoints.Length; i++)
             {
                 var point = m_ControlPoints[i];
@@ -364,6 +402,12 @@ namespace TiltBrush
             }
 
             m_BrushScale *= Mathf.Abs(leftTransform.lossyScale.x);
+
+            if (updateSnapHash)
+            {
+                RefreshSnapHash();
+            }
+
             InvalidateCopy();
         }
 
@@ -466,16 +510,43 @@ namespace TiltBrush
             }
         }
 
-        public void Hide(bool hide)
+        /// <summary>
+        /// Synchronizes the snap hash state with the current stroke state.
+        /// This is the single source of truth for snap hash management.
+        /// Should be called after any operation that changes geometry or visibility.
+        /// </summary>
+        private void RefreshSnapHash()
+        {
+            // Early exit if this stroke doesn't have the straight edge flag
+            if ((m_Flags & SketchMemoryScript.StrokeFlags.CreatedWithStraightEdge) == 0)
+            {
+                return;
+            }
+
+            // Synchronize hash state with ShouldBeInSnapHash
+            if (ShouldBeInSnapHash)
+            {
+                StraightEdgeGuideScript.m_Instance?.AddStrokeToHash(this);
+            }
+            else
+            {
+                StraightEdgeGuideScript.m_Instance?.RemoveStrokeFromHash(this);
+            }
+        }
+
+        public void Hide(bool hide, bool adjustMeter = true)
         {
             switch (m_Type)
             {
                 case Type.BrushStroke:
-                    BaseBrushScript rBrushScript =
-                        m_Object.GetComponent<BaseBrushScript>();
-                    if (rBrushScript)
+                    if (m_Object)
                     {
-                        rBrushScript.HideBrush(hide);
+                        BaseBrushScript rBrushScript =
+                            m_Object.GetComponent<BaseBrushScript>();
+                        if (rBrushScript)
+                        {
+                            rBrushScript.HideBrush(hide);
+                        }
                     }
                     break;
                 case Type.BatchedBrushStroke:
@@ -494,7 +565,13 @@ namespace TiltBrush
                     break;
             }
 
-            TiltMeterScript.m_Instance.AdjustMeter(this, up: !hide);
+            // Synchronize snap hash state based on visibility
+            RefreshSnapHash();
+
+            if (adjustMeter)
+            {
+                TiltMeterScript.m_Instance.AdjustMeter(this, up: !hide);
+            }
         }
 
         private void _CheckValidLayerState()

@@ -4468,6 +4468,9 @@ namespace TiltBrush
             int newLayerIndex = App.Scene.GetIndexOfCanvas(newLayer);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: true, targetLayer: newLayerIndex, out List<Stroke> loadedStrokes))
             {
+                // Rebuild straight edge snap hash from loaded/merged strokes
+                StraightEdgeGuideScript.m_Instance.RebuildAllCanvasHashes();
+
                 // A new layer will have been created for the merged strokes.
                 // Rename it accordingly
                 App.Scene.RenameLayer(newLayer, fileInfo.HumanName);
@@ -4498,7 +4501,9 @@ namespace TiltBrush
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
             {
-                PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
+                // Rebuild straight edge snap hash from loaded strokes
+                StraightEdgeGuideScript.m_Instance.RebuildAllCanvasHashes();
+
                 SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
                 // the order of these two lines are important as ExitIntroSketch is setting the
@@ -5550,7 +5555,7 @@ namespace TiltBrush
             SelectionManager.m_Instance.RemoveFromSelection(false);
             PointerManager.m_Instance.ResetSymmetryToHome();
             PointerManager.m_Instance.FinalizeLine(false, true);
-            PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
+            PointerManager.m_Instance.StraightEdgeGuide.ClearAllCanvasHashes();
             App.Scene.ResetLayers(notify: true);
             ApiManager.Instance.ResetBrushTransform();
             ApiManager.Instance.ForcePainting = ApiManager.ForcePaintingMode.None;
