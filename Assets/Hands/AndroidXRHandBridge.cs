@@ -230,6 +230,14 @@ private bool m_TutorialBypassApplied;
         private readonly List<XRHandSubsystem> m_XRHandSubsystems = new();
         private float m_NextXRHandsSearchTime;
 
+        // Right brush tip is reconstructed from the INDEX finger bone chain rather
+        // than trusting XRHand IndexTip blindly. Some Android XR hand poses can
+        // transiently report IndexTip at/near another fingertip when fingers curl.
+        private float m_RightIndexDistalToTipLength = 0.018f;
+        private bool m_RightIndexTipLengthCalibrated;
+        private Vector3 m_LastStableRightIndexDirectionLocal = Vector3.forward;
+        private bool m_HaveLastStableRightIndexDirection;
+
         private ControllerBinding m_LeftControllerBinding;
         private ControllerBinding m_RightControllerBinding;
 
@@ -1799,68 +1807,193 @@ private bool m_SwimModeUp;
                 hand.GetJoint(
                     XRHandJointID.Palm);
 
-            XRHandJoint indexTipJoint =
+            XRHandJoint indexIntermediateJoint =
                 hand.GetJoint(
-                    XRHandJointID.IndexTip);
+                    XRHandJointID.IndexIntermediate);
 
             XRHandJoint indexDistalJoint =
                 hand.GetJoint(
                     XRHandJointID.IndexDistal);
 
+            XRHandJoint indexTipJoint =
+                hand.GetJoint(
+                    XRHandJointID.IndexTip);
+
             bool havePalm =
                 palmJoint.TryGetPose(
                     out Pose palmLocal);
 
-            bool haveTip =
-                indexTipJoint.TryGetPose(
-                    out Pose indexTipLocal);
+            bool haveIntermediate =
+                indexIntermediateJoint.TryGetPose(
+                    out Pose indexIntermediateLocal);
 
             bool haveDistal =
                 indexDistalJoint.TryGetPose(
                     out Pose indexDistalLocal);
 
+            bool haveRawTip =
+                indexTipJoint.TryGetPose(
+                    out Pose rawIndexTipLocal);
+
             if (havePalm)
             {
-                // EXACT source used by the older working Wand implementation.
                 state.palmPose =
                     ToWorldPose(
                         palmLocal);
             }
 
-            if (haveTip)
-            {
-                // EXACT fingertip source used by the older working UI touch.
-                state.indexTipPose =
-                    ToWorldPose(
-                        indexTipLocal);
-            }
-
-            if (haveTip &&
+            /*
+             * IMPORTANT — RIGHT BRUSH POSITION
+             *
+             * Do NOT use raw IndexTip as the authoritative drawing position.
+             *
+             * On Android XR we have observed IndexTip occasionally jumping to the
+             * end of the middle finger when the other fingers curl. Instead build
+             * the brush tip strictly from the INDEX finger's own bone chain:
+             *
+             *     IndexIntermediate -> IndexDistal -> reconstructed tip
+             *
+             * The raw IndexTip is used only to learn the short distal->tip length
+             * when it is geometrically consistent with the index bone direction.
+             */
+            if (isRightHand &&
+                haveIntermediate &&
                 haveDistal)
             {
-                Vector3 directionLocal =
-                    indexTipLocal.position -
-                    indexDistalLocal.position;
+                Vector3 distalBone =
+                    indexDistalLocal.position -
+                    indexIntermediateLocal.position;
 
-                if (directionLocal.sqrMagnitude >
-                    0.00000001f)
+                if (distalBone.sqrMagnitude > 0.00000001f)
                 {
-                    // EXACT IndexDistal -> IndexTip pointer direction used by
-                    // the older working teleporter / colour pointer.
+                    Vector3 indexDirectionLocal =
+                        distalBone.normalized;
+
+                    m_LastStableRightIndexDirectionLocal =
+                        indexDirectionLocal;
+
+                    m_HaveLastStableRightIndexDirection =
+                        true;
+
+                    // Calibrate distal->tip length only when raw IndexTip lies
+                    // plausibly in front of IndexDistal along the index bone.
+                    if (haveRawTip)
+                    {
+                        Vector3 rawDistalToTip =
+                            rawIndexTipLocal.position -
+                            indexDistalLocal.position;
+
+                        float rawLength =
+                            rawDistalToTip.magnitude;
+
+                        float alignment =
+                            rawLength > 0.0001f
+                                ? Vector3.Dot(
+                                    rawDistalToTip / rawLength,
+                                    indexDirectionLocal)
+                                : -1.0f;
+
+                        // Human distal->tip distance should be short. More
+                        // importantly, it must continue the index bone rather than
+                        // point sideways toward the middle fingertip.
+                        bool rawTipLooksLikeIndex =
+                            rawLength >= 0.004f &&
+                            rawLength <= 0.035f &&
+                            alignment >= 0.65f;
+
+                        if (rawTipLooksLikeIndex)
+                        {
+                            if (!m_RightIndexTipLengthCalibrated)
+                            {
+                                m_RightIndexDistalToTipLength =
+                                    rawLength;
+
+                                m_RightIndexTipLengthCalibrated =
+                                    true;
+                            }
+                            else
+                            {
+                                // Slow smoothing prevents a single odd frame from
+                                // changing the physical brush-tip length.
+                                m_RightIndexDistalToTipLength =
+                                    Mathf.Lerp(
+                                        m_RightIndexDistalToTipLength,
+                                        rawLength,
+                                        0.05f);
+                            }
+                        }
+                    }
+
+                    Vector3 reconstructedTipLocal =
+                        indexDistalLocal.position +
+                        indexDirectionLocal *
+                        Mathf.Clamp(
+                            m_RightIndexDistalToTipLength,
+                            0.008f,
+                            0.030f);
+
+                    Pose reconstructedTipPoseLocal =
+                        new Pose(
+                            reconstructedTipLocal,
+                            indexDistalLocal.rotation);
+
+                    state.indexTipPose =
+                        ToWorldPose(
+                            reconstructedTipPoseLocal);
+
                     state.indexDirectionWorld =
                         ToWorldDirection(
-                            directionLocal.normalized);
+                            indexDirectionLocal);
 
-                    state.indexDirectionValid = true;
+                    state.indexDirectionValid =
+                        true;
                 }
+            }
+            else if (!isRightHand && haveRawTip)
+            {
+                // Left hand does not drive the brush. Preserve the normal raw
+                // fingertip mapping for any diagnostics/auxiliary use.
+                state.indexTipPose =
+                    ToWorldPose(
+                        rawIndexTipLocal);
+            }
+
+            // If the right intermediate joint temporarily drops but distal remains,
+            // keep the brush tied to the INDEX distal joint using the last known
+            // index direction. Never fall back to poke/pinch or another fingertip.
+            if (isRightHand &&
+                !state.indexDirectionValid &&
+                haveDistal &&
+                m_HaveLastStableRightIndexDirection)
+            {
+                Vector3 reconstructedTipLocal =
+                    indexDistalLocal.position +
+                    m_LastStableRightIndexDirectionLocal *
+                    Mathf.Clamp(
+                        m_RightIndexDistalToTipLength,
+                        0.008f,
+                        0.030f);
+
+                state.indexTipPose =
+                    ToWorldPose(
+                        new Pose(
+                            reconstructedTipLocal,
+                            indexDistalLocal.rotation));
+
+                state.indexDirectionWorld =
+                    ToWorldDirection(
+                        m_LastStableRightIndexDirectionLocal);
+
+                state.indexDirectionValid =
+                    true;
             }
 
             state.xrHandsSpatialValid =
                 havePalm &&
                 (!isRightHand ||
-                 (haveTip && haveDistal));
+                 (haveDistal &&
+                  state.indexDirectionValid));
         }
-
 
         private void UpdateSourceSelection()
         {
@@ -2860,6 +2993,17 @@ m_SwimModeUp =
         {
             if (behavior == null ||
                 behavior.PointerAttachPoint == null)
+            {
+                return;
+            }
+
+            // For hand-tracked painting, never drive the brush from the
+            // Hand Interaction poke/pinch position. Those are semantic runtime
+            // poses and can migrate when other fingers curl. Wait for the actual
+            // XR Hands IndexTip/IndexDistal pose instead.
+            if (UseHand(true) &&
+                useXRHandsForSpatialPose &&
+                !hand.xrHandsSpatialValid)
             {
                 return;
             }
