@@ -69,6 +69,16 @@ namespace TiltBrush
     [MoonSharpUserData]
     public static class SymmetryApiWrapper
     {
+        [LuaDocsDescription("The current physical brush pointer pose in the active canvas")]
+        public static TransformApiWrapper pointerPose
+        {
+            get
+            {
+                var pose_GS = TrTransform.FromTransform(PointerManager.m_Instance.MainPointer.transform);
+                pose_GS.scale = 1;
+                return new TransformApiWrapper(App.Scene.ActiveCanvas.Pose.inverse * pose_GS);
+            }
+        }
 
         [LuaDocsDescription("The current symmetry settings")]
         public static SymmetrySettingsApiWrapper current
@@ -354,6 +364,14 @@ namespace TiltBrush
                 .ToList();
         }
 
+        [LuaDocsDescription("Sets painting modes in the order of transforms returned by the symmetry script")]
+        [LuaDocsParameter("modes", "One painting mode per returned pointer transform")]
+        public static void SetPointerPaintModes(List<SymmetryPointerPaintMode> modes)
+        {
+            PointerManager.m_Instance.SetScriptedPointerPaintModes(
+                modes.Select(mode => (PointerManager.PointerPaintingOverride)mode).ToList());
+        }
+
         [LuaDocsDescription("Convenience helper that forces a scripted pointer to start painting.")]
         [LuaDocsParameter("pointerIndex", "Zero-based pointer index matching the transform order returned by the symmetry script.")]
         [LuaDocsExample("Symmetry:StartPointer(1)")]
@@ -376,6 +394,30 @@ namespace TiltBrush
         public static void ForcePointerNewStroke(int pointerIndex)
         {
             PointerManager.m_Instance.ForceScriptedPointerNewStroke(pointerIndex);
+        }
+
+        [LuaDocsDescription("Applies an action expressed in a frame to a pointer pose")]
+        [LuaDocsParameter("pose", "The pointer pose")]
+        [LuaDocsParameter("frame", "The frame in which the action is expressed, in the same space as the pose")]
+        [LuaDocsParameter("action", "The local translation, rotation and scale to apply")]
+        [LuaDocsReturnValue("The transformed pointer pose in the same space")]
+        public static TransformApiWrapper ApplyPoseAction(
+            TransformApiWrapper pose, TransformApiWrapper frame, TransformApiWrapper action)
+        {
+            var frameAction = action._TrTransform.TransformBy(frame._TrTransform);
+            return new TransformApiWrapper(frameAction * pose._TrTransform);
+        }
+
+        [LuaDocsDescription("Reflects a pointer pose across a frame's local YZ plane")]
+        [LuaDocsParameter("pose", "The pointer pose")]
+        [LuaDocsParameter("frame", "The frame defining the reflection plane, in the same space as the pose")]
+        [LuaDocsReturnValue("The reflected pose with its handedness preserved")]
+        public static TransformApiWrapper ReflectPose(
+            TransformApiWrapper pose, TransformApiWrapper frame)
+        {
+            var plane = new Plane(frame._TrTransform.rotation * Vector3.right,
+                frame._TrTransform.translation);
+            return new TransformApiWrapper(plane.ReflectPoseKeepHandedness(pose._TrTransform));
         }
 
         // Converts an array of points centered on the origin to a list of TrTransforms

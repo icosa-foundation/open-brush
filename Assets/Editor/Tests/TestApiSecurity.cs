@@ -264,18 +264,18 @@ namespace TiltBrush
                 request.redirectLimit);
         }
 
-        [TestCase("{}", "examples.openbrush.test")]
-        [TestCase("{\"Flags\":{\"PluginWebRequestRules\":null}}", "examples.openbrush.test")]
+        private const string kDefaultWebRequestHosts =
+            "api.openverse.org,upload.wikimedia.org,avatars.openbrush.app,icosa.gallery,openbrush.app";
+
+        [TestCase("{}", kDefaultWebRequestHosts)]
+        [TestCase("{\"Flags\":{\"PluginWebRequestRules\":null}}", kDefaultWebRequestHosts)]
         [TestCase("{\"Flags\":{\"PluginWebRequestRules\":[]}}", "")]
         [TestCase("{\"Flags\":{\"PluginWebRequestRules\":[{\"Host\":\"custom.test\",\"Methods\":[\"GET\"],\"FileTypes\":[\"image\"]}]}}", "custom.test")]
         public void TestUserConfigInheritsOnlyMissingOrNullWebRequestRuleDefaults(
             string userConfigText, string expectedHosts)
         {
-            const string defaultConfigText =
-                "{\"Flags\":{\"PluginWebRequestRules\":[{\"Host\":\"examples.openbrush.test\",\"Methods\":[\"GET\"],\"FileTypes\":[\"json\"]}]}}";
-
-            UserConfig config = App.DeserializeUserConfigWithDefaults(
-                defaultConfigText, userConfigText, out string warning);
+            UserConfig config = App.DeserializeObjectWithWarning<UserConfig>(
+                userConfigText, out string warning);
 
             Assert.IsNull(warning);
             Assert.AreEqual(
@@ -286,16 +286,15 @@ namespace TiltBrush
         [Test]
         public void TestLegacyStringOnlyLuaHostAllowlistIsNotAccepted()
         {
-            const string defaultConfigText =
-                "{\"Flags\":{\"PluginWebRequestRules\":[{\"Host\":\"default.test\",\"Methods\":[\"GET\"],\"FileTypes\":[\"json\"]}]}}";
             const string userConfigText =
                 "{\"Flags\":{\"LuaWebRequestAllowedHosts\":[\"legacy.test\"]}}";
 
-            UserConfig config = App.DeserializeUserConfigWithDefaults(
-                defaultConfigText, userConfigText, out string warning);
+            UserConfig config = App.DeserializeObjectWithWarning<UserConfig>(
+                userConfigText, out string warning);
 
             StringAssert.Contains("LuaWebRequestAllowedHosts", warning);
-            Assert.AreEqual("default.test", config.Flags.PluginWebRequestRules.Single().Host);
+            Assert.AreEqual(kDefaultWebRequestHosts,
+                string.Join(",", config.Flags.PluginWebRequestRules.Select(rule => rule.Host)));
         }
 
         [TestCase("module.lua", true)]

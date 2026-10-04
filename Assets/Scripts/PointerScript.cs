@@ -345,8 +345,8 @@ namespace TiltBrush
 
         void Update()
         {
-            //update brush audio
-            if (m_AudioSources.Length > 0)
+            //update brush audio (no brush is assigned until the pointer is first set up)
+            if (m_AudioSources.Length > 0 && m_CurrentBrush != null)
             {
                 //smooth volume and pitch out a bit from frame to frame
                 float fFadeStepUp = m_BrushAudioAdjustSpeedUp * Time.deltaTime;
@@ -568,6 +568,11 @@ namespace TiltBrush
         public void UpdateLineFromObject()
         {
             var xf_LS = GetTransformForLine(m_CurrentLine.transform, Coords.AsRoom[transform]);
+            if (PointerManager.m_Instance.CurrentSymmetryMode ==
+                PointerManager.SymmetryMode.ScriptedSymmetryMode)
+            {
+                xf_LS.scale = m_CurrentLine.StrokeScale;
+            }
 
             if (!PointerManager.m_Instance.IsMainPointerProcessingLine() && m_CurrentCreator != null)
             {
@@ -583,6 +588,11 @@ namespace TiltBrush
                     TrTransform xfSymmetry_RS = PointerManager.m_Instance.GetSymmetryTransformFor(
                         this, xfMain_RS);
                     xf_LS = GetTransformForLine(m_CurrentLine.transform, xfSymmetry_RS);
+                    if (PointerManager.m_Instance.CurrentSymmetryMode ==
+                        PointerManager.SymmetryMode.ScriptedSymmetryMode)
+                    {
+                        xf_LS.scale = m_CurrentLine.StrokeScale;
+                    }
                 }
 
                 m_ControlPoints.Clear();

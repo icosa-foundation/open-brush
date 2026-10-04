@@ -5,7 +5,6 @@ using UnityEngine;
 using System;
 using System.Collections;
 using System.IO;
-using System.Reflection;
 using Debug = UnityEngine.Debug;
 using TiltBrush;
 using UnityEngine.Rendering;
@@ -31,6 +30,8 @@ public class HybridCamera : MonoBehaviour {
   // Keep an explicit ODS render-target cap and use maxTextureSize only as an additional
   // platform bound; maxTextureSize is not itself a render-texture guarantee.
   const int MaxRenderTextureWidth = 8192;
+  // Layer used only by the temporary post-processing camera and quad (unused elsewhere).
+  const int PostProcessLayer = 31;
                        
   public float interPupillaryDistance = 0.05f;
   public int imageWidth = 4096;
@@ -285,9 +286,13 @@ public class HybridCamera : MonoBehaviour {
       // Mobile captures span many frames so freeze animations and simulation for every entry point.
       Time.timeScale = 0.0f;
       if (usingScriptableRenderPipeline && UrpPostProcessingController.Instance != null) {
+        // Slices are rendered without post-processing: spatial effects like bloom must run over
+        // the stitched image, not per slice. Keep HDR so bright values survive for that pass.
         postProcessingState =
-          UrpPostProcessingController.Instance.BeginCapturePostProcessing(
-            renderCamera, includePostProcessing);
+          UrpPostProcessingController.Instance.BeginCapturePostProcessing(renderCamera, false);
+        if (includePostProcessing) {
+          renderCamera.allowHDR = true;
+        }
       }
 
       yield return StartCoroutine(
@@ -325,22 +330,15 @@ public class HybridCamera : MonoBehaviour {
     RenderTexture.active = oldActiveTexture;
 
     bool useBloomedImage = false;
-    if (includePostProcessing && !usingScriptableRenderPipeline) {
-      MonoBehaviour[] behaviours = gameObject.GetComponents<MonoBehaviour>();
-      foreach (MonoBehaviour b in behaviours) {
-        MethodInfo m = b.GetType().GetMethod("OnRenderImage");
-        if (m != null && m.IsPublic && b.enabled) {
-          //Apply the bloom and composite.
-          if (vr180) {
-            SbsBloomAndComposite(stitched, finalImage, b, m);
-          }
-          else {
-            StackedBloomAndComposite(stitched, finalImage, b, m);
-          }
-          useBloomedImage = true;
-          break;
-        }
+    if (includePostProcessing && UrpPostProcessingController.Instance != null) {
+      //Apply post-processing (bloom) and composite.
+      if (vr180) {
+        SbsBloomAndComposite(stitched, finalImage, PostProcess);
       }
+      else {
+        StackedBloomAndComposite(stitched, finalImage, PostProcess);
+      }
+      useBloomedImage = true;
     }
 
     //When bloom is not enabled, we still have to composite.
@@ -463,15 +461,65 @@ public class HybridCamera : MonoBehaviour {
     RenderTexture.active = oldActiveTexture;
   }
 
+  // Runs URP post-processing over src (the stitched image, or one eye of it) into dst by rendering
+  // it on a quad through a temporary camera with the capture post-processing settings.
+  private void PostProcess(RenderTexture src, RenderTexture dst)
+  {
+    var root = new GameObject("ODS Post Processing");
+    root.hideFlags = HideFlags.HideAndDontSave;
+    var quadMaterial = new Material(Shader.Find("Hidden/BlitCopy"));
+    quadMaterial.mainTexture = src;
+    try {
+      float aspect = (float)src.width / src.height;
+
+      GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+      DestroyImmediate(quad.GetComponent<Collider>());
+      quad.layer = PostProcessLayer;
+      quad.transform.SetParent(root.transform, false);
+      quad.transform.localPosition = new Vector3(0.0f, 0.0f, 1.0f);
+      quad.transform.localScale = new Vector3(aspect, 1.0f, 1.0f);
+      var quadRenderer = quad.GetComponent<MeshRenderer>();
+      quadRenderer.sharedMaterial = quadMaterial;
+      quadRenderer.shadowCastingMode = ShadowCastingMode.Off;
+      quadRenderer.receiveShadows = false;
+
+      Camera camera = root.AddComponent<Camera>();
+      camera.enabled = false;
+      camera.orthographic = true;
+      camera.orthographicSize = 0.5f;
+      camera.nearClipPlane = 0.5f;
+      camera.farClipPlane = 1.5f;
+      camera.clearFlags = CameraClearFlags.SolidColor;
+      camera.backgroundColor = Color.black;
+      camera.cullingMask = 1 << PostProcessLayer;
+      camera.allowMSAA = false;
+      camera.targetTexture = dst;
+
+      UrpPostProcessingController.CameraPostProcessingState state =
+        UrpPostProcessingController.Instance.BeginCapturePostProcessing(camera, true);
+      try {
+        camera.Render();
+      }
+      finally {
+        UrpPostProcessingController.Instance.EndCapturePostProcessing(state);
+        camera.targetTexture = null;
+      }
+    }
+    finally {
+      DestroyImmediate(root);
+      DestroyImmediate(quadMaterial);
+    }
+  }
+
   //Apply bloom and composite into the final image.
   private void StackedBloomAndComposite(RenderTexture src, RenderTexture dst,
-                                        MonoBehaviour behavior, MethodInfo renderImageMethod)
+                                        Action<RenderTexture, RenderTexture> postProcess)
   {
     RenderTextureFormat fmt = src.format;
     RenderTexture rt0 = RenderTexture.GetTemporary(src.width, src.height, 0, fmt);
     float eyeWidth = (float)rt0.width;
 
-    renderImageMethod.Invoke(behavior, new object[] { src, rt0 });
+    postProcess(src, rt0);
 
     var oldActiveTexture = RenderTexture.active;
     RenderTexture.active = dst;
@@ -490,7 +538,7 @@ public class HybridCamera : MonoBehaviour {
 
   //Apply bloom and composite into the final image.
   private void SbsBloomAndComposite(RenderTexture src, RenderTexture dst,
-                                    MonoBehaviour behavior, MethodInfo renderImageMethod)
+                                    Action<RenderTexture, RenderTexture> postProcess)
   {
     //split the src into halves.
     int srcWidth = src.width;
@@ -522,8 +570,8 @@ public class HybridCamera : MonoBehaviour {
     Graphics.CopyTexture(src, srcElement, srcMipLevel, srcX, srcY, tmpWidth, srcHeight, rt1,
       dstElement, dstMipLevel, dstX, dstY);
 
-    renderImageMethod.Invoke(behavior, new object[] { rt0, rt2 });
-    renderImageMethod.Invoke(behavior, new object[] { rt1, rt3 });
+    postProcess(rt0, rt2);
+    postProcess(rt1, rt3);
 
     //CopyTexture doesn't work when changing formats, so DrawTexture must be used instead.
     //Merge both eye textures once bloom has been applied back into a single image.
