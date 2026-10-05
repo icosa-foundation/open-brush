@@ -235,8 +235,6 @@ namespace TiltBrush
 
             if (publicationRecoveryComplete)
             {
-                SafApiImportStaging.CleanupOrphans(
-                    OpenBrushStorage.MediaLibraryAnchorPath);
                 string[] staleVideoStagingPaths = m_PreexistingVideoStagingPaths;
                 m_PreexistingVideoStagingPaths = Array.Empty<string>();
                 OpenBrushStorage.CleanupRecoveredVideoStaging(

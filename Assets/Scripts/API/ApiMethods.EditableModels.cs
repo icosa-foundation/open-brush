@@ -47,27 +47,37 @@ namespace TiltBrush
             {
                 return;
             }
-            if (OpenBrushStorage.IsScopedStorageMode && ext != "gltf" && ext != "glb" && ext != "obj")
+            bool useSharedStorage = OpenBrushStorage.IsScopedStorageMode;
+            if (useSharedStorage && ext != "gltf" && ext != "glb" && ext != "obj")
             {
                 OutputWindowScript.Error("Model import failed", $"{ext} models are not supported on this build");
                 return;
             }
-            // A glTF owns an isolated directory so its complete dependency tree can be
-            // published without rewriting relative filenames.
-            string modelDirectory = ext == "gltf"
+            // Keep a glTF and its dependencies together without rewriting relative filenames.
+            // The shared downloader already assigns a unique import directory.
+            string modelDirectory = ext == "gltf" && !useSharedStorage
                 ? Path.Combine(uri.Host, $"import-{Guid.NewGuid():N}") : uri.Host;
-            string fullLocalPath = GetSafeRelativePathInDirectory(
+            string downloadDirectory = GetSafeRelativePathInDirectory(
                 App.ModelLibraryPath(), modelDirectory, "model import directory");
-            // Single-file SAF downloads commit before returning. glTF still needs its whole
-            // dependency tree staged and published before import can start.
             string filename = _DownloadMediaFileFromUrlToDirectory(
-                uri, fullLocalPath, allowRedirects: true,
-                streamToSharedStorage: OpenBrushStorage.IsScopedStorageMode && ext != "gltf");
+                uri, downloadDirectory, allowRedirects: true);
             if (filename == null) { return; }
+            string modelPath = Path.Combine(downloadDirectory, filename);
             if (ext == "gltf")
             {
                 var baseUri = new Uri(uri, ".");
-                var jsonString = File.ReadAllText(Path.Combine(fullLocalPath, filename));
+                string jsonString;
+                if (useSharedStorage)
+                {
+                    var source = new OpenBrushStorage.MediaSource(UserStorage.Backend,
+                        StorageArea.MediaLibraryModels, Path.GetRelativePath(App.ModelLibraryPath(), modelPath));
+                    using var reader = new StreamReader(source.OpenRead());
+                    jsonString = reader.ReadToEnd();
+                }
+                else
+                {
+                    jsonString = File.ReadAllText(modelPath);
+                }
                 JObject jsonObject = JObject.Parse(jsonString);
                 IEnumerable<string> externalFiles = GetGltfExternalFiles(jsonObject);
                 foreach (var externalFile in externalFiles)
@@ -77,28 +87,31 @@ namespace TiltBrush
                     {
                         throw new ArgumentException($"Unsupported model dependency URI: {externalFile}");
                     }
-                    string dependencyPath = GetSafeRelativePathInDirectory(fullLocalPath,
+                    string dependencyPath = GetSafeRelativePathInDirectory(Path.GetDirectoryName(modelPath),
                         Uri.UnescapeDataString(externalFile), "model dependency path");
-                    if (string.Equals(dependencyPath, Path.Combine(fullLocalPath, filename),
+                    if (string.Equals(dependencyPath, modelPath,
                         StringComparison.OrdinalIgnoreCase))
                     {
                         throw new ArgumentException("A glTF dependency cannot replace its model file.");
                     }
-                    Directory.CreateDirectory(Path.GetDirectoryName(dependencyPath));
                     // Preserve the exact URI-relative filename, including .bin buffers.
                     using var client = new System.Net.WebClient();
                     client.Headers.Add("user-agent", ApiManager.WebRequestUserAgent);
-                    client.DownloadFile(newUri, dependencyPath);
-                }
-                string importPath = Path.Combine(modelDirectory, filename);
-                PublishApiGltfDirectoryToSharedStorage(
-                    fullLocalPath,
-                    onComplete: (success, _) =>
+                    if (useSharedStorage)
                     {
-                        if (success) { ImportModel(importPath); }
-                    });
-                return;
+                        using Stream input = client.OpenRead(newUri);
+                        WriteSafMediaDownload(UserStorage.Backend, StorageArea.MediaLibraryModels,
+                            Path.GetRelativePath(App.ModelLibraryPath(), dependencyPath), input);
+                    }
+                    else
+                    {
+                        Directory.CreateDirectory(Path.GetDirectoryName(dependencyPath));
+                        client.DownloadFile(newUri, dependencyPath);
+                    }
+                }
             }
+            // Every download (and shared commit) has completed. On failure, leave the partial
+            // new directory for the user to remove or retry, matching local import behavior.
             ImportModel(Path.Combine(modelDirectory, filename));
         }
 

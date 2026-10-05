@@ -21,54 +21,6 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    internal static class SafApiImportStaging
-    {
-        internal static void CleanupOrphans(string rootDirectory)
-        {
-            // Startup calls this after publication recovery. Only glTF dependency bundles
-            // still stage media here; no live audio or video consumer owns these directories.
-            if (!Directory.Exists(rootDirectory)) { return; }
-            try
-            {
-                // Deepest first in case a future import layout nests owned directories.
-                foreach (string directory in Directory.EnumerateDirectories(
-                             rootDirectory, "import-*", SearchOption.AllDirectories)
-                         .Where(IsOwnedDirectory)
-                         .OrderByDescending(path => path.Length)
-                         .ToList())
-                {
-                    DeleteBestEffort(directory);
-                }
-            }
-            catch (Exception e) when (
-                e is IOException || e is UnauthorizedAccessException)
-            {
-                Debug.LogWarning($"SAF_IMPORT Could not scan stale API imports: {e.Message}");
-            }
-        }
-
-        private static bool IsOwnedDirectory(string directory)
-        {
-            string name = Path.GetFileName(directory);
-            return name.StartsWith("import-", StringComparison.Ordinal) &&
-                Guid.TryParseExact(name.Substring("import-".Length), "N", out _);
-        }
-
-        private static void DeleteBestEffort(string directory)
-        {
-            try
-            {
-                if (Directory.Exists(directory)) { Directory.Delete(directory, recursive: true); }
-            }
-            catch (Exception e) when (
-                e is IOException || e is UnauthorizedAccessException)
-            {
-                Debug.LogWarning(
-                    $"SAF_IMPORT Could not remove API import staging '{directory}': {e.Message}");
-            }
-        }
-    }
-
     public static class OpenBrushStorage
     {
         public static bool IsScopedStorageMode
@@ -605,21 +557,6 @@ namespace TiltBrush
                 candidate = $"{Path.GetFileNameWithoutExtension(filename)} ({++version}){Path.GetExtension(filename)}";
             }
             return string.IsNullOrEmpty(directory) ? candidate : $"{directory}/{candidate}";
-        }
-
-        public static void PublishImportedMediaToSharedStorageAsync(
-            string localPath, string sharedPath, string label, Action<bool, string> onComplete,
-            bool preserveDestination = false)
-        {
-            if (!TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
-            {
-                onComplete?.Invoke(false, "Unsupported media import destination.");
-                return;
-            }
-            AndroidStorageManager.StartStorageOperation(label,
-                () => PublishImportedMedia(UserStorage.Backend, area, relativePath, localPath,
-                    prepareLocalImport: false, out _, preserveDestination),
-                onComplete);
         }
 
         internal static SafPublicationResult PublishImportedMedia(

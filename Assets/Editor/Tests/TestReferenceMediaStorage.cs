@@ -196,29 +196,6 @@ namespace TiltBrush
         }
 
         [Test]
-        public void SafApiImports_RemoveOnlyOwnedStagingDirectoriesFromEarlierSessions()
-        {
-            string root = Path.Combine(
-                Path.GetTempPath(), $"saf-api-import-cleanup-{Guid.NewGuid():N}");
-            string owned = Path.Combine(root, "Models", $"import-{Guid.NewGuid():N}");
-            string userDirectory = Path.Combine(root, "Models", "import-reference");
-            Directory.CreateDirectory(owned);
-            Directory.CreateDirectory(userDirectory);
-            File.WriteAllText(Path.Combine(owned, "model.gltf"), "staged model");
-            try
-            {
-                SafApiImportStaging.CleanupOrphans(root);
-
-                Assert.IsFalse(Directory.Exists(owned));
-                Assert.IsTrue(Directory.Exists(userDirectory));
-            }
-            finally
-            {
-                if (Directory.Exists(root)) { Directory.Delete(root, recursive: true); }
-            }
-        }
-
-        [Test]
         public void ExtractedSafAudioCommitsUniqueSharedFilesAndReadsThemAfterSourceRemoval()
         {
             string root = Path.Combine(Path.GetTempPath(), $"saf-gltf-audio-{Guid.NewGuid():N}");

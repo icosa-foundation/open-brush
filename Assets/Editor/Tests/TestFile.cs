@@ -1050,6 +1050,8 @@ namespace TiltBrush
         [TestCase(StorageArea.MediaLibraryBackgroundImages, "sky.hdr")]
         [TestCase(StorageArea.MediaLibraryModels, "model.glb")]
         [TestCase(StorageArea.MediaLibraryModels, "model.obj")]
+        [TestCase(StorageArea.MediaLibraryModels, "model.gltf")]
+        [TestCase(StorageArea.MediaLibraryModels, "buffer.bin")]
         public void SafMediaDownload_CommitsBeforeReturning(StorageArea area, string filename)
         {
             var backend = new FakeSafBackend();

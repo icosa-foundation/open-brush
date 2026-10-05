@@ -234,16 +234,14 @@ namespace TiltBrush
                 App.MediaLibraryPath(), relativeDestinationFolder,
                 "media destination folder", allowBaseDirectory: true);
             return _DownloadMediaFileFromUrlToDirectory(
-                uri, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix,
-                streamToSharedStorage: OpenBrushStorage.IsScopedStorageMode);
+                uri, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix);
         }
 
         private static string _DownloadMediaFileFromUrlToDirectory(
             Uri url,
             string absoluteDestinationPath,
             bool allowRedirects,
-            string requiredContentTypePrefix = null,
-            bool streamToSharedStorage = false)
+            string requiredContentTypePrefix = null)
         {
             var request = System.Net.WebRequest.CreateHttp(url);
             request.UserAgent = ApiManager.WebRequestUserAgent;
@@ -256,12 +254,12 @@ namespace TiltBrush
             var contentDisposition = response.Headers["Content-Disposition"];
             string filename = GetSafeDownloadFilename(url, contentDisposition);
 
-            if (streamToSharedStorage)
+            if (OpenBrushStorage.IsScopedStorageMode)
             {
                 if (!IsSupportedMediaDownload(filename)) { return null; }
 
                 // Keep the unique logical name, but stream directly into a shared transaction.
-                // Commit before returning: images, skyboxes, and video playback then all read
+                // Commit before returning: images, skyboxes, models, and video playback all read
                 // the shared file, with no private media copy to shadow subsequent edits.
                 string relativePath = $"import-{Guid.NewGuid():N}/{filename}";
                 string logicalPath = GetSafeRelativePathInDirectory(
@@ -468,25 +466,6 @@ namespace TiltBrush
             }
 
             Publish();
-        }
-
-        private static void PublishApiGltfDirectoryToSharedStorage(
-            string localPath, Action<bool, string> onComplete)
-        {
-            if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
-                    localPath, out string relativePath))
-            {
-                onComplete?.Invoke(false, "The API media path is outside shared storage.");
-                return;
-            }
-            _PublishApiPathToSharedStorage(
-                localPath,
-                relativePath,
-                "media file",
-                (path, label, complete) => OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
-                    path, relativePath, label, complete,
-                    preserveDestination: true),
-                onComplete);
         }
 
         private static void _PublishApiPathToSharedStorage(
