@@ -1367,42 +1367,7 @@ namespace TiltBrush
             }
         }
 
-        public void LoadFromBytes(byte[] data)
-        {
-            if (data == null || data.Length == 0)
-            {
-                Debug.LogError("LoadFromBytes: Data is null or empty.");
-                return;
-            }
 
-            try
-            {
-                // Write the byte array to a temporary file
-                string tempFilePath = Path.Combine(Application.temporaryCachePath, "temp_autosave.tilt");
-                File.WriteAllBytes(tempFilePath, data);
-
-                // Load the temporary file into the scene
-                var fileInfo = new DiskSceneFileInfo(tempFilePath);
-                if (Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
-                {
-                    Debug.Log("LoadFromBytes: Scene successfully loaded from bytes.");
-                }
-                else
-                {
-                    Debug.LogError("LoadFromBytes: Failed to load scene.");
-                }
-
-                // Clean up the temporary file
-                if (File.Exists(tempFilePath))
-                {
-                    File.Delete(tempFilePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"LoadFromBytes: Error while loading scene from bytes. Exception: {ex.Message}");
-            }
-        }
     }
 
 } // namespace TiltBrush
