@@ -69,8 +69,7 @@ namespace TiltBrush
                 {
                     if (SourceType == QuillSourceType.Imm)
                     {
-                        m_ChapterCountCache =
-                            ImmStrokeReader.SharpQuillCompat.GetImmChapterCount(FullPath);
+                        m_ChapterCountCache = ImmStrokeReader.SharpQuillCompat.GetImmChapterCount(FullPath);
                     }
                     else
                     {

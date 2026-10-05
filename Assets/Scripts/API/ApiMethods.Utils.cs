@@ -301,6 +301,7 @@ namespace TiltBrush
                 fullDestinationPath = GetSafePathInDirectory(
                     absoluteDestinationPath, uniqueFilename, "download filename");
             }
+
             // TODO - make this smarter
             if (IsSupportedMediaDownload(filename))
             {

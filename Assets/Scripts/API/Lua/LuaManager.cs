@@ -235,7 +235,7 @@ namespace TiltBrush
             }
         }
 
-        private void OnDestroy()
+        void OnDestroy()
         {
             m_FileWatcher?.Dispose();
             m_FileWatcher = null;

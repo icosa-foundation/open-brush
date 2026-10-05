@@ -40,6 +40,7 @@ namespace TiltBrush
         private bool m_DirectoryScanRequired;
         private bool m_IsScanningDirectory;
         private string m_SearchText = "";
+
         public int ItemCount => m_Files.Count;
         public bool IsScanning => m_IsScanningDirectory;
         public string HomeDirectory => GetDirectoryForSource(m_SourceDirectory);

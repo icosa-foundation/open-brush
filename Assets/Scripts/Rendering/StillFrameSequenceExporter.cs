@@ -25,7 +25,7 @@ namespace TiltBrush
         private int m_FrameCount;
         private float m_FPS;
         private bool m_IsCapturing;
-        private bool m_IsWritingMetadata;
+        private bool m_IsSaving;
         private ScreenshotManager m_ScreenshotManager;
         private float m_LastCaptureTime;
         private float m_FrameInterval;
@@ -37,7 +37,7 @@ namespace TiltBrush
         public int FrameCount => m_FrameCount;
         public float FPS => m_FPS;
         public bool IsCapturing => m_IsCapturing;
-        public bool IsSaving => !m_IsCapturing && m_IsWritingMetadata;
+        public bool IsSaving => !m_IsCapturing && m_IsSaving;
         public string OutputDirectory => m_DirectoryPath;
 
         public static string GetOutputDirectory(string filePath)
@@ -88,7 +88,7 @@ namespace TiltBrush
             }
 
             m_IsCapturing = true;
-            m_IsWritingMetadata = false;
+            m_IsSaving = false;
 
             // Create metadata file with frame rate information
             CreateMetadataFile();
@@ -161,10 +161,10 @@ namespace TiltBrush
 
             if (save)
             {
-                m_IsWritingMetadata = true;
+                m_IsSaving = true;
                 // Update metadata file with final frame count
                 UpdateMetadataFile();
-                m_IsWritingMetadata = false;
+                m_IsSaving = false;
             }
             else
             {

@@ -896,7 +896,7 @@ namespace TiltBrush
                 m_ImportMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_Location.AbsolutePath);
                 // Export uses the loaded meshes and Unity materials; it does not need to
                 // materialize the streamed OBJ dependency tree locally.
-                m_AllowExport = m_ImportMaterialCollector != null;
+                m_AllowExport = (m_ImportMaterialCollector != null);
                 // m_Valid = true;
                 GameObject parent = new GameObject("ImportedObjParent");
                 gameObject.transform.SetParent(parent.transform, true);

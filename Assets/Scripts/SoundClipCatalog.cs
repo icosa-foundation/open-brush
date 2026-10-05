@@ -548,6 +548,9 @@ namespace TiltBrush
             }
         }
 
+        /// True when path is a direct child of directory and has a supported sound clip
+        /// extension. Changed paths come from a watcher that covers subdirectories and
+        /// every file type, so they need this before joining a folder's catalog.
         internal static bool IsDirectChildSupportedPath(
             string directory, string path, IEnumerable<string> supportedExtensions)
         {

@@ -121,6 +121,9 @@ namespace TiltBrush
             DisposeFileWatcher();
         }
 
+        /// Releases the watcher for the previous folder. Navigating away must not leave a
+        /// live watcher behind: its callbacks would keep firing, and would drive scans of
+        /// the folder now on screen.
         private void DisposeFileWatcher()
         {
             if (m_FileWatcher == null) return;
@@ -624,9 +627,9 @@ namespace TiltBrush
         /// Resolves a saved library path independently of the folder shown in the panel.
         public ReferenceVideo GetVideoByPersistentPath(string path)
         {
-            // The listed entry is only preferred while its file is still there. The catalog can
-            // outlive a deletion, and returning a stale entry would bypass the validating
-            // resolver below rather than falling through to it.
+            // The listed entry is only preferred while its file is still there. The catalog
+            // can outlive a deletion, and returning a stale entry here would bypass the
+            // validating resolver below rather than falling through to it.
             //
             // Only checked on the local backend: under SAF, AbsolutePath is a provider document
             // identity rather than a filesystem path, so File.Exists would answer false for every
@@ -655,7 +658,8 @@ namespace TiltBrush
                 string absolutePath = Path.GetFullPath(Path.Combine(root, normalized));
                 string prefix = $"{root.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)}{Path.DirectorySeparatorChar}";
                 StringComparison comparison = Path.DirectorySeparatorChar == '\\'
-                    ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.Ordinal;
                 if (!absolutePath.StartsWith(prefix, comparison) ||
                     !IsSupportedVideoExtension(absolutePath, supportedExtensions)) { return null; }
 

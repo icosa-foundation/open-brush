@@ -299,9 +299,7 @@ namespace TiltBrush
 
             try
             {
-                Quill.Load(
-                    m_SelectedFile.FullPath,
-                    chapterIndex: m_SelectedFile.SelectedChapterIndex);
+                Quill.Load(m_SelectedFile.FullPath, chapterIndex: m_SelectedFile.SelectedChapterIndex);
             }
             catch (System.Exception ex)
             {

@@ -245,7 +245,7 @@ namespace TiltBrush
                     tiltWriter.Complete();
                 }
 
-                return null;
+                return null; // No error
             }
             catch (Exception ex)
             {

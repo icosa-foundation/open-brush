@@ -297,7 +297,7 @@ namespace TiltBrush
             }
         }
 
-        private readonly string m_Fullpath;
+        private string m_Fullpath;
         private readonly IReopenableReadStream m_StreamSource;
         private readonly string m_DisplayName;
 

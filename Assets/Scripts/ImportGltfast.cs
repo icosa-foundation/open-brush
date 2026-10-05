@@ -70,11 +70,9 @@ namespace TiltBrush
             return sm_AsyncCoroutineHelper;
         }
 
-        private static GameObject _ImportUsingLegacyGltf(
-            string localPath, string assetLocation)
+        private static GameObject _ImportUsingLegacyGltf(string localPath, string assetLocation)
         {
-            var loader = new TiltBrushUriLoader(
-                localPath, assetLocation, loadImages: false);
+            var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
             var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
             var importOptions = new GltfImportOptions
             {

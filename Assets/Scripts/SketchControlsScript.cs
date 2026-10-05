@@ -5930,7 +5930,6 @@ namespace TiltBrush
                     Destroy(camObj);
                     RenderTexture.ReleaseTemporary(renderTexture);
                 }
-
             }
 
             oldWandPose.ToTransform(InputManager.Wand.Geometry.transform);

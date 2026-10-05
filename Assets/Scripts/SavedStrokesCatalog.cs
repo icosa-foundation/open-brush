@@ -83,7 +83,8 @@ namespace TiltBrush
             if (!IsSafStorage && Directory.Exists(m_CurrentSavedStrokesDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentSavedStrokesDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite
+                    | NotifyFilters.FileName | NotifyFilters.DirectoryName;
                 m_FileWatcher.FileChanged += OnDirectoryChanged;
                 m_FileWatcher.FileCreated += OnDirectoryChanged;
                 m_FileWatcher.FileDeleted += OnDirectoryChanged;
@@ -126,10 +127,10 @@ namespace TiltBrush
             StringComparison comparison = Path.DirectorySeparatorChar == '\\'
                 ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
             return fullPath.Equals(fullRoot, comparison) ||
-                fullPath.StartsWith(fullRoot + Path.DirectorySeparatorChar,
-                    comparison);
+                fullPath.StartsWith(fullRoot + Path.DirectorySeparatorChar, comparison);
         }
 
+        /// True when path is a direct child of directory, one level down and no further.
         internal static bool IsDirectChildPath(string directory, string path)
         {
             return string.Equals(
@@ -137,7 +138,8 @@ namespace TiltBrush
                     Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
                 Path.GetFullPath(directory).TrimEnd(
                     Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
-                Path.DirectorySeparatorChar == '\\' ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+                Path.DirectorySeparatorChar == '\\'
+                    ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
         }
 
         public string GetCurrentDirectory()
@@ -214,6 +216,7 @@ namespace TiltBrush
 
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)
         {
+            // A watcher replaced by a directory change can still deliver an event.
             if (!ReferenceEquals(source, m_FileWatcher)) { return; }
             RequestScanAfterSketchSetRefresh();
         }
@@ -329,8 +332,9 @@ namespace TiltBrush
             CatalogChanged?.Invoke();
         }
 
-        // The sketch set is a library-wide index; the reference panel is a
-        // folder page. Keep only direct children of the selected folder here.
+        // The sketch set indexes the whole Saved Strokes tree, because saved strokes may
+        // be organised into subfolders. This panel is a folder page, so it shows the
+        // direct children of the selected folder only.
         private bool IsInCurrentDirectory(SceneFileInfo fileInfo)
         {
             if (fileInfo == null)

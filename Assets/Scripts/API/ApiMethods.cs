@@ -56,7 +56,7 @@ namespace TiltBrush
             ApiManager.Instance.AddOutgoingCommandListener(new Uri(url));
         }
 
-        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on desktop")]
+        [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
         public static void OpenUserScriptsFolder()
         {
             if (OpenBrushStorage.IsScopedStorageMode)

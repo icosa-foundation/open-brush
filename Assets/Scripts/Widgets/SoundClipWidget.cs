@@ -231,8 +231,7 @@ namespace TiltBrush
             }
 
             Directory.CreateDirectory(fullLibraryPath);
-            string destinationPath = GetUniqueSoundClipPath(
-                fullLibraryPath, Path.GetFileName(fullSourcePath));
+            string destinationPath = GetUniqueSoundClipPath(fullLibraryPath, Path.GetFileName(fullSourcePath));
             File.Copy(fullSourcePath, destinationPath);
             SoundClipCatalog.Instance.ForceCatalogScan();
             return new SoundClip(destinationPath);

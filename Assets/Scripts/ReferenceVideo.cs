@@ -213,7 +213,7 @@ namespace TiltBrush
             // Case-insensitively, because discovery accepts extensions in any case. A
             // .TXT pointer that classified as an ordinary video would be handed to
             // VideoPlayer as the text file itself rather than the URL it contains.
-            NetworkVideo = filePath.EndsWith(".txt", StringComparison.OrdinalIgnoreCase);
+            NetworkVideo = filePath.EndsWith(".txt", System.StringComparison.OrdinalIgnoreCase);
             AbsolutePath = filePath;
             CatalogIdentity = catalogIdentity;
             PersistentPath = persistentPath ?? _GetPersistentPath(filePath);

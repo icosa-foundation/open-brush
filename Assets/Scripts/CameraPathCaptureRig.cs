@@ -148,8 +148,10 @@ namespace TiltBrush
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
             App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.Recording);
 
-            string saveName = MultiCamTool.GetSaveName(MultiCamStyle.Video);
-            VideoRecorderUtils.StartVideoCapture(saveName, m_Manager.GetComponent<VideoRecorder>(), m_VideoUsdSerializer);
+            VideoRecorderUtils.StartVideoCapture(
+                MultiCamTool.GetSaveName(MultiCamStyle.Video),
+                m_Manager.GetComponent<VideoRecorder>(),
+                m_VideoUsdSerializer);
         }
 
         public void StopRecordingPath(bool saveCapture)

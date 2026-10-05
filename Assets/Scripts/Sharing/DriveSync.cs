@@ -743,9 +743,8 @@ namespace TiltBrush
             // number of bytes that was being transferred by the old sync.
             m_PreviousTotalBytesToTransfer = m_TotalBytesToTransfer;
             m_ToTransfer.Clear();
-            // Cancel transfers for folders that are no longer synced.
-            var toRemove = m_Transfers
-                .Where(x => !IsFolderOfTypeSynced(x.Key.Item.FolderType))
+            // Cancel any transfers to folders we no longer want to backup
+            var toRemove = m_Transfers.Where(x => !IsFolderOfTypeSynced(x.Key.Item.FolderType))
                 .Select(x => x.Key).ToArray();
             foreach (var transfer in toRemove)
             {

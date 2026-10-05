@@ -331,8 +331,7 @@ namespace TiltBrush
 
         public Model GetModelAtIndex(int i)
         {
-            return m_ModelsByRelativePath[
-                m_OrderedModelNames[m_CurrentModelsDirectory][i]];
+            return m_ModelsByRelativePath[m_OrderedModelNames[m_CurrentModelsDirectory][i]];
         }
 
         public void LoadModels()

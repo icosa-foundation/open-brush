@@ -420,11 +420,10 @@ public class CameraCaptureRuntime : MonoBehaviour
             this.radius = domeTargets[0].Radii.Max();
         }
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        IEnumerator capture = runtimeSequence
+        StartCaptureInCompositor(runtimeSequence
             ? RuntimeSequenceCoroutine(domeTargets, null, pathTargets, captureOutputFolder)
             : CaptureTargetsAndExportColmap(
-                domeTargets, null, pathTargets, captureOutputFolder, outAdd: "");
-        StartCaptureInCompositor(capture);
+                domeTargets, null, pathTargets, captureOutputFolder, outAdd: ""));
     }
 
     [ContextMenu("Start Volume Capture")]
@@ -451,11 +450,10 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
 
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        IEnumerator capture = runtimeSequence
+        StartCaptureInCompositor(runtimeSequence
             ? RuntimeSequenceCoroutine(null, volumeTargets, pathTargets, captureOutputFolder)
             : CaptureTargetsAndExportColmap(
-                null, volumeTargets, pathTargets, captureOutputFolder, outAdd: "");
-        StartCaptureInCompositor(capture);
+                null, volumeTargets, pathTargets, captureOutputFolder, outAdd: ""));
     }
 
     [ContextMenu("Start All Capture")]
@@ -490,12 +488,10 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
 
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        IEnumerator capture = runtimeSequence
-            ? RuntimeSequenceCoroutine(domeTargets, volumeTargets, pathTargets,
-                captureOutputFolder)
+        StartCaptureInCompositor(runtimeSequence
+            ? RuntimeSequenceCoroutine(domeTargets, volumeTargets, pathTargets, captureOutputFolder)
             : CaptureTargetsAndExportColmap(
-                domeTargets, volumeTargets, pathTargets, captureOutputFolder, outAdd: "");
-        StartCaptureInCompositor(capture);
+                domeTargets, volumeTargets, pathTargets, captureOutputFolder, outAdd: ""));
     }
 
     [ContextMenu("Cancel")]
