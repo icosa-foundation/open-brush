@@ -87,6 +87,12 @@ namespace TiltBrush
                     {
                         throw new ArgumentException($"Unsupported model dependency URI: {externalFile}");
                     }
+                    if (useSharedStorage && Uri.TryCreate(externalFile, UriKind.Absolute, out _))
+                    {
+                        // Keep absolute web references intact; the glTF loader fetches them
+                        // directly, just as the non-SAF FileLoader does.
+                        continue;
+                    }
                     string dependencyPath = GetSafeRelativePathInDirectory(Path.GetDirectoryName(modelPath),
                         Uri.UnescapeDataString(externalFile), "model dependency path");
                     if (string.Equals(dependencyPath, modelPath,

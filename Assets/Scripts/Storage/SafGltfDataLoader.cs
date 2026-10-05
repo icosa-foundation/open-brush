@@ -44,6 +44,13 @@ namespace TiltBrush
 
         public Task<Stream> LoadStreamAsync(string relativeFilePath)
         {
+            if (Uri.TryCreate(relativeFilePath, UriKind.Absolute, out Uri uri) &&
+                (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps))
+            {
+                // Match FileLoader: absolute web references are fetched directly, while
+                // relative references are read from the model's storage area.
+                return new UnityWebRequestLoader("").LoadStreamAsync(relativeFilePath);
+            }
             return Task.FromResult(LoadStream(relativeFilePath));
         }
 
