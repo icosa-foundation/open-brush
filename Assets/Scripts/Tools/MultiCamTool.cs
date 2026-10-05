@@ -1306,11 +1306,7 @@ namespace TiltBrush
         private static string ReserveCaptureName(string format, MultiCamStyle style)
         {
             var backend = UserStorage.Backend;
-            OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(format, out string sharedPath);
-            if (!OpenBrushStorage.TryResolveStorageDestination(sharedPath, out StorageArea area, out string relative))
-            {
-                throw new IOException("Unsupported capture destination.");
-            }
+            var (area, relative) = OpenBrushStorage.GetGeneratedDestination(format);
             string directory = Path.GetDirectoryName(format);
             string name = OpenBrushStorage.ReserveCaptureName(backend, area,
                 Path.GetDirectoryName(relative)?.Replace('\\', '/') ?? "", Path.GetFileName(format),

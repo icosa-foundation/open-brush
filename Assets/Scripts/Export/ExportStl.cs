@@ -58,7 +58,7 @@ namespace TiltBrush
                 }
             }
 
-            System.IO.File.WriteAllText(outputFile, buffer.ToString());
+            OpenBrushStorage.WriteGeneratedText(outputFile, buffer.ToString());
         }
     }
 } // namespace TiltBrush

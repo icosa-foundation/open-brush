@@ -83,36 +83,6 @@ namespace TiltBrush
     {
         private const int kVersion = 1;
 
-        // Reserve a name before writing any format. The empty local directory reserves it
-        // until direct outputs exist or the remaining path-based formats have been published.
-        internal static string ReserveExportDirectory(IUserStorageBackend backend,
-            string localRoot, string preferredName, CancellationToken cancellationToken)
-        {
-            using IDisposable reservation = SafDestinationLocks.Acquire(
-                $"{backend.RootIdentity}\nExports\n__export_name__".ToLowerInvariant(), cancellationToken);
-            List<string> reservedNames = GetPendingTopLevelNames(
-                backend.RootIdentity, StorageArea.Exports, cancellationToken);
-            if (Directory.Exists(localRoot))
-            {
-                reservedNames.AddRange(Directory.EnumerateFileSystemEntries(localRoot)
-                    .Select(Path.GetFileName));
-            }
-            string destination = SelectExportDirectoryName(
-                backend, preferredName, reservedNames, cancellationToken);
-            string localDirectory = Path.Combine(localRoot, destination);
-            Directory.CreateDirectory(localDirectory);
-            return localDirectory;
-        }
-
-        public static SafPublicationResult PublishExport(
-            IUserStorageBackend backend, string stagedDirectory, CancellationToken cancellationToken)
-        {
-            // The caller already selected this name for both direct and staged formats.
-            return PublishBundle(backend, StorageArea.Exports,
-                new[] { new SafStagedPath(stagedDirectory, Path.GetFileName(stagedDirectory)) },
-                transactionOwnsPayload: true, cancellationToken: cancellationToken);
-        }
-
         public static SafPublicationResult PublishUniqueDirectory(
             IUserStorageBackend backend, StorageArea area, string stagedDirectory,
             bool transactionOwnsPayload, CancellationToken cancellationToken)
@@ -137,13 +107,6 @@ namespace TiltBrush
             return PublishBundle(backend, area,
                 new[] { new SafStagedPath(stagedDirectory, destination) },
                 transactionOwnsPayload, cancellationToken);
-        }
-
-        internal static string SelectExportDirectoryName(IUserStorageBackend backend,
-            string preferredName, IEnumerable<string> reservedNames, CancellationToken cancellationToken)
-        {
-            return SelectUniqueDirectoryName(
-                backend, StorageArea.Exports, preferredName, reservedNames, cancellationToken);
         }
 
         internal static string SelectUniqueDirectoryName(IUserStorageBackend backend,

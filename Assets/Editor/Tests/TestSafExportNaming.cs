@@ -74,52 +74,40 @@ namespace TiltBrush
             }
         }
 
-        [TestCase(false)]
-        [TestCase(true)]
-        public void RepeatedExportsPreserveCompletedAndPendingDestinations(bool failFirst)
+        [Test]
+        public void DirectExportsKeepFormatsTogetherAndChooseNewFolder()
         {
-            string fixture = Path.Combine(OpenBrushStorage.LocalStagingPath, $"export-test-{Guid.NewGuid():N}");
-            string shared = Path.Combine(fixture, "shared");
-            var backend = new ExportBackend(shared);
-            string recovery = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            Directory.CreateDirectory(shared);
+            string root = Path.Combine(Path.GetTempPath(), $"direct-export-{Guid.NewGuid():N}");
+            var backend = new LocalUserStorageBackend(_ => root);
+            Directory.CreateDirectory(root);
             try
             {
-                string localRoot = Path.Combine(fixture, "staging");
-                string first = SafStagedOutputPublisher.ReserveExportDirectory(
-                    backend, localRoot, "Sketch", CancellationToken.None);
-                File.WriteAllText(Path.Combine(first, "model.obj"), "first");
-                backend.FailWrites = failFirst;
-                var firstResult = SafStagedOutputPublisher.PublishExport(backend, first, CancellationToken.None);
-                Assert.AreEqual(!failFirst, firstResult.Success, firstResult.Error);
-                Assert.AreEqual(failFirst, Directory.Exists(first));
-                backend.FailWrites = false;
-                string second = SafStagedOutputPublisher.ReserveExportDirectory(
-                    backend, localRoot, "Sketch", CancellationToken.None);
-                Assert.AreEqual("Sketch 0", Path.GetFileName(second));
-                // A directly written GLB and the staged formats must keep the same folder.
-                OpenBrushStorage.WriteSharedFile(backend, StorageArea.Exports,
-                    "Sketch 0/newglb/model.glb", output => output.WriteByte(42));
-                File.WriteAllText(Path.Combine(second, "model.obj"), "second");
-                var secondResult = SafStagedOutputPublisher.PublishExport(backend, second, CancellationToken.None);
-                Assert.AreEqual(new byte[] { 42 }, File.ReadAllBytes(
-                    Path.Combine(shared, "Sketch 0", "newglb", "model.glb")));
-                Assert.IsTrue(secondResult.Success, secondResult.Error);
-                Assert.AreEqual("second", File.ReadAllText(Path.Combine(shared, "Sketch 0", "model.obj")));
-                if (failFirst)
+                string first = OpenBrushStorage.GetUniqueOutputDirectoryName(backend, StorageArea.Exports, "Sketch");
+                foreach (string format in new[] { "glb", "json", "latk", "stl", "wrl" })
                 {
-                    var report = SafStagedOutputPublisher.RecoverAll(backend, CancellationToken.None);
-                    Assert.AreEqual(1, report.Recovered);
-                    Assert.AreEqual(0, report.Pending);
+                    OpenBrushStorage.WriteSharedFile(backend, StorageArea.Exports,
+                        $"{first}/{format}/Sketch.{format}", output => output.WriteByte(42));
                 }
-                Assert.AreEqual("first", File.ReadAllText(Path.Combine(shared, "Sketch", "model.obj")));
-                Assert.AreEqual("second", File.ReadAllText(Path.Combine(shared, "Sketch 0", "model.obj")));
+                string second = OpenBrushStorage.GetUniqueOutputDirectoryName(backend, StorageArea.Exports, "Sketch");
+                Assert.AreEqual("Sketch", first);
+                Assert.AreEqual("Sketch 0", second);
+                Assert.AreEqual(1, Directory.GetDirectories(root).Length);
+                Assert.AreEqual(5, Directory.GetFiles(root, "*", SearchOption.AllDirectories).Length);
             }
-            finally
-            {
-                if (Directory.Exists(fixture)) { Directory.Delete(fixture, true); }
-                if (Directory.Exists(recovery)) { Directory.Delete(recovery, true); }
-            }
+            finally { Directory.Delete(root, true); }
+        }
+
+        [TestCase("Exports", StorageArea.Exports)]
+        [TestCase("Snapshots", StorageArea.Snapshots)]
+        [TestCase("Videos", StorageArea.Videos)]
+        [TestCase("VRVideos", StorageArea.VrVideos)]
+        [TestCase("SplatPoses", StorageArea.SplatPoses)]
+        public void GeneratedPathsResolveToSharedDestinations(string folder, StorageArea expectedArea)
+        {
+            string path = Path.Combine(OpenBrushStorage.LocalStagingPath, folder, "Example", "output.bin");
+            var (area, relativePath) = OpenBrushStorage.GetGeneratedDestination(path);
+            Assert.AreEqual(expectedArea, area);
+            Assert.AreEqual("Example/output.bin", relativePath);
         }
 
         [TestCase(false)]
@@ -188,8 +176,8 @@ namespace TiltBrush
                         "SKETCH 0", "", isDirectory, null, null, 0, "SKETCH 0")
                 })
             };
-            Assert.AreEqual("Sketch 1", SafStagedOutputPublisher.SelectExportDirectoryName(
-                backend, "Sketch", Array.Empty<string>(), CancellationToken.None));
+            Assert.AreEqual("Sketch 1", OpenBrushStorage.GetUniqueOutputDirectoryName(
+                backend, StorageArea.Exports, "Sketch"));
         }
 
         [Test]
@@ -199,10 +187,10 @@ namespace TiltBrush
             {
                 Listing = () => StorageDirectoryResult.Succeeded(Array.Empty<StorageDocument>())
             };
-            Assert.AreEqual("Sketch 1", SafStagedOutputPublisher.SelectExportDirectoryName(
-                backend, "Sketch", new[] { "Sketch", "Sketch 0" }, CancellationToken.None));
-            Assert.AreEqual("Sketch", SafStagedOutputPublisher.SelectExportDirectoryName(
-                backend, "Sketch", Array.Empty<string>(), CancellationToken.None));
+            Assert.AreEqual("Sketch 1", SafStagedOutputPublisher.SelectUniqueDirectoryName(
+                backend, StorageArea.Exports, "Sketch", new[] { "Sketch", "Sketch 0" }, CancellationToken.None));
+            Assert.AreEqual("Sketch", OpenBrushStorage.GetUniqueOutputDirectoryName(
+                backend, StorageArea.Exports, "Sketch"));
         }
 
         [Test]
@@ -212,8 +200,8 @@ namespace TiltBrush
             {
                 Listing = () => StorageDirectoryResult.Failed(StorageResultCode.NotFound, "missing")
             };
-            Assert.AreEqual("Sketch", SafStagedOutputPublisher.SelectExportDirectoryName(
-                backend, "Sketch", Array.Empty<string>(), CancellationToken.None));
+            Assert.AreEqual("Sketch", OpenBrushStorage.GetUniqueOutputDirectoryName(
+                backend, StorageArea.Exports, "Sketch"));
         }
 
         [Test]
@@ -223,8 +211,8 @@ namespace TiltBrush
             {
                 Listing = () => StorageDirectoryResult.Failed(StorageResultCode.ProviderUnavailable, "denied")
             };
-            Assert.Throws<IOException>(() => SafStagedOutputPublisher.SelectExportDirectoryName(
-                backend, "Sketch", Array.Empty<string>(), CancellationToken.None));
+            Assert.Throws<IOException>(() => OpenBrushStorage.GetUniqueOutputDirectoryName(
+                backend, StorageArea.Exports, "Sketch"));
         }
 
 

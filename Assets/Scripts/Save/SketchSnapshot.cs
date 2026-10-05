@@ -73,10 +73,11 @@ namespace TiltBrush
         public static void ExportMetadata(string path)
         {
             var instance = new SketchSnapshot();
-            using (var jsonWriter = new CustomJsonWriter(new StreamWriter(new FileStream(path, FileMode.Create))))
+            OpenBrushStorage.WriteGeneratedFile(path, output =>
             {
+                using var jsonWriter = new CustomJsonWriter(new StreamWriter(output));
                 instance.m_JsonSerializer.Serialize(jsonWriter, instance.m_Metadata);
-            }
+            });
         }
 
         // Initialize just enough to generate metadata JSON for export

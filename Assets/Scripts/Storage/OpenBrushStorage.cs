@@ -228,37 +228,6 @@ namespace TiltBrush
             }
         }
 
-        public static bool TryGetSharedGeneratedFileRelativePath(
-            string localPath, out string relativePath)
-        {
-            relativePath = null;
-
-            if (string.IsNullOrEmpty(localPath))
-            {
-                return false;
-            }
-
-            if (TryGetRelativePath(App.SnapshotPath(), localPath, out string snapshotPath))
-            {
-                relativePath = Path.Combine("Snapshots", snapshotPath);
-                return true;
-            }
-
-            if (TryGetRelativePath(App.VideosPath(), localPath, out string videoPath))
-            {
-                relativePath = Path.Combine("Videos", videoPath);
-                return true;
-            }
-
-            if (TryGetRelativePath(App.VrVideosPath(), localPath, out string vrVideoPath))
-            {
-                relativePath = Path.Combine("VRVideos", vrVideoPath);
-                return true;
-            }
-
-            return false;
-        }
-
         public static bool TryGetSharedMediaLibraryRelativePath(
             string localPath, out string relativePath)
         {
@@ -292,10 +261,10 @@ namespace TiltBrush
 
         internal static (StorageArea area, string relativePath) GetGeneratedDestination(string path)
         {
-            if (!TryGetSharedGeneratedFileRelativePath(path, out string sharedPath) ||
+            if (!TryGetRelativePath(LocalStagingPath, path, out string sharedPath) ||
                 !TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
             {
-                throw new IOException($"Capture destination is outside shared storage: {path}");
+                throw new IOException($"Generated-file destination is outside shared storage: {path}");
             }
             return (area, relativePath);
         }
@@ -324,6 +293,34 @@ namespace TiltBrush
                     throw new IOException(result.Error);
                 }
             }
+        }
+
+        public static void WriteGeneratedText(string path, string text)
+        {
+            if (!IsScopedStorageMode) { File.WriteAllText(path, text); return; }
+            WriteGeneratedFile(path, output =>
+            {
+                using var writer = new StreamWriter(output);
+                writer.Write(text);
+            });
+        }
+
+        internal static string GetUniqueOutputDirectoryName(
+            IUserStorageBackend backend, StorageArea area, string preferredName)
+        {
+            StorageDirectoryResult listing = backend.List(area, "", CancellationToken.None);
+            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
+            {
+                throw new IOException($"Could not check shared output names: {listing.Error}");
+            }
+            var names = new HashSet<string>(listing.Documents.Select(document => document.DisplayName),
+                StringComparer.OrdinalIgnoreCase);
+            string candidate = preferredName;
+            for (int index = 0; names.Contains(candidate); ++index)
+            {
+                candidate = $"{preferredName} {index}";
+            }
+            return candidate;
         }
 
         public static void WriteGeneratedBytes(string path, byte[] bytes)
@@ -446,28 +443,6 @@ namespace TiltBrush
             }
         }
 
-
-        public static void PublishExportToSharedStorageAsync(
-            string localExportDirectory, Action<bool, string> onComplete)
-        {
-            if (!IsScopedStorageMode)
-            {
-                onComplete?.Invoke(true, null);
-                return;
-            }
-            if (!Directory.EnumerateFileSystemEntries(localExportDirectory).Any())
-            {
-                // GLB-only exports have no local payload to publish or retain.
-                Directory.Delete(localExportDirectory);
-                onComplete?.Invoke(true, null);
-                return;
-            }
-            IUserStorageBackend backend = UserStorage.Backend;
-            AndroidStorageManager.StartStorageOperation(
-                $"export {Path.GetFileName(localExportDirectory)}",
-                () => SafStagedOutputPublisher.PublishExport(
-                    backend, localExportDirectory, CancellationToken.None), onComplete);
-        }
 
         public static void PublishGaussianCaptureToSharedStorageAsync(
             string localCaptureDirectory, Action<bool, string> onComplete)

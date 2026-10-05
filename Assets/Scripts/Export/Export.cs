@@ -40,6 +40,10 @@ URL=" + kExportDocumentationUrl;
         // or null on failure.
         private static string MakeExportPath(string parent, string basename, string ext)
         {
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                return Path.Combine(parent, ext, $"{basename}.{ext}");
+            }
             string child = FileUtils.GenerateNonexistentFilename(parent, basename: ext, extension: "");
             if (!FileUtils.InitializeDirectoryWithUserError(
                     child, "Failed to create export directory for " + ext))
@@ -127,8 +131,7 @@ URL=" + kExportDocumentationUrl;
 
         public static void ExportScene()
         {
-            // SAF outputs use the shared volume, whether written directly or published
-            // by a format whose exporter still requires filesystem paths.
+            // SAF exports write to the shared volume; check its available space.
             if (OpenBrushStorage.IsScopedStorageMode &&
                 !FileUtils.CheckSharedStorageSpaceWithError(
                     error: "Not enough space in the Open Brush folder to export!"))
@@ -149,9 +152,9 @@ URL=" + kExportDocumentationUrl;
             {
                 try
                 {
-                    parent = SafStagedOutputPublisher.ReserveExportDirectory(
-                        UserStorage.Backend, App.UserExportPath(), basename,
-                        System.Threading.CancellationToken.None);
+                    parent = Path.Combine(App.UserExportPath(),
+                        OpenBrushStorage.GetUniqueOutputDirectoryName(
+                            UserStorage.Backend, StorageArea.Exports, basename));
                 }
                 catch (IOException e)
                 {
@@ -326,9 +329,7 @@ URL=" + kExportDocumentationUrl;
                     // Legacy GLTF export
                     string extension = App.Config.m_EnableGlbVersion2 ? "glb" : "glb1";
                     int gltfVersion = App.Config.m_EnableGlbVersion2 ? 2 : 1;
-                    filename = OpenBrushStorage.IsScopedStorageMode
-                        ? Path.Combine(parent, extension, $"{basename}.{extension}")
-                        : MakeExportPath(parent, basename, extension);
+                    filename = MakeExportPath(parent, basename, extension);
                     if (filename != null)
                     {
                         using (var unused = new AutoTimer("glb export"))
@@ -411,22 +412,8 @@ URL=" + kExportDocumentationUrl;
                     // A README failure must not prevent publication of the selected formats.
                     OutputWindowScript.Error("Failed to write export README", e.Message);
                 }
-                OpenBrushStorage.PublishExportToSharedStorageAsync(parent, (success, error) =>
-                {
-                    if (success)
-                    {
-                        ControllerConsoleScript.m_Instance.AddNewLine(
-                            "Located in " + OpenBrushStorage.SharedExportDisplayPath);
-                    }
-                    else
-                    {
-                        OutputWindowScript.Error(
-                            InputManager.ControllerName.Wand,
-                            "Failed to copy export to shared storage",
-                            "The local staging copy was kept at " + parent);
-                        ControllerConsoleScript.m_Instance.AddNewLine("Export staging copy kept at " + parent);
-                    }
-                });
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    $"Located in {OpenBrushStorage.SharedExportDisplayPath}");
             }
             else
             {

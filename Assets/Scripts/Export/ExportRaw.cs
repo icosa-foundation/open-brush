@@ -29,18 +29,16 @@ namespace TiltBrush
             var tempName = outputFile + "_part";
             try
             {
-                using (var textWriter = new StreamWriter(tempName))
-                using (var json = new JsonTextWriter(textWriter))
+                if (OpenBrushStorage.IsScopedStorageMode)
                 {
-                    json.Formatting = Formatting.Indented;
-                    json.WriteStartObject();
-
-                    Dictionary<Guid, int> brushMap;
-                    WriteStrokes(json, out brushMap);
-                    WriteBrushes(json, brushMap);
-
-                    json.WriteEndObject();
+                    OpenBrushStorage.WriteGeneratedFile(outputFile, output =>
+                    {
+                        using var writer = new StreamWriter(output);
+                        WriteJson(writer);
+                    });
+                    return true;
                 }
+                using (var textWriter = new StreamWriter(tempName)) { WriteJson(textWriter); }
                 DestroyFile(outputFile);
                 Directory.Move(tempName, outputFile);
                 return true;
@@ -50,6 +48,17 @@ namespace TiltBrush
                 Debug.LogException(e);
                 return false;
             }
+        }
+
+        private static void WriteJson(TextWriter writer)
+        {
+            using var json = new JsonTextWriter(writer);
+            json.Formatting = Formatting.Indented;
+            json.WriteStartObject();
+            Dictionary<Guid, int> brushMap;
+            WriteStrokes(json, out brushMap);
+            WriteBrushes(json, brushMap);
+            json.WriteEndObject();
         }
 
         static void DestroyFile(string path)

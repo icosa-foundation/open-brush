@@ -151,7 +151,7 @@ namespace TiltBrush
 
             AppendSceneFooter(ref buffer);
 
-            System.IO.File.WriteAllText(outputFile, buffer.ToString());
+            OpenBrushStorage.WriteGeneratedText(outputFile, buffer.ToString());
             return true;
         }
 
