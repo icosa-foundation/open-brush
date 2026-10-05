@@ -47,20 +47,22 @@ namespace TiltBrush
             {
                 return;
             }
-            // A glTF owns an isolated directory so dependency names need no rewriting
-            // and one folder-picker continuation can publish the whole dependency tree.
+            if (OpenBrushStorage.IsScopedStorageMode && ext != "gltf" && ext != "glb" && ext != "obj")
+            {
+                OutputWindowScript.Error("Model import failed", $"{ext} models are not supported on this build");
+                return;
+            }
+            // A glTF owns an isolated directory so its complete dependency tree can be
+            // published without rewriting relative filenames.
             string modelDirectory = ext == "gltf"
                 ? Path.Combine(uri.Host, $"import-{Guid.NewGuid():N}") : uri.Host;
             string fullLocalPath = GetSafeRelativePathInDirectory(
                 App.ModelLibraryPath(), modelDirectory, "model import directory");
-            // SAF model loaders read the shared document, so the staged download alone is
-            // not enough. The glTF branch below already waits for its whole dependency tree.
-            bool waitForPublication = OpenBrushStorage.IsScopedStorageMode && ext != "gltf";
+            // Single-file SAF downloads commit before returning. glTF still needs its whole
+            // dependency tree staged and published before import can start.
             string filename = _DownloadMediaFileFromUrlToDirectory(
-                uri, fullLocalPath, allowRedirects: true, publish: ext != "gltf",
-                onPublished: waitForPublication
-                    ? publishedFilename => ImportModel(Path.Combine(modelDirectory, publishedFilename))
-                    : null);
+                uri, fullLocalPath, allowRedirects: true,
+                streamToSharedStorage: OpenBrushStorage.IsScopedStorageMode && ext != "gltf");
             if (filename == null) { return; }
             if (ext == "gltf")
             {
@@ -89,19 +91,15 @@ namespace TiltBrush
                     client.DownloadFile(newUri, dependencyPath);
                 }
                 string importPath = Path.Combine(modelDirectory, filename);
-                _PublishApiMediaLibraryPathToSharedStorage(
+                PublishApiGltfDirectoryToSharedStorage(
                     fullLocalPath,
-                    preserveDestination: true,
                     onComplete: (success, _) =>
                     {
                         if (success) { ImportModel(importPath); }
                     });
                 return;
             }
-            if (!waitForPublication)
-            {
-                ImportModel(Path.Combine(modelDirectory, filename));
-            }
+            ImportModel(Path.Combine(modelDirectory, filename));
         }
 
         internal static IEnumerable<string> GetGltfExternalFiles(JObject gltf)

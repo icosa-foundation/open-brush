@@ -223,38 +223,18 @@ namespace TiltBrush
             return WidgetManager.m_Instance.GetNthActiveCameraPath(index);
         }
 
-        private static string _DownloadMediaFileFromUrl(string url, string relativeDestinationFolder)
-        {
-            return _DownloadMediaFileFromUrl(url, relativeDestinationFolder, allowRedirects: true);
-        }
-
         private static string _DownloadMediaFileFromUrl(
             string url,
             string relativeDestinationFolder,
             bool allowRedirects,
             string requiredContentTypePrefix = null)
         {
-            return _DownloadMediaFileFromUrl(
-                new Uri(url), relativeDestinationFolder, allowRedirects,
-                requiredContentTypePrefix);
-        }
-
-        private static string _DownloadMediaFileFromUrl(Uri url, string relativeDestinationFolder)
-        {
-            return _DownloadMediaFileFromUrl(url, relativeDestinationFolder, allowRedirects: true);
-        }
-
-        private static string _DownloadMediaFileFromUrl(
-            Uri url,
-            string relativeDestinationFolder,
-            bool allowRedirects,
-            string requiredContentTypePrefix = null)
-        {
+            var uri = new Uri(url);
             string absoluteDestinationPath = GetSafeRelativePathInDirectory(
                 App.MediaLibraryPath(), relativeDestinationFolder,
                 "media destination folder", allowBaseDirectory: true);
             return _DownloadMediaFileFromUrlToDirectory(
-                url, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix,
+                uri, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix,
                 streamToSharedStorage: OpenBrushStorage.IsScopedStorageMode);
         }
 
@@ -263,22 +243,8 @@ namespace TiltBrush
             string absoluteDestinationPath,
             bool allowRedirects,
             string requiredContentTypePrefix = null,
-            bool publish = true,
-            Action<string> onPublished = null,
             bool streamToSharedStorage = false)
         {
-            string requestedDirectory = absoluteDestinationPath;
-            bool preserveDestination = publish && OpenBrushStorage.IsScopedStorageMode &&
-                !streamToSharedStorage;
-            if (preserveDestination)
-            {
-                // Assign the logical path before returning a widget, even without a selected tree.
-                // Publication must never rename this path after it is used by a sketch or Lua.
-                // Keep the local copy through shutdown in case publication recovery still needs
-                // it. Startup removes it only after all pending publications have recovered.
-                absoluteDestinationPath =
-                    SafApiImportStaging.CreateDirectory(absoluteDestinationPath);
-            }
             var request = System.Net.WebRequest.CreateHttp(url);
             request.UserAgent = ApiManager.WebRequestUserAgent;
             request.Method = "HEAD";
@@ -299,7 +265,7 @@ namespace TiltBrush
                 // the shared file, with no private media copy to shadow subsequent edits.
                 string relativePath = $"import-{Guid.NewGuid():N}/{filename}";
                 string logicalPath = GetSafeRelativePathInDirectory(
-                    requestedDirectory, relativePath, "download path");
+                    absoluteDestinationPath, relativePath, "download path");
                 if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(logicalPath, out string downloadSharedPath) ||
                     !OpenBrushStorage.TryResolveStorageDestination(downloadSharedPath, out StorageArea downloadArea,
                         out string downloadRelativePath))
@@ -337,18 +303,6 @@ namespace TiltBrush
                 fullDestinationPath = GetSafePathInDirectory(
                     absoluteDestinationPath, uniqueFilename, "download filename");
             }
-            if (OpenBrushStorage.IsScopedStorageMode && UserStorage.Backend.IsReady &&
-                OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(fullDestinationPath, out string sharedPath) &&
-                OpenBrushStorage.TryResolveStorageDestination(sharedPath, out StorageArea area,
-                    out string areaRelativePath))
-            {
-                uniqueFilename = Path.GetFileName(OpenBrushStorage.GetUniqueImportPath(
-                    UserStorage.Backend, area, areaRelativePath,
-                    candidate => File.Exists(Path.Combine(absoluteDestinationPath, candidate))));
-                fullDestinationPath = GetSafePathInDirectory(
-                    absoluteDestinationPath, uniqueFilename, "download filename");
-            }
-
             // TODO - make this smarter
             if (IsSupportedMediaDownload(filename))
             {
@@ -372,19 +326,7 @@ namespace TiltBrush
                     using var output = new FileStream(fullDestinationPath, FileMode.CreateNew);
                     input.CopyTo(output);
                 }
-                if (publish)
-                {
-                    _PublishApiMediaLibraryPathToSharedStorage(
-                        fullDestinationPath, preserveDestination,
-                        onComplete: onPublished == null ? null : (success, _) =>
-                        {
-                            if (success)
-                            {
-                                onPublished(Path.GetRelativePath(requestedDirectory, fullDestinationPath));
-                            }
-                        });
-                }
-                return Path.GetRelativePath(requestedDirectory, fullDestinationPath);
+                return Path.GetRelativePath(absoluteDestinationPath, fullDestinationPath);
             }
             return null;
         }
@@ -528,9 +470,8 @@ namespace TiltBrush
             Publish();
         }
 
-        internal static void _PublishApiMediaLibraryPathToSharedStorage(
-            string localPath, bool preserveDestination = false,
-            Action<bool, string> onComplete = null, bool replaceDestination = false)
+        private static void PublishApiGltfDirectoryToSharedStorage(
+            string localPath, Action<bool, string> onComplete)
         {
             if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(
                     localPath, out string relativePath))
@@ -544,8 +485,7 @@ namespace TiltBrush
                 "media file",
                 (path, label, complete) => OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
                     path, relativePath, label, complete,
-                    preserveDestination: preserveDestination,
-                    replaceDestination: replaceDestination),
+                    preserveDestination: true),
                 onComplete);
         }
 
