@@ -79,6 +79,7 @@
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
+    "com.esprogram.inkpainter": "https://github.com/icosa-mirror/InkPainter.git#upm",
     "com.icosa.unitytinyexr": "https://github.com/icosa-mirror/UnityTinyEXR.git#7d86cd3109a02be80a91846d69c59802dba05665"
   },
   "scopedRegistries": [
