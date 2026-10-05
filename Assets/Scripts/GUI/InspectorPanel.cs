@@ -36,7 +36,7 @@ namespace TiltBrush
         public SelectionType CurrentSelectionType => m_CurrentSelectionType;
         private SelectionType m_CurrentSelectionType;
 
-        public TrTransform  CurrentSelectionTr => m_CurrentSelectionTr;
+        public TrTransform CurrentSelectionTr => m_CurrentSelectionTr;
         private TrTransform m_CurrentSelectionTr;
 
         public int CurrentSelectionCount => m_CurrentSelectionCount;

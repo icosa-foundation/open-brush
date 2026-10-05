@@ -71,7 +71,7 @@ public class InspectorAppearanceTab : InspectorBaseTab
                 if (m_InspectorPanel.CurrentSelectionCount == 1)
                 {
                     var model = m_InspectorPanel.SelectedModels[0].Model;
-                     m_SummaryText.text = $"Model path: {model.RelativePath}";
+                    m_SummaryText.text = $"Model path: {model.RelativePath}";
                 }
                 else
                 {
