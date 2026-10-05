@@ -254,7 +254,8 @@ namespace TiltBrush
                 App.MediaLibraryPath(), relativeDestinationFolder,
                 "media destination folder", allowBaseDirectory: true);
             return _DownloadMediaFileFromUrlToDirectory(
-                url, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix);
+                url, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix,
+                streamToSharedStorage: OpenBrushStorage.IsScopedStorageMode);
         }
 
         private static string _DownloadMediaFileFromUrlToDirectory(
@@ -263,10 +264,12 @@ namespace TiltBrush
             bool allowRedirects,
             string requiredContentTypePrefix = null,
             bool publish = true,
-            Action<string> onPublished = null)
+            Action<string> onPublished = null,
+            bool streamToSharedStorage = false)
         {
             string requestedDirectory = absoluteDestinationPath;
-            bool preserveDestination = publish && OpenBrushStorage.IsScopedStorageMode;
+            bool preserveDestination = publish && OpenBrushStorage.IsScopedStorageMode &&
+                !streamToSharedStorage;
             if (preserveDestination)
             {
                 // Assign the logical path before returning a widget, even without a selected tree.
@@ -286,6 +289,34 @@ namespace TiltBrush
 
             var contentDisposition = response.Headers["Content-Disposition"];
             string filename = GetSafeDownloadFilename(url, contentDisposition);
+
+            if (streamToSharedStorage)
+            {
+                if (!IsSupportedMediaDownload(filename)) { return null; }
+
+                // Keep the unique logical name, but stream directly into a shared transaction.
+                // Commit before returning: images, skyboxes, and video playback then all read
+                // the shared file, with no private media copy to shadow subsequent edits.
+                string relativePath = $"import-{Guid.NewGuid():N}/{filename}";
+                string logicalPath = GetSafeRelativePathInDirectory(
+                    requestedDirectory, relativePath, "download path");
+                if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(logicalPath, out string downloadSharedPath) ||
+                    !OpenBrushStorage.TryResolveStorageDestination(downloadSharedPath, out StorageArea downloadArea,
+                        out string downloadRelativePath))
+                {
+                    throw new IOException("The API media destination is outside shared storage.");
+                }
+
+                var downloadRequest = System.Net.WebRequest.CreateHttp(url);
+                downloadRequest.UserAgent = ApiManager.WebRequestUserAgent;
+                downloadRequest.AllowAutoRedirect = allowRedirects;
+                using var downloadResponse = (HttpWebResponse)downloadRequest.GetResponse();
+                ThrowIfRedirectDisallowed(downloadResponse, allowRedirects);
+                ThrowIfContentTypeDisallowed(downloadResponse.ContentType, requiredContentTypePrefix);
+                using Stream input = downloadResponse.GetResponseStream();
+                WriteSafMediaDownload(UserStorage.Backend, downloadArea, downloadRelativePath, input);
+                return relativePath;
+            }
 
             if (!Directory.Exists(absoluteDestinationPath))
             {
@@ -319,11 +350,7 @@ namespace TiltBrush
             }
 
             // TODO - make this smarter
-            if (ReferenceImageFormat.IsSupportedFile(filename) ||
-                filename.ToLower().EndsWith(".mp4") ||
-                filename.ToLower().EndsWith(".obj") || filename.ToLower().EndsWith(".off") ||
-                filename.ToLower().EndsWith(".gltf") || filename.ToLower().EndsWith(".glb") ||
-                filename.ToLower().EndsWith(".usd") || filename.ToLower().EndsWith(".fbx"))
+            if (IsSupportedMediaDownload(filename))
             {
 
                 if (allowRedirects)
@@ -362,10 +389,37 @@ namespace TiltBrush
             return null;
         }
 
+        private static bool IsSupportedMediaDownload(string filename)
+        {
+            return ReferenceImageFormat.IsSupportedFile(filename) ||
+                filename.ToLower().EndsWith(".mp4") ||
+                filename.ToLower().EndsWith(".obj") || filename.ToLower().EndsWith(".off") ||
+                filename.ToLower().EndsWith(".gltf") || filename.ToLower().EndsWith(".glb") ||
+                filename.ToLower().EndsWith(".usd") || filename.ToLower().EndsWith(".fbx");
+        }
+
+        internal static void WriteSafMediaDownload(
+            IUserStorageBackend backend, StorageArea area, string relativePath, Stream input)
+        {
+            using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                area, relativePath, StorageMimeTypes.ForPath(relativePath), default))
+            {
+                using (Stream output = transaction.OpenWrite())
+                {
+                    input.CopyTo(output);
+                }
+                StorageMutationResult result = transaction.Commit();
+                if (!result.Success)
+                {
+                    throw new IOException($"Could not save shared media '{relativePath}': {result.Error}");
+                }
+            }
+        }
+
         internal static ReferenceImage ResolveApiImage(string fullPath)
         {
             var backend = UserStorage.Backend;
-            if (File.Exists(fullPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
+            if (backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
                 return new ReferenceImage(fullPath);
             }
@@ -378,7 +432,7 @@ namespace TiltBrush
         internal static ReferenceVideo ResolveApiVideo(string fullPath)
         {
             var backend = UserStorage.Backend;
-            if (File.Exists(fullPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
+            if (backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
                 return new ReferenceVideo(fullPath);
             }

@@ -226,7 +226,8 @@ namespace TiltBrush
             string relativePath = Path.GetRelativePath(
                 App.BackgroundImagesLibraryPath(), path).Replace('\\', '/');
             m_CustomSkyboxTextureName = relativePath;
-            bool localFileExists = File.Exists(path);
+            bool localFileExists = UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework &&
+                File.Exists(path);
             if (!localFileExists &&
                 UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
@@ -319,7 +320,7 @@ namespace TiltBrush
             // accounting for both file buffering and decoded texture allocations. Encoded file
             // size alone does not bound texture memory. Keep file-size acceptance consistent
             // across SAF and local storage; the existing decoder dimension checks still apply.
-            if (File.Exists(localPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
+            if (backend.Kind != StorageBackendKind.StorageAccessFramework)
             {
                 return File.ReadAllBytes(localPath);
             }

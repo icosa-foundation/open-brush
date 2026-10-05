@@ -662,6 +662,32 @@ namespace TiltBrush
             Assert.Throws<IOException>(() => source.OpenRead());
         }
 
+        [TestCase("sky.png")]
+        [TestCase("sky.hdr")]
+        public void SafSkybox_IgnoresPrivateCopyEvenWhenSharedFileIsDeleted(string filename)
+        {
+            var backend = new FakeSafBackend();
+            StorageDocumentId shared = backend.Add(filename, new byte[] { 2 });
+            string privatePath = Path.Combine(Path.GetTempPath(), $"shadow-{Guid.NewGuid():N}-{filename}");
+            try
+            {
+                File.WriteAllBytes(privatePath, new byte[] { 1 });
+                CollectionAssert.AreEqual(new byte[] { 2 },
+                    SceneSettings.ReadSkyboxBytes(backend, filename, privatePath));
+
+                backend.Delete(shared, CancellationToken.None);
+                Assert.Throws<FileNotFoundException>(() =>
+                    SceneSettings.ReadSkyboxBytes(backend, filename, privatePath));
+
+                CollectionAssert.AreEqual(new byte[] { 1 }, SceneSettings.ReadSkyboxBytes(
+                    new LocalUserStorageBackend(), filename, privatePath));
+            }
+            finally
+            {
+                File.Delete(privatePath);
+            }
+        }
+
         private static void SetModelCatalogField(ModelCatalog catalog, string name, object value)
         {
             typeof(ModelCatalog).GetField(name,
@@ -1017,6 +1043,47 @@ namespace TiltBrush
             Assert.AreEqual(2, input.ReadByte());
             Assert.AreEqual(3, input.ReadByte());
             Assert.AreEqual(-1, input.ReadByte());
+        }
+
+        [TestCase(StorageArea.MediaLibraryImages, "image.png")]
+        [TestCase(StorageArea.MediaLibraryVideos, "video.mp4")]
+        [TestCase(StorageArea.MediaLibraryBackgroundImages, "sky.hdr")]
+        public void SafMediaDownload_CommitsBeforeReturning(StorageArea area, string filename)
+        {
+            var backend = new FakeSafBackend();
+            byte[] expected = { 2, 3, 4 };
+            using var download = new MemoryStream(expected);
+            ApiMethods.WriteSafMediaDownload(backend, area, $"import-test/{filename}", download);
+
+            Assert.AreEqual(1, backend.CommitCount);
+            StorageDocument document = backend.List(area, "import-test", CancellationToken.None).Documents.Single();
+            using Stream input = backend.OpenRead(document.DocumentId, false, CancellationToken.None);
+            using var actual = new MemoryStream();
+            input.CopyTo(actual);
+            CollectionAssert.AreEqual(expected, actual.ToArray());
+        }
+
+        private sealed class InterruptedDownloadStream : MemoryStream
+        {
+            public override void CopyTo(Stream destination, int bufferSize)
+            {
+                destination.WriteByte(2);
+                throw new IOException("Download interrupted.");
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafMediaDownload_DoesNotPublishFailedDownloads(bool failCommit)
+        {
+            var backend = new FakeSafBackend { FailCommitNumber = failCommit ? 1 : 0 };
+            using Stream download = failCommit
+                ? new MemoryStream(new byte[] { 2 })
+                : new InterruptedDownloadStream();
+            Assert.Throws<IOException>(() => ApiMethods.WriteSafMediaDownload(
+                backend, StorageArea.MediaLibraryImages, "import-test/image.png", download));
+            Assert.AreEqual(0, backend.CommitCount);
+            Assert.IsEmpty(backend.List(StorageArea.MediaLibraryImages, "import-test", CancellationToken.None).Documents);
         }
 
         [Test]
