@@ -1,34 +1,11 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Threading;
-using Newtonsoft.Json;
 using NUnit.Framework;
 
 namespace TiltBrush
 {
     public class TestSafExportNaming
     {
-        private sealed class ExportBackend : IUserStorageBackend
-        {
-            private readonly LocalUserStorageBackend m_Local;
-            public ExportBackend(string root) { m_Local = new LocalUserStorageBackend(_ => root); }
-            public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
-            public bool IsReady => true;
-            public string RootIdentity { get; } = $"export-test-{Guid.NewGuid():N}";
-            public StorageDirectoryResult List(StorageArea area, string path, CancellationToken token) => m_Local.List(area, path, token);
-            public StorageTreeResult EnumerateTree(StorageArea area, string path, StorageTreeQuery query, CancellationToken token) => m_Local.EnumerateTree(area, path, query, token);
-            public Stream OpenRead(StorageArea area, string relativePath, bool seekable, CancellationToken token) => m_Local.OpenRead(area, relativePath, seekable, token);
-            public bool Exists(StorageArea area, string relativePath) => m_Local.Exists(area, relativePath);
-            public Stream OpenRead(StorageDocumentId id, bool seekable, CancellationToken token) => m_Local.OpenRead(id, seekable, token);
-            public IStorageWriteTransaction BeginWrite(StorageArea area, string path, string mime, CancellationToken token, StorageDocumentId targetDocumentId = default)
-            {
-                return m_Local.BeginWrite(area, path, mime, token, targetDocumentId);
-            }
-            public StorageMutationResult Rename(StorageDocumentId id, string name, CancellationToken token) => m_Local.Rename(id, name, token);
-            public StorageMutationResult Delete(StorageDocumentId id, CancellationToken token) => m_Local.Delete(id, token);
-        }
-
         [TestCase(1)]
         [TestCase(2)]
         public void LegacyGlbStreamMatchesFileOutputAndCopiesSidecars(int version)
@@ -150,48 +127,5 @@ namespace TiltBrush
 
 
 
-        [Test]
-        public void CompletedPublicationRecoveryFinishesPartialOwnedPayloadCleanup()
-        {
-            string fixture = Path.Combine(OpenBrushStorage.LocalStagingPath,
-                $"cleanup-test-{Guid.NewGuid():N}");
-            var backend = new ExportBackend(Path.Combine(fixture, "shared"));
-            string recovery = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            string journalDirectory = Path.Combine(recovery, "publications");
-            string alreadyDeleted = Path.Combine(fixture, "already-deleted");
-            string remaining = Path.Combine(fixture, "remaining");
-            Directory.CreateDirectory(remaining);
-            File.WriteAllText(Path.Combine(remaining, "data.bin"), "payload");
-            Directory.CreateDirectory(journalDirectory);
-            var record = new SafPublicationRecord
-            {
-                TransactionId = "partial-cleanup",
-                RootId = backend.RootIdentity,
-                Area = StorageArea.Exports.ToString(),
-                TransactionOwnsPayload = true,
-                State = "Complete",
-                Items = new System.Collections.Generic.List<SafPublicationItem>
-                {
-                    new SafPublicationItem { SourcePath = alreadyDeleted, IsDirectory = true },
-                    new SafPublicationItem { SourcePath = remaining, IsDirectory = true },
-                },
-            };
-            string journal = Path.Combine(journalDirectory, $"{record.TransactionId}.json");
-            File.WriteAllText(journal, JsonConvert.SerializeObject(record));
-            try
-            {
-                SafRecoveryReport report = SafStagedOutputPublisher.RecoverAll(
-                    backend, CancellationToken.None);
-                Assert.AreEqual(1, report.Recovered);
-                Assert.AreEqual(0, report.Pending);
-                Assert.IsFalse(Directory.Exists(remaining));
-                Assert.IsFalse(File.Exists(journal));
-            }
-            finally
-            {
-                if (Directory.Exists(fixture)) { Directory.Delete(fixture, true); }
-                if (Directory.Exists(recovery)) { Directory.Delete(recovery, true); }
-            }
-        }
     }
 }

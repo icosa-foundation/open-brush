@@ -22,12 +22,12 @@ namespace TiltBrush
     ///
     /// Open Brush assumes the shared folder is fixed for the life of an installation, which is why
     /// the per-operation root comparisons that used to run throughout the catalogs, the write
-    /// transaction and the publisher have all been removed. That assumption is about the user's
+    /// transaction have all been removed. That assumption is about the user's
     /// behaviour, not about the URI: a reinstall, a provider change, or a re-grant through the
     /// recovery path can all hand back a different root.
     ///
     /// Without a check, a changed root would silently write into app-private state left behind by
-    /// the previous one - staged outputs, publication records, seeding flags - with nothing to
+    /// the previous one - transaction recovery records, sync state, seeding flags - with nothing to
     /// notice. So the root is recorded once and compared at startup, and anything derived from it
     /// is discarded when it differs.
     public static class SafRootChangeGuard
@@ -73,10 +73,7 @@ namespace TiltBrush
         {
             foreach (string path in new[]
             {
-                OpenBrushStorage.LocalStagingPath,
-                OpenBrushStorage.LocalExportStagingPath,
                 Path.Combine(OpenBrushStorage.PersistentDataPath, "OpenBrushSafRecovery"),
-                Path.Combine(OpenBrushStorage.PersistentDataPath, "OpenBrushSafPublications"),
                 // The Drive ledger used to carry the storage root in its path, which is what kept
                 // a stale one from claiming files were already synced. That protection moves here.
                 Path.Combine(OpenBrushStorage.PersistentDataPath, "OpenBrushDriveSyncLedger"),

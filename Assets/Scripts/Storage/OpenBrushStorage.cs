@@ -66,6 +66,8 @@ namespace TiltBrush
             }
         }
 
+        // Generated output paths are logical addresses on SAF. Writers resolve them to shared
+        // documents; they do not create files or staging directories at these private paths.
         public static string LocalExportStagingPath
         {
             get
@@ -345,7 +347,7 @@ namespace TiltBrush
         }
 
         internal static string GetUniqueImportPath(IUserStorageBackend backend, StorageArea area,
-            string relativePath, Func<string, bool> localExists = null)
+            string relativePath)
         {
             string directory = (Path.GetDirectoryName(relativePath) ?? "").Replace('\\', '/');
             StorageDirectoryResult listing = backend.List(area, directory, CancellationToken.None);
@@ -361,59 +363,12 @@ namespace TiltBrush
             string filename = Path.GetFileName(relativePath);
             string candidate = filename;
             int version = 0;
-            while (names.Contains(candidate) || (localExists?.Invoke(candidate) ?? false))
+            while (names.Contains(candidate))
             {
                 candidate = $"{Path.GetFileNameWithoutExtension(filename)} ({++version}){Path.GetExtension(filename)}";
             }
             return string.IsNullOrEmpty(directory) ? candidate : $"{directory}/{candidate}";
         }
-
-        internal static SafPublicationResult PublishImportedMedia(
-            IUserStorageBackend backend, StorageArea area, string relativePath, string localPath,
-            bool prepareLocalImport, out string publishedLocalPath,
-            bool preserveDestination = false, bool replaceDestination = false)
-        {
-            publishedLocalPath = null;
-            if (preserveDestination && replaceDestination)
-            {
-                throw new ArgumentException(
-                    "An imported-media publication cannot both reject and replace collisions.");
-            }
-            // Serialize API name selection and publication, including delayed picker continuations.
-            using (SafDestinationLocks.Acquire($"api-import:{backend.RootIdentity}:{area}", CancellationToken.None))
-            {
-                string localDirectory = Path.GetDirectoryName(localPath);
-                string destination = replaceDestination
-                    ? relativePath
-                    : GetUniqueImportPath(backend, area, relativePath,
-                        candidate => !string.Equals(candidate, Path.GetFileName(localPath),
-                            StringComparison.OrdinalIgnoreCase) &&
-                            File.Exists(Path.Combine(localDirectory, candidate)));
-                if (preserveDestination && !string.Equals(destination, relativePath, StringComparison.Ordinal))
-                {
-                    return new SafPublicationResult(StorageResultCode.Failed,
-                        $"The reserved import destination already exists: {relativePath}. Staged content was preserved.");
-                }
-                SafPublicationResult result = replaceDestination
-                    ? SafStagedOutputPublisher.PublishReplacing(
-                        backend, area, destination, localPath,
-                        transactionOwnsPayload: false, CancellationToken.None)
-                    : SafStagedOutputPublisher.Publish(
-                        backend, area, destination, localPath,
-                        transactionOwnsPayload: false, CancellationToken.None);
-                if (result.Success && prepareLocalImport)
-                {
-                    // The importing widget needs both the final logical name and its local bytes.
-                    publishedLocalPath = Path.Combine(localDirectory, Path.GetFileName(destination));
-                    if (!string.Equals(localPath, publishedLocalPath, StringComparison.OrdinalIgnoreCase))
-                    {
-                        File.Copy(localPath, publishedLocalPath);
-                    }
-                }
-                return result;
-            }
-        }
-
 
         internal static bool TryResolveStorageDestination(
             string sharedRelativePath,

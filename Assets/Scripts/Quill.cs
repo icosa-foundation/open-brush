@@ -89,6 +89,14 @@ namespace TiltBrush
             LastLoadedBackgroundColor = null;
             LastLoaded360SkyboxName = null;
 
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                // Both readers still require filesystem paths. Re-enable this entry point only
+                // after they can consume shared streams and extract media directly to shared storage.
+                Debug.LogWarning("[Quill] Quill import is not yet available in this Android build.");
+                return;
+            }
+
             string kind;
             SQ.Sequence sequence = null;
             if (Directory.Exists(path))
@@ -688,7 +696,7 @@ namespace TiltBrush
             }
 
             string relativePath = Path.GetRelativePath(homeDir, finalPath);
-            ReferenceImage refImage = ResolveQuillReferenceImage(finalPath, relativePath);
+            ReferenceImage refImage = ReferenceImageCatalog.m_Instance.RelativePathToImage(relativePath);
             imageCache[cacheKey] = refImage;
             return refImage;
         }
@@ -763,40 +771,9 @@ namespace TiltBrush
             }
 
             string relativePath = Path.GetRelativePath(homeDir, destPath);
-            ReferenceImage refImage = ResolveQuillReferenceImage(destPath, relativePath);
+            ReferenceImage refImage = ReferenceImageCatalog.m_Instance.RelativePathToImage(relativePath);
             imageCache[cacheKey] = refImage;
             return refImage;
-        }
-
-        private static ReferenceImage ResolveQuillReferenceImage(
-            string localPath, string relativePath)
-        {
-            IUserStorageBackend backend = UserStorage.Backend;
-            if (backend.Kind != StorageBackendKind.StorageAccessFramework)
-            {
-                return ReferenceImageCatalog.m_Instance.RelativePathToImage(relativePath);
-            }
-
-            // In SAF builds HomeDirectory is only a logical, app-private anchor. Publish the
-            // extracted image before resolving it because the catalog reads the shared tree.
-            SafPublicationResult publication = OpenBrushStorage.PublishImportedMedia(
-                backend,
-                StorageArea.MediaLibraryImages,
-                relativePath,
-                localPath,
-                prepareLocalImport: true,
-                out string publishedLocalPath);
-            if (!publication.Success)
-            {
-                Debug.LogWarning(
-                    $"Failed to publish Quill picture into media library: {publication.Error}");
-                return null;
-            }
-
-            string publishedRelativePath = Path.GetRelativePath(
-                ReferenceImageCatalog.m_Instance.HomeDirectory, publishedLocalPath);
-            return ReferenceImageCatalog.ResolveSafImage(
-                backend, StorageArea.MediaLibraryImages, publishedRelativePath);
         }
 
         private static string GetQuillImageDirectory(string quillProjectPath)

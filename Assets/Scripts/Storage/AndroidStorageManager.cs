@@ -195,12 +195,6 @@ namespace TiltBrush
                     SafRecoveryReport transactionReport =
                         SafTransactionRecovery.RecoverAll(
                             UserStorage.Backend, default);
-                    SafRecoveryReport publicationReport =
-                        SafStagedOutputPublisher.RecoverAll(
-                            UserStorage.Backend, default);
-                    transactionReport.Recovered += publicationReport.Recovered;
-                    transactionReport.Pending += publicationReport.Pending;
-                    transactionReport.Errors.AddRange(publicationReport.Errors);
                     RecoverAutosave(transactionReport);
                     return transactionReport;
                 },
@@ -425,56 +419,6 @@ namespace TiltBrush
                 SoundClipCatalog.Instance.ChangeDirectory(
                     SoundClipCatalog.Instance.HomeDirectory);
             }
-        }
-
-        public static void StartStorageOperation(
-            string label,
-            Func<SafPublicationResult> operation,
-            Action<bool, string> onComplete)
-        {
-            if (m_Instance == null)
-            {
-                onComplete?.Invoke(false, "Android storage manager is not ready.");
-                return;
-            }
-            m_Instance.StartCoroutine(
-                m_Instance.RunStorageOperation(label, operation, onComplete));
-        }
-
-        private IEnumerator RunStorageOperation(
-            string label,
-            Func<SafPublicationResult> operation,
-            Action<bool, string> onComplete)
-        {
-            var future = new Future<SafPublicationResult>(operation, longRunning: true);
-            SafPublicationResult result = null;
-            while (true)
-            {
-                bool finished;
-                try
-                {
-                    finished = future.TryGetResult(out result);
-                }
-                catch (FutureFailed e)
-                {
-                    result = new SafPublicationResult(
-                        StorageResultCode.Failed,
-                        e.InnerException?.Message ?? e.Message);
-                    break;
-                }
-                if (finished)
-                {
-                    break;
-                }
-                yield return null;
-            }
-            future.Close();
-            if (!result.Success)
-            {
-                Debug.LogWarning(
-                    $"SAF_STORAGE {label} publication failed: {result.Error}");
-            }
-            onComplete?.Invoke(result.Success, result.Error);
         }
 
     }

@@ -54,7 +54,6 @@ namespace TiltBrush
                 new Dictionary<StorageDocumentId, Entry>();
             public int CommitCount { get; private set; }
             public int FailCommitNumber { get; set; }
-            public string RootAfterFirstCommit { get; set; }
             public string RootAfterFirstRead { get; set; }
             public StorageResultCode? ListFailureCode { get; set; }
             public DateTime DocumentLastModified { get; set; } = DateTime.UtcNow;
@@ -62,7 +61,6 @@ namespace TiltBrush
             public int ReadCount { get; private set; }
             public string LastListedDirectory { get; private set; }
             public StorageArea LastListedArea { get; private set; }
-            public List<string> CommittedNames { get; } = new List<string>();
 
             private sealed class WriteTransaction : IStorageWriteTransaction
             {
@@ -100,12 +98,6 @@ namespace TiltBrush
                     }
                     TargetDocumentId = m_Backend.AddOrReplace(m_Name, m_Stream.ToArray());
                     m_Backend.CommitCount = commitNumber;
-                    m_Backend.CommittedNames.Add(m_Name);
-                    if (m_Backend.RootAfterFirstCommit != null &&
-                        commitNumber == 1)
-                    {
-                        m_Backend.RootIdentity = m_Backend.RootAfterFirstCommit;
-                    }
                     m_Finished = true;
                     return new StorageMutationResult(
                         StorageResultCode.Success, TargetDocumentId);
@@ -927,103 +919,14 @@ namespace TiltBrush
         }
 
         [Test]
-        public void SafImports_AvoidSharedAndLocalNames()
+        public void SafImports_AvoidExistingSharedNames()
         {
             var backend = new FakeSafBackend();
             backend.Add("Picture.png", new byte[] { 1 });
             backend.Add("Picture (1).png", new byte[] { 2 });
-            Assert.AreEqual("Picture (3).png", OpenBrushStorage.GetUniqueImportPath(
-                backend, StorageArea.MediaLibraryImages, "Picture.png",
-                name => name == "Picture (2).png"));
+            Assert.AreEqual("Picture (2).png", OpenBrushStorage.GetUniqueImportPath(
+                backend, StorageArea.MediaLibraryImages, "Picture.png"));
             Assert.IsTrue(backend.Contains("Picture.png"));
-        }
-
-        [TestCase(false, false)]
-        [TestCase(true, false)]
-        [TestCase(true, true)]
-        public void SafImports_ReturnPublishedNameAndMatchingLocalBytes(bool collision, bool failCommit)
-        {
-            string stagingRoot = Path.Combine(
-                Path.GetTempPath(), $"open-brush-import-test-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(stagingRoot);
-            string stagedPath = Path.Combine(stagingRoot, "Picture.png");
-            byte[] importedBytes = { 3, 4, 5 };
-            File.WriteAllBytes(stagedPath, importedBytes);
-            var backend = new FakeSafBackend { FailCommitNumber = failCommit ? 1 : 0 };
-            StorageDocumentId originalId = default;
-            if (collision)
-            {
-                originalId = backend.Add("Picture.png", new byte[] { 1 });
-                File.WriteAllBytes(Path.Combine(stagingRoot, "Picture (1).png"), new byte[] { 2 });
-            }
-            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            try
-            {
-                SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(
-                    backend, StorageArea.MediaLibraryImages, "Picture.png", stagedPath,
-                    prepareLocalImport: true, out string publishedPath);
-                Assert.AreEqual(!failCommit, result.Success, result.Error);
-                if (failCommit)
-                {
-                    Assert.IsNull(publishedPath);
-                }
-                else
-                {
-                    string expectedName = collision ? "Picture (2).png" : "Picture.png";
-                    Assert.AreEqual(Path.Combine(stagingRoot, expectedName), publishedPath);
-                    CollectionAssert.AreEqual(importedBytes, File.ReadAllBytes(publishedPath));
-                    CollectionAssert.Contains(backend.CommittedNames, expectedName);
-                }
-                CollectionAssert.AreEqual(importedBytes, File.ReadAllBytes(stagedPath));
-                if (collision)
-                {
-                    CollectionAssert.AreEqual(new byte[] { 2 },
-                        File.ReadAllBytes(Path.Combine(stagingRoot, "Picture (1).png")));
-                    using Stream original = backend.OpenRead(
-                        originalId, false, CancellationToken.None);
-                    Assert.AreEqual(1, original.ReadByte());
-                }
-            }
-            finally
-            {
-                Directory.Delete(stagingRoot, true);
-                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
-            }
-        }
-
-        [TestCase(false)]
-        [TestCase(true)]
-        public void SafReviewImport_NeverRenamesAnAlreadyReturnedWidgetPath(bool collision)
-        {
-            string stagingRoot = Path.Combine(Path.GetTempPath(), $"saf-import-test-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(stagingRoot);
-            string stagedPath = Path.Combine(stagingRoot, "image.png");
-            File.WriteAllBytes(stagedPath, new byte[] { 2 });
-            var backend = new FakeSafBackend();
-            StorageDocumentId original = default;
-            if (collision) { original = backend.Add("image.png", new byte[] { 1 }); }
-            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            try
-            {
-                SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(backend,
-                    StorageArea.MediaLibraryImages, "image.png", stagedPath,
-                    prepareLocalImport: false, out _, preserveDestination: true);
-                Assert.AreEqual(!collision, result.Success);
-                Assert.IsFalse(backend.Contains("image (1).png"));
-                Assert.IsTrue(File.Exists(stagedPath));
-                Assert.AreEqual(collision ? 0 : 1, backend.CommitCount);
-                if (collision)
-                {
-                    using Stream input = backend.OpenRead(original, false, CancellationToken.None);
-                    Assert.AreEqual(1, input.ReadByte());
-                }
-                else { CollectionAssert.Contains(backend.CommittedNames, "image.png"); }
-            }
-            finally
-            {
-                Directory.Delete(stagingRoot, true);
-                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
-            }
         }
 
         [TestCase(false)]
@@ -1148,284 +1051,6 @@ namespace TiltBrush
             StorageDocument current = backend.List(StorageArea.Snapshots, "", CancellationToken.None).Documents.Single();
             using Stream read = backend.OpenRead(current.DocumentId, false, CancellationToken.None);
             Assert.AreEqual(failProducer || failCommit ? 1 : 2, read.ReadByte());
-        }
-
-        [Test]
-        public void SafApiImportReplacement_PreservesNameAndReplacesBytes()
-        {
-            string stagingRoot = Path.Combine(
-                Path.GetTempPath(), $"saf-import-replacement-test-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(stagingRoot);
-            string stagedPath = Path.Combine(stagingRoot, "image.png");
-            File.WriteAllBytes(stagedPath, new byte[] { 2 });
-            var backend = new FakeSafBackend();
-            backend.Add("image.png", new byte[] { 1 });
-            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            try
-            {
-                SafPublicationResult result = OpenBrushStorage.PublishImportedMedia(
-                    backend,
-                    StorageArea.MediaLibraryImages,
-                    "image.png",
-                    stagedPath,
-                    prepareLocalImport: false,
-                    out _,
-                    replaceDestination: true);
-
-                Assert.IsTrue(result.Success, result.Error);
-                Assert.IsFalse(backend.Contains("image (1).png"));
-                using Stream input = backend.OpenRead(
-                    backend.List(StorageArea.MediaLibraryImages, "", CancellationToken.None)
-                        .Documents.Single(document => document.DisplayName == "image.png").DocumentId,
-                    false,
-                    CancellationToken.None);
-                Assert.AreEqual(2, input.ReadByte());
-            }
-            finally
-            {
-                Directory.Delete(stagingRoot, true);
-                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
-            }
-        }
-
-
-        [Test]
-        public void SafStagedOutputPublisher_CommitsWholeDirectory()
-        {
-            string stagingRoot = Path.Combine(
-                Path.GetTempPath(), $"open-brush-publication-test-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(Path.Combine(stagingRoot, "nested"));
-            File.WriteAllText(Path.Combine(stagingRoot, "one.txt"), "one");
-            File.WriteAllBytes(Path.Combine(stagingRoot, "nested", "two.bin"), new byte[] { 2 });
-            var backend = new FakeSafBackend();
-            string recoveryRoot =
-                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            try
-            {
-                SafPublicationResult result = SafStagedOutputPublisher.Publish(
-                    backend,
-                    StorageArea.Exports,
-                    "Test Export",
-                    stagingRoot,
-                    transactionOwnsPayload: false,
-                    CancellationToken.None);
-                Assert.IsTrue(result.Success, result.Error);
-                Assert.IsTrue(backend.Contains("one.txt"));
-                Assert.IsTrue(backend.Contains("two.bin"));
-                string publicationDirectory = Path.Combine(recoveryRoot, "publications");
-                Assert.IsFalse(Directory.Exists(publicationDirectory) &&
-                    Directory.GetFiles(publicationDirectory, "*.json").Length > 0);
-            }
-            finally
-            {
-                if (Directory.Exists(stagingRoot))
-                {
-                    Directory.Delete(stagingRoot, true);
-                }
-                if (Directory.Exists(recoveryRoot))
-                {
-                    Directory.Delete(recoveryRoot, true);
-                }
-            }
-        }
-
-        [Test]
-        public void SafStagedOutputPublisher_RejectsRootedDestination()
-        {
-            string stagedFile = Path.GetTempFileName();
-            try
-            {
-                var backend = new FakeSafBackend();
-                Assert.Throws<ArgumentException>(() =>
-                    SafStagedOutputPublisher.Publish(
-                        backend,
-                        StorageArea.Exports,
-                        Path.GetFullPath("outside.txt"),
-                        stagedFile,
-                        transactionOwnsPayload: false,
-                        CancellationToken.None));
-            }
-            finally
-            {
-                File.Delete(stagedFile);
-            }
-        }
-
-        [Test]
-        public void SafStagedOutputPublisher_RemovesCommittedOwnedPayload()
-        {
-            string stagingRoot = Path.Combine(
-                OpenBrushStorage.LocalStagingPath,
-                $"publication-test-{Guid.NewGuid():N}");
-            string stagedFile = Path.Combine(stagingRoot, "snapshot.png");
-            Directory.CreateDirectory(stagingRoot);
-            File.WriteAllBytes(stagedFile, new byte[] { 1, 2, 3 });
-            var backend = new FakeSafBackend();
-            string recoveryRoot =
-                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            try
-            {
-                SafPublicationResult result = SafStagedOutputPublisher.Publish(
-                    backend,
-                    StorageArea.Snapshots,
-                    "snapshot.png",
-                    stagedFile,
-                    transactionOwnsPayload: true,
-                    CancellationToken.None);
-                Assert.IsTrue(result.Success, result.Error);
-                Assert.IsFalse(File.Exists(stagedFile));
-                Assert.IsTrue(backend.Contains("snapshot.png"));
-            }
-            finally
-            {
-                if (Directory.Exists(stagingRoot))
-                {
-                    Directory.Delete(stagingRoot, true);
-                }
-                if (Directory.Exists(recoveryRoot))
-                {
-                    Directory.Delete(recoveryRoot, true);
-                }
-            }
-        }
-
-        [TestCase("unchanged")]
-        [TestCase("edited")]
-        [TestCase("deleted")]
-        public void SafPublicationRecovery_PreservesCompletedFiles(string change)
-        {
-            string stagingRoot = Path.Combine(Path.GetTempPath(), $"saf-recovery-test-{Guid.NewGuid():N}");
-            Directory.CreateDirectory(stagingRoot);
-            string first = Path.Combine(stagingRoot, "first.txt");
-            string second = Path.Combine(stagingRoot, "second.txt");
-            File.WriteAllText(first, "original");
-            File.WriteAllText(second, "second");
-            var backend = new FakeSafBackend { FailCommitNumber = 2 };
-            string recoveryRoot = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            try
-            {
-                Assert.IsFalse(SafStagedOutputPublisher.PublishBundle(backend, StorageArea.Exports,
-                    new[] { new SafStagedPath(first, "first.txt"), new SafStagedPath(second, "second.txt") },
-                    transactionOwnsPayload: false, CancellationToken.None).Success);
-                backend.FailCommitNumber = 0;
-                StorageDocument original = backend.List(StorageArea.Exports, "", CancellationToken.None)
-                    .Documents.Single(document => document.DisplayName == "first.txt");
-                if (change == "edited")
-                {
-                    using IStorageWriteTransaction edit = backend.BeginWrite(
-                        StorageArea.Exports, "first.txt", "text/plain", CancellationToken.None);
-                    using (var writer = new StreamWriter(edit.OpenWrite())) { writer.Write("user edit"); }
-                    Assert.IsTrue(edit.Commit().Success);
-                }
-                else if (change == "deleted")
-                {
-                    Assert.IsTrue(backend.Delete(original.DocumentId, CancellationToken.None).Success);
-                }
-                int commitsBeforeRecovery = backend.CommitCount;
-                SafRecoveryReport report = SafStagedOutputPublisher.RecoverAll(backend, CancellationToken.None);
-                Assert.AreEqual(change == "unchanged" ? 1 : 0, report.Recovered);
-                Assert.AreEqual(change == "unchanged" ? 0 : 1, report.Pending);
-                Assert.AreEqual(commitsBeforeRecovery + (change == "unchanged" ? 1 : 0), backend.CommitCount);
-                Assert.AreEqual(change == "unchanged", backend.Contains("second.txt"));
-                if (change == "deleted") { Assert.IsFalse(backend.Contains("first.txt")); }
-                else
-                {
-                    using var reader = new StreamReader(backend.OpenRead(original.DocumentId, false, CancellationToken.None));
-                    Assert.AreEqual(change == "edited" ? "user edit" : "original", reader.ReadToEnd());
-                }
-            }
-            finally
-            {
-                Directory.Delete(stagingRoot, true);
-                if (Directory.Exists(recoveryRoot)) { Directory.Delete(recoveryRoot, true); }
-            }
-        }
-
-        [Test]
-        public void SafStagedOutputPublisher_RetainsOwnedPayloadAfterFailure()
-        {
-            string stagingRoot = Path.Combine(
-                OpenBrushStorage.LocalStagingPath,
-                $"publication-test-{Guid.NewGuid():N}");
-            string stagedFile = Path.Combine(stagingRoot, "snapshot.png");
-            Directory.CreateDirectory(stagingRoot);
-            File.WriteAllBytes(stagedFile, new byte[] { 1, 2, 3 });
-            var backend = new FakeSafBackend { FailCommitNumber = 1 };
-            string recoveryRoot =
-                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            try
-            {
-                SafPublicationResult result = SafStagedOutputPublisher.Publish(
-                    backend,
-                    StorageArea.Snapshots,
-                    "snapshot.png",
-                    stagedFile,
-                    transactionOwnsPayload: true,
-                    CancellationToken.None);
-
-                Assert.IsFalse(result.Success);
-                Assert.IsTrue(File.Exists(stagedFile));
-                Assert.AreEqual(
-                    1,
-                    Directory.GetFiles(
-                        Path.Combine(recoveryRoot, "publications"), "*.json").Length);
-            }
-            finally
-            {
-                if (Directory.Exists(stagingRoot))
-                {
-                    Directory.Delete(stagingRoot, true);
-                }
-                if (Directory.Exists(recoveryRoot))
-                {
-                    Directory.Delete(recoveryRoot, true);
-                }
-            }
-        }
-
-        [Test]
-        public void SafStagedOutputPublisher_CommitsFrameMetadataLast()
-        {
-            string stagingRoot = Path.Combine(
-                Path.GetTempPath(), $"open-brush-publication-test-{Guid.NewGuid():N}");
-            string frames = Path.Combine(stagingRoot, "frames");
-            Directory.CreateDirectory(frames);
-            File.WriteAllText(Path.Combine(frames, "0001.png"), "one");
-            File.WriteAllText(Path.Combine(frames, "0002.png"), "two");
-            string metadata = Path.Combine(stagingRoot, "sequence.txt");
-            File.WriteAllText(metadata, "complete");
-            var backend = new FakeSafBackend();
-            string recoveryRoot =
-                SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            try
-            {
-                SafPublicationResult result = SafStagedOutputPublisher.PublishBundle(
-                    backend,
-                    StorageArea.Videos,
-                    new[]
-                    {
-                        new SafStagedPath(frames, "frames"),
-                        new SafStagedPath(metadata, "sequence.txt"),
-                    },
-                    transactionOwnsPayload: false,
-                    CancellationToken.None);
-
-                Assert.IsTrue(result.Success, result.Error);
-                Assert.AreEqual(
-                    "sequence.txt",
-                    backend.CommittedNames[backend.CommittedNames.Count - 1]);
-            }
-            finally
-            {
-                if (Directory.Exists(stagingRoot))
-                {
-                    Directory.Delete(stagingRoot, true);
-                }
-                if (Directory.Exists(recoveryRoot))
-                {
-                    Directory.Delete(recoveryRoot, true);
-                }
-            }
         }
 
         [Test]
