@@ -155,7 +155,7 @@ namespace TiltBrush
 
         protected override bool IsControlPointReady(PointerManager.ControlPoint controlPoint)
         {
-            long currentTimeMs = ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(
+            long currentTimeMs = ScenePlaybackByTimeLayered.ConvertSketchTimeToMilliseconds(
                 App.Instance.CurrentSketchTime);
             return m_timeline.GetControlPointTimeMs(
                 m_stroke, controlPoint.m_TimestampMs) <= currentTimeMs;
