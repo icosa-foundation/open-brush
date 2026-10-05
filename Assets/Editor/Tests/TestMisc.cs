@@ -60,7 +60,7 @@ namespace TiltBrush
         {
             Assert.AreEqual(
                 expectedMilliseconds,
-                ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(sketchTimeSeconds));
+                ScenePlaybackByTimeLayered.ConvertSketchTimeToMilliseconds(sketchTimeSeconds));
         }
 
         [Test]
@@ -68,10 +68,10 @@ namespace TiltBrush
         {
             Assert.AreEqual(
                 long.MaxValue,
-                ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(float.MaxValue));
+                ScenePlaybackByTimeLayered.ConvertSketchTimeToMilliseconds(float.MaxValue));
             Assert.AreEqual(
                 long.MinValue,
-                ScenePlaybackByTime.ConvertSketchTimeToMilliseconds(-float.MaxValue));
+                ScenePlaybackByTimeLayered.ConvertSketchTimeToMilliseconds(-float.MaxValue));
         }
 
         [TestCase(30, 0, 30)]
