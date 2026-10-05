@@ -1000,6 +1000,39 @@ namespace TiltBrush
             }
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafBase64ImageWrite_CommitsBeforeReturning(bool replace)
+        {
+            var backend = new FakeSafBackend();
+            if (replace) { backend.Add("image.png", new byte[] { 1 }); }
+
+            ApiMethods.WriteSafReferenceImage(backend, "image.png", new byte[] { 2, 3 });
+
+            Assert.AreEqual(1, backend.CommitCount);
+            StorageDocument document = backend.List(
+                StorageArea.MediaLibraryImages, "", CancellationToken.None).Documents.Single();
+            Assert.AreEqual("image.png", document.DisplayName);
+            using Stream input = backend.OpenRead(document.DocumentId, false, CancellationToken.None);
+            Assert.AreEqual(2, input.ReadByte());
+            Assert.AreEqual(3, input.ReadByte());
+            Assert.AreEqual(-1, input.ReadByte());
+        }
+
+        [Test]
+        public void SafBase64ImageWrite_ReportsFailureAndPreservesTheExistingImage()
+        {
+            var backend = new FakeSafBackend { FailCommitNumber = 1 };
+            StorageDocumentId original = backend.Add("image.png", new byte[] { 1 });
+
+            Assert.Throws<IOException>(() =>
+                ApiMethods.WriteSafReferenceImage(backend, "image.png", new byte[] { 2 }));
+
+            Assert.AreEqual(0, backend.CommitCount);
+            using Stream input = backend.OpenRead(original, false, CancellationToken.None);
+            Assert.AreEqual(1, input.ReadByte());
+        }
+
         [Test]
         public void SafApiImportReplacement_PreservesNameAndReplacesBytes()
         {

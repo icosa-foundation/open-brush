@@ -1805,24 +1805,39 @@ namespace TiltBrush
             }
 
             var path = GetSafeReferenceImageWritePath(filename);
-            Directory.CreateDirectory(Path.GetDirectoryName(path));
-            File.WriteAllBytes(path, bytes);
-            _PublishApiMediaLibraryPathToSharedStorage(
-                path,
-                // File.WriteAllBytes replaces this name on ordinary filesystems. Preserve that
-                // contract on SAF as well: silently publishing "foo (1).png" would make the
-                // returned logical path refer to an older image after the sketch is reopened.
-                replaceDestination: true,
-                onComplete: (success, _) =>
-                {
-                    // SAF publications do not trigger the filesystem watcher that normally
-                    // refreshes reference images, so expose the new image after publication.
-                    if (success && OpenBrushStorage.IsScopedStorageMode)
-                    {
-                        ReferenceImageCatalog.m_Instance?.ForceCatalogScan();
-                    }
-                });
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                // Commit before returning so an immediate API import reads the shared image.
+                // A private copy at this path would mask later shared-file edits or deletion.
+                WriteSafReferenceImage(UserStorage.Backend, filename, bytes);
+                ReferenceImageCatalog.m_Instance?.ForceCatalogScan();
+            }
+            else
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                File.WriteAllBytes(path, bytes);
+            }
             return path;
+        }
+
+        internal static void WriteSafReferenceImage(
+            IUserStorageBackend backend, string filename, byte[] bytes)
+        {
+            // BeginWrite resolves an existing filename as a replacement target and owns the
+            // temporary shared document, commit sequence, and interrupted-write recovery.
+            using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                StorageArea.MediaLibraryImages, filename, StorageMimeTypes.ForPath(filename), default))
+            {
+                using (Stream output = transaction.OpenWrite())
+                {
+                    output.Write(bytes, 0, bytes.Length);
+                }
+                StorageMutationResult result = transaction.Commit();
+                if (!result.Success)
+                {
+                    throw new IOException($"Could not save shared image '{filename}': {result.Error}");
+                }
+            }
         }
 
         private static string GetReferenceImageExtension(byte[] bytes)
