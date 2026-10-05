@@ -4502,7 +4502,7 @@ namespace TiltBrush
             PointerManager.m_Instance.EnablePointerStrokeGeneration(true);
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
             {
-				PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
+                PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
                 var playbackMode = playbackModeOverride ?? m_SketchPlaybackMode;
                 SketchMemoryScript.m_Instance.SetPlaybackMode(playbackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
