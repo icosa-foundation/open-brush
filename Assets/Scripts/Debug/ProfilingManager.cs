@@ -262,10 +262,20 @@ namespace TiltBrush
 
             Debug.Log(message.ToString());
 
-            string path = Path.Join(
-                App.UserPath(),
-                $"{GetProfilingFilename()}_summary.txt");
-            File.WriteAllText(path, message.ToString());
+            string filename = $"{GetProfilingFilename()}_summary.txt";
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                OpenBrushStorage.WriteSharedFile(UserStorage.Backend, StorageArea.UserRoot,
+                    filename, output =>
+                    {
+                        using var writer = new System.IO.StreamWriter(output);
+                        writer.Write(message.ToString());
+                    });
+            }
+            else
+            {
+                File.WriteAllText(Path.Join(App.UserPath(), filename), message.ToString());
+            }
         }
 
         private string BuildComparisonLine(Statistics.Summary stats, int numBatches, int numTriangles)

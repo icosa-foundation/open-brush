@@ -5924,8 +5924,6 @@ namespace TiltBrush
                 int res = App.UserConfig.Profiling.ScreenshotResolution;
                 RenderTexture renderTexture = RenderTexture.GetTemporary(
                     CaptureColorUtils.CreateDescriptor(res, res, RenderTextureFormat.ARGB32));
-                string screenshotPath = null;
-                string screenshotName = null;
                 try
                 {
                     cam.targetTexture = renderTexture;
@@ -5936,50 +5934,23 @@ namespace TiltBrush
                     string filename = sceneFile is SafSceneFileInfo
                         ? FileUtils.GetValidFilename(sceneFile.HumanName)
                         : Path.GetFileNameWithoutExtension(sceneFile.FullPath);
-                    screenshotName = filename + ".jpg";
+                    string screenshotName = $"{filename}.jpg";
                     if (OpenBrushStorage.IsScopedStorageMode)
                     {
-                        string stagingDirectory = Path.Combine(
-                            OpenBrushStorage.LocalStagingPath, "Profiling");
-                        Directory.CreateDirectory(stagingDirectory);
-                        screenshotPath = Path.Combine(stagingDirectory, screenshotName);
+                        OpenBrushStorage.WriteSharedFile(UserStorage.Backend, StorageArea.UserRoot,
+                            screenshotName, output => output.Write(jpegBytes, 0, jpegBytes.Length));
                     }
                     else
                     {
-                        screenshotPath = Path.Combine(App.UserPath(), screenshotName);
+                        File.WriteAllBytes(Path.Combine(App.UserPath(), screenshotName), jpegBytes);
                     }
-                    File.WriteAllBytes(screenshotPath, jpegBytes);
                 }
                 finally
                 {
                     Destroy(camObj);
                     RenderTexture.ReleaseTemporary(renderTexture);
                 }
-                if (OpenBrushStorage.IsScopedStorageMode)
-                {
-                    bool publicationFinished = false;
-                    bool publicationSucceeded = false;
-                    string publicationError = null;
-                    OpenBrushStorage.PublishUserRootFileToSharedStorageAsync(
-                        screenshotPath,
-                        screenshotName,
-                        "profiling screenshot",
-                        (success, error) =>
-                        {
-                            publicationSucceeded = success;
-                            publicationError = error;
-                            publicationFinished = true;
-                        });
-                    while (!publicationFinished)
-                    {
-                        yield return null;
-                    }
-                    if (!publicationSucceeded)
-                    {
-                        OutputWindowScript.Error(
-                            "Failed to save profiling screenshot", publicationError);
-                    }
-                }
+
             }
 
             oldWandPose.ToTransform(InputManager.Wand.Geometry.transform);
