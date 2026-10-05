@@ -652,7 +652,7 @@ namespace TiltBrush
                         batchInfo.Add(subsetInfo);
                     }
                     primitive.Extras = JToken.FromObject(new Dictionary<string, object>
-                        { ["ICOSA_batchInfo"] = batchInfo });
+                    { ["ICOSA_batchInfo"] = batchInfo });
                 }
             }
 
@@ -770,7 +770,7 @@ namespace TiltBrush
                 if (uv[i].y < minY) minY = uv[i].y;
                 if (uv[i].x > maxX) maxX = uv[i].x;
                 if (uv[i].y > maxY) maxY = uv[i].y;
-                Buffer.BlockCopy(BitConverter.GetBytes(uv[i].x), 0, bytes, i * 8,     4);
+                Buffer.BlockCopy(BitConverter.GetBytes(uv[i].x), 0, bytes, i * 8, 4);
                 Buffer.BlockCopy(BitConverter.GetBytes(uv[i].y), 0, bytes, i * 8 + 4, 4);
             }
             var accessorId = exporter.ExportAccessor(bytes, (uint)vertCount,
