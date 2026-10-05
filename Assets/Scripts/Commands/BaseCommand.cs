@@ -36,7 +36,16 @@ namespace TiltBrush
 
         public void SetParent(BaseCommand parent)
         {
+            if (m_Parent == parent)
+            {
+                return;
+            }
+            m_Parent?.m_Children.Remove(this);
             m_Parent = parent;
+            if (parent != null && !parent.m_Children.Contains(this))
+            {
+                parent.m_Children.Add(this);
+            }
         }
         public int Timestamp
         {

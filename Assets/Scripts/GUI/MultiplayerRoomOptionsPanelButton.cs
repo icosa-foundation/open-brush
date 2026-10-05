@@ -45,13 +45,16 @@ namespace TiltBrush
                     // "Single User" commands
 
                     case SketchControlsScript.GlobalCommands.MultiplayerMutePlayerForMe:
-                        IsToggledOn = _playerData.m_IsMutedForMe;
+                        IsToggledOn = _playerData?.m_IsMutedForMe ?? false;
+                        break;
+                    case SketchControlsScript.GlobalCommands.MultiplayerHideForMe:
+                        IsToggledOn = _playerData?.m_IsHiddenForMe ?? false;
                         break;
                     case SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode:
-                        IsToggledOn = _playerData.m_IsViewOnly;
+                        IsToggledOn = _playerData?.m_IsViewOnly ?? false;
                         break;
                     case SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll:
-                        IsToggledOn = _playerData.m_IsMutedForAll;
+                        IsToggledOn = _playerData?.m_IsMutedForAll ?? false;
                         break;
 
                     // "All User" commands
@@ -64,6 +67,9 @@ namespace TiltBrush
                         break;
                     case SketchControlsScript.GlobalCommands.MultiplayerMuteAllForAll:
                         IsToggledOn = MultiplayerManager.m_Instance.m_IsAllMutedForAll;
+                        break;
+                    case SketchControlsScript.GlobalCommands.MultiplayerHideAllForMe:
+                        IsToggledOn = MultiplayerManager.m_Instance.ArePlayerAvatarsHiddenForMe;
                         break;
                 }
             }

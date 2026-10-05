@@ -168,10 +168,12 @@ namespace TiltBrush
             MultiplayerViewOnlyMode = 1014,
             MultiplayerTransferRoomOwnership = 1013,
             MultiplayerKickPlayerOut = 1015,
+            MultiplayerHideForMe = 1024,
 
             MultiplayerMuteAllForMe = 1016,
             MultiplayerSetAllViewOnly = 1017,
             MultiplayerMuteAllForAll = 1018,
+            MultiplayerHideAllForMe = 1023,
 
             MultiplayerSetRoomViewOnly = 1020,
             MultiplayerSetRoomSilent = 1021,
@@ -4484,7 +4486,9 @@ namespace TiltBrush
             }
         }
 
-        public void LoadSketch(SceneFileInfo fileInfo, bool quickload = false)
+        public void LoadSketch(
+            SceneFileInfo fileInfo, bool quickload = false,
+            SketchMemoryScript.PlaybackMode? playbackModeOverride = null)
         {
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
@@ -4499,7 +4503,8 @@ namespace TiltBrush
             if (SaveLoadScript.m_Instance.Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
             {
                 PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
-                SketchMemoryScript.m_Instance.SetPlaybackMode(m_SketchPlaybackMode, m_DefaultSketchLoadSpeed);
+                var playbackMode = playbackModeOverride ?? m_SketchPlaybackMode;
+                SketchMemoryScript.m_Instance.SetPlaybackMode(playbackMode, m_DefaultSketchLoadSpeed);
                 SketchMemoryScript.m_Instance.BeginDrawingFromMemory(bDrawFromStart: true);
                 // the order of these two lines are important as ExitIntroSketch is setting the
                 // color of the pointer and we need the color to be set before we go to the Loading
@@ -5374,6 +5379,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerDisconnect:
                 case GlobalCommands.MultiplayerManualColocation:
                 case GlobalCommands.MultiplayerMutePlayerForMe:
+                case GlobalCommands.MultiplayerHideForMe:
                 case GlobalCommands.MultiplayerTransferRoomOwnership:
                 case GlobalCommands.MultiplayerViewOnlyMode:
                 case GlobalCommands.MultiplayerMuteAllForMe:
@@ -5381,6 +5387,7 @@ namespace TiltBrush
                 case GlobalCommands.MultiplayerKickPlayerOut:
                 case GlobalCommands.MultiplayerMuteAllForAll:
                 case GlobalCommands.MultiplayerPlayerMuteForAll:
+                case GlobalCommands.MultiplayerHideAllForMe:
                 case GlobalCommands.WhatIsNew:
                 case GlobalCommands.LoginToIcosa:
                 case GlobalCommands.OpenIcosaPanelOptionsPopup:
@@ -5442,7 +5449,17 @@ namespace TiltBrush
             }
         }
 
-        private void LoadNamed(string path, bool quickload, bool additive)
+        public void LoadNamedFileWithPlaybackMode(
+            string path, SketchMemoryScript.PlaybackMode playbackMode)
+        {
+            LoadNamed(
+                path, quickload: false, additive: false,
+                playbackModeOverride: playbackMode);
+        }
+
+        private void LoadNamed(
+            string path, bool quickload, bool additive,
+            SketchMemoryScript.PlaybackMode? playbackModeOverride = null)
         {
             var fileInfo = new DiskSceneFileInfo(path);
             fileInfo.ReadMetadata();
@@ -5460,7 +5477,7 @@ namespace TiltBrush
             }
             else
             {
-                LoadSketch(fileInfo, quickload);
+                LoadSketch(fileInfo, quickload, playbackModeOverride);
             }
             if (m_ControlsType != ControlsType.ViewingOnly)
             {
