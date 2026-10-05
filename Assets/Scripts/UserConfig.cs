@@ -244,7 +244,7 @@ namespace TiltBrush
             public bool EnablePluginClipboardAccess;
 
             [JsonConverter(typeof(StringEnumConverter))]
-            public PhotonUdpPortSet PhotonUdpPorts = PhotonUdpPortSet.Default;
+            public PhotonUdpPortSet PhotonUdpPorts;
 
             bool? m_AdvancedKeyboardShortcuts;
             public bool AdvancedKeyboardShortcuts
