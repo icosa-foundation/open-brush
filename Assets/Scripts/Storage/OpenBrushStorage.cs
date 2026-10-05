@@ -444,34 +444,6 @@ namespace TiltBrush
         }
 
 
-        public static void PublishGaussianCaptureToSharedStorageAsync(
-            string localCaptureDirectory, Action<bool, string> onComplete)
-        {
-            if (!IsScopedStorageMode)
-            {
-                onComplete?.Invoke(true, null);
-                return;
-            }
-            string captureName = Path.GetFileName(localCaptureDirectory);
-            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
-            {
-                IUserStorageBackend backend = UserStorage.Backend;
-                AndroidStorageManager.StartStorageOperation(
-                    $"Gaussian capture {captureName}",
-                    () => SafStagedOutputPublisher.PublishUniqueDirectory(
-                        backend, StorageArea.SplatPoses, localCaptureDirectory,
-                        transactionOwnsPayload: true, CancellationToken.None),
-                    onComplete);
-                return;
-            }
-            PublishPathToSharedStorageAsync(
-                Path.Combine("SplatPoses", captureName),
-                localCaptureDirectory,
-                $"Gaussian capture {captureName}",
-                transactionOwnsPayload: true,
-                onComplete);
-        }
-
         private static void PublishPathToSharedStorageAsync(
             string relativePath,
             string localPath,

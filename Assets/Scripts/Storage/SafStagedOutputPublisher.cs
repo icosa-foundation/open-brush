@@ -83,78 +83,6 @@ namespace TiltBrush
     {
         private const int kVersion = 1;
 
-        public static SafPublicationResult PublishUniqueDirectory(
-            IUserStorageBackend backend, StorageArea area, string stagedDirectory,
-            bool transactionOwnsPayload, CancellationToken cancellationToken)
-        {
-            if (backend == null || backend.Kind != StorageBackendKind.StorageAccessFramework ||
-                !backend.IsReady)
-            {
-                return new SafPublicationResult(StorageResultCode.NotReady,
-                    "Open Brush shared folder is unavailable.");
-            }
-            if (!Directory.Exists(stagedDirectory))
-            {
-                return new SafPublicationResult(StorageResultCode.NotFound,
-                    $"Staged output does not exist: {stagedDirectory}");
-            }
-            string rootId = backend.RootIdentity;
-            using IDisposable reservation = SafDestinationLocks.Acquire(
-                $"{rootId}\n{area}\n__directory_name__".ToLowerInvariant(), cancellationToken);
-            List<string> reservedNames = GetPendingTopLevelNames(rootId, area, cancellationToken);
-            string destination = SelectUniqueDirectoryName(
-                backend, area, Path.GetFileName(stagedDirectory), reservedNames, cancellationToken);
-            return PublishBundle(backend, area,
-                new[] { new SafStagedPath(stagedDirectory, destination) },
-                transactionOwnsPayload, cancellationToken);
-        }
-
-        internal static string SelectUniqueDirectoryName(IUserStorageBackend backend,
-            StorageArea area, string preferredName, IEnumerable<string> reservedNames,
-            CancellationToken cancellationToken)
-        {
-            string rootId = backend.RootIdentity;
-            StorageDirectoryResult listing = backend.List(area, "", cancellationToken);
-            if (!listing.Success && listing.Code != StorageResultCode.NotFound)
-            {
-                throw new IOException($"Could not check shared output names: {listing.Error}");
-            }
-            var names = new HashSet<string>(reservedNames, StringComparer.OrdinalIgnoreCase);
-            foreach (StorageDocument document in listing.Documents) { names.Add(document.DisplayName); }
-            string candidate = preferredName;
-            for (int index = 0; names.Contains(candidate); ++index)
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                candidate = $"{preferredName} {index}";
-            }
-            return candidate;
-        }
-
-        private static List<string> GetPendingTopLevelNames(
-            string rootId, StorageArea area, CancellationToken cancellationToken)
-        {
-            var reservedNames = new List<string>();
-            string journalDirectory = GetPublicationDirectory(rootId);
-            if (!Directory.Exists(journalDirectory)) { return reservedNames; }
-            foreach (string path in Directory.EnumerateFiles(journalDirectory, "*.json"))
-            {
-                cancellationToken.ThrowIfCancellationRequested();
-                var record = JsonConvert.DeserializeObject<SafPublicationRecord>(File.ReadAllText(path));
-                if (record == null || record.Version != kVersion || record.RootId != rootId)
-                {
-                    throw new IOException(
-                        "Cannot reserve an output name while a publication journal is invalid.");
-                }
-                if (record.Area != area.ToString()) { continue; }
-                EnsureItems(record);
-                foreach (SafPublicationItem item in record.Items)
-                {
-                    reservedNames.Add(item.DestinationRelativePath.Split('/')[0]);
-                }
-            }
-            return reservedNames;
-        }
-
         public static SafPublicationResult Publish(
             IUserStorageBackend backend,
             StorageArea area,
@@ -666,9 +594,7 @@ namespace TiltBrush
 
         private static string GetPublicationDirectory(string rootId)
         {
-            // Namespaced by root, and load-bearing: GetPendingTopLevelNames rejects a record
-            // whose RootId does not match, so sharing one directory between roots turns a
-            // foreign record into a hard failure rather than something to ignore.
+            // Namespaced by root so each grant has its own publication records.
             return Path.Combine(
                 SafPrivatePaths.GetRecoveryRootDirectory(rootId), "publications");
         }

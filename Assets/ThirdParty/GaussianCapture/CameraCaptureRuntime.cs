@@ -88,7 +88,6 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     private bool isRunning = false;
     private bool cancel = false;
-    private bool m_CaptureCancellationRequested;
     private Material _eyeDepthMat;
     private Material m_NativeDepthMaterial;
     private Transform m_VolumeTransform;
@@ -420,17 +419,12 @@ public class CameraCaptureRuntime : MonoBehaviour
             this.target = domeTargets[0].Transform;
             this.radius = domeTargets[0].Radii.Max();
         }
-        m_CaptureCancellationRequested = false;
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        bool captureSucceeded = false;
         IEnumerator capture = runtimeSequence
-            ? RuntimeSequenceCoroutine(domeTargets, null, pathTargets, captureOutputFolder,
-                () => captureSucceeded = true)
+            ? RuntimeSequenceCoroutine(domeTargets, null, pathTargets, captureOutputFolder)
             : CaptureTargetsAndExportColmap(
-                domeTargets, null, pathTargets, captureOutputFolder, outAdd: "",
-                () => captureSucceeded = true);
-        StartCaptureInCompositor(CaptureAndPublish(
-            capture, captureOutputFolder, () => captureSucceeded));
+                domeTargets, null, pathTargets, captureOutputFolder, outAdd: "");
+        StartCaptureInCompositor(capture);
     }
 
     [ContextMenu("Start Volume Capture")]
@@ -456,17 +450,12 @@ public class CameraCaptureRuntime : MonoBehaviour
             this.volumeSize = volumeTargets[0].Transform.lossyScale;
         }
 
-        m_CaptureCancellationRequested = false;
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        bool captureSucceeded = false;
         IEnumerator capture = runtimeSequence
-            ? RuntimeSequenceCoroutine(null, volumeTargets, pathTargets, captureOutputFolder,
-                () => captureSucceeded = true)
+            ? RuntimeSequenceCoroutine(null, volumeTargets, pathTargets, captureOutputFolder)
             : CaptureTargetsAndExportColmap(
-                null, volumeTargets, pathTargets, captureOutputFolder, outAdd: "",
-                () => captureSucceeded = true);
-        StartCaptureInCompositor(CaptureAndPublish(
-            capture, captureOutputFolder, () => captureSucceeded));
+                null, volumeTargets, pathTargets, captureOutputFolder, outAdd: "");
+        StartCaptureInCompositor(capture);
     }
 
     [ContextMenu("Start All Capture")]
@@ -500,17 +489,13 @@ public class CameraCaptureRuntime : MonoBehaviour
             this.volumeSize = volumeTargets[0].Transform.lossyScale;
         }
 
-        m_CaptureCancellationRequested = false;
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        bool captureSucceeded = false;
         IEnumerator capture = runtimeSequence
             ? RuntimeSequenceCoroutine(domeTargets, volumeTargets, pathTargets,
-                captureOutputFolder, () => captureSucceeded = true)
+                captureOutputFolder)
             : CaptureTargetsAndExportColmap(
-                domeTargets, volumeTargets, pathTargets, captureOutputFolder, outAdd: "",
-                () => captureSucceeded = true);
-        StartCaptureInCompositor(CaptureAndPublish(
-            capture, captureOutputFolder, () => captureSucceeded));
+                domeTargets, volumeTargets, pathTargets, captureOutputFolder, outAdd: "");
+        StartCaptureInCompositor(capture);
     }
 
     [ContextMenu("Cancel")]
@@ -519,7 +504,6 @@ public class CameraCaptureRuntime : MonoBehaviour
         if (isRunning)
         {
             cancel = true;
-            m_CaptureCancellationRequested = true;
             Debug.LogWarning("[Capture] Cancel requested.");
         }
     }
@@ -556,6 +540,12 @@ public class CameraCaptureRuntime : MonoBehaviour
             basename = "Untitled";
         }
 
+        if (OpenBrushStorage.IsScopedStorageMode)
+        {
+            return Path.Combine(outputFolder, OpenBrushStorage.GetUniqueOutputDirectoryName(
+                UserStorage.Backend, StorageArea.SplatPoses, $"{basename}_00"));
+        }
+
         for (int i = 0; i < int.MaxValue; ++i)
         {
             string folderName = $"{basename}_{i:00}";
@@ -574,8 +564,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         List<DomeCaptureTarget> domeTargets,
         List<VolumeCaptureTarget> volumeTargets,
         List<PoseCaptureTarget> pathTargets,
-        string captureOutputFolder,
-        Action onCaptureComplete)
+        string captureOutputFolder)
     {
         int totalFrames = Mathf.Max(1, Mathf.RoundToInt(duration * Mathf.Max(1, fbs)));
         isRunning = true;
@@ -598,10 +587,6 @@ public class CameraCaptureRuntime : MonoBehaviour
         }
         isRunning = false;
         cancel = false;
-        if (!m_CaptureCancellationRequested)
-        {
-            onCaptureComplete?.Invoke();
-        }
         ReportProgress(1f, "Runtime sequence finished");
     }
 
@@ -657,30 +642,20 @@ public class CameraCaptureRuntime : MonoBehaviour
 
     public IEnumerator CaptureViewsAndExportColmap(string outAdd)
     {
-        m_CaptureCancellationRequested = false;
         var domeTargets = GetActiveDomeCaptureTargets();
         var pathTargets = GetActiveCameraPathTargets();
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        bool captureSucceeded = false;
-        yield return StartCoroutine(CaptureAndPublish(
-            CaptureTargetsAndExportColmap(
-                domeTargets, null, pathTargets, captureOutputFolder, outAdd,
-                () => captureSucceeded = true),
-            captureOutputFolder, () => captureSucceeded));
+        yield return StartCoroutine(CaptureTargetsAndExportColmap(
+            domeTargets, null, pathTargets, captureOutputFolder, outAdd));
     }
 
     public IEnumerator CaptureVolumeViewsAndExportColmap(string outAdd)
     {
-        m_CaptureCancellationRequested = false;
         var volumeTargets = GetActiveVolumeCaptureTargets();
         var pathTargets = GetActiveCameraPathTargets();
         string captureOutputFolder = CreateUniqueCaptureOutputFolder();
-        bool captureSucceeded = false;
-        yield return StartCoroutine(CaptureAndPublish(
-            CaptureTargetsAndExportColmap(
-                null, volumeTargets, pathTargets, captureOutputFolder, outAdd,
-                () => captureSucceeded = true),
-            captureOutputFolder, () => captureSucceeded));
+        yield return StartCoroutine(CaptureTargetsAndExportColmap(
+            null, volumeTargets, pathTargets, captureOutputFolder, outAdd));
     }
 
     private IEnumerator CaptureTargetsAndExportColmap(
@@ -688,12 +663,11 @@ public class CameraCaptureRuntime : MonoBehaviour
         List<VolumeCaptureTarget> volumeTargets,
         List<PoseCaptureTarget> pathTargets,
         string captureOutputFolder,
-        string outAdd,
-        Action onCaptureComplete = null)
+        string outAdd)
     {
         isRunning = true;
         string folderPath = PathCombineSafe(captureOutputFolder, outAdd);
-        Directory.CreateDirectory(folderPath);
+        if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(folderPath); }
         DepthTextureMode previousDepthTextureMode = cameraToUse.depthTextureMode;
 
         try
@@ -710,15 +684,23 @@ public class CameraCaptureRuntime : MonoBehaviour
             float fx = fy;
             float cx = width / 2f;
             float cy = height / 2f;
-            using (StreamWriter camWriter = new StreamWriter(camerasTxt))
+            using (IStorageWriteTransaction cameraTransaction = BeginSharedMetadataWrite(camerasTxt))
             {
-                camWriter.WriteLine("# Camera list with one line of data per camera:");
-                camWriter.WriteLine("# CAMERA_ID, MODEL, WIDTH, HEIGHT, PARAMS[]");
-                camWriter.WriteLine($"1 PINHOLE {width} {height} {fx.ToString(CultureInfo.InvariantCulture)} {fy.ToString(CultureInfo.InvariantCulture)} {cx} {cy}");
+                using (StreamWriter camWriter = cameraTransaction == null
+                    ? new StreamWriter(camerasTxt) : new StreamWriter(cameraTransaction.OpenWrite()))
+                {
+                    camWriter.WriteLine("# Camera list with one line of data per camera:");
+                    camWriter.WriteLine("# CAMERA_ID, MODEL, WIDTH, HEIGHT, PARAMS[]");
+                    camWriter.WriteLine($"1 PINHOLE {width} {height} {fx.ToString(CultureInfo.InvariantCulture)} {fy.ToString(CultureInfo.InvariantCulture)} {cx} {cy}");
+                }
+
+                CommitMetadataWrite(cameraTransaction);
             }
 
             string imagesTxt = Path.Combine(folderPath, "images.txt");
-            using (StreamWriter imgWriter = new StreamWriter(imagesTxt))
+            using IStorageWriteTransaction imageTransaction = BeginSharedMetadataWrite(imagesTxt);
+            using (StreamWriter imgWriter = imageTransaction == null
+                ? new StreamWriter(imagesTxt) : new StreamWriter(imageTransaction.OpenWrite()))
             {
                 imgWriter.WriteLine("# Image list with two lines per image:");
                 imgWriter.WriteLine("# IMAGE_ID, QW, QX, QY, QZ, TX, TY, TZ, CAMERA_ID, IMAGE_NAME");
@@ -764,7 +746,10 @@ public class CameraCaptureRuntime : MonoBehaviour
                     yield break;
                 }
 
-                using (StreamWriter writer3D = new StreamWriter(Path.Combine(folderPath, "points3D.txt")))
+                string pointsPath = Path.Combine(folderPath, "points3D.txt");
+                using IStorageWriteTransaction pointsTransaction = BeginSharedMetadataWrite(pointsPath);
+                using (StreamWriter writer3D = pointsTransaction == null
+                    ? new StreamWriter(pointsPath) : new StreamWriter(pointsTransaction.OpenWrite()))
                 {
                     writer3D.WriteLine("# 3D point list with one line of data per point:");
                     writer3D.WriteLine("# POINT3D_ID, X, Y, Z, R, G, B, ERROR, TRACK[] as (IMAGE_ID, POINT2D_IDX)");
@@ -813,7 +798,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                                 SafeDestroy(capturedOpaqueDepth);
                             }
 
-                            File.WriteAllBytes(imagePath, tex.EncodeToPNG());
+                            OpenBrushStorage.WriteGeneratedBytes(imagePath, tex.EncodeToPNG());
 
                             imgWriter.WriteLine($"{imageId} {q.w.ToString(CultureInfo.InvariantCulture)} {q.x.ToString(CultureInfo.InvariantCulture)} {q.y.ToString(CultureInfo.InvariantCulture)} {q.z.ToString(CultureInfo.InvariantCulture)} {t.x.ToString(CultureInfo.InvariantCulture)} {t.y.ToString(CultureInfo.InvariantCulture)} {t.z.ToString(CultureInfo.InvariantCulture)} 1 {imageName}");
                             imgWriter.WriteLine();
@@ -899,7 +884,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                                 }
 
                                 byte[] pngData = tex.EncodeToPNG();
-                                File.WriteAllBytes(imagePath, pngData);
+                                OpenBrushStorage.WriteGeneratedBytes(imagePath, pngData);
 
                                 imgWriter.WriteLine($"{imageId} {q.w.ToString(CultureInfo.InvariantCulture)} {q.x.ToString(CultureInfo.InvariantCulture)} {q.y.ToString(CultureInfo.InvariantCulture)} {q.z.ToString(CultureInfo.InvariantCulture)} {t.x.ToString(CultureInfo.InvariantCulture)} {t.y.ToString(CultureInfo.InvariantCulture)} {t.z.ToString(CultureInfo.InvariantCulture)} 1 {imageName}");
                                 imgWriter.WriteLine();
@@ -924,7 +909,9 @@ public class CameraCaptureRuntime : MonoBehaviour
                 SafeDestroy(rt);
                 SafeDestroy(resolvedRt);
                 SafeDestroy(tex);
+                CommitMetadataWrite(pointsTransaction);
             }
+            CommitMetadataWrite(imageTransaction);
         }
         finally
         {
@@ -938,53 +925,22 @@ public class CameraCaptureRuntime : MonoBehaviour
         if (!runtimeSequence && trainPostShot && !cancel)
             TryRunPostshotBatch(captureOutputFolder);
 
-        onCaptureComplete?.Invoke();
-
         yield return new WaitForEndOfFrame();
     }
 
-    private IEnumerator CaptureAndPublish(
-        IEnumerator captureRoutine, string captureOutputFolder, Func<bool> captureSucceeded)
+    private static IStorageWriteTransaction BeginSharedMetadataWrite(string path)
     {
-        yield return StartCoroutine(captureRoutine);
-        if (!ShouldPublishGaussianCapture(
-                captureSucceeded(), m_CaptureCancellationRequested,
-                OpenBrushStorage.IsScopedStorageMode))
-        {
-            m_CaptureCancellationRequested = false;
-            yield break;
-        }
-
-        bool publicationFinished = false;
-        bool publicationSucceeded = false;
-        string publicationError = null;
-        isRunning = true;
-        ReportProgress(0.99f, "Publishing Gaussian capture to shared storage");
-        OpenBrushStorage.PublishGaussianCaptureToSharedStorageAsync(
-            captureOutputFolder, (success, error) =>
-            {
-                publicationSucceeded = success;
-                publicationError = error;
-                publicationFinished = true;
-            });
-        while (!publicationFinished) { yield return null; }
-        isRunning = false;
-        m_CaptureCancellationRequested = false;
-        if (publicationSucceeded)
-        {
-            ReportProgress(1f, "Gaussian capture saved to shared storage");
-        }
-        else
-        {
-            Debug.LogWarning(
-                $"[SAF_GAUSSIAN_CAPTURE] Shared publication failed: {publicationError}");
-        }
+        if (!OpenBrushStorage.IsScopedStorageMode) { return null; }
+        var (area, relativePath) = OpenBrushStorage.GetGeneratedDestination(path);
+        return UserStorage.Backend.BeginWrite(area, relativePath, StorageMimeTypes.ForPath(relativePath),
+            System.Threading.CancellationToken.None);
     }
 
-    internal static bool ShouldPublishGaussianCapture(
-        bool captureSucceeded, bool cancellationRequested, bool usesSharedStorage)
+    private static void CommitMetadataWrite(IStorageWriteTransaction transaction)
     {
-        return captureSucceeded && !cancellationRequested && usesSharedStorage;
+        if (transaction == null) { return; }
+        StorageMutationResult result = transaction.Commit();
+        if (!result.Success) { throw new IOException($"Could not save Gaussian capture metadata: {result.Error}"); }
     }
 
     private List<DomeCaptureTarget> GetActiveDomeCaptureTargets()
@@ -1572,7 +1528,7 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         string exrPath = $"{debugOutputBasePath}_depth.exr";
         byte[] exrBytes = ImageConversion.EncodeToEXR(depthTex, Texture2D.EXRFlags.OutputAsFloat);
-        File.WriteAllBytes(exrPath, exrBytes);
+        OpenBrushStorage.WriteGeneratedBytes(exrPath, exrBytes);
 
         if (!saveDepthDebugPreviewPng)
         {
@@ -1632,7 +1588,7 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         previewTex.SetPixels(previewPixels);
         previewTex.Apply(false, false);
-        File.WriteAllBytes($"{debugOutputBasePath}_depth.png", previewTex.EncodeToPNG());
+        OpenBrushStorage.WriteGeneratedBytes($"{debugOutputBasePath}_depth.png", previewTex.EncodeToPNG());
         SafeDestroy(previewTex);
     }
 
@@ -1643,7 +1599,7 @@ public class CameraCaptureRuntime : MonoBehaviour
             return;
         }
 
-        File.WriteAllBytes(
+        OpenBrushStorage.WriteGeneratedBytes(
             $"{debugOutputBasePath}_depth_opaque.exr",
             ImageConversion.EncodeToEXR(opaqueDepthTex, Texture2D.EXRFlags.OutputAsFloat));
 
@@ -1707,7 +1663,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         var previewTex = new Texture2D(w, h, TextureFormat.RGBA32, false, true);
         previewTex.SetPixels(previewPixels);
         previewTex.Apply(false, false);
-        File.WriteAllBytes($"{debugOutputBasePath}_depth_compare.png", previewTex.EncodeToPNG());
+        OpenBrushStorage.WriteGeneratedBytes($"{debugOutputBasePath}_depth_compare.png", previewTex.EncodeToPNG());
         SafeDestroy(previewTex);
     }
 

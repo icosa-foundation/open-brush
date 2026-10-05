@@ -13,7 +13,6 @@ namespace TiltBrush
         {
             private readonly LocalUserStorageBackend m_Local;
             public ExportBackend(string root) { m_Local = new LocalUserStorageBackend(_ => root); }
-            public bool FailWrites;
             public StorageBackendKind Kind => StorageBackendKind.StorageAccessFramework;
             public bool IsReady => true;
             public string RootIdentity { get; } = $"export-test-{Guid.NewGuid():N}";
@@ -24,7 +23,6 @@ namespace TiltBrush
             public Stream OpenRead(StorageDocumentId id, bool seekable, CancellationToken token) => m_Local.OpenRead(id, seekable, token);
             public IStorageWriteTransaction BeginWrite(StorageArea area, string path, string mime, CancellationToken token, StorageDocumentId targetDocumentId = default)
             {
-                if (FailWrites) { throw new IOException("Injected export failure"); }
                 return m_Local.BeginWrite(area, path, mime, token, targetDocumentId);
             }
             public StorageMutationResult Rename(StorageDocumentId id, string name, CancellationToken token) => m_Local.Rename(id, name, token);
@@ -112,58 +110,6 @@ namespace TiltBrush
 
         [TestCase(false)]
         [TestCase(true)]
-        public void GaussianDirectoriesPreserveCompletedAndPendingDatasets(bool failFirst)
-        {
-            string fixture = Path.Combine(OpenBrushStorage.LocalStagingPath,
-                $"gaussian-test-{Guid.NewGuid():N}");
-            string shared = Path.Combine(fixture, "shared");
-            var backend = new ExportBackend(shared);
-            string recovery = SafPrivatePaths.GetRecoveryRootDirectory(backend.RootIdentity);
-            Directory.CreateDirectory(shared);
-            try
-            {
-                string first = Path.Combine(fixture, "first", "Sketch_00");
-                string second = Path.Combine(fixture, "second", "Sketch_00");
-                Directory.CreateDirectory(first);
-                Directory.CreateDirectory(second);
-                File.WriteAllText(Path.Combine(first, "cameras.txt"), "first");
-                File.WriteAllText(Path.Combine(second, "cameras.txt"), "second");
-                backend.FailWrites = failFirst;
-                SafPublicationResult firstResult = SafStagedOutputPublisher.PublishUniqueDirectory(
-                    backend, StorageArea.SplatPoses, first,
-                    transactionOwnsPayload: false, CancellationToken.None);
-                Assert.AreEqual(!failFirst, firstResult.Success, firstResult.Error);
-                Assert.IsTrue(Directory.Exists(first));
-
-                backend.FailWrites = false;
-                SafPublicationResult secondResult = SafStagedOutputPublisher.PublishUniqueDirectory(
-                    backend, StorageArea.SplatPoses, second,
-                    transactionOwnsPayload: false, CancellationToken.None);
-                Assert.IsTrue(secondResult.Success, secondResult.Error);
-                Assert.IsTrue(Directory.Exists(second));
-                Assert.AreEqual("second", File.ReadAllText(
-                    Path.Combine(shared, "Sketch_00 0", "cameras.txt")));
-                if (failFirst)
-                {
-                    SafRecoveryReport report = SafStagedOutputPublisher.RecoverAll(
-                        backend, CancellationToken.None);
-                    Assert.AreEqual(1, report.Recovered);
-                    Assert.AreEqual(0, report.Pending);
-                }
-                Assert.AreEqual("first", File.ReadAllText(
-                    Path.Combine(shared, "Sketch_00", "cameras.txt")));
-                Assert.AreEqual("second", File.ReadAllText(
-                    Path.Combine(shared, "Sketch_00 0", "cameras.txt")));
-            }
-            finally
-            {
-                if (Directory.Exists(fixture)) { Directory.Delete(fixture, true); }
-                if (Directory.Exists(recovery)) { Directory.Delete(recovery, true); }
-            }
-        }
-
-        [TestCase(false)]
-        [TestCase(true)]
         public void ExistingSharedFilesAndDirectoriesReserveNames(bool isDirectory)
         {
             var backend = new CatalogTestBackend
@@ -177,19 +123,6 @@ namespace TiltBrush
                 })
             };
             Assert.AreEqual("Sketch 1", OpenBrushStorage.GetUniqueOutputDirectoryName(
-                backend, StorageArea.Exports, "Sketch"));
-        }
-
-        [Test]
-        public void PendingPublicationsReserveNamesEvenWithoutProviderEntries()
-        {
-            var backend = new CatalogTestBackend
-            {
-                Listing = () => StorageDirectoryResult.Succeeded(Array.Empty<StorageDocument>())
-            };
-            Assert.AreEqual("Sketch 1", SafStagedOutputPublisher.SelectUniqueDirectoryName(
-                backend, StorageArea.Exports, "Sketch", new[] { "Sketch", "Sketch 0" }, CancellationToken.None));
-            Assert.AreEqual("Sketch", OpenBrushStorage.GetUniqueOutputDirectoryName(
                 backend, StorageArea.Exports, "Sketch"));
         }
 
