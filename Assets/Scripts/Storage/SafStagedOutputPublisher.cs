@@ -83,49 +83,34 @@ namespace TiltBrush
     {
         private const int kVersion = 1;
 
-        public static SafPublicationResult PublishExport(
-            IUserStorageBackend backend, string stagedDirectory, string stagedReadme,
-            CancellationToken cancellationToken)
+        // Reserve a name before writing any format. The empty local directory reserves it
+        // until direct outputs exist or the remaining path-based formats have been published.
+        internal static string ReserveExportDirectory(IUserStorageBackend backend,
+            string localRoot, string preferredName, CancellationToken cancellationToken)
         {
-            if (backend == null || backend.Kind != StorageBackendKind.StorageAccessFramework ||
-                !backend.IsReady)
-            {
-                return new SafPublicationResult(StorageResultCode.NotReady,
-                    "Open Brush shared folder is unavailable.");
-            }
-            string rootId = backend.RootIdentity;
-            // Keep selection and journal creation together across concurrent exports. Failed
-            // publications retain their destination in the journal for recovery after restart.
             using IDisposable reservation = SafDestinationLocks.Acquire(
-                $"{rootId}\nExports\n__export_name__".ToLowerInvariant(), cancellationToken);
+                $"{backend.RootIdentity}\nExports\n__export_name__".ToLowerInvariant(), cancellationToken);
             List<string> reservedNames = GetPendingTopLevelNames(
-                rootId, StorageArea.Exports, cancellationToken);
-            string destination = SelectExportDirectoryName(backend,
-                Path.GetFileName(stagedDirectory), reservedNames, cancellationToken);
-            // Each recovery journal must own a distinct source. The canonical staging README is
-            // reused by later exports, so letting a successful journal delete it would strand any
-            // earlier failed publication that still names the same path.
-            string publicationReadme = Path.Combine(
-                Path.GetDirectoryName(stagedReadme),
-                $".ob-export-readme-{Guid.NewGuid():N}{Path.GetExtension(stagedReadme)}");
-            File.Copy(stagedReadme, publicationReadme, overwrite: false);
-            bool journalOwnsReadme = false;
-            try
+                backend.RootIdentity, StorageArea.Exports, cancellationToken);
+            if (Directory.Exists(localRoot))
             {
-                return PublishBundle(backend, StorageArea.Exports,
-                    new[] { new SafStagedPath(stagedDirectory, destination),
-                        new SafStagedPath(publicationReadme, "README.txt") },
-                    transactionOwnsPayload: true,
-                    cancellationToken: cancellationToken,
-                    onJournalPersisted: () => journalOwnsReadme = true);
+                reservedNames.AddRange(Directory.EnumerateFileSystemEntries(localRoot)
+                    .Select(Path.GetFileName));
             }
-            catch
-            {
-                // PublishBundle owns the copy after its journal is persisted. An exception before
-                // that handoff must not leave an unjournaled staging file behind.
-                if (!journalOwnsReadme) { File.Delete(publicationReadme); }
-                throw;
-            }
+            string destination = SelectExportDirectoryName(
+                backend, preferredName, reservedNames, cancellationToken);
+            string localDirectory = Path.Combine(localRoot, destination);
+            Directory.CreateDirectory(localDirectory);
+            return localDirectory;
+        }
+
+        public static SafPublicationResult PublishExport(
+            IUserStorageBackend backend, string stagedDirectory, CancellationToken cancellationToken)
+        {
+            // The caller already selected this name for both direct and staged formats.
+            return PublishBundle(backend, StorageArea.Exports,
+                new[] { new SafStagedPath(stagedDirectory, Path.GetFileName(stagedDirectory)) },
+                transactionOwnsPayload: true, cancellationToken: cancellationToken);
         }
 
         public static SafPublicationResult PublishUniqueDirectory(

@@ -199,6 +199,13 @@ namespace TiltBrush
             m_uri = uri;
         }
 
+        public void CopyTo(Stream destination)
+        {
+            if (!m_local) { throw new InvalidOperationException("HTTP references are not copied"); }
+            using Stream source = m_openRead != null ? m_openRead() : File.OpenRead(m_originalLocation);
+            source.CopyTo(destination);
+        }
+
         public void CopyTo(string destination)
         {
             if (!m_local) { throw new InvalidOperationException("HTTP references are not copied"); }

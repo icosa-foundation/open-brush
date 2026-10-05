@@ -31,6 +31,49 @@ namespace TiltBrush
             public StorageMutationResult Delete(StorageDocumentId id, CancellationToken token) => m_Local.Delete(id, token);
         }
 
+        [TestCase(1)]
+        [TestCase(2)]
+        public void LegacyGlbStreamMatchesFileOutputAndCopiesSidecars(int version)
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"glb-stream-{Guid.NewGuid():N}");
+            string local = Path.Combine(root, "local");
+            Directory.CreateDirectory(local);
+            try
+            {
+                string source = Path.Combine(root, "texture.png");
+                File.WriteAllBytes(source, new byte[] { 1, 2, 3, 4 });
+                string localGlb = Path.Combine(local, "model.glb");
+                using (var globals = new GlTF_Globals(Path.Combine(root, "scratch-local"), version))
+                {
+                    globals.binary = true;
+                    globals.extras["texture"] = ExportFileReference.CreateLocal(source, "texture.png");
+                    globals.OpenFiles(localGlb);
+                    globals.Write();
+                    globals.CloseFiles();
+                }
+                var backend = new LocalUserStorageBackend(_ => Path.Combine(root, "shared"));
+                OpenBrushStorage.WriteSharedFile(backend, StorageArea.Exports, "model.glb", output =>
+                {
+                    using var globals = new GlTF_Globals(Path.Combine(root, "scratch-shared"), version);
+                    globals.binary = true;
+                    globals.extras["texture"] = ExportFileReference.CreateLocal(source, "texture.png");
+                    globals.OpenFiles("model.glb", output, (file, destination) =>
+                        OpenBrushStorage.WriteSharedFile(backend, StorageArea.Exports, destination, file.CopyTo));
+                    globals.Write();
+                    globals.CloseFiles();
+                    Assert.IsTrue(output.CanWrite, "The transaction owns the output stream");
+                });
+                CollectionAssert.AreEqual(File.ReadAllBytes(localGlb),
+                    File.ReadAllBytes(Path.Combine(root, "shared", "model.glb")));
+                CollectionAssert.AreEqual(File.ReadAllBytes(Path.Combine(local, "texture.png")),
+                    File.ReadAllBytes(Path.Combine(root, "shared", "texture.png")));
+            }
+            finally
+            {
+                Directory.Delete(root, true);
+            }
+        }
+
         [TestCase(false)]
         [TestCase(true)]
         public void RepeatedExportsPreserveCompletedAndPendingDestinations(bool failFirst)
@@ -42,22 +85,25 @@ namespace TiltBrush
             Directory.CreateDirectory(shared);
             try
             {
-                string first = Path.Combine(fixture, "first", "Sketch");
-                string second = Path.Combine(fixture, "second", "Sketch");
-                Directory.CreateDirectory(first);
-                Directory.CreateDirectory(second);
+                string localRoot = Path.Combine(fixture, "staging");
+                string first = SafStagedOutputPublisher.ReserveExportDirectory(
+                    backend, localRoot, "Sketch", CancellationToken.None);
                 File.WriteAllText(Path.Combine(first, "model.obj"), "first");
-                File.WriteAllText(Path.Combine(second, "model.obj"), "second");
-                string readme1 = Path.Combine(fixture, "first", "README.txt");
-                string readme2 = Path.Combine(fixture, "second", "README.txt");
-                File.WriteAllText(readme1, "readme");
-                File.WriteAllText(readme2, "readme");
                 backend.FailWrites = failFirst;
-                var firstResult = SafStagedOutputPublisher.PublishExport(backend, first, readme1, CancellationToken.None);
+                var firstResult = SafStagedOutputPublisher.PublishExport(backend, first, CancellationToken.None);
                 Assert.AreEqual(!failFirst, firstResult.Success, firstResult.Error);
                 Assert.AreEqual(failFirst, Directory.Exists(first));
                 backend.FailWrites = false;
-                var secondResult = SafStagedOutputPublisher.PublishExport(backend, second, readme2, CancellationToken.None);
+                string second = SafStagedOutputPublisher.ReserveExportDirectory(
+                    backend, localRoot, "Sketch", CancellationToken.None);
+                Assert.AreEqual("Sketch 0", Path.GetFileName(second));
+                // A directly written GLB and the staged formats must keep the same folder.
+                OpenBrushStorage.WriteSharedFile(backend, StorageArea.Exports,
+                    "Sketch 0/newglb/model.glb", output => output.WriteByte(42));
+                File.WriteAllText(Path.Combine(second, "model.obj"), "second");
+                var secondResult = SafStagedOutputPublisher.PublishExport(backend, second, CancellationToken.None);
+                Assert.AreEqual(new byte[] { 42 }, File.ReadAllBytes(
+                    Path.Combine(shared, "Sketch 0", "newglb", "model.glb")));
                 Assert.IsTrue(secondResult.Success, secondResult.Error);
                 Assert.AreEqual("second", File.ReadAllText(Path.Combine(shared, "Sketch 0", "model.obj")));
                 if (failFirst)

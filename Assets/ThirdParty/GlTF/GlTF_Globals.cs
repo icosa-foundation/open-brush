@@ -32,6 +32,7 @@ public sealed class GlTF_Globals : IDisposable {
   public BinaryWriter binWriter;
   // Only valid after OpenFiles has been called. This might be a .glb or a .gltf
   private string m_outputFileName;
+  private Action<ExportFileReference, string> m_copyExportFile;
   private string binFileName;
 
   private int indent = 0;
@@ -304,11 +305,18 @@ public sealed class GlTF_Globals : IDisposable {
     firsts[indent] = false;
   }
 
-  public void OpenFiles(string filepath) {
+  public void OpenFiles(string filepath, Stream output = null,
+                        Action<ExportFileReference, string> copyExportFile = null) {
+    if (output != null && (!binary || copyExportFile == null)) {
+      throw new ArgumentException("Stream output requires binary export and a subsidiary-file writer");
+    }
     Debug.Assert(m_outputFileName == null);
     m_outputFileName = filepath;
+    m_copyExportFile = copyExportFile;
     m_exportedFiles.Add(filepath);
-    jsonWriter = new StreamWriter(File.Open(filepath, FileMode.Create));
+    jsonWriter = output == null
+        ? new StreamWriter(File.Open(filepath, FileMode.Create))
+        : new StreamWriter(output, new System.Text.UTF8Encoding(false, true), 1024, leaveOpen: true);
     jsonWriter.NewLine = "\n";
 
     if (binary) {
@@ -814,11 +822,14 @@ public sealed class GlTF_Globals : IDisposable {
           continue;
         }
         string destination = Path.Combine(gltfDir, fileReference.m_uri);
-        if (File.Exists(destination)) {
+        if (m_copyExportFile != null) {
+          m_copyExportFile(fileReference, destination);
+        } else if (File.Exists(destination)) {
           Debug.LogError($"Not overwriting {destination}");
           continue;
+        } else {
+          fileReference.CopyTo(destination);
         }
-        fileReference.CopyTo(destination);
         m_exportedFiles.Add(destination);
       }
     }

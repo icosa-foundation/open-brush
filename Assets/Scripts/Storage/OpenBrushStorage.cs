@@ -474,50 +474,25 @@ namespace TiltBrush
 
 
         public static void PublishExportToSharedStorageAsync(
-            string localExportDirectory,
-            string localReadmePath,
-            Action<bool, string> onComplete)
+            string localExportDirectory, Action<bool, string> onComplete)
         {
             if (!IsScopedStorageMode)
             {
                 onComplete?.Invoke(true, null);
                 return;
             }
-
-            string exportName = Path.GetFileName(localExportDirectory);
-            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
+            if (!Directory.EnumerateFileSystemEntries(localExportDirectory).Any())
             {
-                IUserStorageBackend backend = UserStorage.Backend;
-                AndroidStorageManager.StartStorageOperation(
-                    $"export {exportName}",
-                    () => SafStagedOutputPublisher.PublishExport(
-                        backend, localExportDirectory, localReadmePath,
-                        CancellationToken.None),
-                    onComplete);
+                // GLB-only exports have no local payload to publish or retain.
+                Directory.Delete(localExportDirectory);
+                onComplete?.Invoke(true, null);
                 return;
             }
-
-            string relativeExportPath = Path.Combine("Exports", exportName);
-            PublishPathToSharedStorageAsync(
-                relativeExportPath,
-                localExportDirectory,
-                "export " + exportName,
-                transactionOwnsPayload: true,
-                (exportCopied, exportError) =>
-                {
-                    if (!exportCopied)
-                    {
-                        onComplete?.Invoke(false, exportError);
-                        return;
-                    }
-
-                    PublishPathToSharedStorageAsync(
-                        Path.Combine("Exports", "README.txt"),
-                        localReadmePath,
-                        "export README",
-                        transactionOwnsPayload: true,
-                        onComplete);
-                });
+            IUserStorageBackend backend = UserStorage.Backend;
+            AndroidStorageManager.StartStorageOperation(
+                $"export {Path.GetFileName(localExportDirectory)}",
+                () => SafStagedOutputPublisher.PublishExport(
+                    backend, localExportDirectory, CancellationToken.None), onComplete);
         }
 
         public static void PublishGaussianCaptureToSharedStorageAsync(

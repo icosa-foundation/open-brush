@@ -92,14 +92,15 @@ namespace TiltBrush
         public ExportResults ExportBrushStrokes(
             string outputFile, AxisConvention axes, bool binary, bool doExtras,
             bool includeLocalMediaContent, int gltfVersion,
-            bool selfContained = false)
+            bool selfContained = false, Stream output = null,
+            Action<ExportFileReference, string> copyExportFile = null)
         {
             var payload = ExportCollector.GetExportPayload(
                 axes,
                 includeLocalMediaContent: includeLocalMediaContent,
                 temporaryDirectory: Path.Combine(Application.temporaryCachePath, "exportgltf"));
             return ExportHelper(payload, outputFile, binary, doExtras: doExtras, gltfVersion: gltfVersion,
-                allowHttpUri: !selfContained);
+                allowHttpUri: !selfContained, output: output, copyExportFile: copyExportFile);
         }
 #if false
   // This exports a game object into glTF. Brush strokes are exported in the style of the FBX
@@ -124,7 +125,9 @@ namespace TiltBrush
             bool binary,
             bool doExtras,
             int gltfVersion,
-            bool allowHttpUri)
+            bool allowHttpUri,
+            Stream output = null,
+            Action<ExportFileReference, string> copyExportFile = null)
         {
             // TODO: Ownership of this temp directory is sloppy.
             // Payload and export share the same dir and we assume that the exporter:
@@ -141,7 +144,7 @@ namespace TiltBrush
                     m_exporter = exporter;
                     exporter.G.binary = binary;
 
-                    exporter.BeginExport(outputFile);
+                    exporter.BeginExport(outputFile, output, copyExportFile);
                     exporter.SetMetadata(payload.generator, copyright: null);
                     if (doExtras)
                     {
