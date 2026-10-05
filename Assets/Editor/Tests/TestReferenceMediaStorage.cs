@@ -200,11 +200,11 @@ namespace TiltBrush
         {
             string root = Path.Combine(
                 Path.GetTempPath(), $"saf-api-import-cleanup-{Guid.NewGuid():N}");
-            string owned = Path.Combine(root, "Images", $"import-{Guid.NewGuid():N}");
-            string userDirectory = Path.Combine(root, "Images", "import-reference");
+            string owned = Path.Combine(root, "Models", $"import-{Guid.NewGuid():N}");
+            string userDirectory = Path.Combine(root, "Models", "import-reference");
             Directory.CreateDirectory(owned);
             Directory.CreateDirectory(userDirectory);
-            File.WriteAllText(Path.Combine(owned, "image.png"), "staged image");
+            File.WriteAllText(Path.Combine(owned, "model.gltf"), "staged model");
             try
             {
                 SafApiImportStaging.CleanupOrphans(root);
@@ -219,10 +219,9 @@ namespace TiltBrush
         }
 
         [Test]
-        public void ExtractedSafAudioUsesOwnedStagingAndStableSharedNames()
+        public void ExtractedSafAudioCommitsUniqueSharedFilesAndReadsThemAfterSourceRemoval()
         {
             string root = Path.Combine(Path.GetTempPath(), $"saf-gltf-audio-{Guid.NewGuid():N}");
-            string library = Path.Combine(root, "private", "Sound Clips");
             string shared = Path.Combine(root, "shared");
             Directory.CreateDirectory(shared);
             string source = Path.Combine(root, "audio.wav");
@@ -232,48 +231,25 @@ namespace TiltBrush
             try
             {
                 var backend = new LocalUserStorageBackend(_ => shared);
-                SoundClip first = SoundClipWidget.StageSafGltfAudio(backend, source, library);
-                SoundClip second = SoundClipWidget.StageSafGltfAudio(backend, source, library);
+                SoundClip first = SoundClipWidget.PublishSafGltfAudio(backend, source);
+                SoundClip second = SoundClipWidget.PublishSafGltfAudio(backend, source);
 
                 Assert.AreEqual("audio (1).wav", first.PersistentPath);
                 Assert.AreEqual("audio (2).wav", second.PersistentPath);
-                StringAssert.StartsWith("import-", Path.GetFileName(Path.GetDirectoryName(first.AbsolutePath)));
-                Assert.IsFalse(File.Exists(Path.Combine(library, first.PersistentPath)));
+                Assert.AreEqual(Path.Combine(shared, first.PersistentPath), first.AbsolutePath);
+                Assert.AreEqual(Path.Combine(shared, second.PersistentPath), second.AbsolutePath);
                 CollectionAssert.AreEqual(audio, File.ReadAllBytes(first.AbsolutePath));
                 CollectionAssert.AreEqual(audio, File.ReadAllBytes(second.AbsolutePath));
-
-                // Model an earlier session without registering its directory in this session.
-                string orphan = Path.Combine(library, $"import-{Guid.NewGuid():N}");
-                Directory.CreateDirectory(orphan);
-                File.Copy(source, Path.Combine(orphan, "old.wav"));
-                SafApiImportStaging.CleanupOrphans(library);
-
-                Assert.IsFalse(Directory.Exists(orphan));
-                Assert.IsTrue(File.Exists(first.AbsolutePath));
-                Assert.IsTrue(File.Exists(second.AbsolutePath));
                 Assert.IsTrue(File.Exists(source));
                 Assert.AreEqual("existing shared audio", File.ReadAllText(Path.Combine(shared, "audio.wav")));
-            }
-            finally
-            {
-                if (Directory.Exists(root)) { Directory.Delete(root, recursive: true); }
-            }
-        }
+                CollectionAssert.AreEqual(new[] { shared }, Directory.GetDirectories(root));
 
-        [Test]
-        public void SafApiImports_PreserveCurrentSessionStagingDuringCleanup()
-        {
-            string root = Path.Combine(
-                Path.GetTempPath(), $"saf-api-import-current-{Guid.NewGuid():N}");
-            string current = SafApiImportStaging.CreateDirectory(
-                Path.Combine(root, "Videos"));
-            Directory.CreateDirectory(current);
-            File.WriteAllText(Path.Combine(current, "video.mp4"), "staged video");
-            try
-            {
-                SafApiImportStaging.CleanupOrphans(root);
-
-                Assert.IsTrue(Directory.Exists(current));
+                File.Delete(source);
+                using Stream read = first.OpenRead();
+                Assert.IsTrue(read.CanSeek);
+                using var bytes = new MemoryStream();
+                read.CopyTo(bytes);
+                CollectionAssert.AreEqual(audio, bytes.ToArray());
             }
             finally
             {

@@ -23,23 +23,10 @@ namespace TiltBrush
 {
     internal static class SafApiImportStaging
     {
-        private static readonly object sm_Gate = new object();
-        private static readonly HashSet<string> sm_CurrentDirectories =
-            new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        public static string CreateDirectory(string parentDirectory)
-        {
-            lock (sm_Gate)
-            {
-                string directory = Path.Combine(
-                    parentDirectory, $"import-{Guid.NewGuid():N}");
-                sm_CurrentDirectories.Add(directory);
-                return directory;
-            }
-        }
-
         internal static void CleanupOrphans(string rootDirectory)
         {
+            // Startup calls this after publication recovery. Only glTF dependency bundles
+            // still stage media here; no live audio or video consumer owns these directories.
             if (!Directory.Exists(rootDirectory)) { return; }
             try
             {
@@ -50,7 +37,7 @@ namespace TiltBrush
                          .OrderByDescending(path => path.Length)
                          .ToList())
                 {
-                    if (!IsCurrentDirectory(directory)) { DeleteBestEffort(directory); }
+                    DeleteBestEffort(directory);
                 }
             }
             catch (Exception e) when (
@@ -60,27 +47,11 @@ namespace TiltBrush
             }
         }
 
-        internal static bool ContainsFile(string parentDirectory, string filename)
-        {
-            lock (sm_Gate)
-            {
-                return sm_CurrentDirectories.Any(directory =>
-                    string.Equals(Path.GetDirectoryName(directory), parentDirectory,
-                        StringComparison.OrdinalIgnoreCase) &&
-                    File.Exists(Path.Combine(directory, filename)));
-            }
-        }
-
         private static bool IsOwnedDirectory(string directory)
         {
             string name = Path.GetFileName(directory);
             return name.StartsWith("import-", StringComparison.Ordinal) &&
                 Guid.TryParseExact(name.Substring("import-".Length), "N", out _);
-        }
-
-        private static bool IsCurrentDirectory(string directory)
-        {
-            lock (sm_Gate) { return sm_CurrentDirectories.Contains(directory); }
         }
 
         private static void DeleteBestEffort(string directory)
@@ -638,24 +609,17 @@ namespace TiltBrush
 
         public static void PublishImportedMediaToSharedStorageAsync(
             string localPath, string sharedPath, string label, Action<bool, string> onComplete,
-            Action<string> onPublished = null, bool preserveDestination = false,
-            bool replaceDestination = false)
+            bool preserveDestination = false)
         {
             if (!TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
             {
                 onComplete?.Invoke(false, "Unsupported media import destination.");
                 return;
             }
-            string publishedLocalPath = null;
             AndroidStorageManager.StartStorageOperation(label,
                 () => PublishImportedMedia(UserStorage.Backend, area, relativePath, localPath,
-                    onPublished != null, out publishedLocalPath, preserveDestination,
-                    replaceDestination),
-                (success, error) =>
-                {
-                    onComplete?.Invoke(success, error);
-                    if (success) { onPublished?.Invoke(publishedLocalPath); }
-                });
+                    prepareLocalImport: false, out _, preserveDestination),
+                onComplete);
         }
 
         internal static SafPublicationResult PublishImportedMedia(

@@ -1089,6 +1089,28 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SafExtractedAudio_FailedCommitPreservesSourceAndExistingSharedAudio()
+        {
+            var backend = new FakeSafBackend { FailCommitNumber = 1 };
+            string source = Path.Combine(Path.GetTempPath(), $"saf-audio-{Guid.NewGuid():N}.wav");
+            StorageDocumentId original = backend.Add(Path.GetFileName(source), new byte[] { 1 });
+            try
+            {
+                File.WriteAllBytes(source, new byte[] { 2 });
+                Assert.Throws<IOException>(() => SoundClipWidget.PublishSafGltfAudio(backend, source));
+                Assert.AreEqual(0, backend.CommitCount);
+                Assert.AreEqual(1, backend.List(StorageArea.MediaLibrarySoundClips, "", CancellationToken.None).Documents.Count);
+                using Stream read = backend.OpenRead(original, false, CancellationToken.None);
+                Assert.AreEqual(1, read.ReadByte());
+                CollectionAssert.AreEqual(new byte[] { 2 }, File.ReadAllBytes(source));
+            }
+            finally
+            {
+                File.Delete(source);
+            }
+        }
+
+        [Test]
         public void SafBase64ImageWrite_ReportsFailureAndPreservesTheExistingImage()
         {
             var backend = new FakeSafBackend { FailCommitNumber = 1 };

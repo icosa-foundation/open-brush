@@ -14,6 +14,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
@@ -217,34 +218,16 @@ namespace TiltBrush
             string fullSourcePath = Path.GetFullPath(sourcePath);
             string fullLibraryPath = Path.GetFullPath(soundClipLibraryPath);
 
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                SoundClip soundClip = PublishSafGltfAudio(UserStorage.Backend, fullSourcePath);
+                SoundClipCatalog.Instance?.ForceCatalogScan();
+                return soundClip;
+            }
+
             if (fullSourcePath.StartsWith(fullLibraryPath + Path.DirectorySeparatorChar))
             {
                 return new SoundClip(fullSourcePath);
-            }
-
-            if (OpenBrushStorage.IsScopedStorageMode)
-            {
-                SoundClip soundClip = StageSafGltfAudio(
-                    UserStorage.Backend, fullSourcePath, fullLibraryPath);
-                string sharedPath = $"Media Library/Sound Clips/{soundClip.PersistentPath}";
-                OpenBrushStorage.PublishImportedMediaToSharedStorageAsync(
-                    soundClip.AbsolutePath,
-                    sharedPath,
-                    "glTF audio",
-                    (success, error) =>
-                    {
-                        if (success)
-                        {
-                            SoundClipCatalog.Instance?.ForceCatalogScan();
-                        }
-                        else
-                        {
-                            Debug.LogWarning(
-                                $"SAF_SOUND Could not publish extracted glTF audio: {error}");
-                        }
-                    },
-                    preserveDestination: true);
-                return soundClip;
             }
 
             Directory.CreateDirectory(fullLibraryPath);
@@ -255,23 +238,29 @@ namespace TiltBrush
             return new SoundClip(destinationPath);
         }
 
-        internal static SoundClip StageSafGltfAudio(
-            IUserStorageBackend backend, string sourcePath, string libraryPath)
+        internal static SoundClip PublishSafGltfAudio(IUserStorageBackend backend, string sourcePath)
         {
-            string fullLibraryPath = Path.GetFullPath(libraryPath);
-            string filename = OpenBrushStorage.GetUniqueImportPath(
-                backend, StorageArea.MediaLibrarySoundClips, Path.GetFileName(sourcePath),
-                candidate => File.Exists(Path.Combine(fullLibraryPath, candidate)) ||
-                    SafApiImportStaging.ContainsFile(fullLibraryPath, candidate));
-            string stagingDirectory = SafApiImportStaging.CreateDirectory(fullLibraryPath);
-            Directory.CreateDirectory(stagingDirectory);
-            string stagedPath = Path.Combine(stagingDirectory, filename);
-            File.Copy(sourcePath, stagedPath);
+            const StorageArea area = StorageArea.MediaLibrarySoundClips;
+            using (SafDestinationLocks.Acquire($"api-import:{backend.RootIdentity}:{area}", CancellationToken.None))
+            using (Stream input = File.OpenRead(sourcePath))
+            {
+                string filename = OpenBrushStorage.GetUniqueImportPath(backend, area, Path.GetFileName(sourcePath));
+                using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                    area, filename, StorageMimeTypes.ForPath(filename), CancellationToken.None))
+                {
+                    using (Stream output = transaction.OpenWrite()) { input.CopyTo(output); }
+                    StorageMutationResult result = transaction.Commit();
+                    if (!result.Success)
+                    {
+                        throw new IOException($"Could not publish extracted glTF audio '{filename}': {result.Error}");
+                    }
+                }
 
-            // Playback and export may still need these bytes after publication. Existing
-            // startup cleanup removes this owned staging directory after the session ends.
-            // Persist the shared filename, never the temporary import-* directory.
-            return new SoundClip(stagedPath, filename, stagedPath);
+                // Playback and deferred export both reopen shared storage. The importer owns
+                // its original source file; no second private audio file is needed here.
+                return SoundClipCatalog.CreateSafSoundClip(backend,
+                    OpenBrushStorage.ResolveMediaDocument(backend, area, filename));
+            }
         }
 
         private static string GetUniqueSoundClipPath(string directory, string filename)
