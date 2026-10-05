@@ -286,12 +286,44 @@ namespace TiltBrush
                 using (var output = new FileStream(path, FileMode.Create)) { write(output); }
                 return;
             }
+            var (area, relativePath) = GetGeneratedDestination(path);
+            WriteSharedFile(UserStorage.Backend, area, relativePath, write);
+        }
+
+        internal static (StorageArea area, string relativePath) GetGeneratedDestination(string path)
+        {
             if (!TryGetSharedGeneratedFileRelativePath(path, out string sharedPath) ||
                 !TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
             {
                 throw new IOException($"Capture destination is outside shared storage: {path}");
             }
-            WriteSharedFile(UserStorage.Backend, area, relativePath, write);
+            return (area, relativePath);
+        }
+
+        public static string ReadGeneratedText(string path)
+        {
+            if (!IsScopedStorageMode) { return File.ReadAllText(path); }
+            var (area, relativePath) = GetGeneratedDestination(path);
+            var source = new MediaSource(UserStorage.Backend, area, relativePath);
+            using var reader = new StreamReader(source.OpenRead());
+            return reader.ReadToEnd();
+        }
+
+        internal static void DeleteSharedFiles(IUserStorageBackend backend, StorageArea area,
+            string directory, ISet<string> filenames)
+        {
+            StorageDirectoryResult listing = backend.List(area, directory, CancellationToken.None);
+            if (listing.Code == StorageResultCode.NotFound) { return; }
+            if (!listing.Success) { throw new IOException(listing.Error); }
+            foreach (StorageDocument file in listing.Documents)
+            {
+                if (file.IsDirectory || !filenames.Contains(file.DisplayName)) { continue; }
+                StorageMutationResult result = backend.Delete(file.DocumentId, CancellationToken.None);
+                if (!result.Success && result.Code != StorageResultCode.NotFound)
+                {
+                    throw new IOException(result.Error);
+                }
+            }
         }
 
         public static void WriteGeneratedBytes(string path, byte[] bytes)
@@ -360,199 +392,6 @@ namespace TiltBrush
         }
 
         private delegate bool TryResolveSharedPath(string localPath, out string relativePath);
-
-        public static void PublishGeneratedFilesToSharedStorageAsync(
-            IReadOnlyList<string> localPaths,
-            string label,
-            Action<bool, string> onComplete,
-            bool transactionOwnsPayload = true)
-        {
-            if (!IsScopedStorageMode || localPaths == null || localPaths.Count == 0)
-            {
-                onComplete?.Invoke(true, null);
-                return;
-            }
-            if (UserStorage.Backend.Kind == StorageBackendKind.StorageAccessFramework)
-            {
-                StorageArea? bundleArea = null;
-                var stagedPaths = new List<SafStagedPath>();
-                foreach (string localPath in localPaths)
-                {
-                    if (!TryGetSharedGeneratedFileRelativePath(
-                            localPath, out string sharedRelativePath) ||
-                        !TryResolveStorageDestination(
-                            sharedRelativePath, out StorageArea area, out string areaRelativePath))
-                    {
-                        onComplete?.Invoke(
-                            false, $"Unsupported generated output path: {localPath}");
-                        return;
-                    }
-                    if (bundleArea.HasValue && bundleArea.Value != area)
-                    {
-                        onComplete?.Invoke(
-                            false, "Generated output bundle spans multiple storage areas.");
-                        return;
-                    }
-                    bundleArea = area;
-                    stagedPaths.Add(new SafStagedPath(localPath, areaRelativePath));
-                }
-                List<SafStagedPath> originalPaths = stagedPaths;
-                if (transactionOwnsPayload)
-                {
-                    try
-                    {
-                        stagedPaths = ClaimGeneratedFilesForPublication(stagedPaths);
-                    }
-                    catch (Exception e) when (
-                        e is IOException || e is UnauthorizedAccessException)
-                    {
-                        onComplete?.Invoke(false,
-                            $"Could not reserve generated output for publication: {e.Message}");
-                        return;
-                    }
-                }
-                int journalPersisted = 0;
-                AndroidStorageManager.StartStorageOperation(
-                    label,
-                    () => SafStagedOutputPublisher.PublishBundle(
-                        UserStorage.Backend,
-                        bundleArea.Value,
-                        stagedPaths,
-                        transactionOwnsPayload,
-                        CancellationToken.None,
-                        onJournalPersisted: () => Interlocked.Exchange(
-                            ref journalPersisted, 1)),
-                    (success, error) =>
-                    {
-                        if (!success && transactionOwnsPayload &&
-                            Volatile.Read(ref journalPersisted) == 0)
-                        {
-                            // The worker can fail before it creates a recovery record (or never
-                            // start). Give the generated output its original name back so the
-                            // application can retry. After journal handoff, recovery owns it.
-                            string restoreError = RestoreUnjournaledGeneratedFiles(
-                                originalPaths, stagedPaths);
-                            if (restoreError != null)
-                            {
-                                error = $"{error} {restoreError}";
-                            }
-                        }
-                        onComplete?.Invoke(success, error);
-                    });
-                return;
-            }
-
-            int index = 0;
-            void PublishNext()
-            {
-                if (index >= localPaths.Count)
-                {
-                    onComplete?.Invoke(true, null);
-                    return;
-                }
-                PublishSinglePathAsync(
-                    localPaths[index++],
-                    label,
-                    TryGetSharedGeneratedFileRelativePath,
-                    transactionOwnsPayload,
-                    (success, error) =>
-                    {
-                        if (success)
-                        {
-                            PublishNext();
-                        }
-                        else
-                        {
-                            onComplete?.Invoke(false, error);
-                        }
-                    });
-            }
-            PublishNext();
-        }
-
-        /// Moves a completed generated bundle to transaction-unique source names while retaining
-        /// its requested SAF destinations. Publication is asynchronous, so canonical staging names
-        /// can be reused by another capture before the first worker reads or deletes them.
-        ///
-        /// This is deliberately a rename within local staging, not another copy: these files are
-        /// generated output already awaiting publication, and no SAF input is being materialized.
-        internal static List<SafStagedPath> ClaimGeneratedFilesForPublication(
-            IReadOnlyList<SafStagedPath> stagedPaths)
-        {
-            var claimed = new List<(string original, string reserved, bool isDirectory)>();
-            try
-            {
-                var result = new List<SafStagedPath>(stagedPaths.Count);
-                foreach (SafStagedPath stagedPath in stagedPaths)
-                {
-                    string source = stagedPath.SourcePath;
-                    bool isDirectory = Directory.Exists(source);
-                    if (!isDirectory && !File.Exists(source))
-                    {
-                        throw new FileNotFoundException(
-                            "Generated output does not exist.", source);
-                    }
-                    string reserved = Path.Combine(
-                        Path.GetDirectoryName(source),
-                        $".ob-publish-{Guid.NewGuid():N}-{Path.GetFileName(source)}");
-                    if (isDirectory) { Directory.Move(source, reserved); }
-                    else { File.Move(source, reserved); }
-                    claimed.Add((source, reserved, isDirectory));
-                    result.Add(new SafStagedPath(
-                        reserved, stagedPath.DestinationRelativePath));
-                }
-                return result;
-            }
-            catch
-            {
-                for (int i = claimed.Count - 1; i >= 0; --i)
-                {
-                    (string original, string reserved, bool isDirectory) = claimed[i];
-                    if (isDirectory && Directory.Exists(reserved) && !Directory.Exists(original))
-                    {
-                        Directory.Move(reserved, original);
-                    }
-                    else if (!isDirectory && File.Exists(reserved) && !File.Exists(original))
-                    {
-                        File.Move(reserved, original);
-                    }
-                }
-                throw;
-            }
-        }
-
-        internal static string RestoreUnjournaledGeneratedFiles(
-            IReadOnlyList<SafStagedPath> originalPaths,
-            IReadOnlyList<SafStagedPath> claimedPaths)
-        {
-            var errors = new List<string>();
-            for (int i = 0; i < claimedPaths.Count; ++i)
-            {
-                string original = originalPaths[i].SourcePath;
-                string claimed = claimedPaths[i].SourcePath;
-                bool isDirectory = Directory.Exists(claimed);
-                if (!isDirectory && !File.Exists(claimed)) { continue; }
-                if (File.Exists(original) || Directory.Exists(original))
-                {
-                    // Another capture may already be using the original name. Never overwrite
-                    // it; retain the earlier generated output at its unique claimed path.
-                    errors.Add($"Generated output retained at {claimed} because {original} exists.");
-                    continue;
-                }
-                try
-                {
-                    if (isDirectory) { Directory.Move(claimed, original); }
-                    else { File.Move(claimed, original); }
-                }
-                catch (Exception e) when (
-                    e is IOException || e is UnauthorizedAccessException)
-                {
-                    errors.Add($"Generated output retained at {claimed}: {e.Message}");
-                }
-            }
-            return errors.Count == 0 ? null : string.Join(" ", errors);
-        }
-
 
         public static void PublishMediaLibraryPathToSharedStorageAsync(
             string localPath, string label, Action<bool, string> onComplete)
@@ -633,129 +472,6 @@ namespace TiltBrush
             }
         }
 
-
-        public static void PublishVideoCaptureToSharedStorageAsync(
-            string localVideoPath, string label, Action<bool, string> onComplete,
-            bool retainLocalPayload = false)
-        {
-            if (!IsScopedStorageMode ||
-                !TryGetSharedGeneratedFileRelativePath(localVideoPath, out _))
-            {
-                onComplete?.Invoke(true, null);
-                return;
-            }
-
-            string directory = Path.GetDirectoryName(localVideoPath);
-            string basename = Path.GetFileNameWithoutExtension(localVideoPath);
-            string frameDirectory = Path.Combine(directory, basename + "_frames");
-            string metadataPath = Path.Combine(directory, basename + "_sequence.txt");
-            string cameraPath = Path.ChangeExtension(localVideoPath, ".usda");
-            var stagedPaths = new List<string>();
-
-            if (File.Exists(localVideoPath))
-            {
-                stagedPaths.Add(localVideoPath);
-            }
-            else if (Directory.Exists(frameDirectory))
-            {
-                stagedPaths.Add(frameDirectory);
-                if (File.Exists(metadataPath))
-                {
-                    stagedPaths.Add(metadataPath);
-                }
-            }
-            else
-            {
-                onComplete?.Invoke(false, "Local video capture output does not exist: " + localVideoPath);
-                return;
-            }
-            if (File.Exists(cameraPath))
-            {
-                stagedPaths.Add(cameraPath);
-            }
-            PublishGeneratedFilesToSharedStorageAsync(
-                stagedPaths,
-                label,
-                onComplete,
-                transactionOwnsPayload: !retainLocalPayload);
-        }
-
-        internal static void DeleteRetainedVideoCapture(string localVideoPath)
-        {
-            if (!TryGetSharedGeneratedFileRelativePath(localVideoPath, out _))
-            {
-                return;
-            }
-            string directory = Path.GetDirectoryName(localVideoPath);
-            string basename = Path.GetFileNameWithoutExtension(localVideoPath);
-            foreach (string path in new[]
-            {
-                localVideoPath,
-                Path.Combine(directory, basename + "_sequence.txt"),
-                Path.ChangeExtension(localVideoPath, ".usda"),
-            })
-            {
-                File.Delete(path);
-            }
-            string frameDirectory = Path.Combine(directory, basename + "_frames");
-            if (Directory.Exists(frameDirectory))
-            {
-                Directory.Delete(frameDirectory, recursive: true);
-            }
-        }
-
-        /// Captures the top-level video payloads that exist before Main can start a recording.
-        internal static string[] GetExistingVideoStagingPaths()
-        {
-            string videoStagingPath = LocalVideoStagingPath;
-            try
-            {
-                return Directory.Exists(videoStagingPath)
-                    ? Directory.GetFileSystemEntries(videoStagingPath)
-                    : Array.Empty<string>();
-            }
-            catch (Exception e) when (
-                e is IOException || e is UnauthorizedAccessException)
-            {
-                Debug.LogWarning($"SAF_VIDEO_RECOVERY Could not inspect stale video staging '{videoStagingPath}': {e.Message}");
-                return Array.Empty<string>();
-            }
-        }
-
-        /// Removes video payloads captured before the current process admitted Main. Recovery
-        /// must finish first so an interrupted publication can still read its payload.
-        internal static void CleanupRecoveredVideoStaging(IEnumerable<string> stalePaths)
-        {
-            string videoStagingPath = Path.GetFullPath(LocalVideoStagingPath)
-                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            foreach (string path in stalePaths)
-            {
-                string fullPath = Path.GetFullPath(path);
-                string parent = Path.GetDirectoryName(fullPath)?.TrimEnd(
-                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                if (!string.Equals(
-                        parent, videoStagingPath, StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-                try
-                {
-                    if (Directory.Exists(fullPath))
-                    {
-                        Directory.Delete(fullPath, recursive: true);
-                    }
-                    else
-                    {
-                        File.Delete(fullPath);
-                    }
-                }
-                catch (Exception e) when (
-                    e is IOException || e is UnauthorizedAccessException)
-                {
-                    Debug.LogWarning($"SAF_VIDEO_RECOVERY Could not remove stale video staging '{fullPath}': {e.Message}");
-                }
-            }
-        }
 
         public static void PublishExportToSharedStorageAsync(
             string localExportDirectory,

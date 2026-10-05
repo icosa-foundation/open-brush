@@ -235,6 +235,32 @@ namespace TiltBrush
         }
 
         [Test]
+        public void SharedFrameDiscard_DeletesOnlyCapturedFiles()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"shared-frames-{Guid.NewGuid():N}");
+            string frames = Path.Combine(root, "capture_frames");
+            Directory.CreateDirectory(frames);
+            try
+            {
+                File.WriteAllText(Path.Combine(frames, "capture_frame_000001.png"), "frame");
+                File.WriteAllText(Path.Combine(frames, "unrelated.png"), "keep");
+                File.WriteAllText(Path.Combine(root, "capture_sequence.txt"), "metadata");
+                var backend = new LocalUserStorageBackend(_ => root);
+                OpenBrushStorage.DeleteSharedFiles(backend, StorageArea.Videos, "capture_frames",
+                    new System.Collections.Generic.HashSet<string> { "capture_frame_000001.png", "absent.png" });
+                OpenBrushStorage.DeleteSharedFiles(backend, StorageArea.Videos, "",
+                    new System.Collections.Generic.HashSet<string> { "capture_sequence.txt" });
+                Assert.IsFalse(File.Exists(Path.Combine(frames, "capture_frame_000001.png")));
+                Assert.IsFalse(File.Exists(Path.Combine(root, "capture_sequence.txt")));
+                Assert.AreEqual("keep", File.ReadAllText(Path.Combine(frames, "unrelated.png")));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Test]
         public void GltfBundle_IncludesBuffersAndTexturesOnceAndSkipsEmbeddedData()
         {
             var gltf = Newtonsoft.Json.Linq.JObject.Parse(@"{

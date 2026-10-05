@@ -80,7 +80,7 @@ namespace TiltBrush
             m_Height = m_ScreenshotManager.m_DisplayHeight;
 
             // Ensure directory exists
-            if (!FileUtils.InitializeDirectoryWithUserError(
+            if (!OpenBrushStorage.IsScopedStorageMode && !FileUtils.InitializeDirectoryWithUserError(
                 m_DirectoryPath,
                 "Failed to start still frame sequence capture"))
             {
@@ -134,7 +134,7 @@ namespace TiltBrush
                     includePostProcessing: includePostProcessing);
 
                 byte[] frameData = ScreenshotManager.SaveToMemory(renderTexture, UsePng); // false = JPG
-                File.WriteAllBytes(frameFilePath, frameData);
+                OpenBrushStorage.WriteGeneratedBytes(frameFilePath, frameData);
 
                 m_FrameCount++;
             }
@@ -180,7 +180,7 @@ namespace TiltBrush
 
             try
             {
-                using (StreamWriter writer = new StreamWriter(metadataPath))
+                void WriteMetadata(StreamWriter writer)
                 {
                     writer.WriteLine("Open Brush Camera Path Frame Sequence");
                     writer.WriteLine($"Base Name: {m_BaseFileName}");
@@ -194,6 +194,19 @@ namespace TiltBrush
                     writer.WriteLine($"ffmpeg -framerate {m_FPS} -i \"{m_BaseFileName}_frame_%06d.{FilenameExtension}\" -c:v {FfmpegPipe.GetVideoEncoder(offline: true, m_Width, m_Height)} -pix_fmt yuv420p \"../{m_BaseFileName}.mp4\"");
                     writer.WriteLine("");
                     writer.WriteLine("(Run this command from inside the frames folder, or adjust paths accordingly)");
+                }
+                if (OpenBrushStorage.IsScopedStorageMode)
+                {
+                    OpenBrushStorage.WriteGeneratedFile(metadataPath, output =>
+                    {
+                        using var writer = new StreamWriter(output);
+                        WriteMetadata(writer);
+                    });
+                }
+                else
+                {
+                    using var writer = new StreamWriter(metadataPath);
+                    WriteMetadata(writer);
                 }
             }
             catch (System.Exception e)
@@ -209,10 +222,18 @@ namespace TiltBrush
             string metadataPath = Path.Combine(baseDir, m_BaseFileName + "_sequence.txt");
             try
             {
-                string content = File.ReadAllText(metadataPath);
+                string content = OpenBrushStorage.ReadGeneratedText(metadataPath);
                 content = content.Replace("Status: Recording", $"Status: Complete ({m_FrameCount} frames)");
                 content = content.Replace("Start Time:", $"End Time: {System.DateTime.Now:yyyy-MM-dd HH:mm:ss}\nStart Time:");
-                File.WriteAllText(metadataPath, content);
+                if (OpenBrushStorage.IsScopedStorageMode)
+                {
+                    OpenBrushStorage.WriteGeneratedFile(metadataPath, output =>
+                    {
+                        using var writer = new StreamWriter(output);
+                        writer.Write(content);
+                    });
+                }
+                else { File.WriteAllText(metadataPath, content); }
             }
             catch (System.Exception e)
             {
@@ -224,6 +245,20 @@ namespace TiltBrush
         {
             try
             {
+                if (OpenBrushStorage.IsScopedStorageMode)
+                {
+                    var (area, directory) = OpenBrushStorage.GetGeneratedDestination(m_DirectoryPath);
+                    var filenames = new System.Collections.Generic.HashSet<string>();
+                    for (int i = 1; i <= m_FrameCount; i++)
+                    {
+                        filenames.Add($"{m_BaseFileName}_frame_{i:D6}.{FilenameExtension}");
+                    }
+                    OpenBrushStorage.DeleteSharedFiles(UserStorage.Backend, area, directory, filenames);
+                    OpenBrushStorage.DeleteSharedFiles(UserStorage.Backend, area,
+                        Path.GetDirectoryName(directory)?.Replace('\\', '/') ?? "",
+                        new System.Collections.Generic.HashSet<string> { $"{m_BaseFileName}_sequence.txt" });
+                    return;
+                }
                 // Delete all frame files
                 for (int i = 1; i <= m_FrameCount; i++)
                 {

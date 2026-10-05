@@ -396,49 +396,6 @@ namespace TiltBrush
             return Model.ForLibraryFile(relativePath, source.Identity);
         }
 
-        internal static void _PublishApiVideoCaptureToSharedStorage(string localPath)
-        {
-            if (!OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(localPath, out string relativePath))
-            {
-                return;
-            }
-            _PublishApiPathToSharedStorage(localPath, relativePath, "video capture",
-                (path, label, onComplete) =>
-                    OpenBrushStorage.PublishVideoCaptureToSharedStorageAsync(
-                        path, label, onComplete));
-        }
-
-        private static void _PublishApiPathToSharedStorage(
-            string localPath,
-            string relativePath,
-            string label,
-            Action<string, string, Action<bool, string>> publish,
-            Action<bool, string> onComplete = null)
-        {
-            if (!OpenBrushStorage.IsScopedStorageMode)
-            {
-                onComplete?.Invoke(true, null);
-                return;
-            }
-
-            void Publish()
-            {
-                publish(localPath, label, (success, error) =>
-                {
-                    if (!success)
-                    {
-                        string message = string.IsNullOrEmpty(error)
-                            ? $"Failed to copy API {label} to shared storage."
-                            : $"Failed to copy API {label} to shared storage: {error}";
-                        ControllerConsoleScript.m_Instance?.AddNewLine(message);
-                    }
-                    onComplete?.Invoke(success, error);
-                });
-            }
-
-            Publish();
-        }
-
         internal static string GetSafeDownloadFilename(Uri url, string contentDisposition)
         {
             string filename = GetContentDispositionFilename(contentDisposition);

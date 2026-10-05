@@ -182,7 +182,7 @@ namespace TiltBrush
             }
 
             // Don't start recording unless there is enough space left.
-            if (!FileUtils.InitializeDirectoryWithUserError(
+            if (!OpenBrushStorage.IsScopedStorageMode && !FileUtils.InitializeDirectoryWithUserError(
                 Path.GetDirectoryName(filePath),
                 "Failed to start video capture"))
             {

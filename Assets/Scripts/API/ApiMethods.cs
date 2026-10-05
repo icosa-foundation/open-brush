@@ -487,7 +487,7 @@ namespace TiltBrush
 
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(fullPath)); }
                 rig.gameObject.SetActive(true);
                 rig.EnableCaptureObject(MultiCamStyle.Video, true);
 
@@ -534,7 +534,6 @@ namespace TiltBrush
                     {
                         yield return null;
                     }
-                    _PublishApiVideoCaptureToSharedStorage(fullPath);
                 }
                 ownedVideoRecording = null;
                 ownedStillFrameExporter = null;

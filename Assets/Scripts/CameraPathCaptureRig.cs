@@ -32,7 +32,6 @@ namespace TiltBrush
         private UsdPathSerializer m_VideoUsdSerializer;
         private Camera m_CameraComponent;
         private Vector2 m_CameraClipPlanesBase;
-        private string m_PathCaptureFile;
 
         public bool Enabled => m_Object.activeSelf;
 
@@ -150,7 +149,6 @@ namespace TiltBrush
             App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.Recording);
 
             string saveName = MultiCamTool.GetSaveName(MultiCamStyle.Video);
-            m_PathCaptureFile = saveName;
             VideoRecorderUtils.StartVideoCapture(saveName, m_Manager.GetComponent<VideoRecorder>(), m_VideoUsdSerializer);
         }
 
@@ -195,10 +193,6 @@ namespace TiltBrush
             }
 
             VideoRecorderUtils.StopVideoCapture(saveCapture);
-            if (saveCapture && OpenBrushStorage.IsScopedStorageMode && !string.IsNullOrEmpty(m_PathCaptureFile))
-            {
-                StartCoroutine(PublishPathCaptureWhenReady(m_PathCaptureFile));
-            }
             WidgetManager.m_Instance.FollowingPath = false;
             m_Widget.ResetToPathStart();
             m_Widget.TintForRecording(false);
@@ -207,28 +201,6 @@ namespace TiltBrush
             // recording state.
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.CameraPathTool);
             App.Switchboard.TriggerCameraPathModeChanged(CameraPathTool.Mode.AddPositionKnot);
-        }
-
-        private IEnumerator PublishPathCaptureWhenReady(string capturePath)
-        {
-            var recorder = m_Manager.GetComponent<VideoRecorder>();
-            var stillFrameExporter = m_Manager.GetComponent<StillFrameSequenceExporter>();
-            while ((recorder != null && recorder.IsSaving) ||
-                   (stillFrameExporter != null && stillFrameExporter.IsSaving))
-            {
-                yield return null;
-            }
-
-            OpenBrushStorage.PublishVideoCaptureToSharedStorageAsync(
-                capturePath,
-                "camera path video",
-                (success, publishError) =>
-                {
-                    if (!success)
-                    {
-                        OutputWindowScript.Error("Failed to save video", publishError);
-                    }
-                });
         }
 
         void RefreshVisibility()
