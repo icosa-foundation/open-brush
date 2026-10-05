@@ -408,66 +408,6 @@ namespace TiltBrush
                         path, label, onComplete));
         }
 
-        internal static void _PublishApiGeneratedFileToSharedStorage(string localPath)
-        {
-            if (!OpenBrushStorage.TryGetSharedGeneratedFileRelativePath(
-                    localPath, out string relativePath))
-            {
-                return;
-            }
-            _PublishApiPathToSharedStorage(
-                localPath,
-                relativePath,
-                "generated file",
-                OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync);
-        }
-
-        internal static void _PublishSnapshotFilesToSharedStorage(
-            string filename, bool renderDepth, bool renderNormals)
-        {
-            if (!OpenBrushStorage.IsScopedStorageMode)
-            {
-                return;
-            }
-            if (!filename.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) &&
-                !filename.EndsWith(".jpeg", StringComparison.OrdinalIgnoreCase) &&
-                !filename.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
-            {
-                filename += ".jpg";
-            }
-
-            string imagePath = GetSafePathInDirectory(
-                App.SnapshotPath(), filename, "snapshot filename");
-            var paths = new List<string> { imagePath };
-            if (renderDepth)
-            {
-                paths.AddRange(ScreenshotManager.GetDepthCaptureFilePaths(imagePath));
-            }
-            if (renderNormals)
-            {
-                string captureBasePath = Path.Combine(
-                    Path.GetDirectoryName(imagePath), Path.GetFileNameWithoutExtension(imagePath));
-                paths.Add($"{captureBasePath}_normals.png");
-            }
-            paths = paths.Where(File.Exists).ToList();
-            if (paths.Count == 0) return;
-
-            void Publish()
-            {
-                OpenBrushStorage.PublishGeneratedFilesToSharedStorageAsync(
-                    paths, "snapshot", (success, error) =>
-                    {
-                        if (!success)
-                        {
-                            ControllerConsoleScript.m_Instance?.AddNewLine(
-                                $"[SAF_SNAPSHOT_BUNDLE] Failed to publish API snapshot: {error}");
-                        }
-                    });
-            }
-
-            Publish();
-        }
-
         private static void _PublishApiPathToSharedStorage(
             string localPath,
             string relativePath,

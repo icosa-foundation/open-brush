@@ -235,7 +235,6 @@ namespace TiltBrush
                 renderDepth,
                 renderNormals,
                 ResolveCapturePostProcessing(includePostProcessing));
-            ApiMethods._PublishSnapshotFilesToSharedStorage(filename, renderDepth, renderNormals);
         }
 
         [LuaDocsDescription("Queue an Auto GIF capture to the Snapshots folder")]
@@ -340,14 +339,19 @@ namespace TiltBrush
             odsDriver.OdsCamera.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
             odsDriver.OdsCamera.gameObject.SetActive(true);
             odsDriver.OdsCamera.enabled = true;
-            AsyncCoroutineRunner.Instance.StartCoroutine(Render360SnapshotAndPublish(odsDriver, filename));
+            AsyncCoroutineRunner.Instance.StartCoroutine(Render360SnapshotAndSave(odsDriver, filename));
         }
 
-        private static IEnumerator Render360SnapshotAndPublish(OdsDriver odsDriver, string filename)
+        private static IEnumerator Render360SnapshotAndSave(OdsDriver odsDriver, string filename)
         {
-            yield return odsDriver.OdsCamera.Render(odsDriver.transform);
-            string path = Path.Join(App.SnapshotPath(), $"{filename}_000000.png");
-            ApiMethods._PublishApiGeneratedFileToSharedStorage(path);
+            bool shared = OpenBrushStorage.IsScopedStorageMode;
+            yield return odsDriver.OdsCamera.Render(odsDriver.transform, saveImage: !shared);
+            if (shared)
+            {
+                string path = Path.Join(App.SnapshotPath(), $"{filename}_000000.png");
+                OpenBrushStorage.WriteGeneratedFile(path,
+                    output => ScreenshotManager.Save(output, odsDriver.OdsCamera.FinalImage, bSaveAsPng: true));
+            }
         }
 
         private static bool ResolveCapturePostProcessing(DynValue includePostProcessing)

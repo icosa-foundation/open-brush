@@ -1126,6 +1126,30 @@ namespace TiltBrush
             Assert.AreEqual(1, input.ReadByte());
         }
 
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        [TestCase(false, true)]
+        public void SharedCaptureWrite_PublishesOnlyCompletedOutput(bool failProducer, bool failCommit)
+        {
+            var backend = new FakeSafBackend { FailCommitNumber = failCommit ? 1 : 0 };
+            StorageDocumentId original = backend.Add("capture.png", new byte[] { 1 });
+            void Save()
+            {
+                OpenBrushStorage.WriteSharedFile(backend, StorageArea.Snapshots, "capture.png", output =>
+                {
+                    using Stream beforeCommit = backend.OpenRead(original, false, CancellationToken.None);
+                    Assert.AreEqual(1, beforeCommit.ReadByte());
+                    output.WriteByte(2);
+                    if (failProducer) { throw new IOException("Capture encoding failed."); }
+                });
+            }
+            if (failProducer || failCommit) { Assert.Throws<IOException>(Save); }
+            else { Save(); }
+            StorageDocument current = backend.List(StorageArea.Snapshots, "", CancellationToken.None).Documents.Single();
+            using Stream read = backend.OpenRead(current.DocumentId, false, CancellationToken.None);
+            Assert.AreEqual(failProducer || failCommit ? 1 : 2, read.ReadByte());
+        }
+
         [Test]
         public void SafApiImportReplacement_PreservesNameAndReplacesBytes()
         {

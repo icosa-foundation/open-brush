@@ -123,7 +123,7 @@ namespace TiltBrush
             bool initialRigActive = rig.gameObject.activeSelf;
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(fullPath)); }
                 rig.gameObject.SetActive(true);
                 rig.EnableCamera(true);
 
@@ -147,15 +147,12 @@ namespace TiltBrush
                     }
                 }
 
-                using (var fs = new FileStream(fullPath, FileMode.Create))
-                {
-                    ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
-                }
+                OpenBrushStorage.WriteGeneratedFile(fullPath,
+                    output => ScreenshotManager.Save(output, tmp, bSaveAsPng: true));
 
                 Debug.Log(
                     $"{logPrefix} Saved snapshot path={fullPath} size={width}x{height} " +
                     $"superSampling={superSampling} post={usePostProcessing}.");
-                _PublishApiGeneratedFileToSharedStorage(fullPath);
                 return fullPath;
             }
             catch (Exception e)
@@ -266,17 +263,12 @@ namespace TiltBrush
             string fullPath = BuildCapturePath(filename, "saveicon.png", ".png");
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(fullPath)); }
                 SketchControlsScript.m_Instance.GenerateBestGuessSaveIcon();
-                using (var fs = new FileStream(fullPath, FileMode.Create))
-                {
-                    ScreenshotManager.Save(
-                        fs,
+                OpenBrushStorage.WriteGeneratedFile(fullPath, output => ScreenshotManager.Save(
+                        output,
                         SaveLoadScript.m_Instance.GetSaveIconRenderTexture(),
-                        bSaveAsPng: true);
-                }
-
-                _PublishApiGeneratedFileToSharedStorage(fullPath);
+                        bSaveAsPng: true));
                 Debug.Log($"{logPrefix} Saved save-icon capture path={fullPath}.");
                 return fullPath;
             }
@@ -330,7 +322,6 @@ namespace TiltBrush
 
                 RenderCameraToPng(camera, fullPath, width, height, usePostProcessing);
 
-                _PublishApiGeneratedFileToSharedStorage(fullPath);
                 Debug.Log(
                     $"{logPrefix} Saved dropcam capture path={fullPath} size={width}x{height} " +
                     $"post={usePostProcessing}.");
@@ -574,7 +565,7 @@ namespace TiltBrush
         private static void RenderCameraToPng(
             Camera camera, string fullPath, int width, int height, bool includePostProcessing)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+            if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(fullPath)); }
 
             RenderTexture target = RenderTexture.GetTemporary(CaptureColorUtils.CreateDescriptor(
                 width, height,
@@ -594,10 +585,8 @@ namespace TiltBrush
                 camera.targetTexture = target;
                 camera.allowMSAA = target.antiAliasing > 1;
                 camera.Render();
-                using (var fs = new FileStream(fullPath, FileMode.Create))
-                {
-                    ScreenshotManager.Save(fs, target, bSaveAsPng: true);
-                }
+                OpenBrushStorage.WriteGeneratedFile(fullPath,
+                    output => ScreenshotManager.Save(output, target, bSaveAsPng: true));
             }
             finally
             {
@@ -2161,7 +2150,6 @@ namespace TiltBrush
             bool renderDepth = true;
             bool renderNormals = true;
             ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
-            _PublishSnapshotFilesToSharedStorage(filename, renderDepth, renderNormals);
         }
 
         internal static void ValidateSnapshotDimensions(

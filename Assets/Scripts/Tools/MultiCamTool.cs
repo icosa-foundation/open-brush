@@ -230,7 +230,6 @@ namespace TiltBrush
         // Only valid during "Building"
         private float m_ProgressRingSize;
         private GifEncodeTask m_Task;
-        private bool m_GifPublicationPending;
 
         private bool m_SwipeBlinkRequested;
         private bool m_SwipeBlinkShowing;
@@ -398,7 +397,7 @@ namespace TiltBrush
         {
             m_SnapshotDirectory = App.SnapshotPath();
             m_VideoDirectory = App.VideosPath();
-            FileUtils.InitializeDirectoryWithUserError(m_SnapshotDirectory);
+            if (!OpenBrushStorage.IsScopedStorageMode) { FileUtils.InitializeDirectoryWithUserError(m_SnapshotDirectory); }
             FileUtils.InitializeDirectoryWithUserError(m_VideoDirectory);
         }
 
@@ -637,33 +636,11 @@ namespace TiltBrush
             string error = m_Task.Error;
             m_Task = null;
 
-            if (error != null || !OpenBrushStorage.IsScopedStorageMode)
-            {
-                FinishGifSave(path, error);
-                return;
-            }
-
-            // The encoder writes to private staging on SAF builds. Keep GIF capture busy
-            // until publication completes, and let the publisher own staging-file cleanup.
-            m_GifPublicationPending = true;
-            void Publish()
-            {
-                string reservedPath = RevalidateCaptureName(path, MultiCamStyle.AutoGif);
-                if (reservedPath != path)
-                {
-                    File.Move(path, reservedPath);
-                    path = reservedPath;
-                }
-                OpenBrushStorage.PublishGeneratedFileToSharedStorageAsync(
-                    path, "GIF capture", (success, publishError) => FinishGifSave(
-                        path, success ? null : publishError ?? "Could not publish GIF to shared storage."));
-            }
-            Publish();
+            FinishGifSave(path, error);
         }
 
         private void FinishGifSave(string path, string error)
         {
-            m_GifPublicationPending = false;
             m_TimeGifCreationState = GifCreationState.Ready;
             m_AutoGifCreationState = GifCreationState.Ready;
 
@@ -2214,11 +2191,9 @@ namespace TiltBrush
                     System.Object err = null;
                     try
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
-                        using (var fs = new FileStream(fullPath, FileMode.Create))
-                        {
-                            ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
-                        }
+                        if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(fullPath)); }
+                        OpenBrushStorage.WriteGeneratedFile(fullPath,
+                            output => ScreenshotManager.Save(output, tmp, bSaveAsPng: true));
                         if (style == MultiCamStyle.Depth)
                         {
                             var depthFiles = rMgr.EncodeDepthCapture(tmpDepth);
@@ -2227,32 +2202,6 @@ namespace TiltBrush
                     }
                     catch (IOException e) { err = e.Message; }
                     catch (UnauthorizedAccessException e) { err = e.Message; }
-
-                    if (err == null && OpenBrushStorage.IsScopedStorageMode)
-                    {
-                        bool publishDone = false;
-                        bool publishSucceeded = false;
-                        string publishError = null;
-                        var generatedPaths = new List<string> { fullPath };
-                        if (style == MultiCamStyle.Depth)
-                        {
-                            generatedPaths.AddRange(ScreenshotManager.GetDepthCaptureFilePaths(fullPath));
-                        }
-                        OpenBrushStorage.PublishGeneratedFilesToSharedStorageAsync(
-                            generatedPaths,
-                            "snapshot",
-                            (success, error) =>
-                            {
-                                publishSucceeded = success;
-                                publishError = error;
-                                publishDone = true;
-                            });
-                        while (!publishDone)
-                        {
-                            yield return null;
-                        }
-                        if (!publishSucceeded) { err = publishError; }
-                    }
 
                     if (err != null)
                     {
@@ -2382,7 +2331,7 @@ namespace TiltBrush
             bool? previousCapturePostProcessingOverride = m_CapturePostProcessingOverride;
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(saveName));
+                if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(saveName)); }
                 rig.gameObject.SetActive(true);
                 rig.EnableCamera(true);
                 m_CapturePostProcessingOverride = includePostProcessing;
@@ -2423,7 +2372,7 @@ namespace TiltBrush
             bool? previousCapturePostProcessingOverride = m_CapturePostProcessingOverride;
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(saveName));
+                if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(saveName)); }
                 rig.gameObject.SetActive(true);
                 rig.EnableCamera(true);
                 m_CapturePostProcessingOverride = includePostProcessing;
@@ -2476,10 +2425,6 @@ namespace TiltBrush
             }
 
             ReportGifTaskDone();
-            while (m_GifPublicationPending)
-            {
-                yield return null;
-            }
         }
 
         void SetTimeBar(float fTime)

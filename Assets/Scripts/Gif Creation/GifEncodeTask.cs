@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Hjg.Pngcs;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,7 +29,6 @@ namespace TiltBrush
         readonly string m_GifName;
         // readonly bool m_Symmetric; Not actually needed at the moment
         readonly int m_FrameDelayMs;
-        readonly bool m_bSavePngs = false;
         readonly bool m_bPalettePerFrame = false;
         readonly float m_DitherStrength;
 
@@ -90,30 +88,6 @@ namespace TiltBrush
             m_Thread.Start();
         }
 
-        private void WriteFrameAsPng(DirectoryInfo di, int i)
-        {
-            Color32[] frame = m_Frames[i];
-            string filename = Path.Combine(di.FullName, string.Format("{0:00}.png", i));
-            ImageInfo imi = new ImageInfo(m_GifWidth, m_GifHeight, 8, false);
-            PngWriter png = FileHelper.CreatePngWriter(filename, imi, true);
-
-            byte[] row = new byte[m_GifWidth * 3];
-            for (int iRow = 0; iRow < m_GifHeight; ++iRow)
-            {
-                int iStartPixel = (m_GifHeight - 1 - iRow) * m_GifWidth;
-                for (int iCol = 0; iCol < m_GifWidth; ++iCol)
-                {
-                    Color32 c = frame[iStartPixel + iCol];
-                    row[iCol * 3 + 0] = c.r;
-                    row[iCol * 3 + 1] = c.g;
-                    row[iCol * 3 + 2] = c.b;
-                }
-                png.WriteRowByte(row, iRow);
-            }
-
-            png.End();
-        }
-
         private void Run()
         {
             m_ErrorMessage = null;
@@ -137,31 +111,7 @@ namespace TiltBrush
 
         private void RunLow()
         {
-            if (m_bSavePngs)
-            {
-                DirectoryInfo di;
-                try
-                {
-                    string dirname = m_GifName.Substring(0, m_GifName.Length - 4) + "_raw";
-                    di = Directory.CreateDirectory(dirname);
-                }
-                catch (IOException)
-                {
-                    di = null;
-                }
-                if (di != null)
-                {
-                    for (int i = 0; i < m_Frames.Count; ++i)
-                    {
-                        WriteFrameAsPng(di, i);
-                    }
-                }
-            }
-
-            Directory.CreateDirectory(Path.GetDirectoryName(m_GifName));
-            // TODO: Add back gif encoding.
-            // If you wish to use a gif encoder, you should add that code in here.
-            // Alternatively, you could push the frames to ffmpeg and use that instead.
+            if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(m_GifName)); }
             var ge = new GIFEncoder();
             ge.useGlobalColorTable = true;
             ge.repeat = 0;
@@ -188,7 +138,7 @@ namespace TiltBrush
                 m_CreationPercent = (float)(++nAdded) / nTotal;
             }
             ge.Finish();
-            File.WriteAllBytes(m_GifName, stream.GetBuffer());
+            OpenBrushStorage.WriteGeneratedBytes(m_GifName, stream.GetBuffer());
             stream.Close();
         }
 

@@ -279,12 +279,40 @@ namespace TiltBrush
         }
 
 
-        public static void PublishGeneratedFileToSharedStorageAsync(
-            string localPath, string label, Action<bool, string> onComplete)
+        public static void WriteGeneratedFile(string path, Action<Stream> write)
         {
-            // Use the same ownership handoff as multi-file captures. A second capture may reuse
-            // this name while publication runs, so the worker must never read the canonical path.
-            PublishGeneratedFilesToSharedStorageAsync(new[] { localPath }, label, onComplete);
+            if (!IsScopedStorageMode)
+            {
+                using (var output = new FileStream(path, FileMode.Create)) { write(output); }
+                return;
+            }
+            if (!TryGetSharedGeneratedFileRelativePath(path, out string sharedPath) ||
+                !TryResolveStorageDestination(sharedPath, out StorageArea area, out string relativePath))
+            {
+                throw new IOException($"Capture destination is outside shared storage: {path}");
+            }
+            WriteSharedFile(UserStorage.Backend, area, relativePath, write);
+        }
+
+        public static void WriteGeneratedBytes(string path, byte[] bytes)
+        {
+            if (!IsScopedStorageMode) { File.WriteAllBytes(path, bytes); return; }
+            WriteGeneratedFile(path, output => output.Write(bytes, 0, bytes.Length));
+        }
+
+        internal static void WriteSharedFile(
+            IUserStorageBackend backend, StorageArea area, string relativePath, Action<Stream> write)
+        {
+            using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                area, relativePath, StorageMimeTypes.ForPath(relativePath), CancellationToken.None))
+            {
+                using (Stream output = transaction.OpenWrite()) { write(output); }
+                StorageMutationResult result = transaction.Commit();
+                if (!result.Success)
+                {
+                    throw new IOException($"Could not save shared file '{relativePath}': {result.Error}");
+                }
+            }
         }
 
         public static void PublishUserRootFileToSharedStorageAsync(
