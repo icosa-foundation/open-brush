@@ -211,10 +211,10 @@ namespace TiltBrush
         private float debugStateInterval = 1.0f;
 
         [Header("Open Brush Tutorial")]
-[SerializeField]
-private bool skipOpenBrushIntroTutorialForHands = true;
+        [SerializeField]
+        private bool skipOpenBrushIntroTutorialForHands = true;
 
-private bool m_TutorialBypassApplied;
+        private bool m_TutorialBypassApplied;
 
 
         // --------------------------------------------------------------------
@@ -311,8 +311,8 @@ private bool m_TutorialBypassApplied;
         // Convenience diagnostics: true when both currently selected hand
         // sources are gripping at once.
         private bool m_SwimModeHeld;
-private bool m_SwimModeDown;
-private bool m_SwimModeUp;
+        private bool m_SwimModeDown;
+        private bool m_SwimModeUp;
 
 
         private enum InputSourceKind
@@ -335,35 +335,35 @@ private bool m_SwimModeUp;
                 device.enabled;
         }
 
-   private void EnsureTutorialBypass()
-{
-    if (!skipOpenBrushIntroTutorialForHands)
-        return;
-
-    if (TutorialManager.m_Instance == null)
-        return;
-
-    // Important:
-    // Open Brush can change IntroState during startup after this bridge has
-    // already initialized. Therefore don't rely on a one-shot flag.
-    if (TutorialManager.m_Instance.TutorialActive())
-    {
-        TutorialManager.m_Instance.IntroState =
-            IntroTutorialState.Done;
-
-        if (InputManager.m_Instance != null)
+        private void EnsureTutorialBypass()
         {
-            TutorialManager.m_Instance.DisableControllerTutorial(
-                InputManager.ControllerName.Brush);
+            if (!skipOpenBrushIntroTutorialForHands)
+                return;
 
-            TutorialManager.m_Instance.DisableControllerTutorial(
-                InputManager.ControllerName.Wand);
+            if (TutorialManager.m_Instance == null)
+                return;
+
+            // Important:
+            // Open Brush can change IntroState during startup after this bridge has
+            // already initialized. Therefore don't rely on a one-shot flag.
+            if (TutorialManager.m_Instance.TutorialActive())
+            {
+                TutorialManager.m_Instance.IntroState =
+                    IntroTutorialState.Done;
+
+                if (InputManager.m_Instance != null)
+                {
+                    TutorialManager.m_Instance.DisableControllerTutorial(
+                        InputManager.ControllerName.Brush);
+
+                    TutorialManager.m_Instance.DisableControllerTutorial(
+                        InputManager.ControllerName.Wand);
+                }
+
+                Debug.Log(
+                    "ANDROIDXR_HAND: forced Open Brush intro tutorial to DONE");
+            }
         }
-
-        Debug.Log(
-            "ANDROIDXR_HAND: forced Open Brush intro tutorial to DONE");
-    }
-}
 
 
         private sealed class HandInteractionBinding
@@ -545,69 +545,69 @@ private bool m_SwimModeUp;
         /// Hand grasp maps to Grip independently per side. This mirrors physical
         /// controller behaviour and allows mixed controller+hand swimming.
         /// </summary>
-       public static bool Grip(bool isBrush)
-{
-    if (Instance == null)
-        return false;
+        public static bool Grip(bool isBrush)
+        {
+            if (Instance == null)
+                return false;
 
-    // Hand swimming is strictly two-handed.
-    // Do not expose either virtual Grip until BOTH hands are gripping.
-    if (!UseHand(false) ||
-        !UseHand(true) ||
-        !Instance.m_SwimModeHeld)
-    {
-        return false;
-    }
+            // Hand swimming is strictly two-handed.
+            // Do not expose either virtual Grip until BOTH hands are gripping.
+            if (!UseHand(false) ||
+                !UseHand(true) ||
+                !Instance.m_SwimModeHeld)
+            {
+                return false;
+            }
 
-    return true;
-}
-
-
-       public static bool GripDown(bool isBrush)
-{
-    if (Instance == null ||
-        !UseHand(false) ||
-        !UseHand(true))
-    {
-        return false;
-    }
-
-    // Both virtual controllers receive GripDown simultaneously
-    // when the SECOND fist completes the two-hand swimming gesture.
-    return Instance.m_SwimModeDown;
-}
+            return true;
+        }
 
 
-       public static bool GripUp(bool isBrush)
-{
-    if (Instance == null ||
-        !UseHand(false) ||
-        !UseHand(true))
-    {
-        return false;
-    }
+        public static bool GripDown(bool isBrush)
+        {
+            if (Instance == null ||
+                !UseHand(false) ||
+                !UseHand(true))
+            {
+                return false;
+            }
 
-    // Releasing EITHER fist releases both virtual grips.
-    return Instance.m_SwimModeUp;
-}
+            // Both virtual controllers receive GripDown simultaneously
+            // when the SECOND fist completes the two-hand swimming gesture.
+            return Instance.m_SwimModeDown;
+        }
 
 
-      public static float GripValue(bool isBrush)
-{
-    if (Instance == null ||
-        !UseHand(false) ||
-        !UseHand(true) ||
-        !Instance.m_SwimModeHeld)
-    {
-        return 0.0f;
-    }
+        public static bool GripUp(bool isBrush)
+        {
+            if (Instance == null ||
+                !UseHand(false) ||
+                !UseHand(true))
+            {
+                return false;
+            }
 
-    // Combined two-hand confidence.
-    // The weaker hand determines the effective grip value.
-    return Mathf.Min(
-        Instance.m_Left.graspValue,
-        Instance.m_Right.graspValue);
-}
+            // Releasing EITHER fist releases both virtual grips.
+            return Instance.m_SwimModeUp;
+        }
+
+
+        public static float GripValue(bool isBrush)
+        {
+            if (Instance == null ||
+                !UseHand(false) ||
+                !UseHand(true) ||
+                !Instance.m_SwimModeHeld)
+            {
+                return 0.0f;
+            }
+
+            // Combined two-hand confidence.
+            // The weaker hand determines the effective grip value.
+            return Mathf.Min(
+                Instance.m_Left.graspValue,
+                Instance.m_Right.graspValue);
+        }
 
 
         public static float FingerDistance(bool isBrush)
@@ -2144,21 +2144,21 @@ private bool m_SwimModeUp;
                 ref m_RightGripDown,
                 ref m_RightGripUp);
 
-           bool wasSwimModeHeld = m_SwimModeHeld;
+            bool wasSwimModeHeld = m_SwimModeHeld;
 
-m_SwimModeHeld =
-    UseHand(false) &&
-    UseHand(true) &&
-    m_LeftGripHeld &&
-    m_RightGripHeld;
+            m_SwimModeHeld =
+                UseHand(false) &&
+                UseHand(true) &&
+                m_LeftGripHeld &&
+                m_RightGripHeld;
 
-m_SwimModeDown =
-    !wasSwimModeHeld &&
-    m_SwimModeHeld;
+            m_SwimModeDown =
+                !wasSwimModeHeld &&
+                m_SwimModeHeld;
 
-m_SwimModeUp =
-    wasSwimModeHeld &&
-    !m_SwimModeHeld;
+            m_SwimModeUp =
+                wasSwimModeHeld &&
+                !m_SwimModeHeld;
         }
 
 
@@ -3369,49 +3369,49 @@ m_SwimModeUp =
                 Mathf.Max(
                     0.1f,
                     debugStateInterval);
-                    
-                    string grabWidget = "none";
-bool tutorialActive = false;
 
-if (SketchControlsScript.m_Instance != null)
-{
-    var widget = SketchControlsScript.m_Instance.CurrentGrabWidget;
+            string grabWidget = "none";
+            bool tutorialActive = false;
 
-    grabWidget = widget != null
-        ? widget.name + "/" + widget.GetType().Name
-        : "none";
-}
+            if (SketchControlsScript.m_Instance != null)
+            {
+                var widget = SketchControlsScript.m_Instance.CurrentGrabWidget;
 
-if (TutorialManager.m_Instance != null)
-{
-    tutorialActive =
-        TutorialManager.m_Instance.TutorialActive();
-}
+                grabWidget = widget != null
+                    ? widget.name + "/" + widget.GetType().Name
+                    : "none";
+            }
+
+            if (TutorialManager.m_Instance != null)
+            {
+                tutorialActive =
+                    TutorialManager.m_Instance.TutorialActive();
+            }
 
 
             bool obWandGrip =
     InputManager.Wand != null &&
     InputManager.Wand.GetControllerGrip();
 
-bool obBrushGrip =
-    InputManager.Brush != null &&
-    InputManager.Brush.GetControllerGrip();
+            bool obBrushGrip =
+                InputManager.Brush != null &&
+                InputManager.Brush.GetControllerGrip();
 
-bool obGrabWorld =
-    SketchControlsScript.m_Instance != null &&
-    SketchControlsScript.m_Instance.IsUserGrabbingWorld();
+            bool obGrabWorld =
+                SketchControlsScript.m_Instance != null &&
+                SketchControlsScript.m_Instance.IsUserGrabbingWorld();
 
-bool obTransformWorld =
-    SketchControlsScript.m_Instance != null &&
-    SketchControlsScript.m_Instance.IsUserTransformingWorld();
+            bool obTransformWorld =
+                SketchControlsScript.m_Instance != null &&
+                SketchControlsScript.m_Instance.IsUserTransformingWorld();
 
-bool obBrushGrabWorld =
-    SketchControlsScript.m_Instance != null &&
-    SketchControlsScript.m_Instance.IsUserGrabbingWorldWithBrushHand();
+            bool obBrushGrabWorld =
+                SketchControlsScript.m_Instance != null &&
+                SketchControlsScript.m_Instance.IsUserGrabbingWorldWithBrushHand();
 
-bool obGrabStable =
-    SketchControlsScript.m_Instance != null &&
-    SketchControlsScript.m_Instance.IsGrabWorldStateStable();
+            bool obGrabStable =
+                SketchControlsScript.m_Instance != null &&
+                SketchControlsScript.m_Instance.IsGrabWorldStateStable();
 
 
             string wandValid =
@@ -3441,7 +3441,7 @@ $" OBgripR={obBrushGrip}" +
 $" OBgrab={obGrabWorld}" +
 $" OBbrushGrab={obBrushGrabWorld}" +
 $" OBtransform={obTransformWorld}" +
-$" OBstable={obGrabStable}"+
+$" OBstable={obGrabStable}" +
 $" currentGrabWidget={grabWidget}" +
 $" tutorial={tutorialActive}" +
                 $"L={m_Left.tracked} " +

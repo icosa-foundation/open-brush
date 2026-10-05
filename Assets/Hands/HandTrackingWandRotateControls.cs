@@ -87,47 +87,47 @@ namespace TiltBrush
         }
 
 
-       private void LateUpdate()
-{
-    bool handTrackingReady =
-        AndroidXRHandBridge.HandTrackingActive &&
-        AndroidXRHandBridge.LeftTracked;
+        private void LateUpdate()
+        {
+            bool handTrackingReady =
+                AndroidXRHandBridge.HandTrackingActive &&
+                AndroidXRHandBridge.LeftTracked;
 
-    if (m_RequireBothHands)
-    {
-        handTrackingReady &=
-            AndroidXRHandBridge.RightTracked;
-    }
+            if (m_RequireBothHands)
+            {
+                handTrackingReady &=
+                    AndroidXRHandBridge.RightTracked;
+            }
 
-    Transform anchor =
-        GetWandAnchor();
+            Transform anchor =
+                GetWandAnchor();
 
-    bool sketchbookOpen =
-        PanelManager.m_Instance != null &&
-        PanelManager.m_Instance.SketchbookActiveIncludingTransitions();
+            bool sketchbookOpen =
+                PanelManager.m_Instance != null &&
+                PanelManager.m_Instance.SketchbookActiveIncludingTransitions();
 
-    bool shouldShow =
-        handTrackingReady &&
-        anchor != null &&
-        !sketchbookOpen;
+            bool shouldShow =
+                handTrackingReady &&
+                anchor != null &&
+                !sketchbookOpen;
 
-    SetControlsVisible(shouldShow);
+            SetControlsVisible(shouldShow);
 
-    if (!shouldShow)
-        return;
+            if (!shouldShow)
+                return;
 
-    Quaternion localRotation =
-        Quaternion.Euler(
-            m_LocalRotationOffset);
+            Quaternion localRotation =
+                Quaternion.Euler(
+                    m_LocalRotationOffset);
 
-    transform.position =
-        anchor.TransformPoint(
-            m_LocalPositionOffset);
+            transform.position =
+                anchor.TransformPoint(
+                    m_LocalPositionOffset);
 
-    transform.rotation =
-        anchor.rotation *
-        localRotation;
-}
+            transform.rotation =
+                anchor.rotation *
+                localRotation;
+        }
 
 
         private static Transform GetWandAnchor()

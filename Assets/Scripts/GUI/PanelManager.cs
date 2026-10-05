@@ -188,21 +188,21 @@ namespace TiltBrush
         }
 
         public void RotateWandPanels(int direction)
-{
-    const float kSnapRotationAngle = 360f / 3f;
+        {
+            const float kSnapRotationAngle = 360f / 3f;
 
-    direction = direction >= 0 ? 1 : -1;
+            direction = direction >= 0 ? 1 : -1;
 
-    m_WandPanelsRotationVelocity = 0.0f;
+            m_WandPanelsRotationVelocity = 0.0f;
 
-    UpdateWandPanelsOriginAngle(
-        direction * kSnapRotationAngle
-    );
+            UpdateWandPanelsOriginAngle(
+                direction * kSnapRotationAngle
+            );
 
-    AudioManager.m_Instance.PanelFlip(
-        InputManager.m_Instance.GetControllerPosition(
-            InputManager.ControllerName.Wand));
-}
+            AudioManager.m_Instance.PanelFlip(
+                InputManager.m_Instance.GetControllerPosition(
+                    InputManager.ControllerName.Wand));
+        }
 
         public class RevealParticle
         {
