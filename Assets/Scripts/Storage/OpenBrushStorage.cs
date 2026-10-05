@@ -344,35 +344,6 @@ namespace TiltBrush
             }
         }
 
-        /// Resolves a local path to its shared destination and publishes it, or reports success
-        /// when there is nothing to publish. The resolver decides which tree the path belongs to.
-        private static void PublishSinglePathAsync(
-            string localPath,
-            string label,
-            TryResolveSharedPath resolve,
-            bool transactionOwnsPayload,
-            Action<bool, string> onComplete)
-        {
-            if (!IsScopedStorageMode || !resolve(localPath, out string relativePath))
-            {
-                onComplete?.Invoke(true, null);
-                return;
-            }
-            PublishPathToSharedStorageAsync(
-                relativePath, localPath, label, transactionOwnsPayload, onComplete);
-        }
-
-        private delegate bool TryResolveSharedPath(string localPath, out string relativePath);
-
-        public static void PublishMediaLibraryPathToSharedStorageAsync(
-            string localPath, string label, Action<bool, string> onComplete)
-        {
-            // Media-library content stays where it is locally; the copy is additive.
-            PublishSinglePathAsync(
-                localPath, label, TryGetSharedMediaLibraryRelativePath,
-                transactionOwnsPayload: false, onComplete);
-        }
-
         internal static string GetUniqueImportPath(IUserStorageBackend backend, StorageArea area,
             string relativePath, Func<string, bool> localExists = null)
         {
@@ -441,38 +412,6 @@ namespace TiltBrush
                 }
                 return result;
             }
-        }
-
-
-        private static void PublishPathToSharedStorageAsync(
-            string relativePath,
-            string localPath,
-            string label,
-            bool transactionOwnsPayload,
-            Action<bool, string> onComplete)
-        {
-            if (UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
-            {
-                onComplete?.Invoke(false, "SAF storage backend is unavailable.");
-                return;
-            }
-            if (!TryResolveStorageDestination(
-                    relativePath, out StorageArea area, out string areaRelativePath))
-            {
-                onComplete?.Invoke(
-                    false, $"Unsupported shared-storage destination: {relativePath}");
-                return;
-            }
-            AndroidStorageManager.StartStorageOperation(
-                label,
-                () => SafStagedOutputPublisher.Publish(
-                    UserStorage.Backend,
-                    area,
-                    areaRelativePath,
-                    localPath,
-                    transactionOwnsPayload,
-                    CancellationToken.None),
-                onComplete);
         }
 
 

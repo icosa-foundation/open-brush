@@ -4270,9 +4270,7 @@ namespace TiltBrush
 #if USD_SUPPORTED
             var current = SaveLoadScript.m_Instance.SceneFile;
             string basename = (current.Valid)
-                ? current is SafSceneFileInfo
-                    ? FileUtils.GetValidFilename(current.HumanName)
-                    : Path.GetFileNameWithoutExtension(current.FullPath)
+                ? Path.GetFileNameWithoutExtension(current.FullPath)
                 : "Untitled";
             if (string.IsNullOrEmpty(basename))
             {
@@ -4289,24 +4287,6 @@ namespace TiltBrush
             //    ? SelectionManager.m_Instance.SelectedStrokes
             //    : null
             ExportUsd.ExportPayload(usdname);
-            if (OpenBrushStorage.IsScopedStorageMode)
-            {
-                OpenBrushStorage.PublishMediaLibraryPathToSharedStorageAsync(
-                    directoryName,
-                    "model",
-                    (success, publishError) =>
-                    {
-                        if (!success)
-                        {
-                            OutputWindowScript.Error("Failed to save model", publishError);
-                            return;
-                        }
-
-                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
-                            InputManager.ControllerName.Brush, "Model created!");
-                    });
-                return;
-            }
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, "Model created!");
 #endif
