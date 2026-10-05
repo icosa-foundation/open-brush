@@ -1,0 +1,159 @@
+// Define the kernel
+#pragma kernel CSMain
+
+StructuredBuffer<float3> positionBuffer;
+RWStructuredBuffer<float2> uvBuffer;
+
+// Constants for bounding box dimensions
+float minX, maxX, minY, maxY, minZ, maxZ;
+// Threshold for deciding when to switch to planar mapping for the caps
+// Adjust this value as needed, closer to 1 means more strict vertical normals
+float capThreshold;
+uint vertexCount;
+
+// Mapping mode: 0 for planar, 1 for box, 2 for cylinder
+int mappingMode;
+
+float2 PlanarMap(uint index)
+{
+    float2 uv;
+    float3 pos = positionBuffer[index];
+    uv.x = (pos.x - minX) / (maxX - minX);
+    uv.y = (pos.z - minZ) / (maxZ - minZ);
+    return uv;
+}
+
+float2 BoxMap(uint index)
+{
+    float3 center = float3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+    float3 position = positionBuffer[index];
+    float3 direction = normalize(position - center);
+    float3 localPos = position - center;
+    float2 uv;
+
+    if(abs(direction.x) > abs(direction.y) && abs(direction.x) > abs(direction.z)) // X-axis is dominant
+    {
+        uv = localPos.yz;
+        uv.x = (uv.x - minY) / (maxY - minY);
+        uv.y = (uv.y - minZ) / (maxZ - minZ);
+    }
+    else if(abs(direction.y) > abs(direction.x) && abs(direction.y) > abs(direction.z)) // Y-axis is dominant
+    {
+        uv = localPos.xz;
+        uv.x = (uv.x - minX) / (maxX - minX);
+        uv.y = (uv.y - minZ) / (maxZ - minZ);
+    }
+    else // Z-axis is dominant
+    {
+        uv = localPos.xy;
+        uv.x = (uv.x - minX) / (maxX - minX);
+        uv.y = (uv.y - minY) / (maxY - minY);
+    }
+
+    // Ensure UV coordinates are within the [0, 1] range
+    uv = clamp(uv, 0.0, 1.0);
+
+    return uv;
+}
+
+
+float2 CylinderMap(uint index)
+{
+    float3 center = float3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+    float3 position = positionBuffer[index];
+    float3 direction = normalize(position - center);
+
+    // Check the angle with the up vector to decide on mapping type
+    float dotUp = dot(direction, float3(0, 1, 0));
+
+    // Use planar mapping for top/bottom cap
+    if (abs(dotUp) > capThreshold)
+    {
+        float u = (position.x - minX) / (maxX - minX);
+        float v = (position.z - minZ) / (maxZ - minZ);
+        return float2(u, v);
+    }
+
+    float angle = atan2(direction.z, direction.x); // angle around the y-axis from z to x-axis
+    float u = angle / (2 * 3.14159265f) + 0.5f; // Normalize angle to [0, 1]
+    float v = (position.y - minY) / (maxY - minY);
+    return float2(u, v);
+}
+
+float3x3 RotationMatrix(float angleX, float angleY, float angleZ)
+{
+    float3x3 rotateX = float3x3(
+        1, 0, 0,
+        0, cos(angleX), sin(angleX),
+        0, -sin(angleX), cos(angleX)
+    );
+
+    float3x3 rotateY = float3x3(
+        cos(angleY), 0, -sin(angleY),
+        0, 1, 0,
+        sin(angleY), 0, cos(angleY)
+    );
+
+    float3x3 rotateZ = float3x3(
+        cos(angleZ), sin(angleZ), 0,
+        -sin(angleZ), cos(angleZ), 0,
+        0, 0, 1
+    );
+
+    // Combine rotations: adjust order if necessary depending on desired rotation sequence
+    float3x3 combinedRotation = mul(mul(rotateZ, rotateY), rotateX);
+
+    return combinedRotation;
+}
+
+float2 SphericalMap(uint index)
+{
+    const float3 position = positionBuffer[index];
+    const float3 center = float3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
+    float3 direction = normalize(position - center);
+
+    // Apply rotation
+    // float3x3 rotationMatrix = RotationMatrix(angleX, angleY, angleZ);
+    // direction = mul(rotationMatrix, direction);
+
+    // Calculate spherical coordinates
+    // theta is the angle down from the north pole
+    // phi is the angle from the prime meridian on the equator
+    float theta = acos(direction.y); // angle down from the y-axis
+    float phi = atan2(direction.z, direction.x); // angle around the y-axis from z to x-axis
+
+    // Normalize theta and phi to get u, v coordinates
+    float u = phi / (2 * 3.14159265f) + 0.5f; // Normalize and shift to [0, 1]
+    float v = theta / 3.14159265f; // Normalize to [0, 1]
+
+    return float2(u, v);
+}
+
+
+// The compute shader kernel
+[numthreads(64, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= vertexCount) return; // Bounds check
+
+    float2 uv;
+
+    if(mappingMode == 0) // Planar mapping
+    {
+        uv = PlanarMap(id.x);
+    }
+    else if(mappingMode == 1) // Box mapping
+    {
+        uv = BoxMap(id.x);
+    }
+    else if(mappingMode == 2) // Cylinder mapping
+    {
+        uv = CylinderMap(id.x);
+    }
+    else if(mappingMode == 3) // Spherical mapping
+    {
+        uv = SphericalMap(id.x);
+    }
+
+    uvBuffer[id.x] = uv;
+}
