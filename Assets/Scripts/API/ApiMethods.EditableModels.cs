@@ -81,7 +81,7 @@ namespace TiltBrush
             }
             ImportModel(Path.Combine(uri.Host, filename));
         }
-        
+
         [ApiEndpoint("model.paintable", "Sets a model to be paintable")]
         public static void MakeModelPaintable(int index)
         {
