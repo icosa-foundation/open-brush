@@ -558,7 +558,7 @@
       "hash": "dd39e8b23a399938e91a1088a78ef63ca64f2cd8"
     },
     "jp.keijiro.klak.ndi": {
-      "version": "2.1.0",
+      "version": "2.1.6",
       "depth": 0,
       "source": "registry",
       "dependencies": {
