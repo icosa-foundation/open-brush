@@ -50,6 +50,8 @@ public class BuildTiltBrushPostProcess
                 doc, BuildTiltBrush.IsScopedStorageBuildActive,
                 PlayerSettings.Android.forceSDCardPermission,
                 PlayerSettings.Android.useAPKExpansionFiles);
+            ConfigureSafMediaNetworkSecurity(
+                doc, manifestFolder, BuildTiltBrush.IsScopedStorageBuildActive);
 
             ConfigureGameActivityLauncher(doc);
 
@@ -69,6 +71,38 @@ public class BuildTiltBrushPostProcess
         {
             UnityEngine.Debug.LogException(e);
             throw;
+        }
+    }
+
+    internal static void ConfigureSafMediaNetworkSecurity(
+        XmlDocument doc, string manifestFolder, bool scopedStorage)
+    {
+        const string resource = "@xml/open_brush_saf_network_security";
+        var application = (XmlElement)doc.SelectSingleNode("/manifest/application");
+        string configPath = Path.Combine(
+            manifestFolder, "res/xml/open_brush_saf_network_security.xml");
+        if (scopedStorage)
+        {
+            // Android's native video extractor rejects cleartext HTTP by default. SAF media
+            // streams from this loopback address; remote HTTP retains Android's default policy.
+            Directory.CreateDirectory(Path.GetDirectoryName(configPath));
+            File.WriteAllText(configPath,
+                @"<network-security-config>
+  <domain-config cleartextTrafficPermitted=""true"">
+    <domain>127.0.0.1</domain>
+  </domain-config>
+</network-security-config>
+");
+            application.SetAttribute("networkSecurityConfig", kAndroidNamespace, resource);
+        }
+        else if (application.GetAttribute("networkSecurityConfig", kAndroidNamespace) == resource)
+        {
+            // A generated Gradle project can be reused for a subsequent non-SAF build.
+            application.RemoveAttribute("networkSecurityConfig", kAndroidNamespace);
+            if (File.Exists(configPath))
+            {
+                File.Delete(configPath);
+            }
         }
     }
 

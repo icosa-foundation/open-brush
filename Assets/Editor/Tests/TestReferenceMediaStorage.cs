@@ -7,6 +7,52 @@ namespace TiltBrush
 {
     internal class TestReferenceMediaStorage
     {
+        [Test]
+        public void SafMediaNetworkSecurity_IsLimitedToLoopbackAndRemovedForNonSaf()
+        {
+            const string android = "http://schemas.android.com/apk/res/android";
+            string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            var doc = new System.Xml.XmlDocument();
+            doc.LoadXml($"<manifest xmlns:android='{android}'><application /></manifest>");
+            var application = (System.Xml.XmlElement)doc.SelectSingleNode("/manifest/application");
+            string original = doc.OuterXml;
+            string configPath = Path.Combine(
+                directory, "res/xml/open_brush_saf_network_security.xml");
+            try
+            {
+                BuildTiltBrushPostProcess.ConfigureSafMediaNetworkSecurity(doc, directory, false);
+                Assert.AreEqual(original, doc.OuterXml);
+                Assert.IsFalse(Directory.Exists(directory));
+
+                BuildTiltBrushPostProcess.ConfigureSafMediaNetworkSecurity(doc, directory, true);
+                Assert.AreEqual("@xml/open_brush_saf_network_security",
+                    application.GetAttribute("networkSecurityConfig", android));
+                var config = new System.Xml.XmlDocument();
+                config.Load(configPath);
+                Assert.AreEqual("true", config.SelectSingleNode(
+                    "/network-security-config/domain-config/@cleartextTrafficPermitted").Value);
+                Assert.AreEqual("127.0.0.1", config.SelectSingleNode(
+                    "/network-security-config/domain-config/domain").InnerText);
+                Assert.IsNull(config.SelectSingleNode("/network-security-config/base-config"));
+
+                BuildTiltBrushPostProcess.ConfigureSafMediaNetworkSecurity(doc, directory, false);
+                Assert.AreEqual(original, doc.OuterXml);
+                Assert.IsFalse(File.Exists(configPath));
+
+                application.SetAttribute("networkSecurityConfig", android, "@xml/plugin_config");
+                original = doc.OuterXml;
+                BuildTiltBrushPostProcess.ConfigureSafMediaNetworkSecurity(doc, directory, false);
+                Assert.AreEqual(original, doc.OuterXml);
+            }
+            finally
+            {
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, recursive: true);
+                }
+            }
+        }
+
         [TestCase(true)]
         [TestCase(false)]
         public void GltfStorageRoutingExcludesIcosaModels(bool saf)
