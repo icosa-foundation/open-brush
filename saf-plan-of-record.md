@@ -18,11 +18,25 @@ device disproved. They remain in this branch's history.
 
 ## 1. Status
 
-Last updated **2026-09-22**.
+Last updated **2026-10-06**.
 
-**In one line: the branch is code-complete for its scope; what remains is
-testing and the bugs it finds.** See §4 for the distinction between that and the
-future work deliberately left out of scope.
+**Current device result:** CI run `37341698368`, commit `32e1b6e2c`, installed
+on an Aura Android XR device (Android 14). Shared save, overwrite, reload,
+snapshot, GLB export and folder-grant persistence across restart passed.
+UnityGLTF import, OBJ materials and native video playback failed. Subsequent
+fixes require a new device build; they are not hardware-proven.
+
+The selected root is `Documents/Open Brush`. This AndroidXR artifact uses
+`foundation.icosa.openbrush`, not a branch-suffixed package. Read the actual
+artifact manifest before installing over an existing app.
+
+`Support/Python/saf-device-smoke.py` records archive/file checks and app logs.
+Its media-reference assertion does **not** prove successful rendering or
+playback; matching runtime failures make the run fail. Current test fixtures
+and results are local under `Temp/DeviceTesting`.
+
+The headset sleeps on removal (`xr_doff`) despite stay-awake charging settings.
+Unlocking/wearing it is currently required; no supported ADB override was found.
 
 ### Proven on hardware
 
@@ -40,9 +54,9 @@ On a Nothing Phone (3a), release build, sideloaded:
 
 ### Not yet verified on hardware
 
-Everything else. In particular **no save has ever been performed on a device.**
-The write path — temp document, fsync, rename sequence — has only ever run in
-EditMode against fakes.
+Successful media import/rendering and video playback, non-GLB exports, crash
+recovery and low-storage failures remain unverified. The successful shared-save
+checks above exercise the write path on hardware, but not interruption recovery.
 
 The former development-build startup stream probe was temporary bring-up
 instrumentation and has been removed. Verify the write path through the actual
@@ -159,8 +173,9 @@ adb shell monkey -p foundation.icosa.openbrushviewerfeaturesafgoogleplayfdbacked
     -c android.intent.category.LAUNCHER 1
 ```
 
-The package name is branch-suffixed, so it installs **alongside** any existing
-Open Brush rather than replacing it. No data is at risk.
+That viewer example used a branch-suffixed package. The AndroidXR artifact
+tested on 2026-10-06 instead uses `foundation.icosa.openbrush` and replaces the
+installed full app; inspect the artifact rather than assuming coexistence.
 
 Three traps that will waste your time:
 
@@ -267,7 +282,23 @@ neither Unity's analyzers nor `.meta`/GUID problems.
 
 ## 4. What is left to do
 
-### Now: nothing. This branch is code-complete for its scope.
+### Current device failures
+
+1. UnityGLTF cannot find `UnityGLTF/PBRGraph`, although CI compiled and included
+   it. Explicitly loading and retaining the shader collection is implemented;
+   the suspected asset-lifetime cause still needs an updated device build.
+2. OBJ geometry loads, but its material request returns 404. SAF now resolves
+   material and texture dependencies as URLs instead of filesystem paths.
+3. Android's native video extractor rejects the loopback HTTP URL. The tested
+   manifest has no cleartext exception; the fix permits only `127.0.0.1` in SAF
+   builds and removes its configuration on reuse for a non-SAF build.
+4. A SAF catalog update refreshes an inactive reference panel and cannot start
+   its directory-query coroutine. Closed-panel refresh is now deferred.
+
+These fixes compile; the manifest isolation/transition checks pass. All four
+still require device verification with a build containing the fixes.
+
+### Earlier resolved work
 
 Every item that was outstanding has resolved, and the last one closed on
 2026-09-18:
@@ -281,7 +312,7 @@ Every item that was outstanding has resolved, and the last one closed on
   them.
 
 **What remains is testing and the bugs it finds.** See §1 for where the risk is
-— principally that no save has ever been performed on a device.
+— now principally successful media import and playback after these fixes.
 
 ### Future work, deliberately out of scope
 
