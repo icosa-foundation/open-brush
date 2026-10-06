@@ -11,13 +11,12 @@ Parameters = {
 
 function Main()
     local guide = Sketch.guides.lastSelected
-    local pointers = Path:New()
-
     if guide == nil then
-        pointers:Insert(Transform:New(Brush.position, Brush.rotation))
-        return pointers
+        return MatrixList:New(1)
     end
 
+    local pointers = MatrixList:New(Parameters.copies)
+    local brushInverse = Matrix:NewTRS(Brush.position, Brush.rotation, Vector3.one).inverse
     for i = 0, Parameters.copies - 1 do
         local angle = Math.pi * 2 * i / Parameters.copies
         local candidate = Brush.position + Vector3:New(
@@ -26,10 +25,12 @@ function Main()
             Math:Sin(angle) * Parameters.radius
         )
         local closest = guide:ClosestPoint(candidate)
-        pointers:Insert(Transform:New(
+        local target = Matrix:NewTRS(
             closest.position + closest.up * Parameters.surfaceOffset,
-            closest.rotation
-        ))
+            closest.rotation,
+            Vector3.one
+        )
+        pointers[i] = target * brushInverse
     end
 
     return pointers

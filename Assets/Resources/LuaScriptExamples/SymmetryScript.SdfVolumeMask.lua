@@ -26,14 +26,12 @@ end
 
 function Main()
     local guide = Sketch.guides.lastSelected
-    local pointers = Path:New()
-
     if guide == nil then
         Symmetry:SetPointerPaintMode(0, SymmetryPointerPaintMode.Inherit)
-        pointers:Insert(Transform:New(Brush.position, Brush.rotation))
-        return pointers
+        return MatrixList:New(1)
     end
 
+    local pointers = MatrixList:New(Parameters.copies)
     for i = 0, Parameters.copies - 1 do
         local angle = Math.pi * 2 * i / Parameters.copies
         local position = Brush.position + Vector3:New(
@@ -48,7 +46,7 @@ function Main()
             paintMode = SymmetryPointerPaintMode.Inherit
         end
         Symmetry:SetPointerPaintMode(i, paintMode)
-        pointers:Insert(Transform:New(position, Brush.rotation))
+        pointers[i] = Matrix:NewTranslation(position - Brush.position)
     end
 
     return pointers
