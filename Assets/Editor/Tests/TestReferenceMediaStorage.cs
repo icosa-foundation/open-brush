@@ -7,6 +7,21 @@ namespace TiltBrush
 {
     internal class TestReferenceMediaStorage
     {
+        [TestCase(null)]
+        [TestCase("Checker")]
+        [TestCase("material_Light-2241cd32-8ba2-48a5-9ee7-2caef7e9ed62")]
+        public void LegacyGltfMaterials_AllowMissingNamesAndPreserveBrushGuids(string name)
+        {
+            var method = typeof(TiltBrushToolkit.GltfMaterialConverter).GetMethod(
+                "ParseGuidFromMaterial", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            var material = new TiltBrushToolkit.Gltf2Material { name = name };
+            Guid actual = (Guid)method.Invoke(null, new object[] { material });
+            Guid expected = name != null && name.StartsWith("material_Light-")
+                ? new Guid("2241cd32-8ba2-48a5-9ee7-2caef7e9ed62")
+                : Guid.Empty;
+            Assert.AreEqual(expected, actual);
+        }
+
         [TestCase(0)]
         [TestCase(1)]
         [TestCase(2)]
