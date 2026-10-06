@@ -27,6 +27,7 @@ namespace TiltBrush
 
         private SDFGroup m_SdfManager;
         private SDFGroupMeshGenerator m_MeshGenerator;
+        private float m_MinimumPreviewCellSize;
         private int m_RequestedVisualRevision;
         private int m_StartedVisualRevision;
         private int m_CompletedVisualRevision;
@@ -178,6 +179,7 @@ namespace TiltBrush
             }
 
             m_MeshGenerator.MainSettings.AutoUpdate = false;
+            m_MinimumPreviewCellSize = m_MeshGenerator.VoxelSettings.CellSize;
             m_MeshGenerator.MeshGenerationFinished += OnMeshGenerationFinished;
 
             MeshRenderer generatedRenderer = m_MeshGenerator.MeshRenderer;
@@ -724,6 +726,7 @@ namespace TiltBrush
             int previousStartedRevision = m_StartedVisualRevision;
             bool previousStartedWasFinal = m_StartedVisualGenerationIsFinal;
             int previousRequestCount = m_MeshGenerator.MeshGenerationRequestCount;
+            FitPreviewGrid();
             m_StartedVisualRevision = targetRevision;
             m_StartedVisualGenerationIsFinal = editingIsIdle;
             m_MeshGenerator.UpdateMesh();
@@ -736,6 +739,107 @@ namespace TiltBrush
             }
 
             m_LastVisualGenerationStartTime = now;
+        }
+
+        private void FitPreviewGrid()
+        {
+            Bounds bounds = CalculatePreviewBounds(GetComponentDefinitions());
+            VoxelSettings settings = m_MeshGenerator.VoxelSettings;
+            int cellCount = settings.CellCount;
+            // Reserve two cells on each side so extraction never reaches the volume edge.
+            float cellSize = Mathf.Max(
+                m_MinimumPreviewCellSize, bounds.size.Max() / Mathf.Max(1, cellCount - 4));
+
+            // IsoMesh exposes voxel settings as read-only properties. Keep the existing
+            // cell count (and buffer budget), changing only the sampling scale and centre.
+            const System.Reflection.BindingFlags fields =
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            typeof(VoxelSettings).GetField("m_cellSizeMode", fields)
+                .SetValue(settings, CellSizeMode.Fixed);
+            typeof(VoxelSettings).GetField("m_cellCount", fields).SetValue(settings, cellCount);
+            typeof(VoxelSettings).GetField("m_cellSize", fields).SetValue(settings, cellSize);
+            m_MeshGenerator.OnCellSizeChanged();
+
+            // Move the sampling grid without moving the previous preview while readback
+            // is pending. The mesh generator writes vertices in the renderer's own frame.
+            Transform meshTransform = m_MeshGenerator.MeshRenderer.transform;
+            Vector3 meshPosition = meshTransform.position;
+            m_MeshGenerator.transform.position =
+                m_SdfManager.transform.TransformPoint(bounds.center);
+            meshTransform.position = meshPosition;
+        }
+
+        internal static Bounds CalculatePreviewBounds(IReadOnlyList<ComponentDefinition> components)
+        {
+            Bounds result = new Bounds();
+            bool hasBounds = false;
+            float smoothing = 0f;
+            float maximumScale = 0f;
+            foreach (ComponentDefinition component in components)
+            {
+                Bounds localBounds;
+                if (component.IsPrimitive)
+                {
+                    PrimitiveDefinition primitive = component.Primitive.Value;
+                    Vector4 data = primitive.Geometry;
+                    Vector3 extents;
+                    switch (primitive.Type)
+                    {
+                        case SDFPrimitiveType.Sphere:
+                            extents = Vector3.one * data.x;
+                            break;
+                        case SDFPrimitiveType.Torus:
+                            extents = new Vector3(data.x + data.y, data.y, data.x + data.y);
+                            break;
+                        case SDFPrimitiveType.Cuboid:
+                        case SDFPrimitiveType.BoxFrame:
+                        case SDFPrimitiveType.Ellipsoid:
+                            extents = new Vector3(data.x, data.y, data.z);
+                            break;
+                        case SDFPrimitiveType.Cylinder:
+                        case SDFPrimitiveType.Cone:
+                        case SDFPrimitiveType.Pyramid:
+                            extents = new Vector3(data.x, data.y, data.x);
+                            break;
+                        case SDFPrimitiveType.Capsule:
+                            extents = new Vector3(data.x, data.x + data.y, data.x);
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException(nameof(primitive.Type));
+                    }
+                    localBounds = new Bounds(Vector3.zero, extents * 2f);
+                }
+                else
+                {
+                    localBounds = new Bounds(
+                        (component.MeshAsset.MinBounds + component.MeshAsset.MaxBounds) * 0.5f,
+                        component.MeshAsset.MaxBounds - component.MeshAsset.MinBounds);
+                }
+
+                // Include every operand conservatively, including rotated and scaled meshes.
+                for (int corner = 0; corner < 8; ++corner)
+                {
+                    Vector3 point = localBounds.center + Vector3.Scale(localBounds.extents,
+                        new Vector3((corner & 1) == 0 ? -1 : 1,
+                            (corner & 2) == 0 ? -1 : 1, (corner & 4) == 0 ? -1 : 1));
+                    point = component.Transform * point;
+                    if (!hasBounds)
+                    {
+                        result = new Bounds(point, Vector3.zero);
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        result.Encapsulate(point);
+                    }
+                }
+                smoothing += Mathf.Max(0f, component.Blend);
+                maximumScale = Mathf.Max(maximumScale, component.Transform.scale);
+            }
+            // Smoothing can expand a union beyond any individual operand's surface.
+            // Accumulated full blend widths conservatively cover repeated smooth unions.
+            result.Expand(2f * smoothing * maximumScale);
+            return result;
         }
 
         private void ValidatePrimitive(SDFPrimitive primitive)
