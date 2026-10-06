@@ -71,9 +71,15 @@ namespace TiltBrush
             return sm_AsyncCoroutineHelper;
         }
 
-        private static GameObject _ImportUsingLegacyGltf(string localPath, string assetLocation)
+        internal static IUriLoader CreateSafLegacyLoader(
+            SafGltfDataLoader dataLoader, string fileName)
         {
-            var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
+            return new TiltBrushUriLoader(
+                () => dataLoader.LoadSeekableStream(fileName), dataLoader.LoadSeekableStream);
+        }
+
+        private static GameObject _ImportUsingLegacyGltf(string localPath, string assetLocation, Model model)
+        {
             var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
             var importOptions = new GltfImportOptions
             {
@@ -81,7 +87,20 @@ namespace TiltBrush
                 scaleFactor = App.METERS_TO_UNITS,
                 recenter = false
             };
-            ImportGltf.GltfImportResult result = ImportGltf.Import(localPath, loader, materialCollector, importOptions);
+            ImportGltf.GltfImportResult result;
+            if (TryGetStorageModelLocation(model, out StorageArea area, out string directory,
+                    out string fileName))
+            {
+                var dataLoader = new SafGltfDataLoader(area, directory);
+                var loader = CreateSafLegacyLoader(dataLoader, fileName);
+                using Stream primary = dataLoader.LoadSeekableStream(fileName);
+                result = ImportGltf.Import(primary, loader, materialCollector, importOptions);
+            }
+            else
+            {
+                var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
+                result = ImportGltf.Import(localPath, loader, materialCollector, importOptions);
+            }
             return result.root;
         }
 
@@ -217,21 +236,10 @@ namespace TiltBrush
             }
             catch (Exception e)
             {
-                if (TryGetStorageModelLocation(model, out _, out _, out _))
-                {
-                    // The legacy Tilt Brush importer opens the primary glTF by filename. Do not
-                    // copy a SAF model and its dependency tree into private storage to satisfy a
-                    // path-only API. Keep this fallback disabled until ImportGltf/GltfFileInfo
-                    // accepts the primary document as a stream; sidecars already use IUriLoader.
-                    Debug.LogError(
-                        $"Failed to import SAF model using UnityGltf. The path-only legacy " +
-                        $"fallback is deliberately disabled.\nUnityGltf Exception: {e}");
-                    throw;
-                }
                 Debug.LogError(
                     $"Failed to import using UnityGltf. Falling back to legacy import.\n" +
                     $"UnityGltf Exception: {e}");
-                GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
+                GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation, model);
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);
             }

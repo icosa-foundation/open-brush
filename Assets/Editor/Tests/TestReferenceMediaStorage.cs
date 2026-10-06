@@ -7,6 +7,51 @@ namespace TiltBrush
 {
     internal class TestReferenceMediaStorage
     {
+        [TestCase(false)]
+        [TestCase(true)]
+        public void LegacySafLoader_ReadsSharedSidecarsAndEmbeddedBin(bool glb)
+        {
+            IUserStorageBackend previous = UserStorage.Backend;
+            string root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(Path.Combine(root, "Models"));
+            Directory.CreateDirectory(Path.Combine(root, "Textures"));
+            string fileName = glb ? "model.glb" : "model.gltf";
+            byte[] document = LegacyGltfDocument(glb ? 2 : 0);
+            byte[] sidecar = { 9, 8, 7, 6 };
+            File.WriteAllBytes(Path.Combine(root, "Models", fileName), document);
+            File.WriteAllBytes(Path.Combine(root, "Textures", "checker map.png"), sidecar);
+            try
+            {
+                // A temporary directory supplies document bytes through the storage contract;
+                // the legacy loader receives only stream factories, never these filenames.
+                UserStorage.SetBackendForTests(new LocalUserStorageBackend(_ => root));
+                var dataLoader = new SafGltfDataLoader(StorageArea.MediaLibraryModels, "Models");
+                using Stream primary = dataLoader.LoadSeekableStream(fileName);
+                using var info = new TiltBrushToolkit.ImportGltf.GltfFileInfo(primary);
+                Assert.AreEqual(glb, info.IsGlb);
+                var loader = NewGltfImporter.CreateSafLegacyLoader(dataLoader, fileName);
+                using (var texture = loader.Load("../Textures/checker%20map.png"))
+                {
+                    var actual = new byte[4];
+                    texture.Read(actual, 0, 0, 4);
+                    CollectionAssert.AreEqual(sidecar, actual);
+                }
+                Assert.Throws<IOException>(() => loader.Load("../../outside.bin"));
+                if (glb)
+                {
+                    using var buffer = loader.Load(null);
+                    var actual = new byte[4];
+                    buffer.Read(actual, 0, 0, 4);
+                    CollectionAssert.AreEqual(new byte[] { 1, 2, 3, 4 }, actual);
+                }
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previous);
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
         [TestCase(null)]
         [TestCase("Checker")]
         [TestCase("material_Light-2241cd32-8ba2-48a5-9ee7-2caef7e9ed62")]

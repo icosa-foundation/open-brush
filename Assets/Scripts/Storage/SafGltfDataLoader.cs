@@ -56,6 +56,16 @@ namespace TiltBrush
 
         public Stream LoadStream(string relativeFilePath)
         {
+            return LoadStream(relativeFilePath, requireSeekable: false);
+        }
+
+        internal Stream LoadSeekableStream(string relativeFilePath)
+        {
+            return LoadStream(relativeFilePath, requireSeekable: true);
+        }
+
+        private Stream LoadStream(string relativeFilePath, bool requireSeekable)
+        {
             if (!TryResolveAreaRelativePath(
                     m_Directory, relativeFilePath, out string path))
             {
@@ -65,7 +75,7 @@ namespace TiltBrush
 
             // Worker-thread reads are attached to the JVM inside the SAF backend.
             return UserStorage.Backend.OpenRead(
-                m_Area, path, requireSeekable: false, CancellationToken.None);
+                m_Area, path, requireSeekable, CancellationToken.None);
         }
 
         private static string Normalize(string path)
