@@ -888,9 +888,10 @@ namespace TiltBrush
                 var objLoader = gameObject.AddComponent<OBJ>();
                 // OBJ reads everything - geometry, .mtl, textures - through UnityWebRequest, which
                 // takes http://, so shared storage serves it over the loopback handler with no
-                // local copy. FixLocalPaths already passes an http URL through untouched.
-                string source = GetSharedStorageUrl() ?? m_Location.AbsolutePath;
-                await objLoader.BeginLoadAsync(source);
+                // local copy. Resolve dependencies as URLs only for this shared-storage route.
+                string sharedUrl = GetSharedStorageUrl();
+                string source = sharedUrl ?? m_Location.AbsolutePath;
+                await objLoader.BeginLoadAsync(source, resolveHttpDependencies: sharedUrl != null);
                 string assetLocation = Path.GetDirectoryName(source);
                 gameObject.transform.localScale = Vector3.one * 10f; // Match the scale of the legacy obj importer
                 m_ImportMaterialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: m_Location.AbsolutePath);
