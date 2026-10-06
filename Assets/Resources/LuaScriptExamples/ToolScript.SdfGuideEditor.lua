@@ -43,7 +43,7 @@ function Main()
     end
 
     local guide = Sketch.guides.lastSelected
-    if guide == nil or guide.guideType ~= "SDF" then
+    if guide == nil or not guide.isSdf then
         print("SDF Guide Editor: select an SDF guide before applying changes")
         return
     end

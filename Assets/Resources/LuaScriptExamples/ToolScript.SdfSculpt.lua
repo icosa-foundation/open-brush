@@ -30,7 +30,7 @@ function Main()
     end
 
     local guide = Sketch.guides.lastSelected
-    if guide == nil or guide.guideType ~= "SDF" then
+    if guide == nil or not guide.isSdf then
         print("SDF Sculpt: select an SDF guide before adding a stamp")
         return
     end
