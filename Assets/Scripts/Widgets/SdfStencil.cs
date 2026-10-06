@@ -163,8 +163,36 @@ namespace TiltBrush
             sdfTransform.localRotation = Quaternion.identity;
             sdfTransform.localScale = Vector3.one;
 
+            CreateBoundsCollider();
             RegisterGeneratedMeshRenderer();
+            UpdateBoundsCollider();
             RequestVisualRefresh();
+        }
+
+        private void CreateBoundsCollider()
+        {
+            Collider previousCollider = m_Collider;
+            GameObject boundsObject = new GameObject("SDF Bounds Collider");
+            boundsObject.transform.SetParent(transform, false);
+            boundsObject.layer = previousCollider.gameObject.layer;
+            BoxCollider boundsCollider = boundsObject.AddComponent<BoxCollider>();
+            boundsCollider.sharedMaterial = previousCollider.sharedMaterial;
+            boundsCollider.isTrigger = previousCollider.isTrigger;
+            boundsCollider.enabled = previousCollider.enabled;
+            m_BoxCollider = boundsCollider;
+            m_Collider = boundsCollider;
+            m_GrabCollider = boundsCollider;
+            previousCollider.enabled = false;
+            Destroy(previousCollider);
+        }
+
+        private void UpdateBoundsCollider()
+        {
+            Bounds bounds = CalculatePreviewBounds(GetComponentDefinitions());
+            m_BoxCollider.transform.localPosition = bounds.center;
+            m_BoxCollider.center = Vector3.zero;
+            // A tiny nonzero box keeps Unity's collider valid for an empty SDF.
+            m_BoxCollider.size = Vector3.Max(bounds.size, Vector3.one * 0.0001f);
         }
 
         private void RegisterGeneratedMeshRenderer()
@@ -657,6 +685,7 @@ namespace TiltBrush
         public void RefreshSdf()
         {
             m_SdfManager.RequestUpdate(onlySendBufferOnChange: false);
+            UpdateBoundsCollider();
             RequestVisualRefresh();
         }
 
@@ -1171,7 +1200,7 @@ namespace TiltBrush
         override public float GetActivationScore(
             Vector3 vControllerPos, InputManager.ControllerName name)
         {
-            // Keep the stand-in collider as a cheap broad-phase test, but use the signed
+            // Use the fitted bounds collider as a cheap broad-phase test, but use the signed
             // distance field itself to decide whether the controller is inside the guide.
             if (m_Collider != null && !m_Collider.bounds.Contains(vControllerPos))
             {
@@ -1229,24 +1258,5 @@ namespace TiltBrush
             return axis;
         }
 
-        public override Bounds GetBounds_SelectionCanvasSpace()
-        {
-            if (m_Collider != null)
-            {
-                SphereCollider sphere = m_Collider as SphereCollider;
-                TrTransform colliderToCanvasXf = App.Scene.SelectionCanvas.Pose.inverse *
-                    TrTransform.FromTransform(m_Collider.transform);
-                Bounds bounds = new Bounds(colliderToCanvasXf * sphere.center, Vector3.zero);
-
-                // Spheres are invariant with rotation, so take out the rotation from the transform and just
-                // add the two opposing corners.
-                colliderToCanvasXf.rotation = Quaternion.identity;
-                bounds.Encapsulate(colliderToCanvasXf * (sphere.center + sphere.radius * Vector3.one));
-                bounds.Encapsulate(colliderToCanvasXf * (sphere.center - sphere.radius * Vector3.one));
-
-                return bounds;
-            }
-            return base.GetBounds_SelectionCanvasSpace();
-        }
     }
 } // namespace TiltBrush

@@ -1112,12 +1112,12 @@ namespace TiltBrush
                     // Reset tint
                     sw.SetInUse(false);
 
-                    // Does a rough check to see if the stencil might overlap. OverlapSphereNonAlloc is
-                    // shockingly slow, which is why we don't use it.
+                    // Only reject points outside the attraction-expanded guide bounds.
+                    // The surface query below decides whether the actual shape is close enough.
                     Collider collider = sw.GrabCollider;
-                    float centerDist = (collider.bounds.center - samplePos).sqrMagnitude;
-                    if (centerDist >
-                        (StencilAttractDist * StencilAttractDist + collider.bounds.extents.sqrMagnitude))
+                    Bounds attractionBounds = collider.bounds;
+                    attractionBounds.Expand(StencilAttractDist * 2f);
+                    if (!attractionBounds.Contains(samplePos))
                     {
                         continue;
                     }
