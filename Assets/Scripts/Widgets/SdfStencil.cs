@@ -24,10 +24,14 @@ namespace TiltBrush
     {
         private const double k_VisualRefreshIntervalSeconds = 0.1;
         private const double k_FinalVisualRefreshDelaySeconds = 0.2;
+#if UNITY_ANDROID
+        private const int k_PreviewCellCount = 64;
+#else
+        private const int k_PreviewCellCount = 80;
+#endif
 
         private SDFGroup m_SdfManager;
         private SDFGroupMeshGenerator m_MeshGenerator;
-        private float m_MinimumPreviewCellSize;
         private int m_RequestedVisualRevision;
         private int m_StartedVisualRevision;
         private int m_CompletedVisualRevision;
@@ -207,7 +211,6 @@ namespace TiltBrush
             }
 
             m_MeshGenerator.MainSettings.AutoUpdate = false;
-            m_MinimumPreviewCellSize = m_MeshGenerator.VoxelSettings.CellSize;
             m_MeshGenerator.MeshGenerationFinished += OnMeshGenerationFinished;
 
             MeshRenderer generatedRenderer = m_MeshGenerator.MeshRenderer;
@@ -774,19 +777,24 @@ namespace TiltBrush
         {
             Bounds bounds = CalculatePreviewBounds(GetComponentDefinitions());
             VoxelSettings settings = m_MeshGenerator.VoxelSettings;
-            int cellCount = settings.CellCount;
+            int previousCellCount = settings.CellCount;
+            int cellCount = k_PreviewCellCount;
             // Reserve two cells on each side so extraction never reaches the volume edge.
             float cellSize = Mathf.Max(
-                m_MinimumPreviewCellSize, bounds.size.Max() / Mathf.Max(1, cellCount - 4));
+                0.0001f, bounds.size.Max() / (cellCount - 4));
 
-            // IsoMesh exposes voxel settings as read-only properties. Keep the existing
-            // cell count (and buffer budget), changing only the sampling scale and centre.
+            // IsoMesh exposes voxel settings as read-only properties. Use a fixed preview
+            // resolution, fitting the sampling scale and centre to the composite.
             const System.Reflection.BindingFlags fields =
                 System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
             typeof(VoxelSettings).GetField("m_cellSizeMode", fields)
                 .SetValue(settings, CellSizeMode.Fixed);
             typeof(VoxelSettings).GetField("m_cellCount", fields).SetValue(settings, cellCount);
             typeof(VoxelSettings).GetField("m_cellSize", fields).SetValue(settings, cellSize);
+            if (previousCellCount != cellCount)
+            {
+                m_MeshGenerator.OnCellCountChanged();
+            }
             m_MeshGenerator.OnCellSizeChanged();
 
             // Move the sampling grid without moving the previous preview while readback
