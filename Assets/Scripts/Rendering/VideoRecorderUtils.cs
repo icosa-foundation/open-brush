@@ -429,7 +429,7 @@ namespace TiltBrush
             // cmd.exe needs UTF-8 without a BOM so it can read the code page command first.
             File.WriteAllText(batFile, batText, new System.Text.UTF8Encoding(false));
 #endif
-#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX || UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
             string shFile = Path.ChangeExtension(usdaFile, ".HQ_Render.sh");
             var pathSections = Application.dataPath.Split('/').ToArray();
             var exePath = String.Join("/", pathSections.Take(pathSections.Length - 1).ToArray());
@@ -437,7 +437,7 @@ namespace TiltBrush
             // It would be nice to think of a way to get this to do something sensible in the editor!
             string offlineRenderExePath = Process.GetCurrentProcess().MainModule.FileName;
 
-            string batText = $"\"{exePath}/Support/bin/renderVideo.sh\" \\\n\t\"{sketchFile}\" \\\n\t\"{usdaFile}\" \\\n\t\"{offlineRenderExePath}\"";
+            string batText = $"bash \"{exePath}/Support/bin/renderVideo.sh\" \\\n\t\"{sketchFile}\" \\\n\t\"{usdaFile}\" \\\n\t\"{offlineRenderExePath}\"";
             File.WriteAllText(shFile, batText);
 #endif
 
