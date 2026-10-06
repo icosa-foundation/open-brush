@@ -222,6 +222,13 @@ namespace TiltBrush
 
         protected override void RefreshPage()
         {
+            // Catalog scans can finish while the panel is closed. SAF refresh starts a
+            // coroutine, which requires an active GameObject; opening the panel refreshes it.
+            if (OpenBrushStorage.IsScopedStorageMode && !gameObject.activeInHierarchy)
+            {
+                ++m_DirectoryQueryVersion;
+                return;
+            }
             foreach (var tab in m_Tabs)
             {
                 tab.RefreshTab(tab == m_CurrentTab);
