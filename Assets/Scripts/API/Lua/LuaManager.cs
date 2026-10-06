@@ -1272,7 +1272,7 @@ namespace TiltBrush
                         scriptResult.Transform.translation,
                         scriptResult.Transform.rotation
                     );
-                    var tr_GS = App.Scene.Pose * tr_CS;
+                    var tr_GS = App.Scene.ActiveCanvas.Pose * tr_CS;
                     pos_GS = tr_GS.translation;
                     rot_GS = tr_GS.rotation;
                     break;
