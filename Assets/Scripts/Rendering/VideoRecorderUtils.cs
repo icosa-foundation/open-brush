@@ -420,10 +420,14 @@ namespace TiltBrush
             // It would be nice to think of a way to get this to do something sensible in the editor!
             string offlineRenderExePath = Process.GetCurrentProcess().MainModule.FileName;
 
-            string batText = string.Format(
-                "@\"{0}/Support/bin/renderVideo.cmd\" ^\n\t\"{1}\" ^\n\t\"{2}\" ^\n\t\"{3}\"",
-                exePath, sketchFile, usdaFile, offlineRenderExePath);
-            File.WriteAllText(batFile, batText);
+            string batText =
+                "@echo off\r\nchcp 65001 >nul\r\n\r\n" +
+                $"call \"{exePath}/Support/bin/renderVideo.cmd\" ^\r\n" +
+                $"  \"{sketchFile}\" ^\r\n" +
+                $"  \"{usdaFile}\" ^\r\n" +
+                $"  \"{offlineRenderExePath}\"\r\n";
+            // cmd.exe needs UTF-8 without a BOM so it can read the code page command first.
+            File.WriteAllText(batFile, batText, new System.Text.UTF8Encoding(false));
 #endif
 #if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
             string shFile = Path.ChangeExtension(usdaFile, ".HQ_Render.sh");
