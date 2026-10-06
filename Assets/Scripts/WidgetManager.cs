@@ -15,6 +15,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using IsoMesh;
 using UnityEngine;
 
 namespace TiltBrush
@@ -35,6 +36,8 @@ namespace TiltBrush
         Pyramid = 7,
         Ellipsoid = 8,
         Custom = 9,
+        Torus = 10,
+        BoxFrame = 11
     }
 
     [Serializable]
@@ -128,9 +131,12 @@ namespace TiltBrush
         [SerializeField] float m_GazeMaxAngleFromFacing = 70.0f;
         [SerializeField] private float m_PanelFocusActivationScore;
         [SerializeField] private float m_ModelVertCountScalar = 1.0f;
+        [SerializeField] public SDFGroup m_SDFManager;
 
         [Header("Stencils")]
         [SerializeField] StencilMapKey[] m_StencilMap;
+        [SerializeField] SdfStencil m_SdfStencilPrefab;
+        [SerializeField] ModelStencil m_ModelStencilPrefab;
         [SerializeField] private float m_StencilAttractDist = 0.5f;
         [SerializeField] private float m_StencilAttachHysteresis = 0.1f;
         [SerializeField] private string m_StencilLayerName;
@@ -378,6 +384,8 @@ namespace TiltBrush
         public GaussianCaptureHemisphereWidget GaussianCaptureHemisphereWidgetPrefab { get { return m_GaussianCaptureHemisphereWidgetPrefab; } }
         public GaussianCaptureBoxWidget GaussianCaptureBoxWidgetPrefab { get { return m_GaussianCaptureBoxWidgetPrefab; } }
         public SceneLightGizmo SceneLightGizmoPrefab { get { return m_SceneLightGizmoPrefab; } }
+        public SdfStencil SdfStencilPrefab { get { return m_SdfStencilPrefab; } }
+        public ModelStencil ModelStencilPrefab { get { return m_ModelStencilPrefab; } }
         public CameraPathWidget CameraPathWidgetPrefab { get { return m_CameraPathWidgetPrefab; } }
         public GameObject CameraPathPositionKnotPrefab { get { return m_CameraPathPositionKnotPrefab; } }
         public GameObject CameraPathRotationKnotPrefab { get { return m_CameraPathRotationKnotPrefab; } }
@@ -1104,12 +1112,12 @@ namespace TiltBrush
                     // Reset tint
                     sw.SetInUse(false);
 
-                    // Does a rough check to see if the stencil might overlap. OverlapSphereNonAlloc is
-                    // shockingly slow, which is why we don't use it.
+                    // Only reject points outside the attraction-expanded guide bounds.
+                    // The surface query below decides whether the actual shape is close enough.
                     Collider collider = sw.GrabCollider;
-                    float centerDist = (collider.bounds.center - samplePos).sqrMagnitude;
-                    if (centerDist >
-                        (StencilAttractDist * StencilAttractDist + collider.bounds.extents.sqrMagnitude))
+                    Bounds attractionBounds = collider.bounds;
+                    attractionBounds.Expand(StencilAttractDist * 2f);
+                    if (!attractionBounds.Contains(samplePos))
                     {
                         continue;
                     }
@@ -1167,6 +1175,15 @@ namespace TiltBrush
             }
 
             return stencilWasUsed;
+        }
+
+        public void ClearActiveStencil()
+        {
+            if (m_ActiveStencil != null)
+            {
+                m_ActiveStencil.SetInUse(false);
+                m_ActiveStencil = null;
+            }
         }
 
         bool FindClosestPointOnCollider(
@@ -1422,6 +1439,7 @@ namespace TiltBrush
             else if (generic is StencilWidget stencil)
             {
                 m_StencilWidgets.Add(new TypedWidgetData<StencilWidget>(stencil));
+                GlobalStencilSdfCache.InvalidateCache();
             }
             else if (generic is ImageWidget image)
             {
@@ -1489,7 +1507,7 @@ namespace TiltBrush
             if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
             if (RemoveFrom(m_PortalWidgets, rWidget)) { return; }
             if (RemoveFrom(m_GaussianCaptureWidgets, rWidget)) { return; }
-            if (RemoveFrom(m_StencilWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_StencilWidgets, rWidget)) { GlobalStencilSdfCache.InvalidateCache(); return; }
             if (RemoveFrom(m_ImageWidgets, rWidget)) { return; }
             if (RemoveFrom(m_TextWidgets, rWidget)) { return; }
             if (RemoveFrom(m_VideoWidgets, rWidget)) { return; }
