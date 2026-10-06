@@ -20,11 +20,24 @@ device disproved. They remain in this branch's history.
 
 Last updated **2026-10-06**.
 
-**Current device result:** CI run `37341698368`, commit `32e1b6e2c`, installed
+**Current device result:** CI run `37480220343`, commit `826214a34`, installed
 on an Aura Android XR device (Android 14). Shared save, overwrite, reload,
 snapshot, GLB export and folder-grant persistence across restart passed.
-UnityGLTF import, OBJ materials and native video playback failed. Subsequent
-fixes require a new device build; they are not hardware-proven.
+The earlier OBJ material, native video extractor and inactive-panel errors no
+longer occurred. Native video decoders started; the two-video test's maximum
+API response time was 0.155 seconds. Visual rendering/playback is not asserted.
+
+The same run's **non-SAF Android OpenXR Development** build reproduces the
+UnityGLTF `PBRGraph not found` error. Its legacy fallback succeeds when the
+fixture's material has a name, but crashes for the valid unnamed-material case.
+This confirms the shader failure is shared, not specific to SAF. The previous
+shader-collection retention change did not resolve it. Inspection of the APK
+confirms both UnityGLTF shaders and all 392 collection entries are included.
+
+Commits `047f4b99f`, `c46931e78` and `b365a7687` add stream-based legacy parsing,
+fix unnamed materials and restore SAF fallback without private copies. Both
+assemblies compile and targeted file/stream, dependency and routing checks pass.
+These changes still require verification in an updated device build.
 
 The selected root is `Documents/Open Brush`. This AndroidXR artifact uses
 `foundation.icosa.openbrush`, not a branch-suffixed package. Read the actual
@@ -282,21 +295,18 @@ neither Unity's analyzers nor `.meta`/GUID problems.
 
 ## 4. What is left to do
 
-### Current device failures
+### Device findings and follow-up
 
 1. UnityGLTF cannot find `UnityGLTF/PBRGraph`, although CI compiled and included
-   it. Explicitly loading and retaining the shader collection is implemented;
-   the suspected asset-lifetime cause still needs an updated device build.
-2. OBJ geometry loads, but its material request returns 404. SAF now resolves
-   material and texture dependencies as URLs instead of filesystem paths.
-3. Android's native video extractor rejects the loopback HTTP URL. The tested
-   manifest has no cleartext exception; the fix permits only `127.0.0.1` in SAF
-   builds and removes its configuration on reuse for a non-SAF build.
-4. A SAF catalog update refreshes an inactive reference panel and cannot start
-   its directory-query coroutine. Closed-panel refresh is now deferred.
-
-These fixes compile; the manifest isolation/transition checks pass. All four
-still require device verification with a build containing the fixes.
+   it. Reproduced on both SAF and non-SAF builds; retaining the collection did
+   not fix it. The cause remains unresolved.
+2. The previous OBJ material 404 did not recur with URL dependency resolution.
+3. The previous native video extractor failures did not recur with the SAF-only
+   localhost exception; native video decoders started successfully.
+4. The previous inactive reference-panel coroutine error did not recur.
+5. Legacy fallback now reads SAF documents and dependencies through seekable
+   streams. The optional material-name crash is also fixed. These latest changes
+   pass managed checks, but require a new APK for on-device confirmation.
 
 ### Earlier resolved work
 
