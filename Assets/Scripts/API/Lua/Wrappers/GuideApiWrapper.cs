@@ -66,9 +66,6 @@ namespace TiltBrush
         [LuaDocsDescription("Whether this guide supports editing SDF primitives, including SDF composites and standalone SDF primitive guides")]
         public bool isSdf => _StencilWidget is SdfStencil;
 
-        [LuaDocsDescription("Whether this guide supports editing SDF primitives, including SDF composites and standalone SDF primitive guides")]
-        public bool isSdf => _StencilWidget is SdfStencil;
-
         [LuaDocsDescription("The 3D position of the Guide Widget")]
         public Vector3 position
         {
