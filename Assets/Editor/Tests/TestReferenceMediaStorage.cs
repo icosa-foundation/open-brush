@@ -7,6 +7,99 @@ namespace TiltBrush
 {
     internal class TestReferenceMediaStorage
     {
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        public void LegacyGltfDocuments_FileAndStreamParsingAgree(int glbVersion)
+        {
+            byte[] document = LegacyGltfDocument(glbVersion);
+            string path = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllBytes(path, document);
+                using var fileInfo = new TiltBrushToolkit.ImportGltf.GltfFileInfo(path);
+                using var stream = new ShortReadDocumentStream(document);
+                using var streamInfo = new TiltBrushToolkit.ImportGltf.GltfFileInfo(stream);
+                Assert.AreEqual(fileInfo.IsGlb, streamInfo.IsGlb);
+                Assert.AreEqual(fileInfo.Version, streamInfo.Version);
+                Assert.AreEqual(fileInfo.Reader.ReadToEnd(), streamInfo.Reader.ReadToEnd());
+                streamInfo.Dispose();
+                Assert.IsTrue(stream.CanRead, "Parsing must not close the caller's stream");
+
+                if (glbVersion != 0)
+                {
+                    var fileLoader = new TiltBrushToolkit.BufferedStreamLoader(path, Path.GetDirectoryName(path));
+                    ShortReadDocumentStream opened = null;
+                    var streamLoader = new TiltBrushToolkit.BufferedStreamLoader(
+                        () => opened = new ShortReadDocumentStream(document),
+                        _ => throw new InvalidOperationException("Embedded BIN needs no sidecar"));
+                    using var fileBuffer = fileLoader.Load(null);
+                    using (var streamBuffer = streamLoader.Load(null))
+                    {
+                        Assert.AreEqual(fileBuffer.GetContentLength(), streamBuffer.GetContentLength());
+                        var expected = new byte[4];
+                        var actual = new byte[4];
+                        fileBuffer.Read(expected, 0, 0, 4);
+                        streamBuffer.Read(actual, 0, 0, 4);
+                        CollectionAssert.AreEqual(new byte[] { 1, 2, 3, 4 }, actual);
+                        CollectionAssert.AreEqual(expected, actual);
+                    }
+                    Assert.IsFalse(opened.CanRead, "Buffer disposal must close its owned stream");
+                }
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        private static byte[] LegacyGltfDocument(int glbVersion)
+        {
+            string json = $"{{\"asset\":{{\"version\":\"{(glbVersion == 1 ? "1.0" : "2.0")}\"}}}}";
+            if (glbVersion == 0)
+            {
+                return System.Text.Encoding.UTF8.GetPreamble()
+                    .Concat(System.Text.Encoding.UTF8.GetBytes(json)).ToArray();
+            }
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(json.PadRight((json.Length + 3) / 4 * 4));
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            writer.Write(0x46546c67u);
+            writer.Write((uint)glbVersion);
+            writer.Write((uint)(20 + bytes.Length + 4 + (glbVersion == 2 ? 8 : 0)));
+            writer.Write((uint)bytes.Length);
+            writer.Write(glbVersion == 1 ? 0u : 0x4e4f534au);
+            writer.Write(bytes);
+            if (glbVersion == 2)
+            {
+                writer.Write(4u);
+                writer.Write(0x004e4942u);
+            }
+            writer.Write(new byte[] { 1, 2, 3, 4 });
+            return stream.ToArray();
+        }
+
+        private sealed class ShortReadDocumentStream : Stream
+        {
+            private readonly MemoryStream m_Stream;
+            public ShortReadDocumentStream(byte[] bytes) => m_Stream = new MemoryStream(bytes);
+            public override bool CanRead => m_Stream.CanRead;
+            public override bool CanSeek => m_Stream.CanSeek;
+            public override bool CanWrite => false;
+            public override long Length => m_Stream.Length;
+            public override long Position { get => m_Stream.Position; set => m_Stream.Position = value; }
+            public override int Read(byte[] buffer, int offset, int count) => m_Stream.Read(buffer, offset, Math.Min(count, 3));
+            public override long Seek(long offset, SeekOrigin origin) => m_Stream.Seek(offset, origin);
+            public override void Flush() { }
+            public override void SetLength(long value) => throw new NotSupportedException();
+            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing) { m_Stream.Dispose(); }
+                base.Dispose(disposing);
+            }
+        }
+
         [Test]
         public void SafMediaNetworkSecurity_IsLimitedToLoopbackAndRemovedForNonSaf()
         {
