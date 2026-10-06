@@ -314,12 +314,23 @@ namespace TiltBrush
                 try
                 {
                     var dir = Path.GetDirectoryName(m_OutputPath);
-                    if (!string.IsNullOrEmpty(dir))
+                    if (!OpenBrushStorage.IsScopedStorageMode && !string.IsNullOrEmpty(dir))
                     {
                         Directory.CreateDirectory(dir);
                     }
-                    File.WriteAllText(m_OutputPath,
-                        "USD camera path serialization not supported in this build.");
+                    if (OpenBrushStorage.IsScopedStorageMode)
+                    {
+                        OpenBrushStorage.WriteGeneratedFile(m_OutputPath, output =>
+                        {
+                            using var writer = new StreamWriter(output);
+                            writer.Write("USD camera path serialization not supported in this build.");
+                        });
+                    }
+                    else
+                    {
+                        File.WriteAllText(m_OutputPath,
+                            "USD camera path serialization not supported in this build.");
+                    }
                 }
                 catch (IOException)
                 {

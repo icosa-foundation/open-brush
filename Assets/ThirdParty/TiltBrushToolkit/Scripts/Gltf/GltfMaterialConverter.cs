@@ -473,7 +473,8 @@ public class GltfMaterialConverter {
 
     // .net 3.5 doesn't have Guid.TryParse, and raising FormatException generates
     // tons of garbage for something that is done so often.
-    if (!kTiltBrushMaterialRegex.IsMatch(gltfMaterial.name)) {
+    // glTF material names are optional, including for ordinary non-Tilt-Brush materials.
+    if (string.IsNullOrEmpty(gltfMaterial.name) || !kTiltBrushMaterialRegex.IsMatch(gltfMaterial.name)) {
       return Guid.Empty;
     }
     int start = Mathf.Max(0, gltfMaterial.name.Length - 36);

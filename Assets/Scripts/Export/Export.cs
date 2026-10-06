@@ -40,6 +40,10 @@ URL=" + kExportDocumentationUrl;
         // or null on failure.
         private static string MakeExportPath(string parent, string basename, string ext)
         {
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                return Path.Combine(parent, ext, $"{basename}.{ext}");
+            }
             string child = FileUtils.GenerateNonexistentFilename(parent, basename: ext, extension: "");
             if (!FileUtils.InitializeDirectoryWithUserError(
                     child, "Failed to create export directory for " + ext))
@@ -127,6 +131,14 @@ URL=" + kExportDocumentationUrl;
 
         public static void ExportScene()
         {
+            // SAF exports write to the shared volume; check its available space.
+            if (OpenBrushStorage.IsScopedStorageMode &&
+                !FileUtils.CheckSharedStorageSpaceWithError(
+                    error: "Not enough space in the Open Brush folder to export!"))
+            {
+                return;
+            }
+
             var current = SaveLoadScript.m_Instance.SceneFile;
             string validHumanName = FileUtils.GetValidFilename(current.HumanName);
             if (string.IsNullOrEmpty(validHumanName))
@@ -135,9 +147,27 @@ URL=" + kExportDocumentationUrl;
             }
             string basename = validHumanName;
 
-            string parent = FileUtils.GenerateNonexistentFilename(App.UserExportPath(), basename, "");
-            if (!FileUtils.InitializeDirectoryWithUserError(
-                    parent, "Failed to create export directory")) return;
+            string parent;
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                try
+                {
+                    parent = Path.Combine(App.UserExportPath(),
+                        OpenBrushStorage.GetUniqueOutputDirectoryName(
+                            UserStorage.Backend, StorageArea.Exports, basename));
+                }
+                catch (IOException e)
+                {
+                    OutputWindowScript.Error("Failed to create export directory", e.Message);
+                    return;
+                }
+            }
+            else
+            {
+                parent = FileUtils.GenerateNonexistentFilename(App.UserExportPath(), basename, "");
+                if (!FileUtils.InitializeDirectoryWithUserError(
+                        parent, "Failed to create export directory")) return;
+            }
 
             // Set up progress bar.
             var progress = new Progress();
@@ -310,12 +340,27 @@ URL=" + kExportDocumentationUrl;
                             // the materials, so it's fine to keep those http:. However, Sketchfab doesn't support
                             // http textures so if uploaded, this glb will have missing textures.
                             var exporter = new ExportGlTF();
-                            exporter.ExportBrushStrokes(
-                                filename, AxisConvention.kGltf2, binary: true, doExtras: true,
-                                includeLocalMediaContent: true,
-                                gltfVersion: gltfVersion,
-                                selfContained: true
-                            );
+                            if (OpenBrushStorage.IsScopedStorageMode)
+                            {
+                                OpenBrushStorage.WriteGeneratedFile(filename, output =>
+                                {
+                                    var result = exporter.ExportBrushStrokes(
+                                        filename, AxisConvention.kGltf2, binary: true, doExtras: true,
+                                        includeLocalMediaContent: true, gltfVersion: gltfVersion,
+                                        selfContained: true, output: output,
+                                        copyExportFile: CopySharedExportFile);
+                                    if (!result.success) { throw new IOException("GLB export failed"); }
+                                });
+                            }
+                            else
+                            {
+                                exporter.ExportBrushStrokes(
+                                    filename, AxisConvention.kGltf2, binary: true, doExtras: true,
+                                    includeLocalMediaContent: true,
+                                    gltfVersion: gltfVersion,
+                                    selfContained: true
+                                );
+                            }
                         }
                     }
                 }
@@ -328,7 +373,18 @@ URL=" + kExportDocumentationUrl;
                     using (var unused = new AutoTimer("glb export"))
                     {
                         OverlayManager.m_Instance.UpdateProgress(0.7f);
-                        ExportNewGlb(Path.Combine(parent, $"newglb"), basename, App.UserConfig.Export.ExportEnvironment);
+                        string destination = Path.Combine(parent, "newglb");
+                        if (OpenBrushStorage.IsScopedStorageMode)
+                        {
+                            OpenBrushStorage.WriteGeneratedFile(
+                                Path.Combine(destination, $"{basename}.glb"), output =>
+                                    ExportNewGlb(destination, basename,
+                                        App.UserConfig.Export.ExportEnvironment, output));
+                        }
+                        else
+                        {
+                            ExportNewGlb(destination, basename, App.UserConfig.Export.ExportEnvironment);
+                        }
                     }
                 }
             });
@@ -336,16 +392,52 @@ URL=" + kExportDocumentationUrl;
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
                 InputManager.ControllerName.Brush, basename +
                 $" {LocalizationSettings.StringDatabase.GetLocalizedString(kExportSuccess)}");
-            ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
 
             string readmeFilename = Path.Combine(App.UserExportPath(), kExportReadmeName);
-            if (!File.Exists(readmeFilename) && !Directory.Exists(readmeFilename))
+            if (OpenBrushStorage.IsScopedStorageMode)
             {
-                File.WriteAllText(readmeFilename, kExportReadmeBody);
+                try
+                {
+                    if (!UserStorage.Backend.Exists(StorageArea.Exports, kExportReadmeName))
+                    {
+                        OpenBrushStorage.WriteGeneratedFile(readmeFilename, output =>
+                        {
+                            using var writer = new StreamWriter(output);
+                            writer.Write(kExportReadmeBody);
+                        });
+                    }
+                }
+                catch (Exception e)
+                {
+                    // A README failure must not prevent publication of the selected formats.
+                    OutputWindowScript.Error("Failed to write export README", e.Message);
+                }
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    $"Located in {OpenBrushStorage.SharedExportDisplayPath}");
+            }
+            else
+            {
+                if (!File.Exists(readmeFilename) && !Directory.Exists(readmeFilename))
+                {
+                    File.WriteAllText(readmeFilename, kExportReadmeBody);
+                }
+                ControllerConsoleScript.m_Instance.AddNewLine("Located in " + App.UserExportPath());
             }
         }
 
-        public static int ExportNewGlb(string destinationPath, string fileBaseName, bool exportEnvironment)
+        private static void CopySharedExportFile(ExportFileReference file, string destination)
+        {
+            var (area, relativePath) = OpenBrushStorage.GetGeneratedDestination(destination);
+            if (UserStorage.Backend.Exists(area, relativePath))
+            {
+                Debug.LogError($"Not overwriting {destination}");
+                return;
+            }
+            OpenBrushStorage.WriteGeneratedFile(destination, file.CopyTo);
+        }
+
+        public static int ExportNewGlb(string destinationPath, string fileBaseName, bool exportEnvironment,
+            Stream output = null)
         {
             // 'New' GLTF style export. Exports to GLB format using UnityGLTF
             var settings = App.Config.m_UnityGLTFSettings;
@@ -365,7 +457,15 @@ URL=" + kExportDocumentationUrl;
             int triangleCount = CountTrianglesInLayers(layerCanvases, layerMask);
 
             var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
-            unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
+            if (output != null)
+            {
+                unityGltfexporter.SaveGLBToStream(output, $"{fileBaseName}.glb");
+            }
+            else
+            {
+                // Upload callers intentionally export a local snapshot even on SAF builds.
+                unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
+            }
 
             return triangleCount;
         }

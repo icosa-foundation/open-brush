@@ -14,6 +14,7 @@
 
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
 using UnityEngine;
 
 namespace TiltBrush
@@ -185,8 +186,7 @@ namespace TiltBrush
 
             foreach (var gltfAudio in go.GetComponentsInChildren<GltfAudioSource>())
             {
-                var soundClipPath = CopyGltfAudioToSoundLibrary(gltfAudio.AbsoluteFilePath);
-                var soundClip = new SoundClip(soundClipPath);
+                var soundClip = CopyGltfAudioToSoundLibrary(gltfAudio.AbsoluteFilePath);
                 var widget = Object.Instantiate(WidgetManager.m_Instance.SoundClipWidgetPrefab);
                 widget.LoadingFromSketch = true;
                 widget.transform.parent = App.Instance.m_CanvasTransform;
@@ -212,22 +212,54 @@ namespace TiltBrush
             return soundClipWidgets;
         }
 
-        private static string CopyGltfAudioToSoundLibrary(string sourcePath)
+        private static SoundClip CopyGltfAudioToSoundLibrary(string sourcePath)
         {
             string soundClipLibraryPath = App.SoundClipLibraryPath();
             string fullSourcePath = Path.GetFullPath(sourcePath);
             string fullLibraryPath = Path.GetFullPath(soundClipLibraryPath);
 
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                SoundClip soundClip = PublishSafGltfAudio(UserStorage.Backend, fullSourcePath);
+                SoundClipCatalog.Instance?.ForceCatalogScan();
+                return soundClip;
+            }
+
             if (fullSourcePath.StartsWith(fullLibraryPath + Path.DirectorySeparatorChar))
             {
-                return fullSourcePath;
+                return new SoundClip(fullSourcePath);
             }
 
             Directory.CreateDirectory(fullLibraryPath);
             string destinationPath = GetUniqueSoundClipPath(fullLibraryPath, Path.GetFileName(fullSourcePath));
             File.Copy(fullSourcePath, destinationPath);
             SoundClipCatalog.Instance.ForceCatalogScan();
-            return destinationPath;
+            return new SoundClip(destinationPath);
+        }
+
+        internal static SoundClip PublishSafGltfAudio(IUserStorageBackend backend, string sourcePath)
+        {
+            const StorageArea area = StorageArea.MediaLibrarySoundClips;
+            using (SafDestinationLocks.Acquire($"api-import:{backend.RootIdentity}:{area}", CancellationToken.None))
+            using (Stream input = File.OpenRead(sourcePath))
+            {
+                string filename = OpenBrushStorage.GetUniqueImportPath(backend, area, Path.GetFileName(sourcePath));
+                using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                    area, filename, StorageMimeTypes.ForPath(filename), CancellationToken.None))
+                {
+                    using (Stream output = transaction.OpenWrite()) { input.CopyTo(output); }
+                    StorageMutationResult result = transaction.Commit();
+                    if (!result.Success)
+                    {
+                        throw new IOException($"Could not publish extracted glTF audio '{filename}': {result.Error}");
+                    }
+                }
+
+                // Playback and deferred export both reopen shared storage. The importer owns
+                // its original source file; no second private audio file is needed here.
+                return SoundClipCatalog.CreateSafSoundClip(backend,
+                    OpenBrushStorage.ResolveMediaDocument(backend, area, filename));
+            }
         }
 
         private static string GetUniqueSoundClipPath(string directory, string filename)

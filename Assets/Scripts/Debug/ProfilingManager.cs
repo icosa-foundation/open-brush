@@ -225,8 +225,10 @@ namespace TiltBrush
 
             var profileName = ActiveProfileName;
             var humanName = SaveLoadScript.m_Instance.GetLastFileHumanName();
-            var fileName = System.IO.Path.GetFileNameWithoutExtension(
-                SaveLoadScript.m_Instance.SceneFile.FullPath);
+            SceneFileInfo sceneFile = SaveLoadScript.m_Instance.SceneFile;
+            var fileName = sceneFile is SafSceneFileInfo
+                ? sceneFile.HumanName
+                : System.IO.Path.GetFileNameWithoutExtension(sceneFile.FullPath);
 
             StringBuilder message = new StringBuilder();
             string file = string.IsNullOrEmpty(profileName)
@@ -260,10 +262,20 @@ namespace TiltBrush
 
             Debug.Log(message.ToString());
 
-            string path = Path.Join(
-                App.UserPath(),
-                $"{GetProfilingFilename()}_summary.txt");
-            File.WriteAllText(path, message.ToString());
+            string filename = $"{GetProfilingFilename()}_summary.txt";
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                OpenBrushStorage.WriteSharedFile(UserStorage.Backend, StorageArea.UserRoot,
+                    filename, output =>
+                    {
+                        using var writer = new System.IO.StreamWriter(output);
+                        writer.Write(message.ToString());
+                    });
+            }
+            else
+            {
+                File.WriteAllText(Path.Join(App.UserPath(), filename), message.ToString());
+            }
         }
 
         private string BuildComparisonLine(Statistics.Summary stats, int numBatches, int numTriangles)

@@ -1,0 +1,573 @@
+using System;
+using System.IO;
+using System.Linq;
+using NUnit.Framework;
+
+namespace TiltBrush
+{
+    internal class TestReferenceMediaStorage
+    {
+        [TestCase(false)]
+        [TestCase(true)]
+        public void LegacySafLoader_ReadsSharedSidecarsAndEmbeddedBin(bool glb)
+        {
+            IUserStorageBackend previous = UserStorage.Backend;
+            string root = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            Directory.CreateDirectory(Path.Combine(root, "Models"));
+            Directory.CreateDirectory(Path.Combine(root, "Textures"));
+            string fileName = glb ? "model.glb" : "model.gltf";
+            byte[] document = LegacyGltfDocument(glb ? 2 : 0);
+            byte[] sidecar = { 9, 8, 7, 6 };
+            File.WriteAllBytes(Path.Combine(root, "Models", fileName), document);
+            File.WriteAllBytes(Path.Combine(root, "Textures", "checker map.png"), sidecar);
+            try
+            {
+                // A temporary directory supplies document bytes through the storage contract;
+                // the legacy loader receives only stream factories, never these filenames.
+                UserStorage.SetBackendForTests(new LocalUserStorageBackend(_ => root));
+                var dataLoader = new SafGltfDataLoader(StorageArea.MediaLibraryModels, "Models");
+                using Stream primary = dataLoader.LoadSeekableStream(fileName);
+                using var info = new TiltBrushToolkit.ImportGltf.GltfFileInfo(primary);
+                Assert.AreEqual(glb, info.IsGlb);
+                var loader = NewGltfImporter.CreateSafLegacyLoader(dataLoader, fileName);
+                using (var texture = loader.Load("../Textures/checker%20map.png"))
+                {
+                    var actual = new byte[4];
+                    texture.Read(actual, 0, 0, 4);
+                    CollectionAssert.AreEqual(sidecar, actual);
+                }
+                Assert.Throws<IOException>(() => loader.Load("../../outside.bin"));
+                if (glb)
+                {
+                    using var buffer = loader.Load(null);
+                    var actual = new byte[4];
+                    buffer.Read(actual, 0, 0, 4);
+                    CollectionAssert.AreEqual(new byte[] { 1, 2, 3, 4 }, actual);
+                }
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previous);
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [TestCase(null)]
+        [TestCase("Checker")]
+        [TestCase("material_Light-2241cd32-8ba2-48a5-9ee7-2caef7e9ed62")]
+        public void LegacyGltfMaterials_AllowMissingNamesAndPreserveBrushGuids(string name)
+        {
+            var method = typeof(TiltBrushToolkit.GltfMaterialConverter).GetMethod(
+                "ParseGuidFromMaterial", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            var material = new TiltBrushToolkit.Gltf2Material { name = name };
+            Guid actual = (Guid)method.Invoke(null, new object[] { material });
+            Guid expected = name != null && name.StartsWith("material_Light-")
+                ? new Guid("2241cd32-8ba2-48a5-9ee7-2caef7e9ed62")
+                : Guid.Empty;
+            Assert.AreEqual(expected, actual);
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(2)]
+        public void LegacyGltfDocuments_FileAndStreamParsingAgree(int glbVersion)
+        {
+            byte[] document = LegacyGltfDocument(glbVersion);
+            string path = Path.GetTempFileName();
+            try
+            {
+                File.WriteAllBytes(path, document);
+                using var fileInfo = new TiltBrushToolkit.ImportGltf.GltfFileInfo(path);
+                using var stream = new ShortReadDocumentStream(document);
+                using var streamInfo = new TiltBrushToolkit.ImportGltf.GltfFileInfo(stream);
+                Assert.AreEqual(fileInfo.IsGlb, streamInfo.IsGlb);
+                Assert.AreEqual(fileInfo.Version, streamInfo.Version);
+                Assert.AreEqual(fileInfo.Reader.ReadToEnd(), streamInfo.Reader.ReadToEnd());
+                streamInfo.Dispose();
+                Assert.IsTrue(stream.CanRead, "Parsing must not close the caller's stream");
+
+                if (glbVersion != 0)
+                {
+                    var fileLoader = new TiltBrushToolkit.BufferedStreamLoader(path, Path.GetDirectoryName(path));
+                    ShortReadDocumentStream opened = null;
+                    var streamLoader = new TiltBrushToolkit.BufferedStreamLoader(
+                        () => opened = new ShortReadDocumentStream(document),
+                        _ => throw new InvalidOperationException("Embedded BIN needs no sidecar"));
+                    using var fileBuffer = fileLoader.Load(null);
+                    using (var streamBuffer = streamLoader.Load(null))
+                    {
+                        Assert.AreEqual(fileBuffer.GetContentLength(), streamBuffer.GetContentLength());
+                        var expected = new byte[4];
+                        var actual = new byte[4];
+                        fileBuffer.Read(expected, 0, 0, 4);
+                        streamBuffer.Read(actual, 0, 0, 4);
+                        CollectionAssert.AreEqual(new byte[] { 1, 2, 3, 4 }, actual);
+                        CollectionAssert.AreEqual(expected, actual);
+                    }
+                    Assert.IsFalse(opened.CanRead, "Buffer disposal must close its owned stream");
+                }
+            }
+            finally
+            {
+                File.Delete(path);
+            }
+        }
+
+        private static byte[] LegacyGltfDocument(int glbVersion)
+        {
+            string json = $"{{\"asset\":{{\"version\":\"{(glbVersion == 1 ? "1.0" : "2.0")}\"}}}}";
+            if (glbVersion == 0)
+            {
+                return System.Text.Encoding.UTF8.GetPreamble()
+                    .Concat(System.Text.Encoding.UTF8.GetBytes(json)).ToArray();
+            }
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(json.PadRight((json.Length + 3) / 4 * 4));
+            using var stream = new MemoryStream();
+            using var writer = new BinaryWriter(stream);
+            writer.Write(0x46546c67u);
+            writer.Write((uint)glbVersion);
+            writer.Write((uint)(20 + bytes.Length + 4 + (glbVersion == 2 ? 8 : 0)));
+            writer.Write((uint)bytes.Length);
+            writer.Write(glbVersion == 1 ? 0u : 0x4e4f534au);
+            writer.Write(bytes);
+            if (glbVersion == 2)
+            {
+                writer.Write(4u);
+                writer.Write(0x004e4942u);
+            }
+            writer.Write(new byte[] { 1, 2, 3, 4 });
+            return stream.ToArray();
+        }
+
+        private sealed class ShortReadDocumentStream : Stream
+        {
+            private readonly MemoryStream m_Stream;
+            public ShortReadDocumentStream(byte[] bytes) => m_Stream = new MemoryStream(bytes);
+            public override bool CanRead => m_Stream.CanRead;
+            public override bool CanSeek => m_Stream.CanSeek;
+            public override bool CanWrite => false;
+            public override long Length => m_Stream.Length;
+            public override long Position { get => m_Stream.Position; set => m_Stream.Position = value; }
+            public override int Read(byte[] buffer, int offset, int count) => m_Stream.Read(buffer, offset, Math.Min(count, 3));
+            public override long Seek(long offset, SeekOrigin origin) => m_Stream.Seek(offset, origin);
+            public override void Flush() { }
+            public override void SetLength(long value) => throw new NotSupportedException();
+            public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing) { m_Stream.Dispose(); }
+                base.Dispose(disposing);
+            }
+        }
+
+        [Test]
+        public void SafMediaNetworkSecurity_IsLimitedToLoopbackAndRemovedForNonSaf()
+        {
+            const string android = "http://schemas.android.com/apk/res/android";
+            string directory = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+            var doc = new System.Xml.XmlDocument();
+            doc.LoadXml($"<manifest xmlns:android='{android}'><application /></manifest>");
+            var application = (System.Xml.XmlElement)doc.SelectSingleNode("/manifest/application");
+            string original = doc.OuterXml;
+            string configPath = Path.Combine(
+                directory, "res/xml/open_brush_saf_network_security.xml");
+            try
+            {
+                BuildTiltBrushPostProcess.ConfigureSafMediaNetworkSecurity(doc, directory, false);
+                Assert.AreEqual(original, doc.OuterXml);
+                Assert.IsFalse(Directory.Exists(directory));
+
+                BuildTiltBrushPostProcess.ConfigureSafMediaNetworkSecurity(doc, directory, true);
+                Assert.AreEqual("@xml/open_brush_saf_network_security",
+                    application.GetAttribute("networkSecurityConfig", android));
+                var config = new System.Xml.XmlDocument();
+                config.Load(configPath);
+                Assert.AreEqual("true", config.SelectSingleNode(
+                    "/network-security-config/domain-config/@cleartextTrafficPermitted").Value);
+                Assert.AreEqual("127.0.0.1", config.SelectSingleNode(
+                    "/network-security-config/domain-config/domain").InnerText);
+                Assert.IsNull(config.SelectSingleNode("/network-security-config/base-config"));
+
+                BuildTiltBrushPostProcess.ConfigureSafMediaNetworkSecurity(doc, directory, false);
+                Assert.AreEqual(original, doc.OuterXml);
+                Assert.IsFalse(File.Exists(configPath));
+
+                application.SetAttribute("networkSecurityConfig", android, "@xml/plugin_config");
+                original = doc.OuterXml;
+                BuildTiltBrushPostProcess.ConfigureSafMediaNetworkSecurity(doc, directory, false);
+                Assert.AreEqual(original, doc.OuterXml);
+            }
+            finally
+            {
+                if (Directory.Exists(directory))
+                {
+                    Directory.Delete(directory, recursive: true);
+                }
+            }
+        }
+
+        [TestCase(true)]
+        [TestCase(false)]
+        public void GltfStorageRoutingExcludesIcosaModels(bool saf)
+        {
+            IUserStorageBackend previous = UserStorage.Backend;
+            try
+            {
+                UserStorage.SetBackendForTests(saf
+                    ? (IUserStorageBackend)new CatalogTestBackend()
+                    : new LocalUserStorageBackend(_ => Path.GetTempPath()));
+                var remote = new Model("asset-id", "cache/model.glb");
+                Assert.IsFalse(NewGltfImporter.TryGetStorageModelLocation(
+                    remote, out _, out _, out _));
+
+                var local = new Model("nested/model.gltf");
+                Assert.AreEqual(saf, NewGltfImporter.TryGetStorageModelLocation(
+                    local, out StorageArea area, out string directory, out string fileName));
+                if (saf)
+                {
+                    Assert.AreEqual(StorageArea.MediaLibraryModels, area);
+                    Assert.AreEqual("nested", directory);
+                    Assert.AreEqual("model.gltf", fileName);
+                }
+            }
+            finally
+            {
+                UserStorage.SetBackendForTests(previous);
+            }
+        }
+
+        [TestCase("stream.txt", true)]
+        [TestCase("stream.TXT", true)]
+        [TestCase("clip.mp4", false)]
+        public void VideoExtensionMatching_RecognizesNetworkPointers(string path, bool expected)
+        {
+            var video = new ReferenceVideo(path, "fixture", path);
+            Assert.AreEqual(expected, video.NetworkVideo);
+        }
+
+        [Test]
+        public void VideoRestore_ResolvesSiblingFoldersWithoutChangingThePanelListing()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-video-restore-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(Path.Combine(root, "A"));
+            Directory.CreateDirectory(Path.Combine(root, "B"));
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "A", "clip.mp4"), "first fixture");
+                File.WriteAllText(Path.Combine(root, "B", "clip.MP4"), "second fixture");
+                var backend = new LocalUserStorageBackend(_ => root);
+                string[] extensions = { ".mp4" };
+                var first = VideoCatalog.ResolveVideoByPersistentPath(backend, root, "A\\clip.mp4", extensions);
+                var second = VideoCatalog.ResolveVideoByPersistentPath(backend, root, "./B/clip.MP4", extensions);
+                Assert.IsNotNull(first);
+                Assert.IsNotNull(second);
+                Assert.AreEqual("A/clip.mp4", first.PersistentPath);
+                Assert.AreEqual("B/clip.MP4", second.PersistentPath);
+                Assert.AreNotEqual(first.AbsolutePath, second.AbsolutePath);
+                Assert.IsFalse(first.IsInitialized);
+                Assert.IsFalse(second.IsInitialized);
+                Assert.IsEmpty(VideoCatalog.ListSafFiles(backend, StorageArea.MediaLibraryVideos, ""));
+                foreach (string path in new[] { "missing.mp4", "../outside.mp4", "/absolute.mp4",
+                             "C:/absolute.mp4", "A/clip.bin", "", null })
+                {
+                    Assert.IsNull(VideoCatalog.ResolveVideoByPersistentPath(backend, root, path, extensions), path);
+                }
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Test]
+        public void ModelCatalog_SupportedExtensionsMatchAllStorageBackends()
+        {
+            var extensions = ModelCatalog.GetSupportedExtensions();
+            CollectionAssert.IsSubsetOf(
+                new[] { ".gltf2", ".gltf", ".glb", ".ply", ".spz", ".sog", ".svg", ".obj", ".vox" },
+                extensions);
+            Assert.IsTrue(extensions.Contains(".SPZ"));
+            Assert.IsTrue(extensions.Contains(".SOG"));
+#if USD_SUPPORTED
+            CollectionAssert.IsSubsetOf(new[] { ".usda", ".usdc", ".usd" }, extensions);
+#else
+            Assert.IsFalse(extensions.Contains(".usd"));
+#endif
+#if FBX_SUPPORTED
+            Assert.IsTrue(extensions.Contains(".fbx"));
+#else
+            Assert.IsFalse(extensions.Contains(".fbx"));
+#endif
+        }
+
+        [Test]
+        public void VideoQuery_ListsOnlySelectedDirectoryAndPreservesLogicalPaths()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"open-brush-video-query-{Guid.NewGuid():N}");
+            string nested = Path.Combine(root, "Nested");
+            string deeper = Path.Combine(nested, "Deeper");
+            Directory.CreateDirectory(deeper);
+            try
+            {
+                File.WriteAllText(Path.Combine(root, "root.mp4"), "root video");
+                File.WriteAllText(Path.Combine(nested, "clip.mp4"), "child video");
+                File.WriteAllText(Path.Combine(deeper, "hidden.mp4"), "nested video");
+                var backend = new LocalUserStorageBackend(_ => root);
+                var parent = VideoCatalog.ListSafFiles(backend, StorageArea.MediaLibraryVideos, "");
+                Assert.AreEqual("root.mp4", parent.Single().RelativeDisplayPath);
+                var child = VideoCatalog.ListSafFiles(backend, StorageArea.MediaLibraryVideos, "Nested");
+                Assert.AreEqual("Nested/clip.mp4", child.Single().RelativeDisplayPath);
+                Assert.IsFalse(child.Single().IsDirectory);
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        private const long kSupportsDeleteAndRename = (1L << 2) | (1L << 6);
+
+        private static StorageDocument OverwriteDocument(
+            string id, string name, bool directory,
+            long providerFlags = kSupportsDeleteAndRename)
+        {
+            return new StorageDocument(new StorageDocumentId(id), default, name,
+                "application/octet-stream", directory, null, null, providerFlags, name);
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafOverwrite_RejectsDirectoryByNameOrExplicitIdentity(bool explicitIdentity)
+        {
+            StorageDocument directory = OverwriteDocument("directory", "target.bin", true);
+            Assert.Throws<IOException>(() => SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { directory }, explicitIdentity ? directory.DocumentId : default, "target.bin"));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafOverwrite_AllowsExistingFile(bool explicitIdentity)
+        {
+            StorageDocument file = OverwriteDocument("file", "target.bin", false);
+            Assert.AreEqual(file.DocumentId, SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { file }, explicitIdentity ? file.DocumentId : default, "target.bin"));
+        }
+
+        [TestCase(0)]
+        [TestCase(1L << 6)]
+        public void SafOverwrite_RejectsTargetsWithoutSafeBackupCleanup(long providerFlags)
+        {
+            StorageDocument file = OverwriteDocument(
+                "file", "target.bin", false, providerFlags);
+            Assert.Throws<IOException>(() => SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { file }, file.DocumentId, "target.bin"));
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void SafOverwrite_RejectsFileAndDirectoryNameCollision(bool explicitIdentity)
+        {
+            StorageDocument file = OverwriteDocument("file", "target.bin", false);
+            StorageDocument directory = OverwriteDocument("directory", "TARGET.BIN", true);
+            Assert.Throws<IOException>(() => SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { file, directory }, explicitIdentity ? file.DocumentId : default, "target.bin"));
+        }
+
+        [Test]
+        public void SafOverwrite_AllowsNewFileAlongsideUnrelatedDirectory()
+        {
+            StorageDocument directory = OverwriteDocument("directory", "other", true);
+            Assert.IsFalse(SafFileWriteTransaction.ResolveFileOverwriteTarget(
+                new[] { directory }, default, "target.bin").IsValid);
+        }
+
+        [TestCase("target.bin.ob-tmp")]
+        [TestCase("TARGET.BIN.OB-BAK")]
+        [TestCase("target.bin.ob-invalid")]
+        public void SafOverwrite_RejectsPreexistingReservedSidecars(string existingName)
+        {
+            StorageDocument existing = OverwriteDocument("user-file", existingName, false);
+            Assert.Throws<IOException>(() => SafFileWriteTransaction.EnsureReservedNamesAvailable(
+                new[] { existing },
+                "target.bin.ob-tmp",
+                "target.bin.ob-bak",
+                "target.bin.ob-invalid"));
+        }
+
+        [Test]
+        public void ExtractedSafAudioCommitsUniqueSharedFilesAndReadsThemAfterSourceRemoval()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"saf-gltf-audio-{Guid.NewGuid():N}");
+            string shared = Path.Combine(root, "shared");
+            Directory.CreateDirectory(shared);
+            string source = Path.Combine(root, "audio.wav");
+            byte[] audio = { 1, 2, 3, 4 };
+            File.WriteAllBytes(source, audio);
+            File.WriteAllText(Path.Combine(shared, "audio.wav"), "existing shared audio");
+            try
+            {
+                var backend = new LocalUserStorageBackend(_ => shared);
+                SoundClip first = SoundClipWidget.PublishSafGltfAudio(backend, source);
+                SoundClip second = SoundClipWidget.PublishSafGltfAudio(backend, source);
+
+                Assert.AreEqual("audio (1).wav", first.PersistentPath);
+                Assert.AreEqual("audio (2).wav", second.PersistentPath);
+                Assert.AreEqual(Path.Combine(shared, first.PersistentPath), first.AbsolutePath);
+                Assert.AreEqual(Path.Combine(shared, second.PersistentPath), second.AbsolutePath);
+                CollectionAssert.AreEqual(audio, File.ReadAllBytes(first.AbsolutePath));
+                CollectionAssert.AreEqual(audio, File.ReadAllBytes(second.AbsolutePath));
+                Assert.IsTrue(File.Exists(source));
+                Assert.AreEqual("existing shared audio", File.ReadAllText(Path.Combine(shared, "audio.wav")));
+                CollectionAssert.AreEqual(new[] { shared }, Directory.GetDirectories(root));
+
+                File.Delete(source);
+                using Stream read = first.OpenRead();
+                Assert.IsTrue(read.CanSeek);
+                using var bytes = new MemoryStream();
+                read.CopyTo(bytes);
+                CollectionAssert.AreEqual(audio, bytes.ToArray());
+            }
+            finally
+            {
+                if (Directory.Exists(root)) { Directory.Delete(root, recursive: true); }
+            }
+        }
+
+        [Test]
+        public void SharedFrameDiscard_DeletesOnlyCapturedFiles()
+        {
+            string root = Path.Combine(Path.GetTempPath(), $"shared-frames-{Guid.NewGuid():N}");
+            string frames = Path.Combine(root, "capture_frames");
+            Directory.CreateDirectory(frames);
+            try
+            {
+                File.WriteAllText(Path.Combine(frames, "capture_frame_000001.png"), "frame");
+                File.WriteAllText(Path.Combine(frames, "unrelated.png"), "keep");
+                File.WriteAllText(Path.Combine(root, "capture_sequence.txt"), "metadata");
+                var backend = new LocalUserStorageBackend(_ => root);
+                OpenBrushStorage.DeleteSharedFiles(backend, StorageArea.Videos, "capture_frames",
+                    new System.Collections.Generic.HashSet<string> { "capture_frame_000001.png", "absent.png" });
+                OpenBrushStorage.DeleteSharedFiles(backend, StorageArea.Videos, "",
+                    new System.Collections.Generic.HashSet<string> { "capture_sequence.txt" });
+                Assert.IsFalse(File.Exists(Path.Combine(frames, "capture_frame_000001.png")));
+                Assert.IsFalse(File.Exists(Path.Combine(root, "capture_sequence.txt")));
+                Assert.AreEqual("keep", File.ReadAllText(Path.Combine(frames, "unrelated.png")));
+            }
+            finally
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+
+        [Test]
+        public void GltfBundle_IncludesBuffersAndTexturesOnceAndSkipsEmbeddedData()
+        {
+            var gltf = Newtonsoft.Json.Linq.JObject.Parse(@"{
+                'buffers': [{'uri':'geometry.bin'}],
+                'images': [{'uri':'textures/My Texture.png'}, {'uri':'geometry.bin'},
+                           {'uri':'data:image/png;base64,AA=='}, {'bufferView':0}]
+            }");
+            CollectionAssert.AreEquivalent(new[] { "geometry.bin", "textures/My Texture.png" },
+                ApiMethods.GetGltfExternalFiles(gltf));
+            Assert.IsEmpty(ApiMethods.GetGltfExternalFiles(new Newtonsoft.Json.Linq.JObject()));
+        }
+
+        [TestCase("Models/Robot", "mesh.bin", "Models/Robot/mesh.bin", true)]
+        [TestCase("Models/Robot", "../Textures/albedo.png", "Models/Textures/albedo.png", true)]
+        [TestCase("Models/Robot", "take..final.bin", "Models/Robot/take..final.bin", true)]
+        [TestCase("Models", "../../outside.bin", null, false)]
+        [TestCase("", "../outside.bin", null, false)]
+        [TestCase("Models", "/absolute.bin", null, false)]
+        public void SafGltfDependencies_NormalizeWithinTheStorageArea(
+            string directory, string reference, string expected, bool valid)
+        {
+            Assert.AreEqual(valid, SafGltfDataLoader.TryResolveAreaRelativePath(
+                directory, reference, out string resolved));
+            Assert.AreEqual(expected, resolved);
+        }
+
+        [Test]
+        public void SafImages_KeepLibraryPathAcrossCacheLocations()
+        {
+            var first = new ReferenceImage("cache-a/image.png", "id-a", null, 1, "./Nested/image.png");
+            var reopened = new ReferenceImage("cache-b/image.png", "id-b", null, 1, "./Nested/image.png");
+            Assert.AreEqual("./Nested/image.png", first.RelativePath);
+            Assert.AreEqual(first.RelativePath, reopened.RelativePath);
+            Assert.AreNotEqual(first.FileFullPath, reopened.FileFullPath);
+        }
+
+        [Test]
+        public void SafImages_OpenProviderStreamWithoutMaterializingAFile()
+        {
+            byte[] bytes = { 1, 2, 3, 4 };
+            var image = new ReferenceImage(
+                "Nested/image.png", $"export-{Guid.NewGuid():N}",
+                () => new MemoryStream(bytes, writable: false), bytes.Length,
+                "./Nested/image.png");
+
+            using (Stream source = image.OpenExportSource())
+            {
+                CollectionAssert.AreEqual(
+                    bytes, ReferenceImage.ReadBytesWithLimit(source, bytes.Length));
+                Assert.AreEqual("Nested/image.png", image.FileFullPath);
+                Assert.AreEqual("./Nested/image.png", image.RelativePath);
+            }
+            Assert.IsFalse(File.Exists(image.FileFullPath));
+        }
+
+        [Test]
+        public void SafSvgImages_ReadProviderTextWithoutMaterializingAFile()
+        {
+            const string svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M0 0\"/></svg>";
+            var image = new ReferenceImage(
+                "shared.svg", "svg-id",
+                () => new MemoryStream(System.Text.Encoding.UTF8.GetBytes(svg)),
+                svg.Length,
+                "./shared.svg");
+
+            Assert.AreEqual(svg, image.ReadSvgText(svg.Length));
+            Assert.IsFalse(File.Exists(image.FilePath));
+        }
+
+        [Test]
+        public void SafImages_EnforceSizeLimitWhenProviderOmitsLength()
+        {
+            byte[] bytes = { 1, 2, 3, 4 };
+            var image = new ReferenceImage(
+                "shared.hdr", "unknown-size-id",
+                () => new MemoryStream(bytes, writable: false),
+                null,
+                "./shared.hdr");
+
+            CollectionAssert.AreEqual(bytes, image.ReadEncodedBytes(bytes.Length));
+            Assert.Throws<IOException>(() => image.ReadEncodedBytes(bytes.Length - 1));
+        }
+
+        [Test]
+        public void SafSvgImages_EnforceSizeLimitWhenProviderOmitsLength()
+        {
+            const string svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"/>";
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(svg);
+            var image = new ReferenceImage(
+                "shared.svg", "unknown-svg-size-id",
+                () => new MemoryStream(bytes, writable: false),
+                null,
+                "./shared.svg");
+
+            Assert.AreEqual(svg, image.ReadSvgText(bytes.Length));
+            Assert.Throws<IOException>(() => image.ReadSvgText(bytes.Length - 1));
+        }
+
+        [Test]
+        public void SafVideos_PreserveSubfoldersAndSeparatePlaybackPath()
+        {
+            var first = new ReferenceVideo("cache-a/clip.mp4", "id-a", "First/clip.mp4");
+            var second = new ReferenceVideo("cache-b/clip.mp4", "id-b", "Second/clip.mp4");
+            var reopened = new ReferenceVideo("cache-c/clip.mp4", "id-c", "First/clip.mp4");
+            Assert.AreEqual(first.PersistentPath, reopened.PersistentPath);
+            Assert.AreNotEqual(first.PersistentPath, second.PersistentPath);
+            Assert.AreEqual("cache-c/clip.mp4", reopened.AbsolutePath);
+            Assert.AreEqual("clip.mp4", reopened.HumanName);
+        }
+    }
+}

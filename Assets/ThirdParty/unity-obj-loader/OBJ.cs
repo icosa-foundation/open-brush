@@ -44,6 +44,7 @@ public class OBJ : MonoBehaviour
     private const string BUMP = "bump";         // Bump map texture
 
     private string basepath;
+    private Uri dependencyBaseUri;
     private string mtllib;
     private GeometryBuffer buffer;
     bool finished = false;
@@ -71,27 +72,31 @@ public class OBJ : MonoBehaviour
             0.25f));
     }
 
-    public Task BeginLoadAsync(string path)
+    public Task BeginLoadAsync(string path, bool resolveHttpDependencies = false)
     {
         var tcs = new TaskCompletionSource<bool>();
         buffer = new GeometryBuffer();
-        StartCoroutine(LoadAsyncWrapper(path, tcs));
+        StartCoroutine(LoadAsyncWrapper(path, tcs, resolveHttpDependencies));
         return tcs.Task;
     }
 
-    private IEnumerator LoadAsyncWrapper(string path, TaskCompletionSource<bool> tcs)
+    private IEnumerator LoadAsyncWrapper(string path, TaskCompletionSource<bool> tcs,
+        bool resolveHttpDependencies)
     {
         // Don't raise the compositor overlay here: _Load already time-slices (it yields between
         // chunks), and this path is used for background preload while the user is browsing the
         // panel - popping a fullscreen loading overlay mid-browse is wrong. Explicit foreground
         // spawns still get the overlay from the higher-level wrapper (Model.LoadFullyCoroutine).
-        yield return StartCoroutine(_Load(path));
+        yield return StartCoroutine(_Load(path, resolveHttpDependencies));
         tcs.SetResult(true);
     }
 
-    private IEnumerator<Null> _Load(string path)
+    private IEnumerator<Null> _Load(string path, bool resolveHttpDependencies = false)
     {
         if (finished) yield break;
+        // SAF supplies an HTTP URL. Filesystem normalization can collapse its double slash,
+        // so resolve its material and texture references as URLs instead.
+        dependencyBaseUri = resolveHttpDependencies ? new Uri(path) : null;
         basepath = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(basepath))
             basepath += Path.DirectorySeparatorChar;
@@ -118,8 +123,9 @@ public class OBJ : MonoBehaviour
 
         if (hasMaterials)
         {
-            string mtlPath = basepath + mtllib;
-            mtlPath = FixLocalPaths(mtlPath);
+            string mtlPath = dependencyBaseUri == null
+                ? FixLocalPaths(basepath + mtllib)
+                : new Uri(dependencyBaseUri, mtllib).AbsoluteUri;
             var mtlRequest = UnityWebRequest.Get(mtlPath);
             var mtlOp = mtlRequest.SendWebRequest();
             while (!mtlOp.isDone)
@@ -196,7 +202,9 @@ public class OBJ : MonoBehaviour
             Debug.LogWarning("maybe unsupported texture format:" + ext);
         }
 
-        texpath = FixLocalPaths(Path.Combine(basepath, texpath));
+        texpath = dependencyBaseUri == null
+            ? FixLocalPaths(Path.Combine(basepath, texpath))
+            : new Uri(dependencyBaseUri, texpath).AbsoluteUri;
         using (UnityWebRequest texRequest = UnityWebRequestTexture.GetTexture(texpath))
         {
             var texOp = texRequest.SendWebRequest();

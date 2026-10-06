@@ -59,6 +59,14 @@ namespace TiltBrush
         [ApiEndpoint("showfolder.scripts", "Opens the user's Scripts folder on the desktop")]
         public static void OpenUserScriptsFolder()
         {
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                // The SAF folder picker is only for the startup grant. This desktop-only command
+                // must never let a running session replace its storage root.
+                ControllerConsoleScript.m_Instance?.AddNewLine(
+                    "Open the selected Open Brush/Scripts folder in Android's Files app.");
+                return;
+            }
             OpenUserFolder(ApiManager.Instance.UserScriptsPath());
         }
 
@@ -115,7 +123,7 @@ namespace TiltBrush
             bool initialRigActive = rig.gameObject.activeSelf;
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(fullPath)); }
                 rig.gameObject.SetActive(true);
                 rig.EnableCamera(true);
 
@@ -139,10 +147,8 @@ namespace TiltBrush
                     }
                 }
 
-                using (var fs = new FileStream(fullPath, FileMode.Create))
-                {
-                    ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
-                }
+                OpenBrushStorage.WriteGeneratedFile(fullPath,
+                    output => ScreenshotManager.Save(output, tmp, bSaveAsPng: true));
 
                 Debug.Log(
                     $"{logPrefix} Saved snapshot path={fullPath} size={width}x{height} " +
@@ -257,16 +263,12 @@ namespace TiltBrush
             string fullPath = BuildCapturePath(filename, "saveicon.png", ".png");
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(fullPath)); }
                 SketchControlsScript.m_Instance.GenerateBestGuessSaveIcon();
-                using (var fs = new FileStream(fullPath, FileMode.Create))
-                {
-                    ScreenshotManager.Save(
-                        fs,
+                OpenBrushStorage.WriteGeneratedFile(fullPath, output => ScreenshotManager.Save(
+                        output,
                         SaveLoadScript.m_Instance.GetSaveIconRenderTexture(),
-                        bSaveAsPng: true);
-                }
-
+                        bSaveAsPng: true));
                 Debug.Log($"{logPrefix} Saved save-icon capture path={fullPath}.");
                 return fullPath;
             }
@@ -485,7 +487,7 @@ namespace TiltBrush
 
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(fullPath)); }
                 rig.gameObject.SetActive(true);
                 rig.EnableCaptureObject(MultiCamStyle.Video, true);
 
@@ -527,6 +529,11 @@ namespace TiltBrush
                 if (OwnsActiveCapture())
                 {
                     VideoRecorderUtils.StopVideoCapture(saveCapture: true);
+                    while ((ownedVideoRecording != null && ownedVideoRecording.IsSaving) ||
+                           (ownedStillFrameExporter != null && ownedStillFrameExporter.IsSaving))
+                    {
+                        yield return null;
+                    }
                 }
                 ownedVideoRecording = null;
                 ownedStillFrameExporter = null;
@@ -557,7 +564,7 @@ namespace TiltBrush
         private static void RenderCameraToPng(
             Camera camera, string fullPath, int width, int height, bool includePostProcessing)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+            if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(fullPath)); }
 
             RenderTexture target = RenderTexture.GetTemporary(CaptureColorUtils.CreateDescriptor(
                 width, height,
@@ -577,10 +584,8 @@ namespace TiltBrush
                 camera.targetTexture = target;
                 camera.allowMSAA = target.antiAliasing > 1;
                 camera.Render();
-                using (var fs = new FileStream(fullPath, FileMode.Create))
-                {
-                    ScreenshotManager.Save(fs, target, bSaveAsPng: true);
-                }
+                OpenBrushStorage.WriteGeneratedFile(fullPath,
+                    output => ScreenshotManager.Save(output, target, bSaveAsPng: true));
             }
             finally
             {
@@ -1106,7 +1111,7 @@ namespace TiltBrush
         {
             location = GetSafeRelativePathInDirectory(
                 App.ReferenceImagePath(), location, "reference image path");
-            var image = new ReferenceImage(location);
+            var image = ResolveApiImage(location);
             image.SynchronousLoad();
             return image;
         }
@@ -1164,9 +1169,11 @@ namespace TiltBrush
             {
                 location = _DownloadMediaFileFromUrl(
                     location, "Videos", allowRedirects, requiredContentTypePrefix);
+                if (location == null) { return null; }
             }
             location = GetSafeRelativePathInDirectory(
                 App.VideoLibraryPath(), location, "video path");
+            ReferenceVideo video = ResolveApiVideo(location);
 
             var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.VideoWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
@@ -1180,7 +1187,6 @@ namespace TiltBrush
                 // Now enable preservation to prevent async overrides
                 videoWidget.SetPreserveCustomSize(true);
 
-                var video = new ReferenceVideo(location);
                 videoWidget.SetVideo(video);
                 videoWidget.Show(true);
                 cmd.SetWidgetCost(videoWidget.GetTiltMeterCost());
@@ -1209,6 +1215,7 @@ namespace TiltBrush
             {
                 location = _DownloadMediaFileFromUrl(
                     location, "BackgroundImages", allowRedirects, requiredContentTypePrefix);
+                if (location == null) { return; }
             }
             SceneSettings.m_Instance.LoadCustomSkybox(location);
         }
@@ -1232,6 +1239,7 @@ namespace TiltBrush
             {
                 location = _DownloadMediaFileFromUrl(
                     location, "Images", allowRedirects, requiredContentTypePrefix);
+                if (location == null) { return null; }
             }
             var imageWidget = _ImportImage(location, _CurrentBrushTransform());
             if (imageWidget != null)
@@ -1753,8 +1761,8 @@ namespace TiltBrush
         )]
         public static string FormEncodeImage(int index)
         {
-            var path = _GetActiveImage(index).ReferenceImage.FileFullPath;
-            return Convert.ToBase64String(File.ReadAllBytes(path));
+            return Convert.ToBase64String(
+                _GetActiveImage(index).ReferenceImage.ReadEncodedBytes());
         }
 
         [ApiEndpoint(
@@ -1785,8 +1793,39 @@ namespace TiltBrush
             }
 
             var path = GetSafeReferenceImageWritePath(filename);
-            File.WriteAllBytes(path, bytes);
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                // Commit before returning so an immediate API import reads the shared image.
+                // A private copy at this path would mask later shared-file edits or deletion.
+                WriteSafReferenceImage(UserStorage.Backend, filename, bytes);
+                ReferenceImageCatalog.m_Instance?.ForceCatalogScan();
+            }
+            else
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                File.WriteAllBytes(path, bytes);
+            }
             return path;
+        }
+
+        internal static void WriteSafReferenceImage(
+            IUserStorageBackend backend, string filename, byte[] bytes)
+        {
+            // BeginWrite resolves an existing filename as a replacement target and owns the
+            // temporary shared document, commit sequence, and interrupted-write recovery.
+            using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                StorageArea.MediaLibraryImages, filename, StorageMimeTypes.ForPath(filename), default))
+            {
+                using (Stream output = transaction.OpenWrite())
+                {
+                    output.Write(bytes, 0, bytes.Length);
+                }
+                StorageMutationResult result = transaction.Commit();
+                if (!result.Success)
+                {
+                    throw new IOException($"Could not save shared image '{filename}': {result.Error}");
+                }
+            }
         }
 
         private static string GetReferenceImageExtension(byte[] bytes)

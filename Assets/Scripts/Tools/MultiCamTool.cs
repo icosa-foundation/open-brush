@@ -385,8 +385,8 @@ namespace TiltBrush
         {
             m_SnapshotDirectory = App.SnapshotPath();
             m_VideoDirectory = App.VideosPath();
-            FileUtils.InitializeDirectoryWithUserError(m_SnapshotDirectory);
-            FileUtils.InitializeDirectoryWithUserError(m_VideoDirectory);
+            if (!OpenBrushStorage.IsScopedStorageMode) { FileUtils.InitializeDirectoryWithUserError(m_SnapshotDirectory); }
+            if (!OpenBrushStorage.IsScopedStorageMode) { FileUtils.InitializeDirectoryWithUserError(m_VideoDirectory); }
         }
 
         override public void HideTool(bool bHide)
@@ -609,25 +609,33 @@ namespace TiltBrush
 
         void ReportGifTaskDone()
         {
-            if (m_Task != null)
+            if (m_Task == null)
             {
-                string err = m_Task.Error;
-                if (err != null)
-                {
-                    OutputWindowScript.Error("Failed to save gif", err);
-                }
-                else
-                {
-                    OutputWindowScript.ReportFileSaved("Gif Written!", m_Task.GifName);
-                }
-                m_Task = null;
+                return;
             }
+            string path = m_Task.GifName;
+            string error = m_Task.Error;
+            m_Task = null;
 
+            FinishGifSave(path, error);
+        }
+
+        private void FinishGifSave(string path, string error)
+        {
             m_TimeGifCreationState = GifCreationState.Ready;
             m_AutoGifCreationState = GifCreationState.Ready;
 
             m_TimeGifCaptureTimer = 0.0f;
             SetTimeBar(m_TimeGifCaptureTimer);
+
+            if (error != null)
+            {
+                OutputWindowScript.Error("Failed to save gif", error);
+            }
+            else
+            {
+                OutputWindowScript.ReportFileSaved("Gif Written!", path);
+            }
         }
 
         void UpdateMultiCamTransform()
@@ -855,9 +863,12 @@ namespace TiltBrush
                             else if (m_CurrentVideoState == VideoState.Previewing)
                             {
                                 // Share or new
+                                bool sharing = false;
                                 if (InputManager.m_Instance.GetCommandHeld(InputManager.SketchCommands.Confirm))
                                 {
-                                    App.Instance.StartCoroutine(YouTube.m_Instance.ShareVideo(m_VideoCaptureFile));
+                                    sharing = true;
+                                    App.Instance.StartCoroutine(
+                                        YouTube.m_Instance.ShareVideo(m_VideoCaptureFile));
                                     m_UploadingIcon.SetActive(true);
                                     StartCoroutine(m_UploadIconBlinker = Blink(m_UploadingIcon, 0.5f));
                                 }
@@ -869,6 +880,10 @@ namespace TiltBrush
                                 {
                                     // No button confirmation yet.
                                     break;
+                                }
+
+                                if (!sharing)
+                                {
                                 }
 
                                 m_CurrentVideoState = VideoState.Ready;
@@ -1285,6 +1300,32 @@ namespace TiltBrush
             UpdateCameraVisualTransforms();
         }
 
+        private static readonly Dictionary<string, (string Format, string Root)> sm_AutoCaptureNames =
+            new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase);
+
+        private static string ReserveCaptureName(string format, MultiCamStyle style)
+        {
+            var backend = UserStorage.Backend;
+            var (area, relative) = OpenBrushStorage.GetGeneratedDestination(format);
+            string directory = Path.GetDirectoryName(format);
+            string name = OpenBrushStorage.ReserveCaptureName(backend, area,
+                Path.GetDirectoryName(relative)?.Replace('\\', '/') ?? "", Path.GetFileName(format),
+                candidate => IsFilenameInUse(Path.Combine(directory, candidate), style));
+            string path = Path.Combine(directory, name);
+            sm_AutoCaptureNames[path] = (format, backend.IsReady ? backend.RootIdentity : null);
+            return path;
+        }
+
+        private static string RevalidateCaptureName(string path, MultiCamStyle style)
+        {
+            if (OpenBrushStorage.IsScopedStorageMode && sm_AutoCaptureNames.TryGetValue(path, out var reservation) &&
+                reservation.Root != UserStorage.Backend.RootIdentity)
+            {
+                return ReserveCaptureName(reservation.Format, style);
+            }
+            return path;
+        }
+
         static public string GetSaveName(MultiCamStyle style)
         {
             string ext = "";
@@ -1334,6 +1375,8 @@ namespace TiltBrush
             {
                 basename = Path.Combine(m_SnapshotDirectory, basename);
             }
+
+            if (OpenBrushStorage.IsScopedStorageMode) { return ReserveCaptureName(basename, style); }
 
             string fullpath;
             int lower = 0;
@@ -1691,6 +1734,7 @@ namespace TiltBrush
 
         public void StartVideoCapture(string filePath, bool offlineRender = false)
         {
+            filePath = RevalidateCaptureName(filePath, MultiCamStyle.Video);
             if (!VideoRecorderUtils.StartVideoCapture(filePath,
                 GetVideoRecorder(m_CurrentCameraIndex),
                 SketchControlsScript.m_Instance.MultiCamCaptureRig.UsdPathSerializer,
@@ -1767,13 +1811,12 @@ namespace TiltBrush
                 && recorder.IsPlayingBack
                 && m_CurrentVideoState != VideoState.Capturing);
 
-            m_VideoSavingRoot.SetActive(recorder != null
-                && recorder.IsSaving
+            m_VideoSavingRoot.SetActive(IsVideoCaptureSaving(recorder)
                 && m_CurrentVideoState != VideoState.Capturing);
 
-            if (m_CurrentVideoState == VideoState.Processing && !recorder.IsSaving)
+            if (m_CurrentVideoState == VideoState.Processing && !IsVideoCaptureSaving(recorder))
             {
-                if (App.GoogleIdentity.LoggedIn)
+                if (!OpenBrushStorage.IsScopedStorageMode && App.GoogleIdentity.LoggedIn)
                 {
                     m_CurrentVideoState = VideoState.ReadyToShare;
                 }
@@ -1813,7 +1856,7 @@ namespace TiltBrush
                     }
 
                     // Disabled until sharing lands.
-                    if (recorder.IsSaving)
+                    if (IsVideoCaptureSaving(recorder))
                     {
                         m_VideoRecordAudioHeader.text = m_VideoSavingText;
                     }
@@ -1918,6 +1961,7 @@ namespace TiltBrush
             string saveName, MultiCamStyle style, HybridCamera odsCamera,
             Transform odsCaptureTransform, int widthOverride)
         {
+            saveName = RevalidateCaptureName(saveName, style);
             // There are multiple expensive bits here, the most expensive of which
             // is the png conversion. Eventually we might want to run that on some other
             // thread, but it'll require a 3rd party library to do the rgb32->png encode.
@@ -2062,11 +2106,9 @@ namespace TiltBrush
                     System.Object err = null;
                     try
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
-                        using (var fs = new FileStream(fullPath, FileMode.Create))
-                        {
-                            ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
-                        }
+                        if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(fullPath)); }
+                        OpenBrushStorage.WriteGeneratedFile(fullPath,
+                            output => ScreenshotManager.Save(output, tmp, bSaveAsPng: true));
                         if (style == MultiCamStyle.Depth)
                         {
                             var depthFiles = rMgr.EncodeDepthCapture(tmpDepth);
@@ -2107,6 +2149,18 @@ namespace TiltBrush
                     RenderTexture.ReleaseTemporary(tmp);
                 }
             }
+        }
+
+        private bool IsVideoCaptureSaving(VideoRecorder recorder)
+        {
+            if (recorder != null && recorder.IsSaving)
+            {
+                return true;
+            }
+
+            StillFrameSequenceExporter stillFrameExporter = GetVideoRecorder(m_CurrentCameraIndex)
+                ?.GetComponent<StillFrameSequenceExporter>();
+            return stillFrameExporter != null && stillFrameExporter.IsSaving;
         }
 
         //
@@ -2192,7 +2246,7 @@ namespace TiltBrush
             bool? previousCapturePostProcessingOverride = m_CapturePostProcessingOverride;
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(saveName));
+                if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(saveName)); }
                 rig.gameObject.SetActive(true);
                 rig.EnableCamera(true);
                 m_CapturePostProcessingOverride = includePostProcessing;
@@ -2233,7 +2287,7 @@ namespace TiltBrush
             bool? previousCapturePostProcessingOverride = m_CapturePostProcessingOverride;
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(saveName));
+                if (!OpenBrushStorage.IsScopedStorageMode) { Directory.CreateDirectory(Path.GetDirectoryName(saveName)); }
                 rig.gameObject.SetActive(true);
                 rig.EnableCamera(true);
                 m_CapturePostProcessingOverride = includePostProcessing;

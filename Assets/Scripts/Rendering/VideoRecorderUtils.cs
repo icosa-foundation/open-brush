@@ -182,7 +182,7 @@ namespace TiltBrush
             }
 
             // Don't start recording unless there is enough space left.
-            if (!FileUtils.InitializeDirectoryWithUserError(
+            if (!OpenBrushStorage.IsScopedStorageMode && !FileUtils.InitializeDirectoryWithUserError(
                 Path.GetDirectoryName(filePath),
                 "Failed to start video capture"))
             {
@@ -396,7 +396,12 @@ namespace TiltBrush
                         if (App.UserConfig.Video.SaveCameraPath && saveCapture)
                         {
                             m_UsdPathSerializer.Save();
-                            CreateOfflineRenderBatchFile(SaveLoadScript.m_Instance.SceneFile.FullPath, m_UsdPath);
+                            string sketchPath =
+                                SaveLoadScript.m_Instance.SceneFile.FullPath;
+                            if (!string.IsNullOrEmpty(sketchPath))
+                            {
+                                CreateOfflineRenderBatchFile(sketchPath, m_UsdPath);
+                            }
                         }
                     }
                 }

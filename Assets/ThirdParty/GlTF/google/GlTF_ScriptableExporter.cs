@@ -126,9 +126,10 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
 
   // Call this first, specifying output path in outPath, the glTF preset, and directory with
   // existing assets to be included, sourceDir.
-  public void BeginExport(string outPath) {
+  public void BeginExport(string outPath, Stream output = null,
+                          Action<TiltBrush.ExportFileReference, string> copyExportFile = null) {
     this.m_outPath = outPath;
-    G.OpenFiles(outPath);
+    G.OpenFiles(outPath, output, copyExportFile);
     NumTris = 0;
     ExportedFiles = new HashSet<string>();
   }
@@ -433,7 +434,7 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
         fileRef = CreateExportFileReferenceFromHttp(textureUri);
       } else {
         fileRef = ExportFileReference.GetOrCreateSafeLocal(
-            G.m_disambiguationContext, textureUri, exportableMaterial.UriBase,
+            G.m_disambiguationContext, exportableMaterial, textureUri,
             $"{meshNamespace}_{Path.GetFileName(textureUri)}");
       }
 

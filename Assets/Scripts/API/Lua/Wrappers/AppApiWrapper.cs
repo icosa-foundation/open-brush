@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections;
+using System.IO;
 using System;
 using MoonSharp.Interpreter;
 using ODS;
@@ -166,18 +167,27 @@ namespace TiltBrush
                 throw new ArgumentException($"Invalid plugin file path: {path}");
             }
 
-            string fullPath = Path.GetFullPath(Path.Join(LuaManager.Instance.UserPluginsPath(), path));
-            if (!_IsSubdirectory(fullPath, LuaManager.Instance.UserPluginsPath()))
+            string pluginsRoot = LuaManager.Instance.UserPluginsPath();
+            string fullPath = Path.GetFullPath(Path.Join(pluginsRoot, path));
+            if (!_IsSubdirectory(fullPath, pluginsRoot))
             {
                 throw new ArgumentException($"Invalid plugin file path: {path}");
             }
 
-            Stream fileStream = new FileStream(fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
-            string contents;
-            using (var sr = new StreamReader(fileStream)) contents = sr.ReadToEnd();
-            fileStream.Close();
-
-            return contents;
+            Stream fileStream = UserStorage.Backend.Kind ==
+                    StorageBackendKind.StorageAccessFramework
+                ? UserStorage.Backend.OpenRead(
+                    StorageArea.Plugins,
+                    Path.GetRelativePath(pluginsRoot, fullPath).Replace('\\', '/'),
+                    requireSeekable: false,
+                    System.Threading.CancellationToken.None)
+                : new FileStream(
+                    fullPath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite);
+            using (fileStream)
+            using (var reader = new StreamReader(fileStream))
+            {
+                return reader.ReadToEnd();
+            }
         }
 
         [LuaDocsDescription("Displays an error message on the back of the user's brush controller")]
@@ -329,7 +339,19 @@ namespace TiltBrush
             odsDriver.OdsCamera.SetOdsRendererType(HybridCamera.OdsRendererType.Slice);
             odsDriver.OdsCamera.gameObject.SetActive(true);
             odsDriver.OdsCamera.enabled = true;
-            AsyncCoroutineRunner.Instance.StartCoroutine(odsDriver.OdsCamera.Render(odsDriver.transform));
+            AsyncCoroutineRunner.Instance.StartCoroutine(Render360SnapshotAndSave(odsDriver, filename));
+        }
+
+        private static IEnumerator Render360SnapshotAndSave(OdsDriver odsDriver, string filename)
+        {
+            bool shared = OpenBrushStorage.IsScopedStorageMode;
+            yield return odsDriver.OdsCamera.Render(odsDriver.transform, saveImage: !shared);
+            if (shared)
+            {
+                string path = Path.Join(App.SnapshotPath(), $"{filename}_000000.png");
+                OpenBrushStorage.WriteGeneratedFile(path,
+                    output => ScreenshotManager.Save(output, odsDriver.OdsCamera.FinalImage, bSaveAsPng: true));
+            }
         }
 
         private static bool ResolveCapturePostProcessing(DynValue includePostProcessing)

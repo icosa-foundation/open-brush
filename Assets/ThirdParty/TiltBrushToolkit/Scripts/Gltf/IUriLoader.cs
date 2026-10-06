@@ -112,6 +112,8 @@ public class BufferedStreamLoader : IUriLoader {
   private string glbPath;
   private string uriBase;
   private int bufferSize;
+  private Func<Stream> openPrimary;
+  private Func<string, Stream> openSidecar;
 
   /// glbPath is the .gltf or .glb file being read; or null.
   public BufferedStreamLoader(string glbPath, string uriBase, int bufferSize=4096) {
@@ -120,13 +122,34 @@ public class BufferedStreamLoader : IUriLoader {
     this.bufferSize = bufferSize;
   }
 
+  /// Stream factories transfer ownership to the returned buffer reader. Streams must be seekable.
+  public BufferedStreamLoader(Func<Stream> openPrimary, Func<string, Stream> openSidecar,
+      int bufferSize=4096) {
+    this.openPrimary = openPrimary;
+    this.openSidecar = openSidecar;
+    this.bufferSize = bufferSize;
+  }
+
   public IBufferReader Load(string uri) {
     Stream stream;
     if (uri == null) {
-      var range = GlbParser.GetBinChunk(glbPath);
-      stream = new SubStream(File.OpenRead(glbPath), range.start, range.length);
+      if (openPrimary == null) {
+        var range = GlbParser.GetBinChunk(glbPath);
+        stream = new SubStream(File.OpenRead(glbPath), range.start, range.length);
+      } else {
+        stream = openPrimary();
+        try {
+          var range = GlbParser.GetBinChunk(stream);
+          stream = new SubStream(stream, range.start, range.length);
+        } catch {
+          stream.Dispose();
+          throw;
+        }
+      }
     } else {
-      stream = File.OpenRead(Path.Combine(uriBase, uri));
+      stream = openSidecar == null
+          ? File.OpenRead(Path.Combine(uriBase, uri))
+          : openSidecar(uri);
     }
     return new BufferedStreamReader(stream, bufferSize, stream.Length);
   }

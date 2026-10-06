@@ -66,7 +66,15 @@ public static class GlbParser {
 
   /// Throws GlbError on parse errors.
   public static Range GetJsonChunk(string glbPath) {
-    using (BinaryReader reader = new BinaryReader(File.OpenRead(glbPath))) {
+    using (var stream = File.OpenRead(glbPath)) {
+      return GetJsonChunk(stream);
+    }
+  }
+
+  /// Reads a seekable document from its beginning; leaves the stream open.
+  public static Range GetJsonChunk(Stream stream) {
+    stream.Position = 0;
+    using (var reader = new BinaryReader(stream, System.Text.Encoding.UTF8, leaveOpen: true)) {
       if (reader.ReadUInt32() != kFourCC_glTF) {
         Err("magic");
       }
@@ -91,18 +99,33 @@ public static class GlbParser {
 
   /// Throws GlbError on parse errors.
   public static string GetJsonChunkAsString(string glbPath) {
-    Range range = GetJsonChunk(glbPath);
     using (var stream = File.OpenRead(glbPath)) {
-      stream.Position = range.start;
-      byte[] buffer = new byte[range.length];
-      stream.Read(buffer, 0, buffer.Length);
+      return GetJsonChunkAsString(stream);
+    }
+  }
+
+  /// Reads a seekable document from its beginning; leaves the stream open.
+  public static string GetJsonChunkAsString(Stream stream) {
+    Range range = GetJsonChunk(stream);
+    stream.Position = range.start;
+    using (var reader = new BinaryReader(stream, System.Text.Encoding.UTF8, leaveOpen: true)) {
+      byte[] buffer = reader.ReadBytes(checked((int)range.length));
+      if (buffer.Length != range.length) { throw new EndOfStreamException(); }
       return System.Text.Encoding.UTF8.GetString(buffer);
     }
   }
 
   /// Throws GlbError on parse errors.
   public static Range GetBinChunk(string glbPath) {
-    using (BinaryReader reader = new BinaryReader(File.OpenRead(glbPath))) {
+    using (var stream = File.OpenRead(glbPath)) {
+      return GetBinChunk(stream);
+    }
+  }
+
+  /// Reads a seekable document from its beginning; leaves the stream open.
+  public static Range GetBinChunk(Stream stream) {
+    stream.Position = 0;
+    using (var reader = new BinaryReader(stream, System.Text.Encoding.UTF8, leaveOpen: true)) {
       if (reader.ReadUInt32() != kFourCC_glTF) {
         Err("magic");
       }
@@ -139,7 +162,15 @@ public static class GlbParser {
 
   // Returns null if this doesn't look like a glb
   public static uint? GetGlbVersion(string glbPath) {
-    using (BinaryReader reader = new BinaryReader(File.OpenRead(glbPath))) {
+    using (var stream = File.OpenRead(glbPath)) {
+      return GetGlbVersion(stream);
+    }
+  }
+
+  /// Reads a seekable document from its beginning; leaves the stream open.
+  public static uint? GetGlbVersion(Stream stream) {
+    stream.Position = 0;
+    using (var reader = new BinaryReader(stream, System.Text.Encoding.UTF8, leaveOpen: true)) {
       if (reader.ReadUInt32() != kFourCC_glTF) {
         return null;
       }

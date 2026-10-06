@@ -161,13 +161,29 @@ public static class ImportGltf {
 
     public GltfFileInfo(string path) {
       Path = path;
-      if (GlbParser.GetGlbVersion(path) is uint glbFormatVersion) {
+      using (var stream = File.OpenRead(path)) {
+        ReadDocument(stream);
+      }
+    }
+
+    /// Reads a seekable document; the caller retains ownership of the stream.
+    public GltfFileInfo(Stream stream) {
+      ReadDocument(stream);
+    }
+
+    private void ReadDocument(Stream stream) {
+      if (GlbParser.GetGlbVersion(stream) is uint glbFormatVersion) {
         IsGlb = true;
         Version = (glbFormatVersion == 1 ? GltfSchemaVersion.GLTF1 : GltfSchemaVersion.GLTF2);
-        Reader = new StringReader(GlbParser.GetJsonChunkAsString(path));
+        Reader = new StringReader(GlbParser.GetJsonChunkAsString(stream));
       } else {
         IsGlb = false;
-        string json = File.ReadAllText(path);
+        stream.Position = 0;
+        string json;
+        using (var reader = new StreamReader(stream, System.Text.Encoding.UTF8,
+            detectEncodingFromByteOrderMarks: true, bufferSize: 1024, leaveOpen: true)) {
+          json = reader.ReadToEnd();
+        }
         var gltf1Or2 = JsonConvert.DeserializeObject<Gltf1Or2>(json);
         var versionString = gltf1Or2?.asset?.version ?? "2";  // default to 2, I guess?
         Version = versionString.StartsWith("1") ? GltfSchemaVersion.GLTF1 : GltfSchemaVersion.GLTF2;
@@ -207,7 +223,19 @@ public static class ImportGltf {
       string gltfOrGlbPath, IUriLoader uriLoader,
       IImportMaterialCollector materialCollector,
       GltfImportOptions options) {
-    using (var state = BeginImport(gltfOrGlbPath, uriLoader, options)) {
+    return CompleteImport(BeginImport(gltfOrGlbPath, uriLoader, options), uriLoader, materialCollector);
+  }
+
+  /// Imports a seekable document; the caller retains ownership of the stream.
+  public static GltfImportResult Import(
+      Stream stream, IUriLoader uriLoader,
+      IImportMaterialCollector materialCollector, GltfImportOptions options) {
+    return CompleteImport(BeginImport(stream, uriLoader, options), uriLoader, materialCollector);
+  }
+
+  private static GltfImportResult CompleteImport(
+      ImportState state, IUriLoader uriLoader, IImportMaterialCollector materialCollector) {
+    using (state) {
       IEnumerable<Null> meshCreator;
       GltfImportResult result = EndImport(state, uriLoader, materialCollector, out meshCreator);
       foreach (var unused in meshCreator) {
@@ -287,10 +315,21 @@ public static class ImportGltf {
   /// <returns>An object which should be passed to <seealso cref="ImportGltf.EndImport"/> and then disposed</returns>
   public static ImportState BeginImport(
       string gltfOrGlbPath, IUriLoader uriLoader, GltfImportOptions options) {
+    return BeginImport(() => new GltfFileInfo(gltfOrGlbPath), uriLoader, options);
+  }
+
+  /// Begins importing a seekable document; the caller retains ownership of the stream.
+  public static ImportState BeginImport(
+      Stream stream, IUriLoader uriLoader, GltfImportOptions options) {
+    return BeginImport(() => new GltfFileInfo(stream), uriLoader, options);
+  }
+
+  private static ImportState BeginImport(
+      Func<GltfFileInfo> openDocument, IUriLoader uriLoader, GltfImportOptions options) {
     if (uriLoader == null) { throw new ArgumentNullException("uriLoader"); }
     SanityCheckImportOptions(options);
 
-    using (var info = new GltfFileInfo(gltfOrGlbPath))
+    using (var info = openDocument())
     using (var reader = new JsonTextReader(info.Reader)) {
       var root = DeserializeGltfRoot(info.Version, reader);
       if (root == null) { throw new NullReferenceException("root"); }

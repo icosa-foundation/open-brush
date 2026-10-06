@@ -26,6 +26,7 @@ namespace TiltBrush
 {
     internal class NewGltfImporter
     {
+        private static ShaderVariantCollection sm_SafShaderVariants;
 
         public sealed class ImportState : IDisposable
         {
@@ -70,9 +71,15 @@ namespace TiltBrush
             return sm_AsyncCoroutineHelper;
         }
 
-        private static GameObject _ImportUsingLegacyGltf(string localPath, string assetLocation)
+        internal static IUriLoader CreateSafLegacyLoader(
+            SafGltfDataLoader dataLoader, string fileName)
         {
-            var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
+            return new TiltBrushUriLoader(
+                () => dataLoader.LoadSeekableStream(fileName), dataLoader.LoadSeekableStream);
+        }
+
+        private static GameObject _ImportUsingLegacyGltf(string localPath, string assetLocation, Model model)
+        {
             var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
             var importOptions = new GltfImportOptions
             {
@@ -80,8 +87,48 @@ namespace TiltBrush
                 scaleFactor = App.METERS_TO_UNITS,
                 recenter = false
             };
-            ImportGltf.GltfImportResult result = ImportGltf.Import(localPath, loader, materialCollector, importOptions);
+            ImportGltf.GltfImportResult result;
+            if (TryGetStorageModelLocation(model, out StorageArea area, out string directory,
+                    out string fileName))
+            {
+                var dataLoader = new SafGltfDataLoader(area, directory);
+                var loader = CreateSafLegacyLoader(dataLoader, fileName);
+                using Stream primary = dataLoader.LoadSeekableStream(fileName);
+                result = ImportGltf.Import(primary, loader, materialCollector, importOptions);
+            }
+            else
+            {
+                var loader = new TiltBrushUriLoader(localPath, assetLocation, loadImages: false);
+                result = ImportGltf.Import(localPath, loader, materialCollector, importOptions);
+            }
             return result.root;
+        }
+
+        /// A model in the shared media library can be read without being copied out of it. Returns
+        /// false for every other source - Icosa downloads, bundled content, non-SAF platforms -
+        /// which keep the ordinary filesystem route.
+        internal static bool TryGetStorageModelLocation(
+            Model model, out StorageArea area, out string directory, out string fileName)
+        {
+            area = StorageArea.MediaLibraryModels;
+            directory = null;
+            fileName = null;
+            if (model == null ||
+                model.GetLocation().GetLocationType() != Model.Location.Type.LocalFile ||
+                UserStorage.Backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return false;
+            }
+            string relativePath = model.RelativePath;
+            if (string.IsNullOrEmpty(relativePath))
+            {
+                return false;
+            }
+            string normalized = relativePath.Replace('\\', '/').Trim('/');
+            int separator = normalized.LastIndexOf('/');
+            directory = separator < 0 ? string.Empty : normalized.Substring(0, separator);
+            fileName = separator < 0 ? normalized : normalized.Substring(separator + 1);
+            return !string.IsNullOrEmpty(fileName);
         }
 
         private static async Task _ImportUsingUnityGltf(
@@ -109,16 +156,48 @@ namespace TiltBrush
                 // See https://github.com/KhronosGroup/UnityGLTF/issues/805. FileLoader also implements
                 // IDataLoader2, letting the importer read the glTF JSON off the main thread when
                 // IsMultithreaded is set.
-                var fullPath = Uri.UnescapeDataString(localPath).Replace("\\", "/");
+                var fullPath = string.IsNullOrEmpty(localPath)
+                    ? null
+                    : Uri.UnescapeDataString(localPath).Replace("\\", "/");
                 // The importer's file name must be RELATIVE to the FileLoader root (the directory),
                 // not absolute. Passing the full path makes FileLoader concatenate root + absolute
                 // path into a doubled, invalid path (e.g. ".../id/C:/.../id/file.gltf2"), which fails
                 // File.Exists and spams "Invalid AssetDatabase path" before falling through.
-                options.DataLoader = new FileLoader(Path.GetDirectoryName(fullPath));
-                GLTFSceneImporter gltf = new GLTFSceneImporter(Path.GetFileName(fullPath), options);
+                // On a backend with no filesystem, resolve the glTF and its external references
+                // straight out of storage. UnityGLTF's loader contract is stream-based, so this
+                // needs no materialized copy - only a different IDataLoader.
+                string gltfFileName;
+                SafGltfDataLoader safDataLoader = null;
+                if (TryGetStorageModelLocation(model, out StorageArea area, out string directory,
+                        out string fileName))
+                {
+                    // Keep the included collection loaded for UnityGLTF's Shader.Find, even
+                    // across the startup/catalog calls to Resources.UnloadUnusedAssets.
+                    if (sm_SafShaderVariants == null)
+                    {
+                        sm_SafShaderVariants = Resources.Load<ShaderVariantCollection>(
+                            "UnityGLTF Shader Variants");
+                    }
+                    safDataLoader = new SafGltfDataLoader(area, directory);
+                    options.DataLoader = safDataLoader;
+                    gltfFileName = fileName;
+                }
+                else
+                {
+                    options.DataLoader = new FileLoader(Path.GetDirectoryName(fullPath));
+                    gltfFileName = Path.GetFileName(fullPath);
+                }
+                GLTFSceneImporter gltf = new GLTFSceneImporter(gltfFileName, options);
 
                 if (options.ImportContext.TryGetPlugin<UnityGLTF.Plugins.OpenBrushAudioImportContext>(out var audioPlugin))
-                    audioPlugin.GltfDirectory = Path.GetDirectoryName(localPath);
+                {
+                    audioPlugin.GltfDirectory = string.IsNullOrEmpty(localPath)
+                        ? null
+                        : Path.GetDirectoryName(localPath);
+                    audioPlugin.OpenSidecar = safDataLoader == null
+                        ? null
+                        : safDataLoader.LoadStream;
+                }
 
                 // Device builds only: GLTFSceneImporter hard-forces this false in the editor (to
                 // avoid a historical editor freeze), so editor imports stay single-threaded regardless.
@@ -157,9 +236,10 @@ namespace TiltBrush
             }
             catch (Exception e)
             {
-                Debug.LogError($"Failed to import using UnityGltf. Falling back to legacy import.\nUnityGltf Exception: {e}");
-                // Fall back to the older import code
-                GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
+                Debug.LogError(
+                    $"Failed to import using UnityGltf. Falling back to legacy import.\n" +
+                    $"UnityGltf Exception: {e}");
+                GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation, model);
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);
             }

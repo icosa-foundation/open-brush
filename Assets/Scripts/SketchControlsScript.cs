@@ -18,6 +18,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using TiltBrush.Layers;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -4144,7 +4145,18 @@ namespace TiltBrush
             for (int i = 0; i < SketchCatalog.m_Instance.GetSet(SketchSetType.User).NumSketches; ++i)
             {
                 SceneFileInfo rInfo = sketchSet.GetSketchSceneFileInfo(i);
-                using (var coroutine = LoadAndExport(rInfo.FullPath))
+                string loadPath = rInfo.FullPath;
+                if (rInfo is SafSceneFileInfo)
+                {
+                    // Bulk export reads each sketch through LoadAndExport, which opens a path.
+                    // Shared storage has none, and copying every sketch out to satisfy it is
+                    // exactly the behaviour this backend exists to avoid.
+                    Debug.LogWarning(
+                        $"SAF_EXPORT Bulk export is unsupported on shared storage: " +
+                        $"{rInfo.HumanName}");
+                    continue;
+                }
+                using (var coroutine = LoadAndExport(loadPath))
                 {
                     while (coroutine.MoveNext())
                     {
@@ -4260,6 +4272,10 @@ namespace TiltBrush
             string basename = (current.Valid)
                 ? Path.GetFileNameWithoutExtension(current.FullPath)
                 : "Untitled";
+            if (string.IsNullOrEmpty(basename))
+            {
+                basename = "Untitled";
+            }
             string directoryName = FileUtils.GenerateNonexistentFilename(
                 App.ModelLibraryPath(), basename, "");
 
@@ -4522,7 +4538,7 @@ namespace TiltBrush
                 // Keyboard command, for debugging and emergency use.
                 case GlobalCommands.Save:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        if (!FileUtils.CheckUserStorageSpaceWithError(App.UserSketchPath()))
                         {
                             return;
                         }
@@ -4560,7 +4576,7 @@ namespace TiltBrush
                     }
                 case GlobalCommands.SaveNew:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        if (!FileUtils.CheckUserStorageSpaceWithError(App.UserSketchPath()))
                         {
                             return;
                         }
@@ -4574,7 +4590,7 @@ namespace TiltBrush
                     }
                 case GlobalCommands.SaveAs:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        if (!FileUtils.CheckUserStorageSpaceWithError(App.UserSketchPath()))
                         {
                             return;
                         }
@@ -4588,7 +4604,7 @@ namespace TiltBrush
                     }
                 case GlobalCommands.SaveSelected:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.SavedStrokesPath()))
+                        if (!FileUtils.CheckUserStorageSpaceWithError(App.SavedStrokesPath()))
                         {
                             return;
                         }
@@ -4599,7 +4615,7 @@ namespace TiltBrush
                     }
                 case GlobalCommands.SaveAndUpload:
                     {
-                        if (!FileUtils.CheckDiskSpaceWithError(App.UserSketchPath()))
+                        if (!FileUtils.CheckUserStorageSpaceWithError(App.UserSketchPath()))
                         {
                             Debug.LogError("SaveAndUpload: Disk space error");
                             return;
@@ -5444,8 +5460,30 @@ namespace TiltBrush
 
         private void LoadNamed(string path, bool quickload, bool additive)
         {
-            var fileInfo = new DiskSceneFileInfo(path);
-            fileInfo.ReadMetadata();
+            SceneFileInfo fileInfo;
+            try
+            {
+                fileInfo = ResolveNamedSceneFile(UserStorage.Backend, path);
+            }
+            catch (IOException e)
+            {
+                OutputWindowScript.Error("Failed to load sketch", e.Message);
+                return;
+            }
+            LoadSketchWithMetadata(fileInfo, quickload, additive);
+        }
+
+        internal void LoadSketchWithMetadata(
+            SceneFileInfo fileInfo, bool quickload = false, bool additive = false)
+        {
+            if (fileInfo is SafSceneFileInfo safFileInfo)
+            {
+                safFileInfo.ReadMetadata();
+            }
+            else
+            {
+                ((DiskSceneFileInfo)fileInfo).ReadMetadata();
+            }
             if (SaveLoadScript.m_Instance.LastMetadataError != null)
             {
                 ControllerConsoleScript.m_Instance.AddNewLine(
@@ -5466,6 +5504,32 @@ namespace TiltBrush
             {
                 EatGazeObjectInput();
             }
+        }
+
+        internal static SceneFileInfo ResolveNamedSceneFile(
+            IUserStorageBackend backend, string path)
+        {
+            if (backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return new DiskSceneFileInfo(path);
+            }
+
+            string displayName = Path.GetFileName(path);
+            StorageDirectoryResult listing = backend.List(
+                StorageArea.Sketches, "", CancellationToken.None);
+            if (!listing.Success)
+            {
+                throw new IOException(listing.Error);
+            }
+            StorageDocument document = listing.Documents.FirstOrDefault(candidate =>
+                string.Equals(
+                    candidate.DisplayName, displayName, StringComparison.OrdinalIgnoreCase));
+            if (document == null)
+            {
+                throw new FileNotFoundException(
+                    $"Sketch '{displayName}' was not found in shared storage.");
+            }
+            return new SafSceneFileInfo(backend, document);
         }
 
         public void OpenURLAndInformUser(string url)
@@ -5845,9 +5909,21 @@ namespace TiltBrush
                     cam.targetTexture = renderTexture;
                     cam.Render();
                     byte[] jpegBytes = ScreenshotManager.SaveToMemory(renderTexture, bSaveAsPng: false);
-                    string filename =
-                        Path.GetFileNameWithoutExtension(SaveLoadScript.m_Instance.SceneFile.FullPath);
-                    File.WriteAllBytes(Path.Combine(App.UserPath(), filename + ".jpg"), jpegBytes);
+                    SceneFileInfo sceneFile =
+                        SaveLoadScript.m_Instance.SceneFile;
+                    string filename = sceneFile is SafSceneFileInfo
+                        ? FileUtils.GetValidFilename(sceneFile.HumanName)
+                        : Path.GetFileNameWithoutExtension(sceneFile.FullPath);
+                    string screenshotName = $"{filename}.jpg";
+                    if (OpenBrushStorage.IsScopedStorageMode)
+                    {
+                        OpenBrushStorage.WriteSharedFile(UserStorage.Backend, StorageArea.UserRoot,
+                            screenshotName, output => output.Write(jpegBytes, 0, jpegBytes.Length));
+                    }
+                    else
+                    {
+                        File.WriteAllBytes(Path.Combine(App.UserPath(), screenshotName), jpegBytes);
+                    }
                 }
                 finally
                 {

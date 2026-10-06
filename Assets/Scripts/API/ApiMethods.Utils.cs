@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -223,38 +223,18 @@ namespace TiltBrush
             return WidgetManager.m_Instance.GetNthActiveCameraPath(index);
         }
 
-        private static string _DownloadMediaFileFromUrl(string url, string relativeDestinationFolder)
-        {
-            return _DownloadMediaFileFromUrl(url, relativeDestinationFolder, allowRedirects: true);
-        }
-
         private static string _DownloadMediaFileFromUrl(
             string url,
             string relativeDestinationFolder,
             bool allowRedirects,
             string requiredContentTypePrefix = null)
         {
-            return _DownloadMediaFileFromUrl(
-                new Uri(url), relativeDestinationFolder, allowRedirects,
-                requiredContentTypePrefix);
-        }
-
-        private static string _DownloadMediaFileFromUrl(Uri url, string relativeDestinationFolder)
-        {
-            return _DownloadMediaFileFromUrl(url, relativeDestinationFolder, allowRedirects: true);
-        }
-
-        private static string _DownloadMediaFileFromUrl(
-            Uri url,
-            string relativeDestinationFolder,
-            bool allowRedirects,
-            string requiredContentTypePrefix = null)
-        {
+            var uri = new Uri(url);
             string absoluteDestinationPath = GetSafeRelativePathInDirectory(
                 App.MediaLibraryPath(), relativeDestinationFolder,
                 "media destination folder", allowBaseDirectory: true);
             return _DownloadMediaFileFromUrlToDirectory(
-                url, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix);
+                uri, absoluteDestinationPath, allowRedirects, requiredContentTypePrefix);
         }
 
         private static string _DownloadMediaFileFromUrlToDirectory(
@@ -273,6 +253,34 @@ namespace TiltBrush
 
             var contentDisposition = response.Headers["Content-Disposition"];
             string filename = GetSafeDownloadFilename(url, contentDisposition);
+
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                if (!IsSupportedMediaDownload(filename)) { return null; }
+
+                // Keep the unique logical name, but stream directly into a shared transaction.
+                // Commit before returning: images, skyboxes, models, and video playback all read
+                // the shared file, with no private media copy to shadow subsequent edits.
+                string relativePath = $"import-{Guid.NewGuid():N}/{filename}";
+                string logicalPath = GetSafeRelativePathInDirectory(
+                    absoluteDestinationPath, relativePath, "download path");
+                if (!OpenBrushStorage.TryGetSharedMediaLibraryRelativePath(logicalPath, out string downloadSharedPath) ||
+                    !OpenBrushStorage.TryResolveStorageDestination(downloadSharedPath, out StorageArea downloadArea,
+                        out string downloadRelativePath))
+                {
+                    throw new IOException("The API media destination is outside shared storage.");
+                }
+
+                var downloadRequest = System.Net.WebRequest.CreateHttp(url);
+                downloadRequest.UserAgent = ApiManager.WebRequestUserAgent;
+                downloadRequest.AllowAutoRedirect = allowRedirects;
+                using var downloadResponse = (HttpWebResponse)downloadRequest.GetResponse();
+                ThrowIfRedirectDisallowed(downloadResponse, allowRedirects);
+                ThrowIfContentTypeDisallowed(downloadResponse.ContentType, requiredContentTypePrefix);
+                using Stream input = downloadResponse.GetResponseStream();
+                WriteSafMediaDownload(UserStorage.Backend, downloadArea, downloadRelativePath, input);
+                return relativePath;
+            }
 
             if (!Directory.Exists(absoluteDestinationPath))
             {
@@ -295,11 +303,7 @@ namespace TiltBrush
             }
 
             // TODO - make this smarter
-            if (ReferenceImageFormat.IsSupportedFile(filename) ||
-                filename.ToLower().EndsWith(".mp4") ||
-                filename.ToLower().EndsWith(".obj") || filename.ToLower().EndsWith(".off") ||
-                filename.ToLower().EndsWith(".gltf") || filename.ToLower().EndsWith(".glb") ||
-                filename.ToLower().EndsWith(".usd") || filename.ToLower().EndsWith(".fbx"))
+            if (IsSupportedMediaDownload(filename))
             {
 
                 if (allowRedirects)
@@ -321,9 +325,76 @@ namespace TiltBrush
                     using var output = new FileStream(fullDestinationPath, FileMode.CreateNew);
                     input.CopyTo(output);
                 }
-                return uniqueFilename;
+                return Path.GetRelativePath(absoluteDestinationPath, fullDestinationPath);
             }
             return null;
+        }
+
+        private static bool IsSupportedMediaDownload(string filename)
+        {
+            return ReferenceImageFormat.IsSupportedFile(filename) ||
+                filename.ToLower().EndsWith(".mp4") ||
+                filename.ToLower().EndsWith(".obj") || filename.ToLower().EndsWith(".off") ||
+                filename.ToLower().EndsWith(".gltf") || filename.ToLower().EndsWith(".glb") ||
+                filename.ToLower().EndsWith(".usd") || filename.ToLower().EndsWith(".fbx");
+        }
+
+        internal static void WriteSafMediaDownload(
+            IUserStorageBackend backend, StorageArea area, string relativePath, Stream input)
+        {
+            using (IStorageWriteTransaction transaction = backend.BeginWrite(
+                area, relativePath, StorageMimeTypes.ForPath(relativePath), default))
+            {
+                using (Stream output = transaction.OpenWrite())
+                {
+                    input.CopyTo(output);
+                }
+                StorageMutationResult result = transaction.Commit();
+                if (!result.Success)
+                {
+                    throw new IOException($"Could not save shared media '{relativePath}': {result.Error}");
+                }
+            }
+        }
+
+        internal static ReferenceImage ResolveApiImage(string fullPath)
+        {
+            var backend = UserStorage.Backend;
+            if (backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return new ReferenceImage(fullPath);
+            }
+            string relative = Path.GetRelativePath(App.ReferenceImagePath(), fullPath).Replace('\\', '/');
+            var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryImages, relative);
+            return new ReferenceImage(relative, source.Identity, source.OpenRead,
+                source.Document.Size, $"./{relative}", source.HasVerifiableRevision);
+        }
+
+        internal static ReferenceVideo ResolveApiVideo(string fullPath)
+        {
+            var backend = UserStorage.Backend;
+            if (backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return new ReferenceVideo(fullPath);
+            }
+            string relative = Path.GetRelativePath(App.VideoLibraryPath(), fullPath).Replace('\\', '/');
+            var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryVideos, relative);
+            return new ReferenceVideo(
+                relative, source.Identity, relative,
+                mediaUrl: () => SafMediaHttpServer.GetUrl(StorageArea.MediaLibraryVideos, relative),
+                openNetworkPointer: source.OpenRead);
+        }
+
+        internal static Model ResolveApiModel(string relativePath)
+        {
+            var backend = UserStorage.Backend;
+            string fullPath = GetSafeRelativePathInDirectory(App.ModelLibraryPath(), relativePath, "model path");
+            if (File.Exists(fullPath) || backend.Kind != StorageBackendKind.StorageAccessFramework)
+            {
+                return new Model(relativePath);
+            }
+            var source = new OpenBrushStorage.MediaSource(backend, StorageArea.MediaLibraryModels, relativePath);
+            return Model.ForLibraryFile(relativePath, source.Identity);
         }
 
         internal static string GetSafeDownloadFilename(Uri url, string contentDisposition)

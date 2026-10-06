@@ -89,6 +89,14 @@ namespace TiltBrush
             LastLoadedBackgroundColor = null;
             LastLoaded360SkyboxName = null;
 
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                // Both readers still require filesystem paths. Re-enable this entry point only
+                // after they can consume shared streams and extract media directly to shared storage.
+                Debug.LogWarning("[Quill] Quill import is not yet available in this Android build.");
+                return;
+            }
+
             string kind;
             SQ.Sequence sequence = null;
             if (Directory.Exists(path))

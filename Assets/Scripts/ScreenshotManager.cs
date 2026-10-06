@@ -749,11 +749,23 @@ namespace TiltBrush
 
         public static void SaveDepthCaptureFiles(string imagePath, DepthCaptureFiles files)
         {
+            string[] paths = GetDepthCaptureFilePaths(imagePath);
+            OpenBrushStorage.WriteGeneratedBytes(paths[0], files.normalizedDepthPng);
+            OpenBrushStorage.WriteGeneratedBytes(paths[1], files.linearDepth16Png);
+            OpenBrushStorage.WriteGeneratedBytes(paths[2], files.linearDepthExr);
+            OpenBrushStorage.WriteGeneratedBytes(paths[3], files.metadataJson);
+        }
+
+        public static string[] GetDepthCaptureFilePaths(string imagePath)
+        {
             string captureBasePath = GetCaptureBasePath(imagePath);
-            File.WriteAllBytes($"{captureBasePath}_depth.png", files.normalizedDepthPng);
-            File.WriteAllBytes($"{captureBasePath}_depth16.png", files.linearDepth16Png);
-            File.WriteAllBytes($"{captureBasePath}_depth.exr", files.linearDepthExr);
-            File.WriteAllBytes($"{captureBasePath}_depth.json", files.metadataJson);
+            return new[]
+            {
+                $"{captureBasePath}_depth.png",
+                $"{captureBasePath}_depth16.png",
+                $"{captureBasePath}_depth.exr",
+                $"{captureBasePath}_depth.json",
+            };
         }
 
         private static string GetCaptureBasePath(string imagePath)
@@ -1195,10 +1207,7 @@ namespace TiltBrush
                         {
                             rMgr.RenderDepthNormalToTexture(tmp);
                             var normalPath = $"{GetCaptureBasePath(path)}_normals.png";
-                            using (var fs = new FileStream(normalPath, FileMode.Create))
-                            {
-                                SaveNormals(fs, tmp);
-                            }
+                            OpenBrushStorage.WriteGeneratedFile(normalPath, output => SaveNormals(output, tmp));
                         }
                     }
                     finally
@@ -1212,10 +1221,8 @@ namespace TiltBrush
                         tmp,
                         removeBackground: removeBackground,
                         includePostProcessing: includePostProcessing);
-                    using (var fs = new FileStream(path, FileMode.Create))
-                    {
-                        Save(fs, tmp, bSaveAsPng: saveAsPng, preserveAlpha: removeBackground);
-                    }
+                    OpenBrushStorage.WriteGeneratedFile(path,
+                        output => Save(output, tmp, bSaveAsPng: saveAsPng, preserveAlpha: removeBackground));
 
                 }
                 finally

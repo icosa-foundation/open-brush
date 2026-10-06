@@ -178,30 +178,10 @@ namespace TiltBrush
             }
             else
             {
-                File.WriteAllText(writeFileName, string.Join("\n", s.ToArray()));
+                OpenBrushStorage.WriteGeneratedText(writeFileName, string.Join("\n", s.ToArray()));
             }
 
             Debug.Log("*** Wrote " + writeFileName);
-        }
-
-        private static JSONNode getJsonFromZip(byte[] bytes)
-        {
-            MemoryStream fileStream = new MemoryStream(bytes, 0, bytes.Length);
-            ZipFile zipFile = new ZipFile(fileStream);
-
-            foreach (ZipEntry entry in zipFile)
-            {
-                if (Path.GetExtension(entry.Name).ToLower() == ".json")
-                {
-                    Stream zippedStream = zipFile.GetInputStream(entry);
-                    StreamReader read = new StreamReader(zippedStream, true);
-                    string json = read.ReadToEnd();
-                    Debug.Log(json);
-                    return JSON.Parse(json);
-                }
-            }
-
-            return null;
         }
 
         private static void saveJsonAsZip(string fileName, string s)
@@ -231,6 +211,15 @@ namespace TiltBrush
             zipStream.Close();          // Must finish the ZipOutputStream before using outputMemStream.
 
             outputMemStream.Position = 0;
+
+            if (OpenBrushStorage.IsScopedStorageMode)
+            {
+                using (outputMemStream)
+                {
+                    OpenBrushStorage.WriteGeneratedFile(fileName, output => outputMemStream.CopyTo(output));
+                }
+                return;
+            }
 
             using (FileStream file = new FileStream(fileName, FileMode.Create, System.IO.FileAccess.Write))
             {

@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.IO;
 using TiltBrushToolkit;
 using UnityEngine;
@@ -33,6 +34,12 @@ namespace TiltBrush
             m_loadImages = loadImages;
             m_uriBase = uriBase;
             m_delegate = new BufferedStreamLoader(glbPath, uriBase);
+        }
+
+        /// Stream-backed legacy imports load textures through IBufferReader on the main thread.
+        public TiltBrushUriLoader(Func<Stream> openPrimary, Func<string, Stream> openSidecar)
+        {
+            m_delegate = new BufferedStreamLoader(openPrimary, openSidecar);
         }
 
         public IBufferReader Load(string uri)
