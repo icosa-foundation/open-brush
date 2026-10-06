@@ -26,6 +26,7 @@ namespace TiltBrush
 {
     internal class NewGltfImporter
     {
+        private static ShaderVariantCollection sm_SafShaderVariants;
 
         public sealed class ImportState : IDisposable
         {
@@ -151,6 +152,13 @@ namespace TiltBrush
                 if (TryGetStorageModelLocation(model, out StorageArea area, out string directory,
                         out string fileName))
                 {
+                    // Keep the included collection loaded for UnityGLTF's Shader.Find, even
+                    // across the startup/catalog calls to Resources.UnloadUnusedAssets.
+                    if (sm_SafShaderVariants == null)
+                    {
+                        sm_SafShaderVariants = Resources.Load<ShaderVariantCollection>(
+                            "UnityGLTF Shader Variants");
+                    }
                     safDataLoader = new SafGltfDataLoader(area, directory);
                     options.DataLoader = safDataLoader;
                     gltfFileName = fileName;
