@@ -71,13 +71,27 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("symmetry.type",
-        description: "Sets the custom symmetry type: point, wallpaper or helical",
+        description: "Sets the custom symmetry type: point, wallpaper, helical or spacegroup",
         exampleUsage: "wallpaper")]
         public static void CustomSymmetryType(string type)
         {
             Enum.TryParse(type, ignoreCase: true, out PointerManager.CustomSymmetryType _type);
             PointerManager.m_Instance.m_CustomSymmetryType = _type;
             PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        [ApiEndpoint("symmetry.spacegroup",
+        description: "Enables a space group (1–230), XYZ cell repeats, and cell size in canvas units",
+        exampleUsage: "19,2,2,2,1")]
+        public static void SpaceGroupSymmetry(int number, int x, int y, int z, float cellSize)
+        {
+            var pm = PointerManager.m_Instance;
+            pm.m_SpaceGroupNumber = Mathf.Clamp(number, 1, 230);
+            pm.m_SpaceGroupRepeats = new Vector3Int(Mathf.Max(1, x), Mathf.Max(1, y), Mathf.Max(1, z));
+            pm.m_SpaceGroupCellSize = Mathf.Max(0.01f, cellSize);
+            pm.m_CustomSymmetryType = PointerManager.CustomSymmetryType.SpaceGroup;
+            pm.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+            pm.CalculateMirrors();
         }
 
         [ApiEndpoint("symmetry.helical",

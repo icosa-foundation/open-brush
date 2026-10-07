@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -17,6 +17,9 @@ namespace TiltBrush
 
         private SymmetryPointType _PointType;
         private int _PointOrder;
+        private int _SpaceGroupNumber = 19;
+        private Vector3Int _SpaceGroupRepeats = new Vector3Int(2, 2, 2);
+        private float _SpaceGroupCellSize = 1f;
         private int _HelicalCopies = 8;
         private float _HelicalAngle = 30f;
         private float _HelicalAdvance = 0.5f;
@@ -48,6 +51,13 @@ namespace TiltBrush
                             _Mode = SymmetryMode.Point;
                             _PointType = (SymmetryPointType)PointerManager.m_Instance.m_PointSymmetryFamily;
                             _PointOrder = PointerManager.m_Instance.m_PointSymmetryOrder;
+                        }
+                        else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.SpaceGroup)
+                        {
+                            _Mode = SymmetryMode.SpaceGroup;
+                            _SpaceGroupNumber = PointerManager.m_Instance.m_SpaceGroupNumber;
+                            _SpaceGroupRepeats = PointerManager.m_Instance.m_SpaceGroupRepeats;
+                            _SpaceGroupCellSize = PointerManager.m_Instance.m_SpaceGroupCellSize;
                         }
                         else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Helical)
                         {
@@ -183,6 +193,9 @@ namespace TiltBrush
 
                 _PointType = _PointType,
                 _PointOrder = _PointOrder,
+                _SpaceGroupNumber = _SpaceGroupNumber,
+                _SpaceGroupRepeats = _SpaceGroupRepeats,
+                _SpaceGroupCellSize = _SpaceGroupCellSize,
                 _HelicalCopies = _HelicalCopies,
                 _HelicalAngle = _HelicalAngle,
                 _HelicalAdvance = _HelicalAdvance,
@@ -220,6 +233,11 @@ namespace TiltBrush
                             break;
                         case SymmetryMode.TwoHanded:
                             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.TwoHanded);
+                            break;
+                        case SymmetryMode.SpaceGroup:
+                            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.SpaceGroup;
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                            PointerManager.m_Instance.CalculateMirrors();
                             break;
                         case SymmetryMode.Helical:
                             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Helical;
@@ -440,6 +458,81 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Space group number (1–230)")]
+        public int spaceGroup
+        {
+            get => _SpaceGroupNumber;
+            set
+            {
+                _SpaceGroupNumber = Mathf.Clamp(value, 1, 230);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_SpaceGroupNumber = _SpaceGroupNumber;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Cell repeats along X")]
+        public int spaceRepeatX
+        {
+            get => _SpaceGroupRepeats.x;
+            set
+            {
+                _SpaceGroupRepeats.x = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_SpaceGroupRepeats = _SpaceGroupRepeats;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Cell repeats along Y")]
+        public int spaceRepeatY
+        {
+            get => _SpaceGroupRepeats.y;
+            set
+            {
+                _SpaceGroupRepeats.y = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_SpaceGroupRepeats = _SpaceGroupRepeats;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Cell repeats along Z")]
+        public int spaceRepeatZ
+        {
+            get => _SpaceGroupRepeats.z;
+            set
+            {
+                _SpaceGroupRepeats.z = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_SpaceGroupRepeats = _SpaceGroupRepeats;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Space group cell size in canvas units")]
+        public float spaceCellSize
+        {
+            get => _SpaceGroupCellSize;
+            set
+            {
+                _SpaceGroupCellSize = Mathf.Max(0.01f, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_SpaceGroupCellSize = _SpaceGroupCellSize;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
         [LuaDocsDescription("Number of helical copies, including the original placement")]
         public int helicalCopies
         {
@@ -502,6 +595,13 @@ namespace TiltBrush
                     break;
                 case SymmetryMode.TwoHanded:
                     newMode = PointerManager.SymmetryMode.TwoHanded;
+                    break;
+                case SymmetryMode.SpaceGroup:
+                    newMode = PointerManager.SymmetryMode.MultiMirror;
+                    PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.SpaceGroup;
+                    PointerManager.m_Instance.m_SpaceGroupNumber = settings._SpaceGroupNumber;
+                    PointerManager.m_Instance.m_SpaceGroupRepeats = settings._SpaceGroupRepeats;
+                    PointerManager.m_Instance.m_SpaceGroupCellSize = settings._SpaceGroupCellSize;
                     break;
                 case SymmetryMode.Helical:
                     newMode = PointerManager.SymmetryMode.MultiMirror;

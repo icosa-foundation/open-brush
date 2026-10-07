@@ -14,7 +14,8 @@ namespace TiltBrush
         TwoHanded,
         Point,
         Wallpaper,
-        Helical
+        Helical,
+        SpaceGroup
     }
 
     [LuaDocsDescription("The list of valid point symmetry types")]
