@@ -1833,19 +1833,7 @@ namespace TiltBrush
 
         public void CalculateMirrorPointers()
         {
-            m_NumActivePointers = m_CustomMirrorMatrices.Count;
-            for (int i = 1; i < m_Pointers.Length; ++i)
-            {
-                var pointer = m_Pointers[i];
-                bool enabled = i < m_NumActivePointers;
-                pointer.m_UiEnabled = enabled;
-                pointer.m_Script.gameObject.SetActive(enabled);
-                pointer.m_Script.EnableRendering(m_PointersRenderingActive && enabled);
-                if (enabled)
-                {
-                    pointer.m_Script.CopyInternals(m_Pointers[0].m_Script);
-                }
-            }
+            ChangeNumActivePointers(m_CustomMirrorMatrices.Count);
         }
 
         void UpdateSymmetryPointerTransforms()
@@ -1878,7 +1866,7 @@ namespace TiltBrush
 
                         var xfCenter = MultiMirrorCenter();
 
-                        for (int i = 0; i < m_CustomMirrorMatrices.Count; i++)
+                        for (int i = 0; i < m_NumActivePointers; i++)
                         {
                             (TrTransform, TrTransform) trAndFix = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[i]);
                             tr = xfCenter * trAndFix.Item1 * xfCenter.inverse; // convert from widget-local coords to world coords
