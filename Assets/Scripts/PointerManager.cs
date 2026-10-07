@@ -266,6 +266,7 @@ namespace TiltBrush
         private List<Color> m_SymmetryPointerColors;
         private List<BrushDescriptor> m_SymmetryPointerBrushes;
         private Vector2[] m_CustomMirrorDomain;
+        public Matrix4x4 SpaceGroupCellBasis { get; private set; }
 
         // ---- events
 
@@ -1768,8 +1769,10 @@ namespace TiltBrush
             switch (m_CustomSymmetryType)
             {
                 case CustomSymmetryType.SpaceGroup:
-                    m_CustomMirrorMatrices = new SpaceGroupSymmetry(m_SpaceGroupNumber,
-                        m_SpaceGroupRepeats, m_SpaceGroupCellSize).matrices;
+                    var spaceGroup = new SpaceGroupSymmetry(m_SpaceGroupNumber,
+                        m_SpaceGroupRepeats, m_SpaceGroupCellSize);
+                    m_CustomMirrorMatrices = spaceGroup.matrices;
+                    SpaceGroupCellBasis = spaceGroup.cellBasis;
                     break;
                 case CustomSymmetryType.Wallpaper:
                     var wallpaperSym = new WallpaperSymmetry(
