@@ -1757,9 +1757,8 @@ namespace TiltBrush
         {
             var center = TrTransform.FromTransform(m_SymmetryLockedToController
                 ? MainPointer.transform : SymmetryWidget.GrabTransform_GS);
-            // Pattern distances are measured in canvas units, independent of the widget's size.
-            if (m_CustomSymmetryType == CustomSymmetryType.Helical ||
-                m_CustomSymmetryType == CustomSymmetryType.SpaceGroup) { center.scale = 1f; }
+            // Helical advance is independent of widget size. Lattices scale with the widget.
+            if (m_CustomSymmetryType == CustomSymmetryType.Helical) { center.scale = 1f; }
             return center;
         }
 
@@ -1924,7 +1923,8 @@ namespace TiltBrush
         public float GetCustomMirrorScale()
         {
             float canvasScale = App.ActiveCanvas.Pose.scale;
-            return canvasScale * (m_CustomSymmetryType == CustomSymmetryType.Helical ? 1f : m_WallpaperSymmetryScale);
+            return canvasScale * (m_CustomSymmetryType == CustomSymmetryType.Helical ||
+                m_CustomSymmetryType == CustomSymmetryType.SpaceGroup ? 1f : m_WallpaperSymmetryScale);
         }
 
         public TrTransform TrFromMatrix(Matrix4x4 m)
@@ -2438,8 +2438,17 @@ namespace TiltBrush
 
                     var xfCenter = MultiMirrorCenter();
 
-                    var appScale = TrTransform.S(m_CustomSymmetryType == CustomSymmetryType.Helical ||
-                        m_CustomSymmetryType == CustomSymmetryType.SpaceGroup
+                    if (m_CustomSymmetryType == CustomSymmetryType.SpaceGroup)
+                    {
+                        // Use the same translation scale as live pointers. Widget scale changes
+                        // the lattice spacing; it does not resize each copy's content.
+                        foreach (var m in CustomMirrorMatrices)
+                        {
+                            xfSymmetriesGS.Add(xfCenter * TrFromMatrix(m) * xfCenter.inverse);
+                        }
+                        break;
+                    }
+                    var appScale = TrTransform.S(m_CustomSymmetryType == CustomSymmetryType.Helical
                         ? App.ActiveCanvas.Pose.scale : App.Scene.Pose.scale);
                     var pre = xfCenter * appScale;
                     foreach (var m in CustomMirrorMatrices)
