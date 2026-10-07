@@ -251,6 +251,7 @@ namespace TiltBrush
             {
                 if (peer == source || !SymmetryWidgetGroup.TryGetPeerTransform(source, peer, out var toPeer)) { continue; }
                 var copy = peer.Clone();
+                copy.SetCanvas(peer.Canvas);
                 copy.LocalTransform = toPeer * joined.inverse * toPeer.inverse * copy.LocalTransform;
                 copy.SetSymmetryGroup(group, peer.SymmetryPointerIndex);
                 m_DuplicatedWidgetPeers.Add(copy);

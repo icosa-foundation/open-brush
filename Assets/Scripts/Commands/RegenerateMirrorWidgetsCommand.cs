@@ -97,6 +97,7 @@ namespace TiltBrush
                 {
                     if (byIndex.ContainsKey(i)) { continue; }
                     var copy = source.Clone();
+                    copy.SetCanvas(group.Mirror.Canvas);
                     var state = WidgetPlacement.Capture(copy);
                     state.Transform = after.PointerTransforms[i] * canonical;
                     state.Restore(copy);
