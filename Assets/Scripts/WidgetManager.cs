@@ -1841,6 +1841,7 @@ namespace TiltBrush
         public bool CreatingMediaWidgets =>
             m_LoadingMedia ||
             m_loadingTiltModels75 != null ||
+            m_loadingTiltLights != null ||
             m_loadingTiltImages75 != null ||
             m_loadingTiltVideos != null;
 

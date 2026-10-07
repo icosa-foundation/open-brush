@@ -168,6 +168,7 @@ namespace TiltBrush
                 {
                     Transform = widget.SaveTransform,
                     Text = widget.Text,
+                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
                     FillColor = widget.TextColor,
                     Pinned = widget.Pinned,
                     GroupId = groupIdMapping.GetId(widget.Group),
