@@ -23,6 +23,11 @@ namespace TiltBrush
         public TextActionButton m_ButtonShowPointControls;
         public TextActionButton m_ButtonShowWallpaperControls;
         public TextActionButton m_ButtonShowOptionsControls;
+        public TextActionButton m_ButtonShowHelicalControls;
+        public GameObject m_HelicalControls;
+        public AdvancedSlider m_HelicalCopiesSlider;
+        public AdvancedSlider m_HelicalAngleSlider;
+        public AdvancedSlider m_HelicalAdvanceSlider;
 
         public GameObject m_PointSymmetryControls;
         public GameObject m_WallpaperSymmetryControls;
@@ -71,6 +76,15 @@ namespace TiltBrush
         {
             base.Init(rParent, sText);
 
+            if (m_LastActiveTab != 2)
+            {
+                switch (PointerManager.m_Instance.m_CustomSymmetryType)
+                {
+                    case PointerManager.CustomSymmetryType.Helical: m_LastActiveTab = 3; break;
+                    case PointerManager.CustomSymmetryType.Wallpaper: m_LastActiveTab = 1; break;
+                    default: m_LastActiveTab = 0; break;
+                }
+            }
             switch (m_LastActiveTab)
             {
                 case 0:
@@ -82,9 +96,15 @@ namespace TiltBrush
                 case 2:
                     HandleShowOptions();
                     break;
+                case 3:
+                    HandleShowHelicalSymmetry();
+                    break;
             }
             SetCurrentMirrorTypeButtonState(true);
 
+            m_HelicalCopiesSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalCopies);
+            m_HelicalAngleSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalAngle);
+            m_HelicalAdvanceSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalAdvance);
             m_PointSymmetryOrderSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_PointSymmetryOrder);
             m_WallpaperScaleSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetryScale);
             m_WallpaperRepeatXSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetryX);
@@ -377,6 +397,39 @@ namespace TiltBrush
             PointerManager.m_Instance.CalculateMirrors();
         }
 
+        public void HandleShowHelicalSymmetry()
+        {
+            m_LastActiveTab = 3;
+            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Helical;
+            m_PointSymmetryControls.SetActive(false);
+            m_WallpaperSymmetryControls.SetActive(false);
+            m_OptionsControls.SetActive(false);
+            m_HelicalControls.SetActive(true);
+            m_ButtonShowPointControls.SetButtonSelected(false);
+            m_ButtonShowWallpaperControls.SetButtonSelected(false);
+            m_ButtonShowOptionsControls.SetButtonSelected(false);
+            m_ButtonShowHelicalControls.SetButtonSelected(true);
+            PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        public void HandleChangeHelicalCopies(Vector3 value)
+        {
+            PointerManager.m_Instance.m_HelicalCopies = Mathf.Max(1, Mathf.FloorToInt(value.z));
+            PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        public void HandleChangeHelicalAngle(Vector3 value)
+        {
+            PointerManager.m_Instance.m_HelicalAngle = value.z;
+            PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        public void HandleChangeHelicalAdvance(Vector3 value)
+        {
+            PointerManager.m_Instance.m_HelicalAdvance = value.z;
+            PointerManager.m_Instance.CalculateMirrors();
+        }
+
         public void HandleShowPointSymmetry()
         {
             m_LastActiveTab = 0;
@@ -388,6 +441,8 @@ namespace TiltBrush
             m_ButtonShowPointControls.SetButtonSelected(true);
             m_ButtonShowWallpaperControls.SetButtonSelected(false);
             m_ButtonShowOptionsControls.SetButtonSelected(false);
+            m_ButtonShowHelicalControls.SetButtonSelected(false);
+            m_HelicalControls.SetActive(false);
         }
 
         public void HandleShowWallpaperSymmetry()
@@ -401,6 +456,8 @@ namespace TiltBrush
             m_ButtonShowPointControls.SetButtonSelected(false);
             m_ButtonShowWallpaperControls.SetButtonSelected(true);
             m_ButtonShowOptionsControls.SetButtonSelected(false);
+            m_ButtonShowHelicalControls.SetButtonSelected(false);
+            m_HelicalControls.SetActive(false);
         }
 
         public void HandleShowOptions()
@@ -415,6 +472,8 @@ namespace TiltBrush
             m_ButtonShowPointControls.SetButtonSelected(false);
             m_ButtonShowWallpaperControls.SetButtonSelected(false);
             m_ButtonShowOptionsControls.SetButtonSelected(true);
+            m_ButtonShowHelicalControls.SetButtonSelected(false);
+            m_HelicalControls.SetActive(false);
         }
 
         private void UpdateOptionsControlsToMatchValues()
