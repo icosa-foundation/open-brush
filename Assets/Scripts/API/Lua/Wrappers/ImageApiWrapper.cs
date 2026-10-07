@@ -30,7 +30,7 @@ namespace TiltBrush
         public LayerApiWrapper layer
         {
             get => _ImageWidget != null ? new LayerApiWrapper(_ImageWidget.Canvas) : null;
-            set => _ImageWidget.SetCanvas(value._CanvasScript);
+            set => ApiMethods.MoveWidgetToLayer(_ImageWidget, value._CanvasScript);
         }
 
         [LuaDocsDescription("The group this image is part of")]
@@ -43,11 +43,10 @@ namespace TiltBrush
         [LuaDocsDescription("The transform of the image widget")]
         public TrTransform transform
         {
-            get => App.Scene.MainCanvas.AsCanvas[_ImageWidget.transform];
+            get => ApiMethods.GetWidgetTransform(_ImageWidget);
             set
             {
-                value = App.Scene.Pose * value;
-                App.Scene.ActiveCanvas.AsCanvas[_ImageWidget.transform] = value;
+                ApiMethods.SetWidgetTransform(_ImageWidget, value);
             }
         }
 

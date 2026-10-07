@@ -26,7 +26,7 @@ namespace TiltBrush
         public LayerApiWrapper layer
         {
             get => _VideoWidget != null ? new LayerApiWrapper(_VideoWidget.Canvas) : null;
-            set => _VideoWidget.SetCanvas(value._CanvasScript);
+            set => ApiMethods.MoveWidgetToLayer(_VideoWidget, value._CanvasScript);
         }
 
         [LuaDocsDescription("The group this video is part of")]
@@ -39,11 +39,10 @@ namespace TiltBrush
         [LuaDocsDescription("The Transform (position, rotation, scale) of the Video Widget")]
         public TrTransform transform
         {
-            get => App.Scene.MainCanvas.AsCanvas[_VideoWidget.transform];
+            get => ApiMethods.GetWidgetTransform(_VideoWidget);
             set
             {
-                value = App.Scene.Pose * value;
-                App.Scene.ActiveCanvas.AsCanvas[_VideoWidget.transform] = value;
+                ApiMethods.SetWidgetTransform(_VideoWidget, value);
             }
         }
 
