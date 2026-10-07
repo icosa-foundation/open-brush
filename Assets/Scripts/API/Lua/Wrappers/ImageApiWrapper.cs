@@ -126,7 +126,8 @@ namespace TiltBrush
         [LuaDocsParameter("color", "The color of the extrusion")]
         public void Extrude(float depth, ColorApiWrapper color = null)
         {
-            _ImageWidget.SetExtrusion(depth, color._Color);
+            WidgetPropertyCommand.Set(_ImageWidget, "ImageExtrusion", (depth, color?._Color ?? UnityEngine.Color.white),
+                w => (w.ExtrusionDepth, w.ExtrusionColor), (w, v) => w.SetExtrusion(v.Item1, v.Item2));
         }
 
         [LuaDocsDescription("Encodes the image as a form")]
