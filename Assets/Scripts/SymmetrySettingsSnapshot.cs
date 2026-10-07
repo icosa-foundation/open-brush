@@ -31,13 +31,17 @@ namespace TiltBrush
         /// Bumped if the serialized layout changes. Readers refuse blobs they don't understand
         /// rather than mis-parsing them; the rest of the stroke is unaffected because the blob
         /// is length-prefixed.
-        // 2: adds TransformEach and TransformEachAfter. Version 1 still reads.
-        private const int kSerializedVersion = 2;
+        // 2: adds TransformEach and TransformEachAfter.
+        // 3: adds helical parameters. Earlier versions still read.
+        private const int kSerializedVersion = 3;
 
         public PointerManager.SymmetryMode Mode;
         public PointerManager.CustomSymmetryType CustomType;
         public PointSymmetry.Family PointFamily;
         public int PointOrder;
+        public int HelicalCopies = 8;
+        public float HelicalAngle = 30f;
+        public float HelicalAdvance = 0.5f;
         public SymmetryGroup.R WallpaperGroup;
         public int WallpaperRepeatX;
         public int WallpaperRepeatY;
@@ -76,6 +80,9 @@ namespace TiltBrush
                 CustomType = pm.m_CustomSymmetryType,
                 PointFamily = pm.m_PointSymmetryFamily,
                 PointOrder = pm.m_PointSymmetryOrder,
+                HelicalCopies = pm.m_HelicalCopies,
+                HelicalAngle = pm.m_HelicalAngle,
+                HelicalAdvance = pm.m_HelicalAdvance,
                 WallpaperGroup = pm.m_WallpaperSymmetryGroup,
                 WallpaperRepeatX = pm.m_WallpaperSymmetryX,
                 WallpaperRepeatY = pm.m_WallpaperSymmetryY,
@@ -145,6 +152,8 @@ namespace TiltBrush
             {
                 return false;
             }
+            if (CustomType == PointerManager.CustomSymmetryType.Helical)
+            { return HelicalCopies == other.HelicalCopies; }
             return CustomType == PointerManager.CustomSymmetryType.Wallpaper
                 ? WallpaperGroup == other.WallpaperGroup &&
                   WallpaperRepeatX == other.WallpaperRepeatX && WallpaperRepeatY == other.WallpaperRepeatY
@@ -160,6 +169,9 @@ namespace TiltBrush
                 CustomType == other.CustomType &&
                 PointFamily == other.PointFamily &&
                 PointOrder == other.PointOrder &&
+                HelicalCopies == other.HelicalCopies &&
+                HelicalAngle == other.HelicalAngle &&
+                HelicalAdvance == other.HelicalAdvance &&
                 WallpaperGroup == other.WallpaperGroup &&
                 WallpaperRepeatX == other.WallpaperRepeatX &&
                 WallpaperRepeatY == other.WallpaperRepeatY &&
@@ -183,6 +195,9 @@ namespace TiltBrush
             pm.m_CustomSymmetryType = CustomType;
             pm.m_PointSymmetryFamily = PointFamily;
             pm.m_PointSymmetryOrder = PointOrder;
+            pm.m_HelicalCopies = HelicalCopies;
+            pm.m_HelicalAngle = HelicalAngle;
+            pm.m_HelicalAdvance = HelicalAdvance;
             pm.m_WallpaperSymmetryGroup = WallpaperGroup;
             pm.m_WallpaperSymmetryX = WallpaperRepeatX;
             pm.m_WallpaperSymmetryY = WallpaperRepeatY;
@@ -251,6 +266,9 @@ namespace TiltBrush
                     writer.Quaternion(TransformEach.rotation);
                     writer.Float(TransformEach.scale);
                     writer.Int32(TransformEachAfter ? 1 : 0);
+                    writer.Int32(HelicalCopies);
+                    writer.Float(HelicalAngle);
+                    writer.Float(HelicalAdvance);
                 }
                 return stream.ToArray();
             }
@@ -317,6 +335,12 @@ namespace TiltBrush
                         snapshot.TransformEach = TrTransform.TRS(eachT, eachR, reader.Float());
                         snapshot.TransformEachAfter = reader.Int32() != 0;
                     }
+                    if (version >= 3)
+                    {
+                        snapshot.HelicalCopies = reader.Int32();
+                        snapshot.HelicalAngle = reader.Float();
+                        snapshot.HelicalAdvance = reader.Float();
+                    }
                     return snapshot;
                 }
             }
@@ -339,6 +363,9 @@ namespace TiltBrush
                 CustomType == other.CustomType &&
                 PointFamily == other.PointFamily &&
                 PointOrder == other.PointOrder &&
+                HelicalCopies == other.HelicalCopies &&
+                HelicalAngle == other.HelicalAngle &&
+                HelicalAdvance == other.HelicalAdvance &&
                 WallpaperGroup == other.WallpaperGroup &&
                 WallpaperRepeatX == other.WallpaperRepeatX &&
                 WallpaperRepeatY == other.WallpaperRepeatY &&
@@ -375,6 +402,9 @@ namespace TiltBrush
                 hash = (hash * 397) ^ (int)CustomType;
                 hash = (hash * 397) ^ (int)PointFamily;
                 hash = (hash * 397) ^ PointOrder;
+                hash = (hash * 397) ^ HelicalCopies;
+                hash = (hash * 397) ^ HelicalAngle.GetHashCode();
+                hash = (hash * 397) ^ HelicalAdvance.GetHashCode();
                 hash = (hash * 397) ^ (int)WallpaperGroup;
                 hash = (hash * 397) ^ WallpaperRepeatX;
                 hash = (hash * 397) ^ WallpaperRepeatY;
@@ -399,6 +429,9 @@ namespace TiltBrush
                 case PointerManager.SymmetryMode.MultiMirror
                     when CustomType == PointerManager.CustomSymmetryType.Wallpaper:
                     return $"Wallpaper {WallpaperGroup} {WallpaperRepeatX}x{WallpaperRepeatY}";
+                case PointerManager.SymmetryMode.MultiMirror
+                    when CustomType == PointerManager.CustomSymmetryType.Helical:
+                    return $"Helical {HelicalCopies} copies";
                 case PointerManager.SymmetryMode.ScriptedSymmetryMode:
                     return $"Scripted ({ScriptName})";
                 default:

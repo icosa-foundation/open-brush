@@ -59,7 +59,8 @@ namespace TiltBrush
         {
             Point,
             Wallpaper,
-            Polyhedra
+            Polyhedra,
+            Helical
         }
 
         public enum ColorShiftComponent
@@ -73,6 +74,10 @@ namespace TiltBrush
         [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cn;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup = SymmetryGroup.R.p1;
         [NonSerialized] public int m_PointSymmetryOrder = 6;
+
+        [NonSerialized] public int m_HelicalCopies = 8;
+        [NonSerialized] public float m_HelicalAngle = 30f;
+        [NonSerialized] public float m_HelicalAdvance = 0.5f;
         [NonSerialized] public int m_WallpaperSymmetryX = 2;
         [NonSerialized] public int m_WallpaperSymmetryY = 2;
         [NonSerialized] public float m_WallpaperSymmetryScale = 1f;
@@ -1687,16 +1692,13 @@ namespace TiltBrush
                         (TrTransform, TrTransform) trAndFix;
                         TrTransform tr;
                         {
-                            var xfCenter = TrTransform.FromTransform(
-                                m_SymmetryLockedToController ?
-                                    MainPointer.transform : m_SymmetryWidget
-                            );
+                            var xfCenter = MultiMirrorCenter();
 
                             // convert from widget-local coords to world coords
                             trAndFix = TrFromMatrixWithFixedReflections(m_CustomMirrorMatrices[child]);
                             tr = trAndFix.Item1.TransformBy(xfCenter);
                         }
-                        return tr * xfMain * trAndFix.Item1;
+                        return tr * xfMain * trAndFix.Item2;
                     }
                 case SymmetryMode.ScriptedSymmetryMode:
                     {
@@ -1734,6 +1736,26 @@ namespace TiltBrush
             SymmetryMirrors.NoteSettingsChanged();
         }
 
+        internal static List<Matrix4x4> CreateHelicalMatrices(int copies, float angle, float advance)
+        {
+            var matrices = new List<Matrix4x4>();
+            for (int i = 0; i < Mathf.Max(1, copies); i++)
+            {
+                matrices.Add(Matrix4x4.TRS(Vector3.up * (i * advance),
+                    Quaternion.AngleAxis(i * angle, Vector3.up), Vector3.one));
+            }
+            return matrices;
+        }
+
+        private TrTransform MultiMirrorCenter()
+        {
+            var center = TrTransform.FromTransform(m_SymmetryLockedToController
+                ? MainPointer.transform : SymmetryWidget.GrabTransform_GS);
+            // Helical advance is measured in canvas units, independent of the widget's size.
+            if (m_CustomSymmetryType == CustomSymmetryType.Helical) { center.scale = 1f; }
+            return center;
+        }
+
         private void CalculateMirrorMatrices()
         {
             switch (m_CustomSymmetryType)
@@ -1751,6 +1773,9 @@ namespace TiltBrush
                     );
                     m_CustomMirrorMatrices = wallpaperSym.matrices;
                     m_CustomMirrorDomain = wallpaperSym.groupProperties.fundamentalRegion.points;
+                    break;
+                case CustomSymmetryType.Helical:
+                    m_CustomMirrorMatrices = CreateHelicalMatrices(m_HelicalCopies, m_HelicalAngle, m_HelicalAdvance);
                     break;
                 case CustomSymmetryType.Point:
                 case CustomSymmetryType.Polyhedra:
@@ -1840,10 +1865,7 @@ namespace TiltBrush
                         TrTransform pointer0 = TrTransform.FromTransform(m_MainPointerData.m_Script.transform);
                         TrTransform tr;
 
-                        var xfCenter = TrTransform.FromTransform(
-                            m_SymmetryLockedToController ?
-                            MainPointer.transform : m_SymmetryWidget
-                        );
+                        var xfCenter = MultiMirrorCenter();
 
                         for (int i = 0; i < m_CustomMirrorMatrices.Count; i++)
                         {
@@ -1902,7 +1924,7 @@ namespace TiltBrush
         public float GetCustomMirrorScale()
         {
             float canvasScale = App.ActiveCanvas.Pose.scale;
-            return canvasScale * m_WallpaperSymmetryScale;
+            return canvasScale * (m_CustomSymmetryType == CustomSymmetryType.Helical ? 1f : m_WallpaperSymmetryScale);
         }
 
         public TrTransform TrFromMatrix(Matrix4x4 m)
@@ -2414,13 +2436,10 @@ namespace TiltBrush
                 case SymmetryMode.MultiMirror:
                     xfSymmetriesGS = new List<TrTransform>();
 
-                    var xfCenter = TrTransform.FromTransform(
-                        m_SymmetryLockedToController
-                            ? MainPointer.transform
-                            : SymmetryWidget.GrabTransform_GS
-                    );
+                    var xfCenter = MultiMirrorCenter();
 
-                    var appScale = TrTransform.S(App.Scene.Pose.scale);
+                    var appScale = TrTransform.S(m_CustomSymmetryType == CustomSymmetryType.Helical
+                        ? App.ActiveCanvas.Pose.scale : App.Scene.Pose.scale);
                     var pre = xfCenter * appScale;
                     foreach (var m in CustomMirrorMatrices)
                     {
