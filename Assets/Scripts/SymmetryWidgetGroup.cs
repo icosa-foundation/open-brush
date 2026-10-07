@@ -100,7 +100,7 @@ namespace TiltBrush
                     m_Peers.Add(new Peer
                     {
                         Widget = peer, Before = WidgetPlacement.Capture(peer), ToPeer = toPeer,
-                        Joined = selection.SelectionTransformWhenSelected(source)
+                        Applied = TrTransform.identity, Joined = selection.SelectionTransformWhenSelected(source)
                     });
                 }
             }
