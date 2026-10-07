@@ -205,6 +205,8 @@ namespace TiltBrush
         public bool m_AutosaveRestoreEnabled = false;
         public bool m_AllowWidgetPinning;
         public bool m_DebugWebRequest;
+        // Temporary UnityGLTF investigation modes; selectable without rebuilding the player.
+        [NonSerialized] public string UnityGltfShaderDiagnostics = "observe";
         public bool m_ToggleProfileOnAppButton = false;
 
         [Header("Upload and Export")]
@@ -520,6 +522,14 @@ namespace TiltBrush
                 {
                     CanReachLocalhostDisabled = true;
                     Debug.Log("[STEAM_BROWSER] Steam overlay browser forced by command line");
+                }
+                else if (args[i] == "--unitygltfShaderDiagnostics")
+                {
+                    if (++i == args.Length || !UnityGltfShaderDiagnosticsProbe.IsValidMode(args[i]))
+                    {
+                        throw new ApplicationException("unitygltfShaderDiagnostics requires off, observe, collection, references, or warmup.");
+                    }
+                    UnityGltfShaderDiagnostics = args[i];
                 }
                 else if (args[i].Contains("."))
                 {

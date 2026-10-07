@@ -130,6 +130,10 @@ namespace TiltBrush
             IList<ShaderCompilerData> datas)
         {
             List<ShaderCompilerData> filtered = datas.Where(ShouldKeepShader).ToList();
+            if (shader.name.StartsWith("UnityGLTF/", System.StringComparison.Ordinal))
+            {
+                Debug.Log($"[OB_GLTF_SHADER_BUILD_20261007] project-stripper shader={shader.name}, pass={snippet.passName}, stage={snippet.shaderType}, variants={datas.Count}->{filtered.Count}");
+            }
             if (filtered.Count != datas.Count)
             {
                 // Debug.Log($"Filter shaders {shader}: {datas.Count} -> {filtered.Count}");
