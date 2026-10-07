@@ -79,10 +79,10 @@ namespace TiltBrush
             return "";
         }
 
-        public static CameraPathMetadata[] GetCameraPaths()
+        public static CameraPathMetadata[] GetCameraPaths(WidgetLinkSaveContext links = null)
         {
             return WidgetManager.m_Instance.CameraPathWidgets
-                .Where(cpw => cpw.WidgetScript.ShouldSerialize())
+                .Where(cpw => cpw.WidgetScript.ShouldSerialize() && (links == null || links.Includes(cpw.WidgetScript)))
                 .Select(cpw => cpw.WidgetScript.AsSerializable())
                 .ToArray();
         }
