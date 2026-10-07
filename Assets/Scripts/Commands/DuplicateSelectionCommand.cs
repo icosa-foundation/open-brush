@@ -28,6 +28,8 @@ namespace TiltBrush
         // A selected copy stands for its linked group. Duplicating it duplicates the group: these
         // are the duplicates of its other copies, which are placed but never selected.
         private readonly List<Stroke> m_DuplicatedCopies = new List<Stroke>();
+        private readonly List<GrabWidget> m_DuplicatedWidgetPeers = new List<GrabWidget>();
+        private readonly List<TransformWidgetPeersCommand> m_OriginalWidgetMoves = new List<TransformWidgetPeersCommand>();
         // The original groups' other copies, baked with the selection's move as a deselect
         // would bake them. Held here rather than as children: Merge expects its only child to
         // be the stamp's selection move.
@@ -91,7 +93,9 @@ namespace TiltBrush
                 // Duplicate widgets.
                 foreach (var widget in m_SelectedWidgets)
                 {
-                    m_DuplicatedWidgets.Add(widget.Clone());
+                    var duplicate = widget.Clone();
+                    m_DuplicatedWidgets.Add(duplicate);
+                    if (widget.SymmetryPeerGroup != null) { DuplicateWidgetGroup(widget, duplicate); }
                 }
             }
             else
@@ -237,8 +241,27 @@ namespace TiltBrush
 
         public override bool NeedsSave { get { return true; } }
 
+        private void DuplicateWidgetGroup(GrabWidget source, GrabWidget duplicate)
+        {
+            var joined = SelectionManager.m_Instance.SelectionTransformWhenSelected(source);
+            var group = new SymmetryWidgetGroup(source.SymmetryPeerGroup.Mirror);
+            duplicate.SetSymmetryGroup(group, source.SymmetryPointerIndex);
+            foreach (var peer in source.SymmetryPeerGroup.ActiveMembers)
+            {
+                if (peer == source || !SymmetryWidgetGroup.TryGetPeerTransform(source, peer, out var toPeer)) { continue; }
+                var copy = peer.Clone();
+                copy.LocalTransform = toPeer * joined.inverse * toPeer.inverse * copy.LocalTransform;
+                copy.SetSymmetryGroup(group, peer.SymmetryPointerIndex);
+                m_DuplicatedWidgetPeers.Add(copy);
+            }
+            m_OriginalWidgetMoves.Add(new TransformWidgetPeersCommand(source,
+                SymmetryPeerEditing.SelectionMovement(m_OriginTransform, joined)));
+        }
+
         protected override void OnRedo()
         {
+            foreach (var widget in m_DuplicatedWidgetPeers) { widget.RestoreFromToss(); }
+            foreach (var move in m_OriginalWidgetMoves) { move.Redo(); }
             // Place duplicated strokes.
             foreach (var stroke in m_DuplicatedStrokes.Concat(m_DuplicatedCopies))
             {
@@ -295,6 +318,8 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            foreach (var widget in m_DuplicatedWidgetPeers) { widget.Hide(); }
+            for (int i = m_OriginalWidgetMoves.Count - 1; i >= 0; --i) { m_OriginalWidgetMoves[i].Undo(); }
             for (int i = m_OriginalCopyMoves.Count - 1; i >= 0; --i) { m_OriginalCopyMoves[i].Undo(); }
 
             // Remove duplicated strokes.
