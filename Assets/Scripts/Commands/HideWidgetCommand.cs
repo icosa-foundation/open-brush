@@ -38,7 +38,6 @@ namespace TiltBrush
                 m_WidgetTransform.scale = widget.GetSignedWidgetSize();
             }
             m_TiltMeterCost = m_Widget.GetTiltMeterCost();
-            TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: false);
             if (propagate && widget.SymmetryPeerGroup != null)
             {
                 foreach (var peer in widget.SymmetryPeerGroup.ActiveMembers)

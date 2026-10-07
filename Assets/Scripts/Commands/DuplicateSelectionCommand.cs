@@ -28,6 +28,7 @@ namespace TiltBrush
         // A selected copy stands for its linked group. Duplicating it duplicates the group: these
         // are the duplicates of its other copies, which are placed but never selected.
         private readonly List<Stroke> m_DuplicatedCopies = new List<Stroke>();
+        private bool m_FirstRedo = true;
         private readonly List<GrabWidget> m_DuplicatedWidgetPeers = new List<GrabWidget>();
         private readonly List<TransformWidgetPeersCommand> m_OriginalWidgetMoves = new List<TransformWidgetPeersCommand>();
         // The original groups' other copies, baked with the selection's move as a deselect
@@ -260,6 +261,16 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            // Clone already accounts for the initial creation. Subsequent redo restores that cost.
+            if (!m_FirstRedo)
+            {
+                foreach (var widget in m_DuplicatedWidgets.Concat(m_DuplicatedWidgetPeers))
+                {
+                    if (widget.SymmetryPeerGroup != null)
+                    { TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: true); }
+                }
+            }
+            m_FirstRedo = false;
             foreach (var widget in m_DuplicatedWidgetPeers) { widget.RestoreFromToss(); }
             foreach (var move in m_OriginalWidgetMoves) { move.Redo(); }
             // Place duplicated strokes.
@@ -318,6 +329,11 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            foreach (var widget in m_DuplicatedWidgets.Concat(m_DuplicatedWidgetPeers))
+            {
+                if (widget.SymmetryPeerGroup != null)
+                { TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: false); }
+            }
             foreach (var widget in m_DuplicatedWidgetPeers) { widget.Hide(); }
             for (int i = m_OriginalWidgetMoves.Count - 1; i >= 0; --i) { m_OriginalWidgetMoves[i].Undo(); }
             for (int i = m_OriginalCopyMoves.Count - 1; i >= 0; --i) { m_OriginalCopyMoves[i].Undo(); }

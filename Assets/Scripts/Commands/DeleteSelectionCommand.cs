@@ -22,6 +22,7 @@ namespace TiltBrush
         private Stroke[] m_Strokes;
         private List<GrabWidget> m_Widgets;
         private TrTransform m_InitialSelectionTransform;
+        private readonly Dictionary<GrabWidget, int> m_LinkedWidgetCosts = new Dictionary<GrabWidget, int>();
 
         public DeleteSelectionCommand(
             ICollection<Stroke> strokes,
@@ -41,6 +42,7 @@ namespace TiltBrush
                 foreach (var widget in widgets)
                 {
                     if (widget.SymmetryPeerGroup == null) { continue; }
+                    m_LinkedWidgetCosts[widget] = widget.GetTiltMeterCost();
                     foreach (var peer in widget.SymmetryPeerGroup.ActiveMembers)
                     {
                         if (seen.Add(peer)) { new HideWidgetCommand(peer, this, propagate: false); }
@@ -97,6 +99,8 @@ namespace TiltBrush
                 for (int i = 0; i < m_Widgets.Count; ++i)
                 {
                     m_Widgets[i].Hide();
+                    if (m_LinkedWidgetCosts.TryGetValue(m_Widgets[i], out var cost))
+                    { TiltMeterScript.m_Instance.AdjustMeterWithWidget(cost, up: false); }
                 }
             }
 
@@ -136,6 +140,8 @@ namespace TiltBrush
                 for (int i = 0; i < m_Widgets.Count; ++i)
                 {
                     m_Widgets[i].RestoreFromToss();
+                    if (m_LinkedWidgetCosts.TryGetValue(m_Widgets[i], out var cost))
+                    { TiltMeterScript.m_Instance.AdjustMeterWithWidget(cost, up: true); }
                 }
             }
 
