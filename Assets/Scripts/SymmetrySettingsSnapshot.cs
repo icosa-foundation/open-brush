@@ -33,12 +33,16 @@ namespace TiltBrush
         /// is length-prefixed.
         // 2: adds TransformEach and TransformEachAfter.
         // 3: adds helical parameters. Earlier versions still read.
-        private const int kSerializedVersion = 3;
+        // 4: adds space-group parameters.
+        private const int kSerializedVersion = 4;
 
         public PointerManager.SymmetryMode Mode;
         public PointerManager.CustomSymmetryType CustomType;
         public PointSymmetry.Family PointFamily;
         public int PointOrder;
+        public int SpaceGroupNumber = 19;
+        public Vector3Int SpaceGroupRepeats = new Vector3Int(2, 2, 2);
+        public float SpaceGroupCellSize = 1f;
         public int HelicalCopies = 8;
         public float HelicalAngle = 30f;
         public float HelicalAdvance = 0.5f;
@@ -80,6 +84,9 @@ namespace TiltBrush
                 CustomType = pm.m_CustomSymmetryType,
                 PointFamily = pm.m_PointSymmetryFamily,
                 PointOrder = pm.m_PointSymmetryOrder,
+                SpaceGroupNumber = pm.m_SpaceGroupNumber,
+                SpaceGroupRepeats = pm.m_SpaceGroupRepeats,
+                SpaceGroupCellSize = pm.m_SpaceGroupCellSize,
                 HelicalCopies = pm.m_HelicalCopies,
                 HelicalAngle = pm.m_HelicalAngle,
                 HelicalAdvance = pm.m_HelicalAdvance,
@@ -152,6 +159,8 @@ namespace TiltBrush
             {
                 return false;
             }
+            if (CustomType == PointerManager.CustomSymmetryType.SpaceGroup)
+            { return SpaceGroupNumber == other.SpaceGroupNumber && SpaceGroupRepeats == other.SpaceGroupRepeats; }
             if (CustomType == PointerManager.CustomSymmetryType.Helical)
             { return HelicalCopies == other.HelicalCopies; }
             return CustomType == PointerManager.CustomSymmetryType.Wallpaper
@@ -169,6 +178,9 @@ namespace TiltBrush
                 CustomType == other.CustomType &&
                 PointFamily == other.PointFamily &&
                 PointOrder == other.PointOrder &&
+                SpaceGroupNumber == other.SpaceGroupNumber &&
+                SpaceGroupRepeats == other.SpaceGroupRepeats &&
+                SpaceGroupCellSize == other.SpaceGroupCellSize &&
                 HelicalCopies == other.HelicalCopies &&
                 HelicalAngle == other.HelicalAngle &&
                 HelicalAdvance == other.HelicalAdvance &&
@@ -195,6 +207,9 @@ namespace TiltBrush
             pm.m_CustomSymmetryType = CustomType;
             pm.m_PointSymmetryFamily = PointFamily;
             pm.m_PointSymmetryOrder = PointOrder;
+            pm.m_SpaceGroupNumber = SpaceGroupNumber;
+            pm.m_SpaceGroupRepeats = SpaceGroupRepeats;
+            pm.m_SpaceGroupCellSize = SpaceGroupCellSize;
             pm.m_HelicalCopies = HelicalCopies;
             pm.m_HelicalAngle = HelicalAngle;
             pm.m_HelicalAdvance = HelicalAdvance;
@@ -269,6 +284,11 @@ namespace TiltBrush
                     writer.Int32(HelicalCopies);
                     writer.Float(HelicalAngle);
                     writer.Float(HelicalAdvance);
+                    writer.Int32(SpaceGroupNumber);
+                    writer.Int32(SpaceGroupRepeats.x);
+                    writer.Int32(SpaceGroupRepeats.y);
+                    writer.Int32(SpaceGroupRepeats.z);
+                    writer.Float(SpaceGroupCellSize);
                 }
                 return stream.ToArray();
             }
@@ -341,6 +361,12 @@ namespace TiltBrush
                         snapshot.HelicalAngle = reader.Float();
                         snapshot.HelicalAdvance = reader.Float();
                     }
+                    if (version >= 4)
+                    {
+                        snapshot.SpaceGroupNumber = reader.Int32();
+                        snapshot.SpaceGroupRepeats = new Vector3Int(reader.Int32(), reader.Int32(), reader.Int32());
+                        snapshot.SpaceGroupCellSize = reader.Float();
+                    }
                     return snapshot;
                 }
             }
@@ -363,6 +389,9 @@ namespace TiltBrush
                 CustomType == other.CustomType &&
                 PointFamily == other.PointFamily &&
                 PointOrder == other.PointOrder &&
+                SpaceGroupNumber == other.SpaceGroupNumber &&
+                SpaceGroupRepeats == other.SpaceGroupRepeats &&
+                SpaceGroupCellSize == other.SpaceGroupCellSize &&
                 HelicalCopies == other.HelicalCopies &&
                 HelicalAngle == other.HelicalAngle &&
                 HelicalAdvance == other.HelicalAdvance &&
@@ -402,6 +431,9 @@ namespace TiltBrush
                 hash = (hash * 397) ^ (int)CustomType;
                 hash = (hash * 397) ^ (int)PointFamily;
                 hash = (hash * 397) ^ PointOrder;
+                hash = (hash * 397) ^ SpaceGroupNumber;
+                hash = (hash * 397) ^ SpaceGroupRepeats.GetHashCode();
+                hash = (hash * 397) ^ SpaceGroupCellSize.GetHashCode();
                 hash = (hash * 397) ^ HelicalCopies;
                 hash = (hash * 397) ^ HelicalAngle.GetHashCode();
                 hash = (hash * 397) ^ HelicalAdvance.GetHashCode();
@@ -432,6 +464,9 @@ namespace TiltBrush
                 case PointerManager.SymmetryMode.MultiMirror
                     when CustomType == PointerManager.CustomSymmetryType.Helical:
                     return $"Helical {HelicalCopies} copies";
+                case PointerManager.SymmetryMode.MultiMirror
+                    when CustomType == PointerManager.CustomSymmetryType.SpaceGroup:
+                    return $"Space group {SpaceGroupNumber} {SpaceGroupRepeats.x}x{SpaceGroupRepeats.y}x{SpaceGroupRepeats.z}";
                 case PointerManager.SymmetryMode.ScriptedSymmetryMode:
                     return $"Scripted ({ScriptName})";
                 default:

@@ -60,7 +60,8 @@ namespace TiltBrush
             Point,
             Wallpaper,
             Polyhedra,
-            Helical
+            Helical,
+            SpaceGroup
         }
 
         public enum ColorShiftComponent
@@ -74,6 +75,10 @@ namespace TiltBrush
         [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cn;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup = SymmetryGroup.R.p1;
         [NonSerialized] public int m_PointSymmetryOrder = 6;
+
+        [NonSerialized] public int m_SpaceGroupNumber = 19;
+        [NonSerialized] public Vector3Int m_SpaceGroupRepeats = new Vector3Int(2, 2, 2);
+        [NonSerialized] public float m_SpaceGroupCellSize = 1f;
 
         [NonSerialized] public int m_HelicalCopies = 8;
         [NonSerialized] public float m_HelicalAngle = 30f;
@@ -1751,15 +1756,21 @@ namespace TiltBrush
         {
             var center = TrTransform.FromTransform(m_SymmetryLockedToController
                 ? MainPointer.transform : SymmetryWidget.GrabTransform_GS);
-            // Helical advance is measured in canvas units, independent of the widget's size.
-            if (m_CustomSymmetryType == CustomSymmetryType.Helical) { center.scale = 1f; }
+            // Pattern distances are measured in canvas units, independent of the widget's size.
+            if (m_CustomSymmetryType == CustomSymmetryType.Helical ||
+                m_CustomSymmetryType == CustomSymmetryType.SpaceGroup) { center.scale = 1f; }
             return center;
         }
 
         private void CalculateMirrorMatrices()
         {
+            m_CustomMirrorDomain = null;
             switch (m_CustomSymmetryType)
             {
+                case CustomSymmetryType.SpaceGroup:
+                    m_CustomMirrorMatrices = new SpaceGroupSymmetry(m_SpaceGroupNumber,
+                        m_SpaceGroupRepeats, m_SpaceGroupCellSize).matrices;
+                    break;
                 case CustomSymmetryType.Wallpaper:
                     var wallpaperSym = new WallpaperSymmetry(
                         m_WallpaperSymmetryGroup,
@@ -2438,7 +2449,8 @@ namespace TiltBrush
 
                     var xfCenter = MultiMirrorCenter();
 
-                    var appScale = TrTransform.S(m_CustomSymmetryType == CustomSymmetryType.Helical
+                    var appScale = TrTransform.S(m_CustomSymmetryType == CustomSymmetryType.Helical ||
+                        m_CustomSymmetryType == CustomSymmetryType.SpaceGroup
                         ? App.ActiveCanvas.Pose.scale : App.Scene.Pose.scale);
                     var pre = xfCenter * appScale;
                     foreach (var m in CustomMirrorMatrices)
