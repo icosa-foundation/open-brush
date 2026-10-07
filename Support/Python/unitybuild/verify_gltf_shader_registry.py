@@ -1,5 +1,14 @@
 """Reject Android builds missing the shader-name entries used by UnityGLTF.
 
+The failing builds contained the compiled shaders and valid material references,
+but their ScriptMapper name index omitted both shaders, making Shader.Find fail.
+Adding only those entries to a test APK restored UnityGLTF imports on the device.
+The Editor prebuild hook now registers the shaders explicitly; check its actual
+serialized output because successful compilation or Editor lookup alone cannot
+prove runtime name lookup will work. Keep this regression check while the reason
+normal Shader Graph registration was missing remains unknown. This checks lookup
+metadata, not rendered appearance or complete shader variant coverage.
+
 Requires UnityPy==1.25.3. Reads the built APK/AAB without modifying it.
 """
 

@@ -557,6 +557,9 @@ jobs:
             androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
             androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
+      # Android builds previously included the shaders but omitted their Shader.Find
+      # name entries, breaking UnityGLTF imports. Verify the finished APK/AAB even
+      # with the prebuild registration fix: Editor lookup cannot prove player metadata.
       - name: Verify Android UnityGLTF shader-name registry
         if: matrix.targetPlatform == 'Android'
         run: |

@@ -43,9 +43,14 @@ namespace TiltBrush
             AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material.shader, out string guid, out long localId);
             if (guid != expectedGuid)
                 throw new BuildFailedException($"{kPrefix} Unexpected shader GUID for {path}: {guid}");
-            // Shader Graph normally registers generated shaders after importing them. Ensure
-            // these runtime name lookups are registered even when using cached import artifacts.
-            // This does not add shaders to Always Included or expand the audited variant set.
+            // Android CI builds contained both compiled shaders and valid material references,
+            // but omitted their names from the player's ScriptMapper shader lookup table.
+            // UnityGLTF uses Shader.Find, so imports failed despite the shaders being present.
+            // Explicit registration restored the built name entries and imports on the device.
+            // Shader Graph normally calls this API after import; why that registration was
+            // missing here is still unknown (cached imports are only a suspected cause).
+            // Register before building without expanding the audited 392 variants. The CI
+            // artifact check verifies the player table, beyond this Editor-only lookup check.
             bool foundBeforeRegistration = Shader.Find(material.shader.name) == material.shader;
             ShaderUtil.RegisterShader(material.shader);
             if (Shader.Find(material.shader.name) != material.shader)
