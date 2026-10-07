@@ -40,10 +40,11 @@
       "hash": "0c747b344715e878f26744069324ef617957da02"
     },
     "com.ixxy.unitysymmetry": {
-      "version": "file:F:/Unity Projects/unity-symmetry/Packages/UnitySymmetry",
+      "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=8#upm",
       "depth": 0,
-      "source": "local",
-      "dependencies": {}
+      "source": "git",
+      "dependencies": {},
+      "hash": "12b6cc83e5463f19080afe40d215b7d2370722f5"
     },
     "com.netpyoung.webp": {
       "version": "https://github.com/netpyoung/unity.webp.git?path=unity_project/Assets/unity.webp#0.3.22",
