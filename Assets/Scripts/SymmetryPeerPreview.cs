@@ -39,6 +39,14 @@ namespace TiltBrush
 
         public static bool IsShowing => m_Strokes.Count > 0;
 
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlayMode()
+        {
+            // With domain reload disabled, peers from the previous run can outlive their batches.
+            // Their geometry is gone, so discard the preview without trying to restore it.
+            Forget();
+        }
+
         /// Starts following the passed strokes, replacing anything showing already. Call when the
         /// set of strokes being moved changes.
         public static void Show(IEnumerable<Stroke> strokes)

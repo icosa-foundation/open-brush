@@ -596,6 +596,15 @@ namespace TiltBrush
             m_SelectionWidget.SelectionTransformed += OnSelectionTransformed;
         }
 
+        void OnDestroy()
+        {
+            if (m_Instance == this)
+            {
+                // Scene teardown destroys the peers' geometry; there is nothing left to restore.
+                SymmetryPeerPreview.Forget();
+            }
+        }
+
         void Update()
         {
             if (HasSelection)
