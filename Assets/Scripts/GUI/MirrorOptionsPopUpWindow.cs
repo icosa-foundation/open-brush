@@ -23,6 +23,16 @@ namespace TiltBrush
         public TextActionButton m_ButtonShowPointControls;
         public TextActionButton m_ButtonShowWallpaperControls;
         public TextActionButton m_ButtonShowOptionsControls;
+        public TextActionButton m_ButtonShowSpaceGroupControls;
+        public GameObject m_SpaceGroupControls;
+        public TextActionButton m_SpaceGroupSystemButton;
+        public TextActionButton m_SpaceGroupPresetButton;
+        public AdvancedSlider m_SpaceGroupNumberSlider;
+        public AdvancedSlider m_SpaceGroupRepeatXSlider;
+        public AdvancedSlider m_SpaceGroupRepeatYSlider;
+        public AdvancedSlider m_SpaceGroupRepeatZSlider;
+        public AdvancedSlider m_SpaceGroupCellSizeSlider;
+        public TMPro.TextMeshPro m_SpaceGroupCopyCount;
         public TextActionButton m_ButtonShowHelicalControls;
         public GameObject m_HelicalControls;
         public AdvancedSlider m_HelicalCopiesSlider;
@@ -80,6 +90,7 @@ namespace TiltBrush
             {
                 switch (PointerManager.m_Instance.m_CustomSymmetryType)
                 {
+                    case PointerManager.CustomSymmetryType.SpaceGroup: m_LastActiveTab = 4; break;
                     case PointerManager.CustomSymmetryType.Helical: m_LastActiveTab = 3; break;
                     case PointerManager.CustomSymmetryType.Wallpaper: m_LastActiveTab = 1; break;
                     default: m_LastActiveTab = 0; break;
@@ -98,6 +109,9 @@ namespace TiltBrush
                     break;
                 case 3:
                     HandleShowHelicalSymmetry();
+                    break;
+                case 4:
+                    HandleShowSpaceGroupSymmetry();
                     break;
             }
             SetCurrentMirrorTypeButtonState(true);
@@ -397,8 +411,115 @@ namespace TiltBrush
             PointerManager.m_Instance.CalculateMirrors();
         }
 
+        public void HandleShowSpaceGroupSymmetry()
+        {
+            m_LastActiveTab = 4;
+            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.SpaceGroup;
+            m_PointSymmetryControls.SetActive(false);
+            m_WallpaperSymmetryControls.SetActive(false);
+            m_HelicalControls.SetActive(false);
+            m_OptionsControls.SetActive(false);
+            m_SpaceGroupControls.SetActive(true);
+            m_ButtonShowPointControls.SetButtonSelected(false);
+            m_ButtonShowWallpaperControls.SetButtonSelected(false);
+            m_ButtonShowHelicalControls.SetButtonSelected(false);
+            m_ButtonShowOptionsControls.SetButtonSelected(false);
+            m_ButtonShowSpaceGroupControls.SetButtonSelected(true);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        private static void SetSpaceGroupButtonLabel(TextActionButton button, string label)
+        {
+            button.m_ButtonLabel = label;
+            button.GetComponentInChildren<TMPro.TextMeshPro>().text = label;
+        }
+
+        private void RefreshSpaceGroupControls()
+        {
+            var pm = PointerManager.m_Instance;
+            var system = SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber);
+            SetSpaceGroupButtonLabel(m_SpaceGroupSystemButton, $"{system} >");
+            var label = SpaceGroupCatalog.GetName(pm.m_SpaceGroupNumber);
+            foreach (var preset in SpaceGroupCatalog.GetPresets(system))
+            {
+                if (preset.number == pm.m_SpaceGroupNumber) { label = preset.label; break; }
+            }
+            SetSpaceGroupButtonLabel(m_SpaceGroupPresetButton, $"{pm.m_SpaceGroupNumber}: {label} >");
+            m_SpaceGroupNumberSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupNumber);
+            m_SpaceGroupRepeatXSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.x);
+            m_SpaceGroupRepeatYSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.y);
+            m_SpaceGroupRepeatZSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.z);
+            m_SpaceGroupCellSizeSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupCellSize);
+            var count = pm.CustomMirrorMatrices.Count;
+            m_SpaceGroupCopyCount.text = count > pm.ActiveSymmetryPointerCount
+                ? $"{count} model copies / {pm.ActiveSymmetryPointerCount} stroke copies"
+                : $"{count} copies";
+        }
+
+        public void HandleNextSpaceGroupSystem()
+        {
+            var pm = PointerManager.m_Instance;
+            var current = SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber);
+            var next = (SpaceGroupCatalog.CrystalSystem)(((int)current + 1) % 7);
+            pm.m_SpaceGroupNumber = SpaceGroupCatalog.GetPresets(next)[0].number;
+            pm.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleNextSpaceGroupPreset()
+        {
+            var pm = PointerManager.m_Instance;
+            var presets = SpaceGroupCatalog.GetPresets(SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber));
+            var next = 0;
+            for (var i = 0; i < presets.Count; i++)
+            {
+                if (presets[i].number == pm.m_SpaceGroupNumber) { next = (i + 1) % presets.Count; break; }
+            }
+            pm.m_SpaceGroupNumber = presets[next].number;
+            pm.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleChangeSpaceGroupNumber(Vector3 value)
+        {
+            PointerManager.m_Instance.m_SpaceGroupNumber = Mathf.Clamp(Mathf.RoundToInt(value.z), 1, 230);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleChangeSpaceGroupRepeatX(Vector3 value)
+        {
+            PointerManager.m_Instance.m_SpaceGroupRepeats.x = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleChangeSpaceGroupRepeatY(Vector3 value)
+        {
+            PointerManager.m_Instance.m_SpaceGroupRepeats.y = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleChangeSpaceGroupRepeatZ(Vector3 value)
+        {
+            PointerManager.m_Instance.m_SpaceGroupRepeats.z = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleChangeSpaceGroupCellSize(Vector3 value)
+        {
+            PointerManager.m_Instance.m_SpaceGroupCellSize = Mathf.Max(0.01f, value.z);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
         public void HandleShowHelicalSymmetry()
         {
+            m_SpaceGroupControls.SetActive(false);
+            m_ButtonShowSpaceGroupControls.SetButtonSelected(false);
             m_LastActiveTab = 3;
             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Helical;
             m_PointSymmetryControls.SetActive(false);
@@ -432,6 +553,8 @@ namespace TiltBrush
 
         public void HandleShowPointSymmetry()
         {
+            m_SpaceGroupControls.SetActive(false);
+            m_ButtonShowSpaceGroupControls.SetButtonSelected(false);
             m_LastActiveTab = 0;
             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Point;
             m_PointSymmetryControls.SetActive(true);
@@ -447,6 +570,8 @@ namespace TiltBrush
 
         public void HandleShowWallpaperSymmetry()
         {
+            m_SpaceGroupControls.SetActive(false);
+            m_ButtonShowSpaceGroupControls.SetButtonSelected(false);
             m_LastActiveTab = 1;
             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Wallpaper;
             m_PointSymmetryControls.SetActive(false);
@@ -462,6 +587,8 @@ namespace TiltBrush
 
         public void HandleShowOptions()
         {
+            m_SpaceGroupControls.SetActive(false);
+            m_ButtonShowSpaceGroupControls.SetButtonSelected(false);
             m_LastActiveTab = 2;
             m_PointSymmetryControls.SetActive(false);
             m_WallpaperSymmetryControls.SetActive(false);

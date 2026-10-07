@@ -176,6 +176,7 @@ namespace TiltBrush
         // ---- Private member data
 
         private int m_NumActivePointers = 1;
+        public int ActiveSymmetryPointerCount => m_NumActivePointers;
 
         private bool m_PointersRenderingRequested;
         private bool m_PointersRenderingActive;
