@@ -46,7 +46,7 @@ namespace TiltBrush
             m_Widgets = new MirrorWidgetEdits(mirror, before);
         }
 
-        internal void UpdateWidgets(SymmetrySettingsSnapshot settings) => m_Widgets.Update(settings, true);
+        internal void UpdateWidgets(SymmetrySettingsSnapshot settings) => m_Widgets.Update(settings);
 
         public override bool NeedsSave => true;
 
@@ -72,7 +72,7 @@ namespace TiltBrush
             if (m_Complete) { return; }
             m_WidgetMove.UpdateMirrorEnd(m_Widget.LocalTransform, m_Widget.CustomDimension);
             m_After = after;
-            m_Widgets.Update(after, true);
+            m_Widgets.Update(after);
             m_Rederives = rederives;
             m_BrokenLinks = brokenLinks;
             foreach (var group in m_Groups) { group.Complete(); }

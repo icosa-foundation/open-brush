@@ -119,7 +119,7 @@ namespace TiltBrush
         /// where even that can't be done (a member selected or outside the mirror's canvas),
         /// break its link undoably.
         internal static void AddFallback(SymmetryStrokeGroup group,
-            SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after, bool holdFirstPointer,
+            SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after,
             List<RederiveSymmetryGroupCommand> rederives,
             List<SymmetryPeerEditing.BrokenLink> brokenLinks)
         {
@@ -134,7 +134,7 @@ namespace TiltBrush
             {
                 rederives.Add(new RederiveSymmetryGroupCommand(
                     source,
-                    RederiveSymmetryGroupCommand.StepFor(source, before, after, holdFirstPointer)));
+                    RederiveSymmetryGroupCommand.StepFor(source, before, after)));
             }
             else
             {
@@ -198,7 +198,7 @@ namespace TiltBrush
             {
                 if (!MirrorStrokeEdits.IsEligible(group, mirror, count))
                 {
-                    MirrorStrokeEdits.AddFallback(group, before, after, holdFirstPointer: false,
+                    MirrorStrokeEdits.AddFallback(group, before, after,
                         m_Rederives, m_BrokenLinks);
                     continue;
                 }
@@ -247,7 +247,7 @@ namespace TiltBrush
                         member.Stroke, m_Canvas, member.After, member.AfterScale);
                 }
             }
-            if (!m_Applied) { m_Widgets.Update(m_After, false); }
+            if (!m_Applied) { m_Widgets.Update(m_After); }
             else { m_Widgets.Restore(true); }
             m_Applied = true;
             m_Mirror.Settings = m_After;

@@ -126,7 +126,7 @@ namespace TiltBrush
                 }
                 foreach (var group in fallback)
                 {
-                    MirrorStrokeEdits.AddFallback(group, m_Start, settings, holdFirstPointer: true,
+                    MirrorStrokeEdits.AddFallback(group, m_Start, settings,
                         rederives, brokenLinks);
                 }
                 foreach (var rederive in rederives) { rederive.Redo(); }
@@ -245,9 +245,9 @@ namespace TiltBrush
                         Reject();
                         return;
                     }
-                    // Pointer zero remains stationary, including numerical noise.
-                    var target = index == 0 ? TrTransform.identity :
-                        PointerDelta(m_MirrorStart[index], worldTransforms[index], m_CanvasPose);
+                    // Polyhedral symmetry can have a non-identity first slot, which must
+                    // follow the mirror just like every other slot.
+                    var target = PointerDelta(m_MirrorStart[index], worldTransforms[index], m_CanvasPose);
                     m_Steps[index] = target * m_Applied[index].inverse;
                     if (!Invertible(m_Steps[index])) { Reject(); return; }
                     changed |= m_Steps[index] != TrTransform.identity;

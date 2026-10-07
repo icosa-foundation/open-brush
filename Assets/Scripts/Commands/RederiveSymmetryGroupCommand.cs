@@ -325,15 +325,15 @@ namespace TiltBrush
 
         /// The move a mirror settings change gives 'source', from the pointer transforms before
         /// and after; null if it doesn't move or the transforms don't cover its pointer. A mirror
-        /// drag holds the first pointer's strokes still (holdFirstPointer); a settings change
-        /// moves every pointer by its own change.
+        /// drag and a settings change move every pointer by its own change. Slot zero is
+        /// stationary only when its symmetry transform is unchanged.
         public static TrTransform? StepFor(Stroke source,
-            SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after, bool holdFirstPointer)
+            SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after)
         {
             int index = source.SymmetryPointerIndex;
             var from = before?.PointerTransforms;
             var to = after?.PointerTransforms;
-            if (index < 0 || (holdFirstPointer && index == 0) || from == null || to == null ||
+            if (index < 0 || from == null || to == null ||
                 index >= from.Count || index >= to.Count)
             {
                 return null;

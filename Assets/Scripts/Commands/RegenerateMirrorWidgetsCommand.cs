@@ -32,13 +32,13 @@ namespace TiltBrush
             }
         }
 
-        internal void Update(SymmetrySettingsSnapshot after, bool holdFirstPointer)
+        internal void Update(SymmetrySettingsSnapshot after)
         {
             foreach (var member in m_Members)
             {
                 int index = member.Index;
                 if (member.Widget == null || index >= after.PointerTransforms.Count ||
-                    index >= m_Before.PointerTransforms.Count || (holdFirstPointer && index == 0)) { continue; }
+                    index >= m_Before.PointerTransforms.Count) { continue; }
                 var step = after.PointerTransforms[index] * m_Before.PointerTransforms[index].inverse;
                 var state = member.Before;
                 state.Transform = step * state.Transform;
