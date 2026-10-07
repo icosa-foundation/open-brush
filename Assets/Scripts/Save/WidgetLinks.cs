@@ -12,6 +12,7 @@ namespace TiltBrush
         public uint GroupId;
         public int PointerIndex;
         [JsonIgnore] internal SymmetryWidgetGroup RuntimeGroup;
+        [JsonIgnore] internal WidgetLinks Owner;
 
         internal void Attach(GrabWidget widget)
         {
@@ -22,7 +23,7 @@ namespace TiltBrush
                 (group.Mirror.Canvas != null && group.Mirror.Canvas != widget.Canvas) ||
                 group.Members.Any(w => w != null && w.SymmetryPointerIndex == PointerIndex))
             {
-                Debug.LogWarning("[OB_WIDGET_LINK] Ignoring invalid widget membership.");
+                Owner?.WarnInvalidMembership();
                 return;
             }
             SymmetryMirrors.Register(group.Mirror);
@@ -40,6 +41,14 @@ namespace TiltBrush
     {
         public int Version = 1;
         public Group[] Groups;
+        [JsonIgnore] private bool m_WarnedInvalidMembership;
+
+        internal void WarnInvalidMembership()
+        {
+            if (m_WarnedInvalidMembership) { return; }
+            m_WarnedInvalidMembership = true;
+            Debug.LogWarning("[OB_WIDGET_LINK] Ignoring invalid widget memberships in this sketch.");
+        }
         [Serializable]
         public sealed class Group
         {
@@ -50,7 +59,11 @@ namespace TiltBrush
         internal void Resolve(SketchMetadata metadata, IReadOnlyDictionary<Guid, SymmetryMirror> mirrors)
         {
             var groups = new Dictionary<uint, SymmetryWidgetGroup>();
-            if (Version != 1) { return; }
+            foreach (var link in Memberships(metadata))
+            {
+                if (link != null) { link.Owner = this; }
+            }
+            if (Version != 1) { WarnInvalidMembership(); return; }
             var records = Groups ?? Array.Empty<Group>();
             var duplicateIds = records.Where(g => g != null).GroupBy(g => g.Id)
                 .Where(g => g.Count() > 1).Select(g => g.Key).ToHashSet();
