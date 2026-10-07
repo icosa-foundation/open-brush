@@ -34,7 +34,7 @@ namespace TiltBrush
             ActiveWidgets.Select(w => w.SymmetryPeerGroup)
                 .Where(g => g != null && ReferenceEquals(g.Mirror, mirror)).Distinct();
 
-        internal static bool CanLink(GrabWidget widget) => widget is MediaWidget;
+        internal static bool CanLink(GrabWidget widget) => widget is MediaWidget || widget is PortalWidgetBase || widget is GaussianCaptureWidgetBase;
 
         internal static bool HasLinkedUsers(Model model) => model != null && ActiveWidgets
             .OfType<ModelWidget>().Any(w => w.Model == model && w.SymmetryPeerGroup != null);
@@ -79,7 +79,7 @@ namespace TiltBrush
         {
             internal GrabWidget Widget;
             internal WidgetPlacement Before;
-            internal TrTransform ToPeer, Joined;
+            internal TrTransform ToPeer, Joined, Applied;
         }
         private static readonly List<Peer> m_Peers = new List<Peer>();
         internal static bool IsShowing => m_Peers.Count > 0;
@@ -112,6 +112,7 @@ namespace TiltBrush
             {
                 if (peer.Widget == null) { continue; }
                 var moved = SymmetryPeerEditing.PeerSelectionMovement(peer.ToPeer, selection, peer.Joined);
+                peer.Applied = moved;
                 var state = peer.Before;
                 state.Transform = moved * state.Transform;
                 state.Restore(peer.Widget);
@@ -128,5 +129,16 @@ namespace TiltBrush
         }
 
         internal static void Forget() { m_Peers.Clear(); }
+
+        internal static void RestorePlacement(GrabWidget widget, WidgetPlacement placement)
+        {
+            var peer = m_Peers.Find(p => p.Widget == widget);
+            if (peer != null)
+            {
+                peer.Before = placement;
+                peer.Before.Transform = peer.Applied.inverse * placement.Transform;
+            }
+            placement.Restore(widget);
+        }
     }
 }

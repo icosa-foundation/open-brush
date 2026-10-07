@@ -80,9 +80,12 @@ namespace TiltBrush
             m_CustomDimension.startState = widget.CustomDimension;
             m_EndTransform = endXf;
             m_CustomDimension.endState = endCustomDimension;
-            if (widget.SymmetryPeerGroup != null && !SelectionManager.m_Instance.IsWidgetSelected(widget))
+            if (widget.SymmetryPeerGroup != null)
             {
-                m_PeerMove = new TransformWidgetPeersCommand(widget, endXf * m_StartTransform.inverse, this);
+                var basis = widget.SymmetryPeerGroup.Mirror.Canvas.Pose.inverse * widget.Canvas.Pose;
+                var delta = basis * endXf * m_StartTransform.inverse * basis.inverse;
+                m_PeerMove = new TransformWidgetPeersCommand(widget, delta, this,
+                    endCustomDimension != m_CustomDimension.startState ? endCustomDimension : (Vector3?)null);
             }
         }
 

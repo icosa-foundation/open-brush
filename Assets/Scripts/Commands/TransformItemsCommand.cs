@@ -43,6 +43,7 @@ namespace TiltBrush
                 // What the strokes actually undergo, pivot included.
                 TrTransform xfAboutPivot =
                     TrTransform.T(m_Pivot) * m_Transform * TrTransform.T(-m_Pivot);
+                TransformWidgetPeersCommand.ForEdits((m_Widgets ?? new List<GrabWidget>()).Select(w => (w, xfAboutPivot)), this);
                 var moved = new HashSet<Stroke>(m_Strokes, new ReferenceComparer<Stroke>());
                 var seen = new HashSet<SymmetryStrokeGroup>();
                 foreach (var stroke in m_Strokes)

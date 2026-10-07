@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace TiltBrush
 {
@@ -59,6 +60,15 @@ namespace TiltBrush
                 m_WidgetsFlipped.AddRange(widgetsFlipped);
             }
             m_FlipPlane_CS = flipPlane;
+            if (m_WidgetsFlipped != null)
+            {
+                TransformWidgetPeersCommand.ForEdits(m_WidgetsFlipped.Select(w =>
+                {
+                    var end = w.SupportsNegativeSize ? flipPlane.ToTrTransform() * w.LocalTransform
+                        : flipPlane.ReflectPoseKeepHandedness(w.LocalTransform);
+                    return (w, end * w.LocalTransform.inverse);
+                }), this);
+            }
         }
 
         protected override void OnRedo()
