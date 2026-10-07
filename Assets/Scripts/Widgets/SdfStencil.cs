@@ -1143,7 +1143,17 @@ namespace TiltBrush
         public override void FindClosestPointOnSurface(
             Vector3 pos, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            surfacePos = m_SdfManager.GetNearestPointOnSurface(pos);
+            // IsoMesh evaluates distances in each shape's local units. Its nearest-point
+            // query applies that distance directly in world space, which breaks when the
+            // scene or guide is scaled. Keep the world-space gradient's magnitude to
+            // convert the field value into a world-space displacement.
+            Mapper mapper = m_SdfManager.Mapper;
+            float distance = mapper.Map(pos);
+            Vector3 gradient = mapper.MapGradient(pos);
+            float gradientSquared = gradient.sqrMagnitude;
+            surfacePos = gradientSquared > 0f
+                ? pos - gradient * (distance / gradientSquared)
+                : pos;
             surfaceNorm = m_SdfManager.GetSurfaceNormal(surfacePos);
         }
 
