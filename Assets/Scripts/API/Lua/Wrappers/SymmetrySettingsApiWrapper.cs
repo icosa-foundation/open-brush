@@ -17,6 +17,9 @@ namespace TiltBrush
 
         private SymmetryPointType _PointType;
         private int _PointOrder;
+        private int _HelicalCopies = 8;
+        private float _HelicalAngle = 30f;
+        private float _HelicalAdvance = 0.5f;
 
         private SymmetryWallpaperType _WallpaperType;
         private int _WallpaperRepeatX;
@@ -45,6 +48,13 @@ namespace TiltBrush
                             _Mode = SymmetryMode.Point;
                             _PointType = (SymmetryPointType)PointerManager.m_Instance.m_PointSymmetryFamily;
                             _PointOrder = PointerManager.m_Instance.m_PointSymmetryOrder;
+                        }
+                        else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Helical)
+                        {
+                            _Mode = SymmetryMode.Helical;
+                            _HelicalCopies = PointerManager.m_Instance.m_HelicalCopies;
+                            _HelicalAngle = PointerManager.m_Instance.m_HelicalAngle;
+                            _HelicalAdvance = PointerManager.m_Instance.m_HelicalAdvance;
                         }
                         else
                         {
@@ -141,6 +151,10 @@ namespace TiltBrush
                         );
                         matrices = wallpaperSym.matrices;
                     }
+                    else if (mode == SymmetryMode.Helical)
+                    {
+                        matrices = PointerManager.CreateHelicalMatrices(helicalCopies, helicalAngle, helicalAdvance);
+                    }
                     else if (mode == SymmetryMode.Point)
                     {
                         var pointSym = new PointSymmetry((PointSymmetry.Family)pointType, pointOrder, 1f);
@@ -169,6 +183,9 @@ namespace TiltBrush
 
                 _PointType = _PointType,
                 _PointOrder = _PointOrder,
+                _HelicalCopies = _HelicalCopies,
+                _HelicalAngle = _HelicalAngle,
+                _HelicalAdvance = _HelicalAdvance,
 
                 _WallpaperType = _WallpaperType,
                 _WallpaperRepeatX = _WallpaperRepeatX,
@@ -203,6 +220,11 @@ namespace TiltBrush
                             break;
                         case SymmetryMode.TwoHanded:
                             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.TwoHanded);
+                            break;
+                        case SymmetryMode.Helical:
+                            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Helical;
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                            PointerManager.m_Instance.CalculateMirrors();
                             break;
                         case SymmetryMode.Point:
                             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
@@ -418,6 +440,51 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Number of helical copies, including the original placement")]
+        public int helicalCopies
+        {
+            get => _HelicalCopies;
+            set
+            {
+                _HelicalCopies = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_HelicalCopies = _HelicalCopies;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Rotation per helical copy in degrees")]
+        public float helicalAngle
+        {
+            get => _HelicalAngle;
+            set
+            {
+                _HelicalAngle = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_HelicalAngle = _HelicalAngle;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Advance per helical copy along the mirror Y axis in canvas units")]
+        public float helicalAdvance
+        {
+            get => _HelicalAdvance;
+            set
+            {
+                _HelicalAdvance = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_HelicalAdvance = _HelicalAdvance;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
         [MoonSharpHidden]
         public static void _WriteToScene(SymmetrySettingsApiWrapper settings)
         {
@@ -435,6 +502,13 @@ namespace TiltBrush
                     break;
                 case SymmetryMode.TwoHanded:
                     newMode = PointerManager.SymmetryMode.TwoHanded;
+                    break;
+                case SymmetryMode.Helical:
+                    newMode = PointerManager.SymmetryMode.MultiMirror;
+                    PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Helical;
+                    PointerManager.m_Instance.m_HelicalCopies = settings._HelicalCopies;
+                    PointerManager.m_Instance.m_HelicalAngle = settings._HelicalAngle;
+                    PointerManager.m_Instance.m_HelicalAdvance = settings._HelicalAdvance;
                     break;
                 case SymmetryMode.Point:
                     PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
@@ -464,6 +538,8 @@ namespace TiltBrush
 
             // Set mode last so we recalculate mirrors etc with correct settings
             PointerManager.m_Instance.SetSymmetryMode(newMode);
+            if (newMode == PointerManager.SymmetryMode.MultiMirror)
+            { PointerManager.m_Instance.CalculateMirrors(); }
         }
     }
 }

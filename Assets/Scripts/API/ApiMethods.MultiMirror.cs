@@ -71,13 +71,27 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("symmetry.type",
-        description: "Sets the custom symmetry type (Currently either 'point' or 'wallpaper'",
+        description: "Sets the custom symmetry type: point, wallpaper or helical",
         exampleUsage: "wallpaper")]
         public static void CustomSymmetryType(string type)
         {
             Enum.TryParse(type, ignoreCase: true, out PointerManager.CustomSymmetryType _type);
             PointerManager.m_Instance.m_CustomSymmetryType = _type;
             PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        [ApiEndpoint("symmetry.helical",
+        description: "Enables helical symmetry with a copy count, rotation per copy in degrees, and advance per copy along the mirror's Y axis in canvas units",
+        exampleUsage: "12,30,0.5")]
+        public static void HelicalSymmetry(int copies, float angle, float advance)
+        {
+            var pm = PointerManager.m_Instance;
+            pm.m_HelicalCopies = Mathf.Max(1, copies);
+            pm.m_HelicalAngle = angle;
+            pm.m_HelicalAdvance = advance;
+            pm.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Helical;
+            pm.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+            pm.CalculateMirrors();
         }
 
         [ApiEndpoint("symmetry.pointfamily",
