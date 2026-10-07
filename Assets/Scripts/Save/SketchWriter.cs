@@ -117,6 +117,7 @@ namespace TiltBrush
             // (just created, or all their strokes deleted); a save of selected strokes keeps only
             // the mirrors those strokes use.
             internal bool IncludeUnreferenced;
+            internal readonly List<SymmetryMirror> WidgetMirrors = new List<SymmetryMirror>();
             // Write no symmetry table at all: the strokes go out unlinked.
             internal bool Unlinked;
 
@@ -170,6 +171,7 @@ namespace TiltBrush
                 {
                     foreach (var mirror in state.Mirrors) { table.AddMirror(mirror); }
                 }
+                foreach (var mirror in state.WidgetMirrors) { table.AddMirror(mirror); }
                 foreach (var copy in strokeCopies)
                 {
                     var group = copy.strokeData.m_SymmetryGroup;
@@ -258,7 +260,7 @@ namespace TiltBrush
         /// An additive load (importing into an open sketch) gives every mirror a fresh identity - reusing an existing one would bind the imported
         /// groups to that mirror's canvas and settings - and leaves the active mirror alone.
         private static void ReadSymmetryTable(Stream stream, List<PendingSymmetry> pending,
-            bool additive)
+            bool additive, IDictionary<Guid, SymmetryMirror> loadedMirrors = null)
         {
             var mirrors = new List<SymmetryMirror>();
             var groupMirrors = new List<uint>();
@@ -293,6 +295,7 @@ namespace TiltBrush
                         {
                             mirrors.Add(SymmetryMirrors.GetOrCreate(mirrorGuid, mirrorSettings));
                         }
+                        if (loadedMirrors != null) { loadedMirrors[mirrorGuid] = mirrors[mirrors.Count - 1]; }
                     }
                     int numGroups = reader.Int32();
                     if (numGroups < 0 || numGroups > pending.Count) { return; }
@@ -783,7 +786,8 @@ namespace TiltBrush
 
         /// Leaves stream in indeterminate state; caller should Close() upon return.
         public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, int targetLayer,
-            out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup, out List<Stroke> strokes)
+            out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup, out List<Stroke> strokes,
+            IDictionary<Guid, SymmetryMirror> loadedMirrors = null)
         {
             bool allowFastPath = BitConverter.IsLittleEndian;
             // Buffering speeds up fast path ~1.4x, slow path ~2.3x
@@ -824,7 +828,7 @@ namespace TiltBrush
             oldGroupToNewGroup = new Dictionary<int, int>();
             // When loading additively we want all strokes on a single new layer;
             strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer,
-                timestampOffset, additive: bAdditive);
+                timestampOffset, additive: bAdditive, loadedMirrors: loadedMirrors);
             if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
@@ -862,7 +866,7 @@ namespace TiltBrush
         /// Returns null on parse error.
         public static List<Stroke> GetStrokes(
             Stream stream, Guid[] brushList, bool allowFastPath, int targetLayer, uint timestampOffset,
-            bool additive = false)
+            bool additive = false, IDictionary<Guid, SymmetryMirror> loadedMirrors = null)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 
@@ -1097,7 +1101,7 @@ namespace TiltBrush
             }
 
             // Reconnect the strokes with the peers their symmetry mode created them alongside.
-            ReadSymmetryTable(stream, pendingSymmetry, additive);
+            ReadSymmetryTable(stream, pendingSymmetry, additive, loadedMirrors);
 
             return result;
         }
