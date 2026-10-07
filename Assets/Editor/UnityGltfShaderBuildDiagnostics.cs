@@ -30,11 +30,11 @@ namespace TiltBrush
                 throw new BuildFailedException($"{kPrefix} Expected audited UnityGLTF collection with 2 shaders and 392 variants.");
             string collectionGuid = AssetDatabase.AssetPathToGUID(kCollectionPath);
             Debug.Log($"{kPrefix} target={report.summary.platform}, options={report.summary.options}, unity={Application.unityVersion}, apis={string.Join(",", PlayerSettings.GetGraphicsAPIs(report.summary.platform))}, pipeline={GraphicsSettings.defaultRenderPipeline?.name ?? "none"}, collectionGuid={collectionGuid}, preloadedSettingContainsGuid={File.ReadAllText("ProjectSettings/GraphicsSettings.asset").Contains(collectionGuid)}, shaders={collection.shaderCount}, variants={collection.variantCount}");
-            ValidateReference("PBRGraph", "478ce3626be7a5f4ea58d6b13f05a2e4");
-            ValidateReference("UnlitGraph", "59541e6caf586ca4f96ccf48a4813a51");
+            ValidateAndRegisterReference("PBRGraph", "478ce3626be7a5f4ea58d6b13f05a2e4");
+            ValidateAndRegisterReference("UnlitGraph", "59541e6caf586ca4f96ccf48a4813a51");
         }
 
-        private static void ValidateReference(string graph, string expectedGuid)
+        private static void ValidateAndRegisterReference(string graph, string expectedGuid)
         {
             string path = $"Assets/Resources/UnityGLTF {graph} Reference.mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
@@ -43,6 +43,14 @@ namespace TiltBrush
             AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material.shader, out string guid, out long localId);
             if (guid != expectedGuid)
                 throw new BuildFailedException($"{kPrefix} Unexpected shader GUID for {path}: {guid}");
+            // Shader Graph normally registers generated shaders after importing them. Ensure
+            // these runtime name lookups are registered even when using cached import artifacts.
+            // This does not add shaders to Always Included or expand the audited variant set.
+            bool foundBeforeRegistration = Shader.Find(material.shader.name) == material.shader;
+            ShaderUtil.RegisterShader(material.shader);
+            if (Shader.Find(material.shader.name) != material.shader)
+                throw new BuildFailedException($"{kPrefix} Shader name registration failed for {material.shader.name}");
+            Debug.Log($"{kPrefix} registered={material.shader.name}, foundBeforeRegistration={foundBeforeRegistration}, foundAfterRegistration=True");
             Debug.Log($"{kPrefix} reference={path}, shader={material.shader.name}, guid={guid}, localId={localId}, source={AssetDatabase.GetAssetPath(material.shader)}, supportedInEditor={material.shader.isSupported}, passesInEditor={material.shader.passCount}");
         }
 
