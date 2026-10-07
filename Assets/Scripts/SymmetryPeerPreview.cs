@@ -37,7 +37,7 @@ namespace TiltBrush
         // Per peer, everything the preview has moved it by so far.
         private static readonly List<TrTransform> m_Applied = new List<TrTransform>();
 
-        public static bool IsShowing => m_Strokes.Count > 0;
+        public static bool IsShowing => m_Strokes.Count > 0 || SymmetryWidgetPreview.IsShowing;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetForPlayMode()
@@ -52,6 +52,7 @@ namespace TiltBrush
         public static void Show(IEnumerable<Stroke> strokes)
         {
             Hide();
+            SymmetryWidgetPreview.Show();
 
             var handled = new HashSet<Stroke>(new ReferenceComparer<Stroke>());
             foreach (var stroke in strokes)
@@ -83,6 +84,7 @@ namespace TiltBrush
         /// every frame: each stroke's geometry is transformed where it lies.
         public static void UpdateTransform(TrTransform selectionXf)
         {
+            SymmetryWidgetPreview.Update(selectionXf);
             for (int i = 0; i < m_Strokes.Count; ++i)
             {
                 TrTransform target = SymmetryPeerEditing.PeerSelectionMovement(
@@ -126,6 +128,7 @@ namespace TiltBrush
         /// Puts every peer back exactly where it was. The deselect is what moves them for real.
         public static void Hide()
         {
+            SymmetryWidgetPreview.Hide();
             for (int i = 0; i < m_Strokes.Count; ++i)
             {
                 if (m_Applied[i] != TrTransform.identity)
@@ -155,6 +158,7 @@ namespace TiltBrush
         /// anyway. Only for teardown; Hide() is what callers want.
         public static void Forget()
         {
+            SymmetryWidgetPreview.Forget();
             m_Strokes.Clear();
             m_ToPeer.Clear();
             m_JoinTransforms.Clear();

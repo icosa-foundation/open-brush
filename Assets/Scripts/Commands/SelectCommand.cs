@@ -35,6 +35,10 @@ namespace TiltBrush
     {
         private List<Stroke> m_Strokes;
         private List<GrabWidget> m_Widgets;
+        private readonly Dictionary<GrabWidget, TrTransform> m_WidgetJoins =
+            new Dictionary<GrabWidget, TrTransform>();
+        private readonly Dictionary<GrabWidget, CanvasScript> m_WidgetCanvases =
+            new Dictionary<GrabWidget, CanvasScript>();
         private TrTransform m_InitialTransform;
         private bool m_Deselect;
         private bool m_Initial;
@@ -165,6 +169,14 @@ namespace TiltBrush
             m_Widgets = new List<GrabWidget>();
             m_Widgets.AddRange(widgetsGrouped);
             m_Widgets.AddRange(widgetsNotGrouped);
+            if (!deselect)
+            {
+                var groups = new HashSet<SymmetryWidgetGroup>();
+                m_Widgets.RemoveAll(w => w.SymmetryPeerGroup != null &&
+                    !SelectionManager.m_Instance.IsWidgetSelected(w) &&
+                    (!groups.Add(w.SymmetryPeerGroup) ||
+                     SelectionManager.m_Instance.IsSymmetryGroupSelectedByOther(w)));
+            }
 
             m_InitialTransform = initialTransform;
             m_Deselect = deselect;
@@ -175,6 +187,30 @@ namespace TiltBrush
             m_TargetCanvas = targetCanvas;
 
             GatherSymmetryPeers();
+            GatherWidgetPeers();
+            if (m_Deselect && m_TargetCanvas != null)
+            {
+                new MoveSymmetryGroupsToLayerCommand(
+                    m_Strokes.Select(s => s.SymmetryPeerGroup).Where(g => g != null), m_TargetCanvas, this,
+                    widgetGroups: m_Widgets.Select(w => w.SymmetryPeerGroup).Where(g => g != null));
+            }
+        }
+
+        private void GatherWidgetPeers()
+        {
+            if (!m_Deselect) { return; }
+            // Restore temporary peer movement before capturing command endpoints.
+            SymmetryWidgetPreview.Hide();
+            var groups = new HashSet<SymmetryWidgetGroup>();
+            foreach (var widget in m_Widgets)
+            {
+                var joined = SelectionManager.m_Instance.SelectionTransformWhenSelected(widget);
+                m_WidgetJoins[widget] = joined;
+                m_WidgetCanvases[widget] = widget.m_PreviousCanvas;
+                if (widget.SymmetryPeerGroup == null || !groups.Add(widget.SymmetryPeerGroup)) { continue; }
+                var delta = SymmetryPeerEditing.SelectionMovement(m_InitialTransform, joined);
+                new TransformWidgetPeersCommand(widget, delta, this);
+            }
         }
 
         /// Deselecting is the point at which a moved selection is baked back into its strokes, so
@@ -213,11 +249,6 @@ namespace TiltBrush
                 // to another layer, the whole group follows it there under a new mirror in that
                 // layer (decision 11).
                 m_CopyMoves.Add(new TransformSymmetryCopiesCommand(stroke, moved, null, this));
-                if (layerChanged)
-                {
-                    new MoveSymmetryGroupsToLayerCommand(
-                        new[] { stroke.SymmetryPeerGroup }, m_TargetCanvas, this);
-                }
             }
         }
 
@@ -304,6 +335,7 @@ namespace TiltBrush
                 if (m_Widgets != null)
                 {
                     SelectionManager.m_Instance.SelectWidgets(m_Widgets);
+                    SelectionManager.m_Instance.RestoreWidgetSelectionJoins(m_WidgetJoins, m_WidgetCanvases);
                 }
             }
 

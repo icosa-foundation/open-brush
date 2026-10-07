@@ -192,6 +192,10 @@ namespace TiltBrush
             {
                 owned |= ReferenceEquals(stroke.SymmetryPeerGroup?.Mirror, mirror);
             }
+            foreach (var widget in selection.SelectedWidgets)
+            {
+                owned |= ReferenceEquals(widget.SymmetryPeerGroup?.Mirror, mirror);
+            }
             if (owned) { selection.ClearActiveSelection(); }
         }
 

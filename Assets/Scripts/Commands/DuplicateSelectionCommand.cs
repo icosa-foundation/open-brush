@@ -125,7 +125,7 @@ namespace TiltBrush
                 // With a linked mirror active, each selected stroke produces its own new set of
                 // symmetry peers under it, rather than joining the source's group.
                 var mirror = SymmetryMirrors.LinkingMirror;
-                bool linkMirrorCopies = mirror != null && m_SelectedStrokes.Count > 0;
+                bool linkMirrorCopies = mirror != null;
 
                 // With plain symmetry, a selected copy's linked partners are duplicated through
                 // the symmetry too, as if they had been selected. They aren't in the selection
@@ -168,6 +168,8 @@ namespace TiltBrush
                     // Generally speaking we want both sides of 2d media to appear
                     // when duplicating using multi-mirror.
                     bool duplicateAsTwoSided = widget is Media2dWidget;
+                    var widgetGroup = linkMirrorCopies && SymmetryWidgetGroup.CanLink(widget)
+                        ? new SymmetryWidgetGroup(mirror) : null;
 
                     for (int i = 0; i < xfSymmetriesGS.Count; i++)
                     {
@@ -185,6 +187,7 @@ namespace TiltBrush
                             position: mat.translation,
                             rotation: mat.rotation);
                         duplicatedWidget.SetSignedWidgetSize(mat.scale);
+                        if (widgetGroup != null) { duplicatedWidget.SetSymmetryGroup(widgetGroup, i); }
 
                         m_DuplicatedWidgets.Add(duplicatedWidget);
                     }

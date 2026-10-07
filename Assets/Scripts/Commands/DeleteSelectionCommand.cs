@@ -37,6 +37,15 @@ namespace TiltBrush
             {
                 m_Widgets = new List<GrabWidget>();
                 m_Widgets.AddRange(widgets);
+                var seen = new HashSet<GrabWidget>(m_Widgets);
+                foreach (var widget in widgets)
+                {
+                    if (widget.SymmetryPeerGroup == null) { continue; }
+                    foreach (var peer in widget.SymmetryPeerGroup.ActiveMembers)
+                    {
+                        if (seen.Add(peer)) { new HideWidgetCommand(peer, this, propagate: false); }
+                    }
+                }
             }
             m_InitialSelectionTransform = SelectionManager.m_Instance.SelectionTransform;
 

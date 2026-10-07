@@ -163,6 +163,7 @@ namespace TiltBrush
     /// Consecutive changes to the same mirror (a slider being dragged) merge into one undo step.
     public class MoveMirrorSettingsCommand : BaseCommand
     {
+        private readonly MirrorWidgetEdits m_Widgets;
         private class Member
         {
             internal Stroke Stroke;
@@ -191,6 +192,7 @@ namespace TiltBrush
             m_Before = before;
             m_After = after;
             m_Canvas = mirror.Canvas;
+            m_Widgets = new MirrorWidgetEdits(mirror, before);
             int count = after.PointerTransforms.Count;
             foreach (var group in SymmetryMirrors.GroupsOf(mirror))
             {
@@ -245,6 +247,8 @@ namespace TiltBrush
                         member.Stroke, m_Canvas, member.After, member.AfterScale);
                 }
             }
+            if (!m_Applied) { m_Widgets.Update(m_After, false); }
+            else { m_Widgets.Restore(true); }
             m_Applied = true;
             m_Mirror.Settings = m_After;
             SymmetryMirrors.ApplySettingsUnrecorded(m_After);
@@ -254,6 +258,7 @@ namespace TiltBrush
         protected override void OnUndo()
         {
             for (int i = m_Rederives.Count - 1; i >= 0; --i) { m_Rederives[i].Undo(); }
+            m_Widgets.Restore(false);
             foreach (var member in m_Members)
             {
                 MirrorStrokeEdits.RestorePoints(
@@ -284,6 +289,7 @@ namespace TiltBrush
             SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after)
         {
             m_Mirror = mirror;
+            new RegenerateMirrorWidgetsCommand(mirror, before, after, this);
             m_Before = before;
             m_After = after;
             int beforeCount = before.PointerTransforms.Count;

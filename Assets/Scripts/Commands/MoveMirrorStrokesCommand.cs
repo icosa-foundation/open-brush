@@ -31,6 +31,7 @@ namespace TiltBrush
         private List<SymmetryPeerEditing.BrokenLink> m_BrokenLinks =
             new List<SymmetryPeerEditing.BrokenLink>();
         private bool m_Complete;
+        private readonly MirrorWidgetEdits m_Widgets;
 
         internal MoveMirrorStrokesCommand(SymmetryWidget widget, SymmetryMirror mirror,
             SymmetrySettingsSnapshot before, List<SymmetryMirrorMove.GroupMove> groups)
@@ -42,7 +43,10 @@ namespace TiltBrush
             m_Before = before;
             m_After = before;
             m_Groups = groups;
+            m_Widgets = new MirrorWidgetEdits(mirror, before);
         }
+
+        internal void UpdateWidgets(SymmetrySettingsSnapshot settings) => m_Widgets.Update(settings, true);
 
         public override bool NeedsSave => true;
 
@@ -68,6 +72,7 @@ namespace TiltBrush
             if (m_Complete) { return; }
             m_WidgetMove.UpdateMirrorEnd(m_Widget.LocalTransform, m_Widget.CustomDimension);
             m_After = after;
+            m_Widgets.Update(after, true);
             m_Rederives = rederives;
             m_BrokenLinks = brokenLinks;
             foreach (var group in m_Groups) { group.Complete(); }
@@ -78,6 +83,7 @@ namespace TiltBrush
         {
             foreach (var link in m_BrokenLinks) { link.Break(); }
             foreach (var group in m_Groups) { group.Restore(after: true); }
+            m_Widgets.Restore(after: true);
             m_WidgetMove.Redo();
             m_Mirror.Settings = m_After;
             // Derived under the mirror's new settings.
@@ -90,6 +96,7 @@ namespace TiltBrush
             if (!m_Complete) { SymmetryMirrorMove.End(); }
             for (int i = m_Rederives.Count - 1; i >= 0; --i) { m_Rederives[i].Undo(); }
             foreach (var group in m_Groups) { group.Restore(after: false); }
+            m_Widgets.Restore(after: false);
             m_WidgetMove.Undo();
             m_Mirror.Settings = m_Before;
             foreach (var link in m_BrokenLinks) { link.Restore(); }

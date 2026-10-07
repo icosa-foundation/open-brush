@@ -96,6 +96,7 @@ namespace TiltBrush
             }
             var worldTransforms = pm.GetSymmetriesForCurrentMode();
             foreach (var group in m_Groups) { group.Update(worldTransforms); }
+            m_Command.UpdateWidgets(current);
         }
 
         public static void End()

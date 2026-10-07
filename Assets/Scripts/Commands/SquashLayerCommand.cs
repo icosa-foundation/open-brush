@@ -53,10 +53,11 @@ namespace TiltBrush
                 .Where(group => group?.Mirror != null && group.Mirror.Canvas == m_SquashedLayer)
                 .Distinct()
                 .ToList();
-            if (linkedGroups.Count > 0)
+            var widgetGroups = m_ActiveWidgets.Select(w => w.SymmetryPeerGroup).Where(g => g != null).Distinct();
+            if (linkedGroups.Count > 0 || widgetGroups.Any())
             {
                 new MoveSymmetryGroupsToLayerCommand(
-                    linkedGroups, m_DestinationLayer, this, moveStrokes: false);
+                    linkedGroups, m_DestinationLayer, this, moveStrokes: false, widgetGroups: widgetGroups);
             }
         }
 

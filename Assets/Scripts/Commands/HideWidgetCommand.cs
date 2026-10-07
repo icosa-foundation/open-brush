@@ -24,7 +24,7 @@ namespace TiltBrush
 
         public GrabWidget Widget { get { return m_Widget; } }
 
-        public HideWidgetCommand(GrabWidget widget, BaseCommand parent = null)
+        public HideWidgetCommand(GrabWidget widget, BaseCommand parent = null, bool propagate = true)
             : base(parent)
         {
             m_Widget = widget;
@@ -39,6 +39,13 @@ namespace TiltBrush
             }
             m_TiltMeterCost = m_Widget.GetTiltMeterCost();
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: false);
+            if (propagate && widget.SymmetryPeerGroup != null)
+            {
+                foreach (var peer in widget.SymmetryPeerGroup.ActiveMembers)
+                {
+                    if (peer != widget) { new HideWidgetCommand(peer, this, propagate: false); }
+                }
+            }
         }
 
         public override bool NeedsSave { get { return true; } }

@@ -22,6 +22,16 @@ namespace TiltBrush
 
     public class GrabWidget : MonoBehaviour
     {
+        public SymmetryWidgetGroup SymmetryPeerGroup { get; private set; }
+        public int SymmetryPointerIndex { get; private set; } = -1;
+
+        internal void SetSymmetryGroup(SymmetryWidgetGroup group, int index)
+        {
+            SymmetryPeerGroup?.Remove(this);
+            SymmetryPeerGroup = group;
+            SymmetryPointerIndex = group == null ? -1 : index;
+            group?.Add(this);
+        }
         public enum State
         {
             Showing,
@@ -1995,6 +2005,7 @@ namespace TiltBrush
 
         virtual protected void OnDestroy()
         {
+            SetSymmetryGroup(null, -1);
             OnPreDestroy();
             WidgetManager.m_Instance.DestroyWidgetPin(m_Pin);
         }

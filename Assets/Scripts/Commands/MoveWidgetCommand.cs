@@ -28,6 +28,7 @@ namespace TiltBrush
 
         private Type m_Type;
         private GrabWidget m_Widget;
+        private TransformWidgetPeersCommand m_PeerMove;
         private TrTransform m_StartTransform;
         private TrTransform m_EndTransform;
         private TrTransform m_StartSelectionTransform;
@@ -79,6 +80,10 @@ namespace TiltBrush
             m_CustomDimension.startState = widget.CustomDimension;
             m_EndTransform = endXf;
             m_CustomDimension.endState = endCustomDimension;
+            if (widget.SymmetryPeerGroup != null && !SelectionManager.m_Instance.IsWidgetSelected(widget))
+            {
+                m_PeerMove = new TransformWidgetPeersCommand(widget, endXf * m_StartTransform.inverse, this);
+            }
         }
 
         public override bool NeedsSave { get { return true; } }
@@ -157,6 +162,7 @@ namespace TiltBrush
             if (move != null && m_Widget == move.m_Widget)
             {
                 m_EndTransform = move.m_EndTransform;
+                if (m_PeerMove != null && move.m_PeerMove != null) { m_PeerMove.UpdateEnd(move.m_PeerMove); }
                 m_CustomDimension.endState = move.m_CustomDimension.endState;
                 // Not used if (m_Type != Type.Selection)
                 m_EndSelectionTransform = move.m_EndSelectionTransform;

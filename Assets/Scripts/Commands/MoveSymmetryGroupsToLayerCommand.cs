@@ -48,11 +48,20 @@ namespace TiltBrush
         private readonly CanvasScript m_Target;
         private readonly List<GroupMove> m_Groups = new List<GroupMove>();
         private readonly List<SymmetryMirror> m_NewMirrors = new List<SymmetryMirror>();
+        private readonly List<WidgetMove> m_WidgetGroups = new List<WidgetMove>();
+
+        private sealed class WidgetMove
+        {
+            internal SymmetryWidgetGroup Before, After;
+            internal readonly List<(GrabWidget widget, CanvasScript canvas, int index, bool moves)> Members =
+                new List<(GrabWidget, CanvasScript, int, bool)>();
+        }
 
         /// Pass moveStrokes: false when the parent command moves every stroke itself (squashing
         /// a layer), so only the groups are re-homed.
         public MoveSymmetryGroupsToLayerCommand(IEnumerable<SymmetryStrokeGroup> groups,
-            CanvasScript target, BaseCommand parent = null, bool moveStrokes = true)
+            CanvasScript target, BaseCommand parent = null, bool moveStrokes = true,
+            IEnumerable<SymmetryWidgetGroup> widgetGroups = null)
             : base(parent)
         {
             m_Target = target;
@@ -92,6 +101,25 @@ namespace TiltBrush
                 }
                 m_Groups.Add(move);
             }
+            foreach (var group in (widgetGroups ?? Enumerable.Empty<SymmetryWidgetGroup>()).Distinct())
+            {
+                var oldMirror = group?.Mirror;
+                if (oldMirror?.Settings == null || oldMirror.Canvas == null || oldMirror.Canvas == target)
+                { continue; }
+                if (!newMirrors.TryGetValue(oldMirror, out var newMirror))
+                {
+                    newMirror = new SymmetryMirror(Guid.NewGuid(), ReExpress(oldMirror, target)) { Canvas = target };
+                    newMirrors.Add(oldMirror, newMirror);
+                    m_NewMirrors.Add(newMirror);
+                }
+                var move = new WidgetMove { Before = group, After = new SymmetryWidgetGroup(newMirror) };
+                foreach (var widget in group.ActiveMembers)
+                {
+                    move.Members.Add((widget, widget.Canvas, widget.SymmetryPointerIndex,
+                        moveStrokes && widget.Canvas != target && widget.Canvas != App.Scene.SelectionCanvas));
+                }
+                m_WidgetGroups.Add(move);
+            }
         }
 
         /// The mirror's settings with each pointer transform carried from its canvas into
@@ -105,11 +133,19 @@ namespace TiltBrush
             return mirror.Settings.WithPointerTransforms(transforms);
         }
 
-        public override bool NeedsSave => m_Groups.Count > 0;
+        public override bool NeedsSave => m_Groups.Count > 0 || m_WidgetGroups.Count > 0;
 
         protected override void OnRedo()
         {
             foreach (var mirror in m_NewMirrors) { SymmetryMirrors.Register(mirror); }
+            foreach (var move in m_WidgetGroups)
+            {
+                foreach (var member in move.Members)
+                {
+                    if (member.moves) { member.widget.SetCanvas(m_Target); }
+                    member.widget.SetSymmetryGroup(move.After, member.index);
+                }
+            }
             foreach (var move in m_Groups)
             {
                 foreach (var member in move.Members)
@@ -122,6 +158,14 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            foreach (var move in m_WidgetGroups)
+            {
+                foreach (var member in move.Members)
+                {
+                    if (member.moves) { member.widget.SetCanvas(member.canvas); }
+                    member.widget.SetSymmetryGroup(move.Before, member.index);
+                }
+            }
             foreach (var move in m_Groups)
             {
                 foreach (var member in move.Members)
