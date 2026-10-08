@@ -62,7 +62,8 @@ namespace TiltBrush
             Polyhedra,
             Helical,
             SpaceGroup,
-            LineGroup
+            LineGroup,
+            Penrose
         }
 
         public enum ColorShiftComponent
@@ -76,6 +77,10 @@ namespace TiltBrush
         [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cn;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup = SymmetryGroup.R.p1;
         [NonSerialized] public int m_PointSymmetryOrder = 6;
+
+        [NonSerialized] public int m_PenroseSubdivisions = 4;
+        [NonSerialized] public float m_PenroseRadius = 2f;
+        [NonSerialized] public PenroseTiling.TileSelection m_PenroseTiles = PenroseTiling.TileSelection.Both;
 
         [NonSerialized] public LineGroupSymmetry.Family m_LineFamily = LineGroupSymmetry.Family.ScrewHalfTurns;
         [NonSerialized] public int m_LineOrder = 5;
@@ -273,6 +278,9 @@ namespace TiltBrush
         private List<Color> m_SymmetryPointerColors;
         private List<BrushDescriptor> m_SymmetryPointerBrushes;
         private Vector2[] m_CustomMirrorDomain;
+        public PenroseTiling PenrosePattern { get; private set; }
+        public Matrix4x4 PenroseReferenceFrame { get; private set; }
+        public int PenroseReferenceTile { get; private set; }
         public Matrix4x4 SpaceGroupCellBasis { get; private set; }
 
         // ---- events
@@ -1775,6 +1783,14 @@ namespace TiltBrush
             m_CustomMirrorDomain = null;
             switch (m_CustomSymmetryType)
             {
+                case CustomSymmetryType.Penrose:
+                    PenrosePattern = new PenroseTiling(m_PenroseSubdivisions, m_PenroseRadius, m_PenroseTiles);
+                    // Anchor the original pointer at the reference tile. Rebase its outlines too.
+                    PenroseReferenceFrame = PenrosePattern.matrices[0].inverse;
+                    m_CustomMirrorMatrices = PenrosePattern.matrices.Select(m => PenroseReferenceFrame * m).ToList();
+                    m_CustomMirrorMatrices[0] = Matrix4x4.identity;
+                    PenroseReferenceTile = PenrosePattern.tiles.FindIndex(tile => UsesPenroseTile(tile.kind));
+                    break;
                 case CustomSymmetryType.LineGroup:
                     m_CustomMirrorMatrices = new LineGroupSymmetry(m_LineFamily, m_LineOrder,
                         m_LineRepeats, m_LineAdvance, m_LineAngle).matrices;
@@ -1934,12 +1950,18 @@ namespace TiltBrush
             }
         }
 
+        public bool UsesPenroseTile(PenroseTiling.Kind kind)
+            => m_PenroseTiles == PenroseTiling.TileSelection.Both ||
+               m_PenroseTiles == PenroseTiling.TileSelection.Thin && kind == PenroseTiling.Kind.Thin ||
+               m_PenroseTiles == PenroseTiling.TileSelection.Thick && kind == PenroseTiling.Kind.Thick;
+
         public float GetCustomMirrorScale()
         {
             float canvasScale = App.ActiveCanvas.Pose.scale;
             return canvasScale * (m_CustomSymmetryType == CustomSymmetryType.Helical ||
                 m_CustomSymmetryType == CustomSymmetryType.SpaceGroup ||
-                m_CustomSymmetryType == CustomSymmetryType.LineGroup ? 1f : m_WallpaperSymmetryScale);
+                m_CustomSymmetryType == CustomSymmetryType.LineGroup ||
+                m_CustomSymmetryType == CustomSymmetryType.Penrose ? 1f : m_WallpaperSymmetryScale);
         }
 
         public TrTransform TrFromMatrix(Matrix4x4 m)
@@ -2454,7 +2476,8 @@ namespace TiltBrush
                     var xfCenter = MultiMirrorCenter();
 
                     if (m_CustomSymmetryType == CustomSymmetryType.SpaceGroup ||
-                        m_CustomSymmetryType == CustomSymmetryType.LineGroup)
+                        m_CustomSymmetryType == CustomSymmetryType.LineGroup ||
+                        m_CustomSymmetryType == CustomSymmetryType.Penrose)
                     {
                         // Use the same translation scale as live pointers. Widget scale changes
                         // the lattice spacing; it does not resize each copy's content.

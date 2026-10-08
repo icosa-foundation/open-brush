@@ -35,12 +35,16 @@ namespace TiltBrush
         // 3: adds helical parameters. Earlier versions still read.
         // 4: adds space-group parameters.
         // 5: adds general line-group parameters.
-        private const int kSerializedVersion = 5;
+        // 6: adds Penrose parameters.
+        private const int kSerializedVersion = 6;
 
         public PointerManager.SymmetryMode Mode;
         public PointerManager.CustomSymmetryType CustomType;
         public PointSymmetry.Family PointFamily;
         public int PointOrder;
+        public int PenroseSubdivisions = 4;
+        public float PenroseRadius = 2f;
+        public PenroseTiling.TileSelection PenroseTiles = PenroseTiling.TileSelection.Both;
         public LineGroupSymmetry.Family LineFamily = LineGroupSymmetry.Family.ScrewHalfTurns;
         public int LineOrder = 5;
         public int LineRepeats = 8;
@@ -90,6 +94,9 @@ namespace TiltBrush
                 CustomType = pm.m_CustomSymmetryType,
                 PointFamily = pm.m_PointSymmetryFamily,
                 PointOrder = pm.m_PointSymmetryOrder,
+                PenroseSubdivisions = pm.m_PenroseSubdivisions,
+                PenroseRadius = pm.m_PenroseRadius,
+                PenroseTiles = pm.m_PenroseTiles,
                 LineFamily = pm.m_LineFamily,
                 LineOrder = pm.m_LineOrder,
                 LineRepeats = pm.m_LineRepeats,
@@ -170,6 +177,8 @@ namespace TiltBrush
             {
                 return false;
             }
+            if (CustomType == PointerManager.CustomSymmetryType.Penrose)
+            { return PenroseSubdivisions == other.PenroseSubdivisions && PenroseTiles == other.PenroseTiles; }
             if (CustomType == PointerManager.CustomSymmetryType.LineGroup)
             { return LineFamily == other.LineFamily && LineOrder == other.LineOrder && LineRepeats == other.LineRepeats; }
             if (CustomType == PointerManager.CustomSymmetryType.SpaceGroup)
@@ -191,6 +200,9 @@ namespace TiltBrush
                 CustomType == other.CustomType &&
                 PointFamily == other.PointFamily &&
                 PointOrder == other.PointOrder &&
+                PenroseSubdivisions == other.PenroseSubdivisions &&
+                PenroseRadius == other.PenroseRadius &&
+                PenroseTiles == other.PenroseTiles &&
                 LineFamily == other.LineFamily &&
                 LineOrder == other.LineOrder &&
                 LineRepeats == other.LineRepeats &&
@@ -225,6 +237,9 @@ namespace TiltBrush
             pm.m_CustomSymmetryType = CustomType;
             pm.m_PointSymmetryFamily = PointFamily;
             pm.m_PointSymmetryOrder = PointOrder;
+            pm.m_PenroseSubdivisions = PenroseSubdivisions;
+            pm.m_PenroseRadius = PenroseRadius;
+            pm.m_PenroseTiles = PenroseTiles;
             pm.m_LineFamily = LineFamily;
             pm.m_LineOrder = LineOrder;
             pm.m_LineRepeats = LineRepeats;
@@ -317,6 +332,9 @@ namespace TiltBrush
                     writer.Int32(LineRepeats);
                     writer.Float(LineAdvance);
                     writer.Float(LineAngle);
+                    writer.Int32(PenroseSubdivisions);
+                    writer.Float(PenroseRadius);
+                    writer.Int32((int)PenroseTiles);
                 }
                 return stream.ToArray();
             }
@@ -403,6 +421,12 @@ namespace TiltBrush
                         snapshot.LineAdvance = reader.Float();
                         snapshot.LineAngle = reader.Float();
                     }
+                    if (version >= 6)
+                    {
+                        snapshot.PenroseSubdivisions = reader.Int32();
+                        snapshot.PenroseRadius = reader.Float();
+                        snapshot.PenroseTiles = (PenroseTiling.TileSelection)reader.Int32();
+                    }
                     return snapshot;
                 }
             }
@@ -425,6 +449,9 @@ namespace TiltBrush
                 CustomType == other.CustomType &&
                 PointFamily == other.PointFamily &&
                 PointOrder == other.PointOrder &&
+                PenroseSubdivisions == other.PenroseSubdivisions &&
+                PenroseRadius == other.PenroseRadius &&
+                PenroseTiles == other.PenroseTiles &&
                 LineFamily == other.LineFamily &&
                 LineOrder == other.LineOrder &&
                 LineRepeats == other.LineRepeats &&
@@ -472,6 +499,9 @@ namespace TiltBrush
                 hash = (hash * 397) ^ (int)CustomType;
                 hash = (hash * 397) ^ (int)PointFamily;
                 hash = (hash * 397) ^ PointOrder;
+                hash = (hash * 397) ^ PenroseSubdivisions.GetHashCode();
+                hash = (hash * 397) ^ PenroseRadius.GetHashCode();
+                hash = (hash * 397) ^ PenroseTiles.GetHashCode();
                 hash = (hash * 397) ^ LineFamily.GetHashCode();
                 hash = (hash * 397) ^ LineOrder.GetHashCode();
                 hash = (hash * 397) ^ LineRepeats.GetHashCode();
@@ -516,6 +546,9 @@ namespace TiltBrush
                 case PointerManager.SymmetryMode.MultiMirror
                     when CustomType == PointerManager.CustomSymmetryType.LineGroup:
                     return $"Line {LineFamily}, order {LineOrder}, {LineRepeats} steps";
+                case PointerManager.SymmetryMode.MultiMirror
+                    when CustomType == PointerManager.CustomSymmetryType.Penrose:
+                    return $"Penrose {PenroseTiles}, depth {PenroseSubdivisions}";
                 case PointerManager.SymmetryMode.ScriptedSymmetryMode:
                     return $"Scripted ({ScriptName})";
                 default:
