@@ -238,7 +238,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584183828497
+      m_KeyId: 551461337731522563
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1183,12 +1183,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Penrose
+  m_DescriptionText: Penrose tiling
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584183828497
+      m_KeyId: 551461337731522577
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1681,12 +1681,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Angle per copy (degrees)
+  m_DescriptionText: Rotation per copy in degrees
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522561
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -2209,7 +2209,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522568
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3163,7 +3163,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584183828497
+      m_KeyId: 551461337731522565
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -4016,12 +4016,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Advance per copy
+  m_DescriptionText: Advance per copy in canvas units
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522562
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -6658,7 +6658,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522567
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -6949,7 +6949,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522566
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -7588,7 +7588,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584183828497
+      m_KeyId: 551461337731522564
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -9461,12 +9461,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Twist per step (degrees)
+  m_DescriptionText: Twist per step in degrees
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522576
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -17099,7 +17099,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522579
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -20382,12 +20382,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Point Symmetry
+  m_DescriptionText: Helical symmetry
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584183828497
+      m_KeyId: 551461337584721920
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -20496,7 +20496,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522573
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -20602,12 +20602,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Patch radius
+  m_DescriptionText: Patch radius in canvas units
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522580
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -20713,12 +20713,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Generalized steps
+  m_DescriptionText: Number of generalized steps
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522574
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -25104,12 +25104,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Copies
+  m_DescriptionText: Helical copies, including the original
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522560
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -25949,12 +25949,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 1
   m_DescriptionYOffset: 0
-  m_DescriptionText: Step advance along Z
+  m_DescriptionText: Step advance along Z in canvas units
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522575
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -28605,12 +28605,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: 'Tiles: Both >'
+  m_DescriptionText: 'Next tile selection: both, thin or thick'
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584183828497
+      m_KeyId: 551461337731522578
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -30454,7 +30454,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522570
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -35195,7 +35195,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 129010807801118720
+      m_KeyId: 551461337731522569
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -42031,12 +42031,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: '5: Screw + half-turns >'
+  m_DescriptionText: Next line-group family
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584183828497
+      m_KeyId: 551461337731522572
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -43431,12 +43431,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Line
+  m_DescriptionText: Line groups
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 128947584183828497
+      m_KeyId: 551461337731522571
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
