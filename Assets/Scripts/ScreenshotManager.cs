@@ -596,11 +596,6 @@ namespace TiltBrush
                     allowHDR = camera.allowHDR
                 };
 
-            if (!includePostProcessing)
-            {
-                return state;
-            }
-
             UniversalAdditionalCameraData cameraData =
                 camera.GetComponent<UniversalAdditionalCameraData>();
             if (cameraData == null)
@@ -613,8 +608,11 @@ namespace TiltBrush
             state.volumeLayerMask = cameraData.volumeLayerMask;
             state.volumeTrigger = cameraData.volumeTrigger;
 
-            camera.allowHDR = true;
-            cameraData.renderPostProcessing = true;
+            if (includePostProcessing)
+            {
+                camera.allowHDR = true;
+            }
+            cameraData.renderPostProcessing = includePostProcessing;
             cameraData.volumeLayerMask = ~0;
             cameraData.volumeTrigger = camera.transform;
 
