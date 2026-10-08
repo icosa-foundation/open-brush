@@ -201,6 +201,17 @@ namespace TiltBrush
                 return StartStillFrameSequenceCapture(filePath, recorder, usdPathSerializer, offlineRender);
             }
 
+#if UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
+            if (FfmpegPipe.GetFfmpegExe() == null)
+            {
+                const string message = "FFmpeg was not found on PATH. Install FFmpeg using your distribution's package manager, then restart Open Brush and retry.";
+                Debug.LogError($"[LinuxFFmpeg] {message}");
+                OutputWindowScript.ReportFileSaved(message, null,
+                    OutputWindowScript.InfoCardSpawnPos.Brush);
+                return false;
+            }
+#endif
+
             // Vertical video is disabled.
             recorder.IsPortrait = false;
 

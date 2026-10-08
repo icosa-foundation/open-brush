@@ -141,6 +141,17 @@ namespace TiltBrush
 
         public static string GetFfmpegExe()
         {
+#if UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
+            // Linux uses the distribution's FFmpeg installation rather than a bundled binary.
+            string searchPath = System.Environment.GetEnvironmentVariable("PATH");
+            if (searchPath == null) return null;
+            foreach (string directory in searchPath.Split(Path.PathSeparator))
+            {
+                string candidate = Path.GetFullPath(Path.Combine(directory, "ffmpeg"));
+                if (File.Exists(candidate)) return candidate;
+            }
+            return null;
+#else
             // Editor and Windows builds have different paths
             // between Application.dataPath and the actual executable
             string traverseToApp = "";
@@ -159,6 +170,8 @@ namespace TiltBrush
                 System.Runtime.InteropServices.Architecture.Arm64 ? "ffmpeg-arm64" : "ffmpeg-x86_64";
 #endif
 
+            if (exeName == null) return null;
+
             var combinedPath = Path.Combine(
                 Application.dataPath,
                 traverseToApp,
@@ -167,10 +180,10 @@ namespace TiltBrush
                 exeName
             );
             string fullPath = Path.GetFullPath(combinedPath);
-            if (exeName != null && File.Exists(fullPath)) return fullPath;
+            if (File.Exists(fullPath)) return fullPath;
 
-            // Only Android and Linux builds should hit this point
             return null;
+#endif
         }
 
         private System.Diagnostics.Process m_encoderProc;
