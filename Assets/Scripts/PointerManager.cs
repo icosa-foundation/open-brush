@@ -61,7 +61,8 @@ namespace TiltBrush
             Wallpaper,
             Polyhedra,
             Helical,
-            SpaceGroup
+            SpaceGroup,
+            LineGroup
         }
 
         public enum ColorShiftComponent
@@ -75,6 +76,12 @@ namespace TiltBrush
         [NonSerialized] public PointSymmetry.Family m_PointSymmetryFamily = PointSymmetry.Family.Cn;
         [NonSerialized] public SymmetryGroup.R m_WallpaperSymmetryGroup = SymmetryGroup.R.p1;
         [NonSerialized] public int m_PointSymmetryOrder = 6;
+
+        [NonSerialized] public LineGroupSymmetry.Family m_LineFamily = LineGroupSymmetry.Family.ScrewHalfTurns;
+        [NonSerialized] public int m_LineOrder = 5;
+        [NonSerialized] public int m_LineRepeats = 8;
+        [NonSerialized] public float m_LineAdvance = 0.5f;
+        [NonSerialized] public float m_LineAngle = 27f;
 
         [NonSerialized] public int m_SpaceGroupNumber = 19;
         [NonSerialized] public Vector3Int m_SpaceGroupRepeats = new Vector3Int(2, 2, 2);
@@ -1768,6 +1775,10 @@ namespace TiltBrush
             m_CustomMirrorDomain = null;
             switch (m_CustomSymmetryType)
             {
+                case CustomSymmetryType.LineGroup:
+                    m_CustomMirrorMatrices = new LineGroupSymmetry(m_LineFamily, m_LineOrder,
+                        m_LineRepeats, m_LineAdvance, m_LineAngle).matrices;
+                    break;
                 case CustomSymmetryType.SpaceGroup:
                     var spaceGroup = new SpaceGroupSymmetry(m_SpaceGroupNumber,
                         m_SpaceGroupRepeats, m_SpaceGroupCellSize);
@@ -1927,7 +1938,8 @@ namespace TiltBrush
         {
             float canvasScale = App.ActiveCanvas.Pose.scale;
             return canvasScale * (m_CustomSymmetryType == CustomSymmetryType.Helical ||
-                m_CustomSymmetryType == CustomSymmetryType.SpaceGroup ? 1f : m_WallpaperSymmetryScale);
+                m_CustomSymmetryType == CustomSymmetryType.SpaceGroup ||
+                m_CustomSymmetryType == CustomSymmetryType.LineGroup ? 1f : m_WallpaperSymmetryScale);
         }
 
         public TrTransform TrFromMatrix(Matrix4x4 m)
@@ -2441,7 +2453,8 @@ namespace TiltBrush
 
                     var xfCenter = MultiMirrorCenter();
 
-                    if (m_CustomSymmetryType == CustomSymmetryType.SpaceGroup)
+                    if (m_CustomSymmetryType == CustomSymmetryType.SpaceGroup ||
+                        m_CustomSymmetryType == CustomSymmetryType.LineGroup)
                     {
                         // Use the same translation scale as live pointers. Widget scale changes
                         // the lattice spacing; it does not resize each copy's content.

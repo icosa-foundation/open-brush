@@ -34,12 +34,18 @@ namespace TiltBrush
         // 2: adds TransformEach and TransformEachAfter.
         // 3: adds helical parameters. Earlier versions still read.
         // 4: adds space-group parameters.
-        private const int kSerializedVersion = 4;
+        // 5: adds general line-group parameters.
+        private const int kSerializedVersion = 5;
 
         public PointerManager.SymmetryMode Mode;
         public PointerManager.CustomSymmetryType CustomType;
         public PointSymmetry.Family PointFamily;
         public int PointOrder;
+        public LineGroupSymmetry.Family LineFamily = LineGroupSymmetry.Family.ScrewHalfTurns;
+        public int LineOrder = 5;
+        public int LineRepeats = 8;
+        public float LineAdvance = 0.5f;
+        public float LineAngle = 27f;
         public int SpaceGroupNumber = 19;
         public Vector3Int SpaceGroupRepeats = new Vector3Int(2, 2, 2);
         public float SpaceGroupCellSize = 1f;
@@ -84,6 +90,11 @@ namespace TiltBrush
                 CustomType = pm.m_CustomSymmetryType,
                 PointFamily = pm.m_PointSymmetryFamily,
                 PointOrder = pm.m_PointSymmetryOrder,
+                LineFamily = pm.m_LineFamily,
+                LineOrder = pm.m_LineOrder,
+                LineRepeats = pm.m_LineRepeats,
+                LineAdvance = pm.m_LineAdvance,
+                LineAngle = pm.m_LineAngle,
                 SpaceGroupNumber = pm.m_SpaceGroupNumber,
                 SpaceGroupRepeats = pm.m_SpaceGroupRepeats,
                 SpaceGroupCellSize = pm.m_SpaceGroupCellSize,
@@ -159,6 +170,8 @@ namespace TiltBrush
             {
                 return false;
             }
+            if (CustomType == PointerManager.CustomSymmetryType.LineGroup)
+            { return LineFamily == other.LineFamily && LineOrder == other.LineOrder && LineRepeats == other.LineRepeats; }
             if (CustomType == PointerManager.CustomSymmetryType.SpaceGroup)
             { return SpaceGroupNumber == other.SpaceGroupNumber && SpaceGroupRepeats == other.SpaceGroupRepeats; }
             if (CustomType == PointerManager.CustomSymmetryType.Helical)
@@ -178,6 +191,11 @@ namespace TiltBrush
                 CustomType == other.CustomType &&
                 PointFamily == other.PointFamily &&
                 PointOrder == other.PointOrder &&
+                LineFamily == other.LineFamily &&
+                LineOrder == other.LineOrder &&
+                LineRepeats == other.LineRepeats &&
+                LineAdvance == other.LineAdvance &&
+                LineAngle == other.LineAngle &&
                 SpaceGroupNumber == other.SpaceGroupNumber &&
                 SpaceGroupRepeats == other.SpaceGroupRepeats &&
                 SpaceGroupCellSize == other.SpaceGroupCellSize &&
@@ -207,6 +225,11 @@ namespace TiltBrush
             pm.m_CustomSymmetryType = CustomType;
             pm.m_PointSymmetryFamily = PointFamily;
             pm.m_PointSymmetryOrder = PointOrder;
+            pm.m_LineFamily = LineFamily;
+            pm.m_LineOrder = LineOrder;
+            pm.m_LineRepeats = LineRepeats;
+            pm.m_LineAdvance = LineAdvance;
+            pm.m_LineAngle = LineAngle;
             pm.m_SpaceGroupNumber = SpaceGroupNumber;
             pm.m_SpaceGroupRepeats = SpaceGroupRepeats;
             pm.m_SpaceGroupCellSize = SpaceGroupCellSize;
@@ -289,6 +312,11 @@ namespace TiltBrush
                     writer.Int32(SpaceGroupRepeats.y);
                     writer.Int32(SpaceGroupRepeats.z);
                     writer.Float(SpaceGroupCellSize);
+                    writer.Int32((int)LineFamily);
+                    writer.Int32(LineOrder);
+                    writer.Int32(LineRepeats);
+                    writer.Float(LineAdvance);
+                    writer.Float(LineAngle);
                 }
                 return stream.ToArray();
             }
@@ -367,6 +395,14 @@ namespace TiltBrush
                         snapshot.SpaceGroupRepeats = new Vector3Int(reader.Int32(), reader.Int32(), reader.Int32());
                         snapshot.SpaceGroupCellSize = reader.Float();
                     }
+                    if (version >= 5)
+                    {
+                        snapshot.LineFamily = (LineGroupSymmetry.Family)reader.Int32();
+                        snapshot.LineOrder = reader.Int32();
+                        snapshot.LineRepeats = reader.Int32();
+                        snapshot.LineAdvance = reader.Float();
+                        snapshot.LineAngle = reader.Float();
+                    }
                     return snapshot;
                 }
             }
@@ -389,6 +425,11 @@ namespace TiltBrush
                 CustomType == other.CustomType &&
                 PointFamily == other.PointFamily &&
                 PointOrder == other.PointOrder &&
+                LineFamily == other.LineFamily &&
+                LineOrder == other.LineOrder &&
+                LineRepeats == other.LineRepeats &&
+                LineAdvance == other.LineAdvance &&
+                LineAngle == other.LineAngle &&
                 SpaceGroupNumber == other.SpaceGroupNumber &&
                 SpaceGroupRepeats == other.SpaceGroupRepeats &&
                 SpaceGroupCellSize == other.SpaceGroupCellSize &&
@@ -431,6 +472,11 @@ namespace TiltBrush
                 hash = (hash * 397) ^ (int)CustomType;
                 hash = (hash * 397) ^ (int)PointFamily;
                 hash = (hash * 397) ^ PointOrder;
+                hash = (hash * 397) ^ LineFamily.GetHashCode();
+                hash = (hash * 397) ^ LineOrder.GetHashCode();
+                hash = (hash * 397) ^ LineRepeats.GetHashCode();
+                hash = (hash * 397) ^ LineAdvance.GetHashCode();
+                hash = (hash * 397) ^ LineAngle.GetHashCode();
                 hash = (hash * 397) ^ SpaceGroupNumber;
                 hash = (hash * 397) ^ SpaceGroupRepeats.GetHashCode();
                 hash = (hash * 397) ^ SpaceGroupCellSize.GetHashCode();
@@ -467,6 +513,9 @@ namespace TiltBrush
                 case PointerManager.SymmetryMode.MultiMirror
                     when CustomType == PointerManager.CustomSymmetryType.SpaceGroup:
                     return $"Space group {SpaceGroupNumber} {SpaceGroupRepeats.x}x{SpaceGroupRepeats.y}x{SpaceGroupRepeats.z}";
+                case PointerManager.SymmetryMode.MultiMirror
+                    when CustomType == PointerManager.CustomSymmetryType.LineGroup:
+                    return $"Line {LineFamily}, order {LineOrder}, {LineRepeats} steps";
                 case PointerManager.SymmetryMode.ScriptedSymmetryMode:
                     return $"Scripted ({ScriptName})";
                 default:
