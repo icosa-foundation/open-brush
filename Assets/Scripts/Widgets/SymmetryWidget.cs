@@ -471,6 +471,14 @@ namespace TiltBrush
             {
                 lr.gameObject.SetActive(false);
                 lr.widthMultiplier = defaultWidth;
+                lr.sortingOrder = 0;
+            }
+
+            if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point
+                || PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Polyhedra)
+            {
+                DrawPointGroupGuides(lrs, matrices, mirrorScale);
+                return;
             }
 
             if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Penrose)
@@ -555,6 +563,32 @@ namespace TiltBrush
                     m_CustomSymmetryMesh, 0, m_CustomSymmetryMaterial,
                     matrices, null, ShadowCastingMode.Off, false
                 );
+            }
+        }
+
+        private void DrawPointGroupGuides(List<LineRenderer> renderers, List<Matrix4x4> matrices, float mirrorScale)
+        {
+            var paths = PointerManager.m_Instance.PointGroupDomainPaths;
+            var width = PointerManager.PointGroupDomainRadius * 0.005f * mirrorScale * transform.lossyScale.x;
+            for (var pathIndex = 0; pathIndex < paths.Count; pathIndex++)
+            {
+                var path = paths[pathIndex];
+                var points = new Vector3[path.Length];
+                for (var copy = 0; copy < matrices.Count; copy++)
+                {
+                    for (var vertex = 0; vertex < path.Length; vertex++)
+                        points[vertex] = matrices[copy].MultiplyPoint3x4(path[vertex]) * mirrorScale;
+                    var slot = copy * paths.Count + pathIndex;
+                    var renderer = slot < renderers.Count ? renderers[slot]
+                        : Instantiate(m_SymmetryDomainPrefab, m_SymmetryDomainParent).GetComponent<LineRenderer>();
+                    renderer.gameObject.SetActive(true);
+                    renderer.loop = false;
+                    renderer.widthMultiplier = width;
+                    renderer.positionCount = points.Length;
+                    renderer.SetPositions(points);
+                    renderer.startColor = renderer.endColor = copy == 0 ? Color.white : Color.blue;
+                    renderer.sortingOrder = copy == 0 ? 1 : 0;
+                }
             }
         }
 

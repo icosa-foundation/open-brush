@@ -405,6 +405,8 @@ namespace TiltBrush
 
         public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
         public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
+        public const float PointGroupDomainRadius = 0.5f;
+        public List<Vector3[]> PointGroupDomainPaths { get; private set; }
         public Vector3[] LineGroupDomainPath { get; private set; }
         public float LineGroupDomainRadius => m_LineAdvance == 0f ? 0.5f : m_LineAdvance;
 
@@ -1829,6 +1831,7 @@ namespace TiltBrush
                 default:
                     var pointSym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0.1f);
                     m_CustomMirrorMatrices = pointSym.matrices;
+                    PointGroupDomainPaths = CreatePointDomainPaths(pointSym.CreateDomainOutline(PointGroupDomainRadius));
                     break;
             }
 
@@ -1851,6 +1854,35 @@ namespace TiltBrush
                 }
                 m_CustomMirrorMatrices[i] = m;
             }
+        }
+
+        // Build line-renderer walks only when settings change. Retrace existing
+        // edges rather than connecting unrelated vertices through the domain.
+        private static List<Vector3[]> CreatePointDomainPaths(PointSymmetry.DomainOutline outline)
+        {
+            var paths = new List<Vector3[]>();
+            var visited = new bool[outline.edges.Length];
+            for (var first = 0; first < outline.edges.Length; first++)
+            {
+                if (visited[first]) continue;
+                var path = new List<Vector3>();
+                void Walk(int vertex)
+                {
+                    path.Add(outline.vertices[vertex]);
+                    for (var edge = 0; edge < outline.edges.Length; edge++)
+                    {
+                        if (visited[edge]) continue;
+                        var ends = outline.edges[edge];
+                        if (ends.x != vertex && ends.y != vertex) continue;
+                        visited[edge] = true;
+                        Walk(ends.x == vertex ? ends.y : ends.x);
+                        path.Add(outline.vertices[vertex]);
+                    }
+                }
+                Walk(outline.edges[first].x);
+                paths.Add(path.ToArray());
+            }
+            return paths;
         }
 
         public void CalculateMirrorColors()
