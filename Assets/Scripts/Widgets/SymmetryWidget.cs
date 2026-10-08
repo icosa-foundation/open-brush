@@ -475,6 +475,12 @@ namespace TiltBrush
                 lr.gameObject.SetActive(false);
             }
 
+            if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Penrose)
+            {
+                DrawPenroseGuides(lrs, matrices, mirrorScale);
+                return;
+            }
+
             if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.LineGroup)
             {
                 DrawLineGroupGuides(lrs, matrices, mirrorScale);
@@ -542,6 +548,35 @@ namespace TiltBrush
                     m_CustomSymmetryMesh, 0, m_CustomSymmetryMaterial,
                     matrices, null, ShadowCastingMode.Off, false
                 );
+            }
+        }
+
+        private void DrawPenroseGuides(List<LineRenderer> renderers, List<Matrix4x4> matrices, float mirrorScale)
+        {
+            var pm = PointerManager.m_Instance;
+            var tiling = pm.PenrosePattern;
+            var rhombPoints = new Vector3[4];
+            var boundaryPoints = new Vector3[3];
+            var slot = 0;
+            for (var i = 0; i < tiling.tiles.Count; i++)
+            {
+                var tile = tiling.tiles[i];
+                var selected = pm.UsesPenroseTile(tile.kind);
+                // Selected outlines follow Transform Each just like their copies.
+                var frame = selected ? matrices[slot] * tiling.matrices[slot].inverse : pm.PenroseReferenceFrame;
+                if (selected) slot++;
+                var points = tile.completeRhomb ? rhombPoints : boundaryPoints;
+                for (var j = 0; j < points.Length; j++)
+                    points[j] = frame.MultiplyPoint3x4(tiling.vertices[tile.indices[j]]) * mirrorScale;
+                var renderer = i < renderers.Count ? renderers[i]
+                    : Instantiate(m_SymmetryDomainPrefab, m_SymmetryDomainParent).GetComponent<LineRenderer>();
+                renderer.gameObject.SetActive(true);
+                renderer.loop = true;
+                renderer.positionCount = points.Length;
+                renderer.SetPositions(points);
+                var color = i == pm.PenroseReferenceTile ? Color.white : !selected ? Color.gray
+                    : tile.kind == PenroseTiling.Kind.Thin ? new Color(1f, 0.7f, 0.15f) : Color.blue;
+                renderer.startColor = renderer.endColor = color;
             }
         }
 

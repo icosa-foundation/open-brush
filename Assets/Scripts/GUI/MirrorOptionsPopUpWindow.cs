@@ -23,6 +23,12 @@ namespace TiltBrush
         public TextActionButton m_ButtonShowPointControls;
         public TextActionButton m_ButtonShowWallpaperControls;
         public TextActionButton m_ButtonShowOptionsControls;
+        public TextActionButton m_ButtonShowPenroseControls;
+        public GameObject m_PenroseControls;
+        public TextActionButton m_PenroseTilesButton;
+        public AdvancedSlider m_PenroseSubdivisionsSlider;
+        public AdvancedSlider m_PenroseRadiusSlider;
+        public TMPro.TextMeshPro m_PenroseCopyCount;
         public TextActionButton m_ButtonShowLineGroupControls;
         public GameObject m_LineGroupControls;
         public TextActionButton m_LineFamilyButton;
@@ -99,6 +105,7 @@ namespace TiltBrush
             {
                 switch (PointerManager.m_Instance.m_CustomSymmetryType)
                 {
+                    case PointerManager.CustomSymmetryType.Penrose: m_LastActiveTab = 6; break;
                     case PointerManager.CustomSymmetryType.LineGroup: m_LastActiveTab = 5; break;
                     case PointerManager.CustomSymmetryType.SpaceGroup: m_LastActiveTab = 4; break;
                     case PointerManager.CustomSymmetryType.Helical: m_LastActiveTab = 3; break;
@@ -125,6 +132,9 @@ namespace TiltBrush
                     break;
                 case 5:
                     HandleShowLineGroupSymmetry();
+                    break;
+                case 6:
+                    HandleShowPenroseSymmetry();
                     break;
             }
             SetCurrentMirrorTypeButtonState(true);
@@ -424,8 +434,65 @@ namespace TiltBrush
             PointerManager.m_Instance.CalculateMirrors();
         }
 
+        public void HandleShowPenroseSymmetry()
+        {
+            m_LastActiveTab = 6;
+            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Penrose;
+            m_PointSymmetryControls.SetActive(false);
+            m_WallpaperSymmetryControls.SetActive(false);
+            m_HelicalControls.SetActive(false);
+            m_SpaceGroupControls.SetActive(false);
+            m_LineGroupControls.SetActive(false);
+            m_OptionsControls.SetActive(false);
+            m_PenroseControls.SetActive(true);
+            m_ButtonShowPointControls.SetButtonSelected(false);
+            m_ButtonShowWallpaperControls.SetButtonSelected(false);
+            m_ButtonShowHelicalControls.SetButtonSelected(false);
+            m_ButtonShowSpaceGroupControls.SetButtonSelected(false);
+            m_ButtonShowLineGroupControls.SetButtonSelected(false);
+            m_ButtonShowOptionsControls.SetButtonSelected(false);
+            m_ButtonShowPenroseControls.SetButtonSelected(true);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshPenroseControls();
+        }
+
+        private void RefreshPenroseControls()
+        {
+            var pm = PointerManager.m_Instance;
+            SetSpaceGroupButtonLabel(m_PenroseTilesButton, $"Tiles: {pm.m_PenroseTiles} >");
+            m_PenroseSubdivisionsSlider.SetInitialValueAndUpdate(pm.m_PenroseSubdivisions);
+            m_PenroseRadiusSlider.SetInitialValueAndUpdate(pm.m_PenroseRadius);
+            var count = pm.CustomMirrorMatrices.Count;
+            m_PenroseCopyCount.text = count > pm.ActiveSymmetryPointerCount
+                ? $"{count} model copies / {pm.ActiveSymmetryPointerCount} stroke copies" : $"{count} copies";
+        }
+
+        public void HandleNextPenroseTiles()
+        {
+            var pm = PointerManager.m_Instance;
+            pm.m_PenroseTiles = (PenroseTiling.TileSelection)(((int)pm.m_PenroseTiles + 1) % 3);
+            pm.CalculateMirrors();
+            RefreshPenroseControls();
+        }
+
+        public void HandleChangePenroseSubdivisions(Vector3 value)
+        {
+            PointerManager.m_Instance.m_PenroseSubdivisions = Mathf.Clamp(Mathf.RoundToInt(value.z), 1, 7);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshPenroseControls();
+        }
+
+        public void HandleChangePenroseRadius(Vector3 value)
+        {
+            PointerManager.m_Instance.m_PenroseRadius = Mathf.Max(0.01f, value.z);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshPenroseControls();
+        }
+
         public void HandleShowLineGroupSymmetry()
         {
+            m_PenroseControls.SetActive(false);
+            m_ButtonShowPenroseControls.SetButtonSelected(false);
             m_LastActiveTab = 5;
             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.LineGroup;
             m_PointSymmetryControls.SetActive(false);
@@ -502,6 +569,8 @@ namespace TiltBrush
 
         public void HandleShowSpaceGroupSymmetry()
         {
+            m_PenroseControls.SetActive(false);
+            m_ButtonShowPenroseControls.SetButtonSelected(false);
             m_LineGroupControls.SetActive(false);
             m_ButtonShowLineGroupControls.SetButtonSelected(false);
             m_LastActiveTab = 4;
@@ -609,6 +678,8 @@ namespace TiltBrush
 
         public void HandleShowHelicalSymmetry()
         {
+            m_PenroseControls.SetActive(false);
+            m_ButtonShowPenroseControls.SetButtonSelected(false);
             m_LineGroupControls.SetActive(false);
             m_ButtonShowLineGroupControls.SetButtonSelected(false);
             m_SpaceGroupControls.SetActive(false);
@@ -646,6 +717,8 @@ namespace TiltBrush
 
         public void HandleShowPointSymmetry()
         {
+            m_PenroseControls.SetActive(false);
+            m_ButtonShowPenroseControls.SetButtonSelected(false);
             m_LineGroupControls.SetActive(false);
             m_ButtonShowLineGroupControls.SetButtonSelected(false);
             m_SpaceGroupControls.SetActive(false);
@@ -665,6 +738,8 @@ namespace TiltBrush
 
         public void HandleShowWallpaperSymmetry()
         {
+            m_PenroseControls.SetActive(false);
+            m_ButtonShowPenroseControls.SetButtonSelected(false);
             m_LineGroupControls.SetActive(false);
             m_ButtonShowLineGroupControls.SetButtonSelected(false);
             m_SpaceGroupControls.SetActive(false);
@@ -684,6 +759,8 @@ namespace TiltBrush
 
         public void HandleShowOptions()
         {
+            m_PenroseControls.SetActive(false);
+            m_ButtonShowPenroseControls.SetButtonSelected(false);
             m_LineGroupControls.SetActive(false);
             m_ButtonShowLineGroupControls.SetButtonSelected(false);
             m_SpaceGroupControls.SetActive(false);
