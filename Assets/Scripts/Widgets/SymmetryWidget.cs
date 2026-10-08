@@ -569,7 +569,6 @@ namespace TiltBrush
         private void DrawPointGroupGuides(List<LineRenderer> renderers, List<Matrix4x4> matrices, float mirrorScale)
         {
             var paths = PointerManager.m_Instance.PointGroupDomainPaths;
-            var width = PointerManager.PointGroupDomainRadius * 0.005f * mirrorScale * transform.lossyScale.x;
             for (var pathIndex = 0; pathIndex < paths.Count; pathIndex++)
             {
                 var path = paths[pathIndex];
@@ -583,7 +582,6 @@ namespace TiltBrush
                         : Instantiate(m_SymmetryDomainPrefab, m_SymmetryDomainParent).GetComponent<LineRenderer>();
                     renderer.gameObject.SetActive(true);
                     renderer.loop = false;
-                    renderer.widthMultiplier = width;
                     renderer.positionCount = points.Length;
                     renderer.SetPositions(points);
                     renderer.startColor = renderer.endColor = copy == 0 ? Color.white : Color.blue;
