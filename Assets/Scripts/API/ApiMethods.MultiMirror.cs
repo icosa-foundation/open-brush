@@ -71,13 +71,29 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("symmetry.type",
-        description: "Sets the custom symmetry type: point, wallpaper, helical or spacegroup",
+        description: "Sets the custom symmetry type: point, wallpaper, helical, spacegroup or linegroup",
         exampleUsage: "wallpaper")]
         public static void CustomSymmetryType(string type)
         {
             Enum.TryParse(type, ignoreCase: true, out PointerManager.CustomSymmetryType _type);
             PointerManager.m_Instance.m_CustomSymmetryType = _type;
             PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        [ApiEndpoint("symmetry.linegroup",
+        description: "Enables line-group family 1–13, axial rotation order, generalized step count, advance along Z, and twist in degrees (families 1 and 5)",
+        exampleUsage: "5,5,8,0.5,27")]
+        public static void LineGroupSymmetry(int family, int order, int repeats, float advance, float angle)
+        {
+            var pm = PointerManager.m_Instance;
+            pm.m_LineFamily = (global::LineGroupSymmetry.Family)Mathf.Clamp(family, 1, 13);
+            pm.m_LineOrder = Mathf.Max(1, order);
+            pm.m_LineRepeats = Mathf.Max(1, repeats);
+            pm.m_LineAdvance = Mathf.Max(0.01f, advance);
+            pm.m_LineAngle = angle;
+            pm.m_CustomSymmetryType = PointerManager.CustomSymmetryType.LineGroup;
+            pm.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+            pm.CalculateMirrors();
         }
 
         [ApiEndpoint("symmetry.spacegroup",

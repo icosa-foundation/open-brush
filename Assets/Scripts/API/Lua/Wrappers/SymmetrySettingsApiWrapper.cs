@@ -17,6 +17,11 @@ namespace TiltBrush
 
         private SymmetryPointType _PointType;
         private int _PointOrder;
+        private SymmetryLineFamily _LineFamily = SymmetryLineFamily.ScrewHalfTurns;
+        private int _LineOrder = 5;
+        private int _LineRepeats = 8;
+        private float _LineAdvance = 0.5f;
+        private float _LineAngle = 27f;
         private int _SpaceGroupNumber = 19;
         private Vector3Int _SpaceGroupRepeats = new Vector3Int(2, 2, 2);
         private float _SpaceGroupCellSize = 1f;
@@ -51,6 +56,15 @@ namespace TiltBrush
                             _Mode = SymmetryMode.Point;
                             _PointType = (SymmetryPointType)PointerManager.m_Instance.m_PointSymmetryFamily;
                             _PointOrder = PointerManager.m_Instance.m_PointSymmetryOrder;
+                        }
+                        else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.LineGroup)
+                        {
+                            _Mode = SymmetryMode.LineGroup;
+                            _LineFamily = (SymmetryLineFamily)PointerManager.m_Instance.m_LineFamily;
+                            _LineOrder = PointerManager.m_Instance.m_LineOrder;
+                            _LineRepeats = PointerManager.m_Instance.m_LineRepeats;
+                            _LineAdvance = PointerManager.m_Instance.m_LineAdvance;
+                            _LineAngle = PointerManager.m_Instance.m_LineAngle;
                         }
                         else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.SpaceGroup)
                         {
@@ -193,6 +207,11 @@ namespace TiltBrush
 
                 _PointType = _PointType,
                 _PointOrder = _PointOrder,
+                _LineFamily = _LineFamily,
+                _LineOrder = _LineOrder,
+                _LineRepeats = _LineRepeats,
+                _LineAdvance = _LineAdvance,
+                _LineAngle = _LineAngle,
                 _SpaceGroupNumber = _SpaceGroupNumber,
                 _SpaceGroupRepeats = _SpaceGroupRepeats,
                 _SpaceGroupCellSize = _SpaceGroupCellSize,
@@ -233,6 +252,11 @@ namespace TiltBrush
                             break;
                         case SymmetryMode.TwoHanded:
                             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.TwoHanded);
+                            break;
+                        case SymmetryMode.LineGroup:
+                            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.LineGroup;
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                            PointerManager.m_Instance.CalculateMirrors();
                             break;
                         case SymmetryMode.SpaceGroup:
                             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.SpaceGroup;
@@ -458,6 +482,81 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Line-group family (1–13)")]
+        public SymmetryLineFamily lineFamily
+        {
+            get => _LineFamily;
+            set
+            {
+                _LineFamily = (SymmetryLineFamily)Mathf.Clamp((int)value, 1, 13);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_LineFamily = (LineGroupSymmetry.Family)_LineFamily;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Axial rotation order, including noncrystallographic orders")]
+        public int lineOrder
+        {
+            get => _LineOrder;
+            set
+            {
+                _LineOrder = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_LineOrder = _LineOrder;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Number of generalized steps along Z")]
+        public int lineRepeats
+        {
+            get => _LineRepeats;
+            set
+            {
+                _LineRepeats = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_LineRepeats = _LineRepeats;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Advance per generalized step in canvas units")]
+        public float lineAdvance
+        {
+            get => _LineAdvance;
+            set
+            {
+                _LineAdvance = Mathf.Max(0.01f, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_LineAdvance = _LineAdvance;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Twist per step in degrees for families 1 and 5")]
+        public float lineAngle
+        {
+            get => _LineAngle;
+            set
+            {
+                _LineAngle = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_LineAngle = _LineAngle;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
         [LuaDocsDescription("Space group number (1–230)")]
         public int spaceGroup
         {
@@ -595,6 +694,15 @@ namespace TiltBrush
                     break;
                 case SymmetryMode.TwoHanded:
                     newMode = PointerManager.SymmetryMode.TwoHanded;
+                    break;
+                case SymmetryMode.LineGroup:
+                    newMode = PointerManager.SymmetryMode.MultiMirror;
+                    PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.LineGroup;
+                    PointerManager.m_Instance.m_LineFamily = (LineGroupSymmetry.Family)settings._LineFamily;
+                    PointerManager.m_Instance.m_LineOrder = settings._LineOrder;
+                    PointerManager.m_Instance.m_LineRepeats = settings._LineRepeats;
+                    PointerManager.m_Instance.m_LineAdvance = settings._LineAdvance;
+                    PointerManager.m_Instance.m_LineAngle = settings._LineAngle;
                     break;
                 case SymmetryMode.SpaceGroup:
                     newMode = PointerManager.SymmetryMode.MultiMirror;

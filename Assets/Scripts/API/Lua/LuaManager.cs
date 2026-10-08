@@ -1075,6 +1075,7 @@ namespace TiltBrush
             UserData.RegisterType<Texture2D>();
 
             RegisterApiEnum(script, "SymmetryMode", typeof(SymmetryMode));
+            RegisterApiEnum(script, "SymmetryLineFamily", typeof(SymmetryLineFamily));
             RegisterApiEnum(script, "SymmetryPointType", typeof(SymmetryPointType));
             RegisterApiEnum(script, "SymmetryWallpaperType", typeof(SymmetryWallpaperType));
             RegisterApiEnum(script, "SymmetryPointerPaintMode", typeof(SymmetryPointerPaintMode));

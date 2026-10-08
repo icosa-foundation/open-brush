@@ -15,7 +15,26 @@ namespace TiltBrush
         Point,
         Wallpaper,
         Helical,
-        SpaceGroup
+        SpaceGroup,
+        LineGroup
+    }
+
+    [LuaDocsDescription("The thirteen general line-group families")]
+    public enum SymmetryLineFamily
+    {
+        ScrewRotations = LineGroupSymmetry.Family.ScrewRotations,
+        TranslationRotoreflection = LineGroupSymmetry.Family.TranslationRotoreflection,
+        TranslationHorizontalMirror = LineGroupSymmetry.Family.TranslationHorizontalMirror,
+        HalfStepHorizontalMirror = LineGroupSymmetry.Family.HalfStepHorizontalMirror,
+        ScrewHalfTurns = LineGroupSymmetry.Family.ScrewHalfTurns,
+        TranslationVerticalMirrors = LineGroupSymmetry.Family.TranslationVerticalMirrors,
+        GlideRotations = LineGroupSymmetry.Family.GlideRotations,
+        HalfStepVerticalMirrors = LineGroupSymmetry.Family.HalfStepVerticalMirrors,
+        TranslationDiagonalMirrors = LineGroupSymmetry.Family.TranslationDiagonalMirrors,
+        GlideRotoreflection = LineGroupSymmetry.Family.GlideRotoreflection,
+        TranslationFullMirrors = LineGroupSymmetry.Family.TranslationFullMirrors,
+        GlideHorizontalMirror = LineGroupSymmetry.Family.GlideHorizontalMirror,
+        HalfStepFullMirrors = LineGroupSymmetry.Family.HalfStepFullMirrors,
     }
 
     [LuaDocsDescription("The list of valid point symmetry types")]
