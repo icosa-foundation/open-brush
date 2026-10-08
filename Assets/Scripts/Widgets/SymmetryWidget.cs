@@ -588,7 +588,7 @@ namespace TiltBrush
                     renderer.positionCount = points.Length;
                     renderer.SetPositions(points);
                     var color = copy == 0 ? Color.white : Color.blue;
-                    color.a = isArc ? 0.2f : 1f;
+                    color.a = isArc ? 0.5f : 1f;
                     renderer.startColor = renderer.endColor = color;
                     renderer.sortingOrder = copy == 0 ? 1 : 0;
                 }
