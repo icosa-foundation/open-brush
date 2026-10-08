@@ -569,22 +569,27 @@ namespace TiltBrush
         private void DrawPointGroupGuides(List<LineRenderer> renderers, List<Matrix4x4> matrices, float mirrorScale)
         {
             var paths = PointerManager.m_Instance.PointGroupDomainPaths;
-            for (var pathIndex = 0; pathIndex < paths.Count; pathIndex++)
+            var arcs = PointerManager.m_Instance.PointGroupArcPaths;
+            var pathCount = paths.Count + arcs.Count;
+            for (var pathIndex = 0; pathIndex < pathCount; pathIndex++)
             {
-                var path = paths[pathIndex];
+                var isArc = pathIndex >= paths.Count;
+                var path = isArc ? arcs[pathIndex - paths.Count] : paths[pathIndex];
                 var points = new Vector3[path.Length];
                 for (var copy = 0; copy < matrices.Count; copy++)
                 {
                     for (var vertex = 0; vertex < path.Length; vertex++)
                         points[vertex] = matrices[copy].MultiplyPoint3x4(path[vertex]) * mirrorScale;
-                    var slot = copy * paths.Count + pathIndex;
+                    var slot = copy * pathCount + pathIndex;
                     var renderer = slot < renderers.Count ? renderers[slot]
                         : Instantiate(m_SymmetryDomainPrefab, m_SymmetryDomainParent).GetComponent<LineRenderer>();
                     renderer.gameObject.SetActive(true);
                     renderer.loop = false;
                     renderer.positionCount = points.Length;
                     renderer.SetPositions(points);
-                    renderer.startColor = renderer.endColor = copy == 0 ? Color.white : Color.blue;
+                    var color = copy == 0 ? Color.white : Color.blue;
+                    color.a = isArc ? 0.2f : 1f;
+                    renderer.startColor = renderer.endColor = color;
                     renderer.sortingOrder = copy == 0 ? 1 : 0;
                 }
             }
