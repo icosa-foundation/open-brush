@@ -70,6 +70,10 @@ namespace TiltBrush
         [SerializeField] private float m_JumpToUserControllerYOffset;
         private static readonly int OutlineWidth = Shader.PropertyToID("_OutlineWidth");
         // A continuous walk of the twelve cell edges, retracing three edges to join the path.
+        private static readonly Vector3[] kLineGroupMarker = {
+            Vector3.zero, new Vector3(0.5f, 0, 0), new Vector3(0, 0.25f, 0), Vector3.zero,
+            new Vector3(0, 0, 0.4f), new Vector3(0.5f, 0, 0), new Vector3(0, 0, 0.4f), new Vector3(0, 0.25f, 0)
+        };
         private static readonly int[] kSpaceGroupCellCorners = { 0, 1, 3, 2, 0, 4, 5, 1, 5, 7, 3, 7, 6, 2, 6, 4 };
         [SerializeField] private Transform m_SymmetryDomainPrefab;
         [SerializeField] private Transform m_SymmetryDomainParent;
@@ -471,6 +475,12 @@ namespace TiltBrush
                 lr.gameObject.SetActive(false);
             }
 
+            if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.LineGroup)
+            {
+                DrawLineGroupGuides(lrs, matrices, mirrorScale);
+                return;
+            }
+
             if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.SpaceGroup)
             {
                 DrawSpaceGroupCellGuides(lrs, mirrorScale);
@@ -532,6 +542,24 @@ namespace TiltBrush
                     m_CustomSymmetryMesh, 0, m_CustomSymmetryMaterial,
                     matrices, null, ShadowCastingMode.Off, false
                 );
+            }
+        }
+
+        private void DrawLineGroupGuides(List<LineRenderer> renderers, List<Matrix4x4> matrices, float mirrorScale)
+        {
+            var points = new Vector3[kLineGroupMarker.Length];
+            var size = PointerManager.m_Instance.m_LineAdvance * 0.5f;
+            for (var i = 0; i < matrices.Count; i++)
+            {
+                var renderer = i < renderers.Count ? renderers[i]
+                    : Instantiate(m_SymmetryDomainPrefab, m_SymmetryDomainParent).GetComponent<LineRenderer>();
+                for (var j = 0; j < points.Length; j++)
+                    points[j] = matrices[i].MultiplyPoint3x4(kLineGroupMarker[j] * size) * mirrorScale;
+                renderer.gameObject.SetActive(true);
+                renderer.loop = false;
+                renderer.positionCount = points.Length;
+                renderer.SetPositions(points);
+                renderer.startColor = renderer.endColor = i == 0 ? Color.white : Color.blue;
             }
         }
 
