@@ -285,7 +285,7 @@ namespace TiltBrush
         public PenroseTiling PenrosePattern { get; private set; }
         public Matrix4x4 PenroseReferenceFrame { get; private set; }
         public int PenroseReferenceTile { get; private set; }
-        public Matrix4x4 SpaceGroupCellBasis { get; private set; }
+        public List<Vector3[]> SpaceGroupDomainPaths { get; private set; }
 
         // ---- events
 
@@ -1819,7 +1819,8 @@ namespace TiltBrush
                     var spaceGroup = new SpaceGroupSymmetry(m_SpaceGroupNumber,
                         m_SpaceGroupRepeats, m_SpaceGroupCellSize);
                     m_CustomMirrorMatrices = spaceGroup.matrices;
-                    SpaceGroupCellBasis = spaceGroup.cellBasis;
+                    var spaceDomain = spaceGroup.CreateDomainOutline();
+                    SpaceGroupDomainPaths = CreateDomainPaths(spaceDomain.vertices, spaceDomain.edges);
                     break;
                 case CustomSymmetryType.Wallpaper:
                     var wallpaperSym = new WallpaperSymmetry(
@@ -1844,9 +1845,9 @@ namespace TiltBrush
                     var pointSym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0.1f);
                     m_CustomMirrorMatrices = pointSym.matrices;
                     var pointDomain = pointSym.CreateDomainOutline(PointGroupDomainRadius);
-                    PointGroupDomainPaths = CreatePointDomainPaths(pointDomain.vertices,
+                    PointGroupDomainPaths = CreateDomainPaths(pointDomain.vertices,
                         pointDomain.edges.Except(pointDomain.arcEdges).ToArray());
-                    PointGroupArcPaths = CreatePointDomainPaths(pointDomain.vertices,
+                    PointGroupArcPaths = CreateDomainPaths(pointDomain.vertices,
                         pointDomain.arcEdges, retraceEdges: false);
                     break;
             }
@@ -1875,7 +1876,7 @@ namespace TiltBrush
         // Build line-renderer walks only when settings change. Retrace existing
         // edges rather than connecting unrelated vertices through the domain.
         // Arcs are unbranched chains/cycles: walk them once to avoid double blending.
-        private static List<Vector3[]> CreatePointDomainPaths(Vector3[] vertices, Vector2Int[] edges, bool retraceEdges = true)
+        private static List<Vector3[]> CreateDomainPaths(Vector3[] vertices, Vector2Int[] edges, bool retraceEdges = true)
         {
             var paths = new List<Vector3[]>();
             var visited = new bool[edges.Length];

@@ -70,7 +70,6 @@ namespace TiltBrush
         [SerializeField] private float m_JumpToUserControllerYOffset;
         private static readonly int OutlineWidth = Shader.PropertyToID("_OutlineWidth");
         // A continuous walk of the twelve cell edges, retracing three edges to join the path.
-        private static readonly int[] kSpaceGroupCellCorners = { 0, 1, 3, 2, 0, 4, 5, 1, 5, 7, 3, 7, 6, 2, 6, 4 };
         [SerializeField] private Transform m_SymmetryDomainPrefab;
         [SerializeField] private Transform m_SymmetryDomainParent;
 
@@ -495,7 +494,7 @@ namespace TiltBrush
 
             if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.SpaceGroup)
             {
-                DrawSpaceGroupCellGuides(lrs, mirrorScale);
+                DrawSpaceGroupGuides(lrs, matrices, mirrorScale);
                 return;
             }
 
@@ -671,41 +670,31 @@ namespace TiltBrush
             axis.startColor = axis.endColor = Color.gray;
         }
 
-        private void DrawSpaceGroupCellGuides(List<LineRenderer> renderers, float mirrorScale)
+        private void DrawSpaceGroupGuides(List<LineRenderer> renderers,
+            List<Matrix4x4> matrices, float mirrorScale)
         {
-            var pm = PointerManager.m_Instance;
-            var repeats = pm.m_SpaceGroupRepeats;
-            var basis = pm.SpaceGroupCellBasis;
-            var points = new Vector3[kSpaceGroupCellCorners.Length];
-            var index = 0;
-            // Show conventional cells, rather than claiming a 3D fundamental domain.
-            // The package basis also supplies the 120-degree cells for trigonal/hexagonal groups.
-            for (var x = 0; x < repeats.x; x++)
-            for (var y = 0; y < repeats.y; y++)
-            for (var z = 0; z < repeats.z; z++)
+            var paths = PointerManager.m_Instance.SpaceGroupDomainPaths;
+            for (var pathIndex = 0; pathIndex < paths.Count; pathIndex++)
             {
-                LineRenderer renderer;
-                if (index < renderers.Count)
+                var path = paths[pathIndex];
+                var points = new Vector3[path.Length];
+                for (var copy = 0; copy < matrices.Count; copy++)
                 {
-                    renderer = renderers[index];
+                    for (var vertex = 0; vertex < path.Length; vertex++)
+                    {
+                        points[vertex] = matrices[copy].MultiplyPoint3x4(path[vertex]) * mirrorScale;
+                    }
+                    var index = copy * paths.Count + pathIndex;
+                    var renderer = index < renderers.Count
+                        ? renderers[index]
+                        : Instantiate(m_SymmetryDomainPrefab, m_SymmetryDomainParent).GetComponent<LineRenderer>();
+                    renderer.gameObject.SetActive(true);
+                    renderer.loop = false;
+                    renderer.positionCount = points.Length;
+                    renderer.SetPositions(points);
+                    renderer.startColor = renderer.endColor = copy == 0 ? Color.white : Color.blue;
+                    renderer.sortingOrder = copy == 0 ? 1 : 0;
                 }
-                else
-                {
-                    var go = Instantiate(m_SymmetryDomainPrefab, m_SymmetryDomainParent);
-                    renderer = go.GetComponent<LineRenderer>();
-                }
-                for (var corner = 0; corner < points.Length; corner++)
-                {
-                    var bits = kSpaceGroupCellCorners[corner];
-                    var fractional = new Vector3(x + (bits & 1), y + ((bits >> 1) & 1), z + ((bits >> 2) & 1));
-                    points[corner] = basis.MultiplyPoint3x4(fractional) * mirrorScale;
-                }
-                renderer.gameObject.SetActive(true);
-                renderer.loop = false;
-                renderer.positionCount = points.Length;
-                renderer.SetPositions(points);
-                renderer.startColor = renderer.endColor = index == 0 ? Color.white : Color.blue;
-                index++;
             }
         }
 
