@@ -197,6 +197,10 @@ namespace TiltBrush
         private float m_FreePaintPointerAngle;
 
         private LineCreationState m_CurrentLineCreationState;
+        private bool m_HasStrokeSpinAnchor;
+        private bool m_StrokeSpinActive;
+        private Quaternion m_StrokeMirrorRotation_CS;
+        private TrTransform m_AppliedPointerSpin = TrTransform.identity;
         private bool m_LineEnabled = false;
         private int m_EatLineEnabledInputFrames;
 
@@ -962,6 +966,7 @@ namespace TiltBrush
         public void SetPointerTransform(ControllerName name, Vector3 v, Quaternion q)
         {
             Transform pointer = GetPointer(name).transform;
+            if (pointer == MainPointer.transform) RestoreUnspunMainPointer();
             pointer.position = v;
             pointer.rotation = q;
             UpdateSymmetryPointerTransforms();
@@ -969,18 +974,24 @@ namespace TiltBrush
 
         public void SetMainPointerPosition(Vector3 vPos)
         {
-            m_MainPointerData.m_Script.transform.position = vPos;
+            // Partial setters specify a displayed world pose (including snapping).
+            var spin = GetStrokeSpinTransform();
+            RestoreUnspunMainPointer();
+            m_MainPointerData.m_Script.transform.position = spin.inverse * vPos;
             UpdateSymmetryPointerTransforms();
         }
 
         public void SetMainPointerRotation(Quaternion qRot)
         {
-            m_MainPointerData.m_Script.transform.rotation = qRot;
+            var spin = GetStrokeSpinTransform();
+            RestoreUnspunMainPointer();
+            m_MainPointerData.m_Script.transform.rotation = Quaternion.Inverse(spin.rotation) * qRot;
             UpdateSymmetryPointerTransforms();
         }
 
         public void SetMainPointerPositionAndForward(Vector3 vPos, Vector3 vForward)
         {
+            RestoreUnspunMainPointer();
             m_MainPointerData.m_Script.transform.position = vPos;
             m_MainPointerData.m_Script.transform.forward = vForward;
             if (App.Config.m_SdkMode == SdkMode.Monoscopic)
@@ -1910,8 +1921,48 @@ namespace TiltBrush
             ChangeNumActivePointers(m_CustomMirrorMatrices.Count);
         }
 
+        // Mirror rotation is measured in canvas coordinates so moving the entire
+        // scene does not add drawing motion. Only free spin activates this behavior.
+        private TrTransform GetStrokeSpinTransform()
+        {
+            if (!m_HasStrokeSpinAnchor || IsMainPointerProcessingLine()
+                || m_SymmetryLockedToController
+                || (m_CurrentSymmetryMode != SymmetryMode.SinglePlane
+                    && m_CurrentSymmetryMode != SymmetryMode.MultiMirror))
+                return TrTransform.identity;
+
+            m_StrokeSpinActive |= m_SymmetryWidgetScript.IsSpinningFreely;
+            if (!m_StrokeSpinActive) return TrTransform.identity;
+
+            var sceneRotation = App.Scene.Pose.rotation;
+            var mirror = TrTransform.FromTransform(m_SymmetryWidgetScript.GrabTransform_GS);
+            var currentRotation_CS = Quaternion.Inverse(sceneRotation) * mirror.rotation;
+            var delta_CS = currentRotation_CS * Quaternion.Inverse(m_StrokeMirrorRotation_CS);
+            var delta_GS = sceneRotation * delta_CS * Quaternion.Inverse(sceneRotation);
+            return TrTransform.T(mirror.translation) * TrTransform.R(delta_GS)
+                * TrTransform.T(-mirror.translation);
+        }
+
+        private void RestoreUnspunMainPointer()
+        {
+            if (m_AppliedPointerSpin == TrTransform.identity) return;
+            var pointer = m_MainPointerData.m_Script.transform;
+            var input = m_AppliedPointerSpin.inverse * TrTransform.FromTransform(pointer);
+            input.ToTransform(pointer);
+            m_AppliedPointerSpin = TrTransform.identity;
+        }
+
         void UpdateSymmetryPointerTransforms()
         {
+            // Always start from hand input: this method can run repeatedly per frame.
+            RestoreUnspunMainPointer();
+            m_AppliedPointerSpin = GetStrokeSpinTransform();
+            if (m_AppliedPointerSpin != TrTransform.identity)
+            {
+                var pointer = m_MainPointerData.m_Script.transform;
+                var spun = m_AppliedPointerSpin * TrTransform.FromTransform(pointer);
+                spun.ToTransform(pointer);
+            }
             switch (m_CurrentSymmetryMode)
             {
                 case SymmetryMode.SinglePlane:
@@ -2352,6 +2403,17 @@ namespace TiltBrush
         // stopped and started a new one.
         void InitiateLine(bool isContinue = false)
         {
+            if (!isContinue)
+            {
+                m_HasStrokeSpinAnchor = m_CurrentSymmetryMode == SymmetryMode.SinglePlane
+                    || m_CurrentSymmetryMode == SymmetryMode.MultiMirror;
+                m_StrokeSpinActive = false;
+                if (m_HasStrokeSpinAnchor)
+                {
+                    m_StrokeMirrorRotation_CS = Quaternion.Inverse(App.Scene.Pose.rotation)
+                        * m_SymmetryWidgetScript.GrabTransform_GS.rotation;
+                }
+            }
             BeginSymmetryStrokeGroup();
 
             if (!isContinue && m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode)
@@ -2401,6 +2463,7 @@ namespace TiltBrush
         {
             // Set Main Pointer to transform.
             CanvasScript canvas = App.Scene.ActiveCanvas;
+            RestoreUnspunMainPointer();
             canvas.AsCanvas[m_MainPointerData.m_Script.transform] = mainPointerXf_CS;
 
             // Update other pointers.
@@ -2439,6 +2502,13 @@ namespace TiltBrush
             }
 
             EndSymmetryStrokeGroup();
+            if (!isContinue)
+            {
+                m_HasStrokeSpinAnchor = false;
+                m_StrokeSpinActive = false;
+                if (m_AppliedPointerSpin != TrTransform.identity)
+                    UpdateSymmetryPointerTransforms();
+            }
         }
 
         /// When peer editing is enabled, finds the mirror shared by the line's strokes.
