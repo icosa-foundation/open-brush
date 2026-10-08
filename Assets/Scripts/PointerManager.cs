@@ -405,6 +405,7 @@ namespace TiltBrush
 
         public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
         public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
+        public Vector3[] LineGroupDomainPath { get; private set; }
 
         public List<Color> SymmetryPointerColors
         {
@@ -1792,8 +1793,12 @@ namespace TiltBrush
                     PenroseReferenceTile = PenrosePattern.tiles.FindIndex(tile => UsesPenroseTile(tile.kind));
                     break;
                 case CustomSymmetryType.LineGroup:
-                    m_CustomMirrorMatrices = new LineGroupSymmetry(m_LineFamily, m_LineOrder,
-                        m_LineRepeats, m_LineAdvance, m_LineAngle).matrices;
+                    var lineGroup = new LineGroupSymmetry(m_LineFamily, m_LineOrder,
+                        m_LineRepeats, m_LineAdvance, m_LineAngle);
+                    m_CustomMirrorMatrices = lineGroup.matrices;
+                    // The mathematical domain is radially unbounded. Use one step advance
+                    // as its display radius, without changing the copy transforms.
+                    LineGroupDomainPath = lineGroup.CreateDomainOutline(m_LineAdvance).GetWirePath();
                     break;
                 case CustomSymmetryType.SpaceGroup:
                     var spaceGroup = new SpaceGroupSymmetry(m_SpaceGroupNumber,

@@ -69,14 +69,6 @@ namespace TiltBrush
         [SerializeField] private float m_JumpToUserControllerOffsetDistance;
         [SerializeField] private float m_JumpToUserControllerYOffset;
         private static readonly int OutlineWidth = Shader.PropertyToID("_OutlineWidth");
-        // An asymmetric 3D arrow makes rotations and both kinds of reflection visible.
-        private static readonly Vector3[] kLineGroupMarker = {
-            new Vector3(-0.2f, -0.12f, -0.16f), new Vector3(0.22f, -0.12f, -0.16f),
-            new Vector3(0.22f, 0.12f, -0.16f), new Vector3(0.45f, 0, 0.12f),
-            new Vector3(0.22f, -0.12f, -0.16f), new Vector3(-0.2f, -0.12f, -0.16f),
-            new Vector3(0.45f, 0, 0.12f), new Vector3(0.22f, 0.12f, -0.16f),
-            new Vector3(-0.2f, -0.12f, -0.16f)
-        };
         // A continuous walk of the twelve cell edges, retracing three edges to join the path.
         private static readonly int[] kSpaceGroupCellCorners = { 0, 1, 3, 2, 0, 4, 5, 1, 5, 7, 3, 7, 6, 2, 6, 4 };
         [SerializeField] private Transform m_SymmetryDomainPrefab;
@@ -599,12 +591,8 @@ namespace TiltBrush
         {
             var pm = PointerManager.m_Instance;
             var advance = pm.m_LineAdvance;
-            // Keep the motif away from the axis and reflection planes, so axial rotations
-            // and reflected copies have distinct positions instead of piling up at each step.
-            var phase = Quaternion.AngleAxis(45f / pm.m_LineOrder, Vector3.forward);
-            var markerFrame = Matrix4x4.TRS(phase * Vector3.right * advance + Vector3.forward * (advance * 0.18f),
-                phase, new Vector3(advance, advance * Mathf.Min(1f, 5f / pm.m_LineOrder), advance));
-            var points = new Vector3[kLineGroupMarker.Length];
+            var domainPath = pm.LineGroupDomainPath;
+            var points = new Vector3[domainPath.Length];
             var width = advance * 0.015f * mirrorScale * transform.lossyScale.x;
             LineRenderer GetRenderer(int index)
             {
@@ -617,9 +605,8 @@ namespace TiltBrush
             }
             for (var i = 0; i < matrices.Count; i++)
             {
-                var marker = matrices[i] * markerFrame;
                 for (var j = 0; j < points.Length; j++)
-                    points[j] = marker.MultiplyPoint3x4(kLineGroupMarker[j]) * mirrorScale;
+                    points[j] = matrices[i].MultiplyPoint3x4(domainPath[j]) * mirrorScale;
                 var renderer = GetRenderer(i);
                 renderer.positionCount = points.Length;
                 renderer.SetPositions(points);
