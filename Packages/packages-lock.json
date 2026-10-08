@@ -44,7 +44,7 @@
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "12b6cc83e5463f19080afe40d215b7d2370722f5"
+      "hash": "6aae1d237ef1f9d145a00e5ab47c6438fbf3b780"
     },
     "com.netpyoung.webp": {
       "version": "https://github.com/netpyoung/unity.webp.git?path=unity_project/Assets/unity.webp#0.3.22",
