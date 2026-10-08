@@ -1769,7 +1769,7 @@ namespace TiltBrush
             return matrices;
         }
 
-        private TrTransform MultiMirrorCenter()
+        internal TrTransform MultiMirrorCenter()
         {
             var center = TrTransform.FromTransform(m_SymmetryLockedToController
                 ? MainPointer.transform : SymmetryWidget.GrabTransform_GS);

@@ -497,6 +497,15 @@ namespace TiltBrush
             {
                 var m0 = matrices[i];
                 var m = transform.localToWorldMatrix * m0;
+                if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Helical)
+                {
+                    var pm = PointerManager.m_Instance;
+                    var center = pm.MultiMirrorCenter();
+                    // Apply the pointer's world transform to the reference guide. Widget size
+                    // changes the marker, while canvas scale determines helical advance.
+                    var symmetry = center * pm.TrFromMatrix(m0) * center.inverse;
+                    m = symmetry.ToMatrix4x4() * transform.localToWorldMatrix;
+                }
                 // Scale the guides away from the origin
                 m *= Matrix4x4.TRS(new Vector3(2, .5f, .05f), Quaternion.identity, new Vector3(0.5f, 0.4f, 0));
                 matrices[i] = m;
