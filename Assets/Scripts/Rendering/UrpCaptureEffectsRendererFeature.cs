@@ -14,17 +14,23 @@ namespace TiltBrush
     {
         [SerializeField] private Shader m_VignetteShader;
         private Material m_VignetteMaterial;
+        [SerializeField] private Shader m_TiltShiftShader;
+        private Material m_TiltShiftMaterial;
 
         public override void Create()
         {
             CoreUtils.Destroy(m_VignetteMaterial);
+            CoreUtils.Destroy(m_TiltShiftMaterial);
             m_VignetteMaterial = m_VignetteShader != null
                 ? CoreUtils.CreateEngineMaterial(m_VignetteShader) : null;
+            m_TiltShiftMaterial = m_TiltShiftShader != null
+                ? CoreUtils.CreateEngineMaterial(m_TiltShiftShader) : null;
         }
 
         protected override void Dispose(bool disposing)
         {
             CoreUtils.Destroy(m_VignetteMaterial);
+            CoreUtils.Destroy(m_TiltShiftMaterial);
         }
 
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
@@ -35,6 +41,20 @@ namespace TiltBrush
                 (camera.TryGetComponent(out RenderWrapper wrapper) && wrapper.SuppressPostEffects))
             {
                 return;
+            }
+
+            if (m_TiltShiftMaterial != null && camera.TryGetComponent(out TiltShift tiltShift))
+            {
+                var properties = new MaterialPropertyBlock();
+                if (tiltShift.mat != null)
+                {
+                    properties.SetFloat("_BlurAmount", tiltShift.mat.GetFloat("_BlurAmount"));
+                    properties.SetFloat("_Center", tiltShift.mat.GetFloat("_Center"));
+                    properties.SetFloat("_StepSize", tiltShift.mat.GetFloat("_StepSize"));
+                    properties.SetFloat("_Steps", tiltShift.mat.GetFloat("_Steps"));
+                }
+                renderer.EnqueuePass(new CaptureEffectPass(
+                    m_TiltShiftMaterial, properties, "Open Brush Capture Tilt Shift"));
             }
 
             if (m_VignetteMaterial != null && camera.TryGetComponent(out Kino.Vignette vignette))
