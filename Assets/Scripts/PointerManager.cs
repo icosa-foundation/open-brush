@@ -405,7 +405,7 @@ namespace TiltBrush
 
         public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
         public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
-        public const float PointGroupDomainRadius = 0.5f;
+        public const float PointGroupDomainRadius = 1.25f;
         public List<Vector3[]> PointGroupDomainPaths { get; private set; }
         public Vector3[] LineGroupDomainPath { get; private set; }
         public float LineGroupDomainRadius => m_LineAdvance == 0f ? 0.5f : m_LineAdvance;
