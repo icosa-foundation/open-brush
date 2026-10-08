@@ -448,7 +448,7 @@ namespace TiltBrush
             // It would be nice to think of a way to get this to do something sensible in the editor!
             string offlineRenderExePath = Process.GetCurrentProcess().MainModule.FileName;
 
-            string batText = $"bash \"{exePath}/Support/bin/renderVideo.sh\" \\\n\t\"{sketchFile}\" \\\n\t\"{usdaFile}\" \\\n\t\"{offlineRenderExePath}\"";
+            string batText = $"bash {QuoteBashArgument($"{exePath}/Support/bin/renderVideo.sh")} \\\n\t{QuoteBashArgument(sketchFile)} \\\n\t{QuoteBashArgument(usdaFile)} \\\n\t{QuoteBashArgument(offlineRenderExePath)}";
             File.WriteAllText(shFile, $"#!/bin/bash\n{batText}\n", new System.Text.UTF8Encoding(false));
 #if UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
             // Allow the generated launcher to be run directly, including paths with spaces or quotes.
@@ -470,6 +470,11 @@ namespace TiltBrush
 #endif
 #endif
 
+        }
+        // Single quotes preserve shell metacharacters; embedded quotes must be emitted separately.
+        private static string QuoteBashArgument(string value)
+        {
+            return $"'{value.Replace("'", "'\"'\"'")}'";
         }
     }
 } // namespace TiltBrush
