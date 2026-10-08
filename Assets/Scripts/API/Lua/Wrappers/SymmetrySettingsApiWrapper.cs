@@ -17,6 +17,9 @@ namespace TiltBrush
 
         private SymmetryPointType _PointType;
         private int _PointOrder;
+        private int _PenroseSubdivisions = 4;
+        private float _PenroseRadius = 2f;
+        private SymmetryPenroseTiles _PenroseTiles = SymmetryPenroseTiles.Both;
         private SymmetryLineFamily _LineFamily = SymmetryLineFamily.ScrewHalfTurns;
         private int _LineOrder = 5;
         private int _LineRepeats = 8;
@@ -56,6 +59,13 @@ namespace TiltBrush
                             _Mode = SymmetryMode.Point;
                             _PointType = (SymmetryPointType)PointerManager.m_Instance.m_PointSymmetryFamily;
                             _PointOrder = PointerManager.m_Instance.m_PointSymmetryOrder;
+                        }
+                        else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Penrose)
+                        {
+                            _Mode = SymmetryMode.Penrose;
+                            _PenroseSubdivisions = PointerManager.m_Instance.m_PenroseSubdivisions;
+                            _PenroseRadius = PointerManager.m_Instance.m_PenroseRadius;
+                            _PenroseTiles = (SymmetryPenroseTiles)PointerManager.m_Instance.m_PenroseTiles;
                         }
                         else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.LineGroup)
                         {
@@ -207,6 +217,9 @@ namespace TiltBrush
 
                 _PointType = _PointType,
                 _PointOrder = _PointOrder,
+                _PenroseSubdivisions = _PenroseSubdivisions,
+                _PenroseRadius = _PenroseRadius,
+                _PenroseTiles = _PenroseTiles,
                 _LineFamily = _LineFamily,
                 _LineOrder = _LineOrder,
                 _LineRepeats = _LineRepeats,
@@ -252,6 +265,11 @@ namespace TiltBrush
                             break;
                         case SymmetryMode.TwoHanded:
                             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.TwoHanded);
+                            break;
+                        case SymmetryMode.Penrose:
+                            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Penrose;
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                            PointerManager.m_Instance.CalculateMirrors();
                             break;
                         case SymmetryMode.LineGroup:
                             PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.LineGroup;
@@ -482,6 +500,51 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Penrose subdivision depth (1–7)")]
+        public int penroseSubdivisions
+        {
+            get => _PenroseSubdivisions;
+            set
+            {
+                _PenroseSubdivisions = Mathf.Clamp(value, 1, 7);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_PenroseSubdivisions = _PenroseSubdivisions;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Penrose seed radius in canvas units")]
+        public float penroseRadius
+        {
+            get => _PenroseRadius;
+            set
+            {
+                _PenroseRadius = Mathf.Max(0.01f, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_PenroseRadius = _PenroseRadius;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Penrose tile types receiving copies")]
+        public SymmetryPenroseTiles penroseTiles
+        {
+            get => _PenroseTiles;
+            set
+            {
+                _PenroseTiles = (SymmetryPenroseTiles)Mathf.Clamp((int)value, 0, 2);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_PenroseTiles = (PenroseTiling.TileSelection)_PenroseTiles;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
         [LuaDocsDescription("Line-group family (1–13)")]
         public SymmetryLineFamily lineFamily
         {
@@ -694,6 +757,13 @@ namespace TiltBrush
                     break;
                 case SymmetryMode.TwoHanded:
                     newMode = PointerManager.SymmetryMode.TwoHanded;
+                    break;
+                case SymmetryMode.Penrose:
+                    newMode = PointerManager.SymmetryMode.MultiMirror;
+                    PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Penrose;
+                    PointerManager.m_Instance.m_PenroseSubdivisions = settings._PenroseSubdivisions;
+                    PointerManager.m_Instance.m_PenroseRadius = settings._PenroseRadius;
+                    PointerManager.m_Instance.m_PenroseTiles = (PenroseTiling.TileSelection)settings._PenroseTiles;
                     break;
                 case SymmetryMode.LineGroup:
                     newMode = PointerManager.SymmetryMode.MultiMirror;

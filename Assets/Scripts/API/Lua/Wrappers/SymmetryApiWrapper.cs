@@ -16,7 +16,16 @@ namespace TiltBrush
         Wallpaper,
         Helical,
         SpaceGroup,
-        LineGroup
+        LineGroup,
+        Penrose
+    }
+
+    [LuaDocsDescription("Penrose tile types receiving copies")]
+    public enum SymmetryPenroseTiles
+    {
+        Both = PenroseTiling.TileSelection.Both,
+        Thin = PenroseTiling.TileSelection.Thin,
+        Thick = PenroseTiling.TileSelection.Thick,
     }
 
     [LuaDocsDescription("The thirteen general line-group families")]

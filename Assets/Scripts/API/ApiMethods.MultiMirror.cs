@@ -71,13 +71,28 @@ namespace TiltBrush
         }
 
         [ApiEndpoint("symmetry.type",
-        description: "Sets the custom symmetry type: point, wallpaper, helical, spacegroup or linegroup",
+        description: "Sets the custom symmetry type: point, wallpaper, helical, spacegroup, linegroup or penrose",
         exampleUsage: "wallpaper")]
         public static void CustomSymmetryType(string type)
         {
             Enum.TryParse(type, ignoreCase: true, out PointerManager.CustomSymmetryType _type);
             PointerManager.m_Instance.m_CustomSymmetryType = _type;
             PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        [ApiEndpoint("symmetry.penrose",
+        description: "Enables Penrose placements with subdivisions 1–7, radius in canvas units, and tile selection thin, thick or both. The reference tile is anchored at the widget origin",
+        exampleUsage: "4,2,both")]
+        public static void PenroseSymmetry(int subdivisions, float radius, string tiles)
+        {
+            var pm = PointerManager.m_Instance;
+            Enum.TryParse(tiles, true, out PenroseTiling.TileSelection selection);
+            pm.m_PenroseSubdivisions = Mathf.Clamp(subdivisions, 1, 7);
+            pm.m_PenroseRadius = Mathf.Max(0.01f, radius);
+            pm.m_PenroseTiles = (PenroseTiling.TileSelection)Mathf.Clamp((int)selection, 0, 2);
+            pm.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Penrose;
+            pm.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+            pm.CalculateMirrors();
         }
 
         [ApiEndpoint("symmetry.linegroup",
