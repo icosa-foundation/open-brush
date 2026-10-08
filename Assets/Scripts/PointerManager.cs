@@ -406,6 +406,7 @@ namespace TiltBrush
         public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
         public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
         public Vector3[] LineGroupDomainPath { get; private set; }
+        public float LineGroupDomainRadius => m_LineAdvance == 0f ? 0.5f : m_LineAdvance;
 
         public List<Color> SymmetryPointerColors
         {
@@ -1797,8 +1798,8 @@ namespace TiltBrush
                         m_LineRepeats, m_LineAdvance, m_LineAngle);
                     m_CustomMirrorMatrices = lineGroup.matrices;
                     // The mathematical domain is radially unbounded. Use one step advance
-                    // as its display radius, without changing the copy transforms.
-                    LineGroupDomainPath = lineGroup.CreateDomainOutline(m_LineAdvance).GetWirePath();
+                    // as its display radius, or a fixed radius for zero-advance patterns.
+                    LineGroupDomainPath = lineGroup.CreateDomainOutline(LineGroupDomainRadius).GetWirePath();
                     break;
                 case CustomSymmetryType.SpaceGroup:
                     var spaceGroup = new SpaceGroupSymmetry(m_SpaceGroupNumber,

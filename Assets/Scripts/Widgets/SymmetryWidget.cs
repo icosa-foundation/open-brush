@@ -593,7 +593,7 @@ namespace TiltBrush
             var advance = pm.m_LineAdvance;
             var domainPath = pm.LineGroupDomainPath;
             var points = new Vector3[domainPath.Length];
-            var width = advance * 0.015f * mirrorScale * transform.lossyScale.x;
+            var width = pm.LineGroupDomainRadius * 0.015f * mirrorScale * transform.lossyScale.x;
             LineRenderer GetRenderer(int index)
             {
                 var renderer = index < renderers.Count ? renderers[index]
@@ -613,6 +613,8 @@ namespace TiltBrush
                 renderer.startColor = renderer.endColor = i == 0 ? Color.white
                     : matrices[i].determinant < 0 ? new Color(1f, 0.7f, 0.15f) : Color.blue;
             }
+
+            if (advance == 0f) return;
 
             // Connect the step origins, with a short transverse tick at each step.
             // Using the generated matrices also keeps this guide aligned with Transform Each.

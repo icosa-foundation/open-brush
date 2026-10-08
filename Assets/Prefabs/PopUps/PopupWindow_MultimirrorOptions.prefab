@@ -10247,9 +10247,9 @@ MonoBehaviour:
   m_DisplayDecimalPlaces: 2
   m_Param1: 0
   m_Param2: 0
-  m_safeMin: 0.05
+  m_safeMin: 0
   m_safeMax: 5
-  m_unsafeMin: 0.05
+  m_unsafeMin: 0
   m_unsafeMax: 5
   m_SafeLimits: 1
   m_InitialValue: 0.5

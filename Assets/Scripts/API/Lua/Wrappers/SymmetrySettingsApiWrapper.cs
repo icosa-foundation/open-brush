@@ -596,7 +596,7 @@ namespace TiltBrush
             get => _LineAdvance;
             set
             {
-                _LineAdvance = Mathf.Max(0.01f, value);
+                _LineAdvance = Mathf.Max(0f, value);
                 if (_IsCurrent)
                 {
                     PointerManager.m_Instance.m_LineAdvance = _LineAdvance;

@@ -104,7 +104,7 @@ namespace TiltBrush
             pm.m_LineFamily = (global::LineGroupSymmetry.Family)Mathf.Clamp(family, 1, 13);
             pm.m_LineOrder = Mathf.Max(1, order);
             pm.m_LineRepeats = Mathf.Max(1, repeats);
-            pm.m_LineAdvance = Mathf.Max(0.01f, advance);
+            pm.m_LineAdvance = Mathf.Max(0f, advance);
             pm.m_LineAngle = angle;
             pm.m_CustomSymmetryType = PointerManager.CustomSymmetryType.LineGroup;
             pm.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);

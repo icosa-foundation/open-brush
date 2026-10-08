@@ -555,7 +555,7 @@ namespace TiltBrush
 
         public void HandleChangeLineAdvance(Vector3 value)
         {
-            PointerManager.m_Instance.m_LineAdvance = Mathf.Max(0.01f, value.z);
+            PointerManager.m_Instance.m_LineAdvance = Mathf.Max(0f, value.z);
             PointerManager.m_Instance.CalculateMirrors();
             RefreshLineGroupControls();
         }
