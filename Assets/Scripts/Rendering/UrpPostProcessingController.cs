@@ -267,8 +267,9 @@ namespace TiltBrush
                 allowHDR = camera != null && camera.allowHDR
             };
 
-            if (camera == null)
+            if (camera == null || !enablePostProcessing)
             {
+                RegisterCaptureCamera(camera);
                 return state;
             }
 
@@ -285,12 +286,7 @@ namespace TiltBrush
             state.volumeLayerMask = cameraData.volumeLayerMask;
             state.volumeTrigger = cameraData.volumeTrigger;
 
-            if (enablePostProcessing)
-            {
-                camera.allowHDR = m_CurrentHdr;
-            }
-            // A disabled override must also be applied (for example a transparent capture
-            // taken while the same camera is recording with post-processing enabled).
+            camera.allowHDR = m_CurrentHdr;
             ConfigureCaptureCamera(camera, enablePostProcessing, m_RuntimeCaptureProfile);
             Debug.Log(
                 $"{kLogPrefix} Capture override camera={camera.name} " +
