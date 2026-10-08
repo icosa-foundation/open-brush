@@ -69,11 +69,15 @@ namespace TiltBrush
         [SerializeField] private float m_JumpToUserControllerOffsetDistance;
         [SerializeField] private float m_JumpToUserControllerYOffset;
         private static readonly int OutlineWidth = Shader.PropertyToID("_OutlineWidth");
-        // A continuous walk of the twelve cell edges, retracing three edges to join the path.
+        // An asymmetric 3D arrow makes rotations and both kinds of reflection visible.
         private static readonly Vector3[] kLineGroupMarker = {
-            Vector3.zero, new Vector3(0.5f, 0, 0), new Vector3(0, 0.25f, 0), Vector3.zero,
-            new Vector3(0, 0, 0.4f), new Vector3(0.5f, 0, 0), new Vector3(0, 0, 0.4f), new Vector3(0, 0.25f, 0)
+            new Vector3(-0.2f, -0.12f, -0.16f), new Vector3(0.22f, -0.12f, -0.16f),
+            new Vector3(0.22f, 0.12f, -0.16f), new Vector3(0.45f, 0, 0.12f),
+            new Vector3(0.22f, -0.12f, -0.16f), new Vector3(-0.2f, -0.12f, -0.16f),
+            new Vector3(0.45f, 0, 0.12f), new Vector3(0.22f, 0.12f, -0.16f),
+            new Vector3(-0.2f, -0.12f, -0.16f)
         };
+        // A continuous walk of the twelve cell edges, retracing three edges to join the path.
         private static readonly int[] kSpaceGroupCellCorners = { 0, 1, 3, 2, 0, 4, 5, 1, 5, 7, 3, 7, 6, 2, 6, 4 };
         [SerializeField] private Transform m_SymmetryDomainPrefab;
         [SerializeField] private Transform m_SymmetryDomainParent;
@@ -470,9 +474,11 @@ namespace TiltBrush
             float mirrorScale = PointerManager.m_Instance.GetCustomMirrorScale();
 
             lrs = m_SymmetryDomainParent.GetComponentsInChildren<LineRenderer>(true).ToList();
+            var defaultWidth = m_SymmetryDomainPrefab.GetComponent<LineRenderer>().widthMultiplier;
             foreach (var lr in lrs)
             {
                 lr.gameObject.SetActive(false);
+                lr.widthMultiplier = defaultWidth;
             }
 
             if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Penrose)
@@ -591,20 +597,54 @@ namespace TiltBrush
 
         private void DrawLineGroupGuides(List<LineRenderer> renderers, List<Matrix4x4> matrices, float mirrorScale)
         {
+            var pm = PointerManager.m_Instance;
+            var advance = pm.m_LineAdvance;
+            // Keep the motif away from the axis and reflection planes, so axial rotations
+            // and reflected copies have distinct positions instead of piling up at each step.
+            var phase = Quaternion.AngleAxis(45f / pm.m_LineOrder, Vector3.forward);
+            var markerFrame = Matrix4x4.TRS(phase * Vector3.right * advance + Vector3.forward * (advance * 0.18f),
+                phase, new Vector3(advance, advance * Mathf.Min(1f, 5f / pm.m_LineOrder), advance));
             var points = new Vector3[kLineGroupMarker.Length];
-            var size = PointerManager.m_Instance.m_LineAdvance * 0.5f;
-            for (var i = 0; i < matrices.Count; i++)
+            var width = advance * 0.015f * mirrorScale * transform.lossyScale.x;
+            LineRenderer GetRenderer(int index)
             {
-                var renderer = i < renderers.Count ? renderers[i]
+                var renderer = index < renderers.Count ? renderers[index]
                     : Instantiate(m_SymmetryDomainPrefab, m_SymmetryDomainParent).GetComponent<LineRenderer>();
-                for (var j = 0; j < points.Length; j++)
-                    points[j] = matrices[i].MultiplyPoint3x4(kLineGroupMarker[j] * size) * mirrorScale;
                 renderer.gameObject.SetActive(true);
                 renderer.loop = false;
+                renderer.widthMultiplier = width;
+                return renderer;
+            }
+            for (var i = 0; i < matrices.Count; i++)
+            {
+                var marker = matrices[i] * markerFrame;
+                for (var j = 0; j < points.Length; j++)
+                    points[j] = marker.MultiplyPoint3x4(kLineGroupMarker[j]) * mirrorScale;
+                var renderer = GetRenderer(i);
                 renderer.positionCount = points.Length;
                 renderer.SetPositions(points);
-                renderer.startColor = renderer.endColor = i == 0 ? Color.white : Color.blue;
+                renderer.startColor = renderer.endColor = i == 0 ? Color.white
+                    : matrices[i].determinant < 0 ? new Color(1f, 0.7f, 0.15f) : Color.blue;
             }
+
+            // Connect the step origins, with a short transverse tick at each step.
+            // Using the generated matrices also keeps this guide aligned with Transform Each.
+            var copiesPerStep = matrices.Count / pm.m_LineRepeats;
+            var axisPoints = new Vector3[pm.m_LineRepeats * 4];
+            for (var step = 0; step < pm.m_LineRepeats; step++)
+            {
+                var matrix = matrices[step * copiesPerStep];
+                var origin = matrix.MultiplyPoint3x4(Vector3.zero) * mirrorScale;
+                var tick = matrix.MultiplyVector(Vector3.right * (advance * 0.08f)) * mirrorScale;
+                axisPoints[step * 4] = origin;
+                axisPoints[step * 4 + 1] = origin - tick;
+                axisPoints[step * 4 + 2] = origin + tick;
+                axisPoints[step * 4 + 3] = origin;
+            }
+            var axis = GetRenderer(matrices.Count);
+            axis.positionCount = axisPoints.Length;
+            axis.SetPositions(axisPoints);
+            axis.startColor = axis.endColor = Color.gray;
         }
 
         private void DrawSpaceGroupCellGuides(List<LineRenderer> renderers, float mirrorScale)
