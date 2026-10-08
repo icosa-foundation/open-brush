@@ -449,7 +449,25 @@ namespace TiltBrush
             string offlineRenderExePath = Process.GetCurrentProcess().MainModule.FileName;
 
             string batText = $"bash \"{exePath}/Support/bin/renderVideo.sh\" \\\n\t\"{sketchFile}\" \\\n\t\"{usdaFile}\" \\\n\t\"{offlineRenderExePath}\"";
-            File.WriteAllText(shFile, batText);
+            File.WriteAllText(shFile, $"#!/bin/bash\n{batText}\n", new System.Text.UTF8Encoding(false));
+#if UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
+            // Allow the generated launcher to be run directly, including paths with spaces or quotes.
+            string quotedShFile = shFile.Replace("\\", "\\\\").Replace("\"", "\\\"");
+            using (var chmod = Process.Start(new ProcessStartInfo
+            {
+                FileName = "chmod",
+                Arguments = $"u+x -- \"{quotedShFile}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }))
+            {
+                chmod.WaitForExit();
+                if (chmod.ExitCode != 0)
+                {
+                    Debug.LogWarning($"[OfflineRenderLauncher] Could not make {shFile} executable. Run it with bash instead.");
+                }
+            }
+#endif
 #endif
 
         }
