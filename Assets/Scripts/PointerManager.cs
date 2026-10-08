@@ -1831,7 +1831,7 @@ namespace TiltBrush
                 default:
                     var pointSym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0.1f);
                     m_CustomMirrorMatrices = pointSym.matrices;
-                    PointGroupDomainPaths = CreatePointDomainPaths(pointSym.CreateDomainOutline(PointGroupDomainRadius));
+                    PointGroupDomainPaths = CreatePointDomainPaths(pointSym.CreateDomainOutline(PointGroupDomainRadius, drawArcs: false));
                     break;
             }
 
