@@ -625,14 +625,12 @@ namespace TiltBrush
             var advance = pm.m_LineAdvance;
             var domainPath = pm.LineGroupDomainPath;
             var points = new Vector3[domainPath.Length];
-            var width = pm.LineGroupDomainRadius * 0.015f * mirrorScale * transform.lossyScale.x;
             LineRenderer GetRenderer(int index)
             {
                 var renderer = index < renderers.Count ? renderers[index]
                     : Instantiate(m_SymmetryDomainPrefab, m_SymmetryDomainParent).GetComponent<LineRenderer>();
                 renderer.gameObject.SetActive(true);
                 renderer.loop = false;
-                renderer.widthMultiplier = width;
                 return renderer;
             }
             for (var i = 0; i < matrices.Count; i++)
