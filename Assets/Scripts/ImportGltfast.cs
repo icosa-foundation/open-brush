@@ -92,7 +92,6 @@ namespace TiltBrush
         {
             try
             {
-                UnityGltfShaderDiagnosticsProbe.BeforeImport();
                 ImportOptions options = new ImportOptions();
                 // TODO - should we import disabled to help round-tripping?
                 options.CameraImport = CameraImportOption.None;
@@ -130,7 +129,6 @@ namespace TiltBrush
                 // time-slicing above and (in the editor) deadlocks the UnityWebRequest file read,
                 // because the player loop can't tick while blocked.
                 await gltf.LoadSceneAsync();
-                UnityGltfShaderDiagnosticsProbe.ImportResult(true);
                 GameObject go = gltf.CreatedObject;
 
                 var clips = gltf.CreatedAnimationClips;
@@ -159,7 +157,6 @@ namespace TiltBrush
             }
             catch (Exception e)
             {
-                UnityGltfShaderDiagnosticsProbe.ImportResult(false);
                 Debug.LogError($"Failed to import using UnityGltf. Falling back to legacy import.\nUnityGltf Exception: {e}");
                 // Fall back to the older import code
                 GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
