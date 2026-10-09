@@ -263,8 +263,7 @@ jobs:
             androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: OpenXR
             cache: Android_Vulkan
-            # Opt in for this APK with [CI BUILD] [ANDROID SCOPED] on an authorized test push.
-            extraoptions: -btb-il2cpp ${{ github.event_name == 'push' && contains(github.event.head_commit.message, '[ANDROID SCOPED]') && '-androidScopedStorage' || '' }}
+            extraoptions: -btb-il2cpp
             versionSuffix: 0
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 

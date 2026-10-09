@@ -69,7 +69,8 @@ static class BuildTiltBrush
         public string Description;
         public bool disableAccountLogins;
         public bool AndroidBuildAppBundle;
-        public bool AndroidScopedStorage;
+        // Android app bundles are the Google Play builds.
+        public bool AndroidScopedStorage => Target == BuildTarget.Android && AndroidBuildAppBundle;
         public AndroidSdkVersions? AndroidTargetSdkVersion;
     }
 
@@ -789,10 +790,6 @@ static class BuildTiltBrush
                     // TODO: do we want to do anything with this? Can we use it instead of the version string
                     // set externally?
                     i++;
-                }
-                else if (args[i] == "-androidScopedStorage")
-                {
-                    tiltOptions.AndroidScopedStorage = true;
                 }
                 else if (args[i] == "-androidTargetSdkVersion")
                 {
@@ -1674,8 +1671,6 @@ static class BuildTiltBrush
     //
     public static void DoBuild(TiltBuildOptions tiltOptions)
     {
-        if (tiltOptions.AndroidScopedStorage && tiltOptions.Target != BuildTarget.Android)
-            throw new BuildFailedException("Scoped storage requires an Android target.");
         BuildTarget target = tiltOptions.Target;
         string location = tiltOptions.Location;
         string stamp = tiltOptions.Stamp;
