@@ -43,7 +43,8 @@ namespace TiltBrush
                 return;
             }
 
-            if (m_TiltShiftMaterial != null && camera.TryGetComponent(out TiltShift tiltShift))
+            if (m_TiltShiftMaterial != null && camera.TryGetComponent(out TiltShift tiltShift) &&
+                !tiltShift.SuppressForCapture)
             {
                 var properties = new MaterialPropertyBlock();
                 if (tiltShift.mat != null)

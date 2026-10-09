@@ -1980,6 +1980,7 @@ namespace TiltBrush
                     bool suppressPostEffectsRestore = wrapper.SuppressPostEffects;
                     TiltShift tiltShift = rMgr.gameObject.GetComponent<TiltShift>();
                     bool tiltShiftRestore = tiltShift != null && tiltShift.enabled;
+                    bool tiltShiftSuppressionRestore = tiltShift != null && tiltShift.SuppressForCapture;
                     Kino.Vignette vignette = rMgr.gameObject.GetComponent<Kino.Vignette>();
                     bool vignetteRestore = vignette != null && vignette.enabled;
                     WatermarkEffect watermark = rMgr.gameObject.GetComponent<WatermarkEffect>();
@@ -1998,6 +1999,7 @@ namespace TiltBrush
                         if (style == MultiCamStyle.Depth && tiltShift != null)
                         {
                             tiltShift.enabled = false;
+                            tiltShift.SuppressForCapture = true;
                         }
 
                         if (odsCamera != null)
@@ -2044,6 +2046,7 @@ namespace TiltBrush
                         if (style == MultiCamStyle.Depth && tiltShift != null)
                         {
                             tiltShift.enabled = tiltShiftRestore;
+                            tiltShift.SuppressForCapture = tiltShiftSuppressionRestore;
                         }
                         if (style == MultiCamStyle.Depth && vignette != null)
                         {
