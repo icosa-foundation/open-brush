@@ -83,6 +83,15 @@ namespace TiltBrush
                 .Distinct(StringComparer.Ordinal).ToArray();
         }
 
+        public static string[] GetFilesWithExtension(string directory, string extension, SearchOption searchOption)
+        {
+            if (!ContainsPath(directory) && directory != RootPath)
+                return Directory.GetFiles(directory, $"*{extension}", searchOption);
+            return GetFiles(directory, searchOption)
+                .Where(path => string.Equals(Path.GetExtension(path), extension, StringComparison.OrdinalIgnoreCase))
+                .ToArray();
+        }
+
         public static string[] GetDirectories(string directory)
         {
             string[] directories = Directory.GetDirectories(directory);
