@@ -1,4 +1,4 @@
-ï»¿// Modified version of a tilt shift shader from Martin Jonasson (http://grapefrukt.com/)
+// Modified version of a tilt shift shader from Martin Jonasson (http://grapefrukt.com/)
 // Read http://notes.underscorediscovery.com/ for context on shaders and this file
 // License : MIT
 // Adapted for Unity by The Tilt Brush Authors.
