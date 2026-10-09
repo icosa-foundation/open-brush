@@ -18,7 +18,9 @@ namespace TiltBrush
         public void OnPreprocessBuild(BuildReport report)
         {
             if (report.summary.platform != BuildTarget.Android) return;
-            ValidateAndRegisterReference("PBRGraph", "478ce3626be7a5f4ea58d6b13f05a2e4");
+            string pbrGuid = "478ce3626be7a5f4ea58d6b13f05a2e4";
+            var pbrShader = AssetDatabase.LoadAssetAtPath<Shader>(AssetDatabase.GUIDToAssetPath(pbrGuid));
+            ValidateAndRegisterShader("PBRGraph", pbrGuid, pbrShader);
             ValidateAndRegisterReference("UnlitGraph", "59541e6caf586ca4f96ccf48a4813a51");
         }
 
@@ -28,9 +30,16 @@ namespace TiltBrush
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (!material || !material.shader || material.shader.name != $"UnityGLTF/{graph}")
                 throw new BuildFailedException($"{kPrefix} Invalid shader reference material: {path}");
-            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(material.shader, out string guid, out long _);
+            ValidateAndRegisterShader(graph, expectedGuid, material.shader);
+        }
+
+        private static void ValidateAndRegisterShader(string graph, string expectedGuid, Shader shader)
+        {
+            if (!shader || shader.name != $"UnityGLTF/{graph}")
+                throw new BuildFailedException($"{kPrefix} Invalid shader for GUID {expectedGuid}: expected UnityGLTF/{graph}");
+            AssetDatabase.TryGetGUIDAndLocalFileIdentifier(shader, out string guid, out long _);
             if (guid != expectedGuid)
-                throw new BuildFailedException($"{kPrefix} Unexpected shader GUID for {path}: {guid}");
+                throw new BuildFailedException($"{kPrefix} Unexpected shader GUID for UnityGLTF/{graph}: {guid}");
             // Android CI builds contained both compiled shaders and valid material references,
             // but omitted their names from the player's ScriptMapper shader lookup table.
             // UnityGLTF uses Shader.Find, so imports failed despite the shaders being present.
@@ -39,9 +48,9 @@ namespace TiltBrush
             // missing here is still unknown (cached imports are only a suspected cause).
             // Register before building without expanding the audited 392 variants. The CI
             // artifact check verifies the player table, beyond this Editor-only lookup check.
-            ShaderUtil.RegisterShader(material.shader);
-            if (Shader.Find(material.shader.name) != material.shader)
-                throw new BuildFailedException($"{kPrefix} Shader name registration failed for {material.shader.name}");
+            ShaderUtil.RegisterShader(shader);
+            if (Shader.Find(shader.name) != shader)
+                throw new BuildFailedException($"{kPrefix} Shader name registration failed for {shader.name}");
         }
     }
 }
