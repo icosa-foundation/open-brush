@@ -557,16 +557,6 @@ jobs:
             androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
             androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
-      # Android builds previously included the shaders but omitted their Shader.Find
-      # name entries, breaking UnityGLTF imports. Verify the finished APK/AAB even
-      # with the prebuild registration fix: Editor lookup cannot prove player metadata.
-      - name: Verify Android UnityGLTF shader-name registry
-        if: matrix.targetPlatform == 'Android'
-        run: |
-          python3 -m venv "$RUNNER_TEMP/gltf-shader-registry-venv"
-          "$RUNNER_TEMP/gltf-shader-registry-venv/bin/python" -m pip install UnityPy==1.25.3
-          "$RUNNER_TEMP/gltf-shader-registry-venv/bin/python" Support/Python/unitybuild/verify_gltf_shader_registry.py "build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}"
-
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |

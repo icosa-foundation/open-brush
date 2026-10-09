@@ -36,8 +36,7 @@ namespace TiltBrush
             // Explicit registration restored the built name entries and imports on the device.
             // Shader Graph normally calls this API after import; why that registration was
             // missing here is still unknown (cached imports are only a suspected cause).
-            // Register before building without expanding the audited 392 variants. The CI
-            // artifact check verifies the player table, beyond this Editor-only lookup check.
+            // Register before building without expanding the audited 392 variants.
             ShaderUtil.RegisterShader(shader);
             if (Shader.Find(shader.name) != shader)
                 throw new BuildFailedException($"{kPrefix} Shader name registration failed for {shader.name}");
