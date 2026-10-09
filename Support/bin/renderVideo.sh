@@ -11,12 +11,7 @@ usdaPath="$2"
 exeName=$(basename "$3")
 exePath="$3"
 
-# Linux uses the system FFmpeg installation.
-if [[ "$(uname -s)" == "Linux" ]] && ! command -v ffmpeg > /dev/null 2>&1; then
-  echo "ERROR: FFmpeg was not found on PATH."
-  echo "Install FFmpeg using your distribution's package manager, then rerun this script."
-  exit 1
-fi
+# Open Brush checks FFmpeg after selecting the capture mode; frame sequences do not need it.
 
 # Check if process is running
 if pgrep -x "$exeName" > /dev/null; then
