@@ -10,6 +10,15 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    // UnityGLTF resolves its generated shaders using Shader.Find. In Android builds made
+    // with Unity 6000.6 / URP / Vulkan, both compiled shaders were present, but their
+    // names were missing from the player's ScriptMapper lookup table, so imports failed.
+    // Explicitly registering them before the build restored the entries and imports on
+    // the device. Shader Graph normally registers shaders after import; why registration
+    // was missing here is unknown (cached imports are only a suspected cause).
+    // Keep this workaround in the Editor: it fixes build metadata without changing
+    // UnityGLTF's runtime lookup or expanding the existing audited 392 shader variants.
+    // Commit a63723deff contains the original diagnostics and APK/AAB metadata verifier.
     internal class UnityGltfShaderRegistration : IPreprocessBuildWithReport
     {
         private const string kPrefix = "[UnityGltfShaderRegistration]";
@@ -24,20 +33,17 @@ namespace TiltBrush
 
         private static void ValidateAndRegisterShader(string graph, string expectedGuid)
         {
+            // Load by asset GUID because name lookup is the mechanism being repaired.
+            // Validate the name so a package change fails the build instead of silently
+            // registering a different shader. No runtime reference materials are needed.
             var shader = AssetDatabase.LoadAssetAtPath<Shader>(AssetDatabase.GUIDToAssetPath(expectedGuid));
             if (!shader || shader.name != $"UnityGLTF/{graph}")
                 throw new BuildFailedException($"{kPrefix} Invalid shader for GUID {expectedGuid}: expected UnityGLTF/{graph}");
             AssetDatabase.TryGetGUIDAndLocalFileIdentifier(shader, out string guid, out long _);
             if (guid != expectedGuid)
                 throw new BuildFailedException($"{kPrefix} Unexpected shader GUID for UnityGLTF/{graph}: {guid}");
-            // Android CI builds contained both compiled shaders and valid material references,
-            // but omitted their names from the player's ScriptMapper shader lookup table.
-            // UnityGLTF uses Shader.Find, so imports failed despite the shaders being present.
-            // Explicit registration restored the built name entries and imports on the device.
-            // Shader Graph normally calls this API after import; why that registration was
-            // missing here is still unknown (cached imports are only a suspected cause).
-            // Register before building without expanding the audited 392 variants.
             ShaderUtil.RegisterShader(shader);
+            // This validates the Editor registry; it does not inspect the built player.
             if (Shader.Find(shader.name) != shader)
                 throw new BuildFailedException($"{kPrefix} Shader name registration failed for {shader.name}");
         }
