@@ -2013,10 +2013,17 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
+#if OPEN_BRUSH_SCOPED_STORAGE
+                    if (!AndroidDirectStorage.StartupReady)
+                        throw new System.InvalidOperationException("OBDS_APP storage must initialize before Main.");
+                    m_UserPath = Path.GetDirectoryName(AndroidDirectStorage.RootPath);
+                    m_OldUserPath = null; // Legacy shared content is connected explicitly, never moved implicitly.
+#else
                     m_UserPath = SteamManager.RunningUnderLepton
                         ? "/sdcard/Documents"
                         : "/sdcard/";
                     m_OldUserPath = Application.persistentDataPath;
+#endif
                     break;
                 case RuntimePlatform.IPhonePlayer:
                 default:
