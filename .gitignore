@@ -103,8 +103,3 @@
 
 # Local planning / analysis notes, not repo content
 /LlmDocs/
-
-# Local Android storage investigation and generated probe output
-/LocalPlanning/
-/implementation-plan.md
-/Support/AndroidDirectStorageProbe/
