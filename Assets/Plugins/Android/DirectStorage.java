@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.UriPermission;
 import android.database.Cursor;
 import android.net.Uri;
+import android.media.MediaScannerConnection;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
@@ -18,8 +19,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -152,6 +156,7 @@ public final class DirectStorage {
                 int entries = 0;
                 JSONArray files = new JSONArray();
                 JSONArray directories = new JSONArray();
+                ArrayList<String[]> unprepared = new ArrayList<>();
                 int failed = 0;
                 String firstFailure = "";
                 while (!pending.isEmpty()) {
@@ -178,21 +183,25 @@ public final class DirectStorage {
                                 directories.put(canonical);
                             }
                             else {
-                                // Translation does not establish ownership. Verify the path
-                                // the existing readers actually use, without reading/copying payloads.
-                                String translationFailure = "";
-                                try {
-                                    Uri media = MediaStore.getMediaUri(context, document);
-                                    if (media == null) translationFailure = "No MediaStore URI";
-                                } catch (Exception error) { translationFailure = error.toString(); }
-                                try (FileInputStream stream = new FileInputStream(canonical)) { }
-                                catch (Exception error) {
-                                    if (failed++ == 0) firstFailure = error + "; translation: " + translationFailure;
-                                }
+                                try { verifyPath(context, document, canonical); }
+                                catch (Exception error) { unprepared.add(new String[] {canonical, document.toString()}); }
                                 files.put(canonical);
                             }
                             entries++;
                         }
+                    }
+                }
+                if (!unprepared.isEmpty()) {
+                    // Newly transferred generic files may not have a MediaStore row yet.
+                    // Register only failed paths, then retry once on this worker thread.
+                    CountDownLatch scanned = new CountDownLatch(unprepared.size());
+                    MediaScannerConnection.scanFile(context,
+                        unprepared.stream().map(file -> file[0]).toArray(String[]::new), null,
+                        (path, uri) -> scanned.countDown());
+                    if (!scanned.await(30, TimeUnit.SECONDS)) throw new IOException("Workspace file registration timed out");
+                    for (String[] file : unprepared) {
+                        try { verifyPath(context, Uri.parse(file[1]), file[0]); }
+                        catch (Exception error) { if (failed++ == 0) firstFailure = error.toString(); }
                     }
                 }
                 JSONObject result = new JSONObject();
@@ -205,6 +214,14 @@ public final class DirectStorage {
                 send(receiver, "OnStoragePrepared", result.toString());
             } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
         }, "OBDS_Prepare").start();
+    }
+
+    private static void verifyPath(Context context, Uri document, String path) throws Exception {
+        // Already readable files need no access preparation. Translation is not ownership.
+        try (FileInputStream stream = new FileInputStream(path)) { return; }
+        catch (IOException ignored) { }
+        if (MediaStore.getMediaUri(context, document) == null) throw new IOException("No MediaStore URI for workspace file");
+        try (FileInputStream stream = new FileInputStream(path)) { }
     }
 
     private static void send(String receiver, String method, String value) {
