@@ -69,8 +69,12 @@ static class BuildTiltBrush
         public string Description;
         public bool disableAccountLogins;
         public bool AndroidBuildAppBundle;
+        public bool AndroidScopedStorage;
         public AndroidSdkVersions? AndroidTargetSdkVersion;
     }
+
+    public static bool CurrentBuildUsesScopedStorage { get; private set; }
+    private const string kScopedStorageDefine = "OPEN_BRUSH_SCOPED_STORAGE";
 
     [Serializable()]
     public class BuildFailedException : System.Exception
@@ -786,6 +790,10 @@ static class BuildTiltBrush
                     // set externally?
                     i++;
                 }
+                else if (args[i] == "-androidScopedStorage")
+                {
+                    tiltOptions.AndroidScopedStorage = true;
+                }
                 else if (args[i] == "-androidTargetSdkVersion")
                 {
                     if (i + 1 < args.Length &&
@@ -932,6 +940,33 @@ static class BuildTiltBrush
         }
     }
 
+    class TempAndroidStorageMode : IDisposable
+    {
+        private readonly bool m_PreviousMode;
+        private readonly string m_PreviousDefines;
+
+        public TempAndroidStorageMode(BuildTarget target, bool scoped)
+        {
+            m_PreviousMode = CurrentBuildUsesScopedStorage;
+            CurrentBuildUsesScopedStorage = target == BuildTarget.Android && scoped;
+            if (target != BuildTarget.Android) return;
+            m_PreviousDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android);
+            var defines = m_PreviousDefines.Split(';')
+                .Select(value => value.Trim())
+                .Where(value => value.Length != 0 && value != kScopedStorageDefine)
+                .ToList();
+            if (scoped) defines.Add(kScopedStorageDefine);
+            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, string.Join(";", defines));
+        }
+
+        public void Dispose()
+        {
+            if (m_PreviousDefines != null)
+                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, m_PreviousDefines);
+            CurrentBuildUsesScopedStorage = m_PreviousMode;
+        }
+    }
+
     class TempSetPlayerSettings : IDisposable
     {
         private BuildTarget m_Target;
@@ -944,10 +979,18 @@ static class BuildTiltBrush
         private AndroidApplicationEntry m_AndroidApplicationEntry;
         private bool m_AndroidResizeableActivity;
         private AndroidSdkVersions m_AndroidMinSdkVersion;
+        private bool m_RestoreStoragePermission;
+        private bool m_ForceStoragePermission;
 
         public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
         {
             m_Target = tiltOptions.Target;
+            if (m_Target == BuildTarget.Android && tiltOptions.AndroidScopedStorage)
+            {
+                m_RestoreStoragePermission = true;
+                m_ForceStoragePermission = PlayerSettings.Android.forceSDCardPermission;
+                PlayerSettings.Android.forceSDCardPermission = false;
+            }
             m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
             m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
             m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Any);
@@ -1020,6 +1063,8 @@ static class BuildTiltBrush
             {
                 PlayerSettings.Android.targetSdkVersion = m_AndroidTargetSdkVersion;
             }
+            if (m_RestoreStoragePermission)
+                PlayerSettings.Android.forceSDCardPermission = m_ForceStoragePermission;
             if (m_RestoreAndroidXrSettings)
             {
                 PlayerSettings.Android.applicationEntry = m_AndroidApplicationEntry;
@@ -1629,6 +1674,8 @@ static class BuildTiltBrush
     //
     public static void DoBuild(TiltBuildOptions tiltOptions)
     {
+        if (tiltOptions.AndroidScopedStorage && tiltOptions.Target != BuildTarget.Android)
+            throw new BuildFailedException("Scoped storage requires an Android target.");
         BuildTarget target = tiltOptions.Target;
         string location = tiltOptions.Location;
         string stamp = tiltOptions.Stamp;
@@ -1652,6 +1699,7 @@ static class BuildTiltBrush
         // It's important here for Main.unity (currently scenes[1]) to be the last scene
         // "temp modified".  TempModifyScene opens the scene and if Main.unity is not the open
         // scene when TempHookUpSingletons runs, the build will fail.
+        using (var storageMode = new TempAndroidStorageMode(target, tiltOptions.AndroidScopedStorage))
         using (var unused = new TempModifyScene(scenes[0]))
         using (var unused12 = new TempModifyScene(scenes[1]))
         using (var unused11 = new TempSetStereoRenderPath(target == BuildTarget.Android
