@@ -18,23 +18,13 @@ namespace TiltBrush
         public void OnPreprocessBuild(BuildReport report)
         {
             if (report.summary.platform != BuildTarget.Android) return;
-            string pbrGuid = "478ce3626be7a5f4ea58d6b13f05a2e4";
-            var pbrShader = AssetDatabase.LoadAssetAtPath<Shader>(AssetDatabase.GUIDToAssetPath(pbrGuid));
-            ValidateAndRegisterShader("PBRGraph", pbrGuid, pbrShader);
-            ValidateAndRegisterReference("UnlitGraph", "59541e6caf586ca4f96ccf48a4813a51");
+            ValidateAndRegisterShader("PBRGraph", "478ce3626be7a5f4ea58d6b13f05a2e4");
+            ValidateAndRegisterShader("UnlitGraph", "59541e6caf586ca4f96ccf48a4813a51");
         }
 
-        private static void ValidateAndRegisterReference(string graph, string expectedGuid)
+        private static void ValidateAndRegisterShader(string graph, string expectedGuid)
         {
-            string path = $"Assets/Resources/UnityGLTF {graph} Reference.mat";
-            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (!material || !material.shader || material.shader.name != $"UnityGLTF/{graph}")
-                throw new BuildFailedException($"{kPrefix} Invalid shader reference material: {path}");
-            ValidateAndRegisterShader(graph, expectedGuid, material.shader);
-        }
-
-        private static void ValidateAndRegisterShader(string graph, string expectedGuid, Shader shader)
-        {
+            var shader = AssetDatabase.LoadAssetAtPath<Shader>(AssetDatabase.GUIDToAssetPath(expectedGuid));
             if (!shader || shader.name != $"UnityGLTF/{graph}")
                 throw new BuildFailedException($"{kPrefix} Invalid shader for GUID {expectedGuid}: expected UnityGLTF/{graph}");
             AssetDatabase.TryGetGUIDAndLocalFileIdentifier(shader, out string guid, out long _);
