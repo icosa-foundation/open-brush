@@ -484,7 +484,10 @@ namespace TiltBrush
 
         public void LoadUserScripts()
         {
-            string[] files = Directory.GetFiles(UserPluginsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
+            string[] files = AndroidDirectStorage.ContainsPath(UserPluginsPath())
+                ? AndroidDirectStorage.GetFiles(UserPluginsPath(), SearchOption.AllDirectories)
+                    .Where(path => path.EndsWith(".lua", StringComparison.OrdinalIgnoreCase)).ToArray()
+                : Directory.GetFiles(UserPluginsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
             foreach (string scriptPath in files)
             {
                 LoadScriptFromPath(scriptPath);

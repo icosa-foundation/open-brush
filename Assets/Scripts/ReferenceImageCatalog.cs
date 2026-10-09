@@ -430,7 +430,7 @@ namespace TiltBrush
             try
             {
                 // GetFiles returns full paths, surprisingly enough.
-                foreach (var filePath in Directory.GetFiles(imageDir))
+                foreach (var filePath in AndroidDirectStorage.GetFiles(imageDir))
                 {
                     string ext = Path.GetExtension(filePath).ToLower();
                     if (!ValidExtension(ext)) { continue; }

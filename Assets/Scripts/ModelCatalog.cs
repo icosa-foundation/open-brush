@@ -334,7 +334,7 @@ namespace TiltBrush
         {
             if (Directory.Exists(sPath))
             {
-                string[] aFiles = Directory.GetFiles(sPath);
+                string[] aFiles = AndroidDirectStorage.GetFiles(sPath);
                 string rootDirectory = GetModelRoot(sPath);
                 var blocksRoot = App.BlocksModelLibraryPath();
                 bool isBlocksTree = !string.IsNullOrEmpty(blocksRoot) && rootDirectory == blocksRoot;
@@ -391,7 +391,7 @@ namespace TiltBrush
                 // Recurse into subdirectories if requested
                 if (recurse || m_RecurseDirectories)
                 {
-                    string[] aSubdirectories = Directory.GetDirectories(sPath);
+                    string[] aSubdirectories = AndroidDirectStorage.GetDirectories(sPath);
                     for (int i = 0; i < aSubdirectories.Length; ++i)
                     {
                         ProcessDirectory(aSubdirectories[i], oldModels, recurse);

@@ -152,7 +152,7 @@ namespace TiltBrush
                 try
                 {
                     detected = new HashSet<string>(
-                        Directory.GetFiles(directory, "*.*", SearchOption.TopDirectoryOnly).Where(
+                        AndroidDirectStorage.GetFiles(directory).Where(
                             x => m_supportedSoundClipExtensions.Contains(
                                 Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
                 }
