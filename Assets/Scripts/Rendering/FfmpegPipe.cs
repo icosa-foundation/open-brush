@@ -141,7 +141,7 @@ namespace TiltBrush
 
         public static string GetFfmpegExe()
         {
-#if UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
+#if UNITY_EDITOR_LINUX || (!UNITY_EDITOR && UNITY_STANDALONE_LINUX)
             // Linux uses the distribution's FFmpeg installation rather than a bundled binary.
             string searchPath = System.Environment.GetEnvironmentVariable("PATH");
             if (searchPath == null) return null;
@@ -161,10 +161,9 @@ namespace TiltBrush
             }
 
             string exeName = null;
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
             exeName = "ffmpeg.exe";
-#endif
-#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+#elif UNITY_EDITOR_OSX || (!UNITY_EDITOR && UNITY_STANDALONE_OSX)
             // A universal binary would exceed GitHub's file size limit, so we ship one per architecture.
             exeName = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==
                 System.Runtime.InteropServices.Architecture.Arm64 ? "ffmpeg-arm64" : "ffmpeg-x86_64";
