@@ -71,16 +71,31 @@ public final class DirectStorage {
                         send(receiver, "OnStorageCanceled", "");
                         return;
                     }
-                    Picker picker = new Picker();
-                    Bundle args = new Bundle();
-                    args.putString("name", name);
-                    args.putString("receiver", receiver);
-                    picker.setArguments(args);
-                    activity.getFragmentManager().beginTransaction().add(picker, "OBDS_Picker").commit();
-                    activity.getFragmentManager().executePendingTransactions();
-                    picker.launch();
+                    new AlertDialog.Builder(activity)
+                        .setTitle("Connect your Open Brush folder")
+                        .setMessage("Open Brush stores sketches, exports, and reference files in Documents/"
+                            + name + ". Grant access to save new files and open existing ones.\n\n"
+                            + "On the next screen, select Use this folder, then Allow. "
+                            + "Folder access is required; choosing Exit closes Open Brush.")
+                        .setPositiveButton("Choose Folder", (dialog, which) -> launchPicker(activity, name, receiver))
+                        .setNegativeButton("Exit", (dialog, which) -> send(receiver, "OnStorageCanceled", ""))
+                        .setOnCancelListener(dialog -> send(receiver, "OnStorageCanceled", ""))
+                        .show();
                 } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
             });
+        } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
+    }
+
+    private static void launchPicker(Activity activity, String name, String receiver) {
+        try {
+            Picker picker = new Picker();
+            Bundle args = new Bundle();
+            args.putString("name", name);
+            args.putString("receiver", receiver);
+            picker.setArguments(args);
+            activity.getFragmentManager().beginTransaction().add(picker, "OBDS_Picker").commit();
+            activity.getFragmentManager().executePendingTransactions();
+            picker.launch();
         } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
     }
 
