@@ -41,6 +41,14 @@ namespace TiltBrush
 
         public static IEnumerable<DiskSceneFileInfo> IterScenes(DirectoryInfo di, bool makeReadOnly = false)
         {
+            if (AndroidDirectStorage.ContainsPath(di.FullName))
+            {
+                foreach (string path in AndroidDirectStorage.GetFiles(di.FullName)
+                    .Concat(AndroidDirectStorage.GetDirectories(di.FullName))
+                    .Where(path => path.EndsWith(TILT_SUFFIX, StringComparison.OrdinalIgnoreCase)))
+                    yield return new DiskSceneFileInfo(path, readOnly: makeReadOnly);
+                yield break;
+            }
             foreach (var sub in di.GetFiles("*" + TILT_SUFFIX))
             {
                 yield return new DiskSceneFileInfo(sub.FullName, readOnly: makeReadOnly);

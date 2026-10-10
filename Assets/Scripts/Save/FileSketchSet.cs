@@ -234,12 +234,12 @@ namespace TiltBrush
 
         public bool IsReadyForAccess
         {
-            get { return m_ReadyForAccess; }
+            get { return m_ReadyForAccess && !IsActivelyRefreshingSketches; }
         }
 
         public bool IsActivelyRefreshingSketches
         {
-            get { return false; }
+            get { return AndroidDirectStorage.ContainsPath(m_SketchesPath) && AndroidDirectStorage.IsRefreshing; }
         }
 
         public bool RequestedIconsAreLoaded
@@ -389,6 +389,11 @@ namespace TiltBrush
 
         public virtual void Init()
         {
+            if (AndroidDirectStorage.ContainsPath(m_SketchesPath))
+            {
+                AndroidDirectStorage.Refreshed -= OnStorageRefreshed;
+                AndroidDirectStorage.Refreshed += OnStorageRefreshed;
+            }
             if (!m_Sketches.Any())
             {
                 ProcessDirectory(m_SketchesPath);
@@ -487,14 +492,24 @@ namespace TiltBrush
 
         public void RequestRefresh()
         {
+            if (AndroidDirectStorage.ContainsPath(m_SketchesPath))
+            {
+                AndroidDirectStorage.RequestRefresh();
+                return;
+            }
             if (m_Type == SketchSetType.SavedStrokes) { Interlocked.Exchange(ref m_RefreshRequested, 1); }
+        }
+
+        private void OnStorageRefreshed()
+        {
+            Interlocked.Exchange(ref m_RefreshRequested, 1);
         }
 
         public void Update()
         {
             // Coalesce filesystem notifications into one refresh on the main thread.
             // Other sketch sets keep their existing incremental, root-only behavior.
-            if (Interlocked.Exchange(ref m_RefreshRequested, 0) == 1)
+            if (!AndroidDirectStorage.IsRefreshing && Interlocked.Exchange(ref m_RefreshRequested, 0) == 1)
             {
                 foreach (FileSketch sketch in m_Sketches) { sketch.UnloadIcon(); }
                 m_RequestedLoads.Clear();
@@ -575,7 +590,7 @@ namespace TiltBrush
                     // Do not follow directory links that can cycle or leave the library.
                     if (m_Type == SketchSetType.SavedStrokes)
                     {
-                        foreach (DirectoryInfo child in di.EnumerateDirectories())
+                        foreach (DirectoryInfo child in AndroidDirectStorage.GetDirectories(directory).Select(childPath => new DirectoryInfo(childPath)))
                         {
                             if (!child.Name.EndsWith(SaveLoadScript.TILT_SUFFIX,
                                     StringComparison.OrdinalIgnoreCase) &&
