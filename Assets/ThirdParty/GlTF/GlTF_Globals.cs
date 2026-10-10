@@ -818,7 +818,7 @@ public sealed class GlTF_Globals : IDisposable {
           Debug.LogError($"Not overwriting {destination}");
           continue;
         }
-        File.Copy(fileReference.m_originalLocation, destination);
+        fileReference.CopyTo(destination);
         m_exportedFiles.Add(destination);
       }
     }
@@ -830,18 +830,18 @@ public sealed class GlTF_Globals : IDisposable {
   private void AddExportedFile(ExportFileReference fileReference) {
     foreach (var file2 in m_exportedFileReferences) {
       if (fileReference.m_uri == file2.m_uri) {
-        if (fileReference.m_originalLocation != file2.m_originalLocation) {
+        if (fileReference.m_sourceIdentity != file2.m_sourceIdentity) {
           Debug.LogError(
-              $"Collision: {fileReference.m_originalLocation} and {file2.m_originalLocation} " +
+              $"Collision: {fileReference.m_sourceIdentity} and {file2.m_sourceIdentity} " +
               $"-> {fileReference.m_uri}");
           throw new InvalidOperationException("file: output collision");
         }
         return;
       } else if (fileReference.m_local &&
-                 fileReference.m_originalLocation == file2.m_originalLocation) {
+                 fileReference.m_sourceIdentity == file2.m_sourceIdentity) {
         // same original location being copied to two different output locations
         Debug.LogWarning(
-            $"Redundant: {fileReference.m_originalLocation} " +
+            $"Redundant: {fileReference.m_sourceIdentity} " +
             $"-> {fileReference.m_uri} and {file2.m_uri}");
       }
     }

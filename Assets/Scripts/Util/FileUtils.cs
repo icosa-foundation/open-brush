@@ -73,6 +73,15 @@ namespace TiltBrush
             return true;
         }
 
+        /// Checks the volume where user-visible saves are written. In scoped-storage builds the
+        /// local path is only a staging location, so its free space must not gate the operation.
+        static public bool CheckUserStorageSpaceWithError(string localPath, string error = null)
+        {
+            return OpenBrushStorage.IsScopedStorageMode
+                ? CheckSharedStorageSpaceWithError(error: error)
+                : CheckDiskSpaceWithError(localPath, error);
+        }
+
         /// Returns true on success.
         /// Returns false and shows a user-visible error on failure.
         static public bool InitializeDirectoryWithUserError(
@@ -195,6 +204,29 @@ namespace TiltBrush
                 // Potentially thrown if the operation is not supported on the current platform or
                 // caller does not have the required permission.
             }
+        }
+
+        /// Returns true when the shared storage folder has more space than spaceRequired, and
+        /// true when the provider cannot say. Saving through SAF has no path to stat - and
+        /// HasFreeSpace on Android would measure the app's private volume regardless of the one
+        /// the folder is on - so this asks the provider instead.
+        /// Returns false and shows a user-visible error on failure.
+        static public bool CheckSharedStorageSpaceWithError(
+            ulong spaceRequiredMb = MIN_DISK_SPACE_MB, string error = null)
+        {
+            long available = AndroidSafStorage.GetSharedFreeSpaceBytes();
+            if (available < 0)
+            {
+                return true;
+            }
+            if ((ulong)available / 1024 / 1024 > spaceRequiredMb)
+            {
+                return true;
+            }
+            OutputWindowScript.ReportFileSaved(
+                error ?? "Out of space in the Open Brush folder!", null,
+                OutputWindowScript.InfoCardSpawnPos.Brush);
+            return false;
         }
 
         ///  Returns true the disk containing the file specified has more space than the spaceRequired.

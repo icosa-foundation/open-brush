@@ -36,12 +36,17 @@ namespace TiltBrush
 
         private void DetectSupportedDevices()
         {
-            // Currently only the Logitech stylus needs this panel
+            // Show the brush size panel when either:
+            // 1. The Logitech VR stylus is active, or
+            // 2. The Brush/right side is currently controlled by Android XR hand tracking.
             bool needsBrushSizeUI =
-                VrStylusHandler.m_Instance?.CurrentState?.isActive == true;
+                VrStylusHandler.m_Instance?.CurrentState?.isActive == true ||
+                AndroidXRHandBridge.UseHand(true);
 
             bool wasShowing = m_AnimateIn;
+
             EnableTray(needsBrushSizeUI);
+
             if (needsBrushSizeUI && !wasShowing)
             {
                 UpdateSliderToMatchCurrentSize();
@@ -59,7 +64,7 @@ namespace TiltBrush
         {
             base.Start();
 
-            // Call DetectSupportedDevice every second
+            // Check supported input devices every second.
             InvokeRepeating(nameof(DetectSupportedDevices), 0.0f, 1);
         }
 

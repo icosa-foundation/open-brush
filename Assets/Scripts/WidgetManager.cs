@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 using System;
+using System.IO;
 using System.Linq;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -813,26 +814,31 @@ namespace TiltBrush
 
         public static string GetPathRootedAtBlocks(string path)
         {
+            string relativePath = GetBlocksModelSubpath(path, App.BlocksModelLibraryPath());
+            if (relativePath == null) { return null; }
+            return relativePath.Length == 0 ? "Blocks/OfflineModels" : $"Blocks/OfflineModels/{relativePath}";
+        }
+
+        internal static string GetBlocksModelSubpath(string path, string blocksRoot)
+        {
             if (!System.IO.Path.IsPathRooted(path))
             {
                 throw new ArgumentException("Path is not rooted");
             }
-            var blocks = App.BlocksModelLibraryPath();
-            if (string.IsNullOrEmpty(blocks))
+            if (string.IsNullOrEmpty(blocksRoot))
             {
                 return null;
             }
-            if (CanonicalizeForCompare(path).StartsWith(CanonicalizeForCompare(blocks)))
+            string fullPath = Path.GetFullPath(path.Replace('\\', Path.DirectorySeparatorChar));
+            string fullRoot = Path.GetFullPath(blocksRoot.Replace('\\', Path.DirectorySeparatorChar))
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            if (string.Equals(fullPath, fullRoot, StringComparison.OrdinalIgnoreCase))
             {
-                // Derive the prefix from the actual BlocksModelLibraryPath
-                // e.g., if blocks = "C:/Users/.../Blocks/OfflineModels", prefix = "Blocks/OfflineModels"
-                var userPath = App.UserPath();
-                var userParent = System.IO.Directory.GetParent(userPath);
-                var blocksRoot = userParent != null ? userParent.FullName : userPath;
-                var relativePrefix = blocks.Substring(blocksRoot.Length).TrimStart('\\', '/').Replace('\\', '/');
-                return relativePrefix + path.Substring(blocks.Length);
+                return "";
             }
-            return null;
+            string prefix = $"{fullRoot}{Path.DirectorySeparatorChar}";
+            return fullPath.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                ? fullPath.Substring(prefix.Length).Replace('\\', '/') : null;
         }
 
         // Returns path after Media Library/Models for models only
@@ -841,7 +847,6 @@ namespace TiltBrush
         public static string GetModelSubpath(string fullPath)
         {
             string media = GetPathRootedAtMedia(fullPath);
-            string blocks = GetPathRootedAtBlocks(fullPath);
             string modelPath = "Media Library/Models/";
 
             if (media != null && media.StartsWith(modelPath))
@@ -849,24 +854,8 @@ namespace TiltBrush
                 return media.Substring(modelPath.Length);
             }
 
-            if (blocks != null)
-            {
-                // Derive the blocks model path prefix dynamically
-                var blocksLibPath = App.BlocksModelLibraryPath();
-                if (!string.IsNullOrEmpty(blocksLibPath))
-                {
-                    var userPath = App.UserPath();
-                    var userParent = System.IO.Directory.GetParent(userPath);
-                    var blocksRoot = userParent != null ? userParent.FullName : userPath;
-                    var blocksModelPath = blocksLibPath.Substring(blocksRoot.Length).TrimStart('\\', '/').Replace('\\', '/') + "/";
-
-                    if (blocks.StartsWith(blocksModelPath))
-                    {
-                        return blocks.Substring(blocksModelPath.Length);
-                    }
-                }
-            }
-            return null;
+            string blocksPath = GetBlocksModelSubpath(fullPath, App.BlocksModelLibraryPath());
+            return string.IsNullOrEmpty(blocksPath) ? null : blocksPath;
         }
 
         // Used only at .tilt-loading time
@@ -1697,6 +1686,11 @@ namespace TiltBrush
 
         public void DestroyAllWidgets()
         {
+            // Invalidate imports that could otherwise recreate widgets after a scene reset.
+            if (ModelCatalog.m_Instance != null)
+            {
+                ModelCatalog.m_Instance.ClearMissingModels();
+            }
             DestroyWidgetList(m_ModelWidgets);
             DestroyWidgetList(m_LightWidgets);
             DestroyWidgetList(m_PortalWidgets);

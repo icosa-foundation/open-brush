@@ -9,6 +9,21 @@ namespace TiltBrush
     {
         private static string TrackingKey(string legacyKey) => $"{legacyKey}.HandledFilesV1";
 
+        internal static HashSet<string> GetHandledFiles(string savedState, bool migrateLegacy,
+            string[] legacyDefaults)
+        {
+            var handled = new HashSet<string>((savedState ?? "").Split(new[] { '\n' },
+                StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal);
+            if (savedState == null && migrateLegacy)
+            {
+                foreach (string file in legacyDefaults ?? Array.Empty<string>())
+                {
+                    handled.Add(file.Replace('\\', '/'));
+                }
+            }
+            return handled;
+        }
+
         public static void Reset(string legacyKey)
         {
             PlayerPrefs.DeleteKey(TrackingKey(legacyKey));
@@ -22,17 +37,9 @@ namespace TiltBrush
         {
             string key = TrackingKey(legacyKey);
             bool initialized = PlayerPrefs.HasKey(key);
-            var handled = new HashSet<string>(
-                PlayerPrefs.GetString(key, "").Split(new[] { '\n' },
-                    StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal);
-            if (!initialized && (hasPlayedBefore || PlayerPrefs.GetInt(legacyKey, 0) != 0 ||
-                Directory.GetFileSystemEntries(directory).Length != 0))
-            {
-                foreach (string file in legacyDefaults ?? Array.Empty<string>())
-                {
-                    handled.Add(file.Replace('\\', '/'));
-                }
-            }
+            var handled = GetHandledFiles(initialized ? PlayerPrefs.GetString(key) : null,
+                hasPlayedBefore || PlayerPrefs.GetInt(legacyKey, 0) != 0 ||
+                Directory.GetFileSystemEntries(directory).Length != 0, legacyDefaults);
 
             foreach (string file in defaults ?? Array.Empty<string>())
             {
