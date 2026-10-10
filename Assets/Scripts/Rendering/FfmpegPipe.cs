@@ -141,6 +141,17 @@ namespace TiltBrush
 
         public static string GetFfmpegExe()
         {
+#if UNITY_EDITOR_LINUX || (!UNITY_EDITOR && UNITY_STANDALONE_LINUX)
+            // Linux uses the distribution's FFmpeg installation rather than a bundled binary.
+            string searchPath = System.Environment.GetEnvironmentVariable("PATH");
+            if (searchPath == null) return null;
+            foreach (string directory in searchPath.Split(Path.PathSeparator))
+            {
+                string candidate = Path.GetFullPath(Path.Combine(directory, "ffmpeg"));
+                if (File.Exists(candidate)) return candidate;
+            }
+            return null;
+#else
             // Editor and Windows builds have different paths
             // between Application.dataPath and the actual executable
             string traverseToApp = "";
@@ -150,14 +161,15 @@ namespace TiltBrush
             }
 
             string exeName = null;
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
             exeName = "ffmpeg.exe";
-#endif
-#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+#elif UNITY_EDITOR_OSX || (!UNITY_EDITOR && UNITY_STANDALONE_OSX)
             // A universal binary would exceed GitHub's file size limit, so we ship one per architecture.
             exeName = System.Runtime.InteropServices.RuntimeInformation.ProcessArchitecture ==
                 System.Runtime.InteropServices.Architecture.Arm64 ? "ffmpeg-arm64" : "ffmpeg-x86_64";
 #endif
+
+            if (exeName == null) return null;
 
             var combinedPath = Path.Combine(
                 Application.dataPath,
@@ -167,10 +179,10 @@ namespace TiltBrush
                 exeName
             );
             string fullPath = Path.GetFullPath(combinedPath);
-            if (exeName != null && File.Exists(fullPath)) return fullPath;
+            if (File.Exists(fullPath)) return fullPath;
 
-            // Only Android and Linux builds should hit this point
             return null;
+#endif
         }
 
         private System.Diagnostics.Process m_encoderProc;

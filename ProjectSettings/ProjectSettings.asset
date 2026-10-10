@@ -560,7 +560,7 @@ PlayerSettings:
     m_APIs: 12000000i
     m_Automatic: 0
   - m_BuildTarget: AndroidPlayer
-    m_APIs: 15000000i
+    m_APIs: 150000000b000000i
     m_Automatic: 0
   - m_BuildTarget: LinuxStandaloneSupport
     m_APIs: 1500000011000000i
@@ -1057,7 +1057,7 @@ PlayerSettings:
   insecureHttpOption: 0
   androidVulkanDenyFilterList: []
   androidVulkanAllowFilterList: []
-  androidVulkanDeviceFilterListAsset: {fileID: 0}
+  androidVulkanDeviceFilterListAsset: {fileID: 7862867394083496736, guid: a97254441eff33f919b261dd41ecc11f, type: 2}
   d3d12DeviceFilterListAsset: {fileID: 0}
   webGPUDeviceFilterListAsset: {fileID: 0}
   allowedHttpConnections: 3

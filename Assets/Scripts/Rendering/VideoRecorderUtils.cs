@@ -201,6 +201,17 @@ namespace TiltBrush
                 return StartStillFrameSequenceCapture(filePath, recorder, usdPathSerializer, offlineRender);
             }
 
+#if UNITY_EDITOR_LINUX || (!UNITY_EDITOR && UNITY_STANDALONE_LINUX)
+            if (FfmpegPipe.GetFfmpegExe() == null)
+            {
+                const string message = "FFmpeg was not found on PATH. Install FFmpeg using your distribution's package manager, then restart Open Brush and retry.";
+                Debug.LogError($"[LinuxFFmpeg] {message}");
+                OutputWindowScript.ReportFileSaved(message, null,
+                    OutputWindowScript.InfoCardSpawnPos.Brush);
+                return false;
+            }
+#endif
+
             // Vertical video is disabled.
             recorder.IsPortrait = false;
 
@@ -412,7 +423,7 @@ namespace TiltBrush
         /// has just been recorded.
         static void CreateOfflineRenderBatchFile(string sketchFile, string usdaFile)
         {
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
             string batFile = Path.ChangeExtension(usdaFile, ".HQ_Render.bat");
             var pathSections = Application.dataPath.Split('/').ToArray();
             var exePath = String.Join("/", pathSections.Take(pathSections.Length - 1).ToArray());
@@ -420,12 +431,15 @@ namespace TiltBrush
             // It would be nice to think of a way to get this to do something sensible in the editor!
             string offlineRenderExePath = Process.GetCurrentProcess().MainModule.FileName;
 
-            string batText = string.Format(
-                "@\"{0}/Support/bin/renderVideo.cmd\" ^\n\t\"{1}\" ^\n\t\"{2}\" ^\n\t\"{3}\"",
-                exePath, sketchFile, usdaFile, offlineRenderExePath);
-            File.WriteAllText(batFile, batText);
-#endif
-#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+            string batText =
+                "@echo off\r\nchcp 65001 >nul\r\n\r\n" +
+                $"call \"{exePath}/Support/bin/renderVideo.cmd\" ^\r\n" +
+                $"  \"{sketchFile}\" ^\r\n" +
+                $"  \"{usdaFile}\" ^\r\n" +
+                $"  \"{offlineRenderExePath}\"\r\n";
+            // cmd.exe needs UTF-8 without a BOM so it can read the code page command first.
+            File.WriteAllText(batFile, batText, new System.Text.UTF8Encoding(false));
+#elif UNITY_EDITOR_OSX || UNITY_EDITOR_LINUX || (!UNITY_EDITOR && (UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX))
             string shFile = Path.ChangeExtension(usdaFile, ".HQ_Render.sh");
             var pathSections = Application.dataPath.Split('/').ToArray();
             var exePath = String.Join("/", pathSections.Take(pathSections.Length - 1).ToArray());
@@ -433,10 +447,33 @@ namespace TiltBrush
             // It would be nice to think of a way to get this to do something sensible in the editor!
             string offlineRenderExePath = Process.GetCurrentProcess().MainModule.FileName;
 
-            string batText = $"\"{exePath}/Support/bin/renderVideo.sh\" \\\n\t\"{sketchFile}\" \\\n\t\"{usdaFile}\" \\\n\t\"{offlineRenderExePath}\"";
-            File.WriteAllText(shFile, batText);
+            string batText = $"bash {QuoteBashArgument($"{exePath}/Support/bin/renderVideo.sh")} \\\n\t{QuoteBashArgument(sketchFile)} \\\n\t{QuoteBashArgument(usdaFile)} \\\n\t{QuoteBashArgument(offlineRenderExePath)}";
+            File.WriteAllText(shFile, $"#!/bin/bash\n{batText}\n", new System.Text.UTF8Encoding(false));
+#if UNITY_EDITOR_LINUX || (!UNITY_EDITOR && UNITY_STANDALONE_LINUX)
+            // Allow the generated launcher to be run directly, including paths with spaces or quotes.
+            string quotedShFile = shFile.Replace("\\", "\\\\").Replace("\"", "\\\"");
+            using (var chmod = Process.Start(new ProcessStartInfo
+            {
+                FileName = "chmod",
+                Arguments = $"u+x -- \"{quotedShFile}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }))
+            {
+                chmod.WaitForExit();
+                if (chmod.ExitCode != 0)
+                {
+                    Debug.LogWarning($"[OfflineRenderLauncher] Could not make {shFile} executable. Run it with bash instead.");
+                }
+            }
+#endif
 #endif
 
+        }
+        // Single quotes preserve shell metacharacters; embedded quotes must be emitted separately.
+        private static string QuoteBashArgument(string value)
+        {
+            return $"'{value.Replace("'", "'\"'\"'")}'";
         }
     }
 } // namespace TiltBrush

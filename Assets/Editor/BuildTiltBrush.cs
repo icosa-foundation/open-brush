@@ -2021,6 +2021,7 @@ static class BuildTiltBrush
                     break;
                 }
             case BuildTarget.StandaloneOSX:
+            case BuildTarget.StandaloneLinux64:
                 looseFilesDest = Path.GetDirectoryName(path);
                 break;
 
