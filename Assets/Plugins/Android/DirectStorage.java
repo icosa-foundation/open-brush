@@ -184,12 +184,17 @@ public final class DirectStorage {
                         if (cursor == null) throw new IOException("Folder provider returned no entries");
                         while (cursor.moveToNext()) {
                             String leaf = cursor.getString(1);
+                            boolean directory = DocumentsContract.Document.MIME_TYPE_DIR.equals(cursor.getString(2));
+                            // Adopt user inputs, not generated exports, captures, or rendered frames.
+                            if (parent[1].isEmpty() && !(directory
+                                ? "Media Library".equals(leaf) || "Plugins".equals(leaf)
+                                    || "Scripts".equals(leaf) || "Sketches".equals(leaf) || "Fonts".equals(leaf)
+                                : "Open Brush.cfg".equals(leaf))) continue;
                             if (!validName(leaf)) throw new IOException("Invalid provider filename");
                             String relative = parent[1].isEmpty() ? leaf : parent[1] + "/" + leaf;
                             if (!paths.add(relative.toLowerCase(Locale.ROOT))) throw new IOException("Ambiguous workspace filenames");
                             String childId = cursor.getString(0);
                             if (!childId.equals(id + "/" + relative)) throw new IOException("Document escapes workspace root");
-                            boolean directory = DocumentsContract.Document.MIME_TYPE_DIR.equals(cursor.getString(2));
                             Uri document = DocumentsContract.buildDocumentUriUsingTree(tree, childId);
                             String canonical = new File(root, relative).getCanonicalPath();
                             if (!canonical.startsWith(root + "/")) throw new IOException("File escapes workspace root");
