@@ -234,7 +234,7 @@ namespace TiltBrush
 
         public bool IsReadyForAccess
         {
-            get { return m_ReadyForAccess && !IsActivelyRefreshingSketches; }
+            get { return m_ReadyForAccess; }
         }
 
         public bool IsActivelyRefreshingSketches
