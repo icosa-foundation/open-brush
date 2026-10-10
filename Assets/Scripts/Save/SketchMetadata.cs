@@ -996,7 +996,6 @@ namespace TiltBrush
                         case ShapeTypes.Arch:
                         case ShapeTypes.Ring:
                         case ShapeTypes.Triangle:
-                        case ShapeTypes.Sector:
                             generatorParameters = new Dictionary<string, object>
                             {
                                 { "type", recipe.ShapeType },

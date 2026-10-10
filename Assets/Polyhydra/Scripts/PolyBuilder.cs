@@ -160,7 +160,6 @@ namespace TiltBrush
                         case ShapeTypes.Arch:
                         case ShapeTypes.Ring:
                         case ShapeTypes.Triangle:
-                        case ShapeTypes.Sector:
                             recipe.Param1Int = Convert.ToInt32(p.GetValueOrDefault("a"));
                             recipe.Param2Float = Convert.ToSingle(p.GetValueOrDefault("b"));
                             recipe.Param3Float = Convert.ToSingle(p.GetValueOrDefault("c"));
@@ -430,9 +429,6 @@ namespace TiltBrush
                             break;
                         case ShapeTypes.Triangle:
                             poly = Shapes.Build(ShapeTypes.Triangle, p.Param1Int, p.Param2Float, p.Param3Float);
-                            break;
-                        case ShapeTypes.Sector:
-                            poly = Shapes.Build(ShapeTypes.Sector, p.Param1Int, 0f, p.Param3Float);
                             break;
                     }
                     if (p.ShapeExtrusion > 0f)
