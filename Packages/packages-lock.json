@@ -39,6 +39,16 @@
       "dependencies": {},
       "hash": "7d86cd3109a02be80a91846d69c59802dba05665"
     },
+    "com.ixxy.polyhydra.core": {
+      "version": "https://github.com/IxxyXR/polyhydra-core.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.syomus.proceduraltoolkit": "0.2.3",
+        "com.nition.unity-octree": "0.0.1-preview"
+      },
+      "hash": "15141eb3ed17fe10a706377599b4501a12fcdc0b"
+    },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
       "depth": 0,
@@ -53,6 +63,13 @@
       "dependencies": {},
       "hash": "9818db6327e09d399bf4fb84da4ed19f03b565b4"
     },
+    "com.nition.unity-octree": {
+      "version": "0.0.1-preview",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
     "com.rlabrecque.steamworks.net": {
       "version": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#ba71581f1ed7349e8d0f17ddc6f135dd3bc8a6a3",
       "depth": 0,
@@ -65,6 +82,15 @@
       "depth": 0,
       "source": "registry",
       "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
+    "com.syomus.proceduraltoolkit": {
+      "version": "0.2.3",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0"
+      },
       "url": "https://package.openupm.com"
     },
     "com.unity.2d.sprite": {
@@ -346,6 +372,13 @@
         "com.unity.graph-authoring": "1.0.0"
       }
     },
+    "com.unity.sharp-zip-lib": {
+      "version": "1.3.9",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
     "com.unity.test-framework": {
       "version": "1.8.0",
       "depth": 0,
@@ -550,6 +583,13 @@
       },
       "hash": "8746c95c90d2c21aedc90b6a2153446bf0040212"
     },
+    "foundation.icosa.openblocks.file-format": {
+      "version": "https://github.com/icosa-foundation/open-blocks.git?path=/Packages/foundation.icosa.openblocks.file-format#packages/foundation.icosa.openblocks.file-format",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "45644671e553a84724a439f5c0ab74ffefbccb6b"
+    },
     "moonsharp": {
       "version": "https://github.com/icosa-mirror/moonsharp-unity-upm.git",
       "depth": 0,
@@ -600,13 +640,6 @@
         "com.unity.nuget.newtonsoft-json": "2.0.2"
       },
       "hash": "caa704e0ec7de2a30b9b883690813f2beac0f2c3"
-    },
-    "com.unity.sharp-zip-lib": {
-      "version": "1.3.9",
-      "depth": 0,
-      "source": "registry",
-      "dependencies": {},
-      "url": "https://packages.unity.com"
     },
     "org.nuget.system.codedom": {
       "version": "file:org.nuget.system.codedom",

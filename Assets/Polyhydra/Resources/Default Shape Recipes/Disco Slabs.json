@@ -1,0 +1,56 @@
+{
+  "Colors": [ [ 0.9254902, 0.831372559, 0.733333349, 1.0 ], [ 0.8156863, 0.6156863, 0.5411765, 1.0 ], [ 0.8235294, 0.31764707, 0.427450985, 1.0 ], [ 0.533333361, 0.168627456, 0.2, 1.0 ], [ 0.2901961, 0.113725491, 0.06666667, 1.0 ]
+  ],
+  "ColorMethod": 1,
+  "MaterialIndex": 4,
+  "GeneratorType": 8,
+  "GeneratorParameters": {
+    "type": 76
+  },
+  "Vertices": null,
+  "Faces": null,
+  "FaceRoles": null,
+  "VertexRoles": null,
+  "FaceTags": null,
+  "Operations": [
+    {
+      "operation": 56,
+      "param1": 0.0,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 0.0 ],
+      "disabled": false,
+      "filterType": 1,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 3,
+      "filterNot": false
+    },
+    {
+      "operation": 40,
+      "param1": 0.36,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 0.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    },
+    {
+      "operation": 36,
+      "param1": 0.05,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 0.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    }
+  ]
+}
