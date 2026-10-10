@@ -1,0 +1,3 @@
+# Unity calls this bridge by name; Android also instantiates its nested picker fragment.
+-keep class foundation.icosa.openbrush.DirectStorage { *; }
+-keep class foundation.icosa.openbrush.DirectStorage$Picker { *; }
