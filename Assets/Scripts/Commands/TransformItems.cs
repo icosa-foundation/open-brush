@@ -144,7 +144,6 @@ namespace TiltBrush
                 AudioManager.m_Instance.DisabledItemSelect(soundPosition);
                 return;
             }
-
             foreach (var stroke in strokes)
             {
                 xforms.Add(TrTransform.T(strokeSnap(stroke.m_BatchSubset.m_Bounds.center)));
