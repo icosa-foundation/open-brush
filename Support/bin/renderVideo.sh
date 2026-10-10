@@ -11,6 +11,8 @@ usdaPath="$2"
 exeName=$(basename "$3")
 exePath="$3"
 
+# Open Brush checks FFmpeg after selecting the capture mode; frame sequences do not need it.
+
 # Check if process is running
 if pgrep -x "$exeName" > /dev/null; then
   echo "Tilt Brush is running, please exit Tilt Brush before rendering"
@@ -39,22 +41,22 @@ do
     3) res=3840; resh=2160; fps=30; break;;
     4) res=3840; resh=2160; fps=60; break;;
     5) 
-      echo "Rendering 360 stereo omnidirecitonal stereo 4k x 4k 30fps 360 stereo"
+      echo "Rendering 360 stereo omnidirectional stereo 4k x 4k 30fps 360 stereo"
       "$exePath" --renderCameraPath "$usdaPath" --Video.OfflineResolution 4096 --fps 30 --captureOds "$sketchPath"
       exit 0
       ;;
     6) 
-      echo "Rendering 360 stereo omnidirecitonal stereo 4k x 4k 30fps 360 stereo, no quick load"
+      echo "Rendering 360 stereo omnidirectional stereo 4k x 4k 30fps 360 stereo, no quick load"
       "$exePath" --noQuickLoad --renderCameraPath "$usdaPath" --Video.OfflineResolution 4096 --fps 30 --captureOds "$sketchPath"
       exit 0
       ;;
     7) 
-      echo "Rendering [Fast,Low Quality] 360 stereo omnidirecitonal stereo 1k x 1k 30fps 360 stereo"
+      echo "Rendering [Fast,Low Quality] 360 stereo omnidirectional stereo 1k x 1k 30fps 360 stereo"
       "$exePath" --preview --renderCameraPath "$usdaPath" --fps 30 --captureOds "$sketchPath"
       exit 0
       ;;
     8) 
-      echo "Rendering [Fast,Low Quality] 360 stereo omnidirecitonal stereo 1k x 1k 30fps 360 stereo, no quick load"
+      echo "Rendering [Fast,Low Quality] 360 stereo omnidirectional stereo 1k x 1k 30fps 360 stereo, no quick load"
       "$exePath" --preview --noQuickLoad --renderCameraPath "$usdaPath" --fps 30 --captureOds "$sketchPath"
       exit 0
       ;;
