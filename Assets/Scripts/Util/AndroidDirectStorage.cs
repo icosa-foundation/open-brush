@@ -163,6 +163,11 @@ namespace TiltBrush
         public void OnStorageError(string error)
         {
             Debug.LogError($"OBDS_APP folder connection failed: {error}");
+            if (StartupReady)
+            {
+                IsRefreshing = false;
+                return;
+            }
             using (var bridge = new AndroidJavaClass(Bridge))
                 bridge.CallStatic("showRetry", m_FolderName, gameObject.name);
         }
@@ -170,6 +175,12 @@ namespace TiltBrush
         [Preserve]
         public void OnStorageCanceled(string unused)
         {
+            if (StartupReady)
+            {
+                Debug.Log("OBDS_APP folder refresh canceled; keeping the current file index");
+                IsRefreshing = false;
+                return;
+            }
             Debug.Log("OBDS_APP folder connection deferred; exiting before shared configuration loads");
             StartupCanceled = true;
             Application.Quit();
