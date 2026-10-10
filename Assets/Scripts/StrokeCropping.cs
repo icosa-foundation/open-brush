@@ -71,19 +71,47 @@ namespace TiltBrush
 
         private static List<Stroke> CropStrokes(StrokeCropVolume volume, IEnumerable<Stroke> strokes, bool keepInside)
         {
-            var originals = (strokes ?? SketchMemoryScript.AllStrokes())
+            var requested = (strokes ?? SketchMemoryScript.AllStrokes())
                 .Where(stroke => stroke != null && stroke.IsGeometryEnabled).Distinct().ToArray();
+            var targets = new List<(Stroke stroke, TrTransform toVolume)>();
+            var seen = new HashSet<Stroke>();
+            var unmirroredGroups = new HashSet<SymmetryStrokeGroup>();
+            foreach (var stroke in requested)
+            {
+                if (!seen.Add(stroke)) { continue; }
+                var canvas = stroke.Canvas;
+                var toVolume = canvas != null ? volume.Pose.inverse * canvas.Pose :
+                    TrTransform.identity;
+                targets.Add((stroke, toVolume));
+                foreach (var peer in SymmetryPeerEditing.PeersOf(stroke))
+                {
+                    if (seen.Contains(peer)) { continue; }
+                    if (SymmetryPeerEditing.TryGetPeerSymmetryTransform(stroke, peer,
+                        out TrTransform toPeer))
+                    {
+                        seen.Add(peer);
+                        targets.Add((peer, toVolume * toPeer.inverse));
+                    }
+                    else
+                    {
+                        // The peer isn't in the mirror's canvas: no mirrored crop exists.
+                        unmirroredGroups.Add(stroke.SymmetryPeerGroup);
+                    }
+                }
+            }
+            var originals = targets.Select(target => target.stroke).ToArray();
             var replacements = new Dictionary<Stroke, List<Stroke>>();
             var result = new List<Stroke>();
-            foreach (var stroke in originals)
+            foreach (var target in targets)
             {
+                var stroke = target.stroke;
                 var canvas = stroke.Canvas;
                 if (canvas == null || stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length == 0)
                 {
                     result.Add(stroke);
                     continue;
                 }
-                var toVolume = volume.Pose.inverse * canvas.Pose;
+                var toVolume = target.toVolume;
                 if (keepInside && stroke.m_ControlPoints.All(cp => volume.Contains(toVolume * cp.m_Pos)))
                 {
                     // A convex volume contains every segment if it contains every endpoint.
@@ -125,14 +153,112 @@ namespace TiltBrush
                 replacements.Add(stroke, clipped);
                 result.AddRange(clipped);
             }
+            // A linked group is cropped once, through its source stroke; the other copies take
+            // that stroke's pieces through the mirror, so the group stays an exact symmetric set
+            // even where clipping each copy separately would come out differently.
+            var brokenLinks = new List<SymmetryPeerEditing.BrokenLink>();
+            var replacementGroups = new List<(Stroke stroke, SymmetryStrokeGroup group, int index)>();
+            var affectedGroups = targets.Select(target => target.stroke.SymmetryPeerGroup)
+                .Where(group => group?.Mirror != null).Distinct().ToList();
+            foreach (var group in affectedGroups)
+            {
+                var members = group.Strokes.Where(member => member.IsGeometryEnabled).ToArray();
+                if (!members.Any(member => replacements.ContainsKey(member))) { continue; }
+                var source = members.OrderBy(member => member.SymmetryPointerIndex).First();
+                var toPeers = new Dictionary<Stroke, TrTransform>();
+                bool mirrored = !unmirroredGroups.Contains(group);
+                foreach (var member in members)
+                {
+                    if (member == source) { continue; }
+                    if (SymmetryPeerEditing.TryGetPeerSymmetryTransform(source, member,
+                        out TrTransform toPeer))
+                    {
+                        toPeers[member] = toPeer;
+                    }
+                    else
+                    {
+                        mirrored = false;
+                    }
+                }
+                if (!mirrored)
+                {
+                    // Only a group split across canvases gets here.
+                    brokenLinks.Add(new SymmetryPeerEditing.BrokenLink(group));
+                    continue;
+                }
+                if (!replacements.TryGetValue(source, out var pieces))
+                {
+                    // The source came through whole, so every copy does.
+                    foreach (var member in members) { replacements.Remove(member); }
+                    continue;
+                }
+                foreach (var member in members)
+                {
+                    if (member == source) { continue; }
+                    replacements[member] = pieces
+                        .Select(piece => DeriveCropPiece(source, piece, member, toPeers[member]))
+                        .ToList();
+                }
+                for (int piece = 0; piece < pieces.Count; ++piece)
+                {
+                    var newGroup = new SymmetryStrokeGroup(group.Mirror);
+                    foreach (var member in members)
+                    {
+                        replacementGroups.Add((replacements[member][piece], newGroup,
+                            member.SymmetryPointerIndex));
+                    }
+                }
+            }
             if (replacements.Count == 0) return strokes as List<Stroke> ?? result;
 
+            result.Clear();
+            foreach (var target in targets)
+            {
+                if (replacements.TryGetValue(target.stroke, out var parts)) result.AddRange(parts);
+                else result.Add(target.stroke);
+            }
             var parent = ApiManager.Instance != null ? ApiManager.Instance.ActiveUndo : null;
             var liveList = strokes as List<Stroke> ?? result;
-            var command = new CropStrokesCommand(originals, replacements, result, liveList, parent);
+            var command = new CropStrokesCommand(originals, replacements, result, liveList,
+                brokenLinks, replacementGroups, parent);
             if (parent == null) SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             else command.Redo(); // Apply now; the tool/API undo group records its children on completion.
             return liveList;
+        }
+
+        /// A copy's version of a piece cropped from its group's source stroke: the piece carried
+        /// through the mirror, keeping the copy's own colour and size relationship.
+        private static Stroke DeriveCropPiece(Stroke source, Stroke piece, Stroke member,
+            TrTransform toPeer)
+        {
+            var points = (PointerManager.ControlPoint[])piece.m_ControlPoints.Clone();
+            for (int i = 0; i < points.Length; ++i)
+            {
+                var pose = toPeer * TrTransform.TR(points[i].m_Pos, points[i].m_Orient);
+                points[i].m_Pos = pose.translation;
+                points[i].m_Orient = pose.rotation;
+            }
+            var copy = new Stroke(member)
+            {
+                m_ControlPoints = points,
+                m_ControlPointsToDrop = new bool[points.Length],
+                m_IntendedCanvas = member.Canvas,
+                m_PreviousCanvas = member.m_PreviousCanvas,
+                m_Type = Stroke.Type.NotCreated
+            };
+            copy.m_BrushScale = piece.m_BrushScale * Mathf.Abs(toPeer.scale);
+            copy.m_ColorOverrideMode = piece.m_ColorOverrideMode;
+            var group = source.SymmetryPeerGroup;
+            Vector3 colorShift = group.InstanceOf(member).ColorShift -
+                group.InstanceOf(source).ColorShift;
+            copy.m_OverrideColors = piece.m_OverrideColors?.Select(color =>
+            {
+                if (!color.HasValue) { return (Color32?)null; }
+                Color32 shifted = SymmetryDerivation.Shift(color.Value, colorShift);
+                shifted.a = color.Value.a;
+                return shifted;
+            }).ToList();
+            return copy;
         }
 
         internal static List<PointerManager.ControlPoint[]> ClipStrokeToVolume(

@@ -200,6 +200,7 @@ namespace TiltBrush
             }
             videoWidget.Group = App.GroupManager.GetGroupFromId(tiltVideo.GroupId);
             videoWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltVideo.LayerId));
+            tiltVideo.WidgetLink?.Attach(videoWidget);
             videoWidget.TwoSided = tiltVideo.TwoSided;
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(videoWidget.GetTiltMeterCost(), up: true);

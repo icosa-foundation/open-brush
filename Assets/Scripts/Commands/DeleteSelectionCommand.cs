@@ -22,6 +22,7 @@ namespace TiltBrush
         private Stroke[] m_Strokes;
         private List<GrabWidget> m_Widgets;
         private TrTransform m_InitialSelectionTransform;
+        private readonly Dictionary<GrabWidget, int> m_LinkedWidgetCosts = new Dictionary<GrabWidget, int>();
 
         public DeleteSelectionCommand(
             ICollection<Stroke> strokes,
@@ -37,8 +38,31 @@ namespace TiltBrush
             {
                 m_Widgets = new List<GrabWidget>();
                 m_Widgets.AddRange(widgets);
+                var seen = new HashSet<GrabWidget>(m_Widgets);
+                foreach (var widget in widgets)
+                {
+                    if (widget.SymmetryPeerGroup == null) { continue; }
+                    m_LinkedWidgetCosts[widget] = widget.GetTiltMeterCost();
+                    foreach (var peer in widget.SymmetryPeerGroup.ActiveMembers)
+                    {
+                        if (seen.Add(peer)) { new HideWidgetCommand(peer, this, propagate: false); }
+                    }
+                }
             }
             m_InitialSelectionTransform = SelectionManager.m_Instance.SelectionTransform;
+
+            // Strokes the symmetry drew alongside the selected ones aren't in the selection, so
+            // they are deleted by child commands rather than as part of this one.
+            if (m_Strokes != null)
+            {
+                foreach (var peer in SymmetryPeerEditing.PeersOutside(m_Strokes))
+                {
+                    if (peer.IsGeometryEnabled)
+                    {
+                        new DeleteStrokeCommand(peer, this);
+                    }
+                }
+            }
         }
 
         public override bool NeedsSave { get { return true; } }
@@ -75,6 +99,8 @@ namespace TiltBrush
                 for (int i = 0; i < m_Widgets.Count; ++i)
                 {
                     m_Widgets[i].Hide();
+                    if (m_LinkedWidgetCosts.TryGetValue(m_Widgets[i], out var cost))
+                    { TiltMeterScript.m_Instance.AdjustMeterWithWidget(cost, up: false); }
                 }
             }
 
@@ -114,6 +140,8 @@ namespace TiltBrush
                 for (int i = 0; i < m_Widgets.Count; ++i)
                 {
                     m_Widgets[i].RestoreFromToss();
+                    if (m_LinkedWidgetCosts.TryGetValue(m_Widgets[i], out var cost))
+                    { TiltMeterScript.m_Instance.AdjustMeterWithWidget(cost, up: true); }
                 }
             }
 

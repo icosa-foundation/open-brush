@@ -81,6 +81,7 @@ namespace TiltBrush
             }
             widget.Group = App.GroupManager.GetGroupFromId(tiltPortal.GroupId);
             widget.SetCanvas(App.Scene.GetOrCreateLayer(tiltPortal.LayerId));
+            tiltPortal.WidgetLink?.Attach(widget);
             widget.UpdateScale();
         }
 

@@ -67,6 +67,7 @@ namespace TiltBrush
 
         public override void RestoreFromToss()
         {
+            gameObject.SetActive(true);
             m_CurrentState = State.Visible;
             m_ShowTimer = m_ShowDuration;
         }

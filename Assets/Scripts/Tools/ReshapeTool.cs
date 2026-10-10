@@ -41,6 +41,12 @@ namespace TiltBrush
 
         private bool m_OwnsUndoGroup;
         private readonly Dictionary<Stroke, ModifyStrokePointsCommand> m_ActiveSculptCommands = new();
+        // Per linked group in the current drag, the derivation that carries the driving copy's
+        // reshape to the other copies.
+        private readonly Dictionary<SymmetryStrokeGroup, RederiveSymmetryGroupCommand> m_ActiveRederives = new();
+        // Per linked group, the first member a drag touched. It drives the group for the rest of
+        // the drag; the other members follow it, even where the tool touches them directly.
+        private readonly Dictionary<SymmetryStrokeGroup, Stroke> m_GroupDrivers = new();
         private readonly Dictionary<Stroke, SculptContactState> m_SculptContacts = new();
         private readonly List<Stroke> m_ExpiredSculptContacts = new();
         private float[] m_InfluenceWeights = new float[0];
@@ -160,6 +166,8 @@ namespace TiltBrush
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
                 m_ActiveSculptCommands.Clear();
+                m_ActiveRederives.Clear();
+                m_GroupDrivers.Clear();
                 m_SculptContacts.Clear();
                 CanvasScript canvas = m_CurrentCanvas != null ? m_CurrentCanvas : App.ActiveCanvas;
                 m_TransformStartToolPosition = canvas.Pose.inverse * m_ToolTransform.position;
@@ -180,6 +188,8 @@ namespace TiltBrush
             else if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
                 m_ActiveSculptCommands.Clear();
+                m_ActiveRederives.Clear();
+                m_GroupDrivers.Clear();
                 m_SculptContacts.Clear();
             }
 
@@ -380,6 +390,8 @@ namespace TiltBrush
                 m_OwnsUndoGroup = false;
             }
             m_ActiveSculptCommands.Clear();
+            m_ActiveRederives.Clear();
+            m_GroupDrivers.Clear();
             m_SculptContacts.Clear();
         }
 
@@ -524,12 +536,32 @@ namespace TiltBrush
         private void ApplyStrokeModification(
             Stroke stroke, PointerManager.ControlPoint[] newControlPoints)
         {
-            PlayModifyStrokeSound();
+            // One member drives each linked group for the whole drag: where the tool touches
+            // two copies at once, the second follows the first rather than fighting it.
             var undoParent = ApiManager.Instance.ActiveUndo;
+            var linkedGroup = stroke.SymmetryPeerGroup;
+            if (undoParent != null && linkedGroup?.Mirror != null)
+            {
+                if (!m_GroupDrivers.TryGetValue(linkedGroup, out var driver))
+                {
+                    m_GroupDrivers.Add(linkedGroup, stroke);
+                }
+                else if (!ReferenceEquals(driver, stroke))
+                {
+                    return;
+                }
+            }
+
+            PlayModifyStrokeSound();
+
+            // The rest of a linked group is derived from the reshaped copy once it moves.
+            var group = SymmetryPeerEditing.IsLinked(stroke) ? stroke.SymmetryPeerGroup : null;
+
             ModifyStrokePointsCommand cmd;
             if (undoParent == null)
             {
                 cmd = new ModifyStrokePointsCommand(stroke, newControlPoints);
+                if (group != null) { new RederiveSymmetryGroupCommand(stroke, cmd); }
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
             }
             else
@@ -543,8 +575,14 @@ namespace TiltBrush
                 {
                     cmd.UpdateEndPoints(newControlPoints);
                 }
+                // Created after the copy's own command, so it is redone after it.
+                if (group != null && !m_ActiveRederives.ContainsKey(group))
+                {
+                    m_ActiveRederives.Add(group, new RederiveSymmetryGroupCommand(stroke, undoParent));
+                }
                 // Apply immediately while keeping this command in the active undo group.
                 cmd.Redo();
+                if (group != null) { m_ActiveRederives[group].Refresh(); }
             }
         }
 

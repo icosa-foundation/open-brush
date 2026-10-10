@@ -28,6 +28,7 @@ namespace TiltBrush
 
         private Type m_Type;
         private GrabWidget m_Widget;
+        private TransformWidgetPeersCommand m_PeerMove;
         private TrTransform m_StartTransform;
         private TrTransform m_EndTransform;
         private TrTransform m_StartSelectionTransform;
@@ -79,10 +80,30 @@ namespace TiltBrush
             m_CustomDimension.startState = widget.CustomDimension;
             m_EndTransform = endXf;
             m_CustomDimension.endState = endCustomDimension;
+            if (widget.SymmetryPeerGroup != null)
+            {
+                var basis = widget.SymmetryPeerGroup.Mirror.Canvas.Pose.inverse * widget.Canvas.Pose;
+                var delta = basis * endXf * m_StartTransform.inverse * basis.inverse;
+                m_PeerMove = new TransformWidgetPeersCommand(widget, delta, this,
+                    endCustomDimension != m_CustomDimension.startState ? endCustomDimension : (Vector3?)null);
+            }
         }
 
         public override bool NeedsSave { get { return true; } }
         public bool IsFinal => m_Final;
+
+        // A mirror drag owns its widget movement explicitly, including its final snap.
+        // Updating that owned command must not depend on Merge accepting a final command.
+        internal void UpdateMirrorEnd(TrTransform transform, Vector3 dimension)
+        {
+            m_EndTransform = transform;
+            m_CustomDimension.endState = dimension;
+        }
+
+        internal void CopyMirrorEnd(MoveWidgetCommand move)
+        {
+            UpdateMirrorEnd(move.m_EndTransform, move.m_CustomDimension.endState);
+        }
 
         protected override void OnRedo()
         {
@@ -144,6 +165,7 @@ namespace TiltBrush
             if (move != null && m_Widget == move.m_Widget)
             {
                 m_EndTransform = move.m_EndTransform;
+                if (m_PeerMove != null && move.m_PeerMove != null) { m_PeerMove.UpdateEnd(move.m_PeerMove); }
                 m_CustomDimension.endState = move.m_CustomDimension.endState;
                 // Not used if (m_Type != Type.Selection)
                 m_EndSelectionTransform = move.m_EndSelectionTransform;

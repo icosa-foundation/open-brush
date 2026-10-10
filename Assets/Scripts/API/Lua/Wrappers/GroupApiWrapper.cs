@@ -89,7 +89,7 @@ namespace TiltBrush
         {
             if (stroke._Stroke.Canvas != _Layer)
             {
-                stroke._Stroke.SetParentKeepWorldPosition(_Layer);
+                StrokeApiWrapper.MoveToLayer(stroke._Stroke, _Layer);
             }
             stroke._Stroke.Group = _Group;
         }

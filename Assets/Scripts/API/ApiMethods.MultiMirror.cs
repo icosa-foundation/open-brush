@@ -20,6 +20,56 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
+        [ApiEndpoint("symmetry.mirror.new",
+        description: "Creates a new linked mirror from the current symmetry settings and makes it active. Strokes drawn with it are linked: an edit to one applies to all its copies, and moving the mirror moves them",
+        exampleUsage: "")]
+        public static void NewSymmetryMirror()
+        {
+            if (SymmetryMirrors.NewLinked() == null)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    "Linked mirrors need plane or multimirror symmetry");
+            }
+        }
+
+        [ApiEndpoint("symmetry.mirror.recall",
+        description: "Makes an earlier linked mirror active again by its position, oldest first, and puts the widget where that mirror has it",
+        exampleUsage: "0")]
+        public static void RecallSymmetryMirror(int index)
+        {
+            var mirrors = SymmetryMirrors.All;
+            if (index < 0 || index >= mirrors.Count)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    $"No mirror {index}; this sketch has {mirrors.Count}");
+                return;
+            }
+            SymmetryMirrors.Recall(mirrors[index]);
+        }
+
+        [ApiEndpoint("symmetry.mirror.fromselection",
+        description: "Makes the linked mirror that owns the most recently selected stroke active",
+        exampleUsage: "")]
+        public static void RecallSymmetryMirrorFromSelection()
+        {
+            var stroke = SelectionManager.m_Instance.LastSelectedStroke;
+            if (!SymmetryPeerEditing.IsLinked(stroke))
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(
+                    "The last selected stroke isn't owned by a linked mirror");
+                return;
+            }
+            SymmetryMirrors.RecallFromStroke(stroke);
+        }
+
+        [ApiEndpoint("symmetry.mirror.plain",
+        description: "Switches to plain symmetry: strokes drawn from now on aren't linked. Linked mirrors keep their strokes",
+        exampleUsage: "")]
+        public static void UsePlainSymmetryMirror()
+        {
+            SymmetryMirrors.UsePlain();
+        }
+
         [ApiEndpoint("symmetry.type",
         description: "Sets the custom symmetry type (Currently either 'point' or 'wallpaper'",
         exampleUsage: "wallpaper")]

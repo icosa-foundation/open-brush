@@ -40,6 +40,7 @@ namespace TiltBrush
         private Dictionary<string, TrTransform[]> m_MissingNormalizedModelsByRelativePath;
         // The other is post-m13 and contains raw transforms (original model's pivot and size)
         private Dictionary<string, TrTransform[]> m_MissingModelsByRelativePath;
+        private readonly List<TiltModels75> m_MissingModelRecords = new List<TiltModels75>();
 
         private Dictionary<string, List<string>> m_OrderedModelNames;
         private bool m_FolderChanged;
@@ -78,7 +79,9 @@ namespace TiltBrush
                             FilePath = e.Key,
                             Transforms = e.Value
                         }).Where(m => m != null);
-                return missingModels.Concat(missingNormalizedModels);
+                var recordedPaths = new HashSet<string>(m_MissingModelRecords.Select(m => m.FilePath));
+                return m_MissingModelRecords.Concat(missingModels.Concat(missingNormalizedModels)
+                    .Where(m => !recordedPaths.Contains(m.FilePath)));
             }
         }
 
@@ -185,8 +188,15 @@ namespace TiltBrush
 
         public void ClearMissingModels()
         {
+            m_MissingModelRecords.Clear();
             m_MissingNormalizedModelsByRelativePath.Clear();
             m_MissingModelsByRelativePath.Clear();
+        }
+
+        public void AddMissingModel(TiltModels75 record)
+        {
+            m_MissingModelRecords.Add(record);
+            if (record.FilePath != null) { AddMissingModel(record.FilePath, record.Transforms, record.RawTransforms); }
         }
 
         public void AddMissingModel(
@@ -298,6 +308,19 @@ namespace TiltBrush
 
             foreach (string relativePath in modelsInDirectory)
             {
+                var records = m_MissingModelRecords.Where(m => m.FilePath == relativePath).ToList();
+                if (records.Count > 0)
+                {
+                    foreach (var record in records)
+                    {
+                        m_MissingModelRecords.Remove(record);
+                        _ = ModelWidget.CreateModelFromSaveData(record);
+                    }
+                    m_MissingModelsByRelativePath.Remove(relativePath);
+                    m_MissingNormalizedModelsByRelativePath.Remove(relativePath);
+                    continue;
+                }
+
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
                     _ = ModelWidget.CreateModelsFromRelativePath(
