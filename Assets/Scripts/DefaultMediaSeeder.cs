@@ -26,7 +26,8 @@ namespace TiltBrush
                 PlayerPrefs.GetString(key, "").Split(new[] { '\n' },
                     StringSplitOptions.RemoveEmptyEntries), StringComparer.Ordinal);
             if (!initialized && (hasPlayedBefore || PlayerPrefs.GetInt(legacyKey, 0) != 0 ||
-                Directory.GetFileSystemEntries(directory).Length != 0))
+                AndroidDirectStorage.GetFiles(directory).Length != 0 ||
+                Directory.GetDirectories(directory).Length != 0))
             {
                 foreach (string file in legacyDefaults ?? Array.Empty<string>())
                 {
