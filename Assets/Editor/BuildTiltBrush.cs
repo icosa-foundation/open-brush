@@ -982,11 +982,18 @@ static class BuildTiltBrush
         public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
         {
             m_Target = tiltOptions.Target;
+            if (m_Target == BuildTarget.Android)
+                m_AndroidMinSdkVersion = PlayerSettings.Android.minSdkVersion;
             if (m_Target == BuildTarget.Android && tiltOptions.AndroidScopedStorage)
             {
                 m_RestoreStoragePermission = true;
                 m_ForceStoragePermission = PlayerSettings.Android.forceSDCardPermission;
                 PlayerSettings.Android.forceSDCardPermission = false;
+                if ((int)PlayerSettings.Android.minSdkVersion <
+                    (int)AndroidSdkVersions.AndroidApiLevel30)
+                {
+                    PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel30;
+                }
             }
             m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
             m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
@@ -1013,7 +1020,6 @@ static class BuildTiltBrush
                 m_RestoreAndroidXrSettings = true;
                 m_AndroidApplicationEntry = PlayerSettings.Android.applicationEntry;
                 m_AndroidResizeableActivity = PlayerSettings.Android.resizeableActivity;
-                m_AndroidMinSdkVersion = PlayerSettings.Android.minSdkVersion;
 
                 PlayerSettings.Android.applicationEntry = AndroidApplicationEntry.GameActivity;
                 PlayerSettings.Android.resizeableActivity = true;
@@ -1066,8 +1072,9 @@ static class BuildTiltBrush
             {
                 PlayerSettings.Android.applicationEntry = m_AndroidApplicationEntry;
                 PlayerSettings.Android.resizeableActivity = m_AndroidResizeableActivity;
-                PlayerSettings.Android.minSdkVersion = m_AndroidMinSdkVersion;
             }
+            if (m_RestoreStoragePermission || m_RestoreAndroidXrSettings)
+                PlayerSettings.Android.minSdkVersion = m_AndroidMinSdkVersion;
             AssetDatabase.SaveAssets();
         }
 
