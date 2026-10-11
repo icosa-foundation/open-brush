@@ -528,7 +528,9 @@ namespace TiltBrush
             {
                 string path = (string)m_ToAdd.Dequeue();
                 var fileInfo = new DiskSceneFileInfo(path, readOnly: m_ReadOnly);
-                if (!m_Sketches.Any(sketch => sketch.SceneFileInfo.FullPath == path) && fileInfo.IsHeaderValid())
+                // Temporary: superseded by the FileSketchSet replace-or-add fix; remove this condition with it.
+                if ((!AndroidDirectStorage.IsActive || !m_Sketches.Any(sketch => sketch.SceneFileInfo.FullPath == path)) &&
+                    fileInfo.IsHeaderValid())
                 {
                     AddSketchToSet(fileInfo);
                     m_Sketches.Sort();
