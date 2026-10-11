@@ -631,7 +631,9 @@ namespace TiltBrush
                 var tile = tiling.tiles[i];
                 var selected = pm.UsesPenroseTile(tile.kind);
                 // Selected outlines follow Transform Each just like their copies.
-                var frame = selected ? matrices[slot] * tiling.matrices[slot].inverse : pm.PenroseReferenceFrame;
+                var frame = selected
+                    ? matrices[slot] * pm.PenroseSourcePlacement * tiling.matrices[slot].inverse
+                    : Matrix4x4.identity;
                 if (selected) slot++;
                 var points = tile.completeRhomb ? rhombPoints : boundaryPoints;
                 for (var j = 0; j < points.Length; j++)

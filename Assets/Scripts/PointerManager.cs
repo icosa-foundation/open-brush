@@ -283,7 +283,7 @@ namespace TiltBrush
         private List<BrushDescriptor> m_SymmetryPointerBrushes;
         private Vector2[] m_CustomMirrorDomain;
         public PenroseTiling PenrosePattern { get; private set; }
-        public Matrix4x4 PenroseReferenceFrame { get; private set; }
+        public Matrix4x4 PenroseSourcePlacement { get; private set; }
         public int PenroseReferenceTile { get; private set; }
         public List<Vector3[]> SpaceGroupDomainPaths { get; private set; }
 
@@ -1801,9 +1801,10 @@ namespace TiltBrush
             {
                 case CustomSymmetryType.Penrose:
                     PenrosePattern = new PenroseTiling(m_PenroseSubdivisions, m_PenroseRadius, m_PenroseTiles);
-                    // Anchor the original pointer at the reference tile. Rebase its outlines too.
-                    PenroseReferenceFrame = PenrosePattern.matrices[0].inverse;
-                    m_CustomMirrorMatrices = PenrosePattern.matrices.Select(m => PenroseReferenceFrame * m).ToList();
+                    // Map the source tile to each copy without moving the tiling's origin.
+                    PenroseSourcePlacement = PenrosePattern.matrices[0];
+                    var penroseSourceInverse = PenroseSourcePlacement.inverse;
+                    m_CustomMirrorMatrices = PenrosePattern.matrices.Select(m => m * penroseSourceInverse).ToList();
                     m_CustomMirrorMatrices[0] = Matrix4x4.identity;
                     PenroseReferenceTile = PenrosePattern.tiles.FindIndex(tile => UsesPenroseTile(tile.kind));
                     break;
