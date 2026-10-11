@@ -923,7 +923,7 @@ static class BuildTiltBrush
             m_group = BuildTiltBrush.TargetToGroup(target);
             m_prevSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(m_group);
             var newSymbols = m_prevSymbols.Split(';') // might be [""]
-                // Scoped storage is selected per build, regardless of saved project defines.
+                                                      // Scoped storage is selected per build, regardless of saved project defines.
                 .Where(elt => target != BuildTarget.Android || elt.Trim() != kScopedStorageDefine)
                 .Concat(symbols.Where(elt => elt != null))
                 .Select(elt => elt.Trim())
