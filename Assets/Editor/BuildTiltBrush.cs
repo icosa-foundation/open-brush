@@ -74,7 +74,6 @@ static class BuildTiltBrush
         public AndroidSdkVersions? AndroidTargetSdkVersion;
     }
 
-    public static bool CurrentBuildUsesScopedStorage { get; private set; }
     private const string kScopedStorageDefine = "OPEN_BRUSH_SCOPED_STORAGE";
 
     [Serializable()]
@@ -168,9 +167,11 @@ static class BuildTiltBrush
     {
         public List<CopyRequest> copyRequests;
         public XrSdkMode xrSdk;
+        public bool scopedStorage;
     }
     static PostBuildInfo m_forPostBuild;
     internal static XrSdkMode CurrentBuildXrSdk => m_forPostBuild?.xrSdk ?? GuiSelectedSdk;
+    internal static bool CurrentBuildUsesScopedStorage => m_forPostBuild?.scopedStorage ?? false;
 
     /// Called on the main thread once the background build is finished
     public static event Action<int> OnBackgroundBuildFinish;
@@ -922,6 +923,8 @@ static class BuildTiltBrush
             m_group = BuildTiltBrush.TargetToGroup(target);
             m_prevSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(m_group);
             var newSymbols = m_prevSymbols.Split(';') // might be [""]
+                // Scoped storage is selected per build, regardless of saved project defines.
+                .Where(elt => target != BuildTarget.Android || elt.Trim() != kScopedStorageDefine)
                 .Concat(symbols.Where(elt => elt != null))
                 .Select(elt => elt.Trim())
                 .Where(elt => elt != "")
@@ -934,33 +937,6 @@ static class BuildTiltBrush
         public void Dispose()
         {
             PlayerSettings.SetScriptingDefineSymbolsForGroup(m_group, m_prevSymbols);
-        }
-    }
-
-    class TempAndroidStorageMode : IDisposable
-    {
-        private readonly bool m_PreviousMode;
-        private readonly string m_PreviousDefines;
-
-        public TempAndroidStorageMode(BuildTarget target, bool scoped)
-        {
-            m_PreviousMode = CurrentBuildUsesScopedStorage;
-            CurrentBuildUsesScopedStorage = target == BuildTarget.Android && scoped;
-            if (target != BuildTarget.Android) return;
-            m_PreviousDefines = PlayerSettings.GetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android);
-            var defines = m_PreviousDefines.Split(';')
-                .Select(value => value.Trim())
-                .Where(value => value.Length != 0 && value != kScopedStorageDefine)
-                .ToList();
-            if (scoped) defines.Add(kScopedStorageDefine);
-            PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, string.Join(";", defines));
-        }
-
-        public void Dispose()
-        {
-            if (m_PreviousDefines != null)
-                PlayerSettings.SetScriptingDefineSymbolsForGroup(BuildTargetGroup.Android, m_PreviousDefines);
-            CurrentBuildUsesScopedStorage = m_PreviousMode;
         }
     }
 
@@ -1701,7 +1677,6 @@ static class BuildTiltBrush
         // It's important here for Main.unity (currently scenes[1]) to be the last scene
         // "temp modified".  TempModifyScene opens the scene and if Main.unity is not the open
         // scene when TempHookUpSingletons runs, the build will fail.
-        using (var storageMode = new TempAndroidStorageMode(target, tiltOptions.AndroidScopedStorage))
         using (var unused = new TempModifyScene(scenes[0]))
         using (var unused12 = new TempModifyScene(scenes[1]))
         using (var unused11 = new TempSetStereoRenderPath(target == BuildTarget.Android
@@ -1710,7 +1685,8 @@ static class BuildTiltBrush
             target,
             tiltOptions.Il2Cpp ? "DISABLE_SYSTEM_AUDIO_CAPTURE" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null,
-            tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null))
+            tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null,
+            tiltOptions.AndroidScopedStorage ? kScopedStorageDefine : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))
@@ -1858,6 +1834,7 @@ static class BuildTiltBrush
                 m_forPostBuild = new PostBuildInfo
                 {
                     xrSdk = xrSdk,
+                    scopedStorage = tiltOptions.AndroidScopedStorage,
                     copyRequests = copyRequests
                 };
 
