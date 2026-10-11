@@ -997,11 +997,6 @@ static class BuildTiltBrush
 
                 PlayerSettings.Android.applicationEntry = AndroidApplicationEntry.GameActivity;
                 PlayerSettings.Android.resizeableActivity = true;
-                if ((int)PlayerSettings.Android.minSdkVersion <
-                    (int)AndroidSdkVersions.AndroidApiLevel24)
-                {
-                    PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
-                }
 
                 Debug.Log("Configured Android XR PlayerSettings for this build.");
             }
@@ -1047,7 +1042,7 @@ static class BuildTiltBrush
                 PlayerSettings.Android.applicationEntry = m_AndroidApplicationEntry;
                 PlayerSettings.Android.resizeableActivity = m_AndroidResizeableActivity;
             }
-            if (m_RestoreStoragePermission || m_RestoreAndroidXrSettings)
+            if (m_RestoreStoragePermission)
                 PlayerSettings.Android.minSdkVersion = m_AndroidMinSdkVersion;
             AssetDatabase.SaveAssets();
         }
