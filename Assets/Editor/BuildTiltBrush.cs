@@ -958,7 +958,7 @@ static class BuildTiltBrush
             m_Target = tiltOptions.Target;
             if (m_Target == BuildTarget.Android)
                 m_AndroidMinSdkVersion = PlayerSettings.Android.minSdkVersion;
-            if (m_Target == BuildTarget.Android && tiltOptions.AndroidScopedStorage)
+            if (tiltOptions.AndroidScopedStorage)
             {
                 m_RestoreStoragePermission = true;
                 m_ForceStoragePermission = PlayerSettings.Android.forceSDCardPermission;
