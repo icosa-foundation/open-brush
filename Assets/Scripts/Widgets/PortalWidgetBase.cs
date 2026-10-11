@@ -80,7 +80,7 @@ namespace TiltBrush
                 widget.PinFromSave();
             }
             widget.Group = App.GroupManager.GetGroupFromId(tiltPortal.GroupId);
-            widget.SetCanvas(App.Scene.GetOrCreateLayer(tiltPortal.LayerId));
+            widget.SetCanvas(App.Scene.GetOrCreateLayer(tiltPortal.LayerId, tiltPortal.FrameId));
             widget.UpdateScale();
         }
 

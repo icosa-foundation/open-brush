@@ -19,7 +19,7 @@ namespace TiltBrush.Layers
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
-            GetComponentInParent<LayerUI_Manager>().SquashLayer(m_CommandParam);
+            GetComponentInParent<ILayerManager>().SquashLayer(m_CommandParam);
         }
     }
 }
