@@ -191,7 +191,7 @@ namespace TiltBrush
                     }
                     else if (mode == SymmetryMode.Point)
                     {
-                        var pointSym = new PointSymmetry((PointSymmetry.Family)pointType, pointOrder, 1f);
+                        var pointSym = new PointSymmetry((PointSymmetry.Family)pointType, pointOrder);
                         matrices = pointSym.matrices;
                     }
                     else

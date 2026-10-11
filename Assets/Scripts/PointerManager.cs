@@ -1842,7 +1842,7 @@ namespace TiltBrush
                 case CustomSymmetryType.Point:
                 case CustomSymmetryType.Polyhedra:
                 default:
-                    var pointSym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder, 0.1f);
+                    var pointSym = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder);
                     m_CustomMirrorMatrices = pointSym.matrices;
                     var pointDomain = pointSym.CreateDomainOutline(PointGroupDomainRadius);
                     PointGroupDomainPaths = CreateDomainPaths(pointDomain.vertices,
