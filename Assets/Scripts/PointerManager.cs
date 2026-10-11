@@ -1811,10 +1811,15 @@ namespace TiltBrush
                 case CustomSymmetryType.LineGroup:
                     var lineGroup = new LineGroupSymmetry(m_LineFamily, m_LineOrder,
                         m_LineRepeats, m_LineAdvance, m_LineAngle);
-                    m_CustomMirrorMatrices = lineGroup.matrices;
+                    // The package uses Z as its axis; Open Brush's axis widget uses Y.
+                    var lineGroupFrame = Matrix4x4.Rotate(Quaternion.Euler(-90f, 0f, 0f));
+                    var lineGroupFrameInverse = lineGroupFrame.inverse;
+                    m_CustomMirrorMatrices = lineGroup.matrices
+                        .Select(m => lineGroupFrame * m * lineGroupFrameInverse).ToList();
                     // The mathematical domain is radially unbounded. Use one step advance
                     // as its display radius, or a fixed radius for zero-advance patterns.
-                    LineGroupDomainPath = lineGroup.CreateDomainOutline(LineGroupDomainRadius).GetWirePath();
+                    LineGroupDomainPath = lineGroup.CreateDomainOutline(LineGroupDomainRadius).GetWirePath()
+                        .Select(point => lineGroupFrame.MultiplyPoint3x4(point)).ToArray();
                     break;
                 case CustomSymmetryType.SpaceGroup:
                     var spaceGroup = new SpaceGroupSymmetry(m_SpaceGroupNumber,
