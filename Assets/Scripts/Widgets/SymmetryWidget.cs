@@ -536,8 +536,8 @@ namespace TiltBrush
                     var symmetry = center * pm.TrFromMatrix(m0) * center.inverse;
                     m = symmetry.ToMatrix4x4() * transform.localToWorldMatrix;
                 }
-                // Scale the guides away from the origin
-                m *= Matrix4x4.TRS(new Vector3(2, .5f, .05f), Quaternion.identity, new Vector3(0.5f, 0.4f, 0));
+                // Size the marker without shifting it away from the symmetry origin.
+                m *= Matrix4x4.Scale(new Vector3(0.5f, 0.4f, 0));
                 matrices[i] = m;
 
                 if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Wallpaper)
