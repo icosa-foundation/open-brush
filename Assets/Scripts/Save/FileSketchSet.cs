@@ -492,11 +492,6 @@ namespace TiltBrush
 
         public void RequestRefresh()
         {
-            if (AndroidDirectStorage.ContainsPath(m_SketchesPath))
-            {
-                AndroidDirectStorage.RequestRefresh();
-                return;
-            }
             if (m_Type == SketchSetType.SavedStrokes) { Interlocked.Exchange(ref m_RefreshRequested, 1); }
         }
 
