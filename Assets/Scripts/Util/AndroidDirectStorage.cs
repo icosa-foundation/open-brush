@@ -133,7 +133,7 @@ namespace TiltBrush
                 if (scan == null || scan.files == null || scan.directories == null || scan.root != RootPath)
                     throw new IOException("Invalid storage preparation result.");
                 if (scan.failed != 0)
-                    throw new IOException($"Access could not be prepared for {scan.failed} documents: {scan.error}");
+                    Debug.LogWarning($"OBDS_APP skipped {scan.failed} inaccessible documents: {scan.error}");
                 string capability = Path.Combine(RootPath, $".obds-capability-{Guid.NewGuid():N}");
                 bool created = false;
                 try

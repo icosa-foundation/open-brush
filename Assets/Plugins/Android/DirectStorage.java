@@ -190,24 +190,29 @@ public final class DirectStorage {
                                 ? "Media Library".equals(leaf) || "Plugins".equals(leaf)
                                     || "Scripts".equals(leaf) || "Sketches".equals(leaf) || "Fonts".equals(leaf)
                                 : "Open Brush.cfg".equals(leaf))) continue;
-                            if (!validName(leaf)) throw new IOException("Invalid provider filename");
-                            String relative = parent[1].isEmpty() ? leaf : parent[1] + "/" + leaf;
-                            if (!paths.add(relative.toLowerCase(Locale.ROOT))) throw new IOException("Ambiguous workspace filenames");
-                            String childId = cursor.getString(0);
-                            if (!childId.equals(id + "/" + relative)) throw new IOException("Document escapes workspace root");
-                            Uri document = DocumentsContract.buildDocumentUriUsingTree(tree, childId);
-                            String canonical = new File(root, relative).getCanonicalPath();
-                            if (!canonical.startsWith(root + "/")) throw new IOException("File escapes workspace root");
-                            if (directory) {
-                                pending.add(new String[] {childId, relative});
-                                directories.put(canonical);
+                            try {
+                                if (!validName(leaf)) throw new IOException("Invalid provider filename");
+                                String relative = parent[1].isEmpty() ? leaf : parent[1] + "/" + leaf;
+                                if (!paths.add(relative.toLowerCase(Locale.ROOT))) throw new IOException("Ambiguous workspace filenames");
+                                String childId = cursor.getString(0);
+                                if (!childId.equals(id + "/" + relative)) throw new IOException("Document escapes workspace root");
+                                Uri document = DocumentsContract.buildDocumentUriUsingTree(tree, childId);
+                                String canonical = new File(root, relative).getCanonicalPath();
+                                if (!canonical.startsWith(root + "/")) throw new IOException("File escapes workspace root");
+                                if (directory) {
+                                    pending.add(new String[] {childId, relative});
+                                    directories.put(canonical);
+                                }
+                                else {
+                                    try {
+                                        verifyPath(context, document, canonical);
+                                        files.put(canonical);
+                                    }
+                                    catch (Exception error) { unprepared.add(new String[] {canonical, document.toString()}); }
+                                }
+                                entries++;
                             }
-                            else {
-                                try { verifyPath(context, document, canonical); }
-                                catch (Exception error) { unprepared.add(new String[] {canonical, document.toString()}); }
-                                files.put(canonical);
-                            }
-                            entries++;
+                            catch (Exception error) { if (failed++ == 0) firstFailure = error.toString(); }
                         }
                     }
                 }
@@ -218,9 +223,12 @@ public final class DirectStorage {
                     MediaScannerConnection.scanFile(context,
                         unprepared.stream().map(file -> file[0]).toArray(String[]::new), null,
                         (path, uri) -> scanned.countDown());
-                    if (!scanned.await(30, TimeUnit.SECONDS)) throw new IOException("Workspace file registration timed out");
+                    scanned.await(30, TimeUnit.SECONDS);
                     for (String[] file : unprepared) {
-                        try { verifyPath(context, Uri.parse(file[1]), file[0]); }
+                        try {
+                            verifyPath(context, Uri.parse(file[1]), file[0]);
+                            files.put(file[0]);
+                        }
                         catch (Exception error) { if (failed++ == 0) firstFailure = error.toString(); }
                     }
                 }
