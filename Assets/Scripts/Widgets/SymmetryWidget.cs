@@ -36,6 +36,8 @@ namespace TiltBrush
     {
         [SerializeField] private Renderer m_LeftRightMesh;
         [SerializeField] private Renderer m_FrontBackMesh;
+        [SerializeField] private Renderer m_SingleAxisMesh;
+        [SerializeField] private Renderer m_SmallCubeMesh;
         [SerializeField] private TextMeshPro m_TitleText;
         // The title shows whether the widget stands for a linked mirror.
         private static readonly Color kLinkedTitleColor = new Color(0.45f, 0.9f, 1f);
@@ -156,12 +158,21 @@ namespace TiltBrush
             m_CustomShowHide = true;
         }
 
-        public void SetMode(PointerManager.SymmetryMode rMode)
+        public void SetAppearance()
         {
-            switch (rMode)
+            m_FrontBackMesh.enabled = false;
+            m_LeftRightMesh.enabled = false;
+            m_SingleAxisMesh.enabled = false;
+            m_SmallCubeMesh.enabled = false;
+            for (int i = 0; i < m_GuideBeams.Length; ++i)
+            {
+                m_GuideBeams[i].m_BeamRenderer.enabled = false;
+            }
+
+            switch (PointerManager.m_Instance.CurrentSymmetryMode)
             {
                 case PointerManager.SymmetryMode.SinglePlane:
-                    m_LeftRightMesh.enabled = false;
+                    m_FrontBackMesh.enabled = true;
                     for (int i = 0; i < m_GuideBeams.Length; ++i)
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Left) &&
@@ -169,17 +180,31 @@ namespace TiltBrush
                     }
                     break;
                 case PointerManager.SymmetryMode.TwoHanded:
-                case PointerManager.SymmetryMode.MultiMirror:
-                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
-                    m_LeftRightMesh.enabled = false;
                     m_FrontBackMesh.enabled = true;
-                    for (int i = 0; i < m_GuideBeams.Length; ++i)
+                    m_LeftRightMesh.enabled = true;
+                    break;
+                case PointerManager.SymmetryMode.MultiMirror:
+                    switch (PointerManager.m_Instance.m_CustomSymmetryType)
                     {
-                        m_GuideBeams[i].m_BeamRenderer.enabled = false;
+                        case PointerManager.CustomSymmetryType.Point:
+                            m_SingleAxisMesh.enabled = true;
+                            break;
+                        case PointerManager.CustomSymmetryType.Wallpaper:
+                            m_SmallCubeMesh.enabled = true;
+                            break;
+                        case PointerManager.CustomSymmetryType.SpaceGroup:
+                            m_SmallCubeMesh.enabled = true;
+                            break;
+                        case PointerManager.CustomSymmetryType.LineGroup:
+                            m_SingleAxisMesh.enabled = true;
+                            break;
+                        case PointerManager.CustomSymmetryType.Polyhedra:
+                            m_SmallCubeMesh.enabled = true;
+                            break;
                     }
-                    if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
-                    {
-                    }
+                    break;
+                case PointerManager.SymmetryMode.ScriptedSymmetryMode:
+                    m_SmallCubeMesh.enabled = true;
                     break;
             }
         }

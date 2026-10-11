@@ -230,7 +230,7 @@ namespace TiltBrush
                     break;
             }
             SetCurrentMirrorTypeButtonState(true);
-            // Regenerate
+            PointerManager.m_Instance.SymmetryWidget.SetAppearance();
             PointerManager.m_Instance.CalculateMirrors();
         }
 
@@ -453,6 +453,7 @@ namespace TiltBrush
             m_ButtonShowOptionsControls.SetButtonSelected(false);
             m_ButtonShowPenroseControls.SetButtonSelected(true);
             PointerManager.m_Instance.CalculateMirrors();
+            PointerManager.m_Instance.SymmetryWidget.SetAppearance();
             RefreshPenroseControls();
         }
 
@@ -508,6 +509,7 @@ namespace TiltBrush
             m_ButtonShowOptionsControls.SetButtonSelected(false);
             m_ButtonShowLineGroupControls.SetButtonSelected(true);
             PointerManager.m_Instance.CalculateMirrors();
+            PointerManager.m_Instance.SymmetryWidget.SetAppearance();
             RefreshLineGroupControls();
         }
 
@@ -586,6 +588,7 @@ namespace TiltBrush
             m_ButtonShowOptionsControls.SetButtonSelected(false);
             m_ButtonShowSpaceGroupControls.SetButtonSelected(true);
             PointerManager.m_Instance.CalculateMirrors();
+            PointerManager.m_Instance.SymmetryWidget.SetAppearance();
             RefreshSpaceGroupControls();
         }
 
@@ -695,6 +698,7 @@ namespace TiltBrush
             m_ButtonShowOptionsControls.SetButtonSelected(false);
             m_ButtonShowHelicalControls.SetButtonSelected(true);
             PointerManager.m_Instance.CalculateMirrors();
+            PointerManager.m_Instance.SymmetryWidget.SetAppearance();
         }
 
         public void HandleChangeHelicalCopies(Vector3 value)
@@ -729,6 +733,7 @@ namespace TiltBrush
             m_WallpaperSymmetryControls.SetActive(false);
             m_OptionsControls.SetActive(false);
             PointerManager.m_Instance.CalculateMirrors();
+            PointerManager.m_Instance.SymmetryWidget.SetAppearance();
             m_ButtonShowPointControls.SetButtonSelected(true);
             m_ButtonShowWallpaperControls.SetButtonSelected(false);
             m_ButtonShowOptionsControls.SetButtonSelected(false);
@@ -750,6 +755,7 @@ namespace TiltBrush
             m_WallpaperSymmetryControls.SetActive(true);
             m_OptionsControls.SetActive(false);
             PointerManager.m_Instance.CalculateMirrors();
+            PointerManager.m_Instance.SymmetryWidget.SetAppearance();
             m_ButtonShowPointControls.SetButtonSelected(false);
             m_ButtonShowWallpaperControls.SetButtonSelected(true);
             m_ButtonShowOptionsControls.SetButtonSelected(false);

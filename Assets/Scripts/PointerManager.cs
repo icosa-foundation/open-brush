@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1645,7 +1645,7 @@ namespace TiltBrush
 
             var previousMode = m_CurrentSymmetryMode;
             m_CurrentSymmetryMode = mode;
-            m_SymmetryWidgetScript.SetMode(m_CurrentSymmetryMode);
+            m_SymmetryWidgetScript.SetAppearance();
             m_SymmetryWidgetScript.Show(m_UseSymmetryWidget && SymmetryModeEnabled);
             if (recordCommand)
             {
