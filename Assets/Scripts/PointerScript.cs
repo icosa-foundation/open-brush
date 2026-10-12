@@ -1133,7 +1133,8 @@ namespace TiltBrush
                 Debug.Assert(strokeFlags == SketchMemoryScript.StrokeFlags.None);
             }
 
-            if (ApiManager.Instance.HasOutgoingListeners)
+            if (!bDiscard &&
+                (ApiManager.Instance.HasOutgoingListeners || ApiManager.Instance.HasPollingListeners))
             {
                 if (rMemoryObjectForPlayback == null)
                 {
@@ -1141,8 +1142,8 @@ namespace TiltBrush
                     ApiManager.Instance.HandleStrokeListeners(
                         m_ControlPoints,
                         CurrentBrush.m_Guid,
-                        App.BrushColor.CurrentColor,
-                        PointerManager.m_Instance.MainPointer.BrushSize01
+                        m_CurrentColor,
+                        BrushSize01
                     );
                 }
                 else
