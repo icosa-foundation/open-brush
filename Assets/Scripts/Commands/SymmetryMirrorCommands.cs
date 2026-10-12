@@ -61,7 +61,7 @@ namespace TiltBrush
         }
     }
 
-    /// Resets the widget without moving the previous mirror's strokes. Linking, when enabled,
+    /// Offsets the widget without moving the previous mirror's strokes. Linking, when enabled,
     /// belongs to a fresh mirror; undo restores the previous mirror, settings and widget pose.
     public class NewMirrorCommand : BaseCommand
     {
@@ -88,7 +88,9 @@ namespace TiltBrush
             widget.CustomDimension = Vector3.zero;
             if (m_NewSettings == null)
             {
-                widget.ResetToHome();
+                var pose = m_PreviousSettings.WidgetTransform;
+                pose.translation += new Vector3(1f, 1f, 0f);
+                widget.SetTransformInSceneSpace(pose);
                 PointerManager.m_Instance.CalculateMirrors();
                 m_NewSettings = SymmetrySettingsSnapshot.FromCurrentSettings();
                 if (m_Linked)

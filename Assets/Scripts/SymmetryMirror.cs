@@ -120,7 +120,7 @@ namespace TiltBrush
 
         // ---- User actions; each records an undoable command --------------------------------- //
 
-        /// Starts afresh at the home pose, keeping the current parameters and linking toggle.
+        /// Starts a mirror offset from the current one, keeping parameters and linking toggle.
         public static void NewMirror()
         {
             if (!IsSpatial(PointerManager.m_Instance.CurrentSymmetryMode)) { return; }

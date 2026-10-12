@@ -435,6 +435,15 @@ namespace TiltBrush
             }
         }
 
+        internal void SetTransformInSceneSpace(TrTransform pose)
+        {
+            App.Scene.AsScene[transform] = pose;
+            if (m_NonScaleChild != null)
+            {
+                m_NonScaleChild.OnPosRotChanged();
+            }
+        }
+
         public void ResetToHome()
         {
             m_IsSpinningFreely = false;

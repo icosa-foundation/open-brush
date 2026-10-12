@@ -265,7 +265,7 @@ namespace TiltBrush
             var widget = pm.SymmetryWidget;
             if (widget != null)
             {
-                App.Scene.AsScene[widget.transform] = WidgetTransform;
+                widget.SetTransformInSceneSpace(WidgetTransform);
             }
 
             pm.SetSymmetryMode(Mode, recordCommand);
