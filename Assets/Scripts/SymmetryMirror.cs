@@ -84,16 +84,15 @@ namespace TiltBrush
         }
 
         /// The active linked mirror if the widget is currently showing it, else null. Turning
-        /// symmetry off leaves the mirror active, so turning it back on resumes it; switching to
-        /// a different symmetry mode goes back to plain symmetry (PointerManager.SetSymmetryMode).
+        /// symmetry off leaves the mirror active, so turning it back on resumes it. Simple and
+        /// custom symmetry share the same linked mirror; other symmetry modes leave it.
         public static SymmetryMirror Showing
         {
             get
             {
                 var pm = PointerManager.m_Instance;
                 if (m_Active?.Settings == null || pm == null ||
-                    !IsSpatial(pm.CurrentSymmetryMode) ||
-                    m_Active.Settings.Mode != pm.CurrentSymmetryMode)
+                    !IsSpatial(pm.CurrentSymmetryMode))
                 {
                     return null;
                 }
@@ -182,7 +181,7 @@ namespace TiltBrush
         /// strokes follow: a change that keeps the number of copies moves them, and one that
         /// doesn't rebuilds each group from one of its members. Pose changes arrive through
         /// SymmetryMirrorMove instead, so only the parameters are compared here.
-        public static void NoteSettingsChanged()
+        public static void NoteSettingsChanged(BaseCommand parent = null)
         {
             if (m_ApplyingSettings || SymmetryMirrorMove.IsMoving) { return; }
             var mirror = Showing;
@@ -192,9 +191,10 @@ namespace TiltBrush
             EndSelectionOwnedBy(mirror);
 
             BaseCommand command = mirror.Settings.HasCompatibleTopology(settings)
-                ? (BaseCommand)new MoveMirrorSettingsCommand(mirror, mirror.Settings, settings)
-                : new RegenerateMirrorStrokesCommand(mirror, mirror.Settings, settings);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                ? (BaseCommand)new MoveMirrorSettingsCommand(mirror, mirror.Settings, settings, parent)
+                : new RegenerateMirrorStrokesCommand(mirror, mirror.Settings, settings, parent);
+            if (parent != null) { command.Redo(); }
+            else { SketchMemoryScript.m_Instance.PerformAndRecordCommand(command); }
         }
 
         /// Ends the selection (baking any move into its strokes) if it holds a copy owned by

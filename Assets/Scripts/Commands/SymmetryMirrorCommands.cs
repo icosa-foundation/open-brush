@@ -248,7 +248,8 @@ namespace TiltBrush
         private bool m_Applied;
 
         internal MoveMirrorSettingsCommand(SymmetryMirror mirror,
-            SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after)
+            SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after, BaseCommand parent = null)
+            : base(parent)
         {
             m_Mirror = mirror;
             m_Before = before;
@@ -348,7 +349,8 @@ namespace TiltBrush
         private bool m_Applied;
 
         internal RegenerateMirrorStrokesCommand(SymmetryMirror mirror,
-            SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after)
+            SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after, BaseCommand parent = null)
+            : base(parent)
         {
             m_Mirror = mirror;
             new RegenerateMirrorWidgetsCommand(mirror, before, after, this);

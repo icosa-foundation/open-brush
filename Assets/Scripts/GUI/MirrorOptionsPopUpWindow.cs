@@ -546,7 +546,6 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.Penrose;
             m_PenroseControls.SetActive(true);
-            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
             SetCustomSymmetryType(PointerManager.CustomSymmetryType.Penrose);
             m_ButtonShowPenroseControls?.SetButtonSelected(true);
             UpdateSymmetry();
@@ -588,7 +587,6 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.LineGroup;
             m_LineGroupControls.SetActive(true);
-            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
             SetCustomSymmetryType(PointerManager.CustomSymmetryType.LineGroup);
             m_ButtonShowLineGroupControls?.SetButtonSelected(true);
             UpdateSymmetry();
@@ -746,7 +744,6 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.Helical;
             m_HelicalControls.SetActive(true);
-            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
             SetCustomSymmetryType(PointerManager.CustomSymmetryType.Helical);
             m_ButtonShowHelicalControls?.SetButtonSelected(true);
             UpdateSymmetry();
@@ -775,7 +772,6 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.Point;
             m_PointSymmetryControls.SetActive(true);
-            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
             SetCustomSymmetryType(PointerManager.CustomSymmetryType.Point);
             m_ButtonShowPointControls?.SetButtonSelected(true);
             UpdateSymmetry();
@@ -786,7 +782,6 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.Wallpaper;
             m_WallpaperSymmetryControls.SetActive(true);
-            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
             SetCustomSymmetryType(PointerManager.CustomSymmetryType.Wallpaper);
             m_ButtonShowWallpaperControls?.SetButtonSelected(true);
             UpdateSymmetry();

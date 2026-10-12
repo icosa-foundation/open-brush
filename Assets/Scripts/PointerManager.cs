@@ -1657,14 +1657,17 @@ namespace TiltBrush
             if (recordCommand)
             {
                 var command = new SymmetryWidgetVisibleCommand(mode, previousMode);
-                // Switching to another mode leaves the linked mirror (it keeps its strokes and
-                // can be recalled). Left active, it would resume with a stale pose if the widget
-                // moved in the meantime. Turning symmetry off keeps it, so on resumes it.
+                // Simple and custom symmetry edit the same linked mirror. Non-mirror modes
+                // leave it behind; turning symmetry off keeps it ready to resume.
                 var linked = SymmetryMirrors.Active;
-                if (linked != null && mode != SymmetryMode.None && mode != linked.Settings?.Mode)
+                if (linked != null && mode != SymmetryMode.None && !MirrorModeEnabled)
                 {
                     new ActivateMirrorCommand(null, created: false, parent: command);
                     SymmetryMirrors.Active = null;
+                }
+                else if (linked != null && MirrorModeEnabled)
+                {
+                    SymmetryMirrors.NoteSettingsChanged(command);
                 }
                 SketchMemoryScript.m_Instance.RecordCommand(command);
             }
