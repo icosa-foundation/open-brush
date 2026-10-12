@@ -685,7 +685,7 @@ namespace TiltBrush
             {
                 var matrix = matrices[step * copiesPerStep];
                 var origin = matrix.MultiplyPoint3x4(Vector3.zero) * mirrorScale;
-                var tick = matrix.MultiplyVector(Vector3.right * (advance * 0.08f)) * mirrorScale;
+                var tick = matrix.MultiplyVector(Vector3.right * (PointerManager.LineGroupDomainRadius * 0.08f)) * mirrorScale;
                 axisPoints[step * 4] = origin;
                 axisPoints[step * 4 + 1] = origin - tick;
                 axisPoints[step * 4 + 2] = origin + tick;

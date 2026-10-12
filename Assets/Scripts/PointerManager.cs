@@ -413,7 +413,7 @@ namespace TiltBrush
         public List<Vector3[]> PointGroupDomainPaths { get; private set; }
         public List<Vector3[]> PointGroupArcPaths { get; private set; }
         public Vector3[] LineGroupDomainPath { get; private set; }
-        public float LineGroupDomainRadius => m_LineAdvance == 0f ? 0.5f : m_LineAdvance;
+        public const float LineGroupDomainRadius = 0.5f;
 
         public List<Color> SymmetryPointerColors
         {
@@ -1816,8 +1816,8 @@ namespace TiltBrush
                     var lineGroupFrameInverse = lineGroupFrame.inverse;
                     m_CustomMirrorMatrices = lineGroup.matrices
                         .Select(m => lineGroupFrame * m * lineGroupFrameInverse).ToList();
-                    // The mathematical domain is radially unbounded. Use one step advance
-                    // as its display radius, or a fixed radius for zero-advance patterns.
+                    // Clip the radially unbounded domain to a fixed display radius.
+                    // Step advance determines only its axial extent.
                     LineGroupDomainPath = lineGroup.CreateDomainOutline(LineGroupDomainRadius).GetWirePath()
                         .Select(point => lineGroupFrame.MultiplyPoint3x4(point)).ToArray();
                     break;
