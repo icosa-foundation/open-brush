@@ -46,9 +46,9 @@ namespace TiltBrush
 
     /// The linked mirrors in the current sketch, and which one the widget is showing.
     ///
-    /// Mirrors are only ever created by the user asking for one (NewLinked). Drawing, moving the
+    /// Mirrors are only ever created by the user asking for one. Drawing, moving the
     /// widget, changing settings and undo never create or switch mirrors on their own; every
-    /// change of the active mirror goes through ActivateMirrorCommand, so undo restores it.
+    /// change of the active mirror goes through a command, so undo restores it.
     public static class SymmetryMirrors
     {
         private static readonly Dictionary<Guid, SymmetryMirror> m_Mirrors =
@@ -120,6 +120,24 @@ namespace TiltBrush
 
         // ---- User actions; each records an undoable command --------------------------------- //
 
+        /// Starts afresh at the home pose, keeping the current parameters and linking toggle.
+        public static void NewMirror()
+        {
+            if (!IsSpatial(PointerManager.m_Instance.CurrentSymmetryMode)) { return; }
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new NewMirrorCommand());
+        }
+
+        /// Cycles registered mirrors in creation order. Plain symmetry starts at either end.
+        public static void Cycle(int direction)
+        {
+            if (m_Order.Count == 0 || direction == 0) { return; }
+            int index = m_Order.IndexOf(Showing);
+            int next = index < 0
+                ? (direction > 0 ? 0 : m_Order.Count - 1)
+                : (index + (direction > 0 ? 1 : -1) + m_Order.Count) % m_Order.Count;
+            Recall(m_Order[next]);
+        }
+
         /// Creates a new linked mirror from the current settings and makes it active. Always a
         /// fresh mirror, even while another linked mirror is active.
         public static SymmetryMirror NewLinked()
@@ -138,7 +156,7 @@ namespace TiltBrush
         /// Makes an earlier linked mirror active again and puts the widget where it has it.
         public static void Recall(SymmetryMirror mirror)
         {
-            if (mirror == null || ReferenceEquals(mirror, m_Active)) { return; }
+            if (mirror == null || ReferenceEquals(mirror, Showing)) { return; }
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new ActivateMirrorCommand(mirror, created: false));
         }

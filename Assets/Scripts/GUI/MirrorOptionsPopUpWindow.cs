@@ -100,6 +100,42 @@ namespace TiltBrush
         public override void Init(GameObject rParent, string sText)
         {
             base.Init(rParent, sText);
+            RefreshMirrorControls();
+        }
+
+        private SymmetryMirror m_DisplayedMirror;
+
+        protected override void BaseUpdate()
+        {
+            base.BaseUpdate();
+            // Also follow recall/undo performed outside this popup.
+            if (!ReferenceEquals(m_DisplayedMirror, SymmetryMirrors.Showing))
+            {
+                RefreshMirrorControls();
+            }
+        }
+
+        public void HandleNewMirror()
+        {
+            SymmetryMirrors.NewMirror();
+            RefreshMirrorControls();
+        }
+
+        public void HandleNextMirror()
+        {
+            SymmetryMirrors.Cycle(1);
+            RefreshMirrorControls();
+        }
+
+        public void HandlePreviousMirror()
+        {
+            SymmetryMirrors.Cycle(-1);
+            RefreshMirrorControls();
+        }
+
+        private void RefreshMirrorControls()
+        {
+            m_DisplayedMirror = SymmetryMirrors.Showing;
 
             if (m_LastActiveTab != 2)
             {
@@ -137,7 +173,12 @@ namespace TiltBrush
                     HandleShowPenroseSymmetry();
                     break;
             }
+            foreach (var button in GetComponentsInChildren<MirrorTypeButton>(true))
+            {
+                button.SetButtonSelected(false);
+            }
             SetCurrentMirrorTypeButtonState(true);
+            UpdateWallpaperSettingControls();
 
             m_HelicalCopiesSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalCopies);
             m_HelicalAngleSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalAngle);

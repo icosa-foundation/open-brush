@@ -720,10 +720,10 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1758786797962018}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 0
+      - m_Target: {fileID: 114054410763498584}
+        m_TargetAssemblyTypeName: TiltBrush.MirrorOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: HandlePreviousMirror
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: 
@@ -4254,7 +4254,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: New Linked Mirror
+  m_DescriptionText: New Mirror
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -4289,10 +4289,10 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1758786797962018}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 0
+      - m_Target: {fileID: 114054410763498584}
+        m_TargetAssemblyTypeName: TiltBrush.MirrorOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: HandleNewMirror
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: 
@@ -6615,10 +6615,10 @@ MonoBehaviour:
   m_Action:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1758786797962018}
-        m_TargetAssemblyTypeName: 
-        m_MethodName: 
-        m_Mode: 0
+      - m_Target: {fileID: 114054410763498584}
+        m_TargetAssemblyTypeName: TiltBrush.MirrorOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: HandleNextMirror
+        m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
           m_ObjectArgumentAssemblyTypeName: 

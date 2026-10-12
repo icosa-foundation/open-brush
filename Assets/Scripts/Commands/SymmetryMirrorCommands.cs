@@ -61,6 +61,66 @@ namespace TiltBrush
         }
     }
 
+    /// Resets the widget without moving the previous mirror's strokes. Linking, when enabled,
+    /// belongs to a fresh mirror; undo restores the previous mirror, settings and widget pose.
+    public class NewMirrorCommand : BaseCommand
+    {
+        private readonly SymmetryMirror m_Previous;
+        private readonly SymmetrySettingsSnapshot m_PreviousSettings;
+        private readonly bool m_Linked;
+        private SymmetryMirror m_Created;
+        private SymmetrySettingsSnapshot m_NewSettings;
+
+        public NewMirrorCommand()
+        {
+            m_Previous = SymmetryMirrors.Active;
+            m_PreviousSettings = SymmetrySettingsSnapshot.FromCurrentSettings();
+            m_Linked = SymmetryMirrors.Showing != null;
+        }
+
+        public override bool NeedsSave => true;
+
+        protected override void OnRedo()
+        {
+            // Detach before changing the pose so the old mirror and its strokes stay put.
+            SymmetryMirrors.Active = null;
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            widget.CustomDimension = Vector3.zero;
+            if (m_NewSettings == null)
+            {
+                widget.ResetToHome();
+                PointerManager.m_Instance.CalculateMirrors();
+                m_NewSettings = SymmetrySettingsSnapshot.FromCurrentSettings();
+                if (m_Linked)
+                {
+                    m_Created = new SymmetryMirror(System.Guid.NewGuid(), m_NewSettings)
+                    {
+                        Canvas = App.Scene.ActiveCanvas
+                    };
+                }
+            }
+            else
+            {
+                SymmetryMirrors.ApplySettingsUnrecorded(m_NewSettings);
+            }
+            SymmetryMirrors.Active = m_Created;
+        }
+
+        protected override void OnUndo()
+        {
+            SymmetryMirrors.Active = m_Previous;
+            SymmetryMirrors.ApplySettingsUnrecorded(m_PreviousSettings);
+            if (m_Created != null) { SymmetryMirrors.Unregister(m_Created); }
+            var widget = PointerManager.m_Instance.SymmetryWidget;
+            widget.CustomDimension = Vector3.zero;
+            var spin = m_PreviousSettings.Spin;
+            if (SymmetryMirrors.Showing == null && spin != Vector3.zero)
+            {
+                widget.Spin(spin.x, spin.y, spin.z);
+            }
+        }
+    }
+
     /// Helpers shared by the commands that carry a mirror's strokes through a settings change.
     internal static class MirrorStrokeEdits
     {
