@@ -360,6 +360,12 @@ namespace TiltBrush
             get { return m_CurrentSymmetryMode; }
         }
 
+        /// The mode to resume from the mirror button, including Simple (single plane).
+        public SymmetryMode LastMirrorMode { get; private set; } = SymmetryMode.SinglePlane;
+
+        public bool MirrorModeEnabled => m_CurrentSymmetryMode == SymmetryMode.SinglePlane ||
+            m_CurrentSymmetryMode == SymmetryMode.MultiMirror;
+
         /// Returns null if the mirror is not active
         public Plane? SymmetryPlane_RS => (m_CurrentSymmetryMode == SymmetryMode.SinglePlane)
             ? (Plane?)m_SymmetryWidgetScript.ReflectionPlane
@@ -1645,6 +1651,7 @@ namespace TiltBrush
 
             var previousMode = m_CurrentSymmetryMode;
             m_CurrentSymmetryMode = mode;
+            if (MirrorModeEnabled) { LastMirrorMode = mode; }
             m_SymmetryWidgetScript.SetAppearance();
             m_SymmetryWidgetScript.Show(m_UseSymmetryWidget && SymmetryModeEnabled);
             if (recordCommand)

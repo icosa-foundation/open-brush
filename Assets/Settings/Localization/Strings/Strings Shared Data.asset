@@ -3931,6 +3931,10 @@ MonoBehaviour:
     m_Key: MULTIMIRROR_PANEL_PENROSE_RADIUS
     m_Metadata:
       m_Items: []
+  - m_Id: 553016172624830464
+    m_Key: MULTIMIRROR_PANEL_SIMPLE_SYMMETRY
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

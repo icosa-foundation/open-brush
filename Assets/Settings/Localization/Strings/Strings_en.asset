@@ -4075,6 +4075,10 @@ MonoBehaviour:
     m_Localized: Patch radius in canvas units
     m_Metadata:
       m_Items: []
+  - m_Id: 553016172624830464
+    m_Localized: Simple Symmetry
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

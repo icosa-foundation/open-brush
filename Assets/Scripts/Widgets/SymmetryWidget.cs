@@ -160,6 +160,8 @@ namespace TiltBrush
 
         public void SetAppearance()
         {
+            m_SymmetryDomainParent.gameObject.SetActive(
+                PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror);
             m_FrontBackMesh.enabled = false;
             m_LeftRightMesh.enabled = false;
             m_SingleAxisMesh.enabled = false;

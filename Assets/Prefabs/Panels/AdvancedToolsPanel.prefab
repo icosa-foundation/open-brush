@@ -1795,12 +1795,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: ADVANCEDTOOLS_PANEL_BUTTON_MIRROR
+  m_DescriptionText: Multi-Mirror
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 5143986307833856
+      m_KeyId: 15506869836361728
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1818,7 +1818,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 500cd172c9f6e9d4492856a074b01c6a, type: 3}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 0
@@ -1827,12 +1827,12 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Command: 14
+  m_Command: 15
   m_CommandParam: -1
   m_CommandParam2: -1
   m_RequiresPopup: 0
   m_CenterPopupOnButton: 0
-  m_PopupOffset: {x: 0, y: 0, z: 0}
+  m_PopupOffset: {x: 0, y: 0.5, z: 0}
   m_PopupText: 
   m_LocalizedPopup:
     m_TableReference:
