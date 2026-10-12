@@ -3390,9 +3390,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.HandTrackingWandRotateControls
   m_LocalPositionOffset: {x: 0, y: 0, z: 1.25}
-  m_LocalRotationOffset: {x: 0, y: 0, z: 0}
+  m_LocalRotationOffset: {x: -90, y: 0, z: 0}
   m_RequireBothHands: 1
   m_DetachFromPanelOnStart: 1
+  m_MaxAimDistance: 1.5
+  m_AimPadding: 0.015
+  m_TargetHoldSeconds: 0.3
+  m_ShowAimLine: 1
+  m_AimColor: {r: 0.25, g: 0.95, b: 1, a: 1}
+  m_LineWidth: 0.0025
+  m_ReticleDiameter: 0.013
+  m_HoverScale: 1.12
 --- !u!1 &3430566547836769564
 GameObject:
   m_ObjectHideFlags: 0
@@ -3421,14 +3429,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3430566547836769564}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -1.2, y: 0.9, z: -0.5}
+  m_LocalRotation: {x: 1, y: 0, z: 0, w: 0}
+  m_LocalPosition: {x: -1.4, y: 0.3, z: 0.95}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 225945178029921109}
   m_Father: {fileID: 194848252474830885}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 180, y: 0, z: 0}
 --- !u!33 &9015870128592435799
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -3505,8 +3513,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 2}
-  m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0.9}
+  m_Size: {x: 1, y: 1, z: 0.1}
+  m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0}
 --- !u!114 &7113471878182006613
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3584,13 +3592,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5201333040749061572}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1.2, y: 1.2, z: 1.2}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 6066799574650457685}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1033012039235345778
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -3880,14 +3888,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6666933368025872272}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: 1.2, y: 0.9, z: -0.5}
+  m_LocalRotation: {x: 1, y: 0, z: 0, w: 0}
+  m_LocalPosition: {x: 1.4, y: 0.3, z: 0.95000005}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 460035552058761310}
   m_Father: {fileID: 194848252474830885}
-  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 180, y: 0, z: 0}
 --- !u!33 &1393898974280693687
 MeshFilter:
   m_ObjectHideFlags: 0
@@ -3964,8 +3972,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 2}
-  m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0.9}
+  m_Size: {x: 1, y: 1, z: 0.1}
+  m_Center: {x: -0.000000074505806, y: 0.000000022351742, z: 0}
 --- !u!114 &912631602692002744
 MonoBehaviour:
   m_ObjectHideFlags: 0

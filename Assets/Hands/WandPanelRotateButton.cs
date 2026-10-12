@@ -27,40 +27,22 @@ namespace TiltBrush
         }
 
 
-        // Reject normal Open Brush pointer/ray interaction.
-        public override bool UpdateStateWithInput(
-            bool inputValid,
-            Ray inputRay,
-            GameObject parentActiveObject,
-            Collider parentCollider)
+        // Use the normal BaseButton pointer/ray interaction path.
+        //
+        // AndroidXRHandBridge now maps the right-hand pinch to Open Brush's
+        // normal Trigger, so laser hover + pinch behaves exactly like a
+        // controller pointing at this button.
+        //
+        // Do not override UpdateStateWithInput(), CalculateReticleCollision()
+        // or ButtonPressed() here: the previous hand-touch-only overrides
+        // explicitly prevented laser targeting.
+
+
+        // Called by the independent hand-aim rotation control.
+        public void RotateFromHandAim()
         {
-            return false;
+            OnButtonPressed();
         }
-
-
-        public override bool CalculateReticleCollision(
-            Ray ray,
-            ref Vector3 pos,
-            ref Vector3 forward)
-        {
-            return false;
-        }
-
-
-        public override void ButtonPressed(
-            RaycastHit hitInfo)
-        {
-            // Only the bridge's stabilized rising edge may activate this.
-            if (!AndroidXRHandBridge.HandTrackingActive ||
-                !AndroidXRHandBridge.MenuTouchDown)
-            {
-                return;
-            }
-
-            base.ButtonPressed(
-                hitInfo);
-        }
-
 
         protected override void OnButtonPressed()
         {
