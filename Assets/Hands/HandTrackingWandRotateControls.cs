@@ -62,7 +62,7 @@ namespace TiltBrush
             CacheVisualsAndColliders();
 
             // Start hidden. The object itself stays active.
-            SetControlsVisible(false);
+            SetControlsVisible(false, force: true);
         }
 
 
@@ -158,7 +158,8 @@ namespace TiltBrush
 
 
         private void SetControlsVisible(
-            bool visible)
+            bool visible,
+            bool force = false)
         {
             if (m_Renderers == null ||
                 m_Colliders == null)
@@ -166,7 +167,7 @@ namespace TiltBrush
                 CacheVisualsAndColliders();
             }
 
-            if (m_Visible == visible)
+            if (!force && m_Visible == visible)
                 return;
 
             m_Visible =
