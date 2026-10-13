@@ -1,6 +1,7 @@
 // Copyright 2026 The Open Brush Authors
 // Licensed under the Apache License, Version 2.0. See LICENSE for details.
 
+using System.Collections;
 using System.IO;
 using ImmPlayer;
 using UnityEngine;
@@ -14,6 +15,7 @@ namespace TiltBrush
     {
         private const string LogPrefix = "[OB_NATIVE_IMM_20261013]";
         private static NativeImmImport s_Active;
+        private static int s_UnloadingDocumentId = -1;
 
         private ImmDocument m_Document;
         private ImmPlayerManager m_Manager;
@@ -22,11 +24,13 @@ namespace TiltBrush
         private Camera m_Camera;
         private bool m_UsesRenderGraph;
         private bool m_Ready;
+        private bool m_AlignInitialView;
         private int m_ChapterIndex;
         private string m_Path;
         private bool m_DeletePathOnUnload;
 
         public static string CurrentPath => s_Active != null ? s_Active.m_Path : null;
+        public static bool IsLoading => s_Active != null && !s_Active.m_Ready;
         public static int? CurrentChapterIndex => s_Active != null ? s_Active.m_ChapterIndex : null;
         public static TrTransform? CurrentSceneTransform => s_Active != null
             ? TrTransform.FromLocalTransform(s_Active.transform) : null;
@@ -61,6 +65,7 @@ namespace TiltBrush
             s_Active = owner;
             owner.m_Path = path;
             owner.m_ChapterIndex = chapterIndex;
+            owner.m_AlignInitialView = !sceneTransform.HasValue;
             owner.transform.SetParent(App.Scene.transform, false);
             if (sceneTransform.HasValue)
             {
@@ -71,12 +76,10 @@ namespace TiltBrush
             }
             else
             {
-                var camera = App.VrSdk.GetVrCamera();
-                owner.transform.position = camera.transform.position + camera.transform.forward * 20f;
                 owner.transform.localRotation = Quaternion.identity;
                 owner.transform.localScale = Vector3.one * 10f;
             }
-            owner.BeginLoad();
+            owner.StartCoroutine(owner.BeginLoadAfterUnload());
         }
 
         public static void LoadFromSketch(SceneFileInfo fileInfo, int chapterIndex, TrTransform? sceneTransform)
@@ -115,7 +118,23 @@ namespace TiltBrush
             if (s_Active == null) return;
             var active = s_Active;
             s_Active = null;
+            if (active.m_Document != null)
+                s_UnloadingDocumentId = active.m_Document.DocumentId;
             Destroy(active.gameObject);
+        }
+
+        private IEnumerator BeginLoadAfterUnload()
+        {
+            if (s_UnloadingDocumentId >= 0)
+            {
+                int documentId = s_UnloadingDocumentId;
+                yield return null; // Let the previous owner's OnDestroy request its unload.
+                while (ImmNativePlugin.IsDocumentActive(documentId))
+                    yield return null;
+                s_UnloadingDocumentId = -1;
+                Debug.Log($"{LogPrefix} Previous document {documentId} finished unloading");
+            }
+            BeginLoad();
         }
 
         private void OnEnable()
@@ -183,6 +202,7 @@ namespace TiltBrush
             else if (state == ImmDocument.LoadingState.Loaded)
             {
                 if (m_ChapterIndex >= 0) m_Document.SetChapter(m_ChapterIndex);
+                if (m_AlignInitialView) AlignSceneToInitialView();
                 m_Document.SetTransform(transform);
                 transform.hasChanged = false;
                 m_Document.Show();
@@ -190,6 +210,26 @@ namespace TiltBrush
                 m_Ready = true;
                 Debug.Log($"{LogPrefix} Native document ready: {m_Path}");
             }
+        }
+
+        private void AlignSceneToInitialView()
+        {
+            int spawnAreaId = m_Document.GetInitialSpawnAreaId();
+            var xrOrigin = m_Camera.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
+            Transform viewTarget = xrOrigin != null ? xrOrigin.transform : m_Camera.transform;
+            if (spawnAreaId < 0 ||
+                !m_Document.TryGetSpawnAreaViewTargetPose(spawnAreaId, transform,
+                    viewTarget, m_Camera.transform, true, out Pose targetView))
+            {
+                transform.position = m_Camera.transform.position + m_Camera.transform.forward * 20f;
+                Debug.LogWarning($"{LogPrefix} No initial IMM viewpoint; placed document in front: {m_Path}");
+                return;
+            }
+
+            TrTransform currentView = TrTransform.TR(viewTarget.position, viewTarget.rotation);
+            TrTransform authoredView = TrTransform.TR(targetView.position, targetView.rotation);
+            App.Scene.Pose = currentView * authoredView.inverse * App.Scene.Pose;
+            Debug.Log($"{LogPrefix} Aligned scene to initial IMM viewpoint: {m_Path}");
         }
 
         private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)

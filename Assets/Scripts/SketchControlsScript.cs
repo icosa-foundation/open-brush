@@ -4253,6 +4253,15 @@ namespace TiltBrush
             }
         }
 
+        IEnumerator LoadNativeImmCoroutine(string path, int chapterIndex)
+        {
+            NewSketch(fade: false);
+            SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(path);
+            NativeImmImport.Load(path, chapterIndex);
+            while (NativeImmImport.IsLoading)
+                yield return null;
+        }
+
         private void SaveModel()
         {
 #if USD_SUPPORTED
@@ -5233,12 +5242,16 @@ namespace TiltBrush
                         if (options != null && !string.IsNullOrEmpty(options.Path))
                         {
                             if (options.NativeImm && !NativeImmImport.CanLoad(options.Path)) break;
-                            NewSketch(fade: false);
-                            SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(options.Path);
                             if (options.NativeImm)
-                                NativeImmImport.Load(options.Path, options.ChapterIndex);
+                                StartCoroutine(OverlayManager.m_Instance.RunInCompositor(
+                                    OverlayType.LoadSketch,
+                                    LoadNativeImmCoroutine(options.Path, options.ChapterIndex), 0.25f));
                             else
+                            {
+                                NewSketch(fade: false);
+                                SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(options.Path);
                                 StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
+                            }
                         }
                     }
                     break;
