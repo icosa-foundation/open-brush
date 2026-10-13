@@ -85,6 +85,9 @@ namespace TiltBrush
         private float deviceSearchInterval = 0.75f;
 
 
+        // TODO: Convert direct-touch radii, pointer backoff and re-arm travel from metres
+        // to world units consistently with trackingOrigin scale before using direct touch.
+        // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4177373440
         [Header("Menu Touch - Right Index")]
 
         [Tooltip(
