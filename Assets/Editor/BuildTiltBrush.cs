@@ -1171,6 +1171,7 @@ static class BuildTiltBrush
         {
             enabledFeatures = new();
             requiredFeatures = new();
+
             m_targetGroup = TargetToGroup(tiltOptions.Target);
 
             // The Quest APK uses OpenXR; AndroidXR is the separate Google Play build option.
