@@ -290,8 +290,12 @@ namespace TiltBrush
 
         public void OnNativeImmButtonPressed()
         {
-            if (m_SelectedFile == null) return;
-            string path = m_SelectedFile.NativeImmPath ?? m_SelectedFile.FullPath;
+            string path = m_SelectedFile.FullPath;
+            if (m_SelectedFile.SourceType == QuillSourceType.Quill)
+            {
+                var immFiles = System.IO.Directory.GetFiles(path, "*.imm");
+                if (immFiles.Length > 0) path = immFiles[0];
+            }
             _LoadFile(path, m_SelectedFile.SelectedChapterIndex, nativeImm: true);
         }
 
