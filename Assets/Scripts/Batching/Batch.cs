@@ -526,6 +526,24 @@ namespace TiltBrush
             }
         }
 
+        /// Moves one subset's geometry where it lies, without repacking the batch or
+        /// regenerating anything: a pass over that subset's vertices and a mesh update that the
+        /// batch would do anyway if anything in it changed. Much cheaper than removing the subset
+        /// and adding it back somewhere else, which is what moving a stroke between canvases does.
+        public void TransformSubset(BatchSubset subset, TrTransform leftTransform)
+        {
+            if (subset == null || subset.m_ParentBatch != this || subset.m_VertLength == 0)
+            {
+                return;
+            }
+            m_Geometry.EnsureGeometryResident();
+            m_Geometry.ApplyTransform(
+                leftTransform, subset.m_StartVertIndex, subset.m_VertLength);
+            subset.m_Bounds = GetBoundsFor(
+                m_Geometry.m_Vertices, subset.m_StartVertIndex, subset.m_VertLength);
+            DelayedUpdateMesh();
+        }
+
         public void RemoveSubset(BatchSubset subset)
         {
             // Often O(1) because it's the last one

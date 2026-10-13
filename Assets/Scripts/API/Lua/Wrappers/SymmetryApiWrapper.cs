@@ -13,7 +13,37 @@ namespace TiltBrush
         Scripted,
         TwoHanded,
         Point,
-        Wallpaper
+        Wallpaper,
+        Helical,
+        SpaceGroup,
+        LineGroup,
+        Penrose
+    }
+
+    [LuaDocsDescription("Penrose tile types receiving copies")]
+    public enum SymmetryPenroseTiles
+    {
+        Both = PenroseTiling.TileSelection.Both,
+        Thin = PenroseTiling.TileSelection.Thin,
+        Thick = PenroseTiling.TileSelection.Thick,
+    }
+
+    [LuaDocsDescription("The thirteen general line-group families")]
+    public enum SymmetryLineFamily
+    {
+        ScrewRotations = LineGroupSymmetry.Family.ScrewRotations,
+        TranslationRotoreflection = LineGroupSymmetry.Family.TranslationRotoreflection,
+        TranslationHorizontalMirror = LineGroupSymmetry.Family.TranslationHorizontalMirror,
+        HalfStepHorizontalMirror = LineGroupSymmetry.Family.HalfStepHorizontalMirror,
+        ScrewHalfTurns = LineGroupSymmetry.Family.ScrewHalfTurns,
+        TranslationVerticalMirrors = LineGroupSymmetry.Family.TranslationVerticalMirrors,
+        GlideRotations = LineGroupSymmetry.Family.GlideRotations,
+        HalfStepVerticalMirrors = LineGroupSymmetry.Family.HalfStepVerticalMirrors,
+        TranslationDiagonalMirrors = LineGroupSymmetry.Family.TranslationDiagonalMirrors,
+        GlideRotoreflection = LineGroupSymmetry.Family.GlideRotoreflection,
+        TranslationFullMirrors = LineGroupSymmetry.Family.TranslationFullMirrors,
+        GlideHorizontalMirror = LineGroupSymmetry.Family.GlideHorizontalMirror,
+        HalfStepFullMirrors = LineGroupSymmetry.Family.HalfStepFullMirrors,
     }
 
     [LuaDocsDescription("The list of valid point symmetry types")]

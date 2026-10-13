@@ -1552,6 +1552,12 @@ namespace TiltBrush
 
         public static void DeleteWidget(GrabWidget widget)
         {
+            if (widget.SymmetryPeerGroup != null)
+            {
+                SymmetryMirrors.EndSelectionOwnedBy(widget.SymmetryPeerGroup.Mirror);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new HideWidgetCommand(widget));
+                return;
+            }
             widget.HideNow(force: true);
         }
 
