@@ -5232,9 +5232,13 @@ namespace TiltBrush
                         Quill.PendingLoadOptions = null;
                         if (options != null && !string.IsNullOrEmpty(options.Path))
                         {
+                            if (options.NativeImm && !NativeImmImport.CanLoad(options.Path)) break;
                             NewSketch(fade: false);
                             SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(options.Path);
-                            StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
+                            if (options.NativeImm)
+                                NativeImmImport.Load(options.Path, options.ChapterIndex);
+                            else
+                                StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
                         }
                     }
                     break;
@@ -5531,6 +5535,7 @@ namespace TiltBrush
 
         public void NewSketch(bool fade)
         {
+            NativeImmImport.Unload();
             bool keepSceneTransform = m_DisableWorldGrabbing;
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;

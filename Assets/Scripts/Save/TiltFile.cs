@@ -37,6 +37,7 @@ namespace TiltBrush
         public const string FN_METADATA = "metadata.json";
         public const string FN_METADATA_LEGACY = "main.json"; // used pre-release only
         public const string FN_SKETCH = "data.sketch";
+        public const string FN_NATIVE_IMM = "native.imm";
         public const string FN_THUMBNAIL = "thumbnail.png";
         public const string FN_HI_RES = "hires.png";
 

@@ -33,6 +33,7 @@ namespace TiltBrush
         [Header("Selection & Action Controls")]
         [SerializeField] private GameObject m_ActionControlsContainer;
         [SerializeField] private ActionButton m_LoadButton;
+        [SerializeField] private ActionButton m_NativeImmButton;
         [SerializeField] private ActionButton m_MergeButton;
         [SerializeField] private GameObject m_ChapterControls;
         [SerializeField] private TextMeshPro m_ChapterLabel;
@@ -230,6 +231,11 @@ namespace TiltBrush
             // Enable/disable action buttons
             if (m_LoadButton != null)
                 m_LoadButton.SetButtonAvailable(!isDetecting);
+            if (m_NativeImmButton != null)
+            {
+                m_NativeImmButton.gameObject.SetActive(m_SelectedFile.SourceType == QuillSourceType.Imm);
+                m_NativeImmButton.SetButtonAvailable(!isDetecting);
+            }
             if (m_MergeButton != null)
                 m_MergeButton.SetButtonAvailable(!isDetecting);
 
@@ -282,12 +288,19 @@ namespace TiltBrush
             _LoadFile(m_SelectedFile.FullPath, m_SelectedFile.SelectedChapterIndex);
         }
 
-        private void _LoadFile(string filePath, int chapterIndex)
+        public void OnNativeImmButtonPressed()
+        {
+            if (m_SelectedFile?.SourceType != QuillSourceType.Imm) return;
+            _LoadFile(m_SelectedFile.FullPath, m_SelectedFile.SelectedChapterIndex, nativeImm: true);
+        }
+
+        private void _LoadFile(string filePath, int chapterIndex, bool nativeImm = false)
         {
             Quill.PendingLoadOptions = new Quill.QuillLoadOptions
             {
                 Path = filePath,
                 ChapterIndex = chapterIndex,
+                NativeImm = nativeImm,
             };
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadQuillConfirmUnsaved, 0, 0);
