@@ -27,6 +27,7 @@
 /*.CSharp.*user
 *.suo
 /*.sln
+/*.slnx
 /*.userprefs
 .vsconfig
 .vs
