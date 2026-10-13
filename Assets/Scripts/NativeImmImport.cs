@@ -3,6 +3,7 @@
 
 using System.Collections;
 using System.IO;
+using System.Linq;
 using ImmPlayer;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -30,10 +31,14 @@ namespace TiltBrush
         private bool m_DeletePathOnUnload;
 
         public static string CurrentPath => s_Active != null ? s_Active.m_Path : null;
+        public static bool IsActive => s_Active != null;
         public static bool IsLoading => s_Active != null && !s_Active.m_Ready;
         public static int? CurrentChapterIndex => s_Active != null ? s_Active.m_ChapterIndex : null;
         public static TrTransform? CurrentSceneTransform => s_Active != null
             ? TrTransform.FromLocalTransform(s_Active.transform) : null;
+
+        public static bool AllowsEnvironment(Environment environment) => !IsActive ||
+            environment != null && (environment.name == "Black" || environment.name == "White");
 
         public static bool CanLoad(string path)
         {
@@ -61,6 +66,10 @@ namespace TiltBrush
         public static void Load(string path, int chapterIndex, TrTransform? sceneTransform = null)
         {
             Unload();
+            var black = EnvironmentCatalog.m_Instance.AllEnvironments.First(
+                environment => environment.name == "Black");
+            SceneSettings.m_Instance.SetDesiredPreset(black, keepSceneTransform: true,
+                skipFade: true);
             var owner = new GameObject("Native IMM Import").AddComponent<NativeImmImport>();
             s_Active = owner;
             owner.m_Path = path;
@@ -201,12 +210,16 @@ namespace TiltBrush
             }
             else if (state == ImmDocument.LoadingState.Loaded)
             {
+                if (SceneSettings.m_Instance.IsTransitioning) return;
                 if (m_ChapterIndex >= 0) m_Document.SetChapter(m_ChapterIndex);
                 if (m_AlignInitialView) AlignSceneToInitialView();
                 m_Document.SetTransform(transform);
                 transform.hasChanged = false;
                 m_Document.Show();
                 m_Document.Resume();
+                Color background = m_Manager.GetPlayerInfo().BackgroundColor.gamma;
+                SceneSettings.m_Instance.SkyColorA = background;
+                SceneSettings.m_Instance.SkyColorB = background;
                 m_Ready = true;
                 Debug.Log($"{LogPrefix} Native document ready: {m_Path}");
             }
