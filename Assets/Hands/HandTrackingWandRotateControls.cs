@@ -102,14 +102,14 @@ namespace TiltBrush
             Transform anchor =
                 GetWandAnchor();
 
-            bool sketchbookOpen =
-                PanelManager.m_Instance != null &&
-                PanelManager.m_Instance.SketchbookActiveIncludingTransitions();
+            PanelManager panels = PanelManager.m_Instance;
 
             bool shouldShow =
                 handTrackingReady &&
                 anchor != null &&
-                !sketchbookOpen;
+                panels != null &&
+                panels.StandardActive() &&
+                panels.GazePanelsAreVisible();
 
             SetControlsVisible(shouldShow);
 
