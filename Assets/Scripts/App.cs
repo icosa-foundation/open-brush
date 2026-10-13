@@ -2019,21 +2019,10 @@ namespace TiltBrush
                     m_UserPath = Path.GetDirectoryName(AndroidDirectStorage.RootPath);
                     m_OldUserPath = null; // Scoped builds use the granted workspace without legacy migration.
 #else
-                    // TODO: Remove this local Android testing override and always use the
-                    // shared-storage path below once private-storage testing is complete.
-                    const bool usePrivateStorageForLocalTesting = true;
-                    if (usePrivateStorageForLocalTesting)
-                    {
-                        m_UserPath = Application.persistentDataPath;
-                        m_OldUserPath = null;
-                    }
-                    else
-                    {
-                        m_UserPath = SteamManager.RunningUnderLepton
-                            ? "/sdcard/Documents"
-                            : "/sdcard/";
-                        m_OldUserPath = Application.persistentDataPath;
-                    }
+                    m_UserPath = SteamManager.RunningUnderLepton
+                        ? "/sdcard/Documents"
+                        : "/sdcard/";
+                    m_OldUserPath = Application.persistentDataPath;
 #endif
                     break;
                 case RuntimePlatform.IPhonePlayer:
