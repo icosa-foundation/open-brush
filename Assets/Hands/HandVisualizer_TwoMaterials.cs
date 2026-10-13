@@ -205,7 +205,7 @@ namespace TiltBrush
             bool leftSelectedAsHand = true;
             bool rightSelectedAsHand = true;
 
-            if (m_FollowHybridSourceSelection && AndroidXRHandBridge.Active)
+            if (m_FollowHybridSourceSelection && AndroidXRHandBridge.Instance != null)
             {
                 leftSelectedAsHand = AndroidXRHandBridge.UseHand(false);
                 rightSelectedAsHand = AndroidXRHandBridge.UseHand(true);
@@ -255,10 +255,12 @@ namespace TiltBrush
             bool rightTracked = running && m_Subsystem.rightHand.isTracked;
 
             bool bridgeActive = AndroidXRHandBridge.Active;
+            bool followSelection =
+                m_FollowHybridSourceSelection && AndroidXRHandBridge.Instance != null;
             bool sourceLeftHand =
-                !bridgeActive || AndroidXRHandBridge.UseHand(false);
+                !followSelection || AndroidXRHandBridge.UseHand(false);
             bool sourceRightHand =
-                !bridgeActive || AndroidXRHandBridge.UseHand(true);
+                !followSelection || AndroidXRHandBridge.UseHand(true);
 
             Debug.Log(
                 "ANDROIDXR_HAND_VIS STATE " +
