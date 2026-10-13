@@ -287,6 +287,7 @@ namespace TiltBrush
             {
                 case PointerManager.CustomSymmetryType.Point:
                     PointerManager.m_Instance.m_PointSymmetryFamily = btn.m_PointSymmetryFamily;
+                    UpdatePointSettingControls();
                     break;
                 case PointerManager.CustomSymmetryType.Wallpaper:
                     PointerManager.m_Instance.m_WallpaperSymmetryGroup = btn.m_WallpaperSymmetryGroup;
@@ -298,55 +299,34 @@ namespace TiltBrush
             PointerManager.m_Instance.CalculateMirrors();
         }
 
+        private void UpdatePointSettingControls()
+        {
+            var family = PointerManager.m_Instance.m_PointSymmetryFamily;
+            bool usesOrder = family == PointSymmetry.Family.Cn ||
+                family == PointSymmetry.Family.Cnv || family == PointSymmetry.Family.Cnh ||
+                family == PointSymmetry.Family.Sn || family == PointSymmetry.Family.Dn ||
+                family == PointSymmetry.Family.Dnh || family == PointSymmetry.Family.Dnd;
+            m_PointSymmetryOrderSlider.gameObject.SetActive(usesOrder);
+        }
+
         private void UpdateWallpaperSettingControls()
         {
-            switch (PointerManager.m_Instance.m_WallpaperSymmetryGroup)
+            var group = PointerManager.m_Instance.m_WallpaperSymmetryGroup;
+            bool supportsSkew = group == SymmetryGroup.R.p1 || group == SymmetryGroup.R.p2;
+            bool supportsHeight = supportsSkew || group == SymmetryGroup.R.pg ||
+                group == SymmetryGroup.R.pm || group == SymmetryGroup.R.cm ||
+                group == SymmetryGroup.R.pmm || group == SymmetryGroup.R.pmg ||
+                group == SymmetryGroup.R.pgg || group == SymmetryGroup.R.cmm;
+
+            m_ButtonWallpaperRepeats.SetButtonAvailable(true);
+            m_ButtonWallpaperScale.SetButtonAvailable(true);
+            m_ButtonWallpaperSkew.SetButtonAvailable(supportsSkew);
+            m_ButtonWallpaperSkew.gameObject.SetActive(supportsSkew);
+            m_WallpaperScaleSliderY.gameObject.SetActive(supportsHeight);
+
+            if (!supportsSkew && m_WallpaperSkewControls.gameObject.activeSelf)
             {
-                // Skew and 2 size DOFs
-                case SymmetryGroup.R.p1:
-                case SymmetryGroup.R.p2:
-
-                    m_ButtonWallpaperRepeats.SetButtonAvailable(true);
-                    m_ButtonWallpaperScale.SetButtonAvailable(true);
-                    m_ButtonWallpaperSkew.SetButtonAvailable(true);
-
-                    break;
-
-                // Just 2 size DOFs
-                case SymmetryGroup.R.pg:
-                case SymmetryGroup.R.pm:
-                case SymmetryGroup.R.cm:
-                case SymmetryGroup.R.pmm:
-
-                    m_ButtonWallpaperRepeats.SetButtonAvailable(true);
-                    m_ButtonWallpaperScale.SetButtonAvailable(true);
-                    m_ButtonWallpaperSkew.SetButtonAvailable(false);
-
-                    m_WallpaperSkewControls.gameObject.SetActive(false);
-
-                    break;
-
-                // Just 1 size DOF
-                case SymmetryGroup.R.p6:
-                case SymmetryGroup.R.p6m:
-                case SymmetryGroup.R.p3:
-                case SymmetryGroup.R.p3m1:
-                case SymmetryGroup.R.p31m:
-                case SymmetryGroup.R.p4:
-                case SymmetryGroup.R.p4m:
-                case SymmetryGroup.R.p4g:
-                case SymmetryGroup.R.pgg:
-                case SymmetryGroup.R.pmg:
-                case SymmetryGroup.R.cmm:
-
-                    m_ButtonWallpaperRepeats.SetButtonAvailable(true);
-                    m_ButtonWallpaperScale.SetButtonAvailable(false);
-                    m_ButtonWallpaperSkew.SetButtonAvailable(false);
-
-                    m_WallpaperScaleControls.gameObject.SetActive(false);
-                    m_WallpaperSkewControls.gameObject.SetActive(false);
-
-                    break;
+                HandleWallpaperControlsRepeatsButton();
             }
         }
 
@@ -774,6 +754,7 @@ namespace TiltBrush
             m_PointSymmetryControls.SetActive(true);
             SetCustomSymmetryType(PointerManager.CustomSymmetryType.Point);
             m_ButtonShowPointControls?.SetButtonSelected(true);
+            UpdatePointSettingControls();
             UpdateSymmetry();
         }
 
@@ -784,6 +765,7 @@ namespace TiltBrush
             m_WallpaperSymmetryControls.SetActive(true);
             SetCustomSymmetryType(PointerManager.CustomSymmetryType.Wallpaper);
             m_ButtonShowWallpaperControls?.SetButtonSelected(true);
+            UpdateWallpaperSettingControls();
             UpdateSymmetry();
         }
 
