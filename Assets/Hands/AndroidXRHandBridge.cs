@@ -796,8 +796,6 @@ namespace TiltBrush
         {
             Debug.Log("ANDROID_XR_HAND: START - hybrid controller / Hand Interaction mode");
 
-            ForceOpenBrushSixDofModeEarly();
-
             FindInputDevices(forceLog: true);
         }
 
@@ -814,6 +812,24 @@ namespace TiltBrush
                         0.1f,
                         deviceSearchInterval);
             }
+
+            // Select input before installing the hand-specific controller scaffold.
+            bool wasDrawingBeforeHandUpdate =
+                m_Right.trigger;
+
+            // Always sample Hand Interaction in the background. This lets a hand
+            // become the candidate source as soon as a controller is put down.
+            UpdateInteractionHand(
+                m_LeftBinding,
+                m_Left,
+                allowDraw: false);
+
+            UpdateInteractionHand(
+                m_RightBinding,
+                m_Right,
+                allowDraw: true);
+
+            UpdateSourceSelection();
 
             EnsureOpenBrushHandMode();
             EnsureTutorialBypass();
@@ -832,27 +848,10 @@ namespace TiltBrush
                 return;
             }
 
-            bool wasDrawingBeforeHandUpdate =
-                m_Right.trigger;
-
-            // Always sample Hand Interaction in the background. This lets a hand
-            // become the candidate source as soon as a controller is put down.
-            UpdateInteractionHand(
-                m_LeftBinding,
-                m_Left,
-                allowDraw: false);
-
-            UpdateInteractionHand(
-                m_RightBinding,
-                m_Right,
-                allowDraw: true);
-
             // Restore the exact spatial source that previously gave correct
             // Wand orientation, teleport aim and fingertip/button alignment.
             // Pinch/grasp values above remain sourced from Hand Interaction.
             UpdateXRHandsSpatialPoses();
-
-            UpdateSourceSelection();
 
             ApplySourceRouting();
 
@@ -942,32 +941,6 @@ namespace TiltBrush
             }
 
             HideHandControllerVisuals();
-        }
-
-
-        // --------------------------------------------------------------------
-        // Early Open Brush mode setup
-        // --------------------------------------------------------------------
-
-        private void ForceOpenBrushSixDofModeEarly()
-        {
-            if (SketchControlsScript.m_Instance == null)
-            {
-                Debug.LogWarning(
-                    "ANDROID_XR_HAND: SketchControlsScript.m_Instance was null in Start(). " +
-                    "Will keep trying from Update().");
-                return;
-            }
-
-            SketchControlsScript.m_Instance.ActiveControlsType =
-                SketchControlsScript.ControlsType.SixDofControllers;
-
-            if (debugLogging)
-            {
-                Debug.Log(
-                    "ANDROID_XR_HAND: Open Brush controls forced to SixDofControllers " +
-                    "before SketchControlsScript.Start()");
-            }
         }
 
 
@@ -1342,6 +1315,10 @@ namespace TiltBrush
         private void EnsureOpenBrushHandMode()
         {
             if (m_OpenBrushHandModeInitialized)
+                return;
+
+            // Borrow the controller scaffold only when a hand is selected for input.
+            if (!Active)
                 return;
 
             if (App.VrSdk == null ||
