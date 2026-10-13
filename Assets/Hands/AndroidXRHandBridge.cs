@@ -2974,16 +2974,9 @@ namespace TiltBrush
                 return;
             }
 
-            // For hand-tracked painting, never drive the brush from the
-            // Hand Interaction poke/pinch position. Those are semantic runtime
-            // poses and can migrate when other fingers curl. Wait for the actual
-            // XR Hands IndexTip/IndexDistal pose instead.
-            if (UseHand(true) &&
-                useXRHandsForSpatialPose &&
-                !hand.xrHandsSpatialValid)
-            {
-                return;
-            }
+            // Use the XR Hands joint pose when available; otherwise keep the
+            // Hand Interaction pose sampled this frame. Joint permission is optional.
+            // The fallback can shift as fingers curl, but must not freeze the brush.
 
 
             Transform root =
