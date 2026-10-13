@@ -1815,6 +1815,9 @@ namespace TiltBrush
                 indexTipJoint.TryGetPose(
                     out Pose rawIndexTipLocal);
 
+            // Keep joint reconstruction separate from the Hand Interaction aim flag.
+            bool jointDirectionValid = false;
+
             if (havePalm)
             {
                 state.palmPose =
@@ -1927,6 +1930,7 @@ namespace TiltBrush
 
                     state.indexDirectionValid =
                         true;
+                    jointDirectionValid = true;
                 }
             }
             else if (!isRightHand && haveRawTip)
@@ -1942,7 +1946,7 @@ namespace TiltBrush
             // keep the brush tied to the INDEX distal joint using the last known
             // index direction. Never fall back to poke/pinch or another fingertip.
             if (isRightHand &&
-                !state.indexDirectionValid &&
+                !jointDirectionValid &&
                 haveDistal &&
                 m_HaveLastStableRightIndexDirection)
             {
@@ -1966,13 +1970,14 @@ namespace TiltBrush
 
                 state.indexDirectionValid =
                     true;
+                jointDirectionValid = true;
             }
 
             state.xrHandsSpatialValid =
                 havePalm &&
                 (!isRightHand ||
                  (haveDistal &&
-                  state.indexDirectionValid));
+                  jointDirectionValid));
         }
 
         private void UpdateSourceSelection()
