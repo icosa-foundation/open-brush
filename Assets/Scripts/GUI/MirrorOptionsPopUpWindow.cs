@@ -56,7 +56,6 @@ namespace TiltBrush
         public AdvancedSlider m_LineRepeatsSlider;
         public AdvancedSlider m_LineAdvanceSlider;
         public AdvancedSlider m_LineAngleSlider;
-        public GameObject m_LineAngleLabel;
 
         public GameObject m_SpaceGroupControls;
         public TextActionButton m_SpaceGroupSystemButton;
@@ -587,7 +586,6 @@ namespace TiltBrush
             m_LineAngleSlider.SetInitialValueAndUpdate(pm.m_LineAngle);
             var freeAngle = LineGroupSymmetry.UsesFreeAngle(pm.m_LineFamily);
             m_LineAngleSlider.gameObject.SetActive(freeAngle);
-            m_LineAngleLabel.SetActive(freeAngle);
         }
 
         public void HandleNextLineFamily()

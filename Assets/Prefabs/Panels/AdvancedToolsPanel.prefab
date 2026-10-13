@@ -245,9 +245,9 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 553297782469386240
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1612,9 +1612,9 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 553297782469386240
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1806,9 +1806,9 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 553297782469386240
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0

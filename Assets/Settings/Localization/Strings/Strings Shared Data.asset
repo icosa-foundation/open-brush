@@ -3935,6 +3935,10 @@ MonoBehaviour:
     m_Key: MULTIMIRROR_PANEL_SIMPLE_SYMMETRY
     m_Metadata:
       m_Items: []
+  - m_Id: 553297782469386240
+    m_Key: UI_LONG_PRESS_MORE_OPTIONS_HINT
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
