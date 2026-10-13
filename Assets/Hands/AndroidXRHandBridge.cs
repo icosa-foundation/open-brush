@@ -337,7 +337,7 @@ namespace TiltBrush
 
         private void EnsureTutorialBypass()
         {
-            if (!skipOpenBrushIntroTutorialForHands)
+            if (!skipOpenBrushIntroTutorialForHands || !Active)
                 return;
 
             if (TutorialManager.m_Instance == null)
