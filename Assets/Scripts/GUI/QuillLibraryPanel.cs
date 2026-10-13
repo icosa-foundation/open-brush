@@ -233,7 +233,7 @@ namespace TiltBrush
                 m_LoadButton.SetButtonAvailable(!isDetecting);
             if (m_NativeImmButton != null)
             {
-                m_NativeImmButton.gameObject.SetActive(m_SelectedFile.SourceType == QuillSourceType.Imm);
+                m_NativeImmButton.gameObject.SetActive(true);
                 m_NativeImmButton.SetButtonAvailable(!isDetecting);
             }
             if (m_MergeButton != null)
@@ -290,8 +290,9 @@ namespace TiltBrush
 
         public void OnNativeImmButtonPressed()
         {
-            if (m_SelectedFile?.SourceType != QuillSourceType.Imm) return;
-            _LoadFile(m_SelectedFile.FullPath, m_SelectedFile.SelectedChapterIndex, nativeImm: true);
+            if (m_SelectedFile == null) return;
+            string path = m_SelectedFile.NativeImmPath ?? m_SelectedFile.FullPath;
+            _LoadFile(path, m_SelectedFile.SelectedChapterIndex, nativeImm: true);
         }
 
         private void _LoadFile(string filePath, int chapterIndex, bool nativeImm = false)

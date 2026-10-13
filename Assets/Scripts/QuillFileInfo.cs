@@ -30,6 +30,7 @@ namespace TiltBrush
         public long FileSizeBytes { get; }
         public DateTime LastWriteTimeUtc { get; }
         public QuillSourceType SourceType { get; }
+        public string NativeImmPath { get; }
 
         /// <summary>
         /// Chapter index to use when loading this file. -1 = default (first/only chapter).
@@ -42,13 +43,14 @@ namespace TiltBrush
         private DateTime? m_ChapterCountCacheTime;
 
         public QuillFileInfo(string fullPath, string displayName, long fileSizeBytes,
-            DateTime lastWriteTimeUtc, QuillSourceType sourceType)
+            DateTime lastWriteTimeUtc, QuillSourceType sourceType, string nativeImmPath = null)
         {
             FullPath = fullPath;
             DisplayName = displayName;
             FileSizeBytes = Math.Max(0, fileSizeBytes);
             LastWriteTimeUtc = lastWriteTimeUtc;
             SourceType = sourceType;
+            NativeImmPath = sourceType == QuillSourceType.Imm ? fullPath : nativeImmPath;
         }
 
         /// <summary>
@@ -160,12 +162,28 @@ namespace TiltBrush
         public static QuillFileInfo FromQuillDirectory(DirectoryInfo directory)
         {
             long estimatedBytes = 0;
+            string nativeImmPath = null;
+            string firstImmPath = null;
+            int immCount = 0;
             try
             {
                 foreach (var file in directory.EnumerateFiles("*", SearchOption.TopDirectoryOnly))
                 {
                     estimatedBytes += file.Length;
+                    if (!string.Equals(file.Extension, ".imm", StringComparison.OrdinalIgnoreCase))
+                        continue;
+
+                    immCount++;
+                    if (firstImmPath == null) firstImmPath = file.FullName;
+                    // Prefer the IMM export named after the Quill project.
+                    if (string.Equals(Path.GetFileNameWithoutExtension(file.Name), directory.Name,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        nativeImmPath = file.FullName;
+                    }
                 }
+                if (nativeImmPath == null && immCount == 1)
+                    nativeImmPath = firstImmPath;
             }
             catch
             {
@@ -173,7 +191,7 @@ namespace TiltBrush
             }
 
             return new QuillFileInfo(directory.FullName, directory.Name, estimatedBytes,
-                directory.LastWriteTimeUtc, QuillSourceType.Quill);
+                directory.LastWriteTimeUtc, QuillSourceType.Quill, nativeImmPath);
         }
     }
 }
