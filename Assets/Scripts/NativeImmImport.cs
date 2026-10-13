@@ -210,13 +210,18 @@ namespace TiltBrush
             }
             else if (state == ImmDocument.LoadingState.Loaded)
             {
-                if (SceneSettings.m_Instance.IsTransitioning) return;
-                if (m_ChapterIndex >= 0) m_Document.SetChapter(m_ChapterIndex);
+                if (!m_Document.IsSequenceReady() || SceneSettings.m_Instance.IsTransitioning)
+                    return;
+                m_Document.Show();
+                m_Document.Resume();
+                if (m_ChapterIndex >= 0)
+                {
+                    m_Document.SetChapter(m_ChapterIndex);
+                    Debug.Log($"{LogPrefix} Chapter requested={m_ChapterIndex}, current={m_Document.GetCurrentChapter()}, count={m_Document.GetChapterCount()}");
+                }
                 if (m_AlignInitialView) AlignSceneToInitialView();
                 m_Document.SetTransform(transform);
                 transform.hasChanged = false;
-                m_Document.Show();
-                m_Document.Resume();
                 Color background = m_Manager.GetPlayerInfo().BackgroundColor.gamma;
                 SceneSettings.m_Instance.SkyColorA = background;
                 SceneSettings.m_Instance.SkyColorB = background;
