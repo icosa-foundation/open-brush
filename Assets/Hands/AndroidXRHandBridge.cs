@@ -2086,6 +2086,10 @@ namespace TiltBrush
             candidateSince =
                 Time.unscaledTime;
 
+            // Request initial panel visibility again when the Wand switches to a hand.
+            if (!isBrush && current == InputSourceKind.Hand)
+                m_PanelsRequested = false;
+
             if (previous == InputSourceKind.Hand &&
                 current != InputSourceKind.Hand)
             {
@@ -3273,7 +3277,8 @@ namespace TiltBrush
 
         private void RequestPanels()
         {
-            if (!showPanels ||
+            if (m_PanelsRequested ||
+                !showPanels ||
                 !UseHand(false) ||
                 !m_Left.tracked)
             {
@@ -3307,13 +3312,13 @@ namespace TiltBrush
 
 
             /*
-             * High-level Open Brush visibility request.
+             * Request initial visibility once; later visibility belongs to normal interaction.
              */
             sketchControls.RequestPanelsVisibility(true);
 
 
             /*
-             * Also explicitly keep PanelManager's visible state enabled.
+             * Apply the initial visible state to PanelManager as well.
              */
             panels.SetVisible(true);
 
