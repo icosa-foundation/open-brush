@@ -1221,6 +1221,10 @@ static class BuildTiltBrush
             // Select concrete feature types, not feature IDs. XR Hands' HandTracking and the
             // Microsoft Hand Interaction profile currently publish the same feature ID, so an
             // ID lookup can silently enable the Microsoft profile and omit XRHandSubsystem.
+            // The Android XR hand bridge requires this profile for pinch and grasp input.
+            EnableRequiredFeature<
+                UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile>(settings);
+
             EnableRequiredFeature<OpenXR.Extensions.OpenXRAndroidSettings>(settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRSupportFeature>(
                 settings);
