@@ -14,27 +14,28 @@ namespace TiltBrush
         private Direction m_Direction = Direction.Right;
 
 
-        protected override void Awake()
+        private bool CanRaycast => isActiveAndEnabled && GetCollider() != null &&
+            GetCollider().enabled && GetCollider().gameObject.activeInHierarchy;
+
+        public override bool RaycastAgainstCustomCollider(Ray ray, out RaycastHit hitInfo, float dist)
         {
-            base.Awake();
-
-            // Ensure RELEASE can never execute OnButtonPressed(),
-            // regardless of values inherited from a duplicated prefab.
-            m_LongPressReleaseButton = false;
-            m_ToggleButton = false;
-
-            SetDescriptionUnavailable(true);
+            hitInfo = default;
+            return CanRaycast && GetCollider().Raycast(ray, out hitInfo, dist);
         }
 
 
-        // Reject normal Open Brush pointer/ray interaction.
         public override bool UpdateStateWithInput(
             bool inputValid,
             Ray inputRay,
             GameObject parentActiveObject,
             Collider parentCollider)
         {
-            return false;
+            if (!CanRaycast)
+            {
+                ResetState();
+                return false;
+            }
+            return base.UpdateStateWithInput(inputValid, inputRay, parentActiveObject, parentCollider);
         }
 
 
@@ -43,22 +44,13 @@ namespace TiltBrush
             ref Vector3 pos,
             ref Vector3 forward)
         {
-            return false;
-        }
-
-
-        public override void ButtonPressed(
-            RaycastHit hitInfo)
-        {
-            // Only the bridge's stabilized rising edge may activate this.
-            if (!AndroidXRHandBridge.HandTrackingActive ||
-                !AndroidXRHandBridge.MenuTouchDown)
+            if (!RaycastAgainstCustomCollider(ray, out RaycastHit hitInfo, 100.0f))
             {
-                return;
+                return false;
             }
-
-            base.ButtonPressed(
-                hitInfo);
+            pos = hitInfo.point;
+            forward = hitInfo.normal;
+            return true;
         }
 
 

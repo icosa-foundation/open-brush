@@ -3188,22 +3188,25 @@ namespace TiltBrush
                             //make sure this b-snap is in view
                             Vector3 vToPanel = aAllPanels[i].m_Panel.transform.position - m_CurrentGazeRay.origin;
                             vToPanel.Normalize();
-                            if (!bRequireVisibilityCheck || Vector3.Angle(vToPanel, m_CurrentGazeRay.direction) < m_GazeMaxAngleFromFacing)
+                            RaycastHit detachedHitInfo = default;
+                            bool hitDetachedUI = hasController && aAllPanels[i].m_Panel.RaycastAgainstDetachedUI(
+                                m_GazeControllerRay, out detachedHitInfo, m_GazeControllerPointingDistance);
+                            if (hitDetachedUI || !bRequireVisibilityCheck || Vector3.Angle(vToPanel, m_CurrentGazeRay.direction) < m_GazeMaxAngleFromFacing)
                             {
                                 if (hasController)
                                 {
                                     if (aAllPanels[i].m_Panel.HasMeshCollider())
                                     {
                                         //make sure the angle between the pointer and the panel forward is below our max angle
-                                        if (Vector3.Angle(aAllPanels[i].m_Panel.transform.forward, m_GazeControllerRay.direction) < m_GazeMaxAngleFromPointing)
+                                        if (hitDetachedUI || Vector3.Angle(aAllPanels[i].m_Panel.transform.forward, m_GazeControllerRay.direction) < m_GazeMaxAngleFromPointing)
                                         {
                                             //make sure the angle between the user-to-panel and the panel forward is reasonable
-                                            if (Vector3.Angle(aAllPanels[i].m_Panel.transform.forward, vToPanel) < m_GazeMaxAngleFacingToForward)
+                                            if (hitDetachedUI || Vector3.Angle(aAllPanels[i].m_Panel.transform.forward, vToPanel) < m_GazeMaxAngleFacingToForward)
                                             {
                                                 m_GazeResults[i].m_WithinView = true;
 
-                                                bRayHit = false;
-                                                bRayHit = aAllPanels[i].m_Panel.RaycastAgainstMeshCollider(
+                                                rHitInfo = detachedHitInfo;
+                                                bRayHit = hitDetachedUI || aAllPanels[i].m_Panel.RaycastAgainstMeshCollider(
                                                     m_GazeControllerRay, out rHitInfo, m_GazeControllerPointingDistance);
 
                                                 if (bRayHit)

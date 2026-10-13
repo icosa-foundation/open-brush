@@ -2336,7 +2336,8 @@ namespace TiltBrush
                     hit.GetComponentInParent<BaseButton>();
 
                 if (component == null ||
-                    !component.isActiveAndEnabled)
+                    !component.isActiveAndEnabled ||
+                    component is WandPanelRotateButton)
                 {
                     continue;
                 }

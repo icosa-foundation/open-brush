@@ -34,8 +34,8 @@ namespace TiltBrush
         [Header("Visibility")]
 
         [Tooltip(
-            "Recommended ON. The left hand owns the Wand and the right index " +
-            "touches these buttons, so the controls are useful only when both " +
+            "Recommended ON. The left hand owns the Wand and the right hand " +
+            "points at these buttons, so the controls are useful only when both " +
             "hands are currently routed through Android XR hand tracking.")]
         [SerializeField]
         private bool m_RequireBothHands = true;
@@ -53,8 +53,9 @@ namespace TiltBrush
 
         private Renderer[] m_Renderers;
         private Collider[] m_Colliders;
+        private WandPanelRotateButton[] m_Buttons;
 
-        private bool m_Visible;
+        private bool m_Visible = true;
 
 
         private void Awake()
@@ -80,6 +81,8 @@ namespace TiltBrush
                 }
 
                 // Keep this manager alive and independent from panel transforms.
+                // Buttons remain registered with the original panel's UIComponentManager;
+                // its detached-collider targeting supplies normal focus, input, and reticles.
                 transform.SetParent(
                     stableParent,
                     true);
@@ -147,6 +150,7 @@ namespace TiltBrush
 
         private void CacheVisualsAndColliders()
         {
+            m_Buttons = GetComponentsInChildren<WandPanelRotateButton>(true);
             m_Renderers =
                 GetComponentsInChildren<Renderer>(
                     true);
@@ -171,6 +175,14 @@ namespace TiltBrush
 
             m_Visible =
                 visible;
+
+            if (!visible)
+            {
+                foreach (WandPanelRotateButton button in m_Buttons)
+                {
+                    button.ResetState();
+                }
+            }
 
 
             if (m_Renderers != null)
