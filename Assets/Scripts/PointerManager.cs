@@ -82,20 +82,21 @@ namespace TiltBrush
         [NonSerialized] public float m_PenroseRadius = 2f;
         [NonSerialized] public PenroseTiling.TileSelection m_PenroseTiles = PenroseTiling.TileSelection.Both;
 
-        [NonSerialized] public LineGroupSymmetry.Family m_LineFamily = LineGroupSymmetry.Family.ScrewHalfTurns;
-        [NonSerialized] public int m_LineOrder = 5;
-        [NonSerialized] public int m_LineRepeats = 8;
+        [NonSerialized] public LineGroupSymmetry.Family m_LineFamily = LineGroupSymmetry.Family.ScrewRotations;
+        [NonSerialized] public int m_LineOrder = 2;
+        [NonSerialized] public int m_LineRepeats = 10;
         [NonSerialized] public float m_LineAdvance = 0.5f;
-        [NonSerialized] public float m_LineAngle = 27f;
+        [NonSerialized] public float m_LineAngle = 18f;
 
-        [NonSerialized] public int m_SpaceGroupNumber = 19;
+        [NonSerialized] public int m_SpaceGroupNumber = 1;
         [NonSerialized] public Vector3Int m_SpaceGroupRepeats = new Vector3Int(2, 2, 2);
-        [NonSerialized] public float m_SpaceGroupCellSize = 1f;
+        [NonSerialized] public float m_SpaceGroupCellSize = 2f;
 
         [NonSerialized] public int m_HelicalCopies = 8;
         [NonSerialized] public float m_HelicalAngle = 30f;
         [NonSerialized] public float m_HelicalAdvance = 0.5f;
-        [NonSerialized] public int m_WallpaperSymmetryX = 2;
+
+        [NonSerialized] public int m_WallpaperSymmetryX = 3;
         [NonSerialized] public int m_WallpaperSymmetryY = 2;
         [NonSerialized] public float m_WallpaperSymmetryScale = 1f;
         [NonSerialized] public float m_WallpaperSymmetryScaleX = 1f;
@@ -415,11 +416,11 @@ namespace TiltBrush
 
         public List<Matrix4x4> CustomMirrorMatrices => m_CustomMirrorMatrices.ToList(); // Ensure we return a clone
         public List<Vector2> CustomMirrorDomain => m_CustomMirrorDomain.ToList();
-        public const float PointGroupDomainRadius = 1.25f;
+        public const float PointGroupDomainRadius = 2f;
         public List<Vector3[]> PointGroupDomainPaths { get; private set; }
         public List<Vector3[]> PointGroupArcPaths { get; private set; }
         public Vector3[] LineGroupDomainPath { get; private set; }
-        public const float LineGroupDomainRadius = 0.5f;
+        public const float LineGroupDomainRadius = 2f;
 
         public List<Color> SymmetryPointerColors
         {
