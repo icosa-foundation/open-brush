@@ -1335,6 +1335,10 @@ namespace TiltBrush
                     Transform rAttachPoint = InputManager.m_Instance.GetBrushControllerAttachPoint();
                     m_GazeControllerRay.direction = rAttachPoint.forward;
                     m_GazeControllerRay.origin = rAttachPoint.position;
+                    if (AndroidXRHandBridge.TryGetMenuRay(out Ray handMenuRay))
+                    {
+                        m_GazeControllerRay = handMenuRay;
+                    }
                 }
                 else
                 {

@@ -31,6 +31,64 @@ namespace TiltBrush
     {
         public static AndroidXRHandBridge Instance { get; private set; }
 
+        private enum MenuRaySource { Finger, Aim, Pinch }
+
+        private const int kPoseTrackingFlags = (int)(
+            UnityEngine.XR.InputTrackingState.Position | UnityEngine.XR.InputTrackingState.Rotation);
+
+        [Header("Menu ray comparison")]
+        [SerializeField]
+        private MenuRaySource m_MenuRaySource = MenuRaySource.Finger;
+
+        public static string MenuRayMode =>
+            Instance != null ? Instance.m_MenuRaySource.ToString().ToLowerInvariant() : "unavailable";
+
+        public static void SetMenuRayMode(string mode)
+        {
+            MenuRaySource source;
+            switch (mode.Trim().ToLowerInvariant())
+            {
+                case "finger": source = MenuRaySource.Finger; break;
+                case "aim": source = MenuRaySource.Aim; break;
+                case "pinch": source = MenuRaySource.Pinch; break;
+                default: throw new ArgumentException("Hand menu ray mode must be finger, aim or pinch.");
+            }
+
+            if (Instance == null)
+                throw new InvalidOperationException("The Android XR hand bridge is not available.");
+
+            Instance.m_MenuRaySource = source;
+            Debug.Log($"ANDROIDXR_MENU_RAY mode={source.ToString().ToLowerInvariant()}");
+        }
+
+        // Menu-only override: leave the brush's drawing and grip poses unchanged.
+        // Unavailable runtime poses retain the existing finger ray.
+        public static bool TryGetMenuRay(out Ray ray)
+        {
+            ray = default;
+            if (!UseHand(true) || !Instance.m_Right.tracked)
+                return false;
+
+            HandState hand = Instance.m_Right;
+            Pose pose;
+            switch (Instance.m_MenuRaySource)
+            {
+                case MenuRaySource.Aim when hand.aimPoseValid:
+                    pose = hand.aimPose;
+                    break;
+                case MenuRaySource.Pinch when hand.pinchPoseValid:
+                    pose = hand.pinchPose;
+                    break;
+                default:
+                    return false;
+            }
+
+            // Unity converts the OpenXR poses to Unity coordinates. Like XRI's
+            // tracked ray transforms, use local +Z as the forward axis.
+            ray = new Ray(pose.position, pose.rotation * Vector3.forward);
+            return true;
+        }
+
         // --------------------------------------------------------------------
         // Inspector
         // --------------------------------------------------------------------
@@ -387,6 +445,8 @@ namespace TiltBrush
 
             public Vector3Control pointerPosition;
             public QuaternionControl pointerRotation;
+            public IntegerControl pointerTrackingState;
+            public IntegerControl pinchTrackingState;
 
             public AxisControl pinchValue;
             public ButtonControl pinchReady;
@@ -419,9 +479,13 @@ namespace TiltBrush
             // Grip/device pose. This is not raw palm-joint data.
             public Pose palmPose;
 
-            // Runtime-defined OpenXR aim pose. OpenXR aim uses -Z as forward.
+            // Runtime-defined OpenXR aim pose, converted to Unity coordinates.
             public Pose aimPose;
             public bool aimPoseValid;
+
+            // Preserve the runtime pinch pose separately from the drawing fingertip.
+            public Pose pinchPose;
+            public bool pinchPoseValid;
 
             // Permission-free poke pose is the best index interaction point.
             public Pose indexTipPose;
@@ -1253,6 +1317,10 @@ namespace TiltBrush
                         "pointerPose/rotation",
                         "pointer/rotation"),
 
+                pointerTrackingState = FindControl<IntegerControl>(device,
+                    "pointer/trackingState", "pointerPose/trackingState", "aimPose/trackingState"),
+                pinchTrackingState = FindControl<IntegerControl>(device, "pinchPose/trackingState"),
+
                 pinchValue =
                     FindControl<AxisControl>(
                         device,
@@ -1504,6 +1572,8 @@ namespace TiltBrush
             bool allowDraw)
         {
             bool wasTrigger = state.trigger;
+            state.aimPoseValid = false;
+            state.pinchPoseValid = false;
 
             if (binding == null || !binding.IsValid)
             {
@@ -1551,6 +1621,16 @@ namespace TiltBrush
                     : 0.0f;
 
 
+            state.pinchPoseValid = state.tracked &&
+                binding.pinchPosition != null && binding.pinchRotation != null &&
+                (binding.pinchTrackingState == null ||
+                 (binding.pinchTrackingState.ReadValue() & kPoseTrackingFlags) == kPoseTrackingFlags);
+            if (state.pinchPoseValid)
+            {
+                state.pinchPose = ToWorldPose(ReadLocalPose(
+                    binding.pinchPosition, binding.pinchRotation));
+            }
+
             Pose gripLocal = ReadLocalPose(
                 binding.devicePosition,
                 binding.deviceRotation);
@@ -1584,9 +1664,8 @@ namespace TiltBrush
                 ToWorldPose(indexLocal);
 
 
-            // Aim/pointer pose gives a stable runtime-defined pointing ray
-            // without reconstructing finger joints. OpenXR defines AIM FORWARD
-            // as local -Z (not Unity's +Z / Vector3.forward).
+            // Preserve the provider aim pose for menu-ray comparison independently
+            // of the joint-derived drawing direction.
             Pose aimLocal;
             if (binding.pointerPosition != null ||
                 binding.pointerRotation != null)
@@ -1596,7 +1675,10 @@ namespace TiltBrush
                     binding.pointerRotation);
                 state.aimPoseValid =
                     state.tracked &&
-                    binding.pointerRotation != null;
+                    binding.pointerPosition != null &&
+                    binding.pointerRotation != null &&
+                    (binding.pointerTrackingState == null ||
+                     (binding.pointerTrackingState.ReadValue() & kPoseTrackingFlags) == kPoseTrackingFlags);
             }
             else
             {

@@ -38,6 +38,32 @@ namespace TiltBrush
                 ".svg"
             };
 
+        [ApiEndpoint("hand.ray.mode",
+            "Get or set the hand menu ray: finger (existing), aim or pinch. Drawing pose and pinch thresholds are unchanged.",
+            "hand.ray.mode=aim")]
+        public static string HandRayMode(string mode = "")
+        {
+            if (!string.IsNullOrWhiteSpace(mode))
+                AndroidXRHandBridge.SetMenuRayMode(mode);
+            return AndroidXRHandBridge.MenuRayMode;
+        }
+
+        [ApiEndpoint("hand.ray.status", "Report the configured and effective hand menu ray modes.")]
+        public static string HandRayStatus()
+        {
+            bool runtimePoseAvailable = AndroidXRHandBridge.TryGetMenuRay(out _);
+            string effective = AndroidXRHandBridge.Instance == null ? "unavailable" :
+                !AndroidXRHandBridge.UseHand(true) ? "controller" :
+                !AndroidXRHandBridge.RightTracked ? "untracked" :
+                runtimePoseAvailable ? AndroidXRHandBridge.MenuRayMode : "finger";
+            return Newtonsoft.Json.JsonConvert.SerializeObject(new
+            {
+                configured = AndroidXRHandBridge.MenuRayMode,
+                effective,
+                runtimePoseAvailable
+            });
+        }
+
         // Example of calling a command and recording an undo step
         // [ApiEndpoint("foo", "")]
         // public static void FooCommand()
