@@ -4,6 +4,7 @@
 // You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
 
 using System;
+using System.Linq;
 using System.Xml;
 
 /// <summary>Store requirements applied to the generated manifest, without editing project assets.</summary>
@@ -12,12 +13,36 @@ internal static class AndroidStoreManifest
     internal const string AndroidNamespace = "http://schemas.android.com/apk/res/android";
     private const string ToolsNamespace = "http://schemas.android.com/tools";
 
-    internal static void Configure(XmlDocument doc, bool metaStore, bool androidXr)
+    internal static void Configure(XmlDocument doc, bool metaStore, bool androidXr, bool scopedStorage = false)
     {
+        if (metaStore && scopedStorage)
+            throw new InvalidOperationException("Scoped storage must use a separate build from the Meta store flavor.");
         var root = doc.DocumentElement ?? throw new InvalidOperationException("Missing Android manifest.");
         root.SetAttribute("xmlns:tools", ToolsNamespace);
         var app = root.SelectSingleNode("application") as XmlElement
             ?? throw new InvalidOperationException("Missing Android application element.");
+
+        if (scopedStorage)
+        {
+            SetAndroid(app, "requestLegacyExternalStorage", "false");
+            SetAndroid(app, "preserveLegacyExternalStorage", "false");
+            string replaces = app.GetAttribute("replace", ToolsNamespace);
+            app.SetAttribute("replace", ToolsNamespace, string.Join(",", replaces.Split(',')
+                .Select(value => value.Trim())
+                .Concat(new[] { "android:requestLegacyExternalStorage", "android:preserveLegacyExternalStorage" })
+                .Where(value => value.Length != 0).Distinct()));
+            // Merge markers also remove permissions introduced by lower-priority libraries.
+            foreach (string permission in new[]
+            {
+                "MANAGE_EXTERNAL_STORAGE", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE",
+                "READ_MEDIA_IMAGES", "READ_MEDIA_VIDEO", "READ_MEDIA_AUDIO", "READ_MEDIA_VISUAL_USER_SELECTED"
+            })
+            {
+                foreach (string tag in new[] { "uses-permission", "uses-permission-sdk-23" })
+                    GetOrCreate(doc, root, tag, $"android.permission.{permission}")
+                        .SetAttribute("node", ToolsNamespace, "remove");
+            }
+        }
 
         // AndroidXR derives hardware requirements from the foveation feature's extension list,
         // including eye-tracked foveation. Open Brush also works with fixed foveation and no

@@ -2013,6 +2013,12 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
+#if OPEN_BRUSH_SCOPED_STORAGE
+                    if (!AndroidDirectStorage.StartupReady)
+                        throw new System.InvalidOperationException("OBDS_APP storage must initialize before Main.");
+                    m_UserPath = Path.GetDirectoryName(AndroidDirectStorage.RootPath);
+                    m_OldUserPath = null; // Scoped builds use the granted workspace without legacy migration.
+#else
                     // TODO: Remove this local Android testing override and always use the
                     // shared-storage path below once private-storage testing is complete.
                     const bool usePrivateStorageForLocalTesting = true;
@@ -2028,6 +2034,7 @@ namespace TiltBrush
                             : "/sdcard/";
                         m_OldUserPath = Application.persistentDataPath;
                     }
+#endif
                     break;
                 case RuntimePlatform.IPhonePlayer:
                 default:

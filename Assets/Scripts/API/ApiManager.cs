@@ -360,11 +360,9 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
             if (Directory.Exists(m_UserScriptsPath))
             {
-                var dirInfo = new DirectoryInfo(m_UserScriptsPath);
-                FileInfo[] AllFileInfo = dirInfo.GetFiles();
-                foreach (FileInfo fileinfo in AllFileInfo)
+                foreach (string path in AndroidDirectStorage.GetFiles(m_UserScriptsPath))
                 {
-                    RegisterUserScript(fileinfo);
+                    RegisterUserScript(new FileInfo(path));
                 }
             }
         }

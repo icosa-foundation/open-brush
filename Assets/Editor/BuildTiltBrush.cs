@@ -69,8 +69,12 @@ static class BuildTiltBrush
         public string Description;
         public bool disableAccountLogins;
         public bool AndroidBuildAppBundle;
+        // Android app bundles are the Google Play builds.
+        public bool AndroidScopedStorage => Target == BuildTarget.Android && AndroidBuildAppBundle;
         public AndroidSdkVersions? AndroidTargetSdkVersion;
     }
+
+    private const string kScopedStorageDefine = "OPEN_BRUSH_SCOPED_STORAGE";
 
     [Serializable()]
     public class BuildFailedException : System.Exception
@@ -163,9 +167,11 @@ static class BuildTiltBrush
     {
         public List<CopyRequest> copyRequests;
         public XrSdkMode xrSdk;
+        public bool scopedStorage;
     }
     static PostBuildInfo m_forPostBuild;
     internal static XrSdkMode CurrentBuildXrSdk => m_forPostBuild?.xrSdk ?? GuiSelectedSdk;
+    internal static bool CurrentBuildUsesScopedStorage => m_forPostBuild?.scopedStorage ?? false;
 
     /// Called on the main thread once the background build is finished
     public static event Action<int> OnBackgroundBuildFinish;
@@ -944,10 +950,25 @@ static class BuildTiltBrush
         private AndroidApplicationEntry m_AndroidApplicationEntry;
         private bool m_AndroidResizeableActivity;
         private AndroidSdkVersions m_AndroidMinSdkVersion;
+        private bool m_RestoreStoragePermission;
+        private bool m_ForceStoragePermission;
 
         public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
         {
             m_Target = tiltOptions.Target;
+            if (m_Target == BuildTarget.Android)
+                m_AndroidMinSdkVersion = PlayerSettings.Android.minSdkVersion;
+            if (tiltOptions.AndroidScopedStorage)
+            {
+                m_RestoreStoragePermission = true;
+                m_ForceStoragePermission = PlayerSettings.Android.forceSDCardPermission;
+                PlayerSettings.Android.forceSDCardPermission = false;
+                if ((int)PlayerSettings.Android.minSdkVersion <
+                    (int)AndroidSdkVersions.AndroidApiLevel30)
+                {
+                    PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel30;
+                }
+            }
             m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
             m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
             m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Any);
@@ -973,15 +994,9 @@ static class BuildTiltBrush
                 m_RestoreAndroidXrSettings = true;
                 m_AndroidApplicationEntry = PlayerSettings.Android.applicationEntry;
                 m_AndroidResizeableActivity = PlayerSettings.Android.resizeableActivity;
-                m_AndroidMinSdkVersion = PlayerSettings.Android.minSdkVersion;
 
                 PlayerSettings.Android.applicationEntry = AndroidApplicationEntry.GameActivity;
                 PlayerSettings.Android.resizeableActivity = true;
-                if ((int)PlayerSettings.Android.minSdkVersion <
-                    (int)AndroidSdkVersions.AndroidApiLevel24)
-                {
-                    PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
-                }
 
                 Debug.Log("Configured Android XR PlayerSettings for this build.");
             }
@@ -1020,12 +1035,15 @@ static class BuildTiltBrush
             {
                 PlayerSettings.Android.targetSdkVersion = m_AndroidTargetSdkVersion;
             }
+            if (m_RestoreStoragePermission)
+                PlayerSettings.Android.forceSDCardPermission = m_ForceStoragePermission;
             if (m_RestoreAndroidXrSettings)
             {
                 PlayerSettings.Android.applicationEntry = m_AndroidApplicationEntry;
                 PlayerSettings.Android.resizeableActivity = m_AndroidResizeableActivity;
-                PlayerSettings.Android.minSdkVersion = m_AndroidMinSdkVersion;
             }
+            if (m_RestoreStoragePermission)
+                PlayerSettings.Android.minSdkVersion = m_AndroidMinSdkVersion;
             AssetDatabase.SaveAssets();
         }
 
@@ -1714,7 +1732,8 @@ static class BuildTiltBrush
             target,
             tiltOptions.Il2Cpp ? "DISABLE_SYSTEM_AUDIO_CAPTURE" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null,
-            tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null))
+            tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null,
+            tiltOptions.AndroidScopedStorage ? kScopedStorageDefine : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))
@@ -1862,6 +1881,7 @@ static class BuildTiltBrush
                 m_forPostBuild = new PostBuildInfo
                 {
                     xrSdk = xrSdk,
+                    scopedStorage = tiltOptions.AndroidScopedStorage,
                     copyRequests = copyRequests
                 };
 

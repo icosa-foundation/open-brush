@@ -50,7 +50,8 @@ public class BuildTiltBrushPostProcess
             const bool metaStore = false;
 #endif
             AndroidStoreManifest.Configure(doc, metaStore,
-                BuildTiltBrush.CurrentBuildXrSdk == TiltBrush.XrSdkMode.AndroidXR);
+                BuildTiltBrush.CurrentBuildXrSdk == TiltBrush.XrSdkMode.AndroidXR,
+                BuildTiltBrush.CurrentBuildUsesScopedStorage);
 
             doc.Save(file);
             UnityEngine.Debug.Log($"[OB-STORE-MANIFEST] Applied Android manifest settings: " +
