@@ -1064,7 +1064,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5567412297101205545, guid: 95b6e7acb119f412cae8063da6323461, type: 3}
       propertyPath: debugLogging
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5567412297101205545, guid: 95b6e7acb119f412cae8063da6323461, type: 3}
       propertyPath: trackingOrigin
