@@ -85,6 +85,9 @@ namespace TiltBrush
         private float deviceSearchInterval = 0.75f;
 
 
+        // TODO: Convert direct-touch radii, pointer backoff and re-arm travel from metres
+        // to world units consistently with trackingOrigin scale before using direct touch.
+        // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4177373440
         [Header("Menu Touch - Right Index")]
 
         [Tooltip(
@@ -550,6 +553,9 @@ namespace TiltBrush
             if (Instance == null)
                 return false;
 
+            // TODO: Expose each selected hand's own grip in mixed hand/controller mode
+            // so world scaling/rotation can combine it with the opposite controller's grip.
+            // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4121690078
             // Hand swimming is strictly two-handed.
             // Do not expose either virtual Grip until BOTH hands are gripping.
             if (!UseHand(false) ||
@@ -1812,6 +1818,9 @@ namespace TiltBrush
                 indexTipJoint.TryGetPose(
                     out Pose rawIndexTipLocal);
 
+            // Keep joint reconstruction separate from the Hand Interaction aim flag.
+            bool jointDirectionValid = false;
+
             if (havePalm)
             {
                 state.palmPose =
@@ -1924,6 +1933,7 @@ namespace TiltBrush
 
                     state.indexDirectionValid =
                         true;
+                    jointDirectionValid = true;
                 }
             }
             else if (!isRightHand && haveRawTip)
@@ -1939,7 +1949,7 @@ namespace TiltBrush
             // keep the brush tied to the INDEX distal joint using the last known
             // index direction. Never fall back to poke/pinch or another fingertip.
             if (isRightHand &&
-                !state.indexDirectionValid &&
+                !jointDirectionValid &&
                 haveDistal &&
                 m_HaveLastStableRightIndexDirection)
             {
@@ -1963,13 +1973,14 @@ namespace TiltBrush
 
                 state.indexDirectionValid =
                     true;
+                jointDirectionValid = true;
             }
 
             state.xrHandsSpatialValid =
                 havePalm &&
                 (!isRightHand ||
                  (haveDistal &&
-                  state.indexDirectionValid));
+                  jointDirectionValid));
         }
 
         private void UpdateSourceSelection()
@@ -2077,6 +2088,10 @@ namespace TiltBrush
 
             candidateSince =
                 Time.unscaledTime;
+
+            // Request initial panel visibility again when the Wand switches to a hand.
+            if (!isBrush && current == InputSourceKind.Hand)
+                m_PanelsRequested = false;
 
             if (previous == InputSourceKind.Hand &&
                 current != InputSourceKind.Hand)
@@ -3266,7 +3281,8 @@ namespace TiltBrush
 
         private void RequestPanels()
         {
-            if (!showPanels ||
+            if (m_PanelsRequested ||
+                !showPanels ||
                 !UseHand(false) ||
                 !m_Left.tracked)
             {
@@ -3300,13 +3316,13 @@ namespace TiltBrush
 
 
             /*
-             * High-level Open Brush visibility request.
+             * Request initial visibility once; later visibility belongs to normal interaction.
              */
             sketchControls.RequestPanelsVisibility(true);
 
 
             /*
-             * Also explicitly keep PanelManager's visible state enabled.
+             * Apply the initial visible state to PanelManager as well.
              */
             panels.SetVisible(true);
 

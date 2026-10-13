@@ -766,6 +766,9 @@ namespace TiltBrush
 
         private void OnUnityXRDeviceConnected(InputDevice device)
         {
+            // TODO: Refresh the physical-controller side's cached XR device in mixed hand/controller
+            // mode without replacing the active hand scaffold or its bindings.
+            // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4257374958
             if (AndroidXRHandBridge.Active)
             {
                 return;
