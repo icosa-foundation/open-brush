@@ -71,16 +71,13 @@ public final class DirectStorage {
                         send(receiver, "OnStorageCanceled", "");
                         return;
                     }
-                    new AlertDialog.Builder(activity)
-                        .setTitle("Connect your Open Brush folder")
-                        .setMessage("Open Brush stores sketches, exports, and reference files in Documents/"
-                            + name + ". Grant access to save new files and open existing ones.\n\n"
-                            + "On the next screen, select Use this folder, then Allow. "
-                            + "Folder access is required; choosing Exit closes Open Brush.")
-                        .setPositiveButton("Choose Folder", (dialog, which) -> launchPicker(activity, name, receiver))
-                        .setNegativeButton("Exit", (dialog, which) -> send(receiver, "OnStorageCanceled", ""))
-                        .setOnCancelListener(dialog -> send(receiver, "OnStorageCanceled", ""))
-                        .show();
+                    // Temporary: bypass the native explanation dialog, which cannot be
+                    // reliably dismissed with hand input on Aura.
+                    // TODO: Restore a hand-accessible, app-controlled explanation before the picker:
+                    // Open Brush stores sketches, exports and reference files in Documents/Open Brush.
+                    // Grant access to save new files and open existing ones. Select Use this folder,
+                    // then Allow. Canceling folder selection exits Open Brush.
+                    launchPicker(activity, name, receiver);
                 } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
             });
         } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
