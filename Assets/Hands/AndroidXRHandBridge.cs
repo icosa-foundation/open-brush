@@ -553,6 +553,9 @@ namespace TiltBrush
             if (Instance == null)
                 return false;
 
+            // TODO: Expose each selected hand's own grip in mixed hand/controller mode
+            // so world scaling/rotation can combine it with the opposite controller's grip.
+            // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4121690078
             // Hand swimming is strictly two-handed.
             // Do not expose either virtual Grip until BOTH hands are gripping.
             if (!UseHand(false) ||
