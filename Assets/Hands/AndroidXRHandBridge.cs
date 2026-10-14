@@ -2406,6 +2406,10 @@ namespace TiltBrush
 
         private void UpdateGripStates()
         {
+            // TODO: Support world scaling/rotation with one hand and the opposite controller.
+            // m_SwimModeHeld still requires two hand sources; combine each side's routed grip
+            // without allowing a lone fist in empty space to move the world.
+            // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4121690078
             UpdateOneHandGrip(
                 m_Left,
                 UseHand(false),
