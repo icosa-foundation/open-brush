@@ -831,6 +831,47 @@ namespace TiltBrush
             m_UIReticle.SetActive(bVisible);
         }
 
+        // External reticle positioning for standalone hand-tracked wand controls.
+        // The rotation controls own target acquisition; this only handles visuals.
+        public void SetExternalUIReticle(bool visible, Vector3 hitPosition, Vector3 pointerForward)
+        {
+            if (m_UIReticle == null)
+                return;
+
+            if (!visible)
+            {
+                m_UIReticle.SetActive(false);
+                return;
+            }
+
+            Camera vrCamera = App.VrSdk != null ? App.VrSdk.GetVrCamera() : null;
+            Vector3 facingDirection = vrCamera != null
+                ? vrCamera.transform.position - hitPosition
+                : -pointerForward;
+
+            if (facingDirection.sqrMagnitude < 0.000001f)
+                facingDirection = Vector3.forward;
+
+            facingDirection.Normalize();
+            SetUIReticleTransform(hitPosition + facingDirection * 0.025f, facingDirection);
+            m_UIReticle.SetActive(true);
+
+            if (Time.frameCount % 72 == 0)
+            {
+                foreach (Renderer renderer in m_UIReticle.GetComponentsInChildren<Renderer>(true))
+                {
+                    Debug.Log(
+                        $"ROTATE_RETICLE_RENDERER name={renderer.name} " +
+                        $"enabled={renderer.enabled} " +
+                        $"active={renderer.gameObject.activeInHierarchy} " +
+                        $"position={renderer.transform.position} " +
+                        $"forward={renderer.transform.forward} " +
+                        $"bounds={renderer.bounds.center} " +
+                        $"material={renderer.sharedMaterial?.name}");
+                }
+            }
+        }
+
         public void SetUIReticleTransform(Vector3 vPos, Vector3 vForward)
         {
             m_UIReticle.transform.position = vPos;
@@ -956,7 +997,7 @@ namespace TiltBrush
         }
 
         void Start()
-        {
+{
             m_TransformGizmo = (GameObject)Instantiate(m_TransformGizmoPrefab);
             m_TransformGizmo.transform.parent = transform;
             m_TransformGizmoScript = m_TransformGizmo.GetComponent<TransformGizmoScript>();
@@ -1829,9 +1870,22 @@ namespace TiltBrush
                 (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) &&
                 App.Instance.IsInStateThatAllowsPainting());
 
+            // Hand-tracked panel contact is resolved independently of GPU widget
+            // intersection. During a fist transition the Brush jumps from the
+            // index-tip aim pose to the stable palm grab pose, so GPU proximity
+            // may briefly be stale or missing. Keep that exact panel eligible.
+            PanelWidget touchedRightHandPanel;
+            bool rightHandPanelAvailable =
+                AndroidXRHandBridge.TryGetRightHandPanelGrabTarget(
+                    out touchedRightHandPanel);
+
             //certain tools don't allow us to mess with widgets
+            // A touched panel may take priority over a stale right-hand world-
+            // grab flag. Never override the left-hand world/two-hand swim route.
             bool bWidgetManipOK = m_SketchSurfacePanel.DoesCurrentToolAllowWidgetManipulation() &&
-                !m_GrabWand.grabbingWorld && !m_GrabBrush.grabbingWorld && IsGrabWorldStateStable() &&
+                !m_GrabWand.grabbingWorld &&
+                (!m_GrabBrush.grabbingWorld || rightHandPanelAvailable) &&
+                (IsGrabWorldStateStable() || rightHandPanelAvailable) &&
                 App.Instance.IsInStateThatAllowsAnyGrabbing();
 
             // Update EatInput flags if they're valid.
@@ -1866,9 +1920,15 @@ namespace TiltBrush
                     m_BackupBrushGrabData = null;
                 }
 
-                if (m_BackupBrushGrabData != null)
+                // Do not let a stale index-tip GPU intersection override the
+                // panel currently touching the user's right palm/knuckles.
+                // This panel survives the hand closing and remains valid until
+                // Open Brush captures the ordinary widget grab on Grip.
+                if (rightHandPanelAvailable || m_BackupBrushGrabData != null)
                 {
-                    m_PotentialGrabWidgetBrush = m_BackupBrushGrabData.m_WidgetScript;
+                    m_PotentialGrabWidgetBrush = rightHandPanelAvailable
+                        ? touchedRightHandPanel
+                        : m_BackupBrushGrabData.m_WidgetScript;
 
                     // Allow widget grab if we're not painting.
                     if (!bActiveInput)
@@ -1887,13 +1947,19 @@ namespace TiltBrush
                                     SelectionManager.m_Instance.StartGrabbingGroupWithWidget(m_CurrentGrabWidget);
                             }
                             UpdateGrab_NoneToOne(InputManager.ControllerName.Brush);
+                            if (rightHandPanelAvailable)
+                            {
+                                Debug.Log("ANDROIDXR_PANEL_GRAB_START " +
+                                    m_CurrentGrabWidget.name + " (right grip)");
+                            }
                             bShouldClearWandInside = true;
                             m_GrabBrush.startedGrabInsideWidget = true;
                         }
                     }
                 }
                 m_GrabBrush.SetHadBestGrabAndTriggerHaptics(m_BackupBrushGrabData);
-                m_ControllerGrabVisuals.BrushInWidgetRange = m_BackupBrushGrabData != null;
+                m_ControllerGrabVisuals.BrushInWidgetRange =
+                    rightHandPanelAvailable || m_BackupBrushGrabData != null;
 
                 // If we're in the intersection request state, fire off a new intersection request.  If
                 // we're in the read wand state, update our wand grab data structure.
@@ -1976,7 +2042,7 @@ namespace TiltBrush
                 Vector3 vAngularVelocity;
                 if (GetGrabWidgetHoldHistory(out vLinearVelocity, out vAngularVelocity))
                 {
-                    rPrevGrabWidget.SetVelocities(
+rPrevGrabWidget.SetVelocities(
                         vLinearVelocity, vAngularVelocity,
                         controller.Transform.position);
                 }
@@ -2715,10 +2781,16 @@ namespace TiltBrush
                         InputManager.m_Instance.GetController(InputManager.ControllerName.Brush));
 
                     // Offset the controller positions so that they're centered on the grips.
+                    // Hand tracking already places each virtual controller root at
+                    // its physical palm-centre grab anchor. Applying the legacy
+                    // OculusTouch grip offset again shifts the world pivot away
+                    // from the hand. Keep that offset only for physical controllers.
                     Vector3 gripPos = InputManager.Controllers[(int)InputManager.ControllerName.Brush].Geometry.GripAttachPoint.localPosition;
                     gripPos.x = 0.0f;
-                    grabXfWand.translation += grabXfWand.MultiplyVector(gripPos);
-                    grabXfBrush.translation += grabXfBrush.MultiplyVector(gripPos);
+                    if (!AndroidXRHandBridge.UseHand(false))
+                        grabXfWand.translation += grabXfWand.MultiplyVector(gripPos);
+                    if (!AndroidXRHandBridge.UseHand(true))
+                        grabXfBrush.translation += grabXfBrush.MultiplyVector(gripPos);
 
                     // Are we initiating two hand transform this frame?
                     if (!bWorldGrabWandPrev || !bWorldGrabBrushPrev)
@@ -2971,8 +3043,7 @@ namespace TiltBrush
                 // If this were more important, we could solve for the t of the closest approach
                 return scene0;
             }
-
-            // t0 is expected to be < 0 (room starts inside the fence)
+// t0 is expected to be < 0 (room starts inside the fence)
             // t1 is expected to be in [0, 1] (room ends outside the fence)
 
             // Constraints:
@@ -3969,8 +4040,7 @@ namespace TiltBrush
             Quaternion qNewRotation = qOrientToUp * m_SketchSurface.transform.rotation;
             return qNewRotation;
         }
-
-        Quaternion OrientSketchSurfaceToForward()
+Quaternion OrientSketchSurfaceToForward()
         {
             //project the world forward vector on to the surface plane
             Vector3 vForwardOnSurfacePlane = Vector3.forward - (Vector3.Dot(Vector3.forward, m_SurfaceForward) * m_SurfaceForward);
@@ -4969,7 +5039,7 @@ namespace TiltBrush
                         {
                             App.Instance.IcosaToken = null;
                             App.IcosaUserName = "";
-                            App.IcosaUserIcon = null;
+App.IcosaUserIcon = null;
                             PanelManager.m_Instance.LastPanelInteractedWith.CloseActivePopUp(true);
                         }
                         else
