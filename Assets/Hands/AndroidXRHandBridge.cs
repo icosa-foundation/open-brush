@@ -21,8 +21,9 @@ namespace TiltBrush
     /// SPATIAL POSE:
     ///     XRHandSubsystem joints reproduce the previously-working Open Brush mapping:
     ///       Left Palm                    -> Wand / panels
-    ///       Right IndexDistal -> IndexTip -> Brush pointer / teleport aim
-    ///       Right IndexTip               -> direct UI touch
+    ///       Right Palm direction            -> Brush / laser aim
+    ///       Right pinch while laser is on UI  -> UI confirmation
+    ///       Right pinch away from UI           -> drawing
     ///
     /// Physical controllers remain selectable independently per side.
     /// </summary>
@@ -147,6 +148,21 @@ namespace TiltBrush
         // to world units consistently with trackingOrigin scale before using direct touch.
         // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4177373440
         [Header("Menu Touch - Right Index")]
+        [Header("Legacy Direct Finger Touch - DISABLED")]
+
+        [Header("Panel Contact / Grab")]
+        [Tooltip(
+            "Radius in metres around the right fingertip used only to detect panel contact. " +
+            "Contact disables laser aiming and prepares the hand for a grasp-driven panel move. " +
+            "It never presses UI buttons.")]
+        [SerializeField]
+        private float panelContactRadius = 0.030f;
+
+        [Tooltip(
+            "Larger radius used after the hand has entered panel proximity. " +
+            "This hysteresis prevents the laser reappearing while fingers curl into a grab.")]
+        [SerializeField]
+        private float panelContactReleaseRadius = 0.055f;
 
         [Tooltip(
             "Radius in metres around the right index fingertip used to detect direct " +
@@ -199,6 +215,10 @@ namespace TiltBrush
 
 
         [Header("Brush / Right Hand")]
+
+        [Tooltip("Wrist aim pitch in degrees. Positive tilts the laser downward around the hand's local right axis.")]
+        [SerializeField] private float wristAimPitchOffset = 45.0f;
+
 
         [Tooltip(
             "Rotation correction applied after aligning the Open Brush pointer " +
@@ -298,6 +318,8 @@ namespace TiltBrush
         private bool m_RightIndexTipLengthCalibrated;
         private Vector3 m_LastStableRightIndexDirectionLocal = Vector3.forward;
         private bool m_HaveLastStableRightIndexDirection;
+        private Vector3 m_RightWristAimWorld;
+        private bool m_RightWristAimValid;
 
         private ControllerBinding m_LeftControllerBinding;
         private ControllerBinding m_RightControllerBinding;
@@ -327,6 +349,24 @@ namespace TiltBrush
         private bool m_MenuTouchDown;
         private bool m_MenuTouchUp;
         private Collider m_MenuTouchCollider;
+
+        // Physical panel contact is NOT a button press. It only suppresses
+        // aiming/drawing and marks the hand as ready for a grasp-based panel move.
+        private bool m_RightPanelContact;
+        private Collider m_RightPanelContactCollider;
+
+        // Latches the intent to manipulate a panel across the transition from
+        // open hand/contact into the grasp pose. Without this, curling the hand
+        // can move all fingertips away from the collider before Open Brush sees
+        // Grip and captures the PanelWidget.
+        private bool m_RightPanelGrabArmed;
+        private float m_RightPanelLastContactTime = -1.0f;
+
+        [Tooltip(
+            "Short grace period after panel proximity is lost. Keeps grab readiness " +
+            "through the open-hand to fist transition.")]
+        [SerializeField]
+        private float panelGrabContactGrace = 0.18f;
 
         // Direct fingertip UI target. We invoke the touched BaseButton directly
         // instead of routing poke through VrInput.Trigger, because Open Brush
@@ -359,9 +399,10 @@ namespace TiltBrush
         private bool m_PrimaryTriggerDown;
         private bool m_PrimaryTriggerUp;
 
-        // Per-hand OpenXR grasp -> Open Brush Grip. Open Brush then gets the
-        // same semantics as physical controllers: one grip can move the world,
-        // two grips can scale/rotate it.
+        // Per-hand OpenXR grasp state.
+        // A single grasp may be exposed to Open Brush only for grabbing a nearby
+        // widget/panel. Two simultaneous grasps are exposed for swimming/world
+        // translation, rotation and scaling.
         private bool m_LeftGripHeld;
         private bool m_LeftGripDown;
         private bool m_LeftGripUp;
@@ -612,73 +653,225 @@ namespace TiltBrush
         /// Hand grasp maps to Grip independently per side. This mirrors physical
         /// controller behaviour and allows mixed controller+hand swimming.
         /// </summary>
-        public static bool Grip(bool isBrush)
+       public static bool Grip(bool isBrush)
         {
-            if (Instance == null)
-                return false;
-
-            // TODO: Expose each selected hand's own grip in mixed hand/controller mode
-            // so world scaling/rotation can combine it with the opposite controller's grip.
-            // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4121690078
-            // Hand swimming is strictly two-handed.
-            // Do not expose either virtual Grip until BOTH hands are gripping.
-            if (!UseHand(false) ||
-                !UseHand(true) ||
-                !Instance.m_SwimModeHeld)
+            if (Instance == null ||
+                !UseHand(isBrush))
             {
                 return false;
             }
 
-            return true;
+            // Two hands gripping always means the existing Open Brush
+            // swimming / world-transform gesture.
+            if (Instance.m_SwimModeHeld)
+                return true;
+
+            // A single hand may expose Grip only while Open Brush has a
+            // grabbable widget/panel opportunity, or while that same hand is
+            // already holding one. A lone fist in empty space therefore cannot
+            // start moving the world.
+            if (!Instance.IsSingleHandWidgetGripAllowed(isBrush))
+                return false;
+
+            return isBrush
+                ? Instance.m_RightGripHeld
+                : Instance.m_LeftGripHeld;
         }
 
 
         public static bool GripDown(bool isBrush)
         {
             if (Instance == null ||
-                !UseHand(false) ||
-                !UseHand(true))
+                !UseHand(isBrush))
             {
                 return false;
             }
 
-            // Both virtual controllers receive GripDown simultaneously
-            // when the SECOND fist completes the two-hand swimming gesture.
-            return Instance.m_SwimModeDown;
+            // When the second fist closes, both virtual controllers enter
+            // swimming together.
+            if (Instance.m_SwimModeDown)
+                return true;
+
+            if (!Instance.IsSingleHandWidgetGripAllowed(isBrush))
+                return false;
+
+            return isBrush
+                ? Instance.m_RightGripDown
+                : Instance.m_LeftGripDown;
         }
 
 
         public static bool GripUp(bool isBrush)
         {
             if (Instance == null ||
-                !UseHand(false) ||
-                !UseHand(true))
+                !UseHand(isBrush))
             {
                 return false;
             }
 
-            // Releasing EITHER fist releases both virtual grips.
-            return Instance.m_SwimModeUp;
+            // Releasing either fist while swimming ends the two-hand virtual
+            // Grip state on both Open Brush controllers.
+            if (Instance.m_SwimModeUp)
+                return true;
+
+            // Do not require the widget to remain a current potential target on
+            // release. Once a one-hand grab has started, Open Brush needs the
+            // per-hand GripUp edge to terminate it cleanly.
+            return isBrush
+                ? Instance.m_RightGripUp
+                : Instance.m_LeftGripUp;
         }
 
 
         public static float GripValue(bool isBrush)
         {
             if (Instance == null ||
-                !UseHand(false) ||
-                !UseHand(true) ||
-                !Instance.m_SwimModeHeld)
+                !UseHand(isBrush))
             {
                 return 0.0f;
             }
 
-            // Combined two-hand confidence.
-            // The weaker hand determines the effective grip value.
-            return Mathf.Min(
-                Instance.m_Left.graspValue,
-                Instance.m_Right.graspValue);
+            if (Instance.m_SwimModeHeld)
+            {
+                // Existing two-hand behaviour: the weaker grasp determines the
+                // effective confidence of the combined swimming gesture.
+                return Mathf.Min(
+                    Instance.m_Left.graspValue,
+                    Instance.m_Right.graspValue);
+            }
+
+            if (!Instance.IsSingleHandWidgetGripAllowed(isBrush))
+                return 0.0f;
+
+            return isBrush
+                ? Instance.m_Right.graspValue
+                : Instance.m_Left.graspValue;
         }
 
+
+        /// <summary>
+        /// Determines whether one hand is allowed to expose its raw grasp as an
+        /// Open Brush Grip without enabling one-hand world swimming.
+        ///
+        /// Open Brush already owns widget/panel intersection and manipulation.
+        /// The bridge only decides whether the hand's grasp may reach that
+        /// existing Grip path.
+        /// </summary>
+        private bool IsSingleHandWidgetGripAllowed(bool isBrush)
+        {
+            SketchControlsScript controls =
+                SketchControlsScript.m_Instance;
+
+            if (controls == null)
+                return false;
+
+            InputManager.ControllerName controllerName =
+                isBrush
+                    ? InputManager.ControllerName.Brush
+                    : InputManager.ControllerName.Wand;
+
+            // Once Open Brush has converted the potential widget into an active
+            // one-hand grab, keep routing Grip only to the hand that owns it.
+            // This prevents losing the object simply because its original
+            // proximity/intersection state changes while it is moving.
+            if (controls.IsUserInteractingWithAnyWidget())
+            {
+                return controls.OneHandGrabController ==
+                       controllerName;
+            }
+
+            // Physical contact with a panel explicitly arms the right hand for
+            // a one-hand panel grab. This remains true while the fist closes,
+            // even if the hand geometry moves away from the original collider.
+            if (isBrush &&
+                m_RightPanelGrabArmed &&
+                m_RightGripHeld)
+            {
+                // If both grasps genuinely reach swim state, Grip() handles
+                // m_SwimModeHeld before calling this helper. Otherwise the
+                // panel-contact hand must be allowed to capture its widget.
+                return true;
+            }
+
+            // Otherwise retain Open Brush's normal widget proximity test. This
+            // supports grabbing non-panel objects without enabling one-hand
+            // world movement in empty space.
+            if (!controls.IsUserAbleToInteractWithAnyWidget())
+                return false;
+
+            bool thisHeld =
+                isBrush
+                    ? m_RightGripHeld
+                    : m_LeftGripHeld;
+
+            if (!thisHeld)
+                return false;
+
+            // If both hands are grasping, m_SwimModeHeld handles the input
+            // instead. This branch is intentionally single-hand only.
+            bool otherHeld =
+                isBrush
+                    ? m_LeftGripHeld
+                    : m_RightGripHeld;
+
+            return !otherHeld;
+        }
+
+
+        /// <summary>
+        /// Returns the actual PanelWidget touched by the right hand. Open Brush's
+        /// normal GPU/widget intersection is driven by the virtual Brush tip,
+        /// which is at the index finger during aiming and at the palm during
+        /// gripping. That selection can disappear during the fist transition.
+        ///
+        /// We retain the panel from physical contact, but still let
+        /// SketchControlsScript perform the actual standard Open Brush widget
+        /// grab/move/release. No touch-click behaviour is introduced here.
+        /// </summary>
+        public static bool TryGetRightHandPanelGrabTarget(out PanelWidget panelWidget)
+        {
+            panelWidget = null;
+
+            if (Instance == null ||
+                !UseHand(true) ||
+                !Instance.m_Right.tracked ||
+                Instance.m_SwimModeHeld ||
+                !Instance.m_RightPanelGrabArmed)
+            {
+                return false;
+            }
+
+            Collider contact = Instance.m_RightPanelContactCollider;
+            if (contact == null ||
+                !contact.enabled ||
+                !contact.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            // The touched collider can belong to a button or the panel mesh.
+            // The movable PanelWidget normally lives on the BasePanel root.
+            BasePanel basePanel = contact.GetComponentInParent<BasePanel>();
+            if (basePanel != null)
+            {
+                panelWidget = basePanel.GetComponent<PanelWidget>();
+            }
+
+            if (panelWidget == null)
+            {
+                panelWidget = contact.GetComponentInParent<PanelWidget>();
+            }
+
+            if (panelWidget == null ||
+                !panelWidget.isActiveAndEnabled ||
+                !panelWidget.gameObject.activeInHierarchy)
+            {
+                panelWidget = null;
+                return false;
+            }
+
+            return true;
+        }
 
         public static float FingerDistance(bool isBrush)
         {
@@ -696,17 +889,16 @@ namespace TiltBrush
             UseHand(true) && Instance.m_Right.triggerUp;
 
 
-        public static bool MenuTouchHeld =>
-            UseHand(true) && Instance.m_MenuTouchHeld;
+        // Direct fingertip UI interaction is disabled. These compatibility
+        // accessors intentionally remain inert for any other scripts that still
+        // reference the old bridge API.
+        public static bool MenuTouchHeld => false;
 
-        public static bool MenuTouchDown =>
-            UseHand(true) && Instance.m_MenuTouchDown;
+        public static bool MenuTouchDown => false;
 
-        public static bool MenuTouchUp =>
-            UseHand(true) && Instance.m_MenuTouchUp;
+        public static bool MenuTouchUp => false;
 
-        public static Collider MenuTouchCollider =>
-            UseHand(true) ? Instance.m_MenuTouchCollider : null;
+        public static Collider MenuTouchCollider => null;
 
         public static Vector3 RightIndexTipPosition =>
             RightTracked
@@ -788,7 +980,11 @@ namespace TiltBrush
                     state.palmPose.position,
                     Quaternion.LookRotation(
                         forward,
-                        up));
+                        up) *
+                    Quaternion.Euler(
+                        90.0f,
+                        0.0f,
+                        0.0f));
 
             return true;
         }
@@ -926,27 +1122,14 @@ namespace TiltBrush
             ApplySourceRouting();
 
             UpdateGripStates();
+// Direct fingertip UI pressing is intentionally disabled.
+            ResetMenuTouchState();
 
-            // Right-hand UI contact is meaningful only while the right side is
-            // actually routed to the hand.
-            if (UseHand(true) && !m_RightGripHeld)
-            {
-                UpdateMenuTouchState();
-
-                if (m_MenuTouchHeld ||
-                    m_MenuTouchUp)
-                {
-                    // Direct poke always wins over painting. Suppress pinch draw
-                    // on both the contact and release frames so touching/lifting
-                    // from a Wand button cannot leave a stray brush mark.
-                    SuppressDrawForMenuContact(
-                        wasDrawingBeforeHandUpdate);
-                }
-            }
-            else
-            {
-                ResetMenuTouchState();
-            }
+            // Physical contact with a panel is a different interaction state:
+            // touching prepares the hand for panel/object manipulation and
+            // suppresses laser/pinch input. The actual move still starts only
+            // when the user performs the grasp gesture.
+            UpdateRightPanelContactState();
 
             UpdatePrimaryTriggerState();
 
@@ -1788,6 +1971,7 @@ namespace TiltBrush
         {
             m_Left.xrHandsSpatialValid = false;
             m_Right.xrHandsSpatialValid = false;
+            m_RightWristAimValid = false;
 
             if (!useXRHandsForSpatialPose)
                 return;
@@ -1872,6 +2056,24 @@ namespace TiltBrush
                 hand.GetJoint(
                     XRHandJointID.Palm);
 
+            // Stable pointing axis across a pinch: wrist to middle knuckle.
+            // This is hand orientation, not a curling fingertip direction.
+            if (isRightHand)
+            {
+                XRHandJoint wristJoint = hand.GetJoint(XRHandJointID.Wrist);
+                XRHandJoint knuckleJoint = hand.GetJoint(XRHandJointID.MiddleProximal);
+                if (wristJoint.TryGetPose(out Pose wristLocal) &&
+                    knuckleJoint.TryGetPose(out Pose knuckleLocal))
+                {
+                    Vector3 wristToKnuckle = knuckleLocal.position - wristLocal.position;
+                    if (wristToKnuckle.sqrMagnitude > 0.000001f)
+                    {
+                        m_RightWristAimWorld = ToWorldDirection(wristToKnuckle);
+                        m_RightWristAimValid = true;
+                    }
+                }
+            }
+
             XRHandJoint indexIntermediateJoint =
                 hand.GetJoint(
                     XRHandJointID.IndexIntermediate);
@@ -1917,7 +2119,7 @@ namespace TiltBrush
              *
              * On Android XR we have observed IndexTip occasionally jumping to the
              * end of the middle finger when the other fingers curl. Instead build
-             * the brush tip strictly from the INDEX finger's own bone chain:
+* the brush tip strictly from the INDEX finger's own bone chain:
              *
              *     IndexIntermediate -> IndexDistal -> reconstructed tip
              *
@@ -2268,23 +2470,26 @@ namespace TiltBrush
                 m_PrimaryTriggerHeld;
 
             /*
-             * IMPORTANT:
+             * Pinch is the normal Open Brush Trigger.
              *
-             * VrInput.Trigger remains DRAW ONLY in hand mode.
+             * Do NOT directly press UI components here. Open Brush already owns
+             * laser hover / UI targeting and decides what Trigger means from the
+             * current pointer context:
              *
-             * Direct fingertip UI input is dispatched by UpdateMenuTouchState()
-             * straight to the touched BaseButton, so a poke can never fall
-             * through into a brush stroke.
+             *     laser over UI + pinch -> UI activation
+             *     laser away from UI + pinch -> drawing
+             *
+             * This is deliberately the same interaction model as a physical
+             * controller trigger, so UI confirmation and painting remain
+             * mutually exclusive through Open Brush's existing input routing.
              */
-            bool drawPressHeld =
-                m_Right.trigger &&
-                !m_MenuTouchHeld &&
-                !m_MenuTouchUp;
-
             bool nextHeld =
                 UseHand(true) &&
                 m_Right.tracked &&
-                drawPressHeld;
+                !m_RightGripHeld &&
+                !m_RightPanelContact &&
+                !m_RightPanelGrabArmed &&
+                m_Right.trigger;
 
             m_PrimaryTriggerHeld =
                 nextHeld;
@@ -2297,19 +2502,267 @@ namespace TiltBrush
 
             if (debugLogging &&
                 (m_PrimaryTriggerDown ||
-                 m_PrimaryTriggerUp ||
-                 m_MenuTouchDown ||
-                 m_MenuTouchUp))
+                 m_PrimaryTriggerUp))
             {
+                bool uiTarget =
+                    SketchControlsScript.m_Instance != null &&
+                    SketchControlsScript.m_Instance.IsUserInteractingWithUI();
+
                 Debug.Log(
                     "ANDROIDXR_PRIMARY_TRIGGER " +
                     $"held={m_PrimaryTriggerHeld} " +
                     $"down={m_PrimaryTriggerDown} " +
                     $"up={m_PrimaryTriggerUp} " +
-                    $"draw={drawPressHeld} " +
-                    $"menuContact={m_MenuTouchHeld} " +
-                    $"directUi={(m_ActiveMenuTouchComponent != null)}");
+                    $"pinch={m_Right.pinchValue:F3} " +
+                    $"uiTarget={uiTarget}");
             }
+        }
+
+
+        // --------------------------------------------------------------------
+        // Physical panel contact (grab preparation only)
+        // --------------------------------------------------------------------
+
+        private void UpdateRightPanelContactState()
+        {
+            bool physicalContact = false;
+            Collider closestCollider = null;
+            float closestDistanceSquared = float.PositiveInfinity;
+
+            // Hysteresis: once panel proximity has been entered, keep a much
+            // larger interaction envelope while the hand curls/repositions.
+            float activeContactRadius =
+                (m_RightPanelContact ||
+                 m_RightPanelGrabArmed)
+                    ? Mathf.Max(
+                        panelContactRadius,
+                        panelContactReleaseRadius)
+                    : panelContactRadius;
+
+            if (UseHand(true) &&
+                m_Right.tracked)
+            {
+                // Test a representative set of joints across the ENTIRE hand.
+                // This is intentionally not limited to IndexTip: palm, thumb,
+                // fingers, knuckles and fingertips can all put the hand into
+                // panel-manipulation mode.
+                if (m_XRHandSubsystem != null &&
+                    m_XRHandSubsystem.running &&
+                    m_XRHandSubsystem.rightHand.isTracked)
+                {
+                    XRHand hand =
+                        m_XRHandSubsystem.rightHand;
+
+                    XRHandJointID[] contactJoints =
+                    {
+                        // Panel-grab contact should come from the palm / knuckle area,
+                        // not from fingertips. Fingertips need to remain free for
+                        // laser aiming + pinch UI activation.
+                        XRHandJointID.Palm,
+                        XRHandJointID.Wrist,
+
+                        XRHandJointID.ThumbMetacarpal,
+                        XRHandJointID.ThumbProximal,
+
+                        XRHandJointID.IndexMetacarpal,
+                        XRHandJointID.IndexProximal,
+
+                        XRHandJointID.MiddleMetacarpal,
+                        XRHandJointID.MiddleProximal,
+
+                        XRHandJointID.RingMetacarpal,
+                        XRHandJointID.RingProximal,
+
+                        XRHandJointID.LittleMetacarpal,
+                        XRHandJointID.LittleProximal
+                    };
+
+                    for (int jointIndex = 0;
+                         jointIndex < contactJoints.Length;
+                         ++jointIndex)
+                    {
+                        XRHandJoint joint =
+                            hand.GetJoint(
+                                contactJoints[jointIndex]);
+
+                        if (!joint.TryGetPose(
+                                out Pose jointLocal))
+                        {
+                            continue;
+                        }
+
+                        Vector3 jointWorld =
+                            ToWorldPose(
+                                jointLocal).position;
+
+                        Collider hit =
+                            FindPanelContactAtPoint(
+                                jointWorld,
+                                activeContactRadius,
+                                ref closestDistanceSquared);
+
+                        if (hit != null)
+                        {
+                            physicalContact = true;
+                            closestCollider = hit;
+                        }
+                    }
+                }
+                else
+                {
+                    // Fallback for frames where XR Hands joint data is not
+                    // available. This still gives useful behaviour from the
+                    // high-level palm and reconstructed index-tip poses.
+                    Collider palmHit =
+                        FindPanelContactAtPoint(
+                            m_Right.palmPose.position,
+                            activeContactRadius,
+                            ref closestDistanceSquared);
+
+                    if (palmHit != null)
+                    {
+                        physicalContact = true;
+                        closestCollider = palmHit;
+                    }
+
+                    Collider tipHit =
+                        FindPanelContactAtPoint(
+                            m_Right.indexTipPose.position,
+                            activeContactRadius,
+                            ref closestDistanceSquared);
+
+                    if (tipHit != null)
+                    {
+                        physicalContact = true;
+                        closestCollider = tipHit;
+                    }
+                }
+            }
+
+            m_RightPanelContact =
+                physicalContact;
+
+            if (closestCollider != null)
+            {
+                m_RightPanelContactCollider =
+                    closestCollider;
+            }
+
+            // Proximity arms a possible one-hand panel grab. Record the last
+            // good contact time so a brief tracking/collider miss cannot let
+            // laser aiming win during the fist transition.
+            if (physicalContact)
+            {
+                m_RightPanelGrabArmed = true;
+                m_RightPanelLastContactTime = Time.unscaledTime;
+            }
+
+            bool openBrushHoldingWidget =
+                SketchControlsScript.m_Instance != null &&
+                SketchControlsScript.m_Instance.IsUserInteractingWithAnyWidget() &&
+                SketchControlsScript.m_Instance.OneHandGrabController ==
+                    InputManager.ControllerName.Brush;
+
+            bool insideGrace =
+                m_RightPanelLastContactTime >= 0.0f &&
+                Time.unscaledTime - m_RightPanelLastContactTime <=
+                    Mathf.Max(0.0f, panelGrabContactGrace);
+
+            if (!physicalContact &&
+                !insideGrace &&
+                !m_RightGripHeld &&
+                !openBrushHoldingWidget)
+            {
+                m_RightPanelGrabArmed = false;
+                m_RightPanelContactCollider = null;
+                m_RightPanelLastContactTime = -1.0f;
+            }
+
+            if (debugLogging &&
+                (m_RightPanelContact ||
+                 m_RightPanelGrabArmed) &&
+                Time.frameCount % 30 == 0)
+            {
+                Debug.Log(
+                    "ANDROIDXR_PANEL_CONTACT " +
+                    $"physical={m_RightPanelContact} " +
+                    $"grabArmed={m_RightPanelGrabArmed} " +
+                    $"radius={activeContactRadius:F3} " +
+                    $"grip={m_RightGripHeld} " +
+                    $"collider=" +
+                    $"{(m_RightPanelContactCollider != null ? m_RightPanelContactCollider.name : "none")} " +
+                    "aimSuppressed=true");
+            }
+        }
+
+
+        private Collider FindPanelContactAtPoint(
+            Vector3 worldPoint,
+            float radius,
+            ref float closestDistanceSquared)
+        {
+            int hitCount =
+                Physics.OverlapSphereNonAlloc(
+                    worldPoint,
+                    Mathf.Max(
+                        0.001f,
+                        radius),
+                    m_MenuTouchHits,
+                    menuTouchLayerMask,
+                    QueryTriggerInteraction.Collide);
+
+            Collider best = null;
+
+            for (int i = 0; i < hitCount; ++i)
+            {
+                Collider hit =
+                    m_MenuTouchHits[i];
+
+                if (hit == null ||
+                    !hit.enabled ||
+                    !hit.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                // A hand touching any part of a panel/widget is enough to stop
+                // aiming. BaseButton is included explicitly because some UI
+                // controls have their own collider outside the panel body's
+                // primary collider.
+                // These controls are laser-only buttons, not grabbable panels.
+                // Their proximity must not disable aiming or pinch.
+                if (hit.GetComponentInParent<WandPanelRotateButton>() != null)
+                    continue;
+
+                bool belongsToPanel =
+                    hit.GetComponentInParent<BasePanel>() != null ||
+                    hit.GetComponentInParent<PanelWidget>() != null ||
+                    hit.GetComponentInParent<GrabWidget>() != null ||
+                    hit.GetComponentInParent<PopUpWindow>() != null ||
+                    hit.GetComponentInParent<BaseButton>() != null;
+
+                if (!belongsToPanel)
+                    continue;
+
+                Vector3 closestPoint =
+                    hit.ClosestPoint(
+                        worldPoint);
+
+                float distanceSquared =
+                    (closestPoint - worldPoint).sqrMagnitude;
+
+                if (distanceSquared <
+                    closestDistanceSquared)
+                {
+                    closestDistanceSquared =
+                        distanceSquared;
+
+                    best =
+                        hit;
+                }
+            }
+
+            return best;
         }
 
 
@@ -2670,7 +3123,7 @@ namespace TiltBrush
                     if (debugLogging)
                     {
                         Debug.Log(
-                            "ANDROIDXR_DIRECT_UI REARM " +
+"ANDROIDXR_DIRECT_UI REARM " +
                             $"fingerTravelLocal={fingerTravel:F4} " +
                             $"clearTime={clearDuration:F3}");
                     }
@@ -3084,6 +3537,26 @@ namespace TiltBrush
                 behavior.PointerAttachPoint;
 
 
+            // Once the fingertip physically reaches a panel, laser aiming must
+            // stop. The user is now in the "ready to grab/move" interaction zone.
+            if ((m_RightPanelContact ||
+                 m_RightPanelGrabArmed) &&
+                !m_RightGripHeld)
+            {
+                if (PointerManager.m_Instance != null)
+                {
+                    PointerManager.m_Instance.AllowPointerPreviewLine(false);
+                    PointerManager.m_Instance.RequestPointerRendering(false);
+                }
+            }
+            else if (!m_RightGripHeld &&
+                     PointerManager.m_Instance != null)
+            {
+                PointerManager.m_Instance.AllowPointerPreviewLine(true);
+                PointerManager.m_Instance.RequestPointerRendering(true);
+            }
+
+
             /*
              * While Grip is held, the Brush must behave like a grabbed physical
              * controller, not like a fingertip pointer.  Using IndexTip /
@@ -3105,30 +3578,39 @@ namespace TiltBrush
 
 
             /*
-             * Aim along the physical index finger / runtime poke pose.
+             * Aim from the physical PALM orientation.
              *
-             *     IndexDistal -> IndexTip
-             *
-             * This avoids inheriting the borrowed Quest controller's palm /
-             * controller axis, which was responsible for the apparent 90 degree
-             * pointer rotation.
+             * Pinch must not steer the laser. The index joints are still used
+             * to keep the pointer origin spatially attached to the hand, but
+             * direction comes from the stable palm pose.
              */
-            Vector3 pointerForward =
-                hand.indexDirectionValid
+            // Wrist -> middle knuckle remains stable while index/thumb pinch.
+            // Retain the proven index direction only as a tracking fallback.
+            Vector3 pointerForward = m_RightWristAimValid
+                ? m_RightWristAimWorld
+                : (hand.indexDirectionValid
                     ? hand.indexDirectionWorld
-                    : hand.indexTipPose.rotation *
-                      Vector3.back;
-
+                    : hand.palmPose.rotation * Vector3.forward);
 
             if (pointerForward.sqrMagnitude <
                 0.00000001f)
             {
                 pointerForward =
-                    hand.palmPose.rotation *
-                    Vector3.back;
+                    hand.aimPoseValid
+                        ? hand.aimPose.rotation * Vector3.forward
+                        : Vector3.forward;
             }
 
             pointerForward.Normalize();
+
+            // Rotate around the hand's own right axis, not world X.
+            // A positive angle pitches the forward ray downward in Unity.
+            Vector3 wristRight = hand.palmPose.rotation * Vector3.right;
+            if (wristRight.sqrMagnitude > 0.000001f)
+            {
+                pointerForward = (Quaternion.AngleAxis(
+                    wristAimPitchOffset, wristRight.normalized) * pointerForward).normalized;
+            }
 
 
             /*
@@ -3143,17 +3625,10 @@ namespace TiltBrush
              *
              *     origin -----> fingertip -----> UI collider
              */
+            // Keep painting position on the index tip while laser direction follows
+            // the wrist-to-knuckle axis. Pinching no longer rotates the aim.
             Vector3 desiredPointerPosition =
                 hand.indexTipPose.position;
-
-            if (m_MenuTouchHeld)
-            {
-                desiredPointerPosition -=
-                    pointerForward *
-                    Mathf.Max(
-                        0.001f,
-                        menuTouchPointerBackoff);
-            }
 
 
             /*
@@ -3237,8 +3712,7 @@ namespace TiltBrush
 
 
             Vector3 activeBrushPositionOffset =
-                useExactRestoredPose ||
-                m_MenuTouchHeld
+                useExactRestoredPose
                     ? Vector3.zero
                     : brushPositionOffset;
 
@@ -3258,6 +3732,40 @@ namespace TiltBrush
         /// Swimming/world manipulation should follow the hand/palm as a rigid
         /// body rather than the curling index fingertip.
         /// </summary>
+        // Shared physical grab anchor for BOTH hands. Using the midpoint between
+        // wrist and middle-finger knuckle places the virtual controller inside
+        // the palm rather than at the wrist joint. It does not depend on curl.
+        private Vector3 GetHandGrabCenter(bool rightHand, Vector3 fallback)
+        {
+            if (m_XRHandSubsystem == null || !m_XRHandSubsystem.running)
+                return fallback;
+
+            XRHand xrHand = rightHand
+                ? m_XRHandSubsystem.rightHand
+                : m_XRHandSubsystem.leftHand;
+            if (!xrHand.isTracked)
+                return fallback;
+
+            XRHandJoint wrist = xrHand.GetJoint(XRHandJointID.Wrist);
+            XRHandJoint middle = xrHand.GetJoint(XRHandJointID.MiddleMetacarpal);
+            XRHandJoint middleProximal = xrHand.GetJoint(XRHandJointID.MiddleProximal);
+            if (!wrist.TryGetPose(out Pose wristPose))
+                return fallback;
+
+            // The metacarpal is often close to the wrist. MiddleProximal is
+            // the knuckle; halfway to it gives a stable central-palm anchor.
+            if (middleProximal.TryGetPose(out Pose knucklePose))
+                return ToWorldPose(new Pose(
+                    Vector3.Lerp(wristPose.position, knucklePose.position, 0.5f),
+                    Quaternion.identity)).position;
+
+            if (middle.TryGetPose(out Pose metacarpalPose))
+                return ToWorldPose(new Pose(metacarpalPose.position,
+                    Quaternion.identity)).position;
+
+            return fallback;
+        }
+
         private void DriveBrushGripPose(
             Transform root,
             HandState hand)
@@ -3269,7 +3777,7 @@ namespace TiltBrush
                 hand.palmPose.rotation;
 
             Vector3 desiredPosition =
-                hand.palmPose.position;
+                GetHandGrabCenter(true, hand.palmPose.position);
 
             if (!useExactRestoredPose)
             {
@@ -3325,7 +3833,9 @@ namespace TiltBrush
                 hand.palmPose.rotation;
 
             Vector3 desiredPosition =
-                hand.palmPose.position;
+                m_LeftGripHeld
+                    ? GetHandGrabCenter(false, hand.palmPose.position)
+                    : hand.palmPose.position;
 
             if (!useExactRestoredPose)
             {
@@ -3521,6 +4031,8 @@ $" tutorial={tutorialActive}" +
                 $"graspL={m_Left.graspValue:F3} " +
                 $"graspR={m_Right.graspValue:F3} " +
                 $"swim={m_SwimModeHeld} " +
+                $"panelContact={m_RightPanelContact} " +
+                $"panelGrabArmed={m_RightPanelGrabArmed} " +
                 $"menuTouch={m_MenuTouchHeld} " +
                 $"xrSpatialL={m_Left.xrHandsSpatialValid} " +
                 $"xrSpatialR={m_Right.xrHandsSpatialValid} " +
