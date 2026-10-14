@@ -23,12 +23,28 @@ namespace TiltBrush
         [UnityEngine.SerializeField] private bool m_IsViewpoint;
         [UnityEngine.SerializeField] private bool m_IsContinue;
 
+        private UnityEngine.Texture2D m_PauseTexture;
+        private bool? m_ShowingPause;
+
+        public void RefreshPlaybackState()
+        {
+            bool pause = NativeImmImport.CanPause;
+            SetButtonAvailable(pause || NativeImmImport.CanContinue);
+            if (m_ShowingPause == pause) return;
+            if (pause && m_PauseTexture == null)
+                m_PauseTexture = UnityEngine.Resources.Load<UnityEngine.Texture2D>("Icons/pause");
+            SetButtonTexture(pause ? m_PauseTexture : m_ButtonTexture);
+            SetDescriptionText(pause ? "Pause IMM" : "Play / Continue IMM");
+            m_ShowingPause = pause;
+        }
+
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
             if (m_IsContinue)
             {
-                NativeImmImport.ContinuePlayback();
+                if (NativeImmImport.CanPause) NativeImmImport.PausePlayback();
+                else NativeImmImport.ContinuePlayback();
                 return;
             }
             if (m_IsViewpoint)

@@ -466,7 +466,7 @@ namespace TiltBrush
             if (m_ContinueButton != null)
             {
                 m_ContinueButton.gameObject.SetActive(true);
-                m_ContinueButton.SetButtonAvailable(NativeImmImport.CanContinue);
+                m_ContinueButton.RefreshPlaybackState();
             }
             if (m_ChapterLabel != null)
                 m_ChapterLabel.text = NativeImmImport.IsLoading ? "Loading IMM…"

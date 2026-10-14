@@ -48,6 +48,16 @@ namespace TiltBrush
         public static bool IsChangingChapter => s_Active != null && s_Active.m_ChapterNavigationRequest != 0;
         public static int ChapterCount => s_Active != null && s_Active.m_Ready
             ? s_Active.m_Document.GetChapterCount() : 0;
+        public static bool CanPause => s_Active != null && s_Active.m_Ready && !IsChangingChapter &&
+            s_Active.m_Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Playing;
+
+        public static void PausePlayback()
+        {
+            if (!CanPause) return;
+            s_Active.m_Document.Pause();
+            Debug.Log("[OB_IMM_PLAYBACK_20261014] Pause requested");
+        }
+
         public static bool CanContinue
         {
             get
