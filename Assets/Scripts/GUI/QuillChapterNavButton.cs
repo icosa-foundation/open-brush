@@ -21,10 +21,16 @@ namespace TiltBrush
     {
         [UnityEngine.SerializeField] private bool m_IsNext;
         [UnityEngine.SerializeField] private bool m_IsViewpoint;
+        [UnityEngine.SerializeField] private bool m_IsContinue;
 
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
+            if (m_IsContinue)
+            {
+                NativeImmImport.ContinuePlayback();
+                return;
+            }
             if (m_IsViewpoint)
             {
                 NativeImmImport.CycleViewpoint(m_IsNext ? 1 : -1);

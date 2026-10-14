@@ -12,6 +12,8 @@ using UnityEngine.Rendering.Universal;
 namespace TiltBrush
 {
     /// <summary>Owns a non-editable IMM document for the current sketch session.</summary>
+    // Read evaluated viewpoint state after ImmPlayerManager's LateUpdate.
+    [DefaultExecutionOrder(100)]
     public sealed class NativeImmImport : MonoBehaviour
     {
         private const string LogPrefix = "[OB_NATIVE_IMM_20261013]";
@@ -31,24 +33,62 @@ namespace TiltBrush
         private bool m_DeletePathOnUnload;
         private int[] m_ViewpointIds = new int[0];
         private int m_ViewpointIndex = -1;
+        private int m_ViewpointCount;
+        private int m_SelectedViewpointId = -1;
+        private bool m_PlaybackStarted;
+        private ulong m_ChapterRequest;
+        private ulong m_ChapterNavigationRequest;
+        private SpawnAreaSnapshot m_ViewpointState;
+        private SpawnAreaPose m_PreviousViewpointPose;
 
-        public static int ViewpointCount => s_Active != null && s_Active.m_Ready
-            ? s_Active.m_ViewpointIds.Length : 0;
+        public static int ViewpointCount => s_Active != null && s_Active.m_Ready && !IsChangingChapter
+            ? s_Active.m_ViewpointCount : 0;
         public static int CurrentViewpointIndex => s_Active != null ? s_Active.m_ViewpointIndex : -1;
+
+        public static bool IsChangingChapter => s_Active != null && s_Active.m_ChapterNavigationRequest != 0;
+        public static int ChapterCount => s_Active != null && s_Active.m_Ready
+            ? s_Active.m_Document.GetChapterCount() : 0;
+        public static bool CanContinue
+        {
+            get
+            {
+                if (s_Active == null || !s_Active.m_Ready || IsChangingChapter) return false;
+                var playback = s_Active.m_Document.GetStateInfo().Playback;
+                return playback == ImmDocument.PlaybackState.Waiting || playback == ImmDocument.PlaybackState.Paused;
+            }
+        }
+
+        public static void ContinuePlayback()
+        {
+            if (!CanContinue) return;
+            if (s_Active.m_Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Waiting)
+                s_Active.m_Document.Continue();
+            else
+                s_Active.m_Document.Resume();
+            Debug.Log("[OB_IMM_PLAYBACK_20261014] Play/Continue requested");
+        }
+
+        public static void CycleChapter(int direction)
+        {
+            if (ChapterCount < 2 || IsChangingChapter || !s_Active.RefreshViewpoints()) return;
+            int target = (s_Active.m_ViewpointState.chapter + direction + ChapterCount) % ChapterCount;
+            s_Active.m_ChapterNavigationRequest = s_Active.m_Document.RequestSetChapter(target);
+            if (IsChangingChapter)
+                Debug.Log($"[OB_IMM_PLAYBACK_20261014] Chapter {target} requested, token={s_Active.m_ChapterNavigationRequest}");
+        }
 
         public static void CycleViewpoint(int direction)
         {
-            if (ViewpointCount < 2) return;
+            if (s_Active == null || !s_Active.m_Ready || IsChangingChapter) return;
             var active = s_Active;
+            if (!active.RefreshViewpoints() || active.m_ViewpointCount < 2 ||
+                active.m_ViewpointState.commandStatus == PlaybackRequestStatus.Pending) return;
+            int count = active.m_ViewpointCount;
             int index = active.m_ViewpointIndex < 0
-                ? (direction < 0 ? ViewpointCount - 1 : 0)
-                : (active.m_ViewpointIndex + direction + ViewpointCount) % ViewpointCount;
-            if (!active.AlignSceneToViewpoint(active.m_ViewpointIds[index])) return;
-            active.m_ViewpointIndex = index;
-            active.m_Document.SetActiveSpawnAreaId(active.m_ViewpointIds[index]);
-            active.m_Document.SetTransform(active.transform);
-            active.transform.hasChanged = false;
-            Debug.Log($"[OB_IMM_VIEWPOINT_20261014] Viewpoint {index + 1}/{ViewpointCount}");
+                ? (direction < 0 ? count - 1 : 0)
+                : (active.m_ViewpointIndex + direction + count) % count;
+            if (!active.SelectViewpoint(active.m_ViewpointIds[index])) return;
+            Debug.Log($"[OB_IMM_VIEWPOINT_20261014] Viewpoint {index + 1}/{count}");
         }
 
         public static string CurrentPath => s_Active != null ? s_Active.m_Path : null;
@@ -212,7 +252,7 @@ namespace TiltBrush
             }
         }
 
-        private void Update()
+        private void LateUpdate()
         {
             if (m_Document == null || !m_Document.IsLoaded) return;
             if (m_Ready && transform.hasChanged)
@@ -222,7 +262,25 @@ namespace TiltBrush
             }
             if (!m_UsesRenderGraph && m_Camera != null)
                 m_Manager.SetCameraMatrices(0, m_Camera, ImmPlayerManager.StereoMode.Mono);
-            if (m_Ready) return;
+            if (m_Ready)
+            {
+                if (!RefreshViewpoints()) return;
+                if (m_ChapterNavigationRequest != 0)
+                {
+                    FinishChapterNavigation();
+                    return;
+                }
+                if (m_ViewpointState.commandStatus == PlaybackRequestStatus.Pending) return;
+                m_ChapterIndex = m_ViewpointState.chapter;
+                if (m_ViewpointState.needsUpdate != 0)
+                    ApplyAuthoredViewpoint();
+                else if (m_SelectedViewpointId == m_ViewpointState.activeId &&
+                         m_ViewpointState.activeAvailable != 0)
+                    FollowViewpoint(m_ViewpointState.activePose);
+                if (m_SelectedViewpointId >= 0 && m_ViewpointIndex < 0)
+                    m_SelectedViewpointId = -1; // Hidden selection stays parked until explicitly selected again.
+                return;
+            }
             var state = m_Document.GetStateInfo().Loading;
             if (state == ImmDocument.LoadingState.Failed)
             {
@@ -233,51 +291,191 @@ namespace TiltBrush
             {
                 if (!m_Document.IsSequenceReady() || SceneSettings.m_Instance.IsTransitioning)
                     return;
-                m_Document.Show();
-                m_Document.Resume();
+                if (!m_PlaybackStarted)
+                {
+                    m_Document.Show();
+                    m_Document.Resume();
+                    m_PlaybackStarted = true;
+                }
                 if (m_ChapterIndex >= 0)
                 {
-                    m_Document.SetChapter(m_ChapterIndex);
-                    Debug.Log($"{LogPrefix} Chapter requested={m_ChapterIndex}, current={m_Document.GetCurrentChapter()}, count={m_Document.GetChapterCount()}");
+                    if (m_ChapterRequest == 0)
+                    {
+                        if (m_ChapterIndex >= m_Document.GetChapterCount())
+                        {
+                            Debug.LogError($"[OB_IMM_VIEWPOINT_20261014] Invalid chapter {m_ChapterIndex}, count={m_Document.GetChapterCount()}");
+                            Unload();
+                            return;
+                        }
+                        m_ChapterRequest = m_Document.RequestSetChapter(m_ChapterIndex);
+                        return; // Zero means busy; retry on a later player update.
+                    }
+                    if (!RefreshViewpoints()) return;
+                    if (!m_ViewpointState.IsComplete(m_ChapterRequest))
+                    {
+                        if (m_ViewpointState.requestedCommand != m_ChapterRequest ||
+                            m_ViewpointState.commandStatus == PlaybackRequestStatus.Rejected ||
+                            m_ViewpointState.commandStatus == PlaybackRequestStatus.Superseded)
+                        {
+                            Debug.LogError($"[OB_IMM_VIEWPOINT_20261014] Chapter {m_ChapterIndex} request {m_ChapterRequest} failed: {m_ViewpointState.commandStatus}");
+                            Unload();
+                        }
+                        return;
+                    }
                 }
-                m_ViewpointIds = m_Document.GetSpawnAreaList();
-                // Embedded IMM restores the saved scene pose, which may be between authored views.
-                m_ViewpointIndex = m_AlignInitialView
-                    ? System.Array.IndexOf(m_ViewpointIds, m_Document.GetInitialSpawnAreaId()) : -1;
-                if (m_AlignInitialView) AlignSceneToInitialView();
+                else if (!RefreshViewpoints()) return;
+                if (m_AlignInitialView)
+                {
+                    int initialId = m_ViewpointState.preferredAvailable != 0
+                        ? m_ViewpointState.preferredId
+                        : (m_ViewpointCount > 0 ? m_ViewpointIds[0] : -1);
+                    if (initialId >= 0)
+                    {
+                        if (!SelectViewpoint(initialId)) return;
+                    }
+                    else
+                    {
+                        transform.position = m_Camera.transform.position + m_Camera.transform.forward * 20f;
+                        Debug.LogWarning($"[OB_IMM_VIEWPOINT_20261014] No available initial viewpoint: {m_Path}");
+                    }
+                }
+                // A saved sketch owns its restored placement. Acknowledge the startup
+                // preference without selecting/following it; later authored changes still apply.
+                if (m_ViewpointState.needsUpdate != 0)
+                    m_Document.SetSpawnAreaNeedsUpdate(false);
+                m_ChapterIndex = m_ViewpointState.chapter;
                 m_Document.SetTransform(transform);
                 transform.hasChanged = false;
                 Color background = m_Manager.GetPlayerInfo().BackgroundColor.gamma;
                 SceneSettings.m_Instance.SkyColorA = background;
                 SceneSettings.m_Instance.SkyColorB = background;
                 m_Ready = true;
+                Debug.Log($"[OB_IMM_VIEWPOINT_20261014] Evaluated chapter={m_ChapterIndex}, request={m_ChapterRequest}, available={m_ViewpointCount}, restored={!m_AlignInitialView}");
                 Debug.Log($"{LogPrefix} Native document ready: {m_Path}");
             }
         }
 
-        private void AlignSceneToInitialView()
+        private bool RefreshViewpoints()
         {
-            int spawnAreaId = m_Document.GetInitialSpawnAreaId();
-            if (spawnAreaId >= 0 && AlignSceneToViewpoint(spawnAreaId)) return;
-            transform.position = m_Camera.transform.position + m_Camera.transform.forward * 20f;
-            Debug.LogWarning($"{LogPrefix} No initial IMM viewpoint; placed document in front: {m_Path}");
+            if (!m_Document.TryGetSpawnAreaSnapshot(m_ViewpointIds, out m_ViewpointState))
+            {
+                if (m_ViewpointState.availableCount <= m_ViewpointIds.Length)
+                {
+                    m_ViewpointCount = 0;
+                    m_ViewpointIndex = -1;
+                    return false;
+                }
+                m_ViewpointIds = new int[m_ViewpointState.availableCount];
+                if (!m_Document.TryGetSpawnAreaSnapshot(m_ViewpointIds, out m_ViewpointState))
+                {
+                    m_ViewpointCount = 0;
+                    m_ViewpointIndex = -1;
+                    return false;
+                }
+            }
+            m_ViewpointCount = m_ViewpointState.availableCount;
+            m_ViewpointIndex = System.Array.IndexOf(m_ViewpointIds, m_SelectedViewpointId, 0, m_ViewpointCount);
+            return true;
         }
 
-        private bool AlignSceneToViewpoint(int spawnAreaId)
+        private void FinishChapterNavigation()
+        {
+            if (!m_ViewpointState.IsComplete(m_ChapterNavigationRequest))
+            {
+                if (m_ViewpointState.requestedCommand != m_ChapterNavigationRequest ||
+                    m_ViewpointState.commandStatus == PlaybackRequestStatus.Rejected ||
+                    m_ViewpointState.commandStatus == PlaybackRequestStatus.Superseded)
+                {
+                    Debug.LogWarning($"[OB_IMM_PLAYBACK_20261014] Chapter request {m_ChapterNavigationRequest} failed: {m_ViewpointState.commandStatus}");
+                    m_ChapterNavigationRequest = 0;
+                }
+                return;
+            }
+            int viewpoint = m_ViewpointState.preferredAvailable != 0 ? m_ViewpointState.preferredId
+                : (m_ViewpointCount > 0 ? m_ViewpointIds[0] : -1);
+            if (viewpoint >= 0 && !SelectViewpoint(viewpoint)) return;
+            if (viewpoint < 0) m_SelectedViewpointId = -1;
+            if (m_ViewpointState.needsUpdate != 0) m_Document.SetSpawnAreaNeedsUpdate(false);
+            m_ChapterIndex = m_ViewpointState.chapter;
+            m_ChapterNavigationRequest = 0;
+            Debug.Log($"[OB_IMM_PLAYBACK_20261014] Chapter {m_ChapterIndex} evaluated without reloading document {m_Document.DocumentId}");
+        }
+
+        private bool SelectViewpoint(int spawnAreaId)
+        {
+            if (!m_Document.TrySetActiveSpawnAreaId(spawnAreaId, out SpawnAreaPose pose,
+                    m_ViewpointState.evaluationRevision)) return false;
+            AlignSceneToViewpoint(pose);
+            m_SelectedViewpointId = spawnAreaId;
+            m_PreviousViewpointPose = pose;
+            m_ViewpointIndex = System.Array.IndexOf(m_ViewpointIds, spawnAreaId, 0, m_ViewpointCount);
+            return true;
+        }
+
+        private void ApplyAuthoredViewpoint()
+        {
+            if (m_ViewpointState.preferredAvailable != 0)
+            {
+                if (!SelectViewpoint(m_ViewpointState.preferredId)) return;
+            }
+            else
+            {
+                // Retain placement rather than jump to an unrelated eligible viewpoint.
+                Debug.Log($"[OB_IMM_VIEWPOINT_20261014] Ignoring unavailable authored viewpoint {m_ViewpointState.preferredId}");
+            }
+            m_Document.SetSpawnAreaNeedsUpdate(false);
+        }
+
+        private Pose GetViewpointWorldPose(SpawnAreaPose pose)
+        {
+            // Same IMM handedness conversion as ImmDocument's world/view pose helpers.
+            // Use the pose returned by checked selection, avoiding a second native query.
+            var flip = Matrix4x4.Scale(new Vector3(1f, 1f, -1f));
+            var converted = flip * Matrix4x4.TRS(pose.GetPosition(), pose.GetRotation(),
+                Vector3.one * pose.sca) * flip;
+            Vector3 up = converted.GetColumn(1);
+            Vector3 forward = converted.GetColumn(2);
+            if (up.sqrMagnitude < 0.0001f) up = Vector3.up;
+            if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
+            return new Pose(transform.TransformPoint(converted.GetColumn(3)),
+                transform.rotation * Quaternion.LookRotation(forward.normalized, up.normalized));
+        }
+
+        private void AlignSceneToViewpoint(SpawnAreaPose pose)
         {
             var xrOrigin = m_Camera.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
             Transform viewTarget = xrOrigin != null ? xrOrigin.transform : m_Camera.transform;
-            if (spawnAreaId < 0 ||
-                !m_Document.TryGetSpawnAreaViewTargetPose(spawnAreaId, transform,
-                    viewTarget, m_Camera.transform, true, out Pose targetView))
-            {
-                return false;
-            }
+            Pose worldPose = GetViewpointWorldPose(pose);
+            Quaternion headRotation = Quaternion.Inverse(viewTarget.rotation) * m_Camera.transform.rotation;
+            Quaternion targetRotation = worldPose.rotation * Quaternion.Inverse(headRotation);
+            Vector3 headPosition = viewTarget.InverseTransformPoint(m_Camera.transform.position);
+            if (pose.isFloorLevel != 0) headPosition.y = 0f;
+            Vector3 targetPosition = worldPose.position - targetRotation * headPosition;
 
             TrTransform currentView = TrTransform.TR(viewTarget.position, viewTarget.rotation);
-            TrTransform authoredView = TrTransform.TR(targetView.position, targetView.rotation);
+            TrTransform authoredView = TrTransform.TR(targetPosition, targetRotation);
             App.Scene.Pose = currentView * authoredView.inverse * App.Scene.Pose;
-            return true;
+            UpdateDocumentTransform();
+        }
+
+        private void FollowViewpoint(SpawnAreaPose pose)
+        {
+            // Apply only authored motion so headset motion and user scene placement remain free.
+            Pose previous = GetViewpointWorldPose(m_PreviousViewpointPose);
+            Pose current = GetViewpointWorldPose(pose);
+            if (previous.position != current.position || previous.rotation != current.rotation)
+            {
+                App.Scene.Pose = TrTransform.TR(previous.position, previous.rotation) *
+                    TrTransform.TR(current.position, current.rotation).inverse * App.Scene.Pose;
+                UpdateDocumentTransform();
+            }
+            m_PreviousViewpointPose = pose;
+        }
+
+        private void UpdateDocumentTransform()
+        {
+            m_Document.SetTransform(transform);
+            transform.hasChanged = false;
         }
 
         private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
