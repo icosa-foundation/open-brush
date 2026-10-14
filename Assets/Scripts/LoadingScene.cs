@@ -74,7 +74,7 @@ namespace TiltBrush
             if (Application.platform == RuntimePlatform.Android)
             {
                 m_Overlay.MessageStatus = m_RequestAndroidFolderPermissions.GetLocalizedStringAsync().Result;
-                yield return AndroidDirectStorage.Initialize(App.kAppFolderName);
+                yield return AndroidDirectStorage.Initialize(App.kAppFolderName, ShowFolderExplanation);
                 if (AndroidDirectStorage.StartupCanceled) yield break;
                 m_Overlay.MessageStatus = m_LoadingText.GetLocalizedStringAsync().Result;
             }
@@ -120,6 +120,17 @@ namespace TiltBrush
 
             Destroy(gameObject);
         }
+
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+        private IEnumerator ShowFolderExplanation(bool retry)
+        {
+            bool accepted = false;
+            yield return StartupFolderDialog.Show(m_VrCamera, m_Overlay, App.kAppFolderName,
+                retry, result => accepted = result);
+            if (accepted) AndroidDirectStorage.OpenFolderPicker();
+            else AndroidDirectStorage.CancelStartup();
+        }
+#endif
 
         // Updates the progress bar. Will always increment a little bit to ensure the user is always
         // told that things are progressing.

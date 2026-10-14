@@ -16,6 +16,8 @@ namespace TiltBrush
         private const string Bridge = "foundation.icosa.openbrush.DirectStorage";
         private static AndroidDirectStorage s_Instance;
         private string m_FolderName;
+        private bool m_PromptRequested;
+        private bool m_RetryPrompt;
         private static int s_RefreshRequested;
         private static string[] s_Files = Array.Empty<string>();
         private static string[] s_Directories = Array.Empty<string>();
@@ -38,7 +40,7 @@ namespace TiltBrush
             public string[] directories;
         }
 
-        public static IEnumerator Initialize(string folderName)
+        public static IEnumerator Initialize(string folderName, Func<bool, IEnumerator> showExplanation)
         {
             if (Application.platform != RuntimePlatform.Android || StartupReady) yield break;
             if (s_Instance == null)
@@ -59,8 +61,41 @@ namespace TiltBrush
                 }
                 catch (Exception error) { s_Instance.OnStorageError(error.Message); }
             }
-            while (!StartupReady && !StartupCanceled) yield return null;
+            while (!StartupReady && !StartupCanceled)
+            {
+                if (s_Instance.m_PromptRequested)
+                {
+                    s_Instance.m_PromptRequested = false;
+                    yield return showExplanation(s_Instance.m_RetryPrompt);
+                }
+                else yield return null;
+            }
         }
+
+        [Preserve]
+        public void OnStoragePickerRequired(string unused)
+        {
+            // A revoked grant during a later refresh must not interrupt the running app.
+            if (StartupReady)
+            {
+                IsRefreshing = false;
+                Debug.LogWarning("OBDS_APP folder access revoked; reconnect on the next launch");
+                return;
+            }
+            m_PromptRequested = true;
+        }
+
+        public static void OpenFolderPicker()
+        {
+            try
+            {
+                using (var bridge = new AndroidJavaClass(Bridge))
+                    bridge.CallStatic("chooseFolder", s_Instance.m_FolderName, s_Instance.gameObject.name);
+            }
+            catch (Exception error) { s_Instance.OnStorageError(error.Message); }
+        }
+
+        public static void CancelStartup() => s_Instance.OnStorageCanceled("");
 
         public static bool ContainsPath(string path)
         {
@@ -168,8 +203,8 @@ namespace TiltBrush
                 IsRefreshing = false;
                 return;
             }
-            using (var bridge = new AndroidJavaClass(Bridge))
-                bridge.CallStatic("showRetry", m_FolderName, gameObject.name);
+            m_RetryPrompt = true;
+            m_PromptRequested = true;
         }
 
         [Preserve]

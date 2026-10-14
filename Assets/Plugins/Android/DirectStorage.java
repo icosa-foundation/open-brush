@@ -2,7 +2,6 @@
 package foundation.icosa.openbrush;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.Context;
 import android.content.Intent;
@@ -65,21 +64,7 @@ public final class DirectStorage {
                     return;
                 }
             }
-            activity.runOnUiThread(() -> {
-                try {
-                    if (activity.isFinishing() || activity.isDestroyed()) {
-                        send(receiver, "OnStorageCanceled", "");
-                        return;
-                    }
-                    // Temporary: bypass the native explanation dialog, which cannot be
-                    // reliably dismissed with hand input on Aura.
-                    // TODO: Restore a hand-accessible, app-controlled explanation before the picker:
-                    // Open Brush stores sketches, exports and reference files in Documents/Open Brush.
-                    // Grant access to save new files and open existing ones. Select Use this folder,
-                    // then Allow. Canceling folder selection exits Open Brush.
-                    launchPicker(activity, name, receiver);
-                } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
-            });
+            send(receiver, "OnStoragePickerRequired", "");
         } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
     }
 
@@ -96,23 +81,18 @@ public final class DirectStorage {
         } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
     }
 
-    public static void showRetry(String name, String receiver) {
+    // Called only after Unity has dismissed its explanation and stopped startup XR.
+    public static void chooseFolder(String name, String receiver) {
         Activity activity = UnityPlayer.currentActivity;
-        if (activity == null) { send(receiver, "OnStorageCanceled", ""); return; }
+        if (activity == null) { send(receiver, "OnStorageError", "Android activity is unavailable"); return; }
         activity.runOnUiThread(() -> {
             try {
                 if (activity.isFinishing() || activity.isDestroyed()) {
                     send(receiver, "OnStorageCanceled", "");
                     return;
                 }
-                new AlertDialog.Builder(activity)
-            .setTitle("Connect your Open Brush folder")
-            .setMessage("Choose the workspace folder in Documents so Open Brush can access existing files. Cancel to exit and connect it later.")
-            .setPositiveButton("Try again", (dialog, which) -> begin(name, receiver))
-            .setNegativeButton("Cancel", (dialog, which) -> send(receiver, "OnStorageCanceled", ""))
-            .setOnCancelListener(dialog -> send(receiver, "OnStorageCanceled", ""))
-                    .show();
-            } catch (Exception error) { send(receiver, "OnStorageCanceled", ""); }
+                launchPicker(activity, name, receiver);
+            } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
         });
     }
 
