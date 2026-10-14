@@ -15,17 +15,21 @@
 namespace TiltBrush
 {
     /// <summary>
-    /// Prev/next chapter navigation button for the Quill file browser.
-    /// Now finds the QuillLibraryPanel instead of individual file buttons
-    /// since chapter controls are centralized in the action area.
+    /// Prev/next navigation for a selected file's chapters or the loaded native IMM's viewpoints.
     /// </summary>
     public class QuillChapterNavButton : BaseButton
     {
         [UnityEngine.SerializeField] private bool m_IsNext;
+        [UnityEngine.SerializeField] private bool m_IsViewpoint;
 
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
+            if (m_IsViewpoint)
+            {
+                NativeImmImport.CycleViewpoint(m_IsNext ? 1 : -1);
+                return;
+            }
             var panel = GetComponentInParent<QuillLibraryPanel>();
             if (m_IsNext) panel?.OnNextChapterPressed();
             else panel?.OnPrevChapterPressed();

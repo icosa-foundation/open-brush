@@ -40,6 +40,9 @@ namespace TiltBrush
         [SerializeField] private QuillChapterNavButton m_PrevChapterButton;
         [SerializeField] private QuillChapterNavButton m_NextChapterButton;
         [SerializeField] private GameObject m_ChapterLoadingSpinner;
+        [Header("Loaded IMM Viewpoints")]
+        [SerializeField] private GameObject m_ViewpointControls;
+        [SerializeField] private TextMeshPro m_ViewpointLabel;
 
         private QuillFileCatalog m_Catalog;
         private QuillFileInfo m_SelectedFile;
@@ -403,6 +406,18 @@ namespace TiltBrush
         {
             BaseUpdate();
             PageFlipUpdate();
+
+            if (m_ViewpointControls != null)
+            {
+                int count = NativeImmImport.ViewpointCount;
+                m_ViewpointControls.SetActive(count > 1);
+                if (count > 1 && m_ViewpointLabel != null)
+                {
+                    int index = NativeImmImport.CurrentViewpointIndex;
+                    m_ViewpointLabel.text = index >= 0
+                        ? $"Viewpoint {index + 1} / {count}" : $"Viewpoint — / {count}";
+                }
+            }
 
             if (m_RefreshingSpinner != null)
             {

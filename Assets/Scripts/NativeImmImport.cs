@@ -29,6 +29,27 @@ namespace TiltBrush
         private int m_ChapterIndex;
         private string m_Path;
         private bool m_DeletePathOnUnload;
+        private int[] m_ViewpointIds = new int[0];
+        private int m_ViewpointIndex = -1;
+
+        public static int ViewpointCount => s_Active != null && s_Active.m_Ready
+            ? s_Active.m_ViewpointIds.Length : 0;
+        public static int CurrentViewpointIndex => s_Active != null ? s_Active.m_ViewpointIndex : -1;
+
+        public static void CycleViewpoint(int direction)
+        {
+            if (ViewpointCount < 2) return;
+            var active = s_Active;
+            int index = active.m_ViewpointIndex < 0
+                ? (direction < 0 ? ViewpointCount - 1 : 0)
+                : (active.m_ViewpointIndex + direction + ViewpointCount) % ViewpointCount;
+            if (!active.AlignSceneToViewpoint(active.m_ViewpointIds[index])) return;
+            active.m_ViewpointIndex = index;
+            active.m_Document.SetActiveSpawnAreaId(active.m_ViewpointIds[index]);
+            active.m_Document.SetTransform(active.transform);
+            active.transform.hasChanged = false;
+            Debug.Log($"[OB_IMM_VIEWPOINT_20261014] Viewpoint {index + 1}/{ViewpointCount}");
+        }
 
         public static string CurrentPath => s_Active != null ? s_Active.m_Path : null;
         public static bool IsActive => s_Active != null;
@@ -219,6 +240,10 @@ namespace TiltBrush
                     m_Document.SetChapter(m_ChapterIndex);
                     Debug.Log($"{LogPrefix} Chapter requested={m_ChapterIndex}, current={m_Document.GetCurrentChapter()}, count={m_Document.GetChapterCount()}");
                 }
+                m_ViewpointIds = m_Document.GetSpawnAreaList();
+                // Embedded IMM restores the saved scene pose, which may be between authored views.
+                m_ViewpointIndex = m_AlignInitialView
+                    ? System.Array.IndexOf(m_ViewpointIds, m_Document.GetInitialSpawnAreaId()) : -1;
                 if (m_AlignInitialView) AlignSceneToInitialView();
                 m_Document.SetTransform(transform);
                 transform.hasChanged = false;
@@ -233,21 +258,26 @@ namespace TiltBrush
         private void AlignSceneToInitialView()
         {
             int spawnAreaId = m_Document.GetInitialSpawnAreaId();
+            if (spawnAreaId >= 0 && AlignSceneToViewpoint(spawnAreaId)) return;
+            transform.position = m_Camera.transform.position + m_Camera.transform.forward * 20f;
+            Debug.LogWarning($"{LogPrefix} No initial IMM viewpoint; placed document in front: {m_Path}");
+        }
+
+        private bool AlignSceneToViewpoint(int spawnAreaId)
+        {
             var xrOrigin = m_Camera.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
             Transform viewTarget = xrOrigin != null ? xrOrigin.transform : m_Camera.transform;
             if (spawnAreaId < 0 ||
                 !m_Document.TryGetSpawnAreaViewTargetPose(spawnAreaId, transform,
                     viewTarget, m_Camera.transform, true, out Pose targetView))
             {
-                transform.position = m_Camera.transform.position + m_Camera.transform.forward * 20f;
-                Debug.LogWarning($"{LogPrefix} No initial IMM viewpoint; placed document in front: {m_Path}");
-                return;
+                return false;
             }
 
             TrTransform currentView = TrTransform.TR(viewTarget.position, viewTarget.rotation);
             TrTransform authoredView = TrTransform.TR(targetView.position, targetView.rotation);
             App.Scene.Pose = currentView * authoredView.inverse * App.Scene.Pose;
-            Debug.Log($"{LogPrefix} Aligned scene to initial IMM viewpoint: {m_Path}");
+            return true;
         }
 
         private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
