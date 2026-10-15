@@ -36,6 +36,8 @@ namespace TiltBrush
         private enum MenuRaySource { Finger, Aim, Pinch }
         private enum PinchDetectionSource { OpenXR, XRHands }
 
+        // Thumb, index, middle, ring, little. Defaults match XR Hands' sample fist.
+        private readonly float[] m_FistMinimumCurl = { 0.625f, 0.85f, 0.85f, 0.85f, 0.75f };
         private XRHandShape m_FistShape;
         private readonly XRHandJointsUpdatedEventArgs m_FistArgs = new XRHandJointsUpdatedEventArgs();
 
@@ -54,6 +56,43 @@ namespace TiltBrush
                         lowerTolerance = tolerance
                     }
                 }
+            };
+        }
+
+        public static void SetFistThresholds(float thumb, float index, float middle, float ring, float little)
+        {
+            var thresholds = new[] { thumb, index, middle, ring, little };
+            foreach (float value in thresholds)
+                if (float.IsNaN(value) || float.IsInfinity(value) || value < 0.0f || value > 1.0f)
+                    throw new ArgumentException("Fist minimum curl values must be finite and between 0 and 1.");
+            if (Instance == null)
+                throw new InvalidOperationException("The Android XR hand bridge is not available.");
+            Array.Copy(thresholds, Instance.m_FistMinimumCurl, thresholds.Length);
+            Instance.ConfigureFistShape();
+            Debug.Log($"ANDROIDXR_FIST_TUNING thumb={thumb} index={index} middle={middle} ring={ring} little={little}");
+        }
+
+        private void ConfigureFistShape()
+        {
+            m_FistShape.fingerShapeConditions = new List<XRFingerShapeCondition>
+            {
+                FistCondition(XRHandFingerID.Thumb, 1.0f - m_FistMinimumCurl[0]),
+                FistCondition(XRHandFingerID.Index, 1.0f - m_FistMinimumCurl[1]),
+                FistCondition(XRHandFingerID.Middle, 1.0f - m_FistMinimumCurl[2]),
+                FistCondition(XRHandFingerID.Ring, 1.0f - m_FistMinimumCurl[3]),
+                FistCondition(XRHandFingerID.Little, 1.0f - m_FistMinimumCurl[4])
+            };
+        }
+
+        private object DescribeCurl(HandState hand, int finger)
+        {
+            float? value = hand.fingerCurl[finger];
+            return new
+            {
+                valid = value.HasValue,
+                value,
+                minimum = m_FistMinimumCurl[finger],
+                passes = value.HasValue && value.Value >= m_FistMinimumCurl[finger]
             };
         }
 
@@ -109,6 +148,14 @@ namespace TiltBrush
                 pinchHeld = hand.pinchHeld,
                 grasp = hand.graspValue,
                 fistDetected = hand.fistDetected,
+                curl = new
+                {
+                    thumb = DescribeCurl(hand, 0),
+                    index = DescribeCurl(hand, 1),
+                    middle = DescribeCurl(hand, 2),
+                    ring = DescribeCurl(hand, 3),
+                    little = DescribeCurl(hand, 4)
+                },
                 gripHeld = isBrush ? m_RightGripHeld : m_LeftGripHeld
             };
         }
@@ -597,6 +644,7 @@ namespace TiltBrush
             public bool pinchHeld;
             public float graspValue;
             public bool fistDetected;
+            public readonly float?[] fingerCurl = new float?[5];
 
             // Kept for compatibility with existing bridge diagnostics/API.
             public float indexMiddleDistance = float.PositiveInfinity;
@@ -1105,15 +1153,7 @@ namespace TiltBrush
         {
             Instance = this;
             m_FistShape = ScriptableObject.CreateInstance<XRHandShape>();
-            // Match XR Hands' shipped Fist Hand Shape, checking thumb/index first.
-            m_FistShape.fingerShapeConditions = new List<XRFingerShapeCondition>
-            {
-                FistCondition(XRHandFingerID.Thumb, 0.375f),
-                FistCondition(XRHandFingerID.Index, 0.15f),
-                FistCondition(XRHandFingerID.Middle, 0.15f),
-                FistCondition(XRHandFingerID.Ring, 0.15f),
-                FistCondition(XRHandFingerID.Little, 0.25f)
-            };
+            ConfigureFistShape();
 
             // Do this in Awake (not only Start) so other Open Brush Awake paths
             // already see AndroidXRHandBridge.Active when OpenXR has created the
@@ -1897,6 +1937,7 @@ namespace TiltBrush
             state.xrHandsPinchValue = 0.0f;
             state.xrHandsPinchValid = false;
             state.fistDetected = false;
+            Array.Clear(state.fingerCurl, 0, state.fingerCurl.Length);
             if (state.tracked && m_XRHandSubsystem != null && m_XRHandSubsystem.running)
             {
                 XRHand hand = allowDraw ? m_XRHandSubsystem.rightHand : m_XRHandSubsystem.leftHand;
@@ -1905,6 +1946,14 @@ namespace TiltBrush
                     // Unity's pinch measurement uses only this finger's tip and the thumb tip.
                     var shape = hand.CalculateFingerShape(XRHandFingerID.Index, XRFingerShapeTypes.Pinch);
                     state.xrHandsPinchValid = shape.TryGetPinch(out state.xrHandsPinchValue);
+                    // Sample every finger even if the fist shape rejects the first condition.
+                    // Null means joint curl could not be calculated, rather than an open finger.
+                    for (int finger = 0; finger < state.fingerCurl.Length; ++finger)
+                    {
+                        var curl = hand.CalculateFingerShape((XRHandFingerID)finger, XRFingerShapeTypes.FullCurl);
+                        if (curl.TryGetFullCurl(out float value) && !float.IsNaN(value) && !float.IsInfinity(value))
+                            state.fingerCurl[finger] = value;
+                    }
                     m_FistArgs.hand = hand;
                     state.fistDetected = m_FistShape.CheckConditions(m_FistArgs);
                 }
@@ -2077,6 +2126,7 @@ namespace TiltBrush
             state.pinchHeld = false;
             state.graspValue = 0.0f;
             state.fistDetected = false;
+            Array.Clear(state.fingerCurl, 0, state.fingerCurl.Length);
             state.indexDirectionValid = false;
             state.indexDirectionWorld = Vector3.forward;
         }

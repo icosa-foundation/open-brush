@@ -58,7 +58,15 @@ namespace TiltBrush
             return AndroidXRHandBridge.PinchMode;
         }
 
-        [ApiEndpoint("hand.pinch.status", "Report both pinch measurements, the effective detector and grip/trigger state. Read over HTTP with query.hand.pinch.status.")]
+        [ApiEndpoint("hand.fist.thresholds",
+            "Set minimum full curl for thumb, index, middle, ring and little (0..1). Applies to both hands until restart. Read values and per-finger validity/pass results with query.hand.pinch.status.",
+            "hand.fist.thresholds=0.625,0.85,0.85,0.85,0.75")]
+        public static void HandFistThresholds(float thumb, float index, float middle, float ring, float little)
+        {
+            AndroidXRHandBridge.SetFistThresholds(thumb, index, middle, ring, little);
+        }
+
+        [ApiEndpoint("hand.pinch.status", "Report both pinch measurements, the effective detector, per-finger fist curl/validity/thresholds and grip/trigger state. Read over HTTP with query.hand.pinch.status.")]
         public static string HandPinchStatus()
         {
             return Newtonsoft.Json.JsonConvert.SerializeObject(AndroidXRHandBridge.GetPinchStatus());
