@@ -121,3 +121,13 @@
 /Assets/Resources/PerformanceTestRunInfo.json.meta
 /Assets/Resources/PerformanceTestRunSettings.json
 /Assets/Resources/PerformanceTestRunSettings.json.meta
+
+# Generated Addressables content-update state (retain with release artifacts)
+/Assets/AddressableAssetsData/**/addressables_content_state.bin
+/Assets/AddressableAssetsData/**/addressables_content_state.bin.meta
+
+# Generated brush shader coverage and diagnostic inventory
+/Assets/Generated/ShaderWarmup/OpenBrushBrushVariants.shadervariants
+/Assets/Generated/ShaderWarmup/OpenBrushBrushVariants.shadervariants.meta
+/Assets/Generated/ShaderWarmup/open-brush-brush-variant-inventory.json
+/Assets/Generated/ShaderWarmup/open-brush-brush-variant-inventory.json.meta
