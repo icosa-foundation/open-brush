@@ -165,6 +165,7 @@ namespace TiltBrush
         public static string
             ANY = "",
             TILT = "TILT",
+            IMM = "IMM",
             BLOCKS = "BLOCKS",
             GLTF = "GLTF",
             GLTF1 = "GLTF1",
@@ -173,6 +174,7 @@ namespace TiltBrush
             FBX = "FBX",
             VOX = "VOX",
             NOT_TILT = "-TILT",
+            NOT_IMM = "-IMM",
             NOT_BLOCKS = "-BLOCKS",
             NOT_GLTF = "-GLTF",
             NOT_GLTF1 = "-GLTF1",
@@ -348,6 +350,7 @@ namespace TiltBrush
                 }
             }
 
+            public bool HasImm { get; }
             public Model Model { get { return App.IcosaAssetCatalog.GetModel(AssetId); } }
 
             public AssetDetails(
@@ -357,6 +360,7 @@ namespace TiltBrush
                 HumanName = json["displayName"].ToString();
                 AssetId = json["assetId"].ToString();
                 AccountName = accountName;
+                HasImm = json["formats"]?.Any(format => format["formatType"]?.ToString() == "IMM") == true;
                 var rotation = json["presentationParams"]?["orientingRotation"];
                 if (rotation != null)
                 {
@@ -833,6 +837,90 @@ namespace TiltBrush
                 }
                 return AssetLoadState.NotDownloaded;
             }
+        }
+
+        public string DownloadingImmAssetId { get; private set; }
+
+        public string GetImmCacheDirectoryForAsset(string assetId)
+        {
+            if (string.IsNullOrEmpty(assetId) || !sm_AssetIdPattern.IsMatch(assetId))
+                throw new ArgumentException("Invalid Icosa asset ID", nameof(assetId));
+            // Keep native documents separate from model cache validation and eviction.
+            return Path.Combine(Application.persistentDataPath, "immAssetCache", assetId);
+        }
+
+        public string GetCachedImmPath(string assetId)
+        {
+            string directory = GetImmCacheDirectoryForAsset(assetId);
+            if (!Directory.Exists(directory)) return null;
+            var files = Directory.GetFiles(directory, "*.imm", SearchOption.AllDirectories);
+            return files.Length == 1 && new FileInfo(files[0]).Length > 0 ? files[0] : null;
+        }
+
+        public bool RequestImmDownload(string assetId, Action<string> onReady)
+        {
+            if (DownloadingImmAssetId != null) return false;
+            GetImmCacheDirectoryForAsset(assetId); // Validate before starting the coroutine.
+            DownloadingImmAssetId = assetId;
+            StartCoroutine(DownloadImmCoroutine(assetId, onReady));
+            return true;
+        }
+
+        private IEnumerator<Null> DownloadImmCoroutine(string assetId, Action<string> onReady)
+        {
+            const string prefix = "[OB_ICOSA_IMM_20261015]";
+            try
+            {
+                string path = null;
+                Exception error = null;
+                try { path = GetCachedImmPath(assetId); }
+                catch (Exception exception) { error = exception; }
+                if (error != null)
+                {
+                    OutputWindowScript.Error("Could not read cached IMM", error.Message);
+                    yield break;
+                }
+                if (path == null)
+                {
+                    var request = VrAssetService.m_Instance.GetAsset(assetId,
+                        new[] { VrAssetFormat.IMM }, "IMM reference");
+                    using (var download = request.GetAssetCoroutine())
+                    {
+                        while (true)
+                        {
+                            bool next = false;
+                            try { next = download.MoveNext(); }
+                            catch (Exception exception) { error = exception; }
+                            if (error != null || !next) break;
+                            yield return download.Current;
+                        }
+                    }
+                    if (error != null || request.IsCanceled || !request.IsReady)
+                    {
+                        Debug.LogWarning($"{prefix} Download failed: {assetId}, {error?.Message}");
+                        OutputWindowScript.Error("Could not download IMM", error?.Message ?? assetId);
+                        yield break;
+                    }
+                    try
+                    {
+                        string directory = GetImmCacheDirectoryForAsset(assetId);
+                        Directory.CreateDirectory(directory);
+                        if (!request.Asset.WriteToDisk(directory))
+                            throw new IOException("Could not write IMM download to cache");
+                        path = GetCachedImmPath(assetId);
+                        if (path == null) throw new IOException("IMM download has no valid root file");
+                    }
+                    catch (Exception exception) { error = exception; }
+                    if (error != null)
+                    {
+                        OutputWindowScript.Error("Could not cache IMM", error.Message);
+                        yield break;
+                    }
+                }
+                Debug.Log($"{prefix} IMM ready: {assetId}, {path}");
+                onReady?.Invoke(path);
+            }
+            finally { DownloadingImmAssetId = null; }
         }
 
         public string GetCacheDirectoryForAsset(string asset)

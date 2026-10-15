@@ -156,13 +156,16 @@ namespace TiltBrush
                         internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "gltf2");
                     }
 
+                    if (selectedType == VrAssetFormat.IMM)
+                        internalRootFilePath = Path.ChangeExtension(internalRootFilePath, "imm");
+
                     // Get root element info.
                     m_Asset.SetRootElement(
                         internalRootFilePath,
                         format["root"]?["url"].ToString());
 
                     // Get all resource infos.  There may be zero.
-                    foreach (var r in format["resources"])
+                    foreach (var r in format["resources"] ?? new JArray())
                     {
                         string path = r["relativePath"].ToString();
                         m_Asset.AddResourceElement(path, r["url"].ToString());
