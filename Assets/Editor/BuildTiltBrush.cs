@@ -1206,26 +1206,30 @@ static class BuildTiltBrush
     // Preserve only generated prefilter fields; authored pipeline settings stay live.
     class TempRestoreUrpPrefilterSettings : IDisposable
     {
-        readonly List<(ScriptableObject asset, ScriptableObject snapshot)> m_Assets = new();
+        // BuildPlayer can unload temporary Unity objects. Keep the snapshot as managed data
+        // and reload the original asset before restoring its generated fields.
+        readonly List<(string path, string json)> m_Assets = new();
 
         public TempRestoreUrpPrefilterSettings()
         {
             foreach (string guid in AssetDatabase.FindAssets("t:UniversalRenderPipelineAsset"))
             {
-                var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(
-                    AssetDatabase.GUIDToAssetPath(guid));
-                var snapshot = UnityEngine.Object.Instantiate(asset);
-                snapshot.hideFlags = HideFlags.HideAndDontSave;
-                m_Assets.Add((asset, snapshot));
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
+                m_Assets.Add((path, EditorJsonUtility.ToJson(asset)));
             }
         }
 
         public void Dispose()
         {
-            try
+            foreach (var (path, json) in m_Assets)
             {
-                foreach (var (asset, snapshot) in m_Assets)
+                var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
+                var snapshot = ScriptableObject.CreateInstance(asset.GetType());
+                snapshot.hideFlags = HideFlags.HideAndDontSave;
+                try
                 {
+                    EditorJsonUtility.FromJsonOverwrite(json, snapshot);
                     using (var original = new SerializedObject(snapshot))
                     using (var current = new SerializedObject(asset))
                     {
@@ -1245,10 +1249,7 @@ static class BuildTiltBrush
                         }
                     }
                 }
-            }
-            finally
-            {
-                foreach (var (_, snapshot) in m_Assets)
+                finally
                 {
                     UnityEngine.Object.DestroyImmediate(snapshot);
                 }
