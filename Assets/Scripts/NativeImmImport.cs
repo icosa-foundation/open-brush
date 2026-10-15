@@ -22,10 +22,8 @@ namespace TiltBrush
 
         private ImmDocument m_Document;
         private ImmPlayerManager m_Manager;
-        private ImmCamera m_CameraRegistration;
-        private bool m_OwnsCameraRegistration;
+        private NativeImmRenderer m_Renderer;
         private Camera m_Camera;
-        private bool m_UsesRenderGraph;
         private bool m_Ready;
         private bool m_AlignInitialView;
         private int m_ChapterIndex;
@@ -217,16 +215,6 @@ namespace TiltBrush
             BeginLoad();
         }
 
-        private void OnEnable()
-        {
-            RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
-        }
-
-        private void OnDisable()
-        {
-            RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
-        }
-
         private void BeginLoad()
         {
             try
@@ -236,18 +224,7 @@ namespace TiltBrush
                     throw new System.InvalidOperationException("IMM player initialization failed");
 
                 m_Camera = App.VrSdk.GetVrCamera();
-                var device = SystemInfo.graphicsDeviceType;
-                m_UsesRenderGraph = device == GraphicsDeviceType.Direct3D12 ||
-                    device == GraphicsDeviceType.Metal || device == GraphicsDeviceType.Vulkan;
-                if (m_UsesRenderGraph)
-                {
-                    m_CameraRegistration = m_Camera.GetComponent<ImmCamera>();
-                    if (m_CameraRegistration == null)
-                    {
-                        m_CameraRegistration = m_Camera.gameObject.AddComponent<ImmCamera>();
-                        m_OwnsCameraRegistration = true;
-                    }
-                }
+                m_Renderer = NativeImmRenderer.Retain(m_Camera, m_Manager);
 
                 m_Document = m_Manager.LoadDocument(m_Path);
                 if (m_Document == null)
@@ -270,8 +247,6 @@ namespace TiltBrush
                 m_Document.SetTransform(transform);
                 transform.hasChanged = false;
             }
-            if (!m_UsesRenderGraph && m_Camera != null)
-                m_Manager.SetCameraMatrices(0, m_Camera, ImmPlayerManager.StereoMode.Mono);
             if (m_Ready)
             {
                 if (!RefreshViewpoints()) return;
@@ -503,14 +478,6 @@ namespace TiltBrush
             transform.hasChanged = false;
         }
 
-        private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
-        {
-            if (m_UsesRenderGraph || camera != m_Camera || m_Document == null || !m_Document.IsLoaded)
-                return;
-            m_Manager.SetCameraMatrices(0, camera, ImmPlayerManager.StereoMode.Mono);
-            m_Manager.IssueRenderEvent(0);
-        }
-
         private void OnDestroy()
         {
             if (s_Active == this) s_Active = null;
@@ -518,8 +485,7 @@ namespace TiltBrush
                 m_Document.GetStateInfo().Loading != ImmDocument.LoadingState.Loading;
             if (m_Document != null && m_Manager != null)
                 m_Manager.UnloadDocument(m_Document);
-            if (m_OwnsCameraRegistration && m_CameraRegistration != null)
-                Destroy(m_CameraRegistration);
+            if (m_Renderer != null) m_Renderer.Release();
             if (m_DeletePathOnUnload && canDeleteExtractedFile && File.Exists(m_Path))
             {
                 try { File.Delete(m_Path); }
