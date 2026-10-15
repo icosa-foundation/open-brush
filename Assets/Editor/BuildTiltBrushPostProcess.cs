@@ -93,8 +93,15 @@ public class BuildTiltBrushPostProcess
             namespaceManager) as XmlElement;
         if (launcherActivity == null)
         {
+            // Incremental builds can reuse the manifest converted by a previous build.
+            launcherActivity = doc.SelectSingleNode(
+                $"/manifest/application/activity[@android:name='{kGameActivity}'][intent-filter/action[@android:name='android.intent.action.MAIN']][intent-filter/category[@android:name='android.intent.category.LAUNCHER']]",
+                namespaceManager) as XmlElement;
+        }
+        if (launcherActivity == null)
+        {
             throw new BuildTiltBrush.BuildFailedException(
-                "The generated Android manifest has no PlayerActivity launcher to convert " +
+                "The generated Android manifest has no PlayerActivity or GameActivity launcher " +
                 "for the selected GameActivity entry point.");
         }
 
@@ -112,7 +119,7 @@ public class BuildTiltBrushPostProcess
             "android.app.lib_name", "game");
 
         UnityEngine.Debug.Log(
-            "Configured the generated Android manifest to launch GameActivity.");
+            "ANDROIDXR_BUILD_LAUNCHER configured the generated manifest to launch GameActivity.");
     }
 
     private static void SetMetadata(
