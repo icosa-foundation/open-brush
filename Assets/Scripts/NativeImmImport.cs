@@ -336,9 +336,8 @@ namespace TiltBrush
                 else if (!RefreshViewpoints()) return;
                 if (m_AlignInitialView)
                 {
-                    int initialId = m_ViewpointState.preferredAvailable != 0
-                        ? m_ViewpointState.preferredId
-                        : (m_ViewpointCount > 0 ? m_ViewpointIds[0] : -1);
+                    // A newly opened file starts at viewpoint 1 in the available UI list.
+                    int initialId = m_ViewpointCount > 0 ? m_ViewpointIds[0] : -1;
                     if (initialId >= 0)
                     {
                         if (!SelectViewpoint(initialId)) return;
