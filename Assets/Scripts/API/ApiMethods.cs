@@ -58,13 +58,13 @@ namespace TiltBrush
             return AndroidXRHandBridge.PinchMode;
         }
 
-        [ApiEndpoint("hand.pinch.status", "Report both pinch measurements, the effective detector and grip/trigger state.")]
+        [ApiEndpoint("hand.pinch.status", "Report both pinch measurements, the effective detector and grip/trigger state. Read over HTTP with query.hand.pinch.status.")]
         public static string HandPinchStatus()
         {
             return Newtonsoft.Json.JsonConvert.SerializeObject(AndroidXRHandBridge.GetPinchStatus());
         }
 
-        [ApiEndpoint("hand.ray.status", "Report the configured and effective hand menu ray modes.")]
+        [ApiEndpoint("hand.ray.status", "Report the configured and effective hand menu ray modes. Read over HTTP with query.hand.ray.status.")]
         public static string HandRayStatus()
         {
             bool runtimePoseAvailable = AndroidXRHandBridge.TryGetMenuRay(out _);
