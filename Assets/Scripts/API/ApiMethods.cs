@@ -60,7 +60,7 @@ namespace TiltBrush
 
         [ApiEndpoint("hand.fist.thresholds",
             "Set minimum full curl for thumb, index, middle, ring and little (0..1). Applies to both hands until restart. Read values and per-finger validity/pass results with query.hand.pinch.status.",
-            "hand.fist.thresholds=0.625,0.85,0.85,0.85,0.75")]
+            "hand.fist.thresholds=0.05,0.75,0.75,0.75,0.70")]
         public static void HandFistThresholds(float thumb, float index, float middle, float ring, float little)
         {
             AndroidXRHandBridge.SetFistThresholds(thumb, index, middle, ring, little);

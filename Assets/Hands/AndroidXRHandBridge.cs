@@ -36,8 +36,8 @@ namespace TiltBrush
         private enum MenuRaySource { Finger, Aim, Pinch }
         private enum PinchDetectionSource { OpenXR, XRHands }
 
-        // Thumb, index, middle, ring, little. Defaults match XR Hands' sample fist.
-        private readonly float[] m_FistMinimumCurl = { 0.625f, 0.85f, 0.85f, 0.85f, 0.75f };
+        // Thumb, index, middle, ring, little. Tuned on Aura for fist grip and pre-curled pinch.
+        private readonly float[] m_FistMinimumCurl = { 0.05f, 0.75f, 0.75f, 0.75f, 0.70f };
         private XRHandShape m_FistShape;
         private readonly XRHandJointsUpdatedEventArgs m_FistArgs = new XRHandJointsUpdatedEventArgs();
 
