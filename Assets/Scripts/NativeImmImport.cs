@@ -435,7 +435,7 @@ namespace TiltBrush
             m_Document.SetSpawnAreaNeedsUpdate(false);
         }
 
-        private Pose GetViewpointWorldPose(SpawnAreaPose pose)
+        private TrTransform GetViewpointWorldTransform(SpawnAreaPose pose)
         {
             // Same IMM handedness conversion as ImmDocument's world/view pose helpers.
             // Use the pose returned by checked selection, avoiding a second native query.
@@ -446,36 +446,52 @@ namespace TiltBrush
             Vector3 forward = converted.GetColumn(2);
             if (up.sqrMagnitude < 0.0001f) up = Vector3.up;
             if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
-            return new Pose(transform.TransformPoint(converted.GetColumn(3)),
-                transform.rotation * Quaternion.LookRotation(forward.normalized, up.normalized));
+            return TrTransform.TRS(transform.TransformPoint(converted.GetColumn(3)),
+                transform.rotation * Quaternion.LookRotation(forward.normalized, up.normalized),
+                Mathf.Abs(transform.lossyScale.x * pose.sca));
+        }
+
+        private static Quaternion GetViewpointYaw(Quaternion rotation)
+        {
+            Vector3 forward = Vector3.ProjectOnPlane(rotation * Vector3.forward, Vector3.up);
+            if (forward.sqrMagnitude < 0.0001f)
+                forward = Vector3.Cross(rotation * Vector3.right, Vector3.up);
+            return Quaternion.LookRotation(forward.normalized, Vector3.up);
         }
 
         private void AlignSceneToViewpoint(SpawnAreaPose pose)
         {
             var xrOrigin = m_Camera.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
             Transform viewTarget = xrOrigin != null ? xrOrigin.transform : m_Camera.transform;
-            Pose worldPose = GetViewpointWorldPose(pose);
-            Quaternion headRotation = Quaternion.Inverse(viewTarget.rotation) * m_Camera.transform.rotation;
-            Quaternion targetRotation = worldPose.rotation * Quaternion.Inverse(headRotation);
-            Vector3 headPosition = viewTarget.InverseTransformPoint(m_Camera.transform.position);
-            if (pose.isFloorLevel != 0) headPosition.y = 0f;
-            Vector3 targetPosition = worldPose.position - targetRotation * headPosition;
-
-            TrTransform currentView = TrTransform.TR(viewTarget.position, viewTarget.rotation);
-            TrTransform authoredView = TrTransform.TR(targetPosition, targetRotation);
-            App.Scene.Pose = currentView * authoredView.inverse * App.Scene.Pose;
+            TrTransform authoredView = GetViewpointWorldTransform(pose);
+            // Anchor in world units: the XR rig scales tracked metres to Open Brush units.
+            // Eye-level areas place the authored eye at the actual HMD position. Floor-level
+            // areas retain the user's tracked height above the rig's floor.
+            Vector3 targetPosition = m_Camera.transform.position;
+            if (pose.isFloorLevel != 0) targetPosition.y = viewTarget.position.y;
+            Quaternion rotation = GetViewpointYaw(m_Camera.transform.rotation) *
+                Quaternion.Inverse(GetViewpointYaw(authoredView.rotation));
+            float scale = App.METERS_TO_UNITS / authoredView.scale;
+            // Start upright rather than let scene tilt protection rotate the anchor afterward.
+            App.Scene.Pose = TrTransform.TRS(targetPosition, rotation, scale) *
+                TrTransform.T(-authoredView.translation) * App.Scene.Pose;
             UpdateDocumentTransform();
+            Debug.Log($"[OB_IMM_VIEW_HEIGHT_20261015] floor={pose.isFloorLevel}, authoredScale={pose.sca}, targetY={targetPosition.y}, sceneScale={App.Scene.Pose.scale}");
         }
 
         private void FollowViewpoint(SpawnAreaPose pose)
         {
             // Apply only authored motion so headset motion and user scene placement remain free.
-            Pose previous = GetViewpointWorldPose(m_PreviousViewpointPose);
-            Pose current = GetViewpointWorldPose(pose);
-            if (previous.position != current.position || previous.rotation != current.rotation)
+            TrTransform previous = GetViewpointWorldTransform(m_PreviousViewpointPose);
+            TrTransform current = GetViewpointWorldTransform(pose);
+            if (previous.translation != current.translation || previous.rotation != current.rotation ||
+                previous.scale != current.scale)
             {
-                App.Scene.Pose = TrTransform.TR(previous.position, previous.rotation) *
-                    TrTransform.TR(current.position, current.rotation).inverse * App.Scene.Pose;
+                var previousUpright = TrTransform.TRS(previous.translation,
+                    GetViewpointYaw(previous.rotation), previous.scale);
+                var currentUpright = TrTransform.TRS(current.translation,
+                    GetViewpointYaw(current.rotation), current.scale);
+                App.Scene.Pose = previousUpright * currentUpright.inverse * App.Scene.Pose;
                 UpdateDocumentTransform();
             }
             m_PreviousViewpointPose = pose;
