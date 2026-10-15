@@ -997,7 +997,7 @@ namespace TiltBrush
         }
 
         void Start()
-{
+        {
             m_TransformGizmo = (GameObject)Instantiate(m_TransformGizmoPrefab);
             m_TransformGizmo.transform.parent = transform;
             m_TransformGizmoScript = m_TransformGizmo.GetComponent<TransformGizmoScript>();
@@ -2046,9 +2046,9 @@ namespace TiltBrush
                 Vector3 vAngularVelocity;
                 if (GetGrabWidgetHoldHistory(out vLinearVelocity, out vAngularVelocity))
                 {
-rPrevGrabWidget.SetVelocities(
-                        vLinearVelocity, vAngularVelocity,
-                        controller.Transform.position);
+                    rPrevGrabWidget.SetVelocities(
+                                            vLinearVelocity, vAngularVelocity,
+                                            controller.Transform.position);
                 }
                 // One -> None
                 UpdateGrab_ToNone(rPrevGrabWidget);
@@ -3047,7 +3047,7 @@ rPrevGrabWidget.SetVelocities(
                 // If this were more important, we could solve for the t of the closest approach
                 return scene0;
             }
-// t0 is expected to be < 0 (room starts inside the fence)
+            // t0 is expected to be < 0 (room starts inside the fence)
             // t1 is expected to be in [0, 1] (room ends outside the fence)
 
             // Constraints:
@@ -4047,7 +4047,7 @@ rPrevGrabWidget.SetVelocities(
             Quaternion qNewRotation = qOrientToUp * m_SketchSurface.transform.rotation;
             return qNewRotation;
         }
-Quaternion OrientSketchSurfaceToForward()
+        Quaternion OrientSketchSurfaceToForward()
         {
             //project the world forward vector on to the surface plane
             Vector3 vForwardOnSurfacePlane = Vector3.forward - (Vector3.Dot(Vector3.forward, m_SurfaceForward) * m_SurfaceForward);
@@ -5046,7 +5046,7 @@ Quaternion OrientSketchSurfaceToForward()
                         {
                             App.Instance.IcosaToken = null;
                             App.IcosaUserName = "";
-App.IcosaUserIcon = null;
+                            App.IcosaUserIcon = null;
                             PanelManager.m_Instance.LastPanelInteractedWith.CloseActivePopUp(true);
                         }
                         else

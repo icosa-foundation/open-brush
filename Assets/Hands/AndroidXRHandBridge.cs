@@ -654,7 +654,7 @@ namespace TiltBrush
         /// Hand grasp maps to Grip independently per side. This mirrors physical
         /// controller behaviour and allows mixed controller+hand swimming.
         /// </summary>
-       public static bool Grip(bool isBrush)
+        public static bool Grip(bool isBrush)
         {
             if (Instance == null ||
                 !UseHand(isBrush))
@@ -1123,7 +1123,7 @@ namespace TiltBrush
             ApplySourceRouting();
 
             UpdateGripStates();
-// Direct fingertip UI pressing is intentionally disabled.
+            // Direct fingertip UI pressing is intentionally disabled.
             ResetMenuTouchState();
 
             // Physical contact with a panel is a different interaction state:
