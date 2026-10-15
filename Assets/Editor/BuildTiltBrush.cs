@@ -639,6 +639,8 @@ static class BuildTiltBrush
     {
         string m_oldKeystoreName, m_oldKeystorePass;
         string m_oldKeyaliasName, m_oldKeyaliasPass;
+        readonly bool m_RestoreKeystoreName, m_RestoreKeystorePass;
+        readonly bool m_RestoreKeyaliasName, m_RestoreKeyaliasPass;
         public TempSetCommandLineOnlyPlayerSettings(
             string keystoreName, string keystorePass,
             string keyaliasName, string keyaliasPass)
@@ -648,6 +650,10 @@ static class BuildTiltBrush
             m_oldKeyaliasName = CheckUnset(PlayerSettings.Android.keyaliasName, "keyaliasName");
             m_oldKeyaliasPass = CheckUnset(PlayerSettings.Android.keyaliasPass, "keyaliasPass");
 
+            m_RestoreKeystoreName = keystoreName != null;
+            m_RestoreKeystorePass = keystorePass != null;
+            m_RestoreKeyaliasName = keyaliasName != null;
+            m_RestoreKeyaliasPass = keyaliasPass != null;
             if (keystoreName != null) { PlayerSettings.Android.keystoreName = keystoreName; }
             if (keystorePass != null) { PlayerSettings.Android.keystorePass = keystorePass; }
             if (keyaliasName != null) { PlayerSettings.Android.keyaliasName = keyaliasName; }
@@ -656,11 +662,15 @@ static class BuildTiltBrush
 
         public void Dispose()
         {
-            PlayerSettings.Android.keystoreName = m_oldKeystoreName;
-            PlayerSettings.Android.keystorePass = m_oldKeystorePass;
-            PlayerSettings.Android.keyaliasName = m_oldKeyaliasName;
-            PlayerSettings.Android.keyaliasPass = m_oldKeyaliasPass;
-            AssetDatabase.SaveAssets();
+            if (m_RestoreKeystoreName) { PlayerSettings.Android.keystoreName = m_oldKeystoreName; }
+            if (m_RestoreKeystorePass) { PlayerSettings.Android.keystorePass = m_oldKeystorePass; }
+            if (m_RestoreKeyaliasName) { PlayerSettings.Android.keyaliasName = m_oldKeyaliasName; }
+            if (m_RestoreKeyaliasPass) { PlayerSettings.Android.keyaliasPass = m_oldKeyaliasPass; }
+            if (m_RestoreKeystoreName || m_RestoreKeystorePass ||
+                m_RestoreKeyaliasName || m_RestoreKeyaliasPass)
+            {
+                AssetDatabase.SaveAssets();
+            }
         }
 
         private static string CheckUnset(string value, string name)
@@ -932,12 +942,27 @@ static class BuildTiltBrush
         }
     }
 
+    // XR package cleanup removes settings from this list. Preserve the Editor's list
+    // after all the other build scopes, including XR loader restoration, have exited.
+    class TempRestorePreloadedAssets : IDisposable
+    {
+        readonly UnityEngine.Object[] m_PreloadedAssets = PlayerSettings.GetPreloadedAssets();
+
+        public void Dispose()
+        {
+            PlayerSettings.SetPreloadedAssets(m_PreloadedAssets);
+            AssetDatabase.SaveAssets();
+        }
+    }
+
     class TempSetPlayerSettings : IDisposable
     {
         private BuildTarget m_Target;
         private UIOrientation m_OrientationSettings;
         private iOSTargetDevice m_iOSTargetDevice;
         private Texture2D[] m_Icons;
+        private bool m_RestoreIcons;
+        private AndroidArchitecture m_AndroidTargetArchitectures;
         private bool m_RestoreAndroidTargetSdkVersion;
         private AndroidSdkVersions m_AndroidTargetSdkVersion;
         private bool m_RestoreAndroidXrSettings;
@@ -948,9 +973,17 @@ static class BuildTiltBrush
         public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
         {
             m_Target = tiltOptions.Target;
+            if (m_Target == BuildTarget.Android)
+            {
+                m_AndroidTargetArchitectures = PlayerSettings.Android.targetArchitectures;
+                if (m_AndroidTargetArchitectures != AndroidArchitecture.ARM64)
+                {
+                    PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+                    Debug.Log("Set Android architecture to ARM64.");
+                }
+            }
             m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
             m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
-            m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Any);
 
 #if OPEN_BRUSH_VIEWER
             if (m_Target == BuildTarget.iOS)
@@ -997,6 +1030,8 @@ static class BuildTiltBrush
 
                     var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target));
 
+                    m_Icons = PlayerSettings.GetIcons(buildTarget, IconKind.Any);
+                    m_RestoreIcons = true;
                     PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Any);
 #if UNITY_IOS
                     PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Notification);
@@ -1015,7 +1050,15 @@ static class BuildTiltBrush
         {
             PlayerSettings.defaultInterfaceOrientation = m_OrientationSettings;
             PlayerSettings.iOS.targetDevice = m_iOSTargetDevice;
-            PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), m_Icons, IconKind.Any);
+            if (m_RestoreIcons)
+            {
+                PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(
+                    TargetToGroup(m_Target)), m_Icons, IconKind.Any);
+            }
+            if (m_Target == BuildTarget.Android)
+            {
+                PlayerSettings.Android.targetArchitectures = m_AndroidTargetArchitectures;
+            }
             if (m_RestoreAndroidTargetSdkVersion)
             {
                 PlayerSettings.Android.targetSdkVersion = m_AndroidTargetSdkVersion;
@@ -1143,11 +1186,82 @@ static class BuildTiltBrush
         }
     }
 
+    // Preserve only generated prefilter fields; authored pipeline settings stay live.
+    class TempRestoreUrpPrefilterSettings : IDisposable
+    {
+        readonly List<(ScriptableObject asset, ScriptableObject snapshot)> m_Assets = new();
+
+        public TempRestoreUrpPrefilterSettings()
+        {
+            foreach (string guid in AssetDatabase.FindAssets("t:UniversalRenderPipelineAsset"))
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(
+                    AssetDatabase.GUIDToAssetPath(guid));
+                var snapshot = UnityEngine.Object.Instantiate(asset);
+                snapshot.hideFlags = HideFlags.HideAndDontSave;
+                m_Assets.Add((asset, snapshot));
+            }
+        }
+
+        public void Dispose()
+        {
+            try
+            {
+                foreach (var (asset, snapshot) in m_Assets)
+                {
+                    using (var original = new SerializedObject(snapshot))
+                    using (var current = new SerializedObject(asset))
+                    {
+                        var property = original.GetIterator();
+                        bool enterChildren = true;
+                        while (property.Next(enterChildren))
+                        {
+                            enterChildren = false;
+                            if (property.name.StartsWith("m_Prefilter", StringComparison.Ordinal))
+                            {
+                                current.CopyFromSerializedProperty(property);
+                            }
+                        }
+                        if (current.ApplyModifiedPropertiesWithoutUndo())
+                        {
+                            AssetDatabase.SaveAssetIfDirty(asset);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                foreach (var (_, snapshot) in m_Assets)
+                {
+                    UnityEngine.Object.DestroyImmediate(snapshot);
+                }
+            }
+        }
+    }
+
+    // URP populates its runtime-only settings list while serializing a player build.
+    // Saving once outside BuildPlayer lets its serializer clear that derived list.
+    class SaveUrpGlobalSettingsAfterBuild : IDisposable
+    {
+        public void Dispose()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<ScriptableObject>(
+                "Assets/UniversalRenderPipelineGlobalSettings.asset");
+            if (settings != null)
+            {
+                EditorUtility.SetDirty(settings);
+                AssetDatabase.SaveAssetIfDirty(settings);
+            }
+        }
+    }
+
     class TempSetOpenXrFeatureGroup : IDisposable
     {
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> enabledFeatures;
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> requiredFeatures;
         readonly BuildTargetGroup m_targetGroup;
+        UnityEngine.XR.OpenXR.OpenXRSettings m_Settings;
+        bool m_OptimizeBufferDiscards;
 
         public TempSetOpenXrFeatureGroup(TiltBuildOptions tiltOptions)
         {
@@ -1175,6 +1289,9 @@ static class BuildTiltBrush
                 throw new BuildFailedException(
                     $"Could not load OpenXR settings for {m_targetGroup}.");
             }
+
+            m_Settings = settings;
+            m_OptimizeBufferDiscards = settings.optimizeBufferDiscards;
 
             var featureList = new List<UnityEngine.XR.OpenXR.Features.OpenXRFeature>();
             int featuresCount = settings.GetFeatures(featureList);
@@ -1277,6 +1394,16 @@ static class BuildTiltBrush
             foreach (var enabledFeature in enabledFeatures)
             {
                 enabledFeature.enabled = true;
+            }
+
+            if (m_Settings != null)
+            {
+                var serializedSettings = new SerializedObject(m_Settings);
+                serializedSettings.FindProperty("m_optimizeBufferDiscards").boolValue =
+                    m_OptimizeBufferDiscards;
+                serializedSettings.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(m_Settings);
+                AssetDatabase.SaveAssetIfDirty(m_Settings);
             }
         }
     }
@@ -1652,6 +1779,7 @@ static class BuildTiltBrush
         // It's important here for Main.unity (currently scenes[1]) to be the last scene
         // "temp modified".  TempModifyScene opens the scene and if Main.unity is not the open
         // scene when TempHookUpSingletons runs, the build will fail.
+        using (var preloadedAssets = new TempRestorePreloadedAssets())
         using (var unused = new TempModifyScene(scenes[0]))
         using (var unused12 = new TempModifyScene(scenes[1]))
         using (var unused11 = new TempSetStereoRenderPath(target == BuildTarget.Android
@@ -1681,14 +1809,6 @@ static class BuildTiltBrush
             config.DoBuildTimeConfiguration(target);
             EditorUtility.SetDirty(config);
 
-            if (GuiSelectedBuildTarget == BuildTarget.Android)
-            {
-                if (PlayerSettings.Android.targetArchitectures != AndroidArchitecture.ARM64)
-                {
-                    PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
-                    Debug.Log("Set Android architecture to ARM64.");
-                }
-            }
 
             // Some mildly-hacky shenanigans here; GetMergedManifest() doesn't expect
             // to be run at build-time (ie when nobody has called Start(), Awake()).
@@ -1821,7 +1941,12 @@ static class BuildTiltBrush
                 m_buildStatus = buildDesc;
 
                 // Start building
-                var thing = BuildPipeline.BuildPlayer(scenes, location, target, options);
+                BuildReport thing;
+                using (var prefilterSettings = new TempRestoreUrpPrefilterSettings())
+                using (var cleanup = new SaveUrpGlobalSettingsAfterBuild())
+                {
+                    thing = BuildPipeline.BuildPlayer(scenes, location, target, options);
+                }
                 string error = FormatBuildReport(thing);
                 if (!string.IsNullOrEmpty(error))
                 {
