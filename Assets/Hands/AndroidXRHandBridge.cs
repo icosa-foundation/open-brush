@@ -512,6 +512,7 @@ namespace TiltBrush
             public bool triggerUp;
 
             public float pinchValue;
+            public bool pinchHeld;
             public float graspValue;
 
             // Kept for compatibility with existing bridge diagnostics/API.
@@ -1957,6 +1958,7 @@ namespace TiltBrush
         {
             state.tracked = false;
             state.pinchValue = 0.0f;
+            state.pinchHeld = false;
             state.graspValue = 0.0f;
             state.indexDirectionValid = false;
             state.indexDirectionWorld = Vector3.forward;
@@ -2406,6 +2408,10 @@ namespace TiltBrush
 
         private void UpdateGripStates()
         {
+            // TODO: Support world scaling/rotation with one hand and the opposite controller.
+            // m_SwimModeHeld still requires two hand sources; combine each side's routed grip
+            // without allowing a lone fist in empty space to move the world.
+            // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4121690078
             UpdateOneHandGrip(
                 m_Left,
                 UseHand(false),
@@ -2445,6 +2451,11 @@ namespace TiltBrush
             ref bool down,
             ref bool up)
         {
+            // Pinch always wins over grasp, including on the non-drawing Wand hand.
+            // Resolve this before grip edges, swimming and controller poses are computed.
+            float pinchThreshold = hand.pinchHeld ? pinchReleaseThreshold : pinchPressThreshold;
+            hand.pinchHeld = useHand && hand.tracked && hand.pinchValue >= pinchThreshold;
+
             bool previous =
                 held;
 
@@ -2456,6 +2467,7 @@ namespace TiltBrush
             bool next =
                 useHand &&
                 hand.tracked &&
+                !hand.pinchHeld &&
                 hand.graspValue >= threshold;
 
             held = next;
