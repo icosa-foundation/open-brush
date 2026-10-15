@@ -235,6 +235,7 @@ namespace TiltBrush
         // Store SVG scene info for SVG models (persists across instantiation)
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
 
+        public bool IsNativeImmModel => m_Location.Extension == ".imm";
         public bool IsGsplatModel { get; private set; }
         private GsplatAsset m_OwnedGsplatAsset;
 
@@ -309,6 +310,27 @@ namespace TiltBrush
             m_Location = Location.IcosaAsset(assetId, path);
             Init();
         }
+
+        /// <summary>Creates a bounded template; each widget owns its native document separately.</summary>
+        public static Model CreateNativeImm(string assetId, string path, Bounds bounds)
+        {
+            var size = bounds.size;
+            if (!IsFinite(bounds.center) || !IsFinite(size) ||
+                size.x < 0 || size.y < 0 || size.z < 0 || Mathf.Max(size.x, Mathf.Max(size.y, size.z)) <= Mathf.Epsilon)
+                throw new ArgumentException("IMM document has no usable bounds", nameof(bounds));
+
+            var model = new Model(assetId, path) { m_MeshBounds = bounds };
+            var root = new GameObject("Native IMM reference template");
+            root.SetActive(false);
+            if (!model.EndCreatePrefab(root, new List<string>()))
+                throw new InvalidOperationException("Could not create IMM reference template");
+            return model;
+        }
+
+        private static bool IsFinite(Vector3 value) =>
+            !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+            !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+            !float.IsNaN(value.z) && !float.IsInfinity(value.z);
 
         public Location GetLocation() { return m_Location; }
 

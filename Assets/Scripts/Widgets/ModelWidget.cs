@@ -373,7 +373,7 @@ namespace TiltBrush
                 SyncHierarchyToSubtree();
                 m_SyncHierarchyPending = false;
             }
-            if (m_ObjModelScript.NumMeshes == 0 && !m_Model.IsGsplatModel)
+            if (m_ObjModelScript.NumMeshes == 0 && !m_Model.IsGsplatModel && !m_Model.IsNativeImmModel)
             {
                 OutputWindowScript.Error("No usable geometry in model");
             }
@@ -391,6 +391,7 @@ namespace TiltBrush
 
         public bool HasMultipleNodes()
         {
+            if (m_Model.IsNativeImmModel) return false;
             // TODO test all other 3d model formats work with "break apart" command
             // Currently we assume that they do
 
@@ -412,6 +413,7 @@ namespace TiltBrush
 
         public bool MeshSplitPossible()
         {
+            if (m_Model.IsNativeImmModel) return false;
             // Unsplit models initially always have the possibility of being split.
             // We only return false if we're already tried to split this mesh
             bool hasBeenSplit = false;
@@ -626,7 +628,7 @@ namespace TiltBrush
 
         public override float GetActivationScore(Vector3 vControllerPos, InputManager.ControllerName name)
         {
-            if (TryIntersectGsplat(vControllerPos, m_CollisionRadius, out float gsplatScore))
+            if (TryIntersectNonMeshModel(vControllerPos, m_CollisionRadius, out float gsplatScore))
             {
                 return gsplatScore;
             }
@@ -650,9 +652,17 @@ namespace TiltBrush
             return -1.0f;
         }
 
-        public bool TryIntersectGsplat(Vector3 center_GS, float radius_GS, out float score)
+        public bool TryIntersectNonMeshModel(Vector3 center_GS, float radius_GS, out float score)
         {
             score = -1.0f;
+            if (m_Model != null && m_Model.IsNativeImmModel)
+            {
+                if (GrabCollider == null || !GrabCollider.gameObject.activeInHierarchy) return false;
+                float distance = Vector3.Distance(center_GS, GrabCollider.ClosestPoint(center_GS));
+                if (distance > radius_GS) return false;
+                score = 1.0f / (1.0f + distance);
+                return true;
+            }
             if (m_Model == null || !m_Model.IsGsplatModel)
             {
                 return false;
@@ -1089,7 +1099,7 @@ namespace TiltBrush
 
         override public bool HasGPUIntersectionObject()
         {
-            return m_ModelInstance != null && (m_Model == null || !m_Model.IsGsplatModel);
+            return m_ModelInstance != null && (m_Model == null || (!m_Model.IsGsplatModel && !m_Model.IsNativeImmModel));
         }
 
         override public void SetGPUIntersectionObjectLayer(int layer)
