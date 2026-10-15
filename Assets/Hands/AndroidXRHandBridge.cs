@@ -36,6 +36,27 @@ namespace TiltBrush
         private enum MenuRaySource { Finger, Aim, Pinch }
         private enum PinchDetectionSource { OpenXR, XRHands }
 
+        private XRHandShape m_FistShape;
+        private readonly XRHandJointsUpdatedEventArgs m_FistArgs = new XRHandJointsUpdatedEventArgs();
+
+        private static XRFingerShapeCondition FistCondition(XRHandFingerID finger, float tolerance)
+        {
+            return new XRFingerShapeCondition
+            {
+                fingerID = finger,
+                targets = new[]
+                {
+                    new XRFingerShapeCondition.Target
+                    {
+                        shapeType = XRFingerShapeType.FullCurl,
+                        desired = 1.0f,
+                        upperTolerance = tolerance,
+                        lowerTolerance = tolerance
+                    }
+                }
+            };
+        }
+
         [SerializeField]
         private PinchDetectionSource m_PinchDetectionSource = PinchDetectionSource.OpenXR;
 
@@ -87,6 +108,7 @@ namespace TiltBrush
                 selected = hand.pinchValue,
                 pinchHeld = hand.pinchHeld,
                 grasp = hand.graspValue,
+                fistDetected = hand.fistDetected,
                 gripHeld = isBrush ? m_RightGripHeld : m_LeftGripHeld
             };
         }
@@ -574,6 +596,7 @@ namespace TiltBrush
             public bool xrHandsPinchValid;
             public bool pinchHeld;
             public float graspValue;
+            public bool fistDetected;
 
             // Kept for compatibility with existing bridge diagnostics/API.
             public float indexMiddleDistance = float.PositiveInfinity;
@@ -1081,6 +1104,16 @@ namespace TiltBrush
         private void Awake()
         {
             Instance = this;
+            m_FistShape = ScriptableObject.CreateInstance<XRHandShape>();
+            // Match XR Hands' shipped Fist Hand Shape, checking thumb/index first.
+            m_FistShape.fingerShapeConditions = new List<XRFingerShapeCondition>
+            {
+                FistCondition(XRHandFingerID.Thumb, 0.375f),
+                FistCondition(XRHandFingerID.Index, 0.15f),
+                FistCondition(XRHandFingerID.Middle, 0.15f),
+                FistCondition(XRHandFingerID.Ring, 0.15f),
+                FistCondition(XRHandFingerID.Little, 0.25f)
+            };
 
             // Do this in Awake (not only Start) so other Open Brush Awake paths
             // already see AndroidXRHandBridge.Active when OpenXR has created the
@@ -1112,6 +1145,8 @@ namespace TiltBrush
             Application.onBeforeRender -= OnBeforeRender;
             InputSystem.onDeviceChange -= OnInputDeviceChange;
 
+            if (m_FistShape != null)
+                Destroy(m_FistShape);
             if (Instance == this)
             {
                 Instance = null;
@@ -1861,6 +1896,7 @@ namespace TiltBrush
                 ? Mathf.Clamp01(binding.pinchValue.ReadValue()) : 0.0f;
             state.xrHandsPinchValue = 0.0f;
             state.xrHandsPinchValid = false;
+            state.fistDetected = false;
             if (state.tracked && m_XRHandSubsystem != null && m_XRHandSubsystem.running)
             {
                 XRHand hand = allowDraw ? m_XRHandSubsystem.rightHand : m_XRHandSubsystem.leftHand;
@@ -1869,6 +1905,8 @@ namespace TiltBrush
                     // Unity's pinch measurement uses only this finger's tip and the thumb tip.
                     var shape = hand.CalculateFingerShape(XRHandFingerID.Index, XRFingerShapeTypes.Pinch);
                     state.xrHandsPinchValid = shape.TryGetPinch(out state.xrHandsPinchValue);
+                    m_FistArgs.hand = hand;
+                    state.fistDetected = m_FistShape.CheckConditions(m_FistArgs);
                 }
             }
             state.pinchValue = m_PinchDetectionSource == PinchDetectionSource.XRHands &&
@@ -2038,6 +2076,7 @@ namespace TiltBrush
             state.xrHandsPinchValid = false;
             state.pinchHeld = false;
             state.graspValue = 0.0f;
+            state.fistDetected = false;
             state.indexDirectionValid = false;
             state.indexDirectionWorld = Vector3.forward;
         }
@@ -2545,6 +2584,9 @@ namespace TiltBrush
                 useHand &&
                 hand.tracked &&
                 !hand.pinchHeld &&
+                // Runtime grasp strength also rises with only three fingers curled.
+                // Require the five-digit fist shape before switching into Grip.
+                hand.fistDetected &&
                 hand.graspValue >= threshold;
 
             held = next;
