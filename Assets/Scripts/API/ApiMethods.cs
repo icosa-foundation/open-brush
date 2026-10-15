@@ -48,6 +48,22 @@ namespace TiltBrush
             return AndroidXRHandBridge.MenuRayMode;
         }
 
+        [ApiEndpoint("hand.pinch.mode",
+            "Get or set pinch detection: openxr (default) or xrhands (thumb/index joints, with OpenXR fallback). Applies to drawing, UI and pinch-over-grip priority; ray mode is unchanged.",
+            "hand.pinch.mode=xrhands")]
+        public static string HandPinchMode(string mode = "")
+        {
+            if (!string.IsNullOrWhiteSpace(mode))
+                AndroidXRHandBridge.SetPinchMode(mode);
+            return AndroidXRHandBridge.PinchMode;
+        }
+
+        [ApiEndpoint("hand.pinch.status", "Report both pinch measurements, the effective detector and grip/trigger state.")]
+        public static string HandPinchStatus()
+        {
+            return Newtonsoft.Json.JsonConvert.SerializeObject(AndroidXRHandBridge.GetPinchStatus());
+        }
+
         [ApiEndpoint("hand.ray.status", "Report the configured and effective hand menu ray modes.")]
         public static string HandRayStatus()
         {

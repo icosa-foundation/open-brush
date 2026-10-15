@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Controls;
 using UnityEngine.SpatialTracking;
 using UnityEngine.XR.Hands;
+using UnityEngine.XR.Hands.Gestures;
 
 namespace TiltBrush
 {
@@ -33,6 +34,62 @@ namespace TiltBrush
         public static AndroidXRHandBridge Instance { get; private set; }
 
         private enum MenuRaySource { Finger, Aim, Pinch }
+        private enum PinchDetectionSource { OpenXR, XRHands }
+
+        [SerializeField]
+        private PinchDetectionSource m_PinchDetectionSource = PinchDetectionSource.OpenXR;
+
+        public static string PinchMode => Instance == null ? "unavailable" :
+            Instance.m_PinchDetectionSource == PinchDetectionSource.XRHands ? "xrhands" : "openxr";
+
+        public static void SetPinchMode(string mode)
+        {
+            PinchDetectionSource source;
+            switch (mode.Trim().ToLowerInvariant())
+            {
+                case "openxr": source = PinchDetectionSource.OpenXR; break;
+                case "xrhands": source = PinchDetectionSource.XRHands; break;
+                default: throw new ArgumentException("Hand pinch mode must be openxr or xrhands.");
+            }
+            if (Instance == null)
+                throw new InvalidOperationException("The Android XR hand bridge is not available.");
+            Instance.m_PinchDetectionSource = source;
+            Debug.Log($"ANDROIDXR_PINCH_COMPARE mode={PinchMode}");
+        }
+
+        public static object GetPinchStatus()
+        {
+            if (Instance == null) return new { configured = "unavailable" };
+            return new
+            {
+                configured = PinchMode,
+                pressThreshold = Instance.pinchPressThreshold,
+                releaseThreshold = Instance.pinchReleaseThreshold,
+                left = Instance.DescribePinch(Instance.m_Left, false),
+                right = Instance.DescribePinch(Instance.m_Right, true),
+                primaryTrigger = Instance.m_PrimaryTriggerHeld,
+                panelContact = Instance.m_RightPanelContact,
+                panelGrabArmed = Instance.m_RightPanelGrabArmed
+            };
+        }
+
+        private object DescribePinch(HandState hand, bool isBrush)
+        {
+            bool useJoints = m_PinchDetectionSource == PinchDetectionSource.XRHands &&
+                hand.xrHandsPinchValid;
+            return new
+            {
+                tracked = hand.tracked,
+                effective = !UseHand(isBrush) ? "controller" : !hand.tracked ? "untracked" :
+                    useJoints ? "xrhands" : "openxr",
+                openxr = hand.openXrPinchValue,
+                xrhands = hand.xrHandsPinchValid ? (float?)hand.xrHandsPinchValue : null,
+                selected = hand.pinchValue,
+                pinchHeld = hand.pinchHeld,
+                grasp = hand.graspValue,
+                gripHeld = isBrush ? m_RightGripHeld : m_LeftGripHeld
+            };
+        }
 
         private const int kPoseTrackingFlags = (int)(
             UnityEngine.XR.InputTrackingState.Position | UnityEngine.XR.InputTrackingState.Rotation);
@@ -512,6 +569,9 @@ namespace TiltBrush
             public bool triggerUp;
 
             public float pinchValue;
+            public float openXrPinchValue;
+            public float xrHandsPinchValue;
+            public bool xrHandsPinchValid;
             public bool pinchHeld;
             public float graspValue;
 
@@ -1079,6 +1139,9 @@ namespace TiltBrush
                         0.1f,
                         deviceSearchInterval);
             }
+
+            // Sample joint pinch independently of whether joints drive the spatial pose.
+            RefreshXRHandSubsystem();
 
             // Select input before installing the hand-specific controller scaffold.
             bool wasDrawingBeforeHandUpdate =
@@ -1794,10 +1857,22 @@ namespace TiltBrush
                 trackingFlags != 0 ||
                 interactionReady;
 
-            state.pinchValue =
-                binding.pinchValue != null
-                    ? Mathf.Clamp01(binding.pinchValue.ReadValue())
-                    : 0.0f;
+            state.openXrPinchValue = binding.pinchValue != null
+                ? Mathf.Clamp01(binding.pinchValue.ReadValue()) : 0.0f;
+            state.xrHandsPinchValue = 0.0f;
+            state.xrHandsPinchValid = false;
+            if (state.tracked && m_XRHandSubsystem != null && m_XRHandSubsystem.running)
+            {
+                XRHand hand = allowDraw ? m_XRHandSubsystem.rightHand : m_XRHandSubsystem.leftHand;
+                if (hand.isTracked)
+                {
+                    // Unity's pinch measurement uses only this finger's tip and the thumb tip.
+                    var shape = hand.CalculateFingerShape(XRHandFingerID.Index, XRFingerShapeTypes.Pinch);
+                    state.xrHandsPinchValid = shape.TryGetPinch(out state.xrHandsPinchValue);
+                }
+            }
+            state.pinchValue = m_PinchDetectionSource == PinchDetectionSource.XRHands &&
+                state.xrHandsPinchValid ? state.xrHandsPinchValue : state.openXrPinchValue;
 
             state.graspValue =
                 binding.graspValue != null
@@ -1887,9 +1962,9 @@ namespace TiltBrush
 
             bool nextTrigger = false;
 
-            if (allowDraw &&
-                state.tracked &&
-                binding.pinchValue != null)
+            if (allowDraw && state.tracked &&
+                (binding.pinchValue != null ||
+                 (m_PinchDetectionSource == PinchDetectionSource.XRHands && state.xrHandsPinchValid)))
             {
                 float threshold =
                     wasTrigger
@@ -1958,6 +2033,9 @@ namespace TiltBrush
         {
             state.tracked = false;
             state.pinchValue = 0.0f;
+            state.openXrPinchValue = 0.0f;
+            state.xrHandsPinchValue = 0.0f;
+            state.xrHandsPinchValid = false;
             state.pinchHeld = false;
             state.graspValue = 0.0f;
             state.indexDirectionValid = false;
@@ -1977,17 +2055,6 @@ namespace TiltBrush
 
             if (!useXRHandsForSpatialPose)
                 return;
-
-            if (m_XRHandSubsystem == null ||
-                !m_XRHandSubsystem.running)
-            {
-                if (Time.unscaledTime >= m_NextXRHandsSearchTime)
-                {
-                    FindRunningXRHandSubsystem();
-                    m_NextXRHandsSearchTime =
-                        Time.unscaledTime + 0.5f;
-                }
-            }
 
             if (m_XRHandSubsystem == null ||
                 !m_XRHandSubsystem.running)
@@ -2015,6 +2082,16 @@ namespace TiltBrush
             }
         }
 
+
+        private void RefreshXRHandSubsystem()
+        {
+            if ((m_XRHandSubsystem == null || !m_XRHandSubsystem.running) &&
+                Time.unscaledTime >= m_NextXRHandsSearchTime)
+            {
+                FindRunningXRHandSubsystem();
+                m_NextXRHandsSearchTime = Time.unscaledTime + 0.5f;
+            }
+        }
 
         private void FindRunningXRHandSubsystem()
         {
