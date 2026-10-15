@@ -229,6 +229,9 @@ namespace TiltBrush
             label.alignment = TextAlignmentOptions.Center;
             label.color = Color.white;
             label.raycastTarget = false;
+            // TrackedDeviceRaycaster ignores raycastTarget, but honors CanvasGroup filters.
+            // Also excludes any TMP submeshes created beneath this label.
+            go.AddComponent<CanvasGroup>().blocksRaycasts = false;
         }
 
         private void ButtonAt(TMP_FontAsset font, RectTransform parent, string title, Vector2 position, bool accept)
@@ -330,6 +333,8 @@ namespace TiltBrush
                     var dot = ImageAt("Aim reticle", (RectTransform)m_Canvas.transform,
                         Vector2.zero, new Vector2(14, 14), Color.cyan);
                     dot.raycastTarget = false;
+                    // Prevent the XR raycaster hitting its own cursor and moving it toward the hand.
+                    dot.gameObject.AddComponent<CanvasGroup>().blocksRaycasts = false;
                     cursor = new Cursor { ray = ray, dot = (RectTransform)dot.transform };
                     m_Cursors.Add(device.deviceId, cursor);
                 }
