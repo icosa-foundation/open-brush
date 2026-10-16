@@ -2791,6 +2791,11 @@ namespace TiltBrush
                         panelContactReleaseRadius)
                     : panelContactRadius;
 
+            // Joint positions are transformed into world space by ToWorldPose.
+            // Apply the same uniform XR origin scale to the metre-based radius.
+            if (trackingOrigin != null)
+                activeContactRadius *= Mathf.Abs(trackingOrigin.lossyScale.x);
+
             if (UseHand(true) &&
                 m_Right.tracked)
             {
