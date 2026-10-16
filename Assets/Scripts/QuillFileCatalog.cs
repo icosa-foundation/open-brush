@@ -230,7 +230,7 @@ namespace TiltBrush
                     }
                 }
 
-                foreach (string path in Directory.GetDirectories(m_CurrentDirectory, "*", SearchOption.TopDirectoryOnly))
+                foreach (string path in AndroidDirectStorage.GetDirectories(m_CurrentDirectory))
                 {
                     if (!string.IsNullOrEmpty(m_SearchText) &&
                         Path.GetFileName(path).IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) < 0)
