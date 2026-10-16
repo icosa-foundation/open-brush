@@ -314,17 +314,23 @@ namespace TiltBrush
         /// <summary>Creates a bounded template; each widget owns its native document separately.</summary>
         public static Model CreateNativeImm(string assetId, string path, Bounds bounds)
         {
+            var model = new Model(assetId, path);
+            model.CreateNativeImmPrefab(bounds);
+            return model;
+        }
+
+        internal void CreateNativeImmPrefab(Bounds bounds)
+        {
             var size = bounds.size;
             if (!IsFinite(bounds.center) || !IsFinite(size) ||
                 size.x < 0 || size.y < 0 || size.z < 0 || Mathf.Max(size.x, Mathf.Max(size.y, size.z)) <= Mathf.Epsilon)
                 throw new ArgumentException("IMM document has no usable bounds", nameof(bounds));
 
-            var model = new Model(assetId, path) { m_MeshBounds = bounds };
+            m_MeshBounds = bounds;
             var root = new GameObject("Native IMM reference template");
             root.SetActive(false);
-            if (!model.EndCreatePrefab(root, new List<string>()))
+            if (!EndCreatePrefab(root, new List<string>()))
                 throw new InvalidOperationException("Could not create IMM reference template");
-            return model;
         }
 
         private static bool IsFinite(Vector3 value) =>
@@ -1103,6 +1109,11 @@ namespace TiltBrush
                     go = LoadUsd(warnings);
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
+                }
+                else if (!isLocal && ext == ".imm")
+                {
+                    if (!await NativeImmReference.LoadModelAsync(this))
+                        m_LoadError = new LoadError("Could not load IMM reference", m_Location.AbsolutePath);
                 }
                 else if (ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {

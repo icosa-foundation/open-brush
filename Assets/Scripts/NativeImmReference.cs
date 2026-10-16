@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections;
+using System.Threading.Tasks;
 using ImmPlayer;
 using UnityEngine;
 
@@ -24,7 +25,31 @@ namespace TiltBrush
         private NativeImmRenderer m_Renderer;
         private Matrix4x4 m_PreviousTransform;
 
-        public static IEnumerator CreateModelCoroutine(string assetId, string path, Action<Model> onReady)
+        public static IEnumerator CreateModelCoroutine(string assetId, string path, Action<Model> onReady) =>
+            CreateModelCoroutine(assetId, path, onReady, null, false);
+
+        // Shared gallery loading can finish before saved widgets exist. Keep the prepared
+        // hidden document on the model template until the first widget adopts it.
+        public static Task<bool> LoadModelAsync(Model model)
+        {
+            var completion = new TaskCompletionSource<bool>();
+            App.IcosaAssetCatalog.StartCoroutine(LoadExistingModelCoroutine(model, completion));
+            return completion.Task;
+        }
+
+        private static IEnumerator LoadExistingModelCoroutine(Model model, TaskCompletionSource<bool> completion)
+        {
+            bool ready = false;
+            try
+            {
+                yield return CreateModelCoroutine(model.AssetId, model.GetLocation().AbsolutePath,
+                    _ => ready = true, model, true);
+            }
+            finally { completion.TrySetResult(ready); }
+        }
+
+        private static IEnumerator CreateModelCoroutine(string assetId, string path, Action<Model> onReady,
+            Model target, bool retainPreparedDocument)
         {
             if (!TryLoad(path, out var manager, out var document, out var renderer)) yield break;
             NativeImmReference template = null;
@@ -42,7 +67,12 @@ namespace TiltBrush
                 Model model = null;
                 try
                 {
-                    model = Model.CreateNativeImm(assetId, path, document.GetBoundingBox());
+                    if (target == null) model = Model.CreateNativeImm(assetId, path, document.GetBoundingBox());
+                    else
+                    {
+                        target.CreateNativeImmPrefab(document.GetBoundingBox());
+                        model = target;
+                    }
                     template = model.m_ModelParent.gameObject.AddComponent<NativeImmReference>();
                     template.m_Path = path;
                     template.m_Manager = manager;
@@ -54,7 +84,7 @@ namespace TiltBrush
             }
             finally
             {
-                if (template?.m_DocumentTransferred != true)
+                if (template?.m_DocumentTransferred != true && (!retainPreparedDocument || template == null))
                 {
                     if (template != null) template.ReleaseDocument();
                     else
