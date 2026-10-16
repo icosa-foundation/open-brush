@@ -189,19 +189,17 @@ namespace TiltBrush
 
         public void RotateWandPanels(int direction)
         {
-            const float kSnapRotationAngle = 360f / 3f;
+            if (m_AdvancedModeRevealActive || m_RotateSnapState != RotateSnapState.Done ||
+                !GazePanelsAreVisible() || m_PanelsMode != PanelMode.Standard)
+            {
+                return;
+            }
 
-            direction = direction >= 0 ? 1 : -1;
-
+            // Handtracking buttons use the same snap, jiggle and cooldown as the thumbstick.
             m_WandPanelsRotationVelocity = 0.0f;
-
-            UpdateWandPanelsOriginAngle(
-                direction * kSnapRotationAngle
-            );
-
-            AudioManager.m_Instance.PanelFlip(
-                InputManager.m_Instance.GetControllerPosition(
-                    InputManager.ControllerName.Wand));
+            m_RotateSnapAnimTime = 1.0f;
+            m_RotateSnapAnimDir = direction >= 0 ? 1 : -1;
+            m_RotateSnapState = RotateSnapState.Snapping;
         }
 
         public class RevealParticle
@@ -1068,7 +1066,9 @@ namespace TiltBrush
                 }
             }
 
-            if (!App.VrSdk.AnalogIsStick(InputManager.ControllerName.Wand))
+            // Finish a button-started snap even if the active input has no thumbstick.
+            if (!App.VrSdk.AnalogIsStick(InputManager.ControllerName.Wand) &&
+                m_RotateSnapState == RotateSnapState.Done)
             {
                 UpdateSwipeRotate(bWandRot, wandScrollXDelta);
             }
