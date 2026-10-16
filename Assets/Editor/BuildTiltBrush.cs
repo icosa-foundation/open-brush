@@ -54,7 +54,8 @@ static class BuildTiltBrush
     // Android Application Identifier
     public static string GuiBuildAndroidApplicationIdentifier => $"{kVendorReverseDNS}.{kGuiBuildExecutableName}".ToLower();
     // Android Executable
-    public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
+    public static string GuiBuildAndroidExecutableName =>
+        $"{GuiBuildAndroidApplicationIdentifier}.{(EditorUserBuildSettings.buildAppBundle ? "aab" : "apk")}";
     public static string GuiBuildiOSApplicationIdentifier => $"{kVendorReverseDNS}.{kGuiBuildExecutableName}".ToLower();
 
     public class TiltBuildOptions
@@ -307,6 +308,8 @@ static class BuildTiltBrush
             AutoProfile = GuiAutoProfile,
             Il2Cpp = GuiRuntimeIl2cpp,
             Target = GuiSelectedBuildTarget,
+            AndroidBuildAppBundle = GuiSelectedBuildTarget == BuildTarget.Android &&
+                EditorUserBuildSettings.buildAppBundle,
             XrSdk = GuiSelectedSdk,
             Location = GetAppPathForGuiBuild(),
             Stamp = "menuitem",
@@ -2267,6 +2270,11 @@ static class BuildTiltBrush
         args.Append("-executemethod BuildTiltBrush.CommandLine ");
         args.AppendFormat("-btb-display {0} ", xrSdk);
         args.AppendFormat("-btb-target {0} ", target);
+        if (target == BuildTarget.Android)
+        {
+            string exportType = tiltOptions.AndroidBuildAppBundle ? "androidAppBundle" : "androidPackage";
+            args.Append($"-androidExportType {exportType} ");
+        }
         foreach (var value in Enum.GetValues(typeof(BuildOptions)))
         {
             if (((int)options & (int)value) != 0)
