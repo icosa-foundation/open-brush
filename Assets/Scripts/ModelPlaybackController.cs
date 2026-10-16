@@ -32,6 +32,7 @@ namespace TiltBrush
         private bool m_VolumeSet;
         private ModelPlaybackState m_InitialState;
         private bool m_RestoreFailed;
+        private bool m_RestartAtChapter;
         private Coroutine m_Operation;
         private int[] m_ViewpointIds = new int[0];
         public string LastError { get; private set; }
@@ -82,12 +83,14 @@ namespace TiltBrush
             if (state.StopTime.HasValue) ValidateTime(state.StopTime.Value);
             ValidateVolume(state.Volume);
             m_InitialState = state.ForRestore(restorePlayingPosition);
+            m_RestartAtChapter = !state.Paused && !restorePlayingPosition && state.Chapter.HasValue;
             m_RestoreFailed = false;
             LastError = null;
         }
         private void LateUpdate()
         {
-            m_PlayingChangePending = false;
+            if (m_PlayingChangePending && (m_Paused ? !Playing : Playing))
+                m_PlayingChangePending = false;
             if (m_InitialState != null && Initialized && !Busy && !m_RestoreFailed)
             {
                 var state = m_InitialState;
@@ -129,12 +132,16 @@ namespace TiltBrush
         {
             RequireReady();
             if (Document == null) { SetPlayingInternal(true); return; }
-            Document.Continue();
-            Document.Resume();
-            m_Paused = false;
-            m_PlayingChangePending = true;
+            m_InitialState = GetSaveState();
+            m_InitialState.Paused = false;
+            StartNative(ContinueNative);
         }
-        public void Play() { RequireReady(); SetPlayingInternal(true); }
+        public void Play()
+        {
+            RequireReady();
+            if (Document != null && Document.GetStateInfo().Playback != ImmDocument.PlaybackState.Finished) Continue();
+            else SetPlayingInternal(true);
+        }
         public void Pause() { RequireReady(); SetPlayingInternal(false); }
         private void SetPlayingInternal(bool playing)
         {
@@ -142,10 +149,10 @@ namespace TiltBrush
             if (Document != null)
             {
                 m_PlayingChangePending = true;
-                if (!playing) Document.Pause();
+                if (!playing) Document.PauseAt(0);
                 else if (Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Waiting) Document.Continue();
                 else if (Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Finished) Document.Restart();
-                else Document.Resume();
+                else ResumeNative(Document);
             }
             else
             {
@@ -174,8 +181,8 @@ namespace TiltBrush
                 m_InitialState = GetSaveState();
                 m_InitialState.Time = time;
                 m_InitialState.StopTime = 0;
-                StartNative(document => WaitForRequest(document,
-                    () => document.RequestSetTime(ToTicks(time), 0)));
+                StartNative(document => WaitForEdit(document,
+                    () => document.RequestSetTime(ToTicks(time), 0), m_InitialState.Paused));
             }
             else SeekInternal(time);
         }
@@ -206,9 +213,9 @@ namespace TiltBrush
             if (Document == null || chapter < 0 || chapter >= ChapterCount) throw new ArgumentOutOfRangeException(nameof(chapter));
             m_InitialState = GetSaveState();
             m_InitialState.Chapter = chapter;
-            m_InitialState.Time = 0;
+            m_InitialState.Time = GetChapterStartTime(Document, chapter);
             m_InitialState.StopTime = 0;
-            StartNative(document => WaitForRequest(document, () => document.RequestSetChapter(chapter)));
+            StartNative(document => WaitForEdit(document, () => document.RequestSetChapter(chapter), m_InitialState.Paused, m_InitialState.Time));
         }
         public ModelViewpointInfo[] GetViewpoints()
         {
@@ -254,19 +261,83 @@ namespace TiltBrush
 
         private IEnumerator RestoreNative(ImmDocument document, ModelPlaybackState state)
         {
-            document.Pause();
-            yield return null;
+            document.SetVolume(0);
+            document.PauseAt(0);
+            yield return WaitForPauseState(document, true);
             if (state.Chapter.HasValue)
             {
                 if (state.Chapter.Value < 0 || state.Chapter.Value >= document.GetChapterCount())
                     throw new ArgumentOutOfRangeException(nameof(state.Chapter));
                 if (document.GetCurrentChapter() != state.Chapter.Value)
+                {
                     yield return WaitForRequest(document, () => document.RequestSetChapter(state.Chapter.Value));
+                    document.PauseAt(0);
+                    yield return WaitForPauseState(document, true);
+                }
             }
-            yield return WaitForRequest(document, () => document.RequestSetTime(ToTicks(state.Time), ToTicks(state.StopTime ?? state.Time)));
+            if (m_RestartAtChapter)
+            {
+                state.Time = GetChapterStartTime(document, state.Chapter.Value);
+                state.StopTime = 0;
+                m_RestartAtChapter = false;
+            }
+            yield return WaitForRequest(document, () => document.RequestSetTime(ToTicks(state.Time), 0));
             SetVolumeInternal(state.Volume);
             SetPlayingInternal(!state.Paused);
+            yield return WaitForPauseState(document, state.Paused);
             m_InitialState = null;
+        }
+        private static double GetChapterStartTime(ImmDocument document, int chapter)
+        {
+            if (chapter == 0) return 0;
+            if (!document.TryGetChapterInfo(out var info))
+                throw new InvalidOperationException("IMM chapter layout is not ready");
+            // Stop-defined chapters begin one tick after the marker; Play-defined
+            // chapters begin on it, matching the native SetChapter implementation.
+            return ModelPlaybackState.GetChapterStartTime(info.Lengths, info.HasPlays, chapter);
+        }
+        private static void ResumeNative(ImmDocument document)
+        {
+            // Zero means "now" and clears any timestamp left by a previous command.
+            document.ResumeAt(0);
+        }
+        private IEnumerator ContinueNative(ImmDocument document)
+        {
+            ResumeNative(document);
+            yield return WaitForPauseState(document, false);
+            document.Continue();
+            yield return null;
+            yield return null;
+        }
+        private IEnumerator WaitForPauseState(ImmDocument document, bool paused)
+        {
+            float started = UnityEngine.Time.realtimeSinceStartup;
+            yield return null;
+            while ((document.GetStateInfo().Playback == ImmDocument.PlaybackState.Paused) != paused)
+            {
+                if (UnityEngine.Time.realtimeSinceStartup - started > 120)
+                    throw new InvalidOperationException("IMM pause/resume timed out");
+                yield return null;
+            }
+        }
+        private IEnumerator WaitForEdit(ImmDocument document, Func<ulong> request, bool paused, double? chapterStart = null)
+        {
+            float volume = m_InitialState.Volume;
+            if (paused) document.SetVolume(0);
+            yield return WaitForRequest(document, request);
+            if (paused)
+            {
+                document.PauseAt(0);
+                yield return WaitForPauseState(document, true);
+                if (chapterStart.HasValue)
+                {
+                    // Freeze on the first tick inside the selected chapter. The native
+                    // chapter command resumes playback and marker lookup uses strict <.
+                    yield return WaitForRequest(document,
+                        () => document.RequestSetTime(ToTicks(chapterStart.Value) + 1, 0));
+                }
+                document.SetVolume(volume);
+            }
         }
         private IEnumerator WaitForRequest(ImmDocument document, Func<ulong> request)
         {
