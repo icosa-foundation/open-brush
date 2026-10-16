@@ -22,6 +22,11 @@ internal static class AndroidStoreManifest
         var app = root.SelectSingleNode("application") as XmlElement
             ?? throw new InvalidOperationException("Missing Android application element.");
 
+        // Android XR uses a different permission from Quest's com.oculus.permission.HAND_TRACKING.
+        // A removal marker also excludes declarations contributed by lower-priority XR libraries.
+        var handTracking = GetOrCreate(doc, root, "uses-permission", "android.permission.HAND_TRACKING");
+        handTracking.SetAttribute("node", ToolsNamespace, androidXr ? "merge" : "remove");
+
         if (scopedStorage)
         {
             SetAndroid(app, "requestLegacyExternalStorage", "false");
