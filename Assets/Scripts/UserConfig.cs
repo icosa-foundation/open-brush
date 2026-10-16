@@ -54,6 +54,8 @@ namespace TiltBrush
             // Emit comparison diagnostics once per second; off by default.
             public bool LogPinchStatus;
             public bool LogRayStatus;
+            // Log hand-subsystem tracking state every 120 frames; off by default.
+            public bool LogSubsystemStatus;
         }
 
         public HandtrackingConfig Handtracking;
