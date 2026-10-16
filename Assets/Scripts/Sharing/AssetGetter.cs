@@ -63,6 +63,8 @@ namespace TiltBrush
             }
         }
 
+        public string ErrorMessage { get; private set; }
+
         public bool IsCanceled
         {
             get;
@@ -120,6 +122,7 @@ namespace TiltBrush
                             catch (VrAssetServiceException e)
                             {
                                 Debug.LogException(e);
+                                ErrorMessage = e.Message;
                                 IsCanceled = true;
                                 yield break;
                             }
@@ -135,6 +138,7 @@ namespace TiltBrush
                 if (json.Count == 0)
                 {
                     Debug.LogErrorFormat("Failed to deserialize response for {0}", m_URI);
+                    ErrorMessage = "Invalid gallery asset metadata";
                     IsCanceled = true;
                     yield break;
                 }
@@ -179,6 +183,7 @@ namespace TiltBrush
                 {
                     string formatInfo = formatType != null ? $" in {formatType} format" : " - no suitable format found";
                     Debug.LogWarning($"Can't download {m_Asset.Id}{formatInfo}.");
+                    ErrorMessage = $"No supported reference file{formatInfo}";
                     IsCanceled = true;
                     yield break;
                 }
@@ -221,6 +226,7 @@ namespace TiltBrush
                 catch (VrAssetServiceException e)
                 {
                     Debug.LogErrorFormat("Error downloading {0}\n{1}", m_Asset.Id, e);
+                    ErrorMessage = e.Message;
                     IsCanceled = true;
                     yield break;
                 }

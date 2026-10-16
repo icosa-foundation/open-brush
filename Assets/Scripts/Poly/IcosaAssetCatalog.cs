@@ -228,10 +228,11 @@ namespace TiltBrush
         static VrAssetFormat[] GetSupportedIcosaFormats()
         {
             // Note: FBX and USD are not included as they're only supported for local files, not Icosa assets.
-            // VOX, GLTF2, GLTF are highest priority, followed by OBJ variants and PLY.
+            // Prefer IMM, then retain the existing model-format preference order.
             // OBJ_NGON is an OBJ file with n-gon faces (faces with >3 vertices).
             return new[]
             {
+                VrAssetFormat.IMM,
                 VrAssetFormat.VOX,
                 VrAssetFormat.GLTF2,
                 VrAssetFormat.GLTF,
@@ -840,7 +841,6 @@ namespace TiltBrush
             }
         }
 
-        private readonly Dictionary<string, Model> m_ImmModels = new Dictionary<string, Model>();
         public string LoadingImmAssetId { get; private set; }
         public bool IsLoadingImm(string assetId) => LoadingImmAssetId == assetId || DownloadingImmAssetId == assetId;
 
@@ -857,7 +857,8 @@ namespace TiltBrush
         {
             try
             {
-                if (m_ImmModels.TryGetValue(assetId, out var cached) && cached.m_Valid)
+                if (m_ModelsByAssetId.TryGetValue(assetId, out var cached) && cached.IsNativeImmModel &&
+                    cached.m_Valid && File.Exists(cached.GetLocation().AbsolutePath))
                 {
                     onReady?.Invoke(cached);
                     yield break;
@@ -868,7 +869,7 @@ namespace TiltBrush
                 if (path == null) yield break;
                 yield return NativeImmReference.CreateModelCoroutine(assetId, path, model =>
                 {
-                    m_ImmModels[assetId] = model;
+                    m_ModelsByAssetId[assetId] = model;
                     onReady?.Invoke(model);
                 });
             }
@@ -1019,6 +1020,9 @@ namespace TiltBrush
                 // ReSharper disable once RedundantAssignment
                 model = null;
             }
+            // A loaded native template still needs its source for additional instances.
+            if (model != null && model.IsNativeImmModel && !File.Exists(model.GetLocation().AbsolutePath))
+                return null;
             return model;
         }
 
@@ -1197,6 +1201,18 @@ namespace TiltBrush
             if (IsLoading(assetId))
             {
                 return;
+            }
+
+            if (m_ModelsByAssetId.TryGetValue(assetId, out var existing) && existing.IsNativeImmModel &&
+                !File.Exists(existing.GetLocation().AbsolutePath))
+            {
+                m_ModelsByAssetId.Remove(assetId);
+                existing.ReleaseFromCatalog();
+            }
+            if (!m_ModelsByAssetId.ContainsKey(assetId))
+            {
+                string immPath = sm_AssetIdPattern.IsMatch(assetId) ? GetCachedImmPath(assetId) : null;
+                if (immPath != null) m_ModelsByAssetId[assetId] = new Model(assetId, immPath);
             }
 
             if (m_ModelsByAssetId.ContainsKey(assetId))
@@ -1441,10 +1457,28 @@ namespace TiltBrush
                 }
                 yield return cr.Current;
             }
-            while (!request.IsReady) { yield return null; }
-            request.Asset.WriteToDisk();
-            string path = Path.Combine(GetCacheDirectoryForAsset(assetId), request.Asset.RootFilePath);
-            m_ModelsByAssetId[assetId] = new Model(assetId, path);
+            if (request.IsCanceled || !request.IsReady) yield break;
+            CacheDownloadedAsset(request.Asset);
+        }
+
+        private Model CacheDownloadedAsset(IcosaRawAsset asset)
+        {
+            try
+            {
+                bool nativeImm = string.Equals(Path.GetExtension(asset.RootFilePath), ".imm",
+                    StringComparison.OrdinalIgnoreCase);
+                string directory = nativeImm ? GetImmCacheDirectoryForAsset(asset.Id) : GetCacheDirectoryForAsset(asset.Id);
+                Directory.CreateDirectory(directory);
+                if (!asset.WriteToDisk(directory)) return null;
+                var model = new Model(asset.Id, Path.Combine(directory, asset.RootFilePath));
+                m_ModelsByAssetId[asset.Id] = model;
+                return model;
+            }
+            catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
+            {
+                OutputWindowScript.Error("Could not cache gallery reference", $"{asset.Id}: {error.Message}");
+                return null;
+            }
         }
 
         public void UpdateCatalog()
@@ -1457,17 +1491,9 @@ namespace TiltBrush
                 {
                     if (request.Asset.ValidAsset)
                     {
-                        if (request.Asset.WriteToDisk())
+                        if (CacheDownloadedAsset(request.Asset) is Model downloaded)
                         {
                             string assetId = request.Asset.Id;
-                            string path =
-                                Path.Combine(GetCacheDirectoryForAsset(assetId), request.Asset.RootFilePath);
-                            // TODO: This assumes PolyRawAssets are models.  This may not be true in the
-                            // future and should the VrAssetProtos.ElementType request parameter to
-                            // VrAssetService.m_Instance.GetAsset to decide how to store and index the asset.
-
-                            // Populate map entry for this new model.
-                            m_ModelsByAssetId[assetId] = new Model(assetId, path);
 
                             // After download the model should be loaded too, unless the request was canceled.
                             // TODO: this seems a littttle suspect. Just because it finished downloading,
@@ -1476,7 +1502,7 @@ namespace TiltBrush
                             {
                                 m_RequestLoadQueue.Add(
                                     new ModelLoadRequest(
-                                        m_ModelsByAssetId[assetId], $"{request.Reason} fetched"));
+                                        downloaded, $"{request.Reason} fetched"));
                             }
                             else
                             {
@@ -1487,7 +1513,10 @@ namespace TiltBrush
                     }
                     else
                     {
-                        Debug.LogWarning("Downloaded asset is empty " + request.Asset.RootFilePath);
+                        Debug.LogWarning($"Downloaded asset is empty: {request.Asset.Id}");
+                        if (!string.IsNullOrEmpty(request.ErrorMessage))
+                            OutputWindowScript.Error("Could not load gallery reference",
+                                $"{request.Asset.Id}: {request.ErrorMessage}");
                     }
 
                     m_ActiveRequests.RemoveAt(i);
@@ -1688,8 +1717,9 @@ namespace TiltBrush
         void OnDestroy()
         {
             OAuth2Identity.ProfileUpdated -= OnProfileUpdated;
-            foreach (var model in m_ImmModels.Values) model.ReleaseFromCatalog();
-            m_ImmModels.Clear();
+            if (m_ModelsByAssetId != null)
+                foreach (var model in m_ModelsByAssetId.Values)
+                    if (model.IsNativeImmModel) model.ReleaseFromCatalog();
         }
 
         public int NumCloudModels(IcosaSetType type)
