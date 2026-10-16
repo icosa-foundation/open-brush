@@ -2648,10 +2648,13 @@ namespace TiltBrush
 
         private void UpdateGripStates()
         {
-            // TODO: Support world scaling/rotation with one hand and the opposite controller.
-            // m_SwimModeHeld still requires two hand sources; combine each side's routed grip
-            // without allowing a lone fist in empty space to move the world.
-            // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4121690078
+            // TODO: Mixed hand/controller world scaling and rotation are deliberately deferred.
+            // On controller-capable Android XR devices, holding a controller grip plus the opposite
+            // hand's fist does not enter swimming: this gate currently requires two hand sources.
+            // Combine each side's selected input grip, including press/release transitions, while
+            // preserving widget grabs and preventing a lone fist in empty space from moving the world.
+            // Earlier review: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4121690078
+            // Decision: https://github.com/icosa-foundation/open-brush/pull/1191#discussion_r4268955043
             UpdateOneHandGrip(
                 m_Left,
                 UseHand(false),
