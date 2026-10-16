@@ -1806,6 +1806,11 @@ namespace TiltBrush
                  * The hybrid routing later still chooses physical controller vs hand
                  * independently per side.
                  */
+                // TODO: Before enabling hand interaction for Pico or other non-Touch controller
+                // profiles, preserve/restore each side's physical-controller geometry and action
+                // binding mask when switching between hands and controllers, including mixed input.
+                // This call replaces both sides; RestoreControllerVisualForSide only shows the model.
+                // Quest and current Android XR controllers use the matching Oculus Touch profile.
                 App.VrSdk.SetControllerStyle(
                     ControllerStyle.OculusTouch);
 
