@@ -472,6 +472,7 @@ namespace TiltBrush
                     {
                         // TODO: fix aspect ratio of thumbnail
                         RawImage imageData = await new ThreadedImageReader(thumbnailBytes, thumbnailUrl);
+                        if (m_Thumbnail == null) return;
 
                         UnityEngine.Profiling.Profiler.BeginSample("AssetDetails.DownloadThumbnail:LoadImage");
                         if (imageData != null)
