@@ -855,6 +855,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 return $"error: {e.Message}";
             }
+            catch (ArgumentException e)
+            {
+                return $"error: {e.Message}";
+            }
+            catch (FormatException e)
+            {
+                return $"error: {e.Message}";
+            }
             catch (TargetInvocationException e)
                 when (e.InnerException is UnauthorizedAccessException authorizationError)
             {

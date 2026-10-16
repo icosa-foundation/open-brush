@@ -69,44 +69,47 @@ namespace TiltBrush
             set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
+        private ModelPlaybackController Playback => _ModelWidget != null ? _ModelWidget.Playback :
+            throw new ScriptRuntimeException("Model instance no longer exists");
+
         [LuaDocsDescription("Whether this instance's playback is initialized")]
-        public bool initialized => _ModelWidget.Playback.Initialized;
+        public bool initialized => Playback.Initialized;
         [LuaDocsDescription("Whether an IMM seek, chapter change or saved-state restore is pending")]
-        public bool busy => _ModelWidget.Playback.Busy || _ModelWidget.Playback.IsRestoring;
+        public bool busy => Playback.Busy || Playback.IsRestoring;
         [LuaDocsDescription("The last asynchronous playback error, or nil")]
-        public string playbackError => _ModelWidget.Playback.LastError;
+        public string playbackError => Playback.LastError;
         [LuaDocsDescription("Whether this instance is playing. Setting true also continues an IMM stop point.")]
-        public bool playing { get => _ModelWidget.Playback.Playing; set { if (value) Play(); else Pause(); } }
+        public bool playing { get => Playback.Playing; set { if (value) Play(); else Pause(); } }
         [LuaDocsDescription("Playback time in seconds; setting it seeks this instance")]
-        public double time { get => _ModelWidget.Playback.Time; set => _ModelWidget.Playback.Seek(value); }
+        public double time { get => Playback.Time; set => Playback.Seek(value); }
         [LuaDocsDescription("Playback duration in seconds")]
-        public double length => _ModelWidget.Playback.Length;
+        public double length => Playback.Length;
         [LuaDocsDescription("Audio volume from 0 to 1; zero is muted")]
-        public float volume { get => _ModelWidget.Playback.Volume; set => _ModelWidget.Playback.SetVolume(value); }
+        public float volume { get => Playback.Volume; set => Playback.SetVolume(value); }
         [LuaDocsDescription("Whether this model contains audio")]
-        public bool hasAudio => _ModelWidget.Playback.HasAudio;
+        public bool hasAudio => Playback.HasAudio;
         [LuaDocsDescription("Current IMM chapter, zero-based; -1 for other models")]
-        public int chapter { get => _ModelWidget.Playback.Chapter; set => _ModelWidget.Playback.SetChapter(value); }
+        public int chapter { get => Playback.Chapter; set => Playback.SetChapter(value); }
         [LuaDocsDescription("Number of IMM chapters")]
-        public int chapterCount => _ModelWidget.Playback.ChapterCount;
+        public int chapterCount => Playback.ChapterCount;
         [LuaDocsDescription("Available glTF animation clip names")]
-        public string[] clips => _ModelWidget.Playback.Clips;
+        public string[] clips => Playback.Clips;
         [LuaDocsDescription("Current glTF animation clip name")]
-        public string clip { get => _ModelWidget.Playback.GetSaveState()?.Clip; set => _ModelWidget.Playback.SelectClip(value); }
+        public string clip { get => Playback.GetSaveState()?.Clip; set => Playback.SelectClip(value); }
         [LuaDocsDescription("Whether this glTF animation loops")]
-        public bool loop { get => _ModelWidget.Playback.GetSaveState()?.Loop ?? false; set => _ModelWidget.Playback.SetLoop(value); }
+        public bool loop { get => Playback.GetSaveState()?.Loop ?? false; set => Playback.SetLoop(value); }
         [LuaDocsDescription("Play or continue this instance")]
-        public void Play() => _ModelWidget.Playback.Play();
+        public void Play() => Playback.Play();
         [LuaDocsDescription("Pause this instance")]
-        public void Pause() => _ModelWidget.Playback.Pause();
+        public void Pause() => Playback.Pause();
         [LuaDocsDescription("Continue an IMM stop point or resume a paused model")]
-        public void Continue() => _ModelWidget.Playback.Continue();
+        public void Continue() => Playback.Continue();
         [LuaDocsDescription("Seek to time in seconds; IMM operations finish asynchronously")]
-        public void Seek(double seconds) => _ModelWidget.Playback.Seek(seconds);
+        public void Seek(double seconds) => Playback.Seek(seconds);
         [LuaDocsDescription("List IMM viewpoint IDs, names, availability and active selection")]
-        public ModelViewpointInfo[] viewpoints => _ModelWidget.Playback.GetViewpoints();
+        public ModelViewpointInfo[] viewpoints => Playback.GetViewpoints();
         [LuaDocsDescription("Explicitly move the user to an eligible IMM viewpoint ID")]
-        public void NavigateToViewpoint(int id) => _ModelWidget.Playback.NavigateToViewpoint(id);
+        public void NavigateToViewpoint(int id) => Playback.NavigateToViewpoint(id);
 
         [LuaDocsDescription(@"Imports a new model from the MediaLibrary/Models folder")]
         [LuaDocsExample(@"Model:Import(""Andy.obj"")")]
