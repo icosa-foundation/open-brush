@@ -4,24 +4,10 @@ using System;
 using System.Collections;
 using System.Linq;
 using ImmPlayer;
-using Newtonsoft.Json;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    [Serializable]
-    public sealed class ModelPlaybackState
-    {
-        public bool Paused;
-        public double Time;
-        public float Volume = 1;
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public double? StopTime;
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int? Chapter;
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public string Clip;
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public bool? Loop;
-        public ModelPlaybackState Copy() => (ModelPlaybackState)MemberwiseClone();
-    }
-
     [MoonSharp.Interpreter.MoonSharpUserData]
     public sealed class ModelViewpointInfo
     {
@@ -95,8 +81,7 @@ namespace TiltBrush
             ValidateTime(state.Time);
             if (state.StopTime.HasValue) ValidateTime(state.StopTime.Value);
             ValidateVolume(state.Volume);
-            m_InitialState = state.Copy();
-            if (!state.Paused && !restorePlayingPosition) { m_InitialState.Time = 0; m_InitialState.StopTime = 0; }
+            m_InitialState = state.ForRestore(restorePlayingPosition);
             m_RestoreFailed = false;
             LastError = null;
         }
