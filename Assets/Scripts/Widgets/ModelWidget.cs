@@ -304,7 +304,8 @@ namespace TiltBrush
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             if (m_Model.IsNativeImmModel)
-                m_ModelInstance.GetComponent<NativeImmReference>().Activate();
+                m_ModelInstance.GetComponent<NativeImmReference>().Activate(
+                    m_Model.m_ModelParent.GetComponent<NativeImmReference>());
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
                 Mathf.Max(m_Model.m_MeshBounds.extents.y, m_Model.m_MeshBounds.extents.z));
             float size;

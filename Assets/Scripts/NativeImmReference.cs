@@ -16,6 +16,7 @@ namespace TiltBrush
         private const float LoadTimeoutSeconds = 120;
         [SerializeField] private string m_Path;
         private bool m_IsInstance;
+        private bool m_DocumentTransferred;
         private bool m_Ready;
         private bool m_Visible;
         private ImmPlayerManager m_Manager;
@@ -26,6 +27,7 @@ namespace TiltBrush
         public static IEnumerator CreateModelCoroutine(string assetId, string path, Action<Model> onReady)
         {
             if (!TryLoad(path, out var manager, out var document, out var renderer)) yield break;
+            NativeImmReference template = null;
             try
             {
                 float started = Time.realtimeSinceStartup;
@@ -41,22 +43,46 @@ namespace TiltBrush
                 try
                 {
                     model = Model.CreateNativeImm(assetId, path, document.GetBoundingBox());
-                    model.m_ModelParent.gameObject.AddComponent<NativeImmReference>().m_Path = path;
+                    template = model.m_ModelParent.gameObject.AddComponent<NativeImmReference>();
+                    template.m_Path = path;
+                    template.m_Manager = manager;
+                    template.m_Document = document;
+                    template.m_Renderer = renderer;
                 }
                 catch (Exception error) { ReportFailure(path, error.Message); }
                 if (model != null) onReady(model);
             }
             finally
             {
-                manager.UnloadDocument(document);
-                renderer.Release();
+                if (template?.m_DocumentTransferred != true)
+                {
+                    if (template != null) template.ReleaseDocument();
+                    else
+                    {
+                        manager.UnloadDocument(document);
+                        renderer.Release();
+                    }
+                }
             }
         }
 
         // Only actual ModelWidget instances activate native rendering. Templates, previews and
         // snap ghosts may be cloned freely without creating native documents.
-        public void Activate()
+        public void Activate(NativeImmReference template)
         {
+            // Adopt the hidden document used to obtain bounds for the first insertion.
+            // Later instances load independently. This avoids loading the same file twice
+            // while the first document's native resources are being torn down.
+            if (template != null && template.m_Document != null)
+            {
+                m_Manager = template.m_Manager;
+                m_Document = template.m_Document;
+                m_Renderer = template.m_Renderer;
+                template.m_Manager = null;
+                template.m_Document = null;
+                template.m_Renderer = null;
+                template.m_DocumentTransferred = true;
+            }
             m_IsInstance = true;
             if (isActiveAndEnabled) StartCoroutine(LoadCoroutine());
         }
