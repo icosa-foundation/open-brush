@@ -37,6 +37,9 @@ namespace TiltBrush
 
         private void DetectSupportedDevices()
         {
+            // Advanced mode has no dedicated undo/redo buttons when using this tray.
+            m_UndoRedoButtons.SetActive(PanelManager.m_Instance.AdvancedModeActive());
+
             // Show the brush size panel when either:
             // 1. The Logitech VR stylus is active, or
             // 2. The Brush/right side is currently controlled by Android XR hand tracking.
@@ -64,11 +67,6 @@ namespace TiltBrush
         protected override void Start()
         {
             base.Start();
-
-            // If advanced mode is active then we need to show undo/redo buttons.
-            // They don't have dedicated buttons unless in beginners mode.
-            // The brush settings tray provides them when controllers aren't used.
-            m_UndoRedoButtons.SetActive(PanelManager.m_Instance.AdvancedModeActive());
 
             // Check supported input devices every few seconds.
             InvokeRepeating(nameof(DetectSupportedDevices), 0.0f, 3);
