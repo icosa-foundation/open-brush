@@ -31,6 +31,9 @@ namespace TiltBrush
         [SerializeField] private float m_MaxBloat;
 
         private Model m_Model;
+        private ModelPlaybackController m_Playback;
+        public ModelPlaybackController Playback => m_Playback != null ? m_Playback :
+            (m_Playback = gameObject.AddComponent<ModelPlaybackController>());
         private bool m_PreserveCustomSize;
 
 
@@ -182,6 +185,7 @@ namespace TiltBrush
             clone.transform.position = position;
             clone.transform.rotation = rotation;
             clone.m_Subtree = m_Subtree;
+            clone.Playback.Restore(Playback.GetSaveState(), restorePlayingPosition: true);
             clone.Model = Model;
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
@@ -303,6 +307,7 @@ namespace TiltBrush
             CaptureGsplatBaseBrightness();
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
+            Playback.Bind(m_ModelInstance);
             if (m_Model.IsNativeImmModel)
                 m_ModelInstance.GetComponent<NativeImmReference>().Activate(
                     m_Model.m_ModelParent.GetComponent<NativeImmReference>());
@@ -933,7 +938,8 @@ namespace TiltBrush
                     modelDatas.GroupIds,
                     modelDatas.LayerIds,
                     modelDatas.SplitMeshPaths,
-                    modelDatas.NotSplittableMeshPaths
+                    modelDatas.NotSplittableMeshPaths,
+                    modelDatas.PlaybackStates
                 );
                 ok = await okTask;
 
@@ -948,7 +954,8 @@ namespace TiltBrush
                     modelDatas.GroupIds,
                     modelDatas.LayerIds,
                     modelDatas.SplitMeshPaths,
-                    modelDatas.NotSplittableMeshPaths
+                    modelDatas.NotSplittableMeshPaths,
+                    modelDatas.PlaybackStates
                 );
             }
             else
@@ -969,7 +976,8 @@ namespace TiltBrush
         /// for creating the missing-model placeholder.
         public static async Task<bool> CreateModelsFromRelativePath(
             string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs,
-            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
+            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths,
+            ModelPlaybackState[] playbackStates = null)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = ModelCatalog.m_Instance.GetModel(relativePath);
@@ -997,7 +1005,8 @@ namespace TiltBrush
                 {
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                    CreateModel(model, subtrees[i], xfs[i], pin, isNonRawTransform: true, groupId, 0);
+                    CreateModel(model, subtrees[i], xfs[i], pin, isNonRawTransform: true, groupId, 0,
+                        playbackState: playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null);
                 }
             }
             if (rawXfs != null)
@@ -1008,7 +1017,8 @@ namespace TiltBrush
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                     int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                    CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId);
+                    CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId,
+                        playbackState: playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null);
                 }
             }
             return true;
@@ -1016,12 +1026,14 @@ namespace TiltBrush
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
-                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
+                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null,
+                                ModelPlaybackState playbackState = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
             modelWidget.m_Subtree = subtree;
+            if (playbackState != null) modelWidget.Playback.Restore(playbackState);
             modelWidget.Model = model;
             modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
@@ -1052,7 +1064,8 @@ namespace TiltBrush
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
         static async Task<bool> CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
-                bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
+                bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths,
+            ModelPlaybackState[] playbackStates = null)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
@@ -1095,7 +1108,8 @@ namespace TiltBrush
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
                 string subtree = (subtrees != null && i < subtrees.Length) ? subtrees[i] : null;
                 CreateModel(model, subtree, rawXfs[i], pin, isNonRawTransform: false,
-                    groupId, layerId, assetId);
+                    groupId, layerId, assetId,
+                    playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null);
             }
             return true;
         }

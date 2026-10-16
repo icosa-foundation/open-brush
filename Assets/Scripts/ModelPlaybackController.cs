@@ -1,0 +1,384 @@
+// Copyright 2026 The Open Brush Authors
+// Licensed under the Apache License, Version 2.0. See LICENSE for details.
+using System;
+using System.Collections;
+using System.Linq;
+using ImmPlayer;
+using Newtonsoft.Json;
+using UnityEngine;
+
+namespace TiltBrush
+{
+    [Serializable]
+    public sealed class ModelPlaybackState
+    {
+        public bool Paused;
+        public double Time;
+        public float Volume = 1;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public double? StopTime;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int? Chapter;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public string Clip;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public bool? Loop;
+        public ModelPlaybackState Copy() => (ModelPlaybackState)MemberwiseClone();
+    }
+
+    [MoonSharp.Interpreter.MoonSharpUserData]
+    public sealed class ModelViewpointInfo
+    {
+        public int id;
+        public string name;
+        public bool available;
+        public bool active;
+    }
+
+    /// <summary>Per-widget playback and deferred restoration, independent of any panel.</summary>
+    [DefaultExecutionOrder(110)]
+    public sealed class ModelPlaybackController : MonoBehaviour
+    {
+        private const double ImmTicksPerSecond = 12600;
+        private NativeImmReference m_Native;
+        private PlayGltfAnimationClip m_Gltf;
+        private AudioSource[] m_Audio = new AudioSource[0];
+        private float[] m_AudioGains = new float[0];
+        private float m_Volume = 1;
+        private bool m_Paused;
+        private bool m_PlayingChangePending;
+        private bool m_VolumeSet;
+        private ModelPlaybackState m_InitialState;
+        private bool m_RestoreFailed;
+        private Coroutine m_Operation;
+        private int[] m_ViewpointIds = new int[0];
+        public string LastError { get; private set; }
+        public ImmDocument Document => m_Native != null ? m_Native.Document : null;
+        public bool Initialized => Document != null || m_Gltf != null && m_Gltf.Initialized || m_Audio.Any(source => source != null && source.clip != null);
+        public bool Busy => m_Operation != null;
+        public bool IsRestoring => Busy || m_InitialState != null && Initialized && !m_RestoreFailed;
+        public bool HasAudio => Document != null ? Document.HasAudio() : m_Audio.Length > 0;
+        public bool Playing => Document != null ? Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Playing :
+            m_Gltf != null && m_Gltf.Initialized ? m_Gltf.Playing : m_Audio.Any(source => source != null && source.isPlaying);
+        public double Time => Document != null ? GetNativeTime().Time : m_Gltf != null && m_Gltf.Initialized ? m_Gltf.Time :
+            m_Audio.FirstOrDefault(source => source != null && source.clip != null)?.time ?? 0;
+        public double Length => Document != null ? (Document.TryGetChapterInfo(out var info) ? info.Lengths.Sum() / ImmTicksPerSecond : 0) :
+            Math.Max(m_Gltf != null ? m_Gltf.Length : 0, m_Audio.Select(source => source != null && source.clip != null ? (double)source.clip.length : 0).DefaultIfEmpty().Max());
+        public int ChapterCount => Document != null ? Document.GetChapterCount() : 0;
+        public int Chapter => Document != null ? Document.GetCurrentChapter() : -1;
+        public string[] Clips => m_Gltf != null ? m_Gltf.ClipNames : new string[0];
+        public float Volume => m_InitialState?.Volume ?? (Document != null && !m_VolumeSet ? Document.GetVolume() : m_Volume);
+
+        public void Bind(Transform root)
+        {
+            m_Native = root.GetComponent<NativeImmReference>();
+            m_Gltf = root.GetComponentInChildren<PlayGltfAnimationClip>(true);
+            m_Audio = root.GetComponentsInChildren<AudioSource>(true);
+            m_AudioGains = m_Audio.Select(source => source.GetComponent<GltfAudioSource>()?.Gain ?? source.volume).ToArray();
+        }
+
+        public ModelPlaybackState GetSaveState()
+        {
+            if (m_InitialState != null) return m_InitialState.Copy();
+            if (!Initialized) return null;
+            var state = Document != null ? GetNativeTime() : new ModelPlaybackState { Time = Time };
+            state.Paused = m_PlayingChangePending ? m_Paused : !Playing;
+            state.Volume = Volume;
+            if (Document != null) state.Chapter = Chapter;
+            if (m_Gltf != null && m_Gltf.Initialized) { state.Clip = m_Gltf.ClipName; state.Loop = m_Gltf.Loop; }
+            return state;
+        }
+        private ModelPlaybackState GetNativeTime()
+        {
+            Document.GetTime(out long start, out long stop);
+            return new ModelPlaybackState { Time = start / ImmTicksPerSecond, StopTime = stop / ImmTicksPerSecond };
+        }
+        public void Restore(ModelPlaybackState state, bool restorePlayingPosition = false)
+        {
+            if (state == null) return;
+            ValidateTime(state.Time);
+            if (state.StopTime.HasValue) ValidateTime(state.StopTime.Value);
+            ValidateVolume(state.Volume);
+            m_InitialState = state.Copy();
+            if (!state.Paused && !restorePlayingPosition) { m_InitialState.Time = 0; m_InitialState.StopTime = 0; }
+            m_RestoreFailed = false;
+            LastError = null;
+        }
+        private void LateUpdate()
+        {
+            m_PlayingChangePending = false;
+            if (m_InitialState != null && Initialized && !Busy && !m_RestoreFailed)
+            {
+                var state = m_InitialState;
+                if (Document != null) StartNative(document => RestoreNative(document, state));
+                else
+                {
+                    try
+                    {
+                        if (state.Clip != null) m_Gltf?.SelectClip(state.Clip);
+                        if (state.Loop.HasValue && m_Gltf != null) m_Gltf.Loop = state.Loop.Value;
+                        SetVolumeInternal(state.Volume);
+                        SeekInternal(state.Time);
+                        SetPlayingInternal(!state.Paused);
+                        m_InitialState = null;
+                    }
+                    catch (Exception error) { ReportError(error); }
+                }
+            }
+            for (int i = 0; i < m_Audio.Length; i++)
+            {
+                if (m_Audio[i] == null) continue;
+                m_Audio[i].volume = m_AudioGains[i] * m_Volume;
+                m_Audio[i].mute = m_Volume <= 0.005f;
+                if (m_Paused && m_Audio[i].isPlaying) m_Audio[i].Pause();
+            }
+        }
+        private void OnDisable()
+        {
+            if (m_InitialState == null && Initialized) m_InitialState = GetSaveState();
+            StopAllCoroutines();
+            m_Operation = null;
+        }
+        internal void PrepareNativeForRestore(ImmDocument document)
+        {
+            // Keep asynchronously restored references silent until their saved pose/time is ready.
+            if (m_InitialState != null) document.SetVolume(0);
+        }
+        public void Continue()
+        {
+            RequireReady();
+            if (Document == null) { SetPlayingInternal(true); return; }
+            Document.Continue();
+            Document.Resume();
+            m_Paused = false;
+            m_PlayingChangePending = true;
+        }
+        public void Play() { RequireReady(); SetPlayingInternal(true); }
+        public void Pause() { RequireReady(); SetPlayingInternal(false); }
+        private void SetPlayingInternal(bool playing)
+        {
+            m_Paused = !playing;
+            if (Document != null)
+            {
+                m_PlayingChangePending = true;
+                if (!playing) Document.Pause();
+                else if (Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Waiting) Document.Continue();
+                else if (Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Finished) Document.Restart();
+                else Document.Resume();
+            }
+            else
+            {
+                if (m_Gltf != null && m_Gltf.Initialized) m_Gltf.Playing = playing;
+                foreach (var source in m_Audio)
+                {
+                    if (source == null || source.clip == null) continue;
+                    if (!playing) source.Pause();
+                    else { source.UnPause(); if (!source.isPlaying) source.Play(); }
+                }
+            }
+        }
+        public void SetVolume(float volume) { RequireReady(); ValidateVolume(volume); SetVolumeInternal(volume); }
+        private void SetVolumeInternal(float volume)
+        {
+            m_Volume = volume <= 0.005f ? 0 : volume;
+            m_VolumeSet = true;
+            if (Document != null) Document.SetVolume(m_Volume);
+        }
+        public void Seek(double time)
+        {
+            RequireReady(); ValidateTime(time);
+            if (time > Length) throw new ArgumentOutOfRangeException(nameof(time));
+            if (Document != null)
+            {
+                m_InitialState = GetSaveState();
+                m_InitialState.Time = time;
+                m_InitialState.StopTime = 0;
+                StartNative(document => WaitForRequest(document,
+                    () => document.RequestSetTime(ToTicks(time), 0)));
+            }
+            else SeekInternal(time);
+        }
+        private void SeekInternal(double time)
+        {
+            if (m_Gltf != null && m_Gltf.Initialized) m_Gltf.Time = Math.Min(time, m_Gltf.Length);
+            foreach (var source in m_Audio)
+                if (source != null && source.clip != null)
+                    source.time = (float)Math.Min(time, Math.Max(0, source.clip.length - 1.0 / source.clip.frequency));
+        }
+        public void SelectClip(string clip)
+        {
+            RequireReady();
+            if (m_Gltf == null) throw new InvalidOperationException("This model has no animation clips");
+            bool playing = Playing;
+            m_Gltf.SelectClip(clip);
+            SetPlayingInternal(playing);
+        }
+        public void SetLoop(bool loop)
+        {
+            RequireReady();
+            if (m_Gltf == null) throw new InvalidOperationException("Loop control is supported for glTF animation clips");
+            m_Gltf.Loop = loop;
+        }
+        public void SetChapter(int chapter)
+        {
+            RequireReady();
+            if (Document == null || chapter < 0 || chapter >= ChapterCount) throw new ArgumentOutOfRangeException(nameof(chapter));
+            m_InitialState = GetSaveState();
+            m_InitialState.Chapter = chapter;
+            m_InitialState.Time = 0;
+            m_InitialState.StopTime = 0;
+            StartNative(document => WaitForRequest(document, () => document.RequestSetChapter(chapter)));
+        }
+        public ModelViewpointInfo[] GetViewpoints()
+        {
+            RequireReady();
+            if (Document == null) throw new InvalidOperationException("This model has no IMM viewpoints");
+            var snapshot = ReadSnapshot(Document);
+            return Document.GetSpawnAreas().Select(area => new ModelViewpointInfo
+            {
+                id = area.Id, name = area.Name,
+                available = Array.IndexOf(m_ViewpointIds, area.Id, 0, snapshot.availableCount) >= 0,
+                active = snapshot.activeId == area.Id
+            }).ToArray();
+        }
+        public void NavigateToViewpoint(int id)
+        {
+            RequireReady();
+            if (Document == null) throw new InvalidOperationException("This model has no IMM viewpoints");
+            var snapshot = ReadSnapshot(Document);
+            if (!Document.TrySetActiveSpawnAreaId(id, out var pose, snapshot.evaluationRevision))
+                throw new InvalidOperationException("Viewpoint is unavailable or evaluated state changed");
+            var root = m_Native.transform;
+            var flip = Matrix4x4.Scale(new Vector3(1, 1, -1));
+            var converted = flip * Matrix4x4.TRS(pose.GetPosition(), pose.GetRotation(), Vector3.one * pose.sca) * flip;
+            Vector3 position = root.TransformPoint(converted.GetColumn(3));
+            Quaternion rotation = root.rotation * Quaternion.LookRotation(converted.GetColumn(2), converted.GetColumn(1));
+            float scale = Mathf.Abs(root.lossyScale.x * pose.sca);
+            if (scale < 1e-6f) throw new InvalidOperationException("Viewpoint has no usable world scale");
+            var camera = App.VrSdk.GetVrCamera();
+            var origin = camera.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
+            Vector3 target = camera.transform.position;
+            if (pose.isFloorLevel != 0) target.y = origin != null ? origin.transform.position.y : camera.transform.position.y;
+            Quaternion yawDelta = Yaw(camera.transform.rotation) * Quaternion.Inverse(Yaw(rotation));
+            App.Scene.Pose = TrTransform.TRS(target, yawDelta, App.METERS_TO_UNITS / scale) *
+                TrTransform.T(-position) * App.Scene.Pose;
+            Document.SetSpawnAreaNeedsUpdate(false);
+        }
+        private static Quaternion Yaw(Quaternion rotation)
+        {
+            Vector3 forward = Vector3.ProjectOnPlane(rotation * Vector3.forward, Vector3.up);
+            if (forward.sqrMagnitude < 0.0001f) forward = Vector3.Cross(rotation * Vector3.right, Vector3.up);
+            return Quaternion.LookRotation(forward.normalized, Vector3.up);
+        }
+
+        private IEnumerator RestoreNative(ImmDocument document, ModelPlaybackState state)
+        {
+            document.Pause();
+            yield return null;
+            if (state.Chapter.HasValue)
+            {
+                if (state.Chapter.Value < 0 || state.Chapter.Value >= document.GetChapterCount())
+                    throw new ArgumentOutOfRangeException(nameof(state.Chapter));
+                if (document.GetCurrentChapter() != state.Chapter.Value)
+                    yield return WaitForRequest(document, () => document.RequestSetChapter(state.Chapter.Value));
+            }
+            yield return WaitForRequest(document, () => document.RequestSetTime(ToTicks(state.Time), ToTicks(state.StopTime ?? state.Time)));
+            SetVolumeInternal(state.Volume);
+            SetPlayingInternal(!state.Paused);
+            m_InitialState = null;
+        }
+        private IEnumerator WaitForRequest(ImmDocument document, Func<ulong> request)
+        {
+            ulong token = 0;
+            float started = UnityEngine.Time.realtimeSinceStartup;
+            while (token == 0)
+            {
+                token = request();
+                if (UnityEngine.Time.realtimeSinceStartup - started > 120) throw new InvalidOperationException("IMM command was rejected or remained busy");
+                yield return null;
+            }
+            while (true)
+            {
+                var snapshot = ReadSnapshot(document);
+                if (snapshot.IsComplete(token)) yield break;
+                if (snapshot.requestedCommand != token || snapshot.commandStatus == PlaybackRequestStatus.Rejected)
+                    throw new InvalidOperationException("IMM command was rejected or superseded");
+                if (UnityEngine.Time.realtimeSinceStartup - started > 120) throw new InvalidOperationException("IMM command timed out");
+                yield return null;
+            }
+        }
+        private SpawnAreaSnapshot ReadSnapshot(ImmDocument document)
+        {
+            if (!document.TryGetSpawnAreaSnapshot(m_ViewpointIds, out var snapshot) && snapshot.availableCount > m_ViewpointIds.Length)
+            {
+                m_ViewpointIds = new int[snapshot.availableCount];
+                document.TryGetSpawnAreaSnapshot(m_ViewpointIds, out snapshot);
+            }
+            return snapshot;
+        }
+        private void StartNative(Func<ImmDocument, IEnumerator> operation)
+        {
+            LastError = null;
+            m_RestoreFailed = false;
+            m_Operation = StartCoroutine(RunNative(operation));
+        }
+        private IEnumerator RunNative(Func<ImmDocument, IEnumerator> operation)
+        {
+            yield return null;
+            try
+            {
+                var enumerator = Flatten(operation(Document));
+                try
+                {
+                    while (true)
+                    {
+                        bool next;
+                        try { next = enumerator.MoveNext(); }
+                        catch (Exception error) { ReportError(error); break; }
+                        if (!next) break;
+                        yield return enumerator.Current;
+                    }
+                    if (!m_RestoreFailed) m_InitialState = null;
+                }
+                finally { (enumerator as IDisposable)?.Dispose(); }
+            }
+            finally { m_Operation = null; }
+        }
+        private static IEnumerator Flatten(IEnumerator routine)
+        {
+            try
+            {
+                while (routine.MoveNext())
+                {
+                    if (routine.Current is IEnumerator child)
+                    {
+                        var nested = Flatten(child);
+                        while (nested.MoveNext()) yield return nested.Current;
+                    }
+                    else yield return routine.Current;
+                }
+            }
+            finally { (routine as IDisposable)?.Dispose(); }
+        }
+        private void ReportError(Exception error)
+        {
+            LastError = error.Message;
+            m_RestoreFailed = true;
+            Debug.LogWarning($"[OB_MODEL_PLAYBACK_20261016] {error.Message}");
+            OutputWindowScript.Error("Model playback failed", error.Message);
+        }
+        private void RequireReady()
+        {
+            if (!Initialized) throw new InvalidOperationException("Model playback is not ready or not supported");
+            if (Busy || m_InitialState != null && !m_RestoreFailed) throw new InvalidOperationException("Model playback is busy");
+            if (m_RestoreFailed) { m_InitialState = null; m_RestoreFailed = false; LastError = null; }
+        }
+        private static void ValidateTime(double time)
+        {
+            if (double.IsNaN(time) || double.IsInfinity(time) || time < 0 || time > long.MaxValue / ImmTicksPerSecond)
+                throw new ArgumentOutOfRangeException(nameof(time));
+        }
+        private static long ToTicks(double time) { ValidateTime(time); return checked((long)Math.Round(time * ImmTicksPerSecond)); }
+        private static void ValidateVolume(float volume)
+        {
+            if (float.IsNaN(volume) || float.IsInfinity(volume) || volume < 0 || volume > 1)
+                throw new ArgumentOutOfRangeException(nameof(volume));
+        }
+    }
+}

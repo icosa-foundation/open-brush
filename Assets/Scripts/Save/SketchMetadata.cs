@@ -384,6 +384,10 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public bool[] PinStates { get; set; }
 
+        /// Per-instance playback, aligned with RawTransforms. Omitted for static/older models.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public ModelPlaybackState[] PlaybackStates { get; set; }
+
         /// Prior to M13, never null or empty; but an empty array is allowed on read.
         /// Post M13, always null.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

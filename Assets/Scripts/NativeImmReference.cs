@@ -25,6 +25,8 @@ namespace TiltBrush
         private NativeImmRenderer m_Renderer;
         private Matrix4x4 m_PreviousTransform;
 
+        public ImmDocument Document => m_Ready ? m_Document : null;
+
         public bool IsLoading => m_IsInstance && m_Document != null && !m_Ready;
 
         public static IEnumerator CreateModelCoroutine(string assetId, string path, Action<Model> onReady) =>
@@ -125,6 +127,7 @@ namespace TiltBrush
             if (m_Ready)
             {
                 RetainRenderer();
+                GetComponentInParent<ModelWidget>()?.Playback.PrepareNativeForRestore(m_Document);
                 UpdateVisibilityAndTransform();
             }
             else StartCoroutine(LoadCoroutine());
@@ -146,6 +149,7 @@ namespace TiltBrush
                 yield return null;
             }
             m_Ready = true;
+            GetComponentInParent<ModelWidget>()?.Playback.PrepareNativeForRestore(m_Document);
             UpdateVisibilityAndTransform();
             Debug.Log($"{LogPrefix} Reference ready: {m_Path}, document={m_Document.DocumentId}");
         }
