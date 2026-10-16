@@ -21,6 +21,7 @@ namespace TiltBrush
     public class BrushSettingsTray : BaseTray
     {
         [SerializeField] private AdvancedSlider m_BrushSizeSlider;
+        [SerializeField] private GameObject m_UndoRedoButtons;
 
         protected override void Awake()
         {
@@ -64,8 +65,13 @@ namespace TiltBrush
         {
             base.Start();
 
-            // Check supported input devices every second.
-            InvokeRepeating(nameof(DetectSupportedDevices), 0.0f, 1);
+            // If advanced mode is active then we need to show undo/redo buttons.
+            // They don't have dedicated buttons unless in beginners mode.
+            // The brush settings tray provides them when controllers aren't used.
+            m_UndoRedoButtons.SetActive(PanelManager.m_Instance.AdvancedModeActive());
+
+            // Check supported input devices every few seconds.
+            InvokeRepeating(nameof(DetectSupportedDevices), 0.0f, 3);
         }
 
         protected override void OnToolChanged()
