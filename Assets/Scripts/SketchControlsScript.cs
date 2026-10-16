@@ -1919,7 +1919,8 @@ namespace TiltBrush
 
                 // Cached candidates can survive several frames between GPU result reads.
                 if (m_BackupBrushGrabData != null &&
-                    !m_BackupBrushGrabData.m_WidgetScript.gameObject.activeInHierarchy)
+                    (m_BackupBrushGrabData.m_WidgetScript == null ||
+                     !m_BackupBrushGrabData.m_WidgetScript.gameObject.activeInHierarchy))
                 {
                     m_BackupBrushGrabData = null;
                 }
@@ -1977,7 +1978,8 @@ namespace TiltBrush
                 }
 
                 if (m_BackupWandGrabData != null &&
-                    !m_BackupWandGrabData.m_WidgetScript.gameObject.activeInHierarchy)
+                    (m_BackupWandGrabData.m_WidgetScript == null ||
+                     !m_BackupWandGrabData.m_WidgetScript.gameObject.activeInHierarchy))
                 {
                     m_BackupWandGrabData = null;
                 }
