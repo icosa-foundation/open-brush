@@ -267,7 +267,7 @@ namespace TiltBrush
             if (m_DirectoryChooserPopupButton != null)
             {
                 m_DirectoryChooserPopupButton.ButtonLabel = $"{displayPath}";
-                m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+                m_CurrentSubdirectories = AndroidDirectStorage.GetDirectories(currentDir);
 
                 if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
                 {
