@@ -1830,6 +1830,8 @@ namespace TiltBrush
             IcosaAssetCatalog pac = App.IcosaAssetCatalog;
             foreach (var gwd in m_ModelWidgets)
             {
+                var nativeReference = gwd.WidgetScript.GetComponentInChildren<NativeImmReference>();
+                if (nativeReference != null && nativeReference.IsLoading) return true;
                 Model.Location loc = gwd.WidgetScript.Model.GetLocation();
                 if (loc.GetLocationType() == Model.Location.Type.IcosaAssetId)
                 {

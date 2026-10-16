@@ -795,6 +795,7 @@ namespace TiltBrush
 
         public AssetLoadState GetAssetLoadState(string assetId)
         {
+            if (m_ModelsBeingLoaded.Contains(assetId)) return AssetLoadState.Loading;
             if (GetModel(assetId) is Model m)
             {
                 // A model may be present in memory but also be still loading -- eg if someone
@@ -837,7 +838,7 @@ namespace TiltBrush
                         return AssetLoadState.Downloading;
                     }
                 }
-                return AssetLoadState.NotDownloaded;
+                return IsLoading(assetId) ? AssetLoadState.Downloading : AssetLoadState.NotDownloaded;
             }
         }
 

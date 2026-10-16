@@ -25,6 +25,8 @@ namespace TiltBrush
         private NativeImmRenderer m_Renderer;
         private Matrix4x4 m_PreviousTransform;
 
+        public bool IsLoading => m_IsInstance && m_Document != null && !m_Ready;
+
         public static IEnumerator CreateModelCoroutine(string assetId, string path, Action<Model> onReady) =>
             CreateModelCoroutine(assetId, path, onReady, null, false);
 
