@@ -26,10 +26,6 @@ namespace TiltBrush
 
         public void OnPreprocessBuild(BuildReport report)
         {
-            // Windows players can also lose the Shader.Find name registration.
-            if (report.summary.platform != BuildTarget.Android &&
-                report.summary.platform != BuildTarget.StandaloneWindows &&
-                report.summary.platform != BuildTarget.StandaloneWindows64) return;
             ValidateAndRegisterShader("PBRGraph", "478ce3626be7a5f4ea58d6b13f05a2e4");
             ValidateAndRegisterShader("UnlitGraph", "59541e6caf586ca4f96ccf48a4813a51");
         }
