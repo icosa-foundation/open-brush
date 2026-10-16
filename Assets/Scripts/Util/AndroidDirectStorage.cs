@@ -17,6 +17,9 @@ namespace TiltBrush
         private static AndroidDirectStorage s_Instance;
         private string m_FolderName;
         private bool m_PromptRequested;
+        private bool m_StartupConnectionRetryRequested;
+        private int m_StartupConnectionRetries;
+        private const int kMaxStartupConnectionRetries = 2;
         private bool m_RetryPrompt;
         private static int s_RefreshRequested;
         private static string[] s_Files = Array.Empty<string>();
@@ -63,7 +66,21 @@ namespace TiltBrush
             }
             while (!StartupReady && !StartupCanceled)
             {
-                if (s_Instance.m_PromptRequested)
+                if (s_Instance.m_StartupConnectionRetryRequested)
+                {
+                    s_Instance.m_StartupConnectionRetryRequested = false;
+                    // A persisted grant can outlive a temporary provider/root outage.
+                    // Retry that connection before asking the user to select the folder again.
+                    yield return new WaitForSecondsRealtime(1.0f);
+                    if (StartupCanceled) yield break;
+                    try
+                    {
+                        using (var bridge = new AndroidJavaClass(Bridge))
+                            bridge.CallStatic("begin", folderName, s_Instance.gameObject.name);
+                    }
+                    catch (Exception error) { s_Instance.OnStorageError(error.Message); }
+                }
+                else if (s_Instance.m_PromptRequested)
                 {
                     s_Instance.m_PromptRequested = false;
                     yield return showExplanation(s_Instance.m_RetryPrompt);
@@ -201,6 +218,12 @@ namespace TiltBrush
             if (StartupReady)
             {
                 IsRefreshing = false;
+                return;
+            }
+            if (m_StartupConnectionRetries < kMaxStartupConnectionRetries)
+            {
+                ++m_StartupConnectionRetries;
+                m_StartupConnectionRetryRequested = true;
                 return;
             }
             m_RetryPrompt = true;
