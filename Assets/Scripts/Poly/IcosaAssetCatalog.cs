@@ -15,6 +15,7 @@
 using UnityEngine;
 using System;
 using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -732,7 +733,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.ANY,
                     OrderBy = OrderByChoices.NEWEST,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -746,7 +747,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.LIKED_TIME,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -761,7 +762,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.BEST,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.TRUE,
                     Category = CategoryChoices.ANY
                 }
@@ -776,7 +777,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.DISPLAY_NAME,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -839,6 +840,41 @@ namespace TiltBrush
             }
         }
 
+        private readonly Dictionary<string, Model> m_ImmModels = new Dictionary<string, Model>();
+        public string LoadingImmAssetId { get; private set; }
+        public bool IsLoadingImm(string assetId) => LoadingImmAssetId == assetId || DownloadingImmAssetId == assetId;
+
+        public bool RequestImmModel(string assetId, Action<Model> onReady)
+        {
+            if (!string.IsNullOrEmpty(LoadingImmAssetId) || !string.IsNullOrEmpty(DownloadingImmAssetId)) return false;
+            GetImmCacheDirectoryForAsset(assetId);
+            LoadingImmAssetId = assetId;
+            StartCoroutine(LoadImmModelCoroutine(assetId, onReady));
+            return true;
+        }
+
+        private IEnumerator LoadImmModelCoroutine(string assetId, Action<Model> onReady)
+        {
+            try
+            {
+                if (m_ImmModels.TryGetValue(assetId, out var cached) && cached.m_Valid)
+                {
+                    onReady?.Invoke(cached);
+                    yield break;
+                }
+                string path = null;
+                DownloadingImmAssetId = assetId;
+                yield return DownloadImmCoroutine(assetId, readyPath => path = readyPath);
+                if (path == null) yield break;
+                yield return NativeImmReference.CreateModelCoroutine(assetId, path, model =>
+                {
+                    m_ImmModels[assetId] = model;
+                    onReady?.Invoke(model);
+                });
+            }
+            finally { LoadingImmAssetId = null; }
+        }
+
         public string DownloadingImmAssetId { get; private set; }
 
         public string GetImmCacheDirectoryForAsset(string assetId)
@@ -859,7 +895,7 @@ namespace TiltBrush
 
         public bool RequestImmDownload(string assetId, Action<string> onReady)
         {
-            if (DownloadingImmAssetId != null) return false;
+            if (!string.IsNullOrEmpty(DownloadingImmAssetId)) return false;
             GetImmCacheDirectoryForAsset(assetId); // Validate before starting the coroutine.
             DownloadingImmAssetId = assetId;
             StartCoroutine(DownloadImmCoroutine(assetId, onReady));
@@ -1652,6 +1688,8 @@ namespace TiltBrush
         void OnDestroy()
         {
             OAuth2Identity.ProfileUpdated -= OnProfileUpdated;
+            foreach (var model in m_ImmModels.Values) model.ReleaseFromCatalog();
+            m_ImmModels.Clear();
         }
 
         public int NumCloudModels(IcosaSetType type)
