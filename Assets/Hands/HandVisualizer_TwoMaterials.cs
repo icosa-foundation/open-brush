@@ -52,9 +52,6 @@ namespace TiltBrush
 
         [Header("Debug")]
         [SerializeField]
-        private bool m_DebugLogging = true;
-
-        [SerializeField]
         [Min(0.1f)]
         private float m_DebugInterval = 1.0f;
 
@@ -137,7 +134,7 @@ namespace TiltBrush
                 {
                     m_Subsystem = subsystem;
 
-                    if (m_DebugLogging)
+                    if (AndroidXRHandBridge.DebugLoggingEnabled)
                     {
                         Debug.Log(
                             "ANDROIDXR_HAND_VIS: Found running XRHandSubsystem. " +
@@ -244,7 +241,7 @@ namespace TiltBrush
 
         private void DebugStateIfNeeded()
         {
-            if (!m_DebugLogging || Time.unscaledTime < m_NextDebugTime)
+            if (!AndroidXRHandBridge.DebugLoggingEnabled || Time.unscaledTime < m_NextDebugTime)
                 return;
 
             m_NextDebugTime =

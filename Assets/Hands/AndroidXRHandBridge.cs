@@ -72,7 +72,7 @@ namespace TiltBrush
                 throw new InvalidOperationException("The Android XR hand bridge is not available.");
             Array.Copy(thresholds, Instance.m_FistMinimumCurl, thresholds.Length);
             Instance.ConfigureFistShape();
-            Debug.Log($"ANDROIDXR_FIST_TUNING thumb={thumb} index={index} middle={middle} ring={ring} little={little}");
+            LogDiagnostic($"ANDROIDXR_FIST_TUNING thumb={thumb} index={index} middle={middle} ring={ring} little={little}");
         }
 
         private void ConfigureFistShape()
@@ -134,20 +134,14 @@ namespace TiltBrush
 
         private void LogHandtrackingStatus()
         {
-            if (m_AppliedUserConfig == null || Time.unscaledTime < m_NextHandtrackingLogTime) return;
-            var config = m_AppliedUserConfig.Handtracking;
-            if (!config.LogPinchStatus && !config.LogRayStatus) return;
+            if (!DebugLoggingEnabled || Time.unscaledTime < m_NextHandtrackingLogTime) return;
             m_NextHandtrackingLogTime = Time.unscaledTime + 1.0f;
-            if (config.LogPinchStatus)
-                Debug.Log($"ANDROIDXR_HANDTRACKING_PINCH {Newtonsoft.Json.JsonConvert.SerializeObject(GetPinchStatus())}");
-            if (config.LogRayStatus)
-            {
-                bool runtimePoseAvailable = TryGetMenuRay(out _);
-                string effective = !UseHand(true) ? "controller" : !RightTracked ? "untracked" :
-                    runtimePoseAvailable ? MenuRayMode : "finger";
-                var status = new { configured = MenuRayMode, effective, runtimePoseAvailable };
-                Debug.Log($"ANDROIDXR_HANDTRACKING_RAY {Newtonsoft.Json.JsonConvert.SerializeObject(status)}");
-            }
+            LogDiagnostic($"ANDROIDXR_HANDTRACKING_PINCH {Newtonsoft.Json.JsonConvert.SerializeObject(GetPinchStatus())}");
+            bool runtimePoseAvailable = TryGetMenuRay(out _);
+            string effective = !UseHand(true) ? "controller" : !RightTracked ? "untracked" :
+                runtimePoseAvailable ? MenuRayMode : "finger";
+            var status = new { configured = MenuRayMode, effective, runtimePoseAvailable };
+            LogDiagnostic($"ANDROIDXR_HANDTRACKING_RAY {Newtonsoft.Json.JsonConvert.SerializeObject(status)}");
         }
 
         private object DescribeCurl(HandState hand, int finger)
@@ -180,7 +174,7 @@ namespace TiltBrush
             if (Instance == null)
                 throw new InvalidOperationException("The Android XR hand bridge is not available.");
             Instance.m_PinchDetectionSource = source;
-            Debug.Log($"ANDROIDXR_PINCH_COMPARE mode={PinchMode}");
+            LogDiagnostic($"ANDROIDXR_PINCH_COMPARE mode={PinchMode}");
         }
 
         private static object GetPinchStatus()
@@ -251,7 +245,7 @@ namespace TiltBrush
                 throw new InvalidOperationException("The Android XR hand bridge is not available.");
 
             Instance.m_MenuRaySource = source;
-            Debug.Log($"ANDROIDXR_MENU_RAY mode={source.ToString().ToLowerInvariant()}");
+            LogDiagnostic($"ANDROIDXR_MENU_RAY mode={source.ToString().ToLowerInvariant()}");
         }
 
         // Menu-only override: leave the brush's drawing and grip poses unchanged.
@@ -475,10 +469,10 @@ namespace TiltBrush
         public bool hideControllerModels = true;
 
 
+        internal static bool DebugLoggingEnabled => App.Instance != null && App.UserConfig != null &&
+            App.UserConfig.Handtracking.DebugLogging;
+
         [Header("Debug")]
-
-        public bool debugLogging = true;
-
         [Tooltip("Seconds between state diagnostic messages.")]
         [SerializeField]
         private float debugStateInterval = 1.0f;
@@ -654,7 +648,7 @@ namespace TiltBrush
                         InputManager.ControllerName.Wand);
                 }
 
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROIDXR_HAND: forced Open Brush intro tutorial to DONE");
             }
         }
@@ -1226,7 +1220,7 @@ namespace TiltBrush
             // Hand Interaction devices.
             FindInputDevices(forceLog: true);
 
-            Debug.Log(
+            LogDiagnostic(
                 "ANDROID_XR_HAND: AWAKE - hybrid controller / Hand Interaction bridge active");
         }
 
@@ -1263,7 +1257,7 @@ namespace TiltBrush
         private void Start()
         {
             ApplyHandtrackingConfig();
-            Debug.Log("ANDROID_XR_HAND: START - hybrid controller / Hand Interaction mode");
+            LogDiagnostic("ANDROID_XR_HAND: START - hybrid controller / Hand Interaction mode");
 
             FindInputDevices(forceLog: true);
         }
@@ -1477,9 +1471,9 @@ namespace TiltBrush
             m_LeftControllerBinding = foundLeftController;
             m_RightControllerBinding = foundRightController;
 
-            if (debugLogging && (forceLog || changed))
+            if (DebugLoggingEnabled && (forceLog || changed))
             {
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROID_XR_HAND: hybrid device discovery " +
                     $"leftHand={DescribeBinding(m_LeftBinding)} " +
                     $"rightHand={DescribeBinding(m_RightBinding)} " +
@@ -1836,9 +1830,9 @@ namespace TiltBrush
 
             m_OpenBrushHandModeInitialized = true;
 
-            if (debugLogging)
+            if (DebugLoggingEnabled)
             {
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROID_XR_HAND: restored anchor geometry initialized. " +
                     $"legacyGeometry={useLegacyOpenBrushAnchorGeometry} " +
                     $"WandStyle={InputManager.Wand.Geometry?.Style} " +
@@ -1865,9 +1859,9 @@ namespace TiltBrush
 
             m_ControllersPrepared = true;
 
-            if (debugLogging)
+            if (DebugLoggingEnabled)
             {
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROID_XR_HAND: hybrid Open Brush controller routing prepared");
             }
         }
@@ -2272,9 +2266,9 @@ namespace TiltBrush
                 {
                     m_XRHandSubsystem = subsystem;
 
-                    if (debugLogging)
+                    if (DebugLoggingEnabled)
                     {
-                        Debug.Log(
+                        LogDiagnostic(
                             "ANDROID_XR_HAND: XRHands spatial source found " +
                             $"L={subsystem.leftHand.isTracked} " +
                             $"R={subsystem.rightHand.isTracked}");
@@ -2626,9 +2620,9 @@ namespace TiltBrush
                     isBrush);
             }
 
-            if (debugLogging)
+            if (DebugLoggingEnabled)
             {
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROIDXR_SOURCE_SWITCH " +
                     $"side={(isBrush ? "RIGHT/BRUSH" : "LEFT/WAND")} " +
                     $"from={previous} " +
@@ -2758,7 +2752,7 @@ namespace TiltBrush
             m_PrimaryTriggerUp =
                 wasHeld && !nextHeld;
 
-            if (debugLogging &&
+            if (DebugLoggingEnabled &&
                 (m_PrimaryTriggerDown ||
                  m_PrimaryTriggerUp))
             {
@@ -2766,7 +2760,7 @@ namespace TiltBrush
                     SketchControlsScript.m_Instance != null &&
                     SketchControlsScript.m_Instance.IsUserInteractingWithUI();
 
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROIDXR_PRIMARY_TRIGGER " +
                     $"held={m_PrimaryTriggerHeld} " +
                     $"down={m_PrimaryTriggerDown} " +
@@ -2936,12 +2930,12 @@ namespace TiltBrush
                 m_RightPanelLastContactTime = -1.0f;
             }
 
-            if (debugLogging &&
+            if (DebugLoggingEnabled &&
                 (m_RightPanelContact ||
                  m_RightPanelGrabArmed) &&
                 Time.frameCount % 30 == 0)
             {
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROIDXR_PANEL_CONTACT " +
                     $"physical={m_RightPanelContact} " +
                     $"grabArmed={m_RightPanelGrabArmed} " +
@@ -3277,9 +3271,9 @@ namespace TiltBrush
                 m_MenuTouchUp =
                     true;
 
-                if (debugLogging)
+                if (DebugLoggingEnabled)
                 {
-                    Debug.Log(
+                    LogDiagnostic(
                         "ANDROIDXR_MENU_TOUCH " +
                         $"held={m_MenuTouchHeld} " +
                         $"down={m_MenuTouchDown} " +
@@ -3378,9 +3372,9 @@ namespace TiltBrush
                     m_MenuTouchHasPressFingerPosition =
                         false;
 
-                    if (debugLogging)
+                    if (DebugLoggingEnabled)
                     {
-                        Debug.Log(
+                        LogDiagnostic(
 "ANDROIDXR_DIRECT_UI REARM " +
                             $"fingerTravelLocal={fingerTravel:F4} " +
                             $"clearTime={clearDuration:F3}");
@@ -3443,9 +3437,9 @@ namespace TiltBrush
                     rawComponent);
 
 
-                if (debugLogging)
+                if (DebugLoggingEnabled)
                 {
-                    Debug.Log(
+                    LogDiagnostic(
                         "ANDROIDXR_MENU_TOUCH " +
                         $"held={m_MenuTouchHeld} " +
                         $"down={m_MenuTouchDown} " +
@@ -3599,9 +3593,9 @@ namespace TiltBrush
             component.GainFocus();
             component.ButtonPressed(default);
 
-            if (debugLogging)
+            if (DebugLoggingEnabled)
             {
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROIDXR_DIRECT_UI PRESS " +
                     $"component={component.GetType().Name} " +
                     $"object={component.gameObject.name}");
@@ -3628,9 +3622,9 @@ namespace TiltBrush
             component.ButtonReleased();
             component.LostFocus();
 
-            if (debugLogging)
+            if (DebugLoggingEnabled)
             {
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROIDXR_DIRECT_UI RELEASE " +
                     $"component={component.GetType().Name} " +
                     $"object={component.gameObject.name}");
@@ -4054,10 +4048,10 @@ namespace TiltBrush
             root.position =
                 desiredPosition;
 
-            if (debugLogging &&
+            if (DebugLoggingEnabled &&
                 Time.frameCount % 120 == 0)
             {
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROIDXR_BRUSH_GRIP_POSE " +
                     $"source={(hand.xrHandsSpatialValid ? "XRHANDS_PALM" : "HAND_INTERACTION_FALLBACK")} " +
                     $"pos={desiredPosition:F3} " +
@@ -4112,10 +4106,10 @@ namespace TiltBrush
             behavior.transform.position =
                 desiredPosition;
 
-            if (debugLogging &&
+            if (DebugLoggingEnabled &&
                 Time.frameCount % 120 == 0)
             {
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROIDXR_WAND_POSE " +
                     $"source={(hand.xrHandsSpatialValid ? "XRHANDS_PALM" : "HAND_INTERACTION_FALLBACK")} " +
                     $"exact={useExactRestoredPose} " +
@@ -4181,7 +4175,7 @@ namespace TiltBrush
             {
                 m_PanelsRequested = true;
 
-                Debug.Log(
+                LogDiagnostic(
                     "ANDROID_XR_HAND: PANELS REQUESTED " +
                     $"count={panels.GetAllPanels().Count} " +
                     $"leftTracked={m_Left.tracked}");
@@ -4193,9 +4187,14 @@ namespace TiltBrush
         // Diagnostics
         // --------------------------------------------------------------------
 
+        private static void LogDiagnostic(string message, UnityEngine.Object context = null)
+        {
+            if (DebugLoggingEnabled) Debug.Log(message, context);
+        }
+
         private void DebugStateIfNeeded()
         {
-            if (!debugLogging)
+            if (!DebugLoggingEnabled)
                 return;
 
             if (Time.unscaledTime < m_NextDebugStateTime)
@@ -4262,7 +4261,7 @@ namespace TiltBrush
                     : "null";
 
 
-            Debug.Log(
+            LogDiagnostic(
                 "ANDROID_XR_HAND STATE " +
                 $"mode=Hybrid " +
                 $"sourceL={m_LeftSource} " +

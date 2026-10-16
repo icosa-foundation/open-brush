@@ -1951,10 +1951,9 @@ namespace TiltBrush
                                     SelectionManager.m_Instance.StartGrabbingGroupWithWidget(m_CurrentGrabWidget);
                             }
                             UpdateGrab_NoneToOne(InputManager.ControllerName.Brush);
-                            if (rightHandPanelAvailable)
+                            if (rightHandPanelAvailable && AndroidXRHandBridge.DebugLoggingEnabled)
                             {
-                                Debug.Log("ANDROIDXR_PANEL_GRAB_START " +
-                                    m_CurrentGrabWidget.name + " (right grip)");
+                                Debug.Log($"ANDROIDXR_PANEL_GRAB_START {m_CurrentGrabWidget.name} (right grip)");
                             }
                             bShouldClearWandInside = true;
                             m_GrabBrush.startedGrabInsideWidget = true;

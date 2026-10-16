@@ -51,11 +51,9 @@ namespace TiltBrush
             // Optional five minimum full-curl values: thumb, index, middle, ring, little.
             // Omitted uses the Aura-tested defaults: 0.05, 0.75, 0.75, 0.75, 0.70.
             public float[] FistMinimumCurl;
-            // Emit comparison diagnostics once per second; off by default.
-            public bool LogPinchStatus;
-            public bool LogRayStatus;
-            // Log hand-subsystem tracking state every 120 frames; off by default.
-            public bool LogSubsystemStatus;
+            // Enable hand bridge, gesture, subsystem, visualizer and permission diagnostics.
+            // Errors and actionable warnings remain enabled regardless of this flag.
+            public bool DebugLogging;
         }
 
         public HandtrackingConfig Handtracking;

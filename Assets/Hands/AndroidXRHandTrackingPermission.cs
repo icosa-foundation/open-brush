@@ -55,10 +55,6 @@ namespace TiltBrush
         [Tooltip("Restart XRHandSubsystem after permission is granted so joint delivery begins immediately.")]
         private bool restartHandSubsystemAfterGrant = true;
 
-        [Header("Debug")]
-        [SerializeField]
-        private bool debugLogging = true;
-
         private bool m_RequestInFlight;
         private bool m_WasFocused;
 
@@ -354,13 +350,10 @@ namespace TiltBrush
         private void Log(
             string message)
         {
-            if (!debugLogging)
+            if (!AndroidXRHandBridge.DebugLoggingEnabled)
                 return;
 
-            Debug.Log(
-                "ANDROID_XR_HAND_PERMISSION: " +
-                message,
-                this);
+            Debug.Log($"ANDROID_XR_HAND_PERMISSION: {message}", this);
         }
     }
 }

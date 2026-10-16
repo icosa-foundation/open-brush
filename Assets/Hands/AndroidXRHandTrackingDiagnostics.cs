@@ -13,12 +13,9 @@ namespace TiltBrush
         private const string HandPermission = "android.permission.HAND_TRACKING";
         private readonly List<XRHandSubsystem> m_Subsystems = new();
 
-        private static bool LoggingEnabled => App.Instance != null && App.UserConfig != null &&
-            App.UserConfig.Handtracking.LogSubsystemStatus;
-
         private void Start()
         {
-            if (!LoggingEnabled) return;
+            if (!AndroidXRHandBridge.DebugLoggingEnabled) return;
 #if UNITY_ANDROID && OPEN_BRUSH_ANDROID_XR && !UNITY_EDITOR
             Debug.Log($"ANDROIDXR_HAND_PERMISSION granted={Permission.HasUserAuthorizedPermission(HandPermission)}");
 #else
@@ -28,7 +25,7 @@ namespace TiltBrush
 
         private void Update()
         {
-            if (!LoggingEnabled || Time.frameCount % 120 != 0)
+            if (!AndroidXRHandBridge.DebugLoggingEnabled || Time.frameCount % 120 != 0)
                 return;
 
             m_Subsystems.Clear();
