@@ -38,56 +38,6 @@ namespace TiltBrush
                 ".svg"
             };
 
-        [ApiEndpoint("hand.ray.mode",
-            "Get or set the hand menu ray: finger (existing), aim or pinch. Drawing pose and pinch thresholds are unchanged.",
-            "hand.ray.mode=aim")]
-        public static string HandRayMode(string mode = "")
-        {
-            if (!string.IsNullOrWhiteSpace(mode))
-                AndroidXRHandBridge.SetMenuRayMode(mode);
-            return AndroidXRHandBridge.MenuRayMode;
-        }
-
-        [ApiEndpoint("hand.pinch.mode",
-            "Get or set pinch detection: openxr (default) or xrhands (thumb/index joints, with OpenXR fallback). Applies to drawing, UI and pinch-over-grip priority; ray mode is unchanged.",
-            "hand.pinch.mode=xrhands")]
-        public static string HandPinchMode(string mode = "")
-        {
-            if (!string.IsNullOrWhiteSpace(mode))
-                AndroidXRHandBridge.SetPinchMode(mode);
-            return AndroidXRHandBridge.PinchMode;
-        }
-
-        [ApiEndpoint("hand.fist.thresholds",
-            "Set minimum full curl for thumb, index, middle, ring and little (0..1). Applies to both hands until restart. Read values and per-finger validity/pass results with query.hand.pinch.status.",
-            "hand.fist.thresholds=0.05,0.75,0.75,0.75,0.70")]
-        public static void HandFistThresholds(float thumb, float index, float middle, float ring, float little)
-        {
-            AndroidXRHandBridge.SetFistThresholds(thumb, index, middle, ring, little);
-        }
-
-        [ApiEndpoint("hand.pinch.status", "Report both pinch measurements, the effective detector, per-finger fist curl/validity/thresholds and grip/trigger state. Read over HTTP with query.hand.pinch.status.")]
-        public static string HandPinchStatus()
-        {
-            return Newtonsoft.Json.JsonConvert.SerializeObject(AndroidXRHandBridge.GetPinchStatus());
-        }
-
-        [ApiEndpoint("hand.ray.status", "Report the configured and effective hand menu ray modes. Read over HTTP with query.hand.ray.status.")]
-        public static string HandRayStatus()
-        {
-            bool runtimePoseAvailable = AndroidXRHandBridge.TryGetMenuRay(out _);
-            string effective = AndroidXRHandBridge.Instance == null ? "unavailable" :
-                !AndroidXRHandBridge.UseHand(true) ? "controller" :
-                !AndroidXRHandBridge.RightTracked ? "untracked" :
-                runtimePoseAvailable ? AndroidXRHandBridge.MenuRayMode : "finger";
-            return Newtonsoft.Json.JsonConvert.SerializeObject(new
-            {
-                configured = AndroidXRHandBridge.MenuRayMode,
-                effective,
-                runtimePoseAvailable
-            });
-        }
-
         // Example of calling a command and recording an undo step
         // [ApiEndpoint("foo", "")]
         // public static void FooCommand()

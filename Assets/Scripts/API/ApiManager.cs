@@ -208,7 +208,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
             public Guid Handle => m_Handle;
             public string Command => m_Command;
             public string Parameters => m_Parameters;
-            public Action<string> Completed;
 
             public EnqueuedApiCommand(string command, string parameters)
             {
@@ -696,17 +695,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
             return String.Join("\n", responses);
         }
 
-        // HTTP handlers run off-thread. Sample live hand state through the existing
-        // command queue rather than reading Unity objects from the HTTP listener.
-        private string QueryEndpointOnMainThread(string endpoint)
-        {
-            var completion = new System.Threading.Tasks.TaskCompletionSource<string>();
-            var command = new EnqueuedApiCommand(endpoint, "");
-            command.Completed = result => completion.SetResult(result);
-            m_RequestedCommandQueue.Enqueue(command);
-            return completion.Task.Wait(TimeSpan.FromSeconds(2)) ? completion.Task.Result : "pending";
-        }
-
         private string HandleApiQuery(string commandString)
         {
 
@@ -716,10 +704,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
             if (commandPair.Length < 1) return null;
             switch (commandPair[0])
             {
-                case "query.hand.pinch.status":
-                    return QueryEndpointOnMainThread("hand.pinch.status");
-                case "query.hand.ray.status":
-                    return QueryEndpointOnMainThread("hand.ray.status");
                 case "query.queue":
                     return m_OutgoingCommandQueue.Count.ToString();
                 case "query.quill.stats":
@@ -851,7 +835,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
             string result = InvokeEndpointForStatus(() => Instance.InvokeEndpoint(command));
             m_CommandStatuses[command.Handle.ToString()] = result;
-            command.Completed?.Invoke(result);
             return true;
         }
 

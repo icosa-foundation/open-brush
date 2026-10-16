@@ -37,7 +37,10 @@ namespace TiltBrush
         private enum PinchDetectionSource { OpenXR, XRHands }
 
         // Thumb, index, middle, ring, little. Tuned on Aura for fist grip and pre-curled pinch.
-        private readonly float[] m_FistMinimumCurl = { 0.05f, 0.75f, 0.75f, 0.75f, 0.70f };
+        private static readonly float[] kDefaultFistMinimumCurl = { 0.05f, 0.75f, 0.75f, 0.75f, 0.70f };
+        private readonly float[] m_FistMinimumCurl = (float[])kDefaultFistMinimumCurl.Clone();
+        private UserConfig m_AppliedUserConfig;
+        private float m_NextHandtrackingLogTime;
         private XRHandShape m_FistShape;
         private readonly XRHandJointsUpdatedEventArgs m_FistArgs = new XRHandJointsUpdatedEventArgs();
 
@@ -59,7 +62,7 @@ namespace TiltBrush
             };
         }
 
-        public static void SetFistThresholds(float thumb, float index, float middle, float ring, float little)
+        private static void SetFistThresholds(float thumb, float index, float middle, float ring, float little)
         {
             var thresholds = new[] { thumb, index, middle, ring, little };
             foreach (float value in thresholds)
@@ -84,6 +87,69 @@ namespace TiltBrush
             };
         }
 
+        private void ApplyHandtrackingConfig()
+        {
+            // App loads UserConfig in Awake; this bridge's earlier Awake only installs input.
+            // RefreshUserConfig replaces the object, so also apply explicit config reloads.
+            if (App.Instance == null || App.UserConfig == null || ReferenceEquals(m_AppliedUserConfig, App.UserConfig))
+                return;
+            m_AppliedUserConfig = App.UserConfig;
+            var config = m_AppliedUserConfig.Handtracking;
+            m_MenuRaySource = MenuRaySource.Finger;
+            m_PinchDetectionSource = PinchDetectionSource.OpenXR;
+            Array.Copy(kDefaultFistMinimumCurl, m_FistMinimumCurl, m_FistMinimumCurl.Length);
+            ConfigureFistShape();
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(config.RayMode)) SetMenuRayMode(config.RayMode);
+            }
+            catch (ArgumentException e)
+            {
+                Debug.LogWarning($"ANDROIDXR_HANDTRACKING_CONFIG RayMode: {e.Message} Using finger.");
+            }
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(config.PinchMode)) SetPinchMode(config.PinchMode);
+            }
+            catch (ArgumentException e)
+            {
+                Debug.LogWarning($"ANDROIDXR_HANDTRACKING_CONFIG PinchMode: {e.Message} Using openxr.");
+            }
+            try
+            {
+                if (config.FistMinimumCurl != null)
+                {
+                    if (config.FistMinimumCurl.Length != 5)
+                        throw new ArgumentException("Provide five values in thumb, index, middle, ring, little order.");
+                    var curl = config.FistMinimumCurl;
+                    SetFistThresholds(curl[0], curl[1], curl[2], curl[3], curl[4]);
+                }
+            }
+            catch (ArgumentException e)
+            {
+                Debug.LogWarning($"ANDROIDXR_HANDTRACKING_CONFIG FistMinimumCurl: {e.Message} Using defaults.");
+            }
+        }
+
+        private void LogHandtrackingStatus()
+        {
+            if (m_AppliedUserConfig == null || Time.unscaledTime < m_NextHandtrackingLogTime) return;
+            var config = m_AppliedUserConfig.Handtracking;
+            if (!config.LogPinchStatus && !config.LogRayStatus) return;
+            m_NextHandtrackingLogTime = Time.unscaledTime + 1.0f;
+            if (config.LogPinchStatus)
+                Debug.Log($"ANDROIDXR_HANDTRACKING_PINCH {Newtonsoft.Json.JsonConvert.SerializeObject(GetPinchStatus())}");
+            if (config.LogRayStatus)
+            {
+                bool runtimePoseAvailable = TryGetMenuRay(out _);
+                string effective = !UseHand(true) ? "controller" : !RightTracked ? "untracked" :
+                    runtimePoseAvailable ? MenuRayMode : "finger";
+                var status = new { configured = MenuRayMode, effective, runtimePoseAvailable };
+                Debug.Log($"ANDROIDXR_HANDTRACKING_RAY {Newtonsoft.Json.JsonConvert.SerializeObject(status)}");
+            }
+        }
+
         private object DescribeCurl(HandState hand, int finger)
         {
             float? value = hand.fingerCurl[finger];
@@ -99,10 +165,10 @@ namespace TiltBrush
         [SerializeField]
         private PinchDetectionSource m_PinchDetectionSource = PinchDetectionSource.OpenXR;
 
-        public static string PinchMode => Instance == null ? "unavailable" :
+        private static string PinchMode => Instance == null ? "unavailable" :
             Instance.m_PinchDetectionSource == PinchDetectionSource.XRHands ? "xrhands" : "openxr";
 
-        public static void SetPinchMode(string mode)
+        private static void SetPinchMode(string mode)
         {
             PinchDetectionSource source;
             switch (mode.Trim().ToLowerInvariant())
@@ -117,7 +183,7 @@ namespace TiltBrush
             Debug.Log($"ANDROIDXR_PINCH_COMPARE mode={PinchMode}");
         }
 
-        public static object GetPinchStatus()
+        private static object GetPinchStatus()
         {
             if (Instance == null) return new { configured = "unavailable" };
             return new
@@ -167,10 +233,10 @@ namespace TiltBrush
         [SerializeField]
         private MenuRaySource m_MenuRaySource = MenuRaySource.Finger;
 
-        public static string MenuRayMode =>
+        private static string MenuRayMode =>
             Instance != null ? Instance.m_MenuRaySource.ToString().ToLowerInvariant() : "unavailable";
 
-        public static void SetMenuRayMode(string mode)
+        private static void SetMenuRayMode(string mode)
         {
             MenuRaySource source;
             switch (mode.Trim().ToLowerInvariant())
@@ -1196,6 +1262,7 @@ namespace TiltBrush
 
         private void Start()
         {
+            ApplyHandtrackingConfig();
             Debug.Log("ANDROID_XR_HAND: START - hybrid controller / Hand Interaction mode");
 
             FindInputDevices(forceLog: true);
@@ -1204,6 +1271,7 @@ namespace TiltBrush
 
         private void Update()
         {
+            ApplyHandtrackingConfig();
             if (Time.unscaledTime >= m_NextDeviceSearchTime)
             {
                 FindInputDevices(forceLog: false);
@@ -1282,6 +1350,7 @@ namespace TiltBrush
 
         private void LateUpdate()
         {
+            LogHandtrackingStatus();
             if (!m_OpenBrushHandModeInitialized ||
                 !m_ControllersPrepared)
             {
