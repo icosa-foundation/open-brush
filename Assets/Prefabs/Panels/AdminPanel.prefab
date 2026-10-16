@@ -3393,14 +3393,6 @@ MonoBehaviour:
   m_LocalRotationOffset: {x: -90, y: 0, z: 0}
   m_RequireBothHands: 1
   m_DetachFromPanelOnStart: 1
-  m_MaxAimDistance: 1.5
-  m_AimPadding: 0.015
-  m_TargetHoldSeconds: 0.3
-  m_ShowAimLine: 1
-  m_AimColor: {r: 0.25, g: 0.95, b: 1, a: 1}
-  m_LineWidth: 0.0025
-  m_ReticleDiameter: 0.013
-  m_HoverScale: 1.12
 --- !u!1 &3430566547836769564
 GameObject:
   m_ObjectHideFlags: 0
@@ -3529,12 +3521,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.WandPanelRotateButton
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
+  m_DescriptionText: Rotate panels left
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 554342843705548800
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3988,12 +3980,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.WandPanelRotateButton
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: 
+  m_DescriptionText: Rotate panels right
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 554342843789434880
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
