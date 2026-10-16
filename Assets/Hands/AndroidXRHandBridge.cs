@@ -1353,10 +1353,10 @@ namespace TiltBrush
 
 
             /*
-             * Keep Open Brush in six-DoF mode.
-             * Other Open Brush startup/runtime paths may assign this value.
+             * Keep Open Brush in six-DoF mode while a hand is actually selected.
+             * Otherwise leave controller/viewer mode selection to the normal XR paths.
              */
-            if (SketchControlsScript.m_Instance != null)
+            if (Active && SketchControlsScript.m_Instance != null)
             {
                 SketchControlsScript.m_Instance.ActiveControlsType =
                     SketchControlsScript.ControlsType.SixDofControllers;
