@@ -77,6 +77,7 @@ MonoBehaviour:
   m_TrayWidth: 0.45
   m_ShowOnToolType: 10
   m_BrushSizeSlider: {fileID: 584482961708206757}
+  m_UndoRedoButtons: {fileID: 3594659416870662126}
   references:
     version: 2
     RefIds: []
