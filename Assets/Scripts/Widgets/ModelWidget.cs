@@ -1004,7 +1004,7 @@ namespace TiltBrush
         }
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
-        static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
+        internal static ModelWidget CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null,
                                 ModelPlaybackState playbackState = null)
         {
@@ -1039,6 +1039,7 @@ namespace TiltBrush
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
             modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
+            return modelWidget;
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).

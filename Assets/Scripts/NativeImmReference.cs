@@ -102,6 +102,20 @@ namespace TiltBrush
 
         // Only actual ModelWidget instances activate native rendering. Templates, previews and
         // snap ghosts may be cloned freely without creating native documents.
+        internal static Model CreatePreparedModel(string path, ImmDocument document,
+            ImmPlayerManager manager, NativeImmRenderer renderer)
+        {
+            // Native bounds include the document transform; the widget needs local bounds.
+            document.SetTransform(Matrix4x4.identity);
+            var model = Model.CreateNativeImm(null, path, document.GetBoundingBox());
+            var template = model.m_ModelParent.gameObject.AddComponent<NativeImmReference>();
+            template.m_Path = path;
+            template.m_Manager = manager;
+            template.m_Document = document;
+            template.m_Renderer = renderer;
+            return model;
+        }
+
         public void Activate(NativeImmReference template)
         {
             // Adopt the hidden document used to obtain bounds for the first insertion.

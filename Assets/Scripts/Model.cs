@@ -314,7 +314,7 @@ namespace TiltBrush
         /// <summary>Creates a bounded template; each widget owns its native document separately.</summary>
         public static Model CreateNativeImm(string assetId, string path, Bounds bounds)
         {
-            var model = new Model(assetId, path);
+            var model = assetId == null ? new Model(path) : new Model(assetId, path);
             model.CreateNativeImmPrefab(bounds);
             return model;
         }
