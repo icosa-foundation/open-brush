@@ -65,7 +65,7 @@ namespace TiltBrush
         public void ChapterRestartUsesAuthoredMarkerClock(bool hasPlays, int chapter, long ticks)
         {
             Assert.AreEqual(ticks / 12600.0,
-                ModelPlaybackState.GetChapterStartTime(new long[] {12600, 25200, 37800}, hasPlays, chapter), 1e-9);
+                ModelPlaybackState.GetChapterStartTime(new long[] { 12600, 25200, 37800 }, hasPlays, chapter), 1e-9);
         }
 
     }
