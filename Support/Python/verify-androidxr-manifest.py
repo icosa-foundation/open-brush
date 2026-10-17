@@ -28,7 +28,10 @@ def validate(root):
         errors.append(f"Missing required XR feature: {name}")
     for tag in ("uses-permission", "uses-permission-sdk-23"):
         for permission in root.findall(tag):
-            if permission.get(f"{ANDROID}name") == "android.permission.MANAGE_EXTERNAL_STORAGE":
+            if (
+                permission.get(f"{ANDROID}name")
+                == "android.permission.MANAGE_EXTERNAL_STORAGE"
+            ):
                 errors.append(f"Forbidden all-files permission in {tag}")
     return errors
 
