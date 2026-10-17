@@ -187,6 +187,21 @@ namespace TiltBrush
             ShowingToHidden,
         }
 
+        public void RotateWandPanels(int direction)
+        {
+            if (m_AdvancedModeRevealActive || m_RotateSnapState != RotateSnapState.Done ||
+                !GazePanelsAreVisible() || m_PanelsMode != PanelMode.Standard)
+            {
+                return;
+            }
+
+            // Handtracking buttons use the same snap, jiggle and cooldown as the thumbstick.
+            m_WandPanelsRotationVelocity = 0.0f;
+            m_RotateSnapAnimTime = 1.0f;
+            m_RotateSnapAnimDir = direction >= 0 ? 1 : -1;
+            m_RotateSnapState = RotateSnapState.Snapping;
+        }
+
         public class RevealParticle
         {
             public Transform xf;
@@ -1051,7 +1066,9 @@ namespace TiltBrush
                 }
             }
 
-            if (!App.VrSdk.AnalogIsStick(InputManager.ControllerName.Wand))
+            // Finish a button-started snap even if the active input has no thumbstick.
+            if (!App.VrSdk.AnalogIsStick(InputManager.ControllerName.Wand) &&
+                m_RotateSnapState == RotateSnapState.Done)
             {
                 UpdateSwipeRotate(bWandRot, wandScrollXDelta);
             }

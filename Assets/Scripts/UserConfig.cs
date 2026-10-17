@@ -42,6 +42,23 @@ namespace TiltBrush
     public class UserConfig
     {
         [Serializable]
+        public struct HandtrackingConfig
+        {
+            // Experimental menu ray: finger (default), aim or pinch.
+            public string RayMode;
+            // Pinch detector: openxr (default) or xrhands.
+            public string PinchMode;
+            // Optional five minimum full-curl values: thumb, index, middle, ring, little.
+            // Omitted uses the Aura-tested defaults: 0.05, 0.75, 0.75, 0.75, 0.70.
+            public float[] FistMinimumCurl;
+            // Enable hand bridge, gesture, subsystem, visualizer and permission diagnostics.
+            // Errors and actionable warnings remain enabled regardless of this flag.
+            public bool DebugLogging;
+        }
+
+        public HandtrackingConfig Handtracking;
+
+        [Serializable]
         public struct PostProcessingFxConfig
         {
             // Null leaves bloom at its default amount of 1 for every quality level.

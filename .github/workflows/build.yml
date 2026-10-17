@@ -134,31 +134,20 @@ jobs:
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
-          MAJOR=$(echo $VERSION | cut -d '.' -f 1)
-          MINOR=$(echo $VERSION | cut -d '.' -f 2)
-          if [ "${{ github.event_name }}" == "pull_request" ]; then
-            # PR builds use a Unix timestamp as the version code instead of the
-            # commit-count formula. The formula counts first-parent commits on main
-            # since the last tag, so it stays fixed for the entire lifetime of a PR
-            # (adding commits to the branch doesn't change it). That causes "version
-            # code already used" rejections when uploading successive test builds to
-            # Google Play.
-            #
-            # DOWNSIDE: timestamp codes (~1.78B today after suffix) are permanently
-            # higher than production codes (~20M), so any build uploaded to Play with
-            # a timestamp code must never be promoted to production — upload test
-            # builds to an internal/closed track only. Also, Unix timestamps exceed
-            # Android's hard limit of 2,100,000,000 around 2036.
-            #
-            # We divide by 10 because the build matrix appends a single-digit
-            # versionSuffix as a string (e.g. "0"), effectively multiplying by 10.
-            # Without the division, the final code would be 11 digits and exceed
-            # Android's 2,100,000,000 limit. Dividing first keeps it within range
-            # while retaining 10-second granularity — sufficient since CI builds
-            # take much longer than 10 seconds.
-            ANDROID_VERSION_CODE=$(( $(date +%s) / 10 ))
-          else
-            ANDROID_VERSION_CODE=$((MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION))
+          # One sequence for PR and production builds, independent of versionName.
+          # Reserve 100 codes per workflow run so reruns also get unused codes.
+          # Rerunning an older run does not make it newer than subsequent runs.
+          if (( GITHUB_RUN_ATTEMPT >= 100 )); then
+            echo "::error::Start a new workflow run after 99 attempts."
+            exit 1
+          fi
+          # Both apps' latest internal releases used 20320370 on 2026-10-17.
+          # Viewer also has an unapproved old timestamp release; acceptance of
+          # this lower range must be verified when uploading to Play.
+          ANDROID_VERSION_CODE=$((21000000 + GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
+          if (( ANDROID_VERSION_CODE < 1 || ANDROID_VERSION_CODE > 2100000000 )); then
+            echo "::error::Android version code is outside Google Play's supported range."
+            exit 1
           fi
           echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
           echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
@@ -264,7 +253,6 @@ jobs:
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
-            versionSuffix: 0
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: Android AndroidXR
@@ -273,7 +261,6 @@ jobs:
             vrsdk: AndroidXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
-            versionSuffix: 0
             androidExportType: androidAppBundle
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
@@ -286,7 +273,6 @@ jobs:
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
-            versionSuffix: 0
             extra_defines: OPEN_BRUSH_VIEWER
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
@@ -296,7 +282,6 @@ jobs:
             vrsdk: AndroidXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
-            versionSuffix: 0
             androidExportType: androidAppBundle
             extra_defines: OPEN_BRUSH_VIEWER
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
@@ -308,7 +293,6 @@ jobs:
             vrsdk: OpenXR
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
-            versionSuffix: 0
             extra_defines: USE_QUEST_PACKAGE_NAME
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
@@ -543,7 +527,7 @@ jobs:
             targetPlatform: ${{ matrix.targetPlatform }}
             customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ matrix.androidExportType != 'androidAppBundle' && needs.configuration.outputs.description || '' }} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
             versioning: Custom
-            androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}${{ matrix.versionSuffix }}"
+            androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}"
             version: ${{ needs.configuration.outputs.version }}
             buildName: ${{ needs.configuration.outputs.basename }}
             buildsPath: build/${{ matrix.vrsdk }}
