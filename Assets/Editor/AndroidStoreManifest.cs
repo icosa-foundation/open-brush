@@ -60,6 +60,39 @@ internal static class AndroidStoreManifest
             eyes.SetAttribute("replace", ToolsNamespace, "android:required");
         }
 
+        if (androidXr)
+        {
+            // Declare known library/permission-implied features explicitly: declarations in
+            // this manifest override required=true contributed during Gradle's library merge.
+            foreach (string feature in new[]
+            {
+                "com.oculus.feature.PASSTHROUGH", "oculus.software.handtracking",
+                "android.hardware.xr.input.hand_tracking", "android.hardware.vr.headtracking",
+                "android.hardware.touchscreen", "android.hardware.touchscreen.multitouch",
+                "android.hardware.touchscreen.multitouch.distinct", "android.hardware.microphone",
+                "android.hardware.opengles.aep"
+            })
+                GetOrCreate(doc, root, "uses-feature", feature);
+
+            // Unity unconditionally declares spatial as required. Require only the OpenXR
+            // platform API, retaining spatial's version for its optional capability declaration.
+            foreach (string feature in new[] { "android.software.xr.api.openxr", "android.software.xr.api.spatial" })
+                GetOrCreate(doc, root, "uses-feature", feature);
+
+            foreach (XmlElement feature in root.SelectNodes("uses-feature"))
+            {
+                string name = feature.GetAttribute("name", AndroidNamespace);
+                bool required = name == "android.software.xr.api.openxr";
+                SetAndroid(feature, "required", required ? "true" : "false");
+                feature.SetAttribute("replace", ToolsNamespace, "android:required");
+            }
+
+            // Android XR must never regain all-files access, including in local APK builds.
+            foreach (string tag in new[] { "uses-permission", "uses-permission-sdk-23" })
+                GetOrCreate(doc, root, tag, "android.permission.MANAGE_EXTERNAL_STORAGE")
+                    .SetAttribute("node", ToolsNamespace, "remove");
+        }
+
         if (!androidXr)
         {
             // These describe Google's AndroidXR platform, not the ability to load an OpenXR

@@ -541,6 +541,24 @@ jobs:
             androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
             androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
+      - name: Validate packaged Android XR manifest
+        if: matrix.targetPlatform == 'Android' && matrix.vrsdk == 'AndroidXR'
+        shell: bash
+        run: |
+          set -euo pipefail
+          bundletool="$RUNNER_TEMP/bundletool-all-1.18.3.jar"
+          curl --fail --location --retry 3 --silent --show-error \
+            https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar \
+            --output "$bundletool"
+          mapfile -d '' bundles < <(find 'build/${{ matrix.vrsdk }}' -type f -name '*.aab' -print0)
+          if [ "${#bundles[@]}" -ne 1 ]; then
+            echo "Expected exactly one Android XR AAB, found ${#bundles[@]}" >&2
+            exit 1
+          fi
+          manifest="$RUNNER_TEMP/androidxr-manifest.xml"
+          java -jar "$bundletool" dump manifest --bundle="${bundles[0]}" --module=base > "$manifest"
+          python3 Support/Python/verify-androidxr-manifest.py "$manifest"
+
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
         run: |
