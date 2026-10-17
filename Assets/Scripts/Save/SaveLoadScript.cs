@@ -897,6 +897,9 @@ namespace TiltBrush
                                 0.5f));
                     }
                     m_LastSceneFile = fileInfo;
+                    if (jsonData.NativeImmFile == TiltFile.FN_NATIVE_IMM)
+                        NativeImmImport.LoadFromSketch(fileInfo, jsonData.NativeImmChapter ?? -1,
+                            jsonData.NativeImmSceneTransform);
                 }
             }
 

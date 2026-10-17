@@ -33,12 +33,18 @@ namespace TiltBrush
         [Header("Selection & Action Controls")]
         [SerializeField] private GameObject m_ActionControlsContainer;
         [SerializeField] private ActionButton m_LoadButton;
+        [SerializeField] private ActionButton m_NativeImmButton;
         [SerializeField] private ActionButton m_MergeButton;
         [SerializeField] private GameObject m_ChapterControls;
         [SerializeField] private TextMeshPro m_ChapterLabel;
         [SerializeField] private QuillChapterNavButton m_PrevChapterButton;
         [SerializeField] private QuillChapterNavButton m_NextChapterButton;
         [SerializeField] private GameObject m_ChapterLoadingSpinner;
+        [Header("Loaded IMM Viewpoints")]
+        [SerializeField] private GameObject m_ViewpointControls;
+        [SerializeField] private TextMeshPro m_ViewpointLabel;
+        [SerializeField] private QuillChapterNavButton m_ContinueButton;
+        private bool m_ShowingNativePlayback;
 
         private QuillFileCatalog m_Catalog;
         private QuillFileInfo m_SelectedFile;
@@ -223,19 +229,35 @@ namespace TiltBrush
 
             // Show/hide action controls container
             if (m_ActionControlsContainer != null)
-                m_ActionControlsContainer.SetActive(hasSelection);
-
-            if (!hasSelection) return;
+                m_ActionControlsContainer.SetActive(hasSelection || NativeImmImport.IsActive);
 
             // Enable/disable action buttons
             if (m_LoadButton != null)
-                m_LoadButton.SetButtonAvailable(!isDetecting);
+            {
+                m_LoadButton.gameObject.SetActive(hasSelection);
+                m_LoadButton.SetButtonAvailable(hasSelection && !isDetecting);
+            }
+            if (m_NativeImmButton != null)
+            {
+                m_NativeImmButton.gameObject.SetActive(hasSelection);
+                m_NativeImmButton.SetButtonAvailable(hasSelection && !isDetecting);
+            }
             if (m_MergeButton != null)
-                m_MergeButton.SetButtonAvailable(!isDetecting);
+            {
+                m_MergeButton.gameObject.SetActive(hasSelection);
+                m_MergeButton.SetButtonAvailable(hasSelection && !isDetecting);
+            }
+            if (m_ContinueButton != null)
+                m_ContinueButton.gameObject.SetActive(NativeImmImport.IsActive);
+            if (NativeImmImport.IsActive)
+            {
+                RefreshNativePlaybackControls();
+                return;
+            }
 
             // Show/hide chapter controls - use optimistic check first for better performance
             bool hasMultipleChapters = false;
-            if (!isDetecting)
+            if (hasSelection && !isDetecting)
             {
                 if (m_SelectedFile.SourceType == QuillSourceType.Quill)
                 {
@@ -266,7 +288,7 @@ namespace TiltBrush
             int current = m_SelectedFile.SelectedChapterIndex < 0 ? 0 : m_SelectedFile.SelectedChapterIndex;
 
             if (m_ChapterLabel != null)
-                m_ChapterLabel.text = $"Chapter {current + 1} / {count}";
+                m_ChapterLabel.text = $"Import chapter {current + 1} / {count}";
 
             // Enable/disable navigation buttons
             if (m_PrevChapterButton != null)
@@ -282,12 +304,25 @@ namespace TiltBrush
             _LoadFile(m_SelectedFile.FullPath, m_SelectedFile.SelectedChapterIndex);
         }
 
-        private void _LoadFile(string filePath, int chapterIndex)
+        public void OnNativeImmButtonPressed()
+        {
+            if (m_SelectedFile == null) return;
+            string path = m_SelectedFile.FullPath;
+            if (m_SelectedFile.SourceType == QuillSourceType.Quill)
+            {
+                var immFiles = System.IO.Directory.GetFiles(path, "*.imm");
+                if (immFiles.Length > 0) path = immFiles[0];
+            }
+            _LoadFile(path, -1, nativeImm: true);
+        }
+
+        private void _LoadFile(string filePath, int chapterIndex, bool nativeImm = false)
         {
             Quill.PendingLoadOptions = new Quill.QuillLoadOptions
             {
                 Path = filePath,
                 ChapterIndex = chapterIndex,
+                NativeImm = nativeImm,
             };
             SketchControlsScript.m_Instance.IssueGlobalCommand(
                 SketchControlsScript.GlobalCommands.LoadQuillConfirmUnsaved, 0, 0);
@@ -309,6 +344,11 @@ namespace TiltBrush
 
         public void OnPrevChapterPressed()
         {
+            if (NativeImmImport.IsActive)
+            {
+                NativeImmImport.CycleChapter(-1);
+                return;
+            }
             if (m_SelectedFile?.HasMultipleChapters != true) return;
 
             int count = m_SelectedFile.ChapterCount;
@@ -319,6 +359,11 @@ namespace TiltBrush
 
         public void OnNextChapterPressed()
         {
+            if (NativeImmImport.IsActive)
+            {
+                NativeImmImport.CycleChapter(1);
+                return;
+            }
             if (m_SelectedFile?.HasMultipleChapters != true) return;
 
             int count = m_SelectedFile.ChapterCount;
@@ -386,10 +431,47 @@ namespace TiltBrush
             BaseUpdate();
             PageFlipUpdate();
 
+            if (m_ShowingNativePlayback != NativeImmImport.IsActive)
+            {
+                m_ShowingNativePlayback = NativeImmImport.IsActive;
+                RefreshActionControls();
+            }
+            if (NativeImmImport.IsActive) RefreshNativePlaybackControls();
+
+            if (m_ViewpointControls != null)
+            {
+                int count = NativeImmImport.ViewpointCount;
+                m_ViewpointControls.SetActive(count > 1);
+                if (count > 1 && m_ViewpointLabel != null)
+                {
+                    int index = NativeImmImport.CurrentViewpointIndex;
+                    m_ViewpointLabel.text = index >= 0
+                        ? $"Viewpoint {index + 1} / {count}" : $"Viewpoint — / {count}";
+                }
+            }
+
             if (m_RefreshingSpinner != null)
             {
                 m_RefreshingSpinner.SetActive(m_Catalog != null && m_Catalog.IsScanning);
             }
+        }
+
+        private void RefreshNativePlaybackControls()
+        {
+            if (m_ChapterControls != null) m_ChapterControls.SetActive(true);
+            bool navigating = NativeImmImport.IsChangingChapter;
+            bool canNavigate = !NativeImmImport.IsLoading && !navigating && NativeImmImport.ChapterCount > 1;
+            if (m_PrevChapterButton != null) m_PrevChapterButton.SetButtonAvailable(canNavigate);
+            if (m_NextChapterButton != null) m_NextChapterButton.SetButtonAvailable(canNavigate);
+            if (m_ContinueButton != null)
+            {
+                m_ContinueButton.gameObject.SetActive(true);
+                m_ContinueButton.RefreshPlaybackState();
+            }
+            if (m_ChapterLabel != null)
+                m_ChapterLabel.text = NativeImmImport.IsLoading ? "Loading IMM…"
+                    : navigating ? "Changing chapter…"
+                    : $"Chapter {(NativeImmImport.CurrentChapterIndex ?? 0) + 1} / {NativeImmImport.ChapterCount}";
         }
 
         protected override void RefreshPage()

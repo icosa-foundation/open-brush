@@ -182,7 +182,7 @@ namespace TiltBrush
                     continue;
                 }
 
-                if (!widget.TryIntersectGsplat(vDetectionCenter_GS, size_GS, out _))
+                if (!widget.TryIntersectNonMeshModel(vDetectionCenter_GS, size_GS, out _))
                 {
                     continue;
                 }

@@ -15,6 +15,7 @@
 using UnityEngine;
 using System;
 using System.Linq;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -165,6 +166,7 @@ namespace TiltBrush
         public static string
             ANY = "",
             TILT = "TILT",
+            IMM = "IMM",
             BLOCKS = "BLOCKS",
             GLTF = "GLTF",
             GLTF1 = "GLTF1",
@@ -173,6 +175,7 @@ namespace TiltBrush
             FBX = "FBX",
             VOX = "VOX",
             NOT_TILT = "-TILT",
+            NOT_IMM = "-IMM",
             NOT_BLOCKS = "-BLOCKS",
             NOT_GLTF = "-GLTF",
             NOT_GLTF1 = "-GLTF1",
@@ -225,10 +228,11 @@ namespace TiltBrush
         static VrAssetFormat[] GetSupportedIcosaFormats()
         {
             // Note: FBX and USD are not included as they're only supported for local files, not Icosa assets.
-            // VOX, GLTF2, GLTF are highest priority, followed by OBJ variants and PLY.
+            // Prefer IMM, then retain the existing model-format preference order.
             // OBJ_NGON is an OBJ file with n-gon faces (faces with >3 vertices).
             return new[]
             {
+                VrAssetFormat.IMM,
                 VrAssetFormat.VOX,
                 VrAssetFormat.GLTF2,
                 VrAssetFormat.GLTF,
@@ -348,6 +352,7 @@ namespace TiltBrush
                 }
             }
 
+            public bool HasImm { get; }
             public Model Model { get { return App.IcosaAssetCatalog.GetModel(AssetId); } }
 
             public AssetDetails(
@@ -357,6 +362,7 @@ namespace TiltBrush
                 HumanName = json["displayName"].ToString();
                 AssetId = json["assetId"].ToString();
                 AccountName = accountName;
+                HasImm = json["formats"]?.Any(format => format["formatType"]?.ToString() == "IMM") == true;
                 var rotation = json["presentationParams"]?["orientingRotation"];
                 if (rotation != null)
                 {
@@ -466,6 +472,7 @@ namespace TiltBrush
                     {
                         // TODO: fix aspect ratio of thumbnail
                         RawImage imageData = await new ThreadedImageReader(thumbnailBytes, thumbnailUrl);
+                        if (m_Thumbnail == null) return;
 
                         UnityEngine.Profiling.Profiler.BeginSample("AssetDetails.DownloadThumbnail:LoadImage");
                         if (imageData != null)
@@ -728,7 +735,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.ANY,
                     OrderBy = OrderByChoices.NEWEST,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -742,7 +749,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.LIKED_TIME,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -757,7 +764,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.BEST,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.TRUE,
                     Category = CategoryChoices.ANY
                 }
@@ -772,7 +779,7 @@ namespace TiltBrush
                     TriangleCountMax = DEFAULT_MODEL_TRIANGLE_COUNT_MAX,
                     License = LicenseChoices.REMIXABLE,
                     OrderBy = OrderByChoices.DISPLAY_NAME,
-                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX },
+                    Formats = new[] { FormatChoices.NOT_TILT, FormatChoices.GLTF2, FormatChoices.OBJ, FormatChoices.VOX, FormatChoices.IMM },
                     Curated = CuratedChoices.ANY,
                     Category = CategoryChoices.ANY
                 }
@@ -789,6 +796,7 @@ namespace TiltBrush
 
         public AssetLoadState GetAssetLoadState(string assetId)
         {
+            if (m_ModelsBeingLoaded.Contains(assetId)) return AssetLoadState.Loading;
             if (GetModel(assetId) is Model m)
             {
                 // A model may be present in memory but also be still loading -- eg if someone
@@ -831,8 +839,127 @@ namespace TiltBrush
                         return AssetLoadState.Downloading;
                     }
                 }
-                return AssetLoadState.NotDownloaded;
+                return IsLoading(assetId) ? AssetLoadState.Downloading : AssetLoadState.NotDownloaded;
             }
+        }
+
+        public string LoadingImmAssetId { get; private set; }
+        public bool IsLoadingImm(string assetId) => LoadingImmAssetId == assetId || DownloadingImmAssetId == assetId;
+
+        public bool RequestImmModel(string assetId, Action<Model> onReady)
+        {
+            if (!string.IsNullOrEmpty(LoadingImmAssetId) || !string.IsNullOrEmpty(DownloadingImmAssetId)) return false;
+            GetImmCacheDirectoryForAsset(assetId);
+            LoadingImmAssetId = assetId;
+            StartCoroutine(LoadImmModelCoroutine(assetId, onReady));
+            return true;
+        }
+
+        private IEnumerator LoadImmModelCoroutine(string assetId, Action<Model> onReady)
+        {
+            try
+            {
+                if (m_ModelsByAssetId.TryGetValue(assetId, out var cached) && cached.IsNativeImmModel &&
+                    cached.m_Valid && File.Exists(cached.GetLocation().AbsolutePath))
+                {
+                    onReady?.Invoke(cached);
+                    yield break;
+                }
+                string path = null;
+                DownloadingImmAssetId = assetId;
+                yield return DownloadImmCoroutine(assetId, readyPath => path = readyPath);
+                if (path == null) yield break;
+                yield return NativeImmReference.CreateModelCoroutine(assetId, path, model =>
+                {
+                    m_ModelsByAssetId[assetId] = model;
+                    onReady?.Invoke(model);
+                });
+            }
+            finally { LoadingImmAssetId = null; }
+        }
+
+        public string DownloadingImmAssetId { get; private set; }
+
+        public string GetImmCacheDirectoryForAsset(string assetId)
+        {
+            if (string.IsNullOrEmpty(assetId) || !sm_AssetIdPattern.IsMatch(assetId))
+                throw new ArgumentException("Invalid Icosa asset ID", nameof(assetId));
+            // Keep native documents separate from model cache validation and eviction.
+            return Path.Combine(Application.persistentDataPath, "immAssetCache", assetId);
+        }
+
+        public string GetCachedImmPath(string assetId)
+        {
+            string directory = GetImmCacheDirectoryForAsset(assetId);
+            if (!Directory.Exists(directory)) return null;
+            var files = Directory.GetFiles(directory, "*.imm", SearchOption.AllDirectories);
+            return files.Length == 1 && new FileInfo(files[0]).Length > 0 ? files[0] : null;
+        }
+
+        public bool RequestImmDownload(string assetId, Action<string> onReady)
+        {
+            if (!string.IsNullOrEmpty(DownloadingImmAssetId)) return false;
+            GetImmCacheDirectoryForAsset(assetId); // Validate before starting the coroutine.
+            DownloadingImmAssetId = assetId;
+            StartCoroutine(DownloadImmCoroutine(assetId, onReady));
+            return true;
+        }
+
+        private IEnumerator<Null> DownloadImmCoroutine(string assetId, Action<string> onReady)
+        {
+            const string prefix = "[OB_ICOSA_IMM_20261015]";
+            try
+            {
+                string path = null;
+                Exception error = null;
+                try { path = GetCachedImmPath(assetId); }
+                catch (Exception exception) { error = exception; }
+                if (error != null)
+                {
+                    OutputWindowScript.Error("Could not read cached IMM", error.Message);
+                    yield break;
+                }
+                if (path == null)
+                {
+                    var request = VrAssetService.m_Instance.GetAsset(assetId,
+                        new[] { VrAssetFormat.IMM }, "IMM reference");
+                    using (var download = request.GetAssetCoroutine())
+                    {
+                        while (true)
+                        {
+                            bool next = false;
+                            try { next = download.MoveNext(); }
+                            catch (Exception exception) { error = exception; }
+                            if (error != null || !next) break;
+                            yield return download.Current;
+                        }
+                    }
+                    if (error != null || request.IsCanceled || !request.IsReady)
+                    {
+                        Debug.LogWarning($"{prefix} Download failed: {assetId}, {error?.Message}");
+                        OutputWindowScript.Error("Could not download IMM", error?.Message ?? assetId);
+                        yield break;
+                    }
+                    try
+                    {
+                        string directory = GetImmCacheDirectoryForAsset(assetId);
+                        Directory.CreateDirectory(directory);
+                        if (!request.Asset.WriteToDisk(directory))
+                            throw new IOException("Could not write IMM download to cache");
+                        path = GetCachedImmPath(assetId);
+                        if (path == null) throw new IOException("IMM download has no valid root file");
+                    }
+                    catch (Exception exception) { error = exception; }
+                    if (error != null)
+                    {
+                        OutputWindowScript.Error("Could not cache IMM", error.Message);
+                        yield break;
+                    }
+                }
+                Debug.Log($"{prefix} IMM ready: {assetId}, {path}");
+                onReady?.Invoke(path);
+            }
+            finally { DownloadingImmAssetId = null; }
         }
 
         public string GetCacheDirectoryForAsset(string asset)
@@ -895,6 +1022,9 @@ namespace TiltBrush
                 // ReSharper disable once RedundantAssignment
                 model = null;
             }
+            // A loaded native template still needs its source for additional instances.
+            if (model != null && model.IsNativeImmModel && !File.Exists(model.GetLocation().AbsolutePath))
+                return null;
             return model;
         }
 
@@ -1073,6 +1203,18 @@ namespace TiltBrush
             if (IsLoading(assetId))
             {
                 return;
+            }
+
+            if (m_ModelsByAssetId.TryGetValue(assetId, out var existing) && existing.IsNativeImmModel &&
+                !File.Exists(existing.GetLocation().AbsolutePath))
+            {
+                m_ModelsByAssetId.Remove(assetId);
+                existing.ReleaseFromCatalog();
+            }
+            if (!m_ModelsByAssetId.ContainsKey(assetId))
+            {
+                string immPath = sm_AssetIdPattern.IsMatch(assetId) ? GetCachedImmPath(assetId) : null;
+                if (immPath != null) m_ModelsByAssetId[assetId] = new Model(assetId, immPath);
             }
 
             if (m_ModelsByAssetId.ContainsKey(assetId))
@@ -1317,10 +1459,28 @@ namespace TiltBrush
                 }
                 yield return cr.Current;
             }
-            while (!request.IsReady) { yield return null; }
-            request.Asset.WriteToDisk();
-            string path = Path.Combine(GetCacheDirectoryForAsset(assetId), request.Asset.RootFilePath);
-            m_ModelsByAssetId[assetId] = new Model(assetId, path);
+            if (request.IsCanceled || !request.IsReady) yield break;
+            CacheDownloadedAsset(request.Asset);
+        }
+
+        private Model CacheDownloadedAsset(IcosaRawAsset asset)
+        {
+            try
+            {
+                bool nativeImm = string.Equals(Path.GetExtension(asset.RootFilePath), ".imm",
+                    StringComparison.OrdinalIgnoreCase);
+                string directory = nativeImm ? GetImmCacheDirectoryForAsset(asset.Id) : GetCacheDirectoryForAsset(asset.Id);
+                Directory.CreateDirectory(directory);
+                if (!asset.WriteToDisk(directory)) return null;
+                var model = new Model(asset.Id, Path.Combine(directory, asset.RootFilePath));
+                m_ModelsByAssetId[asset.Id] = model;
+                return model;
+            }
+            catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
+            {
+                OutputWindowScript.Error("Could not cache gallery reference", $"{asset.Id}: {error.Message}");
+                return null;
+            }
         }
 
         public void UpdateCatalog()
@@ -1333,17 +1493,9 @@ namespace TiltBrush
                 {
                     if (request.Asset.ValidAsset)
                     {
-                        if (request.Asset.WriteToDisk())
+                        if (CacheDownloadedAsset(request.Asset) is Model downloaded)
                         {
                             string assetId = request.Asset.Id;
-                            string path =
-                                Path.Combine(GetCacheDirectoryForAsset(assetId), request.Asset.RootFilePath);
-                            // TODO: This assumes PolyRawAssets are models.  This may not be true in the
-                            // future and should the VrAssetProtos.ElementType request parameter to
-                            // VrAssetService.m_Instance.GetAsset to decide how to store and index the asset.
-
-                            // Populate map entry for this new model.
-                            m_ModelsByAssetId[assetId] = new Model(assetId, path);
 
                             // After download the model should be loaded too, unless the request was canceled.
                             // TODO: this seems a littttle suspect. Just because it finished downloading,
@@ -1352,7 +1504,7 @@ namespace TiltBrush
                             {
                                 m_RequestLoadQueue.Add(
                                     new ModelLoadRequest(
-                                        m_ModelsByAssetId[assetId], $"{request.Reason} fetched"));
+                                        downloaded, $"{request.Reason} fetched"));
                             }
                             else
                             {
@@ -1363,7 +1515,10 @@ namespace TiltBrush
                     }
                     else
                     {
-                        Debug.LogWarning("Downloaded asset is empty " + request.Asset.RootFilePath);
+                        Debug.LogWarning($"Downloaded asset is empty: {request.Asset.Id}");
+                        if (!string.IsNullOrEmpty(request.ErrorMessage))
+                            OutputWindowScript.Error("Could not load gallery reference",
+                                $"{request.Asset.Id}: {request.ErrorMessage}");
                     }
 
                     m_ActiveRequests.RemoveAt(i);
@@ -1564,6 +1719,9 @@ namespace TiltBrush
         void OnDestroy()
         {
             OAuth2Identity.ProfileUpdated -= OnProfileUpdated;
+            if (m_ModelsByAssetId != null)
+                foreach (var model in m_ModelsByAssetId.Values)
+                    if (model.IsNativeImmModel) model.ReleaseFromCatalog();
         }
 
         public int NumCloudModels(IcosaSetType type)

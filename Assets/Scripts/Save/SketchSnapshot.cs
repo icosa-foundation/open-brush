@@ -34,6 +34,7 @@ namespace TiltBrush
         private TrTransform m_LastThumbnail_SS;
         private List<SketchWriter.AdjustedMemoryBrushStroke> m_Strokes;
         private SketchMetadata m_Metadata;
+        private string m_NativeImmPath;
 
         private JsonSerializer m_JsonSerializer;
         private SaveIconCaptureScript m_SaveIconCapture;
@@ -89,6 +90,7 @@ namespace TiltBrush
             m_SaveIconCapture = null;
             m_GroupIdMapping = new GroupIdMapping();
             m_Metadata = GetSketchMetadata();
+            m_NativeImmPath = NativeImmImport.CurrentPath;
             m_LastThumbnail_SS = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
         }
 
@@ -123,6 +125,7 @@ namespace TiltBrush
             stopwatch.Stop();
 
             m_Metadata = GetSketchMetadata();
+            m_NativeImmPath = m_SelectedOnly ? null : NativeImmImport.CurrentPath;
             if (m_SelectedOnly)
             {
                 // Reselect strokes
@@ -168,6 +171,9 @@ namespace TiltBrush
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
+                NativeImmFile = m_SelectedOnly ? null : NativeImmImport.CurrentPath != null ? TiltFile.FN_NATIVE_IMM : null,
+                NativeImmChapter = m_SelectedOnly ? null : NativeImmImport.CurrentChapterIndex,
+                NativeImmSceneTransform = m_SelectedOnly ? null : NativeImmImport.CurrentSceneTransform,
             };
         }
 
@@ -251,6 +257,13 @@ namespace TiltBrush
                     }
                     zip.CloseEntry();
 
+                    if (m_NativeImmPath != null)
+                    {
+                        zip.PutNextEntry(new ZipEntry(TiltFile.FN_NATIVE_IMM));
+                        using (var source = File.OpenRead(m_NativeImmPath)) source.CopyTo(zip);
+                        zip.CloseEntry();
+                    }
+
                     // Prepare the necessary data for WriteMemory
                     List<Stroke> strokes = new List<Stroke>(SketchMemoryScript.m_Instance.GetMemoryList);
                     IList<AdjustedMemoryBrushStroke> strokeCopies = EnumerateAdjustedSnapshots(strokes).ToList();
@@ -317,6 +330,13 @@ namespace TiltBrush
                         tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))
                     {
                         m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
+                    }
+
+                    if (m_NativeImmPath != null)
+                    {
+                        using (var source = File.OpenRead(m_NativeImmPath))
+                        using (var destination = tiltWriter.GetWriteStream(TiltFile.FN_NATIVE_IMM))
+                            source.CopyTo(destination);
                     }
 
                     tiltWriter.Commit();

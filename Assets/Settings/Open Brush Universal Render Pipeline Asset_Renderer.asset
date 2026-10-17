@@ -1,5 +1,18 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-2519828145476762416
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b9512dc10462430c99989aa9918a38e0, type: 3}
+  m_Name: IMM RenderGraph
+  m_EditorClassIdentifier: ImmUnity.URP::ImmPlayer.ImmRendererFeature
+  m_Active: 1
 --- !u!114 &-5352823065678073211
 MonoBehaviour:
   m_ObjectHideFlags: 1
@@ -59,7 +72,8 @@ MonoBehaviour:
   - {fileID: 6111700951782917469}
   - {fileID: -5352823065678073211}
   - {fileID: 5937264514657144174}
-  m_RendererFeatureMap: 3448fbb468321b0a5999ec40bfdb0bb9bc470d47a72a1e2e5d05706ca21fd15485b2bd40c8f3b6b56ecdab7d9e666552l
+  - {fileID: -2519828145476762416}
+  m_RendererFeatureMap: 3448fbb468321b0a5999ec40bfdb0bb9bc470d47a72a1e2e5d05706ca21fd15485b2bd40c8f3b6b56ecdab7d9e666552d084d3fda6c507ddl
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   m_AssetVersion: 3

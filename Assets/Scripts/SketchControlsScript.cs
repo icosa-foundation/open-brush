@@ -4331,6 +4331,15 @@ namespace TiltBrush
             }
         }
 
+        IEnumerator LoadNativeImmCoroutine(string path, int chapterIndex)
+        {
+            NewSketch(fade: false);
+            SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(path);
+            NativeImmImport.Load(path, chapterIndex);
+            while (NativeImmImport.IsLoading)
+                yield return null;
+        }
+
         private void SaveModel()
         {
 #if USD_SUPPORTED
@@ -5310,9 +5319,17 @@ namespace TiltBrush
                         Quill.PendingLoadOptions = null;
                         if (options != null && !string.IsNullOrEmpty(options.Path))
                         {
-                            NewSketch(fade: false);
-                            SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(options.Path);
-                            StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
+                            if (options.NativeImm && !NativeImmImport.CanLoad(options.Path)) break;
+                            if (options.NativeImm)
+                                StartCoroutine(OverlayManager.m_Instance.RunInCompositor(
+                                    OverlayType.LoadSketch,
+                                    LoadNativeImmCoroutine(options.Path, options.ChapterIndex), 0.25f));
+                            else
+                            {
+                                NewSketch(fade: false);
+                                SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(options.Path);
+                                StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
+                            }
                         }
                     }
                     break;
@@ -5609,6 +5626,7 @@ namespace TiltBrush
 
         public void NewSketch(bool fade)
         {
+            NativeImmImport.Unload();
             bool keepSceneTransform = m_DisableWorldGrabbing;
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;

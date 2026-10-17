@@ -32,6 +32,7 @@ namespace TiltBrush
             public string Path { get; set; }
             /// <summary>Chapter index to load. -1 = default (first/only chapter).</summary>
             public int ChapterIndex { get; set; } = -1;
+            public bool NativeImm { get; set; }
         }
 
         public static QuillLoadOptions PendingLoadOptions { get; set; }

@@ -52,7 +52,9 @@ namespace TiltBrush
         public override bool IsAvailable()
         {
             return base.IsAvailable() && m_IcosaAsset != null &&
-                (!App.IcosaAssetCatalog.IsLoading(m_IcosaAsset.AssetId));
+                (!App.IcosaAssetCatalog.IsLoading(m_IcosaAsset.AssetId)) &&
+                (!m_IcosaAsset.HasImm || string.IsNullOrEmpty(App.IcosaAssetCatalog.LoadingImmAssetId) &&
+                    string.IsNullOrEmpty(App.IcosaAssetCatalog.DownloadingImmAssetId));
         }
 
         public void SetPreset(IcosaAssetCatalog.AssetDetails asset, int index)
@@ -62,7 +64,7 @@ namespace TiltBrush
                 m_LoadingOverlay.SetActive(false);
             }
             m_IcosaAsset = asset;
-            SetPreset(asset.Model, index);
+            SetPreset(asset.HasImm ? null : asset.Model, index);
 
             if (m_IcosaAsset.ModelRotation != null)
             {
@@ -73,13 +75,14 @@ namespace TiltBrush
 
         override protected void RequestModelPreloadInternal(string reason)
         {
+            if (m_IcosaAsset.HasImm) return; // Native references never have live panel previews.
             App.IcosaAssetCatalog.RequestModelLoad(m_IcosaAsset.AssetId, reason);
             m_LoadingOverlay.SetActive(true);
         }
 
         override protected void CancelRequestModelPreload()
         {
-            if (m_IcosaAsset == null) { return; }
+            if (m_IcosaAsset == null || m_IcosaAsset.HasImm) { return; }
             var pac = App.IcosaAssetCatalog;
             var assetId = m_IcosaAsset.AssetId;
             pac.CancelRequestModelLoad(assetId);
@@ -88,6 +91,16 @@ namespace TiltBrush
 
         protected override void OnButtonPressed()
         {
+            if (m_IcosaAsset.HasImm)
+            {
+                string assetId = m_IcosaAsset.AssetId;
+                Quaternion rotation = m_PreviewBaseRotation;
+                App.IcosaAssetCatalog.RequestImmModel(assetId, model =>
+                {
+                    if (this != null) SpawnValidModel(model, rotation);
+                });
+                return;
+            }
             if (m_Model != null && m_Model.Error != null)
             {
                 return;
@@ -148,6 +161,13 @@ namespace TiltBrush
 
         protected override void RefreshModelButton()
         {
+            if (m_IcosaAsset != null && m_IcosaAsset.HasImm)
+            {
+                m_Model = null;
+                base.RefreshModelButton();
+                m_LoadingOverlay.SetActive(App.IcosaAssetCatalog.IsLoadingImm(m_IcosaAsset.AssetId));
+                return;
+            }
             base.RefreshModelButton();
             if (m_Model != null)
             {
@@ -182,6 +202,12 @@ namespace TiltBrush
             {
                 m_PreviewParent.localScale = Vector3.one;
             }
+        }
+
+        public override void UpdateVisuals()
+        {
+            base.UpdateVisuals();
+            if (m_IcosaAsset != null && m_IcosaAsset.HasImm) RefreshModelButton();
         }
 
         public override void ResetState()
