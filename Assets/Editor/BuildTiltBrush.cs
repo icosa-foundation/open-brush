@@ -1396,15 +1396,14 @@ static class BuildTiltBrush
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRHandMeshData>(
                 settings);
 
-            // These vendor-neutral/vendor-extension features are also part of the configuration
-            // tested on Quest and Pico. Meta Quest Support supplies Quest's loader initialization;
-            // runtimes that do not expose the Meta extensions simply leave them unavailable.
+            // Composition layers are shared. Quest-specific build hooks must not contribute
+            // store requirements to the dedicated Google Android XR build.
             EnableRequiredFeature<
                 UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature>(
                 settings);
-            EnableRequiredFeature<OpenXR.Extensions.FBPassthrough>(settings);
+            DisableFeature<OpenXR.Extensions.FBPassthrough>(settings);
             EnableRequiredFeature<OpenXR.Extensions.METABoundaryVisibility>(settings);
-            EnableRequiredFeature<
+            DisableFeature<
                 UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
         }
 
