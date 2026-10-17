@@ -33,10 +33,17 @@ namespace TiltBrush
             var playback = _GetModelPlayback(index);
             return JsonConvert.SerializeObject(new
             {
-                initialized = playback.Initialized, busy = playback.Busy || playback.IsRestoring,
-                error = playback.LastError, playing = playback.Playing, time = playback.Time,
-                length = playback.Length, volume = playback.Volume, hasAudio = playback.HasAudio,
-                chapter = playback.Chapter, chapterCount = playback.ChapterCount, clips = playback.Clips,
+                initialized = playback.Initialized,
+                busy = playback.Busy || playback.IsRestoring,
+                error = playback.LastError,
+                playing = playback.Playing,
+                time = playback.Time,
+                length = playback.Length,
+                volume = playback.Volume,
+                hasAudio = playback.HasAudio,
+                chapter = playback.Chapter,
+                chapterCount = playback.ChapterCount,
+                clips = playback.Clips,
                 state = playback.GetSaveState()
             });
         });
