@@ -138,6 +138,20 @@ namespace UnityGLTF.Plugins
                     Emitter = nodeRef.emitter.Value,
                 });
             }
+            else if (ext is KHR_SceneAudioEmittersRef nodeRefs)
+            {
+                // UnityGLTF parses the newer node "emitters" array using its scene-reference type.
+                // Keep accepting the original singular "emitter" reference above.
+                foreach (var emitterId in nodeRefs.emitters)
+                {
+                    if (emitterId == null) continue;
+                    _pendingNodes.Add(new PendingAudioNode
+                    {
+                        NodeObject = nodeObject,
+                        Emitter = emitterId.Value,
+                    });
+                }
+            }
         }
 
         public override void OnAfterImportScene(GLTFScene scene, int sceneIndex, GameObject sceneObject)
