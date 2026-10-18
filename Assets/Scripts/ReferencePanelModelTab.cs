@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -40,6 +41,7 @@ namespace TiltBrush
         [SerializeField] private ActionToggleButton m_LoopToggle;
         [SerializeField] private ActionToggleButton m_SpatialBlendToggle;
         [SerializeField] private OpenListPickerPopupButton m_AnimationSelector;
+        [SerializeField] private TextMeshPro m_PlaybackTime;
         [SerializeField] private FloatPropertySlider m_VolumeSlider;
         [SerializeField] private float m_ModelSkipTime = 10f;
 
@@ -138,6 +140,7 @@ namespace TiltBrush
             foreach (var button in m_PlaybackButtons)
                 if (button != null) button.SetButtonAvailable(available);
             RefreshAnimationSelector(playback, supported);
+            RefreshPlaybackTime(playback, supported);
             if (m_VolumeSlider != null) m_VolumeSlider.gameObject.SetActive(supported && playback.HasAudio);
             if (m_SpatialBlendToggle != null)
             {
@@ -152,6 +155,25 @@ namespace TiltBrush
                 if (supported && playback.CanLoop && m_LoopToggle.ToggleState != playback.Loop)
                     m_LoopToggle.ToggleState = playback.Loop;
             }
+        }
+
+        private void RefreshPlaybackTime(ModelPlaybackController playback, bool supported)
+        {
+            if (m_PlaybackTime == null) return;
+            m_PlaybackTime.gameObject.SetActive(supported);
+            if (!supported) return;
+            double length = playback.Length;
+            double time = Math.Max(0, Math.Min(m_Scrubber != null ? m_Scrubber.TargetTime : playback.TargetTime, length));
+            string label = $"{FormatPlaybackTime(time)} / {FormatPlaybackTime(length)}";
+            if (m_PlaybackTime.text != label) m_PlaybackTime.text = label;
+        }
+
+        private static string FormatPlaybackTime(double seconds)
+        {
+            var time = TimeSpan.FromSeconds(Math.Max(0, seconds));
+            return time.TotalHours >= 1
+                ? $"{(int)time.TotalHours}:{time.Minutes:00}:{time.Seconds:00}.{time.Milliseconds / 100}"
+                : $"{(int)time.TotalMinutes}:{time.Seconds:00}.{time.Milliseconds / 100}";
         }
 
         private void RefreshAnimationSelector(ModelPlaybackController playback, bool supported)
