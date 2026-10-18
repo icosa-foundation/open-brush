@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections;
+using System.IO;
 using System.Threading.Tasks;
 using ImmPlayer;
 using UnityEngine;
@@ -108,7 +109,8 @@ namespace TiltBrush
         {
             // Native bounds include the document transform; the widget needs local bounds.
             document.SetTransform(Matrix4x4.identity);
-            var model = Model.CreateNativeImm(null, path, document.GetBoundingBox());
+            string relativePath = Path.GetRelativePath(App.ModelLibraryPath(), path).Replace('\\', '/');
+            var model = Model.CreateNativeImm(null, relativePath, document.GetBoundingBox());
             var template = model.m_ModelParent.gameObject.AddComponent<NativeImmReference>();
             template.m_Path = path;
             template.m_Manager = manager;

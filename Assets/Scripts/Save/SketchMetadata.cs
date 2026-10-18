@@ -388,6 +388,10 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public ModelPlaybackState[] PlaybackStates { get; set; }
 
+        /// This local IMM supplies the sketch backdrop and authored chapter/viewpoint behavior.
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool ImmSketch { get; set; }
+
         /// Prior to M13, never null or empty; but an empty array is allowed on read.
         /// Post M13, always null.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

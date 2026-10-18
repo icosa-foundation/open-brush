@@ -131,13 +131,8 @@ namespace TiltBrush
                     Location = elem.Key,
                     SplitMeshPaths = modelSplitsMap[elem.Key].m_SplitMeshPaths,
                     NotSplittableMeshPaths = modelSplitsMap[elem.Key].m_NotSplittableMeshPaths,
+                    ImmSketch = NativeImmImport.IsSketchLocation(elem.Key),
                 };
-
-                if (NativeImmImport.IsEmbeddedLocation(elem.Key))
-                {
-                    val.AssetId = null;
-                    val.FilePath = NativeImmImport.EmbeddedModelPath;
-                }
 
                 // Order and align the metadata.
                 WidgetMetadata[] ordered = elem.Value.OrderBy(ByTranslation).ToArray();

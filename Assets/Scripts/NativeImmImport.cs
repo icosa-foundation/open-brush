@@ -25,7 +25,6 @@ namespace TiltBrush
         private ImmDocument m_Document;
         private Model m_Model;
         private ModelWidget m_Widget;
-        internal const string EmbeddedModelPath = "embedded://native.imm";
         private bool m_RestoringSketch;
         private bool m_WaitForWidgetRestore;
         private Transform DocumentTransform => m_Widget != null ? m_Widget.transform : transform;
@@ -39,7 +38,6 @@ namespace TiltBrush
         private bool m_AlignInitialView;
         private int m_ChapterIndex;
         private string m_Path;
-        private bool m_DeletePathOnUnload;
         private int[] m_ViewpointIds = new int[0];
         private int m_ViewpointIndex = -1;
         private int m_ViewpointCount;
@@ -166,41 +164,21 @@ namespace TiltBrush
             owner.StartCoroutine(owner.BeginLoadAfterUnload());
         }
 
-        public static void LoadFromSketch(SceneFileInfo fileInfo)
+        public static void LoadFromSketch(string relativePath)
         {
-            using (var source = fileInfo.GetReadStream(TiltFile.FN_NATIVE_IMM))
-            {
-                if (source == null)
-                {
-                    Debug.LogError($"{LogPrefix} Saved sketch has no embedded native IMM: {fileInfo.FullPath}");
-                    return;
-                }
-
-                string path = Path.Combine(Application.temporaryCachePath, $"open-brush-imm-{System.Guid.NewGuid():N}.imm");
-                try
-                {
-                    using (var destination = File.Create(path)) source.CopyTo(destination);
-                    if (!CanLoad(path))
-                    {
-                        File.Delete(path);
-                        return;
-                    }
-                    Load(path, -1, restoringSketch: true);
-                    if (s_Active != null) s_Active.m_DeletePathOnUnload = true;
-                    else File.Delete(path);
-                }
-                catch (System.Exception error)
-                {
-                    Debug.LogError($"{LogPrefix} Failed to extract saved native IMM: {error}");
-                    if (File.Exists(path)) File.Delete(path);
-                }
-            }
+            string path = Model.Location.File(relativePath).AbsolutePath;
+            if (CanLoad(path)) Load(path, -1, restoringSketch: true);
         }
 
-        internal static bool IsEmbeddedLocation(Model.Location location) =>
+        internal static bool IsSketchLocation(Model.Location location) =>
             s_Active != null && s_Active.m_Model != null && s_Active.m_Model.GetLocation().Equals(location);
 
-        internal static async Task<Model> GetEmbeddedModelAsync()
+        internal static bool IsSketchReference(string relativePath) =>
+            s_Active != null && s_Active.m_RestoringSketch &&
+            string.Equals(Path.GetFullPath(Model.Location.File(relativePath).AbsolutePath),
+                Path.GetFullPath(s_Active.m_Path), System.StringComparison.OrdinalIgnoreCase);
+
+        internal static async Task<Model> GetSketchModelAsync()
         {
             var owner = s_Active;
             while (owner != null && owner == s_Active && owner.m_Model == null)
@@ -322,7 +300,7 @@ namespace TiltBrush
                     }
                     catch (System.Exception error)
                     {
-                        Debug.LogError($"[OB_IMM_SKETCH_WIDGET_20261017] Could not prepare embedded model: {error}");
+                        Debug.LogError($"[OB_IMM_SKETCH_WIDGET_20261017] Could not prepare sketch model: {error}");
                         Unload();
                     }
                     return;
@@ -566,19 +544,9 @@ namespace TiltBrush
             return ids.ToArray();
         }
 
-        private static IEnumerator DeleteExtractedFileAfterUnload(string path, int[] documentIds)
-        {
-            yield return null;
-            while (documentIds.Any(ImmNativePlugin.IsDocumentActive)) yield return null;
-            if (!File.Exists(path)) yield break;
-            try { File.Delete(path); }
-            catch (IOException error) { Debug.LogWarning($"{LogPrefix} Could not remove temporary IMM: {error.Message}"); }
-        }
-
         private void OnDestroy()
         {
             if (s_Active == this) s_Active = null;
-            var documentIds = GetDocumentIds();
             if (m_Model != null)
             {
                 if (WidgetManager.m_Instance != null)
@@ -597,8 +565,6 @@ namespace TiltBrush
             else if (m_Document != null && m_Manager != null)
                 m_Manager.UnloadDocument(m_Document);
             if (m_Renderer != null) m_Renderer.Release();
-            if (m_DeletePathOnUnload && m_Manager != null && m_Manager.isActiveAndEnabled)
-                m_Manager.StartCoroutine(DeleteExtractedFileAfterUnload(m_Path, documentIds));
         }
     }
 }
