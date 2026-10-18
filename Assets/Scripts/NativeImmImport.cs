@@ -2,8 +2,10 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE for details.
 
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using ImmPlayer;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -11,16 +13,25 @@ using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
-    /// <summary>Owns a non-editable IMM document for the current sketch session.</summary>
+    /// <summary>Coordinates the IMM model widgets opened as the current sketch.</summary>
     // Read evaluated viewpoint state after ImmPlayerManager's LateUpdate.
     [DefaultExecutionOrder(100)]
     public sealed class NativeImmImport : MonoBehaviour
     {
         private const string LogPrefix = "[OB_NATIVE_IMM_20261013]";
         private static NativeImmImport s_Active;
-        private static int s_UnloadingDocumentId = -1;
+        private static int[] s_UnloadingDocumentIds = new int[0];
 
         private ImmDocument m_Document;
+        private Model m_Model;
+        private ModelWidget m_Widget;
+        internal const string EmbeddedModelPath = "embedded://native.imm";
+        private bool m_RestoringSketch;
+        private bool m_WaitForWidgetRestore;
+        private Transform DocumentTransform => m_Widget != null ? m_Widget.transform : transform;
+
+        private bool HasWidgets => m_Model == null || WidgetManager.m_Instance != null &&
+            WidgetManager.m_Instance.ModelWidgets.Any(widget => widget.Model == m_Model && widget.gameObject.activeSelf);
         private ImmPlayerManager m_Manager;
         private NativeImmRenderer m_Renderer;
         private Camera m_Camera;
@@ -43,16 +54,19 @@ namespace TiltBrush
             ? s_Active.m_ViewpointCount : 0;
         public static int CurrentViewpointIndex => s_Active != null ? s_Active.m_ViewpointIndex : -1;
 
-        public static bool IsChangingChapter => s_Active != null && s_Active.m_ChapterNavigationRequest != 0;
-        public static int ChapterCount => s_Active != null && s_Active.m_Ready
+        public static bool IsChangingChapter => s_Active != null &&
+            (s_Active.m_ChapterNavigationRequest != 0 ||
+             s_Active.m_Widget != null && s_Active.m_Widget.Playback.IsRestoring);
+        public static int ChapterCount => s_Active != null && s_Active.m_Ready && s_Active.m_Document != null
             ? s_Active.m_Document.GetChapterCount() : 0;
-        public static bool CanPause => s_Active != null && s_Active.m_Ready && !IsChangingChapter &&
+        public static bool CanPause => s_Active != null && s_Active.m_Ready && s_Active.m_Widget != null &&
+            !IsChangingChapter && s_Active.m_Document != null &&
             s_Active.m_Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Playing;
 
         public static void PausePlayback()
         {
             if (!CanPause) return;
-            s_Active.m_Document.Pause();
+            s_Active.m_Widget.Playback.Pause();
             Debug.Log("[OB_IMM_PLAYBACK_20261014] Pause requested");
         }
 
@@ -60,7 +74,8 @@ namespace TiltBrush
         {
             get
             {
-                if (s_Active == null || !s_Active.m_Ready || IsChangingChapter) return false;
+                if (s_Active == null || !s_Active.m_Ready || s_Active.m_Widget == null ||
+                    IsChangingChapter || s_Active.m_Document == null) return false;
                 var playback = s_Active.m_Document.GetStateInfo().Playback;
                 return playback == ImmDocument.PlaybackState.Waiting || playback == ImmDocument.PlaybackState.Paused;
             }
@@ -69,10 +84,7 @@ namespace TiltBrush
         public static void ContinuePlayback()
         {
             if (!CanContinue) return;
-            if (s_Active.m_Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Waiting)
-                s_Active.m_Document.Continue();
-            else
-                s_Active.m_Document.Resume();
+            s_Active.m_Widget.Playback.Continue();
             Debug.Log("[OB_IMM_PLAYBACK_20261014] Play/Continue requested");
         }
 
@@ -99,12 +111,10 @@ namespace TiltBrush
             Debug.Log($"[OB_IMM_VIEWPOINT_20261014] Viewpoint {index + 1}/{count}");
         }
 
-        public static string CurrentPath => s_Active != null ? s_Active.m_Path : null;
-        public static bool IsActive => s_Active != null;
+        public static string CurrentPath => IsActive ? s_Active.m_Path : null;
+        public static bool IsActive => s_Active != null && s_Active.HasWidgets;
         public static bool IsLoading => s_Active != null && !s_Active.m_Ready;
         public static int? CurrentChapterIndex => s_Active != null ? s_Active.m_ChapterIndex : null;
-        public static TrTransform? CurrentSceneTransform => s_Active != null
-            ? TrTransform.FromLocalTransform(s_Active.transform) : null;
 
         public static bool AllowsEnvironment(Environment environment) => !IsActive ||
             environment != null && (environment.name == "Black" || environment.name == "White");
@@ -132,35 +142,31 @@ namespace TiltBrush
             return true;
         }
 
-        public static void Load(string path, int chapterIndex, TrTransform? sceneTransform = null)
+        public static void Load(string path, int chapterIndex) => Load(path, chapterIndex, restoringSketch: false);
+
+        private static void Load(string path, int chapterIndex, bool restoringSketch)
         {
             Unload();
-            var black = EnvironmentCatalog.m_Instance.AllEnvironments.First(
-                environment => environment.name == "Black");
-            SceneSettings.m_Instance.SetDesiredPreset(black, keepSceneTransform: true,
-                skipFade: true);
+            if (!restoringSketch)
+            {
+                var black = EnvironmentCatalog.m_Instance.AllEnvironments.First(
+                    environment => environment.name == "Black");
+                SceneSettings.m_Instance.SetDesiredPreset(black, keepSceneTransform: true,
+                    skipFade: true);
+            }
             var owner = new GameObject("Native IMM Import").AddComponent<NativeImmImport>();
             s_Active = owner;
             owner.m_Path = path;
+            owner.m_RestoringSketch = restoringSketch;
+            owner.m_WaitForWidgetRestore = restoringSketch;
             owner.m_ChapterIndex = chapterIndex;
-            owner.m_AlignInitialView = !sceneTransform.HasValue;
+            owner.m_AlignInitialView = !restoringSketch;
             owner.transform.SetParent(App.Scene.transform, false);
-            if (sceneTransform.HasValue)
-            {
-                var pose = sceneTransform.Value;
-                owner.transform.localPosition = pose.translation;
-                owner.transform.localRotation = pose.rotation;
-                owner.transform.localScale = Vector3.one * pose.scale;
-            }
-            else
-            {
-                owner.transform.localRotation = Quaternion.identity;
-                owner.transform.localScale = Vector3.one * 10f;
-            }
+            owner.transform.localScale = Vector3.one * 10f;
             owner.StartCoroutine(owner.BeginLoadAfterUnload());
         }
 
-        public static void LoadFromSketch(SceneFileInfo fileInfo, int chapterIndex, TrTransform? sceneTransform)
+        public static void LoadFromSketch(SceneFileInfo fileInfo)
         {
             using (var source = fileInfo.GetReadStream(TiltFile.FN_NATIVE_IMM))
             {
@@ -179,7 +185,7 @@ namespace TiltBrush
                         File.Delete(path);
                         return;
                     }
-                    Load(path, chapterIndex, sceneTransform);
+                    Load(path, -1, restoringSketch: true);
                     if (s_Active != null) s_Active.m_DeletePathOnUnload = true;
                     else File.Delete(path);
                 }
@@ -191,26 +197,36 @@ namespace TiltBrush
             }
         }
 
+        internal static bool IsEmbeddedLocation(Model.Location location) =>
+            s_Active != null && s_Active.m_Model != null && s_Active.m_Model.GetLocation().Equals(location);
+
+        internal static async Task<Model> GetEmbeddedModelAsync()
+        {
+            var owner = s_Active;
+            while (owner != null && owner == s_Active && owner.m_Model == null)
+                await Task.Yield();
+            return owner != null && owner == s_Active ? owner.m_Model : null;
+        }
+
         public static void Unload()
         {
             if (s_Active == null) return;
             var active = s_Active;
             s_Active = null;
-            if (active.m_Document != null)
-                s_UnloadingDocumentId = active.m_Document.DocumentId;
+            s_UnloadingDocumentIds = active.GetDocumentIds();
             Destroy(active.gameObject);
         }
 
         private IEnumerator BeginLoadAfterUnload()
         {
-            if (s_UnloadingDocumentId >= 0)
+            if (s_UnloadingDocumentIds.Length > 0)
             {
-                int documentId = s_UnloadingDocumentId;
-                yield return null; // Let the previous owner's OnDestroy request its unload.
-                while (ImmNativePlugin.IsDocumentActive(documentId))
+                var documentIds = s_UnloadingDocumentIds;
+                yield return null; // Let the previous widgets request their document unloads.
+                while (documentIds.Any(ImmNativePlugin.IsDocumentActive))
                     yield return null;
-                s_UnloadingDocumentId = -1;
-                Debug.Log($"{LogPrefix} Previous document {documentId} finished unloading");
+                s_UnloadingDocumentIds = new int[0];
+                Debug.Log($"{LogPrefix} Previous sketch documents finished unloading");
             }
             BeginLoad();
         }
@@ -241,11 +257,31 @@ namespace TiltBrush
 
         private void LateUpdate()
         {
-            if (m_Document == null || !m_Document.IsLoaded) return;
-            if (m_Ready && transform.hasChanged)
+            if (m_Model != null)
             {
-                m_Document.SetTransform(transform);
-                transform.hasChanged = false;
+                if (m_Widget == null || !m_Widget.gameObject.activeSelf)
+                {
+                    m_Widget = WidgetManager.m_Instance.ModelWidgets.FirstOrDefault(
+                        widget => widget.Model == m_Model && widget.gameObject.activeSelf);
+                    m_WaitForWidgetRestore = true;
+                    m_SelectedViewpointId = -1;
+                }
+                if (m_Widget == null || !m_Widget.gameObject.activeInHierarchy) return;
+                m_Document = m_Widget.Playback.Document;
+                if (m_Document == null) return;
+                if (m_WaitForWidgetRestore)
+                {
+                    if (m_Widget.Playback.IsRestoring) return;
+                    // Restoring playback must not reapply a startup camera preference.
+                    m_Document.SetSpawnAreaNeedsUpdate(false);
+                    m_WaitForWidgetRestore = false;
+                }
+            }
+            if (m_Document == null || !m_Document.IsLoaded) return;
+            if (m_Ready && DocumentTransform.hasChanged)
+            {
+                m_Document.SetTransform(DocumentTransform);
+                DocumentTransform.hasChanged = false;
             }
             if (m_Ready)
             {
@@ -276,6 +312,21 @@ namespace TiltBrush
             {
                 if (!m_Document.IsSequenceReady() || SceneSettings.m_Instance.IsTransitioning)
                     return;
+                if (m_RestoringSketch)
+                {
+                    try
+                    {
+                        m_Model = NativeImmReference.CreatePreparedModel(m_Path, m_Document, m_Manager, m_Renderer);
+                        m_Renderer = null;
+                        m_Ready = true;
+                    }
+                    catch (System.Exception error)
+                    {
+                        Debug.LogError($"[OB_IMM_SKETCH_WIDGET_20261017] Could not prepare embedded model: {error}");
+                        Unload();
+                    }
+                    return;
+                }
                 if (!m_PlaybackStarted)
                 {
                     m_Document.Show();
@@ -328,15 +379,37 @@ namespace TiltBrush
                 if (m_ViewpointState.needsUpdate != 0)
                     m_Document.SetSpawnAreaNeedsUpdate(false);
                 m_ChapterIndex = m_ViewpointState.chapter;
-                m_Document.SetTransform(transform);
-                transform.hasChanged = false;
+                m_Document.SetTransform(DocumentTransform);
+                DocumentTransform.hasChanged = false;
                 Color background = m_Manager.GetPlayerInfo().BackgroundColor.gamma;
                 SceneSettings.m_Instance.SkyColorA = background;
                 SceneSettings.m_Instance.SkyColorB = background;
+                try { CreateSketchWidgets(); }
+                catch (System.Exception error)
+                {
+                    Debug.LogError($"[OB_IMM_SKETCH_WIDGET_20261017] Could not create sketch model: {error}");
+                    Unload();
+                    return;
+                }
                 m_Ready = true;
                 Debug.Log($"[OB_IMM_VIEWPOINT_20261014] Evaluated chapter={m_ChapterIndex}, request={m_ChapterRequest}, available={m_ViewpointCount}, restored={!m_AlignInitialView}");
                 Debug.Log($"{LogPrefix} Native document ready: {m_Path}");
             }
+        }
+
+        private void CreateSketchWidgets()
+        {
+            m_Model = NativeImmReference.CreatePreparedModel(m_Path, m_Document, m_Manager, m_Renderer);
+            m_Renderer = null; // The first widget adopts the prepared document and registration.
+            var layer = App.Scene.AddLayerNow();
+            App.Scene.RenameLayer(layer, "IMM");
+            var pose = App.Scene.AsScene[transform];
+            m_Widget = ModelWidget.CreateModel(m_Model, null, pose, false,
+                false, 0, App.Scene.GetIndexOfCanvas(layer));
+            Coords.AsLocal[m_Widget.transform] = pose;
+            m_Widget.SetSignedWidgetSize(pose.scale);
+            m_Document.SetTransform(DocumentTransform);
+            Debug.Log($"[OB_IMM_SKETCH_WIDGET_20261017] Opened on layer {App.Scene.GetIndexOfCanvas(m_Widget.Canvas)}, active layer {App.Scene.GetIndexOfCanvas(App.ActiveCanvas)}");
         }
 
         private bool RefreshViewpoints()
@@ -421,9 +494,9 @@ namespace TiltBrush
             Vector3 forward = converted.GetColumn(2);
             if (up.sqrMagnitude < 0.0001f) up = Vector3.up;
             if (forward.sqrMagnitude < 0.0001f) forward = Vector3.forward;
-            return TrTransform.TRS(transform.TransformPoint(converted.GetColumn(3)),
-                transform.rotation * Quaternion.LookRotation(forward.normalized, up.normalized),
-                Mathf.Abs(transform.lossyScale.x * pose.sca));
+            return TrTransform.TRS(DocumentTransform.TransformPoint(converted.GetColumn(3)),
+                DocumentTransform.rotation * Quaternion.LookRotation(forward.normalized, up.normalized),
+                Mathf.Abs(DocumentTransform.lossyScale.x * pose.sca));
         }
 
         private static Quaternion GetViewpointYaw(Quaternion rotation)
@@ -474,23 +547,58 @@ namespace TiltBrush
 
         private void UpdateDocumentTransform()
         {
-            m_Document.SetTransform(transform);
-            transform.hasChanged = false;
+            m_Document.SetTransform(DocumentTransform);
+            DocumentTransform.hasChanged = false;
+        }
+
+        private int[] GetDocumentIds()
+        {
+            var ids = new HashSet<int>();
+            if (m_Document != null) ids.Add(m_Document.DocumentId);
+            if (m_Model != null && WidgetManager.m_Instance != null)
+            {
+                foreach (var widget in WidgetManager.m_Instance.ModelWidgets.Where(widget => widget.Model == m_Model))
+                {
+                    foreach (var reference in widget.GetComponentsInChildren<NativeImmReference>(true))
+                        if (reference.DocumentId >= 0) ids.Add(reference.DocumentId);
+                }
+            }
+            return ids.ToArray();
+        }
+
+        private static IEnumerator DeleteExtractedFileAfterUnload(string path, int[] documentIds)
+        {
+            yield return null;
+            while (documentIds.Any(ImmNativePlugin.IsDocumentActive)) yield return null;
+            if (!File.Exists(path)) yield break;
+            try { File.Delete(path); }
+            catch (IOException error) { Debug.LogWarning($"{LogPrefix} Could not remove temporary IMM: {error.Message}"); }
         }
 
         private void OnDestroy()
         {
             if (s_Active == this) s_Active = null;
-            bool canDeleteExtractedFile = m_Document == null ||
-                m_Document.GetStateInfo().Loading != ImmDocument.LoadingState.Loading;
-            if (m_Document != null && m_Manager != null)
+            var documentIds = GetDocumentIds();
+            if (m_Model != null)
+            {
+                if (WidgetManager.m_Instance != null)
+                {
+                    foreach (var widget in WidgetManager.m_Instance.ModelWidgets.Where(
+                        widget => widget.Model == m_Model).ToArray())
+                    {
+                        widget.Hide();
+                        widget.OnPreDestroy();
+                        WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
+                        Destroy(widget.gameObject);
+                    }
+                }
+                m_Model.UnloadModel();
+            }
+            else if (m_Document != null && m_Manager != null)
                 m_Manager.UnloadDocument(m_Document);
             if (m_Renderer != null) m_Renderer.Release();
-            if (m_DeletePathOnUnload && canDeleteExtractedFile && File.Exists(m_Path))
-            {
-                try { File.Delete(m_Path); }
-                catch (IOException error) { Debug.LogWarning($"{LogPrefix} Could not remove temporary IMM: {error.Message}"); }
-            }
+            if (m_DeletePathOnUnload && m_Manager != null && m_Manager.isActiveAndEnabled)
+                m_Manager.StartCoroutine(DeleteExtractedFileAfterUnload(m_Path, documentIds));
         }
     }
 }

@@ -90,7 +90,8 @@ namespace TiltBrush
             m_SaveIconCapture = null;
             m_GroupIdMapping = new GroupIdMapping();
             m_Metadata = GetSketchMetadata();
-            m_NativeImmPath = NativeImmImport.CurrentPath;
+            m_NativeImmPath = m_Metadata.ModelIndex?.Any(model => model.FilePath == NativeImmImport.EmbeddedModelPath) == true
+                ? NativeImmImport.CurrentPath : null;
             m_LastThumbnail_SS = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
         }
 
@@ -125,7 +126,8 @@ namespace TiltBrush
             stopwatch.Stop();
 
             m_Metadata = GetSketchMetadata();
-            m_NativeImmPath = m_SelectedOnly ? null : NativeImmImport.CurrentPath;
+            m_NativeImmPath = m_Metadata.ModelIndex?.Any(model => model.FilePath == NativeImmImport.EmbeddedModelPath) == true
+                ? NativeImmImport.CurrentPath : null;
             if (m_SelectedOnly)
             {
                 // Reselect strokes
@@ -171,9 +173,6 @@ namespace TiltBrush
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
-                NativeImmFile = m_SelectedOnly ? null : NativeImmImport.CurrentPath != null ? TiltFile.FN_NATIVE_IMM : null,
-                NativeImmChapter = m_SelectedOnly ? null : NativeImmImport.CurrentChapterIndex,
-                NativeImmSceneTransform = m_SelectedOnly ? null : NativeImmImport.CurrentSceneTransform,
             };
         }
 

@@ -133,6 +133,12 @@ namespace TiltBrush
                     NotSplittableMeshPaths = modelSplitsMap[elem.Key].m_NotSplittableMeshPaths,
                 };
 
+                if (NativeImmImport.IsEmbeddedLocation(elem.Key))
+                {
+                    val.AssetId = null;
+                    val.FilePath = NativeImmImport.EmbeddedModelPath;
+                }
+
                 // Order and align the metadata.
                 WidgetMetadata[] ordered = elem.Value.OrderBy(ByTranslation).ToArray();
                 val.PlaybackStates = ordered.Any(entry => entry.playback != null)

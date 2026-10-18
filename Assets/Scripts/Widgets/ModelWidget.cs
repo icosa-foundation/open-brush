@@ -959,7 +959,9 @@ namespace TiltBrush
             ModelPlaybackState[] playbackStates = null)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
-            Model model = ModelCatalog.m_Instance.GetModel(relativePath);
+            Model model = relativePath == NativeImmImport.EmbeddedModelPath
+                ? await NativeImmImport.GetEmbeddedModelAsync()
+                : ModelCatalog.m_Instance.GetModel(relativePath);
             if (model == null) { return false; }
 
             if (!model.m_Valid)

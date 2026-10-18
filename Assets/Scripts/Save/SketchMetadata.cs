@@ -919,11 +919,5 @@ namespace TiltBrush
         public TiltPortal[] Portals { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltGaussianCapture[] GaussianCaptures { get; set; }
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public string NativeImmFile { get; set; }
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public int? NativeImmChapter { get; set; }
-        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public TrTransform? NativeImmSceneTransform { get; set; }
     }
 } // namespace TiltBrush

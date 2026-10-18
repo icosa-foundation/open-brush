@@ -26,6 +26,7 @@ namespace TiltBrush
         private Matrix4x4 m_PreviousTransform;
 
         public ImmDocument Document => m_Ready ? m_Document : null;
+        internal int DocumentId => m_Document?.DocumentId ?? -1;
 
         public bool IsLoading => m_IsInstance && m_Document != null && !m_Ready;
 
