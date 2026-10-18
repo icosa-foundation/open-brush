@@ -158,6 +158,12 @@ namespace TiltBrush
             m_PinScalar = 0.5f;
         }
 
+        public override void Activate(bool active)
+        {
+            base.Activate(active);
+            if (active) App.Switchboard.TriggerModelWidgetActivated(this);
+        }
+
         override public void OnPreDestroy()
         {
             base.OnPreDestroy();

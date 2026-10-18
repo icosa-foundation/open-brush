@@ -45,11 +45,14 @@ namespace TiltBrush
             m_Gltf != null && m_Gltf.Initialized ? m_Gltf.Playing : m_Audio.Any(source => source != null && source.isPlaying);
         public double Time => Document != null ? GetNativeTime().Time : m_Gltf != null && m_Gltf.Initialized ? m_Gltf.Time :
             m_Audio.FirstOrDefault(source => source != null && source.clip != null)?.time ?? 0;
+        public double TargetTime => m_InitialState?.Time ?? Time;
         public double Length => Document != null ? (Document.TryGetChapterInfo(out var info) ? info.Lengths.Sum() / ImmTicksPerSecond : 0) :
             Math.Max(m_Gltf != null ? m_Gltf.Length : 0, m_Audio.Select(source => source != null && source.clip != null ? (double)source.clip.length : 0).DefaultIfEmpty().Max());
         public int ChapterCount => Document != null ? Document.GetChapterCount() : 0;
         public int Chapter => Document != null ? Document.GetCurrentChapter() : -1;
         public string[] Clips => m_Gltf != null ? m_Gltf.ClipNames : new string[0];
+        public bool CanLoop => m_Gltf != null && m_Gltf.Initialized;
+        public bool Loop => CanLoop && m_Gltf.Loop;
         public float Volume => m_InitialState?.Volume ?? (Document != null && !m_VolumeSet ? Document.GetVolume() : m_Volume);
 
         public void Bind(Transform root)
