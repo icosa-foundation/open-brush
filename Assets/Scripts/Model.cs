@@ -91,7 +91,8 @@ namespace TiltBrush
                     {
                         case Type.LocalFile:
                             string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
-                            if (System.IO.File.Exists(blocksPath))
+                            if (!path.StartsWith("../") && !path.StartsWith("..\\") &&
+                                System.IO.File.Exists(blocksPath))
                             {
                                 return blocksPath.Replace("\\", "/");
                             }

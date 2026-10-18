@@ -840,6 +840,7 @@ namespace TiltBrush
         // Returns: path starting after Models/ or null if the path is not to the Models directory
         public static string GetModelSubpath(string fullPath)
         {
+            fullPath = fullPath.Replace('\\', '/');
             string media = GetPathRootedAtMedia(fullPath);
             string blocks = GetPathRootedAtBlocks(fullPath);
             string modelPath = "Media Library/Models/";
@@ -847,6 +848,11 @@ namespace TiltBrush
             if (media != null && media.StartsWith(modelPath))
             {
                 return media.Substring(modelPath.Length);
+            }
+
+            if (media != null && media.StartsWith("Media Library/Quill/", StringComparison.OrdinalIgnoreCase))
+            {
+                return System.IO.Path.GetRelativePath(App.ModelLibraryPath(), fullPath).Replace('\\', '/');
             }
 
             if (blocks != null)

@@ -102,15 +102,20 @@ namespace TiltBrush
 
         private IEnumerable<string> GetModelDirectories()
         {
-            return new List<string> { App.ModelLibraryPath(), App.BlocksModelLibraryPath() }
+            return new List<string> { App.ModelLibraryPath(), App.BlocksModelLibraryPath(), App.QuillMediaLibraryPath() }
                 .Where(p => !string.IsNullOrEmpty(p))
                 .Distinct();
         }
 
         private string GetModelRoot(string path)
         {
-            return GetModelDirectories()
-                .FirstOrDefault(directory => path.StartsWith(directory, StringComparison.OrdinalIgnoreCase));
+            path = Path.GetFullPath(path);
+            return GetModelDirectories().FirstOrDefault(directory =>
+            {
+                var root = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                return path.Equals(root, StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            });
         }
 
         public void ChangeDirectory(string newPath)
@@ -155,13 +160,12 @@ namespace TiltBrush
 
         public bool IsSubDirectoryOfHome()
         {
-            // Check if current directory is under the main Models directory OR is the Blocks root
-            var blocksRoot = App.BlocksModelLibraryPath();
-            bool isUnderMainRoot = m_CurrentModelsDirectory.StartsWith(HomeDirectory, StringComparison.OrdinalIgnoreCase);
-            bool isBlocksRoot = !string.IsNullOrEmpty(blocksRoot) &&
-                               m_CurrentModelsDirectory.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+            return IsLibraryDirectory(m_CurrentModelsDirectory);
+        }
 
-            return isUnderMainRoot || isBlocksRoot;
+        public bool IsLibraryDirectory(string path)
+        {
+            return GetModelRoot(path) != null;
         }
 
         public string GetCurrentDirectory()
@@ -288,8 +292,8 @@ namespace TiltBrush
                     return true;
                 }
 
-                var dirPath = Path.GetDirectoryName(Path.Join(modelRoot, m));
-                return dirPath == path;
+                var dirPath = Path.GetDirectoryName(Path.GetFullPath(m_ModelsByRelativePath[m].GetLocation().AbsolutePath));
+                return dirPath.Equals(Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase);
             }).ToList();
             modelsInDirectory.Sort();
 

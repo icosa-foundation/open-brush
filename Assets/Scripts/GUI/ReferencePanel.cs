@@ -250,6 +250,10 @@ namespace TiltBrush
                 {
                     displayPath = "Open Blocks";
                 }
+                else if (currentDir.Equals(App.QuillMediaLibraryPath(), System.StringComparison.OrdinalIgnoreCase))
+                {
+                    displayPath = "Quill";
+                }
                 else if (currentDir.StartsWith(App.MediaLibraryPath()))
                 {
                     displayPath = currentDir.Substring(App.MediaLibraryPath().Length);
@@ -277,7 +281,7 @@ namespace TiltBrush
                     bool isBlocksRoot = !string.IsNullOrEmpty(blocksPath) &&
                                        currentDir.Equals(blocksPath, System.StringComparison.OrdinalIgnoreCase);
 
-                    // At main root: show real subdirectories + Open Blocks as virtual subdirectory
+                    // At main root: show real subdirectories and the other model libraries
                     if (isMainRoot)
                     {
                         var subdirList = new System.Collections.Generic.List<string>(m_CurrentSubdirectories);
@@ -286,6 +290,12 @@ namespace TiltBrush
                         if (!string.IsNullOrEmpty(blocksPath) && Directory.Exists(blocksPath))
                         {
                             subdirList.Add(blocksPath);
+                        }
+
+                        var quillPath = App.QuillMediaLibraryPath();
+                        if (Directory.Exists(quillPath))
+                        {
+                            subdirList.Add(quillPath);
                         }
 
                         m_CurrentSubdirectories = subdirList.ToArray();
@@ -418,30 +428,13 @@ namespace TiltBrush
             if (m_CurrentTab.Catalog.IsSubDirectoryOfHome() && !m_CurrentTab.Catalog.IsHomeDirectory())
             {
                 var currentDir = new DirectoryInfo(m_CurrentTab.Catalog.GetCurrentDirectory());
-                var currentPath = m_CurrentTab.Catalog.GetCurrentDirectory();
                 var parentPath = currentDir.Parent?.FullName;
 
                 if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models && parentPath != null)
                 {
                     var homeDir = m_CurrentTab.Catalog.HomeDirectory;
-                    var blocksRoot = App.BlocksModelLibraryPath();
-
-                    // If we're at the Blocks root, go back to home
-                    if (!string.IsNullOrEmpty(blocksRoot) &&
-                        currentPath.Equals(blocksRoot, System.StringComparison.OrdinalIgnoreCase))
-                    {
-                        ChangeDirectoryForCurrentTab(homeDir);
-                    }
-                    // If parent is within home directory, navigate to it
-                    else if (parentPath.StartsWith(homeDir, System.StringComparison.OrdinalIgnoreCase))
-                    {
-                        ChangeDirectoryForCurrentTab(parentPath);
-                    }
-                    // Otherwise go to home
-                    else
-                    {
-                        ChangeDirectoryForCurrentTab(homeDir);
-                    }
+                    var catalog = (ModelCatalog)m_CurrentTab.Catalog;
+                    ChangeDirectoryForCurrentTab(catalog.IsLibraryDirectory(parentPath) ? parentPath : homeDir);
                 }
                 else if (parentPath != null)
                 {
