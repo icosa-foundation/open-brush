@@ -69,6 +69,21 @@ namespace UnityGLTF.Plugins
                 emitters = parsedAudioExtension.emitters,
             };
 
+            // The upstream audio-data reader stops at nested metadata such as extensions/extras.
+            // Read the data references directly so property order cannot hide the audio file.
+            if (extensionToken.Value[nameof(KHR_audio_emitter.audio)] is JArray audioTokens)
+            {
+                for (int i = 0; i < audioTokens.Count; i++)
+                {
+                    var audio = audioExtension.audio[i];
+                    audio.uri = (string)audioTokens[i][nameof(KHR_AudioData.uri)];
+                    audio.mimeType = (string)audioTokens[i][nameof(KHR_AudioData.mimeType)];
+                    audio.bufferView = audioTokens[i][nameof(KHR_AudioData.bufferView)] is JToken bufferView
+                        ? new BufferViewId { Id = (int)bufferView, Root = root }
+                        : null;
+                }
+            }
+
             if (extensionToken.Value[nameof(KHR_audio_emitter.emitters)] is JArray emitterTokens)
             {
                 int emitterCount = Math.Min(emitterTokens.Count, audioExtension.emitters.Count);
