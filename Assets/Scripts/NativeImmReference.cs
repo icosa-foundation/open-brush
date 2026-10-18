@@ -34,12 +34,12 @@ namespace TiltBrush
         public static IEnumerator CreateModelCoroutine(string assetId, string path, Action<Model> onReady) =>
             CreateModelCoroutine(assetId, path, onReady, null, false);
 
-        // Shared gallery loading can finish before saved widgets exist. Keep the prepared
+        // Shared model loading can finish before saved widgets exist. Keep the prepared
         // hidden document on the model template until the first widget adopts it.
         public static Task<bool> LoadModelAsync(Model model)
         {
             var completion = new TaskCompletionSource<bool>();
-            App.IcosaAssetCatalog.StartCoroutine(LoadExistingModelCoroutine(model, completion));
+            ModelCatalog.m_Instance.StartCoroutine(LoadExistingModelCoroutine(model, completion));
             return completion.Task;
         }
 
@@ -48,7 +48,9 @@ namespace TiltBrush
             bool ready = false;
             try
             {
-                yield return CreateModelCoroutine(model.AssetId, model.GetLocation().AbsolutePath,
+                var location = model.GetLocation();
+                string assetId = location.GetLocationType() == Model.Location.Type.IcosaAssetId ? model.AssetId : null;
+                yield return CreateModelCoroutine(assetId, location.AbsolutePath,
                     _ => ready = true, model, true);
             }
             finally { completion.TrySetResult(ready); }

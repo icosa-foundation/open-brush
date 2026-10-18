@@ -1110,7 +1110,7 @@ namespace TiltBrush
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
                 }
-                else if (!isLocal && ext == ".imm")
+                else if (ext == ".imm")
                 {
                     if (!await NativeImmReference.LoadModelAsync(this))
                         m_LoadError = new LoadError("Could not load IMM reference", m_Location.AbsolutePath);
