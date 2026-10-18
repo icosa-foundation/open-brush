@@ -16,6 +16,7 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public int? Chapter;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public string Clip;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public bool? Loop;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)] public float? SpatialBlend;
         public ModelPlaybackState Copy() => (ModelPlaybackState)MemberwiseClone();
         public ModelPlaybackState ForRestore(bool restorePlayingPosition = false)
         {

@@ -27,6 +27,7 @@ namespace TiltBrush
         private AudioSource[] m_Audio = new AudioSource[0];
         private float[] m_AudioGains = new float[0];
         private float m_Volume = 1;
+        private float? m_SpatialBlend;
         private bool m_Paused;
         private bool m_PlayingChangePending;
         private bool m_VolumeSet;
@@ -41,6 +42,9 @@ namespace TiltBrush
         public bool Busy => m_Operation != null;
         public bool IsRestoring => Busy || m_InitialState != null && Initialized && !m_RestoreFailed;
         public bool HasAudio => Document != null ? Document.HasAudio() : m_Audio.Length > 0;
+        public bool CanSpatializeAudio => Document == null && m_Audio.Any(source => source != null);
+        public float SpatialBlend => m_InitialState?.SpatialBlend ?? m_SpatialBlend ??
+            (m_Audio.Any(source => source != null && source.spatialBlend > 0) ? 1f : 0f);
         public bool Playing => Document != null ? Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Playing :
             m_Gltf != null && m_Gltf.Initialized ? m_Gltf.Playing : m_Audio.Any(source => source != null && source.isPlaying);
         public double Time => Document != null ? GetNativeTime().Time : m_Gltf != null && m_Gltf.Initialized ? m_Gltf.Time :
@@ -70,6 +74,7 @@ namespace TiltBrush
             var state = Document != null ? GetNativeTime() : new ModelPlaybackState { Time = Time };
             state.Paused = m_PlayingChangePending ? m_Paused : !Playing;
             state.Volume = Volume;
+            state.SpatialBlend = m_SpatialBlend;
             if (Document != null) state.Chapter = Chapter;
             if (m_Gltf != null && m_Gltf.Initialized) { state.Clip = m_Gltf.ClipName; state.Loop = m_Gltf.Loop; }
             return state;
@@ -85,6 +90,7 @@ namespace TiltBrush
             ValidateTime(state.Time);
             if (state.StopTime.HasValue) ValidateTime(state.StopTime.Value);
             ValidateVolume(state.Volume);
+            if (state.SpatialBlend.HasValue) ValidateSpatialBlend(state.SpatialBlend.Value);
             m_InitialState = state.ForRestore(restorePlayingPosition);
             m_RestartAtChapter = !state.Paused && !restorePlayingPosition && state.Chapter.HasValue;
             m_RestoreFailed = false;
@@ -105,6 +111,7 @@ namespace TiltBrush
                         if (state.Clip != null) m_Gltf?.SelectClip(state.Clip);
                         if (state.Loop.HasValue && m_Gltf != null) m_Gltf.Loop = state.Loop.Value;
                         SetVolumeInternal(state.Volume);
+                        m_SpatialBlend = state.SpatialBlend;
                         SeekInternal(state.Time);
                         SetPlayingInternal(!state.Paused);
                         m_InitialState = null;
@@ -117,6 +124,7 @@ namespace TiltBrush
                 if (m_Audio[i] == null) continue;
                 m_Audio[i].volume = m_AudioGains[i] * m_Volume;
                 m_Audio[i].mute = m_Volume <= 0.005f;
+                if (m_SpatialBlend.HasValue) m_Audio[i].spatialBlend = m_SpatialBlend.Value;
                 if (m_Paused && m_Audio[i].isPlaying) m_Audio[i].Pause();
             }
         }
@@ -169,6 +177,20 @@ namespace TiltBrush
             }
         }
         public void SetVolume(float volume) { RequireReady(); ValidateVolume(volume); SetVolumeInternal(volume); }
+        public void SetSpatialBlend(float spatialBlend)
+        {
+            RequireReady();
+            if (!CanSpatializeAudio) throw new InvalidOperationException("Model has no controllable spatial audio");
+            ValidateSpatialBlend(spatialBlend);
+            m_SpatialBlend = spatialBlend;
+            foreach (var source in m_Audio)
+                if (source != null) source.spatialBlend = spatialBlend;
+        }
+        private static void ValidateSpatialBlend(float spatialBlend)
+        {
+            if (float.IsNaN(spatialBlend) || float.IsInfinity(spatialBlend) || spatialBlend < 0 || spatialBlend > 1)
+                throw new ArgumentOutOfRangeException(nameof(spatialBlend));
+        }
         private void SetVolumeInternal(float volume)
         {
             m_Volume = volume <= 0.005f ? 0 : volume;
