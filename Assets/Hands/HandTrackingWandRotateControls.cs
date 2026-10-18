@@ -109,6 +109,8 @@ namespace TiltBrush
 
             bool shouldShow =
                 handTrackingReady &&
+                SketchControlsScript.m_Instance != null &&
+                !SketchControlsScript.m_Instance.IsViewOnly &&
                 anchor != null &&
                 panels != null &&
                 panels.StandardActive() &&
