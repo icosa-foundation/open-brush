@@ -42,6 +42,8 @@ namespace TiltBrush
         [SerializeField] private ActionToggleButton m_SpatialBlendToggle;
         [SerializeField] private OpenListPickerPopupButton m_AnimationSelector;
         [SerializeField] private TextMeshPro m_PlaybackTime;
+        [SerializeField] private ModelPathLabel m_ModelPath;
+        [SerializeField] private GameObject m_PlaybackButtonsRoot;
         [SerializeField] private FloatPropertySlider m_VolumeSlider;
         [SerializeField] private float m_ModelSkipTime = 10f;
 
@@ -136,7 +138,16 @@ namespace TiltBrush
             var playback = SelectedPlayback;
             bool supported = playback != null && playback.Initialized;
             bool available = supported && !playback.IsRestoring;
-            if (m_ModelControls != null) m_ModelControls.SetActive(m_TabActive && supported);
+            bool brokenApart = m_SelectedModelWidget != null && m_SelectedModelWidget.gameObject.activeInHierarchy &&
+                m_SelectedModelWidget.Model != null && !string.IsNullOrEmpty(m_SelectedModelWidget.Subtree);
+            if (m_ModelControls != null) m_ModelControls.SetActive(m_TabActive && (supported || brokenApart));
+            if (m_Scrubber != null) m_Scrubber.gameObject.SetActive(supported);
+            if (m_PlaybackButtonsRoot != null) m_PlaybackButtonsRoot.SetActive(supported);
+            if (m_ModelPath != null)
+            {
+                m_ModelPath.gameObject.SetActive(brokenApart);
+                if (brokenApart) m_ModelPath.SetModel(m_SelectedModelWidget.Model, m_SelectedModelWidget.Subtree);
+            }
             foreach (var button in m_PlaybackButtons)
                 if (button != null) button.SetButtonAvailable(available);
             RefreshAnimationSelector(playback, supported);
