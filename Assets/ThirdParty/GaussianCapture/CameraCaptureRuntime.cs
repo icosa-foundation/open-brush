@@ -657,7 +657,10 @@ public class CameraCaptureRuntime : MonoBehaviour
     {
         isRunning = true;
         string folderPath = PathCombineSafe(captureOutputFolder, outAdd);
-        Directory.CreateDirectory(folderPath);
+        string imagesFolderPath = Path.Combine(folderPath, "images");
+        string sparseFolderPath = Path.Combine(folderPath, "sparse", "0");
+        Directory.CreateDirectory(imagesFolderPath);
+        Directory.CreateDirectory(sparseFolderPath);
         DepthTextureMode previousDepthTextureMode = cameraToUse.depthTextureMode;
 
         try
@@ -665,7 +668,7 @@ public class CameraCaptureRuntime : MonoBehaviour
             PauseSceneForCapture();
             m_LoggedNativeDepthStats = false;
             cameraToUse.depthTextureMode |= DepthTextureMode.Depth;
-            string camerasTxt = Path.Combine(folderPath, "cameras.txt");
+            string camerasTxt = Path.Combine(sparseFolderPath, "cameras.txt");
             float fov = cameraToUse.fieldOfView;
             float fy = 0.5f * height / Mathf.Tan(0.5f * fov * Mathf.Deg2Rad);
             // Unity's fieldOfView is vertical. With square pixels, the horizontal and
@@ -681,7 +684,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                 camWriter.WriteLine($"1 PINHOLE {width} {height} {fx.ToString(CultureInfo.InvariantCulture)} {fy.ToString(CultureInfo.InvariantCulture)} {cx} {cy}");
             }
 
-            string imagesTxt = Path.Combine(folderPath, "images.txt");
+            string imagesTxt = Path.Combine(sparseFolderPath, "images.txt");
             using (StreamWriter imgWriter = new StreamWriter(imagesTxt))
             {
                 imgWriter.WriteLine("# Image list with two lines per image:");
@@ -728,7 +731,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                     yield break;
                 }
 
-                using (StreamWriter writer3D = new StreamWriter(Path.Combine(folderPath, "points3D.txt")))
+                using (StreamWriter writer3D = new StreamWriter(Path.Combine(sparseFolderPath, "points3D.txt")))
                 {
                     writer3D.WriteLine("# 3D point list with one line of data per point:");
                     writer3D.WriteLine("# POINT3D_ID, X, Y, Z, R, G, B, ERROR, TRACK[] as (IMAGE_ID, POINT2D_IDX)");
@@ -754,7 +757,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                             Vector3 t = new Vector3(colmapMatrix.m03, colmapMatrix.m13, colmapMatrix.m23);
 
                             string imageName = $"{poseTarget.FilePrefix}_view_{imageId:D4}.png";
-                            string imagePath = Path.Combine(folderPath, imageName);
+                            string imagePath = Path.Combine(imagesFolderPath, imageName);
                             SetupCaptureCamera();
                             Texture2D capturedOpaqueDepth =
                                 RenderColorCaptureToTexture(tex, rt, resolvedRt);
@@ -838,7 +841,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                                 Vector3 t = new Vector3(colmapMatrix.m03, colmapMatrix.m13, colmapMatrix.m23);
 
                                 string imageName = $"{volumeTarget.FilePrefix}_view_{imageId:D4}.png";
-                                string imagePath = Path.Combine(folderPath, imageName);
+                                string imagePath = Path.Combine(imagesFolderPath, imageName);
 
                                 SetupCaptureCamera();
                                 Texture2D capturedOpaqueDepth =
@@ -1950,10 +1953,16 @@ public class CameraCaptureRuntime : MonoBehaviour
             return;
         }
 
-        var subDirs = Directory.GetDirectories(captureOutputFolder);
-        List<string> foldersToProcess = subDirs.Length > 0
-            ? new List<string>(subDirs)
-            : new List<string> { captureOutputFolder };
+        // A single capture now has images/ and sparse/ subdirectories. Only
+        // sequence frame directories should become separate training inputs.
+        bool isSingleCapture = Directory.Exists(Path.Combine(captureOutputFolder, "sparse", "0"))
+            || File.Exists(Path.Combine(captureOutputFolder, "cameras.txt"));
+        List<string> foldersToProcess = isSingleCapture
+            ? new List<string> { captureOutputFolder }
+            : Directory.GetDirectories(captureOutputFolder)
+                .Where(folder => Directory.Exists(Path.Combine(folder, "sparse", "0"))
+                    || File.Exists(Path.Combine(folder, "cameras.txt")))
+                .ToList();
 
         List<string> commands = new List<string>();
         foreach (string folder in foldersToProcess)
