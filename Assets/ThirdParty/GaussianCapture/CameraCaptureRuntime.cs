@@ -76,6 +76,10 @@ public class CameraCaptureRuntime : MonoBehaviour
     [Tooltip("Copies the RGB camera's native opaque depth into linear eye-depth values.")]
     public Shader nativeDepthShader;
 
+    [Header("Training Depth Output")]
+    [Tooltip("Export uncompressed float32 linear-depth TIFFs in depth/ for LichtFeld Studio. Adds disk I/O; enable Depth Loss with ssi-depth in the trainer.")]
+    public bool exportTrainingDepth = false;
+
     [Header("Depth Debug Output")]
     [Tooltip("Write the depth image used for point-cloud generation next to each captured image.")]
     public bool saveDepthDebugImages = false;
@@ -661,6 +665,8 @@ public class CameraCaptureRuntime : MonoBehaviour
         string sparseFolderPath = Path.Combine(folderPath, "sparse", "0");
         Directory.CreateDirectory(imagesFolderPath);
         Directory.CreateDirectory(sparseFolderPath);
+        string depthFolderPath = Path.Combine(folderPath, "depth");
+        if (exportTrainingDepth) { Directory.CreateDirectory(depthFolderPath); }
         DepthTextureMode previousDepthTextureMode = cameraToUse.depthTextureMode;
 
         try
@@ -773,7 +779,10 @@ public class CameraCaptureRuntime : MonoBehaviour
                                     ref pointId,
                                     debugOutputBasePath: Path.Combine(
                                         folderPath, Path.GetFileNameWithoutExtension(imageName)),
-                                    capturedOpaqueDepth: capturedOpaqueDepth);
+                                    capturedOpaqueDepth: capturedOpaqueDepth,
+                                    trainingDepthPath: exportTrainingDepth
+                                        ? Path.Combine(depthFolderPath, $"{Path.GetFileNameWithoutExtension(imageName)}.tiff")
+                                        : null);
                             }
                             finally
                             {
@@ -858,7 +867,10 @@ public class CameraCaptureRuntime : MonoBehaviour
                                         ref pointId,
                                         debugOutputBasePath: Path.Combine(
                                             folderPath, Path.GetFileNameWithoutExtension(imageName)),
-                                        capturedOpaqueDepth: capturedOpaqueDepth);
+                                        capturedOpaqueDepth: capturedOpaqueDepth,
+                                        trainingDepthPath: exportTrainingDepth
+                                            ? Path.Combine(depthFolderPath, $"{Path.GetFileNameWithoutExtension(imageName)}.tiff")
+                                            : null);
                                 }
                                 finally
                                 {
@@ -1379,7 +1391,10 @@ public class CameraCaptureRuntime : MonoBehaviour
         depthCam.backgroundColor = new Color(srcCam.farClipPlane, 0, 0, 1);
         depthCam.cullingMask = srcCam.cullingMask;
 
-        var rt = RenderTexture.GetTemporary(w, h, 24, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
+        var depthFormat = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RFloat)
+            ? RenderTextureFormat.RFloat
+            : RenderTextureFormat.ARGBFloat;
+        var rt = RenderTexture.GetTemporary(w, h, 24, depthFormat, RenderTextureReadWrite.Linear);
         depthCam.targetTexture = rt;
 
         Shader.SetGlobalFloat("_CaptureFar", srcCam.farClipPlane);
@@ -1392,7 +1407,10 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         var prev = RenderTexture.active;
         RenderTexture.active = rt;
-        var depthTex = new Texture2D(w, h, TextureFormat.RGBAHalf, false, true);
+        var textureFormat = depthFormat == RenderTextureFormat.RFloat
+            ? TextureFormat.RFloat
+            : TextureFormat.RGBAFloat;
+        var depthTex = new Texture2D(w, h, textureFormat, false, true);
         depthTex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
         depthTex.Apply(false, false);
         RenderTexture.active = prev;
@@ -1647,10 +1665,12 @@ public class CameraCaptureRuntime : MonoBehaviour
         float clampMinMeters = 0f,
         float clampMaxMeters = 0f,
         bool useFloat32 = false,
-        Texture2D capturedOpaqueDepth = null
+        Texture2D capturedOpaqueDepth = null,
+        string trainingDepthPath = null
     )
     {
         if (cam == null || colorTex == null || writer == null) return;
+        useFloat32 |= !string.IsNullOrEmpty(trainingDepthPath);
 
         if (capturedOpaqueDepth == null && _eyeDepthMat == null)
         {
@@ -1722,6 +1742,12 @@ public class CameraCaptureRuntime : MonoBehaviour
             float skipThreshold = skipMaxDepthPlane
                 ? Mathf.Max(0f, maxValidDepth - farDepthTolerance)
                 : float.PositiveInfinity;
+
+            if (!string.IsNullOrEmpty(trainingDepthPath))
+            {
+                GaussianDepthTiffWriter.Write(
+                    trainingDepthPath, depthTex, cam.nearClipPlane, skipThreshold);
+            }
 
             SaveDepthDebugFiles(depthTex, cam, debugOutputBasePath, skipThreshold);
             if (saveOpaqueDepthReference && includeTransparentsAndParticles && eyeDepthShader != null)
