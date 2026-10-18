@@ -243,6 +243,28 @@ namespace TiltBrush
             m_InitialState.StopTime = 0;
             StartNative(document => WaitForEdit(document, () => document.RequestSetChapter(chapter), m_InitialState.Paused, m_InitialState.Time));
         }
+        public void GetViewpointNavigationState(out int index, out int count)
+        {
+            index = -1;
+            count = 0;
+            if (Document == null) return;
+            var snapshot = ReadSnapshot(Document);
+            count = snapshot.availableCount;
+            index = Array.IndexOf(m_ViewpointIds, snapshot.activeId, 0, count);
+        }
+
+        public void CycleViewpoint(int direction)
+        {
+            RequireReady();
+            if (Document == null) throw new InvalidOperationException("This model has no IMM viewpoints");
+            var snapshot = ReadSnapshot(Document);
+            int count = snapshot.availableCount;
+            if (count == 0) return;
+            int index = Array.IndexOf(m_ViewpointIds, snapshot.activeId, 0, count);
+            int next = index < 0 ? (direction > 0 ? 0 : count - 1) : (index + direction + count) % count;
+            TryNavigateToViewpoint(m_ViewpointIds[next], snapshot);
+        }
+
         public ModelViewpointInfo[] GetViewpoints()
         {
             RequireReady();
@@ -260,8 +282,12 @@ namespace TiltBrush
             RequireReady();
             if (Document == null) throw new InvalidOperationException("This model has no IMM viewpoints");
             var snapshot = ReadSnapshot(Document);
-            if (!Document.TrySetActiveSpawnAreaId(id, out var pose, snapshot.evaluationRevision))
+            if (!TryNavigateToViewpoint(id, snapshot))
                 throw new InvalidOperationException("Viewpoint is unavailable or evaluated state changed");
+        }
+        private bool TryNavigateToViewpoint(int id, SpawnAreaSnapshot snapshot)
+        {
+            if (!Document.TrySetActiveSpawnAreaId(id, out var pose, snapshot.evaluationRevision)) return false;
             var root = m_Native.transform;
             var flip = Matrix4x4.Scale(new Vector3(1, 1, -1));
             var converted = flip * Matrix4x4.TRS(pose.GetPosition(), pose.GetRotation(), Vector3.one * pose.sca) * flip;
@@ -277,6 +303,7 @@ namespace TiltBrush
             App.Scene.Pose = TrTransform.TRS(target, yawDelta, App.METERS_TO_UNITS / scale) *
                 TrTransform.T(-position) * App.Scene.Pose;
             Document.SetSpawnAreaNeedsUpdate(false);
+            return true;
         }
         private static Quaternion Yaw(Quaternion rotation)
         {

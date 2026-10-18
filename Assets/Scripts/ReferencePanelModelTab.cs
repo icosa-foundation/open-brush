@@ -42,6 +42,10 @@ namespace TiltBrush
         [SerializeField] private ActionToggleButton m_SpatialBlendToggle;
         [SerializeField] private OpenListPickerPopupButton m_AnimationSelector;
         [SerializeField] private TextMeshPro m_PlaybackTime;
+        [SerializeField] private GameObject m_ChapterControls;
+        [SerializeField] private TextMeshPro m_ChapterLabel;
+        [SerializeField] private GameObject m_ViewpointControls;
+        [SerializeField] private TextMeshPro m_ViewpointLabel;
         [SerializeField] private ModelPathLabel m_ModelPath;
         [SerializeField] private GameObject m_PlaybackButtonsRoot;
         [SerializeField] private FloatPropertySlider m_VolumeSlider;
@@ -150,6 +154,7 @@ namespace TiltBrush
             }
             foreach (var button in m_PlaybackButtons)
                 if (button != null) button.SetButtonAvailable(available);
+            RefreshImmNavigation(playback, supported, available);
             RefreshAnimationSelector(playback, supported);
             RefreshPlaybackTime(playback, supported);
             if (m_VolumeSlider != null) m_VolumeSlider.gameObject.SetActive(supported && playback.HasAudio);
@@ -166,6 +171,45 @@ namespace TiltBrush
                 if (supported && playback.CanLoop && m_LoopToggle.ToggleState != playback.Loop)
                     m_LoopToggle.ToggleState = playback.Loop;
             }
+        }
+
+        private void RefreshImmNavigation(ModelPlaybackController playback, bool supported, bool available)
+        {
+            bool native = supported && playback.Document != null;
+            if (m_ChapterControls != null) m_ChapterControls.SetActive(native && playback.ChapterCount > 1);
+            if (native && m_ChapterLabel != null)
+            {
+                string label = $"Chapter {playback.Chapter + 1} / {playback.ChapterCount}";
+                if (m_ChapterLabel.text != label) m_ChapterLabel.text = label;
+            }
+            int index = -1;
+            int count = 0;
+            if (native) playback.GetViewpointNavigationState(out index, out count);
+            if (m_ViewpointControls != null) m_ViewpointControls.SetActive(native && count > 0);
+            if (native && m_ViewpointLabel != null)
+            {
+                string label = $"Viewpoint {(index < 0 ? "-" : (index + 1).ToString())} / {count}";
+                if (m_ViewpointLabel.text != label) m_ViewpointLabel.text = label;
+            }
+            // Visiting the active viewpoint again realigns the user after they have moved.
+            foreach (var button in m_PlaybackButtons)
+                if (button is ModelImmNavigationButton navigation && navigation.IsViewpoint)
+                    button.SetButtonAvailable(available && count > 0);
+        }
+
+        public void CycleChapter(int direction)
+        {
+            var playback = SelectedPlayback;
+            if (playback == null || !playback.Initialized || playback.IsRestoring || playback.ChapterCount < 2) return;
+            playback.SetChapter((playback.Chapter + direction + playback.ChapterCount) % playback.ChapterCount);
+        }
+
+        public void CycleViewpoint(int direction)
+        {
+            var playback = SelectedPlayback;
+            if (playback == null || !playback.Initialized || playback.IsRestoring || playback.Document == null) return;
+            playback.CycleViewpoint(direction);
+            RefreshModelControls();
         }
 
         private void RefreshPlaybackTime(ModelPlaybackController playback, bool supported)
