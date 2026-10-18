@@ -37,6 +37,7 @@ namespace TiltBrush
         [SerializeField] private BoxCollider m_ModelControlsCollider;
         [SerializeField] private ModelPositionSlider m_Scrubber;
         [SerializeField] private ActionToggleButton m_LoopToggle;
+        [SerializeField] private ActionToggleButton m_SpatialBlendToggle;
         [SerializeField] private FloatPropertySlider m_VolumeSlider;
         [SerializeField] private float m_ModelSkipTime = 10f;
 
@@ -133,6 +134,13 @@ namespace TiltBrush
             foreach (var button in m_PlaybackButtons)
                 if (button != null) button.SetButtonAvailable(available);
             if (m_VolumeSlider != null) m_VolumeSlider.gameObject.SetActive(supported && playback.HasAudio);
+            if (m_SpatialBlendToggle != null)
+            {
+                m_SpatialBlendToggle.gameObject.SetActive(supported && playback.CanSpatializeAudio);
+                if (supported && playback.CanSpatializeAudio &&
+                    m_SpatialBlendToggle.ToggleState != (playback.SpatialBlend > 0))
+                    m_SpatialBlendToggle.ToggleState = playback.SpatialBlend > 0;
+            }
             if (m_LoopToggle != null)
             {
                 m_LoopToggle.gameObject.SetActive(supported && playback.CanLoop);
@@ -166,6 +174,13 @@ namespace TiltBrush
             var playback = SelectedPlayback;
             if (playback != null && playback.Initialized && playback.CanLoop && !playback.IsRestoring)
                 playback.SetLoop(button.ToggleState);
+        }
+
+        public void HandleSpatialBlendToggle(ActionToggleButton button)
+        {
+            var playback = SelectedPlayback;
+            if (playback != null && playback.Initialized && playback.CanSpatializeAudio && !playback.IsRestoring)
+                playback.SetSpatialBlend(button.ToggleState ? 1f : 0f);
         }
 
         private int m_LastPageIndexForLoad = -1;
