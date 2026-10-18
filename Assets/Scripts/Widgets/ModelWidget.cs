@@ -1009,6 +1009,9 @@ namespace TiltBrush
                                 ModelPlaybackState playbackState = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
+            var canvas = App.Scene.GetOrCreateLayer(layerId);
+            // Serialized transforms are local to their owning layer, not the active layer.
+            modelWidget.transform.SetParent(canvas.transform, worldPositionStays: false);
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
             modelWidget.m_Subtree = subtree;
@@ -1038,7 +1041,7 @@ namespace TiltBrush
                 modelWidget.m_PolyCallbackActive = true;
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
-            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
+            modelWidget.SetCanvas(canvas);
             return modelWidget;
         }
 
