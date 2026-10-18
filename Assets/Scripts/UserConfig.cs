@@ -59,6 +59,18 @@ namespace TiltBrush
         public HandtrackingConfig Handtracking;
 
         [Serializable]
+        public struct PanelsConfig
+        {
+            // Shared translation of the wand-panel layout in view-only mode, in metres
+            // along the wand's local axes. Omitted values use 0 right, 0.015 up, 0.2 forward.
+            public float? ViewOnlyOffsetRight;
+            public float? ViewOnlyOffsetUp;
+            public float? ViewOnlyOffsetForward;
+        }
+
+        public PanelsConfig Panels;
+
+        [Serializable]
         public struct PostProcessingFxConfig
         {
             // Null leaves bloom at its default amount of 1 for every quality level.
