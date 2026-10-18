@@ -55,6 +55,7 @@ namespace TiltBrush
         public int ChapterCount => Document != null ? Document.GetChapterCount() : 0;
         public int Chapter => Document != null ? Document.GetCurrentChapter() : -1;
         public string[] Clips => m_Gltf != null ? m_Gltf.ClipNames : new string[0];
+        public string ClipName => m_InitialState?.Clip ?? (m_Gltf != null ? m_Gltf.ClipName : null);
         public bool CanLoop => m_Gltf != null && m_Gltf.Initialized;
         public bool Loop => CanLoop && m_Gltf.Loop;
         public float Volume => m_InitialState?.Volume ?? (Document != null && !m_VolumeSet ? Document.GetVolume() : m_Volume);

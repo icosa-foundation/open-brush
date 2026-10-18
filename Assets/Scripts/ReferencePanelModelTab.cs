@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -38,6 +39,7 @@ namespace TiltBrush
         [SerializeField] private ModelPositionSlider m_Scrubber;
         [SerializeField] private ActionToggleButton m_LoopToggle;
         [SerializeField] private ActionToggleButton m_SpatialBlendToggle;
+        [SerializeField] private OpenListPickerPopupButton m_AnimationSelector;
         [SerializeField] private FloatPropertySlider m_VolumeSlider;
         [SerializeField] private float m_ModelSkipTime = 10f;
 
@@ -45,6 +47,7 @@ namespace TiltBrush
         private BaseButton[] m_PlaybackButtons = new BaseButton[0];
         private bool m_TabActive;
         private float? m_PendingVolume;
+        private bool m_AnimationClipsLoaded;
         private ModelPlaybackController SelectedPlayback => m_SelectedModelWidget != null &&
             m_SelectedModelWidget.gameObject.activeInHierarchy ? m_SelectedModelWidget.Playback : null;
 
@@ -92,6 +95,7 @@ namespace TiltBrush
             if (m_SelectedModelWidget == widget) return;
             m_SelectedModelWidget = widget;
             m_PendingVolume = null;
+            m_AnimationClipsLoaded = false;
             if (m_Scrubber != null) m_Scrubber.ModelWidget = widget;
             RefreshModelControls();
         }
@@ -133,6 +137,7 @@ namespace TiltBrush
             if (m_ModelControls != null) m_ModelControls.SetActive(m_TabActive && supported);
             foreach (var button in m_PlaybackButtons)
                 if (button != null) button.SetButtonAvailable(available);
+            RefreshAnimationSelector(playback, supported);
             if (m_VolumeSlider != null) m_VolumeSlider.gameObject.SetActive(supported && playback.HasAudio);
             if (m_SpatialBlendToggle != null)
             {
@@ -147,6 +152,33 @@ namespace TiltBrush
                 if (supported && playback.CanLoop && m_LoopToggle.ToggleState != playback.Loop)
                     m_LoopToggle.ToggleState = playback.Loop;
             }
+        }
+
+        private void RefreshAnimationSelector(ModelPlaybackController playback, bool supported)
+        {
+            if (m_AnimationSelector == null) return;
+            if (!supported) m_AnimationClipsLoaded = false;
+            if (supported && !m_AnimationClipsLoaded)
+            {
+                m_AnimationSelector.m_Items = new List<string>(playback.Clips);
+                m_AnimationClipsLoaded = true;
+            }
+            bool visible = supported && m_AnimationSelector.m_Items.Count > 1;
+            m_AnimationSelector.gameObject.SetActive(visible);
+            if (!visible) return;
+            int index = Math.Max(0, m_AnimationSelector.m_Items.IndexOf(playback.ClipName));
+            m_AnimationSelector.ItemIndex = index;
+            string label = m_AnimationSelector.m_Items[index];
+            if (m_AnimationSelector.ButtonLabel != label) m_AnimationSelector.ButtonLabel = label;
+        }
+
+        public void HandleAnimationSelected(OpenListPickerPopupButton button)
+        {
+            var playback = SelectedPlayback;
+            if (playback == null || !playback.Initialized || playback.IsRestoring ||
+                button.ItemIndex < 0 || button.ItemIndex >= button.m_Items.Count) return;
+            playback.SelectClip(button.m_Items[button.ItemIndex]);
+            RefreshModelControls();
         }
 
         public override bool RaycastAgainstMeshCollider(Ray ray, out RaycastHit hitInfo, float dist)
