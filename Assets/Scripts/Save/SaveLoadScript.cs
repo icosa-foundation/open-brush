@@ -148,6 +148,7 @@ namespace TiltBrush
         private bool m_AutosaveFailed;
         private string m_AutosaveTargetFilename;
         private IEnumerator<Timeslice> m_AutosaveCoroutine;
+        private bool m_AutosaveWriteInProgress;
 
         private RenderTexture m_SaveIconRenderTexture;
 
@@ -957,6 +958,10 @@ namespace TiltBrush
                 SketchChanged();
             }
 
+            // The snapshot coroutine is cleared before its background write completes.
+            // Keep later changes queued instead of starting another writer for the same file.
+            if (m_AutosaveWriteInProgress) return;
+
             if (m_SecondsUntilNextAutosave >= 0f)
             {
                 m_SecondsUntilNextAutosave -= Time.unscaledDeltaTime;
@@ -993,18 +998,28 @@ namespace TiltBrush
             // We can clear the reference to the coroutine here because  at this point we already have a
             // full snapshot of the save and can just go ahead and write it.
             m_AutosaveCoroutine = null;
+            MarkAsAutosaveDone();
 
             string error = null;
             if (m_LastSceneFile.Valid)
             {
                 snapshot.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
             }
-            var writeFuture = new Future<string>(
-                () => snapshot.WriteSnapshotToFile(m_AutosaveFileInfo.FullPath),
-                null, true);
-            while (!writeFuture.TryGetResult(out error))
+            string autosavePath = m_AutosaveFileInfo.FullPath;
+            m_AutosaveWriteInProgress = true;
+            try
             {
-                yield return null;
+                var writeFuture = new Future<string>(
+                    () => snapshot.WriteSnapshotToFile(autosavePath),
+                    null, true);
+                while (!writeFuture.TryGetResult(out error))
+                {
+                    yield return null;
+                }
+            }
+            finally
+            {
+                m_AutosaveWriteInProgress = false;
             }
 
             if (error != null)
@@ -1014,8 +1029,6 @@ namespace TiltBrush
                 Debug.LogWarning(error);
                 ControllerConsoleScript.m_Instance.AddNewLine(error);
             }
-            MarkAsAutosaveDone();
-
             App.Instance.AutosaveRestoreFileExists = true;
         }
 
@@ -1121,7 +1134,7 @@ namespace TiltBrush
         public IEnumerator GetLastAutosaveBytes(Action<byte[]> onComplete)
         {
 
-            while (m_AutosaveCoroutine != null) yield return null;
+            while (m_AutosaveCoroutine != null || m_AutosaveWriteInProgress) yield return null;
 
             // Retrieve the autosaved file
             string autosaveFile = MostRecentAutosaveFile();
