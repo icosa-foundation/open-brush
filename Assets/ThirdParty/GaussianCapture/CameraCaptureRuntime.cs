@@ -76,10 +76,6 @@ public class CameraCaptureRuntime : MonoBehaviour
     [Tooltip("Copies the RGB camera's native opaque depth into linear eye-depth values.")]
     public Shader nativeDepthShader;
 
-    [Header("Training Depth Output")]
-    [Tooltip("Export uncompressed float32 linear-depth TIFFs in depth/ for LichtFeld Studio. Adds disk I/O; enable Depth Loss with ssi-depth in the trainer.")]
-    public bool exportTrainingDepth = false;
-
     [Header("Depth Debug Output")]
     [Tooltip("Write the depth image used for point-cloud generation next to each captured image.")]
     public bool saveDepthDebugImages = false;
@@ -660,6 +656,7 @@ public class CameraCaptureRuntime : MonoBehaviour
         string outAdd)
     {
         isRunning = true;
+        bool exportTrainingDepth = App.UserConfig.Export.ExportGaussianSplatDepth;
         string folderPath = PathCombineSafe(captureOutputFolder, outAdd);
         string imagesFolderPath = Path.Combine(folderPath, "images");
         string sparseFolderPath = Path.Combine(folderPath, "sparse", "0");

@@ -458,6 +458,14 @@ namespace TiltBrush
         [Serializable]
         public struct ExportConfig
         {
+            // Write float32 linear-depth TIFFs alongside Gaussian splat pose captures.
+            bool? m_ExportGaussianSplatDepth;
+            public bool ExportGaussianSplatDepth
+            {
+                get { return m_ExportGaussianSplatDepth ?? false; }
+                set { m_ExportGaussianSplatDepth = value; }
+            }
+
             bool? m_ExportBinaryFbx;
             public bool ExportBinaryFbx
             {
