@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -234,7 +234,6 @@ namespace TiltBrush
                             m_ExtendPath.SetPathAnimation(true);
                             m_ExtendPathType = ExtendPathType.ExtendAtHead;
                             WidgetManager.m_Instance.SetCurrentCameraPath(m_ExtendPath);
-                            App.Scene.captureRig.SetActive(false);
                             App.Scene.animationUI_manager.AddAnimationPath(m_ExtendPath);
                         }
 
@@ -528,7 +527,12 @@ namespace TiltBrush
                 m_LastValidPath = null;
 
                 GrabWidgetData currentData = WidgetManager.m_Instance.GetCurrentCameraPath();
-                var datas = WidgetManager.m_Instance.AllPathWidgets;
+                var datas = m_Mode == Mode.AddAnimationPositionKnot ||
+                    m_Mode == Mode.AddAnimationRotationKnot
+                    ? WidgetManager.m_Instance.AnimationPathWidgets
+                    : m_Mode == Mode.RemoveKnot
+                        ? WidgetManager.m_Instance.AllPathWidgets
+                        : WidgetManager.m_Instance.CameraPathWidgets;
                 foreach (TypedWidgetData<CameraPathWidget> data in datas)
                 {
                     CameraPathWidget widget = data.WidgetScript;
