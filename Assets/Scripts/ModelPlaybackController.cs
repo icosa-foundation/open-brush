@@ -475,12 +475,12 @@ namespace TiltBrush
         }
         private SpawnAreaSnapshot ReadSnapshot(ImmDocument document)
         {
-            if (!document.TryGetSpawnAreaSnapshot(m_ViewpointIds, out var snapshot) && snapshot.availableCount > m_ViewpointIds.Length)
-            {
-                m_ViewpointIds = new int[snapshot.availableCount];
-                document.TryGetSpawnAreaSnapshot(m_ViewpointIds, out snapshot);
-            }
-            return snapshot;
+            if (document.TryGetSpawnAreaSnapshot(m_ViewpointIds, out var snapshot))
+                return snapshot;
+            if (snapshot.availableCount <= m_ViewpointIds.Length) return default;
+            m_ViewpointIds = new int[snapshot.availableCount];
+            return document.TryGetSpawnAreaSnapshot(m_ViewpointIds, out snapshot)
+                ? snapshot : default;
         }
         private void StartNative(Func<ImmDocument, IEnumerator> operation)
         {
