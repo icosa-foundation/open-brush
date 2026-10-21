@@ -203,9 +203,16 @@ namespace TiltBrush
         override protected void OnShow()
         {
             base.OnShow();
+            GlobalStencilSdfCache.InvalidateCache();
 
             // Refresh visibility with current state of stencil interaction.
             RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
+        }
+
+        protected override void OnHide()
+        {
+            GlobalStencilSdfCache.InvalidateCache();
+            base.OnHide();
         }
 
         virtual public void SetInUse(bool bInUse)
