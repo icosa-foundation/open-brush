@@ -117,7 +117,7 @@ namespace TiltBrush
             m_LoadingOverlay.SetActive(false);
 
             // Set the button index and clear any loaded model
-            m_ModelIndex = index;
+            base.SetPreset(null, index);
             SetDescriptionText(collection.Name);
             SetButtonTexture(collection.Thumbnail);
             DestroyModelPreview();
