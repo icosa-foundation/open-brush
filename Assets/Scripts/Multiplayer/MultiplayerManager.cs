@@ -294,10 +294,19 @@ namespace OpenBrush.Multiplayer
             bool successData = false;
             if (m_Manager != null) successData = await m_Manager.JoinRoom(RoomData);
 
-            bool successVoice = true;
-            if (m_IsVoiceEnabled && m_VoiceManager != null)
+            if (successData)
             {
-                successVoice = await m_VoiceManager.JoinRoom(RoomData);
+                // HTTP joins establish room ownership only during the data-room callback.
+                m_IsRoomVoiceEnabled = CalculateInitialRoomVoiceEnabled(
+                    isUserRoomOwner, !RoomData.voiceDisabled);
+                m_IsVoiceEnabled = m_IsLocalVoiceEnabled && m_IsRoomVoiceEnabled;
+            }
+
+            bool successVoice = true;
+            if (successData && m_IsVoiceEnabled && m_VoiceManager != null)
+            {
+                successVoice = await m_VoiceManager.Connect() &&
+                    await m_VoiceManager.JoinRoom(RoomData);
                 if (successVoice)
                 {
                     m_VoiceManager.StartSpeaking();
