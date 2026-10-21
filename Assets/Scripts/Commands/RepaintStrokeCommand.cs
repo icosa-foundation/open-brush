@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ namespace TiltBrush
             // Capture sculpting modifications before recreating the stroke discards its subset.
             SculptedGeometryData sculptedGeometryData =
                 new SculptedGeometryData(new List<Vector3>(), new List<Vector3>());
-            if (stroke.m_MeshIsEdited)
+            if (stroke.m_MeshIsEdited && stroke.m_BatchSubset != null)
             {
                 var batchSubset = stroke.m_BatchSubset;
                 batchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
@@ -85,11 +85,11 @@ namespace TiltBrush
             stroke.Uncreate();
             stroke.Recreate();
 
+            stroke.m_MeshIsEdited = false;
             if (sculptedGeometryData.vertices.Count > 0)
             {
-                stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
-                stroke.m_MeshIsEdited = true;
-                SketchMemoryScript.m_Instance.InsertSculptedGeometry(sculptedGeometryData, stroke);
+                stroke.m_MeshIsEdited = SketchMemoryScript.m_Instance.InsertSculptedGeometry(
+                    sculptedGeometryData, stroke);
             }
         }
 
