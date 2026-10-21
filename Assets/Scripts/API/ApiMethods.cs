@@ -1990,6 +1990,10 @@ namespace TiltBrush
         )]
         public static void ActivateJitterScript(string scriptName)
         {
+            if (!LuaManager.Instance.GetScriptNames(LuaApiCategory.JitterScript).Contains(scriptName))
+            {
+                throw new ArgumentException($"Unknown jitter script: {scriptName}", nameof(scriptName));
+            }
             LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.JitterScript, scriptName);
             LuaManager.Instance.EnableJitterScript(true);
         }
