@@ -247,6 +247,7 @@ namespace TiltBrush
             }
 
             SDFMeshAsset asset = ScriptableObject.CreateInstance<SDFMeshAsset>();
+            asset.hideFlags = HideFlags.DontSave;
 
             // IsoMesh only exposes asset creation in editor code. Keep this runtime bridge in one
             // place until the package exposes a supported constructor.

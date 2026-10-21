@@ -463,9 +463,49 @@ namespace TiltBrush
                 definition => new ComponentDefinition(definition)).ToList());
         }
 
+        private static readonly Dictionary<SDFMeshAsset, int> sm_RuntimeAssetUsers =
+            new Dictionary<SDFMeshAsset, int>();
+        private List<SDFMeshAsset> m_OwnedMeshAssets = new List<SDFMeshAsset>();
+
+        internal static List<SDFMeshAsset> RetainMeshAssets(
+            IEnumerable<ComponentDefinition> definitions)
+        {
+            var assets = definitions.Where(component => !component.IsPrimitive)
+                .Select(component => component.MeshAsset).Where(asset => asset != null &&
+                    (asset.hideFlags & HideFlags.DontSave) == HideFlags.DontSave)
+                .Distinct().ToList();
+            foreach (SDFMeshAsset asset in assets)
+            {
+                sm_RuntimeAssetUsers.TryGetValue(asset, out int count);
+                sm_RuntimeAssetUsers[asset] = count + 1;
+            }
+            return assets;
+        }
+
+        internal static void ReleaseMeshAssets(IEnumerable<SDFMeshAsset> assets)
+        {
+            foreach (SDFMeshAsset asset in assets)
+            {
+                if (asset == null || !sm_RuntimeAssetUsers.TryGetValue(asset, out int count))
+                {
+                    continue;
+                }
+                if (count > 1) { sm_RuntimeAssetUsers[asset] = count - 1; }
+                else
+                {
+                    sm_RuntimeAssetUsers.Remove(asset);
+                    if (Application.isPlaying) { Destroy(asset); }
+                    else { DestroyImmediate(asset); }
+                }
+            }
+        }
+
         internal void ReplaceComponents(IReadOnlyList<ComponentDefinition> definitions)
         {
             ValidateComponentDefinitions(definitions);
+            List<SDFMeshAsset> previousAssets = m_OwnedMeshAssets;
+            // Acquire before releasing previous components, since edits and clones share assets.
+            m_OwnedMeshAssets = RetainMeshAssets(definitions);
 
             foreach (SDFObject component in GetComponents())
             {
@@ -479,6 +519,7 @@ namespace TiltBrush
             {
                 CreateComponent(definitions[i]);
             }
+            ReleaseMeshAssets(previousAssets);
             RefreshSdf();
         }
 
@@ -1146,6 +1187,8 @@ namespace TiltBrush
 
         protected override void OnDestroy()
         {
+            ReleaseMeshAssets(m_OwnedMeshAssets);
+            m_OwnedMeshAssets.Clear();
             if (m_MeshGenerator != null)
             {
                 m_MeshGenerator.MeshGenerationFinished -= OnMeshGenerationFinished;

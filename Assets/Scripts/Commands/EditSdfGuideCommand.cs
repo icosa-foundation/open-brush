@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using IsoMesh;
 
 namespace TiltBrush
@@ -24,6 +25,7 @@ namespace TiltBrush
         private readonly SdfStencil m_Stencil;
         private readonly IReadOnlyList<SdfStencil.ComponentDefinition> m_Before;
         private readonly IReadOnlyList<SdfStencil.ComponentDefinition> m_After;
+        private readonly List<SDFMeshAsset> m_RetainedMeshAssets;
 
         internal EditSdfGuideCommand(
             SdfStencil stencil,
@@ -38,6 +40,13 @@ namespace TiltBrush
             m_After = new List<SdfStencil.ComponentDefinition>(
                 after ?? throw new ArgumentNullException(nameof(after)));
             SdfStencil.ValidateComponentDefinitions(m_After);
+            m_RetainedMeshAssets = SdfStencil.RetainMeshAssets(m_Before.Concat(m_After));
+        }
+
+        protected override void OnDispose()
+        {
+            SdfStencil.ReleaseMeshAssets(m_RetainedMeshAssets);
+            base.OnDispose();
         }
 
         public override bool NeedsSave => true;

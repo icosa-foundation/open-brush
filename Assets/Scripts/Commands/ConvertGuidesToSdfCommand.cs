@@ -69,6 +69,7 @@ namespace TiltBrush
             private readonly IReadOnlyList<SdfStencil.ComponentDefinition> m_Definitions;
             private readonly SketchGroupTag m_Group;
             private readonly bool m_Pinned;
+            private readonly List<IsoMesh.SDFMeshAsset> m_RetainedMeshAssets;
 
             internal ConfigureCreatedSdfCommand(
                 CreateWidgetCommand createCommand,
@@ -79,8 +80,15 @@ namespace TiltBrush
             {
                 m_CreateCommand = createCommand;
                 m_Definitions = definitions;
+                m_RetainedMeshAssets = SdfStencil.RetainMeshAssets(definitions);
                 m_Group = group;
                 m_Pinned = pinned;
+            }
+
+            protected override void OnDispose()
+            {
+                SdfStencil.ReleaseMeshAssets(m_RetainedMeshAssets);
+                base.OnDispose();
             }
 
             protected override void OnRedo()
