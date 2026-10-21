@@ -81,6 +81,7 @@ namespace TiltBrush
         void Start()
         {
             HandleTabButtonPressed(m_InitialTabButton);
+            OnSelectionChanged();
         }
 
         private void OnSelectionPoseChanged(TrTransform prev, TrTransform current)

@@ -30,20 +30,6 @@ public class InspectorTransformTab : InspectorBaseTab
 
     public EditableLabel m_LabelForScale;
 
-    private InspectorPanel m_ParentPanel;
-    private InspectorPanel ParentPanel
-    {
-        get
-        {
-            if (m_ParentPanel == null)
-            {
-                m_ParentPanel = GetComponentInParent<InspectorPanel>();
-            }
-            return m_ParentPanel;
-        }
-    }
-
-
     public override void OnSelectionPoseChanged()
     {
         if (ParentPanel.CurrentSelectionType == SelectionType.Nothing)

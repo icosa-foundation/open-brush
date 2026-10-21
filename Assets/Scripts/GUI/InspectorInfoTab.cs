@@ -19,13 +19,7 @@ using TMPro;
 
 public class InspectorInfoTab : InspectorBaseTab
 {
-    private InspectorPanel m_InspectorPanel;
     public TextMeshPro m_SummaryText;
-
-    void Start()
-    {
-        m_InspectorPanel = GetComponentInParent<InspectorPanel>();
-    }
 
     public override void OnSelectionChanged()
     {
@@ -43,7 +37,7 @@ public class InspectorInfoTab : InspectorBaseTab
             )
         );
 
-        switch (m_InspectorPanel.CurrentSelectionType)
+        switch (ParentPanel.CurrentSelectionType)
         {
             case SelectionType.Nothing:
                 m_SummaryText.text = "Nothing selected";
@@ -64,51 +58,51 @@ public class InspectorInfoTab : InspectorBaseTab
                 break;
 
             case SelectionType.Image:
-                if (m_InspectorPanel.CurrentSelectionCount == 1)
+                if (ParentPanel.CurrentSelectionCount == 1)
                 {
                     m_SummaryText.text = "1 image selected";
                 }
                 else
                 {
-                    m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} images selected";
+                    m_SummaryText.text = "{ParentPanel.CurrentSelectionCount} images selected";
                 }
                 break;
 
             case SelectionType.Video:
-                if (m_InspectorPanel.CurrentSelectionCount == 1)
+                if (ParentPanel.CurrentSelectionCount == 1)
                 {
                     m_SummaryText.text = "1 video selected";
                 }
                 else
                 {
-                    m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} videos selected";
+                    m_SummaryText.text = "{ParentPanel.CurrentSelectionCount} videos selected";
                 }
                 break;
 
             case SelectionType.Model:
-                if (m_InspectorPanel.CurrentSelectionCount == 1)
+                if (ParentPanel.CurrentSelectionCount == 1)
                 {
                     m_SummaryText.text = "1 model selected";
                 }
                 else
                 {
-                    m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} models selected";
+                    m_SummaryText.text = "{ParentPanel.CurrentSelectionCount} models selected";
                 }
                 break;
 
             case SelectionType.Guide:
-                if (m_InspectorPanel.CurrentSelectionCount == 1)
+                if (ParentPanel.CurrentSelectionCount == 1)
                 {
                     m_SummaryText.text = "1 guide selected";
                 }
                 else
                 {
-                    m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} guides selected";
+                    m_SummaryText.text = "{ParentPanel.CurrentSelectionCount} guides selected";
                 }
                 break;
 
             case SelectionType.Mixed:
-                m_SummaryText.text = "{m_InspectorPanel.CurrentSelectionCount} items selected";
+                m_SummaryText.text = "{ParentPanel.CurrentSelectionCount} items selected";
                 break;
         }
 

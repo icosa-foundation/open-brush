@@ -20,6 +20,11 @@ public abstract class InspectorBaseTab : MonoBehaviour
 {
     [NonSerialized] public InspectorTabButton TabButton;
 
+    private InspectorPanel m_ParentPanel;
+    protected InspectorPanel ParentPanel => m_ParentPanel != null
+        ? m_ParentPanel
+        : m_ParentPanel = GetComponentInParent<InspectorPanel>();
+
     public virtual void OnSelectionChanged()
     { }
 
