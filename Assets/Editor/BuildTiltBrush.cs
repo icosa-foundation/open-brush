@@ -1354,6 +1354,10 @@ static class BuildTiltBrush
             // XR_EXT_hand_interaction ignore it, leaving controller input unchanged.
             EnableRequiredFeature<
                 UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile>(settings);
+
+            // Alpha-blend passthrough (Steam Frame, Android XR). Runtimes that only list opaque
+            // blend modes leave it inactive.
+            EnableRequiredFeature<TiltBrush.EnvironmentBlendPassthroughFeature>(settings);
         }
 
         void EnableAndroidXrFeatures(UnityEngine.XR.OpenXR.OpenXRSettings settings)

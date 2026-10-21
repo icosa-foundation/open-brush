@@ -393,9 +393,15 @@ namespace TiltBrush
                 return PassthroughMode.FBPassthrough;
             }
 
-            // Runtimes that composite the real world for us (additive or alpha-blend
-            // environment blend modes, e.g. Android XR) expose no passthrough extension;
-            // they just report a non-opaque display.
+            // Runtimes that composite the camera feed behind the app's alpha (Steam Frame,
+            // Android XR, Varjo) expose no passthrough extension. They list alpha blend among
+            // their environment blend modes but start opaque until the app requests it.
+            if (EnvironmentBlendPassthroughFeature.AlphaBlendSupported)
+            {
+                return PassthroughMode.OpenXREnvionmentBlendMode;
+            }
+
+            // Optical see-through displays are never opaque, so the real world is always there.
             var display = loader.GetLoadedSubsystem<XRDisplaySubsystem>();
             if (display != null && display.running && !display.displayOpaque)
             {
