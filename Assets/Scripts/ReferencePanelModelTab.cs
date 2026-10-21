@@ -191,10 +191,9 @@ namespace TiltBrush
                 string label = $"Viewpoint {(index < 0 ? "-" : (index + 1).ToString())} / {count}";
                 if (m_ViewpointLabel.text != label) m_ViewpointLabel.text = label;
             }
-            // Visiting the active viewpoint again realigns the user after they have moved.
             foreach (var button in m_PlaybackButtons)
                 if (button is ModelImmNavigationButton navigation && navigation.IsViewpoint)
-                    button.SetButtonAvailable(available && count > 0);
+                    button.SetButtonAvailable(available && count > 0 && (!navigation.MovesToViewpoint || index >= 0));
         }
 
         public void CycleChapter(int direction)
@@ -209,6 +208,17 @@ namespace TiltBrush
             var playback = SelectedPlayback;
             if (playback == null || !playback.Initialized || playback.IsRestoring || playback.Document == null) return;
             playback.CycleViewpoint(direction);
+            RefreshModelControls();
+        }
+
+        public void MoveToSelectedViewpoint()
+        {
+            var playback = SelectedPlayback;
+            if (playback == null || !playback.Initialized || playback.IsRestoring || playback.Document == null) return;
+            playback.GetViewpointNavigationState(out int index, out _);
+            if (index < 0) return;
+            try { playback.NavigateToSelectedViewpoint(); }
+            catch (InvalidOperationException error) { OutputWindowScript.Error(error.Message); }
             RefreshModelControls();
         }
 

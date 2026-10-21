@@ -8,14 +8,17 @@ namespace TiltBrush
     {
         [SerializeField] private bool m_IsNext;
         [SerializeField] private bool m_IsViewpoint;
+        [SerializeField] private bool m_MoveToViewpoint;
 
-        public bool IsViewpoint => m_IsViewpoint;
+        public bool IsViewpoint => m_IsViewpoint || m_MoveToViewpoint;
+        public bool MovesToViewpoint => m_MoveToViewpoint;
 
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
             var tab = GetComponentInParent<ReferencePanelModelTab>();
-            if (m_IsViewpoint) tab?.CycleViewpoint(m_IsNext ? 1 : -1);
+            if (m_MoveToViewpoint) tab?.MoveToSelectedViewpoint();
+            else if (m_IsViewpoint) tab?.CycleViewpoint(m_IsNext ? 1 : -1);
             else tab?.CycleChapter(m_IsNext ? 1 : -1);
         }
     }
