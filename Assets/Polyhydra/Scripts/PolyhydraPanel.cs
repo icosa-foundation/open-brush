@@ -185,7 +185,9 @@ namespace TiltBrush
             // Full directory and filename but with "json" extension removed
 
             get => m_CurrentPresetPath;
-            set => m_CurrentPresetPath = value.Replace(".json", "");
+            set => m_CurrentPresetPath = value != null &&
+                string.Equals(Path.GetExtension(value), ".json", StringComparison.OrdinalIgnoreCase)
+                    ? Path.ChangeExtension(value, null) : value;
         }
         public int CurrentPresetPage { get; set; }
         public int CurrentOperatorPage { get; set; }
