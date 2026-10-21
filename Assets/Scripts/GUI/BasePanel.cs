@@ -419,6 +419,14 @@ namespace TiltBrush
             return m_MeshCollider != null;
         }
 
+        public bool RaycastAgainstDetachedUI(Ray ray, out RaycastHit hitInfo, float distance)
+        {
+            hitInfo = default;
+            return m_ActivePopUp == null && m_TempPopUpCollider == null &&
+                m_UIComponentManager.RaycastAgainstCustomColliders(ray, out hitInfo, distance,
+                    detachedOnly: true);
+        }
+
         virtual public bool RaycastAgainstMeshCollider(Ray rRay, out RaycastHit rHitInfo, float fDist)
         {
             rHitInfo = new RaycastHit();
@@ -1374,6 +1382,12 @@ namespace TiltBrush
             // Cache input ray for this update.
             Vector3 vReticlePos = SketchControlsScript.m_Instance.GetUIReticlePos();
             m_ReticleSelectionRay = new Ray(vReticlePos - transform.forward, transform.forward);
+            // Detached controls must use the pointing ray rather than a projection through the panel.
+            Ray pointingRay = new Ray(vHitPoint - vToPanel, vToPanel);
+            if (RaycastAgainstDetachedUI(pointingRay, out _, 100.0f))
+            {
+                m_ReticleSelectionRay = pointingRay;
+            }
 
             if (m_ActivePopUp != null)
             {
