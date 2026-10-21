@@ -215,7 +215,7 @@ namespace TiltBrush
             var files = new List<QuillFileInfo>();
             if (Directory.Exists(m_CurrentDirectory))
             {
-                foreach (string path in Directory.GetFiles(m_CurrentDirectory, "*.imm", SearchOption.TopDirectoryOnly))
+                foreach (string path in AndroidDirectStorage.GetFilesWithExtension(m_CurrentDirectory, ".imm", SearchOption.TopDirectoryOnly))
                 {
                     if (!string.IsNullOrEmpty(m_SearchText) &&
                         Path.GetFileNameWithoutExtension(path).IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) < 0)
@@ -230,7 +230,7 @@ namespace TiltBrush
                     }
                 }
 
-                foreach (string path in Directory.GetDirectories(m_CurrentDirectory, "*", SearchOption.TopDirectoryOnly))
+                foreach (string path in AndroidDirectStorage.GetDirectories(m_CurrentDirectory))
                 {
                     if (!string.IsNullOrEmpty(m_SearchText) &&
                         Path.GetFileName(path).IndexOf(m_SearchText, StringComparison.OrdinalIgnoreCase) < 0)

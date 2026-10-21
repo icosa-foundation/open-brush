@@ -3823,6 +3823,8 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 415628836388560896
     m_Localized: Dark
+    m_Metadata:
+      m_Items: []
   - m_Id: 475814063085543424
     m_Localized: Drop Portal
     m_Metadata:
@@ -3987,6 +3989,14 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 543158158396841984
     m_Localized: Captures all widgets and also the current camera path if visible
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843705548800
+    m_Localized: Rotate panels left
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Localized: Rotate panels right
     m_Metadata:
       m_Items: []
   references:

@@ -659,7 +659,9 @@ namespace TiltBrush
                 case SketchCommands.Sensitivity:
                     return Mathf.Abs(Mouse.current.scroll.x.ReadValue()) > m_InputThreshold;
                 case SketchCommands.Panic:
-                    return GetMouseButton(1) || Wand.GetCommand(rCommand);
+                    return GetMouseButton(1) || (AndroidXRHandBridge.UseHand(false)
+                        ? AndroidXRHandBridge.LeftPinchHeld
+                        : Wand.GetCommand(rCommand));
                 case SketchCommands.MultiCamSelection:
                     return Brush.GetCommand(rCommand);
                 case SketchCommands.ShowPinCushion:
