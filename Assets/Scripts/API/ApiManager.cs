@@ -838,18 +838,30 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 {
                     listener.Value.SendText(cmd);
                 }
-                else
+                else if (listener.Value.State == WebSocketState.Connecting)
                 {
-                    m_PendingOutgoingWebsocketCommands[listener.Key].Enqueue(cmd);
+                    // Bound the startup backlog even if the connection never completes.
+                    Queue<string> pending = m_PendingOutgoingWebsocketCommands[listener.Key];
+                    if (pending.Count >= 256) pending.Dequeue();
+                    pending.Enqueue(cmd);
                 }
             }
         }
 
         private void FlushPendingOutgoingWebsocketCommands()
         {
-            foreach (var listener in m_OutgoingWebsocketListeners ??
-                Enumerable.Empty<KeyValuePair<Uri, WebSocket>>())
+            // Snapshot the listeners so failed/disconnected sockets can be removed.
+            foreach (var listener in m_OutgoingWebsocketListeners?.ToArray() ??
+                Array.Empty<KeyValuePair<Uri, WebSocket>>())
             {
+                if (listener.Value.State == WebSocketState.Closed ||
+                    listener.Value.State == WebSocketState.Closing)
+                {
+                    m_PendingOutgoingWebsocketCommands.Remove(listener.Key);
+                    m_OutgoingWebsocketListeners.Remove(listener.Key);
+                    Debug.LogWarning($"[OB_REVIEW_WEBSOCKET] Removed disconnected listener {listener.Key}");
+                    continue;
+                }
                 if (listener.Value.State != WebSocketState.Open) continue;
 
                 Queue<string> pendingCommands = m_PendingOutgoingWebsocketCommands[listener.Key];
