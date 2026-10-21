@@ -104,6 +104,7 @@ namespace TiltBrush
             parentBatch.m_Geometry.EnsureGeometryResident();
 
             var newVertices = parentBatch.m_Geometry.m_Vertices.GetRange(startIndex, vertLength);
+            bool modified = false;
             // Tool position adjusted by canvas transformations
             for (int i = 0; i < vertLength; i++)
             { // This loop is expensive
@@ -111,15 +112,16 @@ namespace TiltBrush
                 Vector3 newVert = m_ActiveSubTool.ManipulateVertex(newVertices[i], m_bIsPushing, m_CurrentCanvas.Pose, m_ToolTransform, GetSize(), rGroup);
 
                 // if the vertex pos changed
-                if (Vector3.Distance(newVert, newVertices[i]) > Mathf.Epsilon)
+                if ((newVert - newVertices[i]).sqrMagnitude > 0f)
                 {
-                    rGroup.m_Stroke.m_MeshIsEdited = true;
-                    PlayModifyStrokeSound();
-                    InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
-
+                    modified = true;
                     newVertices[i] = newVert;
                 }
             }
+            if (!modified) return false;
+            rGroup.m_Stroke.m_MeshIsEdited = true;
+            PlayModifyStrokeSound();
+            InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
             SketchMemoryScript.m_Instance.MemorizeStrokeSculpt(rGroup, newVertices, startIndex, !m_AtLeastOneModificationMade);
 
             m_AtLeastOneModificationMade = true;
