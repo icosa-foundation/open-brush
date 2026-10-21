@@ -185,6 +185,11 @@ namespace TiltBrush
                 GenerateSDFAtRuntime();
             }
 
+            if (m_SDFMeshAsset != null)
+            {
+                SetupBoundsCollider();
+            }
+
             // Determine triangle threshold based on platform
             int threshold;
 #if UNITY_ANDROID || UNITY_IOS || MOBILE_INPUT
@@ -532,6 +537,25 @@ namespace TiltBrush
             {
                 foreach (Mesh baked in bakedMeshes) { Destroy(baked); }
             }
+        }
+
+        private void SetupBoundsCollider()
+        {
+            Collider previousCollider = m_Collider;
+            var colliderObject = new GameObject("Model Guide Bounds Collider");
+            colliderObject.transform.SetParent(transform, false);
+            colliderObject.layer = previousCollider.gameObject.layer;
+            var boundsCollider = colliderObject.AddComponent<BoxCollider>();
+            boundsCollider.sharedMaterial = previousCollider.sharedMaterial;
+            boundsCollider.isTrigger = previousCollider.isTrigger;
+            boundsCollider.enabled = previousCollider.enabled;
+            boundsCollider.center = m_SourceMesh.bounds.center;
+            boundsCollider.size = Vector3.Max(m_SourceMesh.bounds.size, Vector3.one * 0.0001f);
+            m_BoxCollider = boundsCollider;
+            m_Collider = boundsCollider;
+            m_GrabCollider = boundsCollider;
+            previousCollider.enabled = false;
+            Destroy(previousCollider);
         }
 
         private void SetupMeshCollider()
