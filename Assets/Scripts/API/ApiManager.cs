@@ -178,6 +178,42 @@ Success. If you are not automatically redirected, please visit <a href='{success
             m_BrushesJson = JsonConvert.SerializeObject(brushNameList, Formatting.Indented);
         }
 
+        private void OnDestroy()
+        {
+            StopOutgoingWebsocketListeners();
+        }
+
+        private void OnApplicationQuit()
+        {
+            StopOutgoingWebsocketListeners();
+        }
+
+        private void StopOutgoingWebsocketListeners()
+        {
+            if (m_OutgoingWebsocketListeners == null) return;
+
+            foreach (var listener in m_OutgoingWebsocketListeners)
+            {
+                try
+                {
+#if !UNITY_WEBGL || UNITY_EDITOR
+                    // Cancellation also terminates a connection that has not opened yet.
+                    listener.Value.CancelConnection();
+#else
+                    _ = listener.Value.Close();
+#endif
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning(
+                        $"[OB_WS_LISTENERS] Unable to close {listener.Key}: {exception.Message}");
+                }
+            }
+
+            m_OutgoingWebsocketListeners.Clear();
+            m_PendingOutgoingWebsocketCommands?.Clear();
+        }
+
         public void ResetBrushTransform()
         {
             // Resets the "turtle" transform back to it's original values
