@@ -21,10 +21,11 @@ import json
 import os
 import uuid
 import sys
-from pprint import pprint
 
-properties_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                              os.path.join('Brushes', 'ExportedProperties'))
+properties_dir = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    os.path.join("Brushes", "ExportedProperties"),
+)
 
 
 def list_brushes(args):
@@ -42,7 +43,7 @@ def recursive_update(d, u):
     return d
 
 
-def analyze_brushes(args):
+def analyze_brushes(_args):
     master_dict = {}
     prop_dict = {}
     brush_dict = {}
@@ -56,31 +57,32 @@ def analyze_brushes(args):
     for file in os.listdir(properties_dir):
         properties_filename = os.path.join(properties_dir, file)
         with open(properties_filename, "r") as properties_file:
-            has_anything = False
             src_brush_data = json.load(properties_file)
             name = src_brush_data["Name"]
-            for section_key in master_dict['Material']:
-                section = master_dict['Material'][section_key]
-                if isinstance(section, collections.abc.Mapping):
-                    for prop in section:
-                        for subsection in ['ColorProperties', 'FloatProperties', 'TextureProperties',
-                                           'VectorProperties']:
-                            result = (prop in src_brush_data['Material'][subsection])
-                            if result:
-                                has_anything = True
-                                # print("{} has {}/{}".format(name, section_key, prop))
+            for section_key in master_dict["Material"]:
+                section = master_dict["Material"][section_key]
+                if not isinstance(section, collections.abc.Mapping):
+                    continue
+                for prop in section:
+                    for subsection in [
+                        "ColorProperties",
+                        "FloatProperties",
+                        "TextureProperties",
+                        "VectorProperties",
+                    ]:
+                        result = prop in src_brush_data["Material"][subsection]
+                        if result:
+                            # print("{} has {}/{}".format(name, section_key, prop))
 
-                                if prop not in prop_dict:
-                                    prop_dict[prop] = []
-                                prop_dict[prop].append(name)
+                            if prop not in prop_dict:
+                                prop_dict[prop] = []
+                            prop_dict[prop].append(name)
 
-                                if name not in brush_dict:
-                                    brush_dict[name] = []
-                                brush_dict[name].append(prop)
-            print(name, src_brush_data['Material']['Shader'], sep=",")
+                            if name not in brush_dict:
+                                brush_dict[name] = []
+                            brush_dict[name].append(prop)
+            print(name, src_brush_data["Material"]["Shader"], sep=",")
 
-            # if not has_anything:
-            #     print("{} has no props".format(name))
         # print()
         #
         # for k, v in prop_dict.items():
@@ -121,13 +123,22 @@ def analyze_brushes(args):
         #     print()
         # print()
 
+
 def create(args):
     properties_filename = os.path.join(properties_dir, args.brush + ".txt")
     if not os.path.exists(properties_filename):
-        print(f"Error - '{args.brush}' is not a valid base brush - use userbrush list to list valid brushes.")
+        print(
+            f"Error - '{args.brush}' is not a valid base brush - use userbrush list to list valid brushes."
+        )
         sys.exit()
     guid = str(uuid.uuid4())
-    dst_folder = os.path.join(os.path.expanduser('~'), 'Documents', 'Open Brush', 'Brushes', args.name + "_" + guid)
+    dst_folder = os.path.join(
+        os.path.expanduser("~"),
+        "Documents",
+        "Open Brush",
+        "Brushes",
+        args.name + "_" + guid,
+    )
     dst_cfg = os.path.join(dst_folder, "Brush.cfg")
     os.makedirs(dst_folder, exist_ok=True)
     with open(properties_filename, "r") as properties_file:
@@ -145,25 +156,27 @@ def create(args):
         with open(dst_cfg, "w") as config_file:
             json.dump(brush_data, config_file, indent=4)
 
-            print(f'Created brush config at {dst_cfg}.')
+            print(f"Created brush config at {dst_cfg}.")
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.set_defaults(func=lambda x: parser.parse_args(['--help']))
-    subparsers = parser.add_subparsers(help='command help', dest='subparser_name')
-    parser_list = subparsers.add_parser('list', help='List available base brushes')
+    parser.set_defaults(func=lambda x: parser.parse_args(["--help"]))
+    subparsers = parser.add_subparsers(help="command help", dest="subparser_name")
+    parser_list = subparsers.add_parser("list", help="List available base brushes")
     parser_list.set_defaults(func=list_brushes)
-    parser_analyze = subparsers.add_parser('analyze', help='Analyze available base brushes')
+    parser_analyze = subparsers.add_parser(
+        "analyze", help="Analyze available base brushes"
+    )
     parser_analyze.set_defaults(func=analyze_brushes)
-    parser_create = subparsers.add_parser('create', help='Create a new user brush')
-    parser_create.add_argument('name', help='Name of the new brush')
-    parser_create.add_argument('brush', help='Brush to base the new one off')
+    parser_create = subparsers.add_parser("create", help="Create a new user brush")
+    parser_create.add_argument("name", help="Name of the new brush")
+    parser_create.add_argument("brush", help="Brush to base the new one off")
     parser_create.set_defaults(func=create)
     args = parser.parse_args()
 
     args.func(args)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
