@@ -90,6 +90,9 @@ namespace TiltBrush
         public static CameraPathMetadata[] GetAnimationPaths()
         {
             return WidgetManager.m_Instance.AnimationPathWidgets
+                .Where(apw => apw.WidgetScript.ShouldSerialize() &&
+                    App.Scene.animationUI_manager.GetAnimationPathLocation(
+                        apw.WidgetScript.Path).Item1 >= 0)
                 .Select(apw => apw.WidgetScript.AsSerializable())
                 .ToArray();
         }

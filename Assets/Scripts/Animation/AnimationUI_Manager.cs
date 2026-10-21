@@ -1576,6 +1576,21 @@ namespace TiltBrush.FrameAnimation
         }
 #endif
 
+        public (int, int) GetAnimationPathLocation(CameraPath path)
+        {
+            EnsureSparseTimeline();
+            for (int track = 0; track < m_SparseTimeline.Tracks.Count; track++)
+            {
+                if (m_SparseTimeline.Tracks[track].Deleted) continue;
+                foreach (var span in m_SparseTimeline.Tracks[track].Spans)
+                {
+                    if (!span.Value.Deleted && span.Value.PathToken is CameraPathWidget widget &&
+                        widget.Path == path) return (track, span.StartFrame);
+                }
+            }
+            return (-1, -1);
+        }
+
         public (int, int) GetSerializableTimelineLocation((int, int) runtimeLocation)
         {
             EnsureSparseTimeline();

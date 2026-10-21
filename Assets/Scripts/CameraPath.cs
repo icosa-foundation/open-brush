@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1796,7 +1796,8 @@ namespace TiltBrush
         {
             (int, int) serializedTimelineLocation = belongsToAnimation &&
                 App.Scene?.animationUI_manager != null
-                ? App.Scene.animationUI_manager.GetSerializableTimelineLocation(timelineLocation)
+                ? App.Scene.animationUI_manager.GetSerializableTimelineLocation(
+                    App.Scene.animationUI_manager.GetAnimationPathLocation(this))
                 : timelineLocation;
             return new CameraPathMetadata()
             {
