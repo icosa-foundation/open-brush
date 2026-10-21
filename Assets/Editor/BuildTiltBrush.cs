@@ -1401,7 +1401,11 @@ static class BuildTiltBrush
             EnableRequiredFeature<
                 UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature>(
                 settings);
-            DisableFeature<OpenXR.Extensions.FBPassthrough>(settings);
+            // XR_FB_passthrough is not Quest-only: Pico and other runtimes expose it too, and
+            // runtimes without it leave the feature disabled at instance creation. Its
+            // com.oculus.feature.PASSTHROUGH declaration is forced to required=false by
+            // AndroidStoreManifest, so it does not filter Play devices.
+            EnableRequiredFeature<OpenXR.Extensions.FBPassthrough>(settings);
             EnableRequiredFeature<OpenXR.Extensions.METABoundaryVisibility>(settings);
             DisableFeature<
                 UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
