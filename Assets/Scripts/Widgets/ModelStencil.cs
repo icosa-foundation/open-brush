@@ -99,6 +99,12 @@ namespace TiltBrush
         {
             m_Type = StencilType.Custom;
             base.Awake();
+            foreach (Renderer placeholder in m_TintableMeshes)
+            {
+                placeholder.enabled = false;
+            }
+            m_TintableMeshes = Array.Empty<Renderer>();
+            m_HighlightMeshFilters = Array.Empty<MeshFilter>();
         }
 
         protected override void Start()
@@ -159,6 +165,9 @@ namespace TiltBrush
             m_SourceVertices = m_SourceMesh.vertices;
             m_SourceTriangles = m_SourceMesh.triangles;
             m_TotalTriangleCount = m_SourceTriangles.Length / 3;
+            m_TintableMeshes = m_ModelInstance.GetComponentsInChildren<Renderer>();
+            m_HighlightMeshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
+            RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
             // Generate SDF at runtime if not manually assigned
             if (m_SDFMeshAsset == null)
             {
@@ -354,6 +363,12 @@ namespace TiltBrush
             }
             outputModeField.SetValue(mainSettings, OutputMode.MeshFilter);
             mainSettings.AutoUpdate = true;
+            m_TintableMeshes = new Renderer[] { m_MeshGenerator.MeshRenderer };
+            m_HighlightMeshFilters = new[] {
+                m_MeshGenerator.MeshRenderer.GetComponent<MeshFilter>()
+            };
+            HierarchyUtils.RecursivelySetMaterialBatchID(meshGeneratorObject.transform, m_BatchId);
+            RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
 
             // AlgorithmSettings: Set isosurface extraction type
             var algorithmSettings = m_MeshGenerator.AlgorithmSettings;
