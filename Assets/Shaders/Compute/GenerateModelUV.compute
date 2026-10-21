@@ -14,12 +14,22 @@ uint vertexCount;
 // Mapping mode: 0 for planar, 1 for box, 2 for cylinder
 int mappingMode;
 
+float NormalizeAxis(float value, float minimum, float maximum)
+{
+    return maximum > minimum ? (value - minimum) / (maximum - minimum) : 0.5;
+}
+
+float3 SafeDirection(float3 offset)
+{
+    float lengthSquared = dot(offset, offset);
+    return lengthSquared > 0 ? offset * rsqrt(lengthSquared) : float3(0, 1, 0);
+}
 float2 PlanarMap(uint index)
 {
     float2 uv;
     float3 pos = positionBuffer[index];
-    uv.x = (pos.x - minX) / (maxX - minX);
-    uv.y = (pos.z - minZ) / (maxZ - minZ);
+    uv.x = NormalizeAxis(pos.x, minX, maxX);
+    uv.y = NormalizeAxis(pos.z, minZ, maxZ);
     return uv;
 }
 
@@ -27,27 +37,26 @@ float2 BoxMap(uint index)
 {
     float3 center = float3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
     float3 position = positionBuffer[index];
-    float3 direction = normalize(position - center);
-    float3 localPos = position - center;
+    float3 direction = SafeDirection(position - center);
     float2 uv;
 
     if(abs(direction.x) > abs(direction.y) && abs(direction.x) > abs(direction.z)) // X-axis is dominant
     {
-        uv = localPos.yz;
-        uv.x = (uv.x - minY) / (maxY - minY);
-        uv.y = (uv.y - minZ) / (maxZ - minZ);
+        uv = position.yz;
+        uv.x = NormalizeAxis(uv.x, minY, maxY);
+        uv.y = NormalizeAxis(uv.y, minZ, maxZ);
     }
     else if(abs(direction.y) > abs(direction.x) && abs(direction.y) > abs(direction.z)) // Y-axis is dominant
     {
-        uv = localPos.xz;
-        uv.x = (uv.x - minX) / (maxX - minX);
-        uv.y = (uv.y - minZ) / (maxZ - minZ);
+        uv = position.xz;
+        uv.x = NormalizeAxis(uv.x, minX, maxX);
+        uv.y = NormalizeAxis(uv.y, minZ, maxZ);
     }
     else // Z-axis is dominant
     {
-        uv = localPos.xy;
-        uv.x = (uv.x - minX) / (maxX - minX);
-        uv.y = (uv.y - minY) / (maxY - minY);
+        uv = position.xy;
+        uv.x = NormalizeAxis(uv.x, minX, maxX);
+        uv.y = NormalizeAxis(uv.y, minY, maxY);
     }
 
     // Ensure UV coordinates are within the [0, 1] range
@@ -61,7 +70,7 @@ float2 CylinderMap(uint index)
 {
     float3 center = float3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
     float3 position = positionBuffer[index];
-    float3 direction = normalize(position - center);
+    float3 direction = SafeDirection(position - center);
 
     // Check the angle with the up vector to decide on mapping type
     float dotUp = dot(direction, float3(0, 1, 0));
@@ -69,14 +78,14 @@ float2 CylinderMap(uint index)
     // Use planar mapping for top/bottom cap
     if (abs(dotUp) > capThreshold)
     {
-        float u = (position.x - minX) / (maxX - minX);
-        float v = (position.z - minZ) / (maxZ - minZ);
+        float u = NormalizeAxis(position.x, minX, maxX);
+        float v = NormalizeAxis(position.z, minZ, maxZ);
         return float2(u, v);
     }
 
     float angle = atan2(direction.z, direction.x); // angle around the y-axis from z to x-axis
     float u = angle / (2 * 3.14159265f) + 0.5f; // Normalize angle to [0, 1]
-    float v = (position.y - minY) / (maxY - minY);
+    float v = NormalizeAxis(position.y, minY, maxY);
     return float2(u, v);
 }
 
@@ -110,7 +119,7 @@ float2 SphericalMap(uint index)
 {
     const float3 position = positionBuffer[index];
     const float3 center = float3((minX + maxX) / 2, (minY + maxY) / 2, (minZ + maxZ) / 2);
-    float3 direction = normalize(position - center);
+    float3 direction = SafeDirection(position - center);
 
     // Apply rotation
     // float3x3 rotationMatrix = RotationMatrix(angleX, angleY, angleZ);
@@ -119,7 +128,7 @@ float2 SphericalMap(uint index)
     // Calculate spherical coordinates
     // theta is the angle down from the north pole
     // phi is the angle from the prime meridian on the equator
-    float theta = acos(direction.y); // angle down from the y-axis
+    float theta = acos(clamp(direction.y, -1.0, 1.0)); // angle down from the y-axis
     float phi = atan2(direction.z, direction.x); // angle around the y-axis from z to x-axis
 
     // Normalize theta and phi to get u, v coordinates
@@ -136,7 +145,7 @@ void CSMain (uint3 id : SV_DispatchThreadID)
 {
     if (id.x >= vertexCount) return; // Bounds check
 
-    float2 uv;
+    float2 uv = float2(0.5, 0.5);
 
     if(mappingMode == 0) // Planar mapping
     {
