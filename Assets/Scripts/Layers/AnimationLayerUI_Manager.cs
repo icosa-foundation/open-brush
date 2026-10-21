@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -180,13 +180,13 @@ namespace TiltBrush.Layers
         public void DeleteLayer(int index)
         {
             var canvas = m_Canvases[index];
-            if (canvas == App.Scene.MainCanvas) return; // Don't delete the main canvas
+            if (canvas == App.Scene.CurrentMainCanvas) return; // Don't delete the main canvas
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(canvas));
         }
 
         public void DeleteLayerGeneral()
         {
-            if (App.Scene.ActiveCanvas == App.Scene.MainCanvas) return; // Don't delete the main canvas
+            if (App.Scene.ActiveCanvas == App.Scene.CurrentMainCanvas) return; // Don't delete the main canvas
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new DeleteLayerCommand(App.Scene.ActiveCanvas));
             if (App.Scene.animationUI_manager != null)
             {

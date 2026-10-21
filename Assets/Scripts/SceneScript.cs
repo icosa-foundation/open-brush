@@ -151,6 +151,12 @@ namespace TiltBrush
 
         /// The initial start-up canvas; guaranteed to always exist
         public CanvasScript MainCanvas { get { return m_MainCanvas; } }
+        private CanvasScript m_CurrentMainCanvas;
+        public CanvasScript CurrentMainCanvas
+        {
+            get => m_CurrentMainCanvas != null ? m_CurrentMainCanvas : MainCanvas;
+            set => m_CurrentMainCanvas = value;
+        }
         public CanvasScript SelectionCanvas { get { return m_SelectionCanvas; } }
         public Transform CanvasTransformPrefab { get { return m_CanvasTransformPrefab; } }
 
@@ -159,6 +165,7 @@ namespace TiltBrush
             get
             {
                 yield return MainCanvas;
+                if (CurrentMainCanvas != MainCanvas) yield return CurrentMainCanvas;
                 if (SelectionCanvas != null)
                 {
                     yield return SelectionCanvas;
@@ -179,7 +186,7 @@ namespace TiltBrush
         {
             get
             {
-                yield return MainCanvas;
+                yield return CurrentMainCanvas;
 
                 if (m_LayerCanvases != null)
                 {
@@ -203,6 +210,7 @@ namespace TiltBrush
             }
             m_LayerCanvases = new List<CanvasScript>();
             m_DeletedLayers = new HashSet<int>();
+            m_CurrentMainCanvas = MainCanvas;
             m_ActiveCanvas = MainCanvas;
             if (notify) NotifyLayerCanvasesUpdate();
         }
@@ -312,7 +320,7 @@ namespace TiltBrush
         // Destructive delete - no undo possible
         public void DestroyLayer(CanvasScript layer)
         {
-            if (layer == MainCanvas) return;
+            if (layer == MainCanvas || layer == CurrentMainCanvas) return;
             m_LayerCanvases.Remove(layer);
             DestroyCanvas(layer);
         }
@@ -458,7 +466,7 @@ namespace TiltBrush
         {
             // Layers are numbered 0=Main then 1, 2, 3
             if (layerIndex == 0)
-                return App.Scene.MainCanvas;
+                return CurrentMainCanvas;
 
             for (var i = m_LayerCanvases.Count; i < layerIndex; ++i)
                 AddLayerNow();
@@ -480,7 +488,7 @@ namespace TiltBrush
 
         public void MarkLayerAsDeleted(CanvasScript layer)
         {
-            if (layer == MainCanvas) return;
+            if (layer == MainCanvas || layer == CurrentMainCanvas) return;
             m_DeletedLayers.Add(GetIndexOfCanvas(layer).Item1 - 1);
             NotifyLayerCanvasesUpdate();
 
@@ -489,7 +497,7 @@ namespace TiltBrush
 
         public void RenameLayer(CanvasScript layer, string newName)
         {
-            if (layer == MainCanvas) return;
+            if (layer == MainCanvas || layer == CurrentMainCanvas) return;
             var location = GetIndexOfCanvas(layer);
             if (animationUI_manager != null && location.Item1 >= 0)
             {

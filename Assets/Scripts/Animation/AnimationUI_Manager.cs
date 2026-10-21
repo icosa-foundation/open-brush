@@ -952,7 +952,7 @@ namespace TiltBrush.FrameAnimation
         private void DestroyTimelineCanvas(
             CanvasScript canvas, IEnumerable<Stroke> createdStrokes = null, bool force = false)
         {
-            if (canvas == null) return;
+            if (canvas == null || canvas == App.Scene.MainCanvas) return;
             bool isDrawing = m_Drawings.TryGetDrawingId(
                 canvas, out AnimationDrawingId drawingId);
             if (!force && !isDrawing && App.Scene != null && App.Scene.ActiveCanvas == canvas)
@@ -2287,7 +2287,7 @@ namespace TiltBrush.FrameAnimation
 
                 if (i == 0)
                 {
-                    App.Scene.m_MainCanvas = Timeline[i].Frames[frameIndex].Canvas;
+                    App.Scene.CurrentMainCanvas = Timeline[i].Frames[frameIndex].Canvas;
                     continue;
                 }
                 CanvasScript canvas = Timeline[i].Frames[frameIndex].Canvas;
@@ -2577,7 +2577,7 @@ namespace TiltBrush.FrameAnimation
         {
             CanvasScript newCanvas = App.Scene.AddCanvas();
             newCanvas.gameObject.name = oldCanvas.gameObject.name;
-            newCanvas.LocalPose = oldCanvas.LocalPose;
+            newCanvas.LocalPose = GetCanvasBasePose(oldCanvas);
             newCanvas.gameObject.SetActive(oldCanvas.gameObject.activeSelf);
 
             newStrokes = oldStrokes
