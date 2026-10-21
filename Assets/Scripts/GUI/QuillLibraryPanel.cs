@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -239,8 +240,9 @@ namespace TiltBrush
             }
             if (m_NativeImmButton != null)
             {
-                m_NativeImmButton.gameObject.SetActive(hasSelection);
-                m_NativeImmButton.SetButtonAvailable(hasSelection && !isDetecting);
+                bool hasNativeImm = GetSelectedNativeImmPath() != null;
+                m_NativeImmButton.gameObject.SetActive(hasNativeImm);
+                m_NativeImmButton.SetButtonAvailable(hasNativeImm && !isDetecting);
             }
             if (m_MergeButton != null)
             {
@@ -306,14 +308,29 @@ namespace TiltBrush
 
         public void OnNativeImmButtonPressed()
         {
-            if (m_SelectedFile == null) return;
-            string path = m_SelectedFile.FullPath;
-            if (m_SelectedFile.SourceType == QuillSourceType.Quill)
-            {
-                var immFiles = System.IO.Directory.GetFiles(path, "*.imm");
-                if (immFiles.Length > 0) path = immFiles[0];
-            }
+            string path = GetSelectedNativeImmPath();
+            if (path == null) return;
             _LoadFile(path, -1, nativeImm: true);
+        }
+
+        private string GetSelectedNativeImmPath()
+        {
+            if (m_SelectedFile == null) return null;
+            string path = m_SelectedFile.FullPath;
+            if (System.IO.File.Exists(path) &&
+                string.Equals(System.IO.Path.GetExtension(path), ".imm",
+                    System.StringComparison.OrdinalIgnoreCase))
+            {
+                return path;
+            }
+            if (m_SelectedFile.SourceType != QuillSourceType.Quill ||
+                !System.IO.Directory.Exists(path)) return null;
+            try
+            {
+                return System.IO.Directory.EnumerateFiles(path, "*.imm").FirstOrDefault();
+            }
+            catch (System.IO.IOException) { return null; }
+            catch (System.UnauthorizedAccessException) { return null; }
         }
 
         private void _LoadFile(string filePath, int chapterIndex, bool nativeImm = false)
