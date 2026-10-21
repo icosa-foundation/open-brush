@@ -178,6 +178,14 @@ namespace TiltBrush
 
         Vector3 GetControllerAttachPos(InputManager.ControllerName controllerName)
         {
+            // Hand controller roots already follow the palm-centre grab anchors used
+            // for world scaling. The hidden physical-controller grip point adds an
+            // unrelated offset to the ruler and connecting line.
+            if (AndroidXRHandBridge.UseHand(controllerName == InputManager.ControllerName.Brush))
+            {
+                return InputManager.m_Instance.GetControllerPosition(controllerName);
+            }
+
             return InputManager.Controllers[(int)controllerName].Geometry.GripAttachPoint.position;
         }
 
