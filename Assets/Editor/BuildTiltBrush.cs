@@ -54,7 +54,8 @@ static class BuildTiltBrush
     // Android Application Identifier
     public static string GuiBuildAndroidApplicationIdentifier => $"{kVendorReverseDNS}.{kGuiBuildExecutableName}".ToLower();
     // Android Executable
-    public static string GuiBuildAndroidExecutableName => GuiBuildAndroidApplicationIdentifier + ".apk";
+    public static string GuiBuildAndroidExecutableName =>
+        $"{GuiBuildAndroidApplicationIdentifier}.{(EditorUserBuildSettings.buildAppBundle ? "aab" : "apk")}";
     public static string GuiBuildiOSApplicationIdentifier => $"{kVendorReverseDNS}.{kGuiBuildExecutableName}".ToLower();
 
     public class TiltBuildOptions
@@ -69,8 +70,12 @@ static class BuildTiltBrush
         public string Description;
         public bool disableAccountLogins;
         public bool AndroidBuildAppBundle;
+        // Android app bundles are the Google Play builds.
+        public bool AndroidScopedStorage => Target == BuildTarget.Android && AndroidBuildAppBundle;
         public AndroidSdkVersions? AndroidTargetSdkVersion;
     }
+
+    private const string kScopedStorageDefine = "OPEN_BRUSH_SCOPED_STORAGE";
 
     [Serializable()]
     public class BuildFailedException : System.Exception
@@ -163,9 +168,11 @@ static class BuildTiltBrush
     {
         public List<CopyRequest> copyRequests;
         public XrSdkMode xrSdk;
+        public bool scopedStorage;
     }
     static PostBuildInfo m_forPostBuild;
     internal static XrSdkMode CurrentBuildXrSdk => m_forPostBuild?.xrSdk ?? GuiSelectedSdk;
+    internal static bool CurrentBuildUsesScopedStorage => m_forPostBuild?.scopedStorage ?? false;
 
     /// Called on the main thread once the background build is finished
     public static event Action<int> OnBackgroundBuildFinish;
@@ -301,6 +308,8 @@ static class BuildTiltBrush
             AutoProfile = GuiAutoProfile,
             Il2Cpp = GuiRuntimeIl2cpp,
             Target = GuiSelectedBuildTarget,
+            AndroidBuildAppBundle = GuiSelectedBuildTarget == BuildTarget.Android &&
+                EditorUserBuildSettings.buildAppBundle,
             XrSdk = GuiSelectedSdk,
             Location = GetAppPathForGuiBuild(),
             Stamp = "menuitem",
@@ -639,6 +648,8 @@ static class BuildTiltBrush
     {
         string m_oldKeystoreName, m_oldKeystorePass;
         string m_oldKeyaliasName, m_oldKeyaliasPass;
+        readonly bool m_RestoreKeystoreName, m_RestoreKeystorePass;
+        readonly bool m_RestoreKeyaliasName, m_RestoreKeyaliasPass;
         public TempSetCommandLineOnlyPlayerSettings(
             string keystoreName, string keystorePass,
             string keyaliasName, string keyaliasPass)
@@ -648,6 +659,10 @@ static class BuildTiltBrush
             m_oldKeyaliasName = CheckUnset(PlayerSettings.Android.keyaliasName, "keyaliasName");
             m_oldKeyaliasPass = CheckUnset(PlayerSettings.Android.keyaliasPass, "keyaliasPass");
 
+            m_RestoreKeystoreName = keystoreName != null;
+            m_RestoreKeystorePass = keystorePass != null;
+            m_RestoreKeyaliasName = keyaliasName != null;
+            m_RestoreKeyaliasPass = keyaliasPass != null;
             if (keystoreName != null) { PlayerSettings.Android.keystoreName = keystoreName; }
             if (keystorePass != null) { PlayerSettings.Android.keystorePass = keystorePass; }
             if (keyaliasName != null) { PlayerSettings.Android.keyaliasName = keyaliasName; }
@@ -656,11 +671,15 @@ static class BuildTiltBrush
 
         public void Dispose()
         {
-            PlayerSettings.Android.keystoreName = m_oldKeystoreName;
-            PlayerSettings.Android.keystorePass = m_oldKeystorePass;
-            PlayerSettings.Android.keyaliasName = m_oldKeyaliasName;
-            PlayerSettings.Android.keyaliasPass = m_oldKeyaliasPass;
-            AssetDatabase.SaveAssets();
+            if (m_RestoreKeystoreName) { PlayerSettings.Android.keystoreName = m_oldKeystoreName; }
+            if (m_RestoreKeystorePass) { PlayerSettings.Android.keystorePass = m_oldKeystorePass; }
+            if (m_RestoreKeyaliasName) { PlayerSettings.Android.keyaliasName = m_oldKeyaliasName; }
+            if (m_RestoreKeyaliasPass) { PlayerSettings.Android.keyaliasPass = m_oldKeyaliasPass; }
+            if (m_RestoreKeystoreName || m_RestoreKeystorePass ||
+                m_RestoreKeyaliasName || m_RestoreKeyaliasPass)
+            {
+                AssetDatabase.SaveAssets();
+            }
         }
 
         private static string CheckUnset(string value, string name)
@@ -932,25 +951,62 @@ static class BuildTiltBrush
         }
     }
 
+    // XR package cleanup removes settings from this list. Preserve the Editor's list
+    // after all the other build scopes, including XR loader restoration, have exited.
+    class TempRestorePreloadedAssets : IDisposable
+    {
+        readonly UnityEngine.Object[] m_PreloadedAssets = PlayerSettings.GetPreloadedAssets();
+
+        public void Dispose()
+        {
+            PlayerSettings.SetPreloadedAssets(m_PreloadedAssets);
+            AssetDatabase.SaveAssets();
+        }
+    }
+
     class TempSetPlayerSettings : IDisposable
     {
         private BuildTarget m_Target;
         private UIOrientation m_OrientationSettings;
         private iOSTargetDevice m_iOSTargetDevice;
         private Texture2D[] m_Icons;
+        private bool m_RestoreIcons;
+        private AndroidArchitecture m_AndroidTargetArchitectures;
         private bool m_RestoreAndroidTargetSdkVersion;
         private AndroidSdkVersions m_AndroidTargetSdkVersion;
         private bool m_RestoreAndroidXrSettings;
         private AndroidApplicationEntry m_AndroidApplicationEntry;
         private bool m_AndroidResizeableActivity;
         private AndroidSdkVersions m_AndroidMinSdkVersion;
+        private bool m_RestoreStoragePermission;
+        private bool m_ForceStoragePermission;
 
         public TempSetPlayerSettings(TiltBuildOptions tiltOptions)
         {
             m_Target = tiltOptions.Target;
+            if (m_Target == BuildTarget.Android)
+            {
+                m_AndroidMinSdkVersion = PlayerSettings.Android.minSdkVersion;
+                m_AndroidTargetArchitectures = PlayerSettings.Android.targetArchitectures;
+                if (m_AndroidTargetArchitectures != AndroidArchitecture.ARM64)
+                {
+                    PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+                    Debug.Log("Set Android architecture to ARM64.");
+                }
+            }
+            if (tiltOptions.AndroidScopedStorage)
+            {
+                m_RestoreStoragePermission = true;
+                m_ForceStoragePermission = PlayerSettings.Android.forceSDCardPermission;
+                PlayerSettings.Android.forceSDCardPermission = false;
+                if ((int)PlayerSettings.Android.minSdkVersion <
+                    (int)AndroidSdkVersions.AndroidApiLevel30)
+                {
+                    PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel30;
+                }
+            }
             m_OrientationSettings = PlayerSettings.defaultInterfaceOrientation;
             m_iOSTargetDevice = PlayerSettings.iOS.targetDevice;
-            m_Icons = PlayerSettings.GetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), IconKind.Any);
 
 #if OPEN_BRUSH_VIEWER
             if (m_Target == BuildTarget.iOS)
@@ -973,15 +1029,9 @@ static class BuildTiltBrush
                 m_RestoreAndroidXrSettings = true;
                 m_AndroidApplicationEntry = PlayerSettings.Android.applicationEntry;
                 m_AndroidResizeableActivity = PlayerSettings.Android.resizeableActivity;
-                m_AndroidMinSdkVersion = PlayerSettings.Android.minSdkVersion;
 
                 PlayerSettings.Android.applicationEntry = AndroidApplicationEntry.GameActivity;
                 PlayerSettings.Android.resizeableActivity = true;
-                if ((int)PlayerSettings.Android.minSdkVersion <
-                    (int)AndroidSdkVersions.AndroidApiLevel24)
-                {
-                    PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel24;
-                }
 
                 Debug.Log("Configured Android XR PlayerSettings for this build.");
             }
@@ -997,6 +1047,8 @@ static class BuildTiltBrush
 
                     var buildTarget = UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target));
 
+                    m_Icons = PlayerSettings.GetIcons(buildTarget, IconKind.Any);
+                    m_RestoreIcons = true;
                     PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Any);
 #if UNITY_IOS
                     PlayerSettings.SetIcons(buildTarget, newIcons, IconKind.Notification);
@@ -1015,17 +1067,28 @@ static class BuildTiltBrush
         {
             PlayerSettings.defaultInterfaceOrientation = m_OrientationSettings;
             PlayerSettings.iOS.targetDevice = m_iOSTargetDevice;
-            PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(TargetToGroup(m_Target)), m_Icons, IconKind.Any);
+            if (m_RestoreIcons)
+            {
+                PlayerSettings.SetIcons(UnityEditor.Build.NamedBuildTarget.FromBuildTargetGroup(
+                    TargetToGroup(m_Target)), m_Icons, IconKind.Any);
+            }
+            if (m_Target == BuildTarget.Android)
+            {
+                PlayerSettings.Android.targetArchitectures = m_AndroidTargetArchitectures;
+            }
             if (m_RestoreAndroidTargetSdkVersion)
             {
                 PlayerSettings.Android.targetSdkVersion = m_AndroidTargetSdkVersion;
             }
+            if (m_RestoreStoragePermission)
+                PlayerSettings.Android.forceSDCardPermission = m_ForceStoragePermission;
             if (m_RestoreAndroidXrSettings)
             {
                 PlayerSettings.Android.applicationEntry = m_AndroidApplicationEntry;
                 PlayerSettings.Android.resizeableActivity = m_AndroidResizeableActivity;
-                PlayerSettings.Android.minSdkVersion = m_AndroidMinSdkVersion;
             }
+            if (m_RestoreStoragePermission)
+                PlayerSettings.Android.minSdkVersion = m_AndroidMinSdkVersion;
             AssetDatabase.SaveAssets();
         }
 
@@ -1143,11 +1206,83 @@ static class BuildTiltBrush
         }
     }
 
+    // Preserve only generated prefilter fields; authored pipeline settings stay live.
+    class TempRestoreUrpPrefilterSettings : IDisposable
+    {
+        // BuildPlayer can unload temporary Unity objects. Keep the snapshot as managed data
+        // and reload the original asset before restoring its generated fields.
+        readonly List<(string path, string json)> m_Assets = new();
+
+        public TempRestoreUrpPrefilterSettings()
+        {
+            foreach (string guid in AssetDatabase.FindAssets("t:UniversalRenderPipelineAsset"))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
+                m_Assets.Add((path, EditorJsonUtility.ToJson(asset)));
+            }
+        }
+
+        public void Dispose()
+        {
+            foreach (var (path, json) in m_Assets)
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<ScriptableObject>(path);
+                var snapshot = ScriptableObject.CreateInstance(asset.GetType());
+                snapshot.hideFlags = HideFlags.HideAndDontSave;
+                try
+                {
+                    EditorJsonUtility.FromJsonOverwrite(json, snapshot);
+                    using (var original = new SerializedObject(snapshot))
+                    using (var current = new SerializedObject(asset))
+                    {
+                        var property = original.GetIterator();
+                        bool enterChildren = true;
+                        while (property.Next(enterChildren))
+                        {
+                            enterChildren = false;
+                            if (property.name.StartsWith("m_Prefilter", StringComparison.Ordinal))
+                            {
+                                current.CopyFromSerializedProperty(property);
+                            }
+                        }
+                        if (current.ApplyModifiedPropertiesWithoutUndo())
+                        {
+                            AssetDatabase.SaveAssetIfDirty(asset);
+                        }
+                    }
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(snapshot);
+                }
+            }
+        }
+    }
+
+    // URP populates its runtime-only settings list while serializing a player build.
+    // Saving once outside BuildPlayer lets its serializer clear that derived list.
+    class SaveUrpGlobalSettingsAfterBuild : IDisposable
+    {
+        public void Dispose()
+        {
+            var settings = AssetDatabase.LoadAssetAtPath<ScriptableObject>(
+                "Assets/UniversalRenderPipelineGlobalSettings.asset");
+            if (settings != null)
+            {
+                EditorUtility.SetDirty(settings);
+                AssetDatabase.SaveAssetIfDirty(settings);
+            }
+        }
+    }
+
     class TempSetOpenXrFeatureGroup : IDisposable
     {
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> enabledFeatures;
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> requiredFeatures;
         readonly BuildTargetGroup m_targetGroup;
+        UnityEngine.XR.OpenXR.OpenXRSettings m_Settings;
+        bool m_OptimizeBufferDiscards;
 
         public TempSetOpenXrFeatureGroup(TiltBuildOptions tiltOptions)
         {
@@ -1176,6 +1311,9 @@ static class BuildTiltBrush
                     $"Could not load OpenXR settings for {m_targetGroup}.");
             }
 
+            m_Settings = settings;
+            m_OptimizeBufferDiscards = settings.optimizeBufferDiscards;
+
             var featureList = new List<UnityEngine.XR.OpenXR.Features.OpenXRFeature>();
             int featuresCount = settings.GetFeatures(featureList);
             if (featuresCount > 0)
@@ -1189,6 +1327,8 @@ static class BuildTiltBrush
                 }
             }
 
+            EnableSharedAndroidOpenXrFeatures(settings);
+
             if (tiltOptions.XrSdk == XrSdkMode.AndroidXR)
             {
                 EnableAndroidXrFeatures(settings);
@@ -1197,6 +1337,16 @@ static class BuildTiltBrush
             // Meta store builds use OpenXR too, but must enable Meta's build hooks explicitly.
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
 #endif
+
+        }
+
+        void EnableSharedAndroidOpenXrFeatures(
+            UnityEngine.XR.OpenXR.OpenXRSettings settings)
+        {
+            // Android OpenXR, Android Viewer OpenXR, Android Meta Quest, Android AndroidXR,
+            // and Android Viewer AndroidXR all support hands through the same XR Hands API.
+            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
+            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
         }
 
         void EnableAndroidXrFeatures(UnityEngine.XR.OpenXR.OpenXRSettings settings)
@@ -1209,9 +1359,23 @@ static class BuildTiltBrush
             // Select concrete feature types, not feature IDs. XR Hands' HandTracking and the
             // Microsoft Hand Interaction profile currently publish the same feature ID, so an
             // ID lookup can silently enable the Microsoft profile and omit XRHandSubsystem.
+            // The Android XR hand bridge requires this profile for pinch and grasp input.
+            EnableRequiredFeature<
+                UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile>(settings);
+
             EnableRequiredFeature<OpenXR.Extensions.OpenXRAndroidSettings>(settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRSupportFeature>(
                 settings);
+            // AndroidXRBuildProfileFeature is internal in com.unity.xr.androidxr-openxr 1.4.1,
+            // so locate it by runtime type name instead of referencing the inaccessible type.
+            EnableRequiredFeatureByTypeName(settings,
+                "UnityEngine.XR.OpenXR.Features.Android.AndroidXRBuildProfileFeature");
+
+            // Foveated rendering currently crashes Android AndroidXR and Android Viewer
+            // AndroidXR. AR Face is not used by Open Brush. Keep main's serialized defaults
+            // unchanged and override both features only for these builds.
+            DisableFeature<UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature>(settings);
+            DisableFeature<UnityEngine.XR.OpenXR.Features.Android.ARFaceFeature>(settings);
 
             // Android XR's AR Foundation providers and display helpers are part of the tested
             // cross-device configuration. Unsupported extensions are negotiated by each runtime.
@@ -1219,7 +1383,6 @@ static class BuildTiltBrush
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARBoundingBoxFeature>(
                 settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARCameraFeature>(settings);
-            EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARFaceFeature>(settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AROcclusionFeature>(
                 settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.ARPlaneFeature>(settings);
@@ -1228,22 +1391,19 @@ static class BuildTiltBrush
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.DisplayUtilitiesFeature>(
                 settings);
 
-            // Hand mesh data is used by Android XR, while XR Hands and Meta's aim extension keep
-            // the same AndroidXR artifact usable with hand tracking on other OpenXR runtimes.
-            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
+            // Hand mesh data is specific to Android XR. Shared XR Hands features are enabled for
+            // every Android OpenXR build by EnableSharedAndroidOpenXrFeatures.
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRHandMeshData>(
                 settings);
-            EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
 
-            // These vendor-neutral/vendor-extension features are also part of the configuration
-            // tested on Quest and Pico. Meta Quest Support supplies Quest's loader initialization;
-            // runtimes that do not expose the Meta extensions simply leave them unavailable.
+            // Composition layers are shared. Quest-specific build hooks must not contribute
+            // store requirements to the dedicated Google Android XR build.
             EnableRequiredFeature<
                 UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature>(
                 settings);
-            EnableRequiredFeature<OpenXR.Extensions.FBPassthrough>(settings);
+            DisableFeature<OpenXR.Extensions.FBPassthrough>(settings);
             EnableRequiredFeature<OpenXR.Extensions.METABoundaryVisibility>(settings);
-            EnableRequiredFeature<
+            DisableFeature<
                 UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
         }
 
@@ -1264,6 +1424,42 @@ static class BuildTiltBrush
                 $"this {m_targetGroup} build.");
         }
 
+        void EnableRequiredFeatureByTypeName(
+            UnityEngine.XR.OpenXR.OpenXRSettings settings, string featureTypeName)
+        {
+            var features = new List<UnityEngine.XR.OpenXR.Features.OpenXRFeature>();
+            settings.GetFeatures(features);
+            var feature = features.Find(candidate =>
+                candidate.GetType().FullName == featureTypeName);
+            if (feature == null)
+            {
+                throw new BuildFailedException(
+                    $"Could not find required OpenXR feature {featureTypeName}. " +
+                    "Is its package installed?");
+            }
+
+            requiredFeatures.Add(feature);
+            feature.enabled = true;
+            Debug.Log($"Enabled required OpenXR feature {featureTypeName} for " +
+                $"this {m_targetGroup} build.");
+        }
+
+        void DisableFeature<T>(UnityEngine.XR.OpenXR.OpenXRSettings settings)
+            where T : UnityEngine.XR.OpenXR.Features.OpenXRFeature
+        {
+            var feature = settings.GetFeature<T>();
+            if (feature == null)
+            {
+                throw new BuildFailedException(
+                    $"Could not find OpenXR feature {typeof(T).FullName} to disable. " +
+                    "Is its package installed?");
+            }
+
+            feature.enabled = false;
+            Debug.Log($"Disabled OpenXR feature {typeof(T).FullName} for " +
+                $"this {m_targetGroup} build.");
+        }
+
         public void Dispose()
         {
             foreach (var requiredFeature in requiredFeatures)
@@ -1277,6 +1473,16 @@ static class BuildTiltBrush
             foreach (var enabledFeature in enabledFeatures)
             {
                 enabledFeature.enabled = true;
+            }
+
+            if (m_Settings != null)
+            {
+                var serializedSettings = new SerializedObject(m_Settings);
+                serializedSettings.FindProperty("m_optimizeBufferDiscards").boolValue =
+                    m_OptimizeBufferDiscards;
+                serializedSettings.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(m_Settings);
+                AssetDatabase.SaveAssetIfDirty(m_Settings);
             }
         }
     }
@@ -1652,6 +1858,7 @@ static class BuildTiltBrush
         // It's important here for Main.unity (currently scenes[1]) to be the last scene
         // "temp modified".  TempModifyScene opens the scene and if Main.unity is not the open
         // scene when TempHookUpSingletons runs, the build will fail.
+        using (var preloadedAssets = new TempRestorePreloadedAssets())
         using (var unused = new TempModifyScene(scenes[0]))
         using (var unused12 = new TempModifyScene(scenes[1]))
         using (var unused11 = new TempSetStereoRenderPath(target == BuildTarget.Android
@@ -1660,7 +1867,8 @@ static class BuildTiltBrush
             target,
             tiltOptions.Il2Cpp ? "DISABLE_SYSTEM_AUDIO_CAPTURE" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null,
-            tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null))
+            tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null,
+            tiltOptions.AndroidScopedStorage ? kScopedStorageDefine : null))
         using (var unused4 = new TempHookUpSingletons())
         using (var unused5 = new TempSetScriptingBackend(target, tiltOptions.Il2Cpp))
         using (var unused14 = new TempSetGraphicsApis(tiltOptions))
@@ -1681,14 +1889,6 @@ static class BuildTiltBrush
             config.DoBuildTimeConfiguration(target);
             EditorUtility.SetDirty(config);
 
-            if (GuiSelectedBuildTarget == BuildTarget.Android)
-            {
-                if (PlayerSettings.Android.targetArchitectures != AndroidArchitecture.ARM64)
-                {
-                    PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
-                    Debug.Log("Set Android architecture to ARM64.");
-                }
-            }
 
             // Some mildly-hacky shenanigans here; GetMergedManifest() doesn't expect
             // to be run at build-time (ie when nobody has called Start(), Awake()).
@@ -1808,6 +2008,7 @@ static class BuildTiltBrush
                 m_forPostBuild = new PostBuildInfo
                 {
                     xrSdk = xrSdk,
+                    scopedStorage = tiltOptions.AndroidScopedStorage,
                     copyRequests = copyRequests
                 };
 
@@ -1821,7 +2022,12 @@ static class BuildTiltBrush
                 m_buildStatus = buildDesc;
 
                 // Start building
-                var thing = BuildPipeline.BuildPlayer(scenes, location, target, options);
+                BuildReport thing;
+                using (var prefilterSettings = new TempRestoreUrpPrefilterSettings())
+                using (var cleanup = new SaveUrpGlobalSettingsAfterBuild())
+                {
+                    thing = BuildPipeline.BuildPlayer(scenes, location, target, options);
+                }
                 string error = FormatBuildReport(thing);
                 if (!string.IsNullOrEmpty(error))
                 {
@@ -2188,6 +2394,11 @@ static class BuildTiltBrush
         args.Append("-executemethod BuildTiltBrush.CommandLine ");
         args.AppendFormat("-btb-display {0} ", xrSdk);
         args.AppendFormat("-btb-target {0} ", target);
+        if (target == BuildTarget.Android)
+        {
+            string exportType = tiltOptions.AndroidBuildAppBundle ? "androidAppBundle" : "androidPackage";
+            args.Append($"-androidExportType {exportType} ");
+        }
         foreach (var value in Enum.GetValues(typeof(BuildOptions)))
         {
             if (((int)options & (int)value) != 0)
