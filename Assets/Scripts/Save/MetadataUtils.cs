@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -131,7 +131,7 @@ namespace TiltBrush
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
                 (newEntry.layerId, newEntry.frameId) =
-                    App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
+                    App.Scene.GetSerializableIndexOfCanvas(widget);
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -199,7 +199,7 @@ namespace TiltBrush
             TiltSoundClip ConvertSoundClipWidgetToTiltSoundClip(SoundClipWidget widget)
             {
                 (int layerId, int frameId) =
-                    App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
+                    App.Scene.GetSerializableIndexOfCanvas(widget);
                 var audioState = widget.GetAudioSaveState();
                 TiltSoundClip soundClip = new TiltSoundClip
                 {
@@ -238,7 +238,7 @@ namespace TiltBrush
                 .Select(portal =>
                 {
                     (int layerId, int frameId) =
-                        App.Scene.GetSerializableIndexOfCanvas(portal.Canvas);
+                        App.Scene.GetSerializableIndexOfCanvas(portal);
                     return new TiltPortal
                     {
                         ShapeType = portal.PortalShapeType,
@@ -263,7 +263,7 @@ namespace TiltBrush
                 .Select(widget =>
                 {
                     (int layerId, int frameId) =
-                        App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
+                        App.Scene.GetSerializableIndexOfCanvas(widget);
                     if (widget is GaussianCaptureBoxWidget box)
                     {
                         return new TiltGaussianCapture
@@ -329,7 +329,7 @@ namespace TiltBrush
             TiltVideo ConvertVideoToTiltVideo(VideoWidget widget)
             {
                 (int layerId, int frameId) =
-                    App.Scene.GetSerializableIndexOfCanvas(widget.Canvas);
+                    App.Scene.GetSerializableIndexOfCanvas(widget);
                 TiltVideo video = new TiltVideo
                 {
                     // Annoyingly Images now use forward slash and a leading dot. So this is inconsistent.
@@ -402,7 +402,7 @@ namespace TiltBrush
                 newEntry.Pinned = lightWidget.Pinned;
                 newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
                 (newEntry.LayerId, newEntry.FrameId) =
-                    App.Scene.GetSerializableIndexOfCanvas(lightWidget.Canvas);
+                    App.Scene.GetSerializableIndexOfCanvas(lightWidget);
 
                 newEntry.PunctualLightType = light.type;
                 newEntry.Intensity = light.intensity;
@@ -456,7 +456,7 @@ namespace TiltBrush
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
                 (newEntry.layerId, newEntry.frameId) =
-                    App.Scene.GetSerializableIndexOfCanvas(image.Canvas);
+                    App.Scene.GetSerializableIndexOfCanvas(image);
                 newEntry.twoSided = image.TwoSided;
                 newEntry.opacity = image.Opacity;
                 imagesByPath[path].Add(newEntry);
