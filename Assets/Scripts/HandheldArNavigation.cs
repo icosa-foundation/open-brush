@@ -90,6 +90,7 @@ namespace TiltBrush
         public static bool IsArLoader(XRLoader loader) => loader != null && loader == sm_ArLoader;
 
         private ARSession m_Session;
+        private ARInputManager m_InputManager;
         private ARCameraManager m_CameraManager;
         private bool m_OwnsCameraManager;
         private bool m_CameraManagerWasEnabled;
@@ -211,7 +212,11 @@ namespace TiltBrush
             // ARSession checks availability, and on Android offers to install ARCore.
             var sessionObject = new GameObject("AR Session");
             sessionObject.transform.SetParent(transform, false);
+            // AR loaders create the input subsystem, but ARInputManager starts it so
+            // device poses and the motion sensors needed for tracking become available.
+            m_InputManager = sessionObject.AddComponent<ARInputManager>();
             m_Session = sessionObject.AddComponent<ARSession>();
+            Debug.Log($"[OB_HANDHELD_AR] Input subsystem running={m_InputManager.subsystem?.running == true}");
             // Otherwise the app is limited to the camera's frame rate.
             m_Session.matchFrameRateRequested = false;
 
@@ -334,6 +339,7 @@ namespace TiltBrush
                     Yaw(m_CameraStartRotation) - Yaw(rotation), 0);
                 m_ArStartPosition = position;
                 m_Anchored = true;
+                Debug.Log($"[OB_HANDHELD_AR] Pose tracking anchored position={position} rotation={rotation.eulerAngles}");
             }
 
             Transform cameraXf = App.VrSdk.GetVrCamera().transform;
@@ -381,6 +387,10 @@ namespace TiltBrush
                 {
                     DestroyImmediate(m_CameraManager);
                 }
+            }
+            if (m_InputManager != null)
+            {
+                m_InputManager.enabled = false;
             }
             if (m_Session != null)
             {
