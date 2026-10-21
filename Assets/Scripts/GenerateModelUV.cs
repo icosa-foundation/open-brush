@@ -28,15 +28,15 @@ public class GenerateModelUV : MonoBehaviour
             positionBuffer = new ComputeBuffer(vertexCount, sizePerVertex);
             uvBuffer = new ComputeBuffer(vertexCount, sizeof(float) * 2);
             positionBuffer.SetData(mesh.vertices);
-    
+
             // Find the kernel ID
             int kernelID = uvGeneratorShader.FindKernel("CSMain");
-    
+
             // Bind the compute buffers to the shader
             uvGeneratorShader.SetBuffer(kernelID, "positionBuffer", positionBuffer);
             uvGeneratorShader.SetBuffer(kernelID, "uvBuffer", uvBuffer);
             uvGeneratorShader.SetInt("mappingMode", mappingMode);
-    
+
             // Set shader parameters for bounding box
             Bounds bounds = mesh.bounds;
             uvGeneratorShader.SetFloat("minX", bounds.min.x);
@@ -47,18 +47,18 @@ public class GenerateModelUV : MonoBehaviour
             uvGeneratorShader.SetFloat("maxZ", bounds.max.z);
             uvGeneratorShader.SetFloat("capThreshold", capThreshold);
             uvGeneratorShader.SetInt("vertexCount", vertexCount);
-    
+
             // Dispatch the compute shader
             int groups = (vertexCount + 63) / 64; // This ensures rounding up
             uvGeneratorShader.Dispatch(kernelID, groups, 1, 1);
-    
+
             // Retrieve data from the buffer
             Vector2[] uvs = new Vector2[vertexCount];
             uvBuffer.GetData(uvs);
-    
+
             // Apply the generated UVs to the mesh
             mesh.uv = uvs;
-    
+
             }
         finally
         {
