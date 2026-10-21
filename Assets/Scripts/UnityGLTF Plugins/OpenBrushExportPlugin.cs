@@ -717,6 +717,18 @@ namespace TiltBrush
             int N = uniqueColors.Count;
             string colorKey = ColorKey(uniqueColors);
             _additiveBrushTextures.TryGetValue(source, out var textureSource);
+            Vector2[] sourceUvs = mesh.uv;
+            Vector2 uvMin = Vector2.zero, uvMax = Vector2.one;
+            foreach (var sourceUv in sourceUvs)
+            {
+                Vector2 transformed = Vector2.Scale(sourceUv, textureSource.Scale) + textureSource.Offset;
+                uvMin = Vector2.Min(uvMin, transformed);
+                uvMax = Vector2.Max(uvMax, transformed);
+            }
+            uvMin = new Vector2(Mathf.Floor(uvMin.x), Mathf.Floor(uvMin.y));
+            uvMax = new Vector2(Mathf.Ceil(uvMax.x), Mathf.Ceil(uvMax.y));
+            Vector2 uvSpan = uvMax - uvMin;
+            colorKey = $"{colorKey}:{uvMin.x:R},{uvMin.y:R},{uvMax.x:R},{uvMax.y:R}";
 
             // Reuse cached material clone if this (source, colorSet) was seen before —
             // but we still need to inject the per-primitive TEXCOORD accessor below.
@@ -727,7 +739,7 @@ namespace TiltBrush
             var textureKey = (textureSource.Texture, colorKey);
             if (!_atlasTextureCache.TryGetValue(textureKey, out Texture2D atlas))
             {
-                atlas = CreateTintedTextureAtlas(textureSource.Texture, uniqueColors);
+                atlas = CreateTintedTextureAtlas(textureSource.Texture, uniqueColors, uvMin, uvSpan);
                 _atlasTextureCache[textureKey] = atlas;
             }
 
@@ -736,7 +748,8 @@ namespace TiltBrush
             var colorIndices = uniqueColors
                 .Select((color, colorIndex) => (color, colorIndex))
                 .ToDictionary(pair => pair.color, pair => pair.colorIndex);
-            Vector2[] sourceUvs = mesh.uv;
+            int tileWidth = atlas.width / columns;
+            int tileHeight = atlas.height / rows;
 
             // Remap the source UV into the tile for this stroke colour.
             int vertCount = mesh.vertexCount;
@@ -752,10 +765,13 @@ namespace TiltBrush
                     Vector2 sourceUv = sourceUvs.Length == vertCount
                         ? Vector2.Scale(sourceUvs[v], textureSource.Scale) + textureSource.Offset
                         : new Vector2(0.5f, 0.5f);
-                    sourceUv.x = ApplyTextureWrap(sourceUv.x, textureSource.Texture);
-                    sourceUv.y = ApplyTextureWrap(sourceUv.y, textureSource.Texture);
-                    float atlasU = (tileX + sourceUv.x) / columns;
-                    float atlasV = (tileY + sourceUv.y) / rows;
+                    // Preserve interpolation across repeat seams by baking the entire UV
+                    // interval into the tile. Never wrap individual vertex coordinates.
+                    Vector2 tileUv = new Vector2(
+                        (sourceUv.x - uvMin.x) / uvSpan.x,
+                        (sourceUv.y - uvMin.y) / uvSpan.y);
+                    float atlasU = (tileX * tileWidth + 1.5f + tileUv.x * (tileWidth - 3)) / atlas.width;
+                    float atlasV = (tileY * tileHeight + 1.5f + tileUv.y * (tileHeight - 3)) / atlas.height;
                     // UnityGLTF flips mesh UV V during export; match it for this custom accessor.
                     uv[v] = new Vector2(atlasU, 1f - atlasV);
                 }
@@ -810,26 +826,24 @@ namespace TiltBrush
         }
 
         private static Texture2D CreateTintedTextureAtlas(
-            Texture sourceTexture, IReadOnlyList<Color32> colors)
+            Texture sourceTexture, IReadOnlyList<Color32> colors, Vector2 uvMin, Vector2 uvSpan)
         {
             int columns = Mathf.CeilToInt(Mathf.Sqrt(colors.Count));
             int rows = Mathf.CeilToInt(colors.Count / (float)columns);
             int maxAtlasSize = Mathf.Min(Mathf.Max(SystemInfo.maxTextureSize, 1), 4096);
             int sourceWidth = sourceTexture != null ? sourceTexture.width : 1;
             int sourceHeight = sourceTexture != null ? sourceTexture.height : 1;
-            int tileWidth = Mathf.Max(1, Mathf.Min(sourceWidth, maxAtlasSize / columns));
-            int tileHeight = Mathf.Max(1, Mathf.Min(sourceHeight, maxAtlasSize / rows));
-
-            Texture2D readableSource = ReadTexture(sourceTexture, tileWidth, tileHeight);
-            Color32[] sourcePixels = readableSource != null
-                ? readableSource.GetPixels32()
-                : new[] { new Color32(255, 255, 255, 255) };
+            int tileWidth = Mathf.Max(4, Mathf.Min(
+                Mathf.CeilToInt(sourceWidth * uvSpan.x) + 2, maxAtlasSize / columns));
+            int tileHeight = Mathf.Max(4, Mathf.Min(
+                Mathf.CeilToInt(sourceHeight * uvSpan.y) + 2, maxAtlasSize / rows));
+            Texture2D readableSource = ReadTexture(sourceTexture, sourceWidth, sourceHeight);
+            if (readableSource != null) readableSource.wrapMode = sourceTexture.wrapMode;
             var atlas = new Texture2D(
                 tileWidth * columns, tileHeight * rows, TextureFormat.RGBA32,
                 mipChain: false, linear: false)
             {
-                name = (sourceTexture != null ? sourceTexture.name : "Solid") +
-                    "_StrokeColorAtlas",
+                name = $"{(sourceTexture != null ? sourceTexture.name : "Solid")}_StrokeColorAtlas",
                 filterMode = sourceTexture != null ? sourceTexture.filterMode : FilterMode.Point,
                 wrapMode = TextureWrapMode.Clamp,
             };
@@ -838,20 +852,20 @@ namespace TiltBrush
             {
                 int tileX = colorIndex % columns;
                 int tileY = colorIndex / columns;
-                Color32 tint = colors[colorIndex];
+                Color tint = colors[colorIndex];
                 for (int y = 0; y < tileHeight; y++)
                 {
-                    int sourceRow = y * tileWidth;
-                    int atlasRow = (tileY * tileHeight + y) * atlas.width +
-                        tileX * tileWidth;
+                    // Duplicate the outermost interior pixel into a one-pixel gutter.
+                    float v = Mathf.Clamp01((y - 1f) / (tileHeight - 3));
                     for (int x = 0; x < tileWidth; x++)
                     {
-                        Color32 pixel = sourcePixels[sourceRow + x];
-                        atlasPixels[atlasRow + x] = new Color32(
-                            (byte)(pixel.r * tint.r / 255),
-                            (byte)(pixel.g * tint.g / 255),
-                            (byte)(pixel.b * tint.b / 255),
-                            pixel.a);
+                        float u = Mathf.Clamp01((x - 1f) / (tileWidth - 3));
+                        Color pixel = readableSource != null
+                            ? readableSource.GetPixelBilinear(uvMin.x + u * uvSpan.x, uvMin.y + v * uvSpan.y)
+                            : Color.white;
+                        Color tinted = pixel * tint;
+                        tinted.a = pixel.a;
+                        atlasPixels[(tileY * tileHeight + y) * atlas.width + tileX * tileWidth + x] = tinted;
                     }
                 }
             }
