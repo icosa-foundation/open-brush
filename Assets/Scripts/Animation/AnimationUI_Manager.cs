@@ -1104,7 +1104,8 @@ namespace TiltBrush.FrameAnimation
             if (emptyCanvas != null)
             {
                 contentCanvas.LocalPose = emptyCanvas.LocalPose;
-                contentCanvas.gameObject.SetActive(emptyCanvas.gameObject.activeSelf);
+                contentCanvas.gameObject.SetActive(!track.Deleted && track.Visible &&
+                    FrameOn >= span.StartFrame && FrameOn < span.StartFrame + span.Duration);
             }
             AnimationDrawingId drawingId = GetOrCreateDrawingId(contentCanvas);
             ApplySparseTimelineEdit(tracks =>
