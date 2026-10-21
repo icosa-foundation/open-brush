@@ -166,7 +166,7 @@ namespace TiltBrush
                     RenderSettings.fog = false;
                     for (int i = 0; i < m_Cameras.Count; ++i)
                     {
-                        if (m_Cameras[i].gameObject.activeSelf)
+                        if (m_Cameras[i] != null)
                         {
                             m_Cameras[i].clearFlags = CameraClearFlags.SolidColor;
                             m_Cameras[i].backgroundColor = Color.clear;
@@ -180,12 +180,17 @@ namespace TiltBrush
                     m_PassthroughEnabled = false;
                     if (CurrentEnvironment != null)
                     {
-                        RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
+                        if (RenderSettings.skybox == null)
+                        {
+                            RenderSettings.skybox = HasCustomSkybox ? m_CustomSkyboxMaterial :
+                                CurrentEnvironment.m_SkyboxMaterial;
+                        }
+                        RenderSettings.fog = CurrentEnvironment.m_RenderSettings.m_FogEnabled;
                         for (int i = 0; i < m_Cameras.Count; ++i)
                         {
-                            if (m_Cameras[i].gameObject.activeSelf)
+                            if (m_Cameras[i] != null)
                             {
-                                var clearFlags = CurrentEnvironment.HasSkybox ? CameraClearFlags.Skybox : CameraClearFlags.SolidColor;
+                                var clearFlags = CameraClearFlags.Skybox;
                                 m_Cameras[i].clearFlags = clearFlags;
                             }
                         }
@@ -894,7 +899,7 @@ namespace TiltBrush
                 }
 
                 RenderSettings.ambientSkyColor = m_InterimValues.m_AmbientColor;
-                RenderSettings.fog = m_InterimValues.m_FogEnabled;
+                RenderSettings.fog = !PassthroughEnabled && m_InterimValues.m_FogEnabled;
                 RenderSettings.fogColor = m_InterimValues.m_FogColor;
                 RenderSettings.fogMode = m_InterimValues.m_FogMode;
                 RenderSettings.reflectionIntensity = m_InterimValues.m_ReflectionIntensity;
