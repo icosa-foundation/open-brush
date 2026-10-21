@@ -286,7 +286,7 @@ namespace TiltBrush
             }
             foreach (Stroke stroke in strokes)
             {
-                if (stroke.m_Type != Stroke.Type.NotCreated)
+                if (stroke.m_Type != Stroke.Type.NotCreated && stroke.IsGeometryEnabled)
                 {
                     TiltMeterScript.m_Instance.AdjustMeter(stroke, up: false);
                 }
