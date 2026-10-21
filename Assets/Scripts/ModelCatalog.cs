@@ -417,9 +417,11 @@ namespace TiltBrush
                             {
                                 oldModels.Remove(relativePath);
                             }
-                            // Should we skip this loop earlier if m_ModelsByRelativePath already contains the key?
-                            m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel);
-                            m_ModelRootsByRelativePath[rNewModel.RelativePath] = rootDirectory;
+                            // Keep root ownership consistent with the first accepted model.
+                            if (m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel))
+                            {
+                                m_ModelRootsByRelativePath[rNewModel.RelativePath] = rootDirectory;
+                            }
                         }
                     }
                 }
