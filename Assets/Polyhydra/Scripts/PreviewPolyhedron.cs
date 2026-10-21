@@ -36,6 +36,7 @@ public class PreviewPolyhedron : MonoBehaviour
     public Mesh m_ErrorMesh;
 
     private MeshFilter meshFilter;
+    private Mesh m_OwnedPreviewMesh;
     private PolyMesh.MeshData m_MeshData;
     private bool NeedsRebuild;
     public bool m_UpdateSelectedModels;
@@ -43,6 +44,20 @@ public class PreviewPolyhedron : MonoBehaviour
     private void Awake()
     {
         m_Instance = this;
+    }
+
+    private void OnDestroy()
+    {
+        ReleasePreviewMesh();
+        if (m_Instance == this) m_Instance = null;
+    }
+
+    private void ReleasePreviewMesh()
+    {
+        if (m_OwnedPreviewMesh == null) return;
+        if (Application.isPlaying) Destroy(m_OwnedPreviewMesh);
+        else DestroyImmediate(m_OwnedPreviewMesh);
+        m_OwnedPreviewMesh = null;
     }
 
     void Start()
@@ -303,6 +318,9 @@ public class PreviewPolyhedron : MonoBehaviour
 
         if (meshFilter != null)
         {
+            // Only meshes generated for this preview are owned here; never dispose the error asset.
+            ReleasePreviewMesh();
+            m_OwnedPreviewMesh = mesh;
             if (Application.isPlaying)
             {
                 meshFilter.mesh = mesh;
@@ -312,6 +330,12 @@ public class PreviewPolyhedron : MonoBehaviour
             {
                 meshFilter.sharedMesh = mesh;
             }
+        }
+
+        if (meshFilter == null)
+        {
+            if (Application.isPlaying) Destroy(mesh);
+            else DestroyImmediate(mesh);
         }
 
         if (m_UpdateSelectedModels)
