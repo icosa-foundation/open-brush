@@ -3491,10 +3491,6 @@ MonoBehaviour:
     m_Key: VIEW_MODE_CONTROLS
     m_Metadata:
       m_Items: []
-  - m_Id: 317029250049335296
-    m_Key: VIEW_MODE_CONTROLS
-    m_Metadata:
-      m_Items: []
   - m_Id: 332314407106863104
     m_Key: ICOSAPANEL_PANEL_OPTIONS_POPUP
     m_Metadata:
