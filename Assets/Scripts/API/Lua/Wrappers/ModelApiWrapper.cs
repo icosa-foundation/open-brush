@@ -110,7 +110,7 @@ namespace TiltBrush
         public ModelViewpointInfo[] viewpoints => Playback.GetViewpoints();
         [LuaDocsDescription("Select an eligible IMM viewpoint ID without moving or rescaling anything")]
         public void SelectViewpoint(int id) => Playback.SelectViewpoint(id);
-        [LuaDocsDescription("Explicitly move the user to an eligible IMM viewpoint ID")]
+        [LuaDocsDescription("Move once to an eligible IMM viewpoint ID, rescaling only this model around the viewpoint. Preserves scene scale and does not follow viewpoint animation.")]
         public void NavigateToViewpoint(int id) => Playback.NavigateToViewpoint(id);
 
         [LuaDocsDescription(@"Imports a new model from the MediaLibrary/Models folder")]

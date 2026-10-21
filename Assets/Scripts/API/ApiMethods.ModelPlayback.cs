@@ -27,7 +27,7 @@ namespace TiltBrush
         public static string GetModelViewpoints(int index) => InvokeModelPlayback(() => JsonConvert.SerializeObject(_GetModelPlayback(index).GetViewpoints()));
         [ApiEndpoint("model.viewpoint.select", "Select an eligible IMM viewpoint ID on one model instance without moving or rescaling anything.")]
         public static string SelectModelViewpoint(int index, int viewpoint) => InvokeModelPlayback(() => _GetModelPlayback(index).SelectViewpoint(viewpoint));
-        [ApiEndpoint("model.viewpoint", "Explicitly move the user to an eligible IMM viewpoint ID, including authored scale and floor/eye height.")]
+        [ApiEndpoint("model.viewpoint", "Move once to an eligible IMM viewpoint ID, rescaling only that model around the viewpoint to its authored viewing scale. Scene scale is preserved; viewpoint animation is not followed.")]
         public static string NavigateModelViewpoint(int index, int viewpoint) => InvokeModelPlayback(() => _GetModelPlayback(index).NavigateToViewpoint(viewpoint));
         [ApiEndpoint("model.playback", "Return model playback state, readiness, pending operation, audio and chapter/clip capabilities as JSON. HTTP returns a handle; retrieve the result with query.command=handle.")]
         public static string GetModelPlayback(int index) => InvokeModelPlayback(() =>

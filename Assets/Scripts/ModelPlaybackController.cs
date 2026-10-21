@@ -301,6 +301,11 @@ namespace TiltBrush
         }
         private bool TryNavigateToViewpoint(int id, SpawnAreaSnapshot snapshot)
         {
+            if (Array.IndexOf(m_ViewpointIds, id, 0, snapshot.availableCount) < 0) return false;
+            var widget = GetComponent<ModelWidget>();
+            if (widget == null) throw new InvalidOperationException("This viewpoint has no model instance");
+            if (widget.ShouldPreserveCustomSizePublic())
+                throw new InvalidOperationException("This model's size is locked");
             if (!Document.TrySetActiveSpawnAreaId(id, out var pose, snapshot.evaluationRevision)) return false;
             var root = m_Native.transform;
             var flip = Matrix4x4.Scale(new Vector3(1, 1, -1));
@@ -308,16 +313,34 @@ namespace TiltBrush
             Vector3 position = root.TransformPoint(converted.GetColumn(3));
             Quaternion rotation = root.rotation * Quaternion.LookRotation(converted.GetColumn(2), converted.GetColumn(1));
             float scale = Mathf.Abs(root.lossyScale.x * pose.sca);
-            if (scale < 1e-6f) throw new InvalidOperationException("Viewpoint has no usable world scale");
+            if (float.IsNaN(scale) || float.IsInfinity(scale) || scale < 1e-6f)
+                throw new InvalidOperationException("Viewpoint has no usable world scale");
+            float scaleFactor = App.METERS_TO_UNITS / scale;
+            var modelPose = ScaleModelAboutViewpoint(widget.LocalTransform,
+                widget.transform.parent.InverseTransformPoint(position), scaleFactor);
+            var sizeRange = widget.GetWidgetSizeRange();
+            if (Mathf.Abs(modelPose.scale) < sizeRange.x || Mathf.Abs(modelPose.scale) > sizeRange.y)
+                throw new InvalidOperationException("Authored viewpoint scale exceeds this model's size limits");
             var camera = App.VrSdk.GetVrCamera();
             var origin = camera.GetComponentInParent<Unity.XR.CoreUtils.XROrigin>();
             Vector3 target = camera.transform.position;
             if (pose.isFloorLevel != 0) target.y = origin != null ? origin.transform.position.y : camera.transform.position.y;
             Quaternion yawDelta = Yaw(camera.transform.rotation) * Quaternion.Inverse(Yaw(rotation));
-            App.Scene.Pose = TrTransform.TRS(target, yawDelta, App.METERS_TO_UNITS / scale) *
+            // Resize only this widget about the destination, with normal save/undo support.
+            // Navigation then uses a rigid scene transform, preserving the scene's scale.
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new MoveWidgetCommand(widget, modelPose, widget.CustomDimension, true));
+            App.Scene.Pose = TrTransform.TR(target, yawDelta) *
                 TrTransform.T(-position) * App.Scene.Pose;
+            // Apply the evaluated pose once. Model playback never follows viewpoint animation.
             Document.SetSpawnAreaNeedsUpdate(false);
             return true;
+        }
+        internal static TrTransform ScaleModelAboutViewpoint(TrTransform modelPose, Vector3 viewpoint, float factor)
+        {
+            modelPose.translation = viewpoint + (modelPose.translation - viewpoint) * factor;
+            modelPose.scale *= factor;
+            return modelPose;
         }
         private static Quaternion Yaw(Quaternion rotation)
         {
