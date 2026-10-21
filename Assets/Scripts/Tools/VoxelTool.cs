@@ -275,7 +275,10 @@ namespace TiltBrush
             }
 
             var gestureDocument = m_CurrentDocument;
-            if (m_GestureChanged && m_GestureWidget != null)
+            bool targetShowing = m_GestureWidget != null && m_GestureWidget.Showing &&
+                m_GestureWidget.gameObject.activeInHierarchy;
+            bool documentIsEmpty = gestureDocument._Document.Models.All(model => model.Voxels.Count == 0);
+            if (m_GestureChanged && m_GestureWidget != null && (targetShowing || documentIsEmpty))
             {
                 var command = new ModifyVoxDocumentCommand(
                     m_GestureWidget,
@@ -285,8 +288,6 @@ namespace TiltBrush
                     m_GestureBeforePalette,
                     m_CurrentDocument._Document.Palette,
                     m_CreateWidgetCommand);
-                bool documentIsEmpty = m_CurrentDocument._Document.Models.All(
-                    model => model.Voxels.Count == 0);
                 if (documentIsEmpty)
                 {
                     new HideWidgetCommand(m_GestureWidget, command);
@@ -307,7 +308,7 @@ namespace TiltBrush
             }
 
             gestureDocument.SuppressDirtyTracking = false;
-            gestureDocument.SetAutoVisuals(m_GestureAutoVisuals, true);
+            gestureDocument.SetAutoVisuals(m_GestureAutoVisuals && targetShowing, true);
             m_GestureActive = false;
             m_GestureChanged = false;
             m_HasLastCell = false;
