@@ -176,10 +176,13 @@ namespace TiltBrush
 
             TiltText ConvertTextWidgetToTiltText(TextWidget widget)
             {
+                (int layerId, int frameId) = App.Scene.GetSerializableIndexOfCanvas(widget);
                 TiltText text = new TiltText
                 {
                     Transform = widget.SaveTransform,
                     Text = widget.Text,
+                    LayerId = layerId,
+                    FrameId = frameId,
                     FillColor = widget.TextColor,
                     Pinned = widget.Pinned,
                     GroupId = groupIdMapping.GetId(widget.Group),
