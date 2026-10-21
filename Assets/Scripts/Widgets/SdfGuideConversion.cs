@@ -140,7 +140,7 @@ namespace TiltBrush
                         generatedAssets));
                     return;
                 }
-                TrTransform sourcePose_GS = GuidePose(guide);
+                TrTransform sourcePose_GS = TrTransform.FromTransform(guide.transform);
                 foreach (SdfStencil.ComponentDefinition source in sdfGuide.GetComponentDefinitions())
                 {
                     TrTransform transform =

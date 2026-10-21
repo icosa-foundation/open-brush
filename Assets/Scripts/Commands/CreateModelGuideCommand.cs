@@ -51,9 +51,7 @@ namespace TiltBrush
                 targetCanvas = App.ActiveCanvas;
             }
 
-            TrTransform pose = TrTransform.TRS(
-                source.transform.position, source.transform.rotation,
-                source.GetSignedWidgetSize());
+            TrTransform pose = TrTransform.FromTransform(source.transform);
             m_CreateCommand = new CreateWidgetCommand(
                 WidgetManager.m_Instance.ModelStencilPrefab,
                 pose,
