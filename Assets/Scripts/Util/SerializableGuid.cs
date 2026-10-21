@@ -79,7 +79,7 @@ namespace TiltBrush
 
         public override int GetHashCode()
         {
-            return m_storage.GetHashCode();
+            return ((System.Guid)this).GetHashCode();
         }
 
         public static implicit operator SerializableGuid(System.Guid rhs)
@@ -116,11 +116,8 @@ namespace TiltBrush
 
         public override bool Equals(object obj)
         {
-            if (obj == null)
-            {
-                return false;
-            }
-            return m_storage.Equals(obj.ToString());
+            return obj is SerializableGuid other &&
+                ((System.Guid)this).Equals((System.Guid)other);
         }
 
         public static bool operator ==(SerializableGuid lhs, SerializableGuid rhs)
