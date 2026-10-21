@@ -12,15 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+
 namespace TiltBrush
 {
-    /// Records one voxel-edit gesture as before/after VOX document snapshots.
+    /// Records a voxel edit using changed cells, or snapshots for document-wide operations.
     public sealed class ModifyVoxDocumentCommand : BaseCommand
     {
         private readonly ModelWidget m_Widget;
         private readonly byte[] m_Before;
         private readonly byte[] m_After;
         private readonly bool m_PreserveSourceData;
+        private readonly int m_ModelIndex;
+        private readonly Dictionary<Vector3Int, byte> m_BeforeCells;
+        private readonly Dictionary<Vector3Int, byte> m_AfterCells;
+        private readonly Color32[] m_BeforePalette;
+        private readonly Color32[] m_AfterPalette;
 
         public ModifyVoxDocumentCommand(
             ModelWidget widget,
@@ -35,17 +44,52 @@ namespace TiltBrush
             m_PreserveSourceData = widget.EditableVoxDocument.HasPreservedSourceData;
         }
 
+        public ModifyVoxDocumentCommand(
+            ModelWidget widget, int modelIndex,
+            Dictionary<Vector3Int, byte> before, Dictionary<Vector3Int, byte> after,
+            Color32[] beforePalette, Color32[] afterPalette, BaseCommand parent = null)
+            : base(parent)
+        {
+            m_Widget = widget;
+            m_ModelIndex = modelIndex;
+            m_BeforeCells = new Dictionary<Vector3Int, byte>(before);
+            m_AfterCells = new Dictionary<Vector3Int, byte>(after);
+            m_BeforePalette = (Color32[])beforePalette.Clone();
+            m_AfterPalette = (Color32[])afterPalette.Clone();
+        }
+
         public override bool NeedsSave => true;
         public override bool IsAvailable => m_Widget != null;
 
         protected override void OnUndo()
         {
-            Apply(m_Before);
+            if (m_BeforeCells != null) ApplyCells(m_BeforeCells, m_BeforePalette);
+            else Apply(m_Before);
         }
 
         protected override void OnRedo()
         {
-            Apply(m_After);
+            if (m_AfterCells != null) ApplyCells(m_AfterCells, m_AfterPalette);
+            else Apply(m_After);
+        }
+
+        private void ApplyCells(Dictionary<Vector3Int, byte> cells, Color32[] palette)
+        {
+            if (m_Widget == null || m_Widget.EditableVoxDocument == null ||
+                m_ModelIndex >= m_Widget.EditableVoxDocument.Models.Count) return;
+            var document = m_Widget.EditableVoxDocument;
+            var model = document.Models[m_ModelIndex];
+            Array.Copy(palette, document.Palette, palette.Length);
+            foreach (var cell in cells)
+            {
+                if (cell.Value == 0) model.RemoveVoxel(cell.Key);
+                else model.AddOrUpdateVoxel(cell.Key, cell.Value);
+            }
+            if (m_Widget.Showing && m_Widget.gameObject.activeInHierarchy)
+            {
+                m_Widget.RefreshEditableVoxMeshes();
+            }
+            SaveLoadScript.m_Instance?.SketchChanged();
         }
 
         private void Apply(byte[] bytes)

@@ -14,6 +14,7 @@
 
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -40,7 +41,9 @@ namespace TiltBrush
         private bool m_GestureChanged;
         private bool m_HasLastCell;
         private Vector3Int m_LastCell;
-        private byte[] m_GestureBefore;
+        private Dictionary<Vector3Int, byte> m_GestureBeforeCells;
+        private Dictionary<Vector3Int, byte> m_GestureAfterCells;
+        private Color32[] m_GestureBeforePalette;
         private bool m_GestureAutoVisuals;
         private ModelWidget m_GestureWidget;
         private CreateWidgetCommand m_CreateWidgetCommand;
@@ -202,10 +205,9 @@ namespace TiltBrush
             }
 
             bool createdThisGesture = m_CreateWidgetCommand != null;
-            if (!createdThisGesture)
-            {
-                m_GestureBefore = m_CurrentDocument._Document.ToVoxBytes();
-            }
+            m_GestureBeforeCells = new Dictionary<Vector3Int, byte>();
+            m_GestureAfterCells = new Dictionary<Vector3Int, byte>();
+            m_GestureBeforePalette = (Color32[])m_CurrentDocument._Document.Palette.Clone();
             m_GestureWidget = m_CurrentDocument.Widget;
             m_GestureAutoVisuals = m_CurrentDocument.autoVisuals;
             m_CurrentDocument.SuppressDirtyTracking = true;
@@ -248,6 +250,7 @@ namespace TiltBrush
 
         private void ApplyCell(Vector3Int cell)
         {
+            m_CurrentModel._Model.TryGetPaletteIndex(cell, out byte before);
             Vector3 canvasPosition = m_CurrentModel.VoxelToCanvas(cell);
             bool changed = Mode switch
             {
@@ -255,7 +258,13 @@ namespace TiltBrush
                 EditMode.Paint => m_CurrentModel.RecolorAt(canvasPosition, App.BrushColor.CurrentColor),
                 _ => m_CurrentModel.PaintAt(canvasPosition, App.BrushColor.CurrentColor),
             };
-            m_GestureChanged |= changed;
+            if (changed)
+            {
+                if (!m_GestureBeforeCells.ContainsKey(cell)) m_GestureBeforeCells.Add(cell, before);
+                m_CurrentModel._Model.TryGetPaletteIndex(cell, out byte after);
+                m_GestureAfterCells[cell] = after;
+                m_GestureChanged = true;
+            }
         }
 
         private void EndGesture()
@@ -268,11 +277,13 @@ namespace TiltBrush
             var gestureDocument = m_CurrentDocument;
             if (m_GestureChanged && m_GestureWidget != null)
             {
-                byte[] after = m_CurrentDocument._Document.ToVoxBytes();
                 var command = new ModifyVoxDocumentCommand(
                     m_GestureWidget,
-                    m_GestureBefore,
-                    after,
+                    m_CurrentModel.index,
+                    m_GestureBeforeCells,
+                    m_GestureAfterCells,
+                    m_GestureBeforePalette,
+                    m_CurrentDocument._Document.Palette,
                     m_CreateWidgetCommand);
                 bool documentIsEmpty = m_CurrentDocument._Document.Models.All(
                     model => model.Voxels.Count == 0);
@@ -300,7 +311,9 @@ namespace TiltBrush
             m_GestureActive = false;
             m_GestureChanged = false;
             m_HasLastCell = false;
-            m_GestureBefore = null;
+            m_GestureBeforeCells = null;
+            m_GestureAfterCells = null;
+            m_GestureBeforePalette = null;
             m_GestureWidget = null;
             m_CreateWidgetCommand = null;
         }
@@ -311,14 +324,12 @@ namespace TiltBrush
             var document = new RuntimeVoxDocument();
             RuntimeVoxDocument.RuntimeModel runtimeModel = document.CreateModel(
                 "model_0", new Vector3Int(size, size, size));
-            m_GestureBefore = document.ToVoxBytes();
             byte paletteIndex = document.GetOrAddPaletteColor(App.BrushColor.CurrentColor);
             int center = size / 2;
             runtimeModel.AddOrUpdateVoxel(new Vector3Int(center, center, center), paletteIndex);
             Model model = Model.CreateEditableVoxModelFromBytes(document.ToVoxBytes());
             if (model == null)
             {
-                m_GestureBefore = null;
                 return false;
             }
 
