@@ -596,11 +596,26 @@ namespace TiltBrush
         private bool m_RightGripDown;
         private bool m_RightGripUp;
 
-        // Convenience diagnostics: true when both currently selected hand
-        // sources are gripping at once.
+        // True when both sides grip at once and at least one side is a hand.
+        // Each side grips with its selected source: a hand fist or a physical
+        // controller's grip button.
         private bool m_SwimModeHeld;
         private bool m_SwimModeDown;
         private bool m_SwimModeUp;
+
+        // Each side's selected-source grip, including physical controllers.
+        private bool m_LeftSideGripHeld;
+        private bool m_RightSideGripHeld;
+
+        // Whether Open Brush saw Grip on each hand side last frame, so swim edges
+        // don't repeat a press or drop a hand's own widget grab.
+        private bool m_LeftGripWasExposed;
+        private bool m_RightGripWasExposed;
+
+        // A fist still closed when swimming ends must open before it can grab a
+        // widget again, so it can't fall into a one-hand grab of the world.
+        private bool m_LeftNeedsRegrip;
+        private bool m_RightNeedsRegrip;
 
 
         private enum InputSourceKind
@@ -857,8 +872,8 @@ namespace TiltBrush
                 return false;
             }
 
-            // Two hands gripping always means the existing Open Brush
-            // swimming / world-transform gesture.
+            // Both sides gripping (two fists, or a fist plus a controller grip)
+            // always means the existing Open Brush swimming / world-transform gesture.
             if (Instance.m_SwimModeHeld)
                 return true;
 
@@ -883,10 +898,14 @@ namespace TiltBrush
                 return false;
             }
 
-            // When the second fist closes, both virtual controllers enter
-            // swimming together.
+            // When the second side closes, the hand enters swimming. A hand
+            // already holding a widget is not pressed a second time.
             if (Instance.m_SwimModeDown)
-                return true;
+            {
+                return !(isBrush
+                    ? Instance.m_RightGripWasExposed
+                    : Instance.m_LeftGripWasExposed);
+            }
 
             if (!Instance.IsSingleHandWidgetGripAllowed(isBrush))
                 return false;
@@ -905,10 +924,10 @@ namespace TiltBrush
                 return false;
             }
 
-            // Releasing either fist while swimming ends the two-hand virtual
-            // Grip state on both Open Brush controllers.
+            // Releasing either side while swimming ends this hand's virtual Grip,
+            // unless the hand keeps its own one-hand widget grab.
             if (Instance.m_SwimModeUp)
-                return true;
+                return !Grip(isBrush);
 
             // Do not require the widget to remain a current potential target on
             // release. Once a one-hand grab has started, Open Brush needs the
@@ -929,11 +948,16 @@ namespace TiltBrush
 
             if (Instance.m_SwimModeHeld)
             {
-                // Existing two-hand behaviour: the weaker grasp determines the
-                // effective confidence of the combined swimming gesture.
-                return Mathf.Min(
-                    Instance.m_Left.graspValue,
-                    Instance.m_Right.graspValue);
+                // With two hands, the weaker grasp determines the effective
+                // confidence of the combined swimming gesture. A controller side
+                // has no grasp value, so a mixed swim uses this hand's grasp.
+                return UseHand(!isBrush)
+                    ? Mathf.Min(
+                        Instance.m_Left.graspValue,
+                        Instance.m_Right.graspValue)
+                    : (isBrush
+                        ? Instance.m_Right.graspValue
+                        : Instance.m_Left.graspValue);
             }
 
             if (!Instance.IsSingleHandWidgetGripAllowed(isBrush))
@@ -976,6 +1000,9 @@ namespace TiltBrush
                        controllerName;
             }
 
+            if (isBrush ? m_RightNeedsRegrip : m_LeftNeedsRegrip)
+                return false;
+
             // Physical contact with a panel explicitly arms the right hand for
             // a one-hand panel grab. This remains true while the fist closes,
             // even if the hand geometry moves away from the original collider.
@@ -1003,12 +1030,12 @@ namespace TiltBrush
             if (!thisHeld)
                 return false;
 
-            // If both hands are grasping, m_SwimModeHeld handles the input
+            // If both sides are gripping, m_SwimModeHeld handles the input
             // instead. This branch is intentionally single-hand only.
             bool otherHeld =
                 isBrush
-                    ? m_LeftGripHeld
-                    : m_RightGripHeld;
+                    ? m_LeftSideGripHeld
+                    : m_RightSideGripHeld;
 
             return !otherHeld;
         }
@@ -2684,13 +2711,10 @@ namespace TiltBrush
 
         private void UpdateGripStates()
         {
-            // TODO: Mixed hand/controller world scaling and rotation are deliberately deferred.
-            // On controller-capable Android XR devices, holding a controller grip plus the opposite
-            // hand's fist does not enter swimming: this gate currently requires two hand sources.
-            // Combine each side's selected input grip, including press/release transitions, while
-            // preserving widget grabs and preventing a lone fist in empty space from moving the world.
-            // Earlier review: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4121690078
-            // Decision: https://github.com/icosa-foundation/open-brush/pull/1191#discussion_r4268955043
+            // Sample last frame's exposed Grip before any state changes.
+            m_LeftGripWasExposed = Grip(false);
+            m_RightGripWasExposed = Grip(true);
+
             UpdateOneHandGrip(
                 m_Left,
                 UseHand(false),
@@ -2705,13 +2729,32 @@ namespace TiltBrush
                 ref m_RightGripDown,
                 ref m_RightGripUp);
 
+            if (!m_LeftGripHeld)
+                m_LeftNeedsRegrip = false;
+
+            if (!m_RightGripHeld)
+                m_RightNeedsRegrip = false;
+
+            // A controller side contributes its own grip button. Open Brush already
+            // reads it directly, so only the hand side needs the combined state.
+            m_LeftSideGripHeld =
+                UseHand(false)
+                    ? m_LeftGripHeld
+                    : IsPhysicalControllerGripHeld(false);
+
+            m_RightSideGripHeld =
+                UseHand(true)
+                    ? m_RightGripHeld
+                    : IsPhysicalControllerGripHeld(true);
+
             bool wasSwimModeHeld = m_SwimModeHeld;
 
+            // Swimming needs both sides, so a lone fist in empty space never moves
+            // the world. A physical controller alone keeps its normal one-hand grab.
             m_SwimModeHeld =
-                UseHand(false) &&
-                UseHand(true) &&
-                m_LeftGripHeld &&
-                m_RightGripHeld;
+                (UseHand(false) || UseHand(true)) &&
+                m_LeftSideGripHeld &&
+                m_RightSideGripHeld;
 
             m_SwimModeDown =
                 !wasSwimModeHeld &&
@@ -2720,6 +2763,55 @@ namespace TiltBrush
             m_SwimModeUp =
                 wasSwimModeHeld &&
                 !m_SwimModeHeld;
+
+            if (m_SwimModeUp)
+            {
+                m_LeftNeedsRegrip =
+                    m_LeftGripHeld &&
+                    !OwnsOneHandWidgetGrab(false);
+
+                m_RightNeedsRegrip =
+                    m_RightGripHeld &&
+                    !OwnsOneHandWidgetGrab(true);
+            }
+        }
+
+
+        private static bool IsPhysicalControllerGripHeld(
+            bool isBrush)
+        {
+            if (!PhysicalControllerActive(isBrush))
+                return false;
+
+            // The controller side reads its own grip action; it never consults
+            // the hand path, so this cannot recurse into Grip(). isBrush means the
+            // right hand here, which holds the Wand when the user swaps hands.
+            bool rightIsWand =
+                InputManager.m_Instance != null &&
+                InputManager.m_Instance.WandOnRight;
+
+            ControllerInfo controller =
+                isBrush != rightIsWand
+                    ? InputManager.Brush
+                    : InputManager.Wand;
+
+            return controller != null &&
+                   controller.GetControllerGrip();
+        }
+
+
+        private static bool OwnsOneHandWidgetGrab(
+            bool isBrush)
+        {
+            SketchControlsScript controls =
+                SketchControlsScript.m_Instance;
+
+            return controls != null &&
+                   controls.IsUserInteractingWithAnyWidget() &&
+                   controls.OneHandGrabController ==
+                   (isBrush
+                       ? InputManager.ControllerName.Brush
+                       : InputManager.ControllerName.Wand);
         }
 
 

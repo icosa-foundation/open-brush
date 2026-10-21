@@ -205,7 +205,8 @@ namespace TiltBrush
                 return actionSet.WMRControllerScheme.bindingGroup;
             }
 
-            if (deviceName.Contains("PICO Controller"))
+            // Matches VrSdk's Pico style detection; Pico device names vary by profile.
+            if (deviceName.Contains("PICO"))
             {
                 return actionSet.PicoControllerScheme.bindingGroup;
             }

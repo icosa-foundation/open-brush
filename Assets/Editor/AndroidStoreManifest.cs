@@ -36,8 +36,12 @@ internal static class AndroidStoreManifest
             var questHands = GetOrCreate(doc, root, "uses-feature", "oculus.software.handtracking");
             SetAndroid(questHands, "required", "false");
             questHands.SetAttribute("replace", ToolsNamespace, "android:required");
-            // Pico enables tracked hands for OpenXR apps through this application metadata.
+            // Pico declarations match PICO-Unity-OpenXR-SDK's "Controllers And Hands" mode
+            // (Editor/PICOModifyAndroidManifest.cs). Without controller=1 Pico treats a
+            // hand-tracking app as hands-only.
+            GetOrCreate(doc, root, "uses-permission", "com.picovr.permission.HAND_TRACKING");
             SetMetadata(doc, app, "handtracking", "1");
+            SetMetadata(doc, app, "controller", "1");
         }
 
         if (scopedStorage)
