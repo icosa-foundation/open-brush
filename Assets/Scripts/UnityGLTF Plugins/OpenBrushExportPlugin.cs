@@ -110,19 +110,21 @@ namespace TiltBrush
             public List<BatchSubset> BatchSubsets { get; }
             public string BatchName { get; }
             public Stroke Stroke { get; }
+            public byte[] Data { get; }
 
             private TimestampSource(
-                List<BatchSubset> batchSubsets, string batchName, Stroke stroke)
+                List<BatchSubset> batchSubsets, string batchName, Stroke stroke, byte[] data = null)
             {
+                Data = data;
                 BatchSubsets = batchSubsets;
                 BatchName = batchName;
                 Stroke = stroke;
             }
 
             public static TimestampSource ForBatch(
-                List<BatchSubset> batchSubsets, string batchName)
+                List<BatchSubset> batchSubsets, string batchName, byte[] data = null)
             {
-                return new TimestampSource(batchSubsets, batchName, null);
+                return new TimestampSource(batchSubsets, batchName, null, data);
             }
 
             public static TimestampSource ForStroke(Stroke stroke)
@@ -345,6 +347,8 @@ namespace TiltBrush
                     m_OriginalBatchMeshes[batch] = mf.sharedMesh;
                     if (mesh.vertexCount > 0)
                     {
+                        byte[] originalTimestamps = App.UserConfig.Export.ExportStrokeTimestamp
+                            ? CreateTimestampData(batch, mesh.vertexCount) : null;
                         int[] sourceVertexIndices;
                         mesh = ProcessBrushMesh(
                             mesh, brush.m_Guid.ToString(), batch.InstantiatedMaterial,
@@ -358,7 +362,8 @@ namespace TiltBrush
                         if (App.UserConfig.Export.ExportStrokeTimestamp)
                         {
                             m_TimestampSources[mesh] =
-                                TimestampSource.ForBatch(exportSubsets, batch.name);
+                                TimestampSource.ForBatch(exportSubsets, batch.name,
+                                    RemapTimestampData(originalTimestamps, sourceVertexIndices));
                         }
                     }
                 }
@@ -934,10 +939,10 @@ namespace TiltBrush
                 return;
             }
 
-            byte[] timestampData = source.Stroke != null
+            byte[] timestampData = source.Data ?? (source.Stroke != null
                 ? CreateTimestampData(source.Stroke, mesh.vertexCount)
                 : CreateTimestampData(
-                    source.BatchSubsets, source.BatchName, mesh.vertexCount);
+                    source.BatchSubsets, source.BatchName, mesh.vertexCount));
             if (timestampData == null)
             {
                 return;
@@ -956,6 +961,18 @@ namespace TiltBrush
             {
                 primitive.Attributes[kTimestampAttribute] = timestampAccessor;
             }
+        }
+
+        private static byte[] RemapTimestampData(byte[] data, int[] sourceVertexIndices)
+        {
+            if (data == null || sourceVertexIndices == null) return data;
+            const int stride = sizeof(float) * 3;
+            var remapped = new byte[sourceVertexIndices.Length * stride];
+            for (int i = 0; i < sourceVertexIndices.Length; ++i)
+            {
+                Buffer.BlockCopy(data, sourceVertexIndices[i] * stride, remapped, i * stride, stride);
+            }
+            return remapped;
         }
 
         private static byte[] CreateTimestampData(
