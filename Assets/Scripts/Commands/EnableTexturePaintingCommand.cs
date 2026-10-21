@@ -40,7 +40,9 @@ namespace TiltBrush
             BaseCommand parent = null)
             : base(parent)
         {
-            if (widget != null && widget is ModelWidget || widget is ImageWidget || widget is StencilWidget)
+            if (widget != null &&
+                (widget is ModelWidget || widget is ImageWidget || widget is StencilWidget) &&
+                widget.GetComponentInChildren<InkCanvas>(true) == null)
             {
                 m_Widget = widget;
             }
@@ -91,6 +93,8 @@ namespace TiltBrush
         }
         private void AddInkCanvas(GameObject gameObject)
         {
+            if (gameObject.GetComponent<InkCanvas>() != null) return;
+
             var materials = gameObject.GetComponent<MeshRenderer>().materials;
             var paintSets = new List<InkCanvas.PaintSet>(materials.Length);
             foreach (var material in materials)
@@ -107,12 +111,8 @@ namespace TiltBrush
                     material: material));
             }
 
-            var canvas = gameObject.GetComponent<InkCanvas>();
-            if (canvas == null)
-            {
-                gameObject.AddInkCanvas(paintSets);
-                gameObject.layer = LayerMask.NameToLayer("TexturePaint");
-            }
+            gameObject.AddInkCanvas(paintSets);
+            gameObject.layer = LayerMask.NameToLayer("TexturePaint");
             var collider = gameObject.GetComponent<Collider>();
             if (!(collider is MeshCollider))
             {

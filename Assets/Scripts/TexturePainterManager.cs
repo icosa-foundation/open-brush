@@ -123,7 +123,7 @@ namespace TiltBrush
         public bool CanBeMadePaintable(GrabWidget grabWidget)
         {
             if (grabWidget == null) return false;
-            return grabWidget.GetComponentInChildren<InkCanvas>() == null &&
+            return grabWidget.GetComponentInChildren<InkCanvas>(true) == null &&
                 (
                     grabWidget is ModelWidget ||
                     grabWidget is StencilWidget
