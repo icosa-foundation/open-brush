@@ -24,7 +24,7 @@ namespace TiltBrush
         private List<string> m_TextureNames;
         private List<string> m_TexturePaths;
         Stroke currentStroke;
-        Stroke previousStroke;
+        private CanvasScript m_PreviewCanvas;
         private Dictionary<int, string> ButtonsToTexturePaths;
 
         public Material PreviewMaterial
@@ -65,6 +65,7 @@ namespace TiltBrush
         private void OnDestroy()
         {
             PointerManager.m_Instance.OnMainPointerBrushChange -= OnMainPointerBrushChange;
+            DestroyPreviewDrawing();
         }
 
         private void OnDrawGizmosSelected()
@@ -349,17 +350,18 @@ namespace TiltBrush
         void Update()
         {
             BaseUpdate();
-            var previewMesh = StrokePreview.GetComponent<MeshFilter>().mesh;
-            if (currentStroke != null && (previewMesh == null || previewMesh.vertexCount < 3))
+        }
+
+        private void DestroyPreviewDrawing()
+        {
+            // The panel borrows this mesh from its private canvas; release the view first.
+            StrokePreview.GetComponent<MeshFilter>().sharedMesh = null;
+            currentStroke?.Uncreate();
+            currentStroke = null;
+            if (m_PreviewCanvas != null)
             {
-                try
-                {
-                    StrokePreview.GetComponent<MeshFilter>().sharedMesh = currentStroke.m_BatchSubset.m_ParentBatch.gameObject.GetComponent<MeshFilter>().sharedMesh;
-                }
-                catch (Exception e)
-                {
-                    // TODO it's harmless NREs that fix themselves next call but should probably still do something better here.
-                }
+                App.Scene.DestroyLayer(m_PreviewCanvas);
+                m_PreviewCanvas = null;
             }
         }
 
@@ -434,6 +436,12 @@ namespace TiltBrush
             var scale = 2f;
             uint time = 0;
             if (brush == null) return;
+            DestroyPreviewDrawing();
+            // Do not register preview geometry as a sketch layer or draw on the active canvas.
+            var previewCanvasObject = new GameObject("Brush Editor Preview");
+            previewCanvasObject.transform.SetParent(App.Scene.transform, false);
+            previewCanvasObject.layer = App.Scene.MainCanvas.gameObject.layer;
+            m_PreviewCanvas = previewCanvasObject.AddComponent<CanvasScript>();
             float minPressure = brush.PressureSizeMin(false);
             float pressure = Mathf.Lerp(minPressure, 1f, 0.5f);
             var group = App.GroupManager.NewUnusedGroup();
@@ -471,7 +479,7 @@ namespace TiltBrush
             currentStroke = new Stroke
             {
                 m_Type = Stroke.Type.NotCreated,
-                m_IntendedCanvas = App.Scene.ActiveCanvas,
+                m_IntendedCanvas = m_PreviewCanvas,
                 m_BrushGuid = brush.m_Guid,
                 m_BrushScale = 1f,
                 m_BrushSize = .5f,
@@ -481,17 +489,14 @@ namespace TiltBrush
             };
             currentStroke.m_ControlPointsToDrop = Enumerable.Repeat(false, currentStroke.m_ControlPoints.Length).ToArray();
             currentStroke.Group = group;
-            currentStroke.Recreate(null, App.Scene.ActiveCanvas);
-
-            // TODO
-            // Cheat and keep a stroke history as stroke geometry isn't created immediately
-            // so destroying the current stroke destroys the preview stroke mesh
-            // if (previousStroke != null) previousStroke.DestroyStroke();
-
-            previousStroke = currentStroke;
-            StrokePreview.GetComponent<MeshRenderer>().sharedMaterial = brush.Material;
-            StrokePreview.GetComponent<MeshFilter>().mesh = null; // And set it on Update
-
+            currentStroke.Recreate(null, m_PreviewCanvas);
+            m_PreviewCanvas.BatchManager.FlushMeshUpdates();
+            PreviewMaterial = brush.Material;
+            StrokePreview.GetComponent<MeshFilter>().sharedMesh = currentStroke.m_BatchSubset != null
+                ? currentStroke.m_BatchSubset.m_ParentBatch.gameObject.GetComponent<MeshFilter>().sharedMesh
+                : currentStroke.m_Object?.GetComponent<MeshFilter>()?.sharedMesh;
+            // Only the panel's renderer should display the generated geometry.
+            m_PreviewCanvas.gameObject.SetActive(false);
         }
     }
 }
