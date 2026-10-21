@@ -134,6 +134,11 @@ namespace TiltBrush
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
             clone.CloneInitialMaterials(this);
+            clone.m_TextMeshPro.font = m_TextMeshPro.font;
+            clone.Text = Text;
+            clone.TextColor = TextColor;
+            clone.StrokeColor = StrokeColor;
+            clone.Mode = Mode;
             clone.TrySetCanvasKeywordsFromObject(transform);
             return clone;
         }
