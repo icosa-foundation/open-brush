@@ -156,6 +156,10 @@ namespace TiltBrush
             if (!string.IsNullOrEmpty(m_Subtree))
             {
                 var (node, excludeChildren) = ModelWidget.FindSubtreeRoot(m_ModelInstance, m_Subtree);
+                if (node == null)
+                {
+                    throw new ArgumentException($"Model guide subtree '{m_Subtree}' was not found.");
+                }
                 foreach (Transform child in m_ModelInstance.GetComponentsInChildren<Transform>())
                 {
                     bool keep = child == node || node.IsChildOf(child) ||
