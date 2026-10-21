@@ -418,6 +418,7 @@ namespace TiltBrush
                 {
                     return;
                 }
+                bool visibilityChanged = m_ViewState.Widget == null || !m_ViewState.Widget.Showing;
                 if (m_ViewState.Widget == null && !TryCreateWidget())
                 {
                     return;
@@ -426,6 +427,7 @@ namespace TiltBrush
                 {
                     m_ViewState.Widget.Show(true, false);
                 }
+                if (visibilityChanged) MarkWidgetVisibilityChanged();
                 m_ViewState.Widget.RefreshEditableVoxMeshes(optimized);
                 m_ViewState.VisualsDirty = false;
                 return;
@@ -496,14 +498,23 @@ namespace TiltBrush
             }
         }
 
-        [LuaDocsDescription("Hides this document's model widget, if present")]
+        [LuaDocsDescription("Hides this document's model widget; hidden widgets are omitted from sketch saves")]
         public void Hide()
         {
+            if (m_ViewState.Widget == null || !m_ViewState.Widget.Showing) return;
             m_ViewState.WidgetTransform = GetSceneTransform();
-            if (m_ViewState.Widget != null)
+            m_ViewState.Widget.Show(false, false);
+            MarkWidgetVisibilityChanged();
+        }
+
+        [MoonSharpHidden]
+        private void MarkWidgetVisibilityChanged()
+        {
+            if (!SuppressDirtyTracking)
             {
-                m_ViewState.Widget.Show(false, false);
+                SketchMemoryScript.m_Instance?.MarkUnrecordedChange();
             }
+            SaveLoadScript.m_Instance?.SketchChanged();
         }
 
         [MoonSharpHidden]
