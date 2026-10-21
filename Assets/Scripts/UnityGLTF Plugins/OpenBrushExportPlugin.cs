@@ -671,13 +671,14 @@ namespace TiltBrush
             return string.Join(",", colors.Select(c => $"{c.r:X2}{c.g:X2}{c.b:X2}"));
         }
 
-        // KeepStrokes=false: one clone per (source material, color set), with TEXCOORD_n colour atlas injected
+        // Both stroke layouts share one clone per material, color set and continuous UV interval.
         private int GetOrCreateAtlasMaterial(
             GLTFMaterial source, Mesh mesh,
             MeshPrimitive primitive, float gain, GLTFSceneExporter exporter)
         {
             // Build a tinted copy of the source brush texture for each stroke colour. glTF has
             // only one emissive texture slot, so the colour and source mask must be combined.
+            if (mesh.vertexCount == 0) return primitive.Material.Id;
             var bakedColors = mesh.colors;
             if (bakedColors.Length != mesh.vertexCount)
                 bakedColors = Enumerable.Repeat(Color.white, mesh.vertexCount).ToArray();
@@ -775,8 +776,9 @@ namespace TiltBrush
 
             primitive.Attributes[$"TEXCOORD_{texCoordIndex}"] = accessorId;
 
-            // Export atlas texture and build emissiveTexture pointing at that channel
-            var atlasTexInfo = exporter.ExportTextureInfo(atlas, GLTFSceneExporter.TextureMapType.Emissive);
+            // BaseColor export preserves alpha; the Emissive export preset drops it.
+            // The same sRGB image supplies both emissive RGB and base-color coverage.
+            var atlasTexInfo = exporter.ExportTextureInfo(atlas, GLTFSceneExporter.TextureMapType.BaseColor);
             atlasTexInfo.TexCoord = texCoordIndex;
 
             int materialIdx;
