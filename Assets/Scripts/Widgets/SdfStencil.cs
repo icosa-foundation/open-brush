@@ -35,6 +35,7 @@ namespace TiltBrush
         private int m_RequestedVisualRevision;
         private int m_StartedVisualRevision;
         private int m_CompletedVisualRevision;
+        private int m_GeneratedVisualRevision = -1;
         private int m_FinalizedVisualRevision;
         private bool m_StartedVisualGenerationIsFinal;
         private double m_LastVisualMutationTime;
@@ -97,6 +98,7 @@ namespace TiltBrush
         }
 
         public int PrimitiveCount => GetPrimitives().Count;
+        internal bool HasSurface => m_SdfManager != null && !m_SdfManager.IsEmpty;
         public int ComponentCount => GetComponents().Count;
 
         public override Vector3 Extents
@@ -394,7 +396,8 @@ namespace TiltBrush
             if (m_MeshGenerator == null || m_MeshGenerator.MeshRenderer == null ||
                 m_MeshGenerator.IsMeshGenerationPending ||
                 m_CompletedVisualRevision != m_RequestedVisualRevision ||
-                m_FinalizedVisualRevision != m_RequestedVisualRevision)
+                m_FinalizedVisualRevision != m_RequestedVisualRevision ||
+                m_GeneratedVisualRevision != m_RequestedVisualRevision)
             {
                 return false;
             }
@@ -701,8 +704,9 @@ namespace TiltBrush
             m_LastVisualMutationTime = Time.realtimeSinceStartupAsDouble;
         }
 
-        private void OnMeshGenerationFinished(bool _)
+        private void OnMeshGenerationFinished(bool succeeded)
         {
+            if (succeeded) { m_GeneratedVisualRevision = m_StartedVisualRevision; }
             // A revision is considered handled even if generation failed. This avoids an
             // unsupported or failing readback producing a retry-and-log loop every frame; a later
             // edit or show operation requests another attempt.
@@ -1151,6 +1155,12 @@ namespace TiltBrush
         public override void FindClosestPointOnSurface(
             Vector3 pos, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
+            if (!HasSurface)
+            {
+                surfacePos = pos;
+                surfaceNorm = Vector3.zero;
+                return;
+            }
             // IsoMesh evaluates distances in each shape's local units. Its nearest-point
             // query applies that distance directly in world space, which breaks when the
             // scene or guide is scaled. Keep the world-space gradient's magnitude to
@@ -1226,6 +1236,7 @@ namespace TiltBrush
         override public float GetActivationScore(
             Vector3 vControllerPos, InputManager.ControllerName name)
         {
+            if (!HasSurface) { return -1f; }
             // Use the fitted bounds collider as a cheap broad-phase test, but use the signed
             // distance field itself to decide whether the controller is inside the guide.
             if (m_Collider != null && !m_Collider.bounds.Contains(vControllerPos))
