@@ -1253,14 +1253,23 @@ namespace TiltBrush
         {
             if (m_SavedSculptedGeometry != null)
             {
-                int index = 0;
+                bool warned = false;
                 foreach (var stroke in m_MemoryList)
                 {
-                    if (stroke.m_MeshIsEdited)
+                    if (!stroke.m_MeshIsEdited) continue;
+                    if (m_SavedSculptedGeometry.Count > 0)
                     {
                         InsertSculptedGeometry(m_SavedSculptedGeometry.Dequeue(), stroke);
                     }
-                    index++;
+                    else
+                    {
+                        stroke.m_MeshIsEdited = false;
+                        if (!warned)
+                        {
+                            Debug.LogWarning("[OB_REVIEW_SCULPT] Missing saved sculpt geometry; retaining regenerated strokes.");
+                            warned = true;
+                        }
+                    }
                 }
                 // Clear everything just in case.
                 m_SavedSculptedGeometry = null;
@@ -1268,25 +1277,31 @@ namespace TiltBrush
         }
 
         /// Insert new geometry data into a stroke.
-        public void InsertSculptedGeometry(SculptedGeometryData sculptedGeometry, Stroke stroke)
+        public bool InsertSculptedGeometry(SculptedGeometryData sculptedGeometry, Stroke stroke)
         {
-            int startIndex = stroke.m_BatchSubset.m_StartVertIndex;
-            int endIndex = startIndex + stroke.m_BatchSubset.m_VertLength;
-
-            if (sculptedGeometry.vertices.Count != stroke.m_BatchSubset.m_VertLength)
+            var subset = stroke.m_BatchSubset;
+            if (subset == null || sculptedGeometry.vertices == null ||
+                sculptedGeometry.normals == null ||
+                sculptedGeometry.vertices.Count != subset.m_VertLength ||
+                sculptedGeometry.normals.Count != subset.m_VertLength)
             {
-                Debug.LogError("Sculpted stroke topology doesn't match actual stroke.");
-                return;
+                stroke.m_MeshIsEdited = false;
+                Debug.LogWarning("[OB_REVIEW_SCULPT] Sculpt geometry does not match regenerated stroke topology.");
+                return false;
             }
-            stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
+
+            int startIndex = subset.m_StartVertIndex;
+            int endIndex = startIndex + subset.m_VertLength;
+            subset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
             for (int i = startIndex; i < endIndex; i++)
             {
-                stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Vertices[i] = sculptedGeometry.vertices[i - startIndex];
-                stroke.m_BatchSubset.m_ParentBatch.m_Geometry.m_Normals[i] = sculptedGeometry.normals[i - startIndex];
+                subset.m_ParentBatch.m_Geometry.m_Vertices[i] = sculptedGeometry.vertices[i - startIndex];
+                subset.m_ParentBatch.m_Geometry.m_Normals[i] = sculptedGeometry.normals[i - startIndex];
             }
-
-            stroke.m_BatchSubset.RecalculateBounds();
-            stroke.m_BatchSubset.m_ParentBatch.DelayedUpdateMesh();
+            stroke.m_MeshIsEdited = true;
+            subset.RecalculateBounds();
+            subset.m_ParentBatch.DelayedUpdateMesh();
+            return true;
         }
         //
         // Sanity-checking geometry generation
