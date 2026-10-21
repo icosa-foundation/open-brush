@@ -36,6 +36,7 @@ namespace TiltBrush
         private bool m_RestartAtChapter;
         private Coroutine m_Operation;
         private int[] m_ViewpointIds = new int[0];
+        private int m_SelectedViewpointId = -1;
         public string LastError { get; private set; }
         public ImmDocument Document => m_Native != null ? m_Native.Document : null;
         public bool Initialized => Document != null || m_Gltf != null && m_Gltf.Initialized || m_Audio.Any(source => source != null && source.clip != null);
@@ -250,7 +251,7 @@ namespace TiltBrush
             if (Document == null) return;
             var snapshot = ReadSnapshot(Document);
             count = snapshot.availableCount;
-            index = Array.IndexOf(m_ViewpointIds, snapshot.activeId, 0, count);
+            index = Array.IndexOf(m_ViewpointIds, m_SelectedViewpointId, 0, count);
         }
 
         public void CycleViewpoint(int direction)
@@ -260,10 +261,22 @@ namespace TiltBrush
             var snapshot = ReadSnapshot(Document);
             int count = snapshot.availableCount;
             if (count == 0) return;
-            int index = Array.IndexOf(m_ViewpointIds, snapshot.activeId, 0, count);
+            int index = Array.IndexOf(m_ViewpointIds, m_SelectedViewpointId, 0, count);
             int next = index < 0 ? (direction > 0 ? 0 : count - 1) : (index + direction + count) % count;
-            TryNavigateToViewpoint(m_ViewpointIds[next], snapshot);
+            m_SelectedViewpointId = m_ViewpointIds[next];
         }
+
+        public void SelectViewpoint(int id)
+        {
+            RequireReady();
+            if (Document == null) throw new InvalidOperationException("This model has no IMM viewpoints");
+            var snapshot = ReadSnapshot(Document);
+            if (Array.IndexOf(m_ViewpointIds, id, 0, snapshot.availableCount) < 0)
+                throw new InvalidOperationException("Viewpoint is unavailable");
+            m_SelectedViewpointId = id;
+        }
+
+        public void NavigateToSelectedViewpoint() => NavigateToViewpoint(m_SelectedViewpointId);
 
         public ModelViewpointInfo[] GetViewpoints()
         {
@@ -274,7 +287,7 @@ namespace TiltBrush
             {
                 id = area.Id, name = area.Name,
                 available = Array.IndexOf(m_ViewpointIds, area.Id, 0, snapshot.availableCount) >= 0,
-                active = snapshot.activeId == area.Id
+                active = m_SelectedViewpointId == area.Id
             }).ToArray();
         }
         public void NavigateToViewpoint(int id)
@@ -284,6 +297,7 @@ namespace TiltBrush
             var snapshot = ReadSnapshot(Document);
             if (!TryNavigateToViewpoint(id, snapshot))
                 throw new InvalidOperationException("Viewpoint is unavailable or evaluated state changed");
+            m_SelectedViewpointId = id;
         }
         private bool TryNavigateToViewpoint(int id, SpawnAreaSnapshot snapshot)
         {

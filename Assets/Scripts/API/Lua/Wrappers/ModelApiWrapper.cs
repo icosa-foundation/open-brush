@@ -108,6 +108,8 @@ namespace TiltBrush
         public void Seek(double seconds) => Playback.Seek(seconds);
         [LuaDocsDescription("List IMM viewpoint IDs, names, availability and active selection")]
         public ModelViewpointInfo[] viewpoints => Playback.GetViewpoints();
+        [LuaDocsDescription("Select an eligible IMM viewpoint ID without moving or rescaling anything")]
+        public void SelectViewpoint(int id) => Playback.SelectViewpoint(id);
         [LuaDocsDescription("Explicitly move the user to an eligible IMM viewpoint ID")]
         public void NavigateToViewpoint(int id) => Playback.NavigateToViewpoint(id);
 
