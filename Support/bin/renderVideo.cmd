@@ -73,22 +73,22 @@ IF "%selItem%"=="4" (
   GOTO RunVideo
 )
 IF "%selItem%"=="5" (
-  ECHO Rendering 360 stereo omnidirecitonal stereo 4k x 4k 30fps 360 stereo
+  ECHO Rendering 360 stereo omnidirectional stereo 4k x 4k 30fps 360 stereo
   "%exePath%" --renderCameraPath "%usdaPath%" --Video.OfflineResolution 4096 --fps 30 --captureOds "%sketchPath%"
   GOTO End
 )
 IF "%selItem%"=="6" (
-  ECHO Rendering 360 stereo omnidirecitonal stereo 4k x 4k 30fps 360 stereo, no quick load
+  ECHO Rendering 360 stereo omnidirectional stereo 4k x 4k 30fps 360 stereo, no quick load
   "%exePath%" --noQuickLoad --renderCameraPath "%usdaPath%" --Video.OfflineResolution 4096 --fps 30 --captureOds "%sketchPath%"
   GOTO End
 )
 IF "%selItem%"=="7" (
-  ECHO Rendering [Fast,Low Quality] 360 stereo omnidirecitonal stereo 1k x 1k 30fps 360 stereo
+  ECHO Rendering [Fast,Low Quality] 360 stereo omnidirectional stereo 1k x 1k 30fps 360 stereo
   "%exePath%" --preview --renderCameraPath "%usdaPath%" --fps 30 --captureOds "%sketchPath%"
   GOTO End
 )
 IF "%selItem%"=="8" (
-  ECHO Rendering [Fast,Low Quality] 360 stereo omnidirecitonal stereo 1k x 1k 30fps 360 stereo, no quick load
+  ECHO Rendering [Fast,Low Quality] 360 stereo omnidirectional stereo 1k x 1k 30fps 360 stereo, no quick load
   "%exePath%" --preview --noQuickLoad --renderCameraPath "%usdaPath%" --fps 30 --captureOds "%sketchPath%"
   GOTO End
 )

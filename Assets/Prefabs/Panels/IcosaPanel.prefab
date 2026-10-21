@@ -3494,7 +3494,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: -0.68226534, y: 0.679, z: 0.003}
-  m_LocalScale: {x: 0.393, y: 0.395, z: 0.395}
+  m_LocalScale: {x: 0.393, y: 0.393, z: 0.393}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 465812}
@@ -3625,7 +3625,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.1, y: 0.8, z: 0.025}
+  m_Size: {x: 1.103168, y: 0.7338694, z: 0.025}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1000012134891236
 GameObject:
@@ -5303,7 +5303,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.1, y: 0.8, z: 0.025}
+  m_Size: {x: 1.103168, y: 0.7338694, z: 0.025}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!114 &114020894668800226
 MonoBehaviour:
@@ -5415,7 +5415,7 @@ Transform:
   m_GameObject: {fileID: 1000013820106702}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.68226534, y: -0.18599999, z: 0.003}
+  m_LocalPosition: {x: -0.68226534, y: -0.186, z: 0.003}
   m_LocalScale: {x: 0.393, y: 0.393, z: 0.393}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5547,7 +5547,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.1, y: 0.8, z: 0.025}
+  m_Size: {x: 1.103168, y: 0.7338694, z: 0.025}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1000013864904278
 GameObject:
@@ -7042,7 +7042,7 @@ MonoBehaviour:
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
   m_ButtonTexture: {fileID: 2800000, guid: 05540076714c54e4882720ef5e05ae15, type: 3}
-  m_AtlasTexture: 1
+  m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
   m_ButtonHasPressedAudio: 1
@@ -7074,7 +7074,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.1, y: 0.8, z: 0.025}
+  m_Size: {x: 1.103168, y: 0.7338694, z: 0.025}
   m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &89258244032498694
 GameObject:
@@ -8955,7 +8955,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
-  m_ActiveFontFeatures: 00000000u
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -10064,7 +10064,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
-  m_ActiveFontFeatures: 00000000u
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
@@ -11102,7 +11102,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
-  m_ActiveFontFeatures: 00000000u
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1
