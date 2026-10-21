@@ -347,7 +347,7 @@ namespace TiltBrush
                     {
                         int[] sourceVertexIndices;
                         mesh = ProcessBrushMesh(
-                            mesh, brush.m_Guid.ToString(), brush.Material,
+                            mesh, brush.m_Guid.ToString(), batch.InstantiatedMaterial,
                             mf.transform.localToWorldMatrix, out sourceVertexIndices);
                         var exportSubsets = RemapBatchSubsets(
                             batch.m_Groups, sourceVertexIndices);
@@ -355,12 +355,6 @@ namespace TiltBrush
                         m_TemporaryBatchMeshes.Add(mesh);
                         mf.sharedMesh = mesh;
                         mf.mesh = mesh;
-                        if (IsStaticExport)
-                        {
-                            // Static export can deduplicate brush materials because all
-                            // per-stroke colour is represented in exported mesh/material data.
-                            batch.gameObject.GetComponent<Renderer>().sharedMaterial = brush.Material;
-                        }
                         if (App.UserConfig.Export.ExportStrokeTimestamp)
                         {
                             m_TimestampSources[mesh] =
