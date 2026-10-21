@@ -196,7 +196,7 @@ namespace TiltBrush
             const int rootTransformNodeId = 0;
             const int rootGroupNodeId = 1;
             const int modelTransformNodeStart = 10;
-            const int modelShapeNodeStart = 1000;
+            int modelShapeNodeStart = checked(modelTransformNodeStart + models.Count);
 
             int[] modelTransformIds = new int[models.Count];
             for (int i = 0; i < models.Count; i++)
