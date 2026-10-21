@@ -41,6 +41,8 @@ namespace Kino
         [SerializeField] private float m_ChromaticAberration;
         [SerializeField] private Material m_material;
 
+        public float chromaticAberration => m_ChromaticAberration;
+
         public float intensity {
             get { return _falloff; }
             set { _falloff = value; }
