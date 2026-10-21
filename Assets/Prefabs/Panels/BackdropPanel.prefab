@@ -3715,19 +3715,7 @@ MonoBehaviour:
   m_LinkedUIObject: {fileID: 0}
   m_OnToggle:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 114088734560356942}
-        m_TargetAssemblyTypeName: TiltBrush.BackdropPanel, Assembly-CSharp
-        m_MethodName: TogglePassthrough
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   references:
     version: 2
     RefIds: []
@@ -3781,7 +3769,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &6082819151609977637
 Transform:
   m_ObjectHideFlags: 0
@@ -3814,7 +3802,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &5359200864364972101
 Transform:
   m_ObjectHideFlags: 0
@@ -4236,7 +4224,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &3021242023405006289
 Transform:
   m_ObjectHideFlags: 0
@@ -4429,19 +4417,7 @@ MonoBehaviour:
   m_LinkedUIObject: {fileID: 0}
   m_OnToggle:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 114088734560356942}
-        m_TargetAssemblyTypeName: TiltBrush.BackdropPanel, Assembly-CSharp
-        m_MethodName: TogglePassthrough
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   references:
     version: 2
     RefIds: []
@@ -4620,19 +4596,7 @@ MonoBehaviour:
   m_LinkedUIObject: {fileID: 0}
   m_OnToggle:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 114088734560356942}
-        m_TargetAssemblyTypeName: TiltBrush.BackdropPanel, Assembly-CSharp
-        m_MethodName: TogglePassthrough
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
   references:
     version: 2
     RefIds: []
