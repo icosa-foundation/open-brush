@@ -201,6 +201,17 @@ namespace TiltBrush
                 Shutdown("AR could not be initialized");
                 yield break;
             }
+            // Save the non-AR view before starting any subsystem that can update the pose.
+            Camera camera = App.VrSdk.GetVrCamera();
+            m_CameraStartPosition = camera.transform.localPosition;
+            m_CameraStartRotation = camera.transform.localRotation;
+            m_PoseDriver = camera.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+            if (m_PoseDriver != null)
+            {
+                m_PoseDriverWasEnabled = m_PoseDriver.enabled;
+                m_PoseDriver.enabled = false;
+            }
+
             manager.InitializeLoaderSync();
             if (manager.activeLoader != sm_ArLoader)
             {
@@ -246,7 +257,6 @@ namespace TiltBrush
                 yield break;
             }
 
-            Camera camera = App.VrSdk.GetVrCamera();
             // AR only produces frames, and so poses, while its camera is running, even when
             // the feed isn't shown.
             m_CameraManager = camera.GetComponent<ARCameraManager>();
@@ -258,14 +268,6 @@ namespace TiltBrush
             m_CameraManagerWasEnabled = m_CameraManager.enabled;
             m_CameraManager.enabled = true;
 
-            // Don't let the headset pose driver fight over the camera.
-            m_PoseDriver = camera.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
-            if (m_PoseDriver != null)
-            {
-                m_PoseDriverWasEnabled = m_PoseDriver.enabled;
-                m_PoseDriver.enabled = false;
-            }
-
             m_PositionAction = new InputAction("AR Device Position", InputActionType.Value,
                 "<HandheldARInputDevice>/devicePosition", expectedControlType: "Vector3");
             m_RotationAction = new InputAction("AR Device Rotation", InputActionType.Value,
@@ -273,8 +275,6 @@ namespace TiltBrush
             m_PositionAction.Enable();
             m_RotationAction.Enable();
 
-            m_CameraStartPosition = camera.transform.localPosition;
-            m_CameraStartRotation = camera.transform.localRotation;
             m_Anchored = false;
             Application.onBeforeRender += ApplyPose;
             ApplyCameraFeed();
