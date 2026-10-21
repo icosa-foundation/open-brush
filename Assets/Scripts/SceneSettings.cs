@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -133,6 +133,10 @@ namespace TiltBrush
 
         private bool m_PassthroughEnabled;
 
+        public bool CanLeavePassthrough => !PassthroughEnabled ||
+            MultiplayerManager.m_Instance == null ||
+            !MultiplayerManager.m_Instance.HasRemotePlayersInRoom();
+
         public bool PassthroughEnabled
         {
             get
@@ -145,6 +149,7 @@ namespace TiltBrush
             }
             set
             {
+                if (!value && !CanLeavePassthrough) return;
 #if PASSTHROUGH_SUPPORTED
                 var passthrough = m_RoomGeometry.GetComponent<OVRPassthroughLayer>();
                 if (passthrough == null)
@@ -265,7 +270,7 @@ namespace TiltBrush
             get { return RenderSettings.skybox != null && m_InGradient; }
             set
             {
-                if (value == InGradient) { return; }
+                if (value == InGradient || (value && !CanLeavePassthrough)) { return; }
                 if (value)
                 {
                     TransitionToGradient();
@@ -290,6 +295,7 @@ namespace TiltBrush
 
         public void LoadCustomSkybox(string filename)
         {
+            if (!CanLeavePassthrough) return;
             m_PassthroughEnabled = false;
             m_InGradient = false;
             m_CustomSkyboxTextureName = filename;
@@ -1104,9 +1110,7 @@ namespace TiltBrush
                 return false;
             }
 
-            Environment currentEnvironment = GetDesiredPreset();
-            return currentEnvironment != null && currentEnvironment.isPassthrough &&
-                env != null && !env.isPassthrough;
+            return !CanLeavePassthrough && env != null && !env.m_PassthroughEnabled;
         }
 
         public Environment GetDesiredPreset()
