@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ namespace TiltBrush
     {
         private System.IO.FileSystemWatcher m_InternalFileWatcher;
 
-        public FileWatcher(string path, bool includeSubdirectories = false)
+        public FileWatcher(string path, bool includeSubdirectories = true)
         {
             if (App.PlatformConfig.UseFileSystemWatcher)
             {
@@ -36,7 +36,7 @@ namespace TiltBrush
             }
         }
 
-        public FileWatcher(string path, string filter, bool includeSubdirectories = false)
+        public FileWatcher(string path, string filter, bool includeSubdirectories = true)
         {
             if (App.PlatformConfig.UseFileSystemWatcher)
             {
