@@ -599,7 +599,8 @@ namespace TiltBrush
                 {
                     Visible = layer.gameObject.activeSelf,
                     Name = layer.name,
-                    Transform = layer.LocalPose
+                    Transform = animationUI_manager != null
+                        ? animationUI_manager.GetCanvasBasePose(layer) : layer.LocalPose
                 };
             }
             return meta;

@@ -448,7 +448,11 @@ namespace TiltBrush.FrameAnimation
 
         public void NotifyCanvasWillBeDestroyed(CanvasScript canvas)
         {
-            if (canvas != null) m_CanvasesBeingDestroyed.Add(canvas);
+            if (canvas != null)
+            {
+                m_CanvasesBeingDestroyed.Add(canvas);
+                m_AnimatedCanvasPoses.Remove(canvas);
+            }
         }
 
         public void NotifyStrokeAdded(Stroke stroke)
@@ -3179,6 +3183,15 @@ namespace TiltBrush.FrameAnimation
             return (m_FrameOn - span.StartFrame) / span.Duration;
         }
 
+        private readonly Dictionary<CanvasScript, (TrTransform basePose, TrTransform appliedPose)>
+            m_AnimatedCanvasPoses = new();
+
+        public TrTransform GetCanvasBasePose(CanvasScript canvas)
+        {
+            return m_AnimatedCanvasPoses.TryGetValue(canvas, out var pose) &&
+                canvas.LocalPose.Equals(pose.appliedPose) ? pose.basePose : canvas.LocalPose;
+        }
+
         public void UpdateLayerTransforms()
         {
             int frameInt = FrameOn;
@@ -3189,7 +3202,18 @@ namespace TiltBrush.FrameAnimation
             for (int t = 0; t < Timeline.Count; t++)
             {
                 if (frameInt >= Timeline[t].Frames.Count) { continue; }
-                if (Timeline[t].Frames[frameInt].AnimatedPath != null)
+                CanvasScript animatedCanvas = Timeline[t].Frames[frameInt].Canvas;
+                CameraPathWidget animatedPath = Timeline[t].Frames[frameInt].AnimatedPath;
+                if (animatedPath == null || animatedPath.Path.NumPositionKnots == 0)
+                {
+                    if (m_AnimatedCanvasPoses.TryGetValue(animatedCanvas, out var oldPose))
+                    {
+                        animatedCanvas.LocalPose = GetCanvasBasePose(animatedCanvas);
+                        m_AnimatedCanvasPoses.Remove(animatedCanvas);
+                    }
+                    continue;
+                }
+                if (animatedPath != null)
                 {
                     float canvasTime = GetSmoothAnimationTime(Timeline[t]) * (Timeline[t].Frames[frameInt].AnimatedPath.Path.NumPositionKnots - 1);
                     PathT pathTime = new TiltBrush.PathT(canvasTime);
@@ -3198,7 +3222,10 @@ namespace TiltBrush.FrameAnimation
                     TrTransform posStart = App.Scene.Pose.inverse * TrTransform.TR(Timeline[t].Frames[frameInt].AnimatedPath.Path.GetPosition(pathStart), Timeline[t].Frames[frameInt].AnimatedPath.Path.GetRotation(pathStart));
                     TrTransform posNow = App.Scene.Pose.inverse * TrTransform.TR(Timeline[t].Frames[frameInt].AnimatedPath.Path.GetPosition(pathTime), Timeline[t].Frames[frameInt].AnimatedPath.Path.GetRotation(pathTime));
                     TrTransform posDifference = posNow * posStart.inverse;
-                    Timeline[t].Frames[frameInt].Canvas.LocalPose = posDifference;
+                    TrTransform basePose = GetCanvasBasePose(animatedCanvas);
+                    TrTransform appliedPose = posDifference * basePose;
+                    animatedCanvas.LocalPose = appliedPose;
+                    m_AnimatedCanvasPoses[animatedCanvas] = (basePose, appliedPose);
                     TrTransform pathPositionConstant = (pathPosition);
                     Timeline[t].Frames[frameInt].AnimatedPath.gameObject.transform.position = pathPositionConstant.translation;
                     Timeline[t].Frames[frameInt].AnimatedPath.gameObject.transform.rotation = pathPositionConstant.rotation;
