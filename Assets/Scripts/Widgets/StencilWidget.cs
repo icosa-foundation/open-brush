@@ -299,6 +299,7 @@ namespace TiltBrush
                     Debug.LogException(e, stencil);
                     if (stencil is SdfStencil)
                     {
+                        WidgetManager.m_Instance.UnregisterGrabWidget(stencil.gameObject);
                         stencil.gameObject.SetActive(false);
                         Destroy(stencil.gameObject);
                         continue;
