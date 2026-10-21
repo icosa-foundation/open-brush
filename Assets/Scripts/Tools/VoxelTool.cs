@@ -346,7 +346,8 @@ namespace TiltBrush
             {
                 return;
             }
-            if (!m_CurrentDocument.isValid)
+            if (!m_CurrentDocument.isValid || m_CurrentDocument.Widget == null ||
+                !m_CurrentDocument.Widget.Showing || !m_CurrentDocument.Widget.gameObject.activeInHierarchy)
             {
                 EndGesture();
                 m_CurrentDocument = null;
