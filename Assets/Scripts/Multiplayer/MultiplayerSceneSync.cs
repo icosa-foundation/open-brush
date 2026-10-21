@@ -59,13 +59,13 @@ namespace OpenBrush.Multiplayer
             onLargeDataReceived -= OnLargeDataReceived;
         }
 
-        public void StartSyncronizationForUser(int id)
+        public void StartSyncronizationForUser(int id, List<Stroke> initialStrokes = null)
         {
 
             switch (m_SyncType)
             {
                 case SyncType.Strokes:
-                    SendStrokesToPlayer(id);
+                    SendStrokesToPlayer(id, initialStrokes);
                     break;
                 case SyncType.Commands:
                     StartCoroutine(SendCommandHistory(id));
@@ -76,9 +76,10 @@ namespace OpenBrush.Multiplayer
 
         #region Syncronization Logic Strokes
 
-        async void SendStrokesToPlayer(int id)
+        async void SendStrokesToPlayer(int id, List<Stroke> initialStrokes)
         {
-            LinkedList<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList;
+            List<Stroke> strokes = initialStrokes ??
+                SketchMemoryScript.m_Instance.GetMemoryList.ToList();
 
             if (strokes.Count == 0) return;
 

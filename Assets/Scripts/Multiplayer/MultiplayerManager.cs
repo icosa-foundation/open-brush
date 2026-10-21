@@ -104,6 +104,7 @@ namespace OpenBrush.Multiplayer
         private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
         private const float k_LiveStrokeRepairRetentionSeconds = 30f;
         private const int k_CapabilityDiscoveryTimeoutMs = 2000;
+        private readonly Dictionary<int, List<Stroke>> m_InitialSceneStrokeSnapshots = new();
 
         public bool IsLiveStrokeStreamingEnabled { get; private set; }
         public bool IsLiveStrokeRoomStateReady { get; private set; }
@@ -677,6 +678,9 @@ namespace OpenBrush.Multiplayer
         private void ScheduleInitialSceneSync(int playerId)
         {
             m_PendingSceneSyncPlayerIds.Add(playerId);
+            // Capture the membership before capability discovery; later strokes arrive as deltas.
+            m_InitialSceneStrokeSnapshots[playerId] =
+                SketchMemoryScript.m_Instance.GetMemoryList.ToList();
             if (IsPlayerLiveStrokeCompatible(playerId))
             {
                 CompletePendingSceneSync(playerId, "known capability");
@@ -703,7 +707,9 @@ namespace OpenBrush.Multiplayer
             Debug.Log(
                 $"[LiveStrokeCapabilitySync] Starting scene sync for player {playerId}; " +
                 $"reason={reason}, enriched={IsPlayerLiveStrokeCompatible(playerId)}.");
-            MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(playerId);
+            m_InitialSceneStrokeSnapshots.TryGetValue(playerId, out var initialStrokes);
+            m_InitialSceneStrokeSnapshots.Remove(playerId);
+            MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(playerId, initialStrokes);
         }
 
         public bool IsPlayerLiveStrokeCompatible(int playerId)
@@ -1329,6 +1335,7 @@ namespace OpenBrush.Multiplayer
         {
             m_LiveStrokeCapablePlayers.Remove(id);
             m_PendingSceneSyncPlayerIds.Remove(id);
+            m_InitialSceneStrokeSnapshots.Remove(id);
             m_LiveStrokePointerCapacities.Remove(id);
             m_Manager?.RemoveLiveStrokePreviewsForPlayer(id);
             foreach (OutgoingLiveStroke stream in m_OutgoingLiveStrokes.Values)
@@ -1525,6 +1532,7 @@ namespace OpenBrush.Multiplayer
             m_RemotePlayers.ClearList();// Clean up remote player references
             m_LiveStrokeCapablePlayers.Clear();
             m_PendingSceneSyncPlayerIds.Clear();
+            m_InitialSceneStrokeSnapshots.Clear();
             m_LiveStrokePointerCapacities.Clear();
             IsLiveStrokeStreamingEnabled = false;
             IsLiveStrokeRoomStateReady = false;
