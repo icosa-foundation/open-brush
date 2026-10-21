@@ -414,7 +414,7 @@ MonoBehaviour:
   m_SkyboxPreview: {fileID: 5126479623106838355}
   m_SkyboxPreviewMaterial: {fileID: 2100000, guid: 00ddccd780fd8784e94f870a1a3b9e25,
     type: 2}
-  m_PassthroughPreviewMaterial: {fileID: 2100000, guid: fe9ceb0714c558cba8c750949b0da45d,
+  m_PassthroughPreviewMaterial: {fileID: 2100000, guid: ce8b2be5f7b63f344ae603ba6f4b4aec,
     type: 2}
   references:
     version: 2
