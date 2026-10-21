@@ -97,7 +97,14 @@ namespace TiltBrush
 
             BrushCatalog.m_Instance.UpdateCatalog(newBrushPath);
             BrushCatalog.m_Instance.HandleChangedBrushes();
-            BrushDescriptor newBrush = BrushCatalog.m_Instance.AllBrushes.Last();
+            string newBrushLocation = Path.GetFileName(newBrushPath);
+            BrushDescriptor newBrush = BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(
+                brush => brush.UserVariantBrush?.Location == newBrushLocation);
+            if (newBrush == null)
+            {
+                Debug.LogError($"[BrushEditor] Failed to load duplicated brush at {newBrushPath}");
+                return;
+            }
 
             var fileName = Path.Combine(UserVariantBrush.GetBrushesPath(), newBrush.UserVariantBrush.Location, "brush.cfg");
             UserVariantBrush.SaveDescriptor(newBrush, fileName, textureRefs);
