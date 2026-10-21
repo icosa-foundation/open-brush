@@ -63,49 +63,42 @@ public class InspectorTransformTab : InspectorBaseTab
 
     public void HandleLabelEdited(EditableLabel label)
     {
-        var newTr = ParentPanel.CurrentSelectionTr;
-
-        if (float.TryParse(label.LastTextInput, out float value))
+        if (ParentPanel.CurrentSelectionType == SelectionType.Nothing) return;
+        if (!float.TryParse(label.LastTextInput, out float value) ||
+            float.IsNaN(value) || float.IsInfinity(value) ||
+            (label.m_LabelTag == "SX" && value == 0f))
         {
-            label.SetError(false);
-            switch (label.m_LabelTag)
-            {
-                case "TX":
-                    newTr.translation.x = value;
-                    break;
-                case "TY":
-                    newTr.translation.y = value;
-                    break;
-                case "TZ":
-                    newTr.translation.z = value;
-                    break;
-                case "RX":
-                    var rotationX = newTr.rotation.eulerAngles;
-                    rotationX.x = value;
-                    newTr.rotation = Quaternion.Euler(rotationX);
-                    break;
-                case "RY":
-                    var rotationY = newTr.rotation.eulerAngles;
-                    rotationY.y = value;
-                    newTr.rotation = Quaternion.Euler(rotationY);
-                    break;
-                case "RZ":
-                    var rotationZ = newTr.rotation.eulerAngles;
-                    rotationZ.z = value;
-                    newTr.rotation = Quaternion.Euler(rotationZ);
-                    break;
-                case "SX":
-                    newTr.scale = value;
-                    break;
-            }
+            label.SetError(true);
+            return;
+        }
 
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new TransformSelectionCommand(newTr, SelectionBounds.center)
-            );
-        }
-        else
+        // The fields describe the absolute pose at the selection center. The command
+        // applies a relative transform about that center, so convert between the two.
+        TrTransform currentCenter = ParentPanel.CurrentSelectionTr * TrTransform.T(SelectionBounds.center);
+        TrTransform editedCenter = currentCenter;
+        switch (label.m_LabelTag)
         {
-            m_LabelForTranslationX.SetError(true);
+            case "TX": editedCenter.translation.x = value; break;
+            case "TY": editedCenter.translation.y = value; break;
+            case "TZ": editedCenter.translation.z = value; break;
+            case "RX":
+            case "RY":
+            case "RZ":
+                Vector3 rotation = editedCenter.rotation.eulerAngles;
+                if (label.m_LabelTag == "RX") rotation.x = value;
+                else if (label.m_LabelTag == "RY") rotation.y = value;
+                else rotation.z = value;
+                editedCenter.rotation = Quaternion.Euler(rotation);
+                break;
+            case "SX": editedCenter.scale = value; break;
+            default:
+                label.SetError(true);
+                return;
         }
+
+        label.SetError(false);
+        TrTransform delta = currentCenter.inverse * editedCenter;
+        SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+            new TransformSelectionCommand(delta, SelectionBounds.center));
     }
 }
