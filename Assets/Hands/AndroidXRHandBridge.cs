@@ -790,6 +790,10 @@ namespace TiltBrush
             UseHand(true) &&
             Instance.m_Right.tracked;
 
+        // The Wand hand has no trigger mapping. Expose its pinch separately for
+        // quick loading without enabling left-hand drawing or other trigger commands.
+        public static bool LeftPinchHeld => LeftTracked && Instance.m_Left.pinchHeld;
+
 
         /// <summary>
         /// Tracking validity for the HAND path only. UnityXRControllerInfo should
