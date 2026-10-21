@@ -139,7 +139,7 @@ namespace TiltBrush
             }
 
             UrpPostProcessingController.Instance.ConfigureDropCamCamera(
-                camera, enableCaptureEffects: false);
+                camera, enableCaptureEffects: CameraConfig.PostEffects);
         }
 
         void DisableOptionalBuiltInCapturePostEffects()

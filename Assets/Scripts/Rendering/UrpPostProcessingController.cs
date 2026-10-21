@@ -267,9 +267,8 @@ namespace TiltBrush
                 allowHDR = camera != null && camera.allowHDR
             };
 
-            if (camera == null || !enablePostProcessing)
+            if (camera == null)
             {
-                RegisterCaptureCamera(camera);
                 return state;
             }
 
@@ -278,6 +277,7 @@ namespace TiltBrush
                 camera.GetComponent<UniversalAdditionalCameraData>();
             if (cameraData == null)
             {
+                if (!enablePostProcessing) return state;
                 cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
             }
 
@@ -285,6 +285,14 @@ namespace TiltBrush
             state.renderPostProcessing = cameraData.renderPostProcessing;
             state.volumeLayerMask = cameraData.volumeLayerMask;
             state.volumeTrigger = cameraData.volumeTrigger;
+
+            if (!enablePostProcessing)
+            {
+                // Previews may have effects enabled. Suppress only the post-processing flag
+                // for this capture; do not reconfigure XR, the camera stack, or MSAA.
+                cameraData.renderPostProcessing = false;
+                return state;
+            }
 
             camera.allowHDR = m_CurrentHdr;
             ConfigureCaptureCamera(camera, enablePostProcessing, m_RuntimeCaptureProfile);
@@ -489,7 +497,7 @@ namespace TiltBrush
             cameraData.volumeLayerMask = m_VolumeLayerMask;
             cameraData.volumeTrigger = camera.transform;
             cameraData.renderPostProcessing =
-                !isCapture && m_EnablePostProcessingOnMainCameras && CameraConfig.PostEffects;
+                (isCapture || m_EnablePostProcessingOnMainCameras) && CameraConfig.PostEffects;
             camera.allowHDR = m_CurrentHdr;
 
             if (!isCapture)

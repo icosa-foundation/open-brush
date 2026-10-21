@@ -181,7 +181,7 @@ namespace TiltBrush
                 try
                 {
                     detected = new HashSet<string>(
-                        Directory.GetFiles(m_CurrentVideoDirectory, "*.*", SearchOption.TopDirectoryOnly).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
+                        AndroidDirectStorage.GetFiles(m_CurrentVideoDirectory).Where(x => m_supportedVideoExtensions.Contains(Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
                 }
                 catch (Exception e) when (e is IOException || e is UnauthorizedAccessException ||
                                           e is ArgumentException || e is NotSupportedException)
