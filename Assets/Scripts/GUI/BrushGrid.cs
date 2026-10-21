@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -534,8 +534,9 @@ namespace TiltBrush
         public void GotoPageForBrush(BrushDescriptor brush)
         {
             int brushIndex = Array.FindIndex(m_TagFilteredBrushes, b => b.m_Guid == brush.m_Guid);
-            int page = Mathf.FloorToInt(brushIndex / m_BrushButtons.Length);
-            m_PageIndex = Mathf.Clamp(0, page, m_NumPages - 1);
+            if (brushIndex < 0 || m_BrushButtons.Length == 0 || m_NumPages == 0) return;
+            int page = brushIndex / m_BrushButtons.Length;
+            m_PageIndex = Mathf.Clamp(page, 0, m_NumPages - 1);
             m_RequestedPageIndex = m_PageIndex;
             RefreshButtonPositions();
         }
