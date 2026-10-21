@@ -2529,7 +2529,7 @@ namespace TiltBrush.FrameAnimation
                     NewEmptyFrameValue, IsSparseFrameFilled);
             });
 
-            m_FrameOn--;
+            m_FrameOn = Mathf.Max(0, m_FrameOn - 1);
             FocusFrame(FrameOn);
             ResetTimeline();
             return CompleteFrameLengthOperation(index, previousTimeline);
