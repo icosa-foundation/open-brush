@@ -121,7 +121,25 @@ namespace TiltBrush
 
         public long GetControlPointTimeMs(Stroke stroke, uint timestampMs)
         {
-            var session = m_strokeSessions[stroke];
+            if (!m_strokeSessions.TryGetValue(stroke, out var session))
+            {
+                if (!SketchMemoryScript.m_Instance.TryGetStrokeTimeSession(stroke, out session))
+                {
+                    // Completed network strokes enter the rendered list immediately. Anchor
+                    // metadata-free additions at their arrival playhead and retain that anchor
+                    // so rewinding uses the same coordinates.
+                    long arrivalTimeMs = Math.Max(0, Math.Min(uint.MaxValue,
+                        ScenePlaybackByTimeLayered.ConvertSketchTimeToMilliseconds(
+                            App.Instance.CurrentSketchTime)));
+                    session = new StrokeTimeSessionMetadata
+                    {
+                        StartUtcMs = checked(m_startUtcMs + arrivalTimeMs),
+                        StartSketchTimeMs = stroke.TailTimestampMs,
+                        EndSketchTimeMs = stroke.TailTimestampMs,
+                    };
+                }
+                m_strokeSessions.Add(stroke, session);
+            }
             return checked(
                 session.StartUtcMs + ((long)timestampMs - session.StartSketchTimeMs) -
                 m_startUtcMs);
