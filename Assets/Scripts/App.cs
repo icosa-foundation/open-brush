@@ -2357,10 +2357,11 @@ namespace TiltBrush
         {
             SaveLoadScript.m_Instance.SignalPlaybackCompletion();
             if (SketchMemoryScript.m_Instance.CurrentPlaybackMode !=
-                SketchMemoryScript.PlaybackMode.Timestamps)
+                SketchMemoryScript.PlaybackMode.Timestamps ||
+                CurrentSketchTime >= float.MaxValue)
             {
 
-                // For non-timestamp playback mode, adjust current time to last stroke in drawing.
+                // Restore the drawing clock after playback, including timestamp quick-load.
                 try
                 {
                     this.CurrentSketchTime = SketchMemoryScript.m_Instance.GetApproximateLatestTimestamp();
