@@ -764,10 +764,6 @@ namespace TiltBrush
         {
             var script = GetActiveScript(category);
             EndScript(script);
-            if (category == LuaApiCategory.PointerScript)
-            {
-                ForceGuideSnappingOff(false);
-            }
         }
 
         public void EndScript(Script script)
@@ -781,6 +777,7 @@ namespace TiltBrush
                 script.Globals.Set("_scriptHasBeenInitialized", DynValue.False);
                 script.Globals.Set("_scriptHasEnded", DynValue.True);
             }
+            ForceGuideSnappingOff(script, false);
         }
 
         private void CallActiveBackgroundScripts(string fnName)
@@ -941,7 +938,22 @@ namespace TiltBrush
             }
         }
 
+        private readonly HashSet<Script> m_GuideSnappingOwners = new HashSet<Script>();
+
+        public void ForceGuideSnappingOff(Script script, bool active)
+        {
+            if (active) { m_GuideSnappingOwners.Add(script); }
+            else { m_GuideSnappingOwners.Remove(script); }
+            UpdateForcedGuideSnapping(m_GuideSnappingOwners.Count > 0);
+        }
+
         public void ForceGuideSnappingOff(bool active)
+        {
+            if (!active) { m_GuideSnappingOwners.Clear(); }
+            UpdateForcedGuideSnapping(active);
+        }
+
+        private void UpdateForcedGuideSnapping(bool active)
         {
             IsGuideSnappingForcedOff = active;
             if (active && WidgetManager.m_Instance != null)

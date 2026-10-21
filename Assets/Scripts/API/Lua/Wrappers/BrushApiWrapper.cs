@@ -205,8 +205,8 @@ namespace TiltBrush
         [LuaDocsDescription("If set to true then the drawing pointer will not snap to guides. Guide visibility and surface queries are unaffected.")]
         [LuaDocsExample("Brush:ForceGuideSnappingOff(true)")]
         [LuaDocsParameter("active", "True means guide snapping is forced off, false is normal behaviour")]
-        public static void ForceGuideSnappingOff(bool active) =>
-            LuaManager.Instance.ForceGuideSnappingOff(active);
+        public static void ForceGuideSnappingOff(Script script, bool active) =>
+            LuaManager.Instance.ForceGuideSnappingOff(script, active);
 
         [LuaDocsDescription("Forces the start of a new stroke - will stop painting this frame and start again the next.")]
         [LuaDocsExample("Brush:ForceNewStroke()")]
