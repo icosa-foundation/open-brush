@@ -114,7 +114,7 @@ namespace TiltBrush
         private FileWatcher m_FileWatcher;
         private static LuaManager m_Instance;
         private ApiManager apiManager;
-        private static readonly string LuaFileSearchPattern = "*.lua";
+        private static readonly string LuaFileExtension = ".lua";
         private string m_UserPluginsPath;
 
         public string UserPluginsPath() { return m_UserPluginsPath; }
@@ -484,7 +484,8 @@ namespace TiltBrush
 
         public void LoadUserScripts()
         {
-            string[] files = Directory.GetFiles(UserPluginsPath(), LuaFileSearchPattern, SearchOption.AllDirectories);
+            string[] files = AndroidDirectStorage.GetFilesWithExtension(
+                UserPluginsPath(), LuaFileExtension, SearchOption.AllDirectories);
             foreach (string scriptPath in files)
             {
                 LoadScriptFromPath(scriptPath);

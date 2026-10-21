@@ -4083,6 +4083,14 @@ MonoBehaviour:
     m_Localized: Hold button down for more option
     m_Metadata:
       m_Items: []
+  - m_Id: 554342843705548800
+    m_Localized: Rotate panels left
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Localized: Rotate panels right
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
