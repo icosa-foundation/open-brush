@@ -349,16 +349,31 @@ namespace TiltBrush
             Vector3 target = camera.transform.position;
             if (pose.isFloorLevel != 0) target.y = origin != null ? origin.transform.position.y : camera.transform.position.y;
             Quaternion yawDelta = Yaw(camera.transform.rotation) * Quaternion.Inverse(Yaw(rotation));
-            // Resize only this widget about the destination, with normal save/undo support.
-            // Navigation then uses a rigid scene transform, preserving the scene's scale.
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                new MoveWidgetCommand(widget, modelPose, widget.CustomDimension, true));
-            App.Scene.Pose = TrTransform.TR(target, yawDelta) *
+            TrTransform scenePose = TrTransform.TR(target, yawDelta) *
                 TrTransform.T(-position) * App.Scene.Pose;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new NavigateModelViewpointCommand(widget, modelPose, scenePose));
             // Apply the evaluated pose once. Model playback never follows viewpoint animation.
             Document.SetSpawnAreaNeedsUpdate(false);
             return true;
         }
+        private sealed class NavigateModelViewpointCommand : BaseCommand
+        {
+            private readonly TrTransform m_BeforeScenePose;
+            private readonly TrTransform m_AfterScenePose;
+
+            internal NavigateModelViewpointCommand(
+                ModelWidget widget, TrTransform modelPose, TrTransform scenePose)
+            {
+                m_BeforeScenePose = App.Scene.Pose;
+                m_AfterScenePose = scenePose;
+                new MoveWidgetCommand(widget, modelPose, widget.CustomDimension, true, this);
+            }
+
+            protected override void OnRedo() { App.Scene.Pose = m_AfterScenePose; }
+            protected override void OnUndo() { App.Scene.Pose = m_BeforeScenePose; }
+        }
+
         internal static TrTransform ScaleModelAboutViewpoint(TrTransform modelPose, Vector3 viewpoint, float factor)
         {
             modelPose.translation = viewpoint + (modelPose.translation - viewpoint) * factor;
