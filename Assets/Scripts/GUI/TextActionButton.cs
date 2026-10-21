@@ -1,4 +1,4 @@
-﻿// Copyright 2024 The Open Brush Authors
+// Copyright 2024 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ namespace TiltBrush
         public override void SetButtonSelected(bool bSelected)
         {
             base.SetButtonSelected(bSelected);
-            m_Highlight.SetActive(true);
+            m_Highlight.SetActive(bSelected);
             var color = bSelected ? m_ColorSelected : m_ColorDeselected;
             m_Highlight.GetComponent<MeshRenderer>().material.color = color;
         }
