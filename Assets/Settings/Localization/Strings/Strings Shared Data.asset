@@ -3851,6 +3851,14 @@ MonoBehaviour:
     m_Key: CAPTURE_TRAY_EXPORT_BUTTON_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
+  - m_Id: 554342843705548800
+    m_Key: HANDTRACKING_ROTATE_PANELS_LEFT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Key: HANDTRACKING_ROTATE_PANELS_RIGHT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:
