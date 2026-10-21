@@ -152,7 +152,7 @@ namespace TiltBrush
         // Returns immediate child directories, relative to the requested path.
         virtual public IEnumerable<string> GetContentsAt(string path)
         {
-            string relativePath = path.Replace('\', '/').Trim('/');
+            string relativePath = path.Replace('\\', '/').Trim('/');
             if (m_IsFile)
             {
                 string prefix = $"{m_subfolder}{relativePath}";
