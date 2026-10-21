@@ -219,23 +219,42 @@ namespace TiltBrush
         {
             if (m_CurrentModel == null || !m_CurrentModel.ContainsAt(canvasPosition))
             {
+                m_HasLastCell = false;
                 return;
             }
-
             Vector3Int cell = Vector3Int.RoundToInt(m_CurrentModel.CanvasToVoxel(canvasPosition));
-            if (m_HasLastCell && cell == m_LastCell)
+            if (m_HasLastCell && cell == m_LastCell) return;
+            Vector3Int current = m_HasLastCell ? m_LastCell : cell;
+            if (!m_HasLastCell) ApplyCell(current);
+            Vector3Int delta = cell - current;
+            Vector3Int step = new Vector3Int(System.Math.Sign(delta.x), System.Math.Sign(delta.y), System.Math.Sign(delta.z));
+            Vector3 interval = new Vector3(
+                delta.x == 0 ? float.PositiveInfinity : 1f / Mathf.Abs(delta.x),
+                delta.y == 0 ? float.PositiveInfinity : 1f / Mathf.Abs(delta.y),
+                delta.z == 0 ? float.PositiveInfinity : 1f / Mathf.Abs(delta.z));
+            Vector3 next = interval * 0.5f;
+            // Traverse every voxel crossed between successive cell centers.
+            while (current != cell)
             {
-                return;
+                float crossing = Mathf.Min(next.x, Mathf.Min(next.y, next.z));
+                if (next.x <= crossing) { current.x += step.x; next.x += interval.x; }
+                if (next.y <= crossing) { current.y += step.y; next.y += interval.y; }
+                if (next.z <= crossing) { current.z += step.z; next.z += interval.z; }
+                ApplyCell(current);
             }
+            m_LastCell = cell;
+            m_HasLastCell = true;
+        }
 
+        private void ApplyCell(Vector3Int cell)
+        {
+            Vector3 canvasPosition = m_CurrentModel.VoxelToCanvas(cell);
             bool changed = Mode switch
             {
                 EditMode.Erase => m_CurrentModel.EraseAt(canvasPosition),
                 EditMode.Paint => m_CurrentModel.RecolorAt(canvasPosition, App.BrushColor.CurrentColor),
                 _ => m_CurrentModel.PaintAt(canvasPosition, App.BrushColor.CurrentColor),
             };
-            m_LastCell = cell;
-            m_HasLastCell = true;
             m_GestureChanged |= changed;
         }
 
