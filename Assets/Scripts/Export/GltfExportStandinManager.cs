@@ -26,6 +26,7 @@ namespace TiltBrush
         [NonSerialized] public static GltfExportStandinManager m_Instance;
         private List<GameObject> m_TemporaryCameras;
         private Transform m_SkyStandinOriginalParent;
+        private Quaternion m_SkyStandinOriginalRotation;
         private Material m_TemporarySkyMaterial;
         private Texture2D m_TemporarySkyTexture;
 
@@ -40,6 +41,7 @@ namespace TiltBrush
         public void CreateSkyStandin()
         {
             var settings = SceneSettings.m_Instance;
+            m_SkyStandinOriginalRotation = m_TemporarySkySphere.rotation;
             // Include inactive children in case the sphere was previously hidden.
             var renderer = m_TemporarySkySphere.GetComponentInChildren<MeshRenderer>(true);
 
@@ -63,7 +65,10 @@ namespace TiltBrush
             {
                 // Gradient sky: bake the two sky colors into a vertical gradient texture.
                 // The gradient runs from SkyColorA (bottom/south pole) to SkyColorB (top/north pole),
-                // matching the default LinearGradient shader direction (Vector3.up).
+                // Rotate the sphere so its texture poles follow the runtime gradient direction.
+                Vector3 gradientDirection = App.Scene.Pose.rotation * settings.GradientOrientation * Vector3.up;
+                m_TemporarySkySphere.rotation = Quaternion.FromToRotation(
+                    m_TemporarySkySphere.up, gradientDirection) * m_TemporarySkySphere.rotation;
                 m_TemporarySkyMaterial = CreateGradientMaterial(settings.SkyColorA, settings.SkyColorB);
             }
             else
@@ -109,6 +114,7 @@ namespace TiltBrush
                 m_TemporarySkySphere.SetParent(m_SkyStandinOriginalParent, worldPositionStays: true);
                 m_SkyStandinOriginalParent = null;
             }
+            m_TemporarySkySphere.rotation = m_SkyStandinOriginalRotation;
             if (m_TemporarySkyMaterial != null)
             {
                 Destroy(m_TemporarySkyMaterial);
