@@ -21,36 +21,38 @@ namespace TiltBrush
         public string primitiveType
         {
             get => SdfStencil.PrimitiveTypeName(Primitive.Type);
-            set => m_Stencil.SetPrimitiveGeometry(
-                Primitive, SdfStencil.ParsePrimitiveType(value), Primitive.Data);
+            set => ApplyEdit(slot => EditSdfGuideCommand.SetPrimitiveGeometry(
+                m_Stencil, slot, SdfStencil.ParsePrimitiveType(value), Primitive.Data));
         }
 
         [LuaDocsDescription("The primitive dimensions")]
         public Vector4ApiWrapper geometry
         {
             get => new Vector4ApiWrapper(Primitive.Data);
-            set => m_Stencil.SetPrimitiveGeometry(Primitive, Primitive.Type, value._Vector4);
+            set => ApplyEdit(slot => EditSdfGuideCommand.SetPrimitiveGeometry(
+                m_Stencil, slot, Primitive.Type, value._Vector4));
         }
 
         [LuaDocsDescription("The primitive transform relative to its guide")]
         public TrTransform transform
         {
             get => TrTransform.FromLocalTransform(Primitive.transform);
-            set => m_Stencil.SetPrimitiveTransform(Primitive, value);
+            set => ApplyEdit(slot => EditSdfGuideCommand.SetComponentTransform(m_Stencil, slot, value));
         }
 
         [LuaDocsDescription("How this primitive combines with the preceding result: union, subtract, or intersect")]
         public string operation
         {
             get => SdfStencil.OperationName(Primitive.Operation);
-            set => m_Stencil.SetPrimitiveOperation(Primitive, SdfStencil.ParseOperation(value));
+            set => ApplyEdit(slot => EditSdfGuideCommand.SetComponentOperation(
+                m_Stencil, slot, SdfStencil.ParseOperation(value)));
         }
 
         [LuaDocsDescription("The non-negative smoothing distance for this primitive's operation")]
         public float blend
         {
             get => Primitive.Smoothing;
-            set => m_Stencil.SetPrimitiveBlend(Primitive, value);
+            set => ApplyEdit(slot => EditSdfGuideCommand.SetComponentBlend(m_Stencil, slot, value));
         }
 
         [LuaDocsDescription("Updates the geometry, local transform, operation, and blend in one mesh rebuild")]
@@ -63,9 +65,9 @@ namespace TiltBrush
             string primitiveType, Vector4ApiWrapper geometry, TrTransform transform,
             string operation, float blend)
         {
-            m_Stencil.UpdatePrimitive(
-                Primitive, SdfStencil.ParsePrimitiveType(primitiveType), geometry._Vector4,
-                transform, SdfStencil.ParseOperation(operation), blend);
+            ApplyEdit(slot => EditSdfGuideCommand.UpdatePrimitive(
+                m_Stencil, slot, SdfStencil.ParsePrimitiveType(primitiveType), geometry._Vector4,
+                transform, SdfStencil.ParseOperation(operation), blend));
         }
 
         [LuaDocsDescription("The zero-based index of this primitive in the analytic primitive list")]
@@ -105,7 +107,8 @@ namespace TiltBrush
         [LuaDocsDescription("Removes this primitive from its SDF guide")]
         public void Delete()
         {
-            m_Stencil.RemovePrimitive(Primitive);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                EditSdfGuideCommand.RemoveComponent(m_Stencil, componentIndex));
             m_Primitive = null;
         }
 
@@ -113,6 +116,14 @@ namespace TiltBrush
         public override string ToString()
         {
             return $"SDFPrimitive({primitiveType}, {operation}, index {index})";
+        }
+
+        private void ApplyEdit(Func<int, EditSdfGuideCommand> createCommand)
+        {
+            int slot = componentIndex;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand(slot));
+            // Edit commands rebuild components. Keep this handle bound to its edited slot.
+            m_Primitive = m_Stencil.GetComponents()[slot] as SDFPrimitive;
         }
 
         private SDFPrimitive Primitive

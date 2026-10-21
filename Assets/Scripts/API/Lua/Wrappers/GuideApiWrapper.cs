@@ -276,10 +276,11 @@ namespace TiltBrush
             string operation, float blend)
         {
             SdfStencil stencil = GetSdfStencil();
-            var primitive = stencil.AddPrimitive(
-                SdfStencil.ParsePrimitiveType(primitiveType), geometry._Vector4, transform,
-                SdfStencil.ParseOperation(operation), blend);
-            return new SdfPrimitiveApiWrapper(stencil, primitive);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                EditSdfGuideCommand.AddPrimitive(
+                    stencil, SdfStencil.ParsePrimitiveType(primitiveType), geometry._Vector4,
+                    transform, operation: SdfStencil.ParseOperation(operation), blend: blend));
+            return new SdfPrimitiveApiWrapper(stencil, stencil.GetPrimitives().Last());
         }
 
         [LuaDocsDescription("Returns a primitive from this SDF guide; negative indexes count from the end")]
@@ -294,7 +295,8 @@ namespace TiltBrush
         [LuaDocsDescription("Removes every primitive from this SDF guide")]
         public void ClearPrimitives()
         {
-            GetSdfStencil().ClearPrimitives();
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                EditSdfGuideCommand.Clear(GetSdfStencil()));
         }
 
         private SdfStencil GetSdfStencil()
