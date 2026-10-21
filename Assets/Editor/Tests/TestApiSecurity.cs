@@ -463,15 +463,31 @@ namespace TiltBrush
         public void TestPostFormCommandsAreSplitBeforeDecoding()
         {
             var commands = ApiManager.ParseFormCommands(
-                "listenfor.strokes.poll=team%26one&test.value=space+and%2Bplus");
+                "listenfor.strokes.poll=team%2520one&test.value=space+and%2Bplus");
 
             CollectionAssert.AreEqual(
                 new[]
                 {
-                    "listenfor.strokes.poll=team&one",
-                    "test.value=space and+plus"
+                    "listenfor.strokes.poll=team%2520one",
+                    "test.value=space%20and%2Bplus"
                 },
                 commands);
+
+            var owner = new GameObject("Polling POST decode test");
+            owner.SetActive(false);
+            try
+            {
+                var manager = owner.AddComponent<ApiManager>();
+                var enqueue = typeof(ApiManager).GetMethod("EnqueueCommand",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                object queued = enqueue.Invoke(manager, new object[] { commands[0] });
+                Assert.AreEqual("team%20one",
+                    queued.GetType().GetProperty("Parameters").GetValue(queued));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
         }
 
         [Test]

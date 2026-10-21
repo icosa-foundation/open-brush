@@ -698,7 +698,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
         internal static List<string> ParseFormCommands(string formdata)
         {
             return formdata.Split('&')
-                .Select(command => Uri.UnescapeDataString(command.Replace("+", " ")))
+                // Keep escapes intact until EnqueueCommand or HandleApiQuery decodes the value.
+                .Select(command => command.Replace("+", "%20"))
                 .Where(command => command.Trim().Length > 0)
                 .ToList();
         }
