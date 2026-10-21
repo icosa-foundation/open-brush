@@ -147,7 +147,10 @@ namespace TiltBrush
 
                 return modelWidget.GetMeshes().Any(
                     meshFilter => meshFilter != null && meshFilter.sharedMesh != null &&
-                        meshFilter.sharedMesh.vertexCount > 0);
+                        meshFilter.sharedMesh.vertexCount > 0) ||
+                    modelWidget.GetComponentsInChildren<SkinnedMeshRenderer>().Any(
+                        renderer => renderer.sharedMesh != null &&
+                            renderer.sharedMesh.vertexCount > 0);
             }
         }
 
