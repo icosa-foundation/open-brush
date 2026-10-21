@@ -157,7 +157,7 @@ namespace TiltBrush
                 if (value && m_RoomGeometry == null)
                 {
                     m_RoomGeometry = new GameObject("Passthrough Environment");
-                    m_RoomGeometry.transform.SetParent(transform, false);
+                    m_RoomGeometry.transform.SetParent(App.Instance.m_EnvironmentTransform, false);
                 }
                 var passthrough = m_RoomGeometry != null
                     ? m_RoomGeometry.GetComponent<OVRPassthroughLayer>() : null;
