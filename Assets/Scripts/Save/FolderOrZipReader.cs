@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Open Brush Authors
+// Copyright 2020 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -149,38 +149,29 @@ namespace TiltBrush
             return null;
         }
 
+        // Returns immediate child directories, relative to the requested path.
         virtual public IEnumerable<string> GetContentsAt(string path)
         {
+            string relativePath = path.Replace('\', '/').Trim('/');
             if (m_IsFile)
             {
+                string prefix = $"{m_subfolder}{relativePath}";
+                if (prefix.Length > 0 && !prefix.EndsWith("/")) prefix += "/";
                 var entries = new HashSet<string>();
-                using (var zipFile = new ZipLibrary.ZipFile(m_RootPath))
+                foreach (string name in m_ZipEntryMap.Values)
                 {
-                    foreach (ZipLibrary.ZipEntry entry in zipFile)
-                    {
-                        if (entry == null)
-                        {
-                            continue;
-                        }
-
-                        if (entry.Name.StartsWith(path))
-                        {
-                            string subpart = Path.GetDirectoryName(entry.Name.Substring(path.Length));
-                            if (subpart[0] == '/' || subpart[0] == '\\')
-                            {
-                                subpart = subpart.Substring(1);
-                            }
-                            entries.Add(subpart);
-                        }
-                    }
+                    if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    string remainder = name.Substring(prefix.Length);
+                    int separator = remainder.IndexOf('/');
+                    if (separator > 0) entries.Add(remainder.Substring(0, separator));
                 }
                 return entries;
             }
-            else
-            {
-                string folderPath = Path.Combine(m_RootPath, path);
-                return Directory.GetDirectories(folderPath).Select(Path.GetFileName);
-            }
+
+            string folderPath = Path.Combine(m_RootPath, m_subfolder, relativePath);
+            return Directory.Exists(folderPath)
+                ? Directory.GetDirectories(folderPath).Select(Path.GetFileName)
+                : Enumerable.Empty<string>();
         }
     }
 }
