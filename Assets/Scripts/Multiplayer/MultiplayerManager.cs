@@ -1381,6 +1381,13 @@ namespace OpenBrush.Multiplayer
 
         public async void OnCommandPerformed(BaseCommand command)
         {
+            if (State != ConnectionState.IN_ROOM) return;
+            if (EnumerateBrushStrokeCommands(command).Any())
+            {
+                // DetachLine computes user simplification after recording the stroke command.
+                // Resume after that synchronous work before inspecting or serializing drop flags.
+                await Task.Yield();
+            }
             if (State == ConnectionState.IN_ROOM)
             {
                 foreach (BrushStrokeCommand brushCommand in
