@@ -1517,9 +1517,28 @@ static class BuildTiltBrush
             {
                 case XrSdkMode.OpenXR:
                     // Unity's OpenXR loader supports Standalone and Android, but not iOS.
-                    // An iOS Viewer build deliberately has no loader: it remains in the normal
-                    // UnityXR runtime mode and uses the existing no-HMD view-only fallback.
-                    if (tiltOptions.Target != BuildTarget.iOS)
+                    // An iOS Viewer build has only the ARKit loader, which HandheldArNavigation
+                    // keeps out of the headset search: it remains in the normal UnityXR runtime
+                    // mode and uses the no-HMD view-only fallback, with optional AR navigation.
+                    if (tiltOptions.Target == BuildTarget.iOS)
+                    {
+                        targetXrPluginsRequired = new string[] { kArKitLoader };
+                        ConfigureOptionalArKit();
+                    }
+                    else if (tiltOptions.Target == BuildTarget.Android)
+                    {
+                        targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+#if !USE_QUEST_PACKAGE_NAME
+                        // Generic Android OpenXR builds also run on phones, where the no-headset
+                        // view mode can offer handheld AR navigation. HandheldArNavigation keeps
+                        // this loader out of the headset search. The Meta store build excludes it,
+                        // as it would only add camera and ARCore declarations to the manifest.
+                        targetXrPluginsRequired = targetXrPluginsRequired
+                            .Append(kArCoreLoader).ToArray();
+                        ConfigureOptionalArCore();
+#endif
+                    }
+                    else
                     {
                         targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     }
@@ -1557,6 +1576,46 @@ static class BuildTiltBrush
 
             Debug.Log("Building with XR plugins: " + String.Join(", ", targetSettings.Manager.activeLoaders));
             EditorUtility.SetDirty(targetSettings);
+        }
+
+        const string kArCoreLoader = "UnityEngine.XR.ARCore.ARCoreLoader";
+        const string kArKitLoader = "UnityEngine.XR.ARKit.ARKitLoader";
+
+        static void ConfigureOptionalArCore()
+        {
+            // Required would stop the APK installing on headsets and phones without ARCore.
+            var settings = UnityEditor.XR.ARCore.ARCoreSettings.GetOrCreateSettings();
+            if (!EditorUtility.IsPersistent(settings))
+            {
+                AssetDatabase.CreateAsset(settings, "Assets/XR/Settings/ARCoreSettings.asset");
+                UnityEditor.XR.ARCore.ARCoreSettings.currentSettings = settings;
+            }
+            settings.requirement = UnityEditor.XR.ARCore.ARCoreSettings.Requirement.Optional;
+            settings.depth = UnityEditor.XR.ARCore.ARCoreSettings.Requirement.Optional;
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssetIfDirty(settings);
+        }
+
+        static void ConfigureOptionalArKit()
+        {
+            // Required would restrict the app to ARKit-capable devices in the App Store.
+            var settings = UnityEditor.XR.ARKit.ARKitSettings.GetOrCreateSettings();
+            if (!EditorUtility.IsPersistent(settings))
+            {
+                AssetDatabase.CreateAsset(settings, "Assets/XR/Settings/ARKitSettings.asset");
+                UnityEditor.XR.ARKit.ARKitSettings.currentSettings = settings;
+            }
+            settings.requirement = UnityEditor.XR.ARKit.ARKitSettings.Requirement.Optional;
+            settings.faceTracking = false;
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssetIfDirty(settings);
+
+            // ARKit's build processor fails without one; iOS shows it in the permission prompt.
+            if (string.IsNullOrEmpty(PlayerSettings.iOS.cameraUsageDescription))
+            {
+                PlayerSettings.iOS.cameraUsageDescription =
+                    "Open Brush uses the camera to place sketches in your surroundings.";
+            }
         }
 
         public void Dispose()
