@@ -2339,7 +2339,7 @@ namespace TiltBrush
             // Try each root directory in order and return the first where the file exists
             foreach (var root in potentialRoots)
             {
-                string candidatePath = Path.Combine(root, relativePath);
+                string candidatePath = ApiMethods.GetSafeRelativePathInDirectory(root, relativePath, "media path");
                 if (File.Exists(candidatePath))
                 {
                     return candidatePath;
@@ -2348,7 +2348,9 @@ namespace TiltBrush
 
             // If file not found in any root, return the default (first root) path
             // This maintains backwards compatibility and allows files to be created in the default location
-            return potentialRoots.Count > 0 ? Path.Combine(potentialRoots[0], relativePath) : relativePath;
+            return potentialRoots.Count > 0
+                ? ApiMethods.GetSafeRelativePathInDirectory(potentialRoots[0], relativePath, "media path")
+                : relativePath;
         }
 
         public static string MediaLibraryPath()
