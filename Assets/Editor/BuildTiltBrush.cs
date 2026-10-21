@@ -1339,6 +1339,12 @@ static class BuildTiltBrush
             {
                 EnableAndroidXrFeatures(settings);
             }
+            else
+            {
+                // The Android XR package disables this in the normal Editor configuration.
+                // Preserve foveation for other Android OpenXR builds independently of that default.
+                EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature>(settings);
+            }
 #if USE_QUEST_PACKAGE_NAME
             // Meta store builds use OpenXR too, but must enable Meta's build hooks explicitly.
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
@@ -1385,8 +1391,8 @@ static class BuildTiltBrush
                 "UnityEngine.XR.OpenXR.Features.Android.AndroidXRBuildProfileFeature");
 
             // Foveated rendering currently crashes Android AndroidXR and Android Viewer
-            // AndroidXR. AR Face is not used by Open Brush. Keep main's serialized defaults
-            // unchanged and override both features only for these builds.
+            // AndroidXR. AR Face is not used by Open Brush. Configure these features for
+            // this build, then restore the serialized Editor configuration afterward.
             DisableFeature<UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature>(settings);
             DisableFeature<UnityEngine.XR.OpenXR.Features.Android.ARFaceFeature>(settings);
 
