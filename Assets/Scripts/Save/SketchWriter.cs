@@ -92,7 +92,7 @@ namespace TiltBrush
             public StrokeData strokeData;
             public StrokeFlags adjustedStrokeFlags;
 
-            // If the stroke was sculpted, its vertices and triangles are stored here.
+            // If the stroke was sculpted, its vertices and normals are stored here.
             // Empty by default.
             public SculptedGeometryData sculptedGeometryData;
         }
@@ -356,7 +356,9 @@ namespace TiltBrush
                 }
 
                 // Sculpted geometry
-                if (copy.sculptedGeometryData.vertices != null)
+                if (copy.sculptedGeometryData.vertices != null &&
+                    copy.sculptedGeometryData.normals != null &&
+                    copy.sculptedGeometryData.vertices.Count == copy.sculptedGeometryData.normals.Count)
                 {
                     // Write the length of the batch subset then save all the vertices.
                     writer.Int32(copy.sculptedGeometryData.vertices.Count);
