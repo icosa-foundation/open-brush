@@ -11,12 +11,20 @@ namespace TiltBrush
     [DefaultExecutionOrder(90)]
     public sealed class NativeImmRenderer : MonoBehaviour
     {
+        private static int sm_ActiveUsers;
+        private static ImmPlayerManager sm_ActiveManager;
         private int m_Users;
         private Camera m_Camera;
         private ImmPlayerManager m_Manager;
         private ImmCamera m_Registration;
         private bool m_OwnsRegistration;
         private bool m_UsesRenderGraph;
+
+        internal static NativeImmRenderer RetainForCapture(Camera camera)
+        {
+            return sm_ActiveUsers > 0 && sm_ActiveManager != null
+                ? Retain(camera, sm_ActiveManager) : null;
+        }
 
         public static NativeImmRenderer Retain(Camera camera, ImmPlayerManager manager)
         {
@@ -37,6 +45,8 @@ namespace TiltBrush
                 }
             }
             renderer.m_Users++;
+            ++sm_ActiveUsers;
+            sm_ActiveManager = manager;
             renderer.enabled = true;
             if (renderer.m_OwnsRegistration) renderer.m_Registration.enabled = true;
             return renderer;
@@ -45,6 +55,8 @@ namespace TiltBrush
         public void Release()
         {
             if (m_Users <= 0) return;
+            --sm_ActiveUsers;
+            if (sm_ActiveUsers == 0) sm_ActiveManager = null;
             if (--m_Users != 0) return;
             enabled = false;
             if (m_OwnsRegistration && m_Registration != null) m_Registration.enabled = false;
@@ -69,6 +81,9 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            sm_ActiveUsers -= m_Users;
+            m_Users = 0;
+            if (sm_ActiveUsers == 0) sm_ActiveManager = null;
             if (m_OwnsRegistration && m_Registration != null) Destroy(m_Registration);
         }
     }
