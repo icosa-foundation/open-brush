@@ -15,6 +15,9 @@
 using UnityEngine;
 using OpenXR.Extensions;
 using Unity.XR.CompositionLayers;
+using Unity.XR.CompositionLayers.Layers;
+using Unity.XR.CompositionLayers.Services;
+using Unity.XR.CoreUtils;
 using UnityEngine.XR.ARFoundation;
 
 namespace TiltBrush
@@ -27,6 +30,19 @@ namespace TiltBrush
         // the passthrough environment is active.
         void Start()
         {
+            if (App.VrSdk.PassthroughMode == PassthroughMode.None)
+            {
+                return;
+            }
+
+            // Both passthrough paths composite the eye buffer over the camera feed using its
+            // alpha, so the default scene layer's premultiplied flag decides how additive
+            // brushes look. Set it explicitly rather than inheriting Unity's hidden fallback
+            // layer (FB path) or native default (blend mode path), so the two paths match.
+            // Must precede the FB layer: once the fallback exists, ours is destroyed as a
+            // duplicate.
+            SetDefaultSceneLayer(true);
+
             if (App.VrSdk.PassthroughMode == PassthroughMode.FBPassthrough)
             {
                 m_PassthroughLayer.enabled = true;
@@ -44,10 +60,43 @@ namespace TiltBrush
         void OnDestroy()
         {
             // Also runs on quit, after App has gone.
-            if (App.Instance != null && App.VrSdk != null &&
-                App.VrSdk.PassthroughMode == PassthroughMode.OpenXREnvionmentBlendMode)
+            if (App.Instance == null || App.VrSdk == null)
+            {
+                return;
+            }
+            if (App.VrSdk.PassthroughMode == PassthroughMode.OpenXREnvionmentBlendMode)
             {
                 SetBlendModePassthrough(false);
+            }
+            if (App.VrSdk.PassthroughMode != PassthroughMode.None)
+            {
+                SetDefaultSceneLayer(false);
+            }
+        }
+
+        // The rig's Default Scene Layer carries the blend type for the eye buffer.
+        static void SetDefaultSceneLayer(bool active)
+        {
+            var origin = App.VrSdk.GetVrCamera().GetComponentInParent<XROrigin>();
+            if (origin == null)
+            {
+                return;
+            }
+            foreach (var layer in origin.GetComponentsInChildren<CompositionLayer>(true))
+            {
+                if (layer.LayerData is not DefaultLayerData)
+                {
+                    continue;
+                }
+                var current = CompositionLayerManager.Instance?.DefaultSceneCompositionLayer;
+                if (active && current != null && current != layer)
+                {
+                    Debug.LogWarning("[Passthrough] Another default scene layer is already " +
+                        $"registered; eye buffer blend type stays {current.LayerData.BlendType}.");
+                    return;
+                }
+                layer.enabled = active;
+                return;
             }
         }
 
