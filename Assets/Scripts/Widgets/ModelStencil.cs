@@ -547,137 +547,114 @@ namespace TiltBrush
         private void FindClosestPointUsingSDF(Vector3 worldPos,
                                                out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            // Transform query point to widget local space
             Vector3 localPos = transform.InverseTransformPoint(worldPos);
-
-            // Sample the distance field using IsoMesh's built-in method
-            // Note: Sample() handles clamping, normalization, and trilinear interpolation
-            float distance = m_SDFMeshAsset.Sample(localPos);
-
-            // Compute gradient for surface normal using finite differences
-            // This gives us the direction of steepest ascent in the distance field
-            float epsilon = (m_SDFMeshAsset.MaxBounds - m_SDFMeshAsset.MinBounds).magnitude / m_SDFMeshAsset.Size;
-            Vector3 gradient = new Vector3(
-                m_SDFMeshAsset.Sample(localPos + new Vector3(epsilon, 0, 0)) - distance,
-                m_SDFMeshAsset.Sample(localPos + new Vector3(0, epsilon, 0)) - distance,
-                m_SDFMeshAsset.Sample(localPos + new Vector3(0, 0, epsilon)) - distance
-            );
-
-            // Normalize gradient to get surface normal
-            Vector3 localNormal = gradient.sqrMagnitude > 0.0001f ? gradient.normalized : Vector3.up;
-
-            // Move point to surface along gradient
-            // Negative distance means inside, positive means outside
-            Vector3 localSurfacePos = localPos - localNormal * distance;
-
-            // Transform back to world space
-            surfacePos = transform.TransformPoint(localSurfacePos);
+            Vector3 minimum = m_SDFMeshAsset.MinBounds;
+            Vector3 maximum = m_SDFMeshAsset.MaxBounds;
+            // Sample() clamps internally. Project from that clamped point too, so a distant
+            // query cannot apply a boundary sample's distance to an unrelated position.
+            localPos = Vector3.Min(Vector3.Max(localPos, minimum), maximum);
+            float epsilon = (maximum - minimum).magnitude / m_SDFMeshAsset.Size;
+            Vector3 localNormal = Vector3.zero;
+            for (int iteration = 0; iteration < 12; ++iteration)
+            {
+                float distance = m_SDFMeshAsset.Sample(localPos);
+                Vector3 gradient = new Vector3(
+                    m_SDFMeshAsset.Sample(localPos + Vector3.right * epsilon) -
+                        m_SDFMeshAsset.Sample(localPos - Vector3.right * epsilon),
+                    m_SDFMeshAsset.Sample(localPos + Vector3.up * epsilon) -
+                        m_SDFMeshAsset.Sample(localPos - Vector3.up * epsilon),
+                    m_SDFMeshAsset.Sample(localPos + Vector3.forward * epsilon) -
+                        m_SDFMeshAsset.Sample(localPos - Vector3.forward * epsilon));
+                if (gradient.sqrMagnitude <= 1e-12f)
+                {
+                    FindClosestPointUsingCollider(worldPos, out surfacePos, out surfaceNorm);
+                    return;
+                }
+                localNormal = gradient.normalized;
+                localPos -= localNormal * distance;
+                localPos = Vector3.Min(Vector3.Max(localPos, minimum), maximum);
+                if (Mathf.Abs(distance) < epsilon * 0.01f) { break; }
+            }
+            surfacePos = transform.TransformPoint(localPos);
             surfaceNorm = transform.TransformDirection(localNormal).normalized;
         }
 
         private void FindClosestPointUsingCollider(Vector3 pos,
-                                                    out Vector3 surfacePos, out Vector3 surfaceNorm)
+            out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            if (m_MeshCollider != null)
+            // Collider.ClosestPoint returns the query itself for interior points. Search the
+            // retained source triangles instead; the fallback is limited to small meshes.
+            Vector3 query = transform.InverseTransformPoint(pos);
+            float closestSquared = float.PositiveInfinity;
+            Vector3 closest = Vector3.zero;
+            Vector3 normal = Vector3.up;
+            if (m_SourceTriangles == null)
             {
-                surfacePos = m_MeshCollider.ClosestPoint(pos);
-
-                // Get normal by sampling nearby points (gradient-based approach)
-                // More robust than raycasting, especially for complex geometry
-                Vector3 toSurface = surfacePos - pos;
-                float dist = toSurface.magnitude;
-
-                if (dist < 0.0001f)
-                {
-                    // Point is on/very close to surface, use outward direction from center
-                    surfaceNorm = (pos - transform.position).normalized;
-                }
-                else
-                {
-                    // Sample 3 nearby points to estimate the surface tangent plane
-                    Vector3 offset1 = Vector3.Cross(toSurface, Vector3.up).normalized * 0.01f;
-                    if (offset1.sqrMagnitude < 0.0001f)
-                    {
-                        offset1 = Vector3.Cross(toSurface, Vector3.right).normalized * 0.01f;
-                    }
-                    Vector3 offset2 = Vector3.Cross(toSurface, offset1).normalized * 0.01f;
-
-                    Vector3 p1 = m_MeshCollider.ClosestPoint(surfacePos + offset1);
-                    Vector3 p2 = m_MeshCollider.ClosestPoint(surfacePos + offset2);
-
-                    // Compute tangent vectors
-                    Vector3 tangent1 = p1 - surfacePos;
-                    Vector3 tangent2 = p2 - surfacePos;
-
-                    // Normal is perpendicular to both tangents
-                    Vector3 normal = Vector3.Cross(tangent1, tangent2);
-
-                    if (normal.sqrMagnitude > 0.0001f)
-                    {
-                        surfaceNorm = normal.normalized;
-                        // Ensure normal points away from query point
-                        if (Vector3.Dot(surfaceNorm, toSurface) < 0)
-                        {
-                            surfaceNorm = -surfaceNorm;
-                        }
-                    }
-                    else
-                    {
-                        // Fallback: use direction from surface to query point
-                        surfaceNorm = toSurface.normalized;
-                    }
-                }
-            }
-            else
-            {
-                // Fallback to transform position
                 surfacePos = transform.position;
-                surfaceNorm = (pos - transform.position).normalized;
+                surfaceNorm = Vector3.up;
+                return;
             }
+            for (int i = 0; i < m_SourceTriangles.Length; i += 3)
+            {
+                Vector3 a = m_SourceVertices[m_SourceTriangles[i]];
+                Vector3 b = m_SourceVertices[m_SourceTriangles[i + 1]];
+                Vector3 c = m_SourceVertices[m_SourceTriangles[i + 2]];
+                Vector3 triangleNormal = Vector3.Cross(b - a, c - a);
+                Vector3 candidate = ClosestTrianglePoint(query, a, b, c, triangleNormal);
+                float squared = (candidate - query).sqrMagnitude;
+                if (squared < closestSquared)
+                {
+                    closestSquared = squared;
+                    closest = candidate;
+                    // Source winding defines outward orientation for interior and exterior
+                    // queries alike, without guessing from the model origin.
+                    normal = triangleNormal.normalized;
+                }
+            }
+            surfacePos = transform.TransformPoint(closest);
+            surfaceNorm = transform.TransformDirection(normal).normalized;
+        }
+
+        private static Vector3 ClosestTrianglePoint(
+            Vector3 point, Vector3 a, Vector3 b, Vector3 c, Vector3 normal)
+        {
+            if (normal.sqrMagnitude > 1e-12f)
+            {
+                Vector3 projected = point - normal *
+                    (Vector3.Dot(point - a, normal) / normal.sqrMagnitude);
+                if (Vector3.Dot(Vector3.Cross(b - a, projected - a), normal) >= 0f &&
+                    Vector3.Dot(Vector3.Cross(c - b, projected - b), normal) >= 0f &&
+                    Vector3.Dot(Vector3.Cross(a - c, projected - c), normal) >= 0f)
+                {
+                    return projected;
+                }
+            }
+            Vector3 OnSegment(Vector3 start, Vector3 end)
+            {
+                Vector3 edge = end - start;
+                return start + edge * (edge.sqrMagnitude > 1e-12f
+                    ? Mathf.Clamp01(Vector3.Dot(point - start, edge) / edge.sqrMagnitude)
+                    : 0f);
+            }
+            Vector3 ab = OnSegment(a, b);
+            Vector3 bc = OnSegment(b, c);
+            Vector3 ca = OnSegment(c, a);
+            Vector3 closest = (ab - point).sqrMagnitude < (bc - point).sqrMagnitude ? ab : bc;
+            return (ca - point).sqrMagnitude < (closest - point).sqrMagnitude ? ca : closest;
         }
 
         public override float GetActivationScore(
             Vector3 vControllerPos, InputManager.ControllerName name)
         {
-            Bounds bounds;
-
-            // Get bounds from collider if available, otherwise from model instance
-            if (m_MeshCollider != null)
+            if (m_SourceMesh == null) { return -1f; }
+            Vector3 local = transform.InverseTransformPoint(vControllerPos);
+            if (m_SDFMeshAsset != null)
             {
-                bounds = m_MeshCollider.bounds;
+                float distance = m_SDFMeshAsset.Sample(local);
+                return distance <= 0f ? Mathf.Clamp01(-distance /
+                    Mathf.Max(m_SourceMesh.bounds.extents.magnitude, 0.0001f)) : -1f;
             }
-            else if (m_ModelInstance != null)
-            {
-                // Calculate bounds from all renderers
-                var renderers = m_ModelInstance.GetComponentsInChildren<Renderer>();
-                if (renderers.Length == 0)
-                    return -1f;
-
-                bounds = renderers[0].bounds;
-                for (int i = 1; i < renderers.Length; i++)
-                {
-                    bounds.Encapsulate(renderers[i].bounds);
-                }
-            }
-            else
-            {
-                return -1f;
-            }
-
-            // Simple box-based activation
-            Vector3 closestPoint = bounds.ClosestPoint(vControllerPos);
-            float distance = Vector3.Distance(vControllerPos, closestPoint);
-
-            if (bounds.Contains(vControllerPos))
-            {
-                return 1.0f;
-            }
-            else
-            {
-                float maxDist = bounds.extents.magnitude;
-                float score = 1.0f - Mathf.Clamp01(distance / maxDist);
-                return score > 0 ? score : -1f;
-            }
+            return m_SourceMesh.bounds.Contains(local) ? 1f : -1f;
         }
 
         protected override Axis GetInferredManipulationAxis(
@@ -713,36 +690,10 @@ namespace TiltBrush
 
         public override Bounds GetBounds_SelectionCanvasSpace()
         {
-            Bounds worldBounds;
-            Transform boundsTransform;
-
-            if (m_MeshCollider != null)
-            {
-                worldBounds = m_MeshCollider.bounds;
-                boundsTransform = m_MeshCollider.transform;
-            }
-            else if (m_ModelInstance != null)
-            {
-                // Calculate bounds from all renderers
-                var renderers = m_ModelInstance.GetComponentsInChildren<Renderer>();
-                if (renderers.Length == 0)
-                    return base.GetBounds_SelectionCanvasSpace();
-
-                worldBounds = renderers[0].bounds;
-                for (int i = 1; i < renderers.Length; i++)
-                {
-                    worldBounds.Encapsulate(renderers[i].bounds);
-                }
-                boundsTransform = m_ModelInstance;
-            }
-            else
-            {
-                return base.GetBounds_SelectionCanvasSpace();
-            }
-
-            // Transform to canvas space
+            if (m_SourceMesh == null) { return base.GetBounds_SelectionCanvasSpace(); }
+            Bounds worldBounds = m_SourceMesh.bounds;
             TrTransform toCanvasXf = App.Scene.SelectionCanvas.Pose.inverse *
-                TrTransform.FromTransform(boundsTransform);
+                TrTransform.FromTransform(transform);
             Bounds canvasBounds = new Bounds(toCanvasXf * worldBounds.center, Vector3.zero);
 
             // Add bounds corners
