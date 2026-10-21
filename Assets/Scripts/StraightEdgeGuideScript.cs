@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -461,7 +461,8 @@ namespace TiltBrush
             // or endpoint change without first removing the old entry.
             RemoveStrokeFromHash(stroke);
 
-            if (stroke.Canvas == null || stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length < 2)
+            if (stroke.Canvas == null || stroke.m_ControlPoints == null || stroke.m_ControlPoints.Length < 2 ||
+                stroke.m_Type == Stroke.Type.NotCreated || !stroke.IsGeometryEnabled)
             {
                 return;
             }
