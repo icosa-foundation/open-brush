@@ -1660,6 +1660,10 @@ namespace TiltBrush
             const int textureSize = 512;
             RenderTexture renderTexture = null;
             Mesh bakeMesh = null;
+            Material bakeMaterial = null;
+            var previousBeat = Shader.GetGlobalVector("_BeatOutput");
+            var previousBeatAccum = Shader.GetGlobalVector("_BeatOutputAccum");
+            var previousVolume = Shader.GetGlobalVector("_AudioVolume");
             var previous = RenderTexture.active;
             bool matrixPushed = false;
             try
@@ -1673,7 +1677,14 @@ namespace TiltBrush
                 GL.PushMatrix();
                 matrixPushed = true;
                 GL.LoadOrtho();
-                if (!material.SetPass(bakePass))
+                bakeMaterial = new Material(material);
+                bakeMaterial.SetFloat("_TimeBlend", 1f);
+                bakeMaterial.SetVector("_TimeOverrideValue", Vector4.zero);
+                bakeMaterial.DisableKeyword("AUDIO_REACTIVE");
+                Shader.SetGlobalVector("_BeatOutput", Vector4.one);
+                Shader.SetGlobalVector("_BeatOutputAccum", Vector4.zero);
+                Shader.SetGlobalVector("_AudioVolume", Vector4.one);
+                if (!bakeMaterial.SetPass(bakePass))
                 {
                     Debug.LogWarning(
                         $"[OB_GLTF_BAKE] Shader pass {bakePass} is unavailable for material {material.name}");
@@ -1711,6 +1722,10 @@ namespace TiltBrush
                     GL.PopMatrix();
                 }
                 RenderTexture.active = previous;
+                Shader.SetGlobalVector("_BeatOutput", previousBeat);
+                Shader.SetGlobalVector("_BeatOutputAccum", previousBeatAccum);
+                Shader.SetGlobalVector("_AudioVolume", previousVolume);
+                SafeDestroy(bakeMaterial);
                 SafeDestroy(bakeMesh);
                 if (renderTexture != null)
                 {
