@@ -73,6 +73,11 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
     disp.z += cos(t * kScrollJitterFrequency * 0.5 + kSnowExportTime) * kScrollJitterIntensity;
     originWS.xyz += kSpreadProgress * disp * kDecimetersToWorldUnits;
 
+    // Match Particles.cginc's counterclockwise rotation in the billboard plane.
+    float c = cos(uv0.z);
+    float s = sin(uv0.z);
+    preBillboard.xy = mul(float2x2(c, -s, s, c), preBillboard.xy);
+
     vertex = mul(TransformWorldToObject, float4(originWS.xyz + preBillboard, 1.0)).xyz;
     vertexBuffer[id.x] = vertex;
 }
