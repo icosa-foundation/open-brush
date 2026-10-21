@@ -160,7 +160,7 @@ namespace TiltBrush
                 var entries = new HashSet<string>();
                 foreach (string name in m_ZipEntryMap.Values)
                 {
-                    if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (!name.StartsWith(prefix, System.StringComparison.OrdinalIgnoreCase)) continue;
                     string remainder = name.Substring(prefix.Length);
                     int separator = remainder.IndexOf('/');
                     if (separator > 0) entries.Add(remainder.Substring(0, separator));
