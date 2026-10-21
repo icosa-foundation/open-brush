@@ -1347,6 +1347,9 @@ static class BuildTiltBrush
             // and Android Viewer AndroidXR all support hands through the same XR Hands API.
             EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
             EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
+            // Alpha-blend passthrough (Steam Frame, Android XR). Runtimes that only list opaque
+            // blend modes leave it inactive.
+            EnableRequiredFeature<TiltBrush.EnvironmentBlendPassthroughFeature>(settings);
         }
 
         void EnableAndroidXrFeatures(UnityEngine.XR.OpenXR.OpenXRSettings settings)
