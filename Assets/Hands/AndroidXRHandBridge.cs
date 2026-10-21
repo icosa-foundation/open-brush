@@ -1,0 +1,4313 @@
+using System;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Controls;
+using UnityEngine.SpatialTracking;
+using UnityEngine.XR.Hands;
+using UnityEngine.XR.Hands.Gestures;
+
+namespace TiltBrush
+{
+    /// <summary>
+    /// Android XR Hand Interaction bridge for Open Brush.
+    ///
+    /// Hybrid Android XR bridge.
+    ///
+    /// INPUT:
+    ///     Hand Interaction (XR_EXT_hand_interaction)
+    ///       pinchValue -> drawing
+    ///       graspValue -> Grip / swimming
+    ///
+    /// SPATIAL POSE:
+    ///     XRHandSubsystem joints reproduce the previously-working Open Brush mapping:
+    ///       Left Palm                    -> Wand / panels
+    ///       Right Palm direction            -> Brush / laser aim
+    ///       Right pinch while laser is on UI  -> UI confirmation
+    ///       Right pinch away from UI           -> drawing
+    ///
+    /// Physical controllers remain selectable independently per side.
+    /// </summary>
+    [DefaultExecutionOrder(-10000)]
+    public class AndroidXRHandBridge : MonoBehaviour
+    {
+        public static AndroidXRHandBridge Instance { get; private set; }
+
+        private enum MenuRaySource { Finger, Aim, Pinch }
+        private enum PinchDetectionSource { OpenXR, XRHands }
+
+        // Thumb, index, middle, ring, little. Tuned on Aura for fist grip and pre-curled pinch.
+        private static readonly float[] kDefaultFistMinimumCurl = { 0.05f, 0.75f, 0.75f, 0.75f, 0.70f };
+        private readonly float[] m_FistMinimumCurl = (float[])kDefaultFistMinimumCurl.Clone();
+        private UserConfig m_AppliedUserConfig;
+        private float m_NextHandtrackingLogTime;
+        private XRHandShape m_FistShape;
+        private readonly XRHandJointsUpdatedEventArgs m_FistArgs = new XRHandJointsUpdatedEventArgs();
+
+        private static XRFingerShapeCondition FistCondition(XRHandFingerID finger, float tolerance)
+        {
+            return new XRFingerShapeCondition
+            {
+                fingerID = finger,
+                targets = new[]
+                {
+                    new XRFingerShapeCondition.Target
+                    {
+                        shapeType = XRFingerShapeType.FullCurl,
+                        desired = 1.0f,
+                        upperTolerance = tolerance,
+                        lowerTolerance = tolerance
+                    }
+                }
+            };
+        }
+
+        private static void SetFistThresholds(float thumb, float index, float middle, float ring, float little)
+        {
+            var thresholds = new[] { thumb, index, middle, ring, little };
+            foreach (float value in thresholds)
+                if (float.IsNaN(value) || float.IsInfinity(value) || value < 0.0f || value > 1.0f)
+                    throw new ArgumentException("Fist minimum curl values must be finite and between 0 and 1.");
+            if (Instance == null)
+                throw new InvalidOperationException("The Android XR hand bridge is not available.");
+            Array.Copy(thresholds, Instance.m_FistMinimumCurl, thresholds.Length);
+            Instance.ConfigureFistShape();
+            LogDiagnostic($"ANDROIDXR_FIST_TUNING thumb={thumb} index={index} middle={middle} ring={ring} little={little}");
+        }
+
+        private void ConfigureFistShape()
+        {
+            m_FistShape.fingerShapeConditions = new List<XRFingerShapeCondition>
+            {
+                FistCondition(XRHandFingerID.Thumb, 1.0f - m_FistMinimumCurl[0]),
+                FistCondition(XRHandFingerID.Index, 1.0f - m_FistMinimumCurl[1]),
+                FistCondition(XRHandFingerID.Middle, 1.0f - m_FistMinimumCurl[2]),
+                FistCondition(XRHandFingerID.Ring, 1.0f - m_FistMinimumCurl[3]),
+                FistCondition(XRHandFingerID.Little, 1.0f - m_FistMinimumCurl[4])
+            };
+        }
+
+        private void ApplyHandtrackingConfig()
+        {
+            // App loads UserConfig in Awake; this bridge's earlier Awake only installs input.
+            // RefreshUserConfig replaces the object, so also apply explicit config reloads.
+            if (App.Instance == null || App.UserConfig == null || ReferenceEquals(m_AppliedUserConfig, App.UserConfig))
+                return;
+            m_AppliedUserConfig = App.UserConfig;
+            var config = m_AppliedUserConfig.Handtracking;
+            m_MenuRaySource = MenuRaySource.Finger;
+            m_PinchDetectionSource = PinchDetectionSource.OpenXR;
+            Array.Copy(kDefaultFistMinimumCurl, m_FistMinimumCurl, m_FistMinimumCurl.Length);
+            ConfigureFistShape();
+
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(config.RayMode)) SetMenuRayMode(config.RayMode);
+            }
+            catch (ArgumentException e)
+            {
+                Debug.LogWarning($"ANDROIDXR_HANDTRACKING_CONFIG RayMode: {e.Message} Using finger.");
+            }
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(config.PinchMode)) SetPinchMode(config.PinchMode);
+            }
+            catch (ArgumentException e)
+            {
+                Debug.LogWarning($"ANDROIDXR_HANDTRACKING_CONFIG PinchMode: {e.Message} Using openxr.");
+            }
+            try
+            {
+                if (config.FistMinimumCurl != null)
+                {
+                    if (config.FistMinimumCurl.Length != 5)
+                        throw new ArgumentException("Provide five values in thumb, index, middle, ring, little order.");
+                    var curl = config.FistMinimumCurl;
+                    SetFistThresholds(curl[0], curl[1], curl[2], curl[3], curl[4]);
+                }
+            }
+            catch (ArgumentException e)
+            {
+                Debug.LogWarning($"ANDROIDXR_HANDTRACKING_CONFIG FistMinimumCurl: {e.Message} Using defaults.");
+            }
+        }
+
+        private void LogHandtrackingStatus()
+        {
+            if (!DebugLoggingEnabled || Time.unscaledTime < m_NextHandtrackingLogTime) return;
+            m_NextHandtrackingLogTime = Time.unscaledTime + 1.0f;
+            LogDiagnostic($"ANDROIDXR_HANDTRACKING_PINCH {Newtonsoft.Json.JsonConvert.SerializeObject(GetPinchStatus())}");
+            bool runtimePoseAvailable = TryGetMenuRay(out _);
+            string effective = !UseHand(true) ? "controller" : !RightTracked ? "untracked" :
+                runtimePoseAvailable ? MenuRayMode : "finger";
+            var status = new { configured = MenuRayMode, effective, runtimePoseAvailable };
+            LogDiagnostic($"ANDROIDXR_HANDTRACKING_RAY {Newtonsoft.Json.JsonConvert.SerializeObject(status)}");
+        }
+
+        private object DescribeCurl(HandState hand, int finger)
+        {
+            float? value = hand.fingerCurl[finger];
+            return new
+            {
+                valid = value.HasValue,
+                value,
+                minimum = m_FistMinimumCurl[finger],
+                passes = value.HasValue && value.Value >= m_FistMinimumCurl[finger]
+            };
+        }
+
+        [SerializeField]
+        private PinchDetectionSource m_PinchDetectionSource = PinchDetectionSource.OpenXR;
+
+        private static string PinchMode => Instance == null ? "unavailable" :
+            Instance.m_PinchDetectionSource == PinchDetectionSource.XRHands ? "xrhands" : "openxr";
+
+        private static void SetPinchMode(string mode)
+        {
+            PinchDetectionSource source;
+            switch (mode.Trim().ToLowerInvariant())
+            {
+                case "openxr": source = PinchDetectionSource.OpenXR; break;
+                case "xrhands": source = PinchDetectionSource.XRHands; break;
+                default: throw new ArgumentException("Hand pinch mode must be openxr or xrhands.");
+            }
+            if (Instance == null)
+                throw new InvalidOperationException("The Android XR hand bridge is not available.");
+            Instance.m_PinchDetectionSource = source;
+            LogDiagnostic($"ANDROIDXR_PINCH_COMPARE mode={PinchMode}");
+        }
+
+        private static object GetPinchStatus()
+        {
+            if (Instance == null) return new { configured = "unavailable" };
+            return new
+            {
+                configured = PinchMode,
+                pressThreshold = Instance.pinchPressThreshold,
+                releaseThreshold = Instance.pinchReleaseThreshold,
+                left = Instance.DescribePinch(Instance.m_Left, false),
+                right = Instance.DescribePinch(Instance.m_Right, true),
+                primaryTrigger = Instance.m_PrimaryTriggerHeld,
+                panelContact = Instance.m_RightPanelContact,
+                panelGrabArmed = Instance.m_RightPanelGrabArmed
+            };
+        }
+
+        private object DescribePinch(HandState hand, bool isBrush)
+        {
+            bool useJoints = m_PinchDetectionSource == PinchDetectionSource.XRHands &&
+                hand.xrHandsPinchValid;
+            return new
+            {
+                tracked = hand.tracked,
+                effective = !UseHand(isBrush) ? "controller" : !hand.tracked ? "untracked" :
+                    useJoints ? "xrhands" : "openxr",
+                openxr = hand.openXrPinchValue,
+                xrhands = hand.xrHandsPinchValid ? (float?)hand.xrHandsPinchValue : null,
+                selected = hand.pinchValue,
+                pinchHeld = hand.pinchHeld,
+                grasp = hand.graspValue,
+                fistDetected = hand.fistDetected,
+                curl = new
+                {
+                    thumb = DescribeCurl(hand, 0),
+                    index = DescribeCurl(hand, 1),
+                    middle = DescribeCurl(hand, 2),
+                    ring = DescribeCurl(hand, 3),
+                    little = DescribeCurl(hand, 4)
+                },
+                gripHeld = isBrush ? m_RightGripHeld : m_LeftGripHeld
+            };
+        }
+
+        private const int kPoseTrackingFlags = (int)(
+            UnityEngine.XR.InputTrackingState.Position | UnityEngine.XR.InputTrackingState.Rotation);
+
+        [Header("Menu ray comparison")]
+        [SerializeField]
+        private MenuRaySource m_MenuRaySource = MenuRaySource.Finger;
+
+        private static string MenuRayMode =>
+            Instance != null ? Instance.m_MenuRaySource.ToString().ToLowerInvariant() : "unavailable";
+
+        private static void SetMenuRayMode(string mode)
+        {
+            MenuRaySource source;
+            switch (mode.Trim().ToLowerInvariant())
+            {
+                case "finger": source = MenuRaySource.Finger; break;
+                case "aim": source = MenuRaySource.Aim; break;
+                case "pinch": source = MenuRaySource.Pinch; break;
+                default: throw new ArgumentException("Hand menu ray mode must be finger, aim or pinch.");
+            }
+
+            if (Instance == null)
+                throw new InvalidOperationException("The Android XR hand bridge is not available.");
+
+            Instance.m_MenuRaySource = source;
+            LogDiagnostic($"ANDROIDXR_MENU_RAY mode={source.ToString().ToLowerInvariant()}");
+        }
+
+        // Menu-only override: leave the brush's drawing and grip poses unchanged.
+        // Unavailable runtime poses retain the existing finger ray.
+        public static bool TryGetMenuRay(out Ray ray)
+        {
+            ray = default;
+            if (!UseHand(true) || !Instance.m_Right.tracked)
+                return false;
+
+            HandState hand = Instance.m_Right;
+            Pose pose;
+            switch (Instance.m_MenuRaySource)
+            {
+                case MenuRaySource.Aim when hand.aimPoseValid:
+                    pose = hand.aimPose;
+                    break;
+                case MenuRaySource.Pinch when hand.pinchPoseValid:
+                    pose = hand.pinchPose;
+                    break;
+                default:
+                    return false;
+            }
+
+            // Unity converts the OpenXR poses to Unity coordinates. Like XRI's
+            // tracked ray transforms, use local +Z as the forward axis.
+            ray = new Ray(pose.position, pose.rotation * Vector3.forward);
+            return true;
+        }
+
+        // --------------------------------------------------------------------
+        // Inspector
+        // --------------------------------------------------------------------
+
+        [Header("Tracking Space")]
+        [Tooltip("The same XR Origin / tracking origin used by the Open Brush camera.")]
+        public Transform trackingOrigin;
+
+
+        [Header("Hand Interaction - Permission Free")]
+
+        [Tooltip("pinchValue required to START drawing.")]
+        [Range(0.0f, 1.0f)]
+        [SerializeField]
+        private float pinchPressThreshold = 0.75f;
+
+        [Tooltip("pinchValue below this releases drawing. Lower than press threshold for hysteresis.")]
+        [Range(0.0f, 1.0f)]
+        [SerializeField]
+        private float pinchReleaseThreshold = 0.55f;
+
+        [Tooltip("graspValue required on BOTH hands to START swimming/grab mode.")]
+        [Range(0.0f, 1.0f)]
+        [SerializeField]
+        private float graspPressThreshold = 0.75f;
+
+        [Tooltip("graspValue below this releases the hand Grip state.")]
+        [Range(0.0f, 1.0f)]
+        [SerializeField]
+        private float graspReleaseThreshold = 0.55f;
+
+
+        [Header("Hybrid Controller / Hand Routing")]
+
+        [Tooltip(
+            "When a real tracked controller and a tracked hand are both available on the same side, " +
+            "prefer the physical controller. Disable only for hand-first experiments.")]
+        [SerializeField]
+        private bool preferPhysicalControllers = true;
+
+        [Tooltip(
+            "How long a new source must remain available before switching between hand and controller. " +
+            "Prevents momentary tracking drops from causing source flicker.")]
+        [SerializeField]
+        [Range(0.0f, 1.0f)]
+        private float sourceSwitchDelay = 0.18f;
+
+        [Tooltip(
+            "How often to rescan the Input System for Hand Interaction and physical controller devices.")]
+        [SerializeField]
+        [Range(0.1f, 5.0f)]
+        private float deviceSearchInterval = 0.75f;
+
+
+        // TODO: Convert direct-touch radii, pointer backoff and re-arm travel from metres
+        // to world units consistently with trackingOrigin scale before using direct touch.
+        // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4177373440
+        [Header("Menu Touch - Right Index")]
+        [Header("Legacy Direct Finger Touch - DISABLED")]
+
+        [Header("Panel Contact / Grab")]
+        [Tooltip(
+            "Radius in metres around the right fingertip used only to detect panel contact. " +
+            "Contact disables laser aiming and prepares the hand for a grasp-driven panel move. " +
+            "It never presses UI buttons.")]
+        [SerializeField]
+        private float panelContactRadius = 0.030f;
+
+        [Tooltip(
+            "Larger radius used after the hand has entered panel proximity. " +
+            "This hysteresis prevents the laser reappearing while fingers curl into a grab.")]
+        [SerializeField]
+        private float panelContactReleaseRadius = 0.055f;
+
+        [Tooltip(
+            "Radius in metres around the right index fingertip used to detect direct " +
+            "contact with Open Brush panel/UI colliders.")]
+        [SerializeField]
+        private float menuTouchRadius = 0.012f;
+
+        [Tooltip(
+            "Larger radius used to KEEP an already-pressed UI button captured. " +
+            "Must be larger than menuTouchRadius to provide touch hysteresis.")]
+        [SerializeField]
+        private float menuTouchReleaseRadius = 0.025f;
+
+        [Tooltip(
+            "How long a pressed button may temporarily disappear from fingertip overlap " +
+            "before it is considered genuinely released.")]
+        [SerializeField]
+        private float menuTouchReleaseGrace = 0.10f;
+
+        [Tooltip(
+            "After a direct UI press, the fingertip must remain completely clear of UI " +
+            "for this long before another direct UI press can be armed.")]
+        [SerializeField]
+        private float menuTouchRearmClearTime = 0.20f;
+
+        [Tooltip(
+            "Minimum physical fingertip travel from the original press point before the " +
+            "direct UI system can re-arm. Prevents moving UI from re-triggering under a " +
+            "stationary finger.")]
+        [SerializeField]
+        private float menuTouchRearmFingerTravel = 0.030f;
+
+        [Tooltip(
+            "When the fingertip contacts UI, place Open Brush's pointer ray origin " +
+            "this far behind the fingertip along the poke direction. This keeps the " +
+            "ray origin outside the button collider so Open Brush can register hover/click.")]
+        [SerializeField]
+        private float menuTouchPointerBackoff = 0.020f;
+
+        [Tooltip("Physics layers considered by right-index direct menu touch.")]
+        [SerializeField]
+        private LayerMask menuTouchLayerMask = ~0;
+
+        [Tooltip(
+            "Whether direct menu touch should include trigger colliders. " +
+            "Collide is recommended for Open Brush UI.")]
+        [SerializeField]
+        private QueryTriggerInteraction menuTouchQueryTriggerInteraction =
+            QueryTriggerInteraction.Collide;
+
+
+        [Header("Brush / Right Hand")]
+
+        [Tooltip("Wrist aim pitch in degrees. Positive tilts the laser downward around the hand's local right axis.")]
+        [SerializeField] private float wristAimPitchOffset = 45.0f;
+
+
+        [Tooltip(
+            "Rotation correction applied after aligning the Open Brush pointer " +
+            "with the right index finger. Start with (0, 0, 0).")]
+        public Vector3 brushRotationOffset;
+
+        [Tooltip(
+            "Additional offset in pointer local space after placing the Open Brush " +
+            "PointerAttachPoint at the right index fingertip.")]
+        public Vector3 brushPositionOffset;
+
+
+        [Header("Wand / Left Hand")]
+
+        [Tooltip(
+            "Optional local rotation correction after the Android XR left-hand grip pose. " +
+            "Keep this at (0,0,0) first. The Wand root and all attached panels will " +
+            "follow the hand rotation, including wrist roll.")]
+        public Vector3 wandRotationOffset;
+
+        [Tooltip("Local-space offset of the virtual Wand relative to the hand grip/palm pose.")]
+        public Vector3 wandPositionOffset;
+
+        // Legacy serialized fields from v2-v7. Retained only for scene/prefab
+        // compatibility; the restored v8 spatial path does not use either one.
+        [HideInInspector]
+        [SerializeField]
+        private bool useGripPoseForWand = true;
+
+        [HideInInspector]
+        public bool useAimPoseForWand = true;
+
+
+        [Header("Restored Working Spatial Mapping")]
+
+        [Tooltip(
+            "Use XRHandSubsystem Palm / Index joints for Wand, teleport pointer and " +
+            "fingertip UI location. This reproduces the previously working bridge pose.")]
+        [SerializeField]
+        private bool useXRHandsForSpatialPose = true;
+
+        [Tooltip(
+            "Ignore old serialized Wand/Brush pose offsets while using the restored mapping. " +
+            "Leave ON initially so experiments from v5-v7 cannot keep the UI flipped.")]
+        [SerializeField]
+        private bool useExactRestoredPose = true;
+
+        [Tooltip(
+            "Use Open Brush's known OculusTouch controller hierarchy only as an INTERNAL " +
+            "geometry/anchor scaffold. Input still comes from the selected physical controller " +
+            "or hand independently per side.")]
+        [SerializeField]
+        private bool useLegacyOpenBrushAnchorGeometry = true;
+
+
+        [Header("Open Brush")]
+
+        [Tooltip("Show normal Open Brush brush/color/tool panels on the left-hand Wand.")]
+        public bool showPanels = true;
+
+        [Tooltip("Hide the fake Oculus/Quest controller models used internally by Open Brush.")]
+        public bool hideControllerModels = true;
+
+
+        internal static bool DebugLoggingEnabled => App.Instance != null && App.UserConfig != null &&
+            App.UserConfig.Handtracking.DebugLogging;
+
+        [Header("Debug")]
+        [Tooltip("Seconds between state diagnostic messages.")]
+        [SerializeField]
+        private float debugStateInterval = 1.0f;
+
+        [Header("Open Brush Tutorial")]
+        [SerializeField]
+        private bool skipOpenBrushIntroTutorialForHands = true;
+
+        private bool m_TutorialBypassApplied;
+
+
+        // --------------------------------------------------------------------
+        // Runtime state
+        // --------------------------------------------------------------------
+
+        private HandInteractionBinding m_LeftBinding;
+        private HandInteractionBinding m_RightBinding;
+
+        // XR Hands is used only for the spatial mapping that was known to work:
+        // Palm orientation/position and IndexDistal -> IndexTip direction.
+        private XRHandSubsystem m_XRHandSubsystem;
+        private readonly List<XRHandSubsystem> m_XRHandSubsystems = new();
+        private float m_NextXRHandsSearchTime;
+
+        // Right brush tip is reconstructed from the INDEX finger bone chain rather
+        // than trusting XRHand IndexTip blindly. Some Android XR hand poses can
+        // transiently report IndexTip at/near another fingertip when fingers curl.
+        private float m_RightIndexDistalToTipLength = 0.018f;
+        private bool m_RightIndexTipLengthCalibrated;
+        private Vector3 m_LastStableRightIndexDirectionLocal = Vector3.forward;
+        private bool m_HaveLastStableRightIndexDirection;
+        private Vector3 m_RightWristAimWorld;
+        private bool m_RightWristAimValid;
+
+        private ControllerBinding m_LeftControllerBinding;
+        private ControllerBinding m_RightControllerBinding;
+
+        private InputSourceKind m_LeftSource = InputSourceKind.None;
+        private InputSourceKind m_RightSource = InputSourceKind.None;
+        private InputSourceKind m_LeftCandidateSource = InputSourceKind.None;
+        private InputSourceKind m_RightCandidateSource = InputSourceKind.None;
+        private float m_LeftCandidateSince;
+        private float m_RightCandidateSince;
+
+        private bool m_OpenBrushHandModeInitialized;
+        private bool m_ControllersPrepared;
+        private bool m_PanelsRequested;
+
+        private float m_NextDebugStateTime;
+        private float m_NextDeviceSearchTime;
+
+        private readonly HandState m_Left = new HandState();
+        private readonly HandState m_Right = new HandState();
+
+        private const int kMenuTouchHitBufferSize = 32;
+        private readonly Collider[] m_MenuTouchHits =
+            new Collider[kMenuTouchHitBufferSize];
+
+        private bool m_MenuTouchHeld;
+        private bool m_MenuTouchDown;
+        private bool m_MenuTouchUp;
+        private Collider m_MenuTouchCollider;
+
+        // Physical panel contact is NOT a button press. It only suppresses
+        // aiming/drawing and marks the hand as ready for a grasp-based panel move.
+        private bool m_RightPanelContact;
+        private Collider m_RightPanelContactCollider;
+
+        // Latches the intent to manipulate a panel across the transition from
+        // open hand/contact into the grasp pose. Without this, curling the hand
+        // can move all fingertips away from the collider before Open Brush sees
+        // Grip and captures the PanelWidget.
+        private bool m_RightPanelGrabArmed;
+        private float m_RightPanelLastContactTime = -1.0f;
+
+        [Tooltip(
+            "Short grace period after panel proximity is lost. Keeps grab readiness " +
+            "through the open-hand to fist transition.")]
+        [SerializeField]
+        private float panelGrabContactGrace = 0.18f;
+
+        // Direct fingertip UI target. We invoke the touched BaseButton directly
+        // instead of routing poke through VrInput.Trigger, because Open Brush
+        // shares Trigger between UI and painting.
+        private BaseButton m_MenuTouchComponent;
+        private BaseButton m_ActiveMenuTouchComponent;
+
+        // Stable direct-touch capture / re-arm state.
+        //
+        // A direct UI press is allowed only while armed. Once a press occurs,
+        // the system stays disarmed until the fingertip has been clear of UI
+        // for a short time AND has physically moved away from the original
+        // press point. This prevents a moving/rotating panel from producing a
+        // false release followed immediately by a second press.
+        private bool m_MenuTouchArmed = true;
+        private float m_MenuTouchMissSince = -1.0f;
+        private float m_MenuTouchClearSince = -1.0f;
+        // Press point stored relative to a stable left-Wand reference transform.
+        // Comparing in Wand-local space prevents tracking-origin/world-space jumps
+        // and UI motion from being mistaken for a deliberate finger withdrawal.
+        private Transform m_MenuTouchPressReference;
+        private Vector3 m_MenuTouchPressFingerPositionLocal;
+        private Vector3 m_MenuTouchPressFingerPositionWorldFallback;
+        private bool m_MenuTouchHasPressFingerPosition;
+
+        // Open Brush Trigger is reserved for painting while hand input is active:
+        //   pinch -> drawing
+        //   poke  -> direct UIComponent press/release (never a paint trigger)
+        private bool m_PrimaryTriggerHeld;
+        private bool m_PrimaryTriggerDown;
+        private bool m_PrimaryTriggerUp;
+
+        // Per-hand OpenXR grasp state.
+        // A single grasp may be exposed to Open Brush only for grabbing a nearby
+        // widget/panel. Two simultaneous grasps are exposed for swimming/world
+        // translation, rotation and scaling.
+        private bool m_LeftGripHeld;
+        private bool m_LeftGripDown;
+        private bool m_LeftGripUp;
+        private bool m_RightGripHeld;
+        private bool m_RightGripDown;
+        private bool m_RightGripUp;
+
+        // Convenience diagnostics: true when both currently selected hand
+        // sources are gripping at once.
+        private bool m_SwimModeHeld;
+        private bool m_SwimModeDown;
+        private bool m_SwimModeUp;
+
+
+        private enum InputSourceKind
+        {
+            None,
+            Controller,
+            Hand
+        }
+
+
+        private sealed class ControllerBinding
+        {
+            public InputDevice device;
+            public ButtonControl isTracked;
+            public IntegerControl trackingState;
+
+            public bool IsValid =>
+                device != null &&
+                device.added &&
+                device.enabled;
+        }
+
+        private void EnsureTutorialBypass()
+        {
+            if (!skipOpenBrushIntroTutorialForHands || !Active)
+                return;
+
+            if (TutorialManager.m_Instance == null)
+                return;
+
+            // Important:
+            // Open Brush can change IntroState during startup after this bridge has
+            // already initialized. Therefore don't rely on a one-shot flag.
+            if (TutorialManager.m_Instance.TutorialActive())
+            {
+                TutorialManager.m_Instance.IntroState =
+                    IntroTutorialState.Done;
+
+                if (InputManager.m_Instance != null)
+                {
+                    TutorialManager.m_Instance.DisableControllerTutorial(
+                        InputManager.ControllerName.Brush);
+
+                    TutorialManager.m_Instance.DisableControllerTutorial(
+                        InputManager.ControllerName.Wand);
+                }
+
+                LogDiagnostic(
+                    "ANDROIDXR_HAND: forced Open Brush intro tutorial to DONE");
+            }
+        }
+
+
+        private sealed class HandInteractionBinding
+        {
+            public InputDevice device;
+
+            public ButtonControl isTracked;
+            public IntegerControl trackingState;
+
+            public Vector3Control devicePosition;
+            public QuaternionControl deviceRotation;
+
+            public Vector3Control pokePosition;
+            public QuaternionControl pokeRotation;
+
+            public Vector3Control pinchPosition;
+            public QuaternionControl pinchRotation;
+
+            public Vector3Control pointerPosition;
+            public QuaternionControl pointerRotation;
+            public IntegerControl pointerTrackingState;
+            public IntegerControl pinchTrackingState;
+
+            public AxisControl pinchValue;
+            public ButtonControl pinchReady;
+
+            public AxisControl graspValue;
+            public ButtonControl graspReady;
+
+            public bool IsValid =>
+                device != null &&
+                device.added &&
+                device.enabled;
+        }
+
+
+        private class HandState
+        {
+            public bool tracked;
+
+            // Raw right-hand draw state (pinch only).
+            public bool trigger;
+            public bool triggerDown;
+            public bool triggerUp;
+
+            public float pinchValue;
+            public float openXrPinchValue;
+            public float xrHandsPinchValue;
+            public bool xrHandsPinchValid;
+            public bool pinchHeld;
+            public float graspValue;
+            public bool fistDetected;
+            public readonly float?[] fingerCurl = new float?[5];
+
+            // Kept for compatibility with existing bridge diagnostics/API.
+            public float indexMiddleDistance = float.PositiveInfinity;
+
+            // Grip/device pose. This is not raw palm-joint data.
+            public Pose palmPose;
+
+            // Runtime-defined OpenXR aim pose, converted to Unity coordinates.
+            public Pose aimPose;
+            public bool aimPoseValid;
+
+            // Preserve the runtime pinch pose separately from the drawing fingertip.
+            public Pose pinchPose;
+            public bool pinchPoseValid;
+
+            // Permission-free poke pose is the best index interaction point.
+            public Pose indexTipPose;
+
+            // Runtime / XR Hands index direction in Unity world space.
+            public bool indexDirectionValid;
+            public Vector3 indexDirectionWorld = Vector3.forward;
+
+            // True when Palm/Index spatial data was replaced this frame by
+            // XRHandSubsystem joint poses from the restored working mapping.
+            public bool xrHandsSpatialValid;
+        }
+
+
+        // --------------------------------------------------------------------
+        // Public bridge API used by UnityXRControllerInfo
+        // --------------------------------------------------------------------
+
+        /// <summary>
+        /// True while at least one side is currently routed to a hand.
+        /// Use UseHand(isBrush) for the per-side decision.
+        /// </summary>
+        public static bool Active =>
+            Instance != null &&
+            (Instance.m_LeftSource == InputSourceKind.Hand ||
+             Instance.m_RightSource == InputSourceKind.Hand);
+
+
+        /// <summary>
+        /// Compatibility property used by UI such as BrushSettingsTray.
+        /// True while Open Brush is currently routing at least one controller side
+        /// through Android XR hand tracking.
+        /// </summary>
+        public static bool HandTrackingActive => Active;
+
+
+        /// <summary>
+        /// Returns true only when this side is currently routed to Hand Interaction.
+        /// isBrush == false -> left Wand, true -> right Brush.
+        /// </summary>
+        public static bool UseHand(bool isBrush)
+        {
+            if (Instance == null)
+                return false;
+
+            return isBrush
+                ? Instance.m_RightSource == InputSourceKind.Hand
+                : Instance.m_LeftSource == InputSourceKind.Hand;
+        }
+
+
+        public static bool PhysicalControllerActive(bool isBrush)
+        {
+            if (Instance == null)
+                return false;
+
+            return isBrush
+                ? Instance.m_RightSource == InputSourceKind.Controller
+                : Instance.m_LeftSource == InputSourceKind.Controller;
+        }
+
+
+        public static bool LeftTracked =>
+            UseHand(false) &&
+            Instance.m_Left.tracked;
+
+
+        public static bool RightTracked =>
+            UseHand(true) &&
+            Instance.m_Right.tracked;
+
+        // The Wand hand has no trigger mapping. Expose its pinch separately for
+        // quick loading without enabling left-hand drawing or other trigger commands.
+        public static bool LeftPinchHeld => LeftTracked && Instance.m_Left.pinchHeld;
+
+
+        /// <summary>
+        /// Tracking validity for the HAND path only. UnityXRControllerInfo should
+        /// call this only when UseHand(isBrush) is true; otherwise it should use
+        /// the normal physical controller validity path.
+        /// </summary>
+        public static bool IsTracked(bool isBrush)
+        {
+            if (!UseHand(isBrush))
+                return false;
+
+            return isBrush
+                ? Instance.m_Right.tracked
+                : Instance.m_Left.tracked;
+        }
+
+
+        /// <summary>
+        /// Open Brush trigger for the right HAND source only.
+        /// Physical controllers keep their normal TriggerAxis path.
+        /// </summary>
+        public static bool Trigger(bool isBrush)
+        {
+            return UseHand(isBrush) &&
+                   isBrush &&
+                   Instance.m_PrimaryTriggerHeld;
+        }
+
+
+        public static float TriggerValue(bool isBrush)
+        {
+            return Trigger(isBrush) ? 1.0f : 0.0f;
+        }
+
+
+        public static bool TriggerDown(bool isBrush)
+        {
+            return UseHand(isBrush) &&
+                   isBrush &&
+                   Instance.m_PrimaryTriggerDown;
+        }
+
+
+        public static bool TriggerUp(bool isBrush)
+        {
+            return UseHand(isBrush) &&
+                   isBrush &&
+                   Instance.m_PrimaryTriggerUp;
+        }
+
+
+        /// <summary>
+        /// Hand grasp maps to Grip independently per side. This mirrors physical
+        /// controller behaviour and allows mixed controller+hand swimming.
+        /// </summary>
+        public static bool Grip(bool isBrush)
+        {
+            if (Instance == null ||
+                !UseHand(isBrush))
+            {
+                return false;
+            }
+
+            // Two hands gripping always means the existing Open Brush
+            // swimming / world-transform gesture.
+            if (Instance.m_SwimModeHeld)
+                return true;
+
+            // A single hand may expose Grip only while Open Brush has a
+            // grabbable widget/panel opportunity, or while that same hand is
+            // already holding one. A lone fist in empty space therefore cannot
+            // start moving the world.
+            if (!Instance.IsSingleHandWidgetGripAllowed(isBrush))
+                return false;
+
+            return isBrush
+                ? Instance.m_RightGripHeld
+                : Instance.m_LeftGripHeld;
+        }
+
+
+        public static bool GripDown(bool isBrush)
+        {
+            if (Instance == null ||
+                !UseHand(isBrush))
+            {
+                return false;
+            }
+
+            // When the second fist closes, both virtual controllers enter
+            // swimming together.
+            if (Instance.m_SwimModeDown)
+                return true;
+
+            if (!Instance.IsSingleHandWidgetGripAllowed(isBrush))
+                return false;
+
+            return isBrush
+                ? Instance.m_RightGripDown
+                : Instance.m_LeftGripDown;
+        }
+
+
+        public static bool GripUp(bool isBrush)
+        {
+            if (Instance == null ||
+                !UseHand(isBrush))
+            {
+                return false;
+            }
+
+            // Releasing either fist while swimming ends the two-hand virtual
+            // Grip state on both Open Brush controllers.
+            if (Instance.m_SwimModeUp)
+                return true;
+
+            // Do not require the widget to remain a current potential target on
+            // release. Once a one-hand grab has started, Open Brush needs the
+            // per-hand GripUp edge to terminate it cleanly.
+            return isBrush
+                ? Instance.m_RightGripUp
+                : Instance.m_LeftGripUp;
+        }
+
+
+        public static float GripValue(bool isBrush)
+        {
+            if (Instance == null ||
+                !UseHand(isBrush))
+            {
+                return 0.0f;
+            }
+
+            if (Instance.m_SwimModeHeld)
+            {
+                // Existing two-hand behaviour: the weaker grasp determines the
+                // effective confidence of the combined swimming gesture.
+                return Mathf.Min(
+                    Instance.m_Left.graspValue,
+                    Instance.m_Right.graspValue);
+            }
+
+            if (!Instance.IsSingleHandWidgetGripAllowed(isBrush))
+                return 0.0f;
+
+            return isBrush
+                ? Instance.m_Right.graspValue
+                : Instance.m_Left.graspValue;
+        }
+
+
+        /// <summary>
+        /// Determines whether one hand is allowed to expose its raw grasp as an
+        /// Open Brush Grip without enabling one-hand world swimming.
+        ///
+        /// Open Brush already owns widget/panel intersection and manipulation.
+        /// The bridge only decides whether the hand's grasp may reach that
+        /// existing Grip path.
+        /// </summary>
+        private bool IsSingleHandWidgetGripAllowed(bool isBrush)
+        {
+            SketchControlsScript controls =
+                SketchControlsScript.m_Instance;
+
+            if (controls == null)
+                return false;
+
+            InputManager.ControllerName controllerName =
+                isBrush
+                    ? InputManager.ControllerName.Brush
+                    : InputManager.ControllerName.Wand;
+
+            // Once Open Brush has converted the potential widget into an active
+            // one-hand grab, keep routing Grip only to the hand that owns it.
+            // This prevents losing the object simply because its original
+            // proximity/intersection state changes while it is moving.
+            if (controls.IsUserInteractingWithAnyWidget())
+            {
+                return controls.OneHandGrabController ==
+                       controllerName;
+            }
+
+            // Physical contact with a panel explicitly arms the right hand for
+            // a one-hand panel grab. This remains true while the fist closes,
+            // even if the hand geometry moves away from the original collider.
+            if (isBrush &&
+                m_RightPanelGrabArmed &&
+                m_RightGripHeld)
+            {
+                // If both grasps genuinely reach swim state, Grip() handles
+                // m_SwimModeHeld before calling this helper. Otherwise the
+                // panel-contact hand must be allowed to capture its widget.
+                return true;
+            }
+
+            // Otherwise retain Open Brush's normal widget proximity test. This
+            // supports grabbing non-panel objects without enabling one-hand
+            // world movement in empty space.
+            if (!controls.IsUserAbleToInteractWithAnyWidget())
+                return false;
+
+            bool thisHeld =
+                isBrush
+                    ? m_RightGripHeld
+                    : m_LeftGripHeld;
+
+            if (!thisHeld)
+                return false;
+
+            // If both hands are grasping, m_SwimModeHeld handles the input
+            // instead. This branch is intentionally single-hand only.
+            bool otherHeld =
+                isBrush
+                    ? m_LeftGripHeld
+                    : m_RightGripHeld;
+
+            return !otherHeld;
+        }
+
+
+        /// <summary>
+        /// Returns the actual PanelWidget touched by the right hand. Open Brush's
+        /// normal GPU/widget intersection is driven by the virtual Brush tip,
+        /// which is at the index finger during aiming and at the palm during
+        /// gripping. That selection can disappear during the fist transition.
+        ///
+        /// We retain the panel from physical contact, but still let
+        /// SketchControlsScript perform the actual standard Open Brush widget
+        /// grab/move/release. No touch-click behaviour is introduced here.
+        /// </summary>
+        public static bool TryGetRightHandPanelGrabTarget(out PanelWidget panelWidget)
+        {
+            panelWidget = null;
+
+            if (Instance == null ||
+                !UseHand(true) ||
+                !Instance.m_Right.tracked ||
+                Instance.m_SwimModeHeld ||
+                !Instance.m_RightPanelGrabArmed)
+            {
+                return false;
+            }
+
+            Collider contact = Instance.m_RightPanelContactCollider;
+            if (contact == null ||
+                !contact.enabled ||
+                !contact.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            // The touched collider can belong to a button or the panel mesh.
+            // The movable PanelWidget normally lives on the BasePanel root.
+            BasePanel basePanel = contact.GetComponentInParent<BasePanel>();
+            if (basePanel != null)
+            {
+                panelWidget = basePanel.GetComponent<PanelWidget>();
+            }
+
+            if (panelWidget == null)
+            {
+                panelWidget = contact.GetComponentInParent<PanelWidget>();
+            }
+
+            if (panelWidget == null ||
+                !panelWidget.isActiveAndEnabled ||
+                !panelWidget.gameObject.activeInHierarchy)
+            {
+                panelWidget = null;
+                return false;
+            }
+
+            return true;
+        }
+
+        public static float FingerDistance(bool isBrush)
+        {
+            return float.PositiveInfinity;
+        }
+
+
+        public static bool RightDrawHeld =>
+            UseHand(true) && Instance.m_Right.trigger;
+
+        public static bool RightDrawDown =>
+            UseHand(true) && Instance.m_Right.triggerDown;
+
+        public static bool RightDrawUp =>
+            UseHand(true) && Instance.m_Right.triggerUp;
+
+
+        // Direct fingertip UI interaction is disabled. These compatibility
+        // accessors intentionally remain inert for any other scripts that still
+        // reference the old bridge API.
+        public static bool MenuTouchHeld => false;
+
+        public static bool MenuTouchDown => false;
+
+        public static bool MenuTouchUp => false;
+
+        public static Collider MenuTouchCollider => null;
+
+        public static Vector3 RightIndexTipPosition =>
+            RightTracked
+                ? Instance.m_Right.indexTipPose.position
+                : Vector3.zero;
+
+        public static bool RightIndexDirectionValid =>
+            RightTracked &&
+            Instance.m_Right.indexDirectionValid;
+
+        public static Vector3 RightIndexDirection =>
+            RightIndexDirectionValid
+                ? Instance.m_Right.indexDirectionWorld
+                : Vector3.forward;
+
+
+        /// <summary>
+        /// Permission-free whole-hand visual anchor.
+        ///
+        /// Position comes from the OpenXR grip/palm centroid. Rotation is rebuilt
+        /// into a hand-friendly semantic basis instead of copying the raw grip
+        /// quaternion directly:
+        ///
+        ///   local +Z = finger / aim direction
+        ///   local +Y = outward palm normal
+        ///
+        /// OpenXR grip +X points OUT of the left palm but INTO the right palm,
+        /// hence the handedness-dependent sign below.
+        ///
+        /// This is still only a coarse whole-hand pose. Per-finger articulation
+        /// requires XR hand joints and therefore the Hand Tracking subsystem.
+        /// </summary>
+        public static bool TryGetHandVisualPose(bool isBrush, out Pose pose)
+        {
+            pose = default;
+
+            if (!UseHand(isBrush) || Instance == null)
+                return false;
+
+            HandState state = isBrush ? Instance.m_Right : Instance.m_Left;
+            if (!state.tracked)
+                return false;
+
+            Vector3 forward =
+                state.indexDirectionValid
+                    ? state.indexDirectionWorld
+                    : state.aimPose.rotation * Vector3.back;
+
+            if (forward.sqrMagnitude < 0.000001f)
+                forward = state.palmPose.rotation * Vector3.back;
+
+            forward.Normalize();
+
+            // OpenXR grip +X: away from left palm, into right palm.
+            Vector3 palmOut =
+                state.palmPose.rotation *
+                (isBrush ? Vector3.left : Vector3.right);
+
+            Vector3 up =
+                Vector3.ProjectOnPlane(
+                    palmOut,
+                    forward);
+
+            if (up.sqrMagnitude < 0.000001f)
+            {
+                up =
+                    Vector3.ProjectOnPlane(
+                        state.palmPose.rotation * Vector3.up,
+                        forward);
+            }
+
+            if (up.sqrMagnitude < 0.000001f)
+                up = Vector3.up;
+
+            up.Normalize();
+
+            pose =
+                new Pose(
+                    state.palmPose.position,
+                    Quaternion.LookRotation(
+                        forward,
+                        up) *
+                    Quaternion.Euler(
+                        90.0f,
+                        0.0f,
+                        0.0f));
+
+            return true;
+        }
+
+        public static float HandPinchValue(bool isBrush)
+        {
+            if (!UseHand(isBrush) || Instance == null)
+                return 0.0f;
+
+            return isBrush
+                ? Instance.m_Right.pinchValue
+                : Instance.m_Left.pinchValue;
+        }
+
+        public static float HandGraspValue(bool isBrush)
+        {
+            if (!UseHand(isBrush) || Instance == null)
+                return 0.0f;
+
+            return isBrush
+                ? Instance.m_Right.graspValue
+                : Instance.m_Left.graspValue;
+        }
+
+        private bool HasAnyHandInteractionDevice =>
+            (m_LeftBinding != null && m_LeftBinding.IsValid) ||
+            (m_RightBinding != null && m_RightBinding.IsValid);
+
+        // --------------------------------------------------------------------
+        // Unity lifecycle
+        // --------------------------------------------------------------------
+
+        private void Awake()
+        {
+            Instance = this;
+            m_FistShape = ScriptableObject.CreateInstance<XRHandShape>();
+            ConfigureFistShape();
+
+            // Do this in Awake (not only Start) so other Open Brush Awake paths
+            // already see AndroidXRHandBridge.Active when OpenXR has created the
+            // Hand Interaction devices.
+            FindInputDevices(forceLog: true);
+
+            LogDiagnostic(
+                "ANDROID_XR_HAND: AWAKE - hybrid controller / Hand Interaction bridge active");
+        }
+
+
+        private void OnEnable()
+        {
+            Application.onBeforeRender += OnBeforeRender;
+            InputSystem.onDeviceChange += OnInputDeviceChange;
+            FindInputDevices(forceLog: false);
+        }
+
+
+        private void OnDisable()
+        {
+            Application.onBeforeRender -= OnBeforeRender;
+            InputSystem.onDeviceChange -= OnInputDeviceChange;
+        }
+
+
+        private void OnDestroy()
+        {
+            Application.onBeforeRender -= OnBeforeRender;
+            InputSystem.onDeviceChange -= OnInputDeviceChange;
+
+            if (m_FistShape != null)
+                Destroy(m_FistShape);
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+        }
+
+
+        private void Start()
+        {
+            ApplyHandtrackingConfig();
+            LogDiagnostic("ANDROID_XR_HAND: START - hybrid controller / Hand Interaction mode");
+
+            FindInputDevices(forceLog: true);
+        }
+
+
+        private void Update()
+        {
+            ApplyHandtrackingConfig();
+            if (Time.unscaledTime >= m_NextDeviceSearchTime)
+            {
+                FindInputDevices(forceLog: false);
+
+                m_NextDeviceSearchTime =
+                    Time.unscaledTime +
+                    Mathf.Max(
+                        0.1f,
+                        deviceSearchInterval);
+            }
+
+            // Sample joint pinch independently of whether joints drive the spatial pose.
+            RefreshXRHandSubsystem();
+
+            // Select input before installing the hand-specific controller scaffold.
+            bool wasDrawingBeforeHandUpdate =
+                m_Right.trigger;
+
+            // Always sample Hand Interaction in the background. This lets a hand
+            // become the candidate source as soon as a controller is put down.
+            UpdateInteractionHand(
+                m_LeftBinding,
+                m_Left,
+                allowDraw: false);
+
+            UpdateInteractionHand(
+                m_RightBinding,
+                m_Right,
+                allowDraw: true);
+
+            UpdateSourceSelection();
+
+            EnsureOpenBrushHandMode();
+            EnsureTutorialBypass();
+
+            if (!m_OpenBrushHandModeInitialized)
+            {
+                DebugStateIfNeeded();
+                return;
+            }
+
+            PrepareOpenBrushControllers();
+
+            if (!m_ControllersPrepared)
+            {
+                DebugStateIfNeeded();
+                return;
+            }
+
+            // Restore the exact spatial source that previously gave correct
+            // Wand orientation, teleport aim and fingertip/button alignment.
+            // Pinch/grasp values above remain sourced from Hand Interaction.
+            UpdateXRHandsSpatialPoses();
+
+            ApplySourceRouting();
+
+            UpdateGripStates();
+            // Direct fingertip UI pressing is intentionally disabled.
+            ResetMenuTouchState();
+
+            // Physical contact with a panel is a different interaction state:
+            // touching prepares the hand for panel/object manipulation and
+            // suppresses laser/pinch input. The actual move still starts only
+            // when the user performs the grasp gesture.
+            UpdateRightPanelContactState();
+
+            UpdatePrimaryTriggerState();
+
+            DriveOpenBrushControllers();
+
+            RequestPanels();
+
+            DebugStateIfNeeded();
+        }
+
+
+        private void LateUpdate()
+        {
+            LogHandtrackingStatus();
+            if (!m_OpenBrushHandModeInitialized ||
+                !m_ControllersPrepared)
+            {
+                return;
+            }
+
+
+            /*
+             * Keep Open Brush in six-DoF mode while a hand is actually selected.
+             * Otherwise leave controller/viewer mode selection to the normal XR paths.
+             */
+            if (Active && SketchControlsScript.m_Instance != null)
+            {
+                SketchControlsScript.m_Instance.ActiveControlsType =
+                    SketchControlsScript.ControlsType.SixDofControllers;
+            }
+
+
+            /*
+             * Fixed panels are normally positioned from:
+             *
+             *     InputManager.Wand.Geometry.MainAxisAttachPoint
+             *
+             * Since the Wand now follows the left palm, this makes the panels
+             * follow the left hand.
+             */
+            if (showPanels &&
+                UseHand(false) &&
+                m_Left.tracked &&
+                PanelManager.m_Instance != null &&
+                PanelManager.m_Instance.GetAllPanels() != null)
+            {
+                PanelManager.m_Instance.LockPanelsToController();
+            }
+        }
+
+
+        /// <summary>
+        /// onBeforeRender happens later than normal Update/LateUpdate rendering
+        /// preparation, so it is a reliable place to force the fake controller
+        /// renderers off if Open Brush turns them back on during the frame.
+        /// </summary>
+        private void OnBeforeRender()
+        {
+            if (!hideControllerModels ||
+                !m_ControllersPrepared)
+            {
+                return;
+            }
+
+            HideHandControllerVisuals();
+        }
+
+
+        // --------------------------------------------------------------------
+        // Permission-free OpenXR Hand Interaction device discovery
+        // --------------------------------------------------------------------
+
+        private void OnInputDeviceChange(
+            InputDevice device,
+            InputDeviceChange change)
+        {
+            // Controllers and Hand Interaction devices can appear/disappear as
+            // the user puts controllers down or picks them back up.
+            FindInputDevices(forceLog: true);
+        }
+
+
+        private void FindInputDevices(
+            bool forceLog)
+        {
+            HandInteractionBinding foundLeftHand = null;
+            HandInteractionBinding foundRightHand = null;
+            ControllerBinding foundLeftController = null;
+            ControllerBinding foundRightController = null;
+
+            foreach (InputDevice device in InputSystem.devices)
+            {
+                bool isLeft = HasUsage(device, "LeftHand");
+                bool isRight = HasUsage(device, "RightHand");
+
+                string identity =
+                    ((device.name ?? string.Empty) + " " +
+                     (device.displayName ?? string.Empty)).ToLowerInvariant();
+
+                if (!isLeft && !isRight)
+                {
+                    isLeft = identity.Contains("left");
+                    isRight = identity.Contains("right");
+                }
+
+                if (IsHandInteractionDevice(device))
+                {
+                    if (isLeft && foundLeftHand == null)
+                        foundLeftHand = BindHandInteractionDevice(device);
+
+                    if (isRight && foundRightHand == null)
+                        foundRightHand = BindHandInteractionDevice(device);
+
+                    continue;
+                }
+
+                if (!IsPhysicalControllerDevice(device))
+                    continue;
+
+                ControllerBinding controller =
+                    BindControllerDevice(device);
+
+                if (isLeft && foundLeftController == null)
+                    foundLeftController = controller;
+
+                if (isRight && foundRightController == null)
+                    foundRightController = controller;
+            }
+
+            bool changed =
+                !SameDevice(m_LeftBinding?.device, foundLeftHand?.device) ||
+                !SameDevice(m_RightBinding?.device, foundRightHand?.device) ||
+                !SameDevice(m_LeftControllerBinding?.device, foundLeftController?.device) ||
+                !SameDevice(m_RightControllerBinding?.device, foundRightController?.device);
+
+            m_LeftBinding = foundLeftHand;
+            m_RightBinding = foundRightHand;
+            m_LeftControllerBinding = foundLeftController;
+            m_RightControllerBinding = foundRightController;
+
+            if (DebugLoggingEnabled && (forceLog || changed))
+            {
+                LogDiagnostic(
+                    "ANDROID_XR_HAND: hybrid device discovery " +
+                    $"leftHand={DescribeBinding(m_LeftBinding)} " +
+                    $"rightHand={DescribeBinding(m_RightBinding)} " +
+                    $"leftController={DescribeControllerBinding(m_LeftControllerBinding)} " +
+                    $"rightController={DescribeControllerBinding(m_RightControllerBinding)}");
+            }
+        }
+
+
+        private static bool SameDevice(
+            InputDevice a,
+            InputDevice b)
+        {
+            return a == b;
+        }
+
+
+        private static bool IsPhysicalControllerDevice(
+            InputDevice device)
+        {
+            if (device == null ||
+                IsHandInteractionDevice(device))
+            {
+                return false;
+            }
+
+            string layout = device.layout ?? string.Empty;
+            string name = device.name ?? string.Empty;
+            string display = device.displayName ?? string.Empty;
+
+            bool looksLikeController =
+                layout.IndexOf(
+                    "XRController",
+                    StringComparison.OrdinalIgnoreCase) >= 0 ||
+                layout.IndexOf(
+                    "TrackedDevice",
+                    StringComparison.OrdinalIgnoreCase) >= 0 ||
+                name.IndexOf(
+                    "Controller",
+                    StringComparison.OrdinalIgnoreCase) >= 0 ||
+                display.IndexOf(
+                    "Controller",
+                    StringComparison.OrdinalIgnoreCase) >= 0;
+
+            if (!looksLikeController)
+                return false;
+
+            // Exclude common non-hand-controller tracked devices.
+            string identity =
+                (layout + " " + name + " " + display).ToLowerInvariant();
+
+            return !identity.Contains("hmd") &&
+                   !identity.Contains("head") &&
+                   !identity.Contains("eye") &&
+                   !identity.Contains("hand interaction");
+        }
+
+
+        private static ControllerBinding BindControllerDevice(
+            InputDevice device)
+        {
+            if (device == null)
+                return null;
+
+            return new ControllerBinding
+            {
+                device = device,
+                isTracked =
+                    FindControl<ButtonControl>(
+                        device,
+                        "isTracked"),
+                trackingState =
+                    FindControl<IntegerControl>(
+                        device,
+                        "trackingState")
+            };
+        }
+
+
+        private static bool IsControllerTracked(
+            ControllerBinding binding)
+        {
+            if (binding == null || !binding.IsValid)
+                return false;
+
+            if (binding.isTracked != null &&
+                binding.isTracked.isPressed)
+            {
+                return true;
+            }
+
+            if (binding.trackingState != null &&
+                binding.trackingState.ReadValue() != 0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+
+        private static string DescribeControllerBinding(
+            ControllerBinding binding)
+        {
+            if (binding == null || binding.device == null)
+                return "none";
+
+            return
+                $"'{binding.device.name}' layout='{binding.device.layout}' " +
+                $"id={binding.device.deviceId} " +
+                $"tracked={IsControllerTracked(binding)}";
+        }
+
+
+        private static bool IsHandInteractionDevice(
+            InputDevice device)
+        {
+            if (device == null)
+                return false;
+
+            string layout = device.layout ?? string.Empty;
+            string name = device.name ?? string.Empty;
+            string display = device.displayName ?? string.Empty;
+
+            return layout.IndexOf(
+                       "HandInteraction",
+                       StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   name.IndexOf(
+                       "Hand Interaction",
+                       StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   display.IndexOf(
+                       "Hand Interaction",
+                       StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+
+        private static bool HasUsage(
+            InputDevice device,
+            string usageName)
+        {
+            if (device == null)
+                return false;
+
+            foreach (var usage in device.usages)
+            {
+                if (string.Equals(
+                        usage.ToString(),
+                        usageName,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+
+        private static HandInteractionBinding BindHandInteractionDevice(
+            InputDevice device)
+        {
+            if (device == null)
+                return null;
+
+            return new HandInteractionBinding
+            {
+                device = device,
+
+                isTracked =
+                    FindControl<ButtonControl>(
+                        device,
+                        "isTracked"),
+
+                trackingState =
+                    FindControl<IntegerControl>(
+                        device,
+                        "trackingState"),
+
+                devicePosition =
+                    FindControl<Vector3Control>(
+                        device,
+                        "devicePosition",
+                        "devicePose/position"),
+
+                deviceRotation =
+                    FindControl<QuaternionControl>(
+                        device,
+                        "deviceRotation",
+                        "devicePose/rotation"),
+
+                pokePosition =
+                    FindControl<Vector3Control>(
+                        device,
+                        "pokePosition",
+                        "pokePose/position"),
+
+                pokeRotation =
+                    FindControl<QuaternionControl>(
+                        device,
+                        "pokeRotation",
+                        "pokePose/rotation"),
+
+                pinchPosition =
+                    FindControl<Vector3Control>(
+                        device,
+                        "pinchPosition",
+                        "pinchPose/position"),
+
+                pinchRotation =
+                    FindControl<QuaternionControl>(
+                        device,
+                        "pinchRotation",
+                        "pinchPose/rotation"),
+
+                pointerPosition =
+                    FindControl<Vector3Control>(
+                        device,
+                        "pointerPosition",
+                        "pointerPose/position",
+                        "pointer/position"),
+
+                pointerRotation =
+                    FindControl<QuaternionControl>(
+                        device,
+                        "pointerRotation",
+                        "pointerPose/rotation",
+                        "pointer/rotation"),
+
+                pointerTrackingState = FindControl<IntegerControl>(device,
+                    "pointer/trackingState", "pointerPose/trackingState", "aimPose/trackingState"),
+                pinchTrackingState = FindControl<IntegerControl>(device, "pinchPose/trackingState"),
+
+                pinchValue =
+                    FindControl<AxisControl>(
+                        device,
+                        "pinchValue"),
+
+                pinchReady =
+                    FindControl<ButtonControl>(
+                        device,
+                        "pinchReady"),
+
+                graspValue =
+                    FindControl<AxisControl>(
+                        device,
+                        "graspValue"),
+
+                graspReady =
+                    FindControl<ButtonControl>(
+                        device,
+                        "graspReady")
+            };
+        }
+
+
+        private static T FindControl<T>(
+            InputDevice device,
+            params string[] paths)
+            where T : InputControl
+        {
+            if (device == null)
+                return null;
+
+            foreach (string path in paths)
+            {
+                T control =
+                    device.TryGetChildControl<T>(path);
+
+                if (control != null)
+                    return control;
+            }
+
+            return null;
+        }
+
+
+        private static string DescribeBinding(
+            HandInteractionBinding binding)
+        {
+            if (binding == null || binding.device == null)
+                return "none";
+
+            return
+                $"'{binding.device.name}' layout='{binding.device.layout}' " +
+                $"id={binding.device.deviceId} " +
+                $"trackedCtl={(binding.isTracked != null)} " +
+                $"pinchCtl={(binding.pinchValue != null)} " +
+                $"graspCtl={(binding.graspValue != null)} " +
+                $"pokeCtl={(binding.pokePosition != null)} " +
+                $"aimCtl={(binding.pointerRotation != null)}";
+        }
+
+
+        // --------------------------------------------------------------------
+        // Open Brush controller initialization
+        // --------------------------------------------------------------------
+
+        private void EnsureOpenBrushHandMode()
+        {
+            if (m_OpenBrushHandModeInitialized)
+                return;
+
+            // Borrow the controller scaffold only when a hand is selected for input.
+            if (!Active)
+                return;
+
+            if (App.VrSdk == null ||
+                InputManager.m_Instance == null)
+            {
+                return;
+            }
+
+            if (useLegacyOpenBrushAnchorGeometry)
+            {
+                /*
+                 * RESTORED FROM THE KNOWN-WORKING BRIDGE.
+                 *
+                 * OculusTouch here is NOT the input source. It is only Open Brush's
+                 * internal geometry scaffold, providing the known-good:
+                 *
+                 *     Wand.Geometry.MainAxisAttachPoint
+                 *     Brush.PointerAttachPoint
+                 *
+                 * The hybrid routing later still chooses physical controller vs hand
+                 * independently per side.
+                 */
+                // TODO: Before enabling hand interaction for Pico or other non-Touch controller
+                // profiles, preserve/restore each side's physical-controller geometry and action
+                // binding mask when switching between hands and controllers, including mixed input.
+                // This call replaces both sides; RestoreControllerVisualForSide only shows the model.
+                // Quest and current Android XR controllers use the matching Oculus Touch profile.
+                App.VrSdk.SetControllerStyle(
+                    ControllerStyle.OculusTouch);
+
+                // SetControllerStyle recreates VrControls.
+                InputManager.m_Instance.CreateControllerInfos();
+            }
+
+            if (InputManager.Wand == null ||
+                InputManager.Brush == null)
+            {
+                return;
+            }
+
+            InputManager.m_Instance.AllowVrControllers = true;
+
+            if (PointerManager.m_Instance != null)
+            {
+                // This call was present in the working bridge and recalculates
+                // free-paint/teleport pointer presentation for the recreated geometry.
+                PointerManager.m_Instance.RefreshFreePaintPointerAngle();
+                PointerManager.m_Instance.RequestPointerRendering(true);
+            }
+
+            m_OpenBrushHandModeInitialized = true;
+
+            if (DebugLoggingEnabled)
+            {
+                LogDiagnostic(
+                    "ANDROID_XR_HAND: restored anchor geometry initialized. " +
+                    $"legacyGeometry={useLegacyOpenBrushAnchorGeometry} " +
+                    $"WandStyle={InputManager.Wand.Geometry?.Style} " +
+                    $"BrushStyle={InputManager.Brush.Geometry?.Style}");
+            }
+        }
+
+
+        // --------------------------------------------------------------------
+        // Capture / prepare Open Brush controller objects
+        // --------------------------------------------------------------------
+
+        private void PrepareOpenBrushControllers()
+        {
+            if (m_ControllersPrepared)
+                return;
+
+            if (InputManager.m_Instance == null ||
+                InputManager.Brush == null ||
+                InputManager.Wand == null)
+            {
+                return;
+            }
+
+            m_ControllersPrepared = true;
+
+            if (DebugLoggingEnabled)
+            {
+                LogDiagnostic(
+                    "ANDROID_XR_HAND: hybrid Open Brush controller routing prepared");
+            }
+        }
+
+
+        private static void SetTrackedPoseDriversEnabled(
+            BaseControllerBehavior behavior,
+            bool enabled)
+        {
+            if (behavior == null)
+                return;
+
+            TrackedPoseDriver[] poseDrivers =
+                behavior.GetComponentsInChildren<TrackedPoseDriver>(
+                    true);
+
+            foreach (TrackedPoseDriver driver in poseDrivers)
+            {
+                driver.enabled = enabled;
+            }
+        }
+
+
+        private void ApplySourceRouting()
+        {
+            if (!m_ControllersPrepared)
+                return;
+
+            bool leftUsesHand =
+                m_LeftSource == InputSourceKind.Hand;
+
+            bool rightUsesHand =
+                m_RightSource == InputSourceKind.Hand;
+
+            if (InputManager.Wand != null)
+            {
+                SetTrackedPoseDriversEnabled(
+                    InputManager.Wand.Behavior,
+                    !leftUsesHand);
+
+                if (hideControllerModels && leftUsesHand)
+                {
+                    InputManager.Wand.ShowController(false);
+                }
+            }
+
+            if (InputManager.Brush != null)
+            {
+                SetTrackedPoseDriversEnabled(
+                    InputManager.Brush.Behavior,
+                    !rightUsesHand);
+
+                if (hideControllerModels && rightUsesHand)
+                {
+                    InputManager.Brush.ShowController(false);
+                }
+            }
+        }
+
+
+        private void RestoreControllerVisualForSide(
+            bool isBrush)
+        {
+            if (!hideControllerModels)
+                return;
+
+            if (isBrush)
+            {
+                InputManager.Brush?.ShowController(true);
+            }
+            else
+            {
+                InputManager.Wand?.ShowController(true);
+            }
+        }
+
+
+        private void HideHandControllerVisuals()
+        {
+            if (!hideControllerModels)
+                return;
+
+            if (UseHand(false))
+                InputManager.Wand?.ShowController(false);
+
+            if (UseHand(true))
+                InputManager.Brush?.ShowController(false);
+        }
+
+
+        // --------------------------------------------------------------------
+        // Hand Interaction processing (no raw joints)
+        // --------------------------------------------------------------------
+
+        private void UpdateInteractionHand(
+            HandInteractionBinding binding,
+            HandState state,
+            bool allowDraw)
+        {
+            bool wasTrigger = state.trigger;
+            state.aimPoseValid = false;
+            state.pinchPoseValid = false;
+
+            if (binding == null || !binding.IsValid)
+            {
+                ResetMissingHand(binding, state);
+
+                if (allowDraw)
+                {
+                    state.triggerDown = false;
+                    state.triggerUp = wasTrigger;
+                }
+
+                return;
+            }
+
+            int trackingFlags =
+                binding.trackingState != null
+                    ? binding.trackingState.ReadValue()
+                    : 0;
+
+            bool explicitTracked =
+                binding.isTracked != null &&
+                binding.isTracked.isPressed;
+
+            bool interactionReady =
+                (binding.pinchReady != null &&
+                 binding.pinchReady.isPressed) ||
+                (binding.graspReady != null &&
+                 binding.graspReady.isPressed);
+
+            // On Android XR the trackingState/isTracked controls are expected.
+            // interactionReady is a useful fallback for provider revisions.
+            state.tracked =
+                explicitTracked ||
+                trackingFlags != 0 ||
+                interactionReady;
+
+            state.openXrPinchValue = binding.pinchValue != null
+                ? Mathf.Clamp01(binding.pinchValue.ReadValue()) : 0.0f;
+            state.xrHandsPinchValue = 0.0f;
+            state.xrHandsPinchValid = false;
+            state.fistDetected = false;
+            Array.Clear(state.fingerCurl, 0, state.fingerCurl.Length);
+            if (state.tracked && m_XRHandSubsystem != null && m_XRHandSubsystem.running)
+            {
+                XRHand hand = allowDraw ? m_XRHandSubsystem.rightHand : m_XRHandSubsystem.leftHand;
+                if (hand.isTracked)
+                {
+                    // Unity's pinch measurement uses only this finger's tip and the thumb tip.
+                    var shape = hand.CalculateFingerShape(XRHandFingerID.Index, XRFingerShapeTypes.Pinch);
+                    state.xrHandsPinchValid = shape.TryGetPinch(out state.xrHandsPinchValue);
+                    // Sample every finger even if the fist shape rejects the first condition.
+                    // Null means joint curl could not be calculated, rather than an open finger.
+                    for (int finger = 0; finger < state.fingerCurl.Length; ++finger)
+                    {
+                        var curl = hand.CalculateFingerShape((XRHandFingerID)finger, XRFingerShapeTypes.FullCurl);
+                        if (curl.TryGetFullCurl(out float value) && !float.IsNaN(value) && !float.IsInfinity(value))
+                            state.fingerCurl[finger] = value;
+                    }
+                    m_FistArgs.hand = hand;
+                    state.fistDetected = m_FistShape.CheckConditions(m_FistArgs);
+                }
+            }
+            state.pinchValue = m_PinchDetectionSource == PinchDetectionSource.XRHands &&
+                state.xrHandsPinchValid ? state.xrHandsPinchValue : state.openXrPinchValue;
+
+            state.graspValue =
+                binding.graspValue != null
+                    ? Mathf.Clamp01(binding.graspValue.ReadValue())
+                    : 0.0f;
+
+
+            state.pinchPoseValid = state.tracked &&
+                binding.pinchPosition != null && binding.pinchRotation != null &&
+                (binding.pinchTrackingState == null ||
+                 (binding.pinchTrackingState.ReadValue() & kPoseTrackingFlags) == kPoseTrackingFlags);
+            if (state.pinchPoseValid)
+            {
+                state.pinchPose = ToWorldPose(ReadLocalPose(
+                    binding.pinchPosition, binding.pinchRotation));
+            }
+
+            Pose gripLocal = ReadLocalPose(
+                binding.devicePosition,
+                binding.deviceRotation);
+
+            state.palmPose =
+                ToWorldPose(gripLocal);
+
+
+            // Poke is the permission-free index interaction point. If a runtime
+            // does not supply it, fall back to pinch, then grip.
+            Pose indexLocal;
+
+            if (binding.pokePosition != null)
+            {
+                indexLocal = ReadLocalPose(
+                    binding.pokePosition,
+                    binding.pokeRotation);
+            }
+            else if (binding.pinchPosition != null)
+            {
+                indexLocal = ReadLocalPose(
+                    binding.pinchPosition,
+                    binding.pinchRotation);
+            }
+            else
+            {
+                indexLocal = gripLocal;
+            }
+
+            state.indexTipPose =
+                ToWorldPose(indexLocal);
+
+
+            // Preserve the provider aim pose for menu-ray comparison independently
+            // of the joint-derived drawing direction.
+            Pose aimLocal;
+            if (binding.pointerPosition != null ||
+                binding.pointerRotation != null)
+            {
+                aimLocal = ReadLocalPose(
+                    binding.pointerPosition,
+                    binding.pointerRotation);
+                state.aimPoseValid =
+                    state.tracked &&
+                    binding.pointerPosition != null &&
+                    binding.pointerRotation != null &&
+                    (binding.pointerTrackingState == null ||
+                     (binding.pointerTrackingState.ReadValue() & kPoseTrackingFlags) == kPoseTrackingFlags);
+            }
+            else
+            {
+                aimLocal = indexLocal;
+                state.aimPoseValid = false;
+            }
+
+            state.aimPose = ToWorldPose(aimLocal);
+
+            Quaternion aimRotationLocal = aimLocal.rotation;
+
+            state.indexDirectionWorld =
+                ToWorldDirection(
+                    aimRotationLocal *
+                    Vector3.back);
+
+            state.indexDirectionValid =
+                state.tracked &&
+                state.indexDirectionWorld.sqrMagnitude >
+                0.000001f;
+
+
+            bool nextTrigger = false;
+
+            if (allowDraw && state.tracked &&
+                (binding.pinchValue != null ||
+                 (m_PinchDetectionSource == PinchDetectionSource.XRHands && state.xrHandsPinchValid)))
+            {
+                float threshold =
+                    wasTrigger
+                        ? pinchReleaseThreshold
+                        : pinchPressThreshold;
+
+                nextTrigger =
+                    state.pinchValue >= threshold;
+            }
+
+            state.trigger = nextTrigger;
+            state.triggerDown =
+                !wasTrigger && nextTrigger;
+            state.triggerUp =
+                wasTrigger && !nextTrigger;
+        }
+
+
+        private static Pose ReadLocalPose(
+            Vector3Control positionControl,
+            QuaternionControl rotationControl)
+        {
+            Vector3 position =
+                positionControl != null
+                    ? positionControl.ReadValue()
+                    : Vector3.zero;
+
+            Quaternion rotation =
+                rotationControl != null
+                    ? SafeQuaternion(
+                        rotationControl.ReadValue())
+                    : Quaternion.identity;
+
+            return new Pose(
+                position,
+                rotation);
+        }
+
+
+        private static Quaternion SafeQuaternion(
+            Quaternion value)
+        {
+            float sqrMagnitude =
+                value.x * value.x +
+                value.y * value.y +
+                value.z * value.z +
+                value.w * value.w;
+
+            if (sqrMagnitude < 0.0001f)
+                return Quaternion.identity;
+
+            float invMagnitude =
+                1.0f / Mathf.Sqrt(sqrMagnitude);
+
+            return new Quaternion(
+                value.x * invMagnitude,
+                value.y * invMagnitude,
+                value.z * invMagnitude,
+                value.w * invMagnitude);
+        }
+
+
+        private static void ResetMissingHand(
+            HandInteractionBinding binding,
+            HandState state)
+        {
+            state.tracked = false;
+            state.pinchValue = 0.0f;
+            state.openXrPinchValue = 0.0f;
+            state.xrHandsPinchValue = 0.0f;
+            state.xrHandsPinchValid = false;
+            state.pinchHeld = false;
+            state.graspValue = 0.0f;
+            state.fistDetected = false;
+            Array.Clear(state.fingerCurl, 0, state.fingerCurl.Length);
+            state.indexDirectionValid = false;
+            state.indexDirectionWorld = Vector3.forward;
+        }
+
+
+        // --------------------------------------------------------------------
+        // XR Hands spatial pose restoration
+        // --------------------------------------------------------------------
+
+        private void UpdateXRHandsSpatialPoses()
+        {
+            m_Left.xrHandsSpatialValid = false;
+            m_Right.xrHandsSpatialValid = false;
+            m_RightWristAimValid = false;
+
+            if (!useXRHandsForSpatialPose)
+                return;
+
+            if (m_XRHandSubsystem == null ||
+                !m_XRHandSubsystem.running)
+            {
+                return;
+            }
+
+            // Only replace spatial pose when the high-level Hand Interaction
+            // device also considers that side tracked. This preserves the
+            // hybrid source-selection semantics.
+            if (m_Left.tracked)
+            {
+                ApplyXRHandSpatialPose(
+                    m_XRHandSubsystem.leftHand,
+                    m_Left,
+                    isRightHand: false);
+            }
+
+            if (m_Right.tracked)
+            {
+                ApplyXRHandSpatialPose(
+                    m_XRHandSubsystem.rightHand,
+                    m_Right,
+                    isRightHand: true);
+            }
+        }
+
+
+        private void RefreshXRHandSubsystem()
+        {
+            if ((m_XRHandSubsystem == null || !m_XRHandSubsystem.running) &&
+                Time.unscaledTime >= m_NextXRHandsSearchTime)
+            {
+                FindRunningXRHandSubsystem();
+                m_NextXRHandsSearchTime = Time.unscaledTime + 0.5f;
+            }
+        }
+
+        private void FindRunningXRHandSubsystem()
+        {
+            m_XRHandSubsystem = null;
+            m_XRHandSubsystems.Clear();
+
+            SubsystemManager.GetSubsystems(
+                m_XRHandSubsystems);
+
+            foreach (XRHandSubsystem subsystem in
+                     m_XRHandSubsystems)
+            {
+                if (subsystem != null &&
+                    subsystem.running)
+                {
+                    m_XRHandSubsystem = subsystem;
+
+                    if (DebugLoggingEnabled)
+                    {
+                        LogDiagnostic(
+                            "ANDROID_XR_HAND: XRHands spatial source found " +
+                            $"L={subsystem.leftHand.isTracked} " +
+                            $"R={subsystem.rightHand.isTracked}");
+                    }
+
+                    return;
+                }
+            }
+        }
+
+
+        private void ApplyXRHandSpatialPose(
+            XRHand hand,
+            HandState state,
+            bool isRightHand)
+        {
+            if (!hand.isTracked)
+                return;
+
+            XRHandJoint palmJoint =
+                hand.GetJoint(
+                    XRHandJointID.Palm);
+
+            // Stable pointing axis across a pinch: wrist to middle knuckle.
+            // This is hand orientation, not a curling fingertip direction.
+            if (isRightHand)
+            {
+                XRHandJoint wristJoint = hand.GetJoint(XRHandJointID.Wrist);
+                XRHandJoint knuckleJoint = hand.GetJoint(XRHandJointID.MiddleProximal);
+                if (wristJoint.TryGetPose(out Pose wristLocal) &&
+                    knuckleJoint.TryGetPose(out Pose knuckleLocal))
+                {
+                    Vector3 wristToKnuckle = knuckleLocal.position - wristLocal.position;
+                    if (wristToKnuckle.sqrMagnitude > 0.000001f)
+                    {
+                        m_RightWristAimWorld = ToWorldDirection(wristToKnuckle);
+                        m_RightWristAimValid = true;
+                    }
+                }
+            }
+
+            XRHandJoint indexIntermediateJoint =
+                hand.GetJoint(
+                    XRHandJointID.IndexIntermediate);
+
+            XRHandJoint indexDistalJoint =
+                hand.GetJoint(
+                    XRHandJointID.IndexDistal);
+
+            XRHandJoint indexTipJoint =
+                hand.GetJoint(
+                    XRHandJointID.IndexTip);
+
+            bool havePalm =
+                palmJoint.TryGetPose(
+                    out Pose palmLocal);
+
+            bool haveIntermediate =
+                indexIntermediateJoint.TryGetPose(
+                    out Pose indexIntermediateLocal);
+
+            bool haveDistal =
+                indexDistalJoint.TryGetPose(
+                    out Pose indexDistalLocal);
+
+            bool haveRawTip =
+                indexTipJoint.TryGetPose(
+                    out Pose rawIndexTipLocal);
+
+            // Keep joint reconstruction separate from the Hand Interaction aim flag.
+            bool jointDirectionValid = false;
+
+            if (havePalm)
+            {
+                state.palmPose =
+                    ToWorldPose(
+                        palmLocal);
+            }
+
+            /*
+             * IMPORTANT — RIGHT BRUSH POSITION
+             *
+             * Do NOT use raw IndexTip as the authoritative drawing position.
+             *
+             * On Android XR we have observed IndexTip occasionally jumping to the
+             * end of the middle finger when the other fingers curl. Instead build
+* the brush tip strictly from the INDEX finger's own bone chain:
+             *
+             *     IndexIntermediate -> IndexDistal -> reconstructed tip
+             *
+             * The raw IndexTip is used only to learn the short distal->tip length
+             * when it is geometrically consistent with the index bone direction.
+             */
+            if (isRightHand &&
+                haveIntermediate &&
+                haveDistal)
+            {
+                Vector3 distalBone =
+                    indexDistalLocal.position -
+                    indexIntermediateLocal.position;
+
+                if (distalBone.sqrMagnitude > 0.00000001f)
+                {
+                    Vector3 indexDirectionLocal =
+                        distalBone.normalized;
+
+                    m_LastStableRightIndexDirectionLocal =
+                        indexDirectionLocal;
+
+                    m_HaveLastStableRightIndexDirection =
+                        true;
+
+                    // Calibrate distal->tip length only when raw IndexTip lies
+                    // plausibly in front of IndexDistal along the index bone.
+                    if (haveRawTip)
+                    {
+                        Vector3 rawDistalToTip =
+                            rawIndexTipLocal.position -
+                            indexDistalLocal.position;
+
+                        float rawLength =
+                            rawDistalToTip.magnitude;
+
+                        float alignment =
+                            rawLength > 0.0001f
+                                ? Vector3.Dot(
+                                    rawDistalToTip / rawLength,
+                                    indexDirectionLocal)
+                                : -1.0f;
+
+                        // Human distal->tip distance should be short. More
+                        // importantly, it must continue the index bone rather than
+                        // point sideways toward the middle fingertip.
+                        bool rawTipLooksLikeIndex =
+                            rawLength >= 0.004f &&
+                            rawLength <= 0.035f &&
+                            alignment >= 0.65f;
+
+                        if (rawTipLooksLikeIndex)
+                        {
+                            if (!m_RightIndexTipLengthCalibrated)
+                            {
+                                m_RightIndexDistalToTipLength =
+                                    rawLength;
+
+                                m_RightIndexTipLengthCalibrated =
+                                    true;
+                            }
+                            else
+                            {
+                                // Slow smoothing prevents a single odd frame from
+                                // changing the physical brush-tip length.
+                                m_RightIndexDistalToTipLength =
+                                    Mathf.Lerp(
+                                        m_RightIndexDistalToTipLength,
+                                        rawLength,
+                                        0.05f);
+                            }
+                        }
+                    }
+
+                    Vector3 reconstructedTipLocal =
+                        indexDistalLocal.position +
+                        indexDirectionLocal *
+                        Mathf.Clamp(
+                            m_RightIndexDistalToTipLength,
+                            0.008f,
+                            0.030f);
+
+                    Pose reconstructedTipPoseLocal =
+                        new Pose(
+                            reconstructedTipLocal,
+                            indexDistalLocal.rotation);
+
+                    state.indexTipPose =
+                        ToWorldPose(
+                            reconstructedTipPoseLocal);
+
+                    state.indexDirectionWorld =
+                        ToWorldDirection(
+                            indexDirectionLocal);
+
+                    state.indexDirectionValid =
+                        true;
+                    jointDirectionValid = true;
+                }
+            }
+            else if (!isRightHand && haveRawTip)
+            {
+                // Left hand does not drive the brush. Preserve the normal raw
+                // fingertip mapping for any diagnostics/auxiliary use.
+                state.indexTipPose =
+                    ToWorldPose(
+                        rawIndexTipLocal);
+            }
+
+            // If the right intermediate joint temporarily drops but distal remains,
+            // keep the brush tied to the INDEX distal joint using the last known
+            // index direction. Never fall back to poke/pinch or another fingertip.
+            if (isRightHand &&
+                !jointDirectionValid &&
+                haveDistal &&
+                m_HaveLastStableRightIndexDirection)
+            {
+                Vector3 reconstructedTipLocal =
+                    indexDistalLocal.position +
+                    m_LastStableRightIndexDirectionLocal *
+                    Mathf.Clamp(
+                        m_RightIndexDistalToTipLength,
+                        0.008f,
+                        0.030f);
+
+                state.indexTipPose =
+                    ToWorldPose(
+                        new Pose(
+                            reconstructedTipLocal,
+                            indexDistalLocal.rotation));
+
+                state.indexDirectionWorld =
+                    ToWorldDirection(
+                        m_LastStableRightIndexDirectionLocal);
+
+                state.indexDirectionValid =
+                    true;
+                jointDirectionValid = true;
+            }
+
+            state.xrHandsSpatialValid =
+                havePalm &&
+                (!isRightHand ||
+                 (haveDistal &&
+                  jointDirectionValid));
+        }
+
+        private void UpdateSourceSelection()
+        {
+            bool leftControllerTracked =
+                IsControllerTracked(
+                    m_LeftControllerBinding);
+
+            bool rightControllerTracked =
+                IsControllerTracked(
+                    m_RightControllerBinding);
+
+            InputSourceKind desiredLeft =
+                ChooseDesiredSource(
+                    leftControllerTracked,
+                    m_Left.tracked);
+
+            InputSourceKind desiredRight =
+                ChooseDesiredSource(
+                    rightControllerTracked,
+                    m_Right.tracked);
+
+            UpdateSideSource(
+                isBrush: false,
+                desiredLeft,
+                ref m_LeftSource,
+                ref m_LeftCandidateSource,
+                ref m_LeftCandidateSince);
+
+            UpdateSideSource(
+                isBrush: true,
+                desiredRight,
+                ref m_RightSource,
+                ref m_RightCandidateSource,
+                ref m_RightCandidateSince);
+        }
+
+
+        private InputSourceKind ChooseDesiredSource(
+            bool controllerTracked,
+            bool handTracked)
+        {
+            if (preferPhysicalControllers)
+            {
+                if (controllerTracked)
+                    return InputSourceKind.Controller;
+
+                if (handTracked)
+                    return InputSourceKind.Hand;
+            }
+            else
+            {
+                if (handTracked)
+                    return InputSourceKind.Hand;
+
+                if (controllerTracked)
+                    return InputSourceKind.Controller;
+            }
+
+            return InputSourceKind.None;
+        }
+
+
+        private void UpdateSideSource(
+            bool isBrush,
+            InputSourceKind desired,
+            ref InputSourceKind current,
+            ref InputSourceKind candidate,
+            ref float candidateSince)
+        {
+            if (desired == current)
+            {
+                candidate = desired;
+                candidateSince = Time.unscaledTime;
+                return;
+            }
+
+            if (candidate != desired)
+            {
+                candidate = desired;
+                candidateSince = Time.unscaledTime;
+                return;
+            }
+
+            bool switchImmediately =
+                current == InputSourceKind.None;
+
+            if (!switchImmediately &&
+                Time.unscaledTime - candidateSince <
+                Mathf.Max(
+                    0.0f,
+                    sourceSwitchDelay))
+            {
+                return;
+            }
+
+            InputSourceKind previous =
+                current;
+
+            current =
+                desired;
+
+            candidate =
+                desired;
+
+            candidateSince =
+                Time.unscaledTime;
+
+            // Request initial panel visibility again when the Wand switches to a hand.
+            if (!isBrush && current == InputSourceKind.Hand)
+                m_PanelsRequested = false;
+
+            if (previous == InputSourceKind.Hand &&
+                current != InputSourceKind.Hand)
+            {
+                RestoreControllerVisualForSide(
+                    isBrush);
+            }
+
+            if (DebugLoggingEnabled)
+            {
+                LogDiagnostic(
+                    "ANDROIDXR_SOURCE_SWITCH " +
+                    $"side={(isBrush ? "RIGHT/BRUSH" : "LEFT/WAND")} " +
+                    $"from={previous} " +
+                    $"to={current} " +
+                    $"controllerTracked=" +
+                    IsControllerTracked(
+                        isBrush
+                            ? m_RightControllerBinding
+                            : m_LeftControllerBinding) +
+                    $" handTracked=" +
+                    (isBrush
+                        ? m_Right.tracked
+                        : m_Left.tracked));
+            }
+        }
+
+
+        private void UpdateGripStates()
+        {
+            // TODO: Mixed hand/controller world scaling and rotation are deliberately deferred.
+            // On controller-capable Android XR devices, holding a controller grip plus the opposite
+            // hand's fist does not enter swimming: this gate currently requires two hand sources.
+            // Combine each side's selected input grip, including press/release transitions, while
+            // preserving widget grabs and preventing a lone fist in empty space from moving the world.
+            // Earlier review: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4121690078
+            // Decision: https://github.com/icosa-foundation/open-brush/pull/1191#discussion_r4268955043
+            UpdateOneHandGrip(
+                m_Left,
+                UseHand(false),
+                ref m_LeftGripHeld,
+                ref m_LeftGripDown,
+                ref m_LeftGripUp);
+
+            UpdateOneHandGrip(
+                m_Right,
+                UseHand(true),
+                ref m_RightGripHeld,
+                ref m_RightGripDown,
+                ref m_RightGripUp);
+
+            bool wasSwimModeHeld = m_SwimModeHeld;
+
+            m_SwimModeHeld =
+                UseHand(false) &&
+                UseHand(true) &&
+                m_LeftGripHeld &&
+                m_RightGripHeld;
+
+            m_SwimModeDown =
+                !wasSwimModeHeld &&
+                m_SwimModeHeld;
+
+            m_SwimModeUp =
+                wasSwimModeHeld &&
+                !m_SwimModeHeld;
+        }
+
+
+        private void UpdateOneHandGrip(
+            HandState hand,
+            bool useHand,
+            ref bool held,
+            ref bool down,
+            ref bool up)
+        {
+            // Pinch always wins over grasp, including on the non-drawing Wand hand.
+            // Resolve this before grip edges, swimming and controller poses are computed.
+            float pinchThreshold = hand.pinchHeld ? pinchReleaseThreshold : pinchPressThreshold;
+            hand.pinchHeld = useHand && hand.tracked && hand.pinchValue >= pinchThreshold;
+
+            bool previous =
+                held;
+
+            float threshold =
+                previous
+                    ? graspReleaseThreshold
+                    : graspPressThreshold;
+
+            bool next =
+                useHand &&
+                hand.tracked &&
+                !hand.pinchHeld &&
+                // Runtime grasp strength also rises with only three fingers curled.
+                // Require the five-digit fist shape before switching into Grip.
+                hand.fistDetected &&
+                hand.graspValue >= threshold;
+
+            held = next;
+            down = !previous && next;
+            up = previous && !next;
+        }
+
+
+        private void UpdatePrimaryTriggerState()
+        {
+            bool wasHeld =
+                m_PrimaryTriggerHeld;
+
+            /*
+             * Pinch is the normal Open Brush Trigger.
+             *
+             * Do NOT directly press UI components here. Open Brush already owns
+             * laser hover / UI targeting and decides what Trigger means from the
+             * current pointer context:
+             *
+             *     laser over UI + pinch -> UI activation
+             *     laser away from UI + pinch -> drawing
+             *
+             * This is deliberately the same interaction model as a physical
+             * controller trigger, so UI confirmation and painting remain
+             * mutually exclusive through Open Brush's existing input routing.
+             */
+            bool nextHeld =
+                UseHand(true) &&
+                m_Right.tracked &&
+                !m_RightGripHeld &&
+                !m_RightPanelContact &&
+                !m_RightPanelGrabArmed &&
+                m_Right.trigger;
+
+            m_PrimaryTriggerHeld =
+                nextHeld;
+
+            m_PrimaryTriggerDown =
+                !wasHeld && nextHeld;
+
+            m_PrimaryTriggerUp =
+                wasHeld && !nextHeld;
+
+            if (DebugLoggingEnabled &&
+                (m_PrimaryTriggerDown ||
+                 m_PrimaryTriggerUp))
+            {
+                bool uiTarget =
+                    SketchControlsScript.m_Instance != null &&
+                    SketchControlsScript.m_Instance.IsUserInteractingWithUI();
+
+                LogDiagnostic(
+                    "ANDROIDXR_PRIMARY_TRIGGER " +
+                    $"held={m_PrimaryTriggerHeld} " +
+                    $"down={m_PrimaryTriggerDown} " +
+                    $"up={m_PrimaryTriggerUp} " +
+                    $"pinch={m_Right.pinchValue:F3} " +
+                    $"uiTarget={uiTarget}");
+            }
+        }
+
+
+        // --------------------------------------------------------------------
+        // Physical panel contact (grab preparation only)
+        // --------------------------------------------------------------------
+
+        private void UpdateRightPanelContactState()
+        {
+            bool physicalContact = false;
+            Collider closestCollider = null;
+            float closestDistanceSquared = float.PositiveInfinity;
+
+            // Hysteresis: once panel proximity has been entered, keep a much
+            // larger interaction envelope while the hand curls/repositions.
+            float activeContactRadius =
+                (m_RightPanelContact ||
+                 m_RightPanelGrabArmed)
+                    ? Mathf.Max(
+                        panelContactRadius,
+                        panelContactReleaseRadius)
+                    : panelContactRadius;
+
+            // Joint positions are transformed into world space by ToWorldPose.
+            // Apply the same uniform XR origin scale to the metre-based radius.
+            if (trackingOrigin != null)
+                activeContactRadius *= Mathf.Abs(trackingOrigin.lossyScale.x);
+
+            if (UseHand(true) &&
+                m_Right.tracked)
+            {
+                // Test a representative set of joints across the ENTIRE hand.
+                // This is intentionally not limited to IndexTip: palm, thumb,
+                // fingers, knuckles and fingertips can all put the hand into
+                // panel-manipulation mode.
+                if (m_XRHandSubsystem != null &&
+                    m_XRHandSubsystem.running &&
+                    m_XRHandSubsystem.rightHand.isTracked)
+                {
+                    XRHand hand =
+                        m_XRHandSubsystem.rightHand;
+
+                    XRHandJointID[] contactJoints =
+                    {
+                        // Panel-grab contact should come from the palm / knuckle area,
+                        // not from fingertips. Fingertips need to remain free for
+                        // laser aiming + pinch UI activation.
+                        XRHandJointID.Palm,
+                        XRHandJointID.Wrist,
+
+                        XRHandJointID.ThumbMetacarpal,
+                        XRHandJointID.ThumbProximal,
+
+                        XRHandJointID.IndexMetacarpal,
+                        XRHandJointID.IndexProximal,
+
+                        XRHandJointID.MiddleMetacarpal,
+                        XRHandJointID.MiddleProximal,
+
+                        XRHandJointID.RingMetacarpal,
+                        XRHandJointID.RingProximal,
+
+                        XRHandJointID.LittleMetacarpal,
+                        XRHandJointID.LittleProximal
+                    };
+
+                    for (int jointIndex = 0;
+                         jointIndex < contactJoints.Length;
+                         ++jointIndex)
+                    {
+                        XRHandJoint joint =
+                            hand.GetJoint(
+                                contactJoints[jointIndex]);
+
+                        if (!joint.TryGetPose(
+                                out Pose jointLocal))
+                        {
+                            continue;
+                        }
+
+                        Vector3 jointWorld =
+                            ToWorldPose(
+                                jointLocal).position;
+
+                        Collider hit =
+                            FindPanelContactAtPoint(
+                                jointWorld,
+                                activeContactRadius,
+                                ref closestDistanceSquared);
+
+                        if (hit != null)
+                        {
+                            physicalContact = true;
+                            closestCollider = hit;
+                        }
+                    }
+                }
+                else
+                {
+                    // Fallback for frames where XR Hands joint data is not
+                    // available. This still gives useful behaviour from the
+                    // high-level palm and reconstructed index-tip poses.
+                    Collider palmHit =
+                        FindPanelContactAtPoint(
+                            m_Right.palmPose.position,
+                            activeContactRadius,
+                            ref closestDistanceSquared);
+
+                    if (palmHit != null)
+                    {
+                        physicalContact = true;
+                        closestCollider = palmHit;
+                    }
+
+                    Collider tipHit =
+                        FindPanelContactAtPoint(
+                            m_Right.indexTipPose.position,
+                            activeContactRadius,
+                            ref closestDistanceSquared);
+
+                    if (tipHit != null)
+                    {
+                        physicalContact = true;
+                        closestCollider = tipHit;
+                    }
+                }
+            }
+
+            m_RightPanelContact =
+                physicalContact;
+
+            if (closestCollider != null)
+            {
+                m_RightPanelContactCollider =
+                    closestCollider;
+            }
+
+            // Proximity arms a possible one-hand panel grab. Record the last
+            // good contact time so a brief tracking/collider miss cannot let
+            // laser aiming win during the fist transition.
+            if (physicalContact)
+            {
+                m_RightPanelGrabArmed = true;
+                m_RightPanelLastContactTime = Time.unscaledTime;
+            }
+
+            bool openBrushHoldingWidget =
+                SketchControlsScript.m_Instance != null &&
+                SketchControlsScript.m_Instance.IsUserInteractingWithAnyWidget() &&
+                SketchControlsScript.m_Instance.OneHandGrabController ==
+                    InputManager.ControllerName.Brush;
+
+            bool insideGrace =
+                m_RightPanelLastContactTime >= 0.0f &&
+                Time.unscaledTime - m_RightPanelLastContactTime <=
+                    Mathf.Max(0.0f, panelGrabContactGrace);
+
+            if (!physicalContact &&
+                !insideGrace &&
+                !m_RightGripHeld &&
+                !openBrushHoldingWidget)
+            {
+                m_RightPanelGrabArmed = false;
+                m_RightPanelContactCollider = null;
+                m_RightPanelLastContactTime = -1.0f;
+            }
+
+            if (DebugLoggingEnabled &&
+                (m_RightPanelContact ||
+                 m_RightPanelGrabArmed) &&
+                Time.frameCount % 30 == 0)
+            {
+                LogDiagnostic(
+                    "ANDROIDXR_PANEL_CONTACT " +
+                    $"physical={m_RightPanelContact} " +
+                    $"grabArmed={m_RightPanelGrabArmed} " +
+                    $"radius={activeContactRadius:F3} " +
+                    $"grip={m_RightGripHeld} " +
+                    $"collider=" +
+                    $"{(m_RightPanelContactCollider != null ? m_RightPanelContactCollider.name : "none")} " +
+                    "aimSuppressed=true");
+            }
+        }
+
+
+        private Collider FindPanelContactAtPoint(
+            Vector3 worldPoint,
+            float radius,
+            ref float closestDistanceSquared)
+        {
+            int hitCount =
+                Physics.OverlapSphereNonAlloc(
+                    worldPoint,
+                    Mathf.Max(
+                        0.001f,
+                        radius),
+                    m_MenuTouchHits,
+                    menuTouchLayerMask,
+                    QueryTriggerInteraction.Collide);
+
+            Collider best = null;
+
+            for (int i = 0; i < hitCount; ++i)
+            {
+                Collider hit =
+                    m_MenuTouchHits[i];
+
+                if (hit == null ||
+                    !hit.enabled ||
+                    !hit.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                // A hand touching any part of a panel/widget is enough to stop
+                // aiming. BaseButton is included explicitly because some UI
+                // controls have their own collider outside the panel body's
+                // primary collider.
+                // These controls are laser-only buttons, not grabbable panels.
+                // Their proximity must not disable aiming or pinch.
+                if (hit.GetComponentInParent<WandPanelRotateButton>() != null)
+                    continue;
+
+                bool belongsToPanel =
+                    hit.GetComponentInParent<BasePanel>() != null ||
+                    hit.GetComponentInParent<PanelWidget>() != null ||
+                    hit.GetComponentInParent<GrabWidget>() != null ||
+                    hit.GetComponentInParent<PopUpWindow>() != null ||
+                    hit.GetComponentInParent<BaseButton>() != null;
+
+                if (!belongsToPanel)
+                    continue;
+
+                Vector3 closestPoint =
+                    hit.ClosestPoint(
+                        worldPoint);
+
+                float distanceSquared =
+                    (closestPoint - worldPoint).sqrMagnitude;
+
+                if (distanceSquared <
+                    closestDistanceSquared)
+                {
+                    closestDistanceSquared =
+                        distanceSquared;
+
+                    best =
+                        hit;
+                }
+            }
+
+            return best;
+        }
+
+
+        // --------------------------------------------------------------------
+        // Separate direct-touch menu input
+        // --------------------------------------------------------------------
+
+        private void UpdateMenuTouchState()
+        {
+            BaseButton previousActive =
+                m_ActiveMenuTouchComponent;
+
+            m_MenuTouchDown = false;
+            m_MenuTouchUp = false;
+            m_MenuTouchCollider = null;
+            m_MenuTouchComponent = null;
+
+
+            // ------------------------------------------------------------
+            // Tracking/source lost: cancel and fully reset.
+            // ------------------------------------------------------------
+
+            if (!m_Right.tracked ||
+                !UseHand(true))
+            {
+                bool wasHeld =
+                    m_MenuTouchHeld;
+
+                if (previousActive != null)
+                {
+                    ReleaseDirectUiComponent(
+                        previousActive);
+                }
+
+                m_MenuTouchHeld = false;
+                m_ActiveMenuTouchComponent = null;
+
+                m_MenuTouchDown = false;
+                m_MenuTouchUp = wasHeld;
+
+                ResetMenuTouchLatch();
+
+                return;
+            }
+
+
+            Vector3 fingertip =
+                m_Right.indexTipPose.position;
+
+
+            // ------------------------------------------------------------
+            // RAW ENTER TEST
+            //
+            // Use the smaller radius only for discovering a new button.
+            // ------------------------------------------------------------
+
+            int hitCount =
+                Physics.OverlapSphereNonAlloc(
+                    fingertip,
+                    Mathf.Max(
+                        0.001f,
+                        menuTouchRadius),
+                    m_MenuTouchHits,
+                    menuTouchLayerMask,
+                    menuTouchQueryTriggerInteraction);
+
+
+            BaseButton rawComponent = null;
+            Collider rawCollider = null;
+
+            float closestDistanceSquared =
+                float.PositiveInfinity;
+
+
+            for (int i = 0;
+                 i < hitCount;
+                 ++i)
+            {
+                Collider hit =
+                    m_MenuTouchHits[i];
+
+                if (hit == null ||
+                    !hit.enabled ||
+                    !hit.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+
+                /*
+                 * Only a real Open Brush BaseButton is pressable.
+                 *
+                 * The previous implementation also accepted a BasePanel body.
+                 * That made physical contact visible in diagnostics but did not
+                 * tell us which actual button should receive the click.
+                 */
+                BaseButton component =
+                    hit.GetComponentInParent<BaseButton>();
+
+                if (component == null ||
+                    !component.isActiveAndEnabled ||
+                    component is WandPanelRotateButton)
+                {
+                    continue;
+                }
+
+
+                Collider componentCollider =
+                    component.GetCollider();
+
+                if (componentCollider == null ||
+                    !componentCollider.enabled ||
+                    !componentCollider.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+
+                Vector3 closestPoint =
+                    componentCollider.ClosestPoint(
+                        fingertip);
+
+                float distanceSquared =
+                    (
+                        closestPoint -
+                        fingertip
+                    )
+                    .sqrMagnitude;
+
+
+                if (distanceSquared <
+                    closestDistanceSquared)
+                {
+                    closestDistanceSquared =
+                        distanceSquared;
+
+                    rawCollider =
+                        componentCollider;
+
+                    rawComponent =
+                        component;
+                }
+            }
+
+
+            bool rawTouch =
+                rawComponent != null;
+
+
+            // ------------------------------------------------------------
+            // EXISTING CAPTURED BUTTON
+            //
+            // Once a button has been pressed, lock to that button until a
+            // genuine withdrawal. Do not retarget merely because another
+            // collider becomes closest after the UI moves.
+            // ------------------------------------------------------------
+
+            if (previousActive != null)
+            {
+                Collider activeCollider =
+                    previousActive.GetCollider();
+
+                bool rawStillSameButton =
+                    rawComponent ==
+                    previousActive;
+
+                bool physicallyStillNearButton =
+                    IsFingerWithinButtonReleaseRadius(
+                        activeCollider,
+                        fingertip);
+
+
+                if (rawStillSameButton ||
+                    physicallyStillNearButton)
+                {
+                    // Stable contact: keep the original button captured.
+                    m_MenuTouchMissSince =
+                        -1.0f;
+
+                    m_MenuTouchClearSince =
+                        -1.0f;
+
+                    m_MenuTouchHeld =
+                        true;
+
+                    m_MenuTouchComponent =
+                        previousActive;
+
+                    m_MenuTouchCollider =
+                        activeCollider;
+
+                    m_ActiveMenuTouchComponent =
+                        previousActive;
+
+                    HoldDirectUiComponent(
+                        previousActive);
+
+                    return;
+                }
+
+
+                // We are outside both the small enter overlap and the larger
+                // release radius. XR finger joints can jitter briefly, so do
+                // not release on the first missing frame.
+                if (m_MenuTouchMissSince < 0.0f)
+                {
+                    m_MenuTouchMissSince =
+                        Time.unscaledTime;
+                }
+
+
+                if (Time.unscaledTime -
+                        m_MenuTouchMissSince <
+                    Mathf.Max(
+                        0.0f,
+                        menuTouchReleaseGrace))
+                {
+                    // Grace period: still treat the original button as held.
+                    m_MenuTouchHeld =
+                        true;
+
+                    m_MenuTouchComponent =
+                        previousActive;
+
+                    m_MenuTouchCollider =
+                        activeCollider;
+
+                    m_ActiveMenuTouchComponent =
+                        previousActive;
+
+                    return;
+                }
+
+
+                // Genuine release.
+                ReleaseDirectUiComponent(
+                    previousActive);
+
+                m_ActiveMenuTouchComponent =
+                    null;
+
+                m_MenuTouchMissSince =
+                    -1.0f;
+
+                m_MenuTouchHeld =
+                    rawTouch;
+
+                m_MenuTouchComponent =
+                    rawComponent;
+
+                m_MenuTouchCollider =
+                    rawCollider;
+
+                m_MenuTouchUp =
+                    true;
+
+                if (DebugLoggingEnabled)
+                {
+                    LogDiagnostic(
+                        "ANDROIDXR_MENU_TOUCH " +
+                        $"held={m_MenuTouchHeld} " +
+                        $"down={m_MenuTouchDown} " +
+                        $"up={m_MenuTouchUp} " +
+                        $"armed={m_MenuTouchArmed} " +
+                        $"event=RELEASE " +
+                        $"collider=" +
+                        $"{(m_MenuTouchCollider != null ? m_MenuTouchCollider.name : "none")} " +
+                        $"component=" +
+                        $"{(m_MenuTouchComponent != null ? m_MenuTouchComponent.GetType().Name : "none")} " +
+                        $"object=" +
+                        $"{(m_MenuTouchComponent != null ? m_MenuTouchComponent.gameObject.name : "none")}");
+                }
+
+                // IMPORTANT:
+                // Do NOT re-arm here. A collider exit is not a new-poke signal.
+            }
+            else
+            {
+                m_MenuTouchHeld =
+                    rawTouch;
+
+                m_MenuTouchComponent =
+                    rawComponent;
+
+                m_MenuTouchCollider =
+                    rawCollider;
+            }
+
+
+            // ------------------------------------------------------------
+            // RE-ARMING
+            //
+            // After any press, a new press is allowed only after:
+            //
+            //   1. fingertip touches no UI,
+            //   2. it remains clear for a short time,
+            //   3. it physically moves away from the original press point.
+            //
+            // Therefore a rotating/moving UI cannot re-trigger itself merely
+            // by moving its collider away from and back under the finger.
+            // ------------------------------------------------------------
+
+            if (!m_MenuTouchArmed)
+            {
+                if (rawTouch)
+                {
+                    // Still touching some UI: remain disarmed.
+                    m_MenuTouchClearSince =
+                        -1.0f;
+
+                    return;
+                }
+
+
+                if (m_MenuTouchClearSince < 0.0f)
+                {
+                    m_MenuTouchClearSince =
+                        Time.unscaledTime;
+                }
+
+
+                bool clearLongEnough =
+                    Time.unscaledTime -
+                        m_MenuTouchClearSince >=
+                    Mathf.Max(
+                        0.0f,
+                        menuTouchRearmClearTime);
+
+
+                float fingerTravel =
+                    GetMenuTouchRearmFingerTravel(
+                        fingertip);
+
+                bool fingerMovedEnough =
+                    !m_MenuTouchHasPressFingerPosition ||
+                    fingerTravel >=
+                    Mathf.Max(
+                        0.001f,
+                        menuTouchRearmFingerTravel);
+
+
+                if (clearLongEnough &&
+                    fingerMovedEnough)
+                {
+                    float clearDuration =
+                        Time.unscaledTime -
+                        m_MenuTouchClearSince;
+
+                    m_MenuTouchArmed =
+                        true;
+
+                    m_MenuTouchClearSince =
+                        -1.0f;
+
+                    m_MenuTouchHasPressFingerPosition =
+                        false;
+
+                    if (DebugLoggingEnabled)
+                    {
+                        LogDiagnostic(
+"ANDROIDXR_DIRECT_UI REARM " +
+                            $"fingerTravelLocal={fingerTravel:F4} " +
+                            $"clearTime={clearDuration:F3}");
+                    }
+                }
+
+                return;
+            }
+
+
+            // ------------------------------------------------------------
+            // FRESH PRESS
+            //
+            // This is the ONLY place where a new direct UI press begins.
+            // ------------------------------------------------------------
+
+            if (rawTouch)
+            {
+                m_MenuTouchHeld =
+                    true;
+
+                // Set DOWN before invoking the component. Hand-only buttons
+                // can use MenuTouchDown as a strict rising-edge guard.
+                m_MenuTouchDown =
+                    true;
+
+                m_MenuTouchUp =
+                    false;
+
+                m_ActiveMenuTouchComponent =
+                    rawComponent;
+
+                m_MenuTouchComponent =
+                    rawComponent;
+
+                m_MenuTouchCollider =
+                    rawCollider;
+
+
+                // Disarm BEFORE executing the button action. If the button
+                // rotates/moves the UI immediately, that movement cannot
+                // accidentally create a second press.
+                m_MenuTouchArmed =
+                    false;
+
+                m_MenuTouchMissSince =
+                    -1.0f;
+
+                m_MenuTouchClearSince =
+                    -1.0f;
+
+                CaptureMenuTouchPressPosition(
+                    fingertip);
+
+                m_MenuTouchHasPressFingerPosition =
+                    true;
+
+
+                PressDirectUiComponent(
+                    rawComponent);
+
+
+                if (DebugLoggingEnabled)
+                {
+                    LogDiagnostic(
+                        "ANDROIDXR_MENU_TOUCH " +
+                        $"held={m_MenuTouchHeld} " +
+                        $"down={m_MenuTouchDown} " +
+                        $"up={m_MenuTouchUp} " +
+                        $"armed={m_MenuTouchArmed} " +
+                        $"event=PRESS " +
+                        $"collider=" +
+                        $"{(m_MenuTouchCollider != null ? m_MenuTouchCollider.name : "none")} " +
+                        $"component=" +
+                        $"{(m_MenuTouchComponent != null ? m_MenuTouchComponent.GetType().Name : "none")} " +
+                        $"object=" +
+                        $"{(m_MenuTouchComponent != null ? m_MenuTouchComponent.gameObject.name : "none")}");
+                }
+            }
+        }
+
+
+        private bool IsFingerWithinButtonReleaseRadius(
+            Collider collider,
+            Vector3 fingertip)
+        {
+            if (collider == null ||
+                !collider.enabled ||
+                !collider.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            Vector3 closestPoint =
+                collider.ClosestPoint(
+                    fingertip);
+
+            float distance =
+                Vector3.Distance(
+                    closestPoint,
+                    fingertip);
+
+            return distance <=
+                Mathf.Max(
+                    menuTouchRadius,
+                    menuTouchReleaseRadius);
+        }
+
+
+        private Transform GetMenuTouchReferenceTransform()
+        {
+            // All direct-touch Wand UI is positioned from this anchor, so this
+            // is the correct frame in which to decide whether the right finger
+            // actually withdrew from a press.
+            if (InputManager.Wand != null)
+            {
+                ControllerGeometry geometry =
+                    InputManager.Wand.Geometry;
+
+                if (geometry != null &&
+                    geometry.MainAxisAttachPoint != null)
+                {
+                    return geometry.MainAxisAttachPoint;
+                }
+            }
+
+            // Fallback for startup/recreation frames.
+            return trackingOrigin;
+        }
+
+
+        private void CaptureMenuTouchPressPosition(
+            Vector3 fingertipWorld)
+        {
+            m_MenuTouchPressReference =
+                GetMenuTouchReferenceTransform();
+
+            if (m_MenuTouchPressReference != null)
+            {
+                m_MenuTouchPressFingerPositionLocal =
+                    m_MenuTouchPressReference.InverseTransformPoint(
+                        fingertipWorld);
+            }
+            else
+            {
+                m_MenuTouchPressFingerPositionWorldFallback =
+                    fingertipWorld;
+            }
+        }
+
+
+        private float GetMenuTouchRearmFingerTravel(
+            Vector3 fingertipWorld)
+        {
+            if (!m_MenuTouchHasPressFingerPosition)
+            {
+                return float.PositiveInfinity;
+            }
+
+            Transform currentReference =
+                GetMenuTouchReferenceTransform();
+
+            // Only compare local coordinates when the reference frame is the
+            // same Transform that was used at press time. If Open Brush rebuilt
+            // the Wand hierarchy, do NOT treat that frame swap as finger travel.
+            if (m_MenuTouchPressReference != null)
+            {
+                if (currentReference !=
+                    m_MenuTouchPressReference)
+                {
+                    return 0.0f;
+                }
+
+                Vector3 fingertipLocal =
+                    m_MenuTouchPressReference.InverseTransformPoint(
+                        fingertipWorld);
+
+                return Vector3.Distance(
+                    fingertipLocal,
+                    m_MenuTouchPressFingerPositionLocal);
+            }
+
+            // Startup fallback when there was no usable reference transform.
+            if (currentReference != null)
+            {
+                return 0.0f;
+            }
+
+            return Vector3.Distance(
+                fingertipWorld,
+                m_MenuTouchPressFingerPositionWorldFallback);
+        }
+
+
+        private void ResetMenuTouchLatch()
+        {
+            m_MenuTouchArmed = true;
+            m_MenuTouchMissSince = -1.0f;
+            m_MenuTouchClearSince = -1.0f;
+            m_MenuTouchPressReference = null;
+            m_MenuTouchHasPressFingerPosition = false;
+        }
+
+
+        private void PressDirectUiComponent(
+            BaseButton component)
+        {
+            if (component == null)
+                return;
+
+            /*
+             * BaseButton.ButtonPressed does not depend on RaycastHit data for
+             * normal buttons. Calling the public UIComponent API keeps this path
+             * completely separate from Brush Trigger / drawing.
+             */
+            component.GainFocus();
+            component.ButtonPressed(default);
+
+            if (DebugLoggingEnabled)
+            {
+                LogDiagnostic(
+                    "ANDROIDXR_DIRECT_UI PRESS " +
+                    $"component={component.GetType().Name} " +
+                    $"object={component.gameObject.name}");
+            }
+        }
+
+
+        private void HoldDirectUiComponent(
+            BaseButton component)
+        {
+            if (component == null)
+                return;
+
+            component.ButtonHeld(default);
+        }
+
+
+        private void ReleaseDirectUiComponent(
+            BaseButton component)
+        {
+            if (component == null)
+                return;
+
+            component.ButtonReleased();
+            component.LostFocus();
+
+            if (DebugLoggingEnabled)
+            {
+                LogDiagnostic(
+                    "ANDROIDXR_DIRECT_UI RELEASE " +
+                    $"component={component.GetType().Name} " +
+                    $"object={component.gameObject.name}");
+            }
+        }
+
+
+        private void ResetMenuTouchState()
+        {
+            bool wasHeld =
+                m_MenuTouchHeld;
+
+            if (m_ActiveMenuTouchComponent != null)
+            {
+                ReleaseDirectUiComponent(
+                    m_ActiveMenuTouchComponent);
+            }
+
+            m_MenuTouchHeld = false;
+            m_MenuTouchDown = false;
+            m_MenuTouchUp = wasHeld;
+            m_MenuTouchCollider = null;
+            m_MenuTouchComponent = null;
+            m_ActiveMenuTouchComponent = null;
+
+            ResetMenuTouchLatch();
+        }
+
+
+        private static bool IsPanelUiCollider(
+            Collider collider)
+        {
+            if (collider == null ||
+                !collider.enabled ||
+                !collider.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+
+            // BasePanel also catches most child/custom panel colliders.
+            if (collider.GetComponentInParent<BasePanel>() != null)
+            {
+                return true;
+            }
+
+            if (collider.GetComponentInParent<PopUpWindow>() != null)
+            {
+                return true;
+            }
+
+            if (collider.GetComponentInParent<UIComponent>() != null)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+
+        private void SuppressDrawForMenuContact(
+            bool wasDrawingBeforeHandUpdate)
+        {
+            m_Right.trigger = false;
+            m_Right.triggerDown = false;
+            m_Right.triggerUp =
+                wasDrawingBeforeHandUpdate;
+        }
+
+
+        // --------------------------------------------------------------------
+        // Tracking-space -> world-space
+        // --------------------------------------------------------------------
+
+        private Pose ToWorldPose(Pose localPose)
+        {
+            if (trackingOrigin == null)
+            {
+                return localPose;
+            }
+
+            return new Pose(
+                trackingOrigin.TransformPoint(
+                    localPose.position),
+
+                trackingOrigin.rotation *
+                localPose.rotation);
+        }
+
+
+        private Vector3 ToWorldDirection(
+            Vector3 localDirection)
+        {
+            if (trackingOrigin == null)
+            {
+                return localDirection.normalized;
+            }
+
+            return trackingOrigin
+                .TransformDirection(
+                    localDirection)
+                .normalized;
+        }
+
+
+        // --------------------------------------------------------------------
+        // Drive Open Brush virtual controllers
+        // --------------------------------------------------------------------
+
+        private void DriveOpenBrushControllers()
+        {
+            if (!m_ControllersPrepared)
+                return;
+
+
+            // RIGHT HAND = BRUSH
+            if (UseHand(true) &&
+                m_Right.tracked &&
+                InputManager.Brush != null)
+            {
+                DriveBrush(
+                    InputManager.Brush.Behavior,
+                    m_Right);
+            }
+
+
+            // LEFT HAND = WAND
+            if (UseHand(false) &&
+                m_Left.tracked &&
+                InputManager.Wand != null)
+            {
+                DriveWand(
+                    InputManager.Wand.Behavior,
+                    m_Left);
+            }
+        }
+
+
+        // --------------------------------------------------------------------
+        // Right hand -> Brush
+        // --------------------------------------------------------------------
+
+        private void DriveBrush(
+            BaseControllerBehavior behavior,
+            HandState hand)
+        {
+            if (behavior == null ||
+                behavior.PointerAttachPoint == null)
+            {
+                return;
+            }
+
+            // Use the XR Hands joint pose when available; otherwise keep the
+            // Hand Interaction pose sampled this frame. Joint permission is optional.
+            // The fallback can shift as fingers curl, but must not freeze the brush.
+
+
+            Transform root =
+                behavior.transform;
+
+            Transform pointer =
+                behavior.PointerAttachPoint;
+
+
+            // Once the fingertip physically reaches a panel, laser aiming must
+            // stop. The user is now in the "ready to grab/move" interaction zone.
+            if ((m_RightPanelContact ||
+                 m_RightPanelGrabArmed) &&
+                !m_RightGripHeld)
+            {
+                if (PointerManager.m_Instance != null)
+                {
+                    PointerManager.m_Instance.AllowPointerPreviewLine(false);
+                    PointerManager.m_Instance.RequestPointerRendering(false);
+                }
+            }
+            else if (!m_RightGripHeld &&
+                     PointerManager.m_Instance != null)
+            {
+                PointerManager.m_Instance.AllowPointerPreviewLine(true);
+                PointerManager.m_Instance.RequestPointerRendering(true);
+            }
+
+
+            /*
+             * While Grip is held, the Brush must behave like a grabbed physical
+             * controller, not like a fingertip pointer.  Using IndexTip /
+             * IndexDistal while the hand closes into a fist makes the virtual
+             * controller move and rotate simply because the finger curls, which
+             * Open Brush would interpret as world translation / rotation / scale.
+             *
+             * Switch to the stable palm pose BEFORE Open Brush consumes the Grip
+             * down state.  AndroidXRHandBridge executes very early, so the palm
+             * pose becomes the baseline transform for world grabbing/swimming.
+             */
+            if (m_RightGripHeld)
+            {
+                DriveBrushGripPose(
+                    root,
+                    hand);
+                return;
+            }
+
+
+            /*
+             * Aim from the physical PALM orientation.
+             *
+             * Pinch must not steer the laser. The index joints are still used
+             * to keep the pointer origin spatially attached to the hand, but
+             * direction comes from the stable palm pose.
+             */
+            // Wrist -> middle knuckle remains stable while index/thumb pinch.
+            // Retain the proven index direction only as a tracking fallback.
+            Vector3 pointerForward = m_RightWristAimValid
+                ? m_RightWristAimWorld
+                : (hand.indexDirectionValid
+                    ? hand.indexDirectionWorld
+                    : hand.palmPose.rotation * Vector3.forward);
+
+            if (pointerForward.sqrMagnitude <
+                0.00000001f)
+            {
+                pointerForward =
+                    hand.aimPoseValid
+                        ? hand.aimPose.rotation * Vector3.forward
+                        : Vector3.forward;
+            }
+
+            pointerForward.Normalize();
+
+            // Rotate around the hand's own right axis, not world X.
+            // A positive angle pitches the forward ray downward in Unity.
+            Vector3 wristRight = hand.palmPose.rotation * Vector3.right;
+            if (wristRight.sqrMagnitude > 0.000001f)
+            {
+                pointerForward = (Quaternion.AngleAxis(
+                    wristAimPitchOffset, wristRight.normalized) * pointerForward).normalized;
+            }
+
+
+            /*
+             * Normal painting: PointerAttachPoint sits at the index tip.
+             *
+             * Direct UI poke: move the pointer origin slightly BEHIND the
+             * fingertip along the poke ray. Starting a ray from inside a button
+             * collider is unreliable, and was the reason a fingertip touch could
+             * become a paint trigger instead of a panel click.
+             *
+             * The ray therefore travels:
+             *
+             *     origin -----> fingertip -----> UI collider
+             */
+            // Keep painting position on the index tip while laser direction follows
+            // the wrist-to-knuckle axis. Pinching no longer rotates the aim.
+            Vector3 desiredPointerPosition =
+                hand.indexTipPose.position;
+
+
+            /*
+             * Build a stable "up" vector from the palm, projected perpendicular
+             * to the finger direction. If the palm up axis happens to be nearly
+             * parallel to the finger, fall back to palm right.
+             */
+            Vector3 palmUp =
+                hand.palmPose.rotation *
+                Vector3.up;
+
+            Vector3 pointerUp =
+                Vector3.ProjectOnPlane(
+                    palmUp,
+                    pointerForward);
+
+            if (pointerUp.sqrMagnitude <
+                0.000001f)
+            {
+                pointerUp =
+                    Vector3.ProjectOnPlane(
+                        hand.palmPose.rotation *
+                        Vector3.right,
+                        pointerForward);
+            }
+
+            if (pointerUp.sqrMagnitude <
+                0.000001f)
+            {
+                pointerUp =
+                    Vector3.up;
+            }
+
+            pointerUp.Normalize();
+
+
+            Quaternion desiredPointerRotation =
+                Quaternion.LookRotation(
+                    pointerForward,
+                    pointerUp);
+
+            if (!useExactRestoredPose)
+            {
+                desiredPointerRotation *=
+                    Quaternion.Euler(
+                        brushRotationOffset);
+            }
+
+
+            /*
+             * PointerAttachPoint belongs to the borrowed controller prefab and
+             * may itself be locally rotated. Preserve that local relationship,
+             * then solve the controller root rotation required to make the
+             * ACTUAL pointer forward match the index finger.
+             */
+            Vector3 pointerLocalPosition =
+                root.InverseTransformPoint(
+                    pointer.position);
+
+            Quaternion pointerLocalRotation =
+                Quaternion.Inverse(
+                    root.rotation)
+                *
+                pointer.rotation;
+
+
+            Quaternion desiredRootRotation =
+                desiredPointerRotation
+                *
+                Quaternion.Inverse(
+                    pointerLocalRotation);
+
+
+            root.rotation =
+                desiredRootRotation;
+
+
+            Vector3 pointerOffsetWorld =
+                root.TransformVector(
+                    pointerLocalPosition);
+
+
+            Vector3 activeBrushPositionOffset =
+                useExactRestoredPose
+                    ? Vector3.zero
+                    : brushPositionOffset;
+
+            root.position =
+                desiredPointerPosition
+                -
+                pointerOffsetWorld
+                +
+                desiredPointerRotation
+                *
+                activeBrushPositionOffset;
+        }
+
+
+        /// <summary>
+        /// Stable controller pose used while the right hand is gripping.
+        /// Swimming/world manipulation should follow the hand/palm as a rigid
+        /// body rather than the curling index fingertip.
+        /// </summary>
+        // Shared physical grab anchor for BOTH hands. Using the midpoint between
+        // wrist and middle-finger knuckle places the virtual controller inside
+        // the palm rather than at the wrist joint. It does not depend on curl.
+        private Vector3 GetHandGrabCenter(bool rightHand, Vector3 fallback)
+        {
+            if (m_XRHandSubsystem == null || !m_XRHandSubsystem.running)
+                return fallback;
+
+            XRHand xrHand = rightHand
+                ? m_XRHandSubsystem.rightHand
+                : m_XRHandSubsystem.leftHand;
+            if (!xrHand.isTracked)
+                return fallback;
+
+            XRHandJoint wrist = xrHand.GetJoint(XRHandJointID.Wrist);
+            XRHandJoint middle = xrHand.GetJoint(XRHandJointID.MiddleMetacarpal);
+            XRHandJoint middleProximal = xrHand.GetJoint(XRHandJointID.MiddleProximal);
+            if (!wrist.TryGetPose(out Pose wristPose))
+                return fallback;
+
+            // The metacarpal is often close to the wrist. MiddleProximal is
+            // the knuckle; halfway to it gives a stable central-palm anchor.
+            if (middleProximal.TryGetPose(out Pose knucklePose))
+                return ToWorldPose(new Pose(
+                    Vector3.Lerp(wristPose.position, knucklePose.position, 0.5f),
+                    Quaternion.identity)).position;
+
+            if (middle.TryGetPose(out Pose metacarpalPose))
+                return ToWorldPose(new Pose(metacarpalPose.position,
+                    Quaternion.identity)).position;
+
+            return fallback;
+        }
+
+        private void DriveBrushGripPose(
+            Transform root,
+            HandState hand)
+        {
+            if (root == null)
+                return;
+
+            Quaternion desiredRotation =
+                hand.palmPose.rotation;
+
+            Vector3 desiredPosition =
+                GetHandGrabCenter(true, hand.palmPose.position);
+
+            if (!useExactRestoredPose)
+            {
+                desiredRotation *=
+                    Quaternion.Euler(
+                        brushRotationOffset);
+
+                desiredPosition +=
+                    desiredRotation *
+                    brushPositionOffset;
+            }
+
+            root.rotation =
+                desiredRotation;
+
+            root.position =
+                desiredPosition;
+
+            if (DebugLoggingEnabled &&
+                Time.frameCount % 120 == 0)
+            {
+                LogDiagnostic(
+                    "ANDROIDXR_BRUSH_GRIP_POSE " +
+                    $"source={(hand.xrHandsSpatialValid ? "XRHANDS_PALM" : "HAND_INTERACTION_FALLBACK")} " +
+                    $"pos={desiredPosition:F3} " +
+                    $"rotEuler={desiredRotation.eulerAngles:F1}");
+            }
+        }
+
+
+        // --------------------------------------------------------------------
+        // Left hand -> Wand
+        // --------------------------------------------------------------------
+
+        private void DriveWand(
+            BaseControllerBehavior behavior,
+            HandState hand)
+        {
+            if (behavior == null)
+                return;
+
+            /*
+             * RESTORED WORKING MAPPING:
+             *
+             * The old bridge drove the Wand root directly from XRHand Palm.
+             * Do not use Hand Interaction aim/grip orientation here when XR Hands
+             * joint pose is available.
+             *
+             * useExactRestoredPose intentionally ignores any inspector rotation/
+             * position experiments left over from v5-v7.
+             */
+            Quaternion desiredRotation =
+                hand.palmPose.rotation;
+
+            Vector3 desiredPosition =
+                m_LeftGripHeld
+                    ? GetHandGrabCenter(false, hand.palmPose.position)
+                    : hand.palmPose.position;
+
+            if (!useExactRestoredPose)
+            {
+                desiredRotation *=
+                    Quaternion.Euler(
+                        wandRotationOffset);
+
+                desiredPosition +=
+                    desiredRotation *
+                    wandPositionOffset;
+            }
+
+            behavior.transform.rotation =
+                desiredRotation;
+
+            behavior.transform.position =
+                desiredPosition;
+
+            if (DebugLoggingEnabled &&
+                Time.frameCount % 120 == 0)
+            {
+                LogDiagnostic(
+                    "ANDROIDXR_WAND_POSE " +
+                    $"source={(hand.xrHandsSpatialValid ? "XRHANDS_PALM" : "HAND_INTERACTION_FALLBACK")} " +
+                    $"exact={useExactRestoredPose} " +
+                    $"pos={desiredPosition:F3} " +
+                    $"rotEuler={desiredRotation.eulerAngles:F1}");
+            }
+        }
+
+
+        // --------------------------------------------------------------------
+        // Open Brush panels
+        // --------------------------------------------------------------------
+
+        private void RequestPanels()
+        {
+            if (m_PanelsRequested ||
+                !showPanels ||
+                !UseHand(false) ||
+                !m_Left.tracked)
+            {
+                return;
+            }
+
+
+            SketchControlsScript sketchControls =
+                SketchControlsScript.m_Instance;
+
+            PanelManager panels =
+                PanelManager.m_Instance;
+
+
+            if (sketchControls == null ||
+                panels == null)
+            {
+                return;
+            }
+
+
+            if (panels.GetAllPanels() == null)
+                return;
+
+
+            /*
+             * Keep Open Brush in its normal 6DoF-controller interaction mode.
+             */
+            sketchControls.ActiveControlsType =
+                SketchControlsScript.ControlsType.SixDofControllers;
+
+
+            /*
+             * Request initial visibility once; later visibility belongs to normal interaction.
+             */
+            sketchControls.RequestPanelsVisibility(true);
+
+
+            /*
+             * Apply the initial visible state to PanelManager as well.
+             */
+            panels.SetVisible(true);
+
+
+            if (!m_PanelsRequested)
+            {
+                m_PanelsRequested = true;
+
+                LogDiagnostic(
+                    "ANDROID_XR_HAND: PANELS REQUESTED " +
+                    $"count={panels.GetAllPanels().Count} " +
+                    $"leftTracked={m_Left.tracked}");
+            }
+        }
+
+
+        // --------------------------------------------------------------------
+        // Diagnostics
+        // --------------------------------------------------------------------
+
+        private static void LogDiagnostic(string message, UnityEngine.Object context = null)
+        {
+            if (DebugLoggingEnabled) Debug.Log(message, context);
+        }
+
+        private void DebugStateIfNeeded()
+        {
+            if (!DebugLoggingEnabled)
+                return;
+
+            if (Time.unscaledTime < m_NextDebugStateTime)
+                return;
+
+            m_NextDebugStateTime =
+                Time.unscaledTime +
+                Mathf.Max(
+                    0.1f,
+                    debugStateInterval);
+
+            string grabWidget = "none";
+            bool tutorialActive = false;
+
+            if (SketchControlsScript.m_Instance != null)
+            {
+                var widget = SketchControlsScript.m_Instance.CurrentGrabWidget;
+
+                grabWidget = widget != null
+                    ? widget.name + "/" + widget.GetType().Name
+                    : "none";
+            }
+
+            if (TutorialManager.m_Instance != null)
+            {
+                tutorialActive =
+                    TutorialManager.m_Instance.TutorialActive();
+            }
+
+
+            bool obWandGrip =
+    InputManager.Wand != null &&
+    InputManager.Wand.GetControllerGrip();
+
+            bool obBrushGrip =
+                InputManager.Brush != null &&
+                InputManager.Brush.GetControllerGrip();
+
+            bool obGrabWorld =
+                SketchControlsScript.m_Instance != null &&
+                SketchControlsScript.m_Instance.IsUserGrabbingWorld();
+
+            bool obTransformWorld =
+                SketchControlsScript.m_Instance != null &&
+                SketchControlsScript.m_Instance.IsUserTransformingWorld();
+
+            bool obBrushGrabWorld =
+                SketchControlsScript.m_Instance != null &&
+                SketchControlsScript.m_Instance.IsUserGrabbingWorldWithBrushHand();
+
+            bool obGrabStable =
+                SketchControlsScript.m_Instance != null &&
+                SketchControlsScript.m_Instance.IsGrabWorldStateStable();
+
+
+            string wandValid =
+                InputManager.Wand != null
+                    ? InputManager.Wand.IsTrackedObjectValid.ToString()
+                    : "null";
+
+            string brushValid =
+                InputManager.Brush != null
+                    ? InputManager.Brush.IsTrackedObjectValid.ToString()
+                    : "null";
+
+
+            LogDiagnostic(
+                "ANDROID_XR_HAND STATE " +
+                $"mode=Hybrid " +
+                $"sourceL={m_LeftSource} " +
+                $"sourceR={m_RightSource} " +
+                $"controllerL={IsControllerTracked(m_LeftControllerBinding)} " +
+                $"controllerR={IsControllerTracked(m_RightControllerBinding)} " +
+                $"leftDevice={DescribeBinding(m_LeftBinding)} " +
+                $"rightDevice={DescribeBinding(m_RightBinding)} " +
+                $"initialized={m_OpenBrushHandModeInitialized} " +
+                $"prepared={m_ControllersPrepared} " +
+                $" OBgripL={obWandGrip}" +
+$" OBgripR={obBrushGrip}" +
+$" OBgrab={obGrabWorld}" +
+$" OBbrushGrab={obBrushGrabWorld}" +
+$" OBtransform={obTransformWorld}" +
+$" OBstable={obGrabStable}" +
+$" currentGrabWidget={grabWidget}" +
+$" tutorial={tutorialActive}" +
+                $"L={m_Left.tracked} " +
+                $"R={m_Right.tracked} " +
+                $"pinch={m_Right.pinchValue:F3} " +
+                $"draw={m_Right.trigger} " +
+                $"primaryTrigger={m_PrimaryTriggerHeld} " +
+                $"graspL={m_Left.graspValue:F3} " +
+                $"graspR={m_Right.graspValue:F3} " +
+                $"swim={m_SwimModeHeld} " +
+                $"panelContact={m_RightPanelContact} " +
+                $"panelGrabArmed={m_RightPanelGrabArmed} " +
+                $"menuTouch={m_MenuTouchHeld} " +
+                $"xrSpatialL={m_Left.xrHandsSpatialValid} " +
+                $"xrSpatialR={m_Right.xrHandsSpatialValid} " +
+                $"directUi={(m_ActiveMenuTouchComponent != null ? m_ActiveMenuTouchComponent.GetType().Name : "none")} " +
+                $"uiTarget={(SketchControlsScript.m_Instance != null && SketchControlsScript.m_Instance.IsUserInteractingWithUI())} " +
+                $"wandValid={wandValid} " +
+                $"brushValid={brushValid} " +
+                $"panelsRequested={m_PanelsRequested}");
+        }
+
+    }
+}
