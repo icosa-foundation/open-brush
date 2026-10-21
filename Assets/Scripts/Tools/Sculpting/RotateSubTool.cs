@@ -34,12 +34,8 @@ namespace TiltBrush.LegacySculpting
                 Vector3 vertToPivot = (vertex - canvasPose.inverse * m_Collider.ClosestPoint(canvasPose * vertex));
                 float strength = vertToPivot.magnitude * 0.05f;
 
-                Quaternion oldRotation = toolTransform.rotation;
-
-                toolTransform.rotation *= Quaternion.Inverse(canvasPose.rotation);
-                // Adapted from https://answers.unity.com/questions/532297/rotate-a-vector-around-a-certain-point.html
-                Vector3 rotation = Quaternion.AngleAxis((bPushing ? 1 : -1) * -90, (toolTransform).forward) * vertToPivot.normalized;
-                toolTransform.rotation = oldRotation;
+                Vector3 axis = Quaternion.Inverse(canvasPose.rotation) * toolTransform.forward;
+                Vector3 rotation = Quaternion.AngleAxis((bPushing ? 1 : -1) * -90, axis) * vertToPivot.normalized;
 
                 return vertex + strength * rotation;
 
