@@ -18,7 +18,9 @@ using UnityEngine;
 using System;
 using TMPro;
 using System.Linq;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine.Profiling;
 
 namespace TiltBrush.FrameAnimation
