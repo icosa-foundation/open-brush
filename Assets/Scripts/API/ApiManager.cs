@@ -854,6 +854,10 @@ Success. If you are not automatically redirected, please visit <a href='{success
             foreach (var listener in m_OutgoingWebsocketListeners?.ToArray() ??
                 Array.Empty<KeyValuePair<Uri, WebSocket>>())
             {
+#if !UNITY_WEBGL || UNITY_EDITOR
+                // NativeWebSocket buffers incoming frames even without an OnMessage handler.
+                listener.Value.DispatchMessageQueue();
+#endif
                 if (listener.Value.State == WebSocketState.Closed ||
                     listener.Value.State == WebSocketState.Closing)
                 {
