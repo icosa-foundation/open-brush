@@ -624,7 +624,9 @@ namespace TiltBrush
         {
             var document = new RuntimeVoxDocument();
             document.CreateModel("model_0", new Vector3Int(sizeX, sizeY, sizeZ));
-            return new VoxDocumentApiWrapper(document, createWidgetOnRefresh: true);
+            var wrapper = new VoxDocumentApiWrapper(document, createWidgetOnRefresh: true);
+            wrapper.SetAutoVisuals(true);
+            return wrapper;
         }
 
     }
