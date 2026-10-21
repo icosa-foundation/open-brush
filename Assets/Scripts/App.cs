@@ -2013,7 +2013,11 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
-#if OPEN_BRUSH_SCOPED_STORAGE
+#if OPEN_BRUSH_VIEWER
+                    // Viewer builds keep all user data in app-owned storage without a folder grant.
+                    m_UserPath = Application.persistentDataPath;
+                    m_OldUserPath = null;
+#elif OPEN_BRUSH_SCOPED_STORAGE
                     if (!AndroidDirectStorage.StartupReady)
                         throw new System.InvalidOperationException("OBDS_APP storage must initialize before Main.");
                     m_UserPath = Path.GetDirectoryName(AndroidDirectStorage.RootPath);
