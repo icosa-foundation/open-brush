@@ -152,8 +152,12 @@ namespace TiltBrush
                     var guid = MakeDeterministicUniqueName(kPbrTransparentGuid, tw, idx);
                     string texturePath = Path.Combine(textOutputDirectory, $"{guid}.png");
 
-                    int width = Mathf.Max(1, Mathf.RoundToInt(renderedWidth * 256));
-                    int height = Mathf.Max(1, Mathf.RoundToInt(renderedHeight * 256));
+                    // Bound both GPU and PNG allocations, retaining the text's aspect ratio.
+                    int maxTextureSize = Mathf.Min(4096, SystemInfo.maxTextureSize);
+                    float pixelsPerUnit = Mathf.Min(256,
+                        maxTextureSize / Mathf.Max(renderedWidth, renderedHeight));
+                    int width = Mathf.Clamp(Mathf.RoundToInt(renderedWidth * pixelsPerUnit), 1, maxTextureSize);
+                    int height = Mathf.Clamp(Mathf.RoundToInt(renderedHeight * pixelsPerUnit), 1, maxTextureSize);
 
                     int tmpLayer = LayerMask.NameToLayer("TempRenderTex");
                     if (tmpLayer < 0)
