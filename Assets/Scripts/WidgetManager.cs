@@ -1075,7 +1075,7 @@ namespace TiltBrush
             if (PointerManager.m_Instance.IsLineEnabled())
             {
                 // If we don't have an active stencil, we're done here.
-                if (m_ActiveStencil == null)
+                if (m_ActiveStencil == null || !m_ActiveStencil.HasSurface)
                 {
                     m_ActiveStencil = null;
                     return false;
@@ -1111,6 +1111,7 @@ namespace TiltBrush
 
                     // Reset tint
                     sw.SetInUse(false);
+                    if (!sw.HasSurface) { continue; }
 
                     // Only reject points outside the attraction-expanded guide bounds.
                     // The surface query below decides whether the actual shape is close enough.

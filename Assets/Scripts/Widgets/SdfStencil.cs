@@ -99,7 +99,7 @@ namespace TiltBrush
         }
 
         public int PrimitiveCount => GetPrimitives().Count;
-        internal bool HasSurface => m_SdfManager != null && !m_SdfManager.IsEmpty;
+        internal override bool HasSurface => m_SdfManager != null && !m_SdfManager.IsEmpty;
         public int ComponentCount => GetComponents().Count;
 
         public override Vector3 Extents

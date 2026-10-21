@@ -212,7 +212,7 @@ namespace TiltBrush
 
         static float DistanceToStencil(StencilWidget s, Vector3 worldPos)
         {
-            if (s is SdfStencil sdf && !sdf.HasSurface) { return float.PositiveInfinity; }
+            if (!s.HasSurface) { return float.PositiveInfinity; }
             Vector3 radii = s.Extents * Mathf.Abs(s.Canvas.Pose.scale) * 0.5f;
             Quaternion rot = s.transform.rotation;
             Vector3 p = Quaternion.Inverse(rot) * (worldPos - s.transform.position);

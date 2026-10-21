@@ -162,6 +162,8 @@ namespace TiltBrush
             return clone;
         }
 
+        internal virtual bool HasSurface => true;
+
         // Given a pos, find the closest position and surface normal of the stencil widget's collider.
         //   - surfacePos is the closest position on the surface, but in the case of ambiguity, will
         //     return a position most appropriate for the user experience.

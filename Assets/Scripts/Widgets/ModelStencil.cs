@@ -570,6 +570,8 @@ namespace TiltBrush
         /// <summary>
         /// Find the closest point on the stencil surface
         /// </summary>
+        internal override bool HasSurface => m_MeshCollider != null || m_SDFMeshAsset != null;
+
         public override void FindClosestPointOnSurface(Vector3 pos,
                                                        out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
@@ -583,10 +585,8 @@ namespace TiltBrush
             }
             else
             {
-                // Should never happen
-                Debug.LogWarning($"{k_LogPrefix} No SDF or collider is available for snapping.");
-                surfacePos = transform.position;
-                surfaceNorm = (pos - transform.position).normalized;
+                throw new InvalidOperationException(
+                    "This model guide has no surface query backend on this device.");
             }
         }
 
