@@ -144,18 +144,28 @@ namespace TiltBrush
         public void Continue()
         {
             RequireReady();
-            if (Document == null) { SetPlayingInternal(true); return; }
+            if (Document == null)
+            {
+                SetPlayingInternal(true);
+                MarkPlaybackChanged();
+                return;
+            }
             m_InitialState = GetSaveState();
             m_InitialState.Paused = false;
             StartNative(ContinueNative);
+            MarkPlaybackChanged();
         }
         public void Play()
         {
             RequireReady();
             if (Document != null && Document.GetStateInfo().Playback != ImmDocument.PlaybackState.Finished) Continue();
-            else SetPlayingInternal(true);
+            else
+            {
+                SetPlayingInternal(true);
+                MarkPlaybackChanged();
+            }
         }
-        public void Pause() { RequireReady(); SetPlayingInternal(false); }
+        public void Pause() { RequireReady(); SetPlayingInternal(false); MarkPlaybackChanged(); }
         private void SetPlayingInternal(bool playing)
         {
             m_Paused = !playing;
@@ -178,7 +188,10 @@ namespace TiltBrush
                 }
             }
         }
-        public void SetVolume(float volume) { RequireReady(); ValidateVolume(volume); SetVolumeInternal(volume); }
+        public void SetVolume(float volume)
+        {
+            RequireReady(); ValidateVolume(volume); SetVolumeInternal(volume); MarkPlaybackChanged();
+        }
         public void SetSpatialBlend(float spatialBlend)
         {
             RequireReady();
@@ -187,6 +200,7 @@ namespace TiltBrush
             m_SpatialBlend = spatialBlend;
             foreach (var source in m_Audio)
                 if (source != null) source.spatialBlend = spatialBlend;
+            MarkPlaybackChanged();
         }
         private static void ValidateSpatialBlend(float spatialBlend)
         {
@@ -212,6 +226,7 @@ namespace TiltBrush
                     () => document.RequestSetTime(ToTicks(time), 0), m_InitialState.Paused));
             }
             else SeekInternal(time);
+            MarkPlaybackChanged();
         }
         private void SeekInternal(double time)
         {
@@ -227,12 +242,14 @@ namespace TiltBrush
             bool playing = Playing;
             m_Gltf.SelectClip(clip);
             SetPlayingInternal(playing);
+            MarkPlaybackChanged();
         }
         public void SetLoop(bool loop)
         {
             RequireReady();
             if (m_Gltf == null) throw new InvalidOperationException("Loop control is supported for glTF animation clips");
             m_Gltf.Loop = loop;
+            MarkPlaybackChanged();
         }
         public void SetChapter(int chapter)
         {
@@ -243,6 +260,12 @@ namespace TiltBrush
             m_InitialState.Time = GetChapterStartTime(Document, chapter);
             m_InitialState.StopTime = 0;
             StartNative(document => WaitForEdit(document, () => document.RequestSetChapter(chapter), m_InitialState.Paused, m_InitialState.Time));
+            MarkPlaybackChanged();
+        }
+
+        private static void MarkPlaybackChanged()
+        {
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
         public void GetViewpointNavigationState(out int index, out int count)
         {

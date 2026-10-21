@@ -92,7 +92,10 @@ namespace TiltBrush
             int target = (s_Active.m_ViewpointState.chapter + direction + ChapterCount) % ChapterCount;
             s_Active.m_ChapterNavigationRequest = s_Active.m_Document.RequestSetChapter(target);
             if (IsChangingChapter)
+            {
+                SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 Debug.Log($"[OB_IMM_PLAYBACK_20261014] Chapter {target} requested, token={s_Active.m_ChapterNavigationRequest}");
+            }
         }
 
         public static void CycleViewpoint(int direction)
@@ -106,6 +109,7 @@ namespace TiltBrush
                 ? (direction < 0 ? count - 1 : 0)
                 : (active.m_ViewpointIndex + direction + count) % count;
             if (!active.SelectViewpoint(active.m_ViewpointIds[index])) return;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
             Debug.Log($"[OB_IMM_VIEWPOINT_20261014] Viewpoint {index + 1}/{count}");
         }
 
@@ -386,6 +390,7 @@ namespace TiltBrush
                 false, 0, App.Scene.GetIndexOfCanvas(layer));
             Coords.AsLocal[m_Widget.transform] = pose;
             m_Widget.SetSignedWidgetSize(pose.scale);
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
             m_Document.SetTransform(DocumentTransform);
             Debug.Log($"[OB_IMM_SKETCH_WIDGET_20261017] Opened on layer {App.Scene.GetIndexOfCanvas(m_Widget.Canvas)}, active layer {App.Scene.GetIndexOfCanvas(App.ActiveCanvas)}");
         }
