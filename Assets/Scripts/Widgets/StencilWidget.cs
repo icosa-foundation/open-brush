@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -61,8 +61,11 @@ namespace TiltBrush
         /// backwards-compatibility code.
         public Guides.State GetSaveState(GroupIdMapping groupIdMapping)
         {
+            (int layerId, int frameId) = App.Scene.GetSerializableIndexOfCanvas(this);
             return new Guides.State
             {
+                LayerId = layerId,
+                FrameId = frameId,
                 Transform = TrTransform.TRS(transform.localPosition, transform.localRotation, 0),
                 Extents = Extents,
                 Pinned = m_Pinned,
@@ -81,7 +84,7 @@ namespace TiltBrush
                     PinFromSave();
                 }
                 Group = App.GroupManager.GetGroupFromId(value.GroupId);
-                SetCanvas(App.Scene.GetOrCreateLayer(value.LayerId));
+                SetCanvas(App.Scene.GetOrCreateLayer(value.LayerId, value.FrameId));
             }
         }
 

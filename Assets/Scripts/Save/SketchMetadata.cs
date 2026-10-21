@@ -475,6 +475,7 @@ namespace TiltBrush
             // Group ID for widget. 0 for ungrouped items. Added in M22.
             public uint GroupId { get; set; }
             public int LayerId { get; set; }
+            public int FrameId { get; set; }
         }
 
         // This is the accessor used by Json.NET for reading/writing the "Type" field.
