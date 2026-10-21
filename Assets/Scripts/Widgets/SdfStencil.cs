@@ -391,7 +391,10 @@ namespace TiltBrush
         {
             mesh = null;
             meshTransform = null;
-            if (m_MeshGenerator == null || m_MeshGenerator.MeshRenderer == null)
+            if (m_MeshGenerator == null || m_MeshGenerator.MeshRenderer == null ||
+                m_MeshGenerator.IsMeshGenerationPending ||
+                m_CompletedVisualRevision != m_RequestedVisualRevision ||
+                m_FinalizedVisualRevision != m_RequestedVisualRevision)
             {
                 return false;
             }
@@ -726,6 +729,11 @@ namespace TiltBrush
 
             if (m_SdfManager.IsEmpty)
             {
+                MeshFilter filter = m_MeshGenerator.MeshRenderer.GetComponent<MeshFilter>();
+                if (filter != null && filter.sharedMesh != null)
+                {
+                    filter.sharedMesh.Clear();
+                }
                 m_CompletedVisualRevision = m_RequestedVisualRevision;
                 m_FinalizedVisualRevision = m_RequestedVisualRevision;
                 return;
