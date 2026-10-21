@@ -111,7 +111,7 @@ namespace TiltBrush
                 : ParseVector4(request["geometry"], "geometry");
             TrTransform? transform = request["transform"] == null
                 ? (TrTransform?)null
-                : App.Scene.Pose * ParseTransform(request["transform"], "transform");
+                : ParseTransform(request["transform"], "transform");
             SDFCombineType? operation = request["operation"] == null
                 ? (SDFCombineType?)null
                 : SdfStencil.ParseOperation(request.Value<string>("operation"));
