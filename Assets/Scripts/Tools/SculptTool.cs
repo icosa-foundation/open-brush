@@ -1,4 +1,4 @@
-﻿// Copyright 2022 Chingiz Dadashov-Khandan
+// Copyright 2022 Chingiz Dadashov-Khandan
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ namespace TiltBrush
         /// vertex interactions, and also just for visual representations for the
         /// user.
         [SerializeField]
-        public LegacySculpting.BaseSculptSubTool m_ActiveSubTool;
+        private LegacySculpting.BaseSculptSubTool m_ActiveSubTool;
 
         override public void EnableTool(bool bEnable)
         {
@@ -40,7 +40,7 @@ namespace TiltBrush
 
         override public void HideTool(bool bHide)
         {
-            m_ActiveSubTool.gameObject.SetActive(!bHide);
+            if (m_ActiveSubTool != null) m_ActiveSubTool.gameObject.SetActive(!bHide);
             base.HideTool(bHide);
         }
 
@@ -51,7 +51,8 @@ namespace TiltBrush
 
         public void SetSubTool(LegacySculpting.BaseSculptSubTool subTool)
         {
-            m_ActiveSubTool.gameObject.SetActive(false);
+            if (subTool == null) return;
+            if (m_ActiveSubTool != null) m_ActiveSubTool.gameObject.SetActive(false);
             m_ActiveSubTool = subTool;
             m_ActiveSubTool.gameObject.SetActive(!m_ToolHidden);
         }
@@ -73,7 +74,7 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleSculpt))
             {
-                if (m_ActiveSubTool.m_SubToolIdentifier != LegacySculpting.SculptSubToolManager.SubTool.Flatten)
+                if (m_ActiveSubTool != null && m_ActiveSubTool.m_SubToolIdentifier != LegacySculpting.SculptSubToolManager.SubTool.Flatten)
                 {
                     m_bIsPushing = !m_bIsPushing;
                     StartToggleAnimation();
@@ -89,8 +90,7 @@ namespace TiltBrush
 
         override protected bool HandleIntersectionWithBatchedStroke(BatchSubset rGroup)
         {
-            // Metadata of target stroke
-            var stroke = rGroup.m_Stroke;
+            if (m_ActiveSubTool == null) return false;
             Batch parentBatch = rGroup.m_ParentBatch;
             int startIndex = rGroup.m_StartVertIndex;
             int vertLength = rGroup.m_VertLength;
@@ -129,7 +129,7 @@ namespace TiltBrush
 
         override public void AssignControllerMaterials(InputManager.ControllerName controller)
         {
-            if (m_ActiveSubTool.m_SubToolIdentifier != LegacySculpting.SculptSubToolManager.SubTool.Flatten)
+            if (m_ActiveSubTool != null && m_ActiveSubTool.m_SubToolIdentifier != LegacySculpting.SculptSubToolManager.SubTool.Flatten)
             {
                 InputManager.Brush.Geometry.ShowSculptToggle(m_bIsPushing);
             }
