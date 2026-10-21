@@ -611,7 +611,7 @@ namespace TiltBrush
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
             rNewStroke.m_Seed = seed;
-            rNewStroke.m_OverrideColors = controlPointColors;
+            rNewStroke.m_OverrideColors = controlPointColors?.ToList();
             rNewStroke.m_ColorOverrideMode = colorMode;
             subset.m_Stroke = rNewStroke;
 
@@ -656,7 +656,7 @@ namespace TiltBrush
             rNewStroke.m_BrushSize = fBrushSize;
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
-            rNewStroke.m_OverrideColors = controlPointColors;
+            rNewStroke.m_OverrideColors = controlPointColors?.ToList();
             rNewStroke.m_ColorOverrideMode = colorMode;
             brushScript.Stroke = rNewStroke;
 
