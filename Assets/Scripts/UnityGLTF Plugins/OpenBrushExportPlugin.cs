@@ -684,6 +684,7 @@ namespace TiltBrush
                 bakedColors = Enumerable.Repeat(Color.white, mesh.vertexCount).ToArray();
             bool whiteHighlight = source.Name.Contains("Bubbles");
             bool multiplyAlpha = source.Name.Contains("Snow");
+            bool chromaticWave = source.Name.Contains("ChromaticWave");
             var linearColors = bakedColors.Select(c =>
             {
                 Color linear = c.linear;
@@ -697,7 +698,7 @@ namespace TiltBrush
             var uniqueColors = colors.Distinct().ToList();
             if (uniqueColors.Count == 0) return primitive.Material.Id;
             int N = uniqueColors.Count;
-            string colorKey = $"{ColorKey(uniqueColors)}:{whiteHighlight}:{multiplyAlpha}:{gain:R}";
+            string colorKey = $"{ColorKey(uniqueColors)}:{whiteHighlight}:{multiplyAlpha}:{chromaticWave}:{gain:R}";
             _additiveBrushTextures.TryGetValue(source, out var textureSource);
             Vector2[] sourceUvs = mesh.uv;
             Vector2 uvMin = Vector2.zero, uvMax = Vector2.one;
@@ -721,7 +722,7 @@ namespace TiltBrush
             var textureKey = (textureSource.Texture, colorKey);
             if (!_atlasTextureCache.TryGetValue(textureKey, out Texture2D atlas))
             {
-                atlas = CreateTintedTextureAtlas(textureSource.Texture, uniqueColors, uvMin, uvSpan, whiteHighlight, multiplyAlpha);
+                atlas = CreateTintedTextureAtlas(textureSource.Texture, uniqueColors, uvMin, uvSpan, whiteHighlight, multiplyAlpha, chromaticWave);
                 _atlasTextureCache[textureKey] = atlas;
             }
 
@@ -811,7 +812,7 @@ namespace TiltBrush
 
         private static Texture2D CreateTintedTextureAtlas(
             Texture sourceTexture, IReadOnlyList<Color32> colors, Vector2 uvMin, Vector2 uvSpan,
-            bool whiteHighlight, bool multiplyAlpha)
+            bool whiteHighlight, bool multiplyAlpha, bool chromaticWave)
         {
             int columns = Mathf.CeilToInt(Mathf.Sqrt(colors.Count));
             int rows = Mathf.CeilToInt(colors.Count / (float)columns);
@@ -849,6 +850,19 @@ namespace TiltBrush
                             ? readableSource.GetPixelBilinear(uvMin.x + u * uvSpan.x, uvMin.y + v * uvSpan.y)
                             : Color.white;
                         Color linear = (pixel * tint).linear;
+                        if (chromaticWave)
+                        {
+                            // RainbowTube's fixed-time wave positions depend on the stroke's
+                            // individual RGB components, so a white-template bake is insufficient.
+                            float sourceU = uvMin.x + u * uvSpan.x;
+                            float sourceV = uvMin.y + v * uvSpan.y;
+                            float row = Mathf.Repeat(sourceV + sourceU * 4f, 1f);
+                            Color tintLinear = tint.linear;
+                            linear = new Color(
+                                tintLinear.r * ChromaticWaveLine(sourceU, row, tint.r),
+                                tintLinear.g * ChromaticWaveLine(sourceU, row, tint.g),
+                                tintLinear.b * ChromaticWaveLine(sourceU, row, tint.b), 1f);
+                        }
                         if (whiteHighlight)
                         {
                             linear.r += pixel.a;
@@ -867,6 +881,12 @@ namespace TiltBrush
             atlas.Apply();
             SafeDestroy(readableSource);
             return atlas;
+        }
+
+        private static float ChromaticWaveLine(float u, float row, float component)
+        {
+            float waveform = 0.15f * Mathf.Sin(u * 100f * component);
+            return Mathf.Clamp01(1f - 40f * Mathf.Abs(row - 0.5f + waveform));
         }
 
         private static Texture2D ReadTexture(Texture source, int width, int height)
