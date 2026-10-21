@@ -31,9 +31,11 @@ namespace TiltBrush
                 throw new ArgumentNullException(nameof(source));
             }
             if (source.Model == null || !source.Model.m_Valid ||
-                !source.GetMeshes().Any(
+                (!source.GetMeshes().Any(
                     meshFilter => meshFilter != null && meshFilter.sharedMesh != null &&
-                        meshFilter.sharedMesh.vertexCount > 0))
+                        meshFilter.sharedMesh.vertexCount > 0) &&
+                 !source.GetComponentsInChildren<UnityEngine.SkinnedMeshRenderer>().Any(
+                    renderer => renderer.sharedMesh != null && renderer.sharedMesh.vertexCount > 0)))
             {
                 throw new InvalidOperationException(
                     "The selected model is not loaded or has no mesh geometry.");
@@ -59,7 +61,7 @@ namespace TiltBrush
                 parent: this,
                 canvas: targetCanvas);
             new ConfigureModelGuideCommand(
-                m_CreateCommand, source.Model, source.Group, source.Pinned, this);
+                m_CreateCommand, source.Model, source.Subtree, source.Group, source.Pinned, this);
             new SelectModelGuideCommand(m_CreateCommand, source, targetCanvas, this);
         }
 
@@ -73,15 +75,17 @@ namespace TiltBrush
         {
             private readonly CreateWidgetCommand m_CreateCommand;
             private readonly Model m_Model;
+            private readonly string m_Subtree;
             private readonly SketchGroupTag m_Group;
             private readonly bool m_Pinned;
 
             internal ConfigureModelGuideCommand(
-                CreateWidgetCommand createCommand, Model model, SketchGroupTag group,
+                CreateWidgetCommand createCommand, Model model, string subtree, SketchGroupTag group,
                 bool pinned, BaseCommand parent) : base(parent)
             {
                 m_CreateCommand = createCommand;
                 m_Model = model;
+                m_Subtree = subtree;
                 m_Group = group;
                 m_Pinned = pinned;
             }
@@ -94,6 +98,7 @@ namespace TiltBrush
                         "The model-guide prefab did not create a model guide.");
                 }
 
+                stencil.Subtree = m_Subtree;
                 stencil.Model = m_Model;
                 stencil.Group = m_Group;
                 if (stencil.Pinned != m_Pinned)

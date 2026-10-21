@@ -45,6 +45,13 @@ namespace TiltBrush
         private const int MESH_COLLIDER_THRESHOLD_MOBILE = 5000;   // 5K triangles for mobile
         private const int MESH_COLLIDER_THRESHOLD_DESKTOP = 20000;  // 20K triangles for desktop
 
+        private Mesh m_SourceMesh;
+        private string m_Subtree;
+        private Vector3[] m_SourceVertices;
+        private int[] m_SourceTriangles;
+        private bool m_OwnsSdfAsset;
+        internal string Subtree { get => m_Subtree; set => m_Subtree = value; }
+
         private MeshCollider m_MeshCollider;
         private MeshFilter m_MeshFilter;
         private Transform m_ModelInstance;
@@ -138,8 +145,20 @@ namespace TiltBrush
             m_ModelInstance.localRotation = Quaternion.identity;
             m_ModelInstance.localScale = Vector3.one;
 
-            // Count total triangles BEFORE generating SDF (which destroys the model instance)
-            m_TotalTriangleCount = CountTotalTriangles();
+            if (!string.IsNullOrEmpty(m_Subtree))
+            {
+                var (node, excludeChildren) = ModelWidget.FindSubtreeRoot(m_ModelInstance, m_Subtree);
+                foreach (Transform child in m_ModelInstance.GetComponentsInChildren<Transform>())
+                {
+                    bool keep = child == node || node.IsChildOf(child) ||
+                        (!excludeChildren && child.IsChildOf(node));
+                    if (!keep) { child.gameObject.SetActive(false); }
+                }
+            }
+            m_SourceMesh = CombineSourceMeshes();
+            m_SourceVertices = m_SourceMesh.vertices;
+            m_SourceTriangles = m_SourceMesh.triangles;
+            m_TotalTriangleCount = m_SourceTriangles.Length / 3;
             // Generate SDF at runtime if not manually assigned
             if (m_SDFMeshAsset == null)
             {
@@ -199,21 +218,8 @@ namespace TiltBrush
             }
 
             // Get all meshes from the model
-            var meshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
-            if (meshFilters.Length == 0)
-            {
-                Debug.LogWarning($"{k_LogPrefix} The source model contains no meshes.");
-                return;
-            }
-
-            // Combine all meshes into one for SDF generation
-            Mesh combinedMesh = CombineMeshesForSDF(meshFilters);
-
-            if (combinedMesh == null || combinedMesh.triangles.Length == 0)
-            {
-                Debug.LogWarning($"{k_LogPrefix} Failed to combine the source meshes.");
-                return;
-            }
+            Mesh combinedMesh = m_SourceMesh;
+            if (combinedMesh == null || combinedMesh.vertexCount == 0) { return; }
 
             // Determine appropriate SDF size based on triangle count
             int triangleCount = combinedMesh.triangles.Length / 3;
@@ -229,6 +235,7 @@ namespace TiltBrush
 
             if (m_SDFMeshAsset != null)
             {
+                m_OwnsSdfAsset = true;
                 Debug.Log(
                     $"{k_LogPrefix} Generated a {sdfSize}³ SDF for " +
                     $"'{m_Model.HumanName}' ({triangleCount:N0} triangles).");
@@ -459,97 +466,55 @@ namespace TiltBrush
         /// <summary>
         /// Combine all meshes into a single mesh for SDF generation
         /// </summary>
-        private Mesh CombineMeshesForSDF(MeshFilter[] meshFilters)
+        private Mesh CombineSourceMeshes()
         {
-            CombineInstance[] combine = new CombineInstance[meshFilters.Length];
-            Matrix4x4 worldToStencil = transform.worldToLocalMatrix;
-
-            for (int i = 0; i < meshFilters.Length; i++)
+            var combine = new System.Collections.Generic.List<CombineInstance>();
+            var bakedMeshes = new System.Collections.Generic.List<Mesh>();
+            Matrix4x4 toLocal = transform.worldToLocalMatrix;
+            void AddMesh(Mesh mesh, Transform source)
             {
-                combine[i].mesh = meshFilters[i].sharedMesh;
-                combine[i].transform =
-                    worldToStencil * meshFilters[i].transform.localToWorldMatrix;
-            }
-
-            Mesh combinedMesh = new Mesh();
-            combinedMesh.indexFormat = UnityEngine.Rendering.IndexFormat.UInt32; // Support large meshes
-            combinedMesh.CombineMeshes(combine, true, true);
-            combinedMesh.RecalculateNormals();
-            combinedMesh.RecalculateBounds();
-
-            return combinedMesh;
-        }
-
-        /// <summary>
-        /// Count total triangles in all mesh filters
-        /// </summary>
-        private int CountTotalTriangles()
-        {
-            if (m_ModelInstance == null)
-            {
-                Debug.LogError($"{k_LogPrefix} Cannot count triangles without a model instance.");
-                return 0;
-            }
-
-            int total = 0;
-            var meshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
-            foreach (var mf in meshFilters)
-            {
-                if (mf.sharedMesh != null)
+                if (mesh == null) { return; }
+                for (int submesh = 0; submesh < mesh.subMeshCount; ++submesh)
                 {
-                    total += mf.sharedMesh.triangles.Length / 3;
+                    combine.Add(new CombineInstance {
+                        mesh = mesh, subMeshIndex = submesh,
+                        transform = toLocal * source.localToWorldMatrix
+                    });
                 }
             }
-            return total;
+            foreach (MeshFilter filter in m_ModelInstance.GetComponentsInChildren<MeshFilter>())
+            {
+                AddMesh(filter.sharedMesh, filter.transform);
+            }
+            foreach (SkinnedMeshRenderer renderer in
+                m_ModelInstance.GetComponentsInChildren<SkinnedMeshRenderer>())
+            {
+                var baked = new Mesh();
+                renderer.BakeMesh(baked);
+                bakedMeshes.Add(baked);
+                AddMesh(baked, renderer.transform);
+            }
+            var combined = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            try
+            {
+                combined.CombineMeshes(combine.ToArray(), true, true);
+                combined.RecalculateNormals();
+                combined.RecalculateBounds();
+                return combined;
+            }
+            finally
+            {
+                foreach (Mesh baked in bakedMeshes) { Destroy(baked); }
+            }
         }
 
         private void SetupMeshCollider()
         {
-            // Find or create mesh collider
-            m_MeshCollider = GetComponentInChildren<MeshCollider>();
-            if (m_MeshCollider == null)
-            {
-                var colliderObj = new GameObject("Collider");
-                colliderObj.transform.SetParent(transform);
-                colliderObj.transform.localPosition = Vector3.zero;
-                colliderObj.transform.localRotation = Quaternion.identity;
-                colliderObj.transform.localScale = Vector3.one;
-                m_MeshCollider = colliderObj.AddComponent<MeshCollider>();
-            }
-
-            // Get combined mesh from model
-            m_MeshFilter = m_MeshCollider.GetComponent<MeshFilter>();
-            if (m_MeshFilter == null)
-            {
-                m_MeshFilter = m_MeshCollider.gameObject.AddComponent<MeshFilter>();
-            }
-
-            // Combine all meshes from the model
-            var meshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
-            if (meshFilters.Length > 0)
-            {
-                CombineInstance[] combine = new CombineInstance[meshFilters.Length];
-
-                // Get widget's world-to-local matrix to transform everything into widget local space
-                Matrix4x4 widgetToLocal = transform.worldToLocalMatrix;
-
-                for (int i = 0; i < meshFilters.Length; i++)
-                {
-                    combine[i].mesh = meshFilters[i].sharedMesh;
-                    // Transform from mesh's world space to widget's local space
-                    // This ensures the combined mesh is in the widget's local coordinate system
-                    combine[i].transform = widgetToLocal * meshFilters[i].transform.localToWorldMatrix;
-                }
-
-                Mesh combinedMesh = new Mesh();
-                combinedMesh.CombineMeshes(combine, true, true);
-
-                m_MeshFilter.mesh = combinedMesh;
-                m_MeshCollider.sharedMesh = combinedMesh;
-
-                // Update collider for this widget
-                m_Collider = m_MeshCollider;
-            }
+            var colliderObject = new GameObject("Model Guide Collider");
+            colliderObject.transform.SetParent(transform, false);
+            m_MeshCollider = colliderObject.AddComponent<MeshCollider>();
+            m_MeshCollider.sharedMesh = m_SourceMesh;
+            m_Collider = m_MeshCollider;
         }
 
         /// <summary>
