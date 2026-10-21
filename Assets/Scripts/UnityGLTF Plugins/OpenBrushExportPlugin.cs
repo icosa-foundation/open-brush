@@ -65,7 +65,6 @@ namespace TiltBrush
         // Template additive material → source texture and its Unity UV transform
         private Dictionary<GLTFMaterial, AdditiveTextureSource> _additiveBrushTextures;
         // (template material, stroke Color32) → index of per-colour clone in gltfRoot.Materials
-        private Dictionary<(GLTFMaterial, Color32), int> _colorModulatedMaterials;
         // (source texture, colorKey) → cached atlas texture
         private Dictionary<(Texture, string), Texture2D> _atlasTextureCache;
         // (template material, colorKey) → index of atlas material clone in gltfRoot.Materials
@@ -144,7 +143,6 @@ namespace TiltBrush
                 _additiveBrushGains = new Dictionary<GLTFMaterial, float>();
                 _additiveBrushTextures =
                     new Dictionary<GLTFMaterial, AdditiveTextureSource>();
-                _colorModulatedMaterials = new Dictionary<(GLTFMaterial, Color32), int>();
                 _atlasTextureCache = new Dictionary<(Texture, string), Texture2D>();
                 _atlasMaterialCache = new Dictionary<(GLTFMaterial, string), int>();
             }
@@ -153,7 +151,6 @@ namespace TiltBrush
                 _gltfRoot = null;
                 _additiveBrushGains = null;
                 _additiveBrushTextures = null;
-                _colorModulatedMaterials = null;
                 _atlasTextureCache = null;
                 _atlasMaterialCache = null;
             }
@@ -661,42 +658,12 @@ namespace TiltBrush
             var mat = _gltfRoot.Materials[primitive.Material.Id];
             if (!_additiveBrushGains.TryGetValue(mat, out float gain)) return;
 
-            var vertexColors = mesh.colors;
-            bool uniformColor = vertexColors.Length == 0 ||
-                vertexColors.All(c => c == vertexColors[0] && c.maxColorComponent <= 1f);
-            if (App.UserConfig.Export.KeepStrokes && uniformColor &&
-                !mat.Name.Contains("Bubbles") && !mat.Name.Contains("Snow"))
-            {
-                var colors = mesh.colors32;
-                var strokeColor = colors.Length > 0 ? colors[0] : new Color32(255, 255, 255, 255);
-                int cloneIdx = GetOrCreateColoredAdditiveMaterial(mat, strokeColor, gain, exporter);
-                primitive.Material = new MaterialId { Id = cloneIdx, Root = _gltfRoot };
-            }
-            else
-            {
-                // Consume the baked vertex colors, including particle lifetime modulation.
-                int cloneIdx = GetOrCreateAtlasMaterial(mat, mesh, primitive, gain, exporter);
-                primitive.Material = new MaterialId { Id = cloneIdx, Root = _gltfRoot };
-            }
-        }
-
-        // KeepStrokes=true: one clone per (material, strokeColor)
-        private int GetOrCreateColoredAdditiveMaterial(GLTFMaterial source, Color32 strokeColor, float gain, GLTFSceneExporter exporter)
-        {
-            var key = (source, strokeColor);
-            if (_colorModulatedMaterials.TryGetValue(key, out int existing)) return existing;
-
-            var clone = CloneGltfMaterial(source);
-            Color linearColor = ((Color)strokeColor).linear;
-            float factor = Mathf.Min(gain, 1f);
-            clone.EmissiveFactor = new GLTF.Math.Color(
-                linearColor.r * factor, linearColor.g * factor, linearColor.b * factor, 1f);
-            if (gain > 1f) ApplyEmissiveStrength(clone, gain, exporter);
-
-            _gltfRoot.Materials.Add(clone);
-            int idx = _gltfRoot.Materials.Count - 1;
-            _colorModulatedMaterials[key] = idx;
-            return idx;
+            // Core glTF cannot express additive blending. Bake a brightness-derived alpha
+            // coverage approximation, with emission unpremultiplied by that coverage.
+            int cloneIdx = GetOrCreateAtlasMaterial(mat, mesh, primitive, gain, exporter);
+            primitive.Material = new MaterialId { Id = cloneIdx, Root = _gltfRoot };
+            // The atlas already contains the baked RGB and lifetime alpha.
+            primitive.Attributes.Remove("COLOR_0");
         }
 
         private static string ColorKey(List<Color32> colors)
@@ -729,7 +696,7 @@ namespace TiltBrush
             var uniqueColors = colors.Distinct().ToList();
             if (uniqueColors.Count == 0) return primitive.Material.Id;
             int N = uniqueColors.Count;
-            string colorKey = $"{ColorKey(uniqueColors)}:{whiteHighlight}:{gain:R}";
+            string colorKey = $"{ColorKey(uniqueColors)}:{whiteHighlight}:{multiplyAlpha}:{gain:R}";
             _additiveBrushTextures.TryGetValue(source, out var textureSource);
             Vector2[] sourceUvs = mesh.uv;
             Vector2 uvMin = Vector2.zero, uvMax = Vector2.one;
@@ -753,7 +720,7 @@ namespace TiltBrush
             var textureKey = (textureSource.Texture, colorKey);
             if (!_atlasTextureCache.TryGetValue(textureKey, out Texture2D atlas))
             {
-                atlas = CreateTintedTextureAtlas(textureSource.Texture, uniqueColors, uvMin, uvSpan, whiteHighlight);
+                atlas = CreateTintedTextureAtlas(textureSource.Texture, uniqueColors, uvMin, uvSpan, whiteHighlight, multiplyAlpha);
                 _atlasTextureCache[textureKey] = atlas;
             }
 
@@ -823,6 +790,14 @@ namespace TiltBrush
                 float factor = Mathf.Min(gain, 1f);
                 clone.EmissiveFactor = new GLTF.Math.Color(factor, factor, factor, 1f);
                 clone.EmissiveTexture = atlasTexInfo;
+                clone.PbrMetallicRoughness = new PbrMetallicRoughness
+                {
+                    BaseColorFactor = new GLTF.Math.Color(0f, 0f, 0f, 1f),
+                    BaseColorTexture = atlasTexInfo,
+                    MetallicFactor = 0f,
+                    RoughnessFactor = 1f,
+                };
+                clone.AlphaMode = AlphaMode.BLEND;
                 if (gain > 1f) ApplyEmissiveStrength(clone, gain, exporter);
                 _gltfRoot.Materials.Add(clone);
                 materialIdx = _gltfRoot.Materials.Count - 1;
@@ -834,7 +809,7 @@ namespace TiltBrush
 
         private static Texture2D CreateTintedTextureAtlas(
             Texture sourceTexture, IReadOnlyList<Color32> colors, Vector2 uvMin, Vector2 uvSpan,
-            bool whiteHighlight)
+            bool whiteHighlight, bool multiplyAlpha)
         {
             int columns = Mathf.CeilToInt(Mathf.Sqrt(colors.Count));
             int rows = Mathf.CeilToInt(colors.Count / (float)columns);
@@ -871,14 +846,17 @@ namespace TiltBrush
                         Color pixel = readableSource != null
                             ? readableSource.GetPixelBilinear(uvMin.x + u * uvSpan.x, uvMin.y + v * uvSpan.y)
                             : Color.white;
-                        Color tinted = pixel * tint;
+                        Color linear = (pixel * tint).linear;
                         if (whiteHighlight)
                         {
-                            tinted.r += pixel.a;
-                            tinted.g += pixel.a;
-                            tinted.b += pixel.a;
+                            linear.r += pixel.a;
+                            linear.g += pixel.a;
+                            linear.b += pixel.a;
                         }
-                        tinted.a = pixel.a;
+                        if (multiplyAlpha) linear *= pixel.a;
+                        float coverage = Mathf.Clamp01(Mathf.Max(linear.r, Mathf.Max(linear.g, linear.b)));
+                        Color tinted = coverage > 0f ? (linear / coverage).gamma : Color.clear;
+                        tinted.a = coverage;
                         atlasPixels[(tileY * tileHeight + y) * atlas.width + tileX * tileWidth + x] = tinted;
                     }
                 }
@@ -1186,8 +1164,11 @@ namespace TiltBrush
                 switch (manifest.m_BlendMode)
                 {
                     case ExportableMaterialBlendMode.AdditiveBlend:
-                        exporter.DeclareExtensionUsage(EXT_blend_operations.EXTENSION_NAME, false);
-                        AddExtension(materialNode, EXT_blend_operations.Add);
+                        if (!IsStaticExport)
+                        {
+                            exporter.DeclareExtensionUsage(EXT_blend_operations.EXTENSION_NAME, false);
+                            AddExtension(materialNode, EXT_blend_operations.Add);
+                        }
                         materialNode.AlphaMode = AlphaMode.BLEND;
                         break;
                     case ExportableMaterialBlendMode.AlphaMask:
@@ -1280,6 +1261,12 @@ namespace TiltBrush
                 }
                 BakeCustomShaderToPbr(
                     exporter, material, materialNode, textureBakeMode, textureBakePass);
+                if (_additiveBrushGains.ContainsKey(materialNode))
+                {
+                    // KHR_materials_unlit ignores emissiveTexture, whereas this static
+                    // approximation needs PBR emission and a black non-reflective base.
+                    materialNode.Extensions?.Remove(KHR_MaterialsUnlitExtensionFactory.EXTENSION_NAME);
+                }
             }
         }
 
