@@ -85,8 +85,7 @@ namespace TiltBrush
 
         /// <summary>
         /// Steps along the combined isosurface from a starting point, moving in the given direction
-        /// at the specified velocity. The candidate step is projected onto the closest contributing
-        /// stencil.
+        /// at the specified velocity. Projections are checked against the combined boundary.
         /// </summary>
         public static Vector3 NextPointOnSurface(
             Vector3 point, float stepDistance, Vector3 direction)
@@ -97,7 +96,18 @@ namespace TiltBrush
                 return point;
             }
 
-            return ProjectOntoStencil(stencil, candidate, point);
+            // A contributor's surface may still be inside another guide. Re-evaluate the
+            // union after each projection, and never publish an internal surface.
+            for (int iteration = 0; iteration < 64; ++iteration)
+            {
+                candidate = ProjectOntoStencil(stencil, candidate, point);
+                if (!TryFindClosestActiveStencil(candidate, out stencil, out float distance))
+                {
+                    return point;
+                }
+                if (Mathf.Abs(distance) <= 0.0001f) { return candidate; }
+            }
+            return point;
         }
 
         /// <summary>
@@ -113,7 +123,16 @@ namespace TiltBrush
                 return point;
             }
 
-            return ProjectOntoStencil(stencil, candidate, point);
+            for (int iteration = 0; iteration < 64; ++iteration)
+            {
+                candidate = ProjectOntoStencil(stencil, candidate, point);
+                if (!TryFindClosestStencil(stencils, candidate, out stencil, out float distance))
+                {
+                    return point;
+                }
+                if (Mathf.Abs(distance) <= 0.0001f) { return candidate; }
+            }
+            return point;
         }
 
         static bool TryFindClosestActiveStencil(
