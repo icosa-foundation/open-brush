@@ -75,29 +75,59 @@ namespace TiltBrush
         }
 
         // The rig's Default Scene Layer carries the blend type for the eye buffer.
-        static void SetDefaultSceneLayer(bool active)
+        static CompositionLayer FindDefaultSceneLayer()
         {
             var origin = App.VrSdk.GetVrCamera().GetComponentInParent<XROrigin>();
             if (origin == null)
             {
-                return;
+                return null;
             }
             foreach (var layer in origin.GetComponentsInChildren<CompositionLayer>(true))
             {
-                if (layer.LayerData is not DefaultLayerData)
+                if (layer.LayerData is DefaultLayerData)
                 {
-                    continue;
+                    return layer;
                 }
-                var current = CompositionLayerManager.Instance?.DefaultSceneCompositionLayer;
-                if (active && current != null && current != layer)
-                {
-                    Debug.LogWarning("[Passthrough] Another default scene layer is already " +
-                        $"registered; eye buffer blend type stays {current.LayerData.BlendType}.");
-                    return;
-                }
-                layer.enabled = active;
+            }
+            return null;
+        }
+
+        static void SetDefaultSceneLayer(bool active)
+        {
+            var layer = FindDefaultSceneLayer();
+            if (layer == null)
+            {
                 return;
             }
+            var current = CompositionLayerManager.Instance?.DefaultSceneCompositionLayer;
+            if (active && current != null && current != layer)
+            {
+                Debug.LogWarning("[Passthrough] Another default scene layer is already " +
+                    $"registered; eye buffer blend type stays {current.LayerData.BlendType}.");
+                return;
+            }
+            layer.enabled = active;
+        }
+
+        /// Runtime override of the eye buffer blend type, for comparing how brushes composite
+        /// over passthrough without a rebuild. Takes effect immediately if the passthrough
+        /// environment is active, otherwise the next time it is. Not saved.
+        public static string SetEyeBufferBlendType(BlendType? blendType)
+        {
+            var layer = FindDefaultSceneLayer();
+            if (layer == null)
+            {
+                return "No Default Scene Layer found on the XR rig";
+            }
+            if (blendType.HasValue)
+            {
+                // The setter reports a state change, which resubmits the layer flags.
+                layer.LayerData.BlendType = blendType.Value;
+                Debug.Log($"[Passthrough] Eye buffer blend type set to {blendType.Value}");
+            }
+            // BlendType falls back to a supported type if the platform rejects the request.
+            return $"requested={layer.LayerData.BlendTypeDirectly} " +
+                $"effective={layer.LayerData.BlendType} layerEnabled={layer.enabled}";
         }
 
         static void SetBlendModePassthrough(bool active)
