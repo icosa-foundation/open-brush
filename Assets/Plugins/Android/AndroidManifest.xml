@@ -56,4 +56,8 @@
     <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE"/>
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>
     <uses-permission android:name="com.oculus.permission.USE_SCENE" />
+
+<uses-feature
+    android:name="android.hardware.xr.input.hand_tracking"
+    android:required="false" />
 </manifest>
