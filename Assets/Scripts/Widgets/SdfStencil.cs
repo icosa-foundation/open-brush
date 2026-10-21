@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1234,8 +1234,50 @@ namespace TiltBrush
             float gradientSquared = gradient.sqrMagnitude;
             surfacePos = gradientSquared > 0f
                 ? pos - gradient * (distance / gradientSquared)
-                : pos;
+                : distance == 0f ? pos : ProjectStationaryPointToSurface(mapper, pos);
             surfaceNorm = m_SdfManager.GetSurfaceNormal(surfacePos);
+        }
+
+        private static readonly Vector3[] sm_ProjectionDirections =
+        {
+            Vector3.right, Vector3.left, Vector3.up,
+            Vector3.down, Vector3.forward, Vector3.back,
+        };
+
+        private Vector3 ProjectStationaryPointToSurface(Mapper mapper, Vector3 query)
+        {
+            // A sphere centre (or another field extremum) has no projection direction.
+            // Only this rare branch probes nearby points; ordinary queries stay one-step.
+            float radius = m_Collider != null ? m_Collider.bounds.extents.magnitude :
+                Mathf.Abs(GetSignedWidgetSize() * Coords.CanvasPose.scale);
+            radius = Mathf.Max(radius, 0.0001f);
+            float toleranceSquared = radius * radius * 1e-8f;
+            Vector3 closest = query;
+            float closestSquared = float.PositiveInfinity;
+            foreach (Vector3 direction in sm_ProjectionDirections)
+            {
+                Vector3 candidate = query + direction * (radius * 0.01f);
+                for (int iteration = 0; iteration < 8; ++iteration)
+                {
+                    float value = mapper.Map(candidate);
+                    Vector3 gradient = mapper.MapGradient(candidate);
+                    float gradientSquared = gradient.sqrMagnitude;
+                    if (!(gradientSquared > 0f) || float.IsInfinity(gradientSquared)) break;
+                    Vector3 displacement = gradient * (value / gradientSquared);
+                    float displacementSquared = displacement.sqrMagnitude;
+                    if (float.IsNaN(displacementSquared) || float.IsInfinity(displacementSquared)) break;
+                    candidate -= Vector3.ClampMagnitude(displacement, radius * 2f);
+                    if (displacementSquared > toleranceSquared) continue;
+                    float candidateSquared = (candidate - query).sqrMagnitude;
+                    if (candidateSquared < closestSquared)
+                    {
+                        closest = candidate;
+                        closestSquared = candidateSquared;
+                    }
+                    break;
+                }
+            }
+            return closest;
         }
 
         public override void RaycastToNearest(Vector3 origin, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
