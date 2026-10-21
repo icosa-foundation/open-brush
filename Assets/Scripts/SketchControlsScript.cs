@@ -4336,8 +4336,18 @@ namespace TiltBrush
             NewSketch(fade: false);
             SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(path);
             NativeImmImport.Load(path, chapterIndex);
+            float loadStarted = Time.realtimeSinceStartup;
             while (NativeImmImport.IsLoading)
+            {
+                if (Time.realtimeSinceStartup - loadStarted > 120f)
+                {
+                    Debug.LogError($"[OB_IMM_REVIEW_20261021] Native IMM load timed out: {path}");
+                    OutputWindowScript.m_Instance.AddNewLine("Native IMM load timed out.");
+                    NativeImmImport.Unload();
+                    yield break;
+                }
                 yield return null;
+            }
         }
 
         private void SaveModel()
