@@ -435,8 +435,7 @@ namespace TiltBrush
 
             private static void ValidatePositive(ref int? value, string settingName)
             {
-                if (value.HasValue &&
-                    (value.Value <= 0 || float.IsNaN(value.Value) || float.IsInfinity(value.Value)))
+                if (value.HasValue && value.Value <= 0)
                 {
                     LogInvalidValue(settingName, value.Value);
                     value = null;
@@ -445,7 +444,8 @@ namespace TiltBrush
 
             private static void ValidatePositive(ref float? value, string settingName)
             {
-                if (value.HasValue && value.Value <= 0)
+                if (value.HasValue &&
+                    (value.Value <= 0 || float.IsNaN(value.Value) || float.IsInfinity(value.Value)))
                 {
                     LogInvalidValue(settingName, value.Value);
                     value = null;

@@ -105,6 +105,25 @@ namespace TiltBrush
             Assert.That(config.OverrideQuestFoveationLevel, Is.EqualTo(3));
         }
 
+        [TestCase(float.NaN)]
+        [TestCase(float.PositiveInfinity)]
+        [TestCase(float.NegativeInfinity)]
+        public void TestValidateClearsNonFinitePositiveOverrides(float value)
+        {
+            var config = new UserConfig.PerformanceConfig
+            {
+                QuickLoadMaxDistancePerFrame = value,
+                LodBias = value,
+            };
+            ExpectInvalidValueWarnings(
+                nameof(config.QuickLoadMaxDistancePerFrame), nameof(config.LodBias));
+
+            config.Validate();
+
+            Assert.That(config.QuickLoadMaxDistancePerFrame, Is.Null);
+            Assert.That(config.LodBias, Is.Null);
+        }
+
         private static void ExpectInvalidValueWarnings(params string[] settingNames)
         {
             foreach (string settingName in settingNames)
