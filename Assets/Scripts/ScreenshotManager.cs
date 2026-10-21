@@ -271,7 +271,7 @@ namespace TiltBrush
             }
 
             UrpPostProcessingController.Instance.ConfigureScreenshotCamera(
-                camera, enableCaptureEffects: false);
+                camera, enableCaptureEffects: CameraConfig.PostEffects);
         }
 
         void EnsureCaptureVisibleLayers(Camera camera)
@@ -596,15 +596,11 @@ namespace TiltBrush
                     allowHDR = camera.allowHDR
                 };
 
-            if (!includePostProcessing)
-            {
-                return state;
-            }
-
             UniversalAdditionalCameraData cameraData =
                 camera.GetComponent<UniversalAdditionalCameraData>();
             if (cameraData == null)
             {
+                if (!includePostProcessing) return state;
                 cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
             }
 
@@ -612,6 +608,12 @@ namespace TiltBrush
             state.renderPostProcessing = cameraData.renderPostProcessing;
             state.volumeLayerMask = cameraData.volumeLayerMask;
             state.volumeTrigger = cameraData.volumeTrigger;
+
+            if (!includePostProcessing)
+            {
+                cameraData.renderPostProcessing = false;
+                return state;
+            }
 
             camera.allowHDR = true;
             cameraData.renderPostProcessing = true;
