@@ -132,6 +132,7 @@ namespace TiltBrush
         private int m_CustomSkyboxLoadVersion;
 
         private bool m_PassthroughEnabled;
+        private bool m_CustomPassthroughEnabled;
 
         public bool CanLeavePassthrough => !PassthroughEnabled ||
             MultiplayerManager.m_Instance == null ||
@@ -626,7 +627,7 @@ namespace TiltBrush
             // Set InGradient after the colors have been defined.  This call sends a message to all those
             // registered to listen for gradient changes.
             InGradient = hasCustomGradient;
-            PassthroughEnabled = custom.PassthroughEnabled;
+            m_CustomPassthroughEnabled = custom.PassthroughEnabled;
         }
 
         public void UpdateReflectionIntensity()
@@ -731,11 +732,6 @@ namespace TiltBrush
             // Set the reflection cubemap
             RenderSettings.customReflection = rDesired.m_ReflectionCubemap;
 
-            // A custom environment applied its saved passthrough state before the transition.
-            if (!m_LoadingCustomEnvironment)
-            {
-                PassthroughEnabled = m_DesiredEnvironment.m_PassthroughEnabled;
-            }
 
             if (!m_LoadingCustomEnvironment)
             {
@@ -777,6 +773,11 @@ namespace TiltBrush
                     InGradient = true;
                 }
             }
+
+            // The passthrough layer belongs to the new room geometry. Apply it after
+            // geometry creation and skybox setup so neither destroys its state.
+            PassthroughEnabled = m_LoadingCustomEnvironment
+                ? m_CustomPassthroughEnabled : m_DesiredEnvironment.m_PassthroughEnabled;
 
             // Fire off messages that say 'everything changed!'
             FogDensityChanged?.Invoke();
