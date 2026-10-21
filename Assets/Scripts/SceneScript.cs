@@ -481,6 +481,14 @@ namespace TiltBrush
         public void RenameLayer(CanvasScript layer, string newName)
         {
             if (layer == MainCanvas) return;
+            var location = GetIndexOfCanvas(layer);
+            if (animationUI_manager != null && location.Item1 >= 0)
+            {
+                foreach (var frame in animationUI_manager.Timeline[location.Item1].Frames)
+                {
+                    if (frame.Canvas != null) frame.Canvas.gameObject.name = newName;
+                }
+            }
             layer.gameObject.name = newName;
             NotifyLayerCanvasesUpdate();
         }
