@@ -121,7 +121,6 @@ namespace TiltBrush
                     SceneSettings.m_Instance.PassthroughEnabled = true;
                     break;
             }
-            OnBackdropModeChanged();
         }
 
         private void LoadPreviousCustomSkybox()

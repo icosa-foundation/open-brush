@@ -194,6 +194,7 @@ namespace TiltBrush
 #else
                 m_PassthroughEnabled = false;
 #endif // PASSTHROUGH_SUPPORTED
+                BackdropModeChanged?.Invoke();
             }
         }
 
@@ -285,6 +286,7 @@ namespace TiltBrush
                 {
                     GradientActiveChanged();
                 }
+                BackdropModeChanged?.Invoke();
             }
         }
 
