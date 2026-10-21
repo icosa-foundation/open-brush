@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -218,6 +218,17 @@ namespace TiltBrush
             clone.m_LoadingFromSketch = true; // prevents intro animation
             clone.m_TransitionScale = 1.0f;
             clone.transform.parent = transform.parent;
+            clone.m_InitialState = VideoController != null ? new VideoState
+            {
+                Paused = !VideoController.Playing,
+                Time = VideoController.Time,
+                Volume = VideoController.Volume,
+            } : m_InitialState == null ? null : new VideoState
+            {
+                Paused = m_InitialState.Paused,
+                Time = m_InitialState.Time,
+                Volume = m_InitialState.Volume,
+            };
             clone.SetVideo(m_Video);
             clone.SetSignedWidgetSize(size);
             clone.Show(bShow: true, bPlayAudio: false);

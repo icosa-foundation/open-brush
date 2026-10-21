@@ -2644,6 +2644,8 @@ namespace TiltBrush.FrameAnimation
                 }
                 GrabWidget clone = widget.Clone();
                 clone.SetCanvas(newCanvas);
+                clone.Group = widget.Group;
+                clone.SetPinned(widget.Pinned, fromSave: true);
             }
 
             return newCanvas;

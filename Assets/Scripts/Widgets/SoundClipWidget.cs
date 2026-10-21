@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -306,12 +306,15 @@ namespace TiltBrush
             clone.m_LoadingFromSketch = true; // prevents intro animation
             clone.transform.parent = transform.parent;
             var audioSettings = GetAudioExportSettings();
+            var saveState = GetAudioSaveState();
             clone.SetAudioProperties(
                 audioSettings.volume,
                 audioSettings.loop,
                 audioSettings.spatialBlend,
                 audioSettings.minDistance,
                 audioSettings.maxDistance);
+            clone.m_InitialState.Paused = saveState.paused;
+            clone.m_InitialState.Time = saveState.time;
             clone.SetSoundClip(m_SoundClip);
             clone.SetSignedWidgetSize(size);
             clone.Show(bShow: true, bPlayAudio: false);
