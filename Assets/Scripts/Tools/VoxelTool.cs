@@ -41,6 +41,7 @@ namespace TiltBrush
         private bool m_HasLastCell;
         private Vector3Int m_LastCell;
         private byte[] m_GestureBefore;
+        private bool m_GestureAutoVisuals;
         private ModelWidget m_GestureWidget;
         private CreateWidgetCommand m_CreateWidgetCommand;
 
@@ -206,6 +207,9 @@ namespace TiltBrush
                 m_GestureBefore = m_CurrentDocument._Document.ToVoxBytes();
             }
             m_GestureWidget = m_CurrentDocument.Widget;
+            m_GestureAutoVisuals = m_CurrentDocument.autoVisuals;
+            m_CurrentDocument.SuppressDirtyTracking = true;
+            m_CurrentDocument.SetAutoVisuals(false, true);
             m_GestureChanged = createdThisGesture;
             m_GestureActive = true;
             m_HasLastCell = false;
@@ -242,6 +246,7 @@ namespace TiltBrush
                 return;
             }
 
+            var gestureDocument = m_CurrentDocument;
             if (m_GestureChanged && m_GestureWidget != null)
             {
                 byte[] after = m_CurrentDocument._Document.ToVoxBytes();
@@ -271,6 +276,8 @@ namespace TiltBrush
                 }
             }
 
+            gestureDocument.SuppressDirtyTracking = false;
+            gestureDocument.SetAutoVisuals(m_GestureAutoVisuals, true);
             m_GestureActive = false;
             m_GestureChanged = false;
             m_HasLastCell = false;
