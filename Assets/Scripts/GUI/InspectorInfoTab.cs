@@ -64,7 +64,7 @@ public class InspectorInfoTab : InspectorBaseTab
                 }
                 else
                 {
-                    m_SummaryText.text = "{ParentPanel.CurrentSelectionCount} images selected";
+                    m_SummaryText.text = $"{ParentPanel.CurrentSelectionCount} images selected";
                 }
                 break;
 
@@ -75,7 +75,7 @@ public class InspectorInfoTab : InspectorBaseTab
                 }
                 else
                 {
-                    m_SummaryText.text = "{ParentPanel.CurrentSelectionCount} videos selected";
+                    m_SummaryText.text = $"{ParentPanel.CurrentSelectionCount} videos selected";
                 }
                 break;
 
@@ -86,7 +86,7 @@ public class InspectorInfoTab : InspectorBaseTab
                 }
                 else
                 {
-                    m_SummaryText.text = "{ParentPanel.CurrentSelectionCount} models selected";
+                    m_SummaryText.text = $"{ParentPanel.CurrentSelectionCount} models selected";
                 }
                 break;
 
@@ -97,12 +97,12 @@ public class InspectorInfoTab : InspectorBaseTab
                 }
                 else
                 {
-                    m_SummaryText.text = "{ParentPanel.CurrentSelectionCount} guides selected";
+                    m_SummaryText.text = $"{ParentPanel.CurrentSelectionCount} guides selected";
                 }
                 break;
 
             case SelectionType.Mixed:
-                m_SummaryText.text = "{ParentPanel.CurrentSelectionCount} items selected";
+                m_SummaryText.text = $"{ParentPanel.CurrentSelectionCount} items selected";
                 break;
         }
 
