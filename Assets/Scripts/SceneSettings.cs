@@ -152,8 +152,16 @@ namespace TiltBrush
             {
                 if (!value && !CanLeavePassthrough) return;
 #if PASSTHROUGH_SUPPORTED
-                var passthrough = m_RoomGeometry.GetComponent<OVRPassthroughLayer>();
-                if (passthrough == null)
+                // Some environments intentionally have no geometry prefab. Disabling
+                // passthrough still restores rendering; enabling needs a layer holder.
+                if (value && m_RoomGeometry == null)
+                {
+                    m_RoomGeometry = new GameObject("Passthrough Environment");
+                    m_RoomGeometry.transform.SetParent(transform, false);
+                }
+                var passthrough = m_RoomGeometry != null
+                    ? m_RoomGeometry.GetComponent<OVRPassthroughLayer>() : null;
+                if (value && passthrough == null)
                 {
                     passthrough = m_RoomGeometry.AddComponent<OVRPassthroughLayer>();
                     passthrough.overlayType = OVROverlay.OverlayType.Underlay;
@@ -177,7 +185,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    passthrough.hidden = true;
+                    if (passthrough != null) passthrough.hidden = true;
                     m_PassthroughEnabled = false;
                     if (CurrentEnvironment != null)
                     {
