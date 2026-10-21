@@ -2639,14 +2639,10 @@ namespace TiltBrush.FrameAnimation
 
             for (int i = 0; i < oldStrokes.Count; i++)
             {
-                if (oldStrokes.Count == newStrokes.Count && (oldStrokes[i].m_Type == Stroke.Type.NotCreated || !oldStrokes[i].IsGeometryEnabled))
+                if (oldStrokes[i].m_Type == Stroke.Type.NotCreated || !oldStrokes[i].IsGeometryEnabled)
                 {
                     // using SketchMemory of oldStrokes to mark Uncreated strokes on newStrokes. Otherwise, Uncreated strokes will be re-made.
                     newStrokes[i].Uncreate();
-                }
-                else
-                {
-                    Debug.LogWarning("Unexpected. Count of oldStrokes must match newStrokes.");
                 }
             }
 
