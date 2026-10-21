@@ -170,10 +170,17 @@ namespace TiltBrush
                     throw new InvalidOperationException(
                         "The model guide has not finished generating its SDF.");
                 }
+                // The model guide owns its runtime asset. Give the converted guide an
+                // independent sample container so deleting the source cannot invalidate it.
+                SDFMeshAsset source = modelGuide.SdfMeshAsset;
+                source.GetDataArrays(out float[] samples, out float[] packedUvs);
+                SDFMeshAsset asset = RuntimeSDFGenerator.CreateSDFAsset(
+                    null, (float[])samples.Clone(),
+                    packedUvs == null ? null : (float[])packedUvs.Clone(),
+                    source.Size, source.Padding, source.MinBounds, source.MaxBounds);
+                generatedAssets.Add(asset);
                 definitions.Add(CreateMeshDefinition(
-                    modelGuide.SdfMeshAsset,
-                    TrTransform.FromTransform(modelGuide.transform),
-                    sdfPose_GS));
+                    asset, TrTransform.FromTransform(modelGuide.transform), sdfPose_GS));
                 return;
             }
 

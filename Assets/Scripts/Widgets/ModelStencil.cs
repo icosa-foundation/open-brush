@@ -726,6 +726,16 @@ namespace TiltBrush
             return canvasBounds;
         }
 
+        protected override void OnDestroy()
+        {
+            if (m_OwnsSdfAsset && m_SDFMeshAsset != null)
+            {
+                Destroy(m_SDFMeshAsset);
+            }
+            if (m_SourceMesh != null) { Destroy(m_SourceMesh); }
+            base.OnDestroy();
+        }
+
         /// <summary>
         /// Create a model stencil from an existing model
         /// </summary>
