@@ -23,12 +23,15 @@ using UnityEngine.XR.Management;
 
 namespace TiltBrush
 {
-    /// Optional handheld AR navigation for the no-headset view mode on Android phones.
+    /// Optional handheld AR navigation for the no-headset view mode on phones and tablets.
     ///
-    /// While active, the phone's ARCore-tracked pose drives the camera's local pose, just as a
+    /// While active, the device's tracked pose drives the camera's local pose, just as a
     /// headset's pose does in VR, so touch navigation keeps moving the scene rather than the
-    /// camera. The ARCore loader is kept out of the automatic loader search: otherwise a phone
-    /// without an OpenXR runtime would fall through to ARCore and be mistaken for a headset.
+    /// camera. The camera feed can replace the sketch's environment, placing it in the room.
+    ///
+    /// AR Foundation hides the ARCore/ARKit differences. Its loader is kept out of the
+    /// automatic loader search: otherwise a device without an OpenXR runtime would fall
+    /// through to the AR loader and be mistaken for a headset.
     public class HandheldArNavigation : MonoBehaviour
     {
         public enum State
@@ -38,7 +41,13 @@ namespace TiltBrush
             Active,
         }
 
-        private const string kArCoreLoaderType = "UnityEngine.XR.ARCore.ARCoreLoader";
+        // By name: each provider's runtime assembly only exists on its own platform.
+        private static readonly string[] kArLoaderTypes =
+        {
+            "UnityEngine.XR.ARCore.ARCoreLoader",
+            "UnityEngine.XR.ARKit.ARKitLoader",
+        };
+        private const string kCameraFeedPref = "HandheldArCameraFeed";
         // Not applied while ARCore is being installed from the Play Store.
         private const float kStartupTimeout = 20f;
 
@@ -46,6 +55,7 @@ namespace TiltBrush
         private static List<XRLoader> sm_HeadsetLoaders;
         private static HandheldArNavigation sm_Instance;
         private static State sm_State = State.Off;
+        private static bool? sm_CameraFeed;
 
         public static event Action StateChanged;
 
@@ -55,7 +65,23 @@ namespace TiltBrush
         public static State CurrentState => sm_State;
         public static bool IsActive => sm_State == State.Active;
 
-        /// True only in the no-headset fallback of a build that includes ARCore.
+        /// Whether the camera feed is shown in place of the environment. Remembered per device.
+        public static bool CameraFeed
+        {
+            get => sm_CameraFeed ??= PlayerPrefs.GetInt(kCameraFeedPref, 1) != 0;
+            set
+            {
+                sm_CameraFeed = value;
+                PlayerPrefs.SetInt(kCameraFeedPref, value ? 1 : 0);
+                if (sm_Instance != null && sm_State == State.Active)
+                {
+                    sm_Instance.ApplyCameraFeed();
+                }
+                StateChanged?.Invoke();
+            }
+        }
+
+        /// True only in the no-headset fallback of a build that includes an AR loader.
         public static bool IsSupported =>
             sm_ArLoader != null &&
             App.Config.m_SdkMode == SdkMode.UnityXR &&
@@ -65,6 +91,8 @@ namespace TiltBrush
 
         private ARSession m_Session;
         private ARCameraManager m_CameraManager;
+        private ARCameraBackground m_CameraBackground;
+        private bool m_HidingEnvironment;
         private UnityEngine.SpatialTracking.TrackedPoseDriver m_PoseDriver;
         private bool m_PoseDriverWasEnabled;
         private InputAction m_PositionAction;
@@ -79,8 +107,9 @@ namespace TiltBrush
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void ExcludeArLoaderFromHeadsetSearch()
         {
-            // Editor play mode modifies the settings asset in place, and ARCore only runs on device.
-            if (Application.platform != RuntimePlatform.Android)
+            // Editor play mode modifies the settings asset in place, and AR only runs on device.
+            if (Application.platform != RuntimePlatform.Android &&
+                Application.platform != RuntimePlatform.IPhonePlayer)
             {
                 return;
             }
@@ -90,14 +119,14 @@ namespace TiltBrush
                 return;
             }
             XRLoader loader = manager.activeLoaders.FirstOrDefault(
-                l => l != null && l.GetType().FullName == kArCoreLoaderType);
+                l => l != null && kArLoaderTypes.Contains(l.GetType().FullName));
             if (loader == null)
             {
                 return;
             }
             if (!manager.TryRemoveLoader(loader))
             {
-                Debug.LogWarning("HandheldArNavigation: could not remove the ARCore loader from the XR loader list");
+                Debug.LogWarning("HandheldArNavigation: could not remove the AR loader from the XR loader list");
                 return;
             }
             sm_ArLoader = loader;
@@ -140,7 +169,7 @@ namespace TiltBrush
         {
 #if UNITY_ANDROID && !UNITY_EDITOR
             // Ask up front so a refusal can be reported, rather than leaving a session that
-            // never tracks.
+            // never tracks. ARKit asks for itself when the session starts.
             if (!UnityEngine.Android.Permission.HasUserAuthorizedPermission(
                 UnityEngine.Android.Permission.Camera))
             {
@@ -177,7 +206,7 @@ namespace TiltBrush
             }
             manager.StartSubsystems();
 
-            // ARSession checks availability and offers to install ARCore itself.
+            // ARSession checks availability, and on Android offers to install ARCore.
             var sessionObject = new GameObject("AR Session");
             sessionObject.transform.SetParent(transform, false);
             m_Session = sessionObject.AddComponent<ARSession>();
@@ -206,13 +235,13 @@ namespace TiltBrush
             {
                 Shutdown(ARSession.state == ARSessionState.Unsupported
                     ? "AR is not supported on this device"
-                    : "ARCore is not available");
+                    : "AR services are not available");
                 yield break;
             }
 
             Camera camera = App.VrSdk.GetVrCamera();
-            // ARCore only produces frames, and so poses, while its camera is running. The
-            // camera image itself isn't drawn: there's no ARCameraBackground.
+            // AR only produces frames, and so poses, while its camera is running, even when
+            // the feed isn't shown.
             m_CameraManager = camera.gameObject.AddComponent<ARCameraManager>();
 
             // Don't let the headset pose driver fight over the camera.
@@ -234,7 +263,39 @@ namespace TiltBrush
             m_CameraStartRotation = camera.transform.localRotation;
             m_Anchored = false;
             Application.onBeforeRender += ApplyPose;
+            ApplyCameraFeed();
             SetState(State.Active);
+        }
+
+        private void ApplyCameraFeed()
+        {
+            Camera camera = App.VrSdk.GetVrCamera();
+            bool show = CameraFeed;
+            if (show && m_CameraBackground == null)
+            {
+                // Draws the feed through the renderer's ARBackgroundRendererFeature. While
+                // enabled it also stops the camera clearing to the skybox and matches the
+                // camera's projection to the device camera, so strokes line up with the room.
+                m_CameraBackground = camera.gameObject.AddComponent<ARCameraBackground>();
+            }
+            if (m_CameraBackground != null)
+            {
+                m_CameraBackground.enabled = show;
+            }
+
+            // Environment geometry would cover the room. Its lights live elsewhere, so the
+            // sketch stays lit as before.
+            int environmentMask = LayerMask.GetMask("Environment");
+            if (show && !m_HidingEnvironment && (camera.cullingMask & environmentMask) != 0)
+            {
+                camera.cullingMask &= ~environmentMask;
+                m_HidingEnvironment = true;
+            }
+            else if (!show && m_HidingEnvironment)
+            {
+                camera.cullingMask |= environmentMask;
+                m_HidingEnvironment = false;
+            }
         }
 
         void Update()
@@ -291,11 +352,23 @@ namespace TiltBrush
             m_PositionAction = null;
             m_RotationAction = null;
 
-            // Disable before the subsystems go away so the managers stop them cleanly.
+            // Disable before the subsystems go away so the managers stop them cleanly. The
+            // background restores the camera's clear flags and projection as it's disabled,
+            // and must go first: it requires the camera manager.
+            if (m_CameraBackground != null)
+            {
+                m_CameraBackground.enabled = false;
+                DestroyImmediate(m_CameraBackground);
+            }
+            if (m_HidingEnvironment)
+            {
+                App.VrSdk.GetVrCamera().cullingMask |= LayerMask.GetMask("Environment");
+                m_HidingEnvironment = false;
+            }
             if (m_CameraManager != null)
             {
                 m_CameraManager.enabled = false;
-                Destroy(m_CameraManager);
+                DestroyImmediate(m_CameraManager);
             }
             if (m_Session != null)
             {

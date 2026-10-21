@@ -16,6 +16,9 @@ public class ViewModeUI : MonoBehaviour
     // Shown only while viewing a sketch on a device that can do handheld AR.
     public GameObject m_ArNavigationButton;
     public TMP_Text m_ArNavigationLabel;
+    // Shown only while AR navigation is active; wire its OnClick to HandleArCameraFeedButton.
+    public GameObject m_ArCameraFeedButton;
+    public TMP_Text m_ArCameraFeedLabel;
 
     private const float kArErrorDisplaySeconds = 3f;
     private float m_ArErrorHideTime;
@@ -67,6 +70,11 @@ public class ViewModeUI : MonoBehaviour
         HandheldArNavigation.Toggle();
     }
 
+    public void HandleArCameraFeedButton()
+    {
+        HandheldArNavigation.CameraFeed = !HandheldArNavigation.CameraFeed;
+    }
+
     private void OnArNavigationStateChanged()
     {
         if (HandheldArNavigation.CurrentState == HandheldArNavigation.State.Off &&
@@ -78,6 +86,23 @@ public class ViewModeUI : MonoBehaviour
 
     private void UpdateArNavigationButton()
     {
+        if (m_ArCameraFeedButton != null)
+        {
+            bool showFeedButton = HandheldArNavigation.IsActive;
+            if (m_ArCameraFeedButton.activeSelf != showFeedButton)
+            {
+                m_ArCameraFeedButton.SetActive(showFeedButton);
+            }
+            if (showFeedButton && m_ArCameraFeedLabel != null)
+            {
+                string feedLabel = HandheldArNavigation.CameraFeed ? "Hide room" : "Show room";
+                if (m_ArCameraFeedLabel.text != feedLabel)
+                {
+                    m_ArCameraFeedLabel.text = feedLabel;
+                }
+            }
+        }
+
         if (m_ArNavigationButton == null)
         {
             return;
