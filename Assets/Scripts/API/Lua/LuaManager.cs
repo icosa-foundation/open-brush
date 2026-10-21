@@ -1469,20 +1469,19 @@ namespace TiltBrush
 
                 // DrawNestedTrList treats the last transform as a terminal point and does
                 // not emit it as a control point, so the preview must do the same.
-                IEnumerable<TrTransform> previewPath = rawPath.Take(rawPath.Count - 1);
-                if (pathWrapper._Space == ScriptCoordSpace.Default || pathWrapper._Space == ScriptCoordSpace.Pointer)
+                foreach (var symmetry in GetToolScriptSymmetriesCs())
                 {
-                    previewPath = previewPath.Select(tr =>
+                    var previewPath = rawPath.Take(rawPath.Count - 1).Select(tr =>
                     {
-                        var transformed = tr_CS * tr;
+                        var transformed = TransformToolScriptPoint(tr, tr_CS, symmetry);
                         transformed.scale = tr.scale;
                         return transformed;
                     });
+                    previewControlPointPaths.Add(ConvertTransformsToControlPoints(previewPath));
+                    previewColors.Add(pathWrapper._Colors != null && pathIndex < pathWrapper._Colors.Count
+                        ? pathWrapper._Colors[pathIndex]
+                        : null);
                 }
-                previewControlPointPaths.Add(ConvertTransformsToControlPoints(previewPath));
-                previewColors.Add(pathWrapper._Colors != null && pathIndex < pathWrapper._Colors.Count
-                    ? pathWrapper._Colors[pathIndex]
-                    : null);
             }
 
             SetLatestToolScriptControlPoints(
@@ -1520,6 +1519,26 @@ namespace TiltBrush
             return -1;
         }
 
+        private static List<TrTransform> GetToolScriptSymmetriesCs()
+        {
+            var symmetries = PointerManager.m_Instance.GetSymmetriesForCurrentMode();
+            if (symmetries.Count == 0) return new List<TrTransform> { TrTransform.identity };
+            var canvasPose = App.ActiveCanvas.Pose;
+            return symmetries.Select(sym => canvasPose.inverse * sym * canvasPose).ToList();
+        }
+
+        private static TrTransform TransformToolScriptPoint(
+            TrTransform point, TrTransform baseTransform, TrTransform symmetry)
+        {
+            var transformed = symmetry * baseTransform * point;
+            if (symmetry.scale < 0)
+            {
+                transformed *= new Plane(Vector3.right, 0).ToTrTransform();
+            }
+            transformed.scale = point.scale;
+            return transformed;
+        }
+
         public void DrawToolScriptResult(ToolScriptExecutionResult executionResult)
         {
             if (executionResult?.PathList == null)
@@ -1529,48 +1548,26 @@ namespace TiltBrush
 
             var transforms = executionResult.PathList.AsMultiTrList();
             var tr_CS = executionResult.BaseTransformCs;
-            float brushScale = 1f;
+            float brushScale = Mathf.Abs(tr_CS.scale);
 
             if (transforms != null)
             {
-                var xfSymmetriesGS = PointerManager.m_Instance.GetSymmetriesForCurrentMode();
-                if (xfSymmetriesGS.Count == 0)
+                var symmetries = GetToolScriptSymmetriesCs();
+                var expandedPaths = new List<List<TrTransform>>();
+                var expandedColors = executionResult.PathList._Colors == null ? null : new List<Color>();
+                for (int pathIndex = 0; pathIndex < transforms.Count; ++pathIndex)
                 {
-                    DrawStrokes.DrawNestedTrList(transforms, tr_CS, executionResult.PathList._Colors, null, brushScale);
-                }
-                else
-                {
-                    var xfSymmetriesCS = new List<TrTransform>();
-                    var xfCSfromGS = App.ActiveCanvas.Pose.inverse;
-                    var xfGSfromCS = App.ActiveCanvas.Pose;
-                    foreach (var sym in xfSymmetriesGS)
+                    foreach (var symmetry in symmetries)
                     {
-                        xfSymmetriesCS.Add(xfCSfromGS * sym * xfGSfromCS);
+                        var path = transforms[pathIndex];
+                        expandedPaths.Add(path?.Select(point =>
+                            TransformToolScriptPoint(point, tr_CS, symmetry)).ToList());
+                        expandedColors?.Add(pathIndex < executionResult.PathList._Colors.Count
+                            ? executionResult.PathList._Colors[pathIndex]
+                            : App.BrushColor.CurrentColor);
                     }
-
-                    var newTransforms = new List<List<TrTransform>>();
-                    foreach (var trList in transforms)
-                    {
-                        foreach (var sym in xfSymmetriesCS)
-                        {
-                            var newTrList = trList.Select(x =>
-                            {
-                                var transformedByTrCS = tr_CS * x;
-                                var symmetriedTransform = sym * transformedByTrCS;
-
-                                if (sym.scale < 0)
-                                {
-                                    var kReflectX = new Plane(new Vector3(1, 0, 0), 0).ToTrTransform();
-                                    symmetriedTransform = symmetriedTransform * kReflectX;
-                                }
-
-                                return symmetriedTransform;
-                            }).ToList();
-                            newTransforms.Add(newTrList);
-                        }
-                    }
-                    DrawStrokes.DrawNestedTrList(newTransforms, TrTransform.identity, executionResult.PathList._Colors, null, brushScale);
                 }
+                DrawStrokes.DrawNestedTrList(expandedPaths, TrTransform.identity, expandedColors, null, brushScale);
             }
 
             if (executionResult.PathList._Colors == null)
