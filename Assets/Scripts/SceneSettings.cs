@@ -312,7 +312,7 @@ namespace TiltBrush
         public void LoadCustomSkybox(string filename)
         {
             if (!CanLeavePassthrough) return;
-            m_PassthroughEnabled = false;
+            PassthroughEnabled = false;
             m_InGradient = false;
             m_CustomSkyboxTextureName = filename;
             int loadVersion = ++m_CustomSkyboxLoadVersion;
