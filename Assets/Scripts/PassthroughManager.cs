@@ -15,6 +15,7 @@
 using UnityEngine;
 using OpenXR.Extensions;
 using Unity.XR.CompositionLayers;
+using UnityEngine.XR.ARFoundation;
 
 namespace TiltBrush
 {
@@ -22,6 +23,8 @@ namespace TiltBrush
     {
         [SerializeField] CompositionLayer m_PassthroughLayer;
 
+        // Lives on the passthrough environment prefab, so Start and OnDestroy bracket the time
+        // the passthrough environment is active.
         void Start()
         {
             if (App.VrSdk.PassthroughMode == PassthroughMode.FBPassthrough)
@@ -32,6 +35,33 @@ namespace TiltBrush
                     METABoundaryVisibility.SuppressBoundaryVisibility(false);
                 }
             }
+            else if (App.VrSdk.PassthroughMode == PassthroughMode.OpenXREnvionmentBlendMode)
+            {
+                SetBlendModePassthrough(true);
+            }
+        }
+
+        void OnDestroy()
+        {
+            // Also runs on quit, after App has gone.
+            if (App.Instance != null && App.VrSdk != null &&
+                App.VrSdk.PassthroughMode == PassthroughMode.OpenXREnvionmentBlendMode)
+            {
+                SetBlendModePassthrough(false);
+            }
+        }
+
+        static void SetBlendModePassthrough(bool active)
+        {
+            // Android XR's camera feature owns the blend mode while its camera subsystem exists:
+            // it resets any mode that disagrees with whether the AR Camera Manager is enabled.
+            // On other runtimes the manager has no subsystem and enabling it does nothing.
+            var cameraManager = App.VrSdk.GetVrCamera().GetComponent<ARCameraManager>();
+            if (cameraManager != null)
+            {
+                cameraManager.enabled = active;
+            }
+            EnvironmentBlendPassthroughFeature.SetPassthrough(active);
         }
     }
 }

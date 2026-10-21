@@ -1347,6 +1347,9 @@ static class BuildTiltBrush
             // and Android Viewer AndroidXR all support hands through the same XR Hands API.
             EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
             EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
+            // Alpha-blend passthrough (Steam Frame, Android XR). Runtimes that only list opaque
+            // blend modes leave it inactive.
+            EnableRequiredFeature<TiltBrush.EnvironmentBlendPassthroughFeature>(settings);
         }
 
         void EnableAndroidXrFeatures(UnityEngine.XR.OpenXR.OpenXRSettings settings)
@@ -1401,11 +1404,7 @@ static class BuildTiltBrush
             EnableRequiredFeature<
                 UnityEngine.XR.OpenXR.Features.CompositionLayers.OpenXRCompositionLayersFeature>(
                 settings);
-            // XR_FB_passthrough is not Quest-only: Pico and other runtimes expose it too, and
-            // runtimes without it leave the feature disabled at instance creation. Its
-            // com.oculus.feature.PASSTHROUGH declaration is forced to required=false by
-            // AndroidStoreManifest, so it does not filter Play devices.
-            EnableRequiredFeature<OpenXR.Extensions.FBPassthrough>(settings);
+            DisableFeature<OpenXR.Extensions.FBPassthrough>(settings);
             EnableRequiredFeature<OpenXR.Extensions.METABoundaryVisibility>(settings);
             DisableFeature<
                 UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
