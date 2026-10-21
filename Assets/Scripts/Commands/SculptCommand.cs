@@ -21,23 +21,21 @@ namespace TiltBrush
     public class SculptCommand : BaseCommand
     {
 
-        private Batch m_TargetBatch;
-        private BatchSubset m_TargetSubset;
+        private Stroke m_TargetStroke;
         private List<Vector3> m_OldVerts;
         private List<Vector3> m_NewVerts;
-        private int m_StartIndex;
         private int m_VertLength;
         private bool m_Initial;
 
         public SculptCommand(
             BatchSubset batchSubset, List<Vector3> newVerts, int startIndex, bool isInitial, BaseCommand parent = null) : base(parent)
         {
-            m_TargetBatch = batchSubset.m_ParentBatch;
-            m_TargetSubset = batchSubset;
+            m_TargetStroke = batchSubset.m_Stroke;
             m_NewVerts = newVerts;
             m_VertLength = newVerts.Count;
-            m_OldVerts = m_TargetBatch.Geometry.m_Vertices.GetRange(startIndex, m_VertLength);
-            m_StartIndex = startIndex;
+            var geometry = batchSubset.m_ParentBatch.Geometry;
+            geometry.EnsureGeometryResident();
+            m_OldVerts = geometry.m_Vertices.GetRange(startIndex, m_VertLength);
             m_Initial = isInitial;
         }
 
@@ -45,14 +43,24 @@ namespace TiltBrush
 
         private void ApplySculptModification(List<Vector3> vertices)
         {
-            m_TargetBatch.Geometry.EnsureGeometryResident();
-            for (int i = m_StartIndex; i < m_StartIndex + m_VertLength; i++)
+            // Repaint and canvas moves recreate subsets; resolve the live stroke storage.
+            var subset = m_TargetStroke?.m_BatchSubset;
+            if (subset?.m_ParentBatch?.Geometry == null || subset.m_VertLength != m_VertLength)
             {
-                m_TargetBatch.Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
+                Debug.LogWarning("[OB_SCULPT_UNDO] Stroke topology changed; skipping sculpt geometry.");
+                return;
             }
 
-            m_TargetSubset.RecalculateBounds();
-            m_TargetBatch.DelayedUpdateMesh();
+            var batch = subset.m_ParentBatch;
+            batch.Geometry.EnsureGeometryResident();
+            int startIndex = subset.m_StartVertIndex;
+            for (int i = 0; i < m_VertLength; i++)
+            {
+                batch.Geometry.m_Vertices[startIndex + i] = vertices[i];
+            }
+
+            subset.RecalculateBounds();
+            batch.DelayedUpdateMesh();
         }
 
         protected override void OnRedo()
