@@ -1149,30 +1149,9 @@ namespace TiltBrush
                 return null;
             }
 
-            CanvasScript sourceCanvas = Canvas == App.Scene.SelectionCanvas
-                ? m_PreviousCanvas ?? App.ActiveCanvas
-                : Canvas ?? App.ActiveCanvas;
-
-            // Create the model stencil on the model's persistent canvas.
-            var stencil = ModelStencil.CreateFromModel(m_Model, sourceCanvas);
-
-            if (stencil != null)
-            {
-                // Copy transform
-                stencil.transform.position = transform.position;
-                stencil.transform.rotation = transform.rotation;
-                stencil.SetSignedWidgetSize(GetSignedWidgetSize());
-                stencil.Group = Group;
-                if (Pinned)
-                {
-                    stencil.SetPinned(true, fromSave: true);
-                }
-
-                Debug.Log("ModelWidget: Converted to ModelStencil. " +
-                         "Install IsoMesh for GPU-accelerated distance queries.");
-            }
-
-            return stencil;
+            var command = new CreateModelGuideCommand(this);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+            return command.Result;
         }
     }
 } // namespace TiltBrush
