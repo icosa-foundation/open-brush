@@ -138,6 +138,7 @@ namespace TiltBrush
                 {
                     var tw = (TextWidget)widget;
                     var textMesh = tw.m_TextMeshPro;
+                    textMesh.ForceMeshUpdate();
                     float renderedWidth = textMesh.renderedWidth;
                     float renderedHeight = textMesh.renderedHeight;
                     if (string.IsNullOrEmpty(tw.Text) ||
@@ -183,11 +184,16 @@ namespace TiltBrush
 
                         // Adjust camera's position and rotation to capture the text mesh
                         tempCamera.orthographic = true;
-                        tempCamera.orthographicSize = textMesh.renderedHeight;
-                        tempCamera.aspect = tw.AspectRatio.Value;
-                        tempCamera.transform.position =
-                            textMesh.transform.position + textMesh.transform.forward * -1;
-                        tempCamera.transform.forward = textMesh.transform.forward;
+                        Bounds textBounds = textMesh.textBounds;
+                        Vector3 worldCenter = textMesh.transform.TransformPoint(textBounds.center);
+                        float worldWidth = textMesh.transform.TransformVector(Vector3.right * textBounds.size.x).magnitude;
+                        float worldHeight = textMesh.transform.TransformVector(Vector3.up * textBounds.size.y).magnitude;
+                        tempCamera.aspect = width / (float)height;
+                        tempCamera.orthographicSize = Mathf.Max(
+                            worldHeight * 0.5f, worldWidth * 0.5f / tempCamera.aspect) * 1.01f;
+                        tempCamera.transform.rotation = textMesh.transform.rotation;
+                        tempCamera.transform.position = worldCenter - textMesh.transform.forward;
+                        tempCamera.nearClipPlane = 0.01f;
 
                         foreach (Transform textTransform in textTransforms)
                         {
