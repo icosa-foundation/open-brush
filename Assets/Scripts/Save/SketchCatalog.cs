@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Collections.Generic;
-using System.IO;
 using UnityEngine;
 
 namespace TiltBrush
@@ -33,9 +32,7 @@ namespace TiltBrush
     {
         static public SketchCatalog m_Instance;
 
-        // This folder contains json files which define where to pull the sketch thumbnail and data
-        // from Poly.  These are used to populate the showcase when we can't query Poly.
-        // Obviously, if Poly as a database is deleted or moved, accessing these files will fail.
+        // Bundled .tilt TextAssets used to seed local example sketches.
         public const string kDefaultShowcaseSketchesFolder = "DefaultShowcaseSketches";
 
         private SketchSet[] m_Sets;
@@ -57,6 +54,13 @@ namespace TiltBrush
                 // Unity bug: https://fogbugz.unity3d.com/default.asp?778750_fncnl0np45at4mq1
                 System.Environment.SetEnvironmentVariable("MONO_MANAGED_WATCHER", "3");
             }
+
+#if UNITY_ANDROID && OPEN_BRUSH_VIEWER
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                InitBundledSketchesPath(App.UserSketchPath());
+            }
+#endif
 
             SketchSet featuredSketchSet = null;
 #if false
@@ -80,22 +84,38 @@ namespace TiltBrush
 
         public static bool InitFeaturedSketchesPath()
         {
-            string featuredPath = App.FeaturedSketchesPath();
-            if (!App.InitDirectoryAtPath(featuredPath)) { return false; }
+            return InitBundledSketchesPath(App.FeaturedSketchesPath());
+        }
+
+        private static bool InitBundledSketchesPath(string sketchesPath)
+        {
+            if (!App.InitDirectoryAtPath(sketchesPath)) { return false; }
 
             TextAsset[] textAssets =
                 Resources.LoadAll<TextAsset>(SketchCatalog.kDefaultShowcaseSketchesFolder);
-            foreach (var asset in textAssets)
+            try
             {
-                if (asset.name.EndsWith(".tilt"))
+                var defaults = new List<string>();
+                var assetsByPath = new Dictionary<string, TextAsset>();
+                foreach (var asset in textAssets)
                 {
-                    string filePath = Path.Combine(App.FeaturedSketchesPath(), asset.name);
-                    if (!File.Exists(filePath))
+                    if (asset.name.EndsWith(".tilt"))
                     {
-                        File.WriteAllBytes(filePath, asset.bytes);
+                        string resourcePath = $"{kDefaultShowcaseSketchesFolder}/{asset.name}";
+                        defaults.Add(resourcePath);
+                        assetsByPath.Add(resourcePath, asset);
                     }
                 }
-                Resources.UnloadAsset(asset);
+                DefaultMediaSeeder.Seed(sketchesPath, defaults.ToArray(), null,
+                    "Seeded bundled sketches", App.m_Instance.HasPlayedBefore,
+                    resourcePath => assetsByPath[resourcePath].bytes);
+            }
+            finally
+            {
+                foreach (var asset in textAssets)
+                {
+                    Resources.UnloadAsset(asset);
+                }
             }
 
             return true;

@@ -1159,6 +1159,12 @@ static class BuildTiltBrush
             m_name = PlayerSettings.productName;
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
+#if OPEN_BRUSH_VIEWER
+            if (m_Target == BuildTarget.Android)
+            {
+                new_name = "Open Brush Viewer";
+            }
+#endif
 
             string new_identifier = m_identifier;
             switch (m_Target)
