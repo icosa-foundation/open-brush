@@ -195,7 +195,8 @@ namespace TiltBrush
             if (s_Active == null) return;
             var active = s_Active;
             s_Active = null;
-            s_UnloadingDocumentIds = active.GetDocumentIds();
+            s_UnloadingDocumentIds = s_UnloadingDocumentIds.Concat(
+                active.GetDocumentIds()).Distinct().ToArray();
             Destroy(active.gameObject);
         }
 
