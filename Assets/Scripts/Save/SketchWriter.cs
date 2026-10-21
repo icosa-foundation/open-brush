@@ -223,7 +223,8 @@ namespace TiltBrush
                     brushIndex = brushList.Count;
                     brushMap[brushGuid] = brushIndex;
                     brushList.Add(brushGuid);
-                    fallbackBrushList.Add(BrushCatalog.m_Instance.GetBrush(brushGuid).BaseGuid);
+                    var brush = BrushCatalog.m_Instance.GetBrush(brushGuid);
+                    fallbackBrushList.Add(brush != null ? (Guid)brush.BaseGuid : brushGuid);
                 }
 
                 writer.Int32(brushIndex);
