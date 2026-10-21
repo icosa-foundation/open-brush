@@ -1,4 +1,4 @@
-﻿// Copyright 2021 The Open Brush Authors
+// Copyright 2021 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -364,11 +364,9 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
             if (Directory.Exists(m_UserScriptsPath))
             {
-                var dirInfo = new DirectoryInfo(m_UserScriptsPath);
-                FileInfo[] AllFileInfo = dirInfo.GetFiles();
-                foreach (FileInfo fileinfo in AllFileInfo)
+                foreach (string path in AndroidDirectStorage.GetFiles(m_UserScriptsPath))
                 {
-                    RegisterUserScript(fileinfo);
+                    RegisterUserScript(new FileInfo(path));
                 }
             }
         }
