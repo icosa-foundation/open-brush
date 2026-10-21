@@ -1339,6 +1339,23 @@ namespace TiltBrush.FrameAnimation
             return IsTimelineLocationValid(track, frame) && GetFrameFilled(track, frame);
         }
 
+        public void DetachAnimationPath(CameraPathWidget path)
+        {
+            ApplySparseTimelineEdit(tracks =>
+            {
+                foreach (var track in tracks)
+                {
+                    foreach (var span in track.Frames.Spans.ToList())
+                    {
+                        if (span.Value.PathToken != path) continue;
+                        TransformSparseRange(track.Frames, span.StartFrame, span.Duration,
+                            value => new AnimationTimelineModel.FrameValue(value.DrawingId,
+                                value.Deleted, value.FrameExists, null, value.SpanIdentity));
+                    }
+                }
+            });
+        }
+
         public void AddAnimationPath(CameraPathWidget pathwidget, int trackNum, int frameNum)
         {
             GameObject moveTransform = pathwidget.gameObject;
