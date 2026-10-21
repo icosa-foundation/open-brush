@@ -1470,7 +1470,7 @@ namespace TiltBrush
                         if (playAudio) PointerManager.m_Instance.SetPointersAudioForPlayback();
                         break;
                     case PlaybackMode.Timestamps:
-                        App.Instance.CurrentSketchTime = GetEarliestTimestamp();
+                        App.Instance.CurrentSketchTime = m_MemoryList.Count == 0 ? 0 : GetEarliestTimestamp();
                         m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender);
                         break;
                     case PlaybackMode.RealTime:
@@ -1487,7 +1487,7 @@ namespace TiltBrush
                         else
                         {
                             Debug.LogWarning("[RealTimePlayback] Sketch does not contain complete wall-clock metadata; using ordinary timestamp playback.");
-                            App.Instance.CurrentSketchTime = GetEarliestTimestamp();
+                            App.Instance.CurrentSketchTime = m_MemoryList.Count == 0 ? 0 : GetEarliestTimestamp();
                             m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender);
                         }
                         break;
