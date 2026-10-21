@@ -131,6 +131,7 @@ namespace TiltBrush
 
         // operation stack size as of last load (always 0) or save
         private int m_LastOperationStackCount;
+        private bool m_HasUnrecordedChanges;
         private bool m_HasVisibleObjects;
         private bool m_MemoryExceeded;
         private bool m_MemoryWarningAccepted;
@@ -288,6 +289,13 @@ namespace TiltBrush
         public void SetLastOperationStackCount()
         {
             m_LastOperationStackCount = m_OperationStack.Count;
+            m_HasUnrecordedChanges = false;
+        }
+
+        // Scripted document mutations can be persistent without an undo command.
+        public void MarkUnrecordedChange()
+        {
+            m_HasUnrecordedChanges = true;
         }
 
         public bool WillVertCountPutUsOverTheMemoryLimit(int numVerts)
@@ -329,6 +337,7 @@ namespace TiltBrush
         // True if strokes have been modified since last load or save (approximately)
         public bool IsMemoryDirty()
         {
+            if (m_HasUnrecordedChanges) return true;
             if (m_OperationStack.Count != m_LastOperationStackCount)
             {
                 IEnumerable<BaseCommand> newCommands = null;
@@ -930,6 +939,7 @@ namespace TiltBrush
             m_NetworkStack.Clear();
             NetworkOperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
+            m_HasUnrecordedChanges = false;
             m_MemoryList.Clear();
             App.GroupManager.ResetGroups();
             SelectionManager.m_Instance.OnFinishReset();

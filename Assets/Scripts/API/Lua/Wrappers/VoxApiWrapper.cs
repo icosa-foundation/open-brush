@@ -302,6 +302,8 @@ namespace TiltBrush
     {
         [MoonSharpHidden] public RuntimeVoxDocument _Document;
         [MoonSharpHidden] private readonly RuntimeVoxDocument.WidgetViewState m_ViewState;
+        [MoonSharpHidden] internal bool SuppressDirtyTracking { get; set; }
+
 
         public VoxDocumentApiWrapper(
             RuntimeVoxDocument document,
@@ -506,6 +508,10 @@ namespace TiltBrush
             m_ViewState.VisualsDirty = true;
             if (m_ViewState.WidgetBacked)
             {
+                if (!SuppressDirtyTracking)
+                {
+                    SketchMemoryScript.m_Instance?.MarkUnrecordedChange();
+                }
                 SaveLoadScript.m_Instance?.SketchChanged();
                 if (!_Document.Models.Any(model => model.Voxels.Count > 0))
                 {
