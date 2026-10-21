@@ -72,13 +72,15 @@ namespace TiltBrush
                     }
 
                 case ImageWidget:
-                    var imageWidget = m_Widget as ImageWidget;
-                    AddInkCanvas(imageWidget.gameObject);
-                    break;
-
                 case StencilWidget:
-                    var stencilWidget = m_Widget as StencilWidget;
-                    AddInkCanvas(stencilWidget.gameObject);
+                    // Widget roots own interaction state; their renderable mesh is a child.
+                    foreach (var renderer in m_Widget.GetComponentsInChildren<MeshRenderer>())
+                    {
+                        if (renderer.GetComponent<MeshFilter>() != null)
+                        {
+                            AddInkCanvas(renderer.gameObject);
+                        }
+                    }
                     break;
 
                 default:
