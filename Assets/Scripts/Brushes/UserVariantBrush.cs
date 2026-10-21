@@ -810,6 +810,9 @@ public class UserVariantBrush
         properties.Material.FloatProperties = new Dictionary<string, float>();
         properties.Material.ColorProperties = new Dictionary<string, float[]>();
         properties.Material.VectorProperties = new Dictionary<string, float[]>();
+        // Loaded textures and picker textures are different Texture2D instances. Keep the
+        // existing file identity when an unchanged texture has no new picker reference.
+        var previousTextureProperties = properties.Material.TextureProperties;
         properties.Material.TextureProperties = new Dictionary<string, string>();
 
         Shader shader = material.shader;
@@ -834,7 +837,14 @@ public class UserVariantBrush
                     properties.Material.VectorProperties.Add(propertyName, floatArray);
                     break;
                 case ShaderPropertyType.Texture:
-                    properties.Material.TextureProperties.Add(propertyName, "");
+                    string texturePath = "";
+                    if (material.GetTexture(propertyName) != null &&
+                        previousTextureProperties != null &&
+                        previousTextureProperties.TryGetValue(propertyName, out var previousPath))
+                    {
+                        texturePath = previousPath;
+                    }
+                    properties.Material.TextureProperties.Add(propertyName, texturePath);
                     break;
                 default:
                     Debug.LogWarning($"Shader {shader.name} from material {material.name} has property {propertyName} of unsupported type {shader.GetPropertyType(i)}.");
