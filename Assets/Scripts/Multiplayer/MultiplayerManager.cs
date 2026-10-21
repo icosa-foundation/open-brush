@@ -44,6 +44,8 @@ namespace OpenBrush.Multiplayer
         private bool m_IsLocalVoiceEnabled = true;
         private bool m_IsRoomVoiceEnabled = true;
         private bool m_IsVoiceEnabled = true;
+        private bool m_HasReceivedRoomVoicePolicy;
+        private int m_RoomVoicePolicyGeneration;
 
         public bool IsLocalVoiceEnabled => m_IsLocalVoiceEnabled;
         public bool IsRoomVoiceEnabled => m_IsRoomVoiceEnabled;
@@ -267,6 +269,8 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> JoinRoom(RoomCreateData RoomData)
         {
+            int voicePolicyGeneration = ++m_RoomVoicePolicyGeneration;
+            m_HasReceivedRoomVoicePolicy = false;
             // A joining client does not know an existing room's authoritative voice policy
             // until the owner sends it after capability negotiation. Fail closed in the
             // meantime so the local microphone is never published using the joiner's defaults.
@@ -338,6 +342,7 @@ namespace OpenBrush.Multiplayer
                     IsLiveStrokeRoomStateReady = false;
                 }
                 await m_Manager.RpcAdvertiseLiveStrokeSupport(MaxStreamedPointers);
+                if (!isUserRoomOwner) _ = ApplyLegacyOwnerVoiceFallback(voicePolicyGeneration);
             }
 
             return successData & successVoice;
@@ -1536,6 +1541,8 @@ namespace OpenBrush.Multiplayer
 
         private void OnConnectionHandlerDisconnected()
         {
+            ++m_RoomVoicePolicyGeneration;
+            m_HasReceivedRoomVoicePolicy = false;
             foreach (RemotePlayer player in m_RemotePlayers.List.ToList())
             {
                 m_Manager?.RemoveLiveStrokePreviewsForPlayer(player.PlayerId);
@@ -1596,8 +1603,35 @@ namespace OpenBrush.Multiplayer
             return appliedLocally && sentToRoom;
         }
 
+        private async Task ApplyLegacyOwnerVoiceFallback(int generation)
+        {
+            await Task.Delay(k_CapabilityDiscoveryTimeoutMs);
+            while (generation == m_RoomVoicePolicyGeneration &&
+                State == ConnectionState.IN_ROOM && !isUserRoomOwner &&
+                !m_HasReceivedRoomVoicePolicy)
+            {
+                RemotePlayer owner = m_RemotePlayers.List.FirstOrDefault(player =>
+                    m_Manager.GetPlayerRoomOwnershipStatus(player.PlayerId));
+                if (owner == null)
+                {
+                    // Ownership data may arrive after the room join. Keep waiting for it
+                    // rather than enabling voice while a modern owner's policy is unknown.
+                    await Task.Delay(250);
+                    continue;
+                }
+                if (IsPlayerLiveStrokeCompatible(owner.PlayerId)) return;
+                // Legacy owners cannot advertise the new room voice policy. Preserve their
+                // historical voice behavior while still respecting the local voice toggle.
+                m_IsRoomVoiceEnabled = true;
+                CurrentRoomData.voiceDisabled = false;
+                await ApplyVoiceEnabled(m_IsLocalVoiceEnabled);
+                return;
+            }
+        }
+
         public async void ApplyRoomVoiceEnabled(bool enabled)
         {
+            m_HasReceivedRoomVoicePolicy = true;
             CurrentRoomData.voiceDisabled = !enabled;
             m_IsRoomVoiceEnabled = enabled;
             if (!await ApplyVoiceEnabled(m_IsLocalVoiceEnabled && m_IsRoomVoiceEnabled))
