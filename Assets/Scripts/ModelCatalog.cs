@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -140,7 +140,9 @@ namespace TiltBrush
         private string GetModelRoot(string path)
         {
             return GetModelDirectories()
-                .FirstOrDefault(directory => path.StartsWith(directory, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(directory => Path.GetFullPath(path).StartsWith(
+                    $"{Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)}{Path.DirectorySeparatorChar}",
+                    App.MediaPathComparison));
         }
 
         public void ChangeDirectory(string newPath)
