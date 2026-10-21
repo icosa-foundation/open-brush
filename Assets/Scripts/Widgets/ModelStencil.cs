@@ -226,7 +226,7 @@ namespace TiltBrush
         /// </summary>
         private void GenerateSDFAtRuntime()
         {
-            if (m_Model == null || m_ModelInstance == null)
+            if (m_SourceMesh == null || m_ModelInstance == null)
                 return;
 
             if (m_SDFComputeShader == null)
