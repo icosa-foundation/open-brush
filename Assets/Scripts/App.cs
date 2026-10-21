@@ -1603,9 +1603,9 @@ namespace TiltBrush
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
                     SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: dstPath);
             }
-            catch (FileNotFoundException)
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
-                OutputWindowScript.Error(String.Format("Couldn't open {0}", path));
+                OutputWindowScript.Error($"Couldn't open {path}", e.Message);
                 return false;
             }
             return true;
