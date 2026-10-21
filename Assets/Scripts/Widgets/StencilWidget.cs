@@ -277,9 +277,11 @@ namespace TiltBrush
                 try
                 {
                     bool isEditableSdf = guide.Type == StencilType.Custom && state.Sdf != null;
-                    StencilWidget stencilPrefab = isEditableSdf
-                        ? WidgetManager.m_Instance.SdfStencilPrefab
-                        : WidgetManager.m_Instance.GetStencilPrefab(guide.Type);
+                    StencilWidget stencilPrefab = state.ModelGuide != null
+                        ? WidgetManager.m_Instance.ModelStencilPrefab
+                        : isEditableSdf
+                            ? WidgetManager.m_Instance.SdfStencilPrefab
+                            : WidgetManager.m_Instance.GetStencilPrefab(guide.Type);
                     stencil = Instantiate(stencilPrefab);
                 }
                 catch (ArgumentException e)
@@ -297,7 +299,7 @@ namespace TiltBrush
                 catch (ArgumentException e)
                 {
                     Debug.LogException(e, stencil);
-                    if (stencil is SdfStencil)
+                    if (stencil is SdfStencil || stencil is ModelStencil)
                     {
                         WidgetManager.m_Instance.UnregisterGrabWidget(stencil.gameObject);
                         stencil.gameObject.SetActive(false);

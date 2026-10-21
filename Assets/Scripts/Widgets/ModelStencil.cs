@@ -45,6 +45,7 @@ namespace TiltBrush
         private const int MESH_COLLIDER_THRESHOLD_MOBILE = 5000;   // 5K triangles for mobile
         private const int MESH_COLLIDER_THRESHOLD_DESKTOP = 20000;  // 20K triangles for desktop
 
+        private Material m_GuideMaterial;
         private Mesh m_SourceMesh;
         private string m_Subtree;
         private Vector3[] m_SourceVertices;
@@ -99,6 +100,7 @@ namespace TiltBrush
         {
             m_Type = StencilType.Custom;
             base.Awake();
+            m_GuideMaterial = m_TintableMeshes.FirstOrDefault()?.sharedMaterial;
             foreach (Renderer placeholder in m_TintableMeshes)
             {
                 placeholder.enabled = false;
@@ -162,6 +164,11 @@ namespace TiltBrush
                 }
             }
             m_SourceMesh = CombineSourceMeshes();
+            InitializeGeometry();
+        }
+
+        private void InitializeGeometry()
+        {
             m_SourceVertices = m_SourceMesh.vertices;
             m_SourceTriangles = m_SourceMesh.triangles;
             m_TotalTriangleCount = m_SourceTriangles.Length / 3;
@@ -247,7 +254,7 @@ namespace TiltBrush
                 m_OwnsSdfAsset = true;
                 Debug.Log(
                     $"{k_LogPrefix} Generated a {sdfSize}³ SDF for " +
-                    $"'{m_Model.HumanName}' ({triangleCount:N0} triangles).");
+                    $"'{m_Model?.HumanName ?? "saved model guide"}' ({triangleCount:N0} triangles).");
 
                 // Generate and assign preview mesh from SDF
                 GenerateSDFPreviewMesh();
@@ -255,7 +262,7 @@ namespace TiltBrush
             else
             {
                 Debug.LogWarning(
-                    $"{k_LogPrefix} SDF generation failed for '{m_Model.HumanName}'.");
+                    $"{k_LogPrefix} SDF generation failed for '{m_Model?.HumanName ?? "saved model guide"}'.");
             }
         }
 
@@ -724,6 +731,68 @@ namespace TiltBrush
             }
 
             return canvasBounds;
+        }
+
+        protected override void PopulateSaveState(Guides.State state)
+        {
+            if (m_SourceMesh == null)
+            {
+                throw new InvalidOperationException("The model guide has no geometry to save.");
+            }
+            state.ModelGuide = new Guides.ModelGuideState {
+                Vertices = m_SourceVertices, Triangles = m_SourceTriangles
+            };
+        }
+
+        protected override void ApplySaveState(Guides.State state)
+        {
+            Guides.ModelGuideState geometry = state.ModelGuide;
+            if (geometry?.Vertices == null || geometry.Triangles == null ||
+                geometry.Vertices.Length == 0 || geometry.Triangles.Length == 0 ||
+                geometry.Triangles.Length % 3 != 0 ||
+                geometry.Triangles.Any(index => index < 0 || index >= geometry.Vertices.Length) ||
+                geometry.Vertices.Any(vertex =>
+                    float.IsNaN(vertex.x) || float.IsInfinity(vertex.x) ||
+                    float.IsNaN(vertex.y) || float.IsInfinity(vertex.y) ||
+                    float.IsNaN(vertex.z) || float.IsInfinity(vertex.z)))
+            {
+                throw new ArgumentException("The model guide requires valid triangle geometry.");
+            }
+            m_SourceMesh = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            m_SourceMesh.vertices = geometry.Vertices;
+            m_SourceMesh.triangles = geometry.Triangles;
+            m_SourceMesh.RecalculateBounds();
+            m_SourceMesh.RecalculateNormals();
+            var source = new GameObject("Saved Model Guide Geometry");
+            source.transform.SetParent(transform, false);
+            source.AddComponent<MeshFilter>().sharedMesh = m_SourceMesh;
+            source.AddComponent<MeshRenderer>().sharedMaterial = m_GuideMaterial;
+            m_ModelInstance = source.transform;
+            InitializeGeometry();
+        }
+
+        public override GrabWidget Clone()
+        {
+            return Clone(transform.position, transform.rotation, m_Size);
+        }
+
+        public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
+        {
+            ModelStencil clone = Instantiate(WidgetManager.m_Instance.ModelStencilPrefab);
+            clone.m_PreviousCanvas = m_PreviousCanvas;
+            clone.transform.SetParent(transform.parent, false);
+            clone.transform.position = position;
+            clone.transform.rotation = rotation;
+            clone.m_SkipIntroAnim = true;
+            clone.m_ShowTimer = clone.m_ShowDuration;
+            clone.SetSignedWidgetSize(size);
+            var state = new Guides.State();
+            PopulateSaveState(state);
+            clone.ApplySaveState(state);
+            clone.CloneInitialMaterials(this);
+            clone.Show(true, false);
+            HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
+            return clone;
         }
 
         protected override void OnDestroy()

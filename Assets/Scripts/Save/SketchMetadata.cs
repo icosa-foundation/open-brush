@@ -474,6 +474,17 @@ namespace TiltBrush
 
             [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
             public SdfGuideState Sdf { get; set; }
+
+            [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+            public ModelGuideState ModelGuide { get; set; }
+        }
+
+        [Serializable]
+        public class ModelGuideState
+        {
+            // A guide owns a static geometry snapshot, independent of imported model paths.
+            public Vector3[] Vertices { get; set; }
+            public int[] Triangles { get; set; }
         }
 
         [Serializable]
