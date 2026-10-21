@@ -40,7 +40,7 @@ namespace TiltBrush
         public void BeginSession(string initialText)
         {
             m_KeyboardUI.Clear();
-            m_KeyboardUI.AddConsoleContent(initialText);
+            m_KeyboardUI.AddConsoleContent(initialText ?? string.Empty);
             m_LastInput = initialText ?? string.Empty;
             m_OnClose = null;
         }
@@ -49,6 +49,13 @@ namespace TiltBrush
         {
             CloseSession();
             m_KeyboardUI.KeyPressed -= KeyPressed;
+        }
+
+        public override void OnWidgetHide()
+        {
+            m_LastInput = m_KeyboardUI.ConsoleContent;
+            CloseSession();
+            base.OnWidgetHide();
         }
 
         private void CloseSession()
@@ -60,6 +67,7 @@ namespace TiltBrush
 
         private void KeyPressed(object sender, KeyboardKeyEventArgs e)
         {
+            if (!e.IsPress) return;
             switch (e.Key.KeyType)
             {
                 case KeyboardKeyType.Enter:
