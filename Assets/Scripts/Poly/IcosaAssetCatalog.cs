@@ -1954,22 +1954,24 @@ namespace TiltBrush
             return m_AssetSetByType[type].m_Models.Count();
         }
 
-        public void SelectCollection(string collectionId, IcosaSetType queryType)
+        public void SelectCollection(string collectionId, IcosaSetType queryType, bool forceRefresh = false)
         {
             EnsureCatalogsExist();
-            if (m_SelectedCollectionId == collectionId)
+            IcosaQueryParameters query = m_AssetSetByType[queryType].QueryParams;
+            if (m_SelectedCollectionId == collectionId && !forceRefresh &&
+                m_CollectionAssetSet.QueryParams.Equals(query))
             {
                 return;
             }
             if (m_CollectionAssetSet.m_FetchMetadataCoroutine != null)
             {
-                StopCoroutine(m_CollectionAssetSet.m_FetchMetadataCoroutine);
+                m_CollectionAssetSet.m_FetchMetadataCoroutine.Dispose();
             }
             m_SelectedCollectionId = collectionId;
             m_CollectionAssetSet = new AssetSet
             {
                 m_RefreshRequested = true,
-                QueryParams = m_AssetSetByType[queryType].QueryParams
+                QueryParams = query
             };
         }
 
@@ -1978,7 +1980,7 @@ namespace TiltBrush
             EnsureCatalogsExist();
             if (m_CollectionAssetSet.m_FetchMetadataCoroutine != null)
             {
-                StopCoroutine(m_CollectionAssetSet.m_FetchMetadataCoroutine);
+                m_CollectionAssetSet.m_FetchMetadataCoroutine.Dispose();
             }
             m_SelectedCollectionId = null;
             m_CollectionAssetSet = new AssetSet();

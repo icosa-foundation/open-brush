@@ -151,7 +151,7 @@ namespace TiltBrush
         {
             if (m_CurrentCollectionId != null)
             {
-                App.IcosaAssetCatalog.SelectCollection(m_CurrentCollectionId, m_CurrentSet);
+                App.IcosaAssetCatalog.SelectCollection(m_CurrentCollectionId, m_CurrentSet, forced);
             }
             else if (forced)
             {
