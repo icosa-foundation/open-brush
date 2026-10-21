@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using IsoMesh;
 using MoonSharp.Interpreter;
 
@@ -9,12 +10,13 @@ namespace TiltBrush
     public class SdfPrimitiveApiWrapper
     {
         private readonly SdfStencil m_Stencil;
-        private SDFPrimitive m_Primitive;
+        private readonly Guid m_ComponentIdentity;
+        private bool m_Deleted;
 
         public SdfPrimitiveApiWrapper(SdfStencil stencil, SDFPrimitive primitive)
         {
             m_Stencil = stencil;
-            m_Primitive = primitive;
+            m_ComponentIdentity = stencil.GetComponentIdentity(primitive);
         }
 
         [LuaDocsDescription("The primitive geometry type: sphere, torus, cuboid, boxframe, or cylinder")]
@@ -109,7 +111,7 @@ namespace TiltBrush
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 EditSdfGuideCommand.RemoveComponent(m_Stencil, componentIndex));
-            m_Primitive = null;
+            m_Deleted = true;
         }
 
         [LuaDocsDescription("Returns a string representation of the SDF primitive")]
@@ -122,19 +124,20 @@ namespace TiltBrush
         {
             int slot = componentIndex;
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand(slot));
-            // Edit commands rebuild components. Keep this handle bound to its edited slot.
-            m_Primitive = m_Stencil.GetComponents()[slot] as SDFPrimitive;
         }
 
         private SDFPrimitive Primitive
         {
             get
             {
-                if (m_Primitive == null)
+                SDFPrimitive primitive = m_Deleted ? null : m_Stencil.GetComponents()
+                    .OfType<SDFPrimitive>().FirstOrDefault(component =>
+                        m_Stencil.GetComponentIdentity(component) == m_ComponentIdentity);
+                if (primitive == null)
                 {
                     throw new InvalidOperationException("The SDF primitive has been deleted.");
                 }
-                return m_Primitive;
+                return primitive;
             }
         }
     }

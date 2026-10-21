@@ -65,6 +65,7 @@ namespace TiltBrush
 
         internal sealed class ComponentDefinition
         {
+            internal Guid Identity { get; set; } = Guid.NewGuid();
             internal readonly PrimitiveDefinition? Primitive;
             internal readonly SDFMeshAsset MeshAsset;
             internal readonly TrTransform Transform;
@@ -328,6 +329,7 @@ namespace TiltBrush
                     component.MeshAsset, transform, component.Operation,
                     component.Blend, component.Flip);
             }
+            definitions[index].Identity = component.Identity;
             ReplaceComponents(definitions);
         }
 
@@ -348,6 +350,7 @@ namespace TiltBrush
             definitions[index] = new ComponentDefinition(new PrimitiveDefinition(
                 primitive.Type, geometry, primitive.Transform, primitive.Operation,
                 primitive.Blend, primitive.Flip));
+            definitions[index].Identity = component.Identity;
             ReplaceComponents(definitions);
         }
 
@@ -357,6 +360,19 @@ namespace TiltBrush
                 .Where(component => component.transform.parent == m_SdfManager.transform)
                 .OrderBy(component => component.transform.GetSiblingIndex())
                 .ToList();
+        }
+
+        private readonly Dictionary<SDFObject, Guid> m_ComponentIdentities =
+            new Dictionary<SDFObject, Guid>();
+
+        internal Guid GetComponentIdentity(SDFObject component)
+        {
+            if (!m_ComponentIdentities.TryGetValue(component, out Guid identity))
+            {
+                identity = Guid.NewGuid();
+                m_ComponentIdentities.Add(component, identity);
+            }
+            return identity;
         }
 
         internal IReadOnlyList<ComponentDefinition> GetComponentDefinitions()
@@ -385,6 +401,7 @@ namespace TiltBrush
                         mesh.Smoothing,
                         gpuData.Flip < 0));
                 }
+                definitions[definitions.Count - 1].Identity = GetComponentIdentity(component);
             }
             return definitions;
         }
@@ -457,6 +474,7 @@ namespace TiltBrush
                 Destroy(component.gameObject);
             }
 
+            m_ComponentIdentities.Clear();
             for (int i = 0; i < definitions.Count; ++i)
             {
                 CreateComponent(definitions[i]);
@@ -922,9 +940,11 @@ namespace TiltBrush
 
         private SDFObject CreateComponent(ComponentDefinition definition)
         {
-            return definition.IsPrimitive
+            SDFObject component = definition.IsPrimitive
                 ? CreatePrimitive(definition.Primitive.Value)
                 : CreateMesh(definition);
+            m_ComponentIdentities[component] = definition.Identity;
+            return component;
         }
 
         private SDFMesh CreateMesh(ComponentDefinition definition)

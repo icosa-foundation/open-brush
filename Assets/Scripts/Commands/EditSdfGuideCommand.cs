@@ -98,7 +98,9 @@ namespace TiltBrush
         {
             var components = Snapshot(stencil);
             ValidateIndex(components, index);
-            components.Insert(index + 1, Copy(components[index]));
+            SdfStencil.ComponentDefinition duplicate = Copy(components[index]);
+            duplicate.Identity = Guid.NewGuid();
+            components.Insert(index + 1, duplicate);
             return new EditSdfGuideCommand(stencil, components);
         }
 
@@ -173,6 +175,7 @@ namespace TiltBrush
                 new SdfStencil.PrimitiveDefinition(
                     type, geometry, primitive.Transform, primitive.Operation,
                     primitive.Blend, primitive.Flip));
+            components[index].Identity = component.Identity;
             return new EditSdfGuideCommand(stencil, components);
         }
 
@@ -198,6 +201,7 @@ namespace TiltBrush
                     operation ?? primitive.Operation,
                     blend ?? primitive.Blend,
                     primitive.Flip));
+            components[index].Identity = component.Identity;
             return new EditSdfGuideCommand(stencil, components);
         }
 
@@ -225,13 +229,13 @@ namespace TiltBrush
             {
                 return new SdfStencil.ComponentDefinition(
                     component.MeshAsset, updatedTransform, updatedOperation,
-                    updatedBlend, updatedFlip);
+                    updatedBlend, updatedFlip) { Identity = component.Identity };
             }
 
             SdfStencil.PrimitiveDefinition primitive = component.Primitive.Value;
             return new SdfStencil.ComponentDefinition(new SdfStencil.PrimitiveDefinition(
                 primitive.Type, primitive.Geometry, updatedTransform, updatedOperation,
-                updatedBlend, updatedFlip));
+                updatedBlend, updatedFlip)) { Identity = component.Identity };
         }
 
         private static void NormalizeFirstOperation(
