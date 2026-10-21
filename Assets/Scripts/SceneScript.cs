@@ -295,6 +295,15 @@ namespace TiltBrush
                 stroke.DestroyStroke();
             }
 
+            foreach (GrabWidget widget in layer.GetComponentsInChildren<GrabWidget>(true))
+            {
+                if (widget.gameObject.activeSelf)
+                {
+                    TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: false);
+                }
+                WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
+            }
+
             foreach (Batch b in layer.BatchManager.AllBatches())
                 b.Destroy();
             Destroy(layer.gameObject);
