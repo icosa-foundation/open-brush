@@ -125,6 +125,7 @@ namespace TiltBrush
             clone.SetSignedWidgetSize(size);
             clone.CloneInitialMaterials(this);
             clone.Extents = Extents;
+            clone.ReplaceComponents(GetComponentDefinitions());
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             return clone;
         }
