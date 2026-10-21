@@ -38,14 +38,24 @@ namespace TiltBrush
         public double Length => m_SelectedClip != null ? m_SelectedClip.length : 0;
         public bool Playing
         {
-            get => Initialized && !m_Paused && (graphInitialized ? graph.IsPlaying() : animationComponent != null && animationComponent.IsPlaying(ClipName));
+            get => Initialized && !m_Paused && (graphInitialized ? graph.IsPlaying() &&
+                (m_Loop || Length <= 0 || m_Playable.GetTime() < Length) : animationComponent != null && animationComponent.IsPlaying(ClipName));
             set
             {
                 if (!Initialized) throw new System.InvalidOperationException("Model has no animation");
                 m_Paused = !value;
                 if (graphInitialized)
                 {
-                    if (value) graph.Play(); else graph.Stop();
+                    if (value)
+                    {
+                        if (!m_Loop && Length > 0 && m_Playable.GetTime() >= Length)
+                        {
+                            m_Playable.SetTime(0);
+                        }
+                        m_Playable.SetDone(false);
+                        graph.Play();
+                    }
+                    else graph.Stop();
                 }
                 else
                 {
@@ -67,7 +77,12 @@ namespace TiltBrush
                 if (!Initialized) throw new System.InvalidOperationException("Model has no animation");
                 if (double.IsNaN(value) || double.IsInfinity(value) || value < 0 || value > Length)
                     throw new System.ArgumentOutOfRangeException(nameof(value));
-                if (graphInitialized) { m_Playable.SetTime(value); graph.Evaluate(0); }
+                if (graphInitialized)
+                {
+                    m_Playable.SetDone(false);
+                    m_Playable.SetTime(value);
+                    graph.Evaluate(0);
+                }
                 else { animationComponent[ClipName].time = (float)value; animationComponent.Sample(); }
             }
         }
@@ -224,10 +239,7 @@ namespace TiltBrush
                 playable.SetTime(0);
                 playable.Play();
 
-                if (shouldLoop)
-                {
-                    playable.SetDuration(double.PositiveInfinity);
-                }
+                playable.SetDuration(shouldLoop ? double.PositiveInfinity : clip.length);
 
                 output.SetSourcePlayable(playable);
 
@@ -242,6 +254,18 @@ namespace TiltBrush
                 Debug.LogError($"Failed to play animation clip: {e.Message}");
                 graphInitialized = false;
             }
+        }
+
+        private void LateUpdate()
+        {
+            if (!graphInitialized || !m_Loop || m_Paused || Length <= 0) return;
+            double time = m_Playable.GetTime();
+            if (time < Length) return;
+            // Playable duration controls completion, not clip sampling. Explicitly wrap the
+            // sample time for imported clips whose authored loop flag is disabled.
+            m_Playable.SetDone(false);
+            m_Playable.SetTime(time % Length);
+            graph.Evaluate(0);
         }
 
         private float GetAnimationScore(AnimationClip clip)
