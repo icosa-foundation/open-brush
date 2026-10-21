@@ -155,7 +155,6 @@ PlayerSettings:
   preloadedAssets:
   - {fileID: 11400000, guid: 62987a061b20ae345a45e835010db90d, type: 2}
   - {fileID: 11400000, guid: feef587f0ac641c4ab7d9e44e7eea888, type: 2}
-  - {fileID: 11400000, guid: 19081a626c84bff4385d3962a9daff0f, type: 2}
   - {fileID: -5428386068462531570, guid: 07092d12b03adbd49b1ade5f5742e72e, type: 2}
   - {fileID: 2219514573358777864, guid: bd3da03a27dd86d45b3502af9504154e, type: 2}
   metroInputSource: 0
@@ -282,7 +281,7 @@ PlayerSettings:
   useCustomBaseGradleTemplate: 0
   useCustomGradlePropertiesTemplate: 0
   useCustomGradleSettingsTemplate: 0
-  useCustomProguardFile: 0
+  useCustomProguardFile: 1
   AndroidTargetArchitectures: 2
   AndroidSplashScreenScale: 0
   androidSplashScreen: {fileID: 0}
@@ -560,7 +559,7 @@ PlayerSettings:
     m_APIs: 12000000i
     m_Automatic: 0
   - m_BuildTarget: AndroidPlayer
-    m_APIs: 15000000i
+    m_APIs: 150000000b000000i
     m_Automatic: 0
   - m_BuildTarget: LinuxStandaloneSupport
     m_APIs: 1500000011000000i
@@ -1057,7 +1056,7 @@ PlayerSettings:
   insecureHttpOption: 0
   androidVulkanDenyFilterList: []
   androidVulkanAllowFilterList: []
-  androidVulkanDeviceFilterListAsset: {fileID: 0}
+  androidVulkanDeviceFilterListAsset: {fileID: 7862867394083496736, guid: a97254441eff33f919b261dd41ecc11f, type: 2}
   d3d12DeviceFilterListAsset: {fileID: 0}
   webGPUDeviceFilterListAsset: {fileID: 0}
   allowedHttpConnections: 3
