@@ -382,7 +382,9 @@ namespace TiltBrush
                     mesh, brushGuid, material, localToWorldMatrix,
                     out sourceVertexIndices);
             }
-            return BrushBaker.m_Instance.ProcessMesh(mesh, brushGuid);
+            // The OpenBrush profile restores the live brush shader on import, including
+            // its vertex deformation. Preserve the original control mesh for that shader.
+            return mesh;
         }
 
         private static List<BatchSubset> RemapBatchSubsets(
