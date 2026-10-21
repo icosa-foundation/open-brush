@@ -194,7 +194,7 @@ namespace TiltBrush
                     try
                     {
                         detected.UnionWith(
-                            Directory.GetFiles(directory, "*.*", SearchOption.AllDirectories).Where(
+                            AndroidDirectStorage.GetFiles(directory, SearchOption.AllDirectories).Where(
                                 x => m_supportedVideoExtensions.Contains(
                                     Path.GetExtension(x), StringComparer.OrdinalIgnoreCase)));
                     }
