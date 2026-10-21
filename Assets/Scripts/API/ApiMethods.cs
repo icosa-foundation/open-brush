@@ -2078,8 +2078,10 @@ namespace TiltBrush
         public static string GetGuideClosestPoint(int index, Vector3 point)
         {
             FindClosestPointOnGuide(
-                _GetActiveStencil(index), point, out Vector3 surfacePosition,
-                out Vector3 surfaceNormal);
+                _GetActiveStencil(index), App.ActiveCanvas.Pose * point,
+                out Vector3 surfacePosition, out Vector3 surfaceNormal);
+            surfacePosition = App.ActiveCanvas.Pose.inverse * surfacePosition;
+            surfaceNormal = Quaternion.Inverse(App.ActiveCanvas.Pose.rotation) * surfaceNormal;
             return new JObject
             {
                 ["position"] = Vector3ToJson(surfacePosition),
@@ -2104,7 +2106,9 @@ namespace TiltBrush
         )]
         public static string GetGuideSignedDistance(int index, Vector3 point)
         {
-            return FloatToJson(GetSignedDistanceToGuide(_GetActiveStencil(index), point));
+            return FloatToJson(GetSignedDistanceToGuide(
+                _GetActiveStencil(index), App.ActiveCanvas.Pose * point) /
+                Mathf.Abs(App.ActiveCanvas.Pose.scale));
         }
 
         [ApiEndpoint(
@@ -2114,7 +2118,8 @@ namespace TiltBrush
         )]
         public static string GetActiveGuidesSignedDistance(Vector3 point)
         {
-            return FloatToJson(GlobalStencilSdfCache.SignedDistance(point));
+            return FloatToJson(GlobalStencilSdfCache.SignedDistance(
+                App.ActiveCanvas.Pose * point) / Mathf.Abs(App.ActiveCanvas.Pose.scale));
         }
 
         [ApiEndpoint(
@@ -2125,9 +2130,11 @@ namespace TiltBrush
         public static string GetActiveGuidesNextSurfacePoint(
             Vector3 point, float stepDistance, Vector3 direction)
         {
+            TrTransform canvasPose = App.ActiveCanvas.Pose;
             Vector3 surfacePoint = GlobalStencilSdfCache.NextPointOnSurface(
-                point, stepDistance, direction);
-            return Vector3ToJson(surfacePoint).ToString(Formatting.None);
+                canvasPose * point, stepDistance * Mathf.Abs(canvasPose.scale),
+                canvasPose.rotation * direction);
+            return Vector3ToJson(canvasPose.inverse * surfacePoint).ToString(Formatting.None);
         }
 
         internal static void FindClosestPointOnGuide(

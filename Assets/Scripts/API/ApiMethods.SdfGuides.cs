@@ -51,7 +51,7 @@ namespace TiltBrush
 
             TrTransform transform = request["transform"] == null
                 ? _CurrentBrushTransform()
-                : ParseTransform(request["transform"], "transform");
+                : App.Scene.Pose * ParseTransform(request["transform"], "transform");
             var command = new CreateWidgetCommand(
                 WidgetManager.m_Instance.SdfStencilPrefab, transform,
                 forceTransform: true);
@@ -111,7 +111,7 @@ namespace TiltBrush
                 : ParseVector4(request["geometry"], "geometry");
             TrTransform? transform = request["transform"] == null
                 ? (TrTransform?)null
-                : ParseTransform(request["transform"], "transform");
+                : App.Scene.Pose * ParseTransform(request["transform"], "transform");
             SDFCombineType? operation = request["operation"] == null
                 ? (SDFCombineType?)null
                 : SdfStencil.ParseOperation(request.Value<string>("operation"));
