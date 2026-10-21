@@ -2036,13 +2036,15 @@ namespace TiltBrush
         [ApiEndpoint("text.setText", "Changes the text on a text widget")]
         public static void ChangeTextContent(int index, string text)
         {
-            _GetActiveTextWidget(index).Text = text;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ModifyTextCommand(_GetActiveTextWidget(index), text));
         }
 
         [ApiEndpoint("text.setColor", "Changes the color on a text widget")]
         public static void ChangeTextColor(int index, Vector3 color)
         {
-            _GetActiveTextWidget(index).TextColor = new Color(color.x, color.y, color.z);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ModifyTextCommand(_GetActiveTextWidget(index), new Color(color.x, color.y, color.z)));
         }
 
         [ApiEndpoint(

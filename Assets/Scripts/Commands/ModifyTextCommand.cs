@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
+
 namespace TiltBrush
 {
     public class ModifyTextCommand : BaseCommand
@@ -19,6 +21,8 @@ namespace TiltBrush
         private readonly TextWidget m_Widget;
         private readonly string m_StartText;
         private readonly string m_EndText;
+        private readonly Color m_StartColor;
+        private readonly Color m_EndColor;
 
         public ModifyTextCommand(TextWidget widget, string endText, BaseCommand parent = null)
             : base(parent)
@@ -26,6 +30,14 @@ namespace TiltBrush
             m_Widget = widget;
             m_StartText = widget.Text;
             m_EndText = endText;
+            m_StartColor = widget.TextColor;
+            m_EndColor = widget.TextColor;
+        }
+
+        public ModifyTextCommand(TextWidget widget, Color endColor, BaseCommand parent = null)
+            : this(widget, widget.Text, parent)
+        {
+            m_EndColor = endColor;
         }
 
         public override bool NeedsSave => true;
@@ -34,11 +46,13 @@ namespace TiltBrush
         protected override void OnUndo()
         {
             m_Widget.Text = m_StartText;
+            m_Widget.TextColor = m_StartColor;
         }
 
         protected override void OnRedo()
         {
             m_Widget.Text = m_EndText;
+            m_Widget.TextColor = m_EndColor;
         }
     }
 } // namespace TiltBrush
