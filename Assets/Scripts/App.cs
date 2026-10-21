@@ -1577,7 +1577,15 @@ namespace TiltBrush
             if (path.StartsWith(kBuiltInSketchPrefix))
             {
                 path = path.Substring(kBuiltInSketchPrefix.Length);
-                path = Path.Join(FeaturedSketchesPath(), path);
+                string sketchesPath = FeaturedSketchesPath();
+#if UNITY_ANDROID && OPEN_BRUSH_VIEWER
+                // Android viewers seed bundled examples into the local sketchbook.
+                if (Application.platform == RuntimePlatform.Android)
+                {
+                    sketchesPath = UserSketchPath();
+                }
+#endif
+                path = Path.Join(sketchesPath, path);
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
                     SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
                 return true;
