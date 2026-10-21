@@ -162,9 +162,9 @@ namespace TiltBrush
             long estimatedBytes = 0;
             try
             {
-                foreach (var file in directory.EnumerateFiles("*", SearchOption.TopDirectoryOnly))
+                foreach (string path in AndroidDirectStorage.GetFiles(directory.FullName))
                 {
-                    estimatedBytes += file.Length;
+                    estimatedBytes += new FileInfo(path).Length;
                 }
             }
             catch
