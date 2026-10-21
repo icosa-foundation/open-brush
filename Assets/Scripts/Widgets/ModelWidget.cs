@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -296,7 +296,6 @@ namespace TiltBrush
             {
                 return;
             }
-            this.gameObject.transform.SetParent(App.Scene.ActiveCanvas.transform);
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
             m_ModelInstance.parent = this.transform;
             m_ModelInstance.gameObject.SetActive(true);
