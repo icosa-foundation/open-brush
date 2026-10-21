@@ -1,4 +1,4 @@
-﻿// Copyright 2024 The Open Brush Authors
+// Copyright 2024 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -24,7 +24,6 @@ namespace TiltBrush
         private GrabWidget m_Widget;
         private GrabWidget m_OriginalWidget;
         private bool m_Initialized;
-        private List<InkCanvas.PaintSet> m_PaintSet;
 
         public GrabWidget Widget => m_Widget;
 
@@ -45,17 +44,6 @@ namespace TiltBrush
             {
                 m_Widget = widget;
             }
-            m_PaintSet = new List<InkCanvas.PaintSet>
-            {
-                new(
-                    mainTextureName: "_MainTex",
-                    normalTextureName: "_BumpMap",
-                    heightTextureName: "_HeightMap",
-                    useMainPaint: true,
-                    useNormalPaint: false,
-                    useHeightPaint: false
-                )
-            };
 
         }
 
@@ -101,11 +89,26 @@ namespace TiltBrush
         }
         private void AddInkCanvas(GameObject gameObject)
         {
-            gameObject.GetComponent<MeshRenderer>().material.mainTexture = TexturePainterManager.m_Instance.DefaultCanvasTexture;
+            var materials = gameObject.GetComponent<MeshRenderer>().materials;
+            var paintSets = new List<InkCanvas.PaintSet>(materials.Length);
+            foreach (var material in materials)
+            {
+                material.mainTexture = TexturePainterManager.m_Instance.DefaultCanvasTexture;
+                // InkCanvas owns and mutates these entries; never share them across meshes.
+                paintSets.Add(new InkCanvas.PaintSet(
+                    mainTextureName: "_MainTex",
+                    normalTextureName: "_BumpMap",
+                    heightTextureName: "_HeightMap",
+                    useMainPaint: true,
+                    useNormalPaint: false,
+                    useHeightPaint: false,
+                    material: material));
+            }
+
             var canvas = gameObject.GetComponent<InkCanvas>();
             if (canvas == null)
             {
-                gameObject.AddInkCanvas(m_PaintSet);
+                gameObject.AddInkCanvas(paintSets);
                 gameObject.layer = LayerMask.NameToLayer("TexturePaint");
             }
             var collider = gameObject.GetComponent<Collider>();
