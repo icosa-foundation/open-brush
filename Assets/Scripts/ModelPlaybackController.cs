@@ -394,7 +394,8 @@ namespace TiltBrush
                 state.StopTime = 0;
                 m_RestartAtChapter = false;
             }
-            yield return WaitForRequest(document, () => document.RequestSetTime(ToTicks(state.Time), 0));
+            yield return WaitForRequest(document, () => document.RequestSetTime(
+                ToTicks(state.Time), ToTicks(state.StopTime ?? 0)));
             SetVolumeInternal(state.Volume);
             SetPlayingInternal(!state.Paused);
             yield return WaitForPauseState(document, state.Paused);
