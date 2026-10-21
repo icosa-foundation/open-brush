@@ -51,7 +51,7 @@ namespace TiltBrush
             EditableModelManager.m_Instance.RegenerateMesh(clone, newPoly, m_PolyRecipe.CurrentMaterial);
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
-            clone.m_WidgetRenderers = GetComponentsInChildren<Renderer>();
+            clone.CloneInitialMaterials(this);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
             CanvasScript canvas = transform.parent.GetComponent<CanvasScript>();
