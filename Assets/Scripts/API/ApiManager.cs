@@ -816,7 +816,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 string uri = $"{httpListenerUrl}?{cmd}";
                 IEnumerator request;
-                if (cmd.Length < 512)  // Actually limit is 2083 but let's be conservative
+                if (uri.Length < 512)  // Actually limit is 2083 but let's be conservative
                 {
                     request = GetRequest(uri);
                 }
