@@ -1145,6 +1145,17 @@ namespace TiltBrush
                     }
                 }
 
+                // These fragment shaders derive their image procedurally or through a
+                // lookup texture; exporting _MainTex alone is not their rendered output.
+                if (IsStaticExport && (shaderName == "Brush/Special/Comet" ||
+                    shaderName == "Brush/Special/Rainbow" ||
+                    shaderName == "Brush/Visualizer/RainbowTube"))
+                {
+                    textureBakeMode = BrushBaker.TextureBakeMode.UvUnlit;
+                    textureBakePass = 0;
+                    forceUnlit = true;
+                }
+
                 materialNode.Name = $"ob-{manifest.DurableName}";
                 materialNode.DoubleSided = manifest.m_RenderBackfaces;
                 var extras = materialNode.Extras as JObject ?? new JObject();
@@ -1555,6 +1566,16 @@ namespace TiltBrush
                     {
                         pbr.BaseColorTexture = bakedInfo;
                         pbr.BaseColorFactor = ToGltfColor(Color.white);
+                        if (textureBakeMode == BrushBaker.TextureBakeMode.UvUnlit &&
+                            _additiveBrushGains.ContainsKey(materialNode))
+                        {
+                            // Primitive material clones must sample the finished image,
+                            // including procedural patterns, rather than raw _MainTex.
+                            materialNode.EmissiveTexture = exporter.ExportTextureInfo(
+                                bakedTexture, GLTFSceneExporter.TextureMapType.Emissive);
+                            _additiveBrushTextures[materialNode] = new AdditiveTextureSource(
+                                bakedTexture, Vector2.one, Vector2.zero);
+                        }
                         hasBakedBaseColor = true;
                         pbrModified = true;
                         m_BakedTextures.Add(bakedTexture);
