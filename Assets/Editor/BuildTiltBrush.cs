@@ -1347,6 +1347,13 @@ static class BuildTiltBrush
             // and Android Viewer AndroidXR all support hands through the same XR Hands API.
             EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
             EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
+
+            // The hand bridge requires this profile for pinch and grasp input on every runtime.
+            // Select the concrete type: XR Hands' HandTracking and the Microsoft Hand Interaction
+            // profile currently publish the same feature ID. Runtimes without
+            // XR_EXT_hand_interaction ignore it, leaving controller input unchanged.
+            EnableRequiredFeature<
+                UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile>(settings);
         }
 
         void EnableAndroidXrFeatures(UnityEngine.XR.OpenXR.OpenXRSettings settings)
@@ -1359,10 +1366,6 @@ static class BuildTiltBrush
             // Select concrete feature types, not feature IDs. XR Hands' HandTracking and the
             // Microsoft Hand Interaction profile currently publish the same feature ID, so an
             // ID lookup can silently enable the Microsoft profile and omit XRHandSubsystem.
-            // The Android XR hand bridge requires this profile for pinch and grasp input.
-            EnableRequiredFeature<
-                UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile>(settings);
-
             EnableRequiredFeature<OpenXR.Extensions.OpenXRAndroidSettings>(settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRSupportFeature>(
                 settings);

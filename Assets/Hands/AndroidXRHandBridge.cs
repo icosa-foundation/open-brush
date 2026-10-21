@@ -1300,7 +1300,11 @@ namespace TiltBrush
                 m_Right,
                 allowDraw: true);
 
+            bool wasActive = Active;
+
             UpdateSourceSelection();
+
+            RestoreControllersAfterHands(wasActive);
 
             EnsureOpenBrushHandMode();
             EnsureTutorialBypass();
@@ -1804,16 +1808,23 @@ namespace TiltBrush
                  * The hybrid routing later still chooses physical controller vs hand
                  * independently per side.
                  */
-                // TODO: Before enabling hand interaction for Pico or other non-Touch controller
-                // profiles, preserve/restore each side's physical-controller geometry and action
-                // binding mask when switching between hands and controllers, including mixed input.
-                // This call replaces both sides; RestoreControllerVisualForSide only shows the model.
-                // Quest and current Android XR controllers use the matching Oculus Touch profile.
-                App.VrSdk.SetControllerStyle(
-                    ControllerStyle.OculusTouch);
+                // Quest and current Android XR controllers already use this scaffold, so only
+                // recreate VrControls when another style is active (initializing, Pico, etc).
+                // A non-Touch controller on the other side keeps its own action bindings (see
+                // UnityXRControllerInfo.SetActionMask) but shows Touch geometry until both
+                // sides return to controllers and RestoreUnityXRControllerStyle runs.
+                ControllerGeometry geometry =
+                    InputManager.Brush?.Geometry;
 
-                // SetControllerStyle recreates VrControls.
-                InputManager.m_Instance.CreateControllerInfos();
+                if (geometry == null ||
+                    geometry.Style != ControllerStyle.OculusTouch)
+                {
+                    App.VrSdk.SetControllerStyle(
+                        ControllerStyle.OculusTouch);
+
+                    // SetControllerStyle recreates VrControls.
+                    InputManager.m_Instance.CreateControllerInfos();
+                }
             }
 
             if (InputManager.Wand == null ||
@@ -1842,6 +1853,33 @@ namespace TiltBrush
                     $"WandStyle={InputManager.Wand.Geometry?.Style} " +
                     $"BrushStyle={InputManager.Brush.Geometry?.Style}");
             }
+        }
+
+
+        /// <summary>
+        /// Once no side uses a hand, give a physical controller its own geometry and
+        /// bindings again. The next switch to a hand re-installs the Touch scaffold.
+        /// </summary>
+        private void RestoreControllersAfterHands(
+            bool wasActive)
+        {
+            if (!wasActive ||
+                Active ||
+                !m_OpenBrushHandModeInitialized ||
+                !(PhysicalControllerActive(false) || PhysicalControllerActive(true)))
+            {
+                return;
+            }
+
+            m_OpenBrushHandModeInitialized = false;
+
+            if (App.VrSdk != null && InputManager.m_Instance != null)
+            {
+                App.VrSdk.RestoreUnityXRControllerStyle();
+            }
+
+            LogDiagnostic(
+                "ANDROID_XR_HAND: all sides returned to physical controllers");
         }
 
 
