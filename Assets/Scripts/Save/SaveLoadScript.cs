@@ -727,6 +727,7 @@ namespace TiltBrush
 
                 if (!bAdditive)
                 {
+                    NativeImmImport.Unload();
                     var environment = EnvironmentCatalog.m_Instance
                         .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
                     if (environment != null)
