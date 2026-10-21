@@ -301,7 +301,8 @@ namespace TiltBrush
         private bool QuerySingleCanvas(CanvasScript canvas, Vector3 position_WS, out Vector3 snapped_WS)
         {
             snapped_WS = position_WS;
-            if (canvas == null || !m_HashPerCanvas.TryGetValue(canvas, out var hash))
+            if (canvas == null || !canvas.gameObject.activeInHierarchy ||
+                !m_HashPerCanvas.TryGetValue(canvas, out var hash))
             {
                 return false; // No snap points on this canvas
             }
@@ -322,7 +323,7 @@ namespace TiltBrush
 
             foreach (var (canvas, hash) in m_HashPerCanvas)
             {
-                if (canvas == null) continue;
+                if (canvas == null || !canvas.gameObject.activeInHierarchy) continue;
 
                 Vector3 queryPos_CS = canvas.Pose.inverse * position_WS;
                 if (QueryCanvasHash(canvas, hash, queryPos_CS, position_WS, out Vector3 result_WS))
