@@ -2572,6 +2572,57 @@ namespace TiltBrush.FrameAnimation
             return CompleteFrameLengthOperation(index, previousTimeline);
         }
 
+        public DeleteFrameOperation SquashAnimationTrack(CanvasScript source, CanvasScript destination)
+        {
+            EnsureSparseTimeline();
+            int sourceTrack = GetCanvasLocation(source).Item1;
+            int destinationTrack = GetCanvasLocation(destination).Item1;
+            if (sourceTrack <= 0 || destinationTrack < 0 || sourceTrack == destinationTrack)
+                return default;
+            // One combined drawing cannot preserve two independent path transforms.
+            if (m_SparseTimeline.Tracks[sourceTrack].Spans.Any(span => span.Value.PathToken != null) ||
+                m_SparseTimeline.Tracks[destinationTrack].Spans.Any(span => span.Value.PathToken != null))
+            {
+                Debug.LogWarning("[OB_ANIM_REVIEW] Remove layer animation paths before squashing tracks.");
+                return default;
+            }
+            var previousTimeline = CreateTimelineSnapshot();
+            var boundaries = m_SparseTimeline.Tracks[sourceTrack].Spans.Select(span => span.StartFrame)
+                .Concat(m_SparseTimeline.Tracks[destinationTrack].Spans.Select(span => span.StartFrame))
+                .Append(GetTimelineLength()).Distinct().OrderBy(frame => frame).ToList();
+            var replacements = new List<(int start, int duration, AnimationTimelineModel.FrameValue value)>();
+            for (int i = 0; i + 1 < boundaries.Count; i++)
+            {
+                int frame = boundaries[i];
+                CanvasScript sourceCanvas = Timeline[sourceTrack].Frames[frame].Canvas;
+                CanvasScript destinationCanvas = Timeline[destinationTrack].Frames[frame].Canvas;
+                var destinationStrokes = SketchMemoryScript.m_Instance.GetMemoryList
+                    .Where(stroke => stroke.Canvas == destinationCanvas).ToList();
+                CanvasScript combined = ReplicateDrawingToNewCanvas(
+                    destinationCanvas, destinationStrokes, out _);
+                var sourceStrokes = SketchMemoryScript.m_Instance.GetMemoryList
+                    .Where(stroke => stroke.Canvas == sourceCanvas).ToList();
+                CanvasScript sourceCopy = ReplicateDrawingToNewCanvas(
+                    sourceCanvas, sourceStrokes, out var copiedStrokes);
+                foreach (var stroke in copiedStrokes.Where(stroke => stroke.Canvas == sourceCopy))
+                    stroke.SetParentKeepWorldPosition(combined);
+                foreach (var widget in sourceCopy.GetComponentsInChildren<GrabWidget>(true))
+                    widget.SetCanvas(combined);
+                DestroyTimelineCanvas(sourceCopy);
+                replacements.Add((frame, boundaries[i + 1] - frame, NewDrawingFrameValue(combined)));
+            }
+            ApplySparseTimelineEdit(tracks =>
+            {
+                foreach (var replacement in replacements)
+                    AnimationTimelineOperations.ReplaceRange(tracks, destinationTrack,
+                        replacement.start, replacement.duration, replacement.value);
+                tracks[sourceTrack].Deleted = true;
+            });
+            SelectTimelineFrame(destinationTrack, FrameOn);
+            ResetTimeline();
+            return CompleteDeleteFrameOperation((destinationTrack, FrameOn), null, previousTimeline);
+        }
+
         private CanvasScript ReplicateDrawingToNewCanvas(
             CanvasScript oldCanvas, List<Stroke> oldStrokes, out List<Stroke> newStrokes)
         {
