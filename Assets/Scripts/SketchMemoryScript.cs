@@ -1280,7 +1280,7 @@ namespace TiltBrush
         public bool InsertSculptedGeometry(SculptedGeometryData sculptedGeometry, Stroke stroke)
         {
             var subset = stroke.m_BatchSubset;
-            if (subset == null || sculptedGeometry.vertices == null ||
+            if (subset == null || subset.m_VertLength <= 0 || sculptedGeometry.vertices == null ||
                 sculptedGeometry.normals == null ||
                 sculptedGeometry.vertices.Count != subset.m_VertLength ||
                 sculptedGeometry.normals.Count != subset.m_VertLength)

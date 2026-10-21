@@ -357,6 +357,7 @@ namespace TiltBrush
 
                 // Sculpted geometry
                 if (copy.sculptedGeometryData.vertices != null &&
+                    copy.sculptedGeometryData.vertices.Count > 0 &&
                     copy.sculptedGeometryData.normals != null &&
                     copy.sculptedGeometryData.vertices.Count == copy.sculptedGeometryData.normals.Count)
                 {
