@@ -91,6 +91,8 @@ namespace TiltBrush
 
         private ARSession m_Session;
         private ARCameraManager m_CameraManager;
+        private bool m_OwnsCameraManager;
+        private bool m_CameraManagerWasEnabled;
         private ARCameraBackground m_CameraBackground;
         private bool m_HidingEnvironment;
         private UnityEngine.SpatialTracking.TrackedPoseDriver m_PoseDriver;
@@ -242,7 +244,14 @@ namespace TiltBrush
             Camera camera = App.VrSdk.GetVrCamera();
             // AR only produces frames, and so poses, while its camera is running, even when
             // the feed isn't shown.
-            m_CameraManager = camera.gameObject.AddComponent<ARCameraManager>();
+            m_CameraManager = camera.GetComponent<ARCameraManager>();
+            m_OwnsCameraManager = m_CameraManager == null;
+            if (m_OwnsCameraManager)
+            {
+                m_CameraManager = camera.gameObject.AddComponent<ARCameraManager>();
+            }
+            m_CameraManagerWasEnabled = m_CameraManager.enabled;
+            m_CameraManager.enabled = true;
 
             // Don't let the headset pose driver fight over the camera.
             m_PoseDriver = camera.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
@@ -368,7 +377,10 @@ namespace TiltBrush
             if (m_CameraManager != null)
             {
                 m_CameraManager.enabled = false;
-                DestroyImmediate(m_CameraManager);
+                if (m_OwnsCameraManager)
+                {
+                    DestroyImmediate(m_CameraManager);
+                }
             }
             if (m_Session != null)
             {
@@ -388,6 +400,13 @@ namespace TiltBrush
                 {
                     manager.TrySetLoaders(sm_HeadsetLoaders);
                 }
+            }
+
+            // Leave the rig's existing camera manager intact and restore its state only
+            // after the AR subsystems have stopped.
+            if (!m_OwnsCameraManager && m_CameraManager != null)
+            {
+                m_CameraManager.enabled = m_CameraManagerWasEnabled;
             }
 
             if (m_PoseDriver != null)
