@@ -94,12 +94,11 @@ namespace TiltBrush
             bool includeLocalMediaContent, int gltfVersion,
             bool selfContained = false)
         {
-            Debug.Log($"outputFile: {outputFile}");
             var payload = ExportCollector.GetExportPayload(
                 axes,
                 includeLocalMediaContent: includeLocalMediaContent,
                 temporaryDirectory: Path.Combine(Application.temporaryCachePath, "exportgltf"),
-                Path.GetDirectoryName(outputFile)
+                outputDirectory: Path.GetDirectoryName(outputFile)
             );
             return ExportHelper(payload, outputFile, binary, doExtras: doExtras, gltfVersion: gltfVersion,
                 allowHttpUri: !selfContained);
