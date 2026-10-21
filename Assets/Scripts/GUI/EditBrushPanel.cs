@@ -199,6 +199,12 @@ namespace TiltBrush
             SaveButton.GetComponent<ActionButton>().SetButtonAvailable(false);
         }
 
+        private void MarkEditedBrushDirty()
+        {
+            m_needsSaving = true;
+            SaveButton.GetComponent<ActionButton>().SetButtonAvailable(true);
+        }
+
         public void SliderChanged(string propertyName, float value, int? vectorComponent)
         {
             // Value has already been scaled from 0..1 back to the full range
@@ -215,6 +221,7 @@ namespace TiltBrush
                 PreviewMaterial.SetFloat(propertyName, value);
                 brush.Material.SetFloat(propertyName, value);
             }
+            MarkEditedBrushDirty();
         }
 
         public void TextureChanged(string propertyName, int textureIndex, BrushEditorTexturePickerButton btn)
@@ -228,6 +235,7 @@ namespace TiltBrush
                 PreviewMaterial.SetTexture(propertyName, tex);
                 brush.Material.SetTexture(propertyName, tex);
                 btn.UpdateValue(tex, propertyName, textureIndex);
+                MarkEditedBrushDirty();
             }
         }
 
@@ -236,6 +244,7 @@ namespace TiltBrush
             var brush = PointerManager.m_Instance.MainPointer.CurrentBrush;
             PreviewMaterial.SetColor(propertyName, color);
             brush.Material.SetColor(propertyName, color);
+            MarkEditedBrushDirty();
         }
 
         private Vector2 GuessRange(float val)
