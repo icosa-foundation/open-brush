@@ -711,43 +711,54 @@ namespace TiltBrush
                     "An SDF guide definition requires a Primitives array.", nameof(state));
             }
 
-            var definitions = new List<ComponentDefinition>(state.Sdf.Primitives.Length);
-            for (int i = 0; i < state.Sdf.Primitives.Length; ++i)
+            var restoredAssets = new List<SDFMeshAsset>();
+            try
             {
-                Guides.SdfPrimitiveState component = state.Sdf.Primitives[i];
-                if (component == null)
+                var definitions = new List<ComponentDefinition>(state.Sdf.Primitives.Length);
+                for (int i = 0; i < state.Sdf.Primitives.Length; ++i)
                 {
-                    throw new ArgumentException($"SDF component {i} cannot be null.", nameof(state));
-                }
-                if (!component.HasTransform)
-                {
-                    throw new ArgumentException($"SDF component {i} requires Transform.", nameof(state));
-                }
-                if (!component.HasBlend)
-                {
-                    throw new ArgumentException($"SDF component {i} requires Blend.", nameof(state));
-                }
-                if (!component.HasFlip)
-                {
-                    throw new ArgumentException($"SDF component {i} requires Flip.", nameof(state));
-                }
+                    Guides.SdfPrimitiveState component = state.Sdf.Primitives[i];
+                    if (component == null)
+                    {
+                        throw new ArgumentException($"SDF component {i} cannot be null.", nameof(state));
+                    }
+                    if (!component.HasTransform)
+                    {
+                        throw new ArgumentException($"SDF component {i} requires Transform.", nameof(state));
+                    }
+                    if (!component.HasBlend)
+                    {
+                        throw new ArgumentException($"SDF component {i} requires Blend.", nameof(state));
+                    }
+                    if (!component.HasFlip)
+                    {
+                        throw new ArgumentException($"SDF component {i} requires Flip.", nameof(state));
+                    }
 
-                if (component.Mesh != null)
-                {
-                    definitions.Add(CreateMeshDefinition(component, i));
-                    continue;
+                    if (component.Mesh != null)
+                    {
+                        ComponentDefinition definition = CreateMeshDefinition(component, i);
+                        restoredAssets.AddRange(RetainMeshAssets(new[] { definition }));
+                        definitions.Add(definition);
+                        continue;
+                    }
+                    if (!component.HasGeometry)
+                    {
+                        throw new ArgumentException(
+                            $"SDF primitive {i} requires Geometry.", nameof(state));
+                    }
+                    definitions.Add(new ComponentDefinition(new PrimitiveDefinition(
+                        ParsePrimitiveType(component.Type), component.Geometry,
+                        component.Transform, ParseOperation(component.Operation),
+                        component.Blend, component.Flip)));
                 }
-                if (!component.HasGeometry)
-                {
-                    throw new ArgumentException(
-                        $"SDF primitive {i} requires Geometry.", nameof(state));
-                }
-                definitions.Add(new ComponentDefinition(new PrimitiveDefinition(
-                    ParsePrimitiveType(component.Type), component.Geometry,
-                    component.Transform, ParseOperation(component.Operation),
-                    component.Blend, component.Flip)));
+                ReplaceComponents(definitions);
             }
-            ReplaceComponents(definitions);
+            finally
+            {
+                // ReplaceComponents acquires its own references only after validation.
+                ReleaseMeshAssets(restoredAssets);
+            }
         }
 
         public void RefreshSdf()
@@ -1035,6 +1046,7 @@ namespace TiltBrush
         private static ComponentDefinition CreateMeshDefinition(
             Guides.SdfPrimitiveState component, int index)
         {
+            SDFCombineType operation = ParseOperation(component.Operation);
             Guides.SdfMeshState mesh = component.Mesh;
             float[] samples = BytesToFloats(mesh.Samples, $"SDF mesh {index} samples");
             float[] packedUvs = BytesToFloats(mesh.PackedUvs, $"SDF mesh {index} UVs");
@@ -1042,7 +1054,7 @@ namespace TiltBrush
                 null, samples, packedUvs, mesh.Size, mesh.Padding,
                 mesh.MinBounds, mesh.MaxBounds);
             return new ComponentDefinition(
-                asset, component.Transform, ParseOperation(component.Operation),
+                asset, component.Transform, operation,
                 component.Blend, component.Flip);
         }
 
