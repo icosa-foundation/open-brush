@@ -27,6 +27,7 @@ namespace TiltBrush
         private List<GameObject> m_TemporaryCameras;
         private Transform m_SkyStandinOriginalParent;
         private Material m_TemporarySkyMaterial;
+        private Texture2D m_TemporarySkyTexture;
 
         // Name used to identify the temporary sky material in AfterMaterialExport.
         public const string kSkyStandinMaterialName = "ob_sky_standin";
@@ -84,10 +85,11 @@ namespace TiltBrush
             m_TemporarySkySphere.gameObject.SetActive(true);
         }
 
-        private static Material CreateGradientMaterial(Color colorA, Color colorB)
+        private Material CreateGradientMaterial(Color colorA, Color colorB)
         {
             const int height = 256;
             var tex = new Texture2D(1, height, TextureFormat.RGB24, false);
+            m_TemporarySkyTexture = tex;
             tex.wrapMode = TextureWrapMode.Clamp;
             for (int y = 0; y < height; y++)
             {
@@ -111,6 +113,11 @@ namespace TiltBrush
             {
                 Destroy(m_TemporarySkyMaterial);
                 m_TemporarySkyMaterial = null;
+            }
+            if (m_TemporarySkyTexture != null)
+            {
+                Destroy(m_TemporarySkyTexture);
+                m_TemporarySkyTexture = null;
             }
         }
     }
