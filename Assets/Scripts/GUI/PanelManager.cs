@@ -187,6 +187,21 @@ namespace TiltBrush
             ShowingToHidden,
         }
 
+        public void RotateWandPanels(int direction)
+        {
+            if (m_AdvancedModeRevealActive || m_RotateSnapState != RotateSnapState.Done ||
+                !GazePanelsAreVisible() || m_PanelsMode != PanelMode.Standard)
+            {
+                return;
+            }
+
+            // Handtracking buttons use the same snap, jiggle and cooldown as the thumbstick.
+            m_WandPanelsRotationVelocity = 0.0f;
+            m_RotateSnapAnimTime = 1.0f;
+            m_RotateSnapAnimDir = direction >= 0 ? 1 : -1;
+            m_RotateSnapState = RotateSnapState.Snapping;
+        }
+
         public class RevealParticle
         {
             public Transform xf;
@@ -1051,7 +1066,9 @@ namespace TiltBrush
                 }
             }
 
-            if (!App.VrSdk.AnalogIsStick(InputManager.ControllerName.Wand))
+            // Finish a button-started snap even if the active input has no thumbstick.
+            if (!App.VrSdk.AnalogIsStick(InputManager.ControllerName.Wand) &&
+                m_RotateSnapState == RotateSnapState.Done)
             {
                 UpdateSwipeRotate(bWandRot, wandScrollXDelta);
             }
@@ -1878,6 +1895,20 @@ namespace TiltBrush
             }
         }
 
+        private Vector3 GetWandPanelOrigin(Transform wandTransform)
+        {
+            if (m_PanelAvailabilityMode != PanelAvailabilityMode.ViewOnly)
+            {
+                return wandTransform.position;
+            }
+
+            UserConfig.PanelsConfig config = App.UserConfig.Panels;
+            Vector3 offsetMeters = new Vector3(config.ViewOnlyOffsetRight ?? 0.0f,
+                config.ViewOnlyOffsetUp ?? 0.015f, config.ViewOnlyOffsetForward ?? 0.2f);
+            return wandTransform.position +
+                wandTransform.TransformDirection(offsetMeters * App.METERS_TO_UNITS);
+        }
+
         public void SetPanelXfFromWand(BasePanel panel, Transform wandTransform,
                                        float originAngle, float originOffset, float radius, bool ignoreReveal = false)
         {
@@ -1887,7 +1918,7 @@ namespace TiltBrush
             Quaternion qRotation = Quaternion.AngleAxis(originAngle + fAngle, wandTransform.forward);
             Vector3 vPanelOffset = vBaseOffset + wandTransform.forward * panel.m_WandAttachYOffset;
             Vector3 vRotatedOffset = qRotation * vPanelOffset;
-            panel.transform.position = wandTransform.position + vRotatedOffset;
+            panel.transform.position = GetWandPanelOrigin(wandTransform) + vRotatedOffset;
 
             Quaternion qPanelOrient = qRotation * wandTransform.rotation;
             Quaternion qPanelAdjust = Quaternion.Euler(90.0f, 0.0f, 0.0f);
@@ -1904,7 +1935,7 @@ namespace TiltBrush
             Vector3 vPanelOffset = sketchbookBaseOffset +
                 (wandTransform.forward * m_SketchbookOffset.y);
             Vector3 vRotatedOffset = qRotation * vPanelOffset;
-            panel.transform.position = wandTransform.position + vRotatedOffset;
+            panel.transform.position = GetWandPanelOrigin(wandTransform) + vRotatedOffset;
 
             Quaternion qPanelOrient = qRotation * wandTransform.rotation;
             Quaternion qPanelAdjust = Quaternion.Euler(m_SketchbookRotation);
