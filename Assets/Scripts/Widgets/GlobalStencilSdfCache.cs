@@ -193,7 +193,7 @@ namespace TiltBrush
 
         static float DistanceToStencil(StencilWidget s, Vector3 worldPos)
         {
-            Vector3 radii = s.Extents * Coords.CanvasPose.scale * 0.5f;
+            Vector3 radii = s.Extents * Mathf.Abs(s.Canvas.Pose.scale) * 0.5f;
             Quaternion rot = s.transform.rotation;
             Vector3 p = Quaternion.Inverse(rot) * (worldPos - s.transform.position);
 
@@ -203,8 +203,10 @@ namespace TiltBrush
                 case StencilType.Ellipsoid:
                     return SdEllipsoid(p, radii);
                 case StencilType.Cube:
-                case StencilType.Plane:
                     return SdBox(p, radii);
+                case StencilType.Plane:
+                    s.FindClosestPointOnSurface(worldPos, out Vector3 planePoint, out _);
+                    return Vector3.Distance(worldPos, planePoint);
                 case StencilType.Capsule:
                     {
                         float r = Mathf.Abs(radii.x);
