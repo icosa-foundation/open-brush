@@ -408,6 +408,7 @@ namespace TiltBrush
         public void ShowLayer(CanvasScript canvas)
         {
             canvas.gameObject.SetActive(true);
+            animationUI_manager?.UpdateLayerVisibilityRefresh(canvas);
             NotifyLayerCanvasesUpdate();
         }
 
@@ -420,6 +421,7 @@ namespace TiltBrush
         public void HideLayer(CanvasScript canvas)
         {
             canvas.gameObject.SetActive(false);
+            animationUI_manager?.UpdateLayerVisibilityRefresh(canvas);
             NotifyLayerCanvasesUpdate();
         }
 
