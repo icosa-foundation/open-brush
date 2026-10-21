@@ -132,6 +132,8 @@ namespace TiltBrush
                     SplitMeshPaths = modelSplitsMap[elem.Key].m_SplitMeshPaths,
                     NotSplittableMeshPaths = modelSplitsMap[elem.Key].m_NotSplittableMeshPaths,
                     ImmSketch = NativeImmImport.IsSketchLocation(elem.Key),
+                    ImmModel = widgetModels.Any(model => model.IsNativeImmModel &&
+                        model.GetLocation().Equals(elem.Key)),
                 };
 
                 // Order and align the metadata.

@@ -940,7 +940,8 @@ namespace TiltBrush
                     modelDatas.LayerIds,
                     modelDatas.SplitMeshPaths,
                     modelDatas.NotSplittableMeshPaths,
-                    modelDatas.PlaybackStates
+                    modelDatas.PlaybackStates,
+                    modelDatas.ImmModel
                 );
             }
             else
@@ -1056,10 +1057,29 @@ namespace TiltBrush
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
         static async Task<bool> CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
                 bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths,
-            ModelPlaybackState[] playbackStates = null)
+            ModelPlaybackState[] playbackStates = null, bool immModel = false)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
+            if (immModel && (model == null || !model.m_Valid || !model.IsNativeImmModel))
+            {
+                Model loadedImm = null;
+                float started = Time.realtimeSinceStartup;
+                while (!App.IcosaAssetCatalog.RequestImmModel(assetId, loaded => loadedImm = loaded))
+                {
+                    if (Time.realtimeSinceStartup - started > 120f) return false;
+                    await Task.Yield();
+                }
+                while (loadedImm == null && App.IcosaAssetCatalog.IsLoadingImm(assetId))
+                {
+                    if (Time.realtimeSinceStartup - started > 120f) return false;
+                    await Task.Yield();
+                }
+                if (loadedImm == null || !loadedImm.m_Valid || !loadedImm.IsNativeImmModel)
+                    return false;
+                model = loadedImm;
+            }
+
             if (model == null)
             {
                 // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
