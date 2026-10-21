@@ -464,6 +464,10 @@ namespace TiltBrush
                 transform.scale = m_ViewState.Widget.GetSignedWidgetSize();
                 App.Scene.ActiveCanvas.AsCanvas[m_ViewState.Widget.transform] = transform;
                 m_ViewState.WidgetTransform = GetSceneTransform();
+                if (!SuppressDirtyTracking)
+                {
+                    SketchMemoryScript.m_Instance?.MarkUnrecordedChange();
+                }
                 SaveLoadScript.m_Instance?.SketchChanged();
                 return;
             }

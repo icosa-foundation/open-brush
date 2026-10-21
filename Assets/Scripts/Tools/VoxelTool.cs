@@ -351,7 +351,16 @@ namespace TiltBrush
                 m_CurrentDocument = new VoxDocumentApiWrapper(document, widget);
                 m_CurrentDocument.SetAutoVisuals(true, true);
                 m_CurrentModel = m_CurrentDocument.Model();
-                m_CurrentModel.PlaceAt(canvasPosition, Mathf.Max(VoxelSize, 0.0001f));
+                // Initial placement belongs to the creation command, not an untracked Lua edit.
+                m_CurrentDocument.SuppressDirtyTracking = true;
+                try
+                {
+                    m_CurrentModel.PlaceAt(canvasPosition, Mathf.Max(VoxelSize, 0.0001f));
+                }
+                finally
+                {
+                    m_CurrentDocument.SuppressDirtyTracking = false;
+                }
                 m_CreateWidgetCommand.SetWidgetCost(widget.GetTiltMeterCost());
                 m_CreateNewOnNextAdd = false;
                 return true;
