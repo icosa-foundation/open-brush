@@ -76,7 +76,7 @@ namespace TiltBrush
         private void ApplyCells(Dictionary<Vector3Int, byte> cells, Color32[] palette)
         {
             if (m_Widget == null || m_Widget.EditableVoxDocument == null ||
-                m_ModelIndex >= m_Widget.EditableVoxDocument.Models.Count) return;
+                m_ModelIndex < 0 || m_ModelIndex >= m_Widget.EditableVoxDocument.Models.Count) return;
             var document = m_Widget.EditableVoxDocument;
             var model = document.Models[m_ModelIndex];
             Array.Copy(palette, document.Palette, palette.Length);
@@ -88,6 +88,7 @@ namespace TiltBrush
             if (m_Widget.Showing && m_Widget.gameObject.activeInHierarchy)
             {
                 m_Widget.RefreshEditableVoxMeshes();
+                m_Widget.EditableVoxDocument.ViewState.VisualsDirty = false;
             }
             SaveLoadScript.m_Instance?.SketchChanged();
         }
@@ -103,6 +104,7 @@ namespace TiltBrush
             if (m_Widget.Showing && m_Widget.gameObject.activeInHierarchy)
             {
                 m_Widget.RefreshEditableVoxMeshes();
+                m_Widget.EditableVoxDocument.ViewState.VisualsDirty = false;
             }
             SaveLoadScript.m_Instance?.SketchChanged();
         }
