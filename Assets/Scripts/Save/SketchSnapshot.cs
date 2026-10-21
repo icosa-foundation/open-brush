@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -120,6 +120,8 @@ namespace TiltBrush
                         stroke.Canvas == App.Scene.SelectionCanvas
                             ? stroke.m_PreviousCanvas
                             : stroke.Canvas));
+                // Capture metadata and stroke locations before the first timeslice yield.
+                m_Metadata = GetSketchMetadata();
                 m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
                 foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
                 {
@@ -132,8 +134,6 @@ namespace TiltBrush
                     m_Strokes.Add(strokeSnapshot);
                 }
                 stopwatch.Stop();
-
-                m_Metadata = GetSketchMetadata();
                 if (m_SelectedOnly)
                 {
                     // Reselect strokes
