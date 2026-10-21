@@ -41,6 +41,7 @@ namespace TiltBrush
         private GroupIdMapping m_GroupIdMapping;
 
         private bool m_SelectedOnly;
+        public long UnrecordedChangesRevision { get; private set; }
 
         public byte[] Thumbnail
         {
@@ -89,6 +90,7 @@ namespace TiltBrush
             m_JsonSerializer.ContractResolver = new CustomJsonContractResolver();
             m_SaveIconCapture = null;
             m_GroupIdMapping = new GroupIdMapping();
+            UnrecordedChangesRevision = SketchMemoryScript.m_Instance.UnrecordedChangesRevision;
             m_Metadata = GetSketchMetadata();
             m_LastThumbnail_SS = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
         }
@@ -123,6 +125,7 @@ namespace TiltBrush
             }
             stopwatch.Stop();
 
+            UnrecordedChangesRevision = SketchMemoryScript.m_Instance.UnrecordedChangesRevision;
             m_Metadata = GetSketchMetadata();
             if (m_SelectedOnly)
             {
