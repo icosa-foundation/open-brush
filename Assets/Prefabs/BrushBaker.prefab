@@ -210,7 +210,7 @@ MonoBehaviour:
     shader: {fileID: 4800000, guid: f62b84c7d6bc5f24487edcd3a458ce88, type: 3}
     brushGuid: 02ffb866-7fb2-4d15-b761-1012cefb1360
     computeShader: {fileID: 7200000, guid: c3f2ea0214c94ca9b5e1c708394a5162, type: 3}
-    ModifyColor: 0
+    ModifyColor: 1
     ModifyNormal: 0
     ModifyUv0: 0
     ModifyUv1: 0
@@ -228,7 +228,7 @@ MonoBehaviour:
     shader: {fileID: 4800000, guid: 731f18bedecafd24f8a663a28a1e1b42, type: 3}
     brushGuid: d902ed8b-d0d1-476c-a8de-878a79e3a34c
     computeShader: {fileID: 7200000, guid: f6251d3547fc4fdca814fa3b6c7d8495, type: 3}
-    ModifyColor: 0
+    ModifyColor: 1
     ModifyNormal: 0
     ModifyUv0: 0
     ModifyUv1: 0

@@ -5,7 +5,7 @@ uniform float4x4 TransformWorldToObject;
 
 RWStructuredBuffer<float3> vertexBuffer;
 StructuredBuffer<float3> normalBuffer;
-StructuredBuffer<float4> colorBuffer;
+RWStructuredBuffer<float4> colorBuffer;
 StructuredBuffer<float3> uvBuffer;
 StructuredBuffer<float4> uv1Buffer;
 
@@ -80,4 +80,6 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
 
     vertex = mul(TransformWorldToObject, float4(originWS.xyz + preBillboard, 1.0)).xyz;
     vertexBuffer[id.x] = vertex;
+    color.a = pow(1.0 - abs(2.0 * (t - 0.5)), 3.0);
+    colorBuffer[id.x] = color;
 }

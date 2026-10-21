@@ -5,7 +5,7 @@ uniform float4x4 TransformWorldToObject;
 
 RWStructuredBuffer<float3> vertexBuffer;
 StructuredBuffer<float3> normalBuffer;
-StructuredBuffer<float4> colorBuffer;
+RWStructuredBuffer<float4> colorBuffer;
 StructuredBuffer<float3> uvBuffer;
 
 uint _VertexCount;
@@ -81,4 +81,11 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
 
     vertex = mul(TransformWorldToObject, float4(originWS.xyz + preBillboard, 1.0)).xyz;
     vertexBuffer[id.x] = vertex;
+    // Match the normal Embers material's fixed-time sparkle and lifetime ramp.
+    float3 incolor = color.rgb;
+    float sparkle = pow(abs(sin(kEmbersExportTime * 3.0 + seed * 10.0)), 30.0);
+    color.rgb += pow(1.0 - t01, 10.0) * incolor * 200.0;
+    color.rgb += incolor * sparkle * 50.0;
+    color.rgb *= incolor * pow(1.0 - t01, 2.0) * 5.0;
+    colorBuffer[id.x] = color;
 }
