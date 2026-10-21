@@ -36,7 +36,7 @@ namespace TiltBrush
             m_TargetSubset = batchSubset;
             m_NewVerts = newVerts;
             m_VertLength = newVerts.Count;
-            m_OldVerts = m_TargetBatch.m_Geometry.m_Vertices.GetRange(startIndex, m_VertLength);
+            m_OldVerts = m_TargetBatch.Geometry.m_Vertices.GetRange(startIndex, m_VertLength);
             m_StartIndex = startIndex;
             m_Initial = isInitial;
         }
@@ -45,10 +45,10 @@ namespace TiltBrush
 
         private void ApplySculptModification(List<Vector3> vertices)
         {
-            m_TargetBatch.m_Geometry.EnsureGeometryResident();
+            m_TargetBatch.Geometry.EnsureGeometryResident();
             for (int i = m_StartIndex; i < m_StartIndex + m_VertLength; i++)
             {
-                m_TargetBatch.m_Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
+                m_TargetBatch.Geometry.m_Vertices[i] = vertices[i - m_StartIndex];
             }
 
             m_TargetSubset.RecalculateBounds();

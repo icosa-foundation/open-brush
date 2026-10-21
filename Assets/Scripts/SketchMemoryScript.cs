@@ -1292,11 +1292,11 @@ namespace TiltBrush
 
             int startIndex = subset.m_StartVertIndex;
             int endIndex = startIndex + subset.m_VertLength;
-            subset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
+            subset.m_ParentBatch.Geometry.EnsureGeometryResident();
             for (int i = startIndex; i < endIndex; i++)
             {
-                subset.m_ParentBatch.m_Geometry.m_Vertices[i] = sculptedGeometry.vertices[i - startIndex];
-                subset.m_ParentBatch.m_Geometry.m_Normals[i] = sculptedGeometry.normals[i - startIndex];
+                subset.m_ParentBatch.Geometry.m_Vertices[i] = sculptedGeometry.vertices[i - startIndex];
+                subset.m_ParentBatch.Geometry.m_Normals[i] = sculptedGeometry.normals[i - startIndex];
             }
             stroke.m_MeshIsEdited = true;
             subset.RecalculateBounds();

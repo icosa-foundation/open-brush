@@ -43,9 +43,9 @@ namespace TiltBrush
 
         public void RecalculateBounds()
         {
-            m_ParentBatch.m_Geometry.EnsureGeometryResident();
+            m_ParentBatch.Geometry.EnsureGeometryResident();
             m_Bounds = Batch.GetBoundsFor(
-                m_ParentBatch.m_Geometry.m_Vertices, m_StartVertIndex, m_VertLength);
+                m_ParentBatch.Geometry.m_Vertices, m_StartVertIndex, m_VertLength);
         }
     }
 } // namespace TiltBrush

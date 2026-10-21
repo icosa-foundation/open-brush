@@ -95,15 +95,15 @@ namespace TiltBrush
             int startIndex = rGroup.m_StartVertIndex;
             int vertLength = rGroup.m_VertLength;
 
-            if (parentBatch == null || parentBatch.m_Geometry == null)
+            if (parentBatch == null || parentBatch.Geometry == null)
             {
                 // Shouldn't happen anymore
                 Debug.LogWarning("Orphaned batch subset, skipping");
                 return false;
             }
-            parentBatch.m_Geometry.EnsureGeometryResident();
+            parentBatch.Geometry.EnsureGeometryResident();
 
-            var newVertices = parentBatch.m_Geometry.m_Vertices.GetRange(startIndex, vertLength);
+            var newVertices = parentBatch.Geometry.m_Vertices.GetRange(startIndex, vertLength);
             bool modified = false;
             // Tool position adjusted by canvas transformations
             for (int i = 0; i < vertLength; i++)

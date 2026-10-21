@@ -165,10 +165,10 @@ namespace TiltBrush
 
                     try
                     {
-                        stroke.m_BatchSubset.m_ParentBatch.m_Geometry.EnsureGeometryResident();
-                        List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.m_Geometry
+                        stroke.m_BatchSubset.m_ParentBatch.Geometry.EnsureGeometryResident();
+                        List<Vector3> vertices = stroke.m_BatchSubset.m_ParentBatch.Geometry
                             .m_Vertices.GetRange(vertStartIndex, vertCount);
-                        List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.m_Geometry
+                        List<Vector3> normals = stroke.m_BatchSubset.m_ParentBatch.Geometry
                             .m_Normals.GetRange(vertStartIndex, vertCount);
                         snapshot.sculptedGeometryData =
                             new SculptedGeometryData(vertices, normals);
