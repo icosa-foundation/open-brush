@@ -53,12 +53,13 @@ MonoBehaviour:
     probeSamplingDebugTexture: {fileID: 0}
     probeVolumeBlendStatesCS: {fileID: 0}
   m_RendererFeatures:
+  - {fileID: 728231190044821556}
   - {fileID: -5112751337474582183}
   - {fileID: 3323140472985962428}
   - {fileID: 6111700951782917469}
   - {fileID: -5352823065678073211}
   - {fileID: 5937264514657144174}
-  m_RendererFeatureMap: 5999ec40bfdb0bb9bc470d47a72a1e2e5d05706ca21fd15485b2bd40c8f3b6b56ecdab7d9e666552l
+  m_RendererFeatureMap: 3448fbb468321b0a5999ec40bfdb0bb9bc470d47a72a1e2e5d05706ca21fd15485b2bd40c8f3b6b56ecdab7d9e666552l
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   m_AssetVersion: 3
@@ -134,3 +135,18 @@ MonoBehaviour:
   m_Name: Gsplat URP Feature
   m_EditorClassIdentifier: Gsplat::Gsplat.GsplatURPFeature
   m_Active: 1
+--- !u!114 &728231190044821556
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02b9b32886e24dcbb3f63e181e2f06fa, type: 3}
+  m_Name: Open Brush Capture Effects
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpCaptureEffectsRendererFeature
+  m_Active: 1
+  m_VignetteShader: {fileID: 4800000, guid: 1927722e19c340ccb0b4df0f890d424a, type: 3}
+  m_TiltShiftShader: {fileID: 4800000, guid: ee8b0fb8af3b4b618299c9d7a073026d, type: 3}
