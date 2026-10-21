@@ -683,10 +683,10 @@ namespace TiltBrush
             if (_colorModulatedMaterials.TryGetValue(key, out int existing)) return existing;
 
             var clone = CloneGltfMaterial(source);
-            float r = strokeColor.r / 255f;
-            float g = strokeColor.g / 255f;
-            float b = strokeColor.b / 255f;
-            clone.EmissiveFactor = new GLTF.Math.Color(r, g, b, 1f);
+            Color linearColor = ((Color)strokeColor).linear;
+            float factor = Mathf.Min(gain, 1f);
+            clone.EmissiveFactor = new GLTF.Math.Color(
+                linearColor.r * factor, linearColor.g * factor, linearColor.b * factor, 1f);
             if (gain > 1f) ApplyEmissiveStrength(clone, gain, exporter);
 
             _gltfRoot.Materials.Add(clone);
@@ -792,7 +792,8 @@ namespace TiltBrush
             else
             {
                 var clone = CloneGltfMaterial(source);
-                clone.EmissiveFactor = new GLTF.Math.Color(1f, 1f, 1f, 1f);
+                float factor = Mathf.Min(gain, 1f);
+                clone.EmissiveFactor = new GLTF.Math.Color(factor, factor, factor, 1f);
                 clone.EmissiveTexture = atlasTexInfo;
                 if (gain > 1f) ApplyEmissiveStrength(clone, gain, exporter);
                 _gltfRoot.Materials.Add(clone);
