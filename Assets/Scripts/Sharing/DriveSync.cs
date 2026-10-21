@@ -779,7 +779,8 @@ namespace TiltBrush
                     driveFiles.Add(item.Name, item);
                 }
             }
-            var localFiles = folder.Local.GetFiles().ToDictionary(x => x.Name);
+            var localFiles = AndroidDirectStorage.GetFiles(folder.Local.FullName)
+                .Select(path => new FileInfo(path)).ToDictionary(x => x.Name);
             if (folder.IncludeExtensions != null)
             {
                 localFiles = localFiles.Values
