@@ -1300,6 +1300,7 @@ namespace TiltBrush
             }
 
             var models = new List<Model>(paths.Length);
+            var documents = new List<RuntimeVoxDocument>(paths.Length);
             try
             {
                 foreach (string path in paths)
@@ -1311,6 +1312,9 @@ namespace TiltBrush
                         source.CopyTo(copy);
                         bytes = copy.ToArray();
                     }
+                    // Validate every runtime payload before creating any scene widgets.
+                    bool preserveImportedSource = preserveSource == null || preserveSource[documents.Count];
+                    documents.Add(RuntimeVoxDocument.FromBytes(bytes, preserveImportedSource));
                     Model model = Model.CreateEditableVoxModelFromBytes(
                         bytes, modelDatas.FilePath);
                     if (model == null)
@@ -1333,17 +1337,9 @@ namespace TiltBrush
                         ? modelDatas.LayerIds[i] : 0;
                     string subtree = modelDatas.Subtrees != null && i < modelDatas.Subtrees.Length
                         ? modelDatas.Subtrees[i] : null;
-                    byte[] bytes;
-                    using (Stream source = fileInfo.GetReadStream(paths[i]))
-                    using (var copy = new MemoryStream())
-                    {
-                        source.CopyTo(copy);
-                        bytes = copy.ToArray();
-                    }
-                    bool preserveImportedSource = preserveSource == null || preserveSource[i];
                     CreateModel(models[i], subtree, transforms[i], pin,
                         isNonRawTransform: false, groupId, layerId,
-                        editableDocument: RuntimeVoxDocument.FromBytes(bytes, preserveImportedSource));
+                        editableDocument: documents[i]);
                 }
                 return true;
             }
