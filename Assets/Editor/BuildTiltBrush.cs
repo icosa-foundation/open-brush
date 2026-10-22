@@ -1282,6 +1282,43 @@ static class BuildTiltBrush
         }
     }
 
+    // Keep the large binary sketch collection outside Resources except while building
+    // the Android Viewer that seeds it into app-owned storage.
+    class TempIncludeBundledSketches : IDisposable
+    {
+        const string kSourcePath = "Assets/DefaultBundledSketches";
+        static string ResourcePath => $"Assets/Resources/{SketchCatalog.kDefaultBundledSketchesFolder}";
+        bool m_Moved;
+
+        public TempIncludeBundledSketches(TiltBuildOptions tiltOptions)
+        {
+#if OPEN_BRUSH_VIEWER
+            if (tiltOptions.Target == BuildTarget.Android)
+            {
+                MoveSketches(kSourcePath, ResourcePath);
+                m_Moved = true;
+            }
+#endif
+        }
+
+        public void Dispose()
+        {
+            if (m_Moved)
+            {
+                MoveSketches(ResourcePath, kSourcePath);
+            }
+        }
+
+        static void MoveSketches(string source, string destination)
+        {
+            string error = AssetDatabase.MoveAsset(source, destination);
+            if (!string.IsNullOrEmpty(error))
+            {
+                throw new BuildFailedException($"Could not move bundled sketches from {source} to {destination}: {error}");
+            }
+        }
+    }
+
     class TempSetOpenXrFeatureGroup : IDisposable
     {
         readonly List<UnityEngine.XR.OpenXR.Features.OpenXRFeature> enabledFeatures;
@@ -1936,6 +1973,7 @@ static class BuildTiltBrush
         // It's important here for Main.unity (currently scenes[1]) to be the last scene
         // "temp modified".  TempModifyScene opens the scene and if Main.unity is not the open
         // scene when TempHookUpSingletons runs, the build will fail.
+        using (var bundledSketches = new TempIncludeBundledSketches(tiltOptions))
         using (var preloadedAssets = new TempRestorePreloadedAssets())
         using (var unused = new TempModifyScene(scenes[0]))
         using (var unused12 = new TempModifyScene(scenes[1]))
