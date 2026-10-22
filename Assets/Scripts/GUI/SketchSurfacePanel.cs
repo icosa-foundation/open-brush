@@ -314,6 +314,7 @@ namespace TiltBrush
                 activeToolType == BaseTool.ToolType.RecolorTool ||
                 activeToolType == BaseTool.ToolType.RebrushTool ||
                 activeToolType == BaseTool.ToolType.PinTool ||
+                activeToolType == BaseTool.ToolType.VoxelTool ||
                 activeToolType == BaseTool.ToolType.SelectionTool)
             {
                 EnableDefaultTool();
