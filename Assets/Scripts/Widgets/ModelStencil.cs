@@ -340,6 +340,8 @@ namespace TiltBrush
                 return;
             }
 
+            m_MeshGenerator.MeshGenerationFinished += OnPreviewMeshGenerationFinished;
+
             // Set the SDFGroup reference on the mesh generator
             var groupField = typeof(SDFGroupMeshGenerator).GetField("m_group",
                 System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
@@ -426,7 +428,6 @@ namespace TiltBrush
             if (m_MeshGenerator != null && m_SDFGroup != null && m_SDFGroup.IsReady)
             {
                 m_MeshGenerator.UpdateMesh();
-                StartCoroutine(CheckMeshGenerationCoroutine());
             }
             else
             {
@@ -437,37 +438,11 @@ namespace TiltBrush
             }
         }
 
-        /// <summary>
-        /// Coroutine to check if mesh was generated after frame delays
-        /// (IsoMesh might generate meshes asynchronously over multiple frames)
-        /// </summary>
-        private System.Collections.IEnumerator CheckMeshGenerationCoroutine()
+        private void OnPreviewMeshGenerationFinished(bool succeeded)
         {
-            // Check after 1, 6, and 36 total frames to allow asynchronous generation to finish.
-            int[] frameChecks = { 1, 5, 30 };
-            int elapsedFrames = 0;
-
-            foreach (int frameCount in frameChecks)
+            if (succeeded && HasGeneratedPreviewMesh())
             {
-                // Wait the specified number of frames
-                for (int i = 0; i < frameCount; i++)
-                {
-                    yield return null;
-                }
-                elapsedFrames += frameCount;
-
-                if (HasGeneratedPreviewMesh())
-                {
-                    ReleaseSourceModel();
-                    yield break;
-                }
-
-                if (frameCount == frameChecks[frameChecks.Length - 1])
-                {
-                    Debug.LogError(
-                        $"{k_LogPrefix} IsoMesh did not produce a preview mesh after " +
-                        $"{elapsedFrames} frames.");
-                }
+                ReleaseSourceModel();
             }
         }
 
@@ -828,6 +803,10 @@ namespace TiltBrush
 
         protected override void OnDestroy()
         {
+            if (m_MeshGenerator != null)
+            {
+                m_MeshGenerator.MeshGenerationFinished -= OnPreviewMeshGenerationFinished;
+            }
             if (m_OwnsSdfAsset && m_SDFMeshAsset != null)
             {
                 Destroy(m_SDFMeshAsset);
