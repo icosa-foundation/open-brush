@@ -49,10 +49,6 @@ namespace TiltBrush
         private static ulong s_XrInstance;
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-        private delegate XrResult GetInstanceProcAddrDelegate(
-            ulong instance, [MarshalAs(UnmanagedType.LPStr)] string name, out IntPtr function);
-
-        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         private delegate XrResult EnumerateEnvironmentBlendModesDelegate(
             ulong instance, ulong systemId, int viewConfigurationType,
             uint capacityInput, out uint countOutput, [Out] int[] blendModes);
@@ -94,10 +90,13 @@ namespace TiltBrush
                 return false;
             }
 
-            var getInstanceProcAddr = Marshal.GetDelegateForFunctionPointer<GetInstanceProcAddrDelegate>(
+            // The extensions package can wrap this pointer in a managed callback. Mono
+            // requires the original delegate type when converting that pointer back.
+            var getInstanceProcAddr = Marshal.GetDelegateForFunctionPointer<del_xrGetInstanceProcAddr>(
                 xrGetInstanceProcAddr);
+            IntPtr enumeratePtr = IntPtr.Zero;
             if (getInstanceProcAddr(s_XrInstance, "xrEnumerateEnvironmentBlendModes",
-                    out IntPtr enumeratePtr) != XrResult.Success || enumeratePtr == IntPtr.Zero)
+                    ref enumeratePtr) != XrResult.Success || enumeratePtr == IntPtr.Zero)
             {
                 return false;
             }
