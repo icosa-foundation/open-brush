@@ -803,15 +803,23 @@ namespace TiltBrush
             }
         }
 
-        public void ClearActiveSelection()
+        public void ClearActiveSelection(bool recordCommand = true)
         {
             // The preview is left showing: the deselect keeps the copies it has moved into place.
 
             // Make sure we don't have a selection active.
             if (HasSelection)
             {
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    CreateEndSelectionCommand());
+                var command = CreateEndSelectionCommand();
+                if (recordCommand)
+                {
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                }
+                else
+                {
+                    // Snapshot capture restores the selection directly and must not edit history.
+                    command.Redo();
+                }
                 App.Scene.MainCanvas.gameObject.SetActive(true);
             }
         }

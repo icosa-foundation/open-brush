@@ -105,7 +105,7 @@ namespace TiltBrush
             var selection = SelectionManager.m_Instance;
             var selectedStrokes = selection.SelectedStrokes.ToList();
             var selectedWidgets = selection.SelectedWidgets.ToList();
-            if (selection.HasSelection) { selection.ClearActiveSelection(); }
+            if (selection.HasSelection) { selection.ClearActiveSelection(recordCommand: false); }
             IEnumerable<Stroke> strokes = m_SelectedOnly
                 ? selectedStrokes.Concat(SymmetryPeerEditing.PeersOutside(selectedStrokes)).ToList()
                 : SketchMemoryScript.AllStrokes();
