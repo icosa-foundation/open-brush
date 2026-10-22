@@ -2352,6 +2352,9 @@ namespace TiltBrush
             m_StraightEdgeControlPoints_CS = cps;
             m_StraightEdgeControlPointIndex = 0;
 
+            // Discarding the proxy ended its group; the real replacement strokes need a new one.
+            BeginSymmetryStrokeGroup();
+
             // Reset pointer to first control point and init all active pointers.
             SetMainPointerPosition(Coords.CanvasPose * m_StraightEdgeControlPoints_CS[0].m_Pos);
 
