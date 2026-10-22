@@ -431,7 +431,11 @@ namespace TiltBrush
                 Transform cameraXf = App.VrSdk.GetVrCamera().transform;
                 Vector3 euler = cameraXf.localEulerAngles;
                 cameraXf.localEulerAngles = new Vector3(euler.x, euler.y, 0);
+                Vector3 finalCameraPosition = Coords.AsRoom[cameraXf].translation;
                 cameraXf.localPosition = m_CameraStartPosition;
+                TrTransform scenePose = App.Scene.Pose;
+                scenePose.translation += Coords.AsRoom[cameraXf].translation - finalCameraPosition;
+                App.Scene.Pose = scenePose;
             }
 
             if (error != null)
