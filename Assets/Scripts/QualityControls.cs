@@ -61,8 +61,7 @@ namespace TiltBrush
         private double m_TimeSinceStart;
         private int m_FramesInLastSecond;
 
-        private int m_NumFramesFpsTooLow;
-        private int m_NumFramesFpsHighEnough;
+        private readonly AutomaticQualityPolicy m_AutomaticQualityPolicy = new AutomaticQualityPolicy();
         private readonly Dictionary<int, int> m_RuntimeFoveationOverrides = new Dictionary<int, int>();
         private float? m_RuntimeLowerFps;
         private float? m_RuntimeHigherFps;
@@ -70,6 +69,8 @@ namespace TiltBrush
         private int? m_RuntimeHigherFrames;
         private bool m_SessionRenderingPrepared;
         private bool m_AutomaticQualityEnabled = true;
+        private bool m_ApplicationPaused;
+        private bool m_HadMeasurementFocus;
         public bool SupportsAutomaticQuality => App.Config.IsMobileHardware;
         public bool AutomaticQualityEnabled
         {
@@ -79,7 +80,7 @@ namespace TiltBrush
                 if (value && !SupportsAutomaticQuality)
                     throw new InvalidOperationException("Automatic quality is only available on mobile hardware.");
                 m_AutomaticQualityEnabled = value;
-                m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+                m_AutomaticQualityPolicy.Reset(m_TimeSinceStart);
             }
         }
 
@@ -108,7 +109,7 @@ namespace TiltBrush
             m_RuntimeHigherFps = higherFps;
             m_RuntimeLowerFrames = lowerFrames;
             m_RuntimeHigherFrames = higherFrames;
-            m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+            m_AutomaticQualityPolicy.Reset(m_TimeSinceStart);
         }
 
         /// Index into the active platform's quality ladder, from lowest to highest.
@@ -233,6 +234,17 @@ namespace TiltBrush
             SetQualityLevel(QualityLevel);
         }
 
+        void OnApplicationPause(bool paused)
+        {
+            m_ApplicationPaused = paused;
+            if (paused) m_HadMeasurementFocus = false;
+        }
+
+        void OnApplicationFocus(bool focused)
+        {
+            if (!focused) m_HadMeasurementFocus = false;
+        }
+
         void Update()
         {
             if (!App.Config.IsMobileHardware)
@@ -240,8 +252,26 @@ namespace TiltBrush
                 return;
             }
 
-            // Count actual frames in the last second
-            m_TimeSinceStart += Time.deltaTime;
+            m_TimeSinceStart += Time.unscaledDeltaTime;
+            bool focusBlocked = App.Config.m_SdkMode == SdkMode.UnityXR &&
+                App.VrSdk != null && App.VrSdk.IsAppFocusBlocked();
+            if (m_ApplicationPaused || !Application.isFocused || focusBlocked)
+            {
+                m_HadMeasurementFocus = false;
+                m_FrameTimeStamps.Clear();
+                m_FramesInLastSecond = 0;
+                return;
+            }
+            if (!m_HadMeasurementFocus)
+            {
+                // Compositor/pause timing is not a measurement of our rendering cost.
+                m_FrameTimeStamps.Clear();
+                m_FramesInLastSecond = 0;
+                m_AutomaticQualityPolicy.ResetMeasurement(m_TimeSinceStart);
+                m_HadMeasurementFocus = true;
+            }
+
+            // Count actual foreground frames in the last second.
             m_FrameTimeStamps.Enqueue(m_TimeSinceStart);
             m_FramesInLastSecond++;
             double oneSecondAgo = m_TimeSinceStart - 1;
@@ -251,60 +281,23 @@ namespace TiltBrush
                 m_FramesInLastSecond--;
             }
 
-            if (!AutomaticQualityEnabled)
+            if (!AutomaticQualityEnabled || SelectionQualityOverrideActive)
             {
-                m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+                m_AutomaticQualityPolicy.Reset(m_TimeSinceStart);
                 return;
             }
 
-            // Update the frame counts. There is no cross-platform GPU load signal,
-            // so the scaler runs on framerate alone; see LlmDocs/openxr-perf-migration.md.
-            int fps = m_FramesInLastSecond;
-            if (fps <= (m_RuntimeLowerFps ?? AppQualityLevels.LowerQualityFpsTrigger))
-            {
-                m_NumFramesFpsTooLow++;
-            }
-            else
-            {
-                m_NumFramesFpsTooLow = 0;
-            }
-
-            if (fps >= (m_RuntimeHigherFps ?? AppQualityLevels.HigherQualityFpsTrigger))
-            {
-                m_NumFramesFpsHighEnough++;
-            }
-            else
-            {
-                m_NumFramesFpsHighEnough = 0;
-            }
-
-            if (SelectionQualityOverrideActive)
-            {
-                m_NumFramesFpsTooLow = 0;
-                m_NumFramesFpsHighEnough = 0;
-                return;
-            }
-
-            // Update quality level if needed
-            int limit = m_RuntimeLowerFrames ?? AppQualityLevels.FramesForLowerQuality;
-            if (m_NumFramesFpsTooLow >= limit)
-            {
-                if (QualityLevel > 0)
-                {
-                    QualityLevel--;
-                }
-                m_NumFramesFpsTooLow = 0;
-            }
-
-            limit = m_RuntimeHigherFrames ?? AppQualityLevels.FramesForHigherQuality;
-            if (m_NumFramesFpsHighEnough >= limit)
-            {
-                if (QualityLevel < AppQualityLevels.Length - 1)
-                {
-                    QualityLevel++;
-                }
-                m_NumFramesFpsHighEnough = 0;
-            }
+            var profiling = App.UserConfig.Profiling;
+            m_AutomaticQualityPolicy.SettlingSeconds = profiling.QualitySettlingSeconds;
+            m_AutomaticQualityPolicy.RecoverySeconds = profiling.QualityRecoverySeconds;
+            m_AutomaticQualityPolicy.RetrySeconds = profiling.QualityRetrySeconds;
+            int nextLevel = m_AutomaticQualityPolicy.Evaluate(m_TimeSinceStart, QualityLevel,
+                AppQualityLevels.Length - 1, m_FramesInLastSecond,
+                m_RuntimeLowerFps ?? AppQualityLevels.LowerQualityFpsTrigger,
+                m_RuntimeHigherFps ?? AppQualityLevels.HigherQualityFpsTrigger,
+                m_RuntimeLowerFrames ?? AppQualityLevels.FramesForLowerQuality,
+                m_RuntimeHigherFrames ?? AppQualityLevels.FramesForHigherQuality);
+            if (nextLevel != QualityLevel) QualityLevel = nextLevel;
 
         }
 
@@ -325,6 +318,7 @@ namespace TiltBrush
 
         void SetQualityLevel(int value)
         {
+            if (value != QualityLevel) m_AutomaticQualityPolicy.ResetMeasurement(m_TimeSinceStart);
             AppQualitySettingLevels settingLevels = AppQualityLevels;
             if (settingLevels != null && (value < 0 || value >= settingLevels.Length))
                 throw new ArgumentOutOfRangeException(nameof(value));
