@@ -1327,11 +1327,9 @@ namespace TiltBrush
                 m_Right,
                 allowDraw: true);
 
-            bool wasActive = Active;
-
             UpdateSourceSelection();
 
-            RestoreControllersAfterHands(wasActive);
+            RestoreControllersAfterHands();
 
             EnsureOpenBrushHandMode();
             EnsureTutorialBypass();
@@ -1887,11 +1885,9 @@ namespace TiltBrush
         /// Once no side uses a hand, give a physical controller its own geometry and
         /// bindings again. The next switch to a hand re-installs the Touch scaffold.
         /// </summary>
-        private void RestoreControllersAfterHands(
-            bool wasActive)
+        private void RestoreControllersAfterHands()
         {
-            if (!wasActive ||
-                Active ||
+            if (Active ||
                 !m_OpenBrushHandModeInitialized ||
                 !(PhysicalControllerActive(false) || PhysicalControllerActive(true)))
             {
