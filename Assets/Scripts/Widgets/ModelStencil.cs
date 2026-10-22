@@ -564,7 +564,10 @@ namespace TiltBrush
             colliderObject.transform.SetParent(transform, false);
             m_MeshCollider = colliderObject.AddComponent<MeshCollider>();
             m_MeshCollider.sharedMesh = m_SourceMesh;
+            m_MeshCollider.enabled = m_GrabCollider.enabled;
+            m_GrabCollider.enabled = false;
             m_Collider = m_MeshCollider;
+            m_GrabCollider = m_MeshCollider;
         }
 
         /// <summary>
