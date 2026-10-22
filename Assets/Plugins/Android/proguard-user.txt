@@ -1,3 +1,7 @@
 # Unity calls this bridge by name; Android also instantiates its nested picker fragment.
 -keep class foundation.icosa.openbrush.DirectStorage { *; }
 -keep class foundation.icosa.openbrush.DirectStorage$Picker { *; }
+
+# ARCore looks up its permission helper and callback interface through JNI.
+-keep class com.unity3d.plugin.UnityAndroidPermissions { *; }
+-keep class com.unity3d.plugin.UnityAndroidPermissions$* { *; }

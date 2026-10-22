@@ -223,7 +223,17 @@ namespace TiltBrush
                     mv = delta * touchLookSensitivity;
                 }
 
-                if (mv != Vector2.zero)
+                if (mv != Vector2.zero && HandheldArNavigation.IsActive)
+                {
+                    // The phone's pose owns the camera, so look input turns the scene
+                    // about the viewer instead. Pitch stays with the phone.
+                    Vector3 pivot = Coords.AsRoom[App.VrSdk.GetVrCamera().transform].translation;
+                    TrTransform turn = TrTransform.T(pivot) *
+                        TrTransform.R(Quaternion.Euler(0, -mv.x, 0)) * TrTransform.T(-pivot);
+                    App.Scene.Pose = SketchControlsScript.MakeValidScenePose(
+                        turn * App.Scene.Pose, BoundsRadius);
+                }
+                else if (mv != Vector2.zero)
                 {
                     Vector3 cameraRotation = App.VrSdk.GetVrCamera().transform.rotation.eulerAngles;
                     cameraRotation.y += mv.x;

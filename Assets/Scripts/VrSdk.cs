@@ -917,7 +917,9 @@ namespace TiltBrush
             switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
-                    return XRGeneralSettings.Instance?.Manager?.activeLoader != null;
+                    XRLoader loader = XRGeneralSettings.Instance?.Manager?.activeLoader;
+                    // Handheld AR tracks a phone, which is still the no-headset view mode.
+                    return loader != null && !HandheldArNavigation.IsArLoader(loader);
                 default:
                     return true;
             }
