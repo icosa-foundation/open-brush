@@ -1901,6 +1901,10 @@ namespace TiltBrush
                 App.VrSdk.RestoreUnityXRControllerStyle();
             }
 
+            // Update returns before its normal routing pass once hand mode ends.
+            // Restore pose drivers here even when the Touch scaffold is reused.
+            ApplySourceRouting();
+
             LogDiagnostic(
                 "ANDROID_XR_HAND: all sides returned to physical controllers");
         }
