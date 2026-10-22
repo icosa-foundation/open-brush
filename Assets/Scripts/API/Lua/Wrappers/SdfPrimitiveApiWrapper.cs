@@ -11,7 +11,6 @@ namespace TiltBrush
     {
         private readonly SdfStencil m_Stencil;
         private readonly Guid m_ComponentIdentity;
-        private bool m_Deleted;
 
         public SdfPrimitiveApiWrapper(SdfStencil stencil, SDFPrimitive primitive)
         {
@@ -111,7 +110,6 @@ namespace TiltBrush
         {
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 EditSdfGuideCommand.RemoveComponent(m_Stencil, componentIndex));
-            m_Deleted = true;
         }
 
         [LuaDocsDescription("Returns a string representation of the SDF primitive")]
@@ -130,7 +128,7 @@ namespace TiltBrush
         {
             get
             {
-                SDFPrimitive primitive = m_Deleted ? null : m_Stencil.GetComponents()
+                SDFPrimitive primitive = m_Stencil.GetComponents()
                     .OfType<SDFPrimitive>().FirstOrDefault(component =>
                         m_Stencil.GetComponentIdentity(component) == m_ComponentIdentity);
                 if (primitive == null)
