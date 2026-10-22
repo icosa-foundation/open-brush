@@ -31,6 +31,8 @@ namespace TiltBrush
         [SerializeField] private SDFPrimitiveType m_PrimitiveType = SDFPrimitiveType.Cylinder;
         [SerializeField] private Vector3 m_AspectRatio = Vector3.one;
 
+        private Guid m_ResizePrimitiveIdentity;
+
         public override Vector3 Extents
         {
             get => m_Size * m_AspectRatio;
@@ -65,6 +67,7 @@ namespace TiltBrush
                     m_PrimitiveType, GeometryFromAspectRatio(), TrTransform.identity,
                     SDFCombineType.SmoothUnion, 0f, false),
             });
+            m_ResizePrimitiveIdentity = GetComponentIdentity(GetComponents()[0]);
             UpdateScale();
         }
 
@@ -99,7 +102,10 @@ namespace TiltBrush
             }
             transform.localScale = Vector3.one * m_Size;
 
-            if (PrimitiveCount > 0)
+            var components = GetComponents();
+            if (components.Count > 0 && components[0] is SDFPrimitive primitive &&
+                primitive.Type == m_PrimitiveType &&
+                GetComponentIdentity(primitive) == m_ResizePrimitiveIdentity)
             {
                 SetComponentPrimitiveGeometry(0, GeometryFromAspectRatio());
             }
@@ -126,8 +132,43 @@ namespace TiltBrush
             clone.CloneInitialMaterials(this);
             clone.Extents = Extents;
             clone.ReplaceComponents(GetComponentDefinitions());
+            clone.m_ResizePrimitiveIdentity = m_ResizePrimitiveIdentity;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             return clone;
+        }
+
+        protected override void PopulateSaveState(Guides.State state)
+        {
+            base.PopulateSaveState(state);
+            var components = GetComponents();
+            state.Sdf.ResizePrimitiveIndex = -1;
+            for (int i = 0; i < components.Count; ++i)
+            {
+                if (GetComponentIdentity(components[i]) == m_ResizePrimitiveIdentity)
+                {
+                    state.Sdf.ResizePrimitiveIndex = i;
+                    break;
+                }
+            }
+        }
+
+        protected override void ApplySaveState(Guides.State state)
+        {
+            base.ApplySaveState(state);
+            m_ResizePrimitiveIdentity = Guid.Empty;
+            var components = GetComponents();
+            int resizeIndex = state.Sdf.ResizePrimitiveIndex ?? -1;
+            if (resizeIndex >= 0 && resizeIndex < components.Count &&
+                components[resizeIndex] is SDFPrimitive savedPrimitive)
+            {
+                m_ResizePrimitiveIdentity = GetComponentIdentity(savedPrimitive);
+            }
+            else if (state.Sdf.ResizePrimitiveIndex == null && components.Count == 1 &&
+                components[0] is SDFPrimitive primitive && primitive.Type == m_PrimitiveType &&
+                primitive.Data == GeometryFromAspectRatio())
+            {
+                m_ResizePrimitiveIdentity = GetComponentIdentity(primitive);
+            }
         }
 
         protected override Axis GetInferredManipulationAxis(

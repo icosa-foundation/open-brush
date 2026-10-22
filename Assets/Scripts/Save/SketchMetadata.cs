@@ -491,6 +491,8 @@ namespace TiltBrush
         public class SdfGuideState
         {
             public SdfPrimitiveState[] Primitives { get; set; }
+            // Nullable preserves conservative restoration of legacy standalone primitive guides.
+            public int? ResizePrimitiveIndex { get; set; }
         }
 
         [Serializable]
