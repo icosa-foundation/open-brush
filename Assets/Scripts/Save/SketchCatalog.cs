@@ -34,6 +34,7 @@ namespace TiltBrush
 
         // Bundled .tilt TextAssets used to seed local example sketches.
         public const string kDefaultShowcaseSketchesFolder = "DefaultShowcaseSketches";
+        public const string kDefaultBundledSketchesFolder = "DefaultBundledSketches";
 
         private SketchSet[] m_Sets;
 
@@ -92,7 +93,7 @@ namespace TiltBrush
             if (!App.InitDirectoryAtPath(sketchesPath)) { return false; }
 
             TextAsset[] textAssets =
-                Resources.LoadAll<TextAsset>(SketchCatalog.kDefaultShowcaseSketchesFolder);
+                Resources.LoadAll<TextAsset>(kDefaultBundledSketchesFolder);
             try
             {
                 var defaults = new List<string>();
@@ -101,7 +102,7 @@ namespace TiltBrush
                 {
                     if (asset.name.EndsWith(".tilt"))
                     {
-                        string resourcePath = $"{kDefaultShowcaseSketchesFolder}/{asset.name}";
+                        string resourcePath = $"{kDefaultBundledSketchesFolder}/{asset.name}";
                         defaults.Add(resourcePath);
                         assetsByPath.Add(resourcePath, asset);
                     }
