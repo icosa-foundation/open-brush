@@ -107,7 +107,7 @@ namespace TiltBrush
                     }
                 }
                 DefaultMediaSeeder.Seed(sketchesPath, defaults.ToArray(), null,
-                    "Seeded bundled sketches", App.m_Instance.HasPlayedBefore,
+                    "Seeded bundled sketches", App.Instance.HasPlayedBefore,
                     resourcePath => assetsByPath[resourcePath].bytes);
             }
             finally
