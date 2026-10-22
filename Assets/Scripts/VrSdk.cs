@@ -918,7 +918,18 @@ namespace TiltBrush
                     VrControls.Brush.ControllerGeometry.Style == style;
                 if (style != ControllerStyle.Unset && !styleMatches)
                 {
+                    // Recreated scaffolds start in the default left/right arrangement.
+                    var inputManager = InputManager.m_Instance;
+                    bool wandOnRight = inputManager.WandOnRight;
+                    if (wandOnRight)
+                    {
+                        inputManager.WandOnRight = false;
+                    }
                     UnityXRFinishControllerInit(device);
+                    if (wandOnRight)
+                    {
+                        inputManager.WandOnRight = true;
+                    }
                 }
                 return;
             }
