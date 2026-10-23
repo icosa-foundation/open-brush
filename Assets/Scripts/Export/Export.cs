@@ -119,6 +119,7 @@ URL=" + kExportDocumentationUrl;
                     { "obj", true },
                     { "stl", false },
                     { "usd", false },
+                    { "vox", false },
                     { "wrl", false },
                 };
             }
@@ -176,6 +177,11 @@ URL=" + kExportDocumentationUrl;
             if (IsExportEnabled("stl"))
             {
                 progress.SetWork("stl");
+            }
+
+            if (IsExportEnabled("vox"))
+            {
+                progress.SetWork("vox");
             }
 
             if (App.PlatformConfig.EnableExportGlb)
@@ -292,6 +298,14 @@ URL=" + kExportDocumentationUrl;
                 }
             });
 
+            RunExport("vox", () =>
+            {
+                if (IsExportEnabled("vox"))
+                {
+                    ExportEditableVoxWidgets(Path.Combine(parent, "vox"));
+                }
+            });
+
             RunExport("glb", () =>
             {
                 if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("glb"))
@@ -343,6 +357,52 @@ URL=" + kExportDocumentationUrl;
             {
                 File.WriteAllText(readmeFilename, kExportReadmeBody);
             }
+        }
+
+        private static void ExportEditableVoxWidgets(string destinationDirectory)
+        {
+            var widgets = WidgetManager.m_Instance.ActiveModelWidgets
+                .Select(widgetData => widgetData.WidgetScript)
+                .Where(widget => widget.EditableVoxDocument != null)
+                .ToList();
+            if (widgets.Count == 0)
+            {
+                return;
+            }
+
+            if (!FileUtils.InitializeDirectoryWithUserError(
+                    destinationDirectory, "Failed to create export directory for vox"))
+            {
+                return;
+            }
+
+            var usedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (ModelWidget widget in widgets)
+            {
+                string basename = GetVoxExportName(widget);
+                string uniqueBasename = basename;
+                int suffix = 2;
+                while (!usedNames.Add(uniqueBasename))
+                {
+                    uniqueBasename = $"{basename}_{suffix}";
+                    ++suffix;
+                }
+
+                string filename = Path.Combine(destinationDirectory, $"{uniqueBasename}.vox");
+                File.WriteAllBytes(filename, widget.EditableVoxDocument.ToVoxBytes());
+            }
+        }
+
+        private static string GetVoxExportName(ModelWidget widget)
+        {
+            string basename = FileUtils.GetValidFilename(widget.GetExportName());
+            if (string.IsNullOrEmpty(basename) || basename == "Unknown")
+            {
+                basename = FileUtils.GetValidFilename(
+                    widget.EditableVoxDocument.Models.FirstOrDefault()?.Name);
+            }
+
+            return string.IsNullOrEmpty(basename) ? "VoxelModel" : basename;
         }
 
         public static int ExportNewGlb(string destinationPath, string fileBaseName, bool exportEnvironment)

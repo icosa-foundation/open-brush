@@ -548,8 +548,12 @@ namespace TiltBrush
 
             m_LastWriteSnapshotError = error;
             m_LastThumbnailBytes = snapshot.Thumbnail;
-            SketchMemoryScript.m_Instance.SetLastOperationStackCount();
-            SketchMemoryScript.m_Instance.InitialSketchTransform = App.Scene.Pose;
+            if (error == null && !selectedOnly)
+            {
+                SketchMemoryScript.m_Instance.SetLastOperationStackCount(
+                    snapshot.UnrecordedChangesRevision);
+                SketchMemoryScript.m_Instance.InitialSketchTransform = App.Scene.Pose;
+            }
             m_SaveCoroutine = null;
             if (error == null)
             {
@@ -826,7 +830,7 @@ namespace TiltBrush
 
                     if (jsonData.ModelIndex != null)
                     {
-                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex);
+                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex, fileInfo);
                     }
 
                     if (jsonData.LightIndex != null)

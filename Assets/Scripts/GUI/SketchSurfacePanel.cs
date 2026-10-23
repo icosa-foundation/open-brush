@@ -95,6 +95,15 @@ namespace TiltBrush
                 m_Tools[i].gameObject.SetActive(false);
             }
 
+            if (GetToolOfType(BaseTool.ToolType.VoxelTool) == null)
+            {
+                var toolObject = new GameObject("VoxelTool");
+                toolObject.transform.SetParent(transform, false);
+                var voxelTool = toolObject.AddComponent<VoxelTool>();
+                voxelTool.m_Type = BaseTool.ToolType.VoxelTool;
+                RegisterRuntimeTool(voxelTool);
+            }
+
             m_ToolHideRequested = false;
         }
 
@@ -285,7 +294,8 @@ namespace TiltBrush
             if (ActiveTool.m_Type != BaseTool.ToolType.RepaintTool &&
                 ActiveTool.m_Type != BaseTool.ToolType.RecolorTool &&
                 ActiveTool.m_Type != BaseTool.ToolType.TintColorTool &&
-                ActiveTool.m_Type != BaseTool.ToolType.ScriptedTool)
+                ActiveTool.m_Type != BaseTool.ToolType.ScriptedTool &&
+                ActiveTool.m_Type != BaseTool.ToolType.VoxelTool)
             {
                 EnableDefaultTool();
             }
@@ -304,6 +314,7 @@ namespace TiltBrush
                 activeToolType == BaseTool.ToolType.RecolorTool ||
                 activeToolType == BaseTool.ToolType.RebrushTool ||
                 activeToolType == BaseTool.ToolType.PinTool ||
+                activeToolType == BaseTool.ToolType.VoxelTool ||
                 activeToolType == BaseTool.ToolType.SelectionTool)
             {
                 EnableDefaultTool();

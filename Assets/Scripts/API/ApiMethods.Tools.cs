@@ -157,5 +157,31 @@
         {
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.TintColorTool);
         }
+
+        [ApiEndpoint("tool.voxel", "Activates the Voxel Tool")]
+        public static void ActivateVoxelTool()
+        {
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.VoxelTool);
+        }
+
+        [ApiEndpoint("tool.voxel.mode", "Sets the Voxel Tool mode: Add, Erase, or Paint")]
+        public static void SetVoxelToolMode(string mode)
+        {
+            var tool = SketchSurfacePanel.m_Instance.GetToolOfType(
+                BaseTool.ToolType.VoxelTool) as VoxelTool;
+            if (tool == null || !System.Enum.TryParse(mode, true, out VoxelTool.EditMode parsed))
+            {
+                throw new System.ArgumentException($"Unknown voxel tool mode '{mode}'.", nameof(mode));
+            }
+            tool.Mode = parsed;
+        }
+
+        [ApiEndpoint("tool.voxel.new", "Makes the Voxel Tool create a new model on its next Add gesture")]
+        public static void RequestNewVoxelModel()
+        {
+            var tool = SketchSurfacePanel.m_Instance.GetToolOfType(
+                BaseTool.ToolType.VoxelTool) as VoxelTool;
+            tool?.RequestNewModel();
+        }
     }
 }

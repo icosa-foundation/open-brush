@@ -52,6 +52,7 @@ namespace TiltBrush
             TintColorTool = 5101,
             ManualColocationTool = 1022,
             ScriptedTool = 6001,
+            VoxelTool = 6002,
             SnipTool = 11000,
             JoinTool = 11001
         }
