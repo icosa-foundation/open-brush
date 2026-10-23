@@ -140,6 +140,14 @@ objects. Analysis target: installed Assembly-CSharp.dll, SHA-256
 `5ce4f78092e1cdd254157d78155c094bcca4d7507d430571d44c440487200dc2`.
 
 P2: Procedural shapes and parameter editing.
+The new `MaquetteGeometryAdapter` converts the five builder families into shared
+generator/operation recipes. Standalone checks translate 2,728 procedural state
+records from the installed projects using saved hierarchy scales; no unsupported
+cases were reported in that corpus. This does not establish generated-mesh parity,
+Maquette master-stage overlay semantics, or .tilt persistence. Square collapsed
+frame openings use Frame's filled-outline result; collapsed rounded openings and
+singular/reflected construction scales remain explicit unsupported cases.
+
 Two library files contain 1,611 procedural entities: rounded corner rim (184),
 rounded corner quad (552), cylinder/cone (761), conic section (114). Parameters
 cover dimensions, radii, thickness/borders, tessellation, sweep, inversion,
