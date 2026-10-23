@@ -426,7 +426,17 @@ URL=" + kExportDocumentationUrl;
                 int triangleCount = CountTrianglesInLayers(layerCanvases, layerMask);
 
                 var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
-                unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
+                try
+                {
+                    unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
+                }
+                finally
+                {
+                    foreach (var plugin in unityGltfexporter.Plugins.OfType<OpenBrushExportPluginConfig>())
+                    {
+                        plugin.RestoreSceneAfterExport();
+                    }
+                }
 
                 return triangleCount;
             }

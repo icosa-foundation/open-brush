@@ -34,8 +34,23 @@ namespace TiltBrush
 
         private Dictionary<int, List<BatchSubset>> m_MeshBatchSubsets;
         private Dictionary<Mesh, TimestampSource> m_TimestampSources;
-        private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
-        private List<Mesh> m_TemporaryBatchMeshes;
+        private sealed class LayerExportState
+        {
+            internal CanvasScript Canvas;
+            internal bool KeepStrokes;
+            internal readonly List<(Stroke stroke, bool enabled)> ConvertedStrokes =
+                new List<(Stroke, bool)>();
+            internal readonly Dictionary<Batch, string> BatchTags = new Dictionary<Batch, string>();
+            internal readonly Dictionary<MeshFilter, Mesh> BatchMeshes = new Dictionary<MeshFilter, Mesh>();
+            internal readonly Dictionary<Renderer, Material> BatchMaterials = new Dictionary<Renderer, Material>();
+            internal readonly List<Mesh> TemporaryMeshes = new List<Mesh>();
+            internal readonly List<Transform> TemporaryGroups = new List<Transform>();
+        }
+
+        private readonly Dictionary<CanvasScript, LayerExportState> m_LayerExportStates =
+            new Dictionary<CanvasScript, LayerExportState>();
+        private bool m_HasBatchingState;
+        private GltfExportStandinManager m_SkyStandinManager;
         private List<Camera> m_CameraPathsCameras;
         private GameObject m_ThumbnailCamera;
         private bool m_WasUsingBatchedBrushes;
@@ -156,13 +171,12 @@ namespace TiltBrush
             }
             m_MeshBatchSubsets = new Dictionary<int, List<BatchSubset>>();
             m_TimestampSources = new Dictionary<Mesh, TimestampSource>();
-            m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
-            m_TemporaryBatchMeshes = new List<Mesh>();
             if (IsIsolatedMeshFixtureExport) return;
 
             if (Application.isPlaying && App.UserConfig.Export.ExportCustomSkybox)
             {
-                GltfExportStandinManager.m_Instance.CreateSkyStandin();
+                m_SkyStandinManager = GltfExportStandinManager.m_Instance;
+                m_SkyStandinManager.CreateSkyStandin();
             }
             SelectionManager.m_Instance?.ClearActiveSelection();
             m_SoundClipNodes = new List<(Node node, SoundClipWidget widget)>();
@@ -180,8 +194,8 @@ namespace TiltBrush
             {
                 var widget = cameraPathWidgets[i];
                 var layer = widget.m_WidgetScript.Canvas;
-                var go = GameObject.Instantiate(new GameObject(), layer.transform);
-                go.name = $"CameraPath_{i}_{widget.m_WidgetScript.name}";
+                var go = new GameObject($"CameraPath_{i}_{widget.m_WidgetScript.name}");
+                go.transform.SetParent(layer.transform, false);
                 var cam = go.AddComponent<Camera>();
                 m_CameraPathsCameras.Add(cam);
                 cam.stereoTargetEye = StereoTargetEyeMask.None;
@@ -259,6 +273,7 @@ namespace TiltBrush
             if (layer.transform.childCount == 0)
             {
                 var groupTransform = new GameObject($"_StrokeGroup_{group}").transform;
+                m_LayerExportStates[layer].TemporaryGroups.Add(groupTransform);
                 groupTransform.parent = layer.transform;
                 groupTransform.localPosition = Vector3.zero;
                 groupTransform.localRotation = Quaternion.identity;
@@ -275,6 +290,7 @@ namespace TiltBrush
                     }
                 }
                 var groupTransform = new GameObject($"_StrokeGroup_{group}").transform;
+                m_LayerExportStates[layer].TemporaryGroups.Add(groupTransform);
                 groupTransform.parent = layer.transform;
                 groupTransform.localPosition = Vector3.zero;
                 groupTransform.localRotation = Quaternion.identity;
@@ -286,29 +302,43 @@ namespace TiltBrush
         public void BeforeLayerExport(Transform transform)
         {
             var canvas = transform.GetComponent<CanvasScript>();
-
-            if (App.UserConfig.Export.KeepStrokes)
+            if (canvas == null || m_LayerExportStates.ContainsKey(canvas)) return;
+            var state = new LayerExportState {
+                Canvas = canvas, KeepStrokes = App.UserConfig.Export.KeepStrokes
+            };
+            // Register recovery state before changing batching or destroying any geometry.
+            m_LayerExportStates.Add(canvas, state);
+            if (state.KeepStrokes)
             {
-                m_WasUsingBatchedBrushes = App.Config.m_UseBatchedBrushes;
-                App.Config.m_UseBatchedBrushes = false;
-                foreach (var batch in canvas.BatchManager.AllBatches())
+                if (!m_HasBatchingState)
                 {
+                    m_WasUsingBatchedBrushes = App.Config.m_UseBatchedBrushes;
+                    m_HasBatchingState = true;
+                }
+                App.Config.m_UseBatchedBrushes = false;
+                foreach (var batch in canvas.BatchManager.AllBatches().ToArray())
+                {
+                    state.BatchTags[batch] = batch.tag;
                     var subsets = batch.m_Groups.ToArray();
                     for (var i = 0; i < subsets.Length; i++)
                     {
                         var subset = subsets[i];
                         var stroke = subset.m_Stroke;
-                        stroke.m_IntendedCanvas = stroke.Canvas;
                         if (stroke.m_Type != Stroke.Type.BatchedBrushStroke) continue;
+                        bool wasEnabled = stroke.IsGeometryEnabled;
+                        state.ConvertedStrokes.Add((stroke, wasEnabled));
                         stroke.Uncreate();
                         stroke.Recreate(null, canvas);
+                        stroke.Hide(!wasEnabled);
                         var mesh = stroke.m_Object.GetComponent<MeshFilter>().sharedMesh;
                         if (mesh.vertexCount > 0)
                         {
                             var renderer = stroke.m_Object.GetComponent<Renderer>();
+                            var originalMesh = mesh;
                             mesh = ProcessBrushMesh(
                                 mesh, stroke.m_BrushGuid.ToString(), renderer?.sharedMaterial,
                                 stroke.m_Object.transform.localToWorldMatrix, out _);
+                            if (mesh != originalMesh) state.TemporaryMeshes.Add(mesh);
                             stroke.m_Object.GetComponent<MeshFilter>().sharedMesh = mesh;
                             stroke.m_Object.GetComponent<MeshFilter>().mesh = mesh;
                             if (App.UserConfig.Export.ExportStrokeTimestamp)
@@ -334,26 +364,30 @@ namespace TiltBrush
                 {
                     var brush = batch.Brush;
                     var mf = batch.gameObject.GetComponent<MeshFilter>();
+                    state.BatchMeshes[mf] = mf.sharedMesh;
+                    var renderer = batch.gameObject.GetComponent<Renderer>();
+                    if (renderer != null) state.BatchMaterials[renderer] = renderer.sharedMaterial;
                     Mesh mesh = new Mesh();
+                    state.TemporaryMeshes.Add(mesh);
                     batch.Geometry.CopyToMesh(mesh);
                     if (mesh == null)
                     {
                         Debug.LogError($"No mesh found for brush {brush.name}");
                         continue;
                     }
-                    m_OriginalBatchMeshes[batch] = mf.sharedMesh;
                     if (mesh.vertexCount > 0)
                     {
                         byte[] originalTimestamps = App.UserConfig.Export.ExportStrokeTimestamp
                             ? CreateTimestampData(batch, mesh.vertexCount) : null;
                         int[] sourceVertexIndices;
+                        var originalCopy = mesh;
                         mesh = ProcessBrushMesh(
                             mesh, brush.m_Guid.ToString(), batch.InstantiatedMaterial,
                             mf.transform.localToWorldMatrix, out sourceVertexIndices);
+                        if (mesh != originalCopy) state.TemporaryMeshes.Add(mesh);
                         var exportSubsets = RemapBatchSubsets(
                             batch.m_Groups, sourceVertexIndices);
                         m_MeshBatchSubsets[mesh.GetHashCode()] = exportSubsets;
-                        m_TemporaryBatchMeshes.Add(mesh);
                         mf.sharedMesh = mesh;
                         mf.mesh = mesh;
                         if (App.UserConfig.Export.ExportStrokeTimestamp)
@@ -507,58 +541,91 @@ namespace TiltBrush
         public void AfterLayerExport(Transform transform)
         {
             var canvas = transform.GetComponent<CanvasScript>();
-            if (App.UserConfig.Export.KeepStrokes)
+            if (canvas == null || !m_LayerExportStates.TryGetValue(canvas, out var state)) return;
+            if (state.KeepStrokes)
             {
-                App.Config.m_UseBatchedBrushes = m_WasUsingBatchedBrushes;
-                foreach (var brushScript in canvas.transform.GetComponentsInChildren<BaseBrushScript>())
+                // Every tracked stroke was batched, even if the global preference had
+                // changed since it was drawn. Restore that representation, then the preference.
+                App.Config.m_UseBatchedBrushes = true;
+                try
                 {
-                    var stroke = brushScript.Stroke;
-                    if (stroke == null || stroke.m_Type != Stroke.Type.BrushStroke) continue;
-                    var strokeGo = stroke.m_Object;
-                    stroke.InvalidateCopy();
-                    stroke.Uncreate();
-                    stroke.Recreate(null, canvas);
-                    if (stroke.m_BatchSubset != null)
+                    foreach (var entry in state.ConvertedStrokes.ToArray())
                     {
-                        stroke.m_BatchSubset.m_ParentBatch.transform.tag = "Untagged";
-                    }
-                    SafeDestroy(strokeGo);
-                }
-                canvas.BatchManager.FlushMeshUpdates();
-
-                if (App.UserConfig.Export.KeepStrokes)
-                {
-                    foreach (Transform child in canvas.transform)
-                    {
-                        if (child.name.StartsWith($"_StrokeGroup_"))
+                        try
                         {
-                            SafeDestroy(child.gameObject);
+                            // A failed export recreation can leave no brush object to enumerate.
+                            // Retained Stroke data still identifies its original canvas.
+                            entry.stroke.InvalidateCopy();
+                            entry.stroke.Uncreate();
+                            entry.stroke.Recreate(null, canvas);
+                            entry.stroke.Hide(!entry.enabled);
+                            state.ConvertedStrokes.Remove(entry);
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.LogError($"[OB_GLB_RESTORE] Could not restore stroke: {e.Message}");
                         }
                     }
                 }
+                finally
+                {
+                    App.Config.m_UseBatchedBrushes = m_WasUsingBatchedBrushes;
+                }
             }
-            else
+            foreach (var pair in state.BatchMeshes)
             {
-                foreach (var batch in canvas.BatchManager.AllBatches())
-                {
-                    var mf = batch.gameObject.GetComponent<MeshFilter>();
-                    if (m_OriginalBatchMeshes.TryGetValue(batch, out var originalMesh))
-                    {
-                        mf.sharedMesh = originalMesh;
-                    }
-                    if (IsStaticExport)
-                    {
-                        // Restore the per-batch material instance that runtime code depends on.
-                        batch.gameObject.GetComponent<Renderer>().sharedMaterial =
-                            batch.InstantiatedMaterial;
-                    }
-                }
+                if (pair.Key != null) pair.Key.sharedMesh = pair.Value;
+            }
+            state.BatchMeshes.Clear();
+            foreach (var pair in state.BatchMaterials)
+            {
+                if (pair.Key != null) pair.Key.sharedMaterial = pair.Value;
+            }
+            state.BatchMaterials.Clear();
+            foreach (var pair in state.BatchTags)
+            {
+                if (pair.Key != null) pair.Key.tag = pair.Value;
+            }
+            state.BatchTags.Clear();
+            foreach (var mesh in state.TemporaryMeshes) SafeDestroy(mesh);
+            state.TemporaryMeshes.Clear();
+            foreach (var group in state.TemporaryGroups)
+            {
+                if (group != null) SafeDestroy(group.gameObject);
+            }
+            state.TemporaryGroups.Clear();
+            canvas.BatchManager.FlushMeshUpdates();
+            if (state.ConvertedStrokes.Count == 0) m_LayerExportStates.Remove(canvas);
+        }
 
-                foreach (var mesh in m_TemporaryBatchMeshes)
-                {
-                    SafeDestroy(mesh);
-                }
-                m_TemporaryBatchMeshes.Clear();
+        // Both normal callbacks and the caller's finally use this idempotent recovery path.
+        public void RestoreSceneAfterExport()
+        {
+            if (m_HasBatchingState)
+            {
+                TryCleanup(() => App.Config.m_UseBatchedBrushes = m_WasUsingBatchedBrushes);
+            }
+            foreach (var canvas in m_LayerExportStates.Keys.ToArray())
+            {
+                if (canvas != null) TryCleanup(() => AfterLayerExport(canvas.transform));
+            }
+            TryCleanup(CleanupCameraPathsCameras);
+            TryCleanup(() => SafeDestroy(m_ThumbnailCamera));
+            m_ThumbnailCamera = null;
+            if (m_SkyStandinManager != null) TryCleanup(m_SkyStandinManager.DestroySkyStandin);
+            m_SkyStandinManager = null;
+            foreach (var texture in m_BakedTextures) TryCleanup(() => SafeDestroy(texture));
+            m_BakedTextures.Clear();
+            TryCleanup(DestroyAtlasTextures);
+            if (m_LayerExportStates.Count == 0) m_HasBatchingState = false;
+        }
+
+        private static void TryCleanup(Action cleanup)
+        {
+            try { cleanup(); }
+            catch (Exception e)
+            {
+                Debug.LogError($"[OB_GLB_RESTORE] Export cleanup failed: {e.Message}");
             }
         }
 
@@ -1395,14 +1462,17 @@ namespace TiltBrush
 
         public override void AfterSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
-            if (!Application.isPlaying) return;
+            if (!Application.isPlaying)
+            {
+                RestoreSceneAfterExport();
+                return;
+            }
             if (IsIsolatedMeshFixtureExport)
             {
                 gltfRoot.Asset.Generator =
                     $"Open Brush UnityGLTF Mesh Fixture {App.Config.m_VersionNumber}." +
                     $"{App.Config.m_BuildStamp}";
-                m_OriginalBatchMeshes?.Clear();
-                m_TemporaryBatchMeshes?.Clear();
+                RestoreSceneAfterExport();
                 return;
             }
 
@@ -1494,15 +1564,7 @@ namespace TiltBrush
             // extras["TB_metadata"] = JObject.FromObject(metadata);
             gltfRoot.Extras = extras;
 
-            Object.Destroy(m_ThumbnailCamera);
-            m_OriginalBatchMeshes?.Clear();
-            m_TemporaryBatchMeshes?.Clear();
-            foreach (var bakedTexture in m_BakedTextures)
-            {
-                SafeDestroy(bakedTexture);
-            }
-            m_BakedTextures.Clear();
-            DestroyAtlasTextures();
+            RestoreSceneAfterExport();
             Debug.Log($"[OB_GLB_PROFILE] Completed {m_ExportMode} GLB export");
         }
 
