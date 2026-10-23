@@ -59,10 +59,23 @@ namespace TiltBrush
         /// Be very careful when changing this, because it affects the save file format.
         public Guides.State GetSaveState(GroupIdMapping groupIdMapping)
         {
+            CanvasScript currentCanvas = Canvas;
+            CanvasScript savedCanvas = currentCanvas == App.Scene.SelectionCanvas &&
+                m_PreviousCanvas != null ? m_PreviousCanvas : currentCanvas;
+            TrTransform savedPose = TrTransform.TRS(transform.localPosition, transform.localRotation, 1);
+            Vector3 savedExtents = Extents;
+            if (savedCanvas != currentCanvas)
+            {
+                // Layer identity, pose and extents must use the same authored canvas.
+                TrTransform savedFromCurrent = savedCanvas.Pose.inverse * currentCanvas.Pose;
+                savedPose = savedFromCurrent * savedPose;
+                savedExtents *= savedFromCurrent.scale;
+            }
             var state = new Guides.State
             {
-                Transform = TrTransform.TRS(transform.localPosition, transform.localRotation, 0),
-                Extents = Extents,
+                Transform = TrTransform.TRS(savedPose.translation, savedPose.rotation, 0),
+                Extents = savedExtents,
+                LayerId = App.Scene.GetIndexOfCanvas(savedCanvas),
                 Pinned = m_Pinned,
                 GroupId = groupIdMapping.GetId(Group)
             };
@@ -76,6 +89,8 @@ namespace TiltBrush
         {
             set
             {
+                // Saved pose and extents are local to this persistent layer.
+                SetCanvas(App.Scene.GetOrCreateLayer(value.LayerId));
                 transform.localPosition = value.Transform.translation;
                 transform.localRotation = value.Transform.rotation;
                 Extents = value.Extents;
@@ -84,7 +99,6 @@ namespace TiltBrush
                     PinFromSave();
                 }
                 Group = App.GroupManager.GetGroupFromId(value.GroupId);
-                SetCanvas(App.Scene.GetOrCreateLayer(value.LayerId));
                 ApplySaveState(value);
             }
         }
