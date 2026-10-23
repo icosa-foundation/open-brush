@@ -657,7 +657,7 @@ namespace TiltBrush
             surfaceNorm = transform.TransformDirection(normal).normalized;
         }
 
-        private static Vector3 ClosestTrianglePoint(
+        internal static Vector3 ClosestTrianglePoint(
             Vector3 point, Vector3 a, Vector3 b, Vector3 c, Vector3 normal)
         {
             if (normal.sqrMagnitude > 1e-12f)

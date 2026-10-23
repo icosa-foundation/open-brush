@@ -21,6 +21,9 @@ namespace TiltBrush
     {
 
         public Mesh m_DefaultMesh;
+        private Mesh m_ProjectionMesh;
+        private Vector3[] m_ProjectionVertices;
+        private int[] m_ProjectionTriangles;
 
         public Mesh SourceMesh
         {
@@ -71,6 +74,7 @@ namespace TiltBrush
         {
             var collider = GetComponentInChildren<MeshCollider>();
             collider.sharedMesh = mesh ?? m_DefaultMesh;
+            m_ProjectionMesh = null;
             collider.GetComponentInChildren<MeshFilter>().mesh = mesh;
         }
 
@@ -82,14 +86,64 @@ namespace TiltBrush
 
         public override void FindClosestPointOnSurface(Vector3 pos, out Vector3 surfacePos, out Vector3 surfaceNorm)
         {
-            var collider = GetComponentInChildren<MeshCollider>();
-            surfacePos = collider.ClosestPoint(pos);
-            surfaceNorm = Vector3.zero;
-            RaycastHit hit;
-            if (Physics.Raycast(pos, surfacePos - pos, out hit))
+            Mesh mesh = SourceMesh;
+            if (mesh == null)
             {
-                surfaceNorm = hit.normal;
+                throw new InvalidOperationException("The custom guide has no surface mesh.");
             }
+            // Snapping queries run every frame; retain immutable mesh arrays instead of
+            // allocating vertex/index copies for each query. SetCustomStencil invalidates them.
+            if (m_ProjectionMesh != mesh)
+            {
+                m_ProjectionVertices = mesh.vertices;
+                m_ProjectionTriangles = mesh.triangles;
+                m_ProjectionMesh = mesh;
+            }
+            Matrix4x4 toWorld = SourceMeshTransform.localToWorldMatrix;
+            if (!TryFindClosestMeshPoint(m_ProjectionVertices, m_ProjectionTriangles,
+                toWorld, toWorld.inverse.transpose, pos, out surfacePos, out surfaceNorm))
+            {
+                throw new InvalidOperationException("The custom guide has no nondegenerate surface triangles.");
+            }
+        }
+
+        internal static bool TryFindClosestMeshPoint(Vector3[] vertices, int[] triangles,
+            Matrix4x4 toWorld, Matrix4x4 normalMatrix, Vector3 query,
+            out Vector3 surfacePos, out Vector3 surfaceNorm)
+        {
+            surfacePos = query;
+            surfaceNorm = Vector3.zero;
+            float closestSquared = float.PositiveInfinity;
+            float closestAlignment = -1f;
+            for (int i = 0; i < triangles.Length; i += 3)
+            {
+                Vector3 localA = vertices[triangles[i]];
+                Vector3 localB = vertices[triangles[i + 1]];
+                Vector3 localC = vertices[triangles[i + 2]];
+                Vector3 a = toWorld.MultiplyPoint3x4(localA);
+                Vector3 b = toWorld.MultiplyPoint3x4(localB);
+                Vector3 c = toWorld.MultiplyPoint3x4(localC);
+                Vector3 geometricNormal = Vector3.Cross(b - a, c - a);
+                Vector3 normal = normalMatrix.MultiplyVector(
+                    Vector3.Cross(localB - localA, localC - localA)).normalized;
+                if (geometricNormal.sqrMagnitude == 0f || normal.sqrMagnitude == 0f) { continue; }
+                Vector3 candidate = ModelStencil.ClosestTrianglePoint(
+                    query, a, b, c, geometricNormal.normalized);
+                Vector3 toQuery = query - candidate;
+                float squared = toQuery.sqrMagnitude;
+                float alignment = Mathf.Abs(Vector3.Dot(toQuery, normal));
+                bool tied = Mathf.Approximately(squared, closestSquared);
+                // At a shared edge, prefer the non-tangent face normal so an exterior
+                // query cannot be classified as a boundary point by a tied tangent face.
+                if ((squared < closestSquared && !tied) || (tied && alignment > closestAlignment))
+                {
+                    closestSquared = squared;
+                    closestAlignment = alignment;
+                    surfacePos = candidate;
+                    surfaceNorm = normal;
+                }
+            }
+            return !float.IsInfinity(closestSquared);
         }
 
         override public float GetActivationScore(
