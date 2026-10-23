@@ -15,6 +15,34 @@ MonoBehaviour:
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
+  - m_Id: 82310000000000001
+    m_Key: VIEWER_NAVIGATION_MENU
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000002
+    m_Key: VIEWER_NAVIGATION_VIEW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000003
+    m_Key: VIEWER_NAVIGATION_VIEW_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000004
+    m_Key: VIEWER_NAVIGATION_FLY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000005
+    m_Key: VIEWER_NAVIGATION_FLY_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000006
+    m_Key: VIEWER_NAVIGATION_TELEPORT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000007
+    m_Key: VIEWER_NAVIGATION_TELEPORT_HINT
+    m_Metadata:
+      m_Items: []
   - m_Id: 5065710952488960
     m_Key: ADMIN_PANEL_ADVANCED_BUTTON_DESCRIPTION
     m_Metadata:

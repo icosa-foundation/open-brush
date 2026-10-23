@@ -208,6 +208,7 @@ namespace TiltBrush
             LoadQuillConfirmUnsaved = 13000,
             LoadQuillFile = 13001,
             OpenQuillPanelSearchPopup = 13002,
+            OpenNavigationPopup = 14000,
         }
 
         public enum ControlsType
@@ -5445,6 +5446,7 @@ namespace TiltBrush
                     CameraCaptureRuntime.m_Instance.StartAllCapture();
                     break;
                 case GlobalCommands.RepaintOptions:
+                case GlobalCommands.OpenNavigationPopup:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
                 case GlobalCommands.MultiplayerLeaveRoom:
