@@ -26,11 +26,13 @@ namespace TiltBrush
         private List<Vector3> m_NewVerts;
         private int m_VertLength;
         private bool m_Initial;
+        private readonly bool m_OldMeshIsEdited;
 
         public SculptCommand(
             BatchSubset batchSubset, List<Vector3> newVerts, int startIndex, bool isInitial, BaseCommand parent = null) : base(parent)
         {
             m_TargetStroke = batchSubset.m_Stroke;
+            m_OldMeshIsEdited = m_TargetStroke?.m_MeshIsEdited ?? false;
             m_NewVerts = newVerts;
             m_VertLength = newVerts.Count;
             var geometry = batchSubset.m_ParentBatch.Geometry;
@@ -41,7 +43,7 @@ namespace TiltBrush
 
         public override bool NeedsSave { get { return true; } } // Should always save.
 
-        private void ApplySculptModification(List<Vector3> vertices)
+        private void ApplySculptModification(List<Vector3> vertices, bool meshIsEdited)
         {
             // Repaint and canvas moves recreate subsets; resolve the live stroke storage.
             var subset = m_TargetStroke?.m_BatchSubset;
@@ -59,18 +61,19 @@ namespace TiltBrush
                 batch.Geometry.m_Vertices[startIndex + i] = vertices[i];
             }
 
+            m_TargetStroke.m_MeshIsEdited = meshIsEdited;
             subset.RecalculateBounds();
             batch.DelayedUpdateMesh();
         }
 
         protected override void OnRedo()
         {
-            ApplySculptModification(m_NewVerts);
+            ApplySculptModification(m_NewVerts, true);
         }
 
         protected override void OnUndo()
         {
-            ApplySculptModification(m_OldVerts);
+            ApplySculptModification(m_OldVerts, m_OldMeshIsEdited);
         }
 
         public override bool Merge(BaseCommand other)

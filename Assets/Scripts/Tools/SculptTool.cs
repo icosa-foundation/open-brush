@@ -119,7 +119,6 @@ namespace TiltBrush
                 }
             }
             if (!modified) return false;
-            rGroup.m_Stroke.m_MeshIsEdited = true;
             PlayModifyStrokeSound();
             InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, m_HapticsToggleOn);
             SketchMemoryScript.m_Instance.MemorizeStrokeSculpt(rGroup, newVertices, startIndex, !m_AtLeastOneModificationMade);
