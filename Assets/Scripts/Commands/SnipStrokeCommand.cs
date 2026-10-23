@@ -26,6 +26,9 @@ namespace TiltBrush
         private PointerManager.ControlPoint[] m_InitialCP;
         private PointerManager.ControlPoint[] m_SnippedCP1;
         private PointerManager.ControlPoint[] m_SnippedCP2;
+        private List<Color32?> m_InitialColors;
+        private List<Color32?> m_SnippedColors1;
+        private List<Color32?> m_SnippedColors2;
         private bool[] m_InitialDrops;
         private bool[] m_SnippedDrops1;
         private bool[] m_SnippedDrops2;
@@ -46,11 +49,14 @@ namespace TiltBrush
             m_SnipIndex = snipIndex;
             m_InitialCP = (PointerManager.ControlPoint[])stroke.m_ControlPoints.Clone();
             m_InitialDrops = (bool[])stroke.m_ControlPointsToDrop.Clone();
+            m_InitialColors = stroke.m_OverrideColors?.ToList();
             m_NewStroke = SketchMemoryScript.m_Instance.DuplicateStroke(stroke, stroke.Canvas, null);
             m_SnippedCP1 = m_InitialCP.Take(m_SnipIndex).ToArray();
             m_SnippedCP2 = m_InitialCP.Skip(m_SnipIndex).ToArray();
             m_SnippedDrops1 = m_InitialDrops.Take(m_SnipIndex).ToArray();
             m_SnippedDrops2 = m_InitialDrops.Skip(m_SnipIndex).ToArray();
+            m_SnippedColors1 = m_InitialColors?.Take(m_SnipIndex).ToList();
+            m_SnippedColors2 = m_InitialColors?.Skip(m_SnipIndex).ToList();
 
             if (newGroup != null)
             {
@@ -115,13 +121,13 @@ namespace TiltBrush
         protected override void OnRedo()
         {
             m_BrokenLink?.Break();
-            ModifyStroke(m_InitialStroke, m_SnippedCP1, m_SnippedDrops1);
-            ModifyStroke(m_NewStroke, m_SnippedCP2, m_SnippedDrops2);
+            ModifyStroke(m_InitialStroke, m_SnippedCP1, m_SnippedDrops1, m_SnippedColors1);
+            ModifyStroke(m_NewStroke, m_SnippedCP2, m_SnippedDrops2, m_SnippedColors2);
         }
 
         protected override void OnUndo()
         {
-            ModifyStroke(m_InitialStroke, m_InitialCP, m_InitialDrops);
+            ModifyStroke(m_InitialStroke, m_InitialCP, m_InitialDrops, m_InitialColors);
 
             switch (m_NewStroke.m_Type)
             {
@@ -140,10 +146,11 @@ namespace TiltBrush
         }
 
         private void ModifyStroke(Stroke stroke, PointerManager.ControlPoint[] newControlPoints,
-            bool[] droppedPoints)
+            bool[] droppedPoints, List<Color32?> pointColors)
         {
             stroke.m_ControlPoints = (PointerManager.ControlPoint[])newControlPoints.Clone();
             stroke.m_ControlPointsToDrop = (bool[])droppedPoints.Clone();
+            stroke.m_OverrideColors = pointColors?.ToList();
             stroke.InvalidateCopy();
             stroke.Uncreate();
             stroke.Recreate();
