@@ -783,9 +783,10 @@ namespace TiltBrush
 
         public void HandleSavePreset(bool overwrite)
         {
-            if (string.IsNullOrEmpty(CurrentPresetPath))
+            string presetPath = CurrentPresetPath;
+            if (string.IsNullOrEmpty(presetPath))
             {
-                CurrentPresetPath = Path.Combine(
+                presetPath = Path.Combine(
                     App.ShapeRecipesPath(),
                     Guid.NewGuid().ToString().Substring(0, 8)
                 );
@@ -794,12 +795,29 @@ namespace TiltBrush
             {
                 if (!overwrite)
                 {
-                    CurrentPresetPath += " (Copy)";
+                    presetPath += " (Copy)";
                 }
             }
-            SavePresetJson(CurrentPresetPath);
-            RenderToImageFile($"{CurrentPresetPath}.png");
+            try
+            {
+                SavePresetJson(presetPath);
+            }
+            catch (Exception ex)
+            {
+                OutputWindowScript.Error("Couldn't save shape preset", ex.Message);
+                return;
+            }
+
+            CurrentPresetPath = presetPath;
             EnablePresetSaveButtons(popupButtonEnabled: true);
+            try
+            {
+                RenderToImageFile($"{presetPath}.png");
+            }
+            catch (Exception ex)
+            {
+                OutputWindowScript.Error("Shape preset saved, but couldn't save its thumbnail", ex.Message);
+            }
         }
 
         void SavePresetJson(string presetPath)
@@ -810,37 +828,84 @@ namespace TiltBrush
                 ContractResolver = new CustomJsonContractResolver()
             };
 
-            using var textWriter = new StreamWriter($"{presetPath}.json");
-            using var jsonWriter = new CustomJsonWriter(textWriter);
-            jsonSerializer.Serialize(jsonWriter, emDef);
+            string destination = $"{presetPath}.json";
+            string temporary = $"{destination}.{Guid.NewGuid():N}.tmp";
+            try
+            {
+                using (var textWriter = new StreamWriter(temporary))
+                using (var jsonWriter = new CustomJsonWriter(textWriter))
+                {
+                    jsonSerializer.Serialize(jsonWriter, emDef);
+                }
+
+                if (File.Exists(destination)) File.Replace(temporary, destination, null);
+                else File.Move(temporary, destination);
+            }
+            finally
+            {
+                if (File.Exists(temporary)) File.Delete(temporary);
+            }
         }
 
         public void HandleLoadPresetFromPath(string path)
         {
-            var jsonDeserializer = new JsonSerializer { ContractResolver = new CustomJsonContractResolver() };
-            EditableModelDefinition emd;
-            using (var textReader = new StreamReader(path))
-            using (var jsonReader = new JsonTextReader(textReader))
+            try
             {
-                emd = jsonDeserializer.Deserialize<EditableModelDefinition>(jsonReader);
+                using var textReader = new StreamReader(path);
+                LoadPreset(textReader, path);
             }
-            LoadFromDefinition(emd);
-            CurrentPresetPath = path;
-            EnablePresetSaveButtons(popupButtonEnabled: true);
+            catch (Exception ex)
+            {
+                OutputWindowScript.Error("Couldn't load shape preset", ex.Message);
+            }
         }
 
         public void HandleLoadPresetFromString(string presetText)
         {
-            var jsonDeserializer = new JsonSerializer { ContractResolver = new CustomJsonContractResolver() };
-            EditableModelDefinition emd;
-            using (var textReader = new StringReader(presetText))
-            using (var jsonReader = new JsonTextReader(textReader))
+            try
             {
-                emd = jsonDeserializer.Deserialize<EditableModelDefinition>(jsonReader);
+                using var textReader = new StringReader(presetText);
+                LoadPreset(textReader, "");
             }
-            LoadFromDefinition(emd);
-            CurrentPresetPath = "";
-            EnablePresetSaveButtons(popupButtonEnabled: false);
+            catch (Exception ex)
+            {
+                OutputWindowScript.Error("Couldn't load shape preset", ex.Message);
+            }
+        }
+
+        private void LoadPreset(TextReader textReader, string presetPath)
+        {
+            var jsonDeserializer = new JsonSerializer { ContractResolver = new CustomJsonContractResolver() };
+            using var jsonReader = new JsonTextReader(textReader);
+            var emd = jsonDeserializer.Deserialize<EditableModelDefinition>(jsonReader);
+            if (emd == null) throw new JsonSerializationException("The shape preset is empty.");
+
+            var preview = PreviewPolyhedron.m_Instance;
+            var previousRecipe = preview.m_PolyRecipe.Clone();
+            var previousDefinition = new EditableModelDefinition(previousRecipe);
+            try
+            {
+                // UI callbacks only schedule a rebuild. Validate the resulting recipe before
+                // returning control to the frame loop, where it could replace the usable mesh.
+                LoadFromDefinition(emd);
+                preview.Validate();
+                PolyBuilder.BuildFromPolyDef(preview.m_PolyRecipe.Clone());
+            }
+            catch
+            {
+                try
+                {
+                    LoadFromDefinition(previousDefinition);
+                }
+                finally
+                {
+                    preview.m_PolyRecipe = previousRecipe;
+                }
+                throw;
+            }
+
+            CurrentPresetPath = presetPath;
+            EnablePresetSaveButtons(popupButtonEnabled: !string.IsNullOrEmpty(presetPath));
         }
 
         public string GetButtonTexturePath(GeneratorTypes mainType, string action)
