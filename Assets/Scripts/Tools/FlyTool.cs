@@ -109,7 +109,7 @@ namespace TiltBrush
 
         public override bool InputBlocked()
         {
-            return !m_Armed;
+            return m_EatInput || !m_Armed;
         }
 
         public override bool AvailableDuringLoading()
