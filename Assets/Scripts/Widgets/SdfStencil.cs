@@ -225,6 +225,10 @@ namespace TiltBrush
                 return;
             }
 
+            // The scene template may carry a baked demonstration mesh. It is borrowed,
+            // not this guide's extraction result: detach it without clearing or destroying
+            // the shared asset, so a pending/failed first extraction displays no stale shape.
+            generatedFilter.sharedMesh = null;
             m_TintableMeshes = new Renderer[] { generatedRenderer };
             m_HighlightMeshFilters = new MeshFilter[] { generatedFilter };
 
