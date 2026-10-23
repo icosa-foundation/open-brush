@@ -154,6 +154,43 @@ namespace TiltBrush
                 .OrderBy(ByModelLocation).ToArray();
         }
 
+        public static Dictionary<string, DocumentImport.GeometryRecipeData> GetEditableModelDefinitions()
+        {
+            var definitions = new Dictionary<string, DocumentImport.GeometryRecipeData>(
+                MeshEditing.EditableModelManager.RetainedDefinitions);
+            foreach (var widget in WidgetManager.m_Instance.EditableModelWidgets.Where(widget => widget.gameObject.activeSelf))
+            {
+                definitions[widget.Model.AssetId] = widget.m_PolyRecipe;
+            }
+            return definitions.Count == 0 ? null : definitions;
+        }
+
+        public static TiltEditableModels[] GetTiltEditableModels(GroupIdMapping groupIdMapping)
+        {
+            CanvasScript SavedCanvas(EditableModelWidget widget) =>
+                widget.Canvas == App.Scene.SelectionCanvas && widget.m_PreviousCanvas != null
+                    ? widget.m_PreviousCanvas : widget.Canvas;
+            TrTransform SavedTransform(EditableModelWidget widget) =>
+                SavedCanvas(widget).Pose.inverse * widget.Canvas.Pose * widget.GetSaveTransform();
+            var models = new List<TiltEditableModels>();
+            foreach (var group in WidgetManager.m_Instance.EditableModelWidgets
+                         .Where(widget => widget.gameObject.activeSelf).GroupBy(widget => widget.Model.GetLocation()))
+            {
+                var widgets = group.OrderBy(widget => ByTranslation(SavedTransform(widget))).ToArray();
+                models.Add(new TiltEditableModels
+                {
+                    Location = group.Key,
+                    RawTransforms = widgets.Select(SavedTransform).ToArray(),
+                    PinStates = widgets.Select(widget => widget.Pinned).ToArray(),
+                    GroupIds = widgets.Select(widget => groupIdMapping.GetId(widget.Group)).ToArray(),
+                    LayerIds = widgets.Select(widget => App.Scene.GetIndexOfCanvas(SavedCanvas(widget))).ToArray(),
+                    Colors = widgets.Select(widget => widget.m_Color).ToArray()
+                });
+            }
+            models.AddRange(MeshEditing.EditableModelManager.RetainedInstances);
+            return models.Count == 0 ? null : models.ToArray();
+        }
+
         public static TiltText[] GetTiltText(GroupIdMapping groupIdMapping)
         {
             return WidgetManager.m_Instance.TextWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertTextWidgetToTiltText(x)).ToArray();

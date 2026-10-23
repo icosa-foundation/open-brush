@@ -835,6 +835,12 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int SchemaVersion { get; set; }
 
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, DocumentImport.GeometryRecipeData> EditableModelDefinitions { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltEditableModels[] EditableModelIndex { get; set; }
+
         /// Deprecated
         /// Only written in 7.0-7.2
         /// Only should ever contains a single model but will create multiples if they are in the list

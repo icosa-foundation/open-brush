@@ -246,6 +246,9 @@ namespace TiltBrush
 
         public bool IsGsplatModel { get; private set; }
         private GsplatAsset m_OwnedGsplatAsset;
+        private readonly List<Material> m_OwnedGeneratedMaterials = new List<Material>();
+
+        internal void TakeGeneratedMaterialOwnership(Material material) => m_OwnedGeneratedMaterials.Add(material);
 
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
@@ -1061,7 +1064,21 @@ namespace TiltBrush
         public void LoadEditableModel(GameObject go)
         {
             if (go == null) { throw new ArgumentNullException(nameof(go)); }
-            _ = StartCreatePrefab(go);
+            InitializeGeneratedModel();
+            AdoptModelHierarchy(go, new List<string>());
+        }
+
+        private void InitializeGeneratedModel()
+        {
+            if (!m_Location.IsGenerated()) { return; }
+            m_AllowExport = true;
+            m_ImportMaterialCollector = new ImportMaterialCollector("generated", m_Location.ToString());
+        }
+
+        private void AdoptModelHierarchy(GameObject go, List<string> warnings)
+        {
+            CalcBoundsNonGltf(go);
+            EndCreatePrefab(go, warnings);
         }
 
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
@@ -1083,11 +1100,7 @@ namespace TiltBrush
 
             List<string> warnings = new List<string>();
 
-            if (m_Location.IsGenerated())
-            {
-                m_AllowExport = true;
-                m_ImportMaterialCollector = new ImportMaterialCollector("generated", m_Location.ToString());
-            }
+            InitializeGeneratedModel();
 
             // If we weren't provided a GameObject, construct one now.
             if (go == null)
@@ -1180,8 +1193,7 @@ namespace TiltBrush
             }
             else
             {
-                CalcBoundsNonGltf(go);
-                EndCreatePrefab(go, warnings);
+                AdoptModelHierarchy(go, warnings);
             }
 
         }
@@ -1361,6 +1373,8 @@ namespace TiltBrush
             }
             DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
             m_OwnedGsplatAsset = null;
+            foreach (var material in m_OwnedGeneratedMaterials) { UObject.Destroy(material); }
+            m_OwnedGeneratedMaterials.Clear();
             m_AppliedMeshSplits?.Clear();
         }
 
