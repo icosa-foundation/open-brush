@@ -14,6 +14,7 @@ using UnityEditor.Build;
 internal static class BundledSketchBuildData
 {
     internal const string SourceDirectory = "Assets/DefaultBundledSketches";
+    private const string PayloadSuffix = ".gz";
 
     internal static void AddToBuild(BuildPlayerContext context)
     {
@@ -28,13 +29,13 @@ internal static class BundledSketchBuildData
         }
     }
 
-    // Unity stores StreamingAssets uncompressed in Android packages. Compress only build
-    // intermediates so moving away from Resources does not add the raw example size to the APK.
+    // Android imports .gz inputs as compressed APK entries under their original names.
+    // AssetManager returns the original bytes; compression stays entirely at build time.
     internal static string PreparePayload(string sourcePath, string outputDirectory)
     {
         Directory.CreateDirectory(outputDirectory);
         string output = Path.Combine(outputDirectory,
-            $"{Path.GetFileNameWithoutExtension(sourcePath)}{BundledSketchManifest.PayloadSuffix}");
+            $"{Path.GetFileNameWithoutExtension(sourcePath)}{PayloadSuffix}");
         using (Stream input = File.OpenRead(sourcePath))
         using (Stream destination = File.Create(output))
         using (var compressed = new GZipStream(destination, CompressionLevel.Optimal))
