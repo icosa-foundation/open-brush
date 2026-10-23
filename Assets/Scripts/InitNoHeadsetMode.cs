@@ -930,14 +930,7 @@ namespace TiltBrush
             // Download (if any) is done; switch the message back from "Downloading" to "Loading" for
             // the brief file-prep window before stroke playback starts.
             SetLoadingMessage("Loading sketch...");
-            if (SketchControlsScript.m_Instance.IsViewOnly)
-            {
-                SketchSurfacePanel.m_Instance.EnableDefaultTool();
-            }
-            else
-            {
-                SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-            }
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FlyTool);
             // No-headset mode is a sketch viewer; selecting another sketch is viewer navigation,
             // so intentionally bypass the editor's unsaved-work confirmation path.
             SketchControlsScript.m_Instance.IssueGlobalCommand(

@@ -62,6 +62,12 @@ namespace TiltBrush
         {
             if (SketchControlsScript.m_Instance != null && SketchControlsScript.m_Instance.IsViewOnly)
             {
+                // Flat mouse/gamepad/touch navigation lives in FlyTool. The neutral
+                // default is for VR, where the navigation popup selects the tool.
+                if (App.Config.m_SdkMode == SdkMode.Monoscopic || !App.VrSdk.IsHmdInitialized())
+                {
+                    return BaseTool.ToolType.FlyTool;
+                }
                 return BaseTool.ToolType.EmptyTool;
             }
             if (m_FreePaintMode)
