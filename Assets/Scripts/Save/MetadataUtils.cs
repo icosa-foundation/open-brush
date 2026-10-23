@@ -129,14 +129,7 @@ namespace TiltBrush
             foreach (var widget in widgets)
             {
                 WidgetMetadata newEntry = new WidgetMetadata();
-                newEntry.xf = widget.GetSaveTransform();
-                CanvasScript currentCanvas = widget.Canvas;
-                CanvasScript savedCanvas = App.Scene.GetSerializableCanvas(widget);
-                if (savedCanvas != null && savedCanvas != currentCanvas)
-                {
-                    // Match the authored frame recorded below, not the temporary selection canvas.
-                    newEntry.xf = savedCanvas.Pose.inverse * currentCanvas.Pose * newEntry.xf;
-                }
+                newEntry.xf = App.Scene.GetSerializableTransform(widget, widget.GetSaveTransform());
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
@@ -219,7 +212,7 @@ namespace TiltBrush
                     FilePath = widget.SoundClip.PersistentPath,
                     AspectRatio = widget.SoundClip.Aspect,
                     Pinned = widget.Pinned,
-                    Transform = widget.LocalTransform,
+                    Transform = App.Scene.GetSerializableTransform(widget, widget.LocalTransform),
                     GroupId = groupIdMapping.GetId(widget.Group),
                     LayerId = layerId,
                     FrameId = frameId,
@@ -255,7 +248,7 @@ namespace TiltBrush
                     return new TiltPortal
                     {
                         ShapeType = portal.PortalShapeType,
-                        Transform = portal.GetSaveTransform(),
+                        Transform = App.Scene.GetSerializableTransform(portal, portal.GetSaveTransform()),
                         Destination = portal.Destination,
                         Pinned = portal.Pinned,
                         GroupId = groupIdMapping.GetId(portal.Group),
@@ -282,7 +275,7 @@ namespace TiltBrush
                         return new TiltGaussianCapture
                         {
                             ShapeType = StencilType.Cube,
-                            Transform = box.GetSaveTransform(),
+                            Transform = App.Scene.GetSerializableTransform(box, box.GetSaveTransform()),
                             AspectRatio = box.CustomDimension,
                             SubdivX = box.SubdivX,
                             SubdivY = box.SubdivY,
@@ -299,7 +292,7 @@ namespace TiltBrush
                         return new TiltGaussianCapture
                         {
                             ShapeType = ellipsoid.CaptureShapeType,
-                            Transform = ellipsoid.GetSaveTransform(),
+                            Transform = App.Scene.GetSerializableTransform(ellipsoid, ellipsoid.GetSaveTransform()),
                             AspectRatio = ellipsoid.CustomDimension,
                             NumRings = ellipsoid.NumRings,
                             ViewsPerRing = ellipsoid.ViewsPerRing,
@@ -315,7 +308,7 @@ namespace TiltBrush
                         return new TiltGaussianCapture
                         {
                             ShapeType = dome.CaptureShapeType,
-                            Transform = dome.GetSaveTransform(),
+                            Transform = App.Scene.GetSerializableTransform(dome, dome.GetSaveTransform()),
                             AspectRatio = Vector3.one,
                             NumRings = dome.NumRings,
                             ViewsPerRing = dome.ViewsPerRing,
@@ -411,7 +404,7 @@ namespace TiltBrush
             {
                 var light = lightWidget.GetComponentInChildren<Light>();
                 var newEntry = new TiltLights();
-                newEntry.Transform = lightWidget.GetSaveTransform();
+                newEntry.Transform = App.Scene.GetSerializableTransform(lightWidget, lightWidget.GetSaveTransform());
                 newEntry.Pinned = lightWidget.Pinned;
                 newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
                 (newEntry.LayerId, newEntry.FrameId) =

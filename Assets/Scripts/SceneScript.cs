@@ -347,6 +347,15 @@ namespace TiltBrush
             return canvas == SelectionCanvas ? widget.m_PreviousCanvas : canvas;
         }
 
+        public TrTransform GetSerializableTransform(GrabWidget widget, TrTransform canvasLocalTransform)
+        {
+            CanvasScript savedCanvas = GetSerializableCanvas(widget);
+            CanvasScript currentCanvas = widget.Canvas;
+            return savedCanvas != null && savedCanvas != currentCanvas
+                ? savedCanvas.Pose.inverse * currentCanvas.Pose * canvasLocalTransform
+                : canvasLocalTransform;
+        }
+
         public (int, int) GetSerializableIndexOfCanvas(GrabWidget widget)
         {
             return GetSerializableIndexOfCanvas(GetSerializableCanvas(widget));

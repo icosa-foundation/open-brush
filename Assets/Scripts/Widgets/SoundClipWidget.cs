@@ -279,6 +279,8 @@ namespace TiltBrush
             {
                 soundClipWidget.m_InitialState.Time = tiltSoundClip.Time;
             }
+            // Saved pose and size are local to this authored frame.
+            soundClipWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltSoundClip.LayerId, tiltSoundClip.FrameId));
             soundClipWidget.SetSignedWidgetSize(tiltSoundClip.Transform.scale);
             soundClipWidget.Show(bShow: true, bPlayAudio: false);
             soundClipWidget.transform.localPosition = tiltSoundClip.Transform.translation;
@@ -288,8 +290,7 @@ namespace TiltBrush
                 soundClipWidget.PinFromSave();
             }
             soundClipWidget.Group = App.GroupManager.GetGroupFromId(tiltSoundClip.GroupId);
-            soundClipWidget.SetCanvas(App.Scene.GetOrCreateLayer(
-                tiltSoundClip.LayerId, tiltSoundClip.FrameId));
+
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(soundClipWidget.GetTiltMeterCost(), up: true);
             soundClipWidget.UpdateScale();
         }

@@ -70,6 +70,8 @@ namespace TiltBrush
             widget.m_SkipIntroAnim = true;
             widget.transform.parent = App.Instance.m_CanvasTransform;
             widget.transform.localScale = Vector3.one;
+            // Saved pose and size are local to this authored frame.
+            widget.SetCanvas(App.Scene.GetOrCreateLayer(tiltPortal.LayerId, tiltPortal.FrameId));
             widget.SetSignedWidgetSize(tiltPortal.Transform.scale);
             widget.Show(bShow: true, bPlayAudio: false);
             widget.transform.localPosition = tiltPortal.Transform.translation;
@@ -80,7 +82,7 @@ namespace TiltBrush
                 widget.PinFromSave();
             }
             widget.Group = App.GroupManager.GetGroupFromId(tiltPortal.GroupId);
-            widget.SetCanvas(App.Scene.GetOrCreateLayer(tiltPortal.LayerId, tiltPortal.FrameId));
+
             widget.UpdateScale();
         }
 

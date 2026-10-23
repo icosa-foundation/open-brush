@@ -407,6 +407,8 @@ namespace TiltBrush
             widget.m_SkipIntroAnim = true;
             widget.transform.parent = App.Instance.m_CanvasTransform;
             widget.transform.localScale = Vector3.one;
+            // Saved pose and size are local to this authored frame.
+            widget.SetCanvas(App.Scene.GetOrCreateLayer(tilt.LayerId, tilt.FrameId));
             widget.SetSignedWidgetSize(tilt.Transform.scale);
             widget.CustomDimension = tilt.AspectRatio;
             if (tilt.NumRings.HasValue)
@@ -422,7 +424,7 @@ namespace TiltBrush
             widget.transform.localRotation = tilt.Transform.rotation;
             if (tilt.Pinned) { widget.PinFromSave(); }
             widget.Group = App.GroupManager.GetGroupFromId(tilt.GroupId);
-            widget.SetCanvas(App.Scene.GetOrCreateLayer(tilt.LayerId, tilt.FrameId));
+
         }
 
         public override GrabWidget Clone()
