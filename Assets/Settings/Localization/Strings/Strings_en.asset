@@ -27,7 +27,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 82310000000000003
-    m_Localized: Pinch or trigger selects UI only. Grip to move, rotate or scale the sketch.
+    m_Localized: Two handed grab to move, rotate or scale the sketch.
     m_Metadata:
       m_Items: []
   - m_Id: 82310000000000004

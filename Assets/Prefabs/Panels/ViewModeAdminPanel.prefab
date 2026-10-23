@@ -2311,7 +2311,7 @@ MonoBehaviour:
   m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
       m_Key: 
@@ -2320,7 +2320,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: ceb3d5486e3115745910a0dd86ed736f, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 6ccc0d6136b1bb146b0b7a2e09378dc2, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -2332,14 +2332,17 @@ MonoBehaviour:
   m_AddOverlay: 0
   m_CenterPopupOnButton: 0
   m_PopupOffset: {x: 0, y: 0, z: 0}
-  m_PopupText:
+  m_PopupText: 
   command: 14000
   m_OnConfirm:
     m_PersistentCalls:
       m_Calls: []
-  m_ViewTexture: {fileID: 2800000, guid: ceb3d5486e3115745910a0dd86ed736f, type: 3}
+  m_ViewTexture: {fileID: 2800000, guid: 6ccc0d6136b1bb146b0b7a2e09378dc2, type: 3}
   m_FlyTexture: {fileID: 2800000, guid: 3c2f6d4b151d82d4d8f53c00ffb8589a, type: 3}
   m_TeleportTexture: {fileID: 2800000, guid: 82be5dbd822a76e42b0484d1bd56c21e, type: 3}
+  references:
+    version: 2
+    RefIds: []
 --- !u!1 &5787249127137797294
 GameObject:
   m_ObjectHideFlags: 0
