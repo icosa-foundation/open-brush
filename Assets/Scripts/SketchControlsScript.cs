@@ -5477,7 +5477,7 @@ namespace TiltBrush
             m_ViewOnly = active;
             if (active)
             {
-                EnsureViewOnlyNavigationTool();
+                m_SketchSurfacePanel.EnableDefaultTool();
                 m_PanelManager.SetPanelAvailabilityMode(PanelManager.PanelAvailabilityMode.ViewOnly);
                 RequestPanelsVisibility(true);
             }
@@ -5488,10 +5488,6 @@ namespace TiltBrush
                 RequestPanelsVisibility(true);
             }
             PointerManager.m_Instance.RequestPointerRendering(!active);
-            // TODO - decide if this is a permanent change
-            // With this line, you can't set a tool such as fly or teleport
-            // and switch to View Only mode as the mode change disables all tools
-            //m_SketchSurface.SetActive(!m_ViewOnly);
             m_Decor.SetActive(!active);
             if (InitNoHeadsetMode.m_Instance != null)
             {
@@ -5504,17 +5500,10 @@ namespace TiltBrush
             return tool == BaseTool.ToolType.FlyTool || tool == BaseTool.ToolType.TeleportTool;
         }
 
-        public void EnsureViewOnlyNavigationTool()
-        {
-            if (!IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
-            {
-                m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-            }
-        }
-
         public void DisableViewOnlyNavigationTool()
         {
-            if (IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            BaseTool.ToolType tool = m_SketchSurfacePanel.GetCurrentToolType();
+            if (tool == BaseTool.ToolType.EmptyTool || IsViewOnlyNavigationTool(tool))
             {
                 m_SketchSurfacePanel.EnableDefaultTool();
             }

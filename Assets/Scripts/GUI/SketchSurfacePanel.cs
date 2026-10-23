@@ -60,6 +60,10 @@ namespace TiltBrush
 
         BaseTool.ToolType DefaultToolType()
         {
+            if (SketchControlsScript.m_Instance != null && SketchControlsScript.m_Instance.IsViewOnly)
+            {
+                return BaseTool.ToolType.EmptyTool;
+            }
             if (m_FreePaintMode)
             {
                 return BaseTool.ToolType.FreePaintTool;
