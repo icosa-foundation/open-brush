@@ -52,4 +52,28 @@ namespace TiltBrush
         [LuaDocsDescription("Enumerate the control points")]
         public IEnumerable<ControlPointApiWrapper> items => _ControlPoints.Select(cp => new ControlPointApiWrapper(cp));
     }
+    [LuaDocsDescription("A snapshot of disconnected Tool Script preview control-point paths")]
+    [MoonSharpUserData]
+    public class ControlPointPathListApiWrapper
+    {
+        [MoonSharpHidden]
+        private readonly List<ControlPointListApiWrapper> m_Paths;
+
+        public ControlPointPathListApiWrapper(IEnumerable<IEnumerable<PointerManager.ControlPoint>> paths)
+        {
+            m_Paths = paths?.Select(path => new ControlPointListApiWrapper(path)).ToList()
+                ?? new List<ControlPointListApiWrapper>();
+        }
+
+        [LuaDocsDescription("Number of preview paths, including symmetry copies")]
+        public int count => m_Paths.Count;
+
+        [LuaDocsDescription("Access a preview path by zero-based index")]
+        public ControlPointListApiWrapper this[int index] =>
+            Utils.WrappedIndexerGet(() => m_Paths[index]);
+
+        [LuaDocsDescription("Enumerate the preview paths")]
+        public IEnumerable<ControlPointListApiWrapper> items => m_Paths;
+    }
+
 }
