@@ -56,6 +56,12 @@ namespace TiltBrush
             {
                 TrTransform imageXf = TrTransform.FromLocalTransform(transform);
                 imageXf.scale = GetSignedWidgetSize();
+                CanvasScript savedCanvas = App.Scene.GetSerializableCanvas(this);
+                if (savedCanvas != null && savedCanvas != Canvas)
+                {
+                    // Save pose and signed size in the same authored frame as the metadata IDs.
+                    imageXf = savedCanvas.Pose.inverse * Canvas.Pose * imageXf;
+                }
                 return imageXf;
             }
         }

@@ -335,6 +335,10 @@ namespace TiltBrush
                 {
                     image.SetMissing(tiltImage.AspectRatio, tiltImage.FileName);
                 }
+                // Apply saved local coordinates only after binding the authored frame.
+                int layerId = (layerIds == null || i >= layerIds.Length) ? 0 : layerIds[i];
+                int frameId = (frameIds == null || i >= frameIds.Length) ? 0 : frameIds[i];
+                image.SetCanvas(App.Scene.GetOrCreateLayer(layerId, frameId));
                 image.SetSignedWidgetSize(tiltImage.Transforms[i].scale);
                 if (extrusionDepths != null &&
                     extrusionColors != null &&
@@ -360,10 +364,7 @@ namespace TiltBrush
                 }
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 image.Group = App.GroupManager.GetGroupFromId(groupId);
-                int layerId = (layerIds == null || i >= layerIds.Length) ? 0 : layerIds[i];
-                int frameId = (frameIds == null || i >= frameIds.Length) ? 0 : frameIds[i];
                 image.TwoSided = twoSidedFlags != null && i < twoSidedFlags.Length && twoSidedFlags[i];
-                image.SetCanvas(App.Scene.GetOrCreateLayer(layerId, frameId));
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(image.GetTiltMeterCost(), up: true);
             }
         }

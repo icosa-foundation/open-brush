@@ -190,6 +190,8 @@ namespace TiltBrush
             {
                 videoWidget.m_InitialState.Time = tiltVideo.Time;
             }
+            // Apply saved local coordinates only after binding the authored frame.
+            videoWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltVideo.LayerId, tiltVideo.FrameId));
             videoWidget.SetSignedWidgetSize(tiltVideo.Transform.scale);
             videoWidget.Show(bShow: true, bPlayAudio: false);
             videoWidget.transform.localPosition = tiltVideo.Transform.translation;
@@ -199,7 +201,6 @@ namespace TiltBrush
                 videoWidget.PinFromSave();
             }
             videoWidget.Group = App.GroupManager.GetGroupFromId(tiltVideo.GroupId);
-            videoWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltVideo.LayerId, tiltVideo.FrameId));
             videoWidget.TwoSided = tiltVideo.TwoSided;
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(videoWidget.GetTiltMeterCost(), up: true);
