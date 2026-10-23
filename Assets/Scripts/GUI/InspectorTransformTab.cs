@@ -36,7 +36,7 @@ public class InspectorTransformTab : InspectorBaseTab
         {
             return;
         }
-        SelectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox();
+        SelectionBounds = SelectionManager.m_Instance.GetSelectionBounds_SelectionCanvasSpace();
         TrTransform tr = ParentPanel.CurrentSelectionTr;
         var translation = tr.MultiplyPoint(SelectionBounds.center);
         var rotation = tr.rotation.eulerAngles;
