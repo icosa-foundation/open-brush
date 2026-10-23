@@ -15,6 +15,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Es.InkPainter;
 using UnityEngine;
 
 namespace TiltBrush
@@ -2149,6 +2150,16 @@ namespace TiltBrush
 
         // Override for widgets that can't be snapped to home.
         public virtual bool CanSnapToHome() { return true; }
+
+        // Restore widget-specific layers first, then keep converted meshes paintable.
+        public void RestoreCanvasLayers(int layer)
+        {
+            RestoreGameObjectLayer(layer);
+            foreach (var inkCanvas in GetComponentsInChildren<InkCanvas>(true))
+            {
+                inkCanvas.gameObject.layer = LayerMask.NameToLayer("TexturePaint");
+            }
+        }
 
         // Override for widgets that need to configure custom layers after selection.
         public virtual void RestoreGameObjectLayer(int layer)
