@@ -278,7 +278,8 @@ namespace TiltBrush
             bool targetShowing = m_GestureWidget != null && m_GestureWidget.Showing &&
                 m_GestureWidget.gameObject.activeInHierarchy;
             bool documentIsEmpty = gestureDocument._Document.Models.All(model => model.Voxels.Count == 0);
-            if (m_GestureChanged && m_GestureWidget != null && (targetShowing || documentIsEmpty))
+            // Preserve already-applied edits even when an external action hid the target.
+            if (m_GestureChanged && m_GestureWidget != null)
             {
                 var command = new ModifyVoxDocumentCommand(
                     m_GestureWidget,
@@ -301,7 +302,7 @@ namespace TiltBrush
                     m_CurrentDocument = null;
                     m_CurrentModel = null;
                 }
-                else
+                else if (targetShowing)
                 {
                     m_CurrentDocument.Refresh();
                 }
