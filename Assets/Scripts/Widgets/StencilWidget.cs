@@ -60,8 +60,16 @@ namespace TiltBrush
         public Guides.State GetSaveState(GroupIdMapping groupIdMapping)
         {
             CanvasScript currentCanvas = Canvas;
-            CanvasScript savedCanvas = currentCanvas == App.Scene.SelectionCanvas &&
-                m_PreviousCanvas != null ? m_PreviousCanvas : currentCanvas;
+            // Metadata and brush strokes serialize only live layers, compacting holes left
+            // by deleted layers. A selected guide's previous canvas can also be deleted.
+            var savedCanvases = App.Scene.LayerCanvases.ToList();
+            CanvasScript savedCanvas = currentCanvas == App.Scene.SelectionCanvas
+                ? m_PreviousCanvas : currentCanvas;
+            if (savedCanvas == null || !savedCanvases.Contains(savedCanvas))
+            {
+                savedCanvas = savedCanvases.Contains(App.Scene.ActiveCanvas)
+                    ? App.Scene.ActiveCanvas : App.Scene.MainCanvas;
+            }
             TrTransform savedPose = TrTransform.TRS(transform.localPosition, transform.localRotation, 1);
             Vector3 savedExtents = Extents;
             if (savedCanvas != currentCanvas)
@@ -75,7 +83,7 @@ namespace TiltBrush
             {
                 Transform = TrTransform.TRS(savedPose.translation, savedPose.rotation, 0),
                 Extents = savedExtents,
-                LayerId = App.Scene.GetIndexOfCanvas(savedCanvas),
+                LayerId = savedCanvases.IndexOf(savedCanvas),
                 Pinned = m_Pinned,
                 GroupId = groupIdMapping.GetId(Group)
             };
