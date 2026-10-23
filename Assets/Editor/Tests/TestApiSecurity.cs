@@ -523,6 +523,54 @@ namespace TiltBrush
         }
 
         [Test]
+        public void TestPollingListenersExpireAndReregisterWithoutOldCommands()
+        {
+            double now = 0;
+            var listeners = new ApiManager.PollingListenerRegistry(10, () => now);
+            listeners.Register("client");
+            listeners.Enqueue(new KeyValuePair<string, string>("old", "command"));
+
+            now = 10;
+            Assert.AreEqual(1, listeners.RemoveExpiredListeners());
+            Assert.IsFalse(listeners.HasListeners);
+            Assert.IsNull(listeners.Drain("client"));
+            Assert.IsTrue(listeners.Register("client"));
+            Assert.IsEmpty(listeners.Drain("client"));
+        }
+
+        [Test]
+        public void TestPollingActivityKeepsOnlyActiveClientsAlive()
+        {
+            double now = 0;
+            var listeners = new ApiManager.PollingListenerRegistry(10, () => now);
+            listeners.Register("active");
+            listeners.Register("abandoned");
+
+            now = 9;
+            Assert.IsEmpty(listeners.Drain("active"));
+            listeners.Enqueue(new KeyValuePair<string, string>("new", "command"));
+            now = 10;
+            Assert.AreEqual(1, listeners.RemoveExpiredListeners());
+            Assert.IsNull(listeners.Drain("abandoned"));
+            Assert.AreEqual(1, listeners.Drain("active").Count);
+        }
+
+        [Test]
+        public void TestPollingReregistrationRenewsWithoutDiscardingCommands()
+        {
+            double now = 0;
+            var listeners = new ApiManager.PollingListenerRegistry(10, () => now);
+            listeners.Register("client");
+            listeners.Enqueue(new KeyValuePair<string, string>("retained", "command"));
+
+            now = 9;
+            Assert.IsTrue(listeners.Register("client"));
+            now = 10;
+            Assert.AreEqual(0, listeners.RemoveExpiredListeners());
+            Assert.AreEqual("retained", listeners.Drain("client")[0].Key);
+        }
+
+        [Test]
         public void TestPollingListenersCanBeUnregistered()
         {
             var listeners = new ApiManager.PollingListenerRegistry();

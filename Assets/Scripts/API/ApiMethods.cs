@@ -58,7 +58,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "listenfor.strokes.poll",
-            "Registers a client ID for polling stroke data via GET /api/v1?query.outgoing.poll=<url-encoded-client-id>",
+            "Registers or renews a polling client; poll via GET /api/v1?query.outgoing.poll=<url-encoded-client-id>. Inactivity expires after Flags.PollingStrokeListenerTimeoutSeconds (default 300); re-register after a not-registered response.",
             "my-client"
         )]
         public static bool AddPollingListener(string clientId)

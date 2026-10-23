@@ -34,6 +34,7 @@ namespace TiltBrush
     {
         public static string WebRequestUserAgent =>
             $"OpenBrush/{Application.version} (https://openbrush.app/)";
+        internal const int DEFAULT_POLLING_LISTENER_TIMEOUT_SECONDS = 300;
         private const string ROOT_API_URL = "/api/v1";
         private const string BASE_USER_SCRIPTS_URL = "/scripts";
         private const string BASE_EXAMPLE_SCRIPTS_URL = "/examplescripts";
@@ -50,8 +51,8 @@ namespace TiltBrush
         private Dictionary<string, string> m_CommandStatuses;
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
         private List<Uri> m_OutgoingApiListeners;
-        private readonly PollingListenerRegistry m_PollingListeners =
-            new PollingListenerRegistry();
+        private PollingListenerRegistry m_PollingListeners;
+        private float m_NextPollingListenerCleanupTime;
         private static ApiManager m_Instance;
         private Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
@@ -95,6 +96,8 @@ namespace TiltBrush
 
         void Awake()
         {
+            m_PollingListeners = new PollingListenerRegistry(
+                App.UserConfig.Flags.PollingStrokeListenerTimeoutSeconds);
             m_Instance = this;
             m_UserScriptsPath = Path.Combine(App.UserPath(), "Scripts");
             App.HttpServer.AddHttpHandler($"/help", InfoCallback);
@@ -900,6 +903,11 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         private void Update()
         {
+            if (Time.realtimeSinceStartup >= m_NextPollingListenerCleanupTime)
+            {
+                m_PollingListeners.RemoveExpiredListeners();
+                m_NextPollingListenerCleanupTime = Time.realtimeSinceStartup + 1f;
+            }
             HandleApiCommand();
             OutgoingApiCommand();
             UpdateCameraView();
@@ -1072,11 +1080,32 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 internal readonly Queue<KeyValuePair<string, string>> Commands =
                     new Queue<KeyValuePair<string, string>>();
+                internal double LastActivitySeconds;
             }
 
             private readonly Dictionary<string, Listener> m_Listeners =
                 new Dictionary<string, Listener>();
             private readonly object m_Lock = new object();
+            private readonly int m_InactivityTimeoutSeconds;
+            private readonly Func<double> m_GetTimeSeconds;
+
+            internal PollingListenerRegistry(
+                int inactivityTimeoutSeconds = DEFAULT_POLLING_LISTENER_TIMEOUT_SECONDS,
+                Func<double> getTimeSeconds = null)
+            {
+                if (inactivityTimeoutSeconds <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(inactivityTimeoutSeconds));
+                }
+                m_InactivityTimeoutSeconds = inactivityTimeoutSeconds;
+                m_GetTimeSeconds = getTimeSeconds ?? ReadMonotonicSeconds;
+            }
+
+            private static double ReadMonotonicSeconds()
+            {
+                return System.Diagnostics.Stopwatch.GetTimestamp() /
+                    (double)System.Diagnostics.Stopwatch.Frequency;
+            }
 
             internal bool HasListeners
             {
@@ -1084,6 +1113,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 {
                     lock (m_Lock)
                     {
+                        RemoveExpiredListeners(m_GetTimeSeconds());
                         return m_Listeners.Count > 0;
                     }
                 }
@@ -1094,8 +1124,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 if (string.IsNullOrWhiteSpace(clientId)) return false;
                 lock (m_Lock)
                 {
-                    if (m_Listeners.ContainsKey(clientId)) return true;
-                    m_Listeners.Add(clientId, new Listener());
+                    double now = m_GetTimeSeconds();
+                    RemoveExpiredListeners(now);
+                    if (!m_Listeners.TryGetValue(clientId, out Listener listener))
+                    {
+                        listener = new Listener();
+                        m_Listeners.Add(clientId, listener);
+                    }
+                    listener.LastActivitySeconds = now;
                     return true;
                 }
             }
@@ -1105,6 +1141,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 if (string.IsNullOrWhiteSpace(clientId)) return false;
                 lock (m_Lock)
                 {
+                    RemoveExpiredListeners(m_GetTimeSeconds());
                     return m_Listeners.Remove(clientId);
                 }
             }
@@ -1113,10 +1150,13 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 lock (m_Lock)
                 {
+                    double now = m_GetTimeSeconds();
+                    RemoveExpiredListeners(now);
                     if (!m_Listeners.TryGetValue(clientId, out Listener listener))
                     {
                         return null;
                     }
+                    listener.LastActivitySeconds = now;
                     var commands =
                         new List<KeyValuePair<string, string>>(listener.Commands);
                     listener.Commands.Clear();
@@ -1128,11 +1168,39 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 lock (m_Lock)
                 {
+                    RemoveExpiredListeners(m_GetTimeSeconds());
                     foreach (Listener listener in m_Listeners.Values)
                     {
                         listener.Commands.Enqueue(command);
                     }
                 }
+            }
+
+            internal int RemoveExpiredListeners()
+            {
+                lock (m_Lock)
+                {
+                    return RemoveExpiredListeners(m_GetTimeSeconds());
+                }
+            }
+
+            private int RemoveExpiredListeners(double now)
+            {
+                List<string> expiredIds = null;
+                foreach (var pair in m_Listeners)
+                {
+                    if (now - pair.Value.LastActivitySeconds >= m_InactivityTimeoutSeconds)
+                    {
+                        if (expiredIds == null) expiredIds = new List<string>();
+                        expiredIds.Add(pair.Key);
+                    }
+                }
+                if (expiredIds == null) return 0;
+                foreach (string clientId in expiredIds)
+                {
+                    m_Listeners.Remove(clientId);
+                }
+                return expiredIds.Count;
             }
         }
 
