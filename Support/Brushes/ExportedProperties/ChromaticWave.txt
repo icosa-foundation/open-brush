@@ -1,0 +1,78 @@
+{
+  "VariantOf": "",
+  "GUID": "0f0ff7b2-a677-45eb-a7d6-0cd7206f4816",
+  "Author": "Open Brush",
+  "Name": "ChromaticWave",
+  "Description": "Chromatic Wave",
+  "ExtraDescription": "",
+  "CopyRestrictions": "EmbedAndShare",
+  "ButtonIcon": "blank.png",
+  "Audio": {
+    "MaxPitchShift": 0.0,
+    "MaxVolume": 0.95,
+    "VolumeUpSpeed": 0.8,
+    "VolumeDownSpeed": 1.2,
+    "VolumeVelocityRangeMultiplier": 2.0,
+    "IsAudioReactive": true
+  },
+  "Material": {
+    "Shader": "Brush/Visualizer/RainbowTube",
+    "FloatProperties": {
+      "_EmissionGain": 0.45
+    },
+    "ColorProperties": {},
+    "VectorProperties": {},
+    "TextureProperties": {},
+    "TextureAtlasV": 1,
+    "TileRate": 0.1,
+    "UseBloomSwatchOnColorPicker": true
+  },
+  "Size": {
+    "BrushSizeRange": [ 0.1, 0.3 ],
+    "PressureSizeRange": [ 0.1, 1.0 ],
+    "SizeVariance": 0.0,
+    "PreviewPressureSizeMin": 0.372
+  },
+  "Color": {
+    "Opacity": 1.0,
+    "PressureOpacityRange": [ 1.0, 1.0 ],
+    "LuminanceMin": 0.04,
+    "SaturationMax": 0.98
+  },
+  "Particle": {
+    "Speed": 0.0,
+    "Rate": 1.0,
+    "InitialRotationRange": 0.0,
+    "RandomizeAlpha": false
+  },
+  "QuadBatch": {
+    "SprayRateMultiplier": 1.0,
+    "RotationVariance": 360.0,
+    "PositionVariance": 0.0,
+    "SizeRatio": [ 1.0, 1.0 ]
+  },
+  "Tube": {
+    "MinLength": 0.002,
+    "StoreRadiusInTexCoord": true
+  },
+  "Misc": {
+    "RenderBackFaces": false,
+    "BackIsInvisible": false,
+    "BackfaceHueShift": 0.0,
+    "BoundsPadding": 0.0,
+    "PlaybackAtStrokeGranularity": false
+  },
+  "Export": {
+    "EmissiveFactor": 0.0,
+    "AllowExport": true
+  },
+  "Simplification": {
+    "SupportsSimplification": true,
+    "HeadMinPoints": 1,
+    "HeadPointStep": 1,
+    "TailMinPoints": 1,
+    "TailPointStep": 1,
+    "MiddlePointStep": 3
+  },
+  "BrushDescriptionVersion": 1
+}
