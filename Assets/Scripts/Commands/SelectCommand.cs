@@ -335,7 +335,6 @@ namespace TiltBrush
                 if (m_Widgets != null)
                 {
                     SelectionManager.m_Instance.SelectWidgets(m_Widgets);
-                    SelectionManager.m_Instance.RestoreWidgetSelectionJoins(m_WidgetJoins, m_WidgetCanvases);
                 }
             }
 
@@ -371,6 +370,7 @@ namespace TiltBrush
                 if (m_Widgets != null)
                 {
                     SelectionManager.m_Instance.SelectWidgets(m_Widgets);
+                    SelectionManager.m_Instance.RestoreWidgetSelectionJoins(m_WidgetJoins, m_WidgetCanvases);
                 }
             }
             else
