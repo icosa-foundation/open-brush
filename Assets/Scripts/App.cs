@@ -1913,6 +1913,7 @@ namespace TiltBrush
                 // Apply any overrides sent through via the command line, even if reading from Tilt Brush.cfg
                 // goes horribly wrong.
                 Config.ApplyUserConfigOverrides(m_UserConfig);
+                m_UserConfig.ApplyPerformanceLimits();
             }
         }
 
