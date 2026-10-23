@@ -53,6 +53,14 @@ namespace TiltBrush
             m_NewStroke.Hide(true); // Hide() automatically manages snap hash removal
         }
 
+        protected override void OnDispose()
+        {
+            if (m_NewStroke == null) { return; }
+            SketchMemoryScript.m_Instance.RemoveMemoryObject(m_NewStroke);
+            m_NewStroke.DestroyStroke();
+            m_NewStroke = null;
+        }
+
         private void ModifyStroke(Stroke stroke, IEnumerable<PointerManager.ControlPoint> newControlPoints)
         {
             stroke.m_ControlPoints = newControlPoints.ToArray();
