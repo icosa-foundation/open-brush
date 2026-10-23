@@ -341,10 +341,15 @@ namespace TiltBrush
             return App.Scene.animationUI_manager.GetCanvasLocation(canvas);
         }
 
+        public CanvasScript GetSerializableCanvas(GrabWidget widget)
+        {
+            CanvasScript canvas = widget.Canvas;
+            return canvas == SelectionCanvas ? widget.m_PreviousCanvas : canvas;
+        }
+
         public (int, int) GetSerializableIndexOfCanvas(GrabWidget widget)
         {
-            return GetSerializableIndexOfCanvas(widget.Canvas == SelectionCanvas
-                ? widget.m_PreviousCanvas : widget.Canvas);
+            return GetSerializableIndexOfCanvas(GetSerializableCanvas(widget));
         }
 
         public (int, int) GetSerializableIndexOfCanvas(CanvasScript canvas)

@@ -1027,11 +1027,13 @@ namespace TiltBrush
                                 bool isNonRawTransform, uint groupId, int layerId, int frameId, string assetId = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
-            modelWidget.transform.localPosition = xf.translation;
-            modelWidget.transform.localRotation = xf.rotation;
             modelWidget.m_Subtree = subtree;
             modelWidget.Model = model;
             modelWidget.m_LoadingFromSketch = true;
+            // Saved pose and size are local to this frame, including when it is not active.
+            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId, frameId));
+            modelWidget.transform.localPosition = xf.translation;
+            modelWidget.transform.localRotation = xf.rotation;
             modelWidget.Show(true, false);
 
             if (isNonRawTransform)
@@ -1056,7 +1058,6 @@ namespace TiltBrush
                 modelWidget.m_PolyCallbackActive = true;
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
-            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId, frameId));
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).

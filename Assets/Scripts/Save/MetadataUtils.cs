@@ -130,6 +130,13 @@ namespace TiltBrush
             {
                 WidgetMetadata newEntry = new WidgetMetadata();
                 newEntry.xf = widget.GetSaveTransform();
+                CanvasScript currentCanvas = widget.Canvas;
+                CanvasScript savedCanvas = App.Scene.GetSerializableCanvas(widget);
+                if (savedCanvas != null && savedCanvas != currentCanvas)
+                {
+                    // Match the authored frame recorded below, not the temporary selection canvas.
+                    newEntry.xf = savedCanvas.Pose.inverse * currentCanvas.Pose * newEntry.xf;
+                }
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
