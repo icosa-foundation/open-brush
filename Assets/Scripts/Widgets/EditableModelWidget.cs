@@ -28,6 +28,31 @@ namespace TiltBrush
         public PolyRecipe m_PolyRecipe;
         public PolyMesh m_PolyMesh;
 
+        // The initial mesh belongs to the model template. Only regenerated meshes
+        // are owned by this widget; undo stores recipes and rebuilds their geometry.
+        private Mesh m_OwnedGeneratedMesh;
+
+        internal void TakeGeneratedMeshOwnership(Mesh mesh)
+        {
+            Mesh previousMesh = m_OwnedGeneratedMesh;
+            m_OwnedGeneratedMesh = mesh;
+            if (previousMesh != null && previousMesh != mesh)
+            {
+                Destroy(previousMesh);
+            }
+        }
+
+        public override void OnPreDestroy()
+        {
+            Mesh ownedMesh = m_OwnedGeneratedMesh;
+            m_OwnedGeneratedMesh = null;
+            if (ownedMesh != null)
+            {
+                Destroy(ownedMesh);
+            }
+            base.OnPreDestroy();
+        }
+
         public override GrabWidget Clone()
         {
             return Clone(transform.position, transform.rotation, m_Size);

@@ -143,6 +143,7 @@ namespace TiltBrush.MeshEditing
             var meshData = poly.BuildMeshData(colors: widget.m_PolyRecipe.Colors, colorMethod: widget.m_PolyRecipe.ColorMethod);
             var mesh = poly.BuildUnityMesh(meshData);
             UpdateMesh(go, mesh, mat);
+            widget.TakeGeneratedMeshOwnership(mesh);
             widget.RecalculateColliderBounds();
             widget.m_PolyMesh = poly;
         }
