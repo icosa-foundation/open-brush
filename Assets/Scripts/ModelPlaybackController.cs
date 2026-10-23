@@ -47,9 +47,12 @@ namespace TiltBrush
         public float SpatialBlend => m_InitialState?.SpatialBlend ?? m_SpatialBlend ??
             (m_Audio.Any(source => source != null && source.spatialBlend > 0) ? 1f : 0f);
         public bool Playing => Document != null ? Document.GetStateInfo().Playback == ImmDocument.PlaybackState.Playing :
-            m_Gltf != null && m_Gltf.Initialized ? m_Gltf.Playing : m_Audio.Any(source => source != null && source.isPlaying);
-        public double Time => Document != null ? GetNativeTime().Time : m_Gltf != null && m_Gltf.Initialized ? m_Gltf.Time :
-            m_Audio.FirstOrDefault(source => source != null && source.clip != null)?.time ?? 0;
+            (m_Gltf != null && m_Gltf.Initialized && m_Gltf.Playing) ||
+            m_Audio.Any(source => source != null && source.isPlaying);
+        public double Time => Document != null ? GetNativeTime().Time :
+            Math.Max(m_Gltf != null && m_Gltf.Initialized ? m_Gltf.Time : 0,
+                m_Audio.Where(source => source != null && source.clip != null)
+                    .Select(source => (double)source.time).DefaultIfEmpty().Max());
         public double TargetTime => m_InitialState?.Time ?? Time;
         public double Length => Document != null ? (Document.TryGetChapterInfo(out var info) ? info.Lengths.Sum() / ImmTicksPerSecond : 0) :
             Math.Max(m_Gltf != null ? m_Gltf.Length : 0, m_Audio.Select(source => source != null && source.clip != null ? (double)source.clip.length : 0).DefaultIfEmpty().Max());
