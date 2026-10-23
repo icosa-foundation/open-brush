@@ -194,8 +194,8 @@ namespace TiltBrush
         IEnumerable LoadHdrImage(string path)
         {
             m_FullSizeReferences++;
-            int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
-            int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
+            int maxDimension = UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension;
+            int resizeDimension = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
             var reader = new Future<HdrTextureLoader.DecodedImage>(
                 () => HdrTextureLoader.Decode(
                     File.ReadAllBytes(path), path, maxDimension, resizeDimension),
@@ -399,7 +399,7 @@ namespace TiltBrush
                 var importer = new RuntimeSVGImporter();
                 var tex = importer.ImportAsTexture(FilePath);
 
-                if (!ValidateDimensions(tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                if (!ValidateDimensions(tex.width, tex.height, UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension))
                 {
                     m_State = ImageState.ErrorImageTooLarge;
                     Object.Destroy(tex);
@@ -463,8 +463,8 @@ namespace TiltBrush
             Texture2D resizedTexture = null;
             try
             {
-                int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
-                int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
+                int maxDimension = UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension;
+                int resizeDimension = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                 var reader = new Future<HdrTextureLoader.DecodedImage>(
                     () => HdrTextureLoader.Decode(
                         File.ReadAllBytes(FilePath), FilePath,
@@ -513,14 +513,14 @@ namespace TiltBrush
                     ReferenceImageCatalog.m_Instance.TexturesCreatedThisFrame++;
                     if (!ValidateDimensions(
                         texture.width, texture.height,
-                        App.PlatformConfig.ReferenceImagesMaxDimension))
+                        UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension))
                     {
                         m_State = ImageState.ErrorImageTooLarge;
                     }
                     else
                     {
                         m_ImageAspect = (float)texture.width / texture.height;
-                        int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                        int resizeLimit = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                         Texture2D imageCacheTexture = texture;
                         if (texture.width > resizeLimit || texture.height > resizeLimit)
                         {
@@ -681,7 +681,7 @@ namespace TiltBrush
                     Texture2D inTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
                     loader.LoadImageIntoTexture(inTex);
 
-                    if (!ValidateDimensions(inTex.width, inTex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                    if (!ValidateDimensions(inTex.width, inTex.height, UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension))
                     {
                         m_State = ImageState.ErrorImageTooLarge;
                         Object.Destroy(inTex);
