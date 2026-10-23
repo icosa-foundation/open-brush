@@ -395,7 +395,7 @@ namespace TiltBrush
                     LoadScriptFromPath(path);
                     if (catMatch == LuaApiCategory.BackgroundScript)
                     {
-                        if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
+                        if (BackgroundScriptsEnabled && m_ActiveBackgroundScripts.ContainsKey(scriptName))
                         {
                             InitScript(m_ActiveBackgroundScripts[scriptName]);
                         }
@@ -404,7 +404,7 @@ namespace TiltBrush
                     {
                         var activeScriptName = GetActiveScriptName(category);
                         ActiveScripts[category] = GetScriptNames(category).IndexOf(activeScriptName);
-                        if (activeScriptName == scriptName)
+                        if (IsCategoryActive(category) && activeScriptName == scriptName)
                         {
                             InitScript(GetActiveScript(category));
                         }
