@@ -22,6 +22,16 @@ namespace TiltBrush
 
     public class GrabWidget : MonoBehaviour
     {
+        public SymmetryWidgetGroup SymmetryPeerGroup { get; private set; }
+        public int SymmetryPointerIndex { get; private set; } = -1;
+
+        internal void SetSymmetryGroup(SymmetryWidgetGroup group, int index)
+        {
+            SymmetryPeerGroup?.Remove(this);
+            SymmetryPeerGroup = group;
+            SymmetryPointerIndex = group == null ? -1 : index;
+            group?.Add(this);
+        }
         public enum State
         {
             Showing,
@@ -543,7 +553,7 @@ namespace TiltBrush
         }
 
         /// Returns true if we think the user intends to throw this thing away
-        bool IsHideToss(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
+        protected bool IsHideToss(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
         {
             if (m_Pinned || !m_AllowHideWithToss)
             {
@@ -635,7 +645,7 @@ namespace TiltBrush
         // vLinVel: units/s
         // vAngVel: degrees/s
         // vPivot: world-space position about which the angular velocity is applied
-        public void SetVelocities(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
+        public virtual void SetVelocities(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
         {
             if (IsHideToss(vLinVel, vAngVel, vPivot))
             {
@@ -1995,6 +2005,7 @@ namespace TiltBrush
 
         virtual protected void OnDestroy()
         {
+            SetSymmetryGroup(null, -1);
             OnPreDestroy();
             WidgetManager.m_Instance.DestroyWidgetPin(m_Pin);
         }

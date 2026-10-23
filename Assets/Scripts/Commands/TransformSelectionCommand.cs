@@ -26,6 +26,11 @@ namespace TiltBrush
         {
             m_Transform = xf;
             m_Pivot = pivot;
+
+            // The selected strokes move within the selection; their linked copies follow.
+            TrTransform local = TrTransform.T(pivot) * xf * TrTransform.T(-pivot);
+            TransformSymmetryCopiesCommand.ForSelectionEdit(
+                SelectionManager.m_Instance.SelectedStrokes.Select(stroke => (stroke, local)), this);
         }
 
         public override bool NeedsSave { get { return true; } }

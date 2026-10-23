@@ -3843,6 +3843,102 @@ MonoBehaviour:
     m_Key: CAPTURE_TRAY_EXPORT_BUTTON_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
+  - m_Id: 551461337584721920
+    m_Key: MULTIMIRROR_PANEL_HELICAL_SYMMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522560
+    m_Key: MULTIMIRROR_PANEL_HELICAL_COPIES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522561
+    m_Key: MULTIMIRROR_PANEL_HELICAL_ANGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522562
+    m_Key: MULTIMIRROR_PANEL_HELICAL_ADVANCE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522563
+    m_Key: MULTIMIRROR_PANEL_SPACE_GROUPS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522564
+    m_Key: MULTIMIRROR_PANEL_SPACE_CRYSTAL_SYSTEM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522565
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522566
+    m_Key: MULTIMIRROR_PANEL_SPACE_NUMBER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522567
+    m_Key: MULTIMIRROR_PANEL_SPACE_REPEATS_X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522568
+    m_Key: MULTIMIRROR_PANEL_SPACE_REPEATS_Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522569
+    m_Key: MULTIMIRROR_PANEL_SPACE_REPEATS_Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522570
+    m_Key: MULTIMIRROR_PANEL_SPACE_CELL_SIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522571
+    m_Key: MULTIMIRROR_PANEL_LINE_GROUPS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522572
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522573
+    m_Key: MULTIMIRROR_PANEL_LINE_ORDER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522574
+    m_Key: MULTIMIRROR_PANEL_LINE_REPEATS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522575
+    m_Key: MULTIMIRROR_PANEL_LINE_ADVANCE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522576
+    m_Key: MULTIMIRROR_PANEL_LINE_ANGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522577
+    m_Key: MULTIMIRROR_PANEL_PENROSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522578
+    m_Key: MULTIMIRROR_PANEL_PENROSE_TILES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522579
+    m_Key: MULTIMIRROR_PANEL_PENROSE_SUBDIVISIONS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522580
+    m_Key: MULTIMIRROR_PANEL_PENROSE_RADIUS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553016172624830464
+    m_Key: MULTIMIRROR_PANEL_SIMPLE_SYMMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553297782469386240
+    m_Key: UI_LONG_PRESS_MORE_OPTIONS_HINT
+    m_Metadata:
+      m_Items: []
   - m_Id: 554342843705548800
     m_Key: HANDTRACKING_ROTATE_PANELS_LEFT_DESCRIPTION
     m_Metadata:

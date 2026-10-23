@@ -15,19 +15,27 @@
 using System;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
     public class MirrorOptionsPopUpWindow : OptionsPopUpWindow
     {
+        public TextActionButton m_ButtonShowSimpleControls;
         public TextActionButton m_ButtonShowPointControls;
         public TextActionButton m_ButtonShowWallpaperControls;
-        public TextActionButton m_ButtonShowOptionsControls;
+        public TextActionButton m_ButtonShowColorControls;
+        public TextActionButton m_ButtonShowPenroseControls;
+        public TextActionButton m_ButtonShowLineGroupControls;
+        public TextActionButton m_ButtonShowSpaceGroupControls;
+        public TextActionButton m_ButtonShowHelicalControls;
+
+        public GameObject m_SimpleControls;
 
         public GameObject m_PointSymmetryControls;
-        public GameObject m_WallpaperSymmetryControls;
-        public GameObject m_OptionsControls;
         public AdvancedSlider m_PointSymmetryOrderSlider;
+
+        public GameObject m_WallpaperSymmetryControls;
         public AdvancedSlider m_WallpaperRepeatXSlider;
         public AdvancedSlider m_WallpaperRepeatYSlider;
         public AdvancedSlider m_WallpaperScaleSlider;
@@ -35,7 +43,39 @@ namespace TiltBrush
         public AdvancedSlider m_WallpaperScaleSliderY;
         public AdvancedSlider m_WallpaperSkewSliderX;
         public AdvancedSlider m_WallpaperSkewSliderY;
+        public ActionButton m_ButtonWallpaperRepeats;
+        public ActionButton m_ButtonWallpaperScale;
+        public ActionButton m_ButtonWallpaperSkew;
+        public Transform m_WallpaperRepeatsControls;
+        public Transform m_WallpaperScaleControls;
+        public Transform m_WallpaperSkewControls;
 
+        public GameObject m_LineGroupControls;
+        public TextActionButton m_LineFamilyButton;
+        public AdvancedSlider m_LineOrderSlider;
+        public AdvancedSlider m_LineRepeatsSlider;
+        public AdvancedSlider m_LineAdvanceSlider;
+        public AdvancedSlider m_LineAngleSlider;
+
+        public GameObject m_SpaceGroupControls;
+        public TextActionButton m_SpaceGroupSystemButton;
+        public TextActionButton m_SpaceGroupPresetButton;
+        public AdvancedSlider m_SpaceGroupRepeatXSlider;
+        public AdvancedSlider m_SpaceGroupRepeatYSlider;
+        public AdvancedSlider m_SpaceGroupRepeatZSlider;
+        public AdvancedSlider m_SpaceGroupCellSizeSlider;
+
+        public GameObject m_PenroseControls;
+        public TextActionButton m_PenroseTilesButton;
+        public AdvancedSlider m_PenroseSubdivisionsSlider;
+        public AdvancedSlider m_PenroseRadiusSlider;
+
+        public GameObject m_HelicalControls;
+        public AdvancedSlider m_HelicalCopiesSlider;
+        public AdvancedSlider m_HelicalAngleSlider;
+        public AdvancedSlider m_HelicalAdvanceSlider;
+
+        public GameObject m_OptionsControls;
         public TextActionButton m_OptionsButtonHue;
         public TextActionButton m_OptionsButtonSaturation;
         public TextActionButton m_OptionsButtonBrightness;
@@ -46,20 +86,21 @@ namespace TiltBrush
         public TextActionButton m_OptionsButtonSawtooth;
         public TextActionButton m_OptionsButtonSquare;
         public TextActionButton m_OptionsButtonNoise;
-
         public GameObject m_ColorPreview;
         public Transform m_ColorPreviewSwatch;
 
-        public ActionButton m_ButtonWallpaperRepeats;
-        public ActionButton m_ButtonWallpaperScale;
-        public ActionButton m_ButtonWallpaperSkew;
+        private enum MirrorTab
+        {
+            Simple,
+            Point,
+            Wallpaper,
+            Helical,
+            SpaceGroup,
+            LineGroup,
+            Penrose
+        }
 
-        public Transform m_WallpaperRepeatsControls;
-        public Transform m_WallpaperScaleControls;
-        public Transform m_WallpaperSkewControls;
-
-        private static int m_LastActiveTab;
-        private bool m_MirrorState;
+        private static MirrorTab m_LastActiveTab = MirrorTab.Simple;
 
         [NonSerialized] public PointerManager.ColorShiftComponent m_currentSelectedColorComponent;
         public enum SymmetryTransformAxis { X, Y, Z };
@@ -71,23 +112,99 @@ namespace TiltBrush
         public override void Init(GameObject rParent, string sText)
         {
             base.Init(rParent, sText);
-            // Store mirror state as the long press button misbehaves sometimes
-            m_MirrorState = GetParentButton().IsButtonActive();
+            RefreshMirrorControls();
+        }
 
+        private SymmetryMirror m_DisplayedMirror;
+
+        protected override void BaseUpdate()
+        {
+            base.BaseUpdate();
+            // Also follow recall/undo performed outside this popup.
+            if (!ReferenceEquals(m_DisplayedMirror, SymmetryMirrors.Showing))
+            {
+                RefreshMirrorControls();
+            }
+        }
+
+        public void HandleNewMirror()
+        {
+            SymmetryMirrors.NewMirror();
+            RefreshMirrorControls();
+        }
+
+        public void HandleNextMirror()
+        {
+            SymmetryMirrors.Cycle(1);
+            RefreshMirrorControls();
+        }
+
+        public void HandlePreviousMirror()
+        {
+            SymmetryMirrors.Cycle(-1);
+            RefreshMirrorControls();
+        }
+
+        private void RefreshMirrorControls()
+        {
+            m_DisplayedMirror = SymmetryMirrors.Showing;
+
+            var pm = PointerManager.m_Instance;
+            var mode = pm.MirrorModeEnabled ? pm.CurrentSymmetryMode : pm.LastMirrorMode;
+
+            if (mode == PointerManager.SymmetryMode.SinglePlane)
+            {
+                m_LastActiveTab = MirrorTab.Simple;
+            }
+            else
+            {
+                switch (PointerManager.m_Instance.m_CustomSymmetryType)
+                {
+                    case PointerManager.CustomSymmetryType.Penrose: m_LastActiveTab = MirrorTab.Penrose; break;
+                    case PointerManager.CustomSymmetryType.LineGroup: m_LastActiveTab = MirrorTab.LineGroup; break;
+                    case PointerManager.CustomSymmetryType.SpaceGroup: m_LastActiveTab = MirrorTab.SpaceGroup; break;
+                    case PointerManager.CustomSymmetryType.Helical: m_LastActiveTab = MirrorTab.Helical; break;
+                    case PointerManager.CustomSymmetryType.Wallpaper: m_LastActiveTab = MirrorTab.Wallpaper; break;
+                    default: m_LastActiveTab = MirrorTab.Point; break;
+                }
+            }
             switch (m_LastActiveTab)
             {
-                case 0:
+                case MirrorTab.Simple:
+                    HandleShowSimpleSymmetry();
+                    break;
+                case MirrorTab.Point:
                     HandleShowPointSymmetry();
                     break;
-                case 1:
+                case MirrorTab.Wallpaper:
                     HandleShowWallpaperSymmetry();
                     break;
-                case 2:
-                    HandleShowOptions();
+                case MirrorTab.Helical:
+                    HandleShowHelicalSymmetry();
+                    break;
+                case MirrorTab.SpaceGroup:
+                    HandleShowSpaceGroupSymmetry();
+                    break;
+                case MirrorTab.LineGroup:
+                    HandleShowLineGroupSymmetry();
+                    break;
+                case MirrorTab.Penrose:
+                    HandleShowPenroseSymmetry();
                     break;
             }
-            SetCurrentMirrorTypeButtonState(true);
+            foreach (var button in GetComponentsInChildren<MirrorTypeButton>(true))
+            {
+                button.SetButtonSelected(false);
+            }
+            if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror)
+            {
+                SetCurrentMirrorTypeButtonState(true);
+            }
+            UpdateWallpaperSettingControls();
 
+            m_HelicalCopiesSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalCopies);
+            m_HelicalAngleSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalAngle);
+            m_HelicalAdvanceSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalAdvance);
             m_PointSymmetryOrderSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_PointSymmetryOrder);
             m_WallpaperScaleSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetryScale);
             m_WallpaperRepeatXSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_WallpaperSymmetryX);
@@ -103,20 +220,6 @@ namespace TiltBrush
             return m_ParentPanel.GetComponentsInChildren<LongPressButton>().First(
                 b => b.m_Command == SketchControlsScript.GlobalCommands.MultiMirror
             );
-        }
-
-        public override bool RequestClose(bool bForceClose = false)
-        {
-            bool close = base.RequestClose(bForceClose);
-            if (close)
-            {
-                // Restore mirror state as the long press button misbehaves sometimes
-                if (GetParentButton().IsButtonActive() != m_MirrorState)
-                {
-                    SketchControlsScript.m_Instance.IssueGlobalCommand(SketchControlsScript.GlobalCommands.MultiMirror);
-                }
-            }
-            return close;
         }
 
         public void HandleWallpaperControlsRepeatsButton()
@@ -183,6 +286,7 @@ namespace TiltBrush
             {
                 case PointerManager.CustomSymmetryType.Point:
                     PointerManager.m_Instance.m_PointSymmetryFamily = btn.m_PointSymmetryFamily;
+                    UpdatePointSettingControls();
                     break;
                 case PointerManager.CustomSymmetryType.Wallpaper:
                     PointerManager.m_Instance.m_WallpaperSymmetryGroup = btn.m_WallpaperSymmetryGroup;
@@ -190,59 +294,38 @@ namespace TiltBrush
                     break;
             }
             SetCurrentMirrorTypeButtonState(true);
-            // Regenerate
+            PointerManager.m_Instance.SymmetryWidget.SetAppearance();
             PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        private void UpdatePointSettingControls()
+        {
+            var family = PointerManager.m_Instance.m_PointSymmetryFamily;
+            bool usesOrder = family == PointSymmetry.Family.Cn ||
+                family == PointSymmetry.Family.Cnv || family == PointSymmetry.Family.Cnh ||
+                family == PointSymmetry.Family.Sn || family == PointSymmetry.Family.Dn ||
+                family == PointSymmetry.Family.Dnh || family == PointSymmetry.Family.Dnd;
+            m_PointSymmetryOrderSlider.gameObject.SetActive(usesOrder);
         }
 
         private void UpdateWallpaperSettingControls()
         {
-            switch (PointerManager.m_Instance.m_WallpaperSymmetryGroup)
+            var group = PointerManager.m_Instance.m_WallpaperSymmetryGroup;
+            bool supportsSkew = group == SymmetryGroup.R.p1 || group == SymmetryGroup.R.p2;
+            bool supportsHeight = supportsSkew || group == SymmetryGroup.R.pg ||
+                group == SymmetryGroup.R.pm || group == SymmetryGroup.R.cm ||
+                group == SymmetryGroup.R.pmm || group == SymmetryGroup.R.pmg ||
+                group == SymmetryGroup.R.pgg || group == SymmetryGroup.R.cmm;
+
+            m_ButtonWallpaperRepeats.SetButtonAvailable(true);
+            m_ButtonWallpaperScale.SetButtonAvailable(true);
+            m_ButtonWallpaperSkew.SetButtonAvailable(supportsSkew);
+            m_ButtonWallpaperSkew.gameObject.SetActive(supportsSkew);
+            m_WallpaperScaleSliderY.gameObject.SetActive(supportsHeight);
+
+            if (!supportsSkew && m_WallpaperSkewControls.gameObject.activeSelf)
             {
-                // Skew and 2 size DOFs
-                case SymmetryGroup.R.p1:
-                case SymmetryGroup.R.p2:
-
-                    m_ButtonWallpaperRepeats.SetButtonAvailable(true);
-                    m_ButtonWallpaperScale.SetButtonAvailable(true);
-                    m_ButtonWallpaperSkew.SetButtonAvailable(true);
-
-                    break;
-
-                // Just 2 size DOFs
-                case SymmetryGroup.R.pg:
-                case SymmetryGroup.R.pm:
-                case SymmetryGroup.R.cm:
-                case SymmetryGroup.R.pmm:
-
-                    m_ButtonWallpaperRepeats.SetButtonAvailable(true);
-                    m_ButtonWallpaperScale.SetButtonAvailable(true);
-                    m_ButtonWallpaperSkew.SetButtonAvailable(false);
-
-                    m_WallpaperSkewControls.gameObject.SetActive(false);
-
-                    break;
-
-                // Just 1 size DOF
-                case SymmetryGroup.R.p6:
-                case SymmetryGroup.R.p6m:
-                case SymmetryGroup.R.p3:
-                case SymmetryGroup.R.p3m1:
-                case SymmetryGroup.R.p31m:
-                case SymmetryGroup.R.p4:
-                case SymmetryGroup.R.p4m:
-                case SymmetryGroup.R.p4g:
-                case SymmetryGroup.R.pgg:
-                case SymmetryGroup.R.pmg:
-                case SymmetryGroup.R.cmm:
-
-                    m_ButtonWallpaperRepeats.SetButtonAvailable(true);
-                    m_ButtonWallpaperScale.SetButtonAvailable(false);
-                    m_ButtonWallpaperSkew.SetButtonAvailable(false);
-
-                    m_WallpaperScaleControls.gameObject.SetActive(false);
-                    m_WallpaperSkewControls.gameObject.SetActive(false);
-
-                    break;
+                HandleWallpaperControlsRepeatsButton();
             }
         }
 
@@ -394,44 +477,307 @@ namespace TiltBrush
             PointerManager.m_Instance.CalculateMirrors();
         }
 
+        private void SetCustomSymmetryType(PointerManager.CustomSymmetryType type)
+        {
+            PointerManager.m_Instance.m_CustomSymmetryType = type;
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+        }
+
+        private void UpdateSymmetry()
+        {
+            PointerManager.m_Instance.CalculateMirrors();
+            PointerManager.m_Instance.SymmetryWidget.SetAppearance();
+        }
+
+        private void HideAllControls()
+        {
+            m_SimpleControls?.SetActive(false);
+            m_PointSymmetryControls.SetActive(false);
+            m_WallpaperSymmetryControls.SetActive(false);
+            m_HelicalControls.SetActive(false);
+            m_SpaceGroupControls.SetActive(false);
+            m_LineGroupControls.SetActive(false);
+            m_PenroseControls.SetActive(false);
+            m_OptionsControls.SetActive(false);
+
+            m_ButtonShowSimpleControls?.SetButtonSelected(false);
+            m_ButtonShowPointControls?.SetButtonSelected(false);
+            m_ButtonShowWallpaperControls?.SetButtonSelected(false);
+            m_ButtonShowHelicalControls?.SetButtonSelected(false);
+            m_ButtonShowSpaceGroupControls?.SetButtonSelected(false);
+            m_ButtonShowLineGroupControls?.SetButtonSelected(false);
+            m_ButtonShowPenroseControls?.SetButtonSelected(false);
+            m_ButtonShowColorControls?.SetButtonSelected(false);
+        }
+
+        public void HandleShowSimpleSymmetry()
+        {
+            HideAllControls();
+            m_LastActiveTab = MirrorTab.Simple;
+            m_SimpleControls?.SetActive(true);
+            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.SinglePlane);
+            m_ButtonShowSimpleControls?.SetButtonSelected(true);
+            PointerManager.m_Instance.SymmetryWidget.SetAppearance();
+        }
+
+        public void HandleShowPenroseSymmetry()
+        {
+            HideAllControls();
+            m_LastActiveTab = MirrorTab.Penrose;
+            m_PenroseControls.SetActive(true);
+            SetCustomSymmetryType(PointerManager.CustomSymmetryType.Penrose);
+            m_ButtonShowPenroseControls?.SetButtonSelected(true);
+            UpdateSymmetry();
+            RefreshPenroseControls();
+        }
+
+        private void RefreshPenroseControls()
+        {
+            var pm = PointerManager.m_Instance;
+            SetSpaceGroupButtonLabel(m_PenroseTilesButton, $"Tiles: {pm.m_PenroseTiles} >");
+            m_PenroseSubdivisionsSlider.SetInitialValueAndUpdate(pm.m_PenroseSubdivisions);
+            m_PenroseRadiusSlider.SetInitialValueAndUpdate(pm.m_PenroseRadius);
+        }
+
+        public void HandleNextPenroseTiles()
+        {
+            var pm = PointerManager.m_Instance;
+            pm.m_PenroseTiles = (PenroseTiling.TileSelection)(((int)pm.m_PenroseTiles + 1) % 3);
+            pm.CalculateMirrors();
+            RefreshPenroseControls();
+        }
+
+        public void HandleChangePenroseSubdivisions(Vector3 value)
+        {
+            PointerManager.m_Instance.m_PenroseSubdivisions = Mathf.Clamp(Mathf.RoundToInt(value.z), 1, 7);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshPenroseControls();
+        }
+
+        public void HandleChangePenroseRadius(Vector3 value)
+        {
+            PointerManager.m_Instance.m_PenroseRadius = Mathf.Max(0.01f, value.z);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshPenroseControls();
+        }
+
+        public void HandleShowLineGroupSymmetry()
+        {
+            HideAllControls();
+            m_LastActiveTab = MirrorTab.LineGroup;
+            m_LineGroupControls.SetActive(true);
+            SetCustomSymmetryType(PointerManager.CustomSymmetryType.LineGroup);
+            m_ButtonShowLineGroupControls?.SetButtonSelected(true);
+            UpdateSymmetry();
+            RefreshLineGroupControls();
+        }
+
+        private void RefreshLineGroupControls()
+        {
+            var pm = PointerManager.m_Instance;
+            var names = new[] { "Screw + rotations", "Translation + roto-reflection", "Translation + horizontal mirror",
+                "Half-step + horizontal mirror", "Screw + half-turns", "Translation + vertical mirrors",
+                "Glide + rotations", "Half-step + vertical mirrors", "Translation + diagonal mirrors",
+                "Glide + roto-reflection", "Translation + full mirrors", "Glide + horizontal mirror", "Half-step + full mirrors" };
+            SetSpaceGroupButtonLabel(m_LineFamilyButton, $"{(int)pm.m_LineFamily}: {names[(int)pm.m_LineFamily - 1]} >");
+            m_LineOrderSlider.SetInitialValueAndUpdate(pm.m_LineOrder);
+            m_LineRepeatsSlider.SetInitialValueAndUpdate(pm.m_LineRepeats);
+            m_LineAdvanceSlider.SetInitialValueAndUpdate(pm.m_LineAdvance);
+            m_LineAngleSlider.SetInitialValueAndUpdate(pm.m_LineAngle);
+            var freeAngle = LineGroupSymmetry.UsesFreeAngle(pm.m_LineFamily);
+            m_LineAngleSlider.gameObject.SetActive(freeAngle);
+        }
+
+        public void HandleNextLineFamily()
+        {
+            var pm = PointerManager.m_Instance;
+            pm.m_LineFamily = (LineGroupSymmetry.Family)((int)pm.m_LineFamily % 13 + 1);
+            pm.CalculateMirrors();
+            RefreshLineGroupControls();
+        }
+
+        public void HandleChangeLineOrder(Vector3 value)
+        {
+            PointerManager.m_Instance.m_LineOrder = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshLineGroupControls();
+        }
+
+        public void HandleChangeLineRepeats(Vector3 value)
+        {
+            PointerManager.m_Instance.m_LineRepeats = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshLineGroupControls();
+        }
+
+        public void HandleChangeLineAdvance(Vector3 value)
+        {
+            PointerManager.m_Instance.m_LineAdvance = Mathf.Max(0f, value.z);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshLineGroupControls();
+        }
+
+        public void HandleChangeLineAngle(Vector3 value)
+        {
+            PointerManager.m_Instance.m_LineAngle = value.z;
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshLineGroupControls();
+        }
+
+        public void HandleShowSpaceGroupSymmetry()
+        {
+            HideAllControls();
+            m_LastActiveTab = MirrorTab.SpaceGroup;
+            m_SpaceGroupControls.SetActive(true);
+            SetCustomSymmetryType(PointerManager.CustomSymmetryType.SpaceGroup);
+            m_ButtonShowSpaceGroupControls?.SetButtonSelected(true);
+            UpdateSymmetry();
+            RefreshSpaceGroupControls();
+        }
+
+        private static void SetSpaceGroupButtonLabel(TextActionButton button, string label)
+        {
+            button.m_ButtonLabel = label;
+            button.GetComponentInChildren<TMPro.TextMeshPro>().text = label;
+        }
+
+        private void RefreshSpaceGroupControls()
+        {
+            var pm = PointerManager.m_Instance;
+            var system = SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber);
+            SetSpaceGroupButtonLabel(m_SpaceGroupSystemButton, $"{system} >");
+            var label = SpaceGroupCatalog.GetName(pm.m_SpaceGroupNumber);
+            foreach (var preset in SpaceGroupCatalog.GetPresets(system))
+            {
+                if (preset.number == pm.m_SpaceGroupNumber) { label = preset.label; break; }
+            }
+            SetSpaceGroupButtonLabel(m_SpaceGroupPresetButton, $"{pm.m_SpaceGroupNumber}: {label} >");
+            m_SpaceGroupRepeatXSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.x);
+            m_SpaceGroupRepeatYSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.y);
+            m_SpaceGroupRepeatZSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.z);
+            m_SpaceGroupCellSizeSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupCellSize);
+        }
+
+        public void HandleNextSpaceGroupSystem()
+        {
+            var pm = PointerManager.m_Instance;
+            var current = SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber);
+            var next = (SpaceGroupCatalog.CrystalSystem)(((int)current + 1) % 7);
+            pm.m_SpaceGroupNumber = SpaceGroupCatalog.GetPresets(next)[0].number;
+            pm.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleNextSpaceGroupPreset()
+        {
+            var pm = PointerManager.m_Instance;
+            var presets = SpaceGroupCatalog.GetPresets(SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber));
+            var next = 0;
+            for (var i = 0; i < presets.Count; i++)
+            {
+                if (presets[i].number == pm.m_SpaceGroupNumber) { next = (i + 1) % presets.Count; break; }
+            }
+            pm.m_SpaceGroupNumber = presets[next].number;
+            pm.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleChangeSpaceGroupNumber(Vector3 value)
+        {
+            PointerManager.m_Instance.m_SpaceGroupNumber = Mathf.Clamp(Mathf.RoundToInt(value.z), 1, 230);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleChangeSpaceGroupRepeatX(Vector3 value)
+        {
+            PointerManager.m_Instance.m_SpaceGroupRepeats.x = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleChangeSpaceGroupRepeatY(Vector3 value)
+        {
+            PointerManager.m_Instance.m_SpaceGroupRepeats.y = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleChangeSpaceGroupRepeatZ(Vector3 value)
+        {
+            PointerManager.m_Instance.m_SpaceGroupRepeats.z = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleChangeSpaceGroupCellSize(Vector3 value)
+        {
+            PointerManager.m_Instance.m_SpaceGroupCellSize = Mathf.Max(0.01f, value.z);
+            PointerManager.m_Instance.CalculateMirrors();
+            RefreshSpaceGroupControls();
+        }
+
+        public void HandleShowHelicalSymmetry()
+        {
+            HideAllControls();
+            m_LastActiveTab = MirrorTab.Helical;
+            m_HelicalControls.SetActive(true);
+            SetCustomSymmetryType(PointerManager.CustomSymmetryType.Helical);
+            m_ButtonShowHelicalControls?.SetButtonSelected(true);
+            UpdateSymmetry();
+        }
+
+        public void HandleChangeHelicalCopies(Vector3 value)
+        {
+            PointerManager.m_Instance.m_HelicalCopies = Mathf.Max(1, Mathf.FloorToInt(value.z));
+            PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        public void HandleChangeHelicalAngle(Vector3 value)
+        {
+            PointerManager.m_Instance.m_HelicalAngle = value.z;
+            PointerManager.m_Instance.CalculateMirrors();
+        }
+
+        public void HandleChangeHelicalAdvance(Vector3 value)
+        {
+            PointerManager.m_Instance.m_HelicalAdvance = value.z;
+            PointerManager.m_Instance.CalculateMirrors();
+        }
+
         public void HandleShowPointSymmetry()
         {
-            m_LastActiveTab = 0;
-            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Point;
+            HideAllControls();
+            m_LastActiveTab = MirrorTab.Point;
             m_PointSymmetryControls.SetActive(true);
-            m_WallpaperSymmetryControls.SetActive(false);
-            m_OptionsControls.SetActive(false);
-            PointerManager.m_Instance.CalculateMirrors();
-            m_ButtonShowPointControls.SetButtonSelected(true);
-            m_ButtonShowWallpaperControls.SetButtonSelected(false);
-            m_ButtonShowOptionsControls.SetButtonSelected(false);
+            SetCustomSymmetryType(PointerManager.CustomSymmetryType.Point);
+            m_ButtonShowPointControls?.SetButtonSelected(true);
+            UpdatePointSettingControls();
+            UpdateSymmetry();
         }
 
         public void HandleShowWallpaperSymmetry()
         {
-            m_LastActiveTab = 1;
-            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Wallpaper;
-            m_PointSymmetryControls.SetActive(false);
+            HideAllControls();
+            m_LastActiveTab = MirrorTab.Wallpaper;
             m_WallpaperSymmetryControls.SetActive(true);
-            m_OptionsControls.SetActive(false);
-            PointerManager.m_Instance.CalculateMirrors();
-            m_ButtonShowPointControls.SetButtonSelected(false);
-            m_ButtonShowWallpaperControls.SetButtonSelected(true);
-            m_ButtonShowOptionsControls.SetButtonSelected(false);
+            SetCustomSymmetryType(PointerManager.CustomSymmetryType.Wallpaper);
+            m_ButtonShowWallpaperControls?.SetButtonSelected(true);
+            UpdateWallpaperSettingControls();
+            UpdateSymmetry();
         }
 
-        public void HandleShowOptions()
+        public void HandleShowColorOptions()
         {
-            m_LastActiveTab = 2;
-            m_PointSymmetryControls.SetActive(false);
-            m_WallpaperSymmetryControls.SetActive(false);
-            m_OptionsControls.SetActive(true);
-            PointerManager.m_Instance.CalculateMirrors();
-            UpdateColorPreview();
-            UpdateOptionsControlsToMatchValues();
-            m_ButtonShowPointControls.SetButtonSelected(false);
-            m_ButtonShowWallpaperControls.SetButtonSelected(false);
-            m_ButtonShowOptionsControls.SetButtonSelected(true);
+            bool show = !m_OptionsControls.activeSelf;
+            m_OptionsControls.SetActive(show);
+            m_ButtonShowColorControls?.SetButtonSelected(show);
+            if (show)
+            {
+                PointerManager.m_Instance.CalculateMirrors();
+                UpdateColorPreview();
+                UpdateOptionsControlsToMatchValues();
+            }
         }
 
         private void UpdateOptionsControlsToMatchValues()
