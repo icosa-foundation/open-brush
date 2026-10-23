@@ -25,7 +25,7 @@ namespace TiltBrush
         private GrabWidget m_OriginalWidget;
         private bool m_Initialized;
 
-        public GrabWidget Widget => m_Widget;
+        public GrabWidget Widget => m_Widget != null ? m_Widget : m_OriginalWidget;
 
         override public bool NeedsSave
         {
@@ -44,22 +44,26 @@ namespace TiltBrush
                 (widget is ModelWidget || widget is ImageWidget || widget is StencilWidget) &&
                 widget.GetComponentInChildren<InkCanvas>(true) == null)
             {
-                m_Widget = widget;
+                m_OriginalWidget = widget;
             }
 
         }
 
         protected override void OnRedo()
         {
-            if (m_Widget == null) return;
-            if (m_OriginalWidget == null)
+            if (m_OriginalWidget == null) return;
+            if (m_Widget == null)
             {
-                m_OriginalWidget = m_Widget.Clone();
+                // Earlier commands retain the original widget, so convert a separate instance.
+                m_Widget = m_OriginalWidget.Clone();
+                m_Widget.Group = m_OriginalWidget.Group;
+                if (m_OriginalWidget.Pinned) m_Widget.SetPinned(true, fromSave: true);
             }
-            m_OriginalWidget.gameObject.SetActive(false);
-            m_Widget.gameObject.SetActive(true);
-
-            if (m_Initialized) return;
+            if (m_Initialized)
+            {
+                SwapVisibleWidget(m_Widget, m_OriginalWidget);
+                return;
+            }
 
             switch (m_Widget)
             {
@@ -90,7 +94,45 @@ namespace TiltBrush
                     return;
             }
             m_Initialized = true;
+            SwapVisibleWidget(m_Widget, m_OriginalWidget);
         }
+
+        private static void SwapVisibleWidget(GrabWidget visible, GrabWidget hidden)
+        {
+            var selection = SelectionManager.m_Instance;
+            if (selection != null && selection.IsWidgetSelected(hidden))
+            {
+                visible.m_PreviousCanvas = hidden.m_PreviousCanvas;
+                SetCanvasAndLayers(visible, App.Scene.SelectionCanvas);
+                // Register first so swapping the last selected widget does not reset its pose.
+                selection.RegisterWidgetsInSelectionCanvas(new[] { visible });
+                selection.DeregisterWidgetsInSelectionCanvas(new[] { hidden });
+            }
+            else if (visible.Canvas == App.Scene.SelectionCanvas)
+            {
+                SetCanvasAndLayers(visible, visible.m_PreviousCanvas ?? App.ActiveCanvas);
+            }
+            if (hidden.Canvas == App.Scene.SelectionCanvas)
+            {
+                SetCanvasAndLayers(hidden, hidden.m_PreviousCanvas ?? App.ActiveCanvas);
+            }
+            selection?.ReplaceCachedWidget(hidden, visible);
+            SketchControlsScript.m_Instance?.ReplaceLastGrabWidget(hidden, visible);
+            hidden.Hide();
+            visible.RestoreFromToss();
+        }
+
+        private static void SetCanvasAndLayers(GrabWidget widget, CanvasScript canvas)
+        {
+            widget.SetCanvas(canvas);
+            widget.RestoreGameObjectLayer(canvas.gameObject.layer);
+            // Canvas changes must not remove the converted mesh from the paint raycast mask.
+            foreach (var inkCanvas in widget.GetComponentsInChildren<InkCanvas>(true))
+            {
+                inkCanvas.gameObject.layer = LayerMask.NameToLayer("TexturePaint");
+            }
+        }
+
         private void AddInkCanvas(GameObject gameObject)
         {
             if (gameObject.GetComponent<InkCanvas>() != null) return;
@@ -128,8 +170,17 @@ namespace TiltBrush
         protected override void OnUndo()
         {
             if (m_Widget == null) return;
-            m_OriginalWidget.gameObject.SetActive(true);
-            m_Widget.gameObject.SetActive(false);
+            SwapVisibleWidget(m_OriginalWidget, m_Widget);
+        }
+
+        protected override void OnDispose()
+        {
+            // Only the replacement belongs to this command; older commands own the original.
+            if (m_Widget != null && !m_Widget.gameObject.activeSelf)
+            {
+                WidgetManager.m_Instance.UnregisterGrabWidget(m_Widget.gameObject);
+                Object.Destroy(m_Widget.gameObject);
+            }
         }
     }
 } // namespace TiltBrush

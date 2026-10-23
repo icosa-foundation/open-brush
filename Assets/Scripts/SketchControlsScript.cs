@@ -790,6 +790,11 @@ namespace TiltBrush
         }
         public GrabWidget LastGrabWidget => m_LastGrabWidget;
 
+        internal void ReplaceLastGrabWidget(GrabWidget previous, GrabWidget replacement)
+        {
+            if (m_LastGrabWidget == previous) m_LastGrabWidget = replacement;
+        }
+
         public SaveIconTool GetSaveIconTool()
         {
             return m_SaveIconTool;
