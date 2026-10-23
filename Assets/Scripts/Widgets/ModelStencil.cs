@@ -442,7 +442,20 @@ namespace TiltBrush
         {
             if (succeeded && HasGeneratedPreviewMesh())
             {
+                // A retry can succeed after a failure restored the source bindings.
+                m_TintableMeshes = new Renderer[] { m_MeshGenerator.MeshRenderer };
+                m_HighlightMeshFilters = new[] {
+                    m_MeshGenerator.MeshRenderer.GetComponent<MeshFilter>()
+                };
+                RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
                 ReleaseSourceModel();
+            }
+            else if (m_ModelInstance != null)
+            {
+                m_MeshGenerator.MeshRenderer.enabled = false;
+                m_TintableMeshes = m_ModelInstance.GetComponentsInChildren<Renderer>();
+                m_HighlightMeshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
+                RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
             }
         }
 
