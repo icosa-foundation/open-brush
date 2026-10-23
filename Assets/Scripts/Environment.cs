@@ -157,6 +157,8 @@ namespace TiltBrush
         [Tooltip("Home position for snappable widgets")]
         public Vector3 m_WidgetHome = Vector3.zero;
 
+        public bool HasSkybox => m_RenderSettings.m_SkyboxCubemap != null;
+
         private Material m_DerivedSkyboxMaterial;
         /// The settings on this material mostly do not matter, and are left alone.
         /// When lerping between presets, _Tint, _Exposure, and _Tex are mutated
@@ -175,6 +177,7 @@ namespace TiltBrush
 
         public Color m_SkyboxColorA;
         public Color m_SkyboxColorB;
+        public bool m_PassthroughEnabled;
         public bool isPassthrough;
     }
 
