@@ -1181,14 +1181,22 @@ namespace OpenBrush.Multiplayer
                     item.Command, item.Stream, fullyStreamedRecipients);
             }
 
-            foreach (RemotePlayer player in m_RemotePlayers.List)
+            // Sending yields; room membership can change before the next recipient.
+            int[] fallbackRecipientIds = m_RemotePlayers.List
+                .Where(player => !fullyStreamedRecipients.Contains(player.PlayerId))
+                .Select(player => player.PlayerId)
+                .ToArray();
+            var manager = m_Manager;
+            foreach (int playerId in fallbackRecipientIds)
             {
-                if (!fullyStreamedRecipients.Contains(player.PlayerId))
+                foreach (BrushStrokeCommand deltaRoot in deltaRoots)
                 {
-                    foreach (BrushStrokeCommand deltaRoot in deltaRoots)
+                    if (manager == null || State != ConnectionState.IN_ROOM || m_Manager != manager)
                     {
-                        await m_Manager.SendCommandToPlayer(deltaRoot, player.PlayerId);
+                        return true;
                     }
+                    if (!IsRemotePlayerStillConnected(playerId)) break;
+                    await manager.SendCommandToPlayer(deltaRoot, playerId);
                 }
             }
             return true;
