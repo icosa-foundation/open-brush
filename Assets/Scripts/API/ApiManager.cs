@@ -15,6 +15,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -1152,14 +1153,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 var pos = cp.m_Pos;
                 var rot = cp.m_Orient.eulerAngles;
-                pointsAsStrings.Add($"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]");
+                pointsAsStrings.Add(FormattableString.Invariant($"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]"));
             }
             EnqueueOutgoingCommands(
                 new List<KeyValuePair<string, string>>
                 {
                     new ("brush.type", guid.ToString()),
-                    new ("brush.size.set", size.ToString()),
-                    new ("color.set.rgb", $"{color.r},{color.g},{color.b}"),
+                    new ("brush.size.set", size.ToString(CultureInfo.InvariantCulture)),
+                    new ("color.set.rgb", FormattableString.Invariant($"{color.r},{color.g},{color.b}")),
                     new ("draw.stroke", string.Join(",", pointsAsStrings))
                 }
             );
