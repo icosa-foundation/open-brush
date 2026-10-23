@@ -27,6 +27,10 @@ namespace TiltBrush
         private List<GameObject> m_TemporaryCameras;
         private Transform m_SkyStandinOriginalParent;
         private Quaternion m_SkyStandinOriginalRotation;
+        private bool m_SkyStandinOriginalActive;
+        private Material m_SkyStandinOriginalMaterial;
+        private MeshRenderer m_SkyStandinRenderer;
+        private bool m_HasSkyStandinState;
         private Material m_TemporarySkyMaterial;
         private Texture2D m_TemporarySkyTexture;
 
@@ -40,10 +44,15 @@ namespace TiltBrush
 
         public void CreateSkyStandin()
         {
+            if (m_HasSkyStandinState) return;
             var settings = SceneSettings.m_Instance;
+            // Capture before allocating or mutating so a failed export can restore the source.
+            m_SkyStandinRenderer = m_TemporarySkySphere.GetComponentInChildren<MeshRenderer>(true);
+            m_SkyStandinOriginalParent = m_TemporarySkySphere.parent;
             m_SkyStandinOriginalRotation = m_TemporarySkySphere.rotation;
-            // Include inactive children in case the sphere was previously hidden.
-            var renderer = m_TemporarySkySphere.GetComponentInChildren<MeshRenderer>(true);
+            m_SkyStandinOriginalActive = m_TemporarySkySphere.gameObject.activeSelf;
+            m_SkyStandinOriginalMaterial = m_SkyStandinRenderer.sharedMaterial;
+            m_HasSkyStandinState = true;
 
             if (settings.HasCustomSkybox())
             {
@@ -81,11 +90,10 @@ namespace TiltBrush
             }
 
             m_TemporarySkyMaterial.name = kSkyStandinMaterialName;
-            renderer.material = m_TemporarySkyMaterial;
+            m_SkyStandinRenderer.sharedMaterial = m_TemporarySkyMaterial;
 
             // Reparent under the main canvas so the UnityGLTF exporter includes the sphere
             // in the exported hierarchy (the exporter only traverses canvas children).
-            m_SkyStandinOriginalParent = m_TemporarySkySphere.parent;
             m_TemporarySkySphere.SetParent(App.Scene.MainCanvas.transform, worldPositionStays: true);
             m_TemporarySkySphere.gameObject.SetActive(true);
         }
@@ -108,13 +116,15 @@ namespace TiltBrush
 
         public void DestroySkyStandin()
         {
-            m_TemporarySkySphere.gameObject.SetActive(false);
-            if (m_SkyStandinOriginalParent != null)
-            {
-                m_TemporarySkySphere.SetParent(m_SkyStandinOriginalParent, worldPositionStays: true);
-                m_SkyStandinOriginalParent = null;
-            }
+            if (!m_HasSkyStandinState) return;
+            m_HasSkyStandinState = false;
+            m_TemporarySkySphere.SetParent(m_SkyStandinOriginalParent, worldPositionStays: true);
             m_TemporarySkySphere.rotation = m_SkyStandinOriginalRotation;
+            m_TemporarySkySphere.gameObject.SetActive(m_SkyStandinOriginalActive);
+            m_SkyStandinRenderer.sharedMaterial = m_SkyStandinOriginalMaterial;
+            m_SkyStandinOriginalParent = null;
+            m_SkyStandinOriginalMaterial = null;
+            m_SkyStandinRenderer = null;
             if (m_TemporarySkyMaterial != null)
             {
                 Destroy(m_TemporarySkyMaterial);

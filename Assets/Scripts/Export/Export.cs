@@ -364,8 +364,17 @@ URL=" + kExportDocumentationUrl;
             // Count triangles before export
             int triangleCount = CountTrianglesInLayers(layerCanvases, layerMask);
 
-            var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
-            unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
+            var skyStandinManager = GltfExportStandinManager.m_Instance;
+            try
+            {
+                var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
+                unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
+            }
+            finally
+            {
+                // AfterSceneExport is skipped when scene traversal or another plugin throws.
+                skyStandinManager?.DestroySkyStandin();
+            }
 
             return triangleCount;
         }
