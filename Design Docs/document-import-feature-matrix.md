@@ -1,0 +1,174 @@
+MAQUETTE AND SHAPESXR DOCUMENT IMPORT FEATURE MATRIX
+2026-10-23. Requirements and candidate mappings; not a claim of completed support.
+
+BROAD FEATURE SUMMARY
+
+This is the high-level scope. The numbered detail table below expands these areas.
+Similar entries share an import concern; they are not necessarily equivalent features.
+
+| ID | Broad feature | Maquette | ShapesXR | Common Open Brush requirement |
+| --- | --- | --- | --- | --- |
+| 1 | Native document loading | Project folders / .mqp archives and JSON sections. | Native MessagePack spaces, usually obtained with a share code. | Separate readers, common import model. |
+| 2 | Objects and groups | Models, object instances and nested state trees/groups. | Objects, instances, groups and parent relationships. | Preserve identity, placement, hierarchy, visibility and locks. |
+| 3 | Procedural shapes | Rounded rectangles, frames, cylinders/cones, conics and capsules. | Editable panels/boxes with rounding, chamfer and bends; presets include spheres, tubes and tori. | Shared geometry recipes and Polyhydra generation; similar preset names do not imply equivalent constructions. |
+| 4 | Imported models | External models, built-in assets and mesh-backed drawings. | External models, library assets and resizable source meshes. | Resolve assets, retain mesh/material data and preserve editable resizing where supported. |
+| 5 | Drawing and strokes | Flat ribbons and mesh-backed hull/volume/tube drawings. | Brush strokes, ribbons/tubes and hull drawings. | Map matching strokes; retain source geometry where a brush conversion would lose appearance. |
+| 6 | Images | Image objects. | Image objects and imported Figma visuals. | Reuse image support while preserving dimensions, aspect, appearance and source references. |
+| 7 | Text | Editable text with font and formatting state. | Editable text with font/style/alignment/fitting state. | Reuse text support; preserve formatting and report font/layout differences. |
+| 8 | Materials and appearance | Colour, transparency, brush/model materials and textures. | Colour, PBR materials, textures and additional visual effects. | Map supported appearance; preserve unsupported shader/effect intent. |
+| 9 | Lighting and environment | Light objects, sun, gradient, fog, floor and environment settings. | Environment/skybox, sun/shadows and baked-lighting/reflection settings. | Map related scene settings; do not assume identical lighting systems. |
+| 10 | Scenes and animation | Multiple scenes with saved states; switching between scenes is instant, with no tweening in the tested project. Internal data distinguishes slides and stages. | Scenes/frames, snapshots and animated transitions. | Resolve a chosen state and retain the rest; support discrete Maquette scene switching and ShapesXR animated transitions separately. |
+| 11 | Navigation and links | Hotspots / viewing destinations. | Viewpoints, frame navigation and space links. | Map destinations and supported links, potentially through bookmarks/portals. |
+| 12 | Interactive prototypes | UI controls and scripting facilities. | Trigger/action interactions, Figma prototypes and play-mode physics. | Preserve behaviour descriptions; implementing playback is separate from displaying the document. |
+| 13 | Audio, video and recordings | Native saved user audio/video objects were not confirmed. | Audio, YouTube content and Holonote/avatar recordings. | Import supported media and retain unsupported references; do not infer Maquette media support from application playback. |
+| 14 | Mixed reality and attachments | Anchors and AR simulation settings. | Spatial anchors, passthrough and body/viewpoint attachments. | Retain reference frames and intent; hardware/runtime behaviour may need separate support. |
+| 15 | Saving back to .tilt | Imported geometry, scene state and unsupported source data. | The same, including retained states, media and behaviour data. | One persistent representation; no silent loss on save/reload or routine duplicate mesh fallback. |
+
+1. HOW TO READ THE TABLE
+
+Each numbered row aligns matching or related requirements. Shared means both sources
+need that capability, not identical serialization or proven visual equivalence.
+Related means similar results with materially different source semantics.
+Specific means confirmed for only one source. Not confirmed does not mean impossible.
+
+The scope is loading native documents, preserving appearance and data, and progressively
+retaining editability/behaviour through .tilt save/reload. A faithful import does not
+require reproducing either application's authoring UI or collaboration service.
+
+Evidence: Maquette installed-application/native-library audit; ShapesXR Unity plugin
+V1.31, two older public spaces, the user's version-5 space, and the official documentation
+listed below. The user loaded the generated Maquette scene-switch probe and confirmed
+instant switching between scenes 1 and 2, with no tweening (2026-10-23).
+Presence in a saved-property model is distinguished from tested execution.
+ShapesXR frames/states and Maquette scenes/slides/stages are analogous, not interchangeable.
+
+The Open Brush column describes work required or reusable foundations. It is NOT a
+completed/not-completed checklist. Polyhydra's new recipe, Panel and Bend support is
+implemented locally but Unity compilation, tests and source mesh/shading parity remain
+unverified. Native import, the proposed .tilt recipe encoding and opaque-data retention
+are not implemented. The full 3D Shapes branch is not assumed to be present here.
+
+2. FEATURE COMPARISON
+
+| ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
+| --- | --- | --- | --- | --- | --- |
+| 1 | Documents | Native input container | Project directory or .mqp ZIP; several JSON sections and asset folders. | Downloaded native MessagePack space data; plugin resolves a share code to a download. | Related: separate readers feeding one normalized import model; GLB exports are not substitutes for native documents. |
+| 2 | Documents | Format revisions | Older JSON versions and version-specific compatibility branches. | Header/version and migration chain; fixtures include legacy data, schema 3 and schema 5. | Shared: version-aware decoding and normalization before feature mapping. |
+| 3 | Documents | Object identity and references | Entity GUIDs separate from scene-state GUIDs. | Entity IDs, creation records, snapshots, state IDs and resource/preset IDs. | Shared: resolve references and keep identities distinct; do not confuse state, geometry and resource identifiers. |
+| 4 | Documents | Object definitions versus placed state | Definitions referenced by state trees. | Objects/presets referenced by snapshots and typed properties. | Related: resolve selected state into shared definitions/instances without treating a preset as the final object. |
+| 5 | Documents | Asset dependency resolution | Objects, Images, TextContents and tokenized or legacy paths. | Resource IDs, downloaded assets and built-in preset references. | Shared: resolve all dependencies, preserve relative relationships and report missing resources. |
+| 6 | Documents | Built-in library dependencies | Content-library model/material references, including shipped assets. | Preset GUIDs refer to plugin assets or procedural defaults. | Related: generate analytic objects from resolved parameters; resolve genuine mesh resources rather than retaining proprietary installation dependencies. |
+| 7 | Documents | Remote model identifiers | Legacy Google Poly IDs and remote-asset loading paths. | Cloud resource IDs and share-code transport. | Related: retain source identity and resolve through the correct resource adapter; do not equate identifier namespaces. |
+| 8 | Documents | Partial or unfamiliar documents | Optional/missing sections and legacy properties. | Unfamiliar edits, property types, versions or presets. | Shared: retain unsupported data and report per-object failures instead of silently omitting content. |
+| 9 | Transforms | Units and ordinary placement | Position, quaternion and source scale conventions. | Local transform records plus geometry dimensions and object size. | Shared: define units/axes and avoid preview normalization changing authored dimensions. |
+| 10 | Transforms | Nonuniform scaling | Three-axis scales, sometimes affecting procedural regeneration. | Three-axis transform/size plus separate procedural dimensions. | Related: retain shape-affecting transforms in the recipe/import representation; no new VR scaling UI is required. |
+| 11 | Transforms | Mirrors, pivots and orientation | Signed scales, source pivots, rotations and loading bounds. | Local frames, preset pivots and resource bounds. | Shared: preserve pivots, winding and normal transforms; mark singular cases explicitly. |
+| 12 | Transforms | Nested hierarchy and groups | State trees and named nested groups. | Parent/link records and group presets. | Related: retain hierarchy and names; existing flat Open Brush group IDs alone are insufficient for all nesting semantics. |
+| 13 | Transforms | Instances and shared objects | Definitions can be reused across scene states. | Object IDs, instance IDs and snapshots can reference shared sources. | Shared: preserve references without accidentally linking all independent edits or duplicating every geometry source. |
+| 14 | Transforms | Visibility and active state | Per-state visibility. | Active state and per-snapshot visibility, including interpolated visibility. | Related: preserve hidden objects and distinguish absence, disabled state and opacity. |
+| 15 | Transforms | Editing locks and placement constraints | Edit locks and group-related editing state. | Lock properties and transform constraints on imported objects. | Related: retain restrictions separately; do not assume a source lock means exactly the same thing as Open Brush pinning. |
+| 16 | Geometry | Fixed and imported model meshes | ModelFile primitives; model picker supports more source formats than GLB alone. | Model resources and fixed library objects; documented OBJ/GLB/glTF imports. | Shared: reuse ModelWidget/import paths where possible, with source-format conversion, bounds, subtrees and dependencies. |
+| 17 | Geometry | Procedural data and evaluation | Five exposed builder families with named source parameters. | One shared parametric panel construction with editable properties; several named presets. | Related: one generator-plus-ordered-operations representation, shared with 3D Shapes; no vendor-specific .tilt recipe types. |
+| 18 | Geometry | Rounded rectangular profiles/solids | RoundedCornerQuad with radius, sampling, dimensions, thickness and pivot. | Panel/box construction with independently shaped outline and depth edges. | Related: Rectangle plus Shell covers ordinary Maquette cases; sampled Panel covers the additional ShapesXR construction requirements. |
+| 19 | Geometry | Selected square and rounded corners | Independent corner selection was not established for the audited builder. | Four-corner selection mask; mixed selection present in the user fixture. | Specific: logical named corner selection; translate source mask order rather than copying C# enum bits. |
+| 20 | Geometry | Depth-edge bevels and fillets | General equivalence not established for RoundedCornerQuad. | Separate chamfer/radius, sharpness and sampling, independent of outline corners. | Specific: new Panel construction provides this capability; do not assume generic Bevel/Chamfer has identical semantics. |
+| 21 | Geometry | Frames and holes | RoundedCornerRim, border width, inner-radius convention and scale_border. | No equivalent exposed parametric frame preset established in the inspected catalogue. | Specific: Frame plus Shell; preserve source border/radius semantics and document collapsed-opening differences. |
+| 22 | Geometry | Cylinders, cones and transformed ends | Independent end radii/scales, top offset/rotation, sweep and hard edges. | Cylinder and Tube are panel configurations, not the same cylinder builder. | Related: use Cylinder for Maquette; reconstruct ShapesXR from actual panel/bend values rather than the preset name. |
+| 23 | Geometry | Spherical and conic surfaces | Circle, ellipse, hyperbola and parabola conic builders with clipping. | Sphere/Inverted Sphere are shared panel configurations, often bent through full wraps. | Related: Conic for Maquette; Panel plus Bend for the corresponding ShapesXR configuration. Matching names do not establish matching topology. |
+| 24 | Geometry | Capsules | Capsule builder with source radius/overall-length and scale rules. | Capsule preset can be edited into a different panel/chamfer/bend configuration. | Related: Capsule generator for Maquette; resolved Panel recipe for ShapesXR. |
+| 25 | Geometry | Curvature, signed/full sweeps and open surfaces | Partial/signed sweeps, cap/cut faces and special zero-angle behaviour. | Independent signed bends, full 360-degree wraps and optional rear geometry. | Related: preserve construction-specific semantics; use existing FaceRemove before bends, not a material-only workaround. |
+| 26 | Geometry | Bend reference frames and surface sampling | No corresponding exposed general panel-bend feature established. | Two ordered bends use the original generator bounds; sampling depends on bend angles. | Specific: explicit-bounds Bend and adequate cap sampling; never guess the second bounds from the first bent result. |
+| 27 | Geometry | Editable resizing of source meshes | Source mesh transforms are confirmed; equivalent border-preserving resizing is not. | CopyMeshGenerator plus border-preserving StretchDeformer on ten preset assets. | Specific: mesh source plus a separate stretch contract/evaluator; ordinary scale and Polyhydra.Stretch(float) are not equivalents. |
+| 28 | Drawing | Flat/freehand brush strokes | Straight/curved flat strokes; source control points contain paired Vector3 values. | Brush presets with point, rotation and size data. | Related: reconstruct source stroke geometry or map to a demonstrably matching Open Brush brush, retaining source controls for later editing. |
+| 29 | Drawing | Variable stroke width and orientation | Control-point ribbons encode width/orientation implicitly. | Stroke sizes and rotations are explicit typed properties. | Related: normalize without losing ribbon edges, varying width or orientation; do not reduce all inputs to a centreline. |
+| 30 | Drawing | Hull and volume drawings | Hull/volume/tube tools save generated geometry as ModelFile GLB. | Hull brush and mesh-stroke reconstruction exist in the plugin. | Related: load the geometry actually saved; do not invent retained voxel/construction history or require recreating Maquette tools. |
+| 31 | Drawing | Stroke shading and brush identity | Legacy material names and material/version changes influence appearance. | Brush presets, materials and hard/smooth hull settings. | Shared: preserve colour, transparency and surface intent; a nearest-name brush substitution is an approximation, not lossless import. |
+| 32 | Appearance | Colour, tint and colour space | Entity/stroke colour plus version-dependent material colour handling. | Object/material colour and colour changes per snapshot. | Shared: preserve source colour spaces and alpha; reuse tint support without silently baking the wrong colour twice. |
+| 33 | Appearance | Opacity and blending | Transparent/additive/unlit brush and model materials. | Opacity, shading/blend and texture-alpha properties. | Related: map actual blend/cull/depth behaviour, not only RGB or material names; test visual results. |
+| 34 | Appearance | Materials and shading models | Named built-in materials and imported model materials. | Material entities, shading types and per-object material bindings. | Related: resolve shared materials and map to Open Brush rendering; preserve unsupported shader intent. |
+| 35 | Appearance | PBR and texture channels | Imported-model textures/material attributes; precise source shader mapping varies. | Base, normal, roughness, metalness, occlusion and emission maps/properties. | Related: reuse model PBR capabilities and preserve bindings; validate channel conventions instead of assuming identical shaders. |
+| 36 | Appearance | Texture projection and transforms | Imported UV/material transforms; full procedural projection equivalence is unconfirmed. | Projection, wrapping, scale, offset, rotation and texture-mode properties. | Related: retain UVs and transform semantics; new mapping may be required for source procedural projection. |
+| 37 | Appearance | Hard edges, normals and triangle layout | Builder-specific hard edges and warped cylinder diagonal rules. | Separate corner/edge sharpness, generated normals and deformed surfaces. | Related: preserve construction-aware smoothing and actual surfaces; matching vertex positions or AutoSmooth alone is insufficient. |
+| 38 | Appearance | Per-corner attributes and mesh sections | Imported mesh submeshes, normals, UVs and material sections. | Copied resource meshes plus generated panel/stroke attributes. | Shared: explicit mesh source must preserve seams/sections and attributes; do not collapse all data to one value per geometric vertex. |
+| 39 | Appearance | Outline, wireframe, Fresnel and passthrough effects | No complete corresponding native effect-property set established. | Material-effect and passthrough properties are present in the model. | Specific/partial evidence: preserve these properties and assess rendering adapters; native property presence is not proof of every UI control. |
+| 40 | Media | Images | PNG/JPG/JPEG image primitives with aspect, transforms, tint/material state. | Image resources and image/rectangle presets. | Shared: reuse ImageWidget where suitable; preserve resolution, aspect, physical dimensions, opacity and orientation. |
+| 41 | Media | Editable text | Text entities/content files, source font/style/alignment/fitting state. | Text string, font size, style, horizontal/vertical alignment and fitting. | Related: reuse TextWidget while retaining unsupported typography and reporting layout/font fallback differences. |
+| 42 | Media | Font assets and identity | Audited content uses SegoeUI_SemiBold SDF; other source fonts may occur. | Text presets and font assets/settings. | Shared: preserve identity and metrics where available; a substituted font does not preserve exact layout automatically. |
+| 43 | Media | Sound resources and playback | A native user-audio entity/importer was not confirmed. | Audio resources, playback actions and volume/distance settings [S2,S5]. | Specific: map available audio playback support and retain missing resource references; application sounds do not establish Maquette scene-audio support. |
+| 44 | Media | Video and streamed media | Application/tutorial video exists; native scene-video import was not confirmed. | Documented placed YouTube videos; web-view playback settings [S3]. | Specific: preserve source URL/type and playback settings. A YouTube/browser resource is not interchangeable with an MP4 VideoWidget. |
+| 45 | Media | Figma objects | No native equivalent established. | Figma resources, frame imports and synchronization metadata [S4]. | Specific: import the saved visual resource first, retain source identity; live Figma synchronization and prototype behaviour are separate features. |
+| 46 | Media | Web/browser content | Legacy browsers.json exists; current functional browser scene feature is unconfirmed. | Web-view resolution, sound and chroma-key fields; YouTube is documented. | Related but unverified breadth: preserve browser-like data without advertising arbitrary web-app support or treating a thumbnail as functional content. |
+| 47 | Media | Recorded avatars and Holonotes | No equivalent saved entity established. | Holonote resource type and avatar-recording metadata; exact playback path needs tracing. | Specific: retain recording/resource references and show an appropriate representation; do not mistake metadata preservation for avatar playback. |
+| 48 | Environment | Environment and sky background | Gradient, sun, fog, floor and scene/master-stage environment settings. | Environment/skybox presets and exposure properties. | Related: map common components and retain unsupported ones; preset identity alone is not a visual match. |
+| 49 | Environment | Dynamic light objects | Saved light entities with intensity/radius/spot/state/shadow parameters. | A comparable per-object light entity set was not established; environment sun controls are present. | Specific: map Maquette light objects to LightWidget where possible; do not infer ShapesXR light entities from global lighting controls. |
+| 50 | Environment | Sun and shadow controls | Sun/environment settings plus source object shadow flags. | Sun direction/intensity and global shadow-intensity properties. | Related: preserve the distinction between scene lighting, shadow strength and object shadow casting. |
+| 51 | Environment | Baked lighting and reflection data | Equivalent baked-lightmap/probe serialization was not established. | Lightmap resource/exposure and reflection-probe settings in the model. | Specific/partial evidence: retain resources/settings and assess their rendering compatibility separately from live lights. |
+| 52 | Environment | Mixed reality, occlusion and spatial anchors | AR simulation, anchors and environment configuration. | Passthrough materials and documented shared spatial anchors [S8]. | Related: retain anchor/frame and occlusion intent. Importing a saved anchor is not recreating a shared-anchor service or hardware environment. |
+| 53 | States | Multiple scenes and authored states | Scenes, slides, stages, ordering and selected-scene metadata. | Spaces, scenes, frames/states, ordering and selected snapshots. | Related: define state selection at import and preserve remaining states; one displayed frame is not the full document. |
+| 54 | States | Inheritance and state resolution | Entity definitions, per-state trees and master-stage/environment selection. | Object properties, snapshots and inherited/default values. | Related: resolve the chosen state without overwriting source definitions or losing per-state differences. |
+| 55 | States | Animation and transitions | User-tested switching between scenes 1 and 2 is instant, with no tweening, consistent with the audited direct transform-restoration path. Ordinary scene switching requires discrete state changes. | Frame transitions, easing, duration and timeline/autoplay data [S6]. | Specific: preserve Maquette discrete states; ShapesXR additionally requires transition/animation data and a playback model. |
+| 56 | States | Navigation destinations | Standalone hotspots with state transforms and viewing-orientation metadata. | Viewpoints with viewing pose/zoom and frame association. | Related: preserve the destination pose and naming; assess bookmarks/portals rather than assuming identical hotspot/viewpoint behaviour. |
+| 57 | States | Links to other documents/spaces | Cross-project hotspot/link semantics were not established by the audit. | Space-link records and navigation actions. | Specific: retain target references and map supported links to portals; do not turn every local viewpoint into a cross-document link. |
+| 58 | Behaviour | UI prototype objects | UI-control asset IDs/property bags; no native UI-control fixture was found in the Maquette corpus. | Figma prototypes, built-in objects and interaction bindings. | Related at purpose level only: preserve visual resources and data; do not assume the applications share a UI layout/event schema. |
+| 59 | Behaviour | Interaction triggers | JavaScript/event facilities exist; their full saved event API needs further tracing. | Click, hover, touch, button, collision, frame-enter and delay triggers [S5]. | Related: retain event graphs/references; source events do not automatically map to Open Brush commands. |
+| 60 | Behaviour | Interaction actions | Scripts and hotspot/navigation facilities. | Go to frame/viewpoint, haptics, sound, look-at and associated target data [S5]. | Related: map supported actions explicitly; preserve unsupported ones rather than executing a guessed equivalent. |
+| 61 | Behaviour | Source scripts | JavaScript runtime and project Scripts data. | Declarative interaction model; a comparable arbitrary user-script format is not established. | Specific: retain source scripts as inert project data; loading a document is not authorization to run it. |
+| 62 | Behaviour | Colliders and play-mode physics | Editing/model collision exists; saved equivalent simulation semantics are unconfirmed. | Collider entities, shapes/transforms, enabled physics, frozen/grabbable settings. | Specific/related: retain physics configuration; Open Brush editing colliders are not a play-mode simulation substitute. |
+| 63 | Behaviour | Body/viewpoint attachments | AR/anchor data is related but not a confirmed equivalent attachment model. | Attachment points and viewpoint/body-related properties; documented attach-to-body workflow. | Specific: preserve reference frames and following behaviour; initial static placement can only be an approximation. |
+| 64 | Behaviour | Input, haptics and playback policy | Application input/runtime state is not necessarily saved document content. | Saved hover/input/haptic settings plus play-mode autoplay/loop/media controls. | Specific: preserve document-owned settings and action data without importing application/controller preferences as geometry. |
+| 65 | Persistence | Source IDs, names, provenance and attribution | Entity/group names, asset paths, attribution and project metadata. | Entity/resource/preset/creator IDs and source metadata. | Shared: retain traceability and attribution without making a saved sketch depend on a share-code download. |
+| 66 | Persistence | Unknown fields and unsupported entities | Unknown/version-specific JSON fields and optional sections. | Unfamiliar property/edit types, presets or versions. | Shared: a persistent preservation envelope and visible import report are needed; do not silently discard unfamiliar data on .tilt save. |
+| 67 | Persistence | Compact editable geometry in .tilt | Procedural builder parameters should remain rebuildable. | Resolved panel/bend parameters and true source-mesh deformations should remain rebuildable. | Shared: use one versioned recipe format shared with 3D Shapes; no duplicate evaluated mesh fallback for every analytic object. |
+| 68 | Persistence | Save/reload of scene state and resources | All imported transforms, visibility, groups, materials and resource relationships. | The same, plus snapshots/transitions/behaviour data retained beyond a chosen displayed frame. | Shared: saving must not silently reduce a native document to whichever widgets the initial importer happens to display. |
+| 69 | Persistence | Missing-resource and fidelity reports | Missing local/content/Poly resources and unsupported builder/material cases. | Unavailable resources/presets/URLs and unsupported state/effect/action cases. | Shared: per-object diagnostics distinguish usable import, approximation and opaque preservation; a successful parse is not full parity. |
+| 70 | Persistence | Representative validation corpus | 174 bundled scenes.json files plus supporting JSON; not independent user projects. | Two older public spaces plus the user-provided version-5 space. | Related evidence: validate meaningful feature combinations and native import/save/reload; corpus counts are not population-frequency claims. |
+
+3. SCOPE BOUNDARIES
+
+3.1 Loading is distinct from authoring UI parity. Toolbars, creation tools, thumbnails,
+    controllers and preset browsers need not be recreated to display/edit imported data.
+3.2 A static-state importer can be a useful first release, but it must say which state
+    was resolved and retain unsupported states/behaviour if it claims preservation.
+3.3 Live collaboration, account/team management, a hosted asset service and online Figma
+    synchronization are not prerequisites for reading a native document. Their saved
+    resource identities or behavioural relationships may still need preservation.
+3.4 Recreating Maquette voxel/hull/tube authoring history is not a prerequisite when
+    Maquette itself saves a generated GLB without that history.
+3.5 No feature listed as unconfirmed should trigger implementation solely because an
+    application ships a related class, shader, video or editor tool.
+3.6 Schema coverage, executable support, appearance parity and editable authoring parity
+    are separate measures. Do not label a feature complete based on parameter retention.
+
+4. EVIDENCE
+
+The table combines the fixed inspected artifacts with official public documentation.
+Documentation can establish user-facing features; decompiled metadata can establish
+saved fields without proving UI exposure or playback. Runtime parity is not inferred
+from either alone. Public documentation was checked on 2026-10-23.
+
+| Source | Evidence | Location |
+| --- | --- | --- |
+| S1 | Local Maquette format, entity, resource and feature audit | maquette-compatibility-assessment.md; ignored Temp/MaquetteAnalysis |
+| S2 | ShapesXR imported resource categories | https://learn.shapesxr.com/dashboard/my-files |
+| S3 | ShapesXR placed YouTube content and playback settings | https://learn.shapesxr.com/import/youtube-integration |
+| S4 | ShapesXR Figma import, updating and prototype resources | https://learn.shapesxr.com/import/figma-integration |
+| S5 | ShapesXR interactivity triggers/actions and Play mode | https://learn.shapesxr.com/prototyping/interactivity-and-play-mode |
+| S6 | ShapesXR frames, transitions, easing and autoplay | https://learn.shapesxr.com/animation |
+| S7 | ShapesXR object Inspector and editable properties | https://learn.shapesxr.com/object-inspector |
+| S8 | Official ShapesXR update including shared spatial anchors | https://www.shapesxr.com/post/update-shapesxr-can-now-import-youtube-and-so-much-more |
+| S9 | ShapesXR freehand brush creation and editable brush properties | https://learn.shapesxr.com/objects-creation/draw-tool |
+| S10 | Official ShapesXR Unity integration and package download | https://learn.shapesxr.com/export-and-sharing/unity-integration |
+| S11 | Local preset/typed-property/native-space audit and implementation limits | procedural-serialization-requirements.md; ignored Temp/ShapesXRAnalysis |
+
+The inspected ShapesXR importer is V1.31. Native-space evidence includes older public
+spaces and the user's schema-5 fixture; the latter demonstrates mixed corner selection,
+independent edge shaping, omitted rear surfaces and nonzero/full-wrap bends.
+
+5. RELATED DESIGN
+
+5.1 procedural-geometry-schema.md proposes the shared geometry serialization subset.
+    It is not a schema for every state, media resource or behaviour in this table.
+5.2 procedural-serialization-requirements.md records the procedural capability audit
+    and the comparison against existing Polyhydra modifiers.
+5.3 This matrix is local planning/research documentation, deliberately untracked. No
+    implementation files or source fixtures were changed or committed to create it.
