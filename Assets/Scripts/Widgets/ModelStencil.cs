@@ -537,6 +537,7 @@ namespace TiltBrush
         {
             var colliderObject = new GameObject("Model Guide Collider");
             colliderObject.transform.SetParent(transform, false);
+            colliderObject.layer = m_GrabCollider.gameObject.layer;
             m_MeshCollider = colliderObject.AddComponent<MeshCollider>();
             m_MeshCollider.sharedMesh = m_SourceMesh;
             m_MeshCollider.enabled = m_GrabCollider.enabled;
