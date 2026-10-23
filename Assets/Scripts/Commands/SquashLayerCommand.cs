@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,6 +14,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using TiltBrush.FrameAnimation;
 using UnityEngine;
 namespace TiltBrush
 {
@@ -24,6 +25,8 @@ namespace TiltBrush
         private Stroke[] m_OriginalStrokes;
         private GrabWidget[] m_ActiveWidgets;
         private bool SquashedLayerWasActive;
+        private AnimationUI_Manager.DeleteFrameOperation m_AnimationOperation;
+        private bool m_UsesAnimation;
 
         public SquashLayerCommand(int squashedLayerIndex, int destinationLayerIndex, BaseCommand parent = null) : base(parent)
         {
@@ -47,10 +50,25 @@ namespace TiltBrush
             m_ActiveWidgets = m_SquashedLayer.GetComponentsInChildren<GrabWidget>();
         }
 
+        protected override void OnDispose()
+        {
+            if (m_UsesAnimation && m_AnimationOperation.Succeeded)
+                App.Scene.animationUI_manager.DiscardDeleteFrameOperationUndoState(m_AnimationOperation);
+        }
+
         public override bool NeedsSave { get { return true; } }
 
         protected override void OnRedo()
         {
+            if (App.Scene.animationUI_manager != null &&
+                App.Scene.animationUI_manager.GetTimelineLength() > 0)
+            {
+                m_UsesAnimation = true;
+                m_AnimationOperation = App.Scene.animationUI_manager.SquashAnimationTrack(
+                    m_SquashedLayer, m_DestinationLayer);
+                if (m_AnimationOperation.Succeeded) App.Scene.MarkLayerAsDeleted(m_SquashedLayer);
+                return;
+            }
             foreach (var stroke in m_OriginalStrokes)
             {
                 stroke.SetParentKeepWorldPosition(m_DestinationLayer);
@@ -68,6 +86,13 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            if (m_UsesAnimation)
+            {
+                if (m_AnimationOperation.Succeeded) App.Scene.MarkLayerAsNotDeleted(m_SquashedLayer);
+                App.Scene.animationUI_manager.UndoDeleteFrameOperation(m_AnimationOperation);
+                m_AnimationOperation = default;
+                return;
+            }
             m_SquashedLayer.gameObject.SetActive(true);
             App.Scene.MarkLayerAsNotDeleted(m_SquashedLayer);
             if (SquashedLayerWasActive) App.Scene.ActiveCanvas = m_SquashedLayer;

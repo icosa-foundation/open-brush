@@ -141,6 +141,8 @@ namespace TiltBrush
             lightWidget.transform.parent = App.Instance.m_CanvasTransform;
             lightWidget.transform.localScale = Vector3.one;
 
+            // Saved pose and size are local to this authored frame.
+            lightWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltLight.LayerId, tiltLight.FrameId));
             lightWidget.SetSignedWidgetSize(tiltLight.Transform.scale);
             lightWidget.Show(bShow: true, bPlayAudio: false);
             lightWidget.transform.localPosition = tiltLight.Transform.translation;
@@ -156,7 +158,7 @@ namespace TiltBrush
                 lightWidget.PinFromSave();
             }
             lightWidget.Group = App.GroupManager.GetGroupFromId(tiltLight.GroupId);
-            lightWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltLight.LayerId));
+
             var gizmo = Instantiate(WidgetManager.m_Instance.SceneLightGizmoPrefab, lightWidget.transform);
             gizmo.SetupLightGizmos(light);
 
