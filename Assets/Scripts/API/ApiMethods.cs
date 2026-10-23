@@ -1984,6 +1984,31 @@ namespace TiltBrush
         }
 
         [ApiEndpoint(
+            "scripts.jitterscript.activate",
+            "Activate the given jitter script",
+            "ColorJitter"
+        )]
+        public static void ActivateJitterScript(string scriptName)
+        {
+            if (!LuaManager.Instance.GetScriptNames(LuaApiCategory.JitterScript).Contains(scriptName))
+            {
+                throw new ArgumentException($"Unknown jitter script: {scriptName}", nameof(scriptName));
+            }
+            LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.JitterScript, scriptName);
+            LuaManager.Instance.EnableJitterScript(true);
+        }
+
+        [ApiEndpoint(
+            "scripts.jitterscript.deactivate",
+            "Deactivate the jitter script",
+            "ColorJitter"
+        )]
+        public static void DeactivateJitterScript()
+        {
+            LuaManager.Instance.EnableJitterScript(false);
+        }
+
+        [ApiEndpoint(
             "scripts.backgroundscript.activate",
             "Activate the given background script",
             "Lines"
