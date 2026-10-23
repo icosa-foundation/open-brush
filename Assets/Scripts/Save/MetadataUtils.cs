@@ -160,10 +160,20 @@ namespace TiltBrush
 
             TiltText ConvertTextWidgetToTiltText(TextWidget widget)
             {
+                CanvasScript currentCanvas = widget.Canvas;
+                CanvasScript savedCanvas = currentCanvas == App.Scene.SelectionCanvas &&
+                    widget.m_PreviousCanvas != null ? widget.m_PreviousCanvas : currentCanvas;
+                TrTransform savedTransform = widget.SaveTransform;
+                if (savedCanvas != currentCanvas)
+                {
+                    // Layer identity and pose must use the same authored canvas.
+                    savedTransform = savedCanvas.Pose.inverse * currentCanvas.Pose * savedTransform;
+                }
                 TiltText text = new TiltText
                 {
-                    Transform = widget.SaveTransform,
+                    Transform = savedTransform,
                     Text = widget.Text,
+                    LayerId = App.Scene.GetIndexOfCanvas(savedCanvas),
                     FillColor = widget.TextColor,
                     Pinned = widget.Pinned,
                     GroupId = groupIdMapping.GetId(widget.Group),
