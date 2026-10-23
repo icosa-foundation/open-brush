@@ -27,13 +27,16 @@ namespace OpenBrush.Multiplayer
         public int TotalExpectedChildren;
 
         public Guid Guid;
+        public Guid ParentGuid;
         public BaseCommand Command;
         public Action PreCommandAction;
         public List<PendingCommand> ChildCommands;
 
-        public PendingCommand(Guid guid, BaseCommand command, Action action, int count)
+        public PendingCommand(
+            Guid guid, Guid parentGuid, BaseCommand command, Action action, int count)
         {
             Guid = guid;
+            ParentGuid = parentGuid;
             Command = command;
             PreCommandAction = action;
             TotalExpectedChildren = count;
@@ -148,6 +151,49 @@ namespace OpenBrush.Multiplayer
             };
 
             return point;
+        }
+    }
+
+    [System.Serializable]
+    public struct NetworkedLiveStrokeStart : INetworkStruct
+    {
+        public Color m_Color;
+        public Guid m_BrushGuid;
+        public float m_BrushSize;
+        public float m_BrushScale;
+        public int m_Seed;
+        public NetworkedControlPoint m_FirstControlPoint;
+        public bool m_FirstControlPointToDrop;
+
+        public NetworkedLiveStrokeStart Init(Stroke data)
+        {
+            m_BrushGuid = data.m_BrushGuid;
+            m_BrushScale = data.m_BrushScale;
+            m_BrushSize = data.m_BrushSize;
+            m_Color = data.m_Color;
+            m_Seed = data.m_Seed;
+            m_FirstControlPoint = new NetworkedControlPoint().Init(data.m_ControlPoints[0]);
+            m_FirstControlPointToDrop = data.m_ControlPointsToDrop[0];
+            return this;
+        }
+
+        public static Stroke ToStroke(NetworkedLiveStrokeStart data)
+        {
+            return new Stroke
+            {
+                m_Type = Stroke.Type.NotCreated,
+                m_IntendedCanvas = App.Scene.MainCanvas,
+                m_BrushGuid = data.m_BrushGuid,
+                m_BrushScale = data.m_BrushScale,
+                m_BrushSize = data.m_BrushSize,
+                m_Color = data.m_Color,
+                m_Seed = data.m_Seed,
+                m_ControlPoints = new[]
+                {
+                    NetworkedControlPoint.ToControlPoint(data.m_FirstControlPoint)
+                },
+                m_ControlPointsToDrop = new[] { data.m_FirstControlPointToDrop }
+            };
         }
     }
 

@@ -46,6 +46,9 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            Debug.Log(
+                $"[LiveStrokeCommand] Apply delete command={Guid} " +
+                $"parent={ParentGuid} seed={m_TargetStroke.m_Seed}.");
             if (!m_SilenceFirstAudio)
             {
                 AudioManager.m_Instance.PlayUndoSound(CommandAudioPosition);

@@ -100,6 +100,7 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
         if (!m_VoiceConnection.Client.IsConnected)
         {
+            ConnectedToMaster = false;
             //ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Attempting to connect Voice Server...");
             m_VoiceConnection.ConnectUsingSettings();
             while (!ConnectedToMaster)
@@ -414,6 +415,7 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
     public void OnDisconnected(DisconnectCause cause)
     {
+        ConnectedToMaster = false;
         if (cause == DisconnectCause.None || cause == DisconnectCause.DisconnectByClientLogic || cause == DisconnectCause.ApplicationQuit)
         {
             return;
