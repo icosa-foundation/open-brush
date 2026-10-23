@@ -2269,9 +2269,13 @@ namespace TiltBrush
                 Debug.LogWarning($"[MediaRoots] Ignoring unusable media root '{root}': {e.Message}");
                 return;
             }
+            // Trim only the comparison key so drive/filesystem roots retain their valid paths.
+            string comparisonPath = normalized.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             foreach (var existing in roots)
             {
-                if (string.Equals(existing, normalized, MediaPathComparison)) { return; }
+                if (string.Equals(
+                    existing.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                    comparisonPath, MediaPathComparison)) { return; }
             }
             roots.Add(normalized);
         }
