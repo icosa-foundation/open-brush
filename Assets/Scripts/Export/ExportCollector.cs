@@ -69,6 +69,7 @@ namespace TiltBrush
                 UnityEngine.Profiling.Profiler.BeginSample("BuildModelMeshes");
                 // TODO: inactive ModelWidgets should be fixed in WidgetManager.
                 var (exportable, notExportable) = WidgetManager.m_Instance.ModelWidgets
+                    .Concat(WidgetManager.m_Instance.EditableModelWidgets)
                     .Where(w => w.Model != null && w.isActiveAndEnabled)
                     .Partition(IsModelExportable);
                 BuildModelsAsModelMeshes(payload, exportable);

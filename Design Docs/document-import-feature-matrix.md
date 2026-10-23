@@ -51,9 +51,14 @@ and explicit snapshot-property resolution. Standalone C# checks read all 174 ins
 Maquette projects (262 scenes, 120,580 states) and all three local ShapesXR fixtures;
 the version-5 fixture resolves 10 procedural snapshots. Ten focused reader tests pass
 in the standalone harness. This is not Unity compilation or rendered import validation.
-Legacy ShapesXR state migration, content conversion, the proposed .tilt recipe encoding
-and opaque-data persistence are not implemented. The full 3D Shapes branch is not
-assumed to be present here.
+The 3D Shapes generated-model/widget/definition-index foundation has now been ported
+and adapted to the shared recipe encoding, together with the text branch's cloning
+and layer-save fixes. The editable-instance DTO round-trip passes in a narrow standalone
+check using production JSON converters; actual widget creation and .tilt save/reload
+remain unverified. Full Unity compilation is blocked by an existing USD package error.
+Legacy ShapesXR state migration and native content-conversion commands are not yet
+implemented. Animation and scene/frame switching are deferred until the other supported
+content is complete. The full 3D Shapes authoring UI is not included.
 
 2. FEATURE COMPARISON
 

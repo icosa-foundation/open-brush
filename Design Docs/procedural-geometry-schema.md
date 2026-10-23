@@ -145,6 +145,10 @@ A definition ID is not an Icosa asset ID or a source application's preset ID.
 5.5 Rebuilding must not require a share code, cloud request, proprietary installation
     path or preset asset. An imported object is not a new widget category merely
     because it originated in Maquette or ShapesXR.
+5.6 The initial runtime port adds optional Colors parallel to RawTransforms, using
+    Open Brush's existing [r,g,b,a] colour convention. Missing entries mean white.
+    This is instance appearance, not a recipe parameter. Full material overrides
+    remain separate work; a base colour alone does not represent every source material.
 
 6. GENERATORS
 
@@ -604,8 +608,18 @@ graph or preset asset is needed by a reader of this recipe.
      space round-trip; 2,728 procedural state records in the installed Maquette
      projects translate using saved hierarchy scales. These checks validate mapping
      and serialization only; they do not execute Polyhydra or compare rendered meshes.
-15.2 Not implemented:
-     .tilt integration and retained-data persistence across an actual sketch load/save;
+     The 3D Shapes runtime foundation is now ported: generated Model locations,
+     EditableModelWidget/EditableModelManager, the existing widget prefab, registration,
+     lifecycle/export hooks and EditableModelDefinitions/EditableModelIndex save/load
+     wiring. The old branch recipe serializer is replaced by GeometryRecipeData at
+     this boundary. Text cloning and layer-coordinate fixes were cherry-picked from
+     feature/text-tool. Authoring panels and animation/frame switching are deferred.
+     The instance DTO round-trip passes with production JsonGlue/CustomJsonWriter in
+     a standalone harness using extracted transform fields. Whole-project compilation
+     is currently blocked by the existing USD package's obsolete PrefabStageUtility
+     namespace; widget creation and actual .tilt save/reload are not yet verified.
+15.2 Still required:
+     Verified retained-data persistence across an actual sketch load/save;
      complete 3D Shapes adapters; source-mesh attribute storage and stretch evaluation;
      native source import and state resolution. No released .tilt uses this contract.
 15.3 Not validated:
