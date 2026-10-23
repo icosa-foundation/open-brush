@@ -1233,8 +1233,8 @@ namespace TiltBrush
                 _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
             };
             uri += $"pageSize={m_AssetsPerPage}&";
-            uri += $"orderBy={queryParams.OrderBy}&";
-            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
 
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
@@ -1245,14 +1245,14 @@ namespace TiltBrush
             string uri = $"{IcosaApiRoot}{string.Format(kCollectionUriFormat, collectionId)}?";
             foreach (var format in queryParams.Formats)
             {
-                uri += $"format={format}&";
+                AppendQueryParam(ref uri, "format", format);
             }
             uri += $"pageSize={m_AssetsPerPage}&";
             uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
-            uri += $"orderBy={queryParams.OrderBy}&";
-            if (!string.IsNullOrEmpty(queryParams.SearchText)) uri += $"name={queryParams.SearchText}&";
-            if (!string.IsNullOrEmpty(queryParams.License)) uri += $"license={queryParams.License}&";
-            if (!string.IsNullOrEmpty(queryParams.Category)) uri += $"category={queryParams.Category}&";
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
 
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
         }
