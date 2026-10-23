@@ -91,39 +91,23 @@ namespace TiltBrush
 
         void ChangeBackdropMode(BackdropMode newMode)
         {
+            DetectCurrentBackdropMode();
+            if (newMode == m_CurrentBackdropMode) return;
             if (newMode != BackdropMode.Passthrough &&
                 !SceneSettings.m_Instance.CanLeavePassthrough) return;
-            switch (newMode)
+
+            string customSkybox = null;
+            if (newMode == BackdropMode.Skybox &&
+                !SceneSettings.m_Instance.CurrentEnvironment.HasSkybox)
             {
-                case BackdropMode.Gradient:
-                    if (!SceneSettings.m_Instance.InGradient ||
-                        SceneSettings.m_Instance.HasCustomSkybox ||
-                        SceneSettings.m_Instance.PassthroughEnabled)
-                    {
-                        SketchMemoryScript.m_Instance.PerformAndRecordCommand(new UnlockSkyboxCommand());
-                    }
-                    break;
-                case BackdropMode.Skybox:
-                    SceneSettings.m_Instance.InGradient = false;
-                    SceneSettings.m_Instance.PassthroughEnabled = false;
-                    if (SceneSettings.m_Instance.CurrentEnvironment.HasSkybox)
-                    {
-                        SceneSettings.m_Instance.ReapplyEnvironmentSkybox();
-                    }
-                    else
-                    {
-                        LoadPreviousCustomSkybox();
-                    }
-                    break;
-                case BackdropMode.Passthrough:
-                    SceneSettings.m_Instance.ClearCustomSkybox();
-                    SceneSettings.m_Instance.InGradient = false;
-                    SceneSettings.m_Instance.PassthroughEnabled = true;
-                    break;
+                customSkybox = GetPreviousCustomSkyboxPath();
+                if (string.IsNullOrEmpty(customSkybox)) return;
             }
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ChangeBackdropModeCommand(newMode, customSkybox));
         }
 
-        private void LoadPreviousCustomSkybox()
+        private string GetPreviousCustomSkyboxPath()
         {
             if (string.IsNullOrEmpty(m_PreviousCustomSkyboxPath))
             {
@@ -134,10 +118,16 @@ namespace TiltBrush
                 }
             }
 
-            // If user has removed all custom skybox files then the value could still be null
-            if (m_PreviousCustomSkyboxPath != null)
+            return m_PreviousCustomSkyboxPath;
+        }
+
+        private void LoadPreviousCustomSkybox()
+        {
+            string path = GetPreviousCustomSkyboxPath();
+            // If user has removed all custom skybox files then the value could still be null.
+            if (path != null)
             {
-                SceneSettings.m_Instance.LoadCustomSkybox(m_PreviousCustomSkyboxPath);
+                SceneSettings.m_Instance.LoadCustomSkybox(path);
             }
         }
 

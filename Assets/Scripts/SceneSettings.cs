@@ -310,6 +310,20 @@ namespace TiltBrush
             RenderSettings.skybox = CurrentEnvironment.m_SkyboxMaterial;
         }
 
+        public void RestoreBackdropGradient(Color colorA, Color colorB, Quaternion orientation)
+        {
+            // Passthrough has no skybox material. Retain the dormant gradient without
+            // writing shader properties until the gradient is active again.
+            m_SkyColorA = colorA;
+            m_SkyColorB = colorB;
+            if (InGradient)
+            {
+                SkyColorA = colorA;
+                SkyColorB = colorB;
+            }
+            GradientOrientation = orientation;
+        }
+
         public void LoadCustomSkybox(string filename)
         {
             if (!CanLeavePassthrough) return;
