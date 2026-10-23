@@ -857,6 +857,10 @@ namespace TiltBrush
             var widgets = WidgetManager.m_Instance;
             if (data.ModelIndex != null) { widgets.SetModelDataFromTilt(data.ModelIndex); }
             if (data.LightIndex != null) { widgets.SetLightDataFromTilt(data.LightIndex); }
+            foreach (var guide in data.GuideIndex ?? Array.Empty<Guides>())
+            {
+                StencilWidget.FromGuideIndex(guide);
+            }
             if (!(fileInfo is IcosaSceneFileInfo))
             {
                 if (ReferenceImageCatalog.m_Instance != null && data.ImageIndex != null) { widgets.SetImageDataFromTilt(data.ImageIndex); }
@@ -895,6 +899,14 @@ namespace TiltBrush
             {
                 image.LayerIds = Enumerable.Repeat(targetLayer, image.Transforms.Length).ToArray();
                 image.GroupIds = image.GroupIds?.Select(Remap).ToArray();
+            }
+            foreach (var guide in data.GuideIndex ?? Array.Empty<Guides>())
+            {
+                foreach (var state in guide.States ?? Array.Empty<Guides.State>())
+                {
+                    state.LayerId = targetLayer;
+                    state.GroupId = Remap(state.GroupId);
+                }
             }
             foreach (var widget in data.LightIndex ?? Array.Empty<TiltLights>())
             { widget.LayerId = targetLayer; widget.GroupId = Remap(widget.GroupId); }
