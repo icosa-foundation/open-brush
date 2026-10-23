@@ -107,7 +107,7 @@ namespace TiltBrush
             }
 
             var fileName = Path.Combine(UserVariantBrush.GetBrushesPath(), newBrush.UserVariantBrush.Location, "brush.cfg");
-            UserVariantBrush.SaveDescriptor(newBrush, fileName, textureRefs);
+            if (!UserVariantBrush.SaveDescriptor(newBrush, fileName, textureRefs)) return;
             m_needsSaving = false;
             SaveButton.GetComponent<ActionButton>().SetButtonAvailable(false);
 
@@ -201,7 +201,7 @@ namespace TiltBrush
                 textureRefs[texturePropertyName] = textureFullPath;
             }
 
-            UserVariantBrush.SaveDescriptor(brush, fileName, textureRefs);
+            if (!UserVariantBrush.SaveDescriptor(brush, fileName, textureRefs)) return;
             m_needsSaving = false;
             SaveButton.GetComponent<ActionButton>().SetButtonAvailable(false);
         }

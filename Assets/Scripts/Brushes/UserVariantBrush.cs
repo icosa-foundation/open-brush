@@ -603,33 +603,57 @@ public class UserVariantBrush
 
 #endif
 
-    public static void SaveDescriptor(BrushDescriptor brush, string filename, Dictionary<string, string> textureRefs)
+    public static bool SaveDescriptor(BrushDescriptor brush, string filename, Dictionary<string, string> textureRefs)
     {
-
-        BrushProperties properties = brush.UserVariantBrush.m_BrushProperties;
-
-        CopyDescriptorToProperties(brush, properties);
-        CopyMaterialToProperties(brush, properties);
-
-        // Copy textures and update texture paths
-        brush.UserVariantBrush.SaveorCopyTextures(brush.Material.shader, textureRefs);
-
+        // Publish only a complete config. Watchers and later loads must never observe
+        // a truncated replacement if serialization or writing fails.
+        string temporaryPath = $"{filename}.{Guid.NewGuid():N}.tmp";
         try
         {
+            BrushProperties properties = brush.UserVariantBrush.m_BrushProperties;
+            CopyDescriptorToProperties(brush, properties);
+            CopyMaterialToProperties(brush, properties);
+            if (!brush.UserVariantBrush.SaveorCopyTextures(brush.Material.shader, textureRefs)) return false;
+
             var serializer = JsonSerializer.Create(new JsonSerializerSettings()
             {
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             });
             serializer.ContractResolver = new CustomJsonContractResolver();
-            using (var writer = new CustomJsonWriter(new StreamWriter(filename)))
+            using (var writer = new CustomJsonWriter(new StreamWriter(temporaryPath)))
             {
                 writer.Formatting = Formatting.Indented;
                 serializer.Serialize(writer, properties);
             }
+            if (File.Exists(filename))
+            {
+                File.Replace(temporaryPath, filename, null);
+            }
+            else
+            {
+                File.Move(temporaryPath, filename);
+            }
+            return true;
         }
-        catch (JsonException e)
+        catch (Exception e) when (e is JsonException || e is IOException ||
+            e is UnauthorizedAccessException || e is NotSupportedException)
         {
-            Debug.LogWarning(e.Message);
+            Debug.LogWarning($"[UserBrushSave] Could not save '{filename}': {e.Message}");
+            return false;
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(temporaryPath))
+                {
+                    File.Delete(temporaryPath);
+                }
+            }
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+            {
+                Debug.LogWarning($"[UserBrushSave] Could not remove temporary config '{temporaryPath}': {e.Message}");
+            }
         }
     }
 
@@ -861,7 +885,7 @@ public class UserVariantBrush
     /// </summary>
     /// <param name="material">The BrushDescriptor.</param>
     /// <param name="textureRefs">A dictionary mapping texture property names to texture paths.</param>
-    public void SaveorCopyTextures(Shader shader, Dictionary<string, string> textureRefs)
+    public bool SaveorCopyTextures(Shader shader, Dictionary<string, string> textureRefs)
     {
 
         for (int i = 0; i < shader.GetPropertyCount(); ++i)
@@ -921,8 +945,8 @@ public class UserVariantBrush
                     }
                     else
                     {
-                        Debug.LogError("User brush textures must be inside brush folder or brush resources folder");
-                        return;
+                        Debug.LogError("[UserBrushSave] User brush textures must be inside brush folder or brush resources folder");
+                        return false;
                     }
                     var textureRelativePath = newTextureFullPath.Substring(thisUserBrushDir.Length + 1);
                     m_BrushProperties.Material.TextureProperties[propertyName] = textureRelativePath;
@@ -933,6 +957,7 @@ public class UserVariantBrush
                 }
             }
         }
+        return true;
     }
 
 }
