@@ -2635,7 +2635,7 @@ namespace TiltBrush.FrameAnimation
 
             newStrokes = oldStrokes
                 .Select(stroke => SketchMemoryScript.m_Instance.DuplicateStroke(
-                    stroke, App.Scene.SelectionCanvas, null)).ToList();
+                    stroke, newCanvas, null)).ToList();
 
             for (int i = 0; i < oldStrokes.Count; i++)
             {
@@ -2679,7 +2679,6 @@ namespace TiltBrush.FrameAnimation
                 if (stroke.m_Type != Stroke.Type.NotCreated)
                 {
                     TiltMeterScript.m_Instance.AdjustMeter(stroke, up: true);
-                    stroke.SetParentKeepWorldPosition(newCanvas);
                 }
             }
 
