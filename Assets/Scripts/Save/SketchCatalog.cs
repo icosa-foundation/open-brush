@@ -92,6 +92,31 @@ namespace TiltBrush
         {
             if (!App.InitDirectoryAtPath(sketchesPath)) { return false; }
 
+#if UNITY_ANDROID && OPEN_BRUSH_VIEWER && !UNITY_EDITOR
+            try
+            {
+                var manifest = BundledSketchAssets.ReadManifest();
+                var paths = new List<string>();
+                var namesByPath = new Dictionary<string, string>();
+                foreach (string name in manifest.Sketches)
+                {
+                    // Keep the old identifiers so upgrades preserve seeding/deletion history.
+                    string resourcePath = $"{kDefaultBundledSketchesFolder}/{name}";
+                    paths.Add(resourcePath);
+                    namesByPath.Add(resourcePath, name);
+                }
+                DefaultMediaSeeder.Seed(sketchesPath, paths.ToArray(), null,
+                    "Seeded bundled sketches", App.Instance.HasPlayedBefore,
+                    path => BundledSketchAssets.Read(namesByPath[path]));
+                return true;
+            }
+            catch (System.Exception e) when (e is System.IO.IOException ||
+                e is System.UnauthorizedAccessException || e is Newtonsoft.Json.JsonException)
+            {
+                Debug.LogWarning($"[OB_BUNDLED_SKETCH] Could not seed packaged examples: {e.Message}");
+                return false;
+            }
+#else
             TextAsset[] textAssets =
                 Resources.LoadAll<TextAsset>(kDefaultBundledSketchesFolder);
             try
@@ -120,6 +145,7 @@ namespace TiltBrush
             }
 
             return true;
+#endif
         }
 
         void Start()

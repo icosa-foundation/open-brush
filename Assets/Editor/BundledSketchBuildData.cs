@@ -14,7 +14,6 @@ internal static class BundledSketchBuildData
 {
     internal const string SourceDirectory = "Assets/DefaultBundledSketches";
 
-    // Activated with the runtime cutover, so intermediate commits keep the old reader working.
     internal static void AddToBuild(BuildPlayerContext context)
     {
         string manifest = Prepare(SourceDirectory, "Library/BundledSketchBuild");
@@ -29,7 +28,7 @@ internal static class BundledSketchBuildData
 
     internal static string Prepare(string sourceDirectory, string outputDirectory)
     {
-        var entries = new List<BundledSketchEntry>();
+        var entries = new List<string>();
         var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (string path in Directory.GetFiles(sourceDirectory, "*.tilt.bytes")
                      .OrderBy(path => path, StringComparer.Ordinal))
@@ -38,25 +37,9 @@ internal static class BundledSketchBuildData
             if (!names.Add(name))
                 throw new BuildFailedException($"Duplicate bundled sketch name: {name}");
 
-            var tilt = new TiltFile(path);
-            using (Stream metadata = tilt.GetReadStream(TiltFile.FN_METADATA))
-            using (Stream thumbnail = tilt.GetReadStream(TiltFile.FN_THUMBNAIL))
-            {
-                if (metadata == null || thumbnail == null)
-                    throw new BuildFailedException($"Bundled sketch is missing metadata or thumbnail: {path}");
-
-                using (var reader = new StreamReader(metadata, Encoding.UTF8))
-                using (var image = new MemoryStream())
-                {
-                    thumbnail.CopyTo(image);
-                    entries.Add(new BundledSketchEntry
-                    {
-                        FileName = name,
-                        Metadata = reader.ReadToEnd(),
-                        Thumbnail = image.ToArray()
-                    });
-                }
-            }
+            if (!new TiltFile(path).IsHeaderValid())
+                throw new BuildFailedException($"Invalid bundled sketch: {path}");
+            entries.Add(name);
         }
         if (entries.Count == 0)
             throw new BuildFailedException($"No bundled sketches found in {sourceDirectory}");

@@ -3,7 +3,7 @@ using System;
 
 namespace TiltBrush
 {
-    // The small index can be read without opening any of the packaged sketch binaries.
+    // Filenames only: this packaging stage preserves the existing sketchbook seeding behavior.
     [Serializable]
     public sealed class BundledSketchManifest
     {
@@ -12,14 +12,6 @@ namespace TiltBrush
         public const int CurrentVersion = 1;
 
         public int Version = CurrentVersion;
-        public BundledSketchEntry[] Sketches;
-    }
-
-    [Serializable]
-    public sealed class BundledSketchEntry
-    {
-        public string FileName;
-        public string Metadata;
-        public byte[] Thumbnail;
+        public string[] Sketches;
     }
 }
