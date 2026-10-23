@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -228,11 +228,10 @@ namespace TiltBrush
         static VrAssetFormat[] GetSupportedIcosaFormats()
         {
             // Note: FBX and USD are not included as they're only supported for local files, not Icosa assets.
-            // Prefer IMM, then retain the existing model-format preference order.
+            // Preserve ordinary gallery/sketch format selection; native IMM uses RequestImmModel.
             // OBJ_NGON is an OBJ file with n-gon faces (faces with >3 vertices).
             return new[]
             {
-                VrAssetFormat.IMM,
                 VrAssetFormat.VOX,
                 VrAssetFormat.GLTF2,
                 VrAssetFormat.GLTF,
