@@ -922,6 +922,9 @@ namespace TiltBrush
                 MarkBrushSizeUsed();
 
                 DisablePreviewLine();
+                // Rebuild independent script brushes without discarding their cached paths.
+                RemoveToolScriptPreviewLines(0);
+                m_ToolScriptPreviewDirty = m_ToolScriptStrokeCreators.Count > 0;
                 SetTintableIntensity(rBrush);
                 UpdateTintableRenderers();
                 OnBrushChange(rBrush);
