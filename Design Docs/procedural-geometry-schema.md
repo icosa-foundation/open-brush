@@ -596,8 +596,16 @@ graph or preset asset is needed by a reader of this recipe.
      GeometryRecipe/GeometryStep, named parameter evaluation; rectangle, frame, panel,
      cylinder, capsule, conic; shell, transform, faceRemove, bend, autoSmooth and flip;
      gallery consumers. Relevant commits: 121f57a, 5f74d53, dd0d8f8 and 1c4e093.
+     Open Brush now has `GeometryRecipeData`: JSON conversion preserving unfamiliar
+     data, strict extraction of known typed steps, and duplicate-member rejection.
+     ShapesXR resolved panel snapshots and all five Maquette builder families have
+     parameter-to-recipe adapters. Seventeen focused recipe/adapter checks pass in
+     a standalone C# harness. All ten procedural snapshots in the user's ShapesXR
+     space round-trip; 2,728 procedural state records in the installed Maquette
+     projects translate using saved hierarchy scales. These checks validate mapping
+     and serialization only; they do not execute Polyhydra or compare rendered meshes.
 15.2 Not implemented:
-     This JSON serializer/deserializer, .tilt integration and unknown-JSON round trips;
+     .tilt integration and retained-data persistence across an actual sketch load/save;
      complete 3D Shapes adapters; source-mesh attribute storage and stretch evaluation;
      native source import and state resolution. No released .tilt uses this contract.
 15.3 Not validated:
