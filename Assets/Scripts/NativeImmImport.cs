@@ -206,8 +206,19 @@ namespace TiltBrush
             {
                 var documentIds = s_UnloadingDocumentIds;
                 yield return null; // Let the previous widgets request their document unloads.
+                float unloadStarted = Time.realtimeSinceStartup;
                 while (documentIds.Any(ImmNativePlugin.IsDocumentActive))
+                {
+                    if (Time.realtimeSinceStartup - unloadStarted > 120f)
+                    {
+                        Debug.LogError($"[OB_IMM_UNLOAD_DEADLINE_20261023] Previous native sketch documents did not unload: {m_Path}");
+                        OutputWindowScript.m_Instance.AddNewLine("Previous native sketch did not finish unloading.");
+                        // Preserve pending document IDs so a later import still waits for them.
+                        Unload();
+                        yield break;
+                    }
                     yield return null;
+                }
                 s_UnloadingDocumentIds = new int[0];
                 Debug.Log($"{LogPrefix} Previous sketch documents finished unloading");
             }
