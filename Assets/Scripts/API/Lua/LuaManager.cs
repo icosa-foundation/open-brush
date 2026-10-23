@@ -144,6 +144,7 @@ namespace TiltBrush
         public bool IsInitialized => m_IsInitialized;
 
         private readonly List<PointerManager.ControlPoint> m_LatestToolScriptControlPoints = new();
+        private readonly List<List<PointerManager.ControlPoint>> m_LatestToolScriptControlPointPaths = new();
         public ScriptCoordSpace LatestToolScriptControlPointSpace { get; private set; } = ScriptCoordSpace.Default;
 
         public string LuaModulesPath => Path.Join(UserPluginsPath(), "LuaModules");
@@ -202,6 +203,22 @@ namespace TiltBrush
         public IReadOnlyList<PointerManager.ControlPoint> GetLatestToolScriptControlPoints()
         {
             return m_LatestToolScriptControlPoints;
+        }
+
+        public IReadOnlyList<List<PointerManager.ControlPoint>> GetLatestToolScriptControlPointPaths()
+        {
+            return m_LatestToolScriptControlPointPaths;
+        }
+
+        private void SetLatestToolScriptControlPointPaths(
+            IEnumerable<IEnumerable<PointerManager.ControlPoint>> paths, ScriptCoordSpace space)
+        {
+            m_LatestToolScriptControlPointPaths.Clear();
+            if (paths != null)
+            {
+                m_LatestToolScriptControlPointPaths.AddRange(paths.Select(path => path.ToList()));
+            }
+            SetLatestToolScriptControlPoints(m_LatestToolScriptControlPointPaths.FirstOrDefault(), space);
         }
 
         private void SetLatestToolScriptControlPoints(IEnumerable<PointerManager.ControlPoint> controlPoints, ScriptCoordSpace space)
@@ -1044,6 +1061,7 @@ namespace TiltBrush
             RegisterApiClass(script, "PathList", typeof(PathListApiWrapper));
             RegisterApiClass(script, "ControlPoint", typeof(ControlPointApiWrapper));
             RegisterApiClass(script, "ControlPointList", typeof(ControlPointListApiWrapper));
+            RegisterApiClass(script, "ControlPointPathList", typeof(ControlPointPathListApiWrapper));
             RegisterApiClass(script, "Path2d", typeof(Path2dApiWrapper));
             RegisterApiClass(script, "Pointer", typeof(PointerApiWrapper));
             RegisterApiClass(script, "Random", typeof(RandomApiWrapper));
@@ -1382,7 +1400,7 @@ namespace TiltBrush
             var pathWrapper = CallActiveToolScript(fnName);
             if (pathWrapper == null)
             {
-                SetLatestToolScriptControlPoints(null, ScriptCoordSpace.Canvas);
+                SetLatestToolScriptControlPointPaths(null, ScriptCoordSpace.Canvas);
                 return null;
             }
 
@@ -1484,8 +1502,8 @@ namespace TiltBrush
                 }
             }
 
-            SetLatestToolScriptControlPoints(
-                previewControlPointPaths.FirstOrDefault(), ScriptCoordSpace.Canvas);
+            SetLatestToolScriptControlPointPaths(
+                previewControlPointPaths, ScriptCoordSpace.Canvas);
 
             return new ToolScriptExecutionResult(
                 pathWrapper, pathWrapper._Space, tr_CS, previewTransforms,
