@@ -21,17 +21,22 @@ namespace TiltBrush.Tests
     public class TestFrameDrawingRepository
     {
         private CanvasScript m_Canvas;
+        private GameObject m_Container;
 
         [SetUp]
         public void SetUp()
         {
-            m_Canvas = CanvasScript.UnitTestSetUp(new GameObject("FrameDrawing repository canvas"));
+            // Repository tests need Canvas identity, not the running application's batching
+            // and gizmo dependencies. Keep Awake from accessing App.Scene in Edit mode.
+            m_Container = new GameObject("FrameDrawing repository canvas");
+            m_Container.SetActive(false);
+            m_Canvas = m_Container.AddComponent<CanvasScript>();
         }
 
         [TearDown]
         public void TearDown()
         {
-            if (m_Canvas != null) CanvasScript.UnitTestTearDown(m_Canvas.gameObject);
+            if (m_Container != null) Object.DestroyImmediate(m_Container);
         }
 
         [Test]

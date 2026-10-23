@@ -46,15 +46,17 @@ namespace TiltBrush.Tests
         [UnitySetUp]
         public IEnumerator EnterRuntime()
         {
+            TestAnimationCanvasLifecycle.PrepareRuntimeScene();
             typeof(LuaManager).GetField(
                 "m_Instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
             yield return new EnterPlayMode();
             float deadline = Time.realtimeSinceStartup + 60f;
-            while ((App.Scene == null || App.Scene.animationUI_manager == null) &&
+            while ((App.Instance == null || App.Scene == null || App.Scene.animationUI_manager == null) &&
                 Time.realtimeSinceStartup < deadline)
             {
                 yield return null;
             }
+            Assert.IsNotNull(App.Instance, $"{kLogPrefix} Open Brush App did not initialize");
             Assert.IsNotNull(App.Scene, "Open Brush scene did not initialize");
             Assert.IsNotNull(App.Scene.animationUI_manager,
                 "Animation manager did not initialize");
@@ -70,6 +72,7 @@ namespace TiltBrush.Tests
         public IEnumerator ExitRuntime()
         {
             if (Application.isPlaying) yield return new ExitPlayMode();
+            TestAnimationCanvasLifecycle.RestoreRuntimeEditorSettings();
         }
 
         [UnityTest]

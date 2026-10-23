@@ -22,6 +22,8 @@ using System.Reflection;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using TiltBrush.FrameAnimation;
+using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.TestTools;
 using Debug = UnityEngine.Debug;
@@ -31,22 +33,44 @@ namespace TiltBrush.Tests
     internal class TestAnimationCanvasLifecycle
     {
         private const string kLogPrefix = "[OB_ANIM_P3_INTEGRATION]";
+        private const string kPlayModeOptionsKey = "OB_ANIM_TEST.PlayModeOptionsEnabled";
+
+        internal static void PrepareRuntimeScene()
+        {
+            // These integration tests require fresh app singletons. With fast Play mode
+            // enabled, the runner also loses its setup log scope across static cleanup.
+            SessionState.SetBool(kPlayModeOptionsKey, EditorSettings.enterPlayModeOptionsEnabled);
+            EditorSettings.enterPlayModeOptionsEnabled = false;
+            // EditMode tests run in a bootstrap scene, not the previously open user scene.
+            EditorSceneManager.OpenScene("Assets/Scenes/Main.unity", OpenSceneMode.Single);
+            Config config = UnityEngine.Object.FindFirstObjectByType<Config>();
+            Assert.IsNotNull(config);
+            config.m_FakeCommandLineArgsInEditor = "-batchmode --EnableMonoscopicMode";
+        }
+
+        internal static void RestoreRuntimeEditorSettings()
+        {
+            EditorSettings.enterPlayModeOptionsEnabled = SessionState.GetBool(kPlayModeOptionsKey, true);
+            SessionState.EraseBool(kPlayModeOptionsKey);
+        }
 
         [UnitySetUp]
         public IEnumerator EnterRuntime()
         {
+            PrepareRuntimeScene();
             // LuaManager does not currently clear its private singleton when Play mode exits.
             // Isolate repeated Play-mode integration cases from that existing lifecycle bug.
             typeof(LuaManager).GetField(
                 "m_Instance", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
             yield return new EnterPlayMode();
             float deadline = Time.realtimeSinceStartup + 60f;
-            while ((App.Scene == null || App.Scene.animationUI_manager == null ||
+            while ((App.Instance == null || App.Scene == null || App.Scene.animationUI_manager == null ||
                     WidgetManager.m_Instance == null) &&
                 Time.realtimeSinceStartup < deadline)
             {
                 yield return null;
             }
+            Assert.IsNotNull(App.Instance, $"{kLogPrefix} Open Brush App did not initialize");
             Assert.IsNotNull(App.Scene, "Open Brush scene did not initialize");
             Assert.IsNotNull(App.Scene.animationUI_manager,
                 "Animation manager did not initialize");
@@ -66,6 +90,7 @@ namespace TiltBrush.Tests
         public IEnumerator ExitRuntime()
         {
             if (Application.isPlaying) yield return new ExitPlayMode();
+            RestoreRuntimeEditorSettings();
         }
 
         [UnityTest]
@@ -156,8 +181,8 @@ namespace TiltBrush.Tests
 
             var widgetObject = new GameObject("Animation coordinate consumer test widget");
             widgetObject.transform.SetParent(importedContentCanvas.transform, false);
-            widgetObject.AddComponent<GrabWidget>();
-            manager.NotifyDrawingContentChanged(importedContentCanvas);
+            GrabWidget widget = widgetObject.AddComponent<GrabWidget>();
+            manager.NotifyWidgetAdded(widget);
             Assert.IsTrue(manager.GetFrameFilled(0, 3));
 
             manager.GetSparseTimelineCounts(out int spanCount, out int emptySpanCount);
