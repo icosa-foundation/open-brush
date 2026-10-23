@@ -18,6 +18,14 @@ MonoBehaviour:
   m_Metadata:
     m_Items: []
   m_TableData:
+  - m_Id: 82310000000000008
+    m_Localized: Featured Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000009
+    m_Localized: Included with Open Brush Viewer. Available offline.
+    m_Metadata:
+      m_Items: []
   - m_Id: 82310000000000001
     m_Localized: Choose navigation mode
     m_Metadata:

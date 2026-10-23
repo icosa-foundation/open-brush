@@ -15,6 +15,14 @@ MonoBehaviour:
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
+  - m_Id: 82310000000000008
+    m_Key: VIEWER_FEATURED_SKETCHES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000009
+    m_Key: VIEWER_FEATURED_SKETCHES_HINT
+    m_Metadata:
+      m_Items: []
   - m_Id: 82310000000000001
     m_Key: VIEWER_NAVIGATION_MENU
     m_Metadata:

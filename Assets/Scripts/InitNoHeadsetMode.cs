@@ -1834,11 +1834,23 @@ namespace TiltBrush
             switch (setType)
             {
                 case SketchSetType.User:
+#if OPEN_BRUSH_VIEWER
+                    return ViewerSketchbookLabels.Featured.GetLocalizedStringAsync().Result;
+#else
                     return "Your Sketches";
+#endif
                 case SketchSetType.Curated:
+#if OPEN_BRUSH_VIEWER
+                    return ViewerSketchbookLabels.All.GetLocalizedStringAsync().Result;
+#else
                     return "Featured Sketches";
+#endif
                 case SketchSetType.Liked:
+#if OPEN_BRUSH_VIEWER
+                    return ViewerSketchbookLabels.Liked.GetLocalizedStringAsync().Result;
+#else
                     return "Liked Sketches";
+#endif
                 default:
                     return setType.ToString();
             }
