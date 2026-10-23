@@ -32,6 +32,13 @@
       },
       "hash": "0c747b344715e878f26744069324ef617957da02"
     },
+    "com.endel.nativewebsocket": {
+      "version": "https://github.com/endel/NativeWebSocket.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "c5101c07762251edc82caad9e8a39d51b1229c31"
+	},
     "com.icosa.unitytinyexr": {
       "version": "https://github.com/icosa-mirror/UnityTinyEXR.git#7d86cd3109a02be80a91846d69c59802dba05665",
       "depth": 0,

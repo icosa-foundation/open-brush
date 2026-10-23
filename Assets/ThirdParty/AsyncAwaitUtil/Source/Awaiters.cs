@@ -4,11 +4,11 @@ using UnityEngine;
 // TODO: Remove the allocs here, use a static memory pool?
 public static class Awaiters
 {
-    readonly static WaitForUpdate _waitForUpdate = new WaitForUpdate();
+    readonly static UnityAsyncAwaitUtil.WaitForUpdate _waitForUpdate = new ();
     readonly static WaitForFixedUpdate _waitForFixedUpdate = new WaitForFixedUpdate();
     readonly static WaitForEndOfFrame _waitForEndOfFrame = new WaitForEndOfFrame();
 
-    public static WaitForUpdate NextFrame
+    public static UnityAsyncAwaitUtil.WaitForUpdate NextFrame
     {
         get { return _waitForUpdate; }
     }
