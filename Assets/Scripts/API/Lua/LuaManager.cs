@@ -617,6 +617,10 @@ namespace TiltBrush
                 script.Globals[LuaNames.ScriptNameString] = scriptName;
                 script.Globals[LuaNames.IsExampleScriptBool] = isExampleScript;
 
+                if (Scripts[category].TryGetValue(scriptName, out var previousScript))
+                {
+                    EndScript(previousScript);
+                }
                 Scripts[category][scriptName] = script;
                 if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
                 {
