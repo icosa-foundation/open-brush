@@ -461,9 +461,11 @@ integers explicitly. Preset names/defaults alone are not a sampling contract.
 The source retained forward surface faces -Z. Generate Back controls its +Z surface.
 Without reorientation, obj-pmuggb=false removes +Z faces and rear bevels, NOT -Z.
 Use faceRemove with direction [0,0,1] and a range near 90 degrees before bending.
-The source also omits side walls at its thin-sheet threshold, depth<=0.0001. Use the
-appropriate front-only selection for that case. A material culling change is not
-an equivalent representation of these missing surfaces.
+The source also omits side walls and bevels at its thin-sheet threshold,
+depth<=0.0001. Generate Back still independently controls the +Z plane. With it
+enabled, retain both planes and remove only the walls; otherwise retain only -Z.
+A material culling change is not an equivalent representation of these surfaces.
+The current Polyhydra Panel requires positive depth; exactly zero remains a gap.
 
 9.5 Bends
 obj-pmbh -> axis x; obj-pmbv -> axis y, in that order. Both reference centres are zero

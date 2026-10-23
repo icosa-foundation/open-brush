@@ -167,7 +167,11 @@ code, generator, modifier or file-format changes, and no Unity mesh-parity execu
 Shell can construct the closed extrusion and FaceRemove can remove selected faces.
 FaceRemove(Filter) supports face predicates; FacingDirection can select the rear cap.
 For beveled panels, the removed rear region must include the rear bevel faces too,
-before any bending. For source thin sheets the appropriate front-only selection also
+before any bending. For source thin sheets, retain both planes when Generate Back is
+enabled, otherwise retain only the front. Remove the walls and bevels in either case.
+The earlier front-only rule was too broad; the source still generates its back plane
+at thickness<=0.0001 when Generate Back is enabled. Exactly zero depth still needs
+Polyhydra support. For a front-only selection, removing non-front faces also
 removes the narrow wall faces. This is a selection/composition requirement, not evidence
 for a new open-back generator or changing Rectangle's single-face topology.
 Evidence: PolyMesh.Geometry.cs FaceRemove overloads, Shell; Filters.cs FacingDirection.
