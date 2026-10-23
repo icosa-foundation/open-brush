@@ -86,7 +86,8 @@ namespace TiltBrush
 
         private void OnSelectionPoseChanged(TrTransform prev, TrTransform current)
         {
-            m_CurrentSelectionTr = current;
+            // Canvas events supply global poses; Inspector fields use active-canvas coordinates.
+            m_CurrentSelectionTr = SelectionManager.m_Instance.SelectionTransform;
             foreach (var tab in AllTabs)
             {
                 tab.OnSelectionPoseChanged();

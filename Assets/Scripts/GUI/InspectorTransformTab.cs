@@ -66,7 +66,7 @@ public class InspectorTransformTab : InspectorBaseTab
         if (ParentPanel.CurrentSelectionType == SelectionType.Nothing) return;
         if (!float.TryParse(label.LastTextInput, out float value) ||
             float.IsNaN(value) || float.IsInfinity(value) ||
-            (label.m_LabelTag == "SX" && value == 0f))
+            (label.m_LabelTag == "SX" && value <= 0f))
         {
             label.SetError(true);
             return;
