@@ -23,6 +23,10 @@ namespace TiltBrush
     public class KeyboardPanel : BasePanel
     {
         private KeyboardUI m_KeyboardUI;
+        private string m_SessionInitialText;
+        private bool m_SessionOpen;
+
+        public bool SessionCancelled { get; private set; }
         [NonSerialized] public static string m_InitialText;
         [NonSerialized] public static string m_LastInput;
         [NonSerialized] public Action<KeyboardPanel> m_OnClose;
@@ -39,9 +43,12 @@ namespace TiltBrush
 
         public void BeginSession(string initialText)
         {
+            m_SessionInitialText = initialText ?? string.Empty;
+            m_SessionOpen = true;
+            SessionCancelled = false;
             m_KeyboardUI.Clear();
-            m_KeyboardUI.AddConsoleContent(initialText ?? string.Empty);
-            m_LastInput = initialText ?? string.Empty;
+            m_KeyboardUI.AddConsoleContent(m_SessionInitialText);
+            m_LastInput = m_SessionInitialText;
             m_OnClose = null;
         }
 
@@ -58,8 +65,22 @@ namespace TiltBrush
             base.OnWidgetHide();
         }
 
+        public void CancelSession()
+        {
+            if (!m_SessionOpen) return;
+            SessionCancelled = true;
+            m_KeyboardUI.Clear();
+            m_KeyboardUI.AddConsoleContent(m_SessionInitialText);
+            m_LastInput = m_SessionInitialText;
+            CloseSession();
+            PanelManager.m_Instance.DismissNonCorePanel(PanelType.Keyboard);
+            SketchControlsScript.m_Instance.EatGazeObjectInput();
+        }
+
         private void CloseSession()
         {
+            if (!m_SessionOpen) return;
+            m_SessionOpen = false;
             Action<KeyboardPanel> onClose = m_OnClose;
             m_OnClose = null;
             onClose?.Invoke(this);
@@ -70,6 +91,9 @@ namespace TiltBrush
             if (!e.IsPress) return;
             switch (e.Key.KeyType)
             {
+                case KeyboardKeyType.Escape:
+                    CancelSession();
+                    return;
                 case KeyboardKeyType.Enter:
                     // Logic will been to be updated if we ever have a multi-line keyboard
                     m_LastInput = m_KeyboardUI.ConsoleContent;

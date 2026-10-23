@@ -95,8 +95,9 @@ namespace TiltBrush
                     if (panel != null)
                     {
                         panel.BeginSession(initialText);
-                        panel.m_OnClose = _ =>
+                        panel.m_OnClose = closedPanel =>
                         {
+                            if (closedPanel.SessionCancelled || widget == null) return;
                             string editedText = KeyboardPanel.m_LastInput;
                             if (editedText != initialText)
                             {
