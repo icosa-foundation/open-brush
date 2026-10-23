@@ -25,6 +25,10 @@ namespace TiltBrush
         [SerializeField] public Transform m_TemporarySkySphere;
         [NonSerialized] public static GltfExportStandinManager m_Instance;
         private List<GameObject> m_TemporaryCameras;
+        private MeshRenderer m_SkyRenderer;
+        private Material m_OriginalSkyMaterial;
+        private bool m_OriginalSkyActive;
+        private bool m_HasSkyState;
 
         void Awake()
         {
@@ -33,14 +37,26 @@ namespace TiltBrush
 
         public void CreateSkyStandin()
         {
-            // TODO check if we need box vs sphere etc
-            m_TemporarySkySphere.GetComponent<MeshRenderer>().material = RenderSettings.skybox;
+            if (m_HasSkyState) return;
+            m_SkyRenderer = m_TemporarySkySphere.GetComponent<MeshRenderer>();
+            m_OriginalSkyMaterial = m_SkyRenderer.sharedMaterial;
+            m_OriginalSkyActive = m_TemporarySkySphere.gameObject.activeSelf;
+            m_HasSkyState = true;
+            m_SkyRenderer.sharedMaterial = RenderSettings.skybox;
             m_TemporarySkySphere.gameObject.SetActive(false);
         }
 
         public void DestroySkyStandin()
         {
-            m_TemporarySkySphere.gameObject.SetActive(false);
+            if (!m_HasSkyState) return;
+            m_HasSkyState = false;
+            if (m_SkyRenderer != null) m_SkyRenderer.sharedMaterial = m_OriginalSkyMaterial;
+            if (m_TemporarySkySphere != null)
+            {
+                m_TemporarySkySphere.gameObject.SetActive(m_OriginalSkyActive);
+            }
+            m_SkyRenderer = null;
+            m_OriginalSkyMaterial = null;
         }
     }
 }
