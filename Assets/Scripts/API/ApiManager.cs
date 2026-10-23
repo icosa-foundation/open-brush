@@ -23,6 +23,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using NativeWebSocket;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -51,6 +52,7 @@ namespace TiltBrush
         private List<Uri> m_OutgoingHttpListeners;
         private Dictionary<Uri, WebSocket> m_OutgoingWebsocketListeners;
         private Dictionary<Uri, Queue<string>> m_PendingOutgoingWebsocketCommands;
+        private bool m_StoppingOutgoingWebsocketListeners;
         private static ApiManager m_Instance;
         private Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
@@ -190,6 +192,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         private void StopOutgoingWebsocketListeners()
         {
+            m_StoppingOutgoingWebsocketListeners = true;
             if (m_OutgoingWebsocketListeners == null) return;
 
             foreach (var listener in m_OutgoingWebsocketListeners)
@@ -200,7 +203,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     // Cancellation also terminates a connection that has not opened yet.
                     listener.Value.CancelConnection();
 #else
-                    _ = listener.Value.Close();
+                    _ = ObserveOutgoingWebsocketOperation(
+                        listener.Key, () => listener.Value.Close(), "close");
 #endif
                 }
                 catch (Exception exception)
@@ -827,8 +831,39 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 return;
             }
             var ws = new WebSocket(uri.ToString());
-            ws.Connect();
+            // The package reports some connection failures through OnError without faulting Connect.
+            ws.OnError += error =>
+            {
+                if (!m_StoppingOutgoingWebsocketListeners)
+                {
+                    ReportOutgoingWebsocketError(uri, "transport", error);
+                }
+            };
             m_OutgoingWebsocketListeners[uri] = ws;
+            _ = ObserveOutgoingWebsocketOperation(uri, () => ws.Connect(), "connect");
+        }
+
+        private async Task ObserveOutgoingWebsocketOperation(
+            Uri uri, Func<Task> operation, string action)
+        {
+            try
+            {
+                // Invoke inside the try so synchronous and asynchronous failures are observed.
+                await operation();
+            }
+            catch (OperationCanceledException) when (m_StoppingOutgoingWebsocketListeners)
+            {
+                // Native connections are canceled when their owning manager shuts down.
+            }
+            catch (Exception exception)
+            {
+                ReportOutgoingWebsocketError(uri, action, exception.Message);
+            }
+        }
+
+        private static void ReportOutgoingWebsocketError(Uri uri, string action, string message)
+        {
+            Debug.LogWarning($"[OB_WS_OUTCOME] Outgoing listener {uri} failed to {action}: {message}");
         }
 
         private void OutgoingApiCommand()
@@ -872,7 +907,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 if (listener.Value.State == WebSocketState.Open)
                 {
-                    listener.Value.SendText(cmd);
+                    _ = ObserveOutgoingWebsocketOperation(
+                        listener.Key, () => listener.Value.SendText(cmd), "send");
                 }
                 else if (listener.Value.State == WebSocketState.Connecting)
                 {
@@ -907,7 +943,9 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 Queue<string> pendingCommands = m_PendingOutgoingWebsocketCommands[listener.Key];
                 while (pendingCommands.Count > 0)
                 {
-                    listener.Value.SendText(pendingCommands.Dequeue());
+                    string pendingCommand = pendingCommands.Dequeue();
+                    _ = ObserveOutgoingWebsocketOperation(
+                        listener.Key, () => listener.Value.SendText(pendingCommand), "send");
                 }
             }
         }
