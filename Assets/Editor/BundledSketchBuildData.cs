@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
@@ -21,9 +22,24 @@ internal static class BundledSketchBuildData
             $"{BundledSketchManifest.AssetDirectory}/{BundledSketchManifest.FileName}");
         foreach (string path in Directory.GetFiles(SourceDirectory, "*.tilt.bytes"))
         {
-            context.AddAdditionalPathToStreamingAssets(Path.GetFullPath(path),
-                $"{BundledSketchManifest.AssetDirectory}/{Path.GetFileNameWithoutExtension(path)}");
+            string payload = PreparePayload(path, "Library/BundledSketchBuild/Payloads");
+            context.AddAdditionalPathToStreamingAssets(Path.GetFullPath(payload),
+                $"{BundledSketchManifest.AssetDirectory}/{Path.GetFileName(payload)}");
         }
+    }
+
+    // Unity stores StreamingAssets uncompressed in Android packages. Compress only build
+    // intermediates so moving away from Resources does not add the raw example size to the APK.
+    internal static string PreparePayload(string sourcePath, string outputDirectory)
+    {
+        Directory.CreateDirectory(outputDirectory);
+        string output = Path.Combine(outputDirectory,
+            $"{Path.GetFileNameWithoutExtension(sourcePath)}{BundledSketchManifest.PayloadSuffix}");
+        using (Stream input = File.OpenRead(sourcePath))
+        using (Stream destination = File.Create(output))
+        using (var compressed = new GZipStream(destination, CompressionLevel.Optimal))
+            input.CopyTo(compressed);
+        return output;
     }
 
     internal static string Prepare(string sourceDirectory, string outputDirectory)

@@ -9,6 +9,7 @@ namespace TiltBrush
     {
         public const string AssetDirectory = "BundledSketches";
         public const string FileName = "catalog.json";
+        public const string PayloadSuffix = ".gz";
         public const int CurrentVersion = 1;
 
         public int Version = CurrentVersion;

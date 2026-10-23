@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Text;
 using Newtonsoft.Json;
 using UnityEngine;
@@ -36,20 +37,35 @@ namespace TiltBrush
         public static byte[] Read(string name)
         {
             ValidateName(name);
+            bool compressed = name.EndsWith(".tilt", StringComparison.Ordinal);
             string path = $"{BundledSketchManifest.AssetDirectory}/{name}";
+            if (compressed) path = $"{path}{BundledSketchManifest.PayloadSuffix}";
+            byte[] bytes;
 #if UNITY_ANDROID && !UNITY_EDITOR
             try
             {
                 using (var bridge = new AndroidJavaClass("foundation.icosa.openbrush.DirectStorage"))
-                    return bridge.CallStatic<byte[]>("readAsset", path);
+                    bytes = bridge.CallStatic<byte[]>("readAsset", path);
             }
             catch (AndroidJavaException e)
             {
                 throw new IOException($"Could not read packaged sketch asset {path}.", e);
             }
 #else
-            return File.ReadAllBytes(Path.Combine(Application.streamingAssetsPath, path));
+            bytes = File.ReadAllBytes(Path.Combine(Application.streamingAssetsPath, path));
 #endif
+            return compressed ? DecodePayload(bytes) : bytes;
+        }
+
+        internal static byte[] DecodePayload(byte[] bytes)
+        {
+            using (var input = new MemoryStream(bytes))
+            using (var decoded = new GZipStream(input, CompressionMode.Decompress))
+            using (var output = new MemoryStream())
+            {
+                decoded.CopyTo(output);
+                return output.ToArray();
+            }
         }
 
         private static void ValidateName(string name)
