@@ -111,6 +111,7 @@ namespace TiltBrush
         private bool m_HasCustomLights;
 
         private bool m_LoadingCustomEnvironment;
+        private string m_CustomSkyboxToRestore;
         private Color m_CustomFogColor;
         private float m_CustomFogDensity;
         private float m_CustomReflectionIntensity;
@@ -614,7 +615,9 @@ namespace TiltBrush
 
         public void SetCustomEnvironment(CustomEnvironment custom, Environment env)
         {
+            if (ShouldBlockLeavingPassthroughInMultiplayer(env)) return;
             m_LoadingCustomEnvironment = true;
+            m_CustomSkyboxToRestore = custom.Skybox;
             m_CustomFogColor = (Color)custom.FogColor;
             m_CustomFogDensity = custom.FogDensity;
             m_CustomReflectionIntensity = custom.ReflectionIntensity;
@@ -1083,18 +1086,20 @@ namespace TiltBrush
                     m_SkyColorA = env.m_SkyboxColorA;
                     m_SkyColorB = env.m_SkyboxColorB;
                     m_GradientSkew = Quaternion.identity;
-                    m_CustomSkyboxTextureName = null;
-                    ++m_CustomSkyboxLoadVersion;
                 }
 
+                // Restored skybox identity is published by LoadCustomSkybox only after
+                // admission, using its normal material/notification ordering.
+                m_CustomSkyboxTextureName = null;
+                ++m_CustomSkyboxLoadVersion;
                 m_DesiredEnvironment = env;
                 m_CurrentValues = m_InterimValues;
                 m_TransitionValue = 0.0f;
                 m_CurrentState = TransitionState.FadingToBlack;
                 m_InhibitSceneReset = keepSceneTransform;
-                if (HasCustomSkybox)
+                if (m_LoadingCustomEnvironment && !string.IsNullOrEmpty(m_CustomSkyboxToRestore))
                 {
-                    LoadCustomSkybox(m_CustomSkyboxTextureName);
+                    LoadCustomSkybox(m_CustomSkyboxToRestore);
                 }
                 else
                 {
