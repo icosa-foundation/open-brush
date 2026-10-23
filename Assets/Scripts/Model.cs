@@ -38,12 +38,20 @@ namespace TiltBrush
             {
                 Invalid,
                 LocalFile,
-                IcosaAssetId
+                IcosaAssetId,
+                Generated
             }
 
             private Type type;
             private string path;
-            private string id; // Only valid when the type is IcosaAssetId.
+            private string id; // Valid for IcosaAssetId and Generated locations.
+
+            public bool IsGenerated() => type == Type.Generated;
+
+            public static Location Generated(string id)
+            {
+                return new Location { type = Type.Generated, id = id };
+            }
 
             public static Location File(string relativePath)
             {
@@ -119,7 +127,7 @@ namespace TiltBrush
             {
                 get
                 {
-                    if (type == Type.IcosaAssetId) { return id; }
+                    if (type == Type.IcosaAssetId || type == Type.Generated) { return id; }
                     throw new Exception("Invalid Icosa asset id request");
                 }
             }
@@ -134,7 +142,7 @@ namespace TiltBrush
             public override string ToString()
             {
                 string str;
-                if (type == Type.IcosaAssetId)
+                if (type == Type.IcosaAssetId || type == Type.Generated)
                 {
                     str = $"{type}:{id}";
                 }
@@ -156,7 +164,8 @@ namespace TiltBrush
 
             public static bool operator ==(Location a, Location b)
             {
-                return a.type == b.type && a.path == b.path;
+                return a.type == b.type && a.path == b.path &&
+                    (a.type != Type.Generated || a.id == b.id);
             }
 
             public static bool operator !=(Location a, Location b)
@@ -254,6 +263,7 @@ namespace TiltBrush
         {
             get
             {
+                if (m_Location.IsGenerated()) { return "[Generated]"; }
                 if (m_Location.GetLocationType() == Location.Type.IcosaAssetId)
                 {
                     return AssetId;
@@ -300,6 +310,13 @@ namespace TiltBrush
         public Model(string relativePath)
         {
             m_Location = Location.File(relativePath);
+            Init();
+        }
+
+        // Generated model support ported from the 3D Shapes branch.
+        public Model(Location location)
+        {
+            m_Location = location;
             Init();
         }
 
@@ -1041,6 +1058,12 @@ namespace TiltBrush
             _ = StartCreatePrefab(null);
         }
 
+        public void LoadEditableModel(GameObject go)
+        {
+            if (go == null) { throw new ArgumentNullException(nameof(go)); }
+            _ = StartCreatePrefab(go);
+        }
+
         /// Either synchronously load a GameObject hierarchy and convert it to a "prefab"
         /// or take a previously (probably asynchronously-loaded) GameObject hierarchy and do the same.
         ///
@@ -1052,13 +1075,19 @@ namespace TiltBrush
         /// - Every BoxCollider also has a visible mesh
         private async Task StartCreatePrefab(GameObject go)
         {
-            if (m_Valid)
+            if (m_Valid && !m_Location.IsGenerated())
             {
                 // This case is handled properly but it seems wasteful.
                 Debug.LogWarning($"Replacing already-loaded {m_Location}: did you mean to?");
             }
 
             List<string> warnings = new List<string>();
+
+            if (m_Location.IsGenerated())
+            {
+                m_AllowExport = true;
+                m_ImportMaterialCollector = new ImportMaterialCollector("generated", m_Location.ToString());
+            }
 
             // If we weren't provided a GameObject, construct one now.
             if (go == null)
@@ -1148,6 +1177,11 @@ namespace TiltBrush
                 Debug.Log($"[ICOSALOAD] import {m_Location} ext={ext} " +
                     $"{__icosaSw.ElapsedMilliseconds}ms over {__icosaFrames} frame(s) " +
                     $"(valid={m_Valid} error={m_LoadError.HasValue})");
+            }
+            else
+            {
+                CalcBoundsNonGltf(go);
+                EndCreatePrefab(go, warnings);
             }
 
         }
@@ -1422,6 +1456,8 @@ namespace TiltBrush
                     return Path.GetFileNameWithoutExtension(RelativePath);
                 case Model.Location.Type.IcosaAssetId:
                     return AssetId;
+                case Model.Location.Type.Generated:
+                    return HumanName;
             }
             return "Unknown";
         }
