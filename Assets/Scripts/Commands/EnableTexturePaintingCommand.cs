@@ -125,12 +125,7 @@ namespace TiltBrush
         private static void SetCanvasAndLayers(GrabWidget widget, CanvasScript canvas)
         {
             widget.SetCanvas(canvas);
-            widget.RestoreGameObjectLayer(canvas.gameObject.layer);
-            // Canvas changes must not remove the converted mesh from the paint raycast mask.
-            foreach (var inkCanvas in widget.GetComponentsInChildren<InkCanvas>(true))
-            {
-                inkCanvas.gameObject.layer = LayerMask.NameToLayer("TexturePaint");
-            }
+            widget.RestoreCanvasLayers(canvas.gameObject.layer);
         }
 
         private void AddInkCanvas(GameObject gameObject)
