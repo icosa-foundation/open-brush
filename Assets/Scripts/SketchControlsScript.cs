@@ -5673,6 +5673,11 @@ namespace TiltBrush
             // TODO: hide gallery view / publish if there are no saved sketches
             switch (rEnum)
             {
+#if OPEN_BRUSH_VIEWER
+                case GlobalCommands.DeleteSketch:
+                case GlobalCommands.RenameSketch:
+                    return false;
+#endif
                 case GlobalCommands.Undo:
                     return SketchMemoryScript.m_Instance.CanUndo() && !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.Redo:

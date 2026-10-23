@@ -1,12 +1,10 @@
 // Copyright 2026 The Open Brush Authors. Licensed under the Apache License, Version 2.0.
-using System;
-using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using TiltBrush;
+using UnityEditor;
 using UnityEditor.Build;
 
 // Prepare generated data outside Assets. The player build supplies these files directly
@@ -19,13 +17,16 @@ internal static class BundledSketchBuildData
     internal static void AddToBuild(BuildPlayerContext context)
     {
         string manifest = Prepare(SourceDirectory, "Library/BundledSketchBuild");
-        context.AddAdditionalPathToStreamingAssets(Path.GetFullPath(manifest),
-            $"{BundledSketchManifest.AssetDirectory}/{BundledSketchManifest.FileName}");
+        bool android = context.BuildPlayerOptions.target == BuildTarget.Android;
+        string catalog = android ? Compress(manifest, $"{manifest}{PayloadSuffix}") : manifest;
+        context.AddAdditionalPathToStreamingAssets(Path.GetFullPath(catalog),
+            $"{BundledSketchManifest.AssetDirectory}/{Path.GetFileName(catalog)}");
         foreach (string path in Directory.GetFiles(SourceDirectory, "*.tilt.bytes"))
         {
-            string payload = PreparePayload(path, "Library/BundledSketchBuild/Payloads");
+            string payload = android ? PreparePayload(path, "Library/BundledSketchBuild/Payloads") : path;
+            string name = android ? Path.GetFileName(payload) : Path.GetFileNameWithoutExtension(path);
             context.AddAdditionalPathToStreamingAssets(Path.GetFullPath(payload),
-                $"{BundledSketchManifest.AssetDirectory}/{Path.GetFileName(payload)}");
+                $"{BundledSketchManifest.AssetDirectory}/{name}");
         }
     }
 
@@ -36,7 +37,12 @@ internal static class BundledSketchBuildData
         Directory.CreateDirectory(outputDirectory);
         string output = Path.Combine(outputDirectory,
             $"{Path.GetFileNameWithoutExtension(sourcePath)}{PayloadSuffix}");
-        using (Stream input = File.OpenRead(sourcePath))
+        return Compress(sourcePath, output);
+    }
+
+    private static string Compress(string source, string output)
+    {
+        using (Stream input = File.OpenRead(source))
         using (Stream destination = File.Create(output))
         using (var compressed = new GZipStream(destination, CompressionLevel.Optimal))
             input.CopyTo(compressed);
@@ -45,26 +51,11 @@ internal static class BundledSketchBuildData
 
     internal static string Prepare(string sourceDirectory, string outputDirectory)
     {
-        var entries = new List<string>();
-        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (string path in Directory.GetFiles(sourceDirectory, "*.tilt.bytes")
-                     .OrderBy(path => path, StringComparer.Ordinal))
-        {
-            string name = Path.GetFileNameWithoutExtension(path);
-            if (!names.Add(name))
-                throw new BuildFailedException($"Duplicate bundled sketch name: {name}");
-
-            if (!new TiltFile(path).IsHeaderValid())
-                throw new BuildFailedException($"Invalid bundled sketch: {path}");
-            entries.Add(name);
-        }
-        if (entries.Count == 0)
-            throw new BuildFailedException($"No bundled sketches found in {sourceDirectory}");
-
+        var manifest = BundledSketchAssets.CreateManifest(sourceDirectory);
         Directory.CreateDirectory(outputDirectory);
         string manifestPath = Path.Combine(outputDirectory, BundledSketchManifest.FileName);
         File.WriteAllText(manifestPath,
-            JsonConvert.SerializeObject(new BundledSketchManifest { Sketches = entries.ToArray() }),
+            JsonConvert.SerializeObject(manifest),
             new UTF8Encoding(false));
         return manifestPath;
     }

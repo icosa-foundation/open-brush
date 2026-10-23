@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -56,11 +57,11 @@ namespace TiltBrush
                 System.Environment.SetEnvironmentVariable("MONO_MANAGED_WATCHER", "3");
             }
 
-#if UNITY_ANDROID && OPEN_BRUSH_VIEWER
-            if (Application.platform == RuntimePlatform.Android)
-            {
-                InitBundledSketchesPath(App.UserSketchPath());
-            }
+#if OPEN_BRUSH_VIEWER
+            var localSketchSet = new FileSketchSet(SketchSetType.User,
+                BundledSketchAssets.ReadManifest().Sketches.Select(entry => new DiskSceneFileInfo(entry)));
+#else
+            var localSketchSet = new FileSketchSet(SketchSetType.User);
 #endif
 
             SketchSet featuredSketchSet = null;
@@ -75,7 +76,7 @@ namespace TiltBrush
 
             m_Sets = new[]
             {
-                new FileSketchSet(SketchSetType.User),
+                localSketchSet,
                 featuredSketchSet,
                 new IcosaSketchSet(this, SketchSetType.Liked, needsLogin: true),
                 new GoogleDriveSketchSet(),
@@ -92,31 +93,6 @@ namespace TiltBrush
         {
             if (!App.InitDirectoryAtPath(sketchesPath)) { return false; }
 
-#if UNITY_ANDROID && OPEN_BRUSH_VIEWER && !UNITY_EDITOR
-            try
-            {
-                var manifest = BundledSketchAssets.ReadManifest();
-                var paths = new List<string>();
-                var namesByPath = new Dictionary<string, string>();
-                foreach (string name in manifest.Sketches)
-                {
-                    // Keep the old identifiers so upgrades preserve seeding/deletion history.
-                    string resourcePath = $"{kDefaultBundledSketchesFolder}/{name}";
-                    paths.Add(resourcePath);
-                    namesByPath.Add(resourcePath, name);
-                }
-                DefaultMediaSeeder.Seed(sketchesPath, paths.ToArray(), null,
-                    "Seeded bundled sketches", App.Instance.HasPlayedBefore,
-                    path => BundledSketchAssets.Read(namesByPath[path]));
-                return true;
-            }
-            catch (System.Exception e) when (e is System.IO.IOException ||
-                e is System.UnauthorizedAccessException || e is Newtonsoft.Json.JsonException)
-            {
-                Debug.LogWarning($"[OB_BUNDLED_SKETCH] Could not seed packaged examples: {e.Message}");
-                return false;
-            }
-#else
             TextAsset[] textAssets =
                 Resources.LoadAll<TextAsset>(kDefaultBundledSketchesFolder);
             try
@@ -145,7 +121,6 @@ namespace TiltBrush
             }
 
             return true;
-#endif
         }
 
         void Start()
