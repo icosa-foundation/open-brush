@@ -40,5 +40,12 @@ namespace TiltBrush
                 return m_ParentBatch.ParentPool.Owner.Canvas;
             }
         }
+
+        public void RecalculateBounds()
+        {
+            m_ParentBatch.Geometry.EnsureGeometryResident();
+            m_Bounds = Batch.GetBoundsFor(
+                m_ParentBatch.Geometry.m_Vertices, m_StartVertIndex, m_VertLength);
+        }
     }
 } // namespace TiltBrush
