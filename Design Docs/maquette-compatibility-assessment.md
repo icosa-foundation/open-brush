@@ -67,8 +67,12 @@ voxel history or tube construction is not established by this save format.
 3. Prioritized gaps and coverage strategy
 
 P0: Native project reader, version normalization, and preservation envelope.
-Open Brush has no Maquette-specific reader. It needs directory/archive loading,
-all entity sections, GUID reference resolution, version-aware normalization,
+Open Brush now has a data-only Maquette reader in `Assets/Scripts/Import` supporting
+directory/archive loading, entity-section indexing and scene-state trees. Standalone
+C# checks read all 174 installed projects (262 scenes, 120,580 states), and six focused
+tests cover archive equivalence, hierarchy, unknown fields and malformed input.
+These are reader checks, not Unity compilation or rendered import validation.
+It still needs content conversion, version-aware normalization,
 asset dependency resolution, and retained unknown fields/sections. Existing
 Open Brush metadata is typed; an explicit persistence extension is needed for
 unsupported source data and provenance. Unsupported content needs a visible

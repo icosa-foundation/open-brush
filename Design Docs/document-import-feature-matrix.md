@@ -45,8 +45,15 @@ ShapesXR frames/states and Maquette scenes/slides/stages are analogous, not inte
 The Open Brush column describes work required or reusable foundations. It is NOT a
 completed/not-completed checklist. Polyhydra's new recipe, Panel and Bend support is
 implemented locally but Unity compilation, tests and source mesh/shading parity remain
-unverified. Native import, the proposed .tilt recipe encoding and opaque-data retention
-are not implemented. The full 3D Shapes branch is not assumed to be present here.
+unverified. Native readers now exist in `Assets/Scripts/Import`: Maquette directory/ZIP
+sections, entity lookup and scene-state trees; ShapesXR MessagePack edit-log replay
+and explicit snapshot-property resolution. Standalone C# checks read all 174 installed
+Maquette projects (262 scenes, 120,580 states) and all three local ShapesXR fixtures;
+the version-5 fixture resolves 10 procedural snapshots. Ten focused reader tests pass
+in the standalone harness. This is not Unity compilation or rendered import validation.
+Legacy ShapesXR state migration, content conversion, the proposed .tilt recipe encoding
+and opaque-data persistence are not implemented. The full 3D Shapes branch is not
+assumed to be present here.
 
 2. FEATURE COMPARISON
 
