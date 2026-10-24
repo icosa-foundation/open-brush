@@ -82,7 +82,8 @@ namespace TiltBrush
         {
             if (string.IsNullOrEmpty(reference)) { return; }
             m_FontReference = reference;
-            var font = Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault(asset => asset.name == reference);
+            var font = Resources.FindObjectsOfTypeAll<TMP_FontAsset>().FirstOrDefault(asset => asset.name == reference)
+                       ?? Resources.Load<TMP_FontAsset>(reference);
             if (font != null) { m_TextMeshPro.font = font; HasUnresolvedFont = false; }
             else if (File.Exists(reference)) { AssignFont(reference); }
             else { HasUnresolvedFont = true; }
