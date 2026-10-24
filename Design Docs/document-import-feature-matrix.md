@@ -1,5 +1,5 @@
 MAQUETTE AND SHAPESXR DOCUMENT IMPORT FEATURE MATRIX
-2026-10-23. Requirements and candidate mappings; not a claim of completed support.
+2026-10-24. Requirements and candidate mappings; not a claim of completed support.
 
 BROAD FEATURE SUMMARY
 
@@ -44,8 +44,8 @@ ShapesXR frames/states and Maquette scenes/slides/stages are analogous, not inte
 
 The Open Brush column describes work required or reusable foundations. It is NOT a
 completed/not-completed checklist. Polyhydra's new recipe, Panel and Bend support is
-implemented locally but Unity compilation, tests and source mesh/shading parity remain
-unverified. Native readers now exist in `Assets/Scripts/Import`: Maquette directory/ZIP
+implemented locally. The checkpoints below distinguish verified compilation/tests
+from still-unverified source mesh/shading parity. Native readers exist in `Assets/Scripts/Import`: Maquette directory/ZIP
 sections, entity lookup and scene-state trees; ShapesXR MessagePack edit-log replay
 and explicit snapshot-property resolution. Standalone C# checks read all 174 installed
 Maquette projects (262 scenes, 120,580 states) and all three local ShapesXR fixtures;
@@ -54,8 +54,8 @@ in the standalone harness. This is not Unity compilation or rendered import vali
 The 3D Shapes generated-model/widget/definition-index foundation has now been ported
 and adapted to the shared recipe encoding, together with the text branch's cloning
 and layer-save fixes. The editable-instance DTO round-trip passes in a narrow standalone
-check using production JSON converters; actual widget creation and .tilt save/reload
-remain unverified. Fresh Unity compilation and Play-mode validation remain pending.
+check using production JSON converters. Checkpoint 17 now covers live Maquette widget
+creation and .tilt save/reload; equivalent ShapesXR runtime validation remains pending.
 Unversioned ShapesXR state migration is not yet implemented; version 3 initial
 views and version 4/5 snapshots are supported by the reader. ShapesXR runtime conversion
 now has initial-state panel, text, referenced-model and image paths; other presets
@@ -171,8 +171,8 @@ Implementation checkpoint, 2026-10-24:
     Standalone checks pass 34 data tests; current importer and main sources compile
     against cached Unity references. These checks do not exercise Unity networking,
     widget creation, visual parity or .tilt save/reload. The agent-owned Editor is
-    alive but remains unreachable through the host Unity CLI; no runtime result is
-    claimed. Animation and scene/frame switching remain deferred.
+    alive but default CLI routing failed at this checkpoint; checkpoint 17 records
+    the later live validation. Animation and scene/frame switching remain deferred.
 
 14. Maquette point and spot lights now use the existing light-widget path. Conversion
     preserves color, intensity, world-space radius, spot angle, switched-off state
@@ -193,9 +193,33 @@ Implementation checkpoint, 2026-10-24:
     frame navigation. The older public sample resolves two panels, two referenced
     assets and one background object; the current sample still resolves ten panels.
     Standalone data checks now pass 37 tests and cached-reference source compilation
-    passes. Maquette master-stage geometry composition remains an identified gap:
-    the installed Disco project has 64 stage content states omitted by slide-only
-    reading. Its stage/slide precedence still needs confirmation before conversion.
+    passes. Subsequent checkpoints cover Maquette master-stage composition and live
+    validation of the implemented Maquette paths.
+16. Static Maquette slide views now include master-stage content. The slide's state
+    wins for shared entity identities, and parent references resolve through the
+    composed hierarchy without changing the original source records. Environment
+    inheritance is independent and remains outstanding. The installed Disco slide
+    resolves 153 distinct entity states rather than 89 slide-only states, retaining
+    all eight point/spot lights. A regression test also exercises a selected group
+    transform overriding the parent of a stage-only entity.
+17. A graphical Unity 6000.6 Editor compiled the current import implementation and
+    passed 65 import-focused EditMode tests. An authored archive fixture then created
+    five procedural families, one text widget, two models, two image placements and
+    three lights, including a hidden image and a disabled pinned spotlight. All 13
+    widgets imported with zero object failures and no font substitution. Its report
+    correctly remains partial for five unmapped procedural `Unlit` materials.
+    Live testing found and fixed Unity missing-component null checks, absolute image
+    cache paths, glTF importer stream disposal and text outline colors being reset
+    by font assignment. The saved .tilt reloaded all 13 widgets; comparison of geometry
+    definitions/instances, models, images, text, lights and layers found zero differences
+    at a numeric tolerance of 1e-6. Two model variants share one binary buffer file.
+    A manually framed thumbnail renders the generated geometry; this is not a native
+    Maquette screenshot comparison or proof of complete material/lighting parity.
+    The owned test Editor and generated library/temp files were cleaned up; ignored
+    validation artifacts remain under `Support/DocumentImportAnalysis/RuntimeFixture`.
+    Brush strokes, remaining material/appearance mappings, environment/navigation and
+    other outstanding content still require work. Animation and scene/frame switching
+    remain deferred.
 
 2. FEATURE COMPARISON
 
