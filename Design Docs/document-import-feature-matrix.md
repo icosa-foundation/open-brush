@@ -55,7 +55,7 @@ The 3D Shapes generated-model/widget/definition-index foundation has now been po
 and adapted to the shared recipe encoding, together with the text branch's cloning
 and layer-save fixes. The editable-instance DTO round-trip passes in a narrow standalone
 check using production JSON converters; actual widget creation and .tilt save/reload
-remain unverified. Full Unity compilation is blocked by an existing USD package error.
+remain unverified. Fresh Unity compilation and Play-mode validation remain pending.
 Legacy ShapesXR state migration and its runtime content conversion are not yet
 implemented. Maquette runtime conversion now has an initial procedural/text path;
 the remaining entity types are reported as unsupported. Animation and scene/frame
@@ -87,21 +87,39 @@ Implementation checkpoint, 2026-10-24:
    differ from the ratio of 100 in the script's field initializer. The adapter maps
    the box and glyph placement; all 910 checked native text states convert without
    missing fallback files. Font substitution and actual TMP rendering remain unverified.
-5. Nineteen focused reader/resource/adapter tests pass in the standalone harness.
+5. Twenty-three focused reader/resource/adapter tests pass in the standalone harness.
    Text layout round-trip and validation pass using production sketch JSON converters.
    Separate compiler invocations for the current data assembly and main application
    sources pass against the existing dependency assemblies, without Unity analyzers.
-   This does not clear the USD package's Unity compilation error or prove Play-mode,
-   widget, renderer, save/reload or end-to-end native import behavior.
-6. `import.maquette` now connects procedural and text conversion to the existing widget
+   This does not prove a fresh Unity compilation, Play-mode execution, widget creation,
+   rendering, save/reload or end-to-end native import behavior. The old USD namespace
+   error is stale relative to the current cached source, which already has the corrected
+   namespace. The agent-owned headless Editor is alive but the CLI currently reports
+   it as unreachable; runtime validation has not been recovered.
+6. `import.maquette` now connects procedural, text and local model conversion to existing widget
    creation paths. It imports the document's selected state at authored placement,
    maps immediate parent groups and locks, and places hidden objects on a hidden layer.
    Text can use the user's installed Segoe UI Semibold font; unavailable fonts are
    reported as substitutions. The returned report counts unsupported object kinds,
    unmapped procedural materials and individual failures. The API command has not
-   been exercised in Play mode. Models, images, drawings, other supported Maquette
+   been exercised in Play mode. Images, drawings, other supported Maquette
    content, and ShapesXR runtime conversion remain to be wired up. This is a partial
    implementation, not a finished or visually verified importer.
+7. Model import now runs asynchronously; `import.status` returns its running/final report.
+   Archives are staged once with relative sidecars intact, while existing local files
+   are read in place. Persistent glTF model variants share source buffers and textures
+   and add intrinsic transform nodes. Ordinary local model widgets and the existing
+   model index provide persistence. glTF/GLB source metadata, including unknown fields
+   and material extensions, is retained by the cache; all 1,402 installed glTF/GLB files
+   pass its standalone copy check. HTTP/data URIs remain references rather than being
+   downloaded by this cache step. Other model formats use the existing model loaders
+   and a one-time glTF conversion; that Unity-dependent conversion remains untested.
+8. Imported media can explicitly skip the model intro animation and use authored poses.
+   Model imports track the current loader's units per metre without changing existing
+   loading behavior: UnityGLTF retains metre units while the FBX/legacy loaders convert
+   to canvas units. Native placement compensates for this difference. The pre-v9 model
+   origin migration moves the widget handle while preserving visible placement. These
+   runtime scale/origin paths still need verification in Unity.
 
 2. FEATURE COMPARISON
 
