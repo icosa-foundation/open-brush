@@ -156,7 +156,26 @@ namespace TiltBrush
             CanvasScript canvas, ReferenceImage reference, NativeDocumentImportReport report)
         {
             var image = ShapesXrImageAdapter.Read(state, App.METERS_TO_UNITS);
-            Color color = ShapesXrColor(document, state, report);
+            var appearance = ShapesXrMaterialAdapter.Read(document, state, ShapesXrMaterialUsage.Image);
+            Color color = new Color(appearance.Color[0], appearance.Color[1], appearance.Color[2], appearance.Color[3]);
+            ImageBlendMode blend;
+            switch (appearance.Blend)
+            {
+                case "opaque": blend = ImageBlendMode.Opaque; break;
+                case "cutout":
+                    blend = ImageBlendMode.Cutout;
+                    UnmappedShapesXrMaterial(report, "ShapesXR image alpha-mask threshold");
+                    break;
+                case "additive": blend = ImageBlendMode.Additive; break;
+                case "multiply":
+                    blend = ImageBlendMode.AlphaBlend;
+                    UnmappedShapesXrMaterial(report, "ShapesXR image multiply blend");
+                    break;
+                default: blend = ImageBlendMode.AlphaBlend; break;
+            }
+            if (appearance.Lit) { UnmappedShapesXrMaterial(report, "ShapesXR lit image"); }
+            if (appearance.Passthrough) { UnmappedShapesXrMaterial(report, "ShapesXR image passthrough"); }
+            foreach (string property in appearance.UnmappedProperties) { UnmappedShapesXrMaterial(report, $"ShapesXR image {property}"); }
             var pose = Pose(image.Placement);
             pose.scale = image.Height;
             var command = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab,
@@ -168,7 +187,7 @@ namespace TiltBrush
             widget.TwoSided = true;
             widget.ApplyLayout(new ImageWidgetLayout
             {
-                Transform = image.GeometryTransform, Tint = new[] { color.r, color.g, color.b }, BlendMode = ImageBlendMode.AlphaBlend
+                Transform = image.GeometryTransform, Tint = new[] { color.r, color.g, color.b }, BlendMode = blend
             });
             widget.LocalTransform = widget.Canvas.Pose.inverse * canvas.Pose * pose;
             command.SetWidgetCost(widget.GetTiltMeterCost());
@@ -212,39 +231,15 @@ namespace TiltBrush
         {
             // Color and opacity fit the existing editable-model representation. Keep the report
             // partial until source shading, textures and secondary material slots are supported.
-            if (!isText)
-            {
-                const string pending = "ShapesXR material appearance";
-                report.UnmappedMaterials.TryGetValue(pending, out int count);
-                report.UnmappedMaterials[pending] = count + 1;
-            }
-            Color color = isText ? new Color(155f / 255, 155f / 255, 155f / 255, 1) : Color.white;
-            if (state.Properties["mid"] != null)
-            {
-                Guid id = ShapesXrDocument.ReadGuid(state.Properties["mid"]);
-                if (!document.Entities.TryGetValue(id, out var material) || !material.Exists || material.Kind != 10)
-                {
-                    throw new InvalidDataException($"Missing ShapesXR material {id}");
-                }
-                var properties = document.ResolveProperties(id, state.StateId);
-                if (properties["m-c"] is JArray rgba)
-                {
-                    if (rgba.Count != 4 || rgba.Any(value => value.Type != JTokenType.Integer || (int)value < 0 || (int)value > 255))
-                    {
-                        throw new InvalidDataException("Invalid ShapesXR material color");
-                    }
-                    color = new Color((int)rgba[0] / 255f, (int)rgba[1] / 255f, (int)rgba[2] / 255f, (int)rgba[3] / 255f);
-                }
-                // Source text explicitly replaces Color32 alpha with the separate opacity.
-                if (isText) { color.a = 1; }
-                color.a *= (float?)properties["m-o"] ?? 1;
-            }
-            color.a *= (float?)state.Properties["obj-vis"] ?? 1;
-            if (float.IsNaN(color.a) || float.IsInfinity(color.a) || color.a < 0 || color.a > 1)
-            {
-                throw new InvalidDataException("Invalid ShapesXR material opacity");
-            }
-            return color;
+            if (!isText) { UnmappedShapesXrMaterial(report, "ShapesXR material appearance"); }
+            var appearance = ShapesXrMaterialAdapter.Read(document, state, isText ? ShapesXrMaterialUsage.Text : ShapesXrMaterialUsage.Panel);
+            return new Color(appearance.Color[0], appearance.Color[1], appearance.Color[2], appearance.Color[3]);
+        }
+
+        private static void UnmappedShapesXrMaterial(NativeDocumentImportReport report, string feature)
+        {
+            report.UnmappedMaterials.TryGetValue(feature, out int count);
+            report.UnmappedMaterials[feature] = count + 1;
         }
     }
 }
