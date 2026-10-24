@@ -216,6 +216,34 @@ namespace TiltBrush.Tests
             Assert.AreEqual(12, child.Placement().Position[0], 1e-5);
         }
 
+        [Test]
+        public void ReadsOnlyResolvedStateInteractionsWithoutSharingSourcePayloads()
+        {
+            var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
+            JArray Interaction(int kind) => new JArray(new JValue(Id(20).ToByteArray()), 0,
+                new JArray(5, new JArray()), new JArray(kind, new JArray("resource")));
+            document.Entities[Id(12)].Properties["st-inr"] = new JArray { Interaction(4) };
+            document.Entities[Id(14)].Properties["st-inr"] = new JArray { Interaction(6) };
+            document.Entities[Id(11)].Properties["st-inr"] = new JArray { Interaction(0) };
+            var interactions = ShapesXrInteractionAdapter.Read(document, new ShapesXrScene(document));
+            Assert.AreEqual(2, interactions.Count);
+            Assert.AreEqual("sound playback", interactions[0].ActionName);
+            Assert.AreEqual(Id(12), interactions[0].StateId);
+            Assert.AreEqual("haptic feedback", interactions[1].ActionName);
+            Assert.AreEqual(Id(14), interactions[1].StateId);
+            interactions[0].ActionData[0] = "changed";
+            Assert.AreEqual("resource", (string)document.Entities[Id(12)].Properties["st-inr"][0][3][1][0]);
+        }
+
+        [Test]
+        public void RejectsMalformedInteractionUnions()
+        {
+            var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
+            document.Entities[Id(12)].Properties["st-inr"] = new JArray { new JArray(
+                new JValue(Id(20).ToByteArray()), 0, new JArray(5), new JArray(4, new JArray())) };
+            Assert.Throws<InvalidDataException>(() => ShapesXrInteractionAdapter.Read(document, new ShapesXrScene(document)));
+        }
+
         private static Guid Id(byte value) => new Guid(Enumerable.Repeat(value, 16).ToArray());
     }
 }

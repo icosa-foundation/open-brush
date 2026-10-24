@@ -29,6 +29,7 @@ namespace TiltBrush
         public int FontSubstitutions { get; internal set; }
         public int FailedObjects { get; internal set; }
         public Dictionary<string, int> UnsupportedObjects { get; } = new Dictionary<string, int>();
+        public Dictionary<string, int> UnsupportedActions { get; } = new Dictionary<string, int>();
         public Dictionary<string, int> UnmappedMaterials { get; } = new Dictionary<string, int>();
         public Dictionary<string, int> UnmappedEnvironment { get; } = new Dictionary<string, int>();
         public List<string> Details { get; } = new List<string>();

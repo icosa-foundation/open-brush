@@ -362,6 +362,16 @@ Implementation checkpoint, 2026-10-24:
     environment, layers and lights metadata and reproduced the same runtime fog
     values. This verifies state and attenuation math, not source-rendered pixels.
 
+27. ShapesXR import now reports interactions attached to the selected state and its
+    background state through `UnsupportedActions` in `import.status`. Sound playback,
+    navigation, look-at, haptics and state transitions are named separately. Malformed
+    interaction data produces a partial import report while object import continues.
+    This reads metadata only: it does not execute actions or import playable audio.
+    The three cached spaces have no saved interactions; authored fixtures verify
+    state scoping, union validation and isolation from source property data. Sixty-one
+    standalone checks and cached-assembly source compilation pass. No fresh Unity
+    runtime validation was performed for this reporting change.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
