@@ -54,6 +54,46 @@ namespace TiltBrush.Tests
         private void Write(string name, JObject data) => File.WriteAllText(Path.Combine(m_Project, name), data.ToString());
 
         [Test]
+        public void GeometryPlacementRetainsHierarchyShearWithRigidWidgetPlacement()
+        {
+            using (var document = new MaquetteDocument(m_Project))
+            {
+                var states = document.ReadStates(document.SelectScene());
+                states[0].Data["cachedTransform"] = JObject.Parse(@"{'position':{'x':10,'y':20,'z':30},
+                    'scale':{'x':2,'y':1,'z':1},'rotation':{'x':0,'y':0,'z':0.70710678,'w':0.70710678}}");
+                states[1].Data["cachedTransform"] = JObject.Parse(@"{'position':{'x':1,'y':0,'z':0},
+                    'rotation':{'x':0,'y':0,'z':0.38268343,'w':0.92387953}}");
+                var placement = new MaquettePlacement(states[1]);
+                Assert.AreEqual(new[] { 10f, 22f, 30f }, placement.Position);
+                var sourceRecipe = GeometryRecipeData.Parse(@"{'Version':1,'Generator':{'Type':'rectangle','Parameters':{}}}");
+                var recipe = placement.BakeLinearTransform(sourceRecipe);
+                recipe.GetSteps(out _, out var operations);
+                System.Numerics.Vector3 Transform(System.Numerics.Vector3 point)
+                {
+                    foreach (var step in operations)
+                    {
+                        var scale = (float[])step.Parameters["scale"];
+                        var rotation = (float[])step.Parameters["rotation"];
+                        point *= new System.Numerics.Vector3(scale[0], scale[1], scale[2]);
+                        point = System.Numerics.Vector3.Transform(point, new System.Numerics.Quaternion(rotation[0], rotation[1], rotation[2], rotation[3]));
+                    }
+                    var r = placement.Rotation;
+                    point = System.Numerics.Vector3.Transform(point, new System.Numerics.Quaternion(r[0], r[1], r[2], r[3]));
+                    return point + new System.Numerics.Vector3(placement.Position[0], placement.Position[1], placement.Position[2]);
+                }
+                var x = Transform(System.Numerics.Vector3.UnitX);
+                var y = Transform(System.Numerics.Vector3.UnitY);
+                Assert.AreEqual(10 - Math.Sqrt(.5), x.X, 1e-5);
+                Assert.AreEqual(22 + Math.Sqrt(2), x.Y, 1e-5);
+                Assert.AreEqual(10 - Math.Sqrt(.5), y.X, 1e-5);
+                Assert.AreEqual(22 - Math.Sqrt(2), y.Y, 1e-5);
+                Assert.AreEqual(-1.5, System.Numerics.Vector3.Dot(x - Transform(System.Numerics.Vector3.Zero), y - Transform(System.Numerics.Vector3.Zero)), 1e-5);
+                Assert.AreEqual(30, x.Z, 1e-5);
+                Assert.IsNull(sourceRecipe.ToJson()["Operations"]);
+            }
+        }
+
+        [Test]
         public void ResolvesSelectedSceneAndPreservesHierarchyAndUnknownValues()
         {
             using (var document = new MaquetteDocument(m_Project))
