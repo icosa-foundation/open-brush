@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -66,7 +67,8 @@ namespace TiltBrush.DocumentImport
             return new GltfAssetDocument(target);
         }
 
-        public void WriteVariant(string path, IEnumerable<GeometryStepData> transforms, float[] centerOffset, float[] color = null)
+        public void WriteVariant(string path, IEnumerable<GeometryStepData> transforms, float[] centerOffset, float[] color = null,
+            IEnumerable<int> excludedNodes = null)
         {
             var data = (JObject)m_Data.DeepClone();
             RebaseResources(data, System.IO.Path.GetDirectoryName(Path), System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(path)));
@@ -77,6 +79,19 @@ namespace TiltBrush.DocumentImport
             var scene = scenes[index] as JObject ?? throw new InvalidDataException("Invalid glTF scene");
             var roots = scene["nodes"] as JArray ?? throw new InvalidDataException("glTF scene has no root nodes");
             roots = (JArray)roots.DeepClone();
+            if (excludedNodes != null)
+            {
+                var excluded = new HashSet<int>(excludedNodes);
+                if (excluded.Any(node => node < 0 || node >= nodes.Count)) { throw new ArgumentException("Excluded glTF node is out of range", nameof(excludedNodes)); }
+                foreach (JObject node in nodes)
+                {
+                    if (node["children"] is JArray children)
+                    {
+                        node["children"] = new JArray(children.Where(child => !excluded.Contains((int)child)));
+                    }
+                }
+                roots = new JArray(roots.Where(root => !excluded.Contains((int)root)));
+            }
             if (centerOffset != null)
             {
                 if (centerOffset.Length != 3) { throw new ArgumentException("Expected three model center components", nameof(centerOffset)); }
