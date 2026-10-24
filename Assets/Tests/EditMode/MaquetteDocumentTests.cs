@@ -37,6 +37,57 @@ namespace TiltBrush.Tests
         public void TearDown() { Directory.Delete(m_Root, true); }
 
         [Test]
+        public void FogInheritanceAndUnitConversionUseTheSelectedEnvironment()
+        {
+            var slide = EnvironmentScene("slide", 2);
+            var master = EnvironmentScene("master", 4);
+            var slideFog = (JObject)slide["sceneSettings"]["Environment"]["Lighting"];
+            var masterFog = (JObject)master["sceneSettings"]["Environment"]["Lighting"];
+            slideFog["FogDensity"] = .03; slideFog["FogEnabled"] = true;
+            masterFog["FogDensity"] = .12; masterFog["FogEnabled"] = true;
+            masterFog["FogColor"] = new JObject { ["r"] = 64f / 255, ["g"] = 128f / 255, ["b"] = 1, ["a"] = 1 };
+            Write("scenes.json", new JObject { ["version"] = 20, ["applyMasterStageEnvironment"] = true,
+                ["slides"] = new JArray(slide), ["stages"] = new JArray(master) });
+            using (var document = new MaquetteDocument(m_Project))
+            {
+                var selected = document.Scenes.Single(value => value.Collection == "slides");
+                var fog = MaquetteEnvironmentAdapter.ReadFog(document, selected);
+                Assert.IsTrue(fog.Enabled);
+                Assert.AreEqual(.12f, fog.Density, 1e-6);
+                Assert.AreEqual(.006f, fog.ToCanvasDensity(10, 2), 1e-6);
+                Assert.AreEqual(64f / 255, fog.Color[0], 1e-6);
+                Assert.AreEqual(.03f, (float)selected.Data["sceneSettings"]["Environment"]["Lighting"]["FogDensity"], 1e-6);
+                document.Sections["scenes.json"]["applyMasterStageEnvironment"] = false;
+                fog = MaquetteEnvironmentAdapter.ReadFog(document, selected);
+                Assert.AreEqual(.003f, fog.ToCanvasDensity(10, 1), 1e-6);
+                Assert.Throws<ArgumentException>(() => fog.ToCanvasDensity(0, 1));
+                Assert.Throws<ArgumentException>(() => fog.ToCanvasDensity(10, float.NaN));
+            }
+        }
+
+        [Test]
+        public void FogLegacyToggleMigrationAndInvalidDensityDoNotAffectSunReading()
+        {
+            foreach (int version in new[] { 12, 13, 20 })
+            {
+                var slide = EnvironmentScene("slide", 2);
+                var lighting = (JObject)slide["sceneSettings"]["Environment"]["Lighting"];
+                lighting["FogEnabled"] = false; lighting["FogDensity"] = .2;
+                Write("scenes.json", new JObject { ["version"] = version, ["slides"] = new JArray(slide) });
+                using (var document = new MaquetteDocument(m_Project))
+                {
+                    var scene = document.SelectScene();
+                    var fog = MaquetteEnvironmentAdapter.ReadFog(document, scene);
+                    Assert.AreEqual(version < 13, fog.Enabled);
+                    Assert.AreEqual(version < 13 ? .02f : 0, fog.ToCanvasDensity(10, 1), 1e-6);
+                    scene.Data["sceneSettings"]["Environment"]["Lighting"]["FogDensity"] = -1;
+                    Assert.Throws<InvalidDataException>(() => MaquetteEnvironmentAdapter.ReadFog(document, scene));
+                    Assert.AreEqual(2, MaquetteEnvironmentAdapter.Read(document, scene).SunIntensity);
+                }
+            }
+        }
+
+        [Test]
         public void EnvironmentInheritanceReplacesTheWholeLightingRecordWithoutChangingSource()
         {
             var slide = EnvironmentScene("slide", 2);

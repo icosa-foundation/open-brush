@@ -12,13 +12,14 @@ namespace TiltBrush
         private static void ImportMaquetteEnvironment(MaquetteDocument document, MaquetteScene scene,
             CanvasScript canvas, NativeDocumentImportReport report)
         {
+            ImportMaquetteFog(document, scene, canvas, report);
             try
             {
                 var environment = MaquetteEnvironmentAdapter.Read(document, scene);
                 if (environment == null) { return; }
                 // These source settings are not represented by importing the sun. Keep them
                 // visible in the result rather than claiming an environment match.
-                foreach (string feature in new[] { "Maquette background", "Maquette fog", "Maquette floor", "Maquette ambient and reflections" })
+                foreach (string feature in new[] { "Maquette background", "Maquette floor", "Maquette ambient and reflections" })
                 {
                     report.UnmappedEnvironment[feature] = 1;
                 }
@@ -49,6 +50,42 @@ namespace TiltBrush
             {
                 report.UnmappedEnvironment["Maquette sun"] = 1;
                 report.Detail($"Maquette environment: {exception.Message}");
+            }
+        }
+
+        private static void ImportMaquetteFog(MaquetteDocument document, MaquetteScene scene,
+            CanvasScript canvas, NativeDocumentImportReport report)
+        {
+            try
+            {
+                var fog = MaquetteEnvironmentAdapter.ReadFog(document, scene);
+                if (fog == null) { return; }
+                if (SceneSettings.m_Instance.IsTransitioning || RenderSettings.fogMode != FogMode.Exponential ||
+                    (fog.Enabled && fog.Density > 0 && !RenderSettings.fog))
+                {
+                    throw new InvalidOperationException("The current Open Brush backdrop does not provide active exponential fog");
+                }
+                float relativeScale = Mathf.Abs(canvas.Pose.scale / App.Scene.Pose.scale);
+                float density = fog.ToCanvasDensity(App.METERS_TO_UNITS, relativeScale);
+                var rgba = fog.Color;
+                var sourceColor = new Color(rgba[0], rgba[1], rgba[2], rgba[3]);
+                // Existing custom-environment metadata stores Color32. Quantize now so a
+                // reload keeps the imported result, and report any precision loss explicitly.
+                Color color = (Color32)sourceColor;
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ModifyFogCommand(color, density, final: true));
+                if (!fog.Enabled && fog.Density > 0)
+                {
+                    report.UnmappedEnvironment["Maquette disabled fog density"] = 1;
+                }
+                if (Mathf.Abs(color.r - sourceColor.r) > 1e-6f || Mathf.Abs(color.g - sourceColor.g) > 1e-6f || Mathf.Abs(color.b - sourceColor.b) > 1e-6f)
+                {
+                    report.UnmappedEnvironment["Maquette fog color precision"] = 1;
+                }
+            }
+            catch (Exception exception)
+            {
+                report.UnmappedEnvironment["Maquette fog"] = 1;
+                report.Detail($"Maquette fog: {exception.Message}");
             }
         }
     }
