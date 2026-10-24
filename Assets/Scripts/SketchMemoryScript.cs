@@ -39,6 +39,7 @@ namespace TiltBrush
         public static SketchMemoryScript m_Instance;
 
         public event Action OperationStackChanged;
+        public event Action UnrecordedChangesChanged;
         public event Action NetworkOperationStackChanged;
         public Action<BaseCommand> CommandPerformed;
         public Action<BaseCommand> CommandUndo;
@@ -300,6 +301,7 @@ namespace TiltBrush
         public void MarkUnrecordedChange()
         {
             ++m_UnrecordedChangesRevision;
+            UnrecordedChangesChanged?.Invoke();
         }
 
         public bool WillVertCountPutUsOverTheMemoryLimit(int numVerts)

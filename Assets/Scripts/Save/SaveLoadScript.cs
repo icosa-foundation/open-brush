@@ -269,11 +269,13 @@ namespace TiltBrush
             m_AutosaveThumbnailBytes = m_AutosaveThumbnail.EncodeToPNG();
 
             SketchMemoryScript.m_Instance.OperationStackChanged += SketchChanged;
+            SketchMemoryScript.m_Instance.UnrecordedChangesChanged += SketchChanged;
         }
 
         protected void OnDestroy()
         {
             SketchMemoryScript.m_Instance.OperationStackChanged -= SketchChanged;
+            SketchMemoryScript.m_Instance.UnrecordedChangesChanged -= SketchChanged;
         }
 
         public void ResetLastFilename()
