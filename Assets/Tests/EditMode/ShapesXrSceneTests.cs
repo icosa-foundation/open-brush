@@ -16,6 +16,41 @@ namespace TiltBrush.Tests
         private const string kSpace = "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";
 
         [Test]
+        public void StrokeReadsBaseGeometryWhileTheSelectedStateControlsPlacement()
+        {
+            var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
+            var properties = document.Entities[Id(1)].Properties;
+            properties["a"] = new JValue(new Guid("3a0fc5ad-c934-4306-8063-60f5940cae06").ToByteArray());
+            properties["p"] = new JArray(new JArray(0, 0, 0), new JArray(0, .1, 0));
+            properties["r"] = new JArray(new JArray(0, 0, 0, 1), new JArray(0, 0, 0, 1));
+            properties["w"] = new JArray(2, 2);
+            document.Entities[Id(4)].Properties["p"] = new JArray();
+            document.Entities[Id(4)].Properties["r"] = new JArray();
+            document.Entities[Id(4)].Properties["w"] = new JArray();
+            document.Entities[Id(4)].Properties["t"] = new JArray(new JArray(3, 0, 0), new JArray(0, 0, 0, 1), new JArray(1, 1, 1));
+            var state = new ShapesXrScene(document).Objects[Id(1)];
+            Assert.IsTrue(ShapesXrStrokeAdapter.IsStroke(state));
+            var ribbon = ShapesXrStrokeAdapter.ReadRibbon(state, 10);
+            Assert.AreEqual(159.6f, ribbon.FirstEdge[0][0], 1e-4);
+            Assert.AreEqual(160.4f, ribbon.SecondEdge[0][0], 1e-4);
+            Assert.AreEqual(1f, ribbon.FirstEdge[1][1], 1e-4);
+        }
+
+        [Test]
+        public void StrokeClassificationUsesPresetIdentityAndRecognizesUnknownExplicitBrushData()
+        {
+            var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
+            document.Entities[Id(1)].Properties["a"] = new JValue(new Guid("3a0fc5ad-c934-4306-8063-60f5940cae06").ToByteArray());
+            Assert.IsTrue(ShapesXrStrokeAdapter.IsStroke(new ShapesXrScene(document).Objects[Id(1)]));
+            document.Entities[Id(1)].Properties["a"] = new JValue(Id(99).ToByteArray());
+            Assert.IsFalse(ShapesXrStrokeAdapter.IsStroke(new ShapesXrScene(document).Objects[Id(1)]));
+            document.Entities[Id(1)].Properties["p"] = new JArray();
+            document.Entities[Id(1)].Properties["r"] = new JArray();
+            document.Entities[Id(1)].Properties["w"] = new JArray();
+            Assert.IsTrue(ShapesXrStrokeAdapter.IsStroke(new ShapesXrScene(document).Objects[Id(1)]));
+        }
+
+        [Test]
         public void NativeGroupPresetRemainsInTheHierarchyWithoutBecomingRenderableContent()
         {
             var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
