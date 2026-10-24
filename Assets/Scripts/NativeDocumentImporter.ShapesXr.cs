@@ -130,7 +130,8 @@ namespace TiltBrush
                             else
                             {
                                 var placement = state.Placement();
-                                var model = await models.ShapesXrModel(resource.Resource, placement);
+                                var model = await models.ShapesXrModel(resource.Resource, placement,
+                                    ShapesXrMaterialAdapter.ReadObjectOpacity(state));
                                 if (canvas == null) { throw new InvalidOperationException("The import canvas was removed while loading a model"); }
                                 var pose = Pose(placement);
                                 pose.scale = App.METERS_TO_UNITS / model.UnitsPerMetre;
