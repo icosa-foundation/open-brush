@@ -40,7 +40,9 @@ namespace TiltBrush
             bool original = primitive.LoadOption == "Original";
             Color linear = color.linear;
             float[] appearance = original ? null : new[] { linear.r, linear.g, linear.b, linear.a };
-            var model = await GetVariant(resource, source, placement, -source.Center, appearance, original ? null : materialId);
+            var colorMaterial = original ? null : MaquetteMaterialAdapter.ModelMaterial(materialId, appearance);
+            var model = await GetVariant(resource, source, placement, -source.Center, appearance, original ? null : materialId,
+                colorMaterial: colorMaterial);
             Vector3 offset = Vector3.zero;
             if (primitive.UsesLegacyMeshOrigin)
             {
@@ -72,7 +74,7 @@ namespace TiltBrush
 
         private async Task<Model> GetVariant(ImportResource resource, Source source, NativePlacement placement,
             Vector3 contentOffset, float[] appearance, string materialId, IEnumerable<int> excludedNodes = null, float opacity = 1,
-            IReadOnlyList<GltfMaterialOverride> materialOverrides = null)
+            IReadOnlyList<GltfMaterialOverride> materialOverrides = null, JObject colorMaterial = null)
         {
             string key = new JObject
             {
@@ -83,14 +85,15 @@ namespace TiltBrush
                 ["color"] = appearance == null ? null : new JArray(appearance),
                 ["material"] = materialId,
                 ["opacity"] = opacity,
-                ["materialOverrides"] = materialOverrides == null ? null : new JArray(System.Linq.Enumerable.Select(materialOverrides, value => value.ToJson()))
+                ["materialOverrides"] = materialOverrides == null ? null : new JArray(System.Linq.Enumerable.Select(materialOverrides, value => value.ToJson())),
+                ["colorMaterial"] = colorMaterial?.DeepClone()
             }.ToString(Formatting.None);
             if (!m_Variants.TryGetValue(key, out var model))
             {
                 string relative = $"{m_RelativeDirectory}/variants/{Guid.NewGuid():N}.gltf";
                 string path = Path.Combine(App.ModelLibraryPath(), relative);
                 source.Document.WriteVariant(path, placement.LinearTransforms,
-                    new[] { contentOffset.x, contentOffset.y, contentOffset.z }, appearance, excludedNodes, opacity, materialOverrides);
+                    new[] { contentOffset.x, contentOffset.y, contentOffset.z }, appearance, excludedNodes, opacity, materialOverrides, colorMaterial);
                 model = new Model(relative);
                 try
                 {

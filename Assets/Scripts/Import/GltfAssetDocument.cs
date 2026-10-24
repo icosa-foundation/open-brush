@@ -83,7 +83,8 @@ namespace TiltBrush.DocumentImport
         }
 
         public void WriteVariant(string path, IEnumerable<GeometryStepData> transforms, float[] centerOffset, float[] color = null,
-            IEnumerable<int> excludedNodes = null, float opacity = 1, IReadOnlyList<GltfMaterialOverride> materialOverrides = null)
+            IEnumerable<int> excludedNodes = null, float opacity = 1, IReadOnlyList<GltfMaterialOverride> materialOverrides = null,
+            JObject colorMaterial = null)
         {
             if (float.IsNaN(opacity) || opacity < 0 || opacity > 1) { throw new ArgumentOutOfRangeException(nameof(opacity)); }
             var data = (JObject)m_Data.DeepClone();
@@ -126,7 +127,7 @@ namespace TiltBrush.DocumentImport
                 });
             }
             scene["nodes"] = roots;
-            if (color != null) { OverrideColor(data, color); }
+            if (color != null) { OverrideColor(data, color, colorMaterial); }
             if (materialOverrides != null) { ApplyMaterialOverrides(data, materialOverrides); }
             if (opacity < 1) { ApplyOpacity(data, opacity); }
             WriteJson(path, data);
@@ -159,14 +160,17 @@ namespace TiltBrush.DocumentImport
                 { throw new InvalidDataException("Invalid glTF material target primitive"); }
                 primitives[entry.PrimitiveIndex]["material"] = materials.Count;
                 materials.Add(entry.Material.DeepClone());
-                if (entry.Material["extensions"] is JObject extensions)
-                {
-                    var used = data["extensionsUsed"] as JArray;
-                    if (used == null) { used = new JArray(); data["extensionsUsed"] = used; }
-                    foreach (var extension in extensions.Properties())
-                    { if (!used.Any(value => (string)value == extension.Name)) { used.Add(extension.Name); } }
-                }
+                RegisterMaterialExtensions(data, entry.Material);
             }
+        }
+
+        private static void RegisterMaterialExtensions(JObject data, JObject material)
+        {
+            if (!(material["extensions"] is JObject extensions) || !extensions.HasValues) { return; }
+            var used = data["extensionsUsed"] as JArray;
+            if (used == null) { used = new JArray(); data["extensionsUsed"] = used; }
+            foreach (var extension in extensions.Properties())
+            { if (!used.Any(value => (string)value == extension.Name)) { used.Add(extension.Name); } }
         }
 
         private static void ApplyOpacity(JObject data, float opacity)
@@ -216,25 +220,32 @@ namespace TiltBrush.DocumentImport
             return new JArray(index);
         }
 
-        private static void OverrideColor(JObject data, float[] color)
+        private static void OverrideColor(JObject data, float[] color, JObject colorMaterial)
         {
             if (color.Length != 4) { throw new ArgumentException("Expected four color components", nameof(color)); }
             var materials = data["materials"] as JArray;
             if (materials == null) { materials = new JArray(); data["materials"] = materials; }
             int material = materials.Count;
-            materials.Add(new JObject
+            var replacement = colorMaterial == null ? new JObject
             {
                 ["name"] = "Imported color", ["alphaMode"] = color[3] < 1 ? "BLEND" : "OPAQUE",
                 ["pbrMetallicRoughness"] = new JObject
                 {
                     ["baseColorFactor"] = new JArray(color), ["metallicFactor"] = 0f, ["roughnessFactor"] = 1f
                 }
-            });
+            } : (JObject)colorMaterial.DeepClone();
+            materials.Add(replacement);
+            RegisterMaterialExtensions(data, replacement);
             if (!(data["meshes"] is JArray meshes)) { return; }
             foreach (JObject mesh in meshes)
             {
                 if (!(mesh["primitives"] is JArray primitives)) { continue; }
-                foreach (JObject primitive in primitives) { primitive["material"] = material; }
+                foreach (JObject primitive in primitives)
+                {
+                    primitive["material"] = material;
+                    // The uniform entity material is independent of the model's old vertex colors.
+                    (primitive["attributes"] as JObject)?.Remove("COLOR_0");
+                }
             }
         }
 

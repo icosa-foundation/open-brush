@@ -412,6 +412,21 @@ Implementation checkpoint, 2026-10-24:
     vertices. Save/reload reproduced identical runtime material/geometry records and
     model/layer/environment/light metadata. No source-rendered pixel parity is claimed.
 
+31. Maquette model imports using its own material mode now map the opaque Lit,
+    Unlit, Matte, Metallic and Plastic presets to independent standard glTF materials.
+    Default/empty IDs select Lit. Opaque presets ignore entity alpha; metallic and
+    roughness factors follow the shipped preset settings. Uniform entity appearance
+    no longer multiplies old mesh vertex colors. Original-material imports retain
+    their materials and vertex colors. No vendor shader/source/asset is shipped.
+    Translucent, additive, edge and other effects remain reported. Explicit disabled
+    model shadow casting is separately reported because it cannot currently be retained.
+    Sixty-four standalone checks and 91 fresh Unity EditMode tests pass. A live
+    seven-model fixture verified all five presets, default Lit, and Original behavior,
+    including color-space conversion, opaque/blended queues and vertex-color handling.
+    Save/reload reproduced identical material/geometry records and model/layer metadata.
+    This verifies state and persistence; it does not establish pixel parity with
+    Maquette's custom lighting shaders.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
