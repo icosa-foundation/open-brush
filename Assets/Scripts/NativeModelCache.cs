@@ -40,28 +40,7 @@ namespace TiltBrush
             bool original = primitive.LoadOption == "Original";
             Color linear = color.linear;
             float[] appearance = original ? null : new[] { linear.r, linear.g, linear.b, linear.a };
-            string key = new JObject
-            {
-                ["source"] = resource.Origin,
-                ["transform"] = new JArray(placement.GetIntrinsicTransform(new[] { 1f, 1f, 1f }, new[] { 0f, 0f, 0f }, 1)),
-                ["color"] = appearance == null ? null : new JArray(appearance),
-                ["material"] = original ? null : materialId
-            }.ToString(Formatting.None);
-            if (!m_Variants.TryGetValue(key, out var model))
-            {
-                string relative = $"{m_RelativeDirectory}/variants/{Guid.NewGuid():N}.gltf";
-                string path = Path.Combine(App.ModelLibraryPath(), relative);
-                source.Document.WriteVariant(path, placement.LinearTransforms,
-                    new[] { -source.Center.x, -source.Center.y, -source.Center.z }, appearance);
-                model = new Model(relative);
-                try
-                {
-                    await model.LoadModelAsync();
-                    if (!model.m_Valid) { throw new InvalidDataException($"Cached model could not be loaded: {model.Error?.message}"); }
-                    m_Variants.Add(key, model);
-                }
-                catch { model.ReleaseFromCatalog(); throw; }
-            }
+            var model = await GetVariant(resource, source, placement, -source.Center, appearance, original ? null : materialId);
             Vector3 offset = Vector3.zero;
             if (primitive.UsesLegacyMeshOrigin)
             {
@@ -74,6 +53,45 @@ namespace TiltBrush
                 offset = new Quaternion(r[0], r[1], r[2], r[3]) * matrix.MultiplyPoint3x4(source.Center);
             }
             return (model, offset);
+        }
+
+        public async Task<Model> ShapesXrModel(ImportResource resource, NativePlacement placement)
+        {
+            if (resource == null) { throw new FileNotFoundException("Missing ShapesXR model resource"); }
+            var source = await GetSource(resource);
+            // ShapesXR preserves the source model's authored origin and materials.
+            var hidden = ShapesXrModelAdapter.HiddenLodNodes(JObject.Parse(File.ReadAllText(source.Document.Path)));
+            return await GetVariant(resource, source, placement, Vector3.zero, null, null, hidden);
+        }
+
+        private async Task<Model> GetVariant(ImportResource resource, Source source, NativePlacement placement,
+            Vector3 contentOffset, float[] appearance, string materialId, IEnumerable<int> excludedNodes = null)
+        {
+            string key = new JObject
+            {
+                ["source"] = resource.Origin,
+                ["transform"] = new JArray(placement.GetIntrinsicTransform(new[] { 1f, 1f, 1f }, new[] { 0f, 0f, 0f }, 1)),
+                ["offset"] = new JArray(contentOffset.x, contentOffset.y, contentOffset.z),
+                ["excludedNodes"] = excludedNodes == null ? null : new JArray(excludedNodes),
+                ["color"] = appearance == null ? null : new JArray(appearance),
+                ["material"] = materialId
+            }.ToString(Formatting.None);
+            if (!m_Variants.TryGetValue(key, out var model))
+            {
+                string relative = $"{m_RelativeDirectory}/variants/{Guid.NewGuid():N}.gltf";
+                string path = Path.Combine(App.ModelLibraryPath(), relative);
+                source.Document.WriteVariant(path, placement.LinearTransforms,
+                    new[] { contentOffset.x, contentOffset.y, contentOffset.z }, appearance, excludedNodes);
+                model = new Model(relative);
+                try
+                {
+                    await model.LoadModelAsync();
+                    if (!model.m_Valid) { throw new InvalidDataException($"Cached model could not be loaded: {model.Error?.message}"); }
+                    m_Variants.Add(key, model);
+                }
+                catch { model.ReleaseFromCatalog(); throw; }
+            }
+            return model;
         }
 
         private async Task<Source> GetSource(ImportResource resource)

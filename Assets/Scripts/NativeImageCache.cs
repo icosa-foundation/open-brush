@@ -24,6 +24,12 @@ namespace TiltBrush
                 return downloaded;
             }
             var resource = assets.Resolve(primitive.Path) ?? throw new FileNotFoundException($"Missing Maquette image: {primitive.Path}");
+            return Get(resource);
+        }
+
+        public ReferenceImage Get(ImportResource resource)
+        {
+            if (resource == null) { throw new FileNotFoundException("Missing native image resource"); }
             if (m_Images.TryGetValue(resource.Origin, out var image)) { return image; }
             string filename = $"{Guid.NewGuid():N}{Path.GetExtension(resource.Name)}";
             string relativePath = $"{m_Directory}/{filename}";

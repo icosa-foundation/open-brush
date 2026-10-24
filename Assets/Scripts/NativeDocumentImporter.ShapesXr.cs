@@ -38,10 +38,14 @@ namespace TiltBrush
                 var scene = new ShapesXrScene(document);
                 report.SourceScene = scene.Name;
                 var groups = new Dictionary<Guid, SketchGroupTag>();
+                using var assets = new NativeShapesXrAssets();
+                using var models = new NativeModelCache(assets.Workspace);
+                var images = new NativeImageCache();
                 foreach (var state in scene.Objects.Values.Where(value => value.HasSnapshot))
                 {
                     bool isText = state.Properties["obj-tx"]?.Type == JTokenType.String;
-                    if (!isText && !(state.Properties["obj-pmugs"] is JArray))
+                    bool isResource = state.Properties["resi"] != null;
+                    if (!isText && !isResource && !(state.Properties["obj-pmugs"] is JArray))
                     {
                         const string kind = "ShapesXR object preset";
                         report.UnsupportedObjects.TryGetValue(kind, out int count);
@@ -56,6 +60,34 @@ namespace TiltBrush
                         {
                             widget = CreateShapesXrText(document, state, canvas, report);
                         }
+                        else if (isResource)
+                        {
+                            var resource = await assets.Get(ShapesXrDocument.ReadGuid(state.Properties["resi"]));
+                            if (canvas == null) { throw new InvalidOperationException("The import canvas was removed while downloading an asset"); }
+                            if (resource.Data.Kind == ShapesXrResourceKind.Image)
+                            {
+                                widget = CreateShapesXrImage(document, state, canvas, images.Get(resource.Resource), report);
+                            }
+                            else
+                            {
+                                var placement = state.Placement();
+                                var model = await models.ShapesXrModel(resource.Resource, placement);
+                                if (canvas == null) { throw new InvalidOperationException("The import canvas was removed while loading a model"); }
+                                var pose = Pose(placement);
+                                pose.scale = App.METERS_TO_UNITS / model.UnitsPerMetre;
+                                var command = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab,
+                                    canvas.Pose * pose, forceTransform: true, skipIntroAnimation: true);
+                                SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                                var modelWidget = (ModelWidget)command.Widget;
+                                modelWidget.Model = model;
+                                modelWidget.Show(true);
+                                command.SetWidgetCost(modelWidget.GetTiltMeterCost());
+                                widget = modelWidget;
+                                const string pending = "ShapesXR model material overrides";
+                                report.UnmappedMaterials.TryGetValue(pending, out int count);
+                                report.UnmappedMaterials[pending] = count + 1;
+                            }
+                        }
                         else
                         {
                             var placement = state.Placement();
@@ -66,7 +98,7 @@ namespace TiltBrush
                                 canvas.Pose * Pose(placement), color: color, skipIntroAnimation: true);
                         }
                         if (widget.Canvas != canvas) { widget.SetCanvas(canvas); }
-                        widget.name = $"ShapesXR {(isText ? "text" : "panel")} {state.Entity.Id}";
+                        widget.name = $"ShapesXR {(isText ? "text" : isResource ? "asset" : "panel")} {state.Entity.Id}";
                         if (state.Parent != null)
                         {
                             if (!groups.TryGetValue(state.ParentId, out var group))
@@ -89,7 +121,15 @@ namespace TiltBrush
                         }
                         if (state.Locked) { widget.PinFromSave(); }
                         if (isText) { report.TextObjects++; }
+                        else if (widget is ImageWidget) { report.ImageObjects++; }
+                        else if (widget is ModelWidget && !(widget is EditableModelWidget)) { report.ModelObjects++; }
                         else { report.ProceduralObjects++; }
+                    }
+                    catch (NotSupportedException exception)
+                    {
+                        report.UnsupportedObjects.TryGetValue(exception.Message, out int count);
+                        report.UnsupportedObjects[exception.Message] = count + 1;
+                        report.Detail($"ShapesXR object {state.Entity.Id}: {exception.Message}");
                     }
                     catch (Exception exception)
                     {
@@ -110,6 +150,29 @@ namespace TiltBrush
                 if (hiddenCanvas != null) { App.Scene.ToggleLayerVisibility(hiddenCanvas); }
             }
             Debug.Log($"[OB_NATIVE_IMPORT] ShapesXR {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, failed={report.FailedObjects}");
+        }
+
+        private static ImageWidget CreateShapesXrImage(ShapesXrDocument document, ShapesXrObjectState state,
+            CanvasScript canvas, ReferenceImage reference, NativeDocumentImportReport report)
+        {
+            var image = ShapesXrImageAdapter.Read(state, App.METERS_TO_UNITS);
+            Color color = ShapesXrColor(document, state, report);
+            var pose = Pose(image.Placement);
+            pose.scale = image.Height;
+            var command = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab,
+                canvas.Pose * pose, forceTransform: true, skipIntroAnimation: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+            var widget = (ImageWidget)command.Widget;
+            widget.ReferenceImage = reference;
+            widget.Opacity = color.a;
+            widget.TwoSided = true;
+            widget.ApplyLayout(new ImageWidgetLayout
+            {
+                Transform = image.GeometryTransform, Tint = new[] { color.r, color.g, color.b }, BlendMode = ImageBlendMode.AlphaBlend
+            });
+            widget.LocalTransform = widget.Canvas.Pose.inverse * canvas.Pose * pose;
+            command.SetWidgetCost(widget.GetTiltMeterCost());
+            return widget;
         }
 
         private static TextWidget CreateShapesXrText(ShapesXrDocument document, ShapesXrObjectState state,
