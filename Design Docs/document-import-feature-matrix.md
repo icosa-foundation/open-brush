@@ -488,6 +488,18 @@ Implementation checkpoint, 2026-10-24:
     against current cached Unity references. This change has not had a fresh live
     Unity import or rendered comparison.
 
+36. Maquette procedural objects now ignore saved color alpha for known opaque
+    presets (Lit/default, Unlit, Matte, Metallic and Plastic), as their source
+    shaders do. Previously alpha below one selected the transparent procedural
+    material. The installed corpus contains 2,603 affected states: 2,349 Lit,
+    120 Matte and 134 Unlit. These counts include repeated scene/state instances.
+    Translucent and unfamiliar presets retain their saved alpha. Existing color
+    metadata persists the effective appearance; no .tilt fields were added.
+    Other procedural material properties remain unmapped and reported pending
+    a shared material representation. Both affected assemblies compile against
+    cached Unity references, and 67 standalone checks pass. A fresh live import
+    and rendered comparison have not been performed for this change.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |

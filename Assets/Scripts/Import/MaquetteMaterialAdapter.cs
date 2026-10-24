@@ -8,8 +8,10 @@ namespace TiltBrush.DocumentImport
 {
     public static class MaquetteMaterialAdapter
     {
-        public static bool IsSupportedModelMaterial(string id) => string.IsNullOrEmpty(id) ||
-            id == "Lit" || id == "Unlit" || id == "Matte" || id == "Metallic" || id == "Plastic" ||
+        public static bool IsOpaqueModelMaterial(string id) => string.IsNullOrEmpty(id) ||
+            id == "Lit" || id == "Unlit" || id == "Matte" || id == "Metallic" || id == "Plastic";
+
+        public static bool IsSupportedModelMaterial(string id) => IsOpaqueModelMaterial(id) ||
             id == "TranslucentLit" || id == "TranslucentUnlit";
 
         /// Maps color, opacity and basic shading to standard glTF properties. Color is linear.

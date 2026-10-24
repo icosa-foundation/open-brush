@@ -43,6 +43,7 @@ namespace TiltBrush.Tests
             {
                 bool translucent = id == "TranslucentLit" || id == "TranslucentUnlit";
                 bool unlit = id == "Unlit" || id == "TranslucentUnlit";
+                Assert.AreEqual(!translucent, MaquetteMaterialAdapter.IsOpaqueModelMaterial(id));
                 var material = MaquetteMaterialAdapter.ModelMaterial(id, color);
                 string output = Path.Combine(m_Root, $"{id}.gltf");
                 document.WriteVariant(output, Array.Empty<GeometryStepData>(), null, color, colorMaterial: material);
@@ -65,6 +66,8 @@ namespace TiltBrush.Tests
             Assert.IsTrue(JToken.DeepEquals(data["materials"], retained["materials"]));
             Assert.AreEqual(data.ToString(), File.ReadAllText(source));
             Assert.IsNull(MaquetteMaterialAdapter.ModelMaterial("Additive", color));
+            Assert.IsFalse(MaquetteMaterialAdapter.IsOpaqueModelMaterial("Additive"));
+            Assert.IsTrue(MaquetteMaterialAdapter.IsOpaqueModelMaterial(null));
             Assert.AreEqual("Imported Lit", (string)MaquetteMaterialAdapter.ModelMaterial(null, color)["name"]);
         }
 

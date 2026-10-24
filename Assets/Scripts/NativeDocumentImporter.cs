@@ -188,9 +188,13 @@ namespace TiltBrush
                             var placement = new MaquettePlacement(state);
                             recipe = placement.BakeLinearTransform(recipe);
                             var mesh = EditableModelManager.Evaluate(recipe);
-                            widget = EditableModelManager.GetOrCreate().GeneratePolyMesh(mesh, recipe,
-                                canvas.Pose * Pose(placement), color: color, skipIntroAnimation: true);
                             string material = (string)state.Data["materialId"];
+                            // Maquette stores alpha even for presets whose shader is opaque.
+                            // Do not accidentally select our transparent procedural material.
+                            Color effectiveColor = color;
+                            if (MaquetteMaterialAdapter.IsOpaqueModelMaterial(material)) { effectiveColor.a = 1; }
+                            widget = EditableModelManager.GetOrCreate().GeneratePolyMesh(mesh, recipe,
+                                canvas.Pose * Pose(placement), color: effectiveColor, skipIntroAnimation: true);
                             if (!string.IsNullOrEmpty(material))
                             {
                                 report.UnmappedMaterials.TryGetValue(material, out int count);
