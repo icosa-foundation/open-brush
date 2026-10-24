@@ -88,6 +88,22 @@ namespace TiltBrush.Tests
             Assert.Throws<InvalidDataException>(() => ShapesXrTextAdapter.Read(state, 10));
         }
 
+        [Test]
+        public void ImagesFitAspectIndependentlyOfAuthoredHierarchyScale()
+        {
+            var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
+            var state = new ShapesXrScene(document).Objects[Id(1)];
+            state.Properties["s"] = new JArray(2, 1, 0);
+            var image = ShapesXrImageAdapter.Read(state, 10);
+            Assert.AreEqual(5, image.Height, 1e-5);
+            Assert.AreEqual(4, image.GeometryTransform[0], 1e-5);
+            Assert.AreEqual(1, image.GeometryTransform[5], 1e-5);
+            state.Properties["s"] = new JArray(.5f, 1, 0);
+            image = ShapesXrImageAdapter.Read(state, 10);
+            Assert.AreEqual(10, image.Height, 1e-5);
+            Assert.AreEqual(1, image.GeometryTransform[0], 1e-5);
+        }
+
         private static Guid Id(byte value) => new Guid(Enumerable.Repeat(value, 16).ToArray());
     }
 }
