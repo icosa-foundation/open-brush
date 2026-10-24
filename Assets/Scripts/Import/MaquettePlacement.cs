@@ -65,6 +65,36 @@ namespace TiltBrush.DocumentImport
             return new GeometryRecipeData(data);
         }
 
+        /// Column-major affine transform for intrinsic content such as text glyphs. Placement
+        /// translation stays on the widget; the content offset, shear and unit conversion stay here.
+        public float[] GetIntrinsicTransform(float[] localScale, float[] localOffset, float unitsPerMetre)
+        {
+            if (!(unitsPerMetre > 0) || float.IsInfinity(unitsPerMetre)) { throw new ArgumentException("Expected a finite positive unit conversion", nameof(unitsPerMetre)); }
+            if (localScale == null || localScale.Length != 3 || localOffset == null || localOffset.Length != 3)
+            {
+                throw new ArgumentException("Expected three intrinsic scale and offset components");
+            }
+            var matrix = Matrix4x4.CreateScale(localScale[0], localScale[1], localScale[2])
+                         * Matrix4x4.CreateTranslation(localOffset[0], localOffset[1], localOffset[2]);
+            foreach (var step in m_LinearSteps)
+            {
+                matrix *= Matrix4x4.CreateScale(step.Scale) * Matrix4x4.CreateFromQuaternion(step.Rotation);
+            }
+            matrix *= Matrix4x4.CreateFromQuaternion(m_InverseRotation) * Matrix4x4.CreateScale(unitsPerMetre);
+            var result = new[]
+            {
+                matrix.M11, matrix.M12, matrix.M13, matrix.M14,
+                matrix.M21, matrix.M22, matrix.M23, matrix.M24,
+                matrix.M31, matrix.M32, matrix.M33, matrix.M34,
+                matrix.M41, matrix.M42, matrix.M43, matrix.M44
+            };
+            foreach (float value in result)
+            {
+                if (float.IsNaN(value) || float.IsInfinity(value)) { throw new InvalidDataException("Invalid intrinsic content transform"); }
+            }
+            return result;
+        }
+
         private static JObject Transform(Vector3 scale, Quaternion rotation) => new JObject
         {
             ["Type"] = "transform", ["Parameters"] = new JObject

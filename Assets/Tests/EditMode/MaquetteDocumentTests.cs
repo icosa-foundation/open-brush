@@ -54,6 +54,42 @@ namespace TiltBrush.Tests
         private void Write(string name, JObject data) => File.WriteAllText(Path.Combine(m_Project, name), data.ToString());
 
         [Test]
+        public void NativeTextUsesTheSelectedStateAndTheShippedBoxOriginAndAutosizingScale()
+        {
+            const string id = "229a97df-4436-410e-8a32-b6386938d06a";
+            Write("textindex.json", new JObject { ["textEntities"] = new JArray(new JObject
+            {
+                ["guid"] = id, ["FontSize"] = 4f, ["FontStyle"] = 0, ["TextAlignmentOption"] = 257
+            }) });
+            var sceneData = JObject.Parse(File.ReadAllText(Path.Combine(m_Project, "scenes.json")));
+            sceneData["slides"][1]["treeRoots"][0]["children"][0]["targetEntityGuid"] = id;
+            Write("scenes.json", sceneData);
+            using (var document = new MaquetteDocument(m_Project))
+            {
+                var states = document.ReadStates(document.SelectScene());
+                states[0].Data["cachedTransform"]["scale"] = JObject.Parse(@"{'x':2,'y':3,'z':1}");
+                states[1].Data["cachedTransform"]["scale"] = JObject.Parse(@"{'x':1,'y':1,'z':1}");
+                states[1].Data["textEntityState"] = JObject.Parse(@"{'Text':'Selected text','FontSize':48.0,
+                    'FontStyle':3,'TextAlignmentOption':258,'IsFontAutoSize':false}");
+                var text = MaquetteTextAdapter.Read(states[1], _ => throw new Exception("Unexpected text file read"), 10);
+                Assert.AreEqual("Selected text", text.Text);
+                Assert.AreEqual(48, text.FontSize);
+                Assert.AreEqual(3, text.FontStyle);
+                Assert.AreEqual(258, text.Alignment);
+                Assert.AreEqual(new[] { 20000f, 30000f }, text.BoxSize);
+                Assert.AreEqual(.001, text.GlyphTransform[0], 1e-8);
+                Assert.AreEqual(.001, text.GlyphTransform[5], 1e-8);
+                Assert.AreEqual(10, text.GlyphTransform[12], 1e-6);
+                Assert.AreEqual(-15, text.GlyphTransform[13], 1e-6);
+                Assert.AreEqual(-.01, text.GlyphTransform[14], 1e-6);
+                states[1].Data.Remove("textEntityState");
+                text = MaquetteTextAdapter.Read(states[1], guid => guid == id ? "File text" : throw new Exception("Wrong text GUID"), 10);
+                Assert.AreEqual("File text", text.Text);
+                Assert.AreEqual(new[] { 200000f, 300000f }, text.BoxSize);
+            }
+        }
+
+        [Test]
         public void GeometryPlacementRetainsHierarchyShearWithRigidWidgetPlacement()
         {
             using (var document = new MaquetteDocument(m_Project))
