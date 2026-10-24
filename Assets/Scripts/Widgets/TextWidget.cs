@@ -63,10 +63,10 @@ namespace TiltBrush
             UpdateCollider();
         }
 
-        public void AssignFont(TMP_FontAsset fontAsset)
+        public void AssignFont(TMP_FontAsset fontAsset, string reference = null)
         {
             m_TextMeshPro.font = fontAsset;
-            m_FontReference = fontAsset.name;
+            m_FontReference = reference ?? fontAsset.name;
             HasUnresolvedFont = false;
         }
 
