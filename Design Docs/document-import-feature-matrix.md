@@ -59,7 +59,7 @@ creation and .tilt save/reload; equivalent ShapesXR runtime validation remains p
 Unversioned ShapesXR state migration is not yet implemented; version 3 initial
 views and version 4/5 snapshots are supported by the reader. ShapesXR runtime conversion
 now has initial-state panel, text, referenced-model and image paths; other presets
-and full material mapping remain outstanding. Maquette runtime conversion has procedural, text, local model, image and point/spot light paths;
+and full material mapping remain outstanding. Maquette runtime conversion has procedural, text, local model, image, ribbon-stroke and point/spot light paths;
 the remaining entity types are reported as unsupported. Animation and scene/frame
 switching are deferred until the other supported
 content is complete. The full 3D Shapes authoring UI is not included.
@@ -261,6 +261,21 @@ Implementation checkpoint, 2026-10-24:
     A fresh Unity recompile including that fix passed 73 import-focused EditMode
     tests. The actual sample group was also resolved live as a container with
     three children. Standalone data checks now total 46, with zero failures.
+
+21. Maquette straight and curved ribbon import now uses ordinary Open Brush strokes
+    and the existing Quill ribbon brush, with no new brush or .tilt fields. Straight
+    drawing retains its first width and final edge orientation. Curved drawing samples
+    both cubic edges independently at the native five subdivisions per span. Mesh
+    recentering, construction rotation, nested transforms, varying width/orientation,
+    groups and hidden layers are retained. A live authored fixture matched both
+    ribbons' boundaries within 0.0000031 metres and all 22 nondegenerate source
+    triangles, including the diagonals of nonplanar quads. This is geometry validation,
+    not a source-rendered material comparison. Lit/other ribbon materials, differing
+    alpha blending and per-stroke locking remain reported gaps. Fresh Unity compilation
+    and 76 focused tests pass. The installed corpus currently decodes 13,342 stroke
+    states; 2,162 pre-v4 straight-stroke states still need their rotation migration.
+    The largest decoded ribbon has 2,511 samples, within the existing brush capacity.
+    Live .tilt stroke save/reload validation is still outstanding at this checkpoint.
 
 2. FEATURE COMPARISON
 
