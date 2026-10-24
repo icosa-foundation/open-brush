@@ -37,6 +37,22 @@ namespace TiltBrush
                 var document = new ShapesXrDocument(path);
                 var scene = new ShapesXrScene(document);
                 report.SourceScene = scene.Name;
+                // State interactions include audio resource references. Surface their actual
+                // presence even while behavior execution and frame navigation are deferred.
+                try
+                {
+                    foreach (var interaction in ShapesXrInteractionAdapter.Read(document, scene))
+                    {
+                        string feature = $"ShapesXR {interaction.ActionName}";
+                        report.UnsupportedActions.TryGetValue(feature, out int count);
+                        report.UnsupportedActions[feature] = count + 1;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    report.UnsupportedActions["ShapesXR malformed interaction data"] = 1;
+                    report.Detail($"ShapesXR interactions: {exception.Message}");
+                }
                 var groups = new Dictionary<Guid, SketchGroupTag>();
                 using var assets = new NativeShapesXrAssets();
                 using var models = new NativeModelCache(assets.Workspace);
@@ -181,7 +197,7 @@ namespace TiltBrush
                     }
                 }
                 report.Status = report.FailedObjects > 0 || report.FontSubstitutions > 0 || report.UnsupportedObjects.Count > 0 ||
-                                report.UnmappedMaterials.Count > 0 ? "partial" : "completed";
+                                report.UnmappedMaterials.Count > 0 || report.UnsupportedActions.Count > 0 ? "partial" : "completed";
             }
             catch (Exception exception)
             {

@@ -67,6 +67,7 @@ namespace TiltBrush.DocumentImport
         private static readonly Guid kBackgroundScene = Guid.Parse("00000000-0000-0000-0000-000000000001");
         public Guid SceneId { get; }
         public Guid StateId { get; }
+        public IReadOnlyList<Guid> ResolvedStateIds { get; }
         public string Name { get; }
         public IReadOnlyDictionary<Guid, ShapesXrObjectState> Objects => m_Objects;
         private readonly Dictionary<Guid, ShapesXrObjectState> m_Objects = new Dictionary<Guid, ShapesXrObjectState>();
@@ -96,6 +97,8 @@ namespace TiltBrush.DocumentImport
             {
                 backgroundState = InitialState(document, background);
             }
+            ResolvedStateIds = Array.AsReadOnly(backgroundState == Guid.Empty || backgroundState == StateId
+                ? new[] { StateId } : new[] { StateId, backgroundState });
             var snapshots = new HashSet<(Guid State, Guid Target)>();
             foreach (var snapshot in document.OfKind(4))
             {
