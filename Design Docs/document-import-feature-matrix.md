@@ -56,8 +56,9 @@ and adapted to the shared recipe encoding, together with the text branch's cloni
 and layer-save fixes. The editable-instance DTO round-trip passes in a narrow standalone
 check using production JSON converters; actual widget creation and .tilt save/reload
 remain unverified. Fresh Unity compilation and Play-mode validation remain pending.
-Legacy ShapesXR state migration and its runtime content conversion are not yet
-implemented. Maquette runtime conversion now has procedural, text, local model and image paths;
+Legacy ShapesXR state migration is not yet implemented. ShapesXR runtime conversion
+now has an initial-state procedural-panel path; other presets and full material mapping
+remain outstanding. Maquette runtime conversion has procedural, text, local model and image paths;
 the remaining entity types are reported as unsupported. Animation and scene/frame
 switching are deferred until the other supported
 content is complete. The full 3D Shapes authoring UI is not included.
@@ -139,6 +140,18 @@ Implementation checkpoint, 2026-10-24:
     layer before assigning saved local coordinates. These widget, shader, export and
     layer-restoration paths compile but still require Unity rendering and save/reload
     validation. No such runtime result is claimed by the adapter or JSON checks.
+
+11. `import.shapesxr` now imports the first state of the first ordered source scene.
+    Procedural panels use the shared recipe and existing editable-model widgets,
+    with hierarchy transforms, visibility, grouping and locks. Color and opacity
+    are read from saved material entities; the import reports partial appearance
+    support while source shading, textures and secondary slots remain unmapped.
+    The supplied version-5 space resolves 10 panel recipes with no data-conversion
+    failures. The standalone data suite passes 27 tests, and both importer and
+    main C# sources compile against cached Unity references. Live widget creation,
+    rendering and save/reload are unverified. No playback or state-switching
+    feature is included; the text and 3D Shapes branches supply the shared widgets,
+    while animation-branch integration is deferred.
 
 2. FEATURE COMPARISON
 
