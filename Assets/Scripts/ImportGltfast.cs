@@ -130,6 +130,7 @@ namespace TiltBrush
                 // because the player loop can't tick while blocked.
                 await gltf.LoadSceneAsync();
                 GameObject go = gltf.CreatedObject;
+                model.UnitsPerMetre = 1f;
 
                 var clips = gltf.CreatedAnimationClips;
                 if (clips != null && clips.Length > 0)
@@ -160,6 +161,7 @@ namespace TiltBrush
                 Debug.LogError($"Failed to import using UnityGltf. Falling back to legacy import.\nUnityGltf Exception: {e}");
                 // Fall back to the older import code
                 GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
+                model.UnitsPerMetre = App.METERS_TO_UNITS;
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);
             }

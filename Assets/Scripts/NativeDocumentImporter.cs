@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
 using TMPro;
 using TiltBrush.DocumentImport;
@@ -15,9 +16,12 @@ namespace TiltBrush
 {
     public sealed class NativeDocumentImportReport
     {
+        public string Status { get; internal set; } = "running";
+        public string Error { get; internal set; }
         public string SourceScene { get; internal set; }
         public int ProceduralObjects { get; internal set; }
         public int TextObjects { get; internal set; }
+        public int ModelObjects { get; internal set; }
         public int HiddenObjects { get; internal set; }
         public int FontSubstitutions { get; internal set; }
         public int FailedObjects { get; internal set; }
@@ -36,9 +40,36 @@ namespace TiltBrush
     /// This imports one resolved state; source scene switching and animation are separate work.
     public static class NativeDocumentImporter
     {
-        public static NativeDocumentImportReport ImportMaquette(string path)
+        private static Task m_ImportTask;
+        public static NativeDocumentImportReport LastReport { get; private set; }
+
+        public static NativeDocumentImportReport BeginMaquette(string path, string contentDirectory = null, string userLibrary = null)
         {
+            if (m_ImportTask != null && !m_ImportTask.IsCompleted) { throw new InvalidOperationException("A native import is already running"); }
             var report = new NativeDocumentImportReport();
+            LastReport = report;
+            m_ImportTask = RunMaquette(path, contentDirectory, userLibrary, report);
+            return report;
+        }
+
+        private static async Task RunMaquette(string path, string contentDirectory, string userLibrary, NativeDocumentImportReport report)
+        {
+            try
+            {
+                await ImportMaquetteAsync(path, contentDirectory, userLibrary, report);
+                report.Status = report.FailedObjects > 0 || report.FontSubstitutions > 0 ||
+                                report.UnsupportedObjects.Count > 0 || report.UnmappedMaterials.Count > 0 ? "partial" : "completed";
+            }
+            catch (Exception exception)
+            {
+                report.Status = "failed";
+                report.Error = exception.Message;
+            }
+            Debug.Log($"[OB_NATIVE_IMPORT] Maquette {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, models={report.ModelObjects}, failed={report.FailedObjects}");
+        }
+
+        private static async Task ImportMaquetteAsync(string path, string contentDirectory, string userLibrary, NativeDocumentImportReport report)
+        {
             var canvas = App.ActiveCanvas;
             if (canvas == null) { throw new InvalidOperationException("No canvas is available for native document import"); }
             var groups = new Dictionary<string, SketchGroupTag>(StringComparer.OrdinalIgnoreCase);
@@ -47,10 +78,14 @@ namespace TiltBrush
             string fontReference = null;
             bool fontPrepared = false;
             using (var document = new MaquetteDocument(path))
+            using (var workspace = new NativeAssetWorkspace(document.Source, Path.Combine(Application.temporaryCachePath, "Native Imports")))
+            using (var models = new NativeModelCache(workspace))
             {
                 var scene = document.SelectScene();
                 report.SourceScene = scene.Name;
-                var assets = new MaquetteAssetResolver(document.Source);
+                userLibrary = userLibrary ?? Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "Maquette");
+                contentDirectory = contentDirectory ?? DefaultMaquetteContent();
+                var assets = new MaquetteAssetResolver(document.Source, userLibrary, contentDirectory);
                 foreach (var state in document.ReadStates(scene))
                 {
                     if (state.Entity?.Kind == MaquetteEntityKind.Group) { continue; }
@@ -61,7 +96,8 @@ namespace TiltBrush
                         report.Detail($"Missing entity {state.EntityId} for state {state.Id}");
                         continue;
                     }
-                    if (state.Entity.Kind != MaquetteEntityKind.Procedural && state.Entity.Kind != MaquetteEntityKind.Text)
+                    if (state.Entity.Kind != MaquetteEntityKind.Procedural && state.Entity.Kind != MaquetteEntityKind.Text &&
+                        state.Entity.Kind != MaquetteEntityKind.Primitive)
                     {
                         string kind = state.Entity.Kind.ToString();
                         report.UnsupportedObjects.TryGetValue(kind, out int count);
@@ -80,7 +116,7 @@ namespace TiltBrush
                             recipe = placement.BakeLinearTransform(recipe);
                             var mesh = EditableModelManager.Evaluate(recipe);
                             widget = EditableModelManager.GetOrCreate().GeneratePolyMesh(mesh, recipe,
-                                canvas.Pose * Pose(placement), color: color);
+                                canvas.Pose * Pose(placement), color: color, skipIntroAnimation: true);
                             string material = (string)state.Data["materialId"];
                             if (!string.IsNullOrEmpty(material))
                             {
@@ -88,7 +124,7 @@ namespace TiltBrush
                                 report.UnmappedMaterials[material] = count + 1;
                             }
                         }
-                        else
+                        else if (state.Entity.Kind == MaquetteEntityKind.Text)
                         {
                             var text = MaquetteTextAdapter.Read(state, id => assets.Text(id)?.ReadText(), App.METERS_TO_UNITS);
                             var layout = new TextWidgetLayout
@@ -107,7 +143,7 @@ namespace TiltBrush
                                 PrepareMaquetteFont(out font, out fontReference, report);
                             }
                             var command = new CreateWidgetCommand(WidgetManager.m_Instance.TextWidgetPrefab,
-                                canvas.Pose * Pose(text.Placement), forceTransform: true);
+                                canvas.Pose * Pose(text.Placement), forceTransform: true, skipIntroAnimation: true);
                             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
                             var textWidget = (TextWidget)command.Widget;
                             if (font != null) { textWidget.AssignFont(font, fontReference); }
@@ -124,6 +160,39 @@ namespace TiltBrush
                             command.SetWidgetCost(textWidget.GetTiltMeterCost());
                             widget = textWidget;
                         }
+                        else
+                        {
+                            int version = (int)document.Sections["primitives.json"]["version"];
+                            var primitive = assets.Primitive(state.Entity.Data, version);
+                            if (primitive.Type != "ModelFile")
+                            {
+                                string kind = $"Primitive:{primitive.Type}";
+                                report.UnsupportedObjects.TryGetValue(kind, out int count);
+                                report.UnsupportedObjects[kind] = count + 1;
+                                continue;
+                            }
+                            var placement = new MaquettePlacement(state);
+                            string materialId = (string)state.Data["materialId"];
+                            var imported = await models.MaquetteModel(assets.Resolve(primitive.Path), primitive, placement, color, materialId);
+                            if (canvas == null) { throw new InvalidOperationException("The import canvas was removed while loading a model"); }
+                            var pose = Pose(placement);
+                            pose.translation += imported.CanvasOffset * App.METERS_TO_UNITS;
+                            pose.scale = App.METERS_TO_UNITS / imported.Model.UnitsPerMetre;
+                            var command = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab,
+                                canvas.Pose * pose, forceTransform: true, skipIntroAnimation: true);
+                            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                            var modelWidget = (ModelWidget)command.Widget;
+                            modelWidget.Model = imported.Model;
+                            modelWidget.Show(true);
+                            command.SetWidgetCost(modelWidget.GetTiltMeterCost());
+                            widget = modelWidget;
+                            if (primitive.LoadOption != "Original" && !string.IsNullOrEmpty(materialId))
+                            {
+                                report.UnmappedMaterials.TryGetValue(materialId, out int count);
+                                report.UnmappedMaterials[materialId] = count + 1;
+                            }
+                        }
+                        if (widget.Canvas != canvas) { widget.SetCanvas(canvas); }
                         widget.name = (string)state.Entity.Data["name"] ?? state.EntityId;
                         if (state.Parent != null)
                         {
@@ -147,7 +216,8 @@ namespace TiltBrush
                         }
                         if ((bool?)state.Data["lockedForEdit"] == true) { widget.PinFromSave(); }
                         if (state.Entity.Kind == MaquetteEntityKind.Procedural) { report.ProceduralObjects++; }
-                        else { report.TextObjects++; }
+                        else if (state.Entity.Kind == MaquetteEntityKind.Text) { report.TextObjects++; }
+                        else { report.ModelObjects++; }
                     }
                     catch (Exception exception)
                     {
@@ -157,7 +227,14 @@ namespace TiltBrush
                 }
             }
             if (hiddenCanvas != null) { App.Scene.ToggleLayerVisibility(hiddenCanvas); }
-            return report;
+        }
+
+        private static string DefaultMaquetteContent()
+        {
+            string root = System.Environment.GetFolderPath(System.Environment.SpecialFolder.ProgramFilesX86);
+            if (string.IsNullOrEmpty(root)) { return null; }
+            string content = Path.Combine(root, "Steam", "steamapps", "common", "Microsoft Maquette", "MaquetteContent");
+            return Directory.Exists(content) ? content : null;
         }
 
         private static TrTransform Pose(MaquettePlacement placement) => TrTransform.TR(
