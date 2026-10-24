@@ -1,0 +1,80 @@
+// Copyright 2026 The Open Brush Authors
+// Licensed under the Apache License, Version 2.0. See LICENSE for details.
+
+using System;
+using System.IO;
+using System.Linq;
+using System.Numerics;
+using Newtonsoft.Json.Linq;
+
+namespace TiltBrush.DocumentImport
+{
+    public sealed class MaquetteEnvironmentData
+    {
+        public string SceneId { get; internal set; }
+        public float[] SunColor { get; internal set; }
+        public float[] SunRotation { get; internal set; }
+        public float SunIntensity { get; internal set; }
+        public bool Shadows { get; internal set; }
+        public JObject Lighting { get; internal set; }
+    }
+
+    public static class MaquetteEnvironmentAdapter
+    {
+        public static MaquetteEnvironmentData Read(MaquetteDocument document, MaquetteScene scene)
+        {
+            if (document == null) { throw new ArgumentNullException(nameof(document)); }
+            if (scene == null || !document.Scenes.Contains(scene)) { throw new ArgumentException("Expected a scene from this document", nameof(scene)); }
+            // Master content is always composed into a slide. Environment inheritance has
+            // its own switch, introduced in v17, and replaces the entire lighting record.
+            if (scene.Collection == "slides" && document.Version >= 17 &&
+                Boolean(document.Sections["scenes.json"]["applyMasterStageEnvironment"], false))
+            {
+                scene = document.Scenes.FirstOrDefault(value => value.Collection == "stages") ?? scene;
+            }
+            var raw = scene.Data["sceneSettings"]?["Environment"]?["Lighting"];
+            if (raw == null || raw.Type == JTokenType.Null) { return null; }
+            if (!(raw is JObject lighting)) { throw new InvalidDataException("Invalid Maquette environment lighting"); }
+            float intensity = document.Version < 12 && scene.Collection != "stages" ? 1.25f : Number(lighting["SunIntensity"]);
+            if (intensity < 0) { throw new InvalidDataException("Negative Maquette sun intensity"); }
+            float[] color = Components(lighting["SunColor"], "rgba");
+            float[] rotation = Components(lighting["SunDirection"], "xyzw");
+            var quaternion = new Quaternion(rotation[0], rotation[1], rotation[2], rotation[3]);
+            if (!(quaternion.LengthSquared() > 0) || float.IsInfinity(quaternion.LengthSquared()))
+            {
+                throw new InvalidDataException("Invalid Maquette sun rotation");
+            }
+            quaternion = Quaternion.Normalize(quaternion);
+            return new MaquetteEnvironmentData
+            {
+                SceneId = scene.Id, Lighting = (JObject)lighting.DeepClone(), SunColor = color,
+                SunRotation = new[] { quaternion.X, quaternion.Y, quaternion.Z, quaternion.W }, SunIntensity = intensity,
+                Shadows = document.Version < 13 && scene.Collection != "stages" || Boolean(lighting["ShadowEnabled"], false)
+            };
+        }
+
+        private static float[] Components(JToken token, string names)
+        {
+            if (!(token is JObject)) { throw new InvalidDataException("Missing Maquette environment color or rotation"); }
+            return names.Select(name => Number(token[name.ToString()])).ToArray();
+        }
+
+        private static float Number(JToken token)
+        {
+            if (token == null || token.Type != JTokenType.Float && token.Type != JTokenType.Integer)
+            {
+                throw new InvalidDataException("Expected a numeric Maquette environment value");
+            }
+            float value = (float)token;
+            if (float.IsNaN(value) || float.IsInfinity(value)) { throw new InvalidDataException("Maquette environment values must be finite"); }
+            return value;
+        }
+
+        private static bool Boolean(JToken token, bool fallback)
+        {
+            if (token == null) { return fallback; }
+            if (token.Type != JTokenType.Boolean) { throw new InvalidDataException("Expected a Maquette environment flag"); }
+            return (bool)token;
+        }
+    }
+}
