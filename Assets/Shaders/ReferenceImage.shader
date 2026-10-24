@@ -20,12 +20,18 @@ Shader "Custom/ReferenceImage" {
         _Cutoff("Alpha cutoff", Range(0,1)) = 0.5
         _Grayscale("Grayscale", Float) = 0
 		[Enum(UnityEngine.Rendering.CullMode)] _CullMode ("CullMode", Int) = 2
+        [HideInInspector] _SrcBlend("Source blend", Int) = 1
+        [HideInInspector] _DstBlend("Destination blend", Int) = 0
+        [HideInInspector] _ZWrite("Depth write", Int) = 1
+        [HideInInspector] _ImageBlendMode("Image blend mode", Float) = 0
     }
     SubShader {
     Tags { "RenderPipeline"="UniversalPipeline" }
         Tags{ "Queue" = "AlphaTest+20" "IgnoreProjector" = "True" "RenderType" = "TransparentCutout" }
         Pass {
             Cull [_CullMode]
+            Blend [_SrcBlend] [_DstBlend]
+            ZWrite [_ZWrite]
 
             CGPROGRAM
             #pragma vertex vert
@@ -42,6 +48,7 @@ Shader "Custom/ReferenceImage" {
             uniform float _Activated;
             uniform float _Aspect;
             uniform float _Cutoff;
+            uniform float _ImageBlendMode;
             uniform float _Grayscale;
             uniform float _LegacyReferenceImageTint;
 
@@ -92,7 +99,7 @@ Shader "Custom/ReferenceImage" {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 float4 c = tex2D(_MainTex, i.uv) * _Color;
 
-                if (c.a < _Cutoff) discard;
+                if (_ImageBlendMode < 0.5 && c.a < _Cutoff) discard;
 
                 // Config flag for reproducing old, broken behavior.
                 if (_LegacyReferenceImageTint > 0) {
@@ -101,12 +108,16 @@ Shader "Custom/ReferenceImage" {
 
                 if (_Grayscale == 1) {
                     float grayscale = dot(c.rgb, float3(0.3, 0.59, 0.11));
-                    return encodeHdr(grayscale);
+                    float4 grayOutput = encodeHdr(grayscale);
+                    if (_ImageBlendMode > 1.5) grayOutput.a = c.a;
+                    return grayOutput;
                 }
 
                 FRAG_MOBILESELECT(c)
 
-                return encodeHdr(c);
+                float4 output = encodeHdr(c);
+                if (_ImageBlendMode > 1.5) output.a = c.a;
+                return output;
             }
             ENDCG
         }

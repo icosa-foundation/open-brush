@@ -33,6 +33,134 @@ namespace TiltBrush
         private ReferenceImage m_ReferenceImage;
         private bool m_TextureAcquired;
         private bool m_PreserveCustomSize;
+        private Color m_Tint = Color.white;
+        private ImageBlendMode m_BlendMode;
+        private float[] m_GeometryTransform;
+        private Mesh m_OriginalPlaneMesh;
+        private Mesh m_OwnedPlaneMesh;
+
+        /// RGB multiplier. Alpha remains controlled by Opacity.
+        public Color TintColor
+        {
+            get => m_Tint;
+            set
+            {
+                m_Tint = new Color(value.r, value.g, value.b, 1);
+                m_ImageQuad.material.color = new Color(value.r, value.g, value.b, m_Opacity);
+            }
+        }
+
+        public ImageWidgetLayout CaptureLayout()
+        {
+            bool tinted = m_Tint != Color.white;
+            if (m_GeometryTransform == null && !tinted && m_BlendMode == ImageBlendMode.Cutout) { return null; }
+            return new ImageWidgetLayout
+            {
+                Transform = m_GeometryTransform == null ? null : (float[])m_GeometryTransform.Clone(),
+                Tint = tinted ? new[] { m_Tint.r, m_Tint.g, m_Tint.b } : null,
+                BlendMode = m_BlendMode
+            };
+        }
+
+        public void ApplyLayout(ImageWidgetLayout layout)
+        {
+            layout?.Validate();
+            m_GeometryTransform = layout?.Transform == null ? null : (float[])layout.Transform.Clone();
+            var tint = layout?.Tint;
+            TintColor = tint == null ? Color.white : new Color(tint[0], tint[1], tint[2], 1);
+            SetBlendMode(layout?.BlendMode ?? ImageBlendMode.Cutout);
+            var filter = m_ImageQuad.GetComponent<MeshFilter>();
+            if (m_OriginalPlaneMesh == null) { m_OriginalPlaneMesh = filter.sharedMesh; }
+            Mesh previous = m_OwnedPlaneMesh;
+            m_OwnedPlaneMesh = null;
+            if (m_GeometryTransform != null)
+            {
+                var matrix = Matrix4x4.identity;
+                for (int i = 0; i < 16; ++i) { matrix[i] = m_GeometryTransform[i]; }
+                m_OwnedPlaneMesh = Instantiate(m_OriginalPlaneMesh);
+                m_OwnedPlaneMesh.name = "Image geometry";
+                var vertices = m_OwnedPlaneMesh.vertices;
+                var normals = m_OwnedPlaneMesh.normals;
+                var tangents = m_OwnedPlaneMesh.tangents;
+                var normalMatrix = matrix.inverse.transpose;
+                Vector3 fallback = -Vector3.Cross(matrix.MultiplyVector(Vector3.right), matrix.MultiplyVector(Vector3.up)).normalized;
+                for (int i = 0; i < vertices.Length; ++i)
+                {
+                    vertices[i] = matrix.MultiplyPoint3x4(vertices[i]);
+                    if (i < normals.Length)
+                    {
+                        var normal = normalMatrix.MultiplyVector(normals[i]).normalized;
+                        normals[i] = normal == Vector3.zero ? fallback : normal;
+                    }
+                    if (i < tangents.Length)
+                    {
+                        var direction = matrix.MultiplyVector(tangents[i]).normalized;
+                        tangents[i] = new Vector4(direction.x, direction.y, direction.z, tangents[i].w * (matrix.determinant < 0 ? -1 : 1));
+                    }
+                }
+                var triangles = m_OwnedPlaneMesh.triangles;
+                for (int i = 0; i < triangles.Length; i += 3)
+                {
+                    int a = triangles[i], b = triangles[i + 1], c = triangles[i + 2];
+                    Vector3 normal = a < normals.Length ? normals[a] : fallback;
+                    if (Vector3.Dot(Vector3.Cross(vertices[b] - vertices[a], vertices[c] - vertices[a]), normal) < 0)
+                    {
+                        triangles[i + 1] = c;
+                        triangles[i + 2] = b;
+                    }
+                }
+                m_OwnedPlaneMesh.vertices = vertices;
+                m_OwnedPlaneMesh.normals = normals;
+                m_OwnedPlaneMesh.tangents = tangents;
+                m_OwnedPlaneMesh.triangles = triangles;
+                m_OwnedPlaneMesh.RecalculateBounds();
+            }
+            filter.sharedMesh = m_OwnedPlaneMesh != null ? m_OwnedPlaneMesh : m_OriginalPlaneMesh;
+            if (m_SnapGhost != null)
+            {
+                var ghost = m_SnapGhost.GetComponent<MeshFilter>();
+                if (ghost != null) { ghost.sharedMesh = filter.sharedMesh; }
+            }
+            if (previous != null) { Destroy(previous); }
+            m_BoxCollider.transform.localPosition = Vector3.zero;
+            m_BoxCollider.center = Vector3.zero;
+            UpdateScale();
+        }
+
+        private void SetBlendMode(ImageBlendMode mode)
+        {
+            m_BlendMode = mode;
+            var material = m_ImageQuad.material;
+            bool transparent = mode == ImageBlendMode.AlphaBlend || mode == ImageBlendMode.Additive;
+            material.SetFloat("_ImageBlendMode", (int)mode);
+            material.SetInt("_SrcBlend", (int)(transparent ? UnityEngine.Rendering.BlendMode.SrcAlpha : UnityEngine.Rendering.BlendMode.One));
+            material.SetInt("_DstBlend", (int)(mode == ImageBlendMode.Additive ? UnityEngine.Rendering.BlendMode.One :
+                transparent ? UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha : UnityEngine.Rendering.BlendMode.Zero));
+            material.SetInt("_ZWrite", transparent ? 0 : 1);
+            material.SetOverrideTag("RenderType", transparent ? "Transparent" : mode == ImageBlendMode.Cutout ? "TransparentCutout" : "Opaque");
+            material.renderQueue = transparent ? (int)UnityEngine.Rendering.RenderQueue.Transparent :
+                mode == ImageBlendMode.Cutout ? (int)UnityEngine.Rendering.RenderQueue.AlphaTest + 20 : (int)UnityEngine.Rendering.RenderQueue.Geometry;
+        }
+
+        protected override void UpdateScale()
+        {
+            base.UpdateScale();
+            if (m_OwnedPlaneMesh == null) { return; }
+            float size = m_Size * m_TransitionScale;
+            m_ImageQuad.transform.localScale = Vector3.one * size;
+            var bounds = m_OwnedPlaneMesh.bounds;
+            var extent = bounds.size * Mathf.Abs(size) + Vector3.one * m_ColliderBloat + m_ContainerBloat * 2;
+            m_BoxCollider.transform.localScale = Vector3.one;
+            m_BoxCollider.transform.localPosition = bounds.center * size;
+            m_BoxCollider.size = new Vector3(Mathf.Max(.001f, extent.x), Mathf.Max(.001f, extent.y), Mathf.Max(.001f, extent.z));
+            if (m_SnapGhost != null) { m_SnapGhost.localScale = Vector3.one * size; }
+        }
+
+        public override void OnPreDestroy()
+        {
+            if (m_OwnedPlaneMesh != null) { Destroy(m_OwnedPlaneMesh); }
+            base.OnPreDestroy();
+        }
 
         public string FileName =>
             m_ReferenceImage?.FileName ?? m_MissingInfo?.fileName ?? Unused("Error");
@@ -136,6 +264,8 @@ namespace TiltBrush
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
             clone.CloneInitialMaterials(this);
+            clone.TwoSided = TwoSided;
+            clone.ApplyLayout(CaptureLayout());
             clone.TrySetCanvasKeywordsFromObject(transform);
             return clone;
         }
@@ -319,6 +449,7 @@ namespace TiltBrush
             var extrusionDepths = tiltImage.ExtrusionDepths;
             var extrusionColors = tiltImage.ExtrusionColors;
             var opacities = tiltImage.Opacities;
+            var layouts = tiltImage.Layouts;
             for (int i = 0; i < tiltImage.Transforms.Length; ++i)
             {
                 ImageWidget image = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
@@ -362,6 +493,7 @@ namespace TiltBrush
                 int layerId = (layerIds == null || i >= layerIds.Length) ? 0 : layerIds[i];
                 image.TwoSided = twoSidedFlags != null && i < twoSidedFlags.Length && twoSidedFlags[i];
                 image.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
+                if (layouts != null && i < layouts.Length) { image.ApplyLayout(layouts[i]); }
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(image.GetTiltMeterCost(), up: true);
             }
         }

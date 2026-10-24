@@ -700,6 +700,8 @@ namespace TiltBrush
         // Per-image alpha multiplier; only written when an image is not fully opaque.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public float[] Opacities { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public ImageWidgetLayout[] Layouts { get; set; }
     }
 
     [Serializable]
