@@ -11,6 +11,21 @@ using Newtonsoft.Json.Linq;
 
 namespace TiltBrush.DocumentImport
 {
+    /// Assigns one material to a node's primitive without changing shared mesh buffers.
+    public sealed class GltfMaterialOverride
+    {
+        public int NodeIndex { get; }
+        public int PrimitiveIndex { get; }
+        public JObject Material { get; }
+        public GltfMaterialOverride(int nodeIndex, int primitiveIndex, JObject material)
+        {
+            NodeIndex = nodeIndex;
+            PrimitiveIndex = primitiveIndex;
+            Material = (JObject)(material ?? throw new ArgumentNullException(nameof(material))).DeepClone();
+        }
+        public JArray ToJson() => new JArray(NodeIndex, PrimitiveIndex, Material.DeepClone());
+    }
+
     /// A persistent glTF source plus shared resources. Variants add node transforms and optional
     /// appearance overrides without making another copy of the vertex/index/texture data.
     public sealed class GltfAssetDocument
@@ -68,7 +83,7 @@ namespace TiltBrush.DocumentImport
         }
 
         public void WriteVariant(string path, IEnumerable<GeometryStepData> transforms, float[] centerOffset, float[] color = null,
-            IEnumerable<int> excludedNodes = null, float opacity = 1)
+            IEnumerable<int> excludedNodes = null, float opacity = 1, IReadOnlyList<GltfMaterialOverride> materialOverrides = null)
         {
             if (float.IsNaN(opacity) || opacity < 0 || opacity > 1) { throw new ArgumentOutOfRangeException(nameof(opacity)); }
             var data = (JObject)m_Data.DeepClone();
@@ -112,8 +127,46 @@ namespace TiltBrush.DocumentImport
             }
             scene["nodes"] = roots;
             if (color != null) { OverrideColor(data, color); }
+            if (materialOverrides != null) { ApplyMaterialOverrides(data, materialOverrides); }
             if (opacity < 1) { ApplyOpacity(data, opacity); }
             WriteJson(path, data);
+        }
+
+        private static void ApplyMaterialOverrides(JObject data, IReadOnlyList<GltfMaterialOverride> overrides)
+        {
+            var nodes = (JArray)data["nodes"];
+            var meshes = data["meshes"] as JArray ?? throw new InvalidDataException("Missing glTF meshes");
+            var materials = data["materials"] as JArray;
+            if (materials == null) { materials = new JArray(); data["materials"] = materials; }
+            var clones = new Dictionary<int, JObject>();
+            var assigned = new HashSet<(int, int)>();
+            foreach (var entry in overrides)
+            {
+                if (entry.NodeIndex < 0 || entry.NodeIndex >= nodes.Count ||
+                    !assigned.Add((entry.NodeIndex, entry.PrimitiveIndex)))
+                { throw new InvalidDataException("Invalid or duplicate glTF material assignment"); }
+                if (!clones.TryGetValue(entry.NodeIndex, out var mesh))
+                {
+                    int original = (int?)nodes[entry.NodeIndex]["mesh"] ?? -1;
+                    if (original < 0 || original >= meshes.Count) { throw new InvalidDataException("Invalid glTF material target mesh"); }
+                    mesh = (JObject)meshes[original].DeepClone();
+                    nodes[entry.NodeIndex]["mesh"] = meshes.Count;
+                    meshes.Add(mesh);
+                    clones.Add(entry.NodeIndex, mesh);
+                }
+                var primitives = mesh["primitives"] as JArray ?? throw new InvalidDataException("Missing glTF primitives");
+                if (entry.PrimitiveIndex < 0 || entry.PrimitiveIndex >= primitives.Count)
+                { throw new InvalidDataException("Invalid glTF material target primitive"); }
+                primitives[entry.PrimitiveIndex]["material"] = materials.Count;
+                materials.Add(entry.Material.DeepClone());
+                if (entry.Material["extensions"] is JObject extensions)
+                {
+                    var used = data["extensionsUsed"] as JArray;
+                    if (used == null) { used = new JArray(); data["extensionsUsed"] = used; }
+                    foreach (var extension in extensions.Properties())
+                    { if (!used.Any(value => (string)value == extension.Name)) { used.Add(extension.Name); } }
+                }
+            }
         }
 
         private static void ApplyOpacity(JObject data, float opacity)

@@ -71,6 +71,58 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void ModelOverridesFollowOriginalGroupsWithoutChangingOtherMeshInstances()
+        {
+            var gltf = JObject.Parse(@"{'asset':{'version':'2.0'},'scene':0,'scenes':[{'nodes':[0,1,2]}],
+                'nodes':[{'mesh':0,'extras':{'original_index':7}},{'mesh':0,'extras':{'original_index':2}},
+                    {'mesh':0,'extras':{'original_index':9}}],
+                'meshes':[{'primitives':[{'attributes':{'POSITION':0},'material':0}]}],
+                'materials':[{'alphaMode':'BLEND','pbrMetallicRoughness':{'baseColorFactor':[0.2,0.3,0.4,0.8],
+                    'baseColorTexture':{'index':0},'metallicFactor':0.4,'roughnessFactor':0.7},
+                    'extensions':{'KHR_materials_unlit':{}}}],'extensionsUsed':['KHR_materials_unlit']}");
+            string unchanged = gltf.ToString();
+            var properties = new System.Collections.Generic.Dictionary<int, JObject>
+            {
+                [0] = JObject.Parse(@"{'m-c':[255,0,0,255],'m-o':0.5,'m-met':0.8,'m-rou':0.2,'m-st':0}"),
+                [1] = JObject.Parse(@"{'m-c':[0,0,255,255],'m-o':1,'m-st':1,'m-e':[0,0,0,255]}"),
+                [9] = new JObject()
+            };
+            var overrides = ShapesXrModelAdapter.MaterialOverrides(gltf, properties, out var unmapped);
+            Assert.AreEqual(2, overrides.Count);
+            Assert.AreEqual(1, overrides[0].NodeIndex);
+            Assert.AreEqual(0, overrides[1].NodeIndex);
+            CollectionAssert.AreEquivalent(new[] { "m-e", "material slot 9 has no mesh group" }, unmapped);
+            Assert.IsNull(overrides[0].Material["extensions"]["KHR_materials_unlit"]);
+            Assert.IsNotNull(overrides[1].Material["extensions"]["KHR_materials_unlit"]);
+            Assert.AreEqual(.8f, (float)overrides[0].Material["pbrMetallicRoughness"]["metallicFactor"], 1e-6);
+            string root = Path.Combine(Path.GetTempPath(), $"OpenBrush-MaterialOverride-{Guid.NewGuid():N}");
+            Directory.CreateDirectory(root);
+            try
+            {
+                string source = Path.Combine(root, "source.gltf"), variant = Path.Combine(root, "variant.gltf");
+                File.WriteAllText(source, unchanged);
+                new GltfAssetDocument(source).WriteVariant(variant, Array.Empty<GeometryStepData>(), null,
+                    opacity: .5f, materialOverrides: overrides);
+                var output = JObject.Parse(File.ReadAllText(variant));
+                var nodes = (JArray)output["nodes"];
+                Assert.AreEqual(0, (int)nodes[2]["mesh"]);
+                Assert.AreNotEqual((int)nodes[0]["mesh"], (int)nodes[1]["mesh"]);
+                foreach (var entry in overrides)
+                {
+                    int materialIndex = (int)output["meshes"][(int)nodes[entry.NodeIndex]["mesh"]]["primitives"][0]["material"];
+                    var material = output["materials"][materialIndex];
+                    Assert.AreEqual(entry.NodeIndex == 1 ? .25 : .5,
+                        (double)material["pbrMetallicRoughness"]["baseColorFactor"][3], 1e-6);
+                    Assert.IsTrue(JToken.DeepEquals(gltf["materials"][0]["pbrMetallicRoughness"]["baseColorTexture"],
+                        material["pbrMetallicRoughness"]["baseColorTexture"]));
+                }
+                Assert.AreEqual(unchanged, gltf.ToString());
+                Assert.AreEqual(unchanged, File.ReadAllText(source));
+            }
+            finally { Directory.Delete(root, true); }
+        }
+
+        [Test]
         public void ResolvesLocalSidecarsWithinTheirResourceRoot()
         {
             string root = Path.Combine(Path.GetTempPath(), $"OpenBrush-LocalResource-{Guid.NewGuid():N}");
