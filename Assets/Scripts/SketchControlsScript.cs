@@ -5507,7 +5507,15 @@ namespace TiltBrush
             BaseTool.ToolType tool = m_SketchSurfacePanel.GetCurrentToolType();
             if (tool == BaseTool.ToolType.EmptyTool || IsViewOnlyNavigationTool(tool))
             {
-                m_SketchSurfacePanel.EnableDefaultTool();
+                if (IsViewOnly)
+                {
+                    // The no-headset default is FlyTool; the sketch picker needs no navigation.
+                    m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.EmptyTool);
+                }
+                else
+                {
+                    m_SketchSurfacePanel.EnableDefaultTool();
+                }
             }
         }
 
