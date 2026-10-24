@@ -342,6 +342,26 @@ Implementation checkpoint, 2026-10-24:
     Fifty-seven standalone checks and cached-assembly source compilation pass;
     this reporting/conversion update has not had fresh Unity runtime validation.
 
+26. Maquette fog now maps to Open Brush's existing custom-environment fog fields.
+    The shipped Maquette scene uses Unity exponential fog (mode 2); Open Brush's
+    environment implementation fixes its fog to the same mode. Density conversion
+    accounts for metres-to-canvas units and the destination layer's scale relative
+    to the scene; Open Brush applies scene scale when setting the renderer density.
+    The source's v13 toggle migration and master-stage environment inheritance are
+    respected. Fog parsing is independent of sun parsing, so invalid fog does not
+    discard valid sunlight. No .tilt field was added.
+    Disabled fog maps to zero density. A nonzero source density retained behind its
+    disabled toggle is reported as unrepresented, and color precision lost through
+    existing Color32 metadata is also reported. An active source fog on a backdrop
+    with fog disabled is reported without changing its density; the importer does
+    not silently change the backdrop to enable it.
+    All 262 installed scene environments parse with fog, including 31 with active
+    fog. Fifty-nine standalone checks and 86 fresh Unity EditMode tests pass. A live
+    fixture with scene scale 3 and canvas scale 6 matched the source's attenuation
+    coefficient, color and exponential mode. Saving/reloading retained identical
+    environment, layers and lights metadata and reproduced the same runtime fog
+    values. This verifies state and attenuation math, not source-rendered pixels.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
