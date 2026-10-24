@@ -22,6 +22,8 @@ namespace TiltBrush
 {
     public class SdfStencil : StencilWidget
     {
+        internal event Action ComponentsChanged;
+
         private const double k_VisualRefreshIntervalSeconds = 0.1;
         private const double k_FinalVisualRefreshDelaySeconds = 0.2;
 #if UNITY_ANDROID
@@ -770,6 +772,7 @@ namespace TiltBrush
             m_SdfManager.RequestUpdate(onlySendBufferOnChange: false);
             UpdateBoundsCollider();
             RequestVisualRefresh();
+            ComponentsChanged?.Invoke();
         }
 
         private void RequestVisualRefresh()

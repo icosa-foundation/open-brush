@@ -69,9 +69,11 @@ namespace TiltBrush
             m_DimensionIndex = dimensionIndex;
             m_TransformValueIndex = Mathf.Clamp(transformValueIndex, 0, 6);
             m_Page = Mathf.Clamp(page, 0, 5);
+            ClampComponentSelection();
             ConfigureButtons();
             Active = this;
             App.Switchboard.SelectionChanged += OnSelectionChanged;
+            m_Stencil.ComponentsChanged += Refresh;
             Refresh();
         }
 
@@ -79,6 +81,10 @@ namespace TiltBrush
             SketchControlsScript.GlobalCommands command, int commandParam = -1)
         {
             int count = m_Stencil != null ? m_Stencil.ComponentCount : 0;
+            if (count > 0 && (m_ComponentIndex < 0 || m_ComponentIndex >= count))
+            {
+                return false;
+            }
             switch (command)
             {
                 case SketchControlsScript.GlobalCommands.SdfPreviousComponent:
@@ -917,7 +923,7 @@ namespace TiltBrush
             m_ComponentHandleDimensions.Clear();
         }
 
-        private void Refresh()
+        private void ClampComponentSelection()
         {
             int count = m_Stencil != null ? m_Stencil.ComponentCount : 0;
             m_ComponentIndex = count == 0
@@ -925,7 +931,12 @@ namespace TiltBrush
                 : Mathf.Clamp(m_ComponentIndex, 0, count - 1);
             m_DimensionIndex = Mathf.Clamp(
                 m_DimensionIndex, 0, Mathf.Max(0, DimensionCount - 1));
+        }
 
+        private void Refresh()
+        {
+            ClampComponentSelection();
+            int count = m_Stencil != null ? m_Stencil.ComponentCount : 0;
             string label = "SDF Components\nEmpty";
             if (m_ComponentIndex >= 0)
             {
@@ -968,6 +979,10 @@ namespace TiltBrush
         private void OnDestroy()
         {
             App.Switchboard.SelectionChanged -= OnSelectionChanged;
+            if (m_Stencil != null)
+            {
+                m_Stencil.ComponentsChanged -= Refresh;
+            }
             DestroyComponentHandles();
             if (Active == this)
             {
