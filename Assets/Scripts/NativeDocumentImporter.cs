@@ -39,7 +39,7 @@ namespace TiltBrush
 
     /// Native content conversion uses the ordinary widgets and their shared .tilt persistence.
     /// This imports one resolved state; source scene switching and animation are separate work.
-    public static class NativeDocumentImporter
+    public static partial class NativeDocumentImporter
     {
         private static Task m_ImportTask;
         public static NativeDocumentImportReport LastReport { get; private set; }
@@ -277,7 +277,7 @@ namespace TiltBrush
             return Directory.Exists(content) ? content : null;
         }
 
-        private static TrTransform Pose(MaquettePlacement placement) => TrTransform.TR(
+        private static TrTransform Pose(NativePlacement placement) => TrTransform.TR(
             new Vector3(placement.Position[0], placement.Position[1], placement.Position[2]) * App.METERS_TO_UNITS,
             new Quaternion(placement.Rotation[0], placement.Rotation[1], placement.Rotation[2], placement.Rotation[3]));
 
