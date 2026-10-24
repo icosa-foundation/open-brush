@@ -221,6 +221,15 @@ Implementation checkpoint, 2026-10-24:
     other outstanding content still require work. Animation and scene/frame switching
     remain deferred.
 
+18. ShapesXR image materials now select existing opaque, alpha-blended and additive
+    image modes from texture-alpha mode, blend mode, opacity and object visibility.
+    Opaque materials ignore stored color alpha; text retains its separate opacity
+    semantics. Missing or empty material IDs use source defaults. Multiply blending,
+    lit images, passthrough, differing alpha-mask thresholds and remaining material
+    properties are reported as incomplete. Forty-two standalone data checks and
+    cached-assembly source compilation pass; this material update has not yet had
+    fresh Unity compilation or live import validation.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
