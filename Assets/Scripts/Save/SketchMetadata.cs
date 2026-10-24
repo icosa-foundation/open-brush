@@ -663,6 +663,10 @@ namespace TiltBrush
         public Color? LightColor;
         public float? Intensity;
         public LightType PunctualLightType;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool? Enabled;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public LightShadows? Shadows;
         public float? Range;
         public float? InnerConeAngle;
         public float? OuterConeAngle;
