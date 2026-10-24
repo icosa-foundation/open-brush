@@ -115,7 +115,7 @@ namespace TiltBrush
                 // path into a doubled, invalid path (e.g. ".../id/C:/.../id/file.gltf2"), which fails
                 // File.Exists and spams "Invalid AssetDatabase path" before falling through.
                 options.DataLoader = new FileLoader(Path.GetDirectoryName(fullPath));
-                GLTFSceneImporter gltf = new GLTFSceneImporter(Path.GetFileName(fullPath), options);
+                using var gltf = new GLTFSceneImporter(Path.GetFileName(fullPath), options);
 
                 if (options.ImportContext.TryGetPlugin<UnityGLTF.Plugins.OpenBrushAudioImportContext>(out var audioPlugin))
                     audioPlugin.GltfDirectory = Path.GetDirectoryName(localPath);
