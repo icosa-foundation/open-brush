@@ -20,6 +20,23 @@ namespace TiltBrush.DocumentImport
 
     public static class MaquetteStrokeAdapter
     {
+        public static string ReadMaterialId(MaquetteDocument document, MaquetteState state)
+        {
+            if (state?.Entity?.Kind != MaquetteEntityKind.Stroke) { throw new ArgumentException("Expected a Maquette stroke", nameof(state)); }
+            int version = (int?)document.Sections["brushes.json"]["version"] ?? document.Version;
+            if (version >= 18) { return (string)state.Data["materialId"]; }
+            // Before material entities, the native loader replaces each state's material
+            // with the stroke definition's legacy brush type, even when a state has an ID.
+            string type = (string)state.Entity.Data["brushType"];
+            if (version < 11)
+            {
+                if (type == "OpaqueLit") { type = "DefaultLit"; }
+                if (type == "OpaqueUnlit") { type = "DefaultUnlit"; }
+            }
+            else if (type?.StartsWith("Brush_", StringComparison.Ordinal) == true) { type = type.Substring(6); }
+            return type == "DefaultLit" ? "Lit" : type == "DefaultUnlit" ? "Unlit" : null;
+        }
+
         public static NativeRibbonData Read(MaquetteDocument document, MaquetteState state, float unitsPerMetre)
         {
             if (state?.Entity?.Kind != MaquetteEntityKind.Stroke) { throw new ArgumentException("Expected a Maquette stroke", nameof(state)); }

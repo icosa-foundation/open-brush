@@ -138,7 +138,7 @@ namespace TiltBrush
                             CreateNativeRibbon(ribbon, strokeCanvas, strokeColor, group);
                             report.StrokeObjects++;
                             if (!state.Visible) { report.HiddenObjects++; }
-                            string material = (string)state.Data["materialId"];
+                            string material = MaquetteStrokeAdapter.ReadMaterialId(document, state);
                             if (material != "Unlit" && material != "DefaultUnlit")
                             {
                                 string feature = $"Maquette ribbon material {material ?? "default"}";
