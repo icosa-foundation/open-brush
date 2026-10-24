@@ -10,6 +10,23 @@ namespace TiltBrush
     public static partial class NativeDocumentImporter
     {
         private static readonly Guid kNativeRibbonBrush = new Guid("c4f8b3e2-9d1a-5e7f-4c3b-8a6d2f9e1c7b");
+        private static readonly Guid kFacetedPointHullBrush = new Guid("d0139741-9d31-43f1-a98d-a388c70b4a63");
+        private static readonly Guid kSmoothPointHullBrush = new Guid("fa35383b-64a7-4561-9dc7-cc547a752318");
+
+        private static Stroke CreateNativeHull(NativeHullData hull, CanvasScript canvas, Color color, SketchGroupTag group)
+        {
+            var brush = BrushCatalog.m_Instance.GetBrush(hull.Faceted ? kFacetedPointHullBrush : kSmoothPointHullBrush);
+            if (brush == null) { throw new InvalidOperationException("The point hull brush is unavailable"); }
+            uint time = (uint)(App.Instance.CurrentSketchTime * 1000);
+            var points = new PointerManager.ControlPoint[hull.Points.Length];
+            for (int i = 0; i < points.Length; ++i)
+            {
+                var p = hull.Points[i];
+                points[i] = new PointerManager.ControlPoint { m_Pos = new Vector3(p[0], p[1], p[2]),
+                    m_Orient = Quaternion.identity, m_Pressure = 1, m_TimestampMs = time };
+            }
+            return CreateNativeStroke(points, brush, 1, canvas, color, group);
+        }
 
         private static Stroke CreateNativeRibbon(NativeRibbonData ribbon, CanvasScript canvas, Color color, SketchGroupTag group)
         {
@@ -47,11 +64,17 @@ namespace TiltBrush
                 };
                 previousRight = right; previousUp = up;
             }
+            return CreateNativeStroke(points, brush, maximumWidth, canvas, color, group);
+        }
+
+        private static Stroke CreateNativeStroke(PointerManager.ControlPoint[] points, BrushDescriptor brush,
+            float size, CanvasScript canvas, Color color, SketchGroupTag group)
+        {
             var stroke = new Stroke
             {
                 m_Type = Stroke.Type.NotCreated, m_IntendedCanvas = canvas, m_BrushGuid = brush.m_Guid,
-                m_BrushScale = 1, m_BrushSize = maximumWidth, m_Color = color, m_Seed = 0,
-                m_ControlPoints = points, m_ControlPointsToDrop = new bool[count]
+                m_BrushScale = 1, m_BrushSize = size, m_Color = color, m_Seed = 0,
+                m_ControlPoints = points, m_ControlPointsToDrop = new bool[points.Length]
             };
             stroke.Recreate(canvas: canvas);
             stroke.Group = group;

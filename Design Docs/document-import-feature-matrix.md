@@ -58,7 +58,7 @@ check using production JSON converters. Checkpoint 17 now covers live Maquette w
 creation and .tilt save/reload; equivalent ShapesXR runtime validation remains pending.
 Unversioned ShapesXR state migration is not yet implemented; version 3 initial
 views and version 4/5 snapshots are supported by the reader. ShapesXR runtime conversion
-now has initial-state panel, text, referenced-model, image and Tape-stroke paths; other presets
+now has initial-state panel, text, referenced-model, image, Tape-stroke and hull paths; other presets
 and full material mapping remain outstanding. Maquette runtime conversion has procedural, text, local model, image, ribbon-stroke and point/spot light paths;
 the remaining entity types are reported as unsupported. Animation and scene/frame
 switching are deferred until the other supported
@@ -310,6 +310,28 @@ Implementation checkpoint, 2026-10-24:
     `ModelIndex` and layer metadata were identical. This verifies loading/persistence,
     not source-rendered appearance. Fresh Unity compilation passed 82 focused
     EditMode tests; standalone data checks total 55 with zero failures.
+
+24. ShapesXR hard and smooth hulls now use the existing Open Brush `HullBrush` with
+    two hidden compatibility configurations. Point conversion consumes saved `p`
+    coordinates directly; the usual rounded-volume inflation and simplification
+    are disabled. No vendor mesh, new generator or .tilt field was added. The native
+    hull importer does not use preset scale/profile values to expand this cloud.
+    Source hierarchy transforms, hard/smooth intent, grouping and hidden layers
+    are retained in ordinary strokes. The smooth normal calculation remains a
+    fidelity gap: Open Brush uses angle-weighted normals, while the native importer
+    invokes Unity normal recalculation in the original object coordinates. The
+    runtime result reports `ShapesXR smooth hull normals` in addition to incomplete
+    material appearance. An irregular tetrahedron under nested nonuniform transforms
+    demonstrated a maximum normal difference of about 56 degrees; no shading match
+    is claimed.
+    Live import created both hulls with zero failures. Each retained its four extreme
+    vertices without inflation or emitting the interior point, four triangles and
+    the analytically expected volume. Hard mode emitted twelve face vertices and
+    smooth mode four shared vertices. Saving/reloading retained identical stroke
+    records, visibility and grouping, and reproduced the same vertices and volumes.
+    Unity compiled the implementation and passed 83 focused EditMode tests; 56
+    standalone data checks pass. Marker, Leaf, Oil, Square and Tube strokes remain
+    outstanding.
 
 2. FEATURE COMPARISON
 

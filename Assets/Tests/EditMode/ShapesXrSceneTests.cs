@@ -16,6 +16,30 @@ namespace TiltBrush.Tests
         private const string kSpace = "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";
 
         [Test]
+        public void HullUsesTheSavedCloudWithoutPresetInflationAndRetainsStyle()
+        {
+            var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
+            var properties = document.Entities[Id(1)].Properties;
+            properties["p"] = new JArray(new JArray(0, 0, 0), new JArray(1, 0, 0), new JArray(0, 1, 0), new JArray(0, 0, 1));
+            foreach (var preset in new[] { (Id: "52e6a9ed-5910-41e2-a640-b079b046d68c", Faceted: true),
+                (Id: "bfefc705-731b-48eb-8476-a0fa4a5fdde2", Faceted: false) })
+            {
+                properties["a"] = new JValue(new Guid(preset.Id).ToByteArray());
+                var state = new ShapesXrScene(document).Objects[Id(1)];
+                Assert.IsTrue(ShapesXrStrokeAdapter.IsStroke(state));
+                Assert.IsTrue(ShapesXrStrokeAdapter.IsHull(state));
+                var hull = ShapesXrStrokeAdapter.ReadHull(state, 10);
+                Assert.AreEqual(preset.Faceted, hull.Faceted);
+                CollectionAssert.AreEqual(new[] { 120f, 0f, 0f }, hull.Points[0]);
+                CollectionAssert.AreEqual(new[] { 140f, 0f, 0f }, hull.Points[1]);
+                CollectionAssert.AreEqual(new[] { 120f, 10f, 0f }, hull.Points[2]);
+                CollectionAssert.AreEqual(new[] { 120f, 0f, 10f }, hull.Points[3]);
+            }
+            ((JArray)properties["p"]).RemoveAt(3);
+            Assert.Throws<InvalidDataException>(() => ShapesXrStrokeAdapter.ReadHull(new ShapesXrScene(document).Objects[Id(1)], 10));
+        }
+
+        [Test]
         public void StrokeReadsBaseGeometryWhileTheSelectedStateControlsPlacement()
         {
             var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));

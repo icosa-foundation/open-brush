@@ -59,7 +59,9 @@ namespace TiltBrush
                     {
                         if (isStroke)
                         {
-                            var ribbon = ShapesXrStrokeAdapter.ReadRibbon(state, App.METERS_TO_UNITS);
+                            bool isHull = ShapesXrStrokeAdapter.IsHull(state);
+                            var hull = isHull ? ShapesXrStrokeAdapter.ReadHull(state, App.METERS_TO_UNITS) : null;
+                            var ribbon = isHull ? null : ShapesXrStrokeAdapter.ReadRibbon(state, App.METERS_TO_UNITS);
                             var strokeCanvas = canvas;
                             if (!state.Visible)
                             {
@@ -77,7 +79,15 @@ namespace TiltBrush
                                 group = App.GroupManager.NewUnusedGroup();
                                 groups.Add(state.ParentId, group);
                             }
-                            CreateNativeRibbon(ribbon, strokeCanvas, ShapesXrColor(document, state, report), group);
+                            var color = ShapesXrColor(document, state, report);
+                            if (isHull) { CreateNativeHull(hull, strokeCanvas, color, group); }
+                            else { CreateNativeRibbon(ribbon, strokeCanvas, color, group); }
+                            if (isHull && !hull.Faceted)
+                            {
+                                const string feature = "ShapesXR smooth hull normals";
+                                report.UnmappedMaterials.TryGetValue(feature, out int count);
+                                report.UnmappedMaterials[feature] = count + 1;
+                            }
                             report.StrokeObjects++;
                             if (!state.Visible) { report.HiddenObjects++; }
                             if (state.Locked)

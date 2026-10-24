@@ -9,9 +9,17 @@ using Newtonsoft.Json.Linq;
 
 namespace TiltBrush.DocumentImport
 {
+    public sealed class NativeHullData
+    {
+        public float[][] Points { get; internal set; }
+        public bool Faceted { get; internal set; }
+    }
+
     public static class ShapesXrStrokeAdapter
     {
         private static readonly Guid kTape = new Guid("3a0fc5ad-c934-4306-8063-60f5940cae06");
+        private static readonly Guid kHullHard = new Guid("52e6a9ed-5910-41e2-a640-b079b046d68c");
+        private static readonly Guid kHullSmooth = new Guid("bfefc705-731b-48eb-8476-a0fa4a5fdde2");
         // Protocol identities classify native objects; no preset meshes, curves or textures
         // are included. Unsupported profiles must not silently become constant-width tape.
         private static readonly Dictionary<Guid, string> kPresets = new Dictionary<Guid, string>
@@ -22,9 +30,34 @@ namespace TiltBrush.DocumentImport
             [new Guid("ffc21f71-b084-4b71-bae7-9c0234a0f5a5")] = "Oil",
             [new Guid("2f630332-2f1f-47a2-88d7-8c5504bf2c5c")] = "Square",
             [new Guid("75e6d4f0-40e3-4563-b919-69e25bdd6221")] = "Tube",
-            [new Guid("52e6a9ed-5910-41e2-a640-b079b046d68c")] = "Hull Hard",
-            [new Guid("bfefc705-731b-48eb-8476-a0fa4a5fdde2")] = "Hull Smooth"
+            [kHullHard] = "Hull Hard",
+            [kHullSmooth] = "Hull Smooth"
         };
+
+        public static bool IsHull(ShapesXrObjectState state)
+        {
+            if (!(state?.Entity.Properties["a"] is JValue value) || !(value.Value is byte[] bytes) || bytes.Length != 16) { return false; }
+            Guid preset = new Guid(bytes);
+            return preset == kHullHard || preset == kHullSmooth;
+        }
+
+        public static NativeHullData ReadHull(ShapesXrObjectState state, float unitsPerMetre)
+        {
+            if (!IsHull(state)) { throw new ArgumentException("Expected a ShapesXR hull stroke", nameof(state)); }
+            var properties = state.Entity.Properties;
+            if (!(properties["p"] is JArray points) || points.Count < 4) { throw new InvalidDataException("ShapesXR hull needs at least four points"); }
+            var placement = state.Placement();
+            var result = new float[points.Count][];
+            for (int i = 0; i < points.Count; ++i)
+            {
+                if (!(points[i] is JArray p) || p.Count != 3) { throw new InvalidDataException("Invalid ShapesXR hull point"); }
+                var point = placement.TransformPoint(new Vector3(Number(p[0]), Number(p[1]), Number(p[2])), unitsPerMetre);
+                result[i] = new[] { point.X, point.Y, point.Z };
+            }
+            // The native hull generator consumes p directly. Its brush preset's scale,
+            // profile and sweep parameters do not inflate or orient this saved cloud.
+            return new NativeHullData { Points = result, Faceted = ShapesXrDocument.ReadGuid(properties["a"]) == kHullHard };
+        }
 
         public static bool IsStroke(ShapesXrObjectState state)
         {
