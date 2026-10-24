@@ -576,6 +576,31 @@ Implementation checkpoint, 2026-10-24:
     This verifies the mapped state and shader behavior, rather than full source-rendered
     pixel parity across platforms or lighting configurations.
 
+41. ShapesXR stroke-profile assessment against the shipped Unity integration:
+
+    | Preset | Cross-section points | Width profile | Current import coverage |
+    | --- | --- | --- | --- |
+    | Tape | 2 | Constant 1 | Supported by the existing ribbon path. |
+    | Marker | 2 | Authored curve, 4 keys | Unsupported; Tape's current parameter mapping would lose its taper and section orientation. |
+    | Leaf | 12, open | Authored curve, 3 keys | Unsupported; not equivalent to an ordinary flat ribbon. |
+    | Oil | 12, closed | Authored curve, 5 keys | Unsupported; needs its profile and width variation. |
+    | Square | 12, closed | Authored curve, 3 keys | Unsupported; not equivalent to a four-sided constant-width tube. |
+    | Tube | 12, closed | Constant 1 | Unsupported; the existing circular tube brush is not an exact profile match. |
+
+    The Tube preset uses rounded coordinates such as 0.86, rather than the
+    approximately 0.866025 produced by regular circle sampling. Changing only the
+    existing Quill tube brush's segment count would therefore change the geometry.
+    Marker can use paired-edge ribbon geometry once its width-profile data is
+    resolved; identifying it as a ribbon does not remove that dependency.
+    No vendor profile curves or cross-section assets have been added to the project.
+    Preset cap and smoothing flags alone do not establish native-application
+    cap or smoothing requirements; those remain subject to fixture validation.
+    The selected states of cached real spaces c198see1 and 265ez32e contain no stroke
+    instances. The legacy a54rscc7 space cannot be inspected through the production
+    state reader because its unversioned state migration remains unimplemented;
+    it is not claimed to be stroke-free. Current profile validation consequently
+    uses authored fixtures and numerical comparisons, rather than real saved stroke samples.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
