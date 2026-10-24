@@ -26,6 +26,8 @@ namespace TiltBrush
         private PlayGltfAnimationClip m_Gltf;
         private AudioSource[] m_Audio = new AudioSource[0];
         private float[] m_AudioGains = new float[0];
+        private bool[] m_AudioPendingSeek = new bool[0];
+        private double m_AudioSeekTime;
         private float m_Volume = 1;
         private float? m_SpatialBlend;
         private bool m_Paused;
@@ -69,6 +71,8 @@ namespace TiltBrush
             m_Native = root.GetComponent<NativeImmReference>();
             m_Gltf = root.GetComponentInChildren<PlayGltfAnimationClip>(true);
             m_Audio = root.GetComponentsInChildren<AudioSource>(true);
+            m_AudioPendingSeek = new bool[m_Audio.Length];
+            m_AudioSeekTime = 0;
             m_AudioGains = m_Audio.Select(source => source.GetComponent<GltfAudioSource>()?.Gain ?? source.volume).ToArray();
         }
 
@@ -127,6 +131,19 @@ namespace TiltBrush
             for (int i = 0; i < m_Audio.Length; i++)
             {
                 if (m_Audio[i] == null) continue;
+                if (m_AudioPendingSeek[i] && m_Audio[i].clip != null && m_InitialState == null)
+                {
+                    // A mixed glTF restore can finish before this clip's asynchronous load.
+                    double time = m_Paused ? m_AudioSeekTime :
+                        m_Gltf != null && m_Gltf.Initialized ? m_Gltf.Time : Math.Max(m_AudioSeekTime, Time);
+                    SeekAudio(m_Audio[i], time);
+                    m_AudioPendingSeek[i] = false;
+                    if (!m_Paused)
+                    {
+                        m_Audio[i].UnPause();
+                        if (!m_Audio[i].isPlaying) m_Audio[i].Play();
+                    }
+                }
                 m_Audio[i].volume = m_AudioGains[i] * m_Volume;
                 m_Audio[i].mute = m_Volume <= 0.005f;
                 if (m_SpatialBlend.HasValue) m_Audio[i].spatialBlend = m_SpatialBlend.Value;
@@ -189,6 +206,7 @@ namespace TiltBrush
                     if (!playing) source.Pause();
                     else { source.UnPause(); if (!source.isPlaying) source.Play(); }
                 }
+                if (m_InitialState == null) m_AudioSeekTime = Time;
             }
         }
         public void SetVolume(float volume)
@@ -233,10 +251,18 @@ namespace TiltBrush
         }
         private void SeekInternal(double time)
         {
+            m_AudioSeekTime = time;
             if (m_Gltf != null && m_Gltf.Initialized) m_Gltf.Time = Math.Min(time, m_Gltf.Length);
-            foreach (var source in m_Audio)
-                if (source != null && source.clip != null)
-                    source.time = (float)Math.Min(time, Math.Max(0, source.clip.length - 1.0 / source.clip.frequency));
+            for (int i = 0; i < m_Audio.Length; i++)
+            {
+                var source = m_Audio[i];
+                m_AudioPendingSeek[i] = source != null && source.clip == null;
+                if (source != null && source.clip != null) SeekAudio(source, time);
+            }
+        }
+        private static void SeekAudio(AudioSource source, double time)
+        {
+            source.time = (float)Math.Min(time, Math.Max(0, source.clip.length - 1.0 / source.clip.frequency));
         }
         public void SelectClip(string clip)
         {
