@@ -472,6 +472,22 @@ Implementation checkpoint, 2026-10-24:
     while sharing the original plane mesh. Export-material checks retained RGBA and
     blend modes; these checks do not claim source-rendered visual parity.
 
+35. Maquette external models using TranslucentLit or TranslucentUnlit now receive
+    alpha-blended glTF materials with their saved linear RGBA, rather than an opaque
+    fallback. TranslucentUnlit uses KHR_materials_unlit; TranslucentLit uses a fully
+    rough nonmetallic approximation. Original-material imports remain unchanged.
+    Inspection of the installed D3D11 shader programs confirms color alpha is used
+    directly, without a preset transparency multiplier. Both source passes use
+    SrcAlpha/OneMinusSrcAlpha blending, back-face culling and depth writing.
+    Their depth-writing behavior remains reported: ordinary glTF transparency does
+    not reproduce it. The lit shader's vertex lighting and the unlit shader's tiny
+    alpha-discard threshold (0.0001) also remain reported differences. No Maquette
+    shader code or assets were added to the project. Sixty-seven standalone checks
+    pass, including generated-variant assertions for both presets, retained source
+    materials and unlit extension registration. Both affected assemblies compile
+    against current cached Unity references. This change has not had a fresh live
+    Unity import or rendered comparison.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |

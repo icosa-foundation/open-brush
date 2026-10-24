@@ -31,7 +31,7 @@ namespace TiltBrush.Tests
             'extensionsUsed':['KHR_materials_transmission'],'extras':{'future':42}}");
 
         [Test]
-        public void MaquetteOpaqueModelPresetsReplaceAppearanceWithoutRecoloringOriginalModels()
+        public void MaquetteModelPresetsReplaceAppearanceWithoutRecoloringOriginalModels()
         {
             var data = Model();
             data["meshes"][0]["primitives"][0]["attributes"]["COLOR_0"] = 0;
@@ -39,22 +39,24 @@ namespace TiltBrush.Tests
             File.WriteAllText(source, data.ToString());
             var document = new GltfAssetDocument(source);
             var color = new[] { .1f, .2f, .3f, .25f };
-            foreach (string id in new[] { "Lit", "Unlit", "Matte", "Metallic", "Plastic" })
+            foreach (string id in new[] { "Lit", "Unlit", "Matte", "Metallic", "Plastic", "TranslucentLit", "TranslucentUnlit" })
             {
+                bool translucent = id == "TranslucentLit" || id == "TranslucentUnlit";
+                bool unlit = id == "Unlit" || id == "TranslucentUnlit";
                 var material = MaquetteMaterialAdapter.ModelMaterial(id, color);
                 string output = Path.Combine(m_Root, $"{id}.gltf");
                 document.WriteVariant(output, Array.Empty<GeometryStepData>(), null, color, colorMaterial: material);
                 var variant = JObject.Parse(File.ReadAllText(output));
                 var primitive = variant["meshes"][0]["primitives"][0];
                 var applied = variant["materials"][(int)primitive["material"]];
-                Assert.AreEqual("OPAQUE", (string)applied["alphaMode"]);
-                CollectionAssert.AreEqual(new[] { .1f, .2f, .3f, 1f }, applied["pbrMetallicRoughness"]["baseColorFactor"].ToObject<float[]>());
+                Assert.AreEqual(translucent ? "BLEND" : "OPAQUE", (string)applied["alphaMode"]);
+                CollectionAssert.AreEqual(new[] { .1f, .2f, .3f, translucent ? .25f : 1f }, applied["pbrMetallicRoughness"]["baseColorFactor"].ToObject<float[]>());
                 Assert.IsNull(primitive["attributes"]["COLOR_0"]);
                 Assert.AreEqual(id == "Metallic" ? 1f : 0f, (float)applied["pbrMetallicRoughness"]["metallicFactor"]);
-                float roughness = id == "Matte" ? 1f : id == "Metallic" ? .456f : id == "Plastic" ? .2f : .7f;
+                float roughness = id == "Matte" || id == "TranslucentLit" ? 1f : id == "Metallic" ? .456f : id == "Plastic" ? .2f : .7f;
                 Assert.AreEqual(roughness, (float)applied["pbrMetallicRoughness"]["roughnessFactor"], 1e-6);
-                Assert.AreEqual(id == "Unlit", applied["extensions"]?["KHR_materials_unlit"] != null);
-                if (id == "Unlit") { CollectionAssert.Contains(variant["extensionsUsed"].ToObject<string[]>(), "KHR_materials_unlit"); }
+                Assert.AreEqual(unlit, applied["extensions"]?["KHR_materials_unlit"] != null);
+                if (unlit) { CollectionAssert.Contains(variant["extensionsUsed"].ToObject<string[]>(), "KHR_materials_unlit"); }
             }
             string original = Path.Combine(m_Root, "original.gltf");
             document.WriteVariant(original, Array.Empty<GeometryStepData>(), null);
@@ -62,7 +64,7 @@ namespace TiltBrush.Tests
             Assert.AreEqual(0, (int)retained["meshes"][0]["primitives"][0]["attributes"]["COLOR_0"]);
             Assert.IsTrue(JToken.DeepEquals(data["materials"], retained["materials"]));
             Assert.AreEqual(data.ToString(), File.ReadAllText(source));
-            Assert.IsNull(MaquetteMaterialAdapter.ModelMaterial("TranslucentLit", color));
+            Assert.IsNull(MaquetteMaterialAdapter.ModelMaterial("Additive", color));
             Assert.AreEqual("Imported Lit", (string)MaquetteMaterialAdapter.ModelMaterial(null, color)["name"]);
         }
 

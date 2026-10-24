@@ -298,6 +298,17 @@ namespace TiltBrush
                                     report.UnmappedMaterials.TryGetValue(materialId, out int count);
                                     report.UnmappedMaterials[materialId] = count + 1;
                                 }
+                                if (primitive.LoadOption != "Original" &&
+                                    (materialId == "TranslucentLit" || materialId == "TranslucentUnlit"))
+                                {
+                                    // Standard glTF alpha blending does not reproduce Maquette's
+                                    // depth-writing transparent passes or its vertex-lit shader.
+                                    string feature = materialId == "TranslucentLit" ?
+                                        "Maquette translucent model depth writing and vertex lighting" :
+                                        "Maquette translucent model depth writing and alpha discard";
+                                    report.UnsupportedObjects.TryGetValue(feature, out int count);
+                                    report.UnsupportedObjects[feature] = count + 1;
+                                }
                                 if (state.Data["castShadow"]?.Type == JTokenType.Boolean && !(bool)state.Data["castShadow"])
                                 {
                                     const string feature = "Maquette model shadow casting";
