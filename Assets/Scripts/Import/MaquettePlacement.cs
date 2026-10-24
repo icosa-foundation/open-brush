@@ -18,6 +18,28 @@ namespace TiltBrush.DocumentImport
         private readonly List<(Vector3 Scale, Quaternion Rotation)> m_LinearSteps = new List<(Vector3, Quaternion)>();
         private readonly Quaternion m_InverseRotation;
 
+        public IEnumerable<GeometryStepData> LinearTransforms
+        {
+            get
+            {
+                foreach (var step in m_LinearSteps)
+                {
+                    if (step.Scale != Vector3.One || step.Rotation != Quaternion.Identity)
+                    {
+                        yield return LinearStep(step.Scale, step.Rotation);
+                    }
+                }
+                if (m_InverseRotation != Quaternion.Identity) { yield return LinearStep(Vector3.One, m_InverseRotation); }
+            }
+        }
+
+        private static GeometryStepData LinearStep(Vector3 scale, Quaternion rotation) => new GeometryStepData(
+            "transform", new Dictionary<string, object>
+            {
+                ["scale"] = new[] { scale.X, scale.Y, scale.Z },
+                ["rotation"] = new[] { rotation.X, rotation.Y, rotation.Z, rotation.W }
+            });
+
         public MaquettePlacement(MaquetteState state)
         {
             if (state == null) { throw new ArgumentNullException(nameof(state)); }
@@ -54,14 +76,10 @@ namespace TiltBrush.DocumentImport
             var data = recipe.ToJson();
             var operations = data["Operations"] as JArray;
             if (operations == null) { operations = new JArray(); data["Operations"] = operations; }
-            foreach (var step in m_LinearSteps)
+            foreach (var step in LinearTransforms)
             {
-                if (step.Scale != Vector3.One || step.Rotation != Quaternion.Identity)
-                {
-                    operations.Add(Transform(step.Scale, step.Rotation));
-                }
+                operations.Add(new JObject { ["Type"] = step.Type, ["Parameters"] = JObject.FromObject(step.Parameters) });
             }
-            if (m_InverseRotation != Quaternion.Identity) { operations.Add(Transform(Vector3.One, m_InverseRotation)); }
             return new GeometryRecipeData(data);
         }
 
@@ -94,15 +112,6 @@ namespace TiltBrush.DocumentImport
             }
             return result;
         }
-
-        private static JObject Transform(Vector3 scale, Quaternion rotation) => new JObject
-        {
-            ["Type"] = "transform", ["Parameters"] = new JObject
-            {
-                ["scale"] = new JArray(scale.X, scale.Y, scale.Z),
-                ["rotation"] = new JArray(rotation.X, rotation.Y, rotation.Z, rotation.W)
-            }
-        };
 
         private static Vector3 Vector(JToken value, Vector3 fallback) => new Vector3(
             Component(value, "x", fallback.X), Component(value, "y", fallback.Y), Component(value, "z", fallback.Z));
