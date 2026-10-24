@@ -54,6 +54,44 @@ namespace TiltBrush.Tests
         private void Write(string name, JObject data) => File.WriteAllText(Path.Combine(m_Project, name), data.ToString());
 
         [Test]
+        public void SlideCompositionIncludesMasterEntitiesAndUsesSelectedParentOverrides()
+        {
+            Write("primitives.json", JObject.Parse(@"{'version':20,'primitives':[{'guid':'box','primitiveType':'ModelFile'},
+                {'guid':'stage-only','primitiveType':'ModelFile'}]}"));
+            var master = Scene("master", 9);
+            var masterGroup = master["treeRoots"][0];
+            masterGroup["targetEntityGuid"] = "shared-group";
+            masterGroup["visible"] = true;
+            masterGroup["cachedTransform"] = JObject.Parse(@"{'position':{'x':100}}");
+            ((JArray)masterGroup["children"]).Add(JObject.Parse(@"{'entityStateGuid':'stage-only-state',
+                'targetEntityGuid':'stage-only','visible':true,'cachedTransform':{'position':{'x':2}}}"));
+            var slide = Scene("slide", 0);
+            var slideGroup = slide["treeRoots"][0];
+            slideGroup["targetEntityGuid"] = "shared-group";
+            slideGroup["visible"] = true;
+            slideGroup["cachedTransform"] = JObject.Parse(@"{'position':{'x':10},'scale':{'x':3,'y':1,'z':1}}");
+            slideGroup["children"][0]["cachedTransform"]["position"] = JObject.Parse(@"{'x':3}");
+            Write("scenes.json", new JObject
+            {
+                ["version"] = 20, ["lastSelectedSceneGuid"] = "slide", ["applyMasterStageEnvironment"] = false,
+                ["slides"] = new JArray(slide), ["stages"] = new JArray(master, Scene("other-stage", 0))
+            });
+            using (var document = new MaquetteDocument(m_Project))
+            {
+                var composed = document.ReadComposedStates(document.SelectScene());
+                Assert.AreEqual(3, composed.Count);
+                Assert.AreEqual(1, composed.Count(value => value.EntityId == "box"));
+                var background = composed.Single(value => value.EntityId == "stage-only");
+                Assert.AreEqual("slide-group", background.Parent.Id);
+                Assert.AreEqual(16, new MaquettePlacement(background).Position[0], 1e-5);
+                Assert.AreEqual(19, new MaquettePlacement(composed.Single(value => value.EntityId == "box")).Position[0], 1e-5);
+                var rawMaster = document.ReadStates(document.Scenes.First(value => value.Collection == "stages"));
+                Assert.AreEqual(102, new MaquettePlacement(rawMaster.Single(value => value.EntityId == "stage-only")).Position[0], 1e-5);
+                Assert.AreEqual(3, document.ReadComposedStates(document.Scenes.First(value => value.Collection == "stages")).Count);
+            }
+        }
+
+        [Test]
         public void LightsKeepSavedWorldRangeAndIndependentEnabledAndShadowFlags()
         {
             Write("lights.json", JObject.Parse(@"{'version':20,'lights':[{'guid':'light','LightType':'Spotlight'}]}"));

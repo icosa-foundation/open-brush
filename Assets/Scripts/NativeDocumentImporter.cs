@@ -89,7 +89,7 @@ namespace TiltBrush
                 contentDirectory = contentDirectory ?? DefaultMaquetteContent();
                 var assets = new MaquetteAssetResolver(document.Source, userLibrary, contentDirectory);
                 var images = new NativeImageCache();
-                foreach (var state in document.ReadStates(scene))
+                foreach (var state in document.ReadComposedStates(scene))
                 {
                     if (state.Entity?.Kind == MaquetteEntityKind.Group) { continue; }
                     if (state.Entity == null && state.Data["children"] is JArray children && children.Count > 0) { continue; }
