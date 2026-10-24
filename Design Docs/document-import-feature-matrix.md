@@ -57,7 +57,7 @@ and layer-save fixes. The editable-instance DTO round-trip passes in a narrow st
 check using production JSON converters; actual widget creation and .tilt save/reload
 remain unverified. Fresh Unity compilation and Play-mode validation remain pending.
 Legacy ShapesXR state migration and its runtime content conversion are not yet
-implemented. Maquette runtime conversion now has an initial procedural/text path;
+implemented. Maquette runtime conversion now has procedural, text, local model and image paths;
 the remaining entity types are reported as unsupported. Animation and scene/frame
 switching are deferred until the other supported
 content is complete. The full 3D Shapes authoring UI is not included.
@@ -87,7 +87,7 @@ Implementation checkpoint, 2026-10-24:
    differ from the ratio of 100 in the script's field initializer. The adapter maps
    the box and glyph placement; all 910 checked native text states convert without
    missing fallback files. Font substitution and actual TMP rendering remain unverified.
-5. Twenty-three focused reader/resource/adapter tests pass in the standalone harness.
+5. Twenty-four focused reader/resource/adapter tests pass in the standalone harness.
    Text layout round-trip and validation pass using production sketch JSON converters.
    Separate compiler invocations for the current data assembly and main application
    sources pass against the existing dependency assemblies, without Unity analyzers.
@@ -96,13 +96,13 @@ Implementation checkpoint, 2026-10-24:
    error is stale relative to the current cached source, which already has the corrected
    namespace. The agent-owned headless Editor is alive but the CLI currently reports
    it as unreachable; runtime validation has not been recovered.
-6. `import.maquette` now connects procedural, text and local model conversion to existing widget
+6. `import.maquette` now connects procedural, text, local model and image conversion to existing widget
    creation paths. It imports the document's selected state at authored placement,
    maps immediate parent groups and locks, and places hidden objects on a hidden layer.
    Text can use the user's installed Segoe UI Semibold font; unavailable fonts are
    reported as substitutions. The returned report counts unsupported object kinds,
    unmapped procedural materials and individual failures. The API command has not
-   been exercised in Play mode. Images, drawings, other supported Maquette
+   been exercised in Play mode. Flat drawing strokes, other supported Maquette
    content, and ShapesXR runtime conversion remain to be wired up. This is a partial
    implementation, not a finished or visually verified importer.
 7. Model import now runs asynchronously; `import.status` returns its running/final report.
@@ -120,6 +120,25 @@ Implementation checkpoint, 2026-10-24:
    to canvas units. Native placement compensates for this difference. The pre-v9 model
    origin migration moves the widget handle while preserving visible placement. These
    runtime scale/origin paths still need verification in Unity.
+9. Image import now stores texture files in the ordinary reference-image library and
+   uses the existing image index. An optional per-instance layout retains intrinsic
+   affine geometry, RGB tint and blend mode; alpha remains in the existing opacity
+   array. Aspect is taken from Maquette's saved scale instead of applying the texture
+   aspect a second time. Source height remains the ordinary widget size. All 1,373
+   checked image states convert through the adapter. Of these, 689 have RGB tint,
+   239 select Additive, and 709 require the pre-v20 default-material migration to
+   TranslucentUnlit. Existing default cutout image rendering remains the default.
+   Alpha-blended, additive and opaque unlit modes are implemented; Lit, TranslucentLit
+   and EdgesLight images remain flagged as unmapped appearance (13 checked states).
+   Native redundant front/back image mesh layers are represented as an ordinary
+   two-sided plane, not copied vendor geometry.
+10. Image layout/opacity index alignment and validation pass standalone production-JSON
+    checks. Image duplication carries layout/two-sided state, and the export paths
+    account for tint, opacity and additive blending. Media save coordinates now use
+    the authored layer when selected; image/model restoration selects the destination
+    layer before assigning saved local coordinates. These widget, shader, export and
+    layer-restoration paths compile but still require Unity rendering and save/reload
+    validation. No such runtime result is claimed by the adapter or JSON checks.
 
 2. FEATURE COMPARISON
 
