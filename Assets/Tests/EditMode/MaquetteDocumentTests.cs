@@ -54,6 +54,28 @@ namespace TiltBrush.Tests
         private void Write(string name, JObject data) => File.WriteAllText(Path.Combine(m_Project, name), data.ToString());
 
         [Test]
+        public void ImagePlacementRetainsShearAndKeepsHeightInTheOrdinaryWidgetSize()
+        {
+            using (var document = new MaquetteDocument(m_Project))
+            {
+                var states = document.ReadStates(document.SelectScene());
+                states[0].Data["cachedTransform"]["scale"] = JObject.Parse(@"{'x':2,'y':1,'z':1}");
+                states[1].Data["cachedTransform"] = JObject.Parse(@"{'scale':{'x':1,'y':1,'z':1},
+                    'rotation':{'x':0,'y':0,'z':0.38268343,'w':0.92387953}}");
+                states[1].Data["materialId"] = "Additive";
+                var primitive = MaquettePrimitiveData.Read(JObject.Parse(@"{'primitiveType':'ImageFile','primitivePath':'Images/test.png'}"), 21, null);
+                var image = MaquetteImageAdapter.Read(states[1], primitive, 10);
+                var m = image.GeometryTransform;
+                Assert.AreEqual(Math.Sqrt(2.5) * 10, image.Height, 1e-5);
+                Assert.AreEqual(1, Math.Sqrt(m[4] * m[4] + m[5] * m[5] + m[6] * m[6]), 1e-6);
+                Assert.AreEqual(-.6, m[0] * m[4] + m[1] * m[5] + m[2] * m[6], 1e-6);
+                Assert.AreEqual("Additive", image.MaterialId);
+                primitive = MaquettePrimitiveData.Read(JObject.Parse(@"{'primitiveType':'ImageFile'}"), 19, null);
+                Assert.AreEqual("TranslucentUnlit", MaquetteImageAdapter.Read(states[1], primitive, 10).MaterialId);
+            }
+        }
+
+        [Test]
         public void NativeTextUsesTheSelectedStateAndTheShippedBoxOriginAndAutosizingScale()
         {
             const string id = "229a97df-4436-410e-8a32-b6386938d06a";
