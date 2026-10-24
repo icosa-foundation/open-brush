@@ -94,6 +94,18 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void BuilderScaleMultipliesComponentsEvenWhenTheParentIsRotated()
+        {
+            using (var document = new MaquetteDocument(m_Project))
+            {
+                var states = document.ReadStates(document.SelectScene());
+                states[0].Data["cachedTransform"]["scale"] = JObject.Parse("{\"x\":2,\"y\":3,\"z\":4}");
+                states[0].Data["cachedTransform"]["rotation"] = JObject.Parse("{\"x\":0,\"y\":0,\"z\":0.70710678,\"w\":0.70710678}");
+                CollectionAssert.AreEqual(new float[] { 4, 9, -4 }, states[1].GetBuilderScale());
+            }
+        }
+
+        [Test]
         public void RejectsDuplicateJsonMembers()
         {
             File.WriteAllText(Path.Combine(m_Project, "manifest.json.mq"), "{\"guid\":\"a\",\"guid\":\"b\"}");

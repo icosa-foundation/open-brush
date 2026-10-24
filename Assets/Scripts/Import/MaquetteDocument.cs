@@ -44,6 +44,32 @@ namespace TiltBrush.DocumentImport
         public MaquetteState Parent { get; }
         public JObject Data { get; }
         public bool Visible => ((bool?)Data["visible"] ?? true) && (Parent?.Visible ?? true);
+
+        /// Maquette's builders multiply ancestor scale components; they do not use lossyScale
+        /// or matrix column lengths. Rotation must therefore not change these construction inputs.
+        public float[] GetBuilderScale()
+        {
+            var scale = new[] { 1f, 1f, 1f };
+            for (var state = this; state != null; state = state.Parent)
+            {
+                var values = state.Data["cachedTransform"]?["scale"];
+                for (int i = 0; i < 3; ++i)
+                {
+                    var value = values?["xyz"[i].ToString()];
+                    if (value == null) { continue; }
+                    if (value.Type != JTokenType.Float && value.Type != JTokenType.Integer)
+                    {
+                        throw new InvalidDataException("Maquette builder scale must be numeric");
+                    }
+                    scale[i] *= (float)value;
+                    if (float.IsNaN(scale[i]) || float.IsInfinity(scale[i]))
+                    {
+                        throw new InvalidDataException("Maquette builder scale must be finite");
+                    }
+                }
+            }
+            return scale;
+        }
         internal MaquetteState(JObject data, MaquetteEntity entity, MaquetteState parent)
         {
             Data = data;
