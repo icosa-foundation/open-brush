@@ -325,8 +325,6 @@ namespace TiltBrush
             {
                 textWidget.PinFromSave();
             }
-            textWidget.TextColor = tiltText.FillColor;
-            textWidget.StrokeColor = tiltText.StrokeColor;
             textWidget.Text = tiltText.Text;
             textWidget.Mode = tiltText.Mode;
             textWidget.Group = App.GroupManager.GetGroupFromId(tiltText.GroupId);
@@ -336,6 +334,10 @@ namespace TiltBrush
                 textWidget.AssignFontReference(tiltText.Font);
                 textWidget.ApplyLayout(tiltText.Layout);
             }
+            // Assigning a font replaces its material. Restore authored colors afterward,
+            // especially a transparent outline used by imported text.
+            textWidget.TextColor = tiltText.FillColor;
+            textWidget.StrokeColor = tiltText.StrokeColor;
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(textWidget.GetTiltMeterCost(), up: true);
             textWidget.UpdateScale();
