@@ -716,6 +716,8 @@ namespace TiltBrush
         public Color FillColor { get; set; }
         public Color StrokeColor { get; set; }
         public string Font { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TextWidgetLayout Layout { get; set; }
         public float ExtrudeDepth { get; set; }
         public TextWidgetMode Mode { get; set; }
         public bool Pinned { get; set; }

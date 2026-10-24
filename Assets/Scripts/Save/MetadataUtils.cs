@@ -215,7 +215,8 @@ namespace TiltBrush
                     Pinned = widget.Pinned,
                     GroupId = groupIdMapping.GetId(widget.Group),
                     StrokeColor = widget.StrokeColor,
-                    Font = "Oswald-Regular",
+                    Font = widget.FontReference,
+                    Layout = widget.CaptureLayout(),
                     ExtrudeDepth = 0,
                     Mode = widget.Mode,
                 };
