@@ -56,9 +56,10 @@ and adapted to the shared recipe encoding, together with the text branch's cloni
 and layer-save fixes. The editable-instance DTO round-trip passes in a narrow standalone
 check using production JSON converters; actual widget creation and .tilt save/reload
 remain unverified. Fresh Unity compilation and Play-mode validation remain pending.
-Legacy ShapesXR state migration is not yet implemented. ShapesXR runtime conversion
+Unversioned ShapesXR state migration is not yet implemented; version 3 initial
+views and version 4/5 snapshots are supported by the reader. ShapesXR runtime conversion
 now has initial-state panel, text, referenced-model and image paths; other presets
-and full material mapping remain outstanding. Maquette runtime conversion has procedural, text, local model and image paths;
+and full material mapping remain outstanding. Maquette runtime conversion has procedural, text, local model, image and point/spot light paths;
 the remaining entity types are reported as unsupported. Animation and scene/frame
 switching are deferred until the other supported
 content is complete. The full 3D Shapes authoring UI is not included.
@@ -172,6 +173,29 @@ Implementation checkpoint, 2026-10-24:
     widget creation, visual parity or .tilt save/reload. The agent-owned Editor is
     alive but remains unreachable through the host Unity CLI; no runtime result is
     claimed. Animation and scene/frame switching remain deferred.
+
+14. Maquette point and spot lights now use the existing light-widget path. Conversion
+    preserves color, intensity, world-space radius, spot angle, switched-off state
+    and hard-shadow enablement. All 273 installed light states convert, including
+    144 spotlights, 12 disabled lights and 58 shadowless lights. Light widgets now
+    initialize missing light/gizmo components and preserve their values when cloned
+    or restored. Optional `TiltLights.Enabled` and `TiltLights.Shadows` fields keep
+    the enabled/shadow states independently of intensity; absent fields retain
+    legacy defaults. Point lights no longer require absent spot-cone fields, and
+    light save/load uses the destination layer's local coordinates consistently.
+    The production-JSON DTO check passes; live light rendering, interaction and
+    complete sketch save/reload remain unverified.
+15. ShapesXR materials now resolve selected-state snapshots as well as their base
+    records. Eight of the ten panel materials in the supplied space have different
+    color/opacity in their snapshots. Initial-view composition includes background
+    objects using their own state. Version 3 property names and per-object scene
+    ownership are normalized without changing the original records or introducing
+    frame navigation. The older public sample resolves two panels, two referenced
+    assets and one background object; the current sample still resolves ten panels.
+    Standalone data checks now pass 37 tests and cached-reference source compilation
+    passes. Maquette master-stage geometry composition remains an identified gap:
+    the installed Disco project has 64 stage content states omitted by slide-only
+    reading. Its stage/slide precedence still needs confirmation before conversion.
 
 2. FEATURE COMPARISON
 
