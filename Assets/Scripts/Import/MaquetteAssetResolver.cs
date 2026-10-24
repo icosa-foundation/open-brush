@@ -101,7 +101,7 @@ namespace TiltBrush.DocumentImport
             string parent = Parent(path);
             string local = Directory.Exists(m_Source.Path) ? Path.Combine(m_Source.Path, path) : null;
             return new ImportResource(Path.GetFileName(path), $"{m_Source.Path}#{path}", local,
-                () => m_Source.OpenRead(path), relative => Project(Join(parent, relative)));
+                () => m_Source.OpenRead(path), relative => Project(Join(parent, relative)), path);
         }
 
         private static ImportResource External(string root, string relative)

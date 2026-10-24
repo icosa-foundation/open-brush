@@ -13,15 +13,17 @@ namespace TiltBrush.DocumentImport
         public string Name { get; }
         public string Origin { get; }
         public string LocalPath { get; }
+        public string ProjectRelativePath { get; }
         private readonly Func<Stream> m_Open;
         private readonly Func<string, ImportResource> m_Related;
 
         internal ImportResource(string name, string origin, string localPath, Func<Stream> open,
-            Func<string, ImportResource> related)
+            Func<string, ImportResource> related, string projectRelativePath = null)
         {
             Name = name;
             Origin = origin;
             LocalPath = localPath;
+            ProjectRelativePath = projectRelativePath;
             m_Open = open;
             m_Related = related;
         }
