@@ -57,8 +57,8 @@ and layer-save fixes. The editable-instance DTO round-trip passes in a narrow st
 check using production JSON converters; actual widget creation and .tilt save/reload
 remain unverified. Fresh Unity compilation and Play-mode validation remain pending.
 Legacy ShapesXR state migration is not yet implemented. ShapesXR runtime conversion
-now has an initial-state procedural-panel path; other presets and full material mapping
-remain outstanding. Maquette runtime conversion has procedural, text, local model and image paths;
+now has initial-state panel, text, referenced-model and image paths; other presets
+and full material mapping remain outstanding. Maquette runtime conversion has procedural, text, local model and image paths;
 the remaining entity types are reported as unsupported. Animation and scene/frame
 switching are deferred until the other supported
 content is complete. The full 3D Shapes authoring UI is not included.
@@ -103,8 +103,8 @@ Implementation checkpoint, 2026-10-24:
    Text can use the user's installed Segoe UI Semibold font; unavailable fonts are
    reported as substitutions. The returned report counts unsupported object kinds,
    unmapped procedural materials and individual failures. The API command has not
-   been exercised in Play mode. Flat drawing strokes, other supported Maquette
-   content, and ShapesXR runtime conversion remain to be wired up. This is a partial
+   been exercised in Play mode. Flat drawing strokes and other supported Maquette
+   content remain to be wired up; subsequent checkpoints cover ShapesXR conversion. This is a partial
    implementation, not a finished or visually verified importer.
 7. Model import now runs asynchronously; `import.status` returns its running/final report.
    Archives are staged once with relative sidecars intact, while existing local files
@@ -152,6 +152,26 @@ Implementation checkpoint, 2026-10-24:
     rendering and save/reload are unverified. No playback or state-switching
     feature is included; the text and 3D Shapes branches supply the shared widgets,
     while animation-branch integration is deferred.
+
+12. ShapesXR text now uses the existing text widget, including TMP styles/alignment,
+    fixed-size versus auto-fit anchoring, the source box size and full hierarchy
+    transforms. Its font GUID resolves to Liberation Sans already included in Open
+    Brush; no ShapesXR font asset is copied. Saved resource-path font references
+    can now reload through the existing widget API.
+13. Referenced ShapesXR assets are fetched from the public resource endpoint, staged
+    once per resource, and copied into ordinary persistent image/model libraries.
+    Images retain the separate source aspect ratio and hierarchy scale. Models
+    retain their authored origin and source glTF appearance, with only the highest
+    available named LOD connected for each converted LOD group. Model overrides
+    and full image/panel material appearance are reported as incomplete.
+    A real image manifest and a converted 5.2 MB GLB were fetched from an older
+    public space. The GLB cache check disconnects 12 alternate LOD nodes and keeps
+    two renderable mesh nodes without duplicating its binary payload.
+    Standalone checks pass 34 data tests; current importer and main sources compile
+    against cached Unity references. These checks do not exercise Unity networking,
+    widget creation, visual parity or .tilt save/reload. The agent-owned Editor is
+    alive but remains unreachable through the host Unity CLI; no runtime result is
+    claimed. Animation and scene/frame switching remain deferred.
 
 2. FEATURE COMPARISON
 
