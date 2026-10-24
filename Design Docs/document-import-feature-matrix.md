@@ -333,6 +333,15 @@ Implementation checkpoint, 2026-10-24:
     standalone data checks pass. Marker, Leaf, Oil, Square and Tube strokes remain
     outstanding.
 
+25. Maquette ribbon material classification now follows the source loader's
+    pre-v18 migration. Pre-v11 `OpaqueLit`/`OpaqueUnlit` names and later
+    `Brush_DefaultLit`/`Brush_DefaultUnlit` names resolve through the stroke
+    definition; modern files retain the state's material ID. This avoids false
+    unknown-material reports for legacy Unlit ribbons and correctly reports legacy
+    Lit ribbons as still needing shading support. Source JSON remains unchanged.
+    Fifty-seven standalone checks and cached-assembly source compilation pass;
+    this reporting/conversion update has not had fresh Unity runtime validation.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |

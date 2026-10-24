@@ -22,6 +22,27 @@ namespace TiltBrush.Tests
         public void TearDown() { Directory.Delete(m_Root, true); }
 
         [Test]
+        public void LegacyBrushMaterialMigrationUsesDefinitionUntilMaterialStatesWereIntroduced()
+        {
+            foreach (int version in new[] { 2, 10, 11, 17, 18, 20 })
+            {
+                using (var document = Document("Curved", new JArray(Pair(Point(-1, 0, 0), Point(1, 0, 0)),
+                    Pair(Point(-1, 1, 0), Point(1, 1, 0))), new JObject(), version: version))
+                {
+                    var state = document.ReadStates(document.SelectScene())[0];
+                    state.Entity.Data["brushType"] = version < 11 ? "OpaqueUnlit" : "Brush_DefaultUnlit";
+                    state.Data["materialId"] = "Lit";
+                    string before = state.Entity.Data.ToString();
+                    Assert.AreEqual(version < 18 ? "Unlit" : "Lit", MaquetteStrokeAdapter.ReadMaterialId(document, state));
+                    Assert.AreEqual(before, state.Entity.Data.ToString());
+                    Assert.AreEqual("Lit", (string)state.Data["materialId"]);
+                    state.Entity.Data["brushType"] = "UnknownBrush";
+                    Assert.AreEqual(version < 18 ? null : "Lit", MaquetteStrokeAdapter.ReadMaterialId(document, state));
+                }
+            }
+        }
+
+        [Test]
         public void CurvedRibbonSamplesBothEdgesWithoutFittingTheirCenterline()
         {
             using (var document = Document("Curved", new JArray(
