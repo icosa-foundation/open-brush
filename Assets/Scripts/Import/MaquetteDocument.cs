@@ -149,6 +149,37 @@ namespace TiltBrush.DocumentImport
             return states;
         }
 
+        /// Resolve the static view of a slide, including master-stage content. The source
+        /// restores the slide after the stage, so shared entities use the slide's state.
+        /// This does not add scene switching or alter the original source records.
+        public IReadOnlyList<MaquetteState> ReadComposedStates(MaquetteScene scene)
+        {
+            var selected = ReadStates(scene);
+            var master = m_Scenes.FirstOrDefault(value => value.Collection == "stages");
+            if (scene.Collection != "slides" || master == null) { return selected; }
+            var states = new Dictionary<string, MaquetteState>(StringComparer.OrdinalIgnoreCase);
+            var order = new List<string>();
+            foreach (var state in ReadStates(master).Concat(selected))
+            {
+                if (!states.ContainsKey(state.EntityId)) { order.Add(state.EntityId); }
+                states[state.EntityId] = state;
+            }
+            var resolved = new Dictionary<string, MaquetteState>(StringComparer.OrdinalIgnoreCase);
+            var visiting = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            MaquetteState Resolve(string id)
+            {
+                if (resolved.TryGetValue(id, out var result)) { return result; }
+                if (!visiting.Add(id)) { throw new InvalidDataException("Maquette composed hierarchy contains a cycle"); }
+                var source = states[id];
+                var parent = source.Parent == null ? null : Resolve(source.Parent.EntityId);
+                result = new MaquetteState(source.Data, source.Entity, parent);
+                resolved.Add(id, result);
+                visiting.Remove(id);
+                return result;
+            }
+            return order.Select(Resolve).ToArray();
+        }
+
         private void Visit(JToken nodes, MaquetteState parent, List<MaquetteState> states, HashSet<string> ids)
         {
             foreach (var data in Objects(nodes, "treeRoots/children"))
