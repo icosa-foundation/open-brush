@@ -81,7 +81,11 @@ namespace TiltBrush
                             }
                             var color = ShapesXrColor(document, state, report);
                             if (isHull) { CreateNativeHull(hull, strokeCanvas, color, group); }
-                            else { CreateNativeRibbon(ribbon, strokeCanvas, color, group); }
+                            else
+                            {
+                                bool lit = ShapesXrMaterialAdapter.Read(document, state, ShapesXrMaterialUsage.Panel).Lit;
+                                CreateNativeRibbon(ribbon, strokeCanvas, color, group, lit: lit);
+                            }
                             if (isHull && !hull.Faceted)
                             {
                                 const string feature = "ShapesXR smooth hull normals";

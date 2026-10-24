@@ -514,6 +514,25 @@ Implementation checkpoint, 2026-10-24:
     pixel parity. The owned Editor was closed, its test arguments restored, and
     the generated test sketch and model-library resources removed after backup.
 
+38. Lit Maquette ribbons (including the default and legacy DefaultLit selection)
+    and lit ShapesXR Tape strokes now use a hidden NativeRibbonLit brush descriptor.
+    It reuses the existing Quill ribbon geometry/prefab and Flat lit vertex-color
+    material, with no taper texture or duplicated back-face geometry. The descriptor
+    is registered in both the main and Zapbox compatibility manifests. Unlit ribbons
+    retain their existing descriptor. Ordinary stroke brush IDs provide persistence;
+    no .tilt fields or geometry recipes were added. Known opaque Maquette presets
+    also ignore saved alpha, avoiding false alpha-blending warnings for opaque strokes.
+    Maquette lighting differences remain reported, and other materials/transparency
+    retain their existing fidelity reports. This does not resolve imported environment
+    lighting or claim source-rendered appearance.
+    A live native fixture imported four Maquette ribbons and two ShapesXR tapes with
+    zero failures, exercising explicit/default lit, unlit and unsupported translucent
+    Maquette appearance, plus lit/unlit ShapesXR material entities. All 16 nondegenerate
+    triangles matched the decoded source ribbons, with maximum vertex error about
+    0.0000038 canvas units. Active batch materials used the expected lit/unlit shaders.
+    Save/reload retained identical metadata and runtime records, including brush IDs,
+    RGBA, geometry, grouping and visibility.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |

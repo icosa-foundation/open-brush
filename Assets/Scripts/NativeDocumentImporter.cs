@@ -137,13 +137,24 @@ namespace TiltBrush
                                 groups.Add(state.Parent.Id, group);
                             }
                             var strokeColor = ReadColor(state.Data["color"]);
-                            CreateNativeRibbon(ribbon, strokeCanvas, strokeColor, group);
+                            string material = MaquetteStrokeAdapter.ReadMaterialId(document, state);
+                            bool lit = string.IsNullOrEmpty(material) || material == "Lit" || material == "DefaultLit";
+                            if (MaquetteMaterialAdapter.IsOpaqueModelMaterial(material) || material == "DefaultLit" || material == "DefaultUnlit")
+                            { strokeColor.a = 1; }
+                            CreateNativeRibbon(ribbon, strokeCanvas, strokeColor, group, lit: lit);
                             report.StrokeObjects++;
                             if (!state.Visible) { report.HiddenObjects++; }
-                            string material = MaquetteStrokeAdapter.ReadMaterialId(document, state);
-                            if (material != "Unlit" && material != "DefaultUnlit")
+                            if (!lit && material != "Unlit" && material != "DefaultUnlit")
                             {
                                 string feature = $"Maquette ribbon material {material ?? "default"}";
+                                report.UnmappedMaterials.TryGetValue(feature, out int count);
+                                report.UnmappedMaterials[feature] = count + 1;
+                            }
+                            if (lit)
+                            {
+                                // Respond to Open Brush lighting, without claiming that its
+                                // lighting uniforms or shading match Maquette's environment.
+                                const string feature = "Maquette ribbon lighting";
                                 report.UnmappedMaterials.TryGetValue(feature, out int count);
                                 report.UnmappedMaterials[feature] = count + 1;
                             }
