@@ -28,7 +28,7 @@ namespace TiltBrush.DocumentImport
             bool straight = mode == "Straight";
             if (!straight && mode != "Curved") { throw new NotSupportedException($"Unsupported Maquette drawing mode: {mode}"); }
             int version = (int?)document.Sections["brushes.json"]["version"] ?? document.Version;
-            if (straight && version < 4) { throw new NotSupportedException("Pre-v4 Maquette straight-stroke rotation migration"); }
+            bool legacyStraightFrame = straight && version >= 2 && version < 4;
             if (!(state.Entity.Data["controlPoints"] is JArray controls) || controls.Count < 2)
             {
                 throw new InvalidDataException("A Maquette ribbon needs at least two paired control points");
@@ -69,7 +69,11 @@ namespace TiltBrush.DocumentImport
             }
             Vector3 low = a.Concat(b).Aggregate(Vector3.Min), high = a.Concat(b).Aggregate(Vector3.Max);
             Vector3 boundsCenter = (low + high) * .5f;
-            Quaternion inverseConstruction = Quaternion.Conjugate(constructionRotation);
+            // v2/v3 states were saved before the straight ribbon's construction-frame
+            // correction. Native migration composes that correction into every state and
+            // its inverse into the mesh. They cancel here: retain the original centered
+            // points and saved state rather than applying only half of the migration.
+            Quaternion inverseConstruction = legacyStraightFrame ? Quaternion.Identity : Quaternion.Conjugate(constructionRotation);
             var placement = new MaquettePlacement(state);
             float[] matrix = placement.GetIntrinsicTransform(new[] { 1f, 1f, 1f }, new[] { 0f, 0f, 0f }, unitsPerMetre);
             var linear = new Matrix4x4(matrix[0], matrix[1], matrix[2], matrix[3], matrix[4], matrix[5], matrix[6], matrix[7],

@@ -40,16 +40,22 @@ namespace TiltBrush.Tests
         [Test]
         public void StraightRibbonUsesEndpointOrientationAndFirstWidthInItsSavedFrame()
         {
-            using (var document = Document("Straight", new JArray(
-                Pair(Point(-1, 0, 0), Point(1, 0, 0)), Pair(Point(100, 10, 0), Point(200, 20, 0)), Pair(Point(4, -2, 0), Point(4, 2, 0))),
-                new JObject { ["position"] = Point(2, 0, 0), ["rotation"] = new JObject { ["x"] = -Math.Sqrt(.5), ["y"] = 0, ["z"] = 0, ["w"] = Math.Sqrt(.5) } }))
+            foreach (int version in new[] { 2, 3, 20 })
             {
-                var ribbon = MaquetteStrokeAdapter.Read(document, document.ReadStates(document.SelectScene())[0], 1);
-                Assert.AreEqual(2, ribbon.FirstEdge.Length);
-                AssertPoint(new[] { 0f, -1f, 0f }, ribbon.FirstEdge[0]);
-                AssertPoint(new[] { 0f, 1f, 0f }, ribbon.SecondEdge[0]);
-                AssertPoint(new[] { 4f, -2f, 0f }, ribbon.FirstEdge[1]);
-                AssertPoint(new[] { 4f, 2f, 0f }, ribbon.SecondEdge[1]);
+                var rotation = version < 4
+                    ? new JObject { ["x"] = 0, ["y"] = 0, ["z"] = Math.Sqrt(.5), ["w"] = Math.Sqrt(.5) }
+                    : new JObject { ["x"] = -.5, ["y"] = -.5, ["z"] = .5, ["w"] = .5 };
+                using (var document = Document("Straight", new JArray(
+                    Pair(Point(-1, 0, 0), Point(1, 0, 0)), Pair(Point(100, 10, 0), Point(200, 20, 0)), Pair(Point(4, -2, 0), Point(4, 2, 0))),
+                    new JObject { ["position"] = Point(2, 0, 0), ["rotation"] = rotation }, version: version))
+                {
+                    var ribbon = MaquetteStrokeAdapter.Read(document, document.ReadStates(document.SelectScene())[0], 1);
+                    Assert.AreEqual(2, ribbon.FirstEdge.Length);
+                    AssertPoint(new[] { 3f, -2f, 0f }, ribbon.FirstEdge[0]);
+                    AssertPoint(new[] { 1f, -2f, 0f }, ribbon.SecondEdge[0]);
+                    AssertPoint(new[] { 4f, 2f, 0f }, ribbon.FirstEdge[1]);
+                    AssertPoint(new[] { 0f, 2f, 0f }, ribbon.SecondEdge[1]);
+                }
             }
         }
 
@@ -68,14 +74,14 @@ namespace TiltBrush.Tests
             }
         }
 
-        private MaquetteDocument Document(string mode, JArray pairs, JObject transform, JObject parent = null)
+        private MaquetteDocument Document(string mode, JArray pairs, JObject transform, JObject parent = null, int version = 20)
         {
             Write("manifest.json.mq", new JObject { ["guid"] = "own-stroke-fixture" });
-            Write("brushes.json", new JObject { ["version"] = 20, ["strokes"] = new JArray(new JObject
+            Write("brushes.json", new JObject { ["version"] = version, ["strokes"] = new JArray(new JObject
                 { ["guid"] = "ribbon", ["drawingMode"] = mode, ["controlPoints"] = pairs }) });
             JObject state = new JObject { ["entityStateGuid"] = "stroke-state", ["targetEntityGuid"] = "ribbon", ["cachedTransform"] = transform };
             if (parent != null) { state = new JObject { ["entityStateGuid"] = "group-state", ["targetEntityGuid"] = "group", ["cachedTransform"] = parent, ["children"] = new JArray(state) }; }
-            Write("scenes.json", new JObject { ["version"] = 20, ["slides"] = new JArray(new JObject
+            Write("scenes.json", new JObject { ["version"] = version, ["slides"] = new JArray(new JObject
                 { ["sceneGuid"] = "scene", ["treeRoots"] = new JArray(state) }) });
             return new MaquetteDocument(m_Root);
         }
