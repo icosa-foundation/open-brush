@@ -89,7 +89,7 @@ namespace TiltBrush
                 var (exportable, notExportable) = images.Cast<ImageWidget>().Partition(IsImageExportable);
 
                 int imageMaterialId = 0;
-                foreach (var group in exportable.GroupBy(widget => (widget.ReferenceImage, widget.TintColor, widget.Opacity, widget.BlendMode)))
+                foreach (var group in exportable.GroupBy(widget => (widget.ReferenceImage, widget.TintColor, widget.Opacity, widget.BlendMode, HasLayout: widget.CaptureLayout() != null)))
                 {
                     ReferenceImage ri = group.Key.ReferenceImage;
                     if (ri == null)
