@@ -154,6 +154,7 @@ namespace TiltBrush
             }
             Vector3 tangent = m_GlyphTransform.MultiplyVector(Vector3.left).normalized;
             float handedness = m_GlyphTransform.determinant < 0 ? -1 : 1;
+            float glyphScale = m_GlyphTransform.MultiplyVector(Vector3.up).magnitude;
             for (int material = 0; material < info.meshInfo.Length; ++material)
             {
                 var mesh = info.meshInfo[material];
@@ -161,6 +162,9 @@ namespace TiltBrush
                 {
                     Vector3 position = m_GlyphTransform.MultiplyPoint3x4(mesh.vertices[i]);
                     mesh.vertices[i] = position;
+                    // TMP derives its SDF scale from the Transform. Our intrinsic scale is baked
+                    // into vertices, so include it in the glyph scale channel uploaded afterward.
+                    mesh.uvs0[i].w *= glyphScale;
                     // TMP initializes flat glyph normals once. Start from the canonical normal on
                     // every rebuild so repeated text/layout edits cannot compound the transform.
                     mesh.normals[i] = normal;
