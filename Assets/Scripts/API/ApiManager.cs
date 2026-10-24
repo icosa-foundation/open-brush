@@ -682,7 +682,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
             foreach (string commandString in commandStrings)
             {
-                if (commandString.StartsWith("query."))
+                if (commandString.StartsWith("query.") || commandString == "quality.get" ||
+                    commandString.StartsWith("quality.get=", StringComparison.Ordinal))
                 {
                     responses.Add(HandleApiQuery(commandString));
                 }
@@ -704,6 +705,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
             if (commandPair.Length < 1) return null;
             switch (commandPair[0])
             {
+                case "quality.get":
+                    return ApiMainThreadObserver.QualityStatus;
                 case "query.queue":
                     return m_OutgoingCommandQueue.Count.ToString();
                 case "query.quill.stats":

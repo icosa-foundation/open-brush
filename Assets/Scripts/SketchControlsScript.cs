@@ -208,6 +208,7 @@ namespace TiltBrush
             LoadQuillConfirmUnsaved = 13000,
             LoadQuillFile = 13001,
             OpenQuillPanelSearchPopup = 13002,
+            OpenNavigationPopup = 14000,
         }
 
         public enum ControlsType
@@ -5445,6 +5446,7 @@ namespace TiltBrush
                     CameraCaptureRuntime.m_Instance.StartAllCapture();
                     break;
                 case GlobalCommands.RepaintOptions:
+                case GlobalCommands.OpenNavigationPopup:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
                 case GlobalCommands.MultiplayerLeaveRoom:
@@ -5477,7 +5479,7 @@ namespace TiltBrush
             m_ViewOnly = active;
             if (active)
             {
-                EnsureViewOnlyNavigationTool();
+                m_SketchSurfacePanel.EnableDefaultTool();
                 m_PanelManager.SetPanelAvailabilityMode(PanelManager.PanelAvailabilityMode.ViewOnly);
                 RequestPanelsVisibility(true);
             }
@@ -5488,10 +5490,6 @@ namespace TiltBrush
                 RequestPanelsVisibility(true);
             }
             PointerManager.m_Instance.RequestPointerRendering(!active);
-            // TODO - decide if this is a permanent change
-            // With this line, you can't set a tool such as fly or teleport
-            // and switch to View Only mode as the mode change disables all tools
-            //m_SketchSurface.SetActive(!m_ViewOnly);
             m_Decor.SetActive(!active);
             if (InitNoHeadsetMode.m_Instance != null)
             {
@@ -5504,19 +5502,20 @@ namespace TiltBrush
             return tool == BaseTool.ToolType.FlyTool || tool == BaseTool.ToolType.TeleportTool;
         }
 
-        public void EnsureViewOnlyNavigationTool()
-        {
-            if (!IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
-            {
-                m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-            }
-        }
-
         public void DisableViewOnlyNavigationTool()
         {
-            if (IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            BaseTool.ToolType tool = m_SketchSurfacePanel.GetCurrentToolType();
+            if (tool == BaseTool.ToolType.EmptyTool || IsViewOnlyNavigationTool(tool))
             {
-                m_SketchSurfacePanel.EnableDefaultTool();
+                if (IsViewOnly)
+                {
+                    // The no-headset default is FlyTool; the sketch picker needs no navigation.
+                    m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.EmptyTool);
+                }
+                else
+                {
+                    m_SketchSurfacePanel.EnableDefaultTool();
+                }
             }
         }
 
@@ -5682,6 +5681,11 @@ namespace TiltBrush
             // TODO: hide gallery view / publish if there are no saved sketches
             switch (rEnum)
             {
+#if OPEN_BRUSH_VIEWER
+                case GlobalCommands.DeleteSketch:
+                case GlobalCommands.RenameSketch:
+                    return false;
+#endif
                 case GlobalCommands.Undo:
                     return SketchMemoryScript.m_Instance.CanUndo() && !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.Redo:

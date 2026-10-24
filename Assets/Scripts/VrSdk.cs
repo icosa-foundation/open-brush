@@ -393,9 +393,15 @@ namespace TiltBrush
                 return PassthroughMode.FBPassthrough;
             }
 
-            // Runtimes that composite the real world for us (additive or alpha-blend
-            // environment blend modes, e.g. Android XR) expose no passthrough extension;
-            // they just report a non-opaque display.
+            // Runtimes that composite the camera feed behind the app's alpha (Steam Frame,
+            // Android XR, Varjo) expose no passthrough extension. They list alpha blend among
+            // their environment blend modes but start opaque until the app requests it.
+            if (EnvironmentBlendPassthroughFeature.AlphaBlendSupported)
+            {
+                return PassthroughMode.OpenXREnvionmentBlendMode;
+            }
+
+            // Optical see-through displays are never opaque, so the real world is always there.
             var display = loader.GetLoadedSubsystem<XRDisplaySubsystem>();
             if (display != null && display.running && !display.displayOpaque)
             {
@@ -766,11 +772,12 @@ namespace TiltBrush
 
         private void OnUnityXRDeviceConnected(InputDevice device)
         {
-            // TODO: Refresh the physical-controller side's cached XR device in mixed hand/controller
-            // mode without replacing the active hand scaffold or its bindings.
-            // Deferred: https://github.com/icosa-foundation/open-brush/pull/1172#discussion_r4257374958
+            // In hand or mixed hand/controller mode, keep the borrowed hand scaffold and only
+            // refresh each side's cached physical controller.
             if (AndroidXRHandBridge.Active)
             {
+                (InputManager.Wand as UnityXRControllerInfo)?.RefreshDevice();
+                (InputManager.Brush as UnityXRControllerInfo)?.RefreshDevice();
                 return;
             }
 
@@ -817,6 +824,16 @@ namespace TiltBrush
 
         private void SetUnityXRControllerStyle(InputDevice device)
         {
+            ControllerStyle style = GetUnityXRControllerStyle(device);
+            if (style != ControllerStyle.Unset)
+            {
+                SetControllerStyle(style);
+            }
+        }
+
+        // Returns Unset for unrecognised controllers.
+        private ControllerStyle GetUnityXRControllerStyle(InputDevice device)
+        {
             if (m_ForceControllerStyleForTesting != ControllerStyle.Unset)
             {
                 if (!m_HasLoggedForcedUnityXRControllerStyle)
@@ -825,23 +842,22 @@ namespace TiltBrush
                         $"STEAM_FRAME_GEOM_FORCE_STYLE style={m_ForceControllerStyleForTesting} device={device.manufacturer}, {device.name}");
                     m_HasLoggedForcedUnityXRControllerStyle = true;
                 }
-                SetControllerStyle(m_ForceControllerStyleForTesting);
-                return;
+                return m_ForceControllerStyleForTesting;
             }
 
             if (device.name.Contains("Logitech") && device.name.Contains("MX Ink"))
             {
                 // MX Ink replaces one Quest controller, so retain the Quest controls prefab.
                 // VrStylusHandler supplies its dedicated inputs and model for the assigned hand.
-                SetControllerStyle(ControllerStyle.OculusTouch);
+                return ControllerStyle.OculusTouch;
             }
             else if (device.name.Contains("Oculus Touch"))
             {
-                SetControllerStyle(ControllerStyle.OculusTouch);
+                return ControllerStyle.OculusTouch;
             }
             else if (device.name.StartsWith("Index Controller OpenXR"))
             {
-                SetControllerStyle(ControllerStyle.Knuckles);
+                return ControllerStyle.Knuckles;
             }
             else if (device.name.Contains("Steam Frame Controller"))
             {
@@ -851,19 +867,19 @@ namespace TiltBrush
                         $"STEAM_FRAME_GEOM_DETECTED_STYLE style={ControllerStyle.SteamFrame} device={device.manufacturer}, {device.name}");
                     m_HasLoggedSteamFrameControllerStyle = true;
                 }
-                SetControllerStyle(ControllerStyle.SteamFrame);
+                return ControllerStyle.SteamFrame;
             }
             else if (device.name.StartsWith("HTC Vive Controller OpenXR"))
             {
-                SetControllerStyle(ControllerStyle.Vive);
+                return ControllerStyle.Vive;
             }
             else if (device.name.StartsWith("Windows MR Controller"))
             {
-                SetControllerStyle(ControllerStyle.Wmr);
+                return ControllerStyle.Wmr;
             }
             else if (device.name.StartsWith("HP Reverb G2 Controller"))
             {
-                SetControllerStyle(ControllerStyle.Wmr);
+                return ControllerStyle.Wmr;
             }
             else if (device.name.Contains("PICO"))
             {
@@ -871,15 +887,57 @@ namespace TiltBrush
                 // Controller name isn't specified in Pico's device layout
                 // so we have to run some additional checks if available.
                 // Default to Pico 4 as newest.
-                SetControllerStyle(ControllerStyle.Phoenix);
+                return ControllerStyle.Phoenix;
             }
             else if (device.name.StartsWith("Zapbox"))
             {
-                SetControllerStyle(ControllerStyle.Zapbox);
+                return ControllerStyle.Zapbox;
             }
             else
             {
                 Debug.LogWarning("Unrecognised controller device name: " + device.name);
+                return ControllerStyle.Unset;
+            }
+        }
+
+        /// <summary>
+        /// Called when every side has returned from hand tracking to physical controllers.
+        /// Hand tracking borrows the Touch controller scaffold; recreate the controllers only
+        /// if the held controller needs a different style.
+        /// </summary>
+        public void RestoreUnityXRControllerStyle()
+        {
+            var devices = new List<InputDevice>();
+            InputDevices.GetDevicesWithCharacteristics(InputDeviceCharacteristics.HeldInHand, devices);
+            foreach (InputDevice device in devices)
+            {
+                if (!device.isValid || UnityXRControllerInfo.IsTrackedHandDevice(device.name))
+                {
+                    continue;
+                }
+
+                ControllerStyle style = GetUnityXRControllerStyle(device);
+                bool styleMatches =
+                    VrControls != null &&
+                    VrControls.Brush != null &&
+                    VrControls.Brush.ControllerGeometry != null &&
+                    VrControls.Brush.ControllerGeometry.Style == style;
+                if (style != ControllerStyle.Unset && !styleMatches)
+                {
+                    // Recreated scaffolds start in the default left/right arrangement.
+                    var inputManager = InputManager.m_Instance;
+                    bool wandOnRight = inputManager.WandOnRight;
+                    if (wandOnRight)
+                    {
+                        inputManager.WandOnRight = false;
+                    }
+                    UnityXRFinishControllerInit(device);
+                    if (wandOnRight)
+                    {
+                        inputManager.WandOnRight = true;
+                    }
+                }
+                return;
             }
         }
 
@@ -917,7 +975,9 @@ namespace TiltBrush
             switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
-                    return XRGeneralSettings.Instance?.Manager?.activeLoader != null;
+                    XRLoader loader = XRGeneralSettings.Instance?.Manager?.activeLoader;
+                    // Handheld AR tracks a phone, which is still the no-headset view mode.
+                    return loader != null && !HandheldArNavigation.IsArLoader(loader);
                 default:
                     return true;
             }
