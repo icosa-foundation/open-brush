@@ -7,6 +7,9 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
+        internal static string CacheNativeImageUrl(string url) => _DownloadMediaFileFromUrl(
+            url, "Images", allowRedirects: true, requiredContentTypePrefix: "image/");
+
         [ApiEndpoint("import.maquette", "Start importing a Maquette project's current scene; use import.status for progress and unsupported content", "project.mqp")]
         public static string ImportMaquette(string path, string contentDirectory = "", string userLibrary = "")
         {

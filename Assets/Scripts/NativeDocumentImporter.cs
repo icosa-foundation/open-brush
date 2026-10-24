@@ -22,6 +22,7 @@ namespace TiltBrush
         public int ProceduralObjects { get; internal set; }
         public int TextObjects { get; internal set; }
         public int ModelObjects { get; internal set; }
+        public int ImageObjects { get; internal set; }
         public int HiddenObjects { get; internal set; }
         public int FontSubstitutions { get; internal set; }
         public int FailedObjects { get; internal set; }
@@ -65,7 +66,7 @@ namespace TiltBrush
                 report.Status = "failed";
                 report.Error = exception.Message;
             }
-            Debug.Log($"[OB_NATIVE_IMPORT] Maquette {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, models={report.ModelObjects}, failed={report.FailedObjects}");
+            Debug.Log($"[OB_NATIVE_IMPORT] Maquette {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, models={report.ModelObjects}, images={report.ImageObjects}, failed={report.FailedObjects}");
         }
 
         private static async Task ImportMaquetteAsync(string path, string contentDirectory, string userLibrary, NativeDocumentImportReport report)
@@ -86,6 +87,7 @@ namespace TiltBrush
                 userLibrary = userLibrary ?? Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "Maquette");
                 contentDirectory = contentDirectory ?? DefaultMaquetteContent();
                 var assets = new MaquetteAssetResolver(document.Source, userLibrary, contentDirectory);
+                var images = new NativeImageCache();
                 foreach (var state in document.ReadStates(scene))
                 {
                     if (state.Entity?.Kind == MaquetteEntityKind.Group) { continue; }
@@ -164,33 +166,70 @@ namespace TiltBrush
                         {
                             int version = (int)document.Sections["primitives.json"]["version"];
                             var primitive = assets.Primitive(state.Entity.Data, version);
-                            if (primitive.Type != "ModelFile")
+                            if (primitive.Type == "ImageFile" || primitive.Type == "ImageFromWeb")
                             {
-                                string kind = $"Primitive:{primitive.Type}";
-                                report.UnsupportedObjects.TryGetValue(kind, out int count);
-                                report.UnsupportedObjects[kind] = count + 1;
-                                continue;
+                                var data = MaquetteImageAdapter.Read(state, primitive, App.METERS_TO_UNITS);
+                                var reference = images.Get(primitive, assets);
+                                var pose = Pose(data.Placement);
+                                pose.scale = data.Height;
+                                var command = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab,
+                                    canvas.Pose * pose, forceTransform: true, skipIntroAnimation: true);
+                                SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                                var imageWidget = (ImageWidget)command.Widget;
+                                imageWidget.ReferenceImage = reference;
+                                if (primitive.IgnoresImageTint) { color = Color.white; }
+                                ImageBlendMode blend;
+                                switch (data.MaterialId)
+                                {
+                                    case "TranslucentUnlit": blend = ImageBlendMode.AlphaBlend; break;
+                                    case "Additive": blend = ImageBlendMode.Additive; break;
+                                    case "Unlit": blend = ImageBlendMode.Opaque; break;
+                                    default:
+                                        blend = data.MaterialId == "TranslucentLit" ? ImageBlendMode.AlphaBlend : ImageBlendMode.Opaque;
+                                        report.UnmappedMaterials.TryGetValue(data.MaterialId, out int count);
+                                        report.UnmappedMaterials[data.MaterialId] = count + 1;
+                                        break;
+                                }
+                                imageWidget.Opacity = color.a;
+                                imageWidget.TwoSided = true;
+                                imageWidget.ApplyLayout(new ImageWidgetLayout
+                                {
+                                    Transform = data.GeometryTransform, Tint = new[] { color.r, color.g, color.b }, BlendMode = blend
+                                });
+                                imageWidget.LocalTransform = imageWidget.Canvas.Pose.inverse * canvas.Pose * pose;
+                                command.SetWidgetCost(imageWidget.GetTiltMeterCost());
+                                widget = imageWidget;
                             }
-                            var placement = new MaquettePlacement(state);
-                            string materialId = (string)state.Data["materialId"];
-                            var imported = await models.MaquetteModel(assets.Resolve(primitive.Path), primitive, placement, color, materialId);
-                            if (canvas == null) { throw new InvalidOperationException("The import canvas was removed while loading a model"); }
-                            var pose = Pose(placement);
-                            pose.translation += imported.CanvasOffset * App.METERS_TO_UNITS;
-                            pose.scale = App.METERS_TO_UNITS / imported.Model.UnitsPerMetre;
-                            var command = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab,
-                                canvas.Pose * pose, forceTransform: true, skipIntroAnimation: true);
-                            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
-                            var modelWidget = (ModelWidget)command.Widget;
-                            modelWidget.Model = imported.Model;
-                            modelWidget.Show(true);
-                            command.SetWidgetCost(modelWidget.GetTiltMeterCost());
-                            widget = modelWidget;
-                            if (primitive.LoadOption != "Original" && !string.IsNullOrEmpty(materialId))
+                            else
                             {
-                                report.UnmappedMaterials.TryGetValue(materialId, out int count);
-                                report.UnmappedMaterials[materialId] = count + 1;
-                            }
+                                if (primitive.Type != "ModelFile")
+                                {
+                                    string kind = $"Primitive:{primitive.Type}";
+                                    report.UnsupportedObjects.TryGetValue(kind, out int count);
+                                    report.UnsupportedObjects[kind] = count + 1;
+                                    continue;
+                                }
+                                var placement = new MaquettePlacement(state);
+                                string materialId = (string)state.Data["materialId"];
+                                var imported = await models.MaquetteModel(assets.Resolve(primitive.Path), primitive, placement, color, materialId);
+                                if (canvas == null) { throw new InvalidOperationException("The import canvas was removed while loading a model"); }
+                                var pose = Pose(placement);
+                                pose.translation += imported.CanvasOffset * App.METERS_TO_UNITS;
+                                pose.scale = App.METERS_TO_UNITS / imported.Model.UnitsPerMetre;
+                                var command = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab,
+                                    canvas.Pose * pose, forceTransform: true, skipIntroAnimation: true);
+                                SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                                var modelWidget = (ModelWidget)command.Widget;
+                                modelWidget.Model = imported.Model;
+                                modelWidget.Show(true);
+                                command.SetWidgetCost(modelWidget.GetTiltMeterCost());
+                                widget = modelWidget;
+                                if (primitive.LoadOption != "Original" && !string.IsNullOrEmpty(materialId))
+                                {
+                                    report.UnmappedMaterials.TryGetValue(materialId, out int count);
+                                    report.UnmappedMaterials[materialId] = count + 1;
+                                }
+                                }
                         }
                         if (widget.Canvas != canvas) { widget.SetCanvas(canvas); }
                         widget.name = (string)state.Entity.Data["name"] ?? state.EntityId;
@@ -217,6 +256,7 @@ namespace TiltBrush
                         if ((bool?)state.Data["lockedForEdit"] == true) { widget.PinFromSave(); }
                         if (state.Entity.Kind == MaquetteEntityKind.Procedural) { report.ProceduralObjects++; }
                         else if (state.Entity.Kind == MaquetteEntityKind.Text) { report.TextObjects++; }
+                        else if (widget is ImageWidget) { report.ImageObjects++; }
                         else { report.ModelObjects++; }
                     }
                     catch (Exception exception)
