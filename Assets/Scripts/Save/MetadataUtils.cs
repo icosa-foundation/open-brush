@@ -33,6 +33,7 @@ namespace TiltBrush
             public float extrusionDepth;
             public Color extrusionColor;
             public float opacity;
+            public ImageWidgetLayout imageLayout;
         }
 
         /// Sanitizes potentially-invalid data coming from the .tilt file.
@@ -472,6 +473,7 @@ namespace TiltBrush
                 newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
                 newEntry.twoSided = image.TwoSided;
                 newEntry.opacity = image.Opacity;
+                newEntry.imageLayout = image.CaptureLayout();
                 imagesByPath[path].Add(newEntry);
             }
 
@@ -512,6 +514,7 @@ namespace TiltBrush
                 {
                     val.Opacities = ordered.Select(m => m.opacity).ToArray();
                 }
+                if (ordered.Any(m => m.imageLayout != null)) { val.Layouts = ordered.Select(m => m.imageLayout).ToArray(); }
                 imageIndex.Add(val);
             }
             return imageIndex.OrderBy(i => i.FileName).ToArray();
