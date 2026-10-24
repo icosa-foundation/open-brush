@@ -60,6 +60,23 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void LegacyFrameUsesOutwardBorderAndTheOldScaleBorderMeaning()
+        {
+            var entity = Entity("RoundedCornerRim", "border_size", "0.02", "radius", "0", "scale_border", "true");
+            MaquetteGeometryAdapter.Convert(entity, new float[] { 2, 3, 1 }, 20).GetSteps(out var legacy, out _);
+            Assert.AreEqual(1.04f, (float)legacy.Parameters["width"], 1e-6);
+            Assert.AreEqual(.94f, (float)legacy.Parameters["height"], 1e-6);
+            Assert.AreEqual(.02f, legacy.Parameters["borderWidth"]);
+            MaquetteGeometryAdapter.Convert(entity, new float[] { 2, 3, 1 }, 21).GetSteps(out var current, out _);
+            Assert.AreEqual(1f, current.Parameters["width"]);
+            Assert.AreEqual(.06f, current.Parameters["borderWidth"]);
+            ((JArray)entity["parameters"])[2]["Value"] = "false";
+            MaquetteGeometryAdapter.Convert(entity, new float[] { 2, 3, 1 }, 20).GetSteps(out legacy, out _);
+            Assert.AreEqual(1.12f, (float)legacy.Parameters["width"], 1e-6);
+            Assert.AreEqual(.06f, legacy.Parameters["borderWidth"]);
+        }
+
+        [Test]
         public void CapsuleRoundProfileControlsScaleCompensationAndZeroSweepUsesUpperCap()
         {
             var entity = Entity("Capsule", "round_profile", "true", "sweep_angle", "0");

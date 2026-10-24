@@ -14,8 +14,9 @@ namespace TiltBrush.DocumentImport
     /// source-local: the caller must apply the original object hierarchy exactly once afterward.
     public static class MaquetteGeometryAdapter
     {
-        public static GeometryRecipeData Convert(JObject entity, float[] globalScale)
+        public static GeometryRecipeData Convert(JObject entity, float[] globalScale, int formatVersion = 21)
         {
+            if (formatVersion < 1 || formatVersion > 21) { throw new NotSupportedException($"Unsupported Maquette procedural format: {formatVersion}"); }
             if (globalScale == null || globalScale.Length != 3) { throw new ArgumentException("Expected three scale components", nameof(globalScale)); }
             foreach (float component in globalScale)
             {
@@ -29,7 +30,7 @@ namespace TiltBrush.DocumentImport
             {
                 case "Procedural/MqProceduralMesh_RoundedCornerQuad":
                 case "Procedural/MqProceduralMesh_RoundedCornerRim":
-                    generator = Rectangle(p, globalScale, prefab.EndsWith("Rim"), operations);
+                    generator = Rectangle(p, globalScale, prefab.EndsWith("Rim"), formatVersion, operations);
                     break;
                 case "Procedural/MqProceduralMesh_CylinderCone":
                     generator = Cylinder(p);
@@ -47,7 +48,7 @@ namespace TiltBrush.DocumentImport
             return new GeometryRecipeData(new JObject { ["Version"] = 1, ["Generator"] = generator, ["Operations"] = operations });
         }
 
-        private static JObject Rectangle(Parameters p, float[] scale, bool frame, JArray operations)
+        private static JObject Rectangle(Parameters p, float[] scale, bool frame, int version, JArray operations)
         {
             float width = p.Number("width", .5f), height = p.Number("height", .3f), thickness = p.Number("thickness", .1f);
             float w = width * scale[0], h = height * scale[1];
@@ -59,7 +60,17 @@ namespace TiltBrush.DocumentImport
             if (frame)
             {
                 float border = p.Number("border_size", .02f);
-                if (p.Boolean("scale_border", false)) { border *= Math.Max(scale[0], scale[1]); }
+                bool scaleBorder = p.Boolean("scale_border", false);
+                // Before format 21 the outline described the opening, and the scale-border
+                // flag had the opposite meaning. Express the same surface using an inward frame.
+                if (version < 21 ? !scaleBorder : scaleBorder) { border *= Math.Max(scale[0], scale[1]); }
+                if (version < 21)
+                {
+                    w += 2 * border;
+                    h += 2 * border;
+                    dimensions["width"] = w;
+                    dimensions["height"] = h;
+                }
                 border = Math.Min(border, Math.Min(w, h) * .5f);
                 if (border < 0 || (!square && border * 2 >= Math.Min(w, h)))
                 {
@@ -75,7 +86,7 @@ namespace TiltBrush.DocumentImport
             float[] pivot = p.Vector("pivot", new[] { .5f, .5f, .5f });
             if (pivot[0] != .5f || pivot[1] != .5f || pivot[2] != .5f)
             {
-                operations.Add(Transform(translation: new JArray((.5f - pivot[0]) * width, (.5f - pivot[1]) * height, (.5f - pivot[2]) * thickness)));
+                operations.Add(Transform(translation: new JArray((.5f - pivot[0]) * w / scale[0], (.5f - pivot[1]) * h / scale[1], (.5f - pivot[2]) * thickness)));
             }
             operations.Add(Step("autoSmooth", new JObject { ["angle"] = 60f }));
             return Step(frame ? "frame" : "rectangle", dimensions);
