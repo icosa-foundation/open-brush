@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using TMPro;
 
 namespace TiltBrush
@@ -20,6 +21,14 @@ namespace TiltBrush
     public class NumericInputPopupWindow : PopUpWindow
     {
         public TMP_InputField m_InputField;
+
+        private Action<string> m_OnGenericConfirm;
+
+        public void Initialize(string initialValue, Action<string> onConfirm)
+        {
+            m_InputField.text = initialValue;
+            m_OnGenericConfirm = onConfirm;
+        }
 
         public void HandleKeypress(string input)
         {
@@ -35,9 +44,19 @@ namespace TiltBrush
         {
             if (confirm)
             {
-                var popupButton = m_OnClose.Target as PopupButton;
-                var label = popupButton.GetComponentInParent<EditableLabel>();
-                label.LastTextInput = m_InputField.text;
+                if (m_OnGenericConfirm != null)
+                {
+                    m_OnGenericConfirm(m_InputField.text);
+                }
+                else
+                {
+                    var popupButton = m_OnClose?.Target as PopupButton;
+                    var label = popupButton?.GetComponentInParent<EditableLabel>();
+                    if (label != null)
+                    {
+                        label.LastTextInput = m_InputField.text;
+                    }
+                }
             }
             RequestClose();
         }
