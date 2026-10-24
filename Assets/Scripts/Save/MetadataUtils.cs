@@ -36,6 +36,16 @@ namespace TiltBrush
             public ImageWidgetLayout imageLayout;
         }
 
+        private static CanvasScript GetSavedCanvas(GrabWidget widget) =>
+            widget.Canvas == App.Scene.SelectionCanvas && widget.m_PreviousCanvas != null
+                ? widget.m_PreviousCanvas : widget.Canvas;
+
+        private static TrTransform GetSavedTransform(GrabWidget widget, TrTransform transform)
+        {
+            var canvas = GetSavedCanvas(widget);
+            return canvas == widget.Canvas ? transform : canvas.Pose.inverse * widget.Canvas.Pose * transform;
+        }
+
         /// Sanitizes potentially-invalid data coming from the .tilt file.
         /// Returns an array of valid TrTransforms; may return the input array.
         public static TrTransform[] Sanitize(TrTransform[] data)
@@ -114,11 +124,11 @@ namespace TiltBrush
             foreach (var widget in widgets)
             {
                 WidgetMetadata newEntry = new WidgetMetadata();
-                newEntry.xf = widget.GetSaveTransform();
+                newEntry.xf = GetSavedTransform(widget, widget.GetSaveTransform());
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(GetSavedCanvas(widget));
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -168,23 +178,18 @@ namespace TiltBrush
 
         public static TiltEditableModels[] GetTiltEditableModels(GroupIdMapping groupIdMapping)
         {
-            CanvasScript SavedCanvas(EditableModelWidget widget) =>
-                widget.Canvas == App.Scene.SelectionCanvas && widget.m_PreviousCanvas != null
-                    ? widget.m_PreviousCanvas : widget.Canvas;
-            TrTransform SavedTransform(EditableModelWidget widget) =>
-                SavedCanvas(widget).Pose.inverse * widget.Canvas.Pose * widget.GetSaveTransform();
             var models = new List<TiltEditableModels>();
             foreach (var group in WidgetManager.m_Instance.EditableModelWidgets
                          .Where(widget => widget.gameObject.activeSelf).GroupBy(widget => widget.Model.GetLocation()))
             {
-                var widgets = group.OrderBy(widget => ByTranslation(SavedTransform(widget))).ToArray();
+                var widgets = group.OrderBy(widget => ByTranslation(GetSavedTransform(widget, widget.GetSaveTransform()))).ToArray();
                 models.Add(new TiltEditableModels
                 {
                     Location = group.Key,
-                    RawTransforms = widgets.Select(SavedTransform).ToArray(),
+                    RawTransforms = widgets.Select(widget => GetSavedTransform(widget, widget.GetSaveTransform())).ToArray(),
                     PinStates = widgets.Select(widget => widget.Pinned).ToArray(),
                     GroupIds = widgets.Select(widget => groupIdMapping.GetId(widget.Group)).ToArray(),
-                    LayerIds = widgets.Select(widget => App.Scene.GetIndexOfCanvas(SavedCanvas(widget))).ToArray(),
+                    LayerIds = widgets.Select(widget => App.Scene.GetIndexOfCanvas(GetSavedCanvas(widget))).ToArray(),
                     Colors = widgets.Select(widget => widget.m_Color).ToArray()
                 });
             }
@@ -198,15 +203,8 @@ namespace TiltBrush
 
             TiltText ConvertTextWidgetToTiltText(TextWidget widget)
             {
-                CanvasScript currentCanvas = widget.Canvas;
-                CanvasScript savedCanvas = currentCanvas == App.Scene.SelectionCanvas &&
-                    widget.m_PreviousCanvas != null ? widget.m_PreviousCanvas : currentCanvas;
-                TrTransform savedTransform = widget.SaveTransform;
-                if (savedCanvas != currentCanvas)
-                {
-                    // Layer identity and pose must use the same authored canvas.
-                    savedTransform = savedCanvas.Pose.inverse * currentCanvas.Pose * savedTransform;
-                }
+                CanvasScript savedCanvas = GetSavedCanvas(widget);
+                TrTransform savedTransform = GetSavedTransform(widget, widget.SaveTransform);
                 TiltText text = new TiltText
                 {
                     Transform = savedTransform,
@@ -466,11 +464,11 @@ namespace TiltBrush
                     aspectRatios[path] = image.AspectRatio ?? 1;
                 }
                 WidgetMetadata newEntry = new WidgetMetadata();
-                newEntry.xf = image.SaveTransform;
+                newEntry.xf = GetSavedTransform(image, image.SaveTransform);
                 newEntry.pinned = image.Pinned;
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(GetSavedCanvas(image));
                 newEntry.twoSided = image.TwoSided;
                 newEntry.opacity = image.Opacity;
                 newEntry.imageLayout = image.CaptureLayout();

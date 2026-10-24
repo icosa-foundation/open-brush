@@ -456,6 +456,8 @@ namespace TiltBrush
                 image.m_LoadingFromSketch = true;
                 image.transform.parent = App.Instance.m_CanvasTransform;
                 image.transform.localScale = Vector3.one;
+                int layerId = (layerIds == null || i >= layerIds.Length) ? 0 : layerIds[i];
+                image.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
                 if (refImage != null)
                 {
                     refImage.SynchronousLoad();
@@ -490,9 +492,7 @@ namespace TiltBrush
                 }
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 image.Group = App.GroupManager.GetGroupFromId(groupId);
-                int layerId = (layerIds == null || i >= layerIds.Length) ? 0 : layerIds[i];
                 image.TwoSided = twoSidedFlags != null && i < twoSidedFlags.Length && twoSidedFlags[i];
-                image.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
                 if (layouts != null && i < layouts.Length) { image.ApplyLayout(layouts[i]); }
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(image.GetTiltMeterCost(), up: true);
             }
