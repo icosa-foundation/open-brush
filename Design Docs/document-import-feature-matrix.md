@@ -394,6 +394,24 @@ Implementation checkpoint, 2026-10-24:
     environment/light metadata and reproduced identical material/geometry records.
     This checks runtime state and persistence, not source-rendered pixel parity.
 
+30. ShapesXR model material-entity overrides now map through `mid`, `mid-1`, etc.
+    Slots follow visible mesh groups sorted by the converted nodes' `original_index`,
+    after choosing their highest-detail LOD. Material properties resolve against
+    each object's selected/background state. Supported overrides are color, opacity,
+    texture-alpha mode, metallic/roughness factors and PBR/unlit shading. Absent fields
+    inherit the source material. Textures, other material data and geometry buffers
+    are retained; assigning a material to one node clones mesh metadata so other
+    instances sharing the source mesh remain unchanged. Cached variants distinguish
+    material assignments and use the existing .tilt model-reference representation.
+    Additive/multiply blending, passthrough, explicit alpha-mask threshold parity,
+    specular-glossiness overrides and other unsupported material fields remain reported.
+    Sixty-three standalone checks and 90 fresh Unity EditMode tests pass. A live
+    fixture imported an original model and two swapped two-group overrides, including
+    a color supplied by the selected state's material snapshot. All six groups had
+    expected colors, alpha, shader types and PBR factors; all models retained 4,284
+    vertices. Save/reload reproduced identical runtime material/geometry records and
+    model/layer/environment/light metadata. No source-rendered pixel parity is claimed.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |

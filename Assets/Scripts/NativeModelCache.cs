@@ -55,17 +55,24 @@ namespace TiltBrush
             return (model, offset);
         }
 
-        public async Task<Model> ShapesXrModel(ImportResource resource, NativePlacement placement, float opacity = 1)
+        public async Task<(Model Model, string[] Unmapped)> ShapesXrModel(ImportResource resource, NativePlacement placement,
+            ShapesXrDocument document, ShapesXrObjectState state)
         {
             if (resource == null) { throw new FileNotFoundException("Missing ShapesXR model resource"); }
             var source = await GetSource(resource);
             // ShapesXR preserves the source model's authored origin and materials.
-            var hidden = ShapesXrModelAdapter.HiddenLodNodes(JObject.Parse(File.ReadAllText(source.Document.Path)));
-            return await GetVariant(resource, source, placement, Vector3.zero, null, null, hidden, opacity);
+            var gltf = JObject.Parse(File.ReadAllText(source.Document.Path));
+            var hidden = ShapesXrModelAdapter.HiddenLodNodes(gltf);
+            var overrides = ShapesXrModelAdapter.MaterialOverrides(gltf,
+                ShapesXrModelAdapter.ReadMaterialProperties(document, state), out var unmapped);
+            var model = await GetVariant(resource, source, placement, Vector3.zero, null, null, hidden,
+                ShapesXrMaterialAdapter.ReadObjectOpacity(state), overrides);
+            return (model, unmapped);
         }
 
         private async Task<Model> GetVariant(ImportResource resource, Source source, NativePlacement placement,
-            Vector3 contentOffset, float[] appearance, string materialId, IEnumerable<int> excludedNodes = null, float opacity = 1)
+            Vector3 contentOffset, float[] appearance, string materialId, IEnumerable<int> excludedNodes = null, float opacity = 1,
+            IReadOnlyList<GltfMaterialOverride> materialOverrides = null)
         {
             string key = new JObject
             {
@@ -75,14 +82,15 @@ namespace TiltBrush
                 ["excludedNodes"] = excludedNodes == null ? null : new JArray(excludedNodes),
                 ["color"] = appearance == null ? null : new JArray(appearance),
                 ["material"] = materialId,
-                ["opacity"] = opacity
+                ["opacity"] = opacity,
+                ["materialOverrides"] = materialOverrides == null ? null : new JArray(System.Linq.Enumerable.Select(materialOverrides, value => value.ToJson()))
             }.ToString(Formatting.None);
             if (!m_Variants.TryGetValue(key, out var model))
             {
                 string relative = $"{m_RelativeDirectory}/variants/{Guid.NewGuid():N}.gltf";
                 string path = Path.Combine(App.ModelLibraryPath(), relative);
                 source.Document.WriteVariant(path, placement.LinearTransforms,
-                    new[] { contentOffset.x, contentOffset.y, contentOffset.z }, appearance, excludedNodes, opacity);
+                    new[] { contentOffset.x, contentOffset.y, contentOffset.z }, appearance, excludedNodes, opacity, materialOverrides);
                 model = new Model(relative);
                 try
                 {

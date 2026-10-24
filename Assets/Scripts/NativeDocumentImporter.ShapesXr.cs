@@ -130,8 +130,8 @@ namespace TiltBrush
                             else
                             {
                                 var placement = state.Placement();
-                                var model = await models.ShapesXrModel(resource.Resource, placement,
-                                    ShapesXrMaterialAdapter.ReadObjectOpacity(state));
+                                var imported = await models.ShapesXrModel(resource.Resource, placement, document, state);
+                                var model = imported.Model;
                                 if (canvas == null) { throw new InvalidOperationException("The import canvas was removed while loading a model"); }
                                 var pose = Pose(placement);
                                 pose.scale = App.METERS_TO_UNITS / model.UnitsPerMetre;
@@ -143,9 +143,8 @@ namespace TiltBrush
                                 modelWidget.Show(true);
                                 command.SetWidgetCost(modelWidget.GetTiltMeterCost());
                                 widget = modelWidget;
-                                const string pending = "ShapesXR model material overrides";
-                                report.UnmappedMaterials.TryGetValue(pending, out int count);
-                                report.UnmappedMaterials[pending] = count + 1;
+                                foreach (string feature in imported.Unmapped)
+                                { UnmappedShapesXrMaterial(report, $"ShapesXR model {feature}"); }
                             }
                         }
                         else
