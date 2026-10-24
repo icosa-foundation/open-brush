@@ -44,7 +44,7 @@ namespace TiltBrush
 
         private static ReferenceImage Load(string relative)
         {
-            var image = new ReferenceImage(relative);
+            var image = new ReferenceImage(Path.Combine(App.ReferenceImagePath(), relative));
             image.SynchronousLoad();
             if (!image.Valid) { throw new InvalidDataException($"Image could not be loaded: {relative}"); }
             return image;
