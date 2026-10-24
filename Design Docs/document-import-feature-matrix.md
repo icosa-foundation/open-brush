@@ -230,6 +230,19 @@ Implementation checkpoint, 2026-10-24:
     cached-assembly source compilation pass; this material update has not yet had
     fresh Unity compilation or live import validation.
 
+19. Maquette environment loading now resolves the selected slide's lighting or the
+    master stage's complete lighting record when the v17 inheritance switch is on.
+    Sun color, intensity and canvas-relative orientation map to the existing Open
+    Brush environment-light controls and HDR light metadata. The other directional
+    slot is cleared; the shadow toggle selects the shadowed or unshadowed slot.
+    Pre-v12 slide intensity and pre-v13 shadow defaults follow source migrations.
+    Background, fog, floor, ambient/reflection lighting and soft-shadow differences
+    remain explicit entries in `UnmappedEnvironment`; malformed or unavailable sun
+    conversion is reported without preventing object import. No new .tilt fields
+    were added. The reader accepts 262 installed scene environment records; 45
+    standalone data checks and cached-assembly compilation pass. This environment
+    change still needs fresh Unity compilation and live import/save/reload checks.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |

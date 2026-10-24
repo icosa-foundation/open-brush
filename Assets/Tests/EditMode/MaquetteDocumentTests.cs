@@ -36,6 +36,79 @@ namespace TiltBrush.Tests
         [TearDown]
         public void TearDown() { Directory.Delete(m_Root, true); }
 
+        [Test]
+        public void EnvironmentInheritanceReplacesTheWholeLightingRecordWithoutChangingSource()
+        {
+            var slide = EnvironmentScene("slide", 2);
+            var master = EnvironmentScene("master", 4);
+            Write("scenes.json", new JObject
+            {
+                ["version"] = 20, ["applyMasterStageEnvironment"] = true,
+                ["slides"] = new JArray(slide), ["stages"] = new JArray(master)
+            });
+            using (var document = new MaquetteDocument(m_Project))
+            {
+                var selected = document.Scenes.Single(value => value.Collection == "slides");
+                var environment = MaquetteEnvironmentAdapter.Read(document, selected);
+                Assert.AreEqual("master", environment.SceneId);
+                Assert.AreEqual(4, environment.SunIntensity);
+                Assert.AreEqual(2, (int)selected.Data["sceneSettings"]["Environment"]["Lighting"]["SunIntensity"]);
+                environment.Lighting["SunIntensity"] = 99;
+                Assert.AreEqual(4, (int)document.Scenes.Single(value => value.Collection == "stages").Data["sceneSettings"]["Environment"]["Lighting"]["SunIntensity"]);
+            }
+        }
+
+        [Test]
+        public void EnvironmentUsesSlideWhenInheritanceIsOffOrPredatesTheSwitch()
+        {
+            foreach (var settings in new[] { (Version: 20, Inherit: false), (Version: 16, Inherit: true), (Version: 11, Inherit: false) })
+            {
+                Write("scenes.json", new JObject
+                {
+                    ["version"] = settings.Version, ["applyMasterStageEnvironment"] = settings.Inherit,
+                    ["slides"] = new JArray(EnvironmentScene("slide", 2)),
+                    ["stages"] = new JArray(EnvironmentScene("master", 4))
+                });
+                using (var document = new MaquetteDocument(m_Project))
+                {
+                    var environment = MaquetteEnvironmentAdapter.Read(document, document.Scenes.Single(value => value.Collection == "slides"));
+                    Assert.AreEqual("slide", environment.SceneId);
+                    Assert.AreEqual(settings.Version < 12 ? 1.25f : 2, environment.SunIntensity);
+                    Assert.AreEqual(settings.Version < 13, environment.Shadows);
+                    CollectionAssert.AreEqual(new[] { 0f, 0f, 0f, 1f }, environment.SunRotation);
+                }
+            }
+        }
+
+        [Test]
+        public void EnvironmentRejectsInvalidSunAndAllowsAbsentSettings()
+        {
+            using (var document = new MaquetteDocument(m_Project))
+            {
+                Assert.IsNull(MaquetteEnvironmentAdapter.Read(document, document.SelectScene()));
+            }
+            var slide = EnvironmentScene("slide", -1);
+            Write("scenes.json", new JObject { ["version"] = 20, ["slides"] = new JArray(slide) });
+            using (var document = new MaquetteDocument(m_Project))
+            {
+                Assert.Throws<InvalidDataException>(() => MaquetteEnvironmentAdapter.Read(document, document.SelectScene()));
+                document.SelectScene().Data["sceneSettings"]["Environment"]["Lighting"]["SunIntensity"] = 1;
+                document.SelectScene().Data["sceneSettings"]["Environment"]["Lighting"]["SunDirection"]["w"] = 0;
+                Assert.Throws<InvalidDataException>(() => MaquetteEnvironmentAdapter.Read(document, document.SelectScene()));
+            }
+        }
+
+        private static JObject EnvironmentScene(string id, float intensity) => new JObject
+        {
+            ["sceneGuid"] = id, ["sceneName"] = id, ["treeRoots"] = new JArray(),
+            ["sceneSettings"] = new JObject { ["Environment"] = new JObject { ["Lighting"] = new JObject
+            {
+                ["SunColor"] = new JObject { ["r"] = 1, ["g"] = .5, ["b"] = .25, ["a"] = 1 },
+                ["SunDirection"] = new JObject { ["x"] = 0, ["y"] = 0, ["z"] = 0, ["w"] = 2 },
+                ["SunIntensity"] = intensity, ["ShadowEnabled"] = false
+            } } }
+        };
+
         private static JObject Scene(string id, int order) => new JObject
         {
             ["sceneGuid"] = id, ["sceneName"] = id, ["sequenceIndex"] = order,

@@ -29,6 +29,7 @@ namespace TiltBrush
         public int FailedObjects { get; internal set; }
         public Dictionary<string, int> UnsupportedObjects { get; } = new Dictionary<string, int>();
         public Dictionary<string, int> UnmappedMaterials { get; } = new Dictionary<string, int>();
+        public Dictionary<string, int> UnmappedEnvironment { get; } = new Dictionary<string, int>();
         public List<string> Details { get; } = new List<string>();
 
         internal void Detail(string message)
@@ -60,7 +61,8 @@ namespace TiltBrush
             {
                 await ImportMaquetteAsync(path, contentDirectory, userLibrary, report);
                 report.Status = report.FailedObjects > 0 || report.FontSubstitutions > 0 ||
-                                report.UnsupportedObjects.Count > 0 || report.UnmappedMaterials.Count > 0 ? "partial" : "completed";
+                                report.UnsupportedObjects.Count > 0 || report.UnmappedMaterials.Count > 0 ||
+                                report.UnmappedEnvironment.Count > 0 ? "partial" : "completed";
             }
             catch (Exception exception)
             {
@@ -85,6 +87,7 @@ namespace TiltBrush
             {
                 var scene = document.SelectScene();
                 report.SourceScene = scene.Name;
+                ImportMaquetteEnvironment(document, scene, canvas, report);
                 userLibrary = userLibrary ?? Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "Maquette");
                 contentDirectory = contentDirectory ?? DefaultMaquetteContent();
                 var assets = new MaquetteAssetResolver(document.Source, userLibrary, contentDirectory);
