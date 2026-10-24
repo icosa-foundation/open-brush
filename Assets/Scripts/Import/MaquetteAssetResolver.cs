@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using Newtonsoft.Json.Linq;
 
 namespace TiltBrush.DocumentImport
 {
@@ -14,6 +15,7 @@ namespace TiltBrush.DocumentImport
         private readonly NativeProjectSource m_Source;
         private readonly string m_UserLibrary;
         private readonly string m_Content;
+        private Dictionary<string, string> m_PrimitivePaths;
 
         public MaquetteAssetResolver(NativeProjectSource source, string userLibrary = null, string content = null)
         {
@@ -66,6 +68,30 @@ namespace TiltBrush.DocumentImport
         {
             if (!Guid.TryParse(entityId, out _)) { throw new InvalidDataException("Invalid Maquette text entity GUID"); }
             return Project($"TextContents/{entityId}.txt");
+        }
+
+        public MaquettePrimitiveData Primitive(JObject data, int version) =>
+            MaquettePrimitiveData.Read(data, version, BuiltInPath);
+
+        private string BuiltInPath(string type)
+        {
+            if (m_PrimitivePaths == null)
+            {
+                m_PrimitivePaths = new Dictionary<string, string>(StringComparer.Ordinal);
+                var resource = External(m_Content, "MaquetteLibrary/Shapes/PrimitivePathMap.json");
+                if (resource != null)
+                {
+                    var map = JObject.Parse(resource.ReadText())["maps"] as JArray
+                              ?? throw new InvalidDataException("Invalid installed Maquette primitive path map");
+                    foreach (JObject entry in map)
+                    {
+                        string name = (string)entry["primitiveType"], path = (string)entry["primitiveFilePath"];
+                        if (string.IsNullOrEmpty(name) || string.IsNullOrEmpty(path)) { throw new InvalidDataException("Invalid Maquette primitive path entry"); }
+                        m_PrimitivePaths.Add(name, path);
+                    }
+                }
+            }
+            return m_PrimitivePaths.TryGetValue(type, out string result) ? result : null;
         }
 
         private ImportResource Project(string path)
