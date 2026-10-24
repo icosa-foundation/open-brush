@@ -83,7 +83,7 @@ namespace TiltBrush.Tests
             string unchanged = gltf.ToString();
             var properties = new System.Collections.Generic.Dictionary<int, JObject>
             {
-                [0] = JObject.Parse(@"{'m-c':[255,0,0,255],'m-o':0.5,'m-met':0.8,'m-rou':0.2,'m-st':0}"),
+                [0] = JObject.Parse(@"{'m-c':[128,64,32,255],'m-o':0.5,'m-met':0.8,'m-rou':0.2,'m-st':0}"),
                 [1] = JObject.Parse(@"{'m-c':[0,0,255,255],'m-o':1,'m-st':1,'m-e':[0,0,0,255]}"),
                 [9] = new JObject()
             };
@@ -95,6 +95,10 @@ namespace TiltBrush.Tests
             Assert.IsNull(overrides[0].Material["extensions"]["KHR_materials_unlit"]);
             Assert.IsNotNull(overrides[1].Material["extensions"]["KHR_materials_unlit"]);
             Assert.AreEqual(.8f, (float)overrides[0].Material["pbrMetallicRoughness"]["metallicFactor"], 1e-6);
+            var factor = overrides[0].Material["pbrMetallicRoughness"]["baseColorFactor"].ToObject<float[]>();
+            Assert.AreEqual(.2158605f, factor[0], 1e-6);
+            Assert.AreEqual(.05126946f, factor[1], 1e-6);
+            Assert.AreEqual(.01444384f, factor[2], 1e-6);
             string root = Path.Combine(Path.GetTempPath(), $"OpenBrush-MaterialOverride-{Guid.NewGuid():N}");
             Directory.CreateDirectory(root);
             try

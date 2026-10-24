@@ -427,6 +427,15 @@ Implementation checkpoint, 2026-10-24:
     This verifies state and persistence; it does not establish pixel parity with
     Maquette's custom lighting shaders.
 
+32. ShapesXR model color overrides now convert saved gamma-space Color32 RGB to
+    linear glTF factors. The current UnityGLTF loader converts those factors back
+    to Unity material color values; writing Color32 fractions directly made midtones
+    too bright. The earlier saturated red/blue fixture could not detect this.
+    The regression fixture now uses RGB (128,64,32), verifies its linear factors,
+    and confirms the loaded material matches the original Color32 values. Alpha is
+    unchanged. Sixty-four standalone checks and 91 fresh Unity EditMode tests pass;
+    live save/reload reproduced identical corrected material records.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
