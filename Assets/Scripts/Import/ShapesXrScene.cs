@@ -12,9 +12,12 @@ namespace TiltBrush.DocumentImport
 {
     public sealed class ShapesXrObjectState
     {
+        // Native Group/GroupPreset protocol identity; no vendor prefab is required.
+        private static readonly Guid kGroupPreset = new Guid("03ddfa60-93c1-4fb1-acef-d632575a106c");
         public ShapesXrEntity Entity { get; }
         public JObject Properties { get; }
         public bool HasSnapshot { get; }
+        public bool IsGroup { get; }
         public Guid StateId { get; }
         public Guid ParentId { get; }
         public ShapesXrObjectState Parent { get; internal set; }
@@ -24,6 +27,7 @@ namespace TiltBrush.DocumentImport
         {
             Entity = entity; Properties = properties; HasSnapshot = hasSnapshot;
             StateId = stateId;
+            IsGroup = properties["a"] != null && ShapesXrDocument.ReadGuid(properties["a"]) == kGroupPreset;
             if (properties["pi"] is JArray parent)
             {
                 if (parent.Count != 2 || parent[1].Type != JTokenType.Boolean) { throw new InvalidDataException("Invalid ShapesXR parent info"); }

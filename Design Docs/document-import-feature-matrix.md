@@ -243,6 +243,25 @@ Implementation checkpoint, 2026-10-24:
     standalone data checks and cached-assembly compilation pass. This environment
     change still needs fresh Unity compilation and live import/save/reload checks.
 
+20. Live graphical Unity validation now covers the environment sun and ShapesXR
+    panels, images and text. The Maquette sun matched the expected HDR radiance and
+    direction on a rotated canvas; its saved/reloaded `Lights` metadata was identical.
+    The supplied ShapesXR space imported ten panels without object failures and
+    reloaded identical geometry definitions/instances, layers and lights. A second
+    local space imported two referenced images and two panels without failures.
+    An independently authored native-space fixture added fixed-size and auto-fit
+    text without font substitution, preserving separate opacity despite zero saved
+    color alpha. Saving/reloading that combined scene retained both images, both
+    texts and both panels with identical geometry, image, text, layer and light
+    metadata. These image cases exercised alpha blending; standalone adapter tests
+    cover the other mapped modes. No rendered source comparison or ShapesXR model
+    import is claimed. Material properties remain partial. The previously reported
+    unsupported object in the second space is the native Group preset; it is now
+    recognized as a container while its children retain placement and grouping.
+    A fresh Unity recompile including that fix passed 73 import-focused EditMode
+    tests. The actual sample group was also resolved live as a container with
+    three children. Standalone data checks now total 46, with zero failures.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
