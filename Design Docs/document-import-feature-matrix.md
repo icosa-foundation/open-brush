@@ -451,6 +451,27 @@ Implementation checkpoint, 2026-10-24:
     does not validate a real ShapesXR audio download. The three cached real spaces
     contain no sound actions. Triggered and spatial fixture actions remained inactive.
 
+34. Image appearance now uses optional per-instance `Colors` (RGBA texture
+    multipliers, default white) and `BlendModes` (default Cutout), aligned with
+    `Transforms`. Alpha lives solely in `Colors`; the established `TintStates`
+    legacy darkening remains independent. The unreleased `Opacities`, `Layouts`
+    and image geometry matrices have been removed without migration aliases.
+    This supersedes earlier checkpoint descriptions of image layout persistence.
+    Ordinary placement and the existing `AspectRatio` describe rectangular images.
+    Copies sharing a file but using different proportions occupy separate image-index
+    records, grouped by file path and aspect ratio; the media file remains shared.
+    Import folds source nonuniform scale into width/height and rigid orientation.
+    Significant shear and reflection are explicitly unsupported. Audits found neither
+    in 1,373 Maquette image states or 103 real ShapesXR image/Figma objects; the
+    latter comprise 102 schema-3 images and one legacy-schema Figma object inspected
+    directly, rather than imported through the production legacy reader.
+    All 1,373 Maquette states and 102 schema-3 ShapesXR images convert through the
+    rectangular adapter without errors. Sixty-seven standalone checks and 94 fresh
+    Unity EditMode tests pass. A live four-image fixture retained differing aspects,
+    RGBA, blend modes, legacy tint, grouping and clone state through .tilt save/reload,
+    while sharing the original plane mesh. Export-material checks retained RGBA and
+    blend modes; these checks do not claim source-rendered visual parity.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |

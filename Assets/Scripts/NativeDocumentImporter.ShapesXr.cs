@@ -228,12 +228,10 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             var widget = (ImageWidget)command.Widget;
             widget.ReferenceImage = reference;
-            widget.Opacity = color.a;
+            widget.ImageColor = color;
             widget.TwoSided = true;
-            widget.ApplyLayout(new ImageWidgetLayout
-            {
-                Transform = image.GeometryTransform, Tint = new[] { color.r, color.g, color.b }, BlendMode = blend
-            });
+            widget.SetAspectRatioOverride(image.Width / image.Height);
+            widget.BlendMode = blend;
             widget.LocalTransform = widget.Canvas.Pose.inverse * canvas.Pose * pose;
             command.SetWidgetCost(widget.GetTiltMeterCost());
             return widget;

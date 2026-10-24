@@ -8,9 +8,9 @@ namespace TiltBrush.DocumentImport
 {
     public sealed class MaquetteImageData
     {
-        public MaquettePlacement Placement { get; internal set; }
+        public NativePlacement Placement { get; internal set; }
         public float Height { get; internal set; }
-        public float[] GeometryTransform { get; internal set; }
+        public float Width { get; internal set; }
         public string MaterialId { get; internal set; }
     }
 
@@ -20,15 +20,10 @@ namespace TiltBrush.DocumentImport
         {
             if (primitive.Type != "ImageFile" && primitive.Type != "ImageFromWeb") { throw new ArgumentException("Expected a Maquette image primitive"); }
             var placement = new MaquettePlacement(state);
-            // The image's aspect is already in its saved scale. Start with a one-unit square,
-            // then factor out its height so ordinary image-widget sizing remains meaningful.
-            var matrix = placement.GetIntrinsicTransform(new[] { 1f, 1f, 1f }, new[] { 0f, 0f, 0f }, unitsPerMetre);
-            float height = (float)Math.Sqrt((double)matrix[4] * matrix[4] + (double)matrix[5] * matrix[5] + (double)matrix[6] * matrix[6]);
-            if (!(height > 0) || float.IsInfinity(height)) { throw new InvalidDataException("Collapsed or invalid Maquette image height"); }
-            for (int i = 0; i < 15; ++i) { matrix[i] /= height; }
+            var rectangle = NativeImageRectangle.FromPlacement(placement, 1, 1, unitsPerMetre);
             return new MaquetteImageData
             {
-                Placement = placement, Height = height, GeometryTransform = matrix,
+                Placement = rectangle.Placement, Height = rectangle.Height, Width = rectangle.Width,
                 MaterialId = primitive.UsesDefaultImageMaterial ? "TranslucentUnlit" : (string)state.Data["materialId"] ?? "TranslucentUnlit"
             };
         }

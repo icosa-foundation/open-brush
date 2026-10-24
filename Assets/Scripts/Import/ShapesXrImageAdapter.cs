@@ -7,16 +7,9 @@ using Newtonsoft.Json.Linq;
 
 namespace TiltBrush.DocumentImport
 {
-    public sealed class ShapesXrImageData
-    {
-        public NativePlacement Placement { get; internal set; }
-        public float Height { get; internal set; }
-        public float[] GeometryTransform { get; internal set; }
-    }
-
     public static class ShapesXrImageAdapter
     {
-        public static ShapesXrImageData Read(ShapesXrObjectState state, float unitsPerMetre)
+        public static NativeImageRectangle Read(ShapesXrObjectState state, float unitsPerMetre)
         {
             if (!(state.Properties["s"] is JArray bounds) || bounds.Count != 3 ||
                 (bounds[0].Type != JTokenType.Float && bounds[0].Type != JTokenType.Integer))
@@ -29,12 +22,7 @@ namespace TiltBrush.DocumentImport
             // a one-unit square. The object hierarchy's authored scale remains independent.
             float width = aspect < 0 || aspect > 1 ? 1 : aspect;
             float localHeight = aspect > 1 ? 1 / aspect : 1;
-            var placement = state.Placement();
-            var matrix = placement.GetIntrinsicTransform(new[] { width, localHeight, 1f }, new[] { 0f, 0f, 0f }, unitsPerMetre);
-            float height = (float)Math.Sqrt((double)matrix[4] * matrix[4] + (double)matrix[5] * matrix[5] + (double)matrix[6] * matrix[6]);
-            if (!(height > 0) || float.IsInfinity(height)) { throw new InvalidDataException("Collapsed ShapesXR image height"); }
-            for (int i = 0; i < 15; ++i) { matrix[i] /= height; }
-            return new ShapesXrImageData { Placement = placement, Height = height, GeometryTransform = matrix };
+            return NativeImageRectangle.FromPlacement(state.Placement(), width, localHeight, unitsPerMetre);
         }
     }
 }

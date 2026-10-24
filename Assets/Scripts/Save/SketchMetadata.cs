@@ -701,11 +701,12 @@ namespace TiltBrush
         public bool[] TwoSidedFlags { get; set; }
         public float[] ExtrusionDepths { get; set; }
         public Color[] ExtrusionColors { get; set; }
-        // Per-image alpha multiplier; only written when an image is not fully opaque.
+        // Per-instance texture RGBA multiplier; omitted when every color is white.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public float[] Opacities { get; set; }
+        public Color[] Colors { get; set; }
+        // Missing values use the established cutout behavior.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public ImageWidgetLayout[] Layouts { get; set; }
+        public ImageBlendMode[] BlendModes { get; set; }
     }
 
     [Serializable]

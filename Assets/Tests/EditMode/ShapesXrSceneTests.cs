@@ -169,12 +169,11 @@ namespace TiltBrush.Tests
             state.Properties["s"] = new JArray(2, 1, 0);
             var image = ShapesXrImageAdapter.Read(state, 10);
             Assert.AreEqual(5, image.Height, 1e-5);
-            Assert.AreEqual(4, image.GeometryTransform[0], 1e-5);
-            Assert.AreEqual(1, image.GeometryTransform[5], 1e-5);
+            Assert.AreEqual(20, image.Width, 1e-5);
             state.Properties["s"] = new JArray(.5f, 1, 0);
             image = ShapesXrImageAdapter.Read(state, 10);
             Assert.AreEqual(10, image.Height, 1e-5);
-            Assert.AreEqual(1, image.GeometryTransform[0], 1e-5);
+            Assert.AreEqual(10, image.Width, 1e-5);
         }
 
         [Test]
@@ -233,6 +232,24 @@ namespace TiltBrush.Tests
             Assert.AreEqual(Id(14), interactions[1].StateId);
             interactions[0].ActionData[0] = "changed";
             Assert.AreEqual("resource", (string)document.Entities[Id(12)].Properties["st-inr"][0][3][1][0]);
+        }
+
+        [Test]
+        public void RectangleDecompositionPreservesCornersUnderRotatedNonuniformParents()
+        {
+            var source = new NativePlacement(new[]
+            {
+                (new System.Numerics.Vector3(1, 2, 3), System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitY, (float)Math.PI / 2), new System.Numerics.Vector3(3, 2, 1)),
+                (new System.Numerics.Vector3(4, 5, 6), System.Numerics.Quaternion.CreateFromAxisAngle(System.Numerics.Vector3.UnitY, .3f), new System.Numerics.Vector3(2, 1, 3))
+            });
+            var rectangle = NativeImageRectangle.FromPlacement(source, 1, 1, 10);
+            foreach (float x in new[] { -.5f, .5f })
+            foreach (float y in new[] { -.5f, .5f })
+            {
+                var expected = source.TransformPoint(new System.Numerics.Vector3(x, y, 0), 10);
+                var actual = rectangle.Placement.TransformPoint(new System.Numerics.Vector3(x * rectangle.Width / 10, y * rectangle.Height / 10, 0), 10);
+                Assert.Less(System.Numerics.Vector3.Distance(expected, actual), .0001f);
+            }
         }
 
         [Test]

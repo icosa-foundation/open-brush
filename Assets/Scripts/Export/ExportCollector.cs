@@ -89,7 +89,7 @@ namespace TiltBrush
                 var (exportable, notExportable) = images.Cast<ImageWidget>().Partition(IsImageExportable);
 
                 int imageMaterialId = 0;
-                foreach (var group in exportable.GroupBy(widget => (widget.ReferenceImage, widget.TintColor, widget.Opacity, widget.BlendMode, HasLayout: widget.CaptureLayout() != null)))
+                foreach (var group in exportable.GroupBy(widget => (widget.ReferenceImage, widget.ImageColor, widget.BlendMode)))
                 {
                     ReferenceImage ri = group.Key.ReferenceImage;
                     if (ri == null)
@@ -378,19 +378,16 @@ namespace TiltBrush
                 uriBase: Path.GetDirectoryName(ri.FileFullPath))
             {
                 BaseColorTex = Path.GetFileName(ri.FileFullPath),
-                BaseColorFactor = new Color(widget.TintColor.r, widget.TintColor.g, widget.TintColor.b, widget.Opacity),
+                BaseColorFactor = widget.ImageColor,
                 MetallicFactor = kRefimageMetallicFactor
             };
-            if (widget.CaptureLayout() != null)
+            material.BlendMode = widget.BlendMode switch
             {
-                material.BlendMode = widget.BlendMode switch
-                {
-                    ImageBlendMode.Additive => ExportableMaterialBlendMode.AdditiveBlend,
-                    ImageBlendMode.AlphaBlend => ExportableMaterialBlendMode.AlphaBlend,
-                    ImageBlendMode.Opaque => ExportableMaterialBlendMode.None,
-                    _ => ExportableMaterialBlendMode.AlphaMask
-                };
-            }
+                ImageBlendMode.Additive => ExportableMaterialBlendMode.AdditiveBlend,
+                ImageBlendMode.AlphaBlend => ExportableMaterialBlendMode.AlphaBlend,
+                ImageBlendMode.Opaque => ExportableMaterialBlendMode.None,
+                _ => ExportableMaterialBlendMode.AlphaMask
+            };
             return material;
         }
 

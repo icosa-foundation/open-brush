@@ -244,7 +244,7 @@ namespace TiltBrush.Tests
         }
 
         [Test]
-        public void ImagePlacementRetainsShearAndKeepsHeightInTheOrdinaryWidgetSize()
+        public void ImagePlacementUsesRectangleDimensionsAndRejectsShear()
         {
             using (var document = new MaquetteDocument(m_Project))
             {
@@ -254,11 +254,11 @@ namespace TiltBrush.Tests
                     'rotation':{'x':0,'y':0,'z':0.38268343,'w':0.92387953}}");
                 states[1].Data["materialId"] = "Additive";
                 var primitive = MaquettePrimitiveData.Read(JObject.Parse(@"{'primitiveType':'ImageFile','primitivePath':'Images/test.png'}"), 21, null);
+                Assert.Throws<NotSupportedException>(() => MaquetteImageAdapter.Read(states[1], primitive, 10));
+                states[1].Data["cachedTransform"]["rotation"] = JObject.Parse(@"{'x':0,'y':0,'z':0,'w':1}");
                 var image = MaquetteImageAdapter.Read(states[1], primitive, 10);
-                var m = image.GeometryTransform;
-                Assert.AreEqual(Math.Sqrt(2.5) * 10, image.Height, 1e-5);
-                Assert.AreEqual(1, Math.Sqrt(m[4] * m[4] + m[5] * m[5] + m[6] * m[6]), 1e-6);
-                Assert.AreEqual(-.6, m[0] * m[4] + m[1] * m[5] + m[2] * m[6], 1e-6);
+                Assert.AreEqual(20, image.Width, 1e-5);
+                Assert.AreEqual(10, image.Height, 1e-5);
                 Assert.AreEqual("Additive", image.MaterialId);
                 primitive = MaquettePrimitiveData.Read(JObject.Parse(@"{'primitiveType':'ImageFile'}"), 19, null);
                 Assert.AreEqual("TranslucentUnlit", MaquetteImageAdapter.Read(states[1], primitive, 10).MaterialId);

@@ -261,12 +261,10 @@ namespace TiltBrush
                                         report.UnmappedMaterials[data.MaterialId] = count + 1;
                                         break;
                                 }
-                                imageWidget.Opacity = color.a;
+                                imageWidget.ImageColor = color;
                                 imageWidget.TwoSided = true;
-                                imageWidget.ApplyLayout(new ImageWidgetLayout
-                                {
-                                    Transform = data.GeometryTransform, Tint = new[] { color.r, color.g, color.b }, BlendMode = blend
-                                });
+                                imageWidget.SetAspectRatioOverride(data.Width / data.Height);
+                                imageWidget.BlendMode = blend;
                                 imageWidget.LocalTransform = imageWidget.Canvas.Pose.inverse * canvas.Pose * pose;
                                 command.SetWidgetCost(imageWidget.GetTiltMeterCost());
                                 widget = imageWidget;

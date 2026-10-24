@@ -32,8 +32,8 @@ namespace TiltBrush
             public bool twoSided;
             public float extrusionDepth;
             public Color extrusionColor;
-            public float opacity;
-            public ImageWidgetLayout imageLayout;
+            public Color imageColor;
+            public ImageBlendMode imageBlendMode;
         }
 
         private static CanvasScript GetSavedCanvas(GrabWidget widget) =>
@@ -450,20 +450,18 @@ namespace TiltBrush
 
             // From the list of image widgets in the sketch, create a map that contains a unique
             // entry per image, with associated metadata (transform and pin state) stored as arrays.
-            Dictionary<string, List<WidgetMetadata>> imagesByPath =
-                new Dictionary<string, List<WidgetMetadata>>();
-            Dictionary<string, float> aspectRatios = new Dictionary<string, float>();
+            var imagesByPath = new Dictionary<(string Path, float Aspect), List<WidgetMetadata>>();
             foreach (var image in imports)
             {
                 string path = image.RelativePath;
+                var key = (Path: path, Aspect: image.AspectRatio ?? 1);
                 if (image.AspectRatio == null)
                 {
                     Debug.LogError("Trying to save partially-initialized image {fileName}");
                 }
-                if (!imagesByPath.ContainsKey(path))
+                if (!imagesByPath.ContainsKey(key))
                 {
-                    imagesByPath[path] = new List<WidgetMetadata>();
-                    aspectRatios[path] = image.AspectRatio ?? 1;
+                    imagesByPath[key] = new List<WidgetMetadata>();
                 }
                 WidgetMetadata newEntry = new WidgetMetadata();
                 newEntry.xf = GetSavedTransform(image, image.SaveTransform);
@@ -472,9 +470,9 @@ namespace TiltBrush
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
                 newEntry.layerId = App.Scene.GetIndexOfCanvas(GetSavedCanvas(image));
                 newEntry.twoSided = image.TwoSided;
-                newEntry.opacity = image.Opacity;
-                newEntry.imageLayout = image.CaptureLayout();
-                imagesByPath[path].Add(newEntry);
+                newEntry.imageColor = image.ImageColor;
+                newEntry.imageBlendMode = image.BlendMode;
+                imagesByPath[key].Add(newEntry);
             }
 
             // Build the save metadata from our unique map.
@@ -483,9 +481,9 @@ namespace TiltBrush
             {
                 var val = new TiltImages75
                 {
-                    FilePath = elem.Key,
-                    FileName = Path.GetFileName(elem.Key),
-                    AspectRatio = aspectRatios[elem.Key]
+                    FilePath = elem.Key.Path,
+                    FileName = Path.GetFileName(elem.Key.Path),
+                    AspectRatio = elem.Key.Aspect
                 };
 
                 // Order and align the metadata.
@@ -510,14 +508,15 @@ namespace TiltBrush
                     val.ExtrusionDepths[i] = ordered[i].extrusionDepth;
                     val.ExtrusionColors[i] = ordered[i].extrusionColor;
                 }
-                if (ordered.Any(m => m.opacity < 1.0f))
+                if (ordered.Any(m => !m.imageColor.Equals(Color.white)))
                 {
-                    val.Opacities = ordered.Select(m => m.opacity).ToArray();
+                    val.Colors = ordered.Select(m => m.imageColor).ToArray();
                 }
-                if (ordered.Any(m => m.imageLayout != null)) { val.Layouts = ordered.Select(m => m.imageLayout).ToArray(); }
+                if (ordered.Any(m => m.imageBlendMode != ImageBlendMode.Cutout))
+                { val.BlendModes = ordered.Select(m => m.imageBlendMode).ToArray(); }
                 imageIndex.Add(val);
             }
-            return imageIndex.OrderBy(i => i.FileName).ToArray();
+            return imageIndex.OrderBy(i => i.FileName).ThenBy(i => i.AspectRatio).ToArray();
         }
 
         public static void VerifyMetadataVersion(SketchMetadata data)
