@@ -24,6 +24,7 @@ namespace TiltBrush
         public int ModelObjects { get; internal set; }
         public int ImageObjects { get; internal set; }
         public int LightObjects { get; internal set; }
+        public int StrokeObjects { get; internal set; }
         public int HiddenObjects { get; internal set; }
         public int FontSubstitutions { get; internal set; }
         public int FailedObjects { get; internal set; }
@@ -103,7 +104,8 @@ namespace TiltBrush
                         continue;
                     }
                     if (state.Entity.Kind != MaquetteEntityKind.Procedural && state.Entity.Kind != MaquetteEntityKind.Text &&
-                        state.Entity.Kind != MaquetteEntityKind.Primitive && state.Entity.Kind != MaquetteEntityKind.Light)
+                        state.Entity.Kind != MaquetteEntityKind.Primitive && state.Entity.Kind != MaquetteEntityKind.Light &&
+                        state.Entity.Kind != MaquetteEntityKind.Stroke)
                     {
                         string kind = state.Entity.Kind.ToString();
                         report.UnsupportedObjects.TryGetValue(kind, out int count);
@@ -112,6 +114,51 @@ namespace TiltBrush
                     }
                     try
                     {
+                        if (state.Entity.Kind == MaquetteEntityKind.Stroke)
+                        {
+                            var ribbon = MaquetteStrokeAdapter.Read(document, state, App.METERS_TO_UNITS);
+                            var strokeCanvas = canvas;
+                            if (!state.Visible)
+                            {
+                                if (hiddenCanvas == null)
+                                {
+                                    hiddenCanvas = App.Scene.AddLayerNow();
+                                    hiddenCanvas.name = $"{scene.Name} (hidden)";
+                                    hiddenCanvas.Pose = canvas.Pose;
+                                }
+                                strokeCanvas = hiddenCanvas;
+                            }
+                            var group = SketchGroupTag.None;
+                            if (state.Parent != null && !groups.TryGetValue(state.Parent.Id, out group))
+                            {
+                                group = App.GroupManager.NewUnusedGroup();
+                                groups.Add(state.Parent.Id, group);
+                            }
+                            var strokeColor = ReadColor(state.Data["color"]);
+                            CreateNativeRibbon(ribbon, strokeCanvas, strokeColor, group);
+                            report.StrokeObjects++;
+                            if (!state.Visible) { report.HiddenObjects++; }
+                            string material = (string)state.Data["materialId"];
+                            if (material != "Unlit" && material != "DefaultUnlit")
+                            {
+                                string feature = $"Maquette ribbon material {material ?? "default"}";
+                                report.UnmappedMaterials.TryGetValue(feature, out int count);
+                                report.UnmappedMaterials[feature] = count + 1;
+                            }
+                            if (strokeColor.a < 1)
+                            {
+                                const string feature = "Maquette ribbon alpha blending";
+                                report.UnmappedMaterials.TryGetValue(feature, out int count);
+                                report.UnmappedMaterials[feature] = count + 1;
+                            }
+                            if ((bool?)state.Data["lockedForEdit"] == true)
+                            {
+                                const string feature = "Maquette per-stroke locking";
+                                report.UnsupportedObjects.TryGetValue(feature, out int count);
+                                report.UnsupportedObjects[feature] = count + 1;
+                            }
+                            continue;
+                        }
                         GrabWidget widget;
                         Color color = ReadColor(state.Data["color"]);
                         if (state.Entity.Kind == MaquetteEntityKind.Light)
