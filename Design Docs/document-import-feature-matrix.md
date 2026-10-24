@@ -277,6 +277,21 @@ Implementation checkpoint, 2026-10-24:
     The largest decoded ribbon has 2,511 samples, within the existing brush capacity.
     Live .tilt stroke save/reload validation is still outstanding at this checkpoint.
 
+22. The pre-v4 straight-ribbon frame migration is now handled without modifying
+    source state records. Native migration applies a construction correction to
+    each state and its inverse to the mesh; retaining the old centered points and
+    saved state is their equivalent composition. Regression inputs exercise v2,
+    v3 and current frames under a nonidentity saved rotation. All 15,504 installed
+    stroke states now decode without errors, including the 2,162 previously rejected
+    legacy states. This corpus check does not execute or compare Maquette rendering.
+    The live authored two-ribbon fixture also saved/reloaded unchanged control-point
+    positions, rotations, pressure, timestamps, brush identity/size/scale, colors,
+    grouping and visibility. Rebuilt geometry still matched the same 22 nondegenerate
+    triangles and boundary tolerance after reload. Source shading parity and the
+    reported material/locking differences remain outstanding. Unity compiled the
+    final legacy-frame change and passed all 76 focused EditMode tests; the standalone
+    data suite passes 49 checks.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
