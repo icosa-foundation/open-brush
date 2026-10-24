@@ -294,10 +294,16 @@ namespace TiltBrush
                                 modelWidget.Show(true);
                                 command.SetWidgetCost(modelWidget.GetTiltMeterCost());
                                 widget = modelWidget;
-                                if (primitive.LoadOption != "Original" && !string.IsNullOrEmpty(materialId))
+                                if (primitive.LoadOption != "Original" && !MaquetteMaterialAdapter.IsSupportedModelMaterial(materialId))
                                 {
                                     report.UnmappedMaterials.TryGetValue(materialId, out int count);
                                     report.UnmappedMaterials[materialId] = count + 1;
+                                }
+                                if (state.Data["castShadow"]?.Type == JTokenType.Boolean && !(bool)state.Data["castShadow"])
+                                {
+                                    const string feature = "Maquette model shadow casting";
+                                    report.UnsupportedObjects.TryGetValue(feature, out int count);
+                                    report.UnsupportedObjects[feature] = count + 1;
                                 }
                                 }
                         }
