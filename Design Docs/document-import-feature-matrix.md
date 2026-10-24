@@ -56,9 +56,52 @@ and adapted to the shared recipe encoding, together with the text branch's cloni
 and layer-save fixes. The editable-instance DTO round-trip passes in a narrow standalone
 check using production JSON converters; actual widget creation and .tilt save/reload
 remain unverified. Full Unity compilation is blocked by an existing USD package error.
-Legacy ShapesXR state migration and native content-conversion commands are not yet
-implemented. Animation and scene/frame switching are deferred until the other supported
+Legacy ShapesXR state migration and its runtime content conversion are not yet
+implemented. Maquette runtime conversion now has an initial procedural/text path;
+the remaining entity types are reported as unsupported. Animation and scene/frame
+switching are deferred until the other supported
 content is complete. The full 3D Shapes authoring UI is not included.
+
+Implementation checkpoint, 2026-10-24:
+
+1. Maquette resource resolution now covers bundled files, archive streams, installed
+   content, user libraries, relative dependencies and legacy author-machine paths.
+   Version normalization resolves older shape names using the user's installed
+   primitive-path map. All 67,751 checked local model/image references resolve in the
+   installed corpus. This excludes gallery/network references and proves file
+   resolution, not model loading, material fidelity or rendered appearance.
+2. The frame adapter distinguishes pre-21 outward borders and their opposite
+   scale-border flag meaning. Builder scales multiply ancestor local scale components;
+   they are separate from matrix-derived scale. Placement retains hierarchy shear
+   through ordered shared recipe transforms and a rigid widget pose. All 120,580
+   checked structural parent links match their saved parent-state references.
+3. Existing text widgets now save optional authored layout: font fitting, style,
+   alignment, wrapping, rich text, rectangle size/pivot and an intrinsic glyph affine
+   transform. Legacy image-style text stretch is captured when saving or cloning.
+   The existing text widget and text index remain the persistence representation.
+   No vendor font assets are included.
+4. Native text conversion uses selected-state text before the TextContents fallback.
+   The shipped Maquette prefab has a 10,000-unit initial autosizing ratio, font size
+   limits 1 to 10,000, a centered text rectangle inside a text field offset by
+   (0.5, -0.5), and a text-area Z offset of -0.001. These measured prefab settings
+   differ from the ratio of 100 in the script's field initializer. The adapter maps
+   the box and glyph placement; all 910 checked native text states convert without
+   missing fallback files. Font substitution and actual TMP rendering remain unverified.
+5. Nineteen focused reader/resource/adapter tests pass in the standalone harness.
+   Text layout round-trip and validation pass using production sketch JSON converters.
+   Separate compiler invocations for the current data assembly and main application
+   sources pass against the existing dependency assemblies, without Unity analyzers.
+   This does not clear the USD package's Unity compilation error or prove Play-mode,
+   widget, renderer, save/reload or end-to-end native import behavior.
+6. `import.maquette` now connects procedural and text conversion to the existing widget
+   creation paths. It imports the document's selected state at authored placement,
+   maps immediate parent groups and locks, and places hidden objects on a hidden layer.
+   Text can use the user's installed Segoe UI Semibold font; unavailable fonts are
+   reported as substitutions. The returned report counts unsupported object kinds,
+   unmapped procedural materials and individual failures. The API command has not
+   been exercised in Play mode. Models, images, drawings, other supported Maquette
+   content, and ShapesXR runtime conversion remain to be wired up. This is a partial
+   implementation, not a finished or visually verified importer.
 
 2. FEATURE COMPARISON
 
