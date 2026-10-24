@@ -19,6 +19,7 @@ namespace TiltBrush
     public sealed class NativeImmImport : MonoBehaviour
     {
         private const string LogPrefix = "[OB_NATIVE_IMM_20261013]";
+        private const float PendingLoadTimeoutSeconds = 120f;
         private static NativeImmImport s_Active;
         private static int[] s_UnloadingDocumentIds = new int[0];
 
@@ -35,6 +36,7 @@ namespace TiltBrush
         private NativeImmRenderer m_Renderer;
         private Camera m_Camera;
         private bool m_Ready;
+        private float? m_LoadStartedAt;
         private bool m_AlignInitialView;
         private int m_ChapterIndex;
         private string m_Path;
@@ -186,8 +188,24 @@ namespace TiltBrush
         {
             var owner = s_Active;
             while (owner != null && owner == s_Active && owner.m_Model == null)
+            {
+                if (owner.AbortExpiredPendingLoad()) return null;
                 await Task.Yield();
+            }
             return owner != null && owner == s_Active ? owner.m_Model : null;
+        }
+
+        private bool AbortExpiredPendingLoad()
+        {
+            if (this != s_Active || m_Ready || !m_LoadStartedAt.HasValue ||
+                Time.realtimeSinceStartup - m_LoadStartedAt.Value < PendingLoadTimeoutSeconds)
+                return false;
+
+            Debug.LogError($"[OB_IMM_LOAD_DEADLINE_20261024] Native document did not become ready: {m_Path}");
+            OutputWindowScript.m_Instance.AddNewLine("Native IMM document did not finish loading.");
+            // An asynchronous waiter may outlive its owner; never cancel a replacement import.
+            if (this == s_Active) Unload();
+            return true;
         }
 
         public static void Unload()
@@ -227,6 +245,7 @@ namespace TiltBrush
 
         private void BeginLoad()
         {
+            m_LoadStartedAt = Time.realtimeSinceStartup;
             try
             {
                 m_Manager = ImmPlayerManager.Instance;
@@ -251,6 +270,7 @@ namespace TiltBrush
 
         private void LateUpdate()
         {
+            if (AbortExpiredPendingLoad()) return;
             if (m_Model != null)
             {
                 if (m_Widget == null || !m_Widget.gameObject.activeSelf)
