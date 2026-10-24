@@ -372,6 +372,14 @@ Implementation checkpoint, 2026-10-24:
     standalone checks and cached-assembly source compilation pass. No fresh Unity
     runtime validation was performed for this reporting change.
 
+28. A standalone audit of the 174 installed Maquette project directories converted
+    all 2,728 saved procedural states to validated shared recipes, including hierarchy
+    linear transforms: 1,344 cylinders, 994 rounded rectangles, 280 frames and 110
+    conic sections. There were zero conversion failures. These are state instances,
+    not necessarily distinct shape definitions; the corpus contains no capsule
+    states. This checks recipe conversion and validation only. It does not evaluate
+    Polyhydra meshes, compare source geometry or establish visual parity.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
