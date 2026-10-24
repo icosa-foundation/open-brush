@@ -23,6 +23,7 @@ namespace TiltBrush
         public int TextObjects { get; internal set; }
         public int ModelObjects { get; internal set; }
         public int ImageObjects { get; internal set; }
+        public int LightObjects { get; internal set; }
         public int HiddenObjects { get; internal set; }
         public int FontSubstitutions { get; internal set; }
         public int FailedObjects { get; internal set; }
@@ -66,7 +67,7 @@ namespace TiltBrush
                 report.Status = "failed";
                 report.Error = exception.Message;
             }
-            Debug.Log($"[OB_NATIVE_IMPORT] Maquette {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, models={report.ModelObjects}, images={report.ImageObjects}, failed={report.FailedObjects}");
+            Debug.Log($"[OB_NATIVE_IMPORT] Maquette {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, models={report.ModelObjects}, images={report.ImageObjects}, lights={report.LightObjects}, failed={report.FailedObjects}");
         }
 
         private static async Task ImportMaquetteAsync(string path, string contentDirectory, string userLibrary, NativeDocumentImportReport report)
@@ -99,7 +100,7 @@ namespace TiltBrush
                         continue;
                     }
                     if (state.Entity.Kind != MaquetteEntityKind.Procedural && state.Entity.Kind != MaquetteEntityKind.Text &&
-                        state.Entity.Kind != MaquetteEntityKind.Primitive)
+                        state.Entity.Kind != MaquetteEntityKind.Primitive && state.Entity.Kind != MaquetteEntityKind.Light)
                     {
                         string kind = state.Entity.Kind.ToString();
                         report.UnsupportedObjects.TryGetValue(kind, out int count);
@@ -110,7 +111,25 @@ namespace TiltBrush
                     {
                         GrabWidget widget;
                         Color color = ReadColor(state.Data["color"]);
-                        if (state.Entity.Kind == MaquetteEntityKind.Procedural)
+                        if (state.Entity.Kind == MaquetteEntityKind.Light)
+                        {
+                            var data = MaquetteLightAdapter.Read(state, App.METERS_TO_UNITS);
+                            var command = new CreateWidgetCommand(WidgetManager.m_Instance.LightWidgetPrefab,
+                                canvas.Pose * Pose(data.Placement), forceTransform: true, skipIntroAnimation: true);
+                            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                            var lightWidget = (LightWidget)command.Widget;
+                            var light = lightWidget.SetLightType(data.IsSpot ? LightType.Spot : LightType.Point);
+                            light.color = color;
+                            light.intensity = data.Intensity;
+                            light.range = data.Range * canvas.Pose.scale;
+                            if (data.IsSpot) { light.spotAngle = data.SpotAngle; light.innerSpotAngle = 0; }
+                            light.enabled = data.Enabled;
+                            light.shadows = data.Shadows ? LightShadows.Hard : LightShadows.None;
+                            lightWidget.RefreshLightGizmo();
+                            command.SetWidgetCost(lightWidget.GetTiltMeterCost());
+                            widget = lightWidget;
+                        }
+                        else if (state.Entity.Kind == MaquetteEntityKind.Procedural)
                         {
                             int version = (int)document.Sections["proceduralmeshes.json"]["version"];
                             var recipe = MaquetteGeometryAdapter.Convert(state.Entity.Data, state.GetBuilderScale(), version);
@@ -256,6 +275,7 @@ namespace TiltBrush
                         if ((bool?)state.Data["lockedForEdit"] == true) { widget.PinFromSave(); }
                         if (state.Entity.Kind == MaquetteEntityKind.Procedural) { report.ProceduralObjects++; }
                         else if (state.Entity.Kind == MaquetteEntityKind.Text) { report.TextObjects++; }
+                        else if (state.Entity.Kind == MaquetteEntityKind.Light) { report.LightObjects++; }
                         else if (widget is ImageWidget) { report.ImageObjects++; }
                         else { report.ModelObjects++; }
                     }

@@ -54,6 +54,34 @@ namespace TiltBrush.Tests
         private void Write(string name, JObject data) => File.WriteAllText(Path.Combine(m_Project, name), data.ToString());
 
         [Test]
+        public void LightsKeepSavedWorldRangeAndIndependentEnabledAndShadowFlags()
+        {
+            Write("lights.json", JObject.Parse(@"{'version':20,'lights':[{'guid':'light','LightType':'Spotlight'}]}"));
+            var scene = Scene("light-scene", 0);
+            var child = scene["treeRoots"][0]["children"][0];
+            child["targetEntityGuid"] = "light";
+            child["lightEntityState"] = JObject.Parse(@"{'Radius':3,'Intensity':4,'SpotAngle':35,'TurnedOn':false,'IsShadowEnabled':false}");
+            Write("scenes.json", new JObject { ["version"] = 20, ["slides"] = new JArray(scene) });
+            using (var document = new MaquetteDocument(m_Project))
+            {
+                var state = document.ReadStates(document.SelectScene())[1];
+                var light = MaquetteLightAdapter.Read(state, 10);
+                Assert.IsTrue(light.IsSpot);
+                Assert.AreEqual(30, light.Range);
+                Assert.AreEqual(4, light.Intensity);
+                Assert.AreEqual(35, light.SpotAngle);
+                Assert.IsFalse(light.Enabled);
+                Assert.IsFalse(light.Shadows);
+                Assert.AreEqual(10, light.Placement.Position[0]);
+                state.Data["lightEntityState"] = null;
+                light = MaquetteLightAdapter.Read(state, 10);
+                Assert.AreEqual(100, light.Range);
+                Assert.IsTrue(light.Enabled);
+                Assert.IsTrue(light.Shadows);
+            }
+        }
+
+        [Test]
         public void ImagePlacementRetainsShearAndKeepsHeightInTheOrdinaryWidgetSize()
         {
             using (var document = new MaquetteDocument(m_Project))
