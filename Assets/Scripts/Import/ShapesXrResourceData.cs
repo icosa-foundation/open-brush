@@ -9,7 +9,7 @@ using Newtonsoft.Json.Linq;
 
 namespace TiltBrush.DocumentImport
 {
-    public enum ShapesXrResourceKind { Image, Model }
+    public enum ShapesXrResourceKind { Image, Model, Audio }
 
     public sealed class ShapesXrResourceFile
     {
@@ -44,6 +44,9 @@ namespace TiltBrush.DocumentImport
                 case "glb": case "gltf": case "obj": case "fbx": case "zip":
                     Kind = ShapesXrResourceKind.Model;
                     break;
+                case "wav": case "mp3":
+                    Kind = ShapesXrResourceKind.Audio;
+                    break;
                 default: throw new NotSupportedException($"Unsupported ShapesXR resource format: {format}");
             }
             var groups = data["files"] as JArray ?? throw new InvalidDataException("Missing ShapesXR resource files");
@@ -74,6 +77,7 @@ namespace TiltBrush.DocumentImport
             }
             Files = files;
             MainFile = Kind == ShapesXrResourceKind.Image ? files.FirstOrDefault(file => IsImage(file.Name)) :
+                Kind == ShapesXrResourceKind.Audio ? files.FirstOrDefault(file => IsAudio(file.Name)) :
                 files.FirstOrDefault(file => file.Name.EndsWith(".glb", StringComparison.OrdinalIgnoreCase)) ??
                 files.FirstOrDefault(file => IsModel(file.Name));
             if (MainFile == null) { throw new NotSupportedException("ShapesXR resource has no supported renderable file"); }
@@ -81,5 +85,6 @@ namespace TiltBrush.DocumentImport
 
         private static bool IsImage(string name) => new[] { ".png", ".jpg", ".jpeg", ".bmp", ".tga" }.Contains(Path.GetExtension(name).ToLowerInvariant());
         private static bool IsModel(string name) => new[] { ".glb", ".gltf", ".obj", ".fbx" }.Contains(Path.GetExtension(name).ToLowerInvariant());
+        private static bool IsAudio(string name) => new[] { ".wav", ".mp3" }.Contains(Path.GetExtension(name).ToLowerInvariant());
     }
 }

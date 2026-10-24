@@ -25,6 +25,7 @@ namespace TiltBrush
         public int ImageObjects { get; internal set; }
         public int LightObjects { get; internal set; }
         public int StrokeObjects { get; internal set; }
+        public int AudioObjects { get; internal set; }
         public int HiddenObjects { get; internal set; }
         public int FontSubstitutions { get; internal set; }
         public int FailedObjects { get; internal set; }

@@ -35,6 +35,22 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void SelectsOriginalAudioFilesWithoutUsingTheirImagePreview()
+        {
+            var manifest = Manifest();
+            manifest["data"]["format"] = "wav";
+            manifest["data"]["files"][0][0]["filename"] = "sound.wav";
+            var audio = new ShapesXrResourceData(manifest, kId);
+            Assert.AreEqual(ShapesXrResourceKind.Audio, audio.Kind);
+            Assert.AreEqual("sound.wav", audio.MainFile.Name);
+            manifest["data"]["format"] = "mp3";
+            manifest["data"]["files"][0][0]["filename"] = "sound.MP3";
+            Assert.AreEqual("sound.MP3", new ShapesXrResourceData(manifest, kId).MainFile.Name);
+            manifest["data"]["files"][0][0]["filename"] = "preview.png";
+            Assert.Throws<NotSupportedException>(() => new ShapesXrResourceData(manifest, kId));
+        }
+
+        [Test]
         public void RejectsMismatchedAndUnsafeResourceManifests()
         {
             var manifest = Manifest();

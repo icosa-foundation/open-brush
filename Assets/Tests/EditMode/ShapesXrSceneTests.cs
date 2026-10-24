@@ -236,6 +236,28 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void DecodesSoundActionsAndLeavesLegacyLifetimeUnspecified()
+        {
+            var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
+            var payload = new JArray(new JValue(Id(30).ToByteArray()), .25f, false,
+                new JValue(Guid.Empty.ToByteArray()), true, false);
+            document.Entities[Id(12)].Properties["st-inr"] = new JArray { new JArray(
+                new JValue(Id(20).ToByteArray()), 0, new JArray(5, new JArray()), new JArray(4, payload)) };
+            var interaction = ShapesXrInteractionAdapter.Read(document, new ShapesXrScene(document))[0];
+            var sound = ShapesXrSoundAdapter.Read(interaction);
+            Assert.AreEqual(Id(30), sound.ResourceId);
+            Assert.AreEqual(.25f, sound.Volume);
+            Assert.IsTrue(sound.AtStateStart);
+            Assert.IsFalse(sound.Spatialize);
+            Assert.IsTrue(sound.Loop);
+            Assert.AreEqual(false, sound.StopOnSceneSwitch);
+            ((JArray)interaction.ActionData).RemoveAt(5);
+            Assert.IsNull(ShapesXrSoundAdapter.Read(interaction).StopOnSceneSwitch);
+            interaction.ActionData[1] = 2;
+            Assert.Throws<InvalidDataException>(() => ShapesXrSoundAdapter.Read(interaction));
+        }
+
+        [Test]
         public void RejectsMalformedInteractionUnions()
         {
             var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));

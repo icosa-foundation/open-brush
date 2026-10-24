@@ -436,6 +436,21 @@ Implementation checkpoint, 2026-10-24:
     unchanged. Sixty-four standalone checks and 91 fresh Unity EditMode tests pass;
     live save/reload reproduced identical corrected material records.
 
+33. ShapesXR non-spatial sound actions triggered on state start now create ordinary
+    SoundClipWidgets. MP3/WAV resources use the original resource artifact, are copied
+    into the sound library with their filenames retained, and are shared by actions
+    referencing the same resource. Volume and loop settings are per widget. Import
+    waits for decoding and reports failures. The existing .tilt sound-clip representation
+    persists the result; no format fields were added. Other triggers, spatial playback
+    and cross-scene lifetime requirements remain explicitly reported rather than guessed.
+    Legacy actions without a lifetime field retain an unspecified value during parsing.
+    Sixty-six standalone checks and 93 fresh Unity EditMode tests pass. An authored
+    native selected/background-state fixture with a generated silent WAV verified two
+    independent controllers, shared persistent media, playback settings and save/reload.
+    That runtime check injected the generated resource into the download cache: it
+    does not validate a real ShapesXR audio download. The three cached real spaces
+    contain no sound actions. Triggered and spatial fixture actions remained inactive.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
