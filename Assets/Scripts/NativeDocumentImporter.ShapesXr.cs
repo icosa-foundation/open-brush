@@ -83,8 +83,10 @@ namespace TiltBrush
                             if (isHull) { CreateNativeHull(hull, strokeCanvas, color, group); }
                             else
                             {
-                                bool lit = ShapesXrMaterialAdapter.Read(document, state, ShapesXrMaterialUsage.Panel).Lit;
-                                CreateNativeRibbon(ribbon, strokeCanvas, color, group, lit: lit);
+                                var material = ShapesXrMaterialAdapter.Read(document, state, ShapesXrMaterialUsage.Panel);
+                                var appearance = material.Lit ? NativeRibbonAppearance.Lit :
+                                    material.Blend == "alphaBlend" ? NativeRibbonAppearance.AlphaBlend : NativeRibbonAppearance.Unlit;
+                                CreateNativeRibbon(ribbon, strokeCanvas, color, group, appearance);
                             }
                             if (isHull && !hull.Faceted)
                             {

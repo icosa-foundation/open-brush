@@ -11,6 +11,9 @@ namespace TiltBrush
     {
         private static readonly Guid kNativeRibbonBrush = new Guid("c4f8b3e2-9d1a-5e7f-4c3b-8a6d2f9e1c7b");
         private static readonly Guid kNativeLitRibbonBrush = new Guid("fd752c0b-05fe-436f-a1d2-a7c328ad3a1f");
+        private static readonly Guid kNativeAlphaRibbonBrush = new Guid("51094f7e-e9ed-4ce0-a74b-d173ba924ec9");
+        private static readonly Guid kNativeDiscardingAlphaRibbonBrush = new Guid("c8a23976-d986-4dd0-ae52-d49c64c73ae7");
+        private enum NativeRibbonAppearance { Unlit, Lit, AlphaBlend, AlphaBlendDiscard }
         private static readonly Guid kFacetedPointHullBrush = new Guid("d0139741-9d31-43f1-a98d-a388c70b4a63");
         private static readonly Guid kSmoothPointHullBrush = new Guid("fa35383b-64a7-4561-9dc7-cc547a752318");
 
@@ -30,9 +33,16 @@ namespace TiltBrush
         }
 
         private static Stroke CreateNativeRibbon(NativeRibbonData ribbon, CanvasScript canvas, Color color, SketchGroupTag group,
-            bool lit = false)
+            NativeRibbonAppearance appearance = NativeRibbonAppearance.Unlit)
         {
-            var brush = BrushCatalog.m_Instance.GetBrush(lit ? kNativeLitRibbonBrush : kNativeRibbonBrush);
+            Guid brushGuid = appearance switch
+            {
+                NativeRibbonAppearance.Lit => kNativeLitRibbonBrush,
+                NativeRibbonAppearance.AlphaBlend => kNativeAlphaRibbonBrush,
+                NativeRibbonAppearance.AlphaBlendDiscard => kNativeDiscardingAlphaRibbonBrush,
+                _ => kNativeRibbonBrush
+            };
+            var brush = BrushCatalog.m_Instance.GetBrush(brushGuid);
             if (brush == null) { throw new InvalidOperationException("The compatible ribbon brush is unavailable"); }
             int count = ribbon.FirstEdge.Length;
             var centers = new Vector3[count];

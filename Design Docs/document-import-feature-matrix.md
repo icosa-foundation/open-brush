@@ -533,6 +533,27 @@ Implementation checkpoint, 2026-10-24:
     Save/reload retained identical metadata and runtime records, including brush IDs,
     RGBA, geometry, grouping and visibility.
 
+39. Unlit alpha-blended ribbons now use two hidden compatibility descriptors with
+    an independently implemented vertex-color blend shader and the existing ribbon
+    geometry. Maquette TranslucentUnlit selects the near-zero-alpha discard variant;
+    unlit ShapesXR Tape with normal alpha blending selects the non-discard variant.
+    Both write depth, matching the shipped Maquette shader. ShapesXR alpha-blended
+    ribbons also write depth; the saved _ZWrite value does not override this mapping.
+    Both use SrcAlpha/OneMinusSrcAlpha blending. Maquette's discard threshold is
+    0.0001. The shared Quill alpha-to-coverage shader remains unchanged. Ordinary
+    brush IDs persist the selection; no .tilt fields were added. Lit transparency,
+    additive effects, ShapesXR material/fog differences and source lighting remain
+    outside this mapping. Maquette ribbons now report mesh vertex-color precision
+    differences, since existing stroke meshes use Color32 even though saved stroke
+    colors retain float RGBA.
+    Eight offscreen D3D11 GPU probes verified blending, depth occlusion and alpha
+    discard, with maximum numeric error about 0.00000003. A live native fixture
+    imported five Maquette ribbons and two ShapesXR tapes with zero failures. All
+    18 decoded source triangles matched, with maximum vertex error about 0.0000038
+    canvas units. Save/reload retained identical metadata and runtime records,
+    including RGBA, brush IDs, active shaders and alpha-cutoff values. These checks
+    verify state and shader behavior, without claiming full source-rendered parity.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |

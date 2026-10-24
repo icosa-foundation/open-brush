@@ -139,12 +139,15 @@ namespace TiltBrush
                             var strokeColor = ReadColor(state.Data["color"]);
                             string material = MaquetteStrokeAdapter.ReadMaterialId(document, state);
                             bool lit = string.IsNullOrEmpty(material) || material == "Lit" || material == "DefaultLit";
+                            bool alphaBlend = material == "TranslucentUnlit";
                             if (MaquetteMaterialAdapter.IsOpaqueModelMaterial(material) || material == "DefaultLit" || material == "DefaultUnlit")
                             { strokeColor.a = 1; }
-                            CreateNativeRibbon(ribbon, strokeCanvas, strokeColor, group, lit: lit);
+                            var appearance = alphaBlend ? NativeRibbonAppearance.AlphaBlendDiscard :
+                                lit ? NativeRibbonAppearance.Lit : NativeRibbonAppearance.Unlit;
+                            CreateNativeRibbon(ribbon, strokeCanvas, strokeColor, group, appearance);
                             report.StrokeObjects++;
                             if (!state.Visible) { report.HiddenObjects++; }
-                            if (!lit && material != "Unlit" && material != "DefaultUnlit")
+                            if (!lit && !alphaBlend && material != "Unlit" && material != "DefaultUnlit")
                             {
                                 string feature = $"Maquette ribbon material {material ?? "default"}";
                                 report.UnmappedMaterials.TryGetValue(feature, out int count);
@@ -158,9 +161,15 @@ namespace TiltBrush
                                 report.UnmappedMaterials.TryGetValue(feature, out int count);
                                 report.UnmappedMaterials[feature] = count + 1;
                             }
-                            if (strokeColor.a < 1)
+                            if (strokeColor.a < 1 && !alphaBlend)
                             {
                                 const string feature = "Maquette ribbon alpha blending";
+                                report.UnmappedMaterials.TryGetValue(feature, out int count);
+                                report.UnmappedMaterials[feature] = count + 1;
+                            }
+                            if (Vector4.Distance(strokeColor, (Color)(Color32)strokeColor) > 1e-6f)
+                            {
+                                const string feature = "Maquette ribbon vertex-color precision";
                                 report.UnmappedMaterials.TryGetValue(feature, out int count);
                                 report.UnmappedMaterials[feature] = count + 1;
                             }
