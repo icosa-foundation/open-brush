@@ -120,5 +120,44 @@ namespace TiltBrush.Tests
             Assert.AreEqual("ImageFile", MaquettePrimitiveData.Read(new JObject { ["primitiveType"] = "IMAGE" }, 4, null).Type);
             Assert.AreEqual("ModelFile", MaquettePrimitiveData.Read(new JObject { ["primitiveType"] = "OBJECT" }, 4, null).Type);
         }
+
+        [Test]
+        public void NativeWorkspaceKeepsArchiveSidecarsAtTheirRelativePathsAndCleansOnlyItsOwnDirectory()
+        {
+            string archive = Path.Combine(m_Root, "project.mqp");
+            ZipFile.CreateFromDirectory(Path.Combine(m_Root, "project"), archive);
+            string cache = Path.Combine(m_Root, "cache");
+            string extractedModel;
+            using (var source = new NativeProjectSource(archive))
+            using (var workspace = new NativeAssetWorkspace(source, cache))
+            {
+                var resolver = new MaquetteAssetResolver(source);
+                extractedModel = workspace.LocalPath(resolver.Resolve("<MAQUETTEOBJECT>/models/model.gltf"));
+                Assert.AreEqual("bundled", File.ReadAllText(extractedModel));
+                Assert.AreEqual("texture", File.ReadAllText(Path.Combine(Path.GetDirectoryName(extractedModel), "../textures/color.png")));
+                Assert.AreEqual(extractedModel, workspace.LocalPath(resolver.Resolve("<MAQUETTEOBJECT>/models/model.gltf")));
+            }
+            Assert.IsFalse(File.Exists(extractedModel));
+            Assert.IsTrue(File.Exists(archive));
+            Assert.IsTrue(File.Exists(Path.Combine(m_Root, "project/Objects/models/model.gltf")));
+            Assert.IsEmpty(Directory.GetFileSystemEntries(cache));
+        }
+
+        [Test]
+        public void NativeWorkspaceUsesExistingProjectAndLibraryFilesWithoutCopyingOrDeletingThem()
+        {
+            string cache = Path.Combine(m_Root, "cache");
+            string project = Path.Combine(m_Root, "project");
+            using (var source = new NativeProjectSource(project))
+            using (var workspace = new NativeAssetWorkspace(source, cache))
+            {
+                var resolver = new MaquetteAssetResolver(source, content: Path.Combine(m_Root, "content"));
+                Assert.AreEqual(Path.Combine(project, "Objects/models/model.gltf").Replace('\\', '/'),
+                    workspace.LocalPath(resolver.Resolve("<MAQUETTEOBJECT>/models/model.gltf")).Replace('\\', '/'));
+                Assert.AreEqual("installed", File.ReadAllText(workspace.LocalPath(resolver.Resolve("<MAQUETTECONTENT>/Library/builtin.fbx"))));
+            }
+            Assert.IsFalse(Directory.Exists(cache));
+            Assert.IsTrue(File.Exists(Path.Combine(m_Root, "content/Library/builtin.fbx")));
+        }
     }
 }
