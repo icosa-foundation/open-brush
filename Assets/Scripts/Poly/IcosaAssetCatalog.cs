@@ -870,7 +870,10 @@ namespace TiltBrush
                 if (path == null) yield break;
                 yield return NativeImmReference.CreateModelCoroutine(assetId, path, model =>
                 {
+                    m_ModelsByAssetId.TryGetValue(assetId, out var displaced);
                     m_ModelsByAssetId[assetId] = model;
+                    if (displaced != null && !ReferenceEquals(displaced, model))
+                        displaced.ReleaseFromCatalog();
                     onReady?.Invoke(model);
                 });
             }
