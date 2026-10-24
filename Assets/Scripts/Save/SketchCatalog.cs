@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using UnityEngine;
 
@@ -33,7 +35,7 @@ namespace TiltBrush
     {
         static public SketchCatalog m_Instance;
 
-        // Bundled .tilt TextAssets used to seed local example sketches.
+        // Resource folders for showcase JSON and legacy example seeding.
         public const string kDefaultShowcaseSketchesFolder = "DefaultShowcaseSketches";
         public const string kDefaultBundledSketchesFolder = "DefaultBundledSketches";
 
@@ -42,6 +44,22 @@ namespace TiltBrush
         public SketchSet GetSet(SketchSetType eType)
         {
             return m_Sets[(int)eType];
+        }
+
+        // Built-in URLs identify packaged filenames, not display names or seeded disk files.
+        public static SceneFileInfo FindBundledSketch(SketchSet sketches, string requestedName)
+        {
+            if (sketches == null || string.IsNullOrEmpty(requestedName)) return null;
+            string name = Uri.UnescapeDataString(requestedName);
+            if (name.IndexOfAny(new[] { '/', '\\' }) >= 0 || Path.IsPathRooted(name)) return null;
+            for (int i = 0; i < sketches.NumSketches; ++i)
+            {
+                var info = sketches.GetSketchSceneFileInfo(i);
+                if (info is DiskSceneFileInfo disk && disk.Embedded && disk.ReadOnly &&
+                    string.Equals(Path.GetFileName(info.FullPath), name, StringComparison.OrdinalIgnoreCase))
+                    return info;
+            }
+            return null;
         }
 
         void Awake()

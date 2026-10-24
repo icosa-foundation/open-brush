@@ -1577,17 +1577,21 @@ namespace TiltBrush
             if (path.StartsWith(kBuiltInSketchPrefix))
             {
                 path = path.Substring(kBuiltInSketchPrefix.Length);
-                string sketchesPath = FeaturedSketchesPath();
-#if UNITY_ANDROID && OPEN_BRUSH_VIEWER
-                // Android viewers seed bundled examples into the local sketchbook.
-                if (Application.platform == RuntimePlatform.Android)
+#if OPEN_BRUSH_VIEWER
+                var sketch = SketchCatalog.FindBundledSketch(
+                    SketchCatalog.m_Instance.GetSet(SketchSetType.User), path);
+                if (sketch == null)
                 {
-                    sketchesPath = UserSketchPath();
+                    OutputWindowScript.Error("Couldn't open built-in sketch",
+                        $"No Featured sketch named '{path}' was found.");
+                    return true;
                 }
-#endif
-                path = Path.Join(sketchesPath, path);
+                SketchControlsScript.m_Instance.LoadSketch(sketch);
+#else
+                path = Path.Join(FeaturedSketchesPath(), path);
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
                     SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+#endif
                 return true;
             }
 
