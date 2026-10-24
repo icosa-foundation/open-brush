@@ -62,7 +62,9 @@ now has initial-state panel, text, referenced-model, image, Tape-stroke and hull
 and full material mapping remain outstanding. Maquette runtime conversion has procedural, text, local model, image, ribbon-stroke and point/spot light paths;
 the remaining entity types are reported as unsupported. Animation and scene/frame
 switching are deferred until the other supported
-content is complete. The full 3D Shapes authoring UI is not included.
+content is complete. Post-generation non-uniform scaling of 3D brush strokes is
+also deferred pending the broader Open Brush non-uniform-scale design. Imported
+drawings must remain brush strokes. The full 3D Shapes authoring UI is not included.
 
 Implementation checkpoint, 2026-10-24:
 
@@ -600,6 +602,67 @@ Implementation checkpoint, 2026-10-24:
     state reader because its unversioned state migration remains unimplemented;
     it is not claimed to be stroke-free. Current profile validation consequently
     uses authored fixtures and numerical comparisons, rather than real saved stroke samples.
+
+42. User decision: defer post-generation non-uniform scaling of 3D brush strokes.
+    Open Brush's control-point transformation and subsequent mesh generation are
+    distinct from transforming the generated mesh. Maquette's scaling gizmo changes
+    the stroke entity transform after its mesh has been built. The bundled
+    Storyboard3D file corroborates separate geometry and scale: the same two-pair
+    stroke definition has Z scales approximately 1.06947 and 0.680625 in two scenes,
+    with X/Y approximately 1. Existing flat-ribbon transform baking remains valid.
+    Do not design an isolated stroke-format extension to address this deferred
+    issue before the broader transform decision. Imported drawings remain strokes;
+    conversion to procedural object widgets is not the selected representation.
+    Taper can use existing per-point pressure. A need for general profile extensions
+    is not established by the profile differences alone; renderer coverage and
+    persistence design must be assessed separately.
+
+43. Follow-up stroke investigation (static source and standalone geometry checks):
+
+    1. Existing brush reuse: width curves can be evaluated at saved samples and
+       represented by existing per-point pressure. The Quill brush variants retain
+       those pressures without smoothing. Marker fits ribbon geometry after its
+       section axis, preset scale and width curve are resolved; it does not require
+       a new renderer or stroke-format field.
+    2. Specific profile gaps remain. Leaf has an open asymmetric 12-point section,
+       unlike the checked closed tube/ellipse/square sections and fixed thick-paint
+       solids. Square's 12 points include collinear subdivisions: an untwisted
+       four-corner square matches its surface, but a normalized two-ring 45-degree
+       twist comparison differs by approximately 0.0196 at sampled source-surface
+       points, even after trying 64 diagonal/phase combinations. This is a numerical
+       profile comparison, not an actual Open Brush renderer or saved-stroke test.
+       Tube/Oil use rounded profile coordinates; direct regular-circle sampling
+       differs by up to approximately 0.00603 per unit radius. TubeBrush also has
+       a 12-vertex-per-knot bound that cannot accommodate a smooth 12-point ring
+       plus its seam duplicate merely by changing the segment setting.
+    3. Source data: the SDK preset supplies the section, scale and authored width
+       curve; ordinary saved position/rotation/width arrays do not contain them.
+       The official Unity integration documentation still links V1.31. A reader
+       could resolve these as data from an external user-supplied SDK ZIP without
+       shipping or executing vendor code/assets. No separate metadata endpoint
+       was verified. Curve tangent/weight interpretation needs validation before
+       implementing such a reader. No vendor profile data was added to production.
+    4. Real Maquette appearance gaps: the bundled corpus contains 208 TranslucentLit,
+       333 Metallic and 126 Plastic ribbon state records (including repeated states,
+       not counts of unique strokes). These currently lack corresponding mappings.
+       Existing Open Brush PBR graphs provide metallic/roughness controls and take
+       vertex RGB into base color, making material reuse plausible. The inspected
+       transparent graph does not connect vertex alpha to its Alpha output, so it
+       cannot simply replace the current material for per-stroke opacity. PbrBrushScript
+       itself is a non-drawing material template; retain ribbon geometry instead.
+    5. ShapesXR appearance: lit transparency currently selects opaque lit ribbons;
+       cutout currently falls back to alpha-to-coverage rather than exact threshold
+       clipping; multiply requires alpha-premultiplied shader output as well as
+       DstColor/Zero blending. Existing blend/cutoff controls cover part of this,
+       but changing blend factors alone does not implement multiply. Maquette's
+       Fresnel edge materials are view-dependent rim/core effects, not wireframes;
+       none were found on strokes in this corpus. Broader lighting remains a
+       separate discussion. These findings do not establish a new stroke schema.
+
+    Evidence: existing brush/PBR source, external preset data and Maquette
+    material assignments in bundled scene files. Ignored
+    analysis artifacts are under Support/DocumentImportAnalysis/BrushStrokeInvestigation.
+    No live Unity or native-app visual validation was performed for this follow-up.
 
 2. FEATURE COMPARISON
 

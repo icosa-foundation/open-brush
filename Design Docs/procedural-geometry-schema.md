@@ -547,6 +547,10 @@ graph or preset asset is needed by a reader of this recipe.
      that replace that authoring model explicitly change its source to mesh. Do not
      leave a stale generator recipe attached to newly edited vertex positions.
 11.5 These requirements do not add a nonuniform-scale VR interaction UI.
+11.6 Post-generation nonuniform scaling of 3D brush strokes is deferred pending
+     the broader Open Brush transform design. Imported drawings remain brush
+     strokes; this procedural-object schema is not an alternative storage path
+     for them. Existing control-point pressure can represent sampled taper.
 
 12. VALIDATION AND UNSUPPORTED DATA
 
