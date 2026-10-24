@@ -102,7 +102,14 @@ namespace TiltBrush.DocumentImport
             if (opacity < 1 && (properties["m-c"] != null || properties["m-o"] != null || properties["m-tam"] != null)) { mode = "BLEND"; }
             if (properties["m-c"] is JArray rgba)
             {
-                for (int i = 0; i < 3; ++i) { color[i] = appearance.Color[i]; }
+                // Saved Color32 values are gamma colors; glTF factors are linear.
+                // UnityGLTF converts those factors back to Unity material color values.
+                for (int i = 0; i < 3; ++i)
+                {
+                    float component = appearance.Color[i];
+                    color[i] = component <= .04045f ? component / 12.92f :
+                        (float)Math.Pow((component + .055f) / 1.055f, 2.4);
+                }
                 color[3] = mode == "OPAQUE" ? 1 : (int)rgba[3] / 255f * opacity;
             }
             else if (properties["m-o"] != null || properties["m-tam"] != null) { color[3] = mode == "OPAQUE" ? 1 : opacity; }
