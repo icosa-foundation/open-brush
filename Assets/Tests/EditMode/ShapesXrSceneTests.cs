@@ -47,6 +47,47 @@ namespace TiltBrush.Tests
             Assert.Throws<InvalidDataException>(() => new ShapesXrScene(document));
         }
 
+        [Test]
+        public void TextKeepsFixedAndAutoFitAnchorsAndIntrinsicHierarchyScale()
+        {
+            var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
+            var properties = document.Entities[Id(1)].Properties;
+            properties["obj-tx"] = "A <b>label</b>";
+            properties["obj-s"] = new JArray(2, 4, 0);
+            properties["obj-ts"] = 5f;
+            properties["obj-ty"] = 1;
+            properties["obj-ta"] = 2;
+            properties["obj-tva"] = 512;
+            var state = new ShapesXrScene(document).Objects[Id(1)];
+            var text = ShapesXrTextAdapter.Read(state, 10);
+            Assert.AreEqual("A <b>label</b>", text.Text);
+            Assert.IsFalse(text.AutoSize);
+            Assert.AreEqual(514, text.Alignment);
+            Assert.AreEqual(12, text.Position[0], 1e-5);
+            Assert.AreEqual(20, text.GlyphTransform[0], 1e-5);
+            Assert.AreEqual(-.5f, text.GlyphTransform[14], 1e-5);
+            state.Properties["obj-ts"] = 0;
+            text = ShapesXrTextAdapter.Read(state, 10);
+            Assert.IsTrue(text.AutoSize);
+            Assert.AreEqual(11, text.Position[0], 1e-5);
+            Assert.AreEqual(2, text.Position[1], 1e-5);
+            Assert.AreEqual(.05f, text.Position[2], 1e-5);
+        }
+
+        [Test]
+        public void RejectsMalformedTextDimensionsAndFontSize()
+        {
+            var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
+            var state = new ShapesXrScene(document).Objects[Id(1)];
+            state.Properties["obj-tx"] = "label";
+            state.Properties["obj-s"] = new JArray(0, 1, 0);
+            state.Properties["obj-ts"] = 5;
+            Assert.Throws<InvalidDataException>(() => ShapesXrTextAdapter.Read(state, 10));
+            state.Properties["obj-s"] = new JArray(1, 1, 0);
+            state.Properties["obj-ts"] = -1;
+            Assert.Throws<InvalidDataException>(() => ShapesXrTextAdapter.Read(state, 10));
+        }
+
         private static Guid Id(byte value) => new Guid(Enumerable.Repeat(value, 16).ToArray());
     }
 }

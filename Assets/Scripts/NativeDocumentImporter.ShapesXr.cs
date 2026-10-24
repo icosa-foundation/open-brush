@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
+using TMPro;
 using TiltBrush.DocumentImport;
 using TiltBrush.MeshEditing;
 using UnityEngine;
@@ -39,7 +40,8 @@ namespace TiltBrush
                 var groups = new Dictionary<Guid, SketchGroupTag>();
                 foreach (var state in scene.Objects.Values.Where(value => value.HasSnapshot))
                 {
-                    if (!(state.Properties["obj-pmugs"] is JArray))
+                    bool isText = state.Properties["obj-tx"]?.Type == JTokenType.String;
+                    if (!isText && !(state.Properties["obj-pmugs"] is JArray))
                     {
                         const string kind = "ShapesXR object preset";
                         report.UnsupportedObjects.TryGetValue(kind, out int count);
@@ -49,14 +51,22 @@ namespace TiltBrush
                     }
                     try
                     {
-                        var placement = state.Placement();
-                        var recipe = placement.BakeLinearTransform(ShapesXrGeometryAdapter.Panel(state.Properties));
-                        Color color = ShapesXrColor(document, state, report);
-                        var mesh = EditableModelManager.Evaluate(recipe);
-                        var widget = EditableModelManager.GetOrCreate().GeneratePolyMesh(mesh, recipe,
-                            canvas.Pose * Pose(placement), color: color, skipIntroAnimation: true);
+                        GrabWidget widget;
+                        if (isText)
+                        {
+                            widget = CreateShapesXrText(document, state, canvas, report);
+                        }
+                        else
+                        {
+                            var placement = state.Placement();
+                            var recipe = placement.BakeLinearTransform(ShapesXrGeometryAdapter.Panel(state.Properties));
+                            Color color = ShapesXrColor(document, state, report);
+                            var mesh = EditableModelManager.Evaluate(recipe);
+                            widget = EditableModelManager.GetOrCreate().GeneratePolyMesh(mesh, recipe,
+                                canvas.Pose * Pose(placement), color: color, skipIntroAnimation: true);
+                        }
                         if (widget.Canvas != canvas) { widget.SetCanvas(canvas); }
-                        widget.name = $"ShapesXR panel {state.Entity.Id}";
+                        widget.name = $"ShapesXR {(isText ? "text" : "panel")} {state.Entity.Id}";
                         if (state.Parent != null)
                         {
                             if (!groups.TryGetValue(state.ParentId, out var group))
@@ -78,7 +88,8 @@ namespace TiltBrush
                             report.HiddenObjects++;
                         }
                         if (state.Locked) { widget.PinFromSave(); }
-                        report.ProceduralObjects++;
+                        if (isText) { report.TextObjects++; }
+                        else { report.ProceduralObjects++; }
                     }
                     catch (Exception exception)
                     {
@@ -86,7 +97,7 @@ namespace TiltBrush
                         report.Detail($"ShapesXR object {state.Entity.Id}: {exception.Message}");
                     }
                 }
-                report.Status = report.FailedObjects > 0 || report.UnsupportedObjects.Count > 0 ||
+                report.Status = report.FailedObjects > 0 || report.FontSubstitutions > 0 || report.UnsupportedObjects.Count > 0 ||
                                 report.UnmappedMaterials.Count > 0 ? "partial" : "completed";
             }
             catch (Exception exception)
@@ -98,18 +109,53 @@ namespace TiltBrush
             {
                 if (hiddenCanvas != null) { App.Scene.ToggleLayerVisibility(hiddenCanvas); }
             }
-            Debug.Log($"[OB_NATIVE_IMPORT] ShapesXR {report.Status}: procedural={report.ProceduralObjects}, failed={report.FailedObjects}");
+            Debug.Log($"[OB_NATIVE_IMPORT] ShapesXR {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, failed={report.FailedObjects}");
+        }
+
+        private static TextWidget CreateShapesXrText(ShapesXrDocument document, ShapesXrObjectState state,
+            CanvasScript canvas, NativeDocumentImportReport report)
+        {
+            var text = ShapesXrTextAdapter.Read(state, App.METERS_TO_UNITS);
+            var layout = new TextWidgetLayout
+            {
+                FontSize = text.FontSize, AutoSize = text.AutoSize,
+                FontSizeMin = ShapesXrTextAdapter.FontSizeMin, FontSizeMax = ShapesXrTextAdapter.FontSizeMax,
+                FontStyle = text.FontStyle, Alignment = text.Alignment,
+                Wrapping = (int)TextWrappingModes.Normal, RichText = true,
+                Size = new Vector2(text.BoxSize[0], text.BoxSize[1]), Pivot = new Vector2(0, 1),
+                GlyphTransform = text.GlyphTransform
+            };
+            layout.Validate();
+            var pose = Pose(text.Placement);
+            pose.translation = new Vector3(text.Position[0], text.Position[1], text.Position[2]) * App.METERS_TO_UNITS;
+            Color color = ShapesXrColor(document, state, report, isText: true);
+            var command = new CreateWidgetCommand(WidgetManager.m_Instance.TextWidgetPrefab,
+                canvas.Pose * pose, forceTransform: true, skipIntroAnimation: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+            var widget = (TextWidget)command.Widget;
+            widget.AssignFontReference(ShapesXrTextAdapter.FontResource);
+            if (widget.HasUnresolvedFont) { report.FontSubstitutions++; }
+            widget.Text = text.Text;
+            widget.TextColor = color;
+            widget.StrokeColor = Color.clear;
+            widget.Mode = TextWidgetMode.TextMeshPro;
+            widget.ApplyLayout(layout);
+            command.SetWidgetCost(widget.GetTiltMeterCost());
+            return widget;
         }
 
         private static Color ShapesXrColor(ShapesXrDocument document, ShapesXrObjectState state,
-            NativeDocumentImportReport report)
+            NativeDocumentImportReport report, bool isText = false)
         {
             // Color and opacity fit the existing editable-model representation. Keep the report
             // partial until source shading, textures and secondary material slots are supported.
-            const string pending = "ShapesXR material appearance";
-            report.UnmappedMaterials.TryGetValue(pending, out int count);
-            report.UnmappedMaterials[pending] = count + 1;
-            Color color = Color.white;
+            if (!isText)
+            {
+                const string pending = "ShapesXR material appearance";
+                report.UnmappedMaterials.TryGetValue(pending, out int count);
+                report.UnmappedMaterials[pending] = count + 1;
+            }
+            Color color = isText ? new Color(155f / 255, 155f / 255, 155f / 255, 1) : Color.white;
             if (state.Properties["mid"] != null)
             {
                 Guid id = ShapesXrDocument.ReadGuid(state.Properties["mid"]);
@@ -125,6 +171,8 @@ namespace TiltBrush
                     }
                     color = new Color((int)rgba[0] / 255f, (int)rgba[1] / 255f, (int)rgba[2] / 255f, (int)rgba[3] / 255f);
                 }
+                // Source text explicitly replaces Color32 alpha with the separate opacity.
+                if (isText) { color.a = 1; }
                 color.a *= (float?)material.Properties["m-o"] ?? 1;
             }
             color.a *= (float?)state.Properties["obj-vis"] ?? 1;
