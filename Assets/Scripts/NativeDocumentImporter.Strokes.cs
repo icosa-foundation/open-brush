@@ -13,7 +13,9 @@ namespace TiltBrush
         private static readonly Guid kNativeLitRibbonBrush = new Guid("fd752c0b-05fe-436f-a1d2-a7c328ad3a1f");
         private static readonly Guid kNativeAlphaRibbonBrush = new Guid("51094f7e-e9ed-4ce0-a74b-d173ba924ec9");
         private static readonly Guid kNativeDiscardingAlphaRibbonBrush = new Guid("c8a23976-d986-4dd0-ae52-d49c64c73ae7");
-        private enum NativeRibbonAppearance { Unlit, Lit, AlphaBlend, AlphaBlendDiscard }
+        private static readonly Guid kNativeAdditiveRibbonBrush = new Guid("37ecddad-4a43-4bf7-a492-8429dce7f01b");
+        private static readonly Guid kNativeAlphaWeightedAdditiveRibbonBrush = new Guid("9e5ef4e8-276c-429b-80e1-31b35f16d074");
+        private enum NativeRibbonAppearance { Unlit, Lit, AlphaBlend, AlphaBlendDiscard, Additive, AdditiveAlpha }
         private static readonly Guid kFacetedPointHullBrush = new Guid("d0139741-9d31-43f1-a98d-a388c70b4a63");
         private static readonly Guid kSmoothPointHullBrush = new Guid("fa35383b-64a7-4561-9dc7-cc547a752318");
 
@@ -40,6 +42,8 @@ namespace TiltBrush
                 NativeRibbonAppearance.Lit => kNativeLitRibbonBrush,
                 NativeRibbonAppearance.AlphaBlend => kNativeAlphaRibbonBrush,
                 NativeRibbonAppearance.AlphaBlendDiscard => kNativeDiscardingAlphaRibbonBrush,
+                NativeRibbonAppearance.Additive => kNativeAdditiveRibbonBrush,
+                NativeRibbonAppearance.AdditiveAlpha => kNativeAlphaWeightedAdditiveRibbonBrush,
                 _ => kNativeRibbonBrush
             };
             var brush = BrushCatalog.m_Instance.GetBrush(brushGuid);

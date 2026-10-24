@@ -84,7 +84,10 @@ namespace TiltBrush
                             else
                             {
                                 var material = ShapesXrMaterialAdapter.Read(document, state, ShapesXrMaterialUsage.Panel);
-                                var appearance = material.Lit ? NativeRibbonAppearance.Lit :
+                                // The supplied ShapesXR URP map uses the same unlit additive
+                                // material for both shading types. Passthrough stays unsupported.
+                                var appearance = material.Blend == "additive" && !material.Passthrough ? NativeRibbonAppearance.Additive :
+                                    material.Lit ? NativeRibbonAppearance.Lit :
                                     material.Blend == "alphaBlend" ? NativeRibbonAppearance.AlphaBlend : NativeRibbonAppearance.Unlit;
                                 CreateNativeRibbon(ribbon, strokeCanvas, color, group, appearance);
                             }

@@ -554,6 +554,28 @@ Implementation checkpoint, 2026-10-24:
     including RGBA, brush IDs, active shaders and alpha-cutoff values. These checks
     verify state and shader behavior, without claiming full source-rendered parity.
 
+40. Additive Maquette ribbons and ShapesXR Tape strokes now use two further hidden
+    descriptors sharing the existing ribbon geometry and native blend shader.
+    Maquette's shipped Additive shader uses SrcAlpha/One with depth writing off;
+    its shipped brightness multiplier is 1. ShapesXR additive ribbons use
+    One/One with depth writing on, so RGB contribution does not scale with alpha.
+    Both lit and unlit additive settings select the same unlit additive material,
+    while retaining the general ShapesXR appearance-fidelity report.
+    The shader's blend/depth properties default to the existing alpha-blended
+    behavior, preserving the earlier descriptors. Ordinary brush IDs persist all
+    selections; no .tilt fields or procedural recipes were added. Source lighting,
+    fog/material differences, lit transparency and vertex-color precision limits
+    remain reported where applicable.
+    Sixteen offscreen D3D11 GPU probes passed: eight alpha-mode regressions and eight
+    additive color/depth cases, including zero alpha. Maximum numeric error was about
+    0.00000003. A live native fixture imported six Maquette ribbons and four ShapesXR
+    tapes with zero failures, including both ShapesXR additive shading settings.
+    All 28 decoded source triangles matched within about 0.0000086 canvas units.
+    Save/reload retained identical metadata and runtime records, including active
+    source/destination blend factors, depth writing, alpha cutoff, brush IDs and RGBA.
+    This verifies the mapped state and shader behavior, rather than full source-rendered
+    pixel parity across platforms or lighting configurations.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |

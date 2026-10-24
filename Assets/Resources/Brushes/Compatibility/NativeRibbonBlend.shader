@@ -7,6 +7,9 @@ Shader "Brush/NativeRibbonBlend"
     {
         _Color ("Main Color", Color) = (1,1,1,1)
         _Cutoff ("Alpha Cutoff", Range(0,1)) = 0
+        [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlend ("Source Blend", Float) = 5
+        [Enum(UnityEngine.Rendering.BlendMode)] _DstBlend ("Destination Blend", Float) = 10
+        [Toggle] _ZWrite ("Write Depth", Float) = 1
     }
     SubShader
     {
@@ -14,9 +17,9 @@ Shader "Brush/NativeRibbonBlend"
         Pass
         {
             Tags { "LightMode"="UniversalForward" }
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend [_SrcBlend] [_DstBlend]
             AlphaToMask Off
-            ZWrite On
+            ZWrite [_ZWrite]
             Cull Off
 
             HLSLPROGRAM
@@ -29,6 +32,9 @@ Shader "Brush/NativeRibbonBlend"
             CBUFFER_START(UnityPerMaterial)
             half4 _Color;
             float _Cutoff;
+            float _SrcBlend;
+            float _DstBlend;
+            float _ZWrite;
             CBUFFER_END
 
             struct Attributes

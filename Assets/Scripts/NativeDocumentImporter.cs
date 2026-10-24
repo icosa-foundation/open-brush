@@ -140,14 +140,16 @@ namespace TiltBrush
                             string material = MaquetteStrokeAdapter.ReadMaterialId(document, state);
                             bool lit = string.IsNullOrEmpty(material) || material == "Lit" || material == "DefaultLit";
                             bool alphaBlend = material == "TranslucentUnlit";
+                            bool additive = material == "Additive";
                             if (MaquetteMaterialAdapter.IsOpaqueModelMaterial(material) || material == "DefaultLit" || material == "DefaultUnlit")
                             { strokeColor.a = 1; }
-                            var appearance = alphaBlend ? NativeRibbonAppearance.AlphaBlendDiscard :
+                            var appearance = additive ? NativeRibbonAppearance.AdditiveAlpha :
+                                alphaBlend ? NativeRibbonAppearance.AlphaBlendDiscard :
                                 lit ? NativeRibbonAppearance.Lit : NativeRibbonAppearance.Unlit;
                             CreateNativeRibbon(ribbon, strokeCanvas, strokeColor, group, appearance);
                             report.StrokeObjects++;
                             if (!state.Visible) { report.HiddenObjects++; }
-                            if (!lit && !alphaBlend && material != "Unlit" && material != "DefaultUnlit")
+                            if (!lit && !alphaBlend && !additive && material != "Unlit" && material != "DefaultUnlit")
                             {
                                 string feature = $"Maquette ribbon material {material ?? "default"}";
                                 report.UnmappedMaterials.TryGetValue(feature, out int count);
@@ -161,7 +163,7 @@ namespace TiltBrush
                                 report.UnmappedMaterials.TryGetValue(feature, out int count);
                                 report.UnmappedMaterials[feature] = count + 1;
                             }
-                            if (strokeColor.a < 1 && !alphaBlend)
+                            if (strokeColor.a < 1 && !alphaBlend && !additive)
                             {
                                 const string feature = "Maquette ribbon alpha blending";
                                 report.UnmappedMaterials.TryGetValue(feature, out int count);
