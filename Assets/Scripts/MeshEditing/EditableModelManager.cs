@@ -88,7 +88,8 @@ namespace TiltBrush.MeshEditing
                     var canvas = App.Scene.GetOrCreateLayer(At(instance.LayerIds, i, 0));
                     var transform = instance.RawTransforms[i];
                     var widget = GetOrCreate().GeneratePolyMesh(poly, recipe, canvas.Pose * transform,
-                        recordCommand: false, color: At(instance.Colors, i, Color.white), definitionId: instance.AssetId);
+                        recordCommand: false, color: At(instance.Colors, i, Color.white), definitionId: instance.AssetId,
+                        skipIntroAnimation: true);
                     widget.SetCanvas(canvas);
                     widget.transform.localPosition = transform.translation;
                     widget.transform.localRotation = transform.rotation;
@@ -124,7 +125,8 @@ namespace TiltBrush.MeshEditing
 
         public EditableModelWidget GeneratePolyMesh(PolyMesh poly, GeometryRecipeData recipe, TrTransform tr,
             Quaternion? desiredEndForward = null, bool forceTransform = true,
-            float snapGrid = 0, float snapAngle = 0, bool recordCommand = true, Color? color = null, string definitionId = null)
+            float snapGrid = 0, float snapAngle = 0, bool recordCommand = true, Color? color = null, string definitionId = null,
+            bool skipIntroAnimation = false)
         {
             // Validate the complete authoring recipe before creating scene objects.
             recipe.GetSteps(out _, out _);
@@ -145,7 +147,7 @@ namespace TiltBrush.MeshEditing
                 throw new InvalidOperationException("Procedural model contains no usable geometry");
             }
             var command = new CreateWidgetCommand(WidgetManager.m_Instance.EditableModelWidgetPrefab,
-                tr, desiredEndForward, forceTransform, snapGrid, snapAngle);
+                tr, desiredEndForward, forceTransform, snapGrid, snapAngle, skipIntroAnimation: skipIntroAnimation);
             if (recordCommand) { SketchMemoryScript.m_Instance.PerformAndRecordCommand(command); }
             else { command.Redo(); }
             var widget = command.Widget as EditableModelWidget;
