@@ -412,14 +412,16 @@ namespace TiltBrush
             {
                 var light = lightWidget.GetComponentInChildren<Light>();
                 var newEntry = new TiltLights();
-                newEntry.Transform = lightWidget.GetSaveTransform();
+                newEntry.Transform = GetSavedTransform(lightWidget, lightWidget.GetSaveTransform());
                 newEntry.Pinned = lightWidget.Pinned;
                 newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
-                newEntry.LayerId = App.Scene.GetIndexOfCanvas(lightWidget.Canvas);
+                newEntry.LayerId = App.Scene.GetIndexOfCanvas(GetSavedCanvas(lightWidget));
 
                 newEntry.PunctualLightType = light.type;
                 newEntry.Intensity = light.intensity;
                 newEntry.LightColor = light.color;
+                newEntry.Enabled = light.enabled;
+                newEntry.Shadows = light.shadows;
 
                 if (light.type == LightType.Spot)
                 {

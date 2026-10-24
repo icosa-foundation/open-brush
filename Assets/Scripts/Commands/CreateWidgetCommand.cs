@@ -107,11 +107,15 @@ namespace TiltBrush
                     case GaussianCaptureBoxWidget:
                     case GaussianCaptureEllipsoidWidget:
                     case GaussianCaptureSphereWidget:
-                    case LightWidget:
                     case ImageWidget:
                     case TextWidget:
                     case VideoWidget:
                     case SoundClipWidget:
+                        m_Widget.transform.parent = m_Canvas.transform;
+                        m_Widget.Show(true);
+                        break;
+                    case LightWidget lightWidget:
+                        lightWidget.SetLightType(LightType.Point);
                         m_Widget.transform.parent = m_Canvas.transform;
                         m_Widget.Show(true);
                         break;
