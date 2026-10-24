@@ -58,7 +58,7 @@ check using production JSON converters. Checkpoint 17 now covers live Maquette w
 creation and .tilt save/reload; equivalent ShapesXR runtime validation remains pending.
 Unversioned ShapesXR state migration is not yet implemented; version 3 initial
 views and version 4/5 snapshots are supported by the reader. ShapesXR runtime conversion
-now has initial-state panel, text, referenced-model and image paths; other presets
+now has initial-state panel, text, referenced-model, image and Tape-stroke paths; other presets
 and full material mapping remain outstanding. Maquette runtime conversion has procedural, text, local model, image, ribbon-stroke and point/spot light paths;
 the remaining entity types are reported as unsupported. Animation and scene/frame
 switching are deferred until the other supported
@@ -291,6 +291,25 @@ Implementation checkpoint, 2026-10-24:
     reported material/locking differences remain outstanding. Unity compiled the
     final legacy-frame change and passed all 76 focused EditMode tests; the standalone
     data suite passes 49 checks.
+
+23. ShapesXR Tape brush import now consumes the native object's static position,
+    rotation and width arrays and produces ordinary Open Brush ribbon strokes. The
+    Tape half-width is in centimetres while positions are in metres. Per-point
+    orientation/width, the selected state's placement, nested nonuniform transforms,
+    grouping and hidden layers are retained. Snapshot fields do not replace the
+    static brush sample stream. Other brush/hull preset identities are recognized
+    and reported by name; Marker, Leaf, Oil, Square, Tube and hull generation are
+    still outstanding rather than substituted with Tape. No preset asset payloads,
+    new brush types or .tilt fields were added.
+    A live authored fixture imported two tapes and one API-referenced ShapesXR model
+    with zero object failures, reporting its deliberately unsupported Marker and
+    incomplete appearance mappings. Both tapes matched all eight source triangles
+    and boundary points within 0.0000004 metres, before and after .tilt reload. Their
+    saved stroke fields were identical, including colors, pressure, orientation,
+    grouping and visibility. The model reloaded all 4,284 selected-LOD vertices;
+    `ModelIndex` and layer metadata were identical. This verifies loading/persistence,
+    not source-rendered appearance. Fresh Unity compilation passed 82 focused
+    EditMode tests; standalone data checks total 55 with zero failures.
 
 2. FEATURE COMPARISON
 

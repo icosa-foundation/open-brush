@@ -46,7 +46,8 @@ namespace TiltBrush
                     if (state.IsGroup) { continue; }
                     bool isText = state.Properties["obj-tx"]?.Type == JTokenType.String;
                     bool isResource = state.Properties["resi"] != null;
-                    if (!isText && !isResource && !(state.Properties["obj-pmugs"] is JArray))
+                    bool isStroke = ShapesXrStrokeAdapter.IsStroke(state);
+                    if (!isText && !isResource && !isStroke && !(state.Properties["obj-pmugs"] is JArray))
                     {
                         const string kind = "ShapesXR object preset";
                         report.UnsupportedObjects.TryGetValue(kind, out int count);
@@ -56,6 +57,37 @@ namespace TiltBrush
                     }
                     try
                     {
+                        if (isStroke)
+                        {
+                            var ribbon = ShapesXrStrokeAdapter.ReadRibbon(state, App.METERS_TO_UNITS);
+                            var strokeCanvas = canvas;
+                            if (!state.Visible)
+                            {
+                                if (hiddenCanvas == null)
+                                {
+                                    hiddenCanvas = App.Scene.AddLayerNow();
+                                    hiddenCanvas.name = $"{scene.Name} (hidden)";
+                                    hiddenCanvas.Pose = canvas.Pose;
+                                }
+                                strokeCanvas = hiddenCanvas;
+                            }
+                            var group = SketchGroupTag.None;
+                            if (state.Parent != null && !groups.TryGetValue(state.ParentId, out group))
+                            {
+                                group = App.GroupManager.NewUnusedGroup();
+                                groups.Add(state.ParentId, group);
+                            }
+                            CreateNativeRibbon(ribbon, strokeCanvas, ShapesXrColor(document, state, report), group);
+                            report.StrokeObjects++;
+                            if (!state.Visible) { report.HiddenObjects++; }
+                            if (state.Locked)
+                            {
+                                const string feature = "ShapesXR per-stroke locking";
+                                report.UnsupportedObjects.TryGetValue(feature, out int count);
+                                report.UnsupportedObjects[feature] = count + 1;
+                            }
+                            continue;
+                        }
                         GrabWidget widget;
                         if (isText)
                         {
@@ -150,7 +182,7 @@ namespace TiltBrush
             {
                 if (hiddenCanvas != null) { App.Scene.ToggleLayerVisibility(hiddenCanvas); }
             }
-            Debug.Log($"[OB_NATIVE_IMPORT] ShapesXR {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, failed={report.FailedObjects}");
+            Debug.Log($"[OB_NATIVE_IMPORT] ShapesXR {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, strokes={report.StrokeObjects}, failed={report.FailedObjects}");
         }
 
         private static ImageWidget CreateShapesXrImage(ShapesXrDocument document, ShapesXrObjectState state,

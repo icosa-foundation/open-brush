@@ -17,6 +17,21 @@ namespace TiltBrush.DocumentImport
         public float[] Rotation { get; }
         private readonly List<(Vector3 Scale, Quaternion Rotation)> m_LinearSteps = new List<(Vector3, Quaternion)>();
         private readonly Quaternion m_InverseRotation;
+        private readonly Matrix4x4 m_LocalToRoot;
+
+        /// Transform an authored local point to the import canvas, retaining the full
+        /// hierarchy's affine transform, including shear, and converting units once.
+        public Vector3 TransformPoint(Vector3 point, float unitsPerMetre)
+        {
+            if (!(unitsPerMetre > 0) || float.IsInfinity(unitsPerMetre)) { throw new ArgumentException("Invalid point unit conversion", nameof(unitsPerMetre)); }
+            var result = Vector3.Transform(point, m_LocalToRoot) * unitsPerMetre;
+            if (float.IsNaN(result.X) || float.IsNaN(result.Y) || float.IsNaN(result.Z) ||
+                float.IsInfinity(result.X) || float.IsInfinity(result.Y) || float.IsInfinity(result.Z))
+            {
+                throw new InvalidDataException("Native point transform exceeds supported range");
+            }
+            return result;
+        }
 
         public IEnumerable<GeometryStepData> LinearTransforms
         {
@@ -60,6 +75,7 @@ namespace TiltBrush.DocumentImport
                 m_LinearSteps.Add((scale, q));
             }
             rotation = Quaternion.Normalize(rotation);
+            m_LocalToRoot = world;
             m_InverseRotation = Quaternion.Conjugate(rotation);
             Position = new[] { world.M41, world.M42, world.M43 };
             foreach (float value in Position)
