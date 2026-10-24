@@ -33,6 +33,17 @@ namespace TiltBrush
             public float extrusionDepth;
             public Color extrusionColor;
             public float opacity;
+            public ImageWidgetLayout imageLayout;
+        }
+
+        private static CanvasScript GetSavedCanvas(GrabWidget widget) =>
+            widget.Canvas == App.Scene.SelectionCanvas && widget.m_PreviousCanvas != null
+                ? widget.m_PreviousCanvas : widget.Canvas;
+
+        private static TrTransform GetSavedTransform(GrabWidget widget, TrTransform transform)
+        {
+            var canvas = GetSavedCanvas(widget);
+            return canvas == widget.Canvas ? transform : canvas.Pose.inverse * widget.Canvas.Pose * transform;
         }
 
         /// Sanitizes potentially-invalid data coming from the .tilt file.
@@ -113,11 +124,11 @@ namespace TiltBrush
             foreach (var widget in widgets)
             {
                 WidgetMetadata newEntry = new WidgetMetadata();
-                newEntry.xf = widget.GetSaveTransform();
+                newEntry.xf = GetSavedTransform(widget, widget.GetSaveTransform());
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(GetSavedCanvas(widget));
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -154,21 +165,57 @@ namespace TiltBrush
                 .OrderBy(ByModelLocation).ToArray();
         }
 
+        public static Dictionary<string, DocumentImport.GeometryRecipeData> GetEditableModelDefinitions()
+        {
+            var definitions = new Dictionary<string, DocumentImport.GeometryRecipeData>(
+                MeshEditing.EditableModelManager.RetainedDefinitions);
+            foreach (var widget in WidgetManager.m_Instance.EditableModelWidgets.Where(widget => widget.gameObject.activeSelf))
+            {
+                definitions[widget.Model.AssetId] = widget.m_PolyRecipe;
+            }
+            return definitions.Count == 0 ? null : definitions;
+        }
+
+        public static TiltEditableModels[] GetTiltEditableModels(GroupIdMapping groupIdMapping)
+        {
+            var models = new List<TiltEditableModels>();
+            foreach (var group in WidgetManager.m_Instance.EditableModelWidgets
+                         .Where(widget => widget.gameObject.activeSelf).GroupBy(widget => widget.Model.GetLocation()))
+            {
+                var widgets = group.OrderBy(widget => ByTranslation(GetSavedTransform(widget, widget.GetSaveTransform()))).ToArray();
+                models.Add(new TiltEditableModels
+                {
+                    Location = group.Key,
+                    RawTransforms = widgets.Select(widget => GetSavedTransform(widget, widget.GetSaveTransform())).ToArray(),
+                    PinStates = widgets.Select(widget => widget.Pinned).ToArray(),
+                    GroupIds = widgets.Select(widget => groupIdMapping.GetId(widget.Group)).ToArray(),
+                    LayerIds = widgets.Select(widget => App.Scene.GetIndexOfCanvas(GetSavedCanvas(widget))).ToArray(),
+                    Colors = widgets.Select(widget => widget.m_Color).ToArray()
+                });
+            }
+            models.AddRange(MeshEditing.EditableModelManager.RetainedInstances);
+            return models.Count == 0 ? null : models.ToArray();
+        }
+
         public static TiltText[] GetTiltText(GroupIdMapping groupIdMapping)
         {
             return WidgetManager.m_Instance.TextWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertTextWidgetToTiltText(x)).ToArray();
 
             TiltText ConvertTextWidgetToTiltText(TextWidget widget)
             {
+                CanvasScript savedCanvas = GetSavedCanvas(widget);
+                TrTransform savedTransform = GetSavedTransform(widget, widget.SaveTransform);
                 TiltText text = new TiltText
                 {
-                    Transform = widget.SaveTransform,
+                    Transform = savedTransform,
                     Text = widget.Text,
+                    LayerId = App.Scene.GetIndexOfCanvas(savedCanvas),
                     FillColor = widget.TextColor,
                     Pinned = widget.Pinned,
                     GroupId = groupIdMapping.GetId(widget.Group),
                     StrokeColor = widget.StrokeColor,
-                    Font = "Oswald-Regular",
+                    Font = widget.FontReference,
+                    Layout = widget.CaptureLayout(),
                     ExtrudeDepth = 0,
                     Mode = widget.Mode,
                 };
@@ -365,14 +412,16 @@ namespace TiltBrush
             {
                 var light = lightWidget.GetComponentInChildren<Light>();
                 var newEntry = new TiltLights();
-                newEntry.Transform = lightWidget.GetSaveTransform();
+                newEntry.Transform = GetSavedTransform(lightWidget, lightWidget.GetSaveTransform());
                 newEntry.Pinned = lightWidget.Pinned;
                 newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
-                newEntry.LayerId = App.Scene.GetIndexOfCanvas(lightWidget.Canvas);
+                newEntry.LayerId = App.Scene.GetIndexOfCanvas(GetSavedCanvas(lightWidget));
 
                 newEntry.PunctualLightType = light.type;
                 newEntry.Intensity = light.intensity;
                 newEntry.LightColor = light.color;
+                newEntry.Enabled = light.enabled;
+                newEntry.Shadows = light.shadows;
 
                 if (light.type == LightType.Spot)
                 {
@@ -417,13 +466,14 @@ namespace TiltBrush
                     aspectRatios[path] = image.AspectRatio ?? 1;
                 }
                 WidgetMetadata newEntry = new WidgetMetadata();
-                newEntry.xf = image.SaveTransform;
+                newEntry.xf = GetSavedTransform(image, image.SaveTransform);
                 newEntry.pinned = image.Pinned;
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
+                newEntry.layerId = App.Scene.GetIndexOfCanvas(GetSavedCanvas(image));
                 newEntry.twoSided = image.TwoSided;
                 newEntry.opacity = image.Opacity;
+                newEntry.imageLayout = image.CaptureLayout();
                 imagesByPath[path].Add(newEntry);
             }
 
@@ -464,6 +514,7 @@ namespace TiltBrush
                 {
                     val.Opacities = ordered.Select(m => m.opacity).ToArray();
                 }
+                if (ordered.Any(m => m.imageLayout != null)) { val.Layouts = ordered.Select(m => m.imageLayout).ToArray(); }
                 imageIndex.Add(val);
             }
             return imageIndex.OrderBy(i => i.FileName).ToArray();

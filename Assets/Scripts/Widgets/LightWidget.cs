@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -52,6 +52,11 @@ namespace TiltBrush
                 );
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
                 LightWidget lightWidget = createCommand.Widget as LightWidget;
+                foreach (var placeholder in lightWidget.GetComponentsInChildren<Light>(true))
+                {
+                    placeholder.gameObject.SetActive(false);
+                    Destroy(placeholder.gameObject);
+                }
                 var light = gizmo.transform.parent.GetComponentInChildren<Light>();
                 gizmo.SetupLightGizmos(light);
                 lightWidget.m_BoxCollider = gizmo.GetComponentInChildren<BoxCollider>(includeInactive: false);
@@ -75,7 +80,6 @@ namespace TiltBrush
         protected override void UpdateScale()
         {
             transform.localScale = Vector3.one * m_Size;
-            m_BoxCollider.size = Vector3.one * m_Size;
         }
 
         public override string GetExportName()
@@ -92,44 +96,32 @@ namespace TiltBrush
         {
             LightWidget clone = Instantiate(WidgetManager.m_Instance.LightWidgetPrefab);
             clone.m_PreviousCanvas = m_PreviousCanvas;
+            clone.m_LoadingFromSketch = true;
+            clone.transform.parent = transform.parent;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
             // We want to lie about our intro transition amount.
             clone.m_ShowTimer = clone.m_ShowDuration;
-            clone.transform.parent = transform.parent;
-            clone.Show(true, false);
-            clone.SetSignedWidgetSize(size);
+            var sourceLight = GetComponentInChildren<Light>();
+            var light = clone.SetLightType(sourceLight.type);
             clone.CloneInitialMaterials(this);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
-
-            clone.transform.parent = App.Instance.m_CanvasTransform;
-            clone.transform.localScale = Vector3.one;
-
-            var light = clone.SetLightType(GetComponentInChildren<Light>().type);
+            clone.SetSignedWidgetSize(size);
 
             clone.Show(bShow: true, bPlayAudio: false);
-            light.color = light.color;
-            light.intensity = light.intensity;
-            light.range = light.range;
-            light.spotAngle = light.spotAngle;
-            light.innerSpotAngle = light.innerSpotAngle;
+            light.color = sourceLight.color;
+            light.intensity = sourceLight.intensity;
+            light.range = sourceLight.range;
+            light.spotAngle = sourceLight.spotAngle;
+            light.innerSpotAngle = sourceLight.innerSpotAngle;
+            light.enabled = sourceLight.enabled;
+            light.shadows = sourceLight.shadows;
             clone.SetPinned(Pinned);
             clone.Group = Group;
-            var gizmo = Instantiate(WidgetManager.m_Instance.SceneLightGizmoPrefab, transform);
-            gizmo.SetupLightGizmos(light);
+            clone.RefreshLightGizmo();
 
-            CanvasScript canvas = transform.parent.GetComponent<CanvasScript>();
-            if (canvas != null)
-            {
-                var materials = clone.GetComponentsInChildren<Renderer>().SelectMany(x => x.materials);
-                foreach (var material in materials)
-                {
-                    foreach (string keyword in canvas.BatchManager.MaterialKeywords)
-                    {
-                        material.EnableKeyword(keyword);
-                    }
-                }
-            }
+            clone.TrySetCanvasKeywordsFromObject(transform);
+            TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
             return clone;
         }
@@ -140,33 +132,37 @@ namespace TiltBrush
             lightWidget.m_LoadingFromSketch = true;
             lightWidget.transform.parent = App.Instance.m_CanvasTransform;
             lightWidget.transform.localScale = Vector3.one;
-
+            var light = lightWidget.SetLightType(tiltLight.PunctualLightType);
+            lightWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltLight.LayerId));
             lightWidget.SetSignedWidgetSize(tiltLight.Transform.scale);
             lightWidget.Show(bShow: true, bPlayAudio: false);
             lightWidget.transform.localPosition = tiltLight.Transform.translation;
             lightWidget.transform.localRotation = tiltLight.Transform.rotation;
-            var light = lightWidget.SetLightType(tiltLight.PunctualLightType);
-            light.color = tiltLight.LightColor.Value;
-            light.intensity = tiltLight.Intensity.Value;
-            light.range = tiltLight.Range.Value;
-            light.spotAngle = tiltLight.OuterConeAngle.Value;
-            light.innerSpotAngle = tiltLight.InnerConeAngle.Value;
+            light.color = tiltLight.LightColor ?? Color.white;
+            light.intensity = tiltLight.Intensity ?? 1;
+            if (tiltLight.Range.HasValue) { light.range = tiltLight.Range.Value; }
+            if (tiltLight.OuterConeAngle.HasValue) { light.spotAngle = tiltLight.OuterConeAngle.Value; }
+            if (tiltLight.InnerConeAngle.HasValue) { light.innerSpotAngle = tiltLight.InnerConeAngle.Value; }
+            light.enabled = tiltLight.Enabled ?? true;
+            if (tiltLight.Shadows.HasValue) { light.shadows = tiltLight.Shadows.Value; }
             if (tiltLight.Pinned)
             {
                 lightWidget.PinFromSave();
             }
             lightWidget.Group = App.GroupManager.GetGroupFromId(tiltLight.GroupId);
-            lightWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltLight.LayerId));
-            var gizmo = Instantiate(WidgetManager.m_Instance.SceneLightGizmoPrefab, lightWidget.transform);
-            gizmo.SetupLightGizmos(light);
+            lightWidget.RefreshLightGizmo();
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(lightWidget.GetTiltMeterCost(), up: true);
             lightWidget.UpdateScale();
         }
 
-        private Light SetLightType(LightType lightType)
+        public Light SetLightType(LightType lightType)
         {
-            var lights = gameObject.GetComponentsInChildren<Light>();
+            if (lightType != LightType.Point && lightType != LightType.Spot && lightType != LightType.Directional)
+            {
+                throw new ArgumentOutOfRangeException(nameof(lightType), "Unsupported widget light type");
+            }
+            var lights = gameObject.GetComponentsInChildren<Light>(true);
             Light activeLight = null;
             foreach (var l in lights)
             {
@@ -178,7 +174,28 @@ namespace TiltBrush
                 }
 
             }
+            if (activeLight == null)
+            {
+                var child = new GameObject($"{lightType} light");
+                child.transform.SetParent(transform, false);
+                activeLight = child.AddComponent<Light>();
+                activeLight.type = lightType;
+            }
+            SetupLightGizmo(activeLight);
             return activeLight;
+        }
+
+        public void RefreshLightGizmo() => SetupLightGizmo(GetComponentInChildren<Light>());
+
+        private void SetupLightGizmo(Light light)
+        {
+            var gizmo = light.GetComponentInChildren<SceneLightGizmo>(true);
+            if (gizmo == null) { gizmo = Instantiate(WidgetManager.m_Instance.SceneLightGizmoPrefab, light.transform); }
+            gizmo.SetupLightGizmos(light);
+            m_BoxCollider = gizmo.GetComponentInChildren<BoxCollider>();
+            m_Mesh = gizmo.ActiveMeshTransform;
+            HighlightMeshXfs = new[] { m_Mesh };
+            HierarchyUtils.RecursivelySetLayer(light.transform, gameObject.layer, skipUI: false);
         }
 
         public TrTransform GetSaveTransform()

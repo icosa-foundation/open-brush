@@ -93,7 +93,12 @@ namespace TiltBrush
 
         public Guid UniqueName => m_UniqueName;
         public string DurableName => m_DurableName;
-        public ExportableMaterialBlendMode BlendMode => Parent.BlendMode;
+        private ExportableMaterialBlendMode? m_BlendMode;
+        public ExportableMaterialBlendMode BlendMode
+        {
+            get => m_BlendMode ?? Parent.BlendMode;
+            set => m_BlendMode = value;
+        }
         public float EmissiveFactor => 0;
 
         // TODO(b/142396408): create a better layout?
