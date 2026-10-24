@@ -2801,15 +2801,18 @@ namespace TiltBrush
 
 
         private static bool OwnsOneHandWidgetGrab(
-            bool isBrush)
+            bool isRight)
         {
             SketchControlsScript controls =
                 SketchControlsScript.m_Instance;
+            bool rightIsWand =
+                InputManager.m_Instance != null &&
+                InputManager.m_Instance.WandOnRight;
 
             return controls != null &&
                    controls.IsUserInteractingWithAnyWidget() &&
                    controls.OneHandGrabController ==
-                   (isBrush
+                   (isRight != rightIsWand
                        ? InputManager.ControllerName.Brush
                        : InputManager.ControllerName.Wand);
         }
