@@ -43,6 +43,7 @@ namespace TiltBrush
                 var images = new NativeImageCache();
                 foreach (var state in scene.Objects.Values.Where(value => value.HasSnapshot))
                 {
+                    if (state.IsGroup) { continue; }
                     bool isText = state.Properties["obj-tx"]?.Type == JTokenType.String;
                     bool isResource = state.Properties["resi"] != null;
                     if (!isText && !isResource && !(state.Properties["obj-pmugs"] is JArray))
