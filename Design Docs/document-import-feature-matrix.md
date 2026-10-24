@@ -380,6 +380,20 @@ Implementation checkpoint, 2026-10-24:
     states. This checks recipe conversion and validation only. It does not evaluate
     Polyhydra meshes, compare source geometry or establish visual parity.
 
+29. ShapesXR model object opacity (`obj-vis`) now maps to the cached model's glTF
+    material alpha, preserving material slots, textures and source metadata. Opaque
+    source materials ignore their saved alpha before the fade; blended/masked
+    materials multiply it by object opacity. Primitives with implicit default
+    materials receive an explicit faded default. Full opacity leaves source materials
+    unchanged, and the cache distinguishes instances with different opacity.
+    No .tilt field was added. Material-entity overrides remain outstanding and reported.
+    Sixty-two standalone checks and 89 fresh Unity EditMode tests pass. A live fixture
+    placed the same resource at opacity 1, 0.25 and 0. All three retained 4,284 vertices
+    and separate cached variants; runtime alpha matched, and faded materials used
+    transparent render queues. Saving/reloading retained identical model/layer and
+    environment/light metadata and reproduced identical material/geometry records.
+    This checks runtime state and persistence, not source-rendered pixel parity.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |

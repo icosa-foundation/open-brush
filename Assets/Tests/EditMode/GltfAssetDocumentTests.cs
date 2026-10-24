@@ -31,6 +31,48 @@ namespace TiltBrush.Tests
             'extensionsUsed':['KHR_materials_transmission'],'extras':{'future':42}}");
 
         [Test]
+        public void OpacityVariantsRetainMaterialsAndFadeImplicitAndExplicitMaterials()
+        {
+            var data = Model();
+            data["materials"] = JArray.Parse(@"[
+                {'pbrMetallicRoughness':{'baseColorFactor':[0.2,0.4,0.6,0.1],'baseColorTexture':{'index':0}}},
+                {'alphaMode':'BLEND','pbrMetallicRoughness':{'baseColorFactor':[1,0.5,0.25,0.6]},'extensions':{'KHR_materials_unlit':{}}},
+                {'alphaMode':'MASK','alphaCutoff':0.3,'pbrMetallicRoughness':{'baseColorFactor':[1,1,1,0.8]}}]");
+            var primitives = (JArray)data["meshes"][0]["primitives"];
+            for (int i = 1; i < 4; ++i)
+            {
+                var primitive = (JObject)primitives[0].DeepClone();
+                if (i == 3) { primitive.Remove("material"); }
+                else { primitive["material"] = i; }
+                primitives.Add(primitive);
+            }
+            string input = Path.Combine(m_Root, "source.gltf"), output = Path.Combine(m_Root, "faded.gltf");
+            File.WriteAllText(input, data.ToString());
+            var source = new GltfAssetDocument(input);
+            source.WriteVariant(output, Array.Empty<GeometryStepData>(), null, opacity: .5f);
+            var faded = JObject.Parse(File.ReadAllText(output));
+            var materials = (JArray)faded["materials"];
+            Assert.AreEqual(4, materials.Count);
+            var expectedAlpha = new[] { .5, .3, .4, .5 };
+            for (int i = 0; i < 4; ++i)
+            {
+                Assert.AreEqual("BLEND", (string)materials[i]["alphaMode"]);
+                Assert.AreEqual(expectedAlpha[i], (double)materials[i]["pbrMetallicRoughness"]["baseColorFactor"][3], 1e-6);
+                Assert.AreEqual(i, (int)faded["meshes"][0]["primitives"][i]["material"]);
+            }
+            Assert.IsTrue(JToken.DeepEquals(data["materials"][0]["pbrMetallicRoughness"]["baseColorTexture"],
+                materials[0]["pbrMetallicRoughness"]["baseColorTexture"]));
+            Assert.IsTrue(JToken.DeepEquals(data["materials"][1]["extensions"], materials[1]["extensions"]));
+            Assert.AreEqual(.2, (double)materials[0]["pbrMetallicRoughness"]["baseColorFactor"][0], 1e-6);
+            Assert.AreEqual(data.ToString(), File.ReadAllText(input));
+            string fullOpacity = Path.Combine(m_Root, "full.gltf");
+            source.WriteVariant(fullOpacity, Array.Empty<GeometryStepData>(), null);
+            Assert.IsTrue(JToken.DeepEquals(data["materials"], JObject.Parse(File.ReadAllText(fullOpacity))["materials"]));
+            Assert.Throws<ArgumentOutOfRangeException>(() => source.WriteVariant(output,
+                Array.Empty<GeometryStepData>(), null, opacity: float.NaN));
+        }
+
+        [Test]
         public void VariantsShareExactBuffersAndTexturesAndRetainSourceMetadata()
         {
             string project = Path.Combine(m_Root, "project");

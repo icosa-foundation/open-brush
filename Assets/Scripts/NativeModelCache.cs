@@ -55,17 +55,17 @@ namespace TiltBrush
             return (model, offset);
         }
 
-        public async Task<Model> ShapesXrModel(ImportResource resource, NativePlacement placement)
+        public async Task<Model> ShapesXrModel(ImportResource resource, NativePlacement placement, float opacity = 1)
         {
             if (resource == null) { throw new FileNotFoundException("Missing ShapesXR model resource"); }
             var source = await GetSource(resource);
             // ShapesXR preserves the source model's authored origin and materials.
             var hidden = ShapesXrModelAdapter.HiddenLodNodes(JObject.Parse(File.ReadAllText(source.Document.Path)));
-            return await GetVariant(resource, source, placement, Vector3.zero, null, null, hidden);
+            return await GetVariant(resource, source, placement, Vector3.zero, null, null, hidden, opacity);
         }
 
         private async Task<Model> GetVariant(ImportResource resource, Source source, NativePlacement placement,
-            Vector3 contentOffset, float[] appearance, string materialId, IEnumerable<int> excludedNodes = null)
+            Vector3 contentOffset, float[] appearance, string materialId, IEnumerable<int> excludedNodes = null, float opacity = 1)
         {
             string key = new JObject
             {
@@ -74,14 +74,15 @@ namespace TiltBrush
                 ["offset"] = new JArray(contentOffset.x, contentOffset.y, contentOffset.z),
                 ["excludedNodes"] = excludedNodes == null ? null : new JArray(excludedNodes),
                 ["color"] = appearance == null ? null : new JArray(appearance),
-                ["material"] = materialId
+                ["material"] = materialId,
+                ["opacity"] = opacity
             }.ToString(Formatting.None);
             if (!m_Variants.TryGetValue(key, out var model))
             {
                 string relative = $"{m_RelativeDirectory}/variants/{Guid.NewGuid():N}.gltf";
                 string path = Path.Combine(App.ModelLibraryPath(), relative);
                 source.Document.WriteVariant(path, placement.LinearTransforms,
-                    new[] { contentOffset.x, contentOffset.y, contentOffset.z }, appearance, excludedNodes);
+                    new[] { contentOffset.x, contentOffset.y, contentOffset.z }, appearance, excludedNodes, opacity);
                 model = new Model(relative);
                 try
                 {

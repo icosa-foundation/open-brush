@@ -68,8 +68,9 @@ namespace TiltBrush.DocumentImport
         }
 
         public void WriteVariant(string path, IEnumerable<GeometryStepData> transforms, float[] centerOffset, float[] color = null,
-            IEnumerable<int> excludedNodes = null)
+            IEnumerable<int> excludedNodes = null, float opacity = 1)
         {
+            if (float.IsNaN(opacity) || opacity < 0 || opacity > 1) { throw new ArgumentOutOfRangeException(nameof(opacity)); }
             var data = (JObject)m_Data.DeepClone();
             RebaseResources(data, System.IO.Path.GetDirectoryName(Path), System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(path)));
             var nodes = data["nodes"] as JArray ?? throw new InvalidDataException("glTF model has no nodes");
@@ -111,7 +112,47 @@ namespace TiltBrush.DocumentImport
             }
             scene["nodes"] = roots;
             if (color != null) { OverrideColor(data, color); }
+            if (opacity < 1) { ApplyOpacity(data, opacity); }
             WriteJson(path, data);
+        }
+
+        private static void ApplyOpacity(JObject data, float opacity)
+        {
+            var materials = data["materials"] as JArray;
+            if (materials == null) { materials = new JArray(); data["materials"] = materials; }
+            // A primitive without a material uses glTF's implicit opaque white material.
+            // Give those primitives a shared explicit material so they fade as well.
+            int defaultMaterial = -1;
+            if (data["meshes"] is JArray meshes)
+            {
+                foreach (JObject mesh in meshes)
+                {
+                    if (!(mesh["primitives"] is JArray primitives)) { continue; }
+                    foreach (JObject primitive in primitives)
+                    {
+                        if (primitive["material"] != null) { continue; }
+                        if (defaultMaterial < 0)
+                        {
+                            defaultMaterial = materials.Count;
+                            materials.Add(new JObject());
+                        }
+                        primitive["material"] = defaultMaterial;
+                    }
+                }
+            }
+            foreach (JObject material in materials)
+            {
+                var pbr = material["pbrMetallicRoughness"] as JObject;
+                if (pbr == null) { pbr = new JObject(); material["pbrMetallicRoughness"] = pbr; }
+                var color = pbr["baseColorFactor"] as JArray;
+                if (color == null) { color = new JArray(1f, 1f, 1f, 1f); pbr["baseColorFactor"] = color; }
+                if (color.Count != 4) { throw new InvalidDataException("Invalid glTF base color factor"); }
+                // Opaque source materials ignore their saved alpha. A source fade switches
+                // to blending with object opacity; masked/blended materials retain their alpha.
+                float alpha = ((string)material["alphaMode"] ?? "OPAQUE") == "OPAQUE" ? 1 : (float)color[3];
+                color[3] = alpha * opacity;
+                material["alphaMode"] = "BLEND";
+            }
         }
 
         private static JArray AddNode(JArray nodes, JArray children, JObject node)

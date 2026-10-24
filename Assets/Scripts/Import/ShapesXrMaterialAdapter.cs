@@ -37,7 +37,13 @@ namespace TiltBrush.DocumentImport
                     properties = document.ResolveProperties(id, state.StateId);
                 }
             }
-            return Read(properties, UnitNumber(state.Properties["obj-vis"], 1), usage);
+            return Read(properties, ReadObjectOpacity(state), usage);
+        }
+
+        public static float ReadObjectOpacity(ShapesXrObjectState state)
+        {
+            if (state == null) { throw new ArgumentNullException(nameof(state)); }
+            return UnitNumber(state.Properties["obj-vis"], 1);
         }
 
         public static ShapesXrMaterialData Read(JObject properties, float visibility, ShapesXrMaterialUsage usage)
