@@ -38,6 +38,7 @@ namespace TiltBrush
         private float[] m_GeometryTransform;
         private Mesh m_OriginalPlaneMesh;
         private Mesh m_OwnedPlaneMesh;
+        public ImageBlendMode BlendMode => m_BlendMode;
 
         /// RGB multiplier. Alpha remains controlled by Opacity.
         public Color TintColor

@@ -88,9 +88,10 @@ namespace TiltBrush
                 var (images, notImages) = media2dWidgets.Partition(w => w is ImageWidget);
                 var (exportable, notExportable) = images.Cast<ImageWidget>().Partition(IsImageExportable);
 
-                foreach (var group in exportable.GroupBy(widget => widget.ReferenceImage))
+                int imageMaterialId = 0;
+                foreach (var group in exportable.GroupBy(widget => (widget.ReferenceImage, widget.TintColor, widget.Opacity, widget.BlendMode)))
                 {
-                    ReferenceImage ri = group.Key;
+                    ReferenceImage ri = group.Key.ReferenceImage;
                     if (ri == null)
                     {
                         Debug.Assert(false, "Empty ImageWidgets");
@@ -112,11 +113,11 @@ namespace TiltBrush
                         string texturePath = $"{temporaryDirectory}/{Path.GetFileName(ri.FileName)}.png";
                         File.WriteAllBytes(texturePath, bytes);
                         var newRi = new ReferenceImage(texturePath);
-                        material = CreateImageQuadMaterial(newRi);
+                        material = CreateImageQuadMaterial(newRi, group.First(), imageMaterialId++);
                     }
                     else
                     {
-                        material = CreateImageQuadMaterial(ri);
+                        material = CreateImageQuadMaterial(ri, group.First(), imageMaterialId++);
                     }
                     foreach ((ImageWidget image, int idx) in group.WithIndex())
                     {
@@ -366,19 +367,31 @@ namespace TiltBrush
             return GuidUtils.Uuid5(descriptor, string.Format("{0}_{1}", ri.FileFullPath, id));
         }
 
-        static DynamicExportableMaterial CreateImageQuadMaterial(ReferenceImage ri)
+        static DynamicExportableMaterial CreateImageQuadMaterial(ReferenceImage ri, ImageWidget widget, int variant)
         {
             BrushDescriptor desc = BrushCatalog.m_Instance.GetBrush(kPbrTransparentGuid);
-            return new DynamicExportableMaterial(
+            var material = new DynamicExportableMaterial(
                 parent: desc,
                 // GetExportName() not totally guaranteed to be unique; maybe we should detect collisions?
                 durableName: $"image_{ri.GetExportName()}",
-                uniqueName: MakeDeterministicUniqueName(desc.m_Guid, ri, 0),
+                uniqueName: MakeDeterministicUniqueName(desc.m_Guid, ri, variant),
                 uriBase: Path.GetDirectoryName(ri.FileFullPath))
             {
                 BaseColorTex = Path.GetFileName(ri.FileFullPath),
+                BaseColorFactor = new Color(widget.TintColor.r, widget.TintColor.g, widget.TintColor.b, widget.Opacity),
                 MetallicFactor = kRefimageMetallicFactor
             };
+            if (widget.CaptureLayout() != null)
+            {
+                material.BlendMode = widget.BlendMode switch
+                {
+                    ImageBlendMode.Additive => ExportableMaterialBlendMode.AdditiveBlend,
+                    ImageBlendMode.AlphaBlend => ExportableMaterialBlendMode.AlphaBlend,
+                    ImageBlendMode.Opaque => ExportableMaterialBlendMode.None,
+                    _ => ExportableMaterialBlendMode.AlphaMask
+                };
+            }
+            return material;
         }
 
         // widget.ReferenceImage must be != null
