@@ -226,7 +226,8 @@ namespace TiltBrush
                 {
                     throw new InvalidDataException($"Missing ShapesXR material {id}");
                 }
-                if (material.Properties["m-c"] is JArray rgba)
+                var properties = document.ResolveProperties(id, state.StateId);
+                if (properties["m-c"] is JArray rgba)
                 {
                     if (rgba.Count != 4 || rgba.Any(value => value.Type != JTokenType.Integer || (int)value < 0 || (int)value > 255))
                     {
@@ -236,7 +237,7 @@ namespace TiltBrush
                 }
                 // Source text explicitly replaces Color32 alpha with the separate opacity.
                 if (isText) { color.a = 1; }
-                color.a *= (float?)material.Properties["m-o"] ?? 1;
+                color.a *= (float?)properties["m-o"] ?? 1;
             }
             color.a *= (float?)state.Properties["obj-vis"] ?? 1;
             if (float.IsNaN(color.a) || float.IsInfinity(color.a) || color.a < 0 || color.a > 1)

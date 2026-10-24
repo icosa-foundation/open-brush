@@ -15,13 +15,15 @@ namespace TiltBrush.DocumentImport
         public ShapesXrEntity Entity { get; }
         public JObject Properties { get; }
         public bool HasSnapshot { get; }
+        public Guid StateId { get; }
         public Guid ParentId { get; }
         public ShapesXrObjectState Parent { get; internal set; }
         public bool Visible => HasSnapshot && ((bool?)Properties["obj-isa"] ?? true) && (Parent?.Visible ?? true);
         public bool Locked => (bool?)Properties["obj-l"] ?? false;
-        internal ShapesXrObjectState(ShapesXrEntity entity, JObject properties, bool hasSnapshot)
+        internal ShapesXrObjectState(ShapesXrEntity entity, JObject properties, bool hasSnapshot, Guid stateId)
         {
             Entity = entity; Properties = properties; HasSnapshot = hasSnapshot;
+            StateId = stateId;
             if (properties["pi"] is JArray parent)
             {
                 if (parent.Count != 2 || parent[1].Type != JTokenType.Boolean) { throw new InvalidDataException("Invalid ShapesXR parent info"); }
@@ -93,7 +95,7 @@ namespace TiltBrush.DocumentImport
             }
             foreach (var entity in document.OfKind(3))
             {
-                m_Objects.Add(entity.Id, new ShapesXrObjectState(entity, document.ResolveProperties(entity.Id, StateId), snapshots.Contains(entity.Id)));
+                m_Objects.Add(entity.Id, new ShapesXrObjectState(entity, document.ResolveProperties(entity.Id, StateId), snapshots.Contains(entity.Id), StateId));
             }
             foreach (var entity in m_Objects.Values)
             {
