@@ -88,12 +88,25 @@ namespace TiltBrush.DocumentImport
         /// remain intact here; geometry/material adapters translate them to the shared representation.
         public JObject ResolveProperties(Guid entityId, Guid stateId)
         {
-            if (Version < 4) { throw new NotSupportedException("Pre-snapshot ShapesXR state migration is not implemented"); }
+            if (Version == 0) { throw new NotSupportedException("Unversioned ShapesXR state migration is not implemented"); }
             if (!m_Entities.TryGetValue(entityId, out var entity) || !entity.Exists)
             {
                 throw new InvalidDataException($"ShapesXR entity not found: {entityId}");
             }
             var result = (JObject)entity.Properties.DeepClone();
+            if (Version == 3)
+            {
+                // Version 3 keeps each object's static frame properties on the object itself.
+                // Normalize only names consumed by the adapters, retaining all original fields.
+                if (entity.Kind == 3)
+                {
+                    foreach (string property in new[] { "l", "pmugs", "pmugcor", "pmugcors", "pmugcos", "pmugchr", "pmugchs", "pmuggb", "pmbh", "pmbv", "tx", "ts", "ty", "ta", "tva", "tf", "s" })
+                    {
+                        if (result[property] != null) { result[$"obj-{property}"] = result[property].DeepClone(); }
+                    }
+                }
+                return result;
+            }
             var snapshots = OfKind(4).Where(snapshot => ReadGuid(snapshot.Properties["snp-ent"]) == entityId
                                                       && ReadGuid(snapshot.Properties["snp-st"]) == stateId).ToArray();
             if (snapshots.Length > 1) { throw new InvalidDataException($"Ambiguous ShapesXR snapshot for {entityId} in {stateId}"); }

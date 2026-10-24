@@ -13,14 +13,14 @@ namespace TiltBrush.Tests
     public class ShapesXrSceneTests
     {
         // Independently encoded synthetic edit log; no vendor or user content.
-        private const string kSpace = "kpIFkgMW3AAWkgCTxBAKCgoKCgoKCgoKCgoKCgoKwwCSBpPEEAoKCgoKCgoKCgoKCgoKCgqmc3Atc2NvkcQQCwsLCwsLCwsLCwsLCwsLC5IAk8QQCwsLCwsLCwsLCwsLCwsLC8MBkgaTxBALCwsLCwsLCwsLCwsLCwsLpHNjLW6RxBAMDAwMDAwMDAwMDAwMDAwMkgaTxBALCwsLCwsLCwsLCwsLCwsLpXNjLW5tp0luaXRpYWySAJPEEAwMDAwMDAwMDAwMDAwMDAzDApIGk8QQDAwMDAwMDAwMDAwMDAwMDKRzdC16xBALCwsLCwsLCwsLCwsLCwsLkgCTxBABAQEBAQEBAQEBAQEBAQEBwwOSBpPEEAEBAQEBAQEBAQEBAQEBAQGicGmSxBACAgICAgICAgICAgICAgICwpIGk8QQAQEBAQEBAQEBAQEBAQEBAaF0k5PLP/AAAAAAAADLAAAAAAAAAADLAAAAAAAAAACUywAAAAAAAAAAywAAAAAAAAAAywAAAAAAAAAAyz/wAAAAAAAAk8s/8AAAAAAAAMs/8AAAAAAAAMs/8AAAAAAAAJIAk8QQAgICAgICAgICAgICAgICAsMDkgaTxBACAgICAgICAgICAgICAgICoXSTk8tAJAAAAAAAAMsAAAAAAAAAAMsAAAAAAAAAAJTLAAAAAAAAAADLAAAAAAAAAADLAAAAAAAAAADLP/AAAAAAAACTy0AAAAAAAAAAyz/wAAAAAAAAyz/wAAAAAAAAkgCTxBADAwMDAwMDAwMDAwMDAwMDwwOSBpPEEAMDAwMDAwMDAwMDAwMDAwOhdJOTywAAAAAAAAAAywAAAAAAAAAAywAAAAAAAAAAlMsAAAAAAAAAAMsAAAAAAAAAAMsAAAAAAAAAAMs/8AAAAAAAAJPLP/AAAAAAAADLP/AAAAAAAADLP/AAAAAAAACSAJPEEAQEBAQEBAQEBAQEBAQEBATDBJIGk8QQBAQEBAQEBAQEBAQEBAQEBKdzbnAtZW50xBABAQEBAQEBAQEBAQEBAQEBkgaTxBAEBAQEBAQEBAQEBAQEBAQEpnNucC1zdMQQDAwMDAwMDAwMDAwMDAwMDJIGk8QQBAQEBAQEBAQEBAQEBAQEBKdvYmotaXNhw5IAk8QQBQUFBQUFBQUFBQUFBQUFBcMEkgaTxBAFBQUFBQUFBQUFBQUFBQUFp3NucC1lbnTEEAICAgICAgICAgICAgICAgKSBpPEEAUFBQUFBQUFBQUFBQUFBQWmc25wLXN0xBAMDAwMDAwMDAwMDAwMDAwMkgaTxBAFBQUFBQUFBQUFBQUFBQUFp29iai1pc2HC";
+        private const string kSpace = "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";
 
         [Test]
         public void SelectsInitialStateAndPreservesParentPlacementAndVisibility()
         {
             var scene = new ShapesXrScene(new ShapesXrDocument(Convert.FromBase64String(kSpace)));
             Assert.AreEqual("Initial", scene.Name);
-            Assert.AreEqual(2, scene.Objects.Values.Count(value => value.HasSnapshot));
+            Assert.AreEqual(3, scene.Objects.Values.Count(value => value.HasSnapshot));
             var child = scene.Objects[Id(1)];
             Assert.AreEqual(Id(2), child.Parent.Entity.Id);
             Assert.AreEqual(12, child.Placement().Position[0], 1e-5);
@@ -102,6 +102,45 @@ namespace TiltBrush.Tests
             image = ShapesXrImageAdapter.Read(state, 10);
             Assert.AreEqual(10, image.Height, 1e-5);
             Assert.AreEqual(1, image.GeometryTransform[0], 1e-5);
+        }
+
+        [Test]
+        public void IncludesBackgroundObjectsUsingTheirOwnState()
+        {
+            var document = new ShapesXrDocument(Convert.FromBase64String(kSpace));
+            document.Entities[Id(1)].Properties["pi"] = new JArray(new JValue(Id(15).ToByteArray()), false);
+            var scene = new ShapesXrScene(document);
+            var background = scene.Objects[Id(15)];
+            Assert.IsTrue(background.HasSnapshot);
+            Assert.IsTrue(background.Visible);
+            Assert.AreEqual(Id(14), background.StateId);
+            Assert.AreEqual(100, background.Placement().Position[0], 1e-5);
+            Assert.AreEqual(101, scene.Objects[Id(1)].Placement().Position[0], 1e-5);
+        }
+
+        [Test]
+        public void ResolvesVersionThreeInitialContentWithoutChangingOriginalProperties()
+        {
+            byte[] bytes = Convert.FromBase64String(kSpace);
+            bytes[2] = 3;
+            var document = new ShapesXrDocument(bytes);
+            foreach (byte id in new byte[] { 1, 2 }) { document.Entities[Id(id)].Properties["z"] = new JValue(Id(11).ToByteArray()); }
+            var properties = document.Entities[Id(1)].Properties;
+            properties["tx"] = "Legacy label";
+            properties["s"] = new JArray(2, 4, 0);
+            properties["ts"] = 5;
+            properties["l"] = true;
+            var scene = new ShapesXrScene(document);
+            var child = scene.Objects[Id(1)];
+            Assert.AreEqual(scene.SceneId, scene.StateId);
+            Assert.IsTrue(child.HasSnapshot);
+            Assert.IsTrue(child.Locked);
+            Assert.IsTrue(child.Visible);
+            Assert.IsFalse(scene.Objects[Id(3)].HasSnapshot);
+            Assert.AreEqual("Legacy label", ShapesXrTextAdapter.Read(child, 10).Text);
+            Assert.AreEqual("Legacy label", (string)child.Properties["tx"]);
+            Assert.IsNull(properties["obj-tx"]);
+            Assert.AreEqual(12, child.Placement().Position[0], 1e-5);
         }
 
         private static Guid Id(byte value) => new Guid(Enumerable.Repeat(value, 16).ToArray());
