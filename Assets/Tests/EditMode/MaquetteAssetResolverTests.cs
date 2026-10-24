@@ -4,6 +4,7 @@
 using System;
 using System.IO;
 using System.IO.Compression;
+using Newtonsoft.Json.Linq;
 using NUnit.Framework;
 using TiltBrush.DocumentImport;
 
@@ -68,6 +69,56 @@ namespace TiltBrush.Tests
                 Assert.AreEqual("user", resolver.Resolve("<MAQUETTEOBJECT>/models/model.gltf").ReadText());
                 Assert.IsNull(resolver.Resolve("<MAQUETTEOBJECT>/missing.glb"));
             }
+        }
+
+        [Test]
+        public void LegacyShapesResolveThroughTheInstalledMapWithoutChangingSourceData()
+        {
+            string folder = Path.Combine(m_Root, "content/MaquetteLibrary/Shapes");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, "PrimitivePathMap.json"), new JObject
+            {
+                ["maps"] = new JArray(new JObject
+                {
+                    ["primitiveType"] = "Cube", ["primitiveFilePath"] = "<MAQUETTECONTENT>/Library/builtin.fbx"
+                })
+            }.ToString());
+            using (var source = new NativeProjectSource(Path.Combine(m_Root, "project")))
+            {
+                var resolver = new MaquetteAssetResolver(source, content: Path.Combine(m_Root, "content"));
+                var original = new JObject { ["primitiveType"] = "Cube", ["primitivePath"] = "" };
+                var legacy = resolver.Primitive(original, 4);
+                Assert.AreEqual("ModelFile", legacy.Type);
+                Assert.AreEqual("installed", resolver.Resolve(legacy.Path).ReadText());
+                Assert.AreEqual("Maquette", legacy.LoadOption);
+                Assert.IsTrue(legacy.UsesLegacyMeshOrigin);
+                Assert.IsTrue(legacy.IgnoresImageTint);
+                Assert.AreEqual("Cube", (string)original["primitiveType"]);
+                var v5 = resolver.Primitive(new JObject
+                {
+                    ["primitiveType"] = "UnityResource", ["primitivePath"] = "Primitives/Maq_Primitive_Cube"
+                }, 5);
+                Assert.AreEqual(legacy.Path, v5.Path);
+                Assert.IsNull(resolver.Primitive(new JObject { ["primitiveType"] = "UnknownShape" }, 4).Path);
+            }
+        }
+
+        [Test]
+        public void AssetVersionsPreserveModernReferencesAndImageCompatibilityFlags()
+        {
+            var data = new JObject
+            {
+                ["primitiveType"] = "ModelFile", ["primitivePath"] = "Objects/a.obj", ["assetLoadOption"] = "Original"
+            };
+            var modern = MaquettePrimitiveData.Read(data, 21, _ => throw new Exception("Unexpected library lookup"));
+            Assert.AreEqual("Objects/a.obj", modern.Path);
+            Assert.AreEqual("Original", modern.LoadOption);
+            Assert.IsFalse(modern.UsesLegacyMeshOrigin);
+            Assert.IsFalse(modern.IgnoresImageTint);
+            Assert.IsFalse(modern.UsesDefaultImageMaterial);
+            Assert.AreEqual("Original", MaquettePrimitiveData.Read(new JObject { ["primitiveType"] = "GooglePoly" }, 6, null).LoadOption);
+            Assert.AreEqual("ImageFile", MaquettePrimitiveData.Read(new JObject { ["primitiveType"] = "IMAGE" }, 4, null).Type);
+            Assert.AreEqual("ModelFile", MaquettePrimitiveData.Read(new JObject { ["primitiveType"] = "OBJECT" }, 4, null).Type);
         }
     }
 }
