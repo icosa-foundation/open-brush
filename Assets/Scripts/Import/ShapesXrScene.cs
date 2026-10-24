@@ -60,6 +60,7 @@ namespace TiltBrush.DocumentImport
     /// Resolves one document state for import. It does not implement frame navigation or playback.
     public sealed class ShapesXrScene
     {
+        private static readonly Guid kBackgroundScene = Guid.Parse("00000000-0000-0000-0000-000000000001");
         public Guid SceneId { get; }
         public Guid StateId { get; }
         public string Name { get; }
@@ -68,7 +69,7 @@ namespace TiltBrush.DocumentImport
 
         public ShapesXrScene(ShapesXrDocument document, Guid? sceneId = null, Guid? stateId = null)
         {
-            if (document.Version < 4) { throw new NotSupportedException("ShapesXR state migration before snapshots is not implemented"); }
+            if (document.Version == 0) { throw new NotSupportedException("Unversioned ShapesXR state migration is not implemented"); }
             var space = document.OfKind(0).SingleOrDefault() ?? throw new InvalidDataException("ShapesXR space entity is missing");
             var order = space.Properties["sp-sco"] as JArray;
             SceneId = sceneId ?? (order != null && order.Count > 0 ? ShapesXrDocument.ReadGuid(order[0]) :
@@ -77,25 +78,36 @@ namespace TiltBrush.DocumentImport
             {
                 throw new InvalidDataException($"Missing ShapesXR scene: {SceneId}");
             }
-            var states = scene.Properties["sc-n"] as JArray;
-            StateId = stateId ?? (states != null && states.Count > 0 ? ShapesXrDocument.ReadGuid(states[0]) :
-                throw new InvalidDataException("ShapesXR scene has no states"));
-            if (!document.Entities.TryGetValue(StateId, out var state) || !state.Exists || state.Kind != 2 ||
-                ShapesXrDocument.ReadGuid(state.Properties["st-z"]) != SceneId)
+            StateId = stateId ?? InitialState(document, scene);
+            bool validState = document.Version == 3 ? StateId == SceneId :
+                document.Entities.TryGetValue(StateId, out var state) && state.Exists && state.Kind == 2 &&
+                ShapesXrDocument.ReadGuid(state.Properties["st-z"]) == SceneId;
+            if (!validState)
             {
                 throw new InvalidDataException("ShapesXR state does not belong to the selected scene");
             }
             Name = (string)scene.Properties["sc-nm"] ?? "ShapesXR scene";
-            var snapshots = new HashSet<Guid>();
+            Guid backgroundState = Guid.Empty;
+            if (document.Entities.TryGetValue(kBackgroundScene, out var background) && background.Exists && background.Kind == 1)
+            {
+                backgroundState = InitialState(document, background);
+            }
+            var snapshots = new HashSet<(Guid State, Guid Target)>();
             foreach (var snapshot in document.OfKind(4))
             {
-                if (ShapesXrDocument.ReadGuid(snapshot.Properties["snp-st"]) != StateId) { continue; }
+                Guid snapshotState = ShapesXrDocument.ReadGuid(snapshot.Properties["snp-st"]);
+                if (snapshotState != StateId && snapshotState != backgroundState) { continue; }
                 Guid target = ShapesXrDocument.ReadGuid(snapshot.Properties["snp-ent"]);
-                if (!snapshots.Add(target)) { throw new InvalidDataException($"Duplicate ShapesXR snapshot for {target}"); }
+                if (!snapshots.Add((snapshotState, target))) { throw new InvalidDataException($"Duplicate ShapesXR snapshot for {target}"); }
             }
             foreach (var entity in document.OfKind(3))
             {
-                m_Objects.Add(entity.Id, new ShapesXrObjectState(entity, document.ResolveProperties(entity.Id, StateId), snapshots.Contains(entity.Id), StateId));
+                string sceneProperty = document.Version == 3 ? "z" : "obj-z";
+                Guid owner = entity.Properties[sceneProperty] == null ? Guid.Empty : ShapesXrDocument.ReadGuid(entity.Properties[sceneProperty]);
+                Guid sourceState = owner == kBackgroundScene && backgroundState != Guid.Empty ? backgroundState : StateId;
+                bool included = owner == SceneId || owner == kBackgroundScene || (document.Version >= 4 && owner == Guid.Empty);
+                bool exists = included && (document.Version == 3 || snapshots.Contains((sourceState, entity.Id)));
+                m_Objects.Add(entity.Id, new ShapesXrObjectState(entity, document.ResolveProperties(entity.Id, sourceState), exists, sourceState));
             }
             foreach (var entity in m_Objects.Values)
             {
@@ -113,6 +125,19 @@ namespace TiltBrush.DocumentImport
                     if (!ancestors.Add(current.Entity.Id)) { throw new InvalidDataException("ShapesXR parent cycle"); }
                 }
             }
+        }
+
+        private static Guid InitialState(ShapesXrDocument document, ShapesXrEntity scene)
+        {
+            if (document.Version == 3) { return scene.Id; }
+            if (!(scene.Properties["sc-n"] is JArray states) || states.Count == 0) { throw new InvalidDataException("ShapesXR scene has no states"); }
+            Guid id = ShapesXrDocument.ReadGuid(states[0]);
+            if (!document.Entities.TryGetValue(id, out var state) || !state.Exists || state.Kind != 2 ||
+                ShapesXrDocument.ReadGuid(state.Properties["st-z"]) != scene.Id)
+            {
+                throw new InvalidDataException("Invalid ShapesXR initial state");
+            }
+            return id;
         }
     }
 }
