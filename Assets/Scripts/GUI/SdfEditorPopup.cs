@@ -39,6 +39,7 @@ namespace TiltBrush
         private readonly List<OptionButton> m_Buttons = new List<OptionButton>();
         private readonly List<SdfComponentHandle> m_ComponentHandles =
             new List<SdfComponentHandle>();
+        private readonly List<int> m_ComponentHandleDimensions = new List<int>();
 
         private SdfStencil m_Stencil;
         private PopUpWindow m_Popup;
@@ -834,13 +835,17 @@ namespace TiltBrush
 
             IReadOnlyList<SdfStencil.ComponentDefinition> components =
                 m_Stencil.GetComponentDefinitions();
-            int expectedHandleCount = components.Sum(component =>
-                1 + (component.IsPrimitive
+            int[] dimensions = components.Select(component => component.IsPrimitive
                     ? DimensionCountForPrimitive(component.Primitive.Value.Type)
-                    : 0));
-            if (m_ComponentHandles.Count != expectedHandleCount)
+                    : 0).ToArray();
+            int expectedHandleCount = dimensions.Sum(count => 1 + count);
+            // Equal totals can still have different ordered roles (e.g. sphere/cuboid
+            // reordered). Rebuild so transform/dimension kind, index and axis agree.
+            if (m_ComponentHandles.Count != expectedHandleCount ||
+                !m_ComponentHandleDimensions.SequenceEqual(dimensions))
             {
                 DestroyComponentHandles();
+                m_ComponentHandleDimensions.AddRange(dimensions);
                 Renderer sourceRenderer =
                     m_Stencil.GetComponentsInChildren<Renderer>(true).FirstOrDefault();
                 Material sourceMaterial = sourceRenderer != null
@@ -909,6 +914,7 @@ namespace TiltBrush
                 }
             }
             m_ComponentHandles.Clear();
+            m_ComponentHandleDimensions.Clear();
         }
 
         private void Refresh()
