@@ -75,6 +75,9 @@ namespace TiltBrush
                 };
             }
 
+            /// A filesystem path, without the legacy URI-fragment interpretation of File().
+            public static Location FilePath(string path) => new Location { type = Type.LocalFile, path = path };
+
             public static Location IcosaAsset(string assetId, string path)
             {
                 return new Location
@@ -197,6 +200,9 @@ namespace TiltBrush
         // It is the object that contains ObjModelScript.
         public Transform m_ModelParent;
         public Bounds m_MeshBounds;
+        // The legacy importers convert metres to canvas units; UnityGLTF retains metre units.
+        // This describes the loaded hierarchy, without changing existing model loading behavior.
+        public float UnitsPerMetre { get; internal set; } = App.METERS_TO_UNITS;
 
         // Data & properties associated with current the state:
         // - Unloaded

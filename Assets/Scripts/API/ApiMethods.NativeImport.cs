@@ -2,19 +2,20 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE for details.
 
 using Newtonsoft.Json;
-using UnityEngine;
 
 namespace TiltBrush
 {
     public static partial class ApiMethods
     {
-        [ApiEndpoint("import.maquette", "Import a Maquette project's current scene; returns imported counts and unsupported content", "project.mqp")]
-        public static string ImportMaquette(string path)
+        [ApiEndpoint("import.maquette", "Start importing a Maquette project's current scene; use import.status for progress and unsupported content", "project.mqp")]
+        public static string ImportMaquette(string path, string contentDirectory = "", string userLibrary = "")
         {
-            var report = NativeDocumentImporter.ImportMaquette(path);
-            string json = JsonConvert.SerializeObject(report);
-            Debug.Log($"[OB_NATIVE_IMPORT] Maquette: procedural={report.ProceduralObjects}, text={report.TextObjects}, hidden={report.HiddenObjects}, failed={report.FailedObjects}");
-            return json;
+            return JsonConvert.SerializeObject(NativeDocumentImporter.BeginMaquette(path,
+                string.IsNullOrEmpty(contentDirectory) ? null : contentDirectory,
+                string.IsNullOrEmpty(userLibrary) ? null : userLibrary));
         }
+
+        [ApiEndpoint("import.status", "Return progress and results for the most recent native import")]
+        public static string NativeImportStatus() => JsonConvert.SerializeObject(NativeDocumentImporter.LastReport);
     }
 }
