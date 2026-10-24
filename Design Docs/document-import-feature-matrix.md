@@ -500,6 +500,20 @@ Implementation checkpoint, 2026-10-24:
     cached Unity references, and 67 standalone checks pass. A fresh live import
     and rendered comparison have not been performed for this change.
 
+37. Live Unity validation now covers the material changes in checkpoints 35 and 36.
+    An authored native Maquette archive imported nine external models and eight
+    procedural instances with zero failures. It exercised all five opaque presets,
+    the default preset, both translucent presets and an Original-material external
+    model. All source colors deliberately used alpha 0.25. Opaque instances rendered
+    with alpha 1 and opaque queues; translucent instances retained alpha 0.25 and
+    transparent queues. External lit/unlit shader selection and original material
+    and vertex-color retention matched expectations. Expected procedural material,
+    transparent depth-writing and vertex-lighting differences remained reported.
+    Saving/reloading produced identical metadata and runtime material/geometry
+    records for all 17 objects. This verifies loaded state, not source-rendered
+    pixel parity. The owned Editor was closed, its test arguments restored, and
+    the generated test sketch and model-library resources removed after backup.
+
 2. FEATURE COMPARISON
 
 | ID | Area | Feature | Maquette | ShapesXR | Match and required Open Brush support |
