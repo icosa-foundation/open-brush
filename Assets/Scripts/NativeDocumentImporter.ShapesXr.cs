@@ -37,22 +37,6 @@ namespace TiltBrush
                 var document = new ShapesXrDocument(path);
                 var scene = new ShapesXrScene(document);
                 report.SourceScene = scene.Name;
-                // State interactions include audio resource references. Surface their actual
-                // presence even while behavior execution and frame navigation are deferred.
-                try
-                {
-                    foreach (var interaction in ShapesXrInteractionAdapter.Read(document, scene))
-                    {
-                        string feature = $"ShapesXR {interaction.ActionName}";
-                        report.UnsupportedActions.TryGetValue(feature, out int count);
-                        report.UnsupportedActions[feature] = count + 1;
-                    }
-                }
-                catch (Exception exception)
-                {
-                    report.UnsupportedActions["ShapesXR malformed interaction data"] = 1;
-                    report.Detail($"ShapesXR interactions: {exception.Message}");
-                }
                 var groups = new Dictionary<Guid, SketchGroupTag>();
                 using var assets = new NativeShapesXrAssets();
                 using var models = new NativeModelCache(assets.Workspace);
@@ -127,7 +111,7 @@ namespace TiltBrush
                             {
                                 widget = CreateShapesXrImage(document, state, canvas, images.Get(resource.Resource), report);
                             }
-                            else
+                            else if (resource.Data.Kind == ShapesXrResourceKind.Model)
                             {
                                 var placement = state.Placement();
                                 var imported = await models.ShapesXrModel(resource.Resource, placement, document, state);
@@ -146,6 +130,7 @@ namespace TiltBrush
                                 foreach (string feature in imported.Unmapped)
                                 { UnmappedShapesXrMaterial(report, $"ShapesXR model {feature}"); }
                             }
+                            else { throw new NotSupportedException("ShapesXR placed audio resource"); }
                         }
                         else
                         {
@@ -196,6 +181,7 @@ namespace TiltBrush
                         report.Detail($"ShapesXR object {state.Entity.Id}: {exception.Message}");
                     }
                 }
+                await ImportShapesXrInteractions(document, scene, canvas, assets, report);
                 report.Status = report.FailedObjects > 0 || report.FontSubstitutions > 0 || report.UnsupportedObjects.Count > 0 ||
                                 report.UnmappedMaterials.Count > 0 || report.UnsupportedActions.Count > 0 ? "partial" : "completed";
             }
@@ -208,7 +194,7 @@ namespace TiltBrush
             {
                 if (hiddenCanvas != null) { App.Scene.ToggleLayerVisibility(hiddenCanvas); }
             }
-            Debug.Log($"[OB_NATIVE_IMPORT] ShapesXR {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, strokes={report.StrokeObjects}, failed={report.FailedObjects}");
+            Debug.Log($"[OB_NATIVE_IMPORT] ShapesXR {report.Status}: procedural={report.ProceduralObjects}, text={report.TextObjects}, strokes={report.StrokeObjects}, audio={report.AudioObjects}, failed={report.FailedObjects}");
         }
 
         private static ImageWidget CreateShapesXrImage(ShapesXrDocument document, ShapesXrObjectState state,
