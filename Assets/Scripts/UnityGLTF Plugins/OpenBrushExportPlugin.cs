@@ -801,9 +801,13 @@ namespace TiltBrush
                 });
 
                 node.AddExtension(GLTF.Schema.KHR_audio_emitter.ExtensionName,
-                    new KHR_NodeAudioEmitterRef
+                    new KHR_SceneAudioEmittersRef
                     {
-                        emitter = new AudioEmitterId { Id = emitterIndex, Root = gltfRoot }
+                        // The updated node syntax uses the same array shape as scene references.
+                        emitters = new List<AudioEmitterId>
+                        {
+                            new AudioEmitterId { Id = emitterIndex, Root = gltfRoot }
+                        }
                     });
             }
 
