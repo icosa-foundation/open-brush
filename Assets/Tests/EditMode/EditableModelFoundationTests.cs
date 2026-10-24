@@ -46,6 +46,37 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void UpdatingANewModelRootCreatesAndReusesItsMeshComponents()
+        {
+            var type = AppType("MeshEditing.EditableModelManager");
+            var instanceField = type.GetField("m_Instance");
+            var previous = instanceField.GetValue(null);
+            var managerRoot = new GameObject("Editable mesh test manager");
+            var modelRoot = new GameObject("Editable mesh test root");
+            var mesh = new Mesh { vertices = new[] { Vector3.zero, Vector3.right, Vector3.up }, triangles = new[] { 0, 1, 2 } };
+            mesh.RecalculateBounds();
+            try
+            {
+                var manager = managerRoot.AddComponent(type);
+                var update = type.GetMethod("UpdateMesh");
+                update.Invoke(manager, new object[] { modelRoot, mesh, null });
+                update.Invoke(manager, new object[] { modelRoot, mesh, null });
+                Assert.AreSame(mesh, modelRoot.GetComponent<MeshFilter>().sharedMesh);
+                Assert.AreEqual(1, modelRoot.GetComponents<MeshFilter>().Length);
+                Assert.AreEqual(1, modelRoot.GetComponents<MeshRenderer>().Length);
+                Assert.AreEqual(1, modelRoot.GetComponents<BoxCollider>().Length);
+                Assert.AreEqual(mesh.bounds.size, modelRoot.GetComponent<BoxCollider>().size);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(modelRoot);
+                UnityEngine.Object.DestroyImmediate(managerRoot);
+                UnityEngine.Object.DestroyImmediate(mesh);
+                instanceField.SetValue(null, previous);
+            }
+        }
+
+        [Test]
         public void EditableInstanceIndexUsesTheExistingSketchJsonConventions()
         {
             var settings = new JsonSerializerSettings

@@ -178,9 +178,12 @@ namespace TiltBrush.MeshEditing
 
         public void UpdateMesh(GameObject root, Mesh mesh, Material material)
         {
-            var filter = root.GetComponent<MeshFilter>() ?? root.AddComponent<MeshFilter>();
-            var renderer = root.GetComponent<MeshRenderer>() ?? root.AddComponent<MeshRenderer>();
-            var collider = root.GetComponent<BoxCollider>() ?? root.AddComponent<BoxCollider>();
+            var filter = root.GetComponent<MeshFilter>();
+            if (filter == null) { filter = root.AddComponent<MeshFilter>(); }
+            var renderer = root.GetComponent<MeshRenderer>();
+            if (renderer == null) { renderer = root.AddComponent<MeshRenderer>(); }
+            var collider = root.GetComponent<BoxCollider>();
+            if (collider == null) { collider = root.AddComponent<BoxCollider>(); }
             filter.sharedMesh = mesh;
             renderer.sharedMaterial = material;
             collider.center = mesh.bounds.center;
