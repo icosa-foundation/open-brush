@@ -1210,11 +1210,6 @@ namespace TiltBrush
                 m_ModelsByAssetId.Remove(assetId);
                 existing.ReleaseFromCatalog();
             }
-            if (!m_ModelsByAssetId.ContainsKey(assetId))
-            {
-                string immPath = sm_AssetIdPattern.IsMatch(assetId) ? GetCachedImmPath(assetId) : null;
-                if (immPath != null) m_ModelsByAssetId[assetId] = new Model(assetId, immPath);
-            }
 
             if (m_ModelsByAssetId.ContainsKey(assetId))
             {
