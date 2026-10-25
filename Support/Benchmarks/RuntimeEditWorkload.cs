@@ -28,7 +28,7 @@ namespace TiltBrush.Benchmarks
             public int sample, frameCount;
             public double wallMs, directCallCpuMs;
             public long directCallAllocatedBytes, managedBytesBefore, managedBytesAfter, nativeBytesBefore, nativeBytesAfter, sampledPeakNativeBytes;
-            public int affectedStrokes;
+            public int affectedStrokes, directCallCollections;
             public string cameraPose;
             public List<Frame> frames = new List<Frame>(512);
             public Counter[] counters;
@@ -380,8 +380,10 @@ namespace TiltBrush.Benchmarks
         }
         static void Call(Action action)
         {
+            int collections = GC.CollectionCount(0);
             long bytes = GC.GetAllocatedBytesForCurrentThread(); long start = Stopwatch.GetTimestamp(); action();
             if (s_Phase != null) { s_Phase.directCallCpuMs += (Stopwatch.GetTimestamp() - start) * ToMs; if (s_Report.threadAllocationCounterValid) s_Phase.directCallAllocatedBytes += GC.GetAllocatedBytesForCurrentThread() - bytes; }
+            if (s_Phase != null) s_Phase.directCallCollections += GC.CollectionCount(0) - collections;
         }
         static void SampleFrame()
         {

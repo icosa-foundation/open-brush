@@ -21,6 +21,9 @@ FILES = [
     "Assets/Scripts/Brushes/QuadStripBrushDistanceUV.cs",
     "Assets/Scripts/Brushes/QuadStripBrushStretchUV.cs",
     "Assets/Scripts/Playback/StrokePlayback.cs",
+    "Assets/Scripts/Stroke.cs",
+    "Assets/Scripts/SelectionManager.cs",
+    "Assets/Scripts/Commands/SelectCommand.cs",
 ]
 STATE = ROOT / "Logs/BatchWorkloadSession"
 
@@ -63,7 +66,66 @@ def wrap(source, pattern, expression, expected=1):
     return source
 
 
-def instrument(path, source):
+def instrument_selection(path, source):
+    """Attribute selection costs without retaining mesh snapshots or changing edit order."""
+    patterns = {
+        "/Stroke.cs": [
+            (r"public void SetParentKeepWorldPosition\(", "14"),
+            (r"private void LeftTransformControlPoints\(TrTransform", "22"),
+        ],
+        "/Batch.cs": [
+            (r"public void RemoveSubset\(", "15"),
+            (r"public void DisableSubset\(", "16"),
+            (r"static Bounds GetBoundsFor\(Vector3\[\]", "21"),
+        ],
+        "/GeometryPool.cs": [(r"public void Append\(\s*GeometryPool rhs,", "17")],
+        "/SelectionManager.cs": [
+            (r"public void UpdateSelectionWidget\(\)", "23"),
+            (r"public void SelectStrokes\(", "24"),
+        ],
+        "/SelectCommand.cs": [(r"protected override void OnRedo\(\)", "25")],
+    }
+    for suffix, scopes in patterns.items():
+        if path.endswith(suffix):
+            for pattern, counter in scopes:
+                source = wrap(source, pattern, counter)
+    if (
+        path.endswith("/GeometryPool.cs")
+        and "private bool TryAppendColdMesh(" in source
+    ):
+        source = wrap(source, r"private bool TryAppendColdMesh\(", "18")
+        source = wrap(
+            source, r"private static unsafe void AppendMeshChannel<T>\(", "20"
+        )
+        marker = (
+            "using (var snapshot = Mesh.AcquireReadOnlyMeshData(rhs.m_BackingMesh))"
+        )
+        if source.count(marker) != 1:
+            raise ValueError("Expected one cold mesh acquisition")
+        source = source.replace(
+            marker,
+            "Mesh.MeshDataArray snapshot;\n"
+            "#if UNITY_EDITOR\n"
+            "using (global::TiltBrush.Benchmarks.BatchWorkloadCounters.Measure(19))\n"
+            "#endif\n"
+            "{ snapshot = Mesh.AcquireReadOnlyMeshData(rhs.m_BackingMesh); }\n"
+            "using (snapshot)",
+        )
+    if path.endswith("/Batch.cs"):
+        marker = "m_Geometry.NumVerts = newNumVert;"
+        if source.count(marker) != 1:
+            raise ValueError("Expected one batch tail resize")
+        source = source.replace(
+            marker,
+            "#if UNITY_EDITOR\n"
+            "using (global::TiltBrush.Benchmarks.BatchWorkloadCounters.Measure(26))\n"
+            "#endif\n"
+            f"{{ {marker} }}",
+        )
+    return source
+
+
+def instrument(path, source, selection_details=False, disable_cold_copy=False):
     if path.endswith("/Batch.cs"):
         source = wrap(
             source,
@@ -111,6 +173,22 @@ def instrument(path, source):
         source = wrap(source, r"public void UpdateLineFromStroke\(", "12")
         if "public void PrepareLineForFinalization()" in source:
             source = wrap(source, r"public void PrepareLineForFinalization\(", "13")
+    if selection_details:
+        source = instrument_selection(path, source)
+    if disable_cold_copy and path.endswith("/GeometryPool.cs"):
+        marker = (
+            "if (rhs.IsGeometryResident || rhs.m_BackingMesh == null) { return false; }"
+        )
+        if source.count(marker) != 1:
+            raise ValueError(
+                "Cold-copy ablation requires the cold append implementation"
+            )
+        source = source.replace(
+            marker,
+            "// Diagnostic ablation: use the resident-copy fallback only in the Editor.\n"
+            "#if UNITY_EDITOR\nif (UnityEngine.Application.isEditor) { return false; }\n#endif\n"
+            + marker,
+        )
     return source
 
 
@@ -145,6 +223,16 @@ def main():
     mode.add_argument("--revision")
     mode.add_argument("--working-tree", action="store_true")
     mode.add_argument("--restore", action="store_true")
+    ap.add_argument(
+        "--selection-details",
+        action="store_true",
+        help="Add nested selection/cold-copy/tail-resize diagnostic scopes",
+    )
+    ap.add_argument(
+        "--disable-cold-copy",
+        action="store_true",
+        help="Diagnostic only: restore whole source geometry instead of cold subset copying",
+    )
     args = ap.parse_args()
     state_path = STATE / "state.json"
     state = json.loads(state_path.read_text()) if state_path.exists() else None
@@ -180,13 +268,20 @@ def main():
         else:
             data = read_revision(revision, path)
         source_hashes[path] = digest(data)
-        pending[path] = instrument(path, data.decode("utf-8-sig")).encode("utf-8")
+        pending[path] = instrument(
+            path,
+            data.decode("utf-8-sig"),
+            args.selection_details,
+            args.disable_cold_copy,
+        ).encode("utf-8")
     for path, data in pending.items():
         (ROOT / path).write_bytes(data)
     state.update(
         revision=revision,
         sourceMode="working-tree" if args.working_tree else "revision",
         sourceHashes=source_hashes,
+        selectionDetails=args.selection_details,
+        coldCopyDisabled=args.disable_cold_copy,
         installed={p: digest(d) for p, d in pending.items()},
     )
     state_path.write_text(json.dumps(state, indent=2) + "\n")
