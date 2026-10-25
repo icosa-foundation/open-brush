@@ -888,37 +888,47 @@ namespace TiltBrush
             }
         }
 
+        // Mesh writes are main-thread-only. Share bounded scratch across all pools rather than
+        // retaining another attribute array per batch. Oversized meshes use temporary storage.
+        private const int kMaxCachedTriangleIdVertices = 16384;
+        private static Vector2[] sm_TriangleIds = Array.Empty<Vector2>();
+
         private void GenerateTriangleIds(Mesh mesh)
         {
-            var triangleIds = new Vector2[mesh.vertexCount];
-            int triCount = mesh.triangles.Length / 3;
-            var tris = mesh.triangles;
-            for (int i = 0; i < triCount; i++)
-            {
-                Vector2 uv = new Vector2(i, 0);
-                int triIndex = i * 3;
-                triangleIds[tris[triIndex]] = uv;
-                triangleIds[tris[triIndex + 1]] = uv;
-                triangleIds[tris[triIndex + 2]] = uv;
-            }
-            mesh.SetUVs(4, triangleIds);
+            GenerateTriangleIds(mesh, 0, NumVerts, 0, NumTriIndices);
         }
 
-        private void GenerateTriangleIds(Mesh mesh, int iVert, int nVert)
+        private void GenerateTriangleIds(Mesh mesh, int iVert, int nVert,
+                                         int iTriIndex, int nTriIndex)
         {
-            var triangleIds = new Vector2[nVert];
-            for (int i = 0; i < mesh.triangles.Length; i += 3)
+            Vector2[] triangleIds;
+            if (nVert <= kMaxCachedTriangleIdVertices)
             {
-                int triIndex = Mathf.FloorToInt(i / 3);
-                Vector2 uv = new Vector2(triIndex, 0);
-                if (mesh.triangles[i] >= iVert && mesh.triangles[i] < iVert + nVert)
-                    triangleIds[mesh.triangles[i] - iVert] = uv;
-                if (mesh.triangles[i + 1] >= iVert && mesh.triangles[i + 1] < iVert + nVert)
-                    triangleIds[mesh.triangles[i + 1] - iVert] = uv;
-                if (mesh.triangles[i + 2] >= iVert && mesh.triangles[i + 2] < iVert + nVert)
-                    triangleIds[mesh.triangles[i + 2] - iVert] = uv;
+                if (sm_TriangleIds.Length < nVert)
+                {
+                    sm_TriangleIds = new Vector2[Mathf.NextPowerOfTwo(nVert)];
+                }
+                triangleIds = sm_TriangleIds;
+                // Unreferenced vertices must remain zero, including after reusing a larger buffer.
+                Array.Clear(triangleIds, 0, nVert);
             }
-            mesh.SetUVs(4, triangleIds);
+            else
+            {
+                triangleIds = new Vector2[nVert];
+            }
+
+            // Read the existing CPU topology. Mesh.triangles returns a new array on every access.
+            // Source indices are absolute; destination vertices and triangle IDs are subset-local.
+            var tris = m_Tris.GetBackingArray();
+            for (int i = 0; i < nTriIndex; i += 3)
+            {
+                var uv = new Vector2(i / 3, 0);
+                triangleIds[tris[iTriIndex + i] - iVert] = uv;
+                triangleIds[tris[iTriIndex + i + 1] - iVert] = uv;
+                triangleIds[tris[iTriIndex + i + 2] - iVert] = uv;
+            }
+            // Shared vertices intentionally retain the last incident triangle's ID, as before.
+            mesh.SetUVs(4, triangleIds, 0, nVert);
         }
 
         /// Like CopyToMesh(), except copies a sub-chunk of verts and triangles.
@@ -974,7 +984,7 @@ namespace TiltBrush
             // If we aren't using the geometry shader, we need to generate triangle IDs
             if (!App.Config.GeometryShaderSuppported)
             {
-                GenerateTriangleIds(mesh, iVert, nVert);
+                GenerateTriangleIds(mesh, iVert, nVert, iTriIndex, nTriIndex);
             }
         }
 

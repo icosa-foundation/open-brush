@@ -343,6 +343,105 @@ namespace TiltBrush
             Object.DestroyImmediate(mesh);
 
         }
+        // Exercise fallback generation even on desktop GPUs with geometry shader support.
+        // The input topology is shared-vertex geometry; unreferenced vertices must remain zero.
+        [TestCase(0, 0)]
+        [TestCase(4, 3)]
+        public void TriangleIdsUseSourceRangesAndLocalDestinationIndices(int vertexStart, int indexStart)
+        {
+            var pool = new GeometryPool { Layout = new VertexLayout() };
+            pool.NumVerts = vertexStart + 5;
+            if (indexStart != 0) pool.m_Tris.AddRange(new[] { 0, 1, 2 });
+            pool.m_Tris.AddRange(new[]
+            {
+                vertexStart, vertexStart + 1, vertexStart + 2,
+                vertexStart, vertexStart + 2, vertexStart + 3
+            });
+            // This triangle must not be included in the copied subset.
+            pool.m_Tris.AddRange(new[] { vertexStart + 4, vertexStart + 4, vertexStart + 4 });
+            var mesh = new Mesh();
+            var indices = new[] { 0, 1, 2, 0, 2, 3 };
+            try
+            {
+                mesh.vertices = new Vector3[5];
+                mesh.triangles = indices;
+                GenerateTriangleIdsForTest(pool, mesh, vertexStart, 5, indexStart, 6);
+                var ids = new List<Vector2>();
+                mesh.GetUVs(4, ids);
+                CollectionAssert.AreEqual(new[]
+                {
+                    new Vector2(1, 0), Vector2.zero, new Vector2(1, 0),
+                    new Vector2(1, 0), Vector2.zero
+                }, ids);
+                CollectionAssert.AreEqual(indices, mesh.triangles);
+                Assert.AreEqual(5, mesh.vertexCount);
+
+                // Reuse the shared scratch with a smaller mesh and no referenced vertices.
+                mesh.Clear();
+                mesh.vertices = new Vector3[3];
+                GenerateTriangleIdsForTest(pool, mesh, 0, 3, 0, 0);
+                mesh.GetUVs(4, ids);
+                CollectionAssert.AreEqual(new[] { Vector2.zero, Vector2.zero, Vector2.zero }, ids);
+            }
+            finally
+            {
+                Object.DestroyImmediate(mesh);
+                pool.Destroy();
+            }
+        }
+
+        [TestCase(0)]
+        [TestCase(16384)]
+        [TestCase(65540)]
+        public void TriangleIdsHandleEmptyAndOversizedMeshesWithoutGrowingCache(int vertexCount)
+        {
+            var pool = new GeometryPool { Layout = new VertexLayout() };
+            pool.NumVerts = vertexCount;
+            if (vertexCount > 0)
+            {
+                pool.m_Tris.AddRange(new[]
+                {
+                    vertexCount - 4, vertexCount - 3, vertexCount - 2,
+                    vertexCount - 3, vertexCount - 2, vertexCount - 1
+                });
+            }
+            var mesh = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            try
+            {
+                mesh.SetVertices(pool.m_Vertices);
+                mesh.SetTriangles(pool.m_Tris, 0);
+                var method = typeof(GeometryPool).GetMethod("GenerateTriangleIds",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+                    null, new[] { typeof(Mesh) }, null);
+                method.Invoke(pool, new object[] { mesh });
+                var ids = new List<Vector2>();
+                mesh.GetUVs(4, ids);
+                Assert.AreEqual(vertexCount, ids.Count);
+                if (vertexCount > 0)
+                {
+                    Assert.AreEqual(Vector2.zero, ids[vertexCount - 4]);
+                    Assert.AreEqual(new Vector2(1, 0), ids[vertexCount - 1]);
+                }
+                var cache = (Vector2[])typeof(GeometryPool).GetField("sm_TriangleIds",
+                    System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).GetValue(null);
+                Assert.LessOrEqual(cache.Length, 16384);
+            }
+            finally
+            {
+                Object.DestroyImmediate(mesh);
+                pool.Destroy();
+            }
+        }
+
+        private static void GenerateTriangleIdsForTest(GeometryPool pool, Mesh mesh,
+            int vertexStart, int vertexCount, int indexStart, int indexCount)
+        {
+            var method = typeof(GeometryPool).GetMethod("GenerateTriangleIds",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+                null, new[] { typeof(Mesh), typeof(int), typeof(int), typeof(int), typeof(int) }, null);
+            method.Invoke(pool, new object[] { mesh, vertexStart, vertexCount, indexStart, indexCount });
+        }
+
     }
 
 }
