@@ -562,12 +562,14 @@ namespace TiltBrush
                 // when these instances are used later.
                 m_Vertices.Clear();
                 m_Tris.Clear();
-                m_Normals.Clear();
+                // ReloadFromMesh restores only enabled channels. Recreate empty containers
+                // for missing channels so this pool can be reused with a different layout.
+                (m_Normals ??= new List<Vector3>()).Clear();
                 m_Texcoord0.Clear();
                 m_Texcoord1.Clear();
                 m_Texcoord2.Clear();
-                m_Colors.Clear();
-                m_Tangents.Clear();
+                (m_Colors ??= new List<Color32>()).Clear();
+                (m_Tangents ??= new List<Vector4>()).Clear();
             }
             else
             {

@@ -199,6 +199,44 @@ namespace TiltBrush
             Assert.AreEqual(0, pool.m_Texcoord2.v4.Count);
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public void ResetReloadedPoolWithoutOptionalChannels(bool keepVertexLayout)
+        {
+            var layout = new VertexLayout();
+            var pool = new GeometryPool { Layout = layout };
+            var mesh = new Mesh();
+            try
+            {
+                pool.m_Vertices.AddRange(new[] { Vector3.zero, Vector3.right, Vector3.up });
+                pool.m_Tris.AddRange(new[] { 0, 1, 2 });
+                mesh.vertices = pool.m_Vertices.ToArray();
+                mesh.triangles = pool.m_Tris.ToArray();
+                pool.MakeGeometryNotResident(mesh);
+                pool.EnsureGeometryResident();
+                Assert.IsNull(pool.m_Normals);
+                Assert.IsNull(pool.m_Colors);
+                Assert.IsNull(pool.m_Tangents);
+
+                pool.Reset(keepVertexLayout);
+                Assert.AreEqual(0, pool.NumVerts);
+                Assert.AreEqual(0, pool.NumTriIndices);
+                if (keepVertexLayout) Assert.AreEqual(layout, pool.Layout);
+
+                // A reused batch can enable channels that were absent from the backing mesh.
+                pool.Layout = new VertexLayout { bUseNormals = true, bUseColors = true, bUseTangents = true };
+                pool.NumVerts = 3;
+                Assert.AreEqual(3, pool.m_Normals.Count);
+                Assert.AreEqual(3, pool.m_Colors.Count);
+                Assert.AreEqual(3, pool.m_Tangents.Count);
+            }
+            finally
+            {
+                pool.Destroy();
+                Object.DestroyImmediate(mesh);
+            }
+        }
+
         [Test]
         public void TestLayoutEquality()
         {
