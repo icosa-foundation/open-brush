@@ -181,7 +181,7 @@ namespace TiltBrush
         /// Reduces memory usage, but causes the next mesh update to be a little more expensive.
         public void ClearCachedGeometry()
         {
-            if (m_Geometry.IsGeometryResident)
+            if (m_Geometry.HasCachedGeometry)
             {
                 SelfCheck();
                 UpdateMesh();
@@ -415,8 +415,8 @@ namespace TiltBrush
             }
             else if (m_bTopologyDirty)
             {
-                // Same as above
-                Debug.Assert(m_Geometry.IsGeometryResident, "Impossible! Dirty but not resident");
+                // Visibility edits can have resident indices while vertex channels stay evicted.
+                Debug.Assert(m_Geometry.m_Tris != null, "Impossible! Dirty but no indices");
                 m_bTopologyDirty = false;
                 UpdateTopology(m_MeshFilter.mesh);
                 ResetDirtyIndexRange();
@@ -642,7 +642,7 @@ namespace TiltBrush
                 subset.m_TriangleBackup = new ushort[subset.m_nTriIndex];
             }
 
-            m_Geometry.EnsureGeometryResident();
+            m_Geometry.EnsureIndicesResident();
             var aTris = m_Geometry.m_Tris.GetBackingArray();
             int t0 = subset.m_iTriIndex;
             int t1 = subset.m_iTriIndex + subset.m_nTriIndex;
@@ -666,7 +666,7 @@ namespace TiltBrush
 
             Debug.Assert(!subset.m_Active);
             subset.m_Active = true;
-            m_Geometry.EnsureGeometryResident();
+            m_Geometry.EnsureIndicesResident();
             var aTris = m_Geometry.m_Tris.GetBackingArray();
             int t0 = subset.m_iTriIndex;
             int t1 = subset.m_iTriIndex + subset.m_nTriIndex;

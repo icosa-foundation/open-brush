@@ -1,3 +1,5 @@
+For index-only reloads of evicted batches, see [cold visibility benchmarks](ColdBatchVisibility.md).
+
 For the second optimization, see [batch visibility benchmarks](BatchVisibility.md).
 
 **Brush triangle-ID benchmark**

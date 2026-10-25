@@ -265,6 +265,25 @@ namespace TiltBrush
         }
 
         [Test]
+        public void IndexOnlyRequestForBackingFileRetainsFullReloadBehavior()
+        {
+            var pool = RandomGeometryPool();
+            var expected = pool.Clone();
+            try
+            {
+                pool.MakeGeometryNotResident(Path.Combine(TemporaryData, "indices-from-backing-file.bin"));
+                pool.EnsureIndicesResident();
+                Assert.IsTrue(pool.IsGeometryResident);
+                AssertAreEqual(expected, pool);
+            }
+            finally
+            {
+                pool.Destroy();
+                expected.Destroy();
+            }
+        }
+
+        [Test]
         public void TestStructByReference()
         {
             var pool = new GeometryPool();

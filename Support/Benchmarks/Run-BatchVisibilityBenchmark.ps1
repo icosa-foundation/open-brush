@@ -16,10 +16,9 @@ $response | Set-Content -LiteralPath ([System.IO.Path]::ChangeExtension($Output,
 $result = $response | ConvertFrom-Json
 if (-not $result.success -or -not $result.data.result.success) { throw ($result | ConvertTo-Json -Depth 8 -Compress) }
 $data = Get-Content -LiteralPath $Output -Raw | ConvertFrom-Json
-if ($data.cases.Count -ne 7) { throw 'Incomplete benchmark output.' }
+if ($data.cases.Count -ne 10) { throw 'Incomplete benchmark output.' }
 foreach ($case in $data.cases) {
     $times = @($case.milliseconds | Sort-Object)
     '{0}: {1:F4} ms/pair; allocation {2} B; errors {3}/{4}; bounds preserved={5}' -f $case.name, $times[20], ($case.allocatedBytes | Measure-Object -Minimum).Minimum, $case.hiddenErrors, $case.restoredErrors, $case.paddedBoundsPreserved
 }
 Write-Output "Raw measurements: $Output"
-

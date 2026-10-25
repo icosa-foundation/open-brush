@@ -39,8 +39,8 @@ namespace TiltBrush
     /// EnsureGeometryResident() if necessary. This is convenient, but means that callers might
     /// inadvertently reload the buffers when they don't mean to.
     ///
-    /// public fields like m_Triangles will not (cannot) be auto-reloaded; they will be null
-    /// if geometry is not resident, and users must explicitly call EnsureGeometryResident().
+    /// Public buffers cannot auto-reload. Call EnsureGeometryResident() before accessing them,
+    /// or EnsureIndicesResident() when only m_Tris is needed from mesh-backed geometry.
     public class GeometryPool
     {
         const UInt32 kMagic = 0x6f6f7047; // 'Gpoo'
@@ -353,6 +353,9 @@ namespace TiltBrush
             get { return m_IsResident; }
         }
 
+        /// Includes an index-only cache on otherwise nonresident mesh-backed geometry.
+        public bool HasCachedGeometry => m_IsResident || m_Tris != null;
+
         /// All writes must go through the setter.
         ///
         /// The setter ensures that the correct member in m_Texcoord{0,1} is created
@@ -660,8 +663,8 @@ namespace TiltBrush
         ///     Caller retains (conceptual) ownership of the Mesh.
         public void MakeGeometryNotResident(Mesh mesh)
         {
-            Debug.Assert(m_IsResident);
-            Debug.Assert(m_BackingMesh == null);
+            Debug.Assert(m_IsResident || m_BackingMesh == mesh);
+            Debug.Assert(m_BackingMesh == null || m_BackingMesh == mesh);
             Debug.Assert(m_BackingFileInfo == null);
             int oldVertexCount = NumVerts;
             int oldIndexCount = NumTriIndices;
@@ -695,6 +698,23 @@ namespace TiltBrush
         public Mesh GetBackingMesh()
         {
             return m_BackingMesh;
+        }
+
+        /// Load only indices for mesh-backed visibility edits. Vertex channels stay evicted.
+        /// File-backed pools retain their existing full reload behavior.
+        public void EnsureIndicesResident()
+        {
+            if (m_Tris != null) return;
+            if (ReferenceEquals(m_BackingMesh, null))
+            {
+                EnsureGeometryResident();
+                return;
+            }
+            if (m_BackingMesh == null)
+                throw new InvalidOperationException("Backing mesh was destroyed");
+            var indices = new List<int>(NumTriIndices);
+            m_BackingMesh.GetTriangles(indices, 0);
+            m_Tris = indices;
         }
 
         /// Re-fills internal buffers if necessary; after this, IsGeometryResident == true.
@@ -738,7 +758,8 @@ namespace TiltBrush
             m_BackingMesh = null;
             m_IsResident = true;
 
-            m_Tris = StealArrayForList(mesh.triangles);
+            // Index-only edits may not have been flushed to the mesh yet.
+            if (m_Tris == null) m_Tris = StealArrayForList(mesh.triangles);
 
             m_Vertices = StealArrayForList(mesh.vertices);
             if (m_Layout.bUseNormals)

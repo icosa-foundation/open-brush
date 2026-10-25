@@ -145,7 +145,8 @@ namespace TiltBrush.Benchmarks
             public string name, fixtureSha256;
             public bool cold, uint32;
             public int vertexCount, indexCount, changedIndices, callsPerSample, hiddenErrors, restoredErrors;
-            public bool paddedBoundsPreserved;
+            public bool paddedBoundsPreserved, geometryResidentAfterCycle;
+            public long cachedIndexPayloadBytes, cachedVertexPayloadBytes;
             public long meshBytes;
             public double[] milliseconds;
             public long[] allocatedBytes;
@@ -164,10 +165,13 @@ namespace TiltBrush.Benchmarks
                 RunCase("large_all", 3999, "all", false, false),
                 RunCase("large_cold_single", 3999, "single", true, false),
                 RunCase("large_uint32_single", 3999, "single", false, true),
+                RunCase("large_cold_adjacent", 3999, "adjacent", true, false),
+                RunCase("large_cold_all", 3999, "all", true, false),
+                RunCase("large_cold_uint32_single", 3999, "single", true, true),
             };
             var result = new
             {
-                schemaVersion = 1,
+                schemaVersion = 2,
                 label,
                 utc = DateTime.UtcNow.ToString("o"),
                 unity = Application.unityVersion,
@@ -176,10 +180,12 @@ namespace TiltBrush.Benchmarks
                 graphicsDevice = SystemInfo.graphicsDeviceName,
                 graphicsApi = SystemInfo.graphicsDeviceType.ToString(),
                 incrementalGc = UnityEngine.Scripting.GarbageCollector.isIncremental,
-                baselineRevision = "2656a5248",
+                baselineRevision = "3827b8e7d",
                 samples = Samples,
                 warmups = Warmups,
                 productionSha256 = Hash(File.ReadAllBytes("Assets/Scripts/Batching/Batch.cs")),
+                geometryPoolSha256 = Hash(File.ReadAllBytes("Assets/Scripts/Brushes/GeometryPool.cs")),
+                batchPoolSha256 = Hash(File.ReadAllBytes("Assets/Scripts/Batching/BatchPool.cs")),
                 benchmarkSha256 = Hash(File.ReadAllBytes("Support/Benchmarks/BatchVisibilityBenchmark.cs")),
                 scope = "Production Batch.DisableSubset/EnableSubset and FlushMeshUpdates CPU time per hide+show pair. No rendering/GPU fence. Cold prepares eviction outside timing. Allocation probes use a global Unity counter outside timing.",
                 cases
@@ -226,6 +232,13 @@ namespace TiltBrush.Benchmarks
                 fixture.Show();
                 result.restoredErrors = fixture.OriginalIndices.Zip(fixture.Mesh.triangles, (a, b) => a == b ? 0 : 1).Sum();
                 result.paddedBoundsPreserved &= fixture.Mesh.bounds == fixture.PaddedBounds;
+                result.geometryResidentAfterCycle = fixture.Geometry.IsGeometryResident;
+                result.cachedIndexPayloadBytes = (fixture.Geometry.m_Tris?.Capacity ?? 0) * 4L;
+                result.cachedVertexPayloadBytes = (fixture.Geometry.m_Vertices?.Capacity ?? 0) * 12L
+                    + (fixture.Geometry.m_Normals?.Capacity ?? 0) * 12L
+                    + (fixture.Geometry.m_Tangents?.Capacity ?? 0) * 16L
+                    + (fixture.Geometry.m_Colors?.Capacity ?? 0) * 4L
+                    + (fixture.Geometry.m_Texcoord0.v2?.Capacity ?? 0) * 8L;
                 return result;
             }
         }
@@ -263,4 +276,3 @@ namespace TiltBrush.Benchmarks
         }
     }
 }
-

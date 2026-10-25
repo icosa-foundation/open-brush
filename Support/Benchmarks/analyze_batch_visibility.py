@@ -11,9 +11,14 @@ def load(paths):
 
 
 def compare(before, after):
-    keys = ("unity", "platform", "cpu", "graphicsApi", "incrementalGc", "samples", "benchmarkSha256")
+    keys = ("schemaVersion", "unity", "platform", "cpu", "graphicsDevice", "graphicsApi", "incrementalGc", "samples", "warmups", "benchmarkSha256")
+    for group in (before, after):
+        for run in group:
+            for key in ("productionSha256", "geometryPoolSha256", "batchPoolSha256"):
+                if run.get(key) != group[0].get(key):
+                    raise ValueError(f"Source changed within measurement group: {key}")
     for run in before + after:
-        if len(run["cases"]) != 7:
+        if len(run["cases"]) != {1: 7, 2: 10}.get(run["schemaVersion"]):
             raise ValueError(f"Incomplete run: {run['label']}")
         for key in keys:
             if run[key] != before[0][key]:
@@ -52,6 +57,10 @@ def compare(before, after):
             "index_count": reference["indexCount"],
             "changed_indices": reference["changedIndices"],
         })
+        for key in ("geometryResidentAfterCycle", "cachedIndexPayloadBytes", "cachedVertexPayloadBytes"):
+            if key in reference:
+                rows[-1][f"before_{key}"] = [case[key] for case in old_cases]
+                rows[-1][f"after_{key}"] = [case[key] for case in new_cases]
     return {
         "before": [run["label"] for run in before],
         "after": [run["label"] for run in after],
@@ -79,4 +88,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

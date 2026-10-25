@@ -1,3 +1,5 @@
+Follow-up: [cold batch visibility results](ColdBatchVisibility.md) cover index-only reloads and the current ten-case harness. The measurements below used the seven-case harness at commit `3827b8e7d`.
+
 **Batch visibility: partial index uploads**
 
 Measured 25 October 2026 against the Batch implementation at commit 2656a5248. This is the second implementation step after triangle-ID generation.

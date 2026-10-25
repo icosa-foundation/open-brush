@@ -129,6 +129,70 @@ namespace TiltBrush
                 Assert.AreEqual(fixture.Bounds, fixture.Mesh.bounds);
             }
         }
+
+        [TestCase(false, false)]
+        [TestCase(false, true)]
+        [TestCase(true, false)]
+        [TestCase(true, true)]
+        public void ColdEditsSurviveFullReloadOrEvictionBeforeFlush(bool uint32, bool reloadVertices)
+        {
+            using (var fixture = new Fixture(uint32))
+            {
+                var vertices = fixture.Geometry.m_Vertices.ToArray();
+                fixture.Batch.ClearCachedGeometry();
+                Assert.IsFalse(fixture.Geometry.HasCachedGeometry);
+                var subset = fixture.Batch.m_Groups[1];
+                fixture.Batch.DisableSubset(subset);
+                Assert.IsFalse(fixture.Geometry.IsGeometryResident);
+                Assert.IsTrue(fixture.Geometry.HasCachedGeometry);
+                Assert.IsNull(fixture.Geometry.m_Vertices);
+                Assert.IsNull(fixture.Geometry.m_Normals);
+                if (reloadVertices)
+                {
+                    var indices = fixture.Geometry.m_Tris;
+                    fixture.Geometry.EnsureGeometryResident();
+                    Assert.AreSame(indices, fixture.Geometry.m_Tris);
+                    CollectionAssert.AreEqual(vertices, fixture.Geometry.m_Vertices);
+                    fixture.Batch.FlushMeshUpdates();
+                }
+                else
+                {
+                    // Eviction must flush pending indices and release the index-only cache.
+                    fixture.Batch.ClearCachedGeometry();
+                    Assert.IsFalse(fixture.Geometry.HasCachedGeometry);
+                }
+                CollectionAssert.AreEqual(new[] { 0, 1, 2, 0, 0, 0, 6, 7, 8 }, fixture.Mesh.triangles);
+                fixture.Batch.EnableSubset(subset);
+                fixture.Batch.FlushMeshUpdates();
+                CollectionAssert.AreEqual(fixture.Indices, fixture.Mesh.triangles);
+                fixture.Batch.ClearCachedGeometry();
+                fixture.Geometry.EnsureGeometryResident();
+                CollectionAssert.AreEqual(vertices, fixture.Geometry.m_Vertices);
+                CollectionAssert.AreEqual(fixture.Indices, fixture.Geometry.m_Tris);
+            }
+        }
+
+        [Test]
+        public void AgedBatchPoolEvictsIndexOnlyCache()
+        {
+            using (var fixture = new Fixture(false))
+            {
+                fixture.Batch.ClearCachedGeometry();
+                fixture.Batch.DisableSubset(fixture.Batch.m_Groups[1]);
+                fixture.Batch.FlushMeshUpdates();
+                var pool = fixture.Batch.ParentPool;
+                pool.m_Batches = new List<Batch> { fixture.Batch };
+                // The protected newest batches are never inspected by the eviction loop.
+                for (int i = 0; i < BatchManager.kBatchesToLeaveMutable; ++i) pool.m_Batches.Add(null);
+                typeof(BatchManager).GetField("m_CurrentTimestamp", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .SetValue(pool.Owner, BatchManager.kTimeUntilBatchImmutable + 1);
+                pool.ClearCachedGeometryFromBatches();
+                Assert.IsFalse(fixture.Geometry.HasCachedGeometry);
+                fixture.Batch.EnableSubset(fixture.Batch.m_Groups[1]);
+                fixture.Batch.FlushMeshUpdates();
+                CollectionAssert.AreEqual(fixture.Indices, fixture.Mesh.triangles);
+            }
+        }
     }
 }
 
