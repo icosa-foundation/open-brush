@@ -13,6 +13,62 @@ def percentile(values, fraction):
     return ordered[min(len(ordered) - 1, int((len(ordered) - 1) * fraction))]
 
 
+def validate_phase_shape(reference):
+    common = [
+        "stationary_view",
+        "select_32",
+        "drag_selection",
+        "release_selection",
+        "erase_32",
+        "undo_erase_32",
+        "redo_erase_32",
+        "restore_erase_32",
+        "repaint_32",
+        "undo_repaint_32",
+    ]
+    shape = [(p["fixture"], p["name"], p["sample"]) for p in reference["phases"]]
+    expected = []
+    for fixture in reference["fixturePaths"]:
+        if reference.get("selectionSizes"):
+            total = next(
+                p["census"]["batchedStrokes"]
+                for p in reference["phases"]
+                if p["fixture"] == fixture
+            )
+            sizes = dict.fromkeys(
+                min(size, total) if size else total
+                for size in reference["selectionSizes"]
+            )
+            for size in sizes:
+                for sample in range(3):
+                    expected.extend(
+                        (fixture, f"{name}_{size}", sample)
+                        for name in (
+                            "stationary_view",
+                            "select",
+                            "drag_selection",
+                            "release_selection",
+                        )
+                    )
+            continue
+        replay = [
+            name
+            for path, name, sample in shape
+            if path == fixture and sample == 0 and name.startswith("paced_")
+        ]
+        if (
+            not replay
+            or len(set(replay)) != len(replay)
+            or not set(replay) <= {"paced_geometry_replay", "paced_legacy_replay"}
+        ):
+            raise ValueError("Missing or duplicate recorded brush replay")
+        for sample in range(3):
+            expected.extend((fixture, name, sample) for name in common + replay)
+    if shape != expected:
+        raise ValueError("Expected three complete editing sequences for every fixture")
+    return shape
+
+
 def validate_runs(runs):
     reference = runs[0]
     keys = (
@@ -35,9 +91,9 @@ def validate_runs(runs):
         "geometryShaders",
         "autosaveDisabled",
     )
-    shape = [(p["fixture"], p["name"], p["sample"]) for p in reference["phases"]]
-    if len(shape) != 69:
-        raise ValueError("Expected all 69 measured phases")
+    if "selectionSizes" in reference:
+        keys += ("selectionSizes",)
+    shape = validate_phase_shape(reference)
     manifest = json.loads(reference["sourceManifest"])
     for run in runs:
         if run["status"] != "completed" or run.get("error"):
@@ -172,6 +228,8 @@ def main():
         after = summarize(args.after)
         if before["environment"] != after["environment"]:
             raise ValueError("Before/after protocol or environment mismatch")
+        if len(before["results"]) != len(after["results"]):
+            raise ValueError("Before/after operation counts mismatch")
         for b_row, a_row in zip(before["results"], after["results"]):
             if (b_row["fixture"], b_row["phase"]) != (a_row["fixture"], a_row["phase"]):
                 raise ValueError("Before/after phases mismatch")

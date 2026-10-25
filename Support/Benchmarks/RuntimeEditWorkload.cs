@@ -43,9 +43,13 @@ namespace TiltBrush.Benchmarks
             public string measurementScope = "Editor Play mode; loaded-sketch editing. Main/render timings include waits and Editor overhead. GPU samples only from settled continuous phases; zero means unavailable. Input hit-testing/controller latency excluded. Frame GC includes Editor and harness overhead. Per-call allocation is -1 when the Mono allocation counter is unavailable. Zero draw/batch counters are unavailable on some Editor backends. Native bytes are Unity tracked allocations, not process peak RAM.";
             public int screenWidth, screenHeight, qualityLevel, targetFrameRate, vSync;
             public string[] fixturePaths, fixtureSha256;
+            public int[] selectionSizes;
             public List<Phase> phases = new List<Phase>();
         }
-        static readonly string[] Fixtures = { "Support/Sketches/Promoted/Blue_Tit.tilt", "Support/Sketches/Promoted/TiltMech.tilt" };
+        static readonly string[] DefaultFixtures = { "Support/Sketches/Promoted/Blue_Tit.tilt", "Support/Sketches/Promoted/TiltMech.tilt" };
+        [Serializable]
+        public class FixtureList { public string[] paths; public int[] selectionSizes; }
+        static string[] s_Fixtures;
         static Report s_Report;
         static string s_Output;
         static bool s_Running, s_Cancel, s_PreviousDisableAutosave;
@@ -60,10 +64,23 @@ namespace TiltBrush.Benchmarks
         static readonly double ToMs = 1000.0 / Stopwatch.Frequency;
         public static string Run(string label, string output)
         {
+            return RunWithFixtures(label, output, null);
+        }
+
+        // A local JSON object {"paths":["path/to/sketch.tilt",...]} keeps user fixtures out of Git.
+        public static string RunWithFixtures(string label, string output, string fixturesFile)
+        {
             if (Screen.width != 1280 || Screen.height != 720) throw new InvalidOperationException("Configure RuntimeEditSetup for 1280 x 720 before measuring");
             if (s_Running || UnityEditor.SessionState.GetBool("BatchWorkloadRunning", false)) throw new InvalidOperationException("A workload is already running");
             if (!Application.isPlaying || App.CurrentState != App.AppState.Standard) throw new InvalidOperationException($"App not ready: {App.CurrentState}");
             if (!App.Config.m_UseBatchedBrushes || !App.Config.m_EnableBatchMemoryOptimization) throw new InvalidOperationException("Default batching and eviction must be enabled");
+            var fixtures = string.IsNullOrEmpty(fixturesFile) ? new FixtureList { paths = DefaultFixtures } :
+                JsonUtility.FromJson<FixtureList>(File.ReadAllText(fixturesFile));
+            s_Fixtures = fixtures?.paths;
+            if (s_Fixtures == null || s_Fixtures.Length == 0 || s_Fixtures.Distinct().Count() != s_Fixtures.Length ||
+                s_Fixtures.Any(path => !File.Exists(path))) throw new ArgumentException("Fixture list must contain unique existing sketch files");
+            if (fixtures.selectionSizes != null && fixtures.selectionSizes.Any(size => size < 0))
+                throw new ArgumentException("Selection sizes must be positive, or zero for select-all");
             s_PreviousDisableAutosave = App.UserConfig.Flags.DisableAutosave;
             App.UserConfig.Flags.DisableAutosave = true;
             s_Output = Path.GetFullPath(output); Directory.CreateDirectory(Path.GetDirectoryName(s_Output));
@@ -77,7 +94,8 @@ namespace TiltBrush.Benchmarks
                 targetFrameRate = Application.targetFrameRate, vSync = QualitySettings.vSyncCount,
                 sourceManifest = File.ReadAllText("Logs/BatchWorkloadSession/state.json"),
                 harnessSha256 = Hash(File.ReadAllBytes("Support/Benchmarks/RuntimeEditWorkload.cs")),
-                fixturePaths = Fixtures, fixtureSha256 = Fixtures.Select(p => Hash(File.ReadAllBytes(p))).ToArray()
+                fixturePaths = s_Fixtures, fixtureSha256 = s_Fixtures.Select(p => Hash(File.ReadAllBytes(p))).ToArray(),
+                selectionSizes = fixtures.selectionSizes ?? Array.Empty<int>()
             };
             s_Main = Unity.Profiling.ProfilerRecorder.StartNew(Unity.Profiling.ProfilerCategory.Internal, "Main Thread", 1);
             s_Render = Unity.Profiling.ProfilerRecorder.StartNew(Unity.Profiling.ProfilerCategory.Internal, "Render Thread", 1);
@@ -91,7 +109,7 @@ namespace TiltBrush.Benchmarks
             s_Report.threadAllocationCounterValid = GC.GetAllocatedBytesForCurrentThread() > beforeProbe;
             GC.KeepAlive(allocationProbe);
             s_Running = true; s_Cancel = false; UnityEditor.SessionState.SetBool("BatchWorkloadRunning", true); UnityEditor.SessionState.SetBool("BatchWorkloadCancel", false); Save();
-            App.Instance.StartCoroutine(Guarded(Work()));
+            App.Instance.StartCoroutine(Guarded(s_Report.selectionSizes.Length == 0 ? Work() : SelectionSweep()));
             return $"[RuntimeEditBenchmark] Started {label}; output {s_Output}";
         }
         public static string Cancel() { s_Cancel = true; UnityEditor.SessionState.SetBool("BatchWorkloadCancel", true); return "Cancellation requested"; }
@@ -121,9 +139,57 @@ namespace TiltBrush.Benchmarks
             BatchWorkloadCounters.Enabled = false; s_Report.status = "completed"; s_Running = false; UnityEditor.SessionState.SetBool("BatchWorkloadRunning", false); App.UserConfig.Flags.DisableAutosave = s_PreviousDisableAutosave; s_Main.Dispose(); s_Render.Dispose(); s_Gc.Dispose(); s_DrawCalls.Dispose(); s_Batches.Dispose(); s_Triangles.Dispose(); Save();
             Debug.Log($"[RuntimeEditBenchmark] Completed {s_Report.label}: {s_Report.phases.Count} phases");
         }
+        // Optional fixture JSON selectionSizes (e.g. [256,1024,4096,0]) runs a selection-only sweep.
+        // Reload for every repetition: selection restores source caches on older implementations.
+        // Reusing that sketch would incorrectly make subsequent baseline selections appear cheap.
+        static IEnumerator SelectionSweep()
+        {
+            foreach (string fixture in s_Fixtures)
+            {
+                yield return Load(fixture, -1);
+                int total = SketchMemoryScript.AllStrokes().Count(s => s.m_Type == Stroke.Type.BatchedBrushStroke);
+                if (total == 0) throw new InvalidOperationException($"No batched strokes: {fixture}");
+                var sizes = s_Report.selectionSizes.Select(size => size == 0 ? total : Math.Min(size, total)).Distinct().ToArray();
+                foreach (int count in sizes)
+                {
+                    for (int sample = -1; sample < 3; sample++)
+                    {
+                        yield return Load(fixture, -1); FrameSketch(); yield return Frames(120);
+                        var all = SketchMemoryScript.AllStrokes().Where(s => s.m_Type == Stroke.Type.BatchedBrushStroke).ToArray();
+                        var selected = Enumerable.Range(0, count).Select(i => all[(long)i * all.Length / count]).ToArray();
+                        Begin(fixture, $"stationary_view_{count}", sample); s_Continuous = true;
+                        yield return Frames(120); End();
+                        yield return Frames(12);
+                        var select = new SelectCommand(selected, null, SelectionManager.m_Instance.SelectionTransform);
+                        Begin(fixture, $"select_{count}", sample);
+                        Call(() => SketchMemoryScript.m_Instance.PerformAndRecordCommand(select));
+                        s_Phase.affectedStrokes = SelectionManager.m_Instance.SelectedStrokes.Count();
+                        yield return Frames(16); End();
+                        yield return Frames(12);
+                        var startPose = SelectionManager.m_Instance.SelectionTransform;
+                        Begin(fixture, $"drag_selection_{count}", sample); s_Continuous = true;
+                        for (int frame = 0; frame < 120; frame++)
+                        {
+                            var pose = startPose; pose.translation += new Vector3(0.5f * Mathf.Sin((frame + 1) * Mathf.PI / 120), 0, 0);
+                            Call(() => SelectionManager.m_Instance.SelectionTransform = pose);
+                            yield return null;
+                        }
+                        End();
+                        var releasePose = startPose; releasePose.translation += new Vector3(0.25f, 0, 0);
+                        SelectionManager.m_Instance.SelectionTransform = releasePose;
+                        yield return Frames(12);
+                        var deselect = new SelectCommand(SelectionManager.m_Instance.SelectedStrokes.ToArray(), null, releasePose, deselect: true);
+                        Begin(fixture, $"release_selection_{count}", sample);
+                        Call(() => SketchMemoryScript.m_Instance.PerformAndRecordCommand(deselect));
+                        yield return Frames(16); End();
+                        if (SelectionManager.m_Instance.HasSelection) throw new InvalidOperationException("Release did not clear selection");
+                    }
+                }
+            }
+        }
         static IEnumerator Work()
         {
-            foreach (string fixture in Fixtures)
+            foreach (string fixture in s_Fixtures)
             {
                 // One unmeasured warm-up of every operation, then three fresh-sketch repetitions.
                 for (int sample = -1; sample < 3; sample++)
