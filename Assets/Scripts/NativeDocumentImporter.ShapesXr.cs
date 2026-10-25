@@ -20,6 +20,7 @@ namespace TiltBrush
         {
             if (m_ImportTask != null && !m_ImportTask.IsCompleted) { throw new InvalidOperationException("A native import is already running"); }
             var report = new NativeDocumentImportReport();
+            report.Detail("Experimental compatibility import using shared Open Brush capabilities; unsupported content is reported.");
             LastReport = report;
             m_ImportTask = RunShapesXr(path, report);
             return report;

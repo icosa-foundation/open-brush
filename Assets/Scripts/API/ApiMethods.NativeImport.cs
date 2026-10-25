@@ -18,7 +18,7 @@ namespace TiltBrush
                 string.IsNullOrEmpty(userLibrary) ? null : userLibrary));
         }
 
-        [ApiEndpoint("import.shapesxr", "Import the initial state of a ShapesXR space; use import.status for unsupported content", "project.space")]
+        [ApiEndpoint("import.shapesxr", "Experimental import through shared native-document capabilities; use import.status for unsupported content", "project.space")]
         public static string ImportShapesXr(string path) => JsonConvert.SerializeObject(NativeDocumentImporter.BeginShapesXr(path));
 
         [ApiEndpoint("import.status", "Return progress and results for the most recent native import")]

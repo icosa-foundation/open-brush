@@ -1,6 +1,17 @@
 MAQUETTE AND SHAPESXR DOCUMENT IMPORT FEATURE MATRIX
 2026-10-24. Requirements and candidate mappings; not a claim of completed support.
 
+CURRENT IMPLEMENTATION SCOPE (2026-10-25)
+
+Maquette is the primary implementation and validation target. ShapesXR remains an
+experimental adapter for content that maps to shared Open Brush capabilities.
+Existing mappings remain available; full ShapesXR parity is not a release target.
+No external ShapesXR SDK dependency or dedicated ShapesXR profile/rendering work
+is planned. Shared improvements driven by Maquette may also improve experimental
+imports. The comparison below records capabilities and differences, not a promise
+to implement every ShapesXR feature. STROKE-IMPORT-TASKS.md is the local active
+stroke-work plan. Animation and slides/frames remain deferred.
+
 BROAD FEATURE SUMMARY
 
 This is the high-level scope. The numbered detail table below expands these areas.
