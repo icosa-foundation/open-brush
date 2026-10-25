@@ -3942,6 +3942,150 @@ MonoBehaviour:
     m_Localized: "Tourner les panneaux vers la droite"
     m_Metadata:
       m_Items: []
+  - m_Id: 128947584179634176
+    m_Localized: "Aligner la sélection actuelle sur les repères :"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634177
+    m_Localized: "Activer/désactiver l’alignement de position sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634178
+    m_Localized: "Activer/désactiver l’alignement de position sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634179
+    m_Localized: "Activer/désactiver l’alignement de position sur Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634180
+    m_Localized: "Aligner la sélection sur la grille"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634181
+    m_Localized: "Aligner les angles de rotation de la sélection sur les repères"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634185
+    m_Localized: "Activer/désactiver le verrouillage de position sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634186
+    m_Localized: "Activer/désactiver le verrouillage de position sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634187
+    m_Localized: "Activer/désactiver le verrouillage de position sur Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634188
+    m_Localized: "Activer/désactiver le verrouillage de rotation sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828480
+    m_Localized: "Activer/désactiver le verrouillage de rotation sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828481
+    m_Localized: "Activer/désactiver le verrouillage de rotation sur Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828496
+    m_Localized: "Miroir multiple"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828497
+    m_Localized: "Symétrie ponctuelle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828498
+    m_Localized: "Symétrie de pavage"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828500
+    m_Localized: "Modifier la teinte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828501
+    m_Localized: "Modifier la saturation"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828502
+    m_Localized: "Modifier la luminosité"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828505
+    m_Localized: "Onde sinusoïdale"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828506
+    m_Localized: "Onde triangulaire"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828507
+    m_Localized: "Onde en dents de scie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022784
+    m_Localized: "Onde carrée"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022785
+    m_Localized: "Bruit"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128978688454426624
+    m_Localized: "Aligner les objets saisis sur les guides ?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128979151367176192
+    m_Localized: "Activer/désactiver l’alignement sur les guides"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129010807801118720
+    m_Localized: "Ordre de symétrie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011310442315776
+    m_Localized: "Répétitions sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011387676229632
+    m_Localized: "Répétitions sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011445721202688
+    m_Localized: "Échelle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011519415123968
+    m_Localized: "Échelle sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011554005549056
+    m_Localized: "Échelle sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011580064759808
+    m_Localized: "Inclinaison sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011621378654208
+    m_Localized: "Inclinaison sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543626534051840
+    m_Localized: "Activer/désactiver l’alignement de rotation sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Localized: "Activer/désactiver l’alignement de rotation sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Localized: "Activer/désactiver l’alignement de rotation sur Z"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
