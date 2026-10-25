@@ -1,3 +1,5 @@
+For default batch-mode application workloads and revised priorities, see [application workload results](AppBatchWorkloads.md).
+
 For index-only reloads of evicted batches, see [cold visibility benchmarks](ColdBatchVisibility.md).
 
 For the second optimization, see [batch visibility benchmarks](BatchVisibility.md).
