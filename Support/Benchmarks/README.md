@@ -1,3 +1,5 @@
+For the second optimization, see [batch visibility benchmarks](BatchVisibility.md).
+
 **Brush triangle-ID benchmark**
 
 This benchmark accompanies the first brush batching optimization: fallback triangle-ID generation. It measures CPU ID generation plus `Mesh.SetUVs`, using deterministic shared-vertex quad fixtures. It does not measure rendered frames, GPU upload completion, selection end-to-end, or desktop/mobile player performance.
