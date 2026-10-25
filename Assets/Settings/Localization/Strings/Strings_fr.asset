@@ -4370,6 +4370,18 @@ MonoBehaviour:
     m_Localized: "Intensité"
     m_Metadata:
       m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: "Coque transparente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 415628836388560896
+    m_Localized: "Assombrir"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: "Vérifiez la flèche de A vers B. La gâchette confirme ; celle de l’autre contrôleur inverse A et B ; Annuler pour quitter."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -4428,6 +4428,18 @@ MonoBehaviour:
     m_Localized: "Stärke"
     m_Metadata:
       m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: "Rumpf (Durchleitung)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 415628836388560896
+    m_Localized: "Abdunkeln"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: "Prüfe den Pfeil von A nach B. Trigger bestätigt; der Trigger des anderen Controllers tauscht A und B; Abbrechen zum Beenden."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -4346,6 +4346,18 @@ MonoBehaviour:
     m_Localized: "强度"
     m_Metadata:
       m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: "透视包"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 415628836388560896
+    m_Localized: "变暗"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: "检查从 A 到 B 的箭头。按扳机确认；另一只控制器的扳机交换 A 和 B；取消以退出。"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -4346,6 +4346,18 @@ MonoBehaviour:
     m_Localized: "強さ"
     m_Metadata:
       m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: "ハル（パススルー）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 415628836388560896
+    m_Localized: "暗くする"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -4346,6 +4346,18 @@ MonoBehaviour:
     m_Localized: "강도"
     m_Metadata:
       m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: "패스스루 헐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 415628836388560896
+    m_Localized: "어둡게"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: "A→B 화살표를 확인하세요. 트리거로 확인, 다른 컨트롤러의 트리거로 A와 B 교환, 취소로 종료합니다."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

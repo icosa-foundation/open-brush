@@ -3912,7 +3912,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000013
-    m_Localized: Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; cancel retries later.
+    m_Localized: "Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; Cancel to exit."
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000014

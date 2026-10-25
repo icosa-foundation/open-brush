@@ -4408,6 +4408,18 @@ MonoBehaviour:
     m_Localized: "Intensidad"
     m_Metadata:
       m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: "Envolvente translúcida"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 415628836388560896
+    m_Localized: "Oscurecer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: "Comprueba la flecha de A a B. El gatillo confirma; el del otro mando intercambia A y B; Cancelar para salir."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
