@@ -27,7 +27,6 @@ namespace TiltBrush
     {
         static public QualityControls m_Instance;
         private const string kAutoSimplificationEnabled = "Autosimplification Enabled";
-        private const string kLegacyPostLogPrefix = "[OB_URP_POST]";
 
         private List<Camera> m_Cameras;
 
@@ -138,7 +137,6 @@ namespace TiltBrush
             if (App.UserConfig.Profiling.HasStrokeSimplification)
             {
                 level = App.UserConfig.Profiling.StrokeSimplification;
-                Debug.Log($"Simplification overridden to be: {level}.");
             }
             StrokeSimplifier = new RdpStrokeSimplifier(level);
             UserStrokeSimplifier = new RdpStrokeSimplifier(Mathf.Min(level, maxUserStrokeLevel));
@@ -305,7 +303,6 @@ namespace TiltBrush
                 }
                 m_NumFramesFpsHighEnough = 0;
             }
-
         }
 
         private static bool SelectionQualityOverrideActive
@@ -401,32 +398,23 @@ namespace TiltBrush
                 return;
             }
 
-            int disabled = 0;
-            disabled += DisableAll<SENaturalBloomAndDirtyLens>();
-            disabled += DisableAll<FXAA>();
-            disabled += DisableAll<MobileBloom>();
-            disabled += DisableAll<TiltShift>();
-            disabled += DisableAll<Kino.Vignette>();
-            disabled += DisableAll<PostEffectsToggle>();
-
-            if (disabled > 0)
-            {
-                Debug.Log($"{kLegacyPostLogPrefix} Disabled {disabled} legacy post-processing components.");
-            }
+            DisableAll<SENaturalBloomAndDirtyLens>();
+            DisableAll<FXAA>();
+            DisableAll<MobileBloom>();
+            DisableAll<TiltShift>();
+            DisableAll<Kino.Vignette>();
+            DisableAll<PostEffectsToggle>();
         }
 
-        int DisableAll<T>() where T : MonoBehaviour
+        void DisableAll<T>() where T : MonoBehaviour
         {
-            int disabled = 0;
             foreach (T component in FindObjectsOfType<T>(includeInactive: true))
             {
                 if (component.enabled)
                 {
                     component.enabled = false;
-                    disabled++;
                 }
             }
-            return disabled;
         }
 
         void EnableHDR(bool bEnable)
@@ -459,8 +447,6 @@ namespace TiltBrush
         {
             if (App.UserConfig.Profiling.HasStrokeSimplification)
             {
-                Debug.LogFormat("Simplification overridden to be: {0}.",
-                    App.UserConfig.Profiling.StrokeSimplification);
                 return;
             }
 
@@ -476,8 +462,6 @@ namespace TiltBrush
             }
             if (total < m_targetMaxControlPoints)
             {
-                Debug.LogFormat("Complexity ({0}) is less than {1}. No extra simplification required.",
-                    total, m_targetMaxControlPoints);
                 return;
             }
             float reduction = m_targetMaxControlPoints / total;
@@ -485,9 +469,6 @@ namespace TiltBrush
                 m_maxLoadingSimplification), StrokeSimplifier.Level);
             if (AutosimplifyEnabled)
             {
-                Debug.LogFormat(
-                    "Complexity ({0}) is greater than {1}. Reduction of {2} using level {3} simplification.",
-                    total, m_targetMaxControlPoints, reduction, level);
                 SimplificationLevel = level;
             }
         }

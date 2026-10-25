@@ -370,25 +370,18 @@ namespace TiltBrush
                 {
                     // Skip "TiltBrush.exe"
                     continue;
-
                 }
                 else if (args[i] == "--captureOds")
                 {
                     m_SdkMode = SdkMode.Ods;
-                    Debug.Log("CaptureODS: Enable ");
-
                 }
                 else if (args[i] == "--noQuickLoad")
                 {
                     m_QuickLoad = false;
-                    Debug.Log("QuickLoad: Disable ");
-
                 }
                 else if (args[i].EndsWith(SaveLoadScript.TILT_SUFFIX))
                 {
                     files.Add(args[i]);
-                    Debug.LogFormat("Sketch: {0}", args[i]);
-
                 }
                 else if (args[i] == "--outputPath")
                 {
@@ -397,8 +390,6 @@ namespace TiltBrush
                         throw new ApplicationException("Invalid outputPath argument, path expected");
                     }
                     m_OdsOutputPath = args[++i];
-                    Debug.LogFormat("ODS Output Path: {0}", args[i]);
-
                 }
                 else if (args[i] == "--outputPrefix")
                 {
@@ -407,8 +398,6 @@ namespace TiltBrush
                         throw new ApplicationException("Invalid prefix argument, name expected");
                     }
                     m_OdsOutputPrefix = args[++i];
-                    Debug.LogFormat("ODS Output Prefix: {0}", args[i]);
-
                 }
                 else if (args[i] == "--preview")
                 {
@@ -416,14 +405,10 @@ namespace TiltBrush
                     // to see a preview. To some people, 2k may look good enough to ship, but is horribly
                     // aliased in the HMD, so let's not give an option for that.
                     m_OdsPreview = true;
-                    Debug.LogFormat("Enable: ODS Preview");
-
                 }
                 else if (args[i] == "--noCorrection")
                 {
                     m_OdsCollapseIpd = false;
-                    Debug.LogFormat("Enable: NO Correction");
-
                 }
                 else if (args[i] == "--turnTable")
                 {
@@ -436,8 +421,6 @@ namespace TiltBrush
                         throw new ApplicationException("Invalid turnTable rotation argument, " +
                             "angle in degrees expected");
                     }
-                    Debug.LogFormat("Enable: Turntable {0}", m_OdsTurnTableDegrees);
-
                 }
                 else if (args[i] == "--numFrames")
                 {
@@ -450,8 +433,6 @@ namespace TiltBrush
                         throw new ApplicationException("Invalid numFrames argument, " +
                             "integer frame count expected");
                     }
-                    Debug.LogFormat("ODS Num Frames: {0}", m_OdsNumFrames);
-
                 }
                 else if (args[i] == "--fps")
                 {
@@ -464,8 +445,6 @@ namespace TiltBrush
                         throw new ApplicationException("Invalid fps argument, " +
                             "floating point frame rate expected");
                     }
-                    Debug.LogFormat("ODS FPS: {0}", m_OdsFps);
-
                 }
                 else if (args[i] == "--export")
                 {
@@ -519,7 +498,6 @@ namespace TiltBrush
                 else if (args[i] == "--forceSteamOverlayBrowser")
                 {
                     CanReachLocalhostDisabled = true;
-                    Debug.Log("[STEAM_BROWSER] Steam overlay browser forced by command line");
                 }
                 else if (args[i].Contains("."))
                 {
@@ -626,7 +604,6 @@ namespace TiltBrush
                 string openBrushArgs = intent.Call<string>("getStringExtra", "OpenBrushArgs");
                 if (!string.IsNullOrWhiteSpace(openBrushArgs))
                 {
-                    Debug.Log("[OB_ANDROID_ARGS] Parsing OpenBrushArgs intent extra");
                     ParseArgString(openBrushArgs);
                 }
 
@@ -820,5 +797,4 @@ namespace TiltBrush
         }
 #endif
     }
-
 } // namespace TiltBrush
