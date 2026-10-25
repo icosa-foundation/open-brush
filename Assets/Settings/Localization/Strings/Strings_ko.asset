@@ -3614,6 +3614,306 @@ MonoBehaviour:
     m_Localized: "미디어 라이브러리"
     m_Metadata:
       m_Items: []
+  - m_Id: 7930412489482241
+    m_Localized: "모든 모델"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977409
+    m_Localized: "모든 모델"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89043032713486336
+    m_Localized: "클릭하여 불러오기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044237590224896
+    m_Localized: "로컬 모델"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044379697438720
+    m_Localized: "로컬 동영상"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044625424932864
+    m_Localized: "로컬 이미지"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89061114353836032
+    m_Localized: "미디어 추가"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064741239808000
+    m_Localized: "방법 알아보기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89072407659962368
+    m_Localized: "미디어 추가"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074692188299264
+    m_Localized: "뒤로 건너뛰기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074820936654848
+    m_Localized: "재생 / 일시 정지"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074884501331968
+    m_Localized: "앞으로 건너뛰기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093320602312704
+    m_Localized: "양손 바꾸기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207223535591424
+    m_Localized: "연기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106429517453328384
+    m_Localized: "배경 이미지"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103924956079587328
+    m_Localized: "스케치 이름 바꾸기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103943359016206336
+    m_Localized: "변형 도구"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109424659466551296
+    m_Localized: "선택 항목 다시 칠하기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584125108224
+    m_Localized: "X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634183
+    m_Localized: "회전"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634184
+    m_Localized: "정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828482
+    m_Localized: "X축 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828483
+    m_Localized: "Y축 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828484
+    m_Localized: "Z축 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828485
+    m_Localized: "정렬 기준:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828486
+    m_Localized: "왼쪽/아래쪽/앞쪽 가장자리"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828487
+    m_Localized: "중심"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828488
+    m_Localized: "오른쪽/위쪽/뒤쪽 가장자리"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828489
+    m_Localized: "회전 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828490
+    m_Localized: "분배:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828491
+    m_Localized: "X축으로 분배"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828492
+    m_Localized: "Y축으로 분배"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828493
+    m_Localized: "Z축으로 분배"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828494
+    m_Localized: "분배 기준:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828495
+    m_Localized: "간격"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828499
+    m_Localized: "옵션"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251051561549824
+    m_Localized: "웹캠"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251441224974336
+    m_Localized: "이전 장치"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251554584428544
+    m_Localized: "다음 장치"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141243230077059072
+    m_Localized: "깊이"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144201565051027456
+    m_Localized: "오디오 클립"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Localized: "오디오 클립"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 137988464450723840
+    m_Localized: "선택 항목을 현재 레이어로 이동"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094550989828096
+    m_Localized: "오류"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147809767845167104
+    m_Localized: "언어 변경"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147811113256255488
+    m_Localized: "언어"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Localized: "캔버스 위치 초기화"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Localized: "캔버스 위치 잠금"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Localized: "캔버스 위치 잠금 해제"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 224363142209691648
+    m_Localized: "하위 폴더 선택"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 234808679492837376
+    m_Localized: "저장된 스트로크"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Localized: "저장된 스트로크"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238556149774557184
+    m_Localized: "이미지가 너무 커서 불러올 수 없습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238935604850335744
+    m_Localized: "이미지가 너무 커서 불러올 수 없습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 242372529028341760
+    m_Localized: "이미지를 불러오지 못했습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276171365497266176
+    m_Localized: "브러시 크기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636550056648704
+    m_Localized: "연결"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637000357126144
+    m_Localized: "연결 해제"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Localized: "옵션"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Localized: "제목으로 검색"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Localized: "필터 및 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941283698237440
+    m_Localized: "모두에게 음소거"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941524061216768
+    m_Localized: "모두에게 음소거"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341358942189346816
+    m_Localized: "사용 가능한 방 이름입니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341359317994790912
+    m_Localized: "이미 존재하는 방입니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 369886448819200000
+    m_Localized: "모두"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397532058527293440
+    m_Localized: "로그인하지 않음"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456507319803904
+    m_Localized: "Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456718544953344
+    m_Localized: "Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433407381692416
+    m_Localized: "다음"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Localized: "이전"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522174996334338048
+    m_Localized: "360"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 533423339270135808
+    m_Localized: "코드 직접 입력"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843705548800
+    m_Localized: "패널을 왼쪽으로 회전"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Localized: "패널을 오른쪽으로 회전"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

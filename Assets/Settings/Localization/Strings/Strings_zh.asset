@@ -3614,6 +3614,306 @@ MonoBehaviour:
     m_Localized: "媒体库"
     m_Metadata:
       m_Items: []
+  - m_Id: 7930412489482241
+    m_Localized: "所有模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977409
+    m_Localized: "所有模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89043032713486336
+    m_Localized: "点击加载"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044237590224896
+    m_Localized: "本地模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044379697438720
+    m_Localized: "本地视频"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044625424932864
+    m_Localized: "本地图像"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89061114353836032
+    m_Localized: "添加媒体"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064741239808000
+    m_Localized: "了解方法"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89072407659962368
+    m_Localized: "添加媒体"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074692188299264
+    m_Localized: "向后跳转"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074820936654848
+    m_Localized: "播放 / 暂停"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074884501331968
+    m_Localized: "向前跳转"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093320602312704
+    m_Localized: "交换左右手"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207223535591424
+    m_Localized: "烟雾"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106429517453328384
+    m_Localized: "背景图像"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103924956079587328
+    m_Localized: "重命名草图"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103943359016206336
+    m_Localized: "变换工具"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109424659466551296
+    m_Localized: "重新绘制所选内容"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584125108224
+    m_Localized: "X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634183
+    m_Localized: "旋转"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634184
+    m_Localized: "对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828482
+    m_Localized: "沿 X 轴对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828483
+    m_Localized: "沿 Y 轴对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828484
+    m_Localized: "沿 Z 轴对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828485
+    m_Localized: "对齐依据："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828486
+    m_Localized: "左侧/底部/前侧边缘"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828487
+    m_Localized: "中心"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828488
+    m_Localized: "右侧/顶部/后侧边缘"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828489
+    m_Localized: "对齐旋转"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828490
+    m_Localized: "分布："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828491
+    m_Localized: "沿 X 轴分布"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828492
+    m_Localized: "沿 Y 轴分布"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828493
+    m_Localized: "沿 Z 轴分布"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828494
+    m_Localized: "分布依据："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828495
+    m_Localized: "间距"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828499
+    m_Localized: "选项"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251051561549824
+    m_Localized: "网络摄像头"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251441224974336
+    m_Localized: "上一个设备"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251554584428544
+    m_Localized: "下一个设备"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141243230077059072
+    m_Localized: "深度"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144201565051027456
+    m_Localized: "音频片段"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Localized: "音频片段"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 137988464450723840
+    m_Localized: "将所选内容移至当前图层"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094550989828096
+    m_Localized: "错误"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147809767845167104
+    m_Localized: "更改语言"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147811113256255488
+    m_Localized: "语言"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Localized: "重置画布位置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Localized: "锁定画布位置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Localized: "解锁画布位置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 224363142209691648
+    m_Localized: "选择子文件夹"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 234808679492837376
+    m_Localized: "已保存的笔划"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Localized: "已保存的笔划"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238556149774557184
+    m_Localized: "图像过大，无法加载"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238935604850335744
+    m_Localized: "图像过大，无法加载"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 242372529028341760
+    m_Localized: "图像加载失败"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276171365497266176
+    m_Localized: "笔刷大小"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636550056648704
+    m_Localized: "连接"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637000357126144
+    m_Localized: "断开连接"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Localized: "选项"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Localized: "按标题搜索"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Localized: "筛选和排序"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941283698237440
+    m_Localized: "对所有人静音"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941524061216768
+    m_Localized: "对所有人静音"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341358942189346816
+    m_Localized: "房间名称可用"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341359317994790912
+    m_Localized: "房间已存在"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 369886448819200000
+    m_Localized: "全部"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397532058527293440
+    m_Localized: "未登录"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456507319803904
+    m_Localized: "Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456718544953344
+    m_Localized: "Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433407381692416
+    m_Localized: "下一步"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Localized: "上一步"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522174996334338048
+    m_Localized: "360"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 533423339270135808
+    m_Localized: "手动输入代码"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843705548800
+    m_Localized: "向左旋转面板"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Localized: "向右旋转面板"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
