@@ -3,9 +3,9 @@ namespace TiltBrush.Benchmarks
 {
     public static class BatchWorkloadCounters
     {
-        public static readonly string[] Names = { "Batch.FullUpload", "Batch.TopologyUpload", "GeometryBrush.VisualUpdate", "GeometryPool.FullCopy", "GeometryPool.FullReload", "GeometryPool.IndexRead", "GeometryPool.TriangleIds", "Pointer.ControlPoint", "Pointer.Recreate", "GeometryPool.SubsetCopy", "Batch.Append", "Pointer.VisualUpdate", "Pointer.BulkControlPoints" };
+        public static readonly string[] Names = { "Batch.FullUpload", "Batch.TopologyUpload", "GeometryBrush.VisualUpdate", "GeometryPool.FullCopy", "GeometryPool.FullReload", "GeometryPool.IndexRead", "GeometryPool.TriangleIds", "Pointer.ControlPoint", "Pointer.Recreate", "GeometryPool.SubsetCopy", "Batch.Append", "Pointer.VisualUpdate", "Pointer.BulkControlPoints", "Pointer.FinalPreparation" };
         public static bool Enabled;
-        public static readonly long[] Calls = new long[13], Ticks = new long[13], Vertices = new long[13], Indices = new long[13];
+        public static readonly long[] Calls = new long[14], Ticks = new long[14], Vertices = new long[14], Indices = new long[14];
         public static void Reset()
         {
             System.Array.Clear(Calls, 0, Calls.Length); System.Array.Clear(Ticks, 0, Ticks.Length);
