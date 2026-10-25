@@ -3537,7 +3537,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: 
+    m_Localized: "Open Brush Skizzenbetrachter"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3601,7 +3601,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: 
+    m_Localized: "Einige Benutzer verwenden möglicherweise Headsets, die keine Passthrough-Ansicht unterstützen"
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928
@@ -4142,6 +4142,158 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 439543840074457088
     m_Localized: "Z-Rotationseinrasten umschalten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Localized: "Füge Bilder und\nModelle hinzu, um\nsie hier zu sehen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Localized: "Füge Bilder auf\ndeinem Gerät hinzu, um\nsie hier zu sehen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093153698373632
+    m_Localized: "Geringere Kompatibilität beim Export. Siehe Dokumentation."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Localized: "Tutorial beim nächsten Neustart"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Localized: "Deaktiviert den erweiterten und den experimentellen Modus"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094689821290496
+    m_Localized: "Die Kontoanmeldung ist auf dieser Plattform derzeit nicht verfügbar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151489918612377600
+    m_Localized: "Videoaufnahmen werden auf diesem Gerät nicht unterstützt."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Localized: "Du kannst ein Video deiner Skizze erstellen, indem du sie auf einem Mac oder PC öffnest. Suche auf unserer Dokumentationswebsite https://docs.openbrush.app nach „Exporting video“, um eine Schritt-für-Schritt-Anleitung zu erhalten."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: "Melde dich bei einem Icosa-Konto an, um\nInhalte auf Icosa hochzuladen."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: "Auf Icosa teilen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: "Bitte erlaube Open Brush den Dateizugriff, um deine Werke zu speichern!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 172767995928834048
+    m_Localized: "Wischen zum Ändern\nder Pinselgröße"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: "Um Fehler 403 beim Veröffentlichen auf Sketchfab zu vermeiden, stelle die Sichtbarkeit auf öffentlich (kostenlose Sketchfab-Konten können keine privaten Modelle veröffentlichen)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Localized: "ALPHA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: "Ausgewählte Striche in der Medienbibliothek speichern"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Localized: "Maus: Umsehen, W,A,S,D: vorwärts/seitwärts, Q,E: auf/ab (Umschalt gedrückt halten zum Beschleunigen)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: "Nimm dein Headset ab oder wechsle zu deinem Webbrowser, um die Anmeldung fortzusetzen."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 381885131211235328
+    m_Localized: "Skizzen werden geladen. Bitte warten..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Localized: "Mesh aufteilen?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Localized: "Das Aufteilen komplexer Meshes kann langsam sein. Speichere deine Skizze regelmäßig."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Localized: "Speichere Pinselstriche mit „Ausgewählte Striche speichern“\n(im Labs-Panel), damit sie hier erscheinen."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: "Open Blocks ausprobieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: "Auf Viverse teilen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: "Quill-Würfel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: "Quill-Zylinder"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: "Quill-Ellipse"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: "Quill-Band"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467449183412510720
+    m_Localized: "Quill-Skizzenbibliothek"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Localized: "Quill-Bibliothek"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464424217206784
+    m_Localized: "Keine Quill-Skizzen in deinem Quill-Ordner gefunden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Localized: "Keine .imm-Dateien in deiner Medienbibliothek gefunden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520669196650635264
+    m_Localized: "Besuche <b>https://icosa.gallery/device</b>,\num einen Anmeldecode zu erhalten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Localized: "Nur auf Icosa Gallery veröffentlichte Skizzen können als Portale verwendet werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641996467429376
+    m_Localized: "Quill-Bibliothek"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642256367476736
+    m_Localized: "Quill-Dateien in deiner Medienbibliothek"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642327830028288
+    m_Localized: "In Quill gespeicherte Quill-Dateien"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542228906948255744
+    m_Localized: "Gerade Striche aneinander einrasten?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542389062831005696
+    m_Localized: "Einrasten gerader Striche umschalten"
     m_Metadata:
       m_Items: []
   references:

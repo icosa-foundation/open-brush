@@ -3451,7 +3451,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: 
+    m_Localized: "Open Brush スケッチビューアー"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3515,7 +3515,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: 
+    m_Localized: "パススルーに対応していないヘッドセットを使用しているユーザーがいる可能性があります"
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928
@@ -4056,6 +4056,158 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 439543840074457088
     m_Localized: "Z 軸の回転スナップを切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Localized: "画像やモデルを\n追加すると\nここに表示されます"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Localized: "デバイスに画像を\n追加すると\nここに表示されます"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093153698373632
+    m_Localized: "エクスポート時の互換性が低下します。ドキュメントをご覧ください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Localized: "次回起動時にチュートリアルを表示"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Localized: "詳細モードと実験モードをオフにします"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094689821290496
+    m_Localized: "このプラットフォームでは現在、アカウントへのログインを利用できません。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151489918612377600
+    m_Localized: "このデバイスでは動画の録画に対応していません。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Localized: "Mac または PC でスケッチを開くと、動画を作成できます。手順については、ドキュメントサイト https://docs.openbrush.app で「Exporting video」を検索してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: "Icosa にアップロードするには、\nIcosa アカウントにログインしてください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: "Icosa で共有"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: "作品を保存するため、Open Brush にファイルへのアクセスを許可してください！"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 172767995928834048
+    m_Localized: "スワイプして\nブラシサイズを調整"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: "Sketchfab への公開時にエラー 403 が発生する場合は、公開範囲をパブリックに変更してください（無料の Sketchfab アカウントでは非公開モデルを公開できません）。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Localized: "アルファ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: "選択したストロークをメディアライブラリに保存"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Localized: "マウス: 見回す、W,A,S,D: 前後左右に移動、Q,E: 上下に移動（Shift を押しながら移動すると加速）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: "ヘッドセットを外すか、ウェブブラウザーに切り替えてログインを続けてください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 381885131211235328
+    m_Localized: "スケッチを読み込んでいます。お待ちください..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Localized: "メッシュを分割しますか？"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Localized: "複雑なメッシュの分割には時間がかかる場合があります。スケッチをこまめに保存してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Localized: "Labs パネルの「選択したストロークを保存」で\nストロークを保存すると、ここに表示されます。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: "Open Blocks を試す"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: "Viverse で共有"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: "Quill キューブ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: "Quill 円柱"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: "Quill 楕円"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: "Quill リボン"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467449183412510720
+    m_Localized: "Quill スケッチライブラリ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Localized: "Quill ライブラリ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464424217206784
+    m_Localized: "Quill フォルダーに Quill スケッチが見つかりません"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Localized: "メディアライブラリに .imm ファイルが見つかりません"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520669196650635264
+    m_Localized: "<b>https://icosa.gallery/device</b> にアクセスして\nログインコードを取得してください"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Localized: "ポータルとして使用できるのは、Icosa Gallery で公開されたスケッチのみです"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641996467429376
+    m_Localized: "Quill ライブラリ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642256367476736
+    m_Localized: "メディアライブラリ内の Quill ファイル"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642327830028288
+    m_Localized: "Quill で保存した Quill ファイル"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542228906948255744
+    m_Localized: "直線ツールのストローク同士をスナップしますか？"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542389062831005696
+    m_Localized: "直線ツールのスナップを切り替え"
     m_Metadata:
       m_Items: []
   references:

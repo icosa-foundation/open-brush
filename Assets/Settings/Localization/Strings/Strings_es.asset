@@ -3513,7 +3513,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: 
+    m_Localized: "Visor de bocetos de Open Brush"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3577,7 +3577,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: 
+    m_Localized: "Puede que algunos usuarios utilicen visores que no admitan la vista del entorno real"
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928
@@ -4118,6 +4118,158 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 439543840074457088
     m_Localized: "Activar/desactivar ajuste de rotación en Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Localized: "Añade imágenes y\nmodelos para\nverlos aquí"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Localized: "Añade imágenes a\ntu dispositivo para\nverlas aquí"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093153698373632
+    m_Localized: "Menor compatibilidad al exportar. Consulta nuestra documentación."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Localized: "Tutorial en el próximo reinicio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Localized: "Desactiva los modos avanzado y experimental"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094689821290496
+    m_Localized: "El inicio de sesión no está disponible actualmente en esta plataforma."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151489918612377600
+    m_Localized: "Este dispositivo no admite la grabación de vídeo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Localized: "Puedes crear un vídeo de tu boceto abriéndolo en un Mac o PC. Busca \"Exporting video\" en nuestra documentación en https://docs.openbrush.app para ver una guía paso a paso."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: "Inicia sesión en una cuenta de Icosa para\nsubir contenido a Icosa."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: "Compartir en Icosa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: "¡Permite que Open Brush acceda a los archivos para guardar tus creaciones!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 172767995928834048
+    m_Localized: "Desliza para ajustar\nel tamaño del pincel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: "Para evitar el error 403 al publicar en Sketchfab, cambia la visibilidad a pública (las cuentas gratuitas de Sketchfab no pueden publicar modelos privados)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Localized: "ALFA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: "Guardar los trazos seleccionados en la biblioteca multimedia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Localized: "Ratón: mirar alrededor, W,A,S,D: avanzar/moverse lateralmente, Q,E: subir/bajar (mantén Mayús para acelerar)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: "Quítate el visor o cambia al navegador web para continuar con el inicio de sesión."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 381885131211235328
+    m_Localized: "Cargando bocetos. Espera..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Localized: "¿Dividir malla?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Localized: "Dividir mallas complejas puede ser lento. Guarda tu boceto con frecuencia."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Localized: "Guarda trazos con \"Guardar trazos seleccionados\"\n(en el panel Labs) y aparecerán aquí."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: "Prueba Open Blocks"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: "Compartir en Viverse"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: "Cubo Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: "Cilindro Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: "Elipse Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: "Cinta Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467449183412510720
+    m_Localized: "Biblioteca de bocetos Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Localized: "Biblioteca de Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464424217206784
+    m_Localized: "No se encontraron bocetos Quill en tu carpeta de Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Localized: "No se encontraron archivos .imm en tu biblioteca multimedia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520669196650635264
+    m_Localized: "Visita <b>https://icosa.gallery/device</b>\npara obtener un código de inicio de sesión"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Localized: "Solo los bocetos publicados en Icosa Gallery pueden usarse como portales"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641996467429376
+    m_Localized: "Biblioteca de Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642256367476736
+    m_Localized: "Archivos Quill en tu biblioteca multimedia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642327830028288
+    m_Localized: "Archivos Quill guardados en Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542228906948255744
+    m_Localized: "¿Ajustar entre sí los trazos de regla?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542389062831005696
+    m_Localized: "Activar/desactivar ajuste de trazos de regla"
     m_Metadata:
       m_Items: []
   references:

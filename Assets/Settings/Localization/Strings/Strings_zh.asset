@@ -3451,7 +3451,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: 
+    m_Localized: "Open Brush 草图查看器"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3515,7 +3515,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: 
+    m_Localized: "部分用户可能正在使用不支持透视功能的头显"
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928
@@ -4056,6 +4056,158 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 439543840074457088
     m_Localized: "切换 Z 轴旋转吸附"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Localized: "添加图像和\n模型后即可\n在此查看"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Localized: "将图像添加到\n设备后即可\n在此查看"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093153698373632
+    m_Localized: "导出时兼容性较低。请参阅我们的文档。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Localized: "下次重启时显示教程"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Localized: "关闭高级和实验模式"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094689821290496
+    m_Localized: "此平台目前无法登录账户。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151489918612377600
+    m_Localized: "此设备不支持视频录制。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Localized: "在 Mac 或 PC 上打开草图即可创建视频。请在文档网站 https://docs.openbrush.app 搜索“Exporting video”，查看分步指南。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: "登录 Icosa 账户以\n向 Icosa 上传内容。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: "分享到 Icosa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: "请允许 Open Brush 访问文件，以保存您的作品！"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 172767995928834048
+    m_Localized: "滑动以调整\n笔刷大小"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: "为避免在 Sketchfab 上发布时出现 403 错误，请将可见性设为公开（免费 Sketchfab 账户无法发布私有模型）。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Localized: "ALPHA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: "将所选笔划保存到媒体库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Localized: "鼠标：环顾四周，W,A,S,D：前后/左右移动，Q,E：上升/下降（按住 Shift 加速）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: "请摘下头显或切换到网页浏览器以继续登录。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 381885131211235328
+    m_Localized: "正在加载草图，请稍候……"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Localized: "拆分网格？"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Localized: "拆分复杂网格可能较慢。请定期保存草图。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Localized: "使用 Labs 面板中的“保存所选笔划”\n保存笔划后，即可在此查看。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: "试用 Open Blocks"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: "分享到 Viverse"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: "Quill 立方体"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: "Quill 圆柱体"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: "Quill 椭圆"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: "Quill 丝带"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467449183412510720
+    m_Localized: "Quill 草图库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Localized: "Quill 库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464424217206784
+    m_Localized: "在 Quill 文件夹中未找到 Quill 草图"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Localized: "在媒体库中未找到 .imm 文件"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520669196650635264
+    m_Localized: "访问 <b>https://icosa.gallery/device</b>\n获取登录代码"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Localized: "只有发布到 Icosa Gallery 的草图才能用作传送门"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641996467429376
+    m_Localized: "Quill 库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642256367476736
+    m_Localized: "媒体库中的 Quill 文件"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642327830028288
+    m_Localized: "在 Quill 中保存的 Quill 文件"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542228906948255744
+    m_Localized: "将直尺笔划相互吸附？"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542389062831005696
+    m_Localized: "切换直尺吸附"
     m_Metadata:
       m_Items: []
   references:
