@@ -8,6 +8,8 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.LowLevel;
 using Debug = UnityEngine.Debug;
 namespace TiltBrush.Benchmarks
 {
@@ -38,7 +40,7 @@ namespace TiltBrush.Benchmarks
         {
             public int schemaVersion = 2;
             public string label, utc, status, error, unity, cpu, gpu, graphicsApi, sdkMode, sourceManifest, harnessSha256;
-            public bool batching, eviction, geometryShaders, autosaveDisabled;
+            public bool batching, eviction, geometryShaders, autosaveDisabled, cameraControlsDisabled, desktopStateInputSuppressed;
             public bool mainRecorderValid, renderRecorderValid, gcRecorderValid, frameTimingEnabled, threadAllocationCounterValid;
             public string measurementScope = "Editor Play mode; loaded-sketch editing. Main/render timings include waits and Editor overhead. GPU samples only from settled continuous phases; zero means unavailable. Input hit-testing/controller latency excluded. Frame GC includes Editor and harness overhead. Per-call allocation is -1 when the Mono allocation counter is unavailable. Zero draw/batch counters are unavailable on some Editor backends. Native bytes are Unity tracked allocations, not process peak RAM.";
             public int screenWidth, screenHeight, qualityLevel, targetFrameRate, vSync;
@@ -61,6 +63,11 @@ namespace TiltBrush.Benchmarks
         static readonly FrameTiming[] s_Timing = new FrameTiming[1];
         static ulong s_LastTiming;
         static bool s_Continuous;
+        static MonoCameraControlScript[] s_CameraControls;
+        static bool[] s_CameraControlsEnabled;
+        static Vector3 s_FixedCameraPosition;
+        static Quaternion s_FixedCameraRotation;
+        static float s_FixedCameraFov;
         static readonly double ToMs = 1000.0 / Stopwatch.Frequency;
         public static string Run(string label, string output)
         {
@@ -83,10 +90,18 @@ namespace TiltBrush.Benchmarks
                 throw new ArgumentException("Selection sizes must be positive, or zero for select-all");
             s_PreviousDisableAutosave = App.UserConfig.Flags.DisableAutosave;
             App.UserConfig.Flags.DisableAutosave = true;
+            // Mouse camera control otherwise overwrites FrameSketch's rotation every Update.
+            // Isolate the benchmark from desktop input and restore the original state afterward.
+            s_CameraControls = UnityEngine.Object.FindObjectsByType<MonoCameraControlScript>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            s_CameraControlsEnabled = s_CameraControls.Select(control => control.enabled).ToArray();
+            foreach (var control in s_CameraControls) control.enabled = false;
+            foreach (var device in InputSystem.devices)
+                if (device is Mouse || device is Keyboard) InputSystem.ResetDevice(device, alsoResetDontResetControls: true);
+            InputSystem.onEvent += SuppressDesktopStateInput;
             s_Output = Path.GetFullPath(output); Directory.CreateDirectory(Path.GetDirectoryName(s_Output));
             s_Report = new Report
             {
-                autosaveDisabled = true, label = label, utc = DateTime.UtcNow.ToString("o"), status = "running", unity = Application.unityVersion,
+                autosaveDisabled = true, cameraControlsDisabled = true, desktopStateInputSuppressed = true, label = label, utc = DateTime.UtcNow.ToString("o"), status = "running", unity = Application.unityVersion,
                 cpu = SystemInfo.processorType, gpu = SystemInfo.graphicsDeviceName, graphicsApi = SystemInfo.graphicsDeviceType.ToString(),
                 sdkMode = App.Config.m_SdkMode.ToString(), batching = App.Config.m_UseBatchedBrushes,
                 eviction = App.Config.m_EnableBatchMemoryOptimization, geometryShaders = App.Config.GeometryShaderSuppported,
@@ -122,6 +137,12 @@ namespace TiltBrush.Benchmarks
                 try
                 {
                     if (s_Cancel || UnityEditor.SessionState.GetBool("BatchWorkloadCancel", false)) throw new OperationCanceledException();
+                    if (s_Phase != null)
+                    {
+                        var camera = App.VrSdk.GetVrCamera();
+                        if (!camera.transform.position.Equals(s_FixedCameraPosition) || !camera.transform.rotation.Equals(s_FixedCameraRotation) || camera.fieldOfView != s_FixedCameraFov)
+                            throw new InvalidOperationException("Benchmark camera moved during a measured phase");
+                    }
                     more = stack.Peek().MoveNext();
                     if (more) value = stack.Peek().Current;
                     else { (stack.Pop() as IDisposable)?.Dispose(); }
@@ -129,15 +150,27 @@ namespace TiltBrush.Benchmarks
                 catch (Exception e)
                 {
                     BatchWorkloadCounters.Enabled = false; s_Report.status = "failed"; s_Report.error = e.ToString();
-                    Debug.LogError($"[RuntimeEditBenchmark] {e}"); Save(); s_Running = false; UnityEditor.SessionState.SetBool("BatchWorkloadRunning", false); App.UserConfig.Flags.DisableAutosave = s_PreviousDisableAutosave; s_Main.Dispose(); s_Render.Dispose(); s_Gc.Dispose(); s_DrawCalls.Dispose(); s_Batches.Dispose(); s_Triangles.Dispose(); yield break;
+                    Debug.LogError($"[RuntimeEditBenchmark] {e}"); Save(); s_Running = false; UnityEditor.SessionState.SetBool("BatchWorkloadRunning", false); App.UserConfig.Flags.DisableAutosave = s_PreviousDisableAutosave; RestoreCameraControls(); s_Main.Dispose(); s_Render.Dispose(); s_Gc.Dispose(); s_DrawCalls.Dispose(); s_Batches.Dispose(); s_Triangles.Dispose(); yield break;
                 }
                 if (!more) continue;
                 if (value is IEnumerator nested) { stack.Push(nested); continue; }
                 yield return value;
                 if (s_Phase != null) SampleFrame();
             }
-            BatchWorkloadCounters.Enabled = false; s_Report.status = "completed"; s_Running = false; UnityEditor.SessionState.SetBool("BatchWorkloadRunning", false); App.UserConfig.Flags.DisableAutosave = s_PreviousDisableAutosave; s_Main.Dispose(); s_Render.Dispose(); s_Gc.Dispose(); s_DrawCalls.Dispose(); s_Batches.Dispose(); s_Triangles.Dispose(); Save();
+            BatchWorkloadCounters.Enabled = false; s_Report.status = "completed"; s_Running = false; UnityEditor.SessionState.SetBool("BatchWorkloadRunning", false); App.UserConfig.Flags.DisableAutosave = s_PreviousDisableAutosave; RestoreCameraControls(); s_Main.Dispose(); s_Render.Dispose(); s_Gc.Dispose(); s_DrawCalls.Dispose(); s_Batches.Dispose(); s_Triangles.Dispose(); Save();
             Debug.Log($"[RuntimeEditBenchmark] Completed {s_Report.label}: {s_Report.phases.Count} phases");
+        }
+        static void RestoreCameraControls()
+        {
+            InputSystem.onEvent -= SuppressDesktopStateInput;
+            for (int i = 0; i < s_CameraControls.Length; i++)
+                if (s_CameraControls[i] != null) s_CameraControls[i].enabled = s_CameraControlsEnabled[i];
+        }
+        static void SuppressDesktopStateInput(InputEventPtr input, InputDevice device)
+        {
+            // Commands are supplied by this workload. Ignore physical button/motion state while
+            // measuring, without disabling OS input or removing devices from the Editor.
+            if ((device is Mouse || device is Keyboard) && (input.IsA<StateEvent>() || input.IsA<DeltaStateEvent>())) input.handled = true;
         }
         // Optional fixture JSON selectionSizes (e.g. [256,1024,4096,0]) runs a selection-only sweep.
         // Reload for every repetition: selection restores source caches on older implementations.
@@ -265,6 +298,9 @@ namespace TiltBrush.Benchmarks
             float distance = Mathf.Max(1, radius / Mathf.Sin(camera.fieldOfView * Mathf.Deg2Rad * 0.5f));
             camera.transform.SetPositionAndRotation(center + Vector3.back * distance, Quaternion.identity);
             camera.farClipPlane = Mathf.Max(camera.farClipPlane, distance + radius * 2);
+            s_FixedCameraPosition = camera.transform.position;
+            s_FixedCameraRotation = camera.transform.rotation;
+            s_FixedCameraFov = camera.fieldOfView;
         }
         static IEnumerator Load(string path, int sample)
         {

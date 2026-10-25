@@ -69,8 +69,7 @@ def validate_phase_shape(reference):
     return shape
 
 
-def validate_runs(runs):
-    reference = runs[0]
+def environment_keys(reference):
     keys = (
         "schemaVersion",
         "harnessSha256",
@@ -93,6 +92,21 @@ def validate_runs(runs):
     )
     if "selectionSizes" in reference:
         keys += ("selectionSizes",)
+    if "cameraControlsDisabled" in reference:
+        keys += ("cameraControlsDisabled", "desktopStateInputSuppressed")
+        if (
+            not reference["cameraControlsDisabled"]
+            or not reference["desktopStateInputSuppressed"]
+        ):
+            raise ValueError(
+                "Benchmark camera and desktop state input must be isolated"
+            )
+    return keys
+
+
+def validate_runs(runs):
+    reference = runs[0]
+    keys = environment_keys(reference)
     shape = validate_phase_shape(reference)
     manifest = json.loads(reference["sourceManifest"])
     for run in runs:
