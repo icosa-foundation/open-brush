@@ -621,8 +621,18 @@ namespace TiltBrush
                     newNumVert = newNumIndices = 0;
                 }
 
-                m_Geometry.NumVerts = newNumVert;
-                m_Geometry.NumTriIndices = newNumIndices;
+                if (newNumVert == 0 && newNumIndices == 0)
+                {
+                    // NumVerts restores cold vertex channels before resizing. An empty batch
+                    // has nothing to preserve, so discard its backing data without reading it.
+                    // Reset retains the layout and reuses arrays that are already resident.
+                    m_Geometry.Reset();
+                }
+                else
+                {
+                    m_Geometry.NumVerts = newNumVert;
+                    m_Geometry.NumTriIndices = newNumIndices;
+                }
                 DelayedUpdateMesh();
             }
 
