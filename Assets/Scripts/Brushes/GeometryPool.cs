@@ -16,7 +16,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -1219,11 +1221,12 @@ namespace TiltBrush
             TrTransform? leftTransform = null)
         {
             EnsureGeometryResident();
-            rhs.EnsureGeometryResident();
             if (m_Layout != rhs.m_Layout)
             {
                 throw new ArgumentException("rhs: must have same layout");
             }
+            if (TryAppendColdMesh(rhs, iVert, nVert, iTriIndex, nTriIndex, leftTransform)) { return; }
+            rhs.EnsureGeometryResident();
 
             // base vert index is shifting from iVert to m_Vertices.Count
             int iVertDest = m_Vertices.Count;
@@ -1278,6 +1281,125 @@ namespace TiltBrush
             for (int i = 0; i < nTriIndex; ++i)
             {
                 destTris[iTriDest + i] = indexOffset + aTriIndices[iTriIndex + i];
+            }
+        }
+
+        // Read only the requested range from a cold batch. Holding MeshData past this call would
+        // force Unity to copy its snapshot on a later mesh write, so dispose it before returning.
+        private bool TryAppendColdMesh(GeometryPool rhs, int iVert, int nVert,
+                                      int iTriIndex, int nTriIndex, TrTransform? leftTransform)
+        {
+            if (rhs.IsGeometryResident || rhs.m_BackingMesh == null) { return false; }
+            using (var snapshot = Mesh.AcquireReadOnlyMeshData(rhs.m_BackingMesh))
+            {
+                var data = snapshot[0];
+                if (data.subMeshCount != 1 || !HasFloatChannel(data, VertexAttribute.Position, 3) ||
+                    (m_Layout.bUseNormals && !HasFloatChannel(data, VertexAttribute.Normal, 3)) ||
+                    (m_Layout.bUseTangents && !HasFloatChannel(data, VertexAttribute.Tangent, 4)) ||
+                    (m_Layout.bUseColors && (!data.HasVertexAttribute(VertexAttribute.Color) ||
+                        data.GetVertexAttributeFormat(VertexAttribute.Color) != VertexAttributeFormat.UNorm8 ||
+                        data.GetVertexAttributeDimension(VertexAttribute.Color) != 4)))
+                {
+                    return false;
+                }
+                for (int channel = 0; channel < kNumTexcoords; ++channel)
+                {
+                    int size = m_Layout.GetTexcoordInfo(channel).size;
+                    if (size != 0 && !HasFloatChannel(data, VertexAttribute.TexCoord0 + channel, size))
+                    {
+                        return false;
+                    }
+                }
+
+                var subMesh = data.GetSubMesh(0);
+                if (iVert < 0 || nVert < 0 || iVert > data.vertexCount - nVert ||
+                    iTriIndex < 0 || nTriIndex < 0 || iTriIndex > subMesh.indexCount - nTriIndex)
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
+                int first = NumVerts;
+                AppendMeshChannel(data, VertexAttribute.Position, iVert, nVert, m_Vertices);
+                if (m_Layout.bUseNormals)
+                {
+                    AppendMeshChannel(data, VertexAttribute.Normal, iVert, nVert, m_Normals);
+                }
+                if (m_Layout.bUseTangents)
+                {
+                    AppendMeshChannel(data, VertexAttribute.Tangent, iVert, nVert, m_Tangents);
+                }
+                for (int channel = 0; channel < kNumTexcoords; ++channel)
+                {
+                    if (m_Layout.GetTexcoordInfo(channel).size == 0) { continue; }
+                    var texcoord = GetTexcoordData(channel);
+                    var attribute = VertexAttribute.TexCoord0 + channel;
+                    switch (m_Layout.GetTexcoordInfo(channel).size)
+                    {
+                        case 2: AppendMeshChannel(data, attribute, iVert, nVert, texcoord.v2); break;
+                        case 3: AppendMeshChannel(data, attribute, iVert, nVert, texcoord.v3); break;
+                        case 4: AppendMeshChannel(data, attribute, iVert, nVert, texcoord.v4); break;
+                    }
+                }
+                if (m_Layout.bUseColors)
+                {
+                    AppendMeshChannel(data, VertexAttribute.Color, iVert, nVert, m_Colors);
+                }
+                if (leftTransform.HasValue) { ApplyTransform(leftTransform.Value, first, nVert); }
+
+                int indexOffset = first - iVert;
+                int firstIndex = m_Tris.Count;
+                m_Tris.SetCount(firstIndex + nTriIndex);
+                var indices = m_Tris.GetBackingArray();
+                if (rhs.m_Tris != null)
+                {
+                    // A visibility edit can leave cached indices newer than the backing mesh.
+                    for (int i = 0; i < nTriIndex; ++i)
+                    {
+                        indices[firstIndex + i] = rhs.m_Tris[iTriIndex + i] + indexOffset;
+                    }
+                }
+                else if (data.indexFormat == IndexFormat.UInt16)
+                {
+                    var source = data.GetIndexData<ushort>();
+                    for (int i = 0; i < nTriIndex; ++i)
+                    {
+                        indices[firstIndex + i] = source[subMesh.indexStart + iTriIndex + i] + subMesh.baseVertex + indexOffset;
+                    }
+                }
+                else
+                {
+                    var source = data.GetIndexData<int>();
+                    for (int i = 0; i < nTriIndex; ++i)
+                    {
+                        indices[firstIndex + i] = source[subMesh.indexStart + iTriIndex + i] + subMesh.baseVertex + indexOffset;
+                    }
+                }
+            }
+            return true;
+        }
+
+        private static bool HasFloatChannel(Mesh.MeshData data, VertexAttribute attribute, int dimension)
+        {
+            return data.HasVertexAttribute(attribute) &&
+                data.GetVertexAttributeFormat(attribute) == VertexAttributeFormat.Float32 &&
+                data.GetVertexAttributeDimension(attribute) == dimension;
+        }
+
+        private static unsafe void AppendMeshChannel<T>(Mesh.MeshData data, VertexAttribute attribute,
+            int first, int count, List<T> destination) where T : unmanaged
+        {
+            if (count == 0) { return; }
+            int stream = data.GetVertexAttributeStream(attribute);
+            var bytes = data.GetVertexData<byte>(stream);
+            int stride = data.GetVertexBufferStride(stream);
+            int offset = data.GetVertexAttributeOffset(attribute);
+            int dest = destination.Count;
+            destination.SetCount(dest + count);
+            // The caller validates format, dimension and range before any channel is appended.
+            // Pin only while copying; retain neither a native pointer nor the MeshData snapshot.
+            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes) + first * stride + offset;
+            fixed (T* target = destination.GetBackingArray())
+            {
+                UnsafeUtility.MemCpyStride(target + dest, sizeof(T), source, stride, sizeof(T), count);
             }
         }
 

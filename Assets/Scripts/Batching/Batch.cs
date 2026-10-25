@@ -532,13 +532,17 @@ namespace TiltBrush
             child.m_VertLength = nVert;
             child.m_iTriIndex = m_Geometry.NumTriIndices;
             child.m_nTriIndex = nTriIndex;
-            geom.EnsureGeometryResident();
-            child.m_Bounds = GetBoundsFor(geom.m_Vertices, iVert, nVert, leftTransform);
-
             if (nVert > 0)
             {
                 m_Geometry.Append(geom, iVert, nVert, iTriIndex, nTriIndex, leftTransform);
+                // The destination already contains transformed positions. Computing bounds here
+                // avoids restoring an entire cold source batch just to read this subset's bounds.
+                child.m_Bounds = GetBoundsFor(m_Geometry.m_Vertices, child.m_StartVertIndex, nVert);
                 DelayedUpdateMesh();
+            }
+            else
+            {
+                child.m_Bounds = GetBoundsFor(Array.Empty<Vector3>(), 0, 0);
             }
 
             SelfCheck();
