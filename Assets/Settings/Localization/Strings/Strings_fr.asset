@@ -4362,6 +4362,14 @@ MonoBehaviour:
     m_Localized: "Placer un portail"
     m_Metadata:
       m_Items: []
+  - m_Id: 554342843789434881
+    m_Localized: "Complexité"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828503
+    m_Localized: "Intensité"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

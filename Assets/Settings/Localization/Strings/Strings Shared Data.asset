@@ -3819,6 +3819,10 @@ MonoBehaviour:
     m_Key: HANDTRACKING_ROTATE_PANELS_RIGHT_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 554342843789434881
+    m_Key: ICOSAPANEL_PANEL_FILTER_COMPLEXITY
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

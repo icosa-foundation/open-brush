@@ -4338,6 +4338,14 @@ MonoBehaviour:
     m_Localized: "ポータルを配置"
     m_Metadata:
       m_Items: []
+  - m_Id: 554342843789434881
+    m_Localized: "複雑さ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828503
+    m_Localized: "強さ"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

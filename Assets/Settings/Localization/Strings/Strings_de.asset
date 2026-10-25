@@ -4420,6 +4420,14 @@ MonoBehaviour:
     m_Localized: "Portal platzieren"
     m_Metadata:
       m_Items: []
+  - m_Id: 554342843789434881
+    m_Localized: "Komplexität"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828503
+    m_Localized: "Stärke"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
