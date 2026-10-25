@@ -3586,6 +3586,34 @@ MonoBehaviour:
     m_Localized: "\u3059\u3079\u3066\u306E\u30D7\u30EC\u30A4\u30E4\u30FC\u306B\u7DE8\u96C6\u3092\u8A31\u53EF\u3059\u308B"
     m_Metadata:
       m_Items: []
+  - m_Id: 89041955544915968
+    m_Localized: "メディアライブラリ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Localized: "開く"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634182
+    m_Localized: "位置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022786
+    m_Localized: "ミラーを呼び出します"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: "閉じる"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312781662766833664
+    m_Localized: "ステータス："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641902376607744
+    m_Localized: "メディアライブラリ"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

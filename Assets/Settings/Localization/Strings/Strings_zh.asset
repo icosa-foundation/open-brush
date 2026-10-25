@@ -3586,6 +3586,34 @@ MonoBehaviour:
     m_Localized: "\u5141\u8BB8\u6240\u6709\u73A9\u5BB6\u7F16\u8F91"
     m_Metadata:
       m_Items: []
+  - m_Id: 89041955544915968
+    m_Localized: "媒体库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Localized: "打开"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634182
+    m_Localized: "位置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022786
+    m_Localized: "召唤镜面"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: "关闭"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312781662766833664
+    m_Localized: " 状态："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641902376607744
+    m_Localized: "媒体库"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

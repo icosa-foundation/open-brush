@@ -3648,6 +3648,34 @@ MonoBehaviour:
     m_Localized: Permitir que todos los jugadores editen
     m_Metadata:
       m_Items: []
+  - m_Id: 89041955544915968
+    m_Localized: "Biblioteca de medios"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Localized: "ABRIR"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634182
+    m_Localized: "Posición"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022786
+    m_Localized: "Convocar espejo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: "Cerrar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312781662766833664
+    m_Localized: "Estado: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641902376607744
+    m_Localized: "Biblioteca de medios"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

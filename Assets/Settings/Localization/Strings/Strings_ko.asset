@@ -3586,6 +3586,34 @@ MonoBehaviour:
     m_Localized: "\uBAA8\uB4E0 \uD50C\uB808\uC774\uC5B4\uAC00 \uD3B8\uC9D1\uD560 \uC218 \uC788\uB3C4\uB85D \uD5C8\uC6A9"
     m_Metadata:
       m_Items: []
+  - m_Id: 89041955544915968
+    m_Localized: "미디어 라이브러리"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Localized: "열기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634182
+    m_Localized: "위치"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022786
+    m_Localized: "거울 소환"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: "닫기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312781662766833664
+    m_Localized: "상태: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641902376607744
+    m_Localized: "미디어 라이브러리"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
