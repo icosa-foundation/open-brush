@@ -4412,6 +4412,14 @@ MonoBehaviour:
     m_Localized: "Erfasst alle Widgets sowie den aktuellen Kamerapfad, falls dieser sichtbar ist"
     m_Metadata:
       m_Items: []
+  - m_Id: 128947584183828504
+    m_Localized: "Frequenz"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: "Portal platzieren"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

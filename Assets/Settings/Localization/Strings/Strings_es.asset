@@ -4388,6 +4388,18 @@ MonoBehaviour:
     m_Localized: "Captura todos los objetos y también la ruta de cámara actual si está visible"
     m_Metadata:
       m_Items: []
+  - m_Id: 5146220882010112
+    m_Localized: "Recolorear activado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828504
+    m_Localized: "Frecuencia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: "Colocar portal"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

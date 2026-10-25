@@ -4326,6 +4326,18 @@ MonoBehaviour:
     m_Localized: "すべてのウィジェットと、表示されている場合は現在のカメラパスもキャプチャします"
     m_Metadata:
       m_Items: []
+  - m_Id: 5146220882010112
+    m_Localized: "色の変更オン"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828504
+    m_Localized: "周波数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: "ポータルを配置"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

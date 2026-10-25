@@ -4326,6 +4326,18 @@ MonoBehaviour:
     m_Localized: "捕获所有控件，以及当前相机路径（如果可见）"
     m_Metadata:
       m_Items: []
+  - m_Id: 5146220882010112
+    m_Localized: "重新着色已开启"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828504
+    m_Localized: "频率"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: "放置传送门"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

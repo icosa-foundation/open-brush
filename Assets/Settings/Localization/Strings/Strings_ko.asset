@@ -4326,6 +4326,18 @@ MonoBehaviour:
     m_Localized: "모든 위젯과 현재 카메라 경로가 표시된 경우 해당 경로도 캡처합니다"
     m_Metadata:
       m_Items: []
+  - m_Id: 5146220882010112
+    m_Localized: "색상 변경 켜짐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828504
+    m_Localized: "주파수"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: "포털 배치"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
