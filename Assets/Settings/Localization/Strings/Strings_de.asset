@@ -4296,6 +4296,122 @@ MonoBehaviour:
     m_Localized: "Einrasten gerader Striche umschalten"
     m_Metadata:
       m_Items: []
+  - m_Id: 482980427487338496
+    m_Localized: "Gauß-Posen exportieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Localized: "Quaderförmigen Aufnahmebereich hinzufügen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Localized: "Kugelförmigen Aufnahmebereich hinzufügen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Localized: "Halbkugelförmigen Aufnahmebereich hinzufügen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Localized: "Ellipsoidförmigen Aufnahmebereich hinzufügen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Localized: "Posenaufnahme für Gaussian Splatting"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000000
+    m_Localized: "Spielbereich ausrichten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000001
+    m_Localized: "Gemeinsame Ausrichtung festlegen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000002
+    m_Localized: "Gemeinsame Ausrichtung zurücksetzen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000003
+    m_Localized: "Spielbereich erneut ausrichten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000004
+    m_Localized: "Ausrichtung aktualisiert – erneut ausrichten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000005
+    m_Localized: "Gemeinsame Ausrichtung nicht festgelegt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000006
+    m_Localized: "Gemeinsame Ausrichtung wird erfasst"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000007
+    m_Localized: "Gemeinsame Ausrichtung bereit"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000008
+    m_Localized: "Spielbereich ausgerichtet"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000009
+    m_Localized: "Ausrichtung geändert – erneut ausrichten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000010
+    m_Localized: "Ausrichtungsfehler – erneut versuchen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000011
+    m_Localized: "Platziere die Spitze des Controllers am Endpunkt A und drücke den Trigger."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000012
+    m_Localized: "Endpunkt A erfasst. Platziere die Spitze des Controllers am Endpunkt B und drücke den Trigger."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000014
+    m_Localized: "Die Referenz ist zu kurz. Wähle Endpunkte mit mindestens 0,1 Metern Abstand."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000015
+    m_Localized: "Die Referenz benötigt mehr horizontalen Abstand. Wähle eine längere horizontale Kante."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000016
+    m_Localized: "Die Controller-Pose ist ungültig. Überprüfe das Tracking und versuche Endpunkt B erneut."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000017
+    m_Localized: "Die Referenz konnte nicht erfasst werden. Versuche Endpunkt B erneut."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000018
+    m_Localized: "Die Referenz ist ungültig: {0}. Versuche Endpunkt B erneut."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000019
+    m_Localized: "Referenzlänge: {0:F2} m."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000020
+    m_Localized: "Die Ausrichtung ist ungültig: {0}. Versuche Endpunkt B erneut."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000021
+    m_Localized: "Gemessene Länge: {0:F2} m."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000022
+    m_Localized: "Warnung: {0}."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 543158158396841984
+    m_Localized: "Erfasst alle Widgets sowie den aktuellen Kamerapfad, falls dieser sichtbar ist"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

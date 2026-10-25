@@ -4272,6 +4272,122 @@ MonoBehaviour:
     m_Localized: "Activar/desactivar ajuste de trazos de regla"
     m_Metadata:
       m_Items: []
+  - m_Id: 482980427487338496
+    m_Localized: "Exportar poses gaussianas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Localized: "Añadir área de captura en forma de caja"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Localized: "Añadir área de captura esférica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Localized: "Añadir área de captura hemisférica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Localized: "Añadir área de captura elipsoidal"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Localized: "Captura de poses para Gaussian Splatting"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000000
+    m_Localized: "Alinear espacio de juego"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000001
+    m_Localized: "Establecer alineación compartida"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000002
+    m_Localized: "Restablecer alineación compartida"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000003
+    m_Localized: "Realinear espacio de juego"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000004
+    m_Localized: "Alineación actualizada: vuelve a alinear"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000005
+    m_Localized: "Alineación compartida sin establecer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000006
+    m_Localized: "Registrando alineación compartida"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000007
+    m_Localized: "Alineación compartida lista"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000008
+    m_Localized: "Espacio de juego alineado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000009
+    m_Localized: "La alineación ha cambiado: vuelve a alinear"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000010
+    m_Localized: "Error de alineación: vuelve a intentarlo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000011
+    m_Localized: "Coloca la punta del mando en el extremo A y pulsa el gatillo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000012
+    m_Localized: "Extremo A registrado. Coloca la punta del mando en el extremo B y pulsa el gatillo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000014
+    m_Localized: "La referencia es demasiado corta. Elige extremos separados al menos 0,1 metros."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000015
+    m_Localized: "La referencia necesita más separación horizontal. Elige un borde horizontal más largo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000016
+    m_Localized: "La pose del mando no es válida. Comprueba el seguimiento y vuelve a intentar el extremo B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000017
+    m_Localized: "No se pudo registrar la referencia. Vuelve a intentar el extremo B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000018
+    m_Localized: "La referencia no es válida: {0}. Vuelve a intentar el extremo B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000019
+    m_Localized: "Longitud de referencia: {0:F2} m."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000020
+    m_Localized: "La alineación no es válida: {0}. Vuelve a intentar el extremo B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000021
+    m_Localized: "Longitud medida: {0:F2} m."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000022
+    m_Localized: "Advertencia: {0}."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 543158158396841984
+    m_Localized: "Captura todos los objetos y también la ruta de cámara actual si está visible"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

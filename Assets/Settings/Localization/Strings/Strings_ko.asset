@@ -4210,6 +4210,122 @@ MonoBehaviour:
     m_Localized: "직선 도구 스냅 전환"
     m_Metadata:
       m_Items: []
+  - m_Id: 482980427487338496
+    m_Localized: "가우시안 포즈 내보내기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Localized: "상자형 캡처 영역 추가"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Localized: "구형 캡처 영역 추가"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Localized: "반구형 캡처 영역 추가"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Localized: "타원체 캡처 영역 추가"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Localized: "가우시안 스플래팅 포즈 캡처"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000000
+    m_Localized: "플레이 공간 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000001
+    m_Localized: "공유 정렬 설정"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000002
+    m_Localized: "공유 정렬 초기화"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000003
+    m_Localized: "플레이 공간 다시 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000004
+    m_Localized: "정렬 업데이트됨 - 다시 정렬하세요"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000005
+    m_Localized: "공유 정렬이 설정되지 않았습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000006
+    m_Localized: "공유 정렬 기록 중"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000007
+    m_Localized: "공유 정렬 준비 완료"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000008
+    m_Localized: "플레이 공간 정렬 완료"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000009
+    m_Localized: "정렬 변경됨 - 다시 정렬하세요"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000010
+    m_Localized: "정렬 오류 - 다시 시도하세요"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000011
+    m_Localized: "컨트롤러 끝을 끝점 A에 놓고 트리거를 누르세요."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000012
+    m_Localized: "끝점 A가 기록되었습니다. 컨트롤러 끝을 끝점 B에 놓고 트리거를 누르세요."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000014
+    m_Localized: "기준 길이가 너무 짧습니다. 최소 0.1미터 떨어진 끝점을 선택하세요."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000015
+    m_Localized: "기준의 수평 간격이 더 필요합니다. 더 긴 수평 모서리를 선택하세요."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000016
+    m_Localized: "컨트롤러 포즈가 유효하지 않습니다. 추적 상태를 확인하고 끝점 B를 다시 시도하세요."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000017
+    m_Localized: "기준을 기록하지 못했습니다. 끝점 B를 다시 시도하세요."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000018
+    m_Localized: "기준이 유효하지 않습니다: {0}. 끝점 B를 다시 시도하세요."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000019
+    m_Localized: "기준 길이: {0:F2} m."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000020
+    m_Localized: "정렬이 유효하지 않습니다: {0}. 끝점 B를 다시 시도하세요."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000021
+    m_Localized: "측정 길이: {0:F2} m."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000022
+    m_Localized: "경고: {0}."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 543158158396841984
+    m_Localized: "모든 위젯과 현재 카메라 경로가 표시된 경우 해당 경로도 캡처합니다"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

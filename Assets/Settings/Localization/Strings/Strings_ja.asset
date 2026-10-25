@@ -4210,6 +4210,122 @@ MonoBehaviour:
     m_Localized: "直線ツールのスナップを切り替え"
     m_Metadata:
       m_Items: []
+  - m_Id: 482980427487338496
+    m_Localized: "ガウシアンポーズをエクスポート"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Localized: "ボックス型のキャプチャ領域を追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Localized: "球形のキャプチャ領域を追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Localized: "半球形のキャプチャ領域を追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Localized: "楕円体のキャプチャ領域を追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Localized: "ガウシアンスプラッティング用ポーズキャプチャ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000000
+    m_Localized: "プレイスペースを位置合わせ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000001
+    m_Localized: "共有の位置合わせを設定"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000002
+    m_Localized: "共有の位置合わせをリセット"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000003
+    m_Localized: "プレイスペースを再度位置合わせ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000004
+    m_Localized: "位置合わせが更新されました - 再度位置合わせ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000005
+    m_Localized: "共有の位置合わせが未設定です"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000006
+    m_Localized: "共有の位置合わせを記録中"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000007
+    m_Localized: "共有の位置合わせの準備ができました"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000008
+    m_Localized: "プレイスペースの位置合わせが完了しました"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000009
+    m_Localized: "位置合わせが変更されました - 再度位置合わせ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000010
+    m_Localized: "位置合わせエラー - 再試行してください"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000011
+    m_Localized: "コントローラーの先端を端点 A に置き、トリガーを押してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000012
+    m_Localized: "端点 A を記録しました。コントローラーの先端を端点 B に置き、トリガーを押してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000014
+    m_Localized: "基準が短すぎます。0.1 メートル以上離れた端点を選んでください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000015
+    m_Localized: "基準にはさらに水平方向の距離が必要です。より長い水平な辺を選んでください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000016
+    m_Localized: "コントローラーのポーズが無効です。トラッキングを確認し、端点 B を再試行してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000017
+    m_Localized: "基準を記録できませんでした。端点 B を再試行してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000018
+    m_Localized: "基準が無効です: {0}。端点 B を再試行してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000019
+    m_Localized: "基準の長さ: {0:F2} m。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000020
+    m_Localized: "位置合わせが無効です: {0}。端点 B を再試行してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000021
+    m_Localized: "測定した長さ: {0:F2} m。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000022
+    m_Localized: "警告: {0}。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 543158158396841984
+    m_Localized: "すべてのウィジェットと、表示されている場合は現在のカメラパスもキャプチャします"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
