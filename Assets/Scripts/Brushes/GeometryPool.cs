@@ -342,6 +342,8 @@ namespace TiltBrush
         // It is not owned by us; and it's up to the owner of the Mesh to ensure
         // that the Mesh is neither modified nor deleted while we reference it.
         private Mesh m_BackingMesh;
+        // The mesh can retain unused trailing vertices after an index-only tail removal.
+        private int m_LiveBackingMeshVertices;
 
         // This file contains data that can be used to re-fill our buffers.
         // It is owned by us, and we need to delete it when we're finished with it.
@@ -389,7 +391,7 @@ namespace TiltBrush
                 }
                 else if (!ReferenceEquals(m_BackingMesh, null))
                 {
-                    return m_BackingMesh.vertexCount;
+                    return m_LiveBackingMeshVertices;
                 }
                 else if (m_BackingFileInfo != null)
                 {
@@ -407,8 +409,6 @@ namespace TiltBrush
                 {
                     return;
                 }
-                // TODO: it would be nice if we could reduce the # verts without forcing the
-                // data resident -- when we reload the data we can always ignore part of it.
                 EnsureGeometryResident();
                 m_Vertices.SetCount(value);
                 if (m_Layout.bUseNormals)
@@ -449,7 +449,7 @@ namespace TiltBrush
         {
             get
             {
-                if (IsGeometryResident)
+                if (m_Tris != null)
                 {
                     return m_Tris.Count;
                 }
@@ -674,6 +674,7 @@ namespace TiltBrush
             int oldIndexCount = NumTriIndices;
             m_IsResident = false;
             m_BackingMesh = mesh;
+            m_LiveBackingMeshVertices = oldVertexCount;
             ClearBuffers();
             if (oldVertexCount != NumVerts || oldIndexCount != NumTriIndices)
             {
@@ -721,6 +722,23 @@ namespace TiltBrush
             m_Tris = indices;
         }
 
+        /// Shorten a mesh-backed pool without reading its vertex channels. The owner must
+        /// upload the shorter index list; the unchanged vertex buffer may retain an unused tail.
+        public bool TryTruncateColdMesh(int numVerts, int numTriIndices)
+        {
+            if (IsGeometryResident || ReferenceEquals(m_BackingMesh, null)) return false;
+            if (numVerts < 0 || numVerts > NumVerts || numTriIndices < 0 ||
+                numTriIndices > NumTriIndices || numTriIndices % 3 != 0)
+                throw new ArgumentOutOfRangeException();
+            // Bound retained buffer space, including earlier cold trims. Aggressive trims
+            // use the existing full update so a tiny live prefix cannot pin a large mesh.
+            if (m_BackingMesh.vertexCount - numVerts > numVerts) return false;
+            EnsureIndicesResident();
+            m_LiveBackingMeshVertices = numVerts;
+            m_Tris.SetCount(numTriIndices);
+            return true;
+        }
+
         /// Re-fills internal buffers if necessary; after this, IsGeometryResident == true.
         /// Throws exceptions on failure (eg, backing file or mesh no longer exists, backing file
         /// is corrupt, etc)
@@ -759,6 +777,7 @@ namespace TiltBrush
             }
 
             Mesh mesh = m_BackingMesh;
+            int liveVertices = m_LiveBackingMeshVertices;
             m_BackingMesh = null;
             m_IsResident = true;
 
@@ -784,6 +803,8 @@ namespace TiltBrush
                 TexcoordData fromMesh = GetTexcoordDataFromMesh(mesh, channel, txcInfo.size);
                 InternalGetTexcoordDataRef(channel) = fromMesh;
             }
+            // Later vertex edits must not bring a previously removed tail back into the pool.
+            NumVerts = liveVertices;
         }
 
         // Goes from state (m_BackingFileInfo != null) to state (m_IsResident = true).
@@ -1314,8 +1335,8 @@ namespace TiltBrush
                 }
 
                 var subMesh = data.GetSubMesh(0);
-                if (iVert < 0 || nVert < 0 || iVert > data.vertexCount - nVert ||
-                    iTriIndex < 0 || nTriIndex < 0 || iTriIndex > subMesh.indexCount - nTriIndex)
+                if (iVert < 0 || nVert < 0 || iVert > rhs.NumVerts - nVert ||
+                    iTriIndex < 0 || nTriIndex < 0 || iTriIndex > rhs.NumTriIndices - nTriIndex)
                 {
                     throw new ArgumentOutOfRangeException();
                 }

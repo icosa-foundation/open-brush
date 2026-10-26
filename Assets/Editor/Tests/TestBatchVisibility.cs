@@ -109,6 +109,84 @@ namespace TiltBrush
             }
         }
 
+        [TestCase(false, false)]
+        [TestCase(false, true)]
+        [TestCase(true, false)]
+        [TestCase(true, true)]
+        public void ColdTailRemovalPreservesHiddenIndicesWithoutVertexReload(bool uint32, bool inactive)
+        {
+            using (var fixture = new Fixture(uint32))
+            {
+                fixture.Batch.ClearCachedGeometry();
+                var hidden = fixture.Batch.m_Groups[0];
+                fixture.Batch.DisableSubset(hidden);
+                fixture.Batch.DisableSubset(fixture.Batch.m_Groups[2]);
+                fixture.Batch.FlushMeshUpdates();
+                fixture.Batch.ClearCachedGeometry();
+                if (inactive) fixture.Object.SetActive(false);
+                fixture.Batch.RemoveSubset(fixture.Batch.m_Groups[2]);
+                Assert.IsFalse(fixture.Geometry.IsGeometryResident);
+                Assert.IsNull(fixture.Geometry.m_Vertices);
+                Assert.AreEqual(6, fixture.Geometry.NumVerts);
+                Assert.AreEqual(6, fixture.Geometry.NumTriIndices);
+                fixture.Batch.FlushMeshUpdates();
+                CollectionAssert.AreEqual(new[] { 0, 0, 0, 3, 4, 5 }, fixture.Mesh.triangles);
+                Assert.AreEqual(9, fixture.Mesh.vertexCount); // Unreferenced tail stays in the buffer.
+                Assert.AreEqual(fixture.Bounds, fixture.Mesh.bounds);
+
+                fixture.Batch.ClearCachedGeometry();
+                Assert.AreEqual(6, fixture.Geometry.NumVerts);
+                Assert.IsFalse(fixture.Geometry.HasCachedGeometry);
+                fixture.Batch.EnableSubset(hidden);
+                fixture.Batch.FlushMeshUpdates();
+                CollectionAssert.AreEqual(new[] { 0, 1, 2, 3, 4, 5 }, fixture.Mesh.triangles);
+                fixture.Geometry.EnsureGeometryResident();
+                Assert.AreEqual(6, fixture.Geometry.m_Vertices.Count);
+                fixture.Batch.FlushMeshUpdates(); // A metadata read must not force a vertex upload.
+                Assert.AreEqual(9, fixture.Mesh.vertexCount);
+            }
+        }
+
+        [TestCase(false, false)]
+        [TestCase(false, true)]
+        [TestCase(true, false)]
+        [TestCase(true, true)]
+        public void RepeatedColdTailRemovalCompactsExcessUnusedVertices(bool uint32, bool inactive)
+        {
+            var previousConfig = Config.m_SingletonState;
+            var previousCatalog = BrushCatalog.m_Instance;
+            var brush = UnityEditor.AssetDatabase.LoadAssetAtPath<BrushDescriptor>(
+                "Assets/Resources/Brushes/Basic/Flat/Flat.asset");
+            using (var fixture = new Fixture(uint32))
+            {
+                try
+                {
+                    // Full uploads consult Config for the platform's triangle-ID channel.
+                    Config.m_SingletonState = fixture.Object.AddComponent<Config>();
+                    BrushCatalog.m_Instance = fixture.Object.AddComponent<BrushCatalog>();
+                    typeof(BrushCatalog).GetField("m_GuidToBrush", BindingFlags.Instance | BindingFlags.NonPublic)
+                        .SetValue(BrushCatalog.m_Instance, new Dictionary<Guid, BrushDescriptor> { { Guid.Empty, brush } });
+                    fixture.Batch.ClearCachedGeometry();
+                    if (inactive) fixture.Object.SetActive(false);
+                    fixture.Batch.RemoveSubset(fixture.Batch.m_Groups[2]);
+                    fixture.Batch.FlushMeshUpdates();
+                    Assert.IsFalse(fixture.Geometry.IsGeometryResident);
+                    Assert.AreEqual(9, fixture.Mesh.vertexCount);
+
+                    fixture.Batch.RemoveSubset(fixture.Batch.m_Groups[1]);
+                    fixture.Batch.FlushMeshUpdates();
+                    Assert.AreEqual(3, fixture.Geometry.NumVerts);
+                    Assert.AreEqual(3, fixture.Mesh.vertexCount);
+                    CollectionAssert.AreEqual(new[] { 0, 1, 2 }, fixture.Mesh.triangles);
+                }
+                finally
+                {
+                    Config.m_SingletonState = previousConfig;
+                    BrushCatalog.m_Instance = previousCatalog;
+                }
+            }
+        }
+
         [Test]
         public void EmptyRangeAndCleanFlushLeaveTopologyUntouched()
         {

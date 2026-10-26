@@ -237,6 +237,58 @@ namespace TiltBrush
             }
         }
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ColdTruncationSurvivesCopyReloadAndAppend(bool uint32)
+        {
+            var pool = new GeometryPool
+            {
+                Layout = new VertexLayout
+                {
+                    bUseNormals = true, bUseColors = true, bUseTangents = true,
+                    texcoord0 = new TexcoordInfo { size = 2 }
+                }
+            };
+            var copy = new GeometryPool { Layout = pool.Layout };
+            var mesh = new Mesh { indexFormat = uint32 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 };
+            try
+            {
+                for (int i = 0; i < 9; i++)
+                {
+                    pool.m_Vertices.Add(new Vector3(i, 0, 0));
+                    pool.m_Normals.Add(Vector3.up);
+                    pool.m_Colors.Add(new Color32((byte)i, 0, 0, 255));
+                    pool.m_Tangents.Add(new Vector4(1, 0, 0, 1));
+                    pool.m_Texcoord0.v2.Add(new Vector2(i, 0));
+                    pool.m_Tris.Add(i);
+                }
+                mesh.SetVertices(pool.m_Vertices); mesh.SetNormals(pool.m_Normals);
+                mesh.SetColors(pool.m_Colors); mesh.SetTangents(pool.m_Tangents);
+                mesh.SetUVs(0, pool.m_Texcoord0.v2); mesh.SetTriangles(pool.m_Tris, 0);
+                pool.MakeGeometryNotResident(mesh);
+                Assert.IsFalse(pool.TryTruncateColdMesh(3, 3));
+                Assert.AreEqual(9, pool.NumVerts);
+                Assert.AreEqual(9, pool.NumTriIndices);
+                Assert.IsFalse(pool.HasCachedGeometry);
+                Assert.IsTrue(pool.TryTruncateColdMesh(6, 6));
+                pool.m_Tris[0] = pool.m_Tris[1] = pool.m_Tris[2] = 0;
+                Assert.IsFalse(pool.IsGeometryResident);
+                copy.Append(pool, 0, 6, 0, 6);
+                Assert.IsFalse(pool.IsGeometryResident);
+                Assert.Throws<ArgumentOutOfRangeException>(() => copy.Append(pool, 6, 3, 0, 3));
+                Assert.Throws<ArgumentOutOfRangeException>(() => copy.Append(pool, 0, 3, 6, 3));
+                pool.EnsureGeometryResident();
+                string why = "";
+                Assert.IsTrue(AreEqual(pool, copy, ref why), why);
+                CollectionAssert.AreEqual(new[] { 0, 0, 0, 3, 4, 5 }, pool.m_Tris);
+                pool.Append(copy, 3, 3, 3, 3);
+                Assert.AreEqual(9, pool.NumVerts);
+                Assert.AreEqual(copy.m_Vertices[3], pool.m_Vertices[6]);
+                CollectionAssert.AreEqual(new[] { 0, 0, 0, 3, 4, 5, 6, 7, 8 }, pool.m_Tris);
+            }
+            finally { pool.Destroy(); copy.Destroy(); Object.DestroyImmediate(mesh); }
+        }
+
         [Test]
         public void TestLayoutEquality()
         {

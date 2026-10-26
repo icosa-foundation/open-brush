@@ -19,7 +19,7 @@ namespace TiltBrush.Benchmarks
         public sealed class Census
         {
             public int strokes, batchedStrokes, solitaryStrokes, notCreated, batches, residentBatches;
-            public long vertices, indices, cachedIndexBytes, cachedVertexBytes;
+            public long vertices, indices, cachedIndexBytes, cachedVertexBytes, meshVertexBytes, unusedMeshVertexBytes;
         }
         public sealed class Phase
         {
@@ -424,12 +424,23 @@ namespace TiltBrush.Benchmarks
                 solitaryStrokes = strokes.Count(s => s.m_Type == Stroke.Type.BrushStroke), notCreated = strokes.Count(s => s.m_Type == Stroke.Type.NotCreated),
                 batches = batches.Length, residentBatches = batches.Count(b => b.Geometry.IsGeometryResident),
                 vertices = batches.Sum(b => (long)b.Geometry.NumVerts), indices = batches.Sum(b => (long)b.Geometry.NumTriIndices),
+                meshVertexBytes = batches.Sum(b => MeshVertexBytes(b, false)),
+                unusedMeshVertexBytes = batches.Sum(b => MeshVertexBytes(b, true)),
                 cachedIndexBytes = batches.Sum(b => (b.Geometry.m_Tris?.Capacity ?? 0) * 4L),
                 cachedVertexBytes = batches.Sum(b => (b.Geometry.m_Vertices?.Capacity ?? 0) * 12L + (b.Geometry.m_Normals?.Capacity ?? 0) * 12L + (b.Geometry.m_Tangents?.Capacity ?? 0) * 16L + (b.Geometry.m_Colors?.Capacity ?? 0) * 4L
                     + (b.Geometry.m_Texcoord0.v2?.Capacity ?? 0) * 8L + (b.Geometry.m_Texcoord0.v3?.Capacity ?? 0) * 12L + (b.Geometry.m_Texcoord0.v4?.Capacity ?? 0) * 16L
                     + (b.Geometry.m_Texcoord1.v2?.Capacity ?? 0) * 8L + (b.Geometry.m_Texcoord1.v3?.Capacity ?? 0) * 12L + (b.Geometry.m_Texcoord1.v4?.Capacity ?? 0) * 16L
                     + (b.Geometry.m_Texcoord2.v2?.Capacity ?? 0) * 8L + (b.Geometry.m_Texcoord2.v3?.Capacity ?? 0) * 12L + (b.Geometry.m_Texcoord2.v4?.Capacity ?? 0) * 16L)
             };
+        }
+        // Vertex-buffer payload, not driver allocation size or total process/GPU memory.
+        static long MeshVertexBytes(Batch batch, bool unusedOnly)
+        {
+            var mesh = batch.GetComponent<MeshFilter>().sharedMesh;
+            if (mesh == null) return 0;
+            long stride = 0;
+            for (int stream = 0; stream < mesh.vertexBufferCount; stream++) stride += mesh.GetVertexBufferStride(stream);
+            return stride * (unusedOnly ? Math.Max(0, mesh.vertexCount - batch.Geometry.NumVerts) : mesh.vertexCount);
         }
         static void Save()
         {

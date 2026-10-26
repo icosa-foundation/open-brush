@@ -359,6 +359,13 @@ namespace TiltBrush
 
         private void UpdateTopology(Mesh mesh)
         {
+            // A cold tail removal changes the submesh length, even when its dirty range is
+            // entirely beyond the remaining indices. Keep the vertex buffer and bounds intact.
+            if (mesh.GetIndexCount(0) != m_Geometry.NumTriIndices)
+            {
+                mesh.SetTriangles(m_Geometry.m_Tris, 0, calculateBounds: false);
+                return;
+            }
             int start = m_DirtyIndexStart;
             int count = m_DirtyIndexEnd - start;
             if (count <= 0) return;
@@ -568,16 +575,10 @@ namespace TiltBrush
             {
                 int geomVert = m_Geometry.NumVerts;
                 int meshVert = m_MeshFilter.sharedMesh.vertexCount;
-                if (!m_bVertexDataDirty && geomVert != meshVert)
+                // Index-only truncation may leave an unused vertex-buffer tail.
+                if (!m_bVertexDataDirty && geomVert > meshVert)
                 {
-                    if (geomVert == 0 && meshVert == 1)
-                    {
-                        // Special case; the empty batch's initial mesh has a single vert
-                    }
-                    else
-                    {
-                        Debug.LogError("Failed self check: geom verts == mesh verts");
-                    }
+                    Debug.LogError("Failed self check: live geometry exceeds mesh vertices");
                 }
                 if (!m_bTopologyDirty && m_Geometry.NumTriIndices != m_MeshFilter.sharedMesh.GetIndexCount(0))
                 {
@@ -602,9 +603,12 @@ namespace TiltBrush
             // freed, we'll reclaim the space then.
             DisableSubset(subset);
 
+            bool updateVertices = false;
+            bool truncatedTail = false;
             // If this is the last subset, we can free up some space.
             if (iSubset == m_Groups.Count - 1)
             {
+                truncatedTail = true;
                 // It would be incorrect to simply subtract from Num{Verts,TriIndices}, because
                 // there may be dead space before this subset.
                 Debug.Assert(subset.m_StartVertIndex + subset.m_VertLength == m_Geometry.NumVerts);
@@ -627,17 +631,27 @@ namespace TiltBrush
                     // has nothing to preserve, so discard its backing data without reading it.
                     // Reset retains the layout and reuses arrays that are already resident.
                     m_Geometry.Reset();
+                    updateVertices = true;
                 }
-                else
+                // Cold pools keep their vertex buffer and need only the index update below.
+                else if (!m_Geometry.TryTruncateColdMesh(newNumVert, newNumIndices))
                 {
                     m_Geometry.NumVerts = newNumVert;
                     m_Geometry.NumTriIndices = newNumIndices;
+                    updateVertices = true;
                 }
-                DelayedUpdateMesh();
             }
 
             m_Groups.RemoveAt(iSubset);
             subset.m_ParentBatch = null;
+            // Inactive batches upload immediately; their subset metadata must be consistent first.
+            if (updateVertices) DelayedUpdateMesh();
+            else if (truncatedTail)
+            {
+                // An already-hidden subset makes DisableSubset return without dirtying indices.
+                MarkTopologyDirty(m_Geometry.NumTriIndices, m_Geometry.NumTriIndices);
+                if (!gameObject.activeSelf) UpdateMesh();
+            }
             SelfCheck();
         }
 
