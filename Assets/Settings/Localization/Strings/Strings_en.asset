@@ -3948,7 +3948,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000013
-    m_Localized: Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; cancel retries later.
+    m_Localized: "Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; Cancel to exit."
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000014
@@ -4029,6 +4029,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 554342843789434880
     m_Localized: Rotate panels right
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434881
+    m_Localized: "Complexity"
     m_Metadata:
       m_Items: []
   references:
