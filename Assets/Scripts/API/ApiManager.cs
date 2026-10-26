@@ -41,7 +41,6 @@ namespace TiltBrush
 <head><meta charset='UTF-8'></head>
 <body>{0}</body></html>";
 
-
         private FileSystemWatcher m_FileWatcher;
         private string m_UserScriptsPath;
         private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
@@ -809,7 +808,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
         IEnumerator GetRequest(string uri)
         {
 #if  UNITY_EDITOR
-            Debug.Log($"GetRequest: {uri}");
 #endif
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
@@ -864,7 +862,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
             OutgoingApiCommand();
             UpdateCameraView();
         }
-
 
         IEnumerator ScreenCap()
         {

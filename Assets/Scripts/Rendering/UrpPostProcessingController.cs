@@ -146,8 +146,6 @@ namespace TiltBrush
             DisableLegacyPostProcessing();
 
             Camera[] cameras = FindObjectsOfType<Camera>(includeInactive: true);
-            int mainCount = 0;
-            int captureCount = 0;
 
             foreach (Camera camera in cameras)
             {
@@ -168,7 +166,6 @@ namespace TiltBrush
                 if (cameraData == null)
                 {
                     cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
-                    Debug.Log($"{kLogPrefix} Added UniversalAdditionalCameraData to camera {camera.name}.");
                 }
 
                 // URP uses allowXRRendering when it builds eye passes, rather than
@@ -180,30 +177,19 @@ namespace TiltBrush
                     continue;
                 }
                 ApplyCameraBaseline(camera, cameraData, isCapture);
-
-                if (isCapture)
-                {
-                    captureCount++;
-                }
-                else
-                {
-                    mainCount++;
-                }
             }
-
-            Debug.Log($"{kLogPrefix} Camera baseline refreshed. main={mainCount} capture/offscreen={captureCount}.");
         }
 
         public void ConfigureScreenshotCamera(Camera camera, bool enableCaptureEffects)
         {
             RegisterCaptureCamera(camera);
-            ConfigureCaptureCamera(camera, enableCaptureEffects, m_RuntimeCaptureProfile);
+            ConfigureCaptureCamera(camera, enableCaptureEffects);
         }
 
         public void ConfigureDropCamCamera(Camera camera, bool enableCaptureEffects)
         {
             RegisterCaptureCamera(camera);
-            ConfigureCaptureCamera(camera, enableCaptureEffects, m_RuntimeCaptureProfile);
+            ConfigureCaptureCamera(camera, enableCaptureEffects);
         }
 
         public static void ConfigureOffscreenCaptureCamera(Camera camera)
@@ -229,13 +215,12 @@ namespace TiltBrush
         public void SetRecordingPostProcessing(Camera camera, bool enabled)
         {
             RegisterCaptureCamera(camera);
-            ConfigureCaptureCamera(camera, enabled, m_RuntimeCaptureProfile);
+            ConfigureCaptureCamera(camera, enabled);
         }
 
         public void SetCapturePostEffects(bool enabled)
         {
             CameraConfig.PostEffects = enabled;
-            Debug.Log($"{kLogPrefix} Capture post-processing default set to {enabled}.");
         }
 
         public void SetBloomAmount(float amount)
@@ -297,10 +282,7 @@ namespace TiltBrush
             }
 
             camera.allowHDR = m_CurrentHdr;
-            ConfigureCaptureCamera(camera, enablePostProcessing, m_RuntimeCaptureProfile);
-            Debug.Log(
-                $"{kLogPrefix} Capture override camera={camera.name} " +
-                $"post={enablePostProcessing} hdr={camera.allowHDR}.");
+            ConfigureCaptureCamera(camera, enablePostProcessing);
             return state;
         }
 
@@ -322,8 +304,7 @@ namespace TiltBrush
             state.cameraData.volumeTrigger = state.volumeTrigger;
         }
 
-
-        private void ConfigureCaptureCamera(Camera camera, bool enablePostProcessing, VolumeProfile profile)
+        private void ConfigureCaptureCamera(Camera camera, bool enablePostProcessing)
         {
             if (camera == null)
             {
@@ -343,11 +324,6 @@ namespace TiltBrush
             cameraData.renderPostProcessing = enablePostProcessing;
             cameraData.volumeLayerMask = m_VolumeLayerMask;
             cameraData.volumeTrigger = camera.transform;
-
-            if (profile == null)
-            {
-                Debug.Log($"{kLogPrefix} Capture camera {camera.name} has no capture profile yet.");
-            }
         }
 
         private void ApplyQuality(int qualityLevel)
@@ -624,8 +600,6 @@ namespace TiltBrush
             m_RuntimeVolume.priority = 0f;
             m_RuntimeVolume.weight = 1f;
             m_RuntimeVolume.sharedProfile = m_RuntimeMainProfile;
-
-            Debug.Log($"{kLogPrefix} Runtime global Volume created with baseline profile.");
         }
 
         private float GetBloomThreshold()
@@ -688,18 +662,12 @@ namespace TiltBrush
 
         public void DisableLegacyPostProcessing()
         {
-            int disabled = 0;
-            disabled += DisableAll<SENaturalBloomAndDirtyLens>();
-            disabled += DisableAll<FXAA>();
-            disabled += DisableAll<MobileBloom>();
-            disabled += DisableAll<TiltShift>();
-            disabled += DisableAll<Kino.Vignette>();
-            disabled += DisableAll<PostEffectsToggle>();
-
-            if (disabled > 0)
-            {
-                Debug.Log($"{kLogPrefix} Disabled {disabled} legacy post-processing components.");
-            }
+            DisableAll<SENaturalBloomAndDirtyLens>();
+            DisableAll<FXAA>();
+            DisableAll<MobileBloom>();
+            DisableAll<TiltShift>();
+            DisableAll<Kino.Vignette>();
+            DisableAll<PostEffectsToggle>();
         }
 
         private void DisableCompositionLayerEditorEmulationIfUnused()
@@ -737,22 +705,18 @@ namespace TiltBrush
             }
 
             method.Invoke(null, null);
-            Debug.Log($"{kLogPrefix} Disabled Composition Layers editor emulation method {typeName}.{methodName}.");
         }
 #endif
 
-        private static int DisableAll<T>() where T : MonoBehaviour
+        private static void DisableAll<T>() where T : MonoBehaviour
         {
-            int disabled = 0;
             foreach (T component in FindObjectsOfType<T>(includeInactive: true))
             {
                 if (component.enabled)
                 {
                     component.enabled = false;
-                    disabled++;
                 }
             }
-            return disabled;
         }
 
         private void EnsureProfilesIfNeeded()

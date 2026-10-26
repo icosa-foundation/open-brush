@@ -835,7 +835,6 @@ namespace TiltBrush
                 string downloadKey = GetDownloadKey(entry);
                 if (!m_DownloadingSketchKeys.Add(downloadKey))
                 {
-                    Debug.Log($"{LogPrefix} download already in flight for {downloadKey}");
                     RecoverFromSketchLoadFailure("Download already in progress.");
                     return;
                 }
@@ -961,7 +960,6 @@ namespace TiltBrush
             }
 
             SetLoadingMessage("Loading sketch...");
-            Debug.Log($"{LogPrefix} showing loading message and waiting for sketch playback to start");
         }
 
         private void RecoverFromSketchLoadFailure(string message)
@@ -1162,8 +1160,6 @@ namespace TiltBrush
             {
                 AttachPointerCursorHandler(scrollRect.verticalScrollbar.gameObject);
             }
-
-            Debug.Log($"{LogPrefix} bound authored sketch grid scroll view");
         }
 
         private void BindExistingGridUi(RectTransform uiParent)

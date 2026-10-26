@@ -90,8 +90,6 @@ namespace TiltBrush
         private VrControllers m_VrControls;
         public VrControllers VrControls { get { return m_VrControls; } }
         private bool m_HasVrFocus = true;
-        private bool m_HasLoggedForcedUnityXRControllerStyle;
-        private bool m_HasLoggedSteamFrameControllerStyle;
 
         public PassthroughMode PassthroughMode { get; private set; } = PassthroughMode.None;
 
@@ -256,7 +254,6 @@ namespace TiltBrush
             if (App.UserConfig.Flags.DisableXrMode || App.UserConfig.Flags.EnableMonoscopicMode) return;
 
             UnityEngine.XR.OpenXR.OpenXRSettings.SetAllowRecentering(false);
-
         }
 
         void Start()
@@ -304,7 +301,6 @@ namespace TiltBrush
 
         private void OnInputFocus(bool focused)
         {
-            App.Log($"VrSdk.OnInputFocus -> {focused}");
             InputManager.m_Instance.AllowVrControllers = focused;
             m_HasVrFocus = focused;
         }
@@ -671,7 +667,6 @@ namespace TiltBrush
                 Debug.Assert(m_VrControls == null);
                 if (style == ControllerStyle.SteamFrame)
                 {
-                    Debug.Log($"STEAM_FRAME_GEOM_INSTANTIATE_CONTROLS prefab={controlsPrefab.name}");
                 }
                 GameObject controlsObject = Instantiate(controlsPrefab);
                 m_VrControls = controlsObject.GetComponent<VrControllers>();
@@ -836,12 +831,6 @@ namespace TiltBrush
         {
             if (m_ForceControllerStyleForTesting != ControllerStyle.Unset)
             {
-                if (!m_HasLoggedForcedUnityXRControllerStyle)
-                {
-                    Debug.Log(
-                        $"STEAM_FRAME_GEOM_FORCE_STYLE style={m_ForceControllerStyleForTesting} device={device.manufacturer}, {device.name}");
-                    m_HasLoggedForcedUnityXRControllerStyle = true;
-                }
                 return m_ForceControllerStyleForTesting;
             }
 
@@ -861,12 +850,6 @@ namespace TiltBrush
             }
             else if (device.name.Contains("Steam Frame Controller"))
             {
-                if (!m_HasLoggedSteamFrameControllerStyle)
-                {
-                    Debug.Log(
-                        $"STEAM_FRAME_GEOM_DETECTED_STYLE style={ControllerStyle.SteamFrame} device={device.manufacturer}, {device.name}");
-                    m_HasLoggedSteamFrameControllerStyle = true;
-                }
                 return ControllerStyle.SteamFrame;
             }
             else if (device.name.StartsWith("HTC Vive Controller OpenXR"))

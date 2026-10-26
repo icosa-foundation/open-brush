@@ -71,7 +71,6 @@ namespace OpenBrush.Multiplayer
                     StartCoroutine(SendCommandHistory(id));
                     break;
             }
-
         }
 
         #region Syncronization Logic Strokes
@@ -96,7 +95,6 @@ namespace OpenBrush.Multiplayer
                 int percentage = (int)((counter / (float)strokeList.Count) * 100);
                 byte[] strokesData = await MultiplayerStrokeSerialization.SerializeAndCompressMemoryListAsync(chunk);
                 MultiplayerManager.m_Instance.SendLargeDataToPlayer(id, strokesData, percentage);
-                //Debug.Log($"Sent {strokesData.Length} bytes of serialized stroke data (batch {(i / chunkSize) + 1}) to player {id}.");
             }
         }
 
@@ -106,7 +104,6 @@ namespace OpenBrush.Multiplayer
             // Decompress and deserialize strokes asynchronously
             List<Stroke> strokes = await MultiplayerStrokeSerialization.DecompressAndDeserializeMemoryListAsync(largeData);
 
-            Debug.Log($"Successfully deserialized {strokes.Count} strokes.");
 
             // Handle the strokes (e.g., add them to the scene or memory)
             foreach (var stroke in strokes)
@@ -115,12 +112,10 @@ namespace OpenBrush.Multiplayer
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(c, true);
             }
-
         }
 
         void OnLargeDataReceived(byte[] largeData, int percentage)
         {
-            //Debug.Log($"[Multiplayer Scene Sync]Successfully received {largeData.Length} bytes from the autosave.");
 
             SynchInfoPercentageUpdate(percentage);
             DeserializeReceivedStrokes(largeData, percentage);
@@ -171,7 +166,6 @@ namespace OpenBrush.Multiplayer
             foreach (BaseCommand command in commands) MultiplayerManager.m_Instance.OnCommandPerformed(command);
 
             _isSendingCommandHistory = false;
-
         }
 
         private void CreateBrushStrokeCommands(List<Stroke> strokes, int LastTimestamp)
@@ -283,7 +277,6 @@ namespace OpenBrush.Multiplayer
         }
 
         #endregion
-
     }
 
     public enum SyncType

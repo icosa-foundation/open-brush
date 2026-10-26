@@ -856,21 +856,6 @@ namespace TiltBrush
             facingDirection.Normalize();
             SetUIReticleTransform(hitPosition + facingDirection * 0.025f, facingDirection);
             m_UIReticle.SetActive(true);
-
-            if (Time.frameCount % 72 == 0)
-            {
-                foreach (Renderer renderer in m_UIReticle.GetComponentsInChildren<Renderer>(true))
-                {
-                    Debug.Log(
-                        $"ROTATE_RETICLE_RENDERER name={renderer.name} " +
-                        $"enabled={renderer.enabled} " +
-                        $"active={renderer.gameObject.activeInHierarchy} " +
-                        $"position={renderer.transform.position} " +
-                        $"forward={renderer.transform.forward} " +
-                        $"bounds={renderer.bounds.center} " +
-                        $"material={renderer.sharedMaterial?.name}");
-                }
-            }
         }
 
         public void SetUIReticleTransform(Vector3 vPos, Vector3 vForward)
@@ -2723,7 +2708,6 @@ namespace TiltBrush
             }
 
             return false;
-
         }
 
         void UpdateGrab_World()
@@ -5948,5 +5932,4 @@ namespace TiltBrush
             }
         }
     }
-
 } // namespace TiltBrush
