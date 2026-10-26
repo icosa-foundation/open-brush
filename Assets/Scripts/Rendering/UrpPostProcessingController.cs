@@ -60,6 +60,8 @@ namespace TiltBrush
         private bool m_CurrentFxaa;
         private int m_CurrentMsaa = 1;
         private UniversalRenderPipelineAsset m_MsaaPipelineAsset;
+        private RenderPipelineAsset m_PreviousQualityPipeline;
+        private bool m_HasSessionPipelineSettings;
         private int m_PreviousPipelineMsaa;
         private int m_PreviousUnityMsaa;
         private float m_PreviousRenderScale;
@@ -350,6 +352,13 @@ namespace TiltBrush
 
         private void ApplyQuality(int qualityLevel)
         {
+            // A quality change selects a different authored pipeline asset. Keep the
+            // session's buffer settings on an owned runtime copy of that asset.
+            if (SessionMsaaLevel.HasValue)
+            {
+                ApplyMsaa(SessionMsaaLevel.Value);
+            }
+
             if (QualityControls.m_Instance == null)
             {
                 m_CurrentBloomMode = AppQualitySettingLevels.BloomMode.Full;
@@ -420,22 +429,32 @@ namespace TiltBrush
             var pipelineAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
             if (pipelineAsset != m_MsaaPipelineAsset)
             {
-                RestorePipelineMsaa();
-                m_MsaaPipelineAsset = pipelineAsset;
+                ReleaseQualityPipeline();
                 if (pipelineAsset != null)
                 {
-                    m_PreviousPipelineMsaa = pipelineAsset.msaaSampleCount;
-                    m_PreviousUnityMsaa = QualitySettings.antiAliasing;
+                    if (!m_HasSessionPipelineSettings)
+                    {
+                        m_PreviousPipelineMsaa = pipelineAsset.msaaSampleCount;
+                        m_PreviousUnityMsaa = QualitySettings.antiAliasing;
+                        m_HasSessionPipelineSettings = true;
+                    }
+                    m_PreviousQualityPipeline = QualitySettings.renderPipeline;
                     m_PreviousRenderScale = pipelineAsset.renderScale;
+                    m_MsaaPipelineAsset = Instantiate(pipelineAsset);
+                    m_MsaaPipelineAsset.name = $"{pipelineAsset.name} (Runtime)";
+                    m_MsaaPipelineAsset.hideFlags = HideFlags.DontSave;
+                    QualitySettings.renderPipeline = m_MsaaPipelineAsset;
                 }
             }
 
-            if (pipelineAsset != null)
+            if (m_MsaaPipelineAsset != null)
             {
-                pipelineAsset.msaaSampleCount = m_CurrentMsaa;
+                m_MsaaPipelineAsset.msaaSampleCount = m_CurrentMsaa;
                 QualitySettings.antiAliasing = m_CurrentMsaa;
                 // Configure the native sample count once, before XR starts rendering.
-                XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
+                // Later quality changes only replace the pipeline's shadow policy.
+                if (!SessionMsaaLevel.HasValue)
+                    XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
             }
         }
 
@@ -469,19 +488,32 @@ namespace TiltBrush
             return 1;
         }
 
-        private void RestorePipelineMsaa()
+        // Restore the current tier's authored reference before selecting another tier.
+        // Do not reset XR buffer formats/sample counts during a quality change.
+        public void ReleaseQualityPipeline()
         {
             if (m_MsaaPipelineAsset != null)
             {
-                m_MsaaPipelineAsset.msaaSampleCount = m_PreviousPipelineMsaa;
-                m_MsaaPipelineAsset.renderScale = m_PreviousRenderScale;
-                QualitySettings.antiAliasing = m_PreviousUnityMsaa;
-                var displays = new List<XRDisplaySubsystem>();
-                SubsystemManager.GetInstances(displays);
-                if (!displays.Exists(display => display.running))
-                    XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
+                if (QualitySettings.renderPipeline == m_MsaaPipelineAsset)
+                {
+                    QualitySettings.renderPipeline = m_PreviousQualityPipeline;
+                }
+                Destroy(m_MsaaPipelineAsset);
                 m_MsaaPipelineAsset = null;
+                m_PreviousQualityPipeline = null;
             }
+        }
+
+        private void RestorePipelineMsaa()
+        {
+            ReleaseQualityPipeline();
+            if (!m_HasSessionPipelineSettings) return;
+            QualitySettings.antiAliasing = m_PreviousUnityMsaa;
+            var displays = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetInstances(displays);
+            if (!displays.Exists(display => display.running))
+                XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
+            m_HasSessionPipelineSettings = false;
         }
 
         private void OnPostEffectsChanged()
