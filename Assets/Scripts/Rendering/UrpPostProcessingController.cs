@@ -499,6 +499,10 @@ namespace TiltBrush
             cameraData.renderPostProcessing =
                 (isCapture || m_EnablePostProcessingOnMainCameras) && CameraConfig.PostEffects;
             camera.allowHDR = m_CurrentHdr;
+#if OPEN_BRUSH_ANDROID_XR
+            // URP's intermediate textures and final XR viewport must use the same scale.
+            camera.allowDynamicResolution = !isCapture && cameraData.allowXRRendering;
+#endif
 
             if (!isCapture)
             {
