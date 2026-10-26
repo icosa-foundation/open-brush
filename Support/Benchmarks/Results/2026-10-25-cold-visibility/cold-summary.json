@@ -1,0 +1,581 @@
+{
+  "before": [
+    "cold-baseline-01",
+    "cold-baseline-02"
+  ],
+  "after": [
+    "cold-after-01",
+    "cold-after-02",
+    "cold-after-03"
+  ],
+  "environment": {
+    "unity": "6000.6.0f1",
+    "platform": "WindowsEditor",
+    "cpu": "AMD Ryzen 7 7800X3D 8-Core Processor ",
+    "graphicsDevice": "NVIDIA GeForce RTX 4090",
+    "graphicsApi": "Direct3D12"
+  },
+  "scope": "Production Batch.DisableSubset/EnableSubset and FlushMeshUpdates CPU time per hide+show pair. No rendering/GPU fence. Cold prepares eviction outside timing. Allocation probes use a global Unity counter outside timing.",
+  "results": [
+    {
+      "case": "small_single",
+      "before_median_ms": 0.00510625,
+      "after_median_ms": 0.00520625,
+      "speedup": 0.9807923169267707,
+      "before_p95_ms": 0.0058625,
+      "after_p95_ms": 0.0056125,
+      "before_allocated_bytes": [
+        0,
+        0
+      ],
+      "after_allocated_bytes": [
+        0,
+        0
+      ],
+      "before_run_medians_ms": [
+        0.0050875,
+        0.00511875
+      ],
+      "after_run_medians_ms": [
+        0.00523125,
+        0.0052,
+        0.0052
+      ],
+      "mesh_bytes_before": 114232,
+      "mesh_bytes_after": 114232,
+      "index_count": 1536,
+      "changed_indices": 192,
+      "before_geometryResidentAfterCycle": [
+        true,
+        true
+      ],
+      "after_geometryResidentAfterCycle": [
+        true,
+        true,
+        true
+      ],
+      "before_cachedIndexPayloadBytes": [
+        6144,
+        6144
+      ],
+      "after_cachedIndexPayloadBytes": [
+        6144,
+        6144,
+        6144
+      ],
+      "before_cachedVertexPayloadBytes": [
+        53248,
+        53248
+      ],
+      "after_cachedVertexPayloadBytes": [
+        53248,
+        53248,
+        53248
+      ]
+    },
+    {
+      "case": "large_single",
+      "before_median_ms": 0.00511875,
+      "after_median_ms": 0.005175,
+      "speedup": 0.9891304347826088,
+      "before_p95_ms": 0.0056125,
+      "after_p95_ms": 0.00589375,
+      "before_allocated_bytes": [
+        0,
+        0
+      ],
+      "after_allocated_bytes": [
+        0,
+        0
+      ],
+      "before_run_medians_ms": [
+        0.0051125,
+        0.005175
+      ],
+      "after_run_medians_ms": [
+        0.005225,
+        0.00515625,
+        0.00516875
+      ],
+      "mesh_bytes_before": 1761152,
+      "mesh_bytes_after": 1761152,
+      "index_count": 23994,
+      "changed_indices": 192,
+      "before_geometryResidentAfterCycle": [
+        true,
+        true
+      ],
+      "after_geometryResidentAfterCycle": [
+        true,
+        true,
+        true
+      ],
+      "before_cachedIndexPayloadBytes": [
+        98304,
+        98304
+      ],
+      "after_cachedIndexPayloadBytes": [
+        98304,
+        98304,
+        98304
+      ],
+      "before_cachedVertexPayloadBytes": [
+        851968,
+        851968
+      ],
+      "after_cachedVertexPayloadBytes": [
+        851968,
+        851968,
+        851968
+      ]
+    },
+    {
+      "case": "large_adjacent",
+      "before_median_ms": 0.02205625,
+      "after_median_ms": 0.0225375,
+      "speedup": 0.9786466999445369,
+      "before_p95_ms": 0.02345625,
+      "after_p95_ms": 0.02954375,
+      "before_allocated_bytes": [
+        0,
+        0
+      ],
+      "after_allocated_bytes": [
+        0,
+        0
+      ],
+      "before_run_medians_ms": [
+        0.02218125,
+        0.02195
+      ],
+      "after_run_medians_ms": [
+        0.0224625,
+        0.02258125,
+        0.0226375
+      ],
+      "mesh_bytes_before": 1761152,
+      "mesh_bytes_after": 1761152,
+      "index_count": 23994,
+      "changed_indices": 1536,
+      "before_geometryResidentAfterCycle": [
+        true,
+        true
+      ],
+      "after_geometryResidentAfterCycle": [
+        true,
+        true,
+        true
+      ],
+      "before_cachedIndexPayloadBytes": [
+        98304,
+        98304
+      ],
+      "after_cachedIndexPayloadBytes": [
+        98304,
+        98304,
+        98304
+      ],
+      "before_cachedVertexPayloadBytes": [
+        851968,
+        851968
+      ],
+      "after_cachedVertexPayloadBytes": [
+        851968,
+        851968,
+        851968
+      ]
+    },
+    {
+      "case": "large_spread",
+      "before_median_ms": 0.047084375,
+      "after_median_ms": 0.0474875,
+      "speedup": 0.9915109239273492,
+      "before_p95_ms": 0.0498875,
+      "after_p95_ms": 0.05070625,
+      "before_allocated_bytes": [
+        0,
+        0
+      ],
+      "after_allocated_bytes": [
+        0,
+        0
+      ],
+      "before_run_medians_ms": [
+        0.047275,
+        0.047025
+      ],
+      "after_run_medians_ms": [
+        0.0472125,
+        0.04768125,
+        0.04753125
+      ],
+      "mesh_bytes_before": 1761152,
+      "mesh_bytes_after": 1761152,
+      "index_count": 23994,
+      "changed_indices": 570,
+      "before_geometryResidentAfterCycle": [
+        true,
+        true
+      ],
+      "after_geometryResidentAfterCycle": [
+        true,
+        true,
+        true
+      ],
+      "before_cachedIndexPayloadBytes": [
+        98304,
+        98304
+      ],
+      "after_cachedIndexPayloadBytes": [
+        98304,
+        98304,
+        98304
+      ],
+      "before_cachedVertexPayloadBytes": [
+        851968,
+        851968
+      ],
+      "after_cachedVertexPayloadBytes": [
+        851968,
+        851968,
+        851968
+      ]
+    },
+    {
+      "case": "large_all",
+      "before_median_ms": 0.236471875,
+      "after_median_ms": 0.2419875,
+      "speedup": 0.9772069838318095,
+      "before_p95_ms": 0.243075,
+      "after_p95_ms": 0.3572375,
+      "before_allocated_bytes": [
+        0,
+        0
+      ],
+      "after_allocated_bytes": [
+        0,
+        0
+      ],
+      "before_run_medians_ms": [
+        0.23794375,
+        0.23535
+      ],
+      "after_run_medians_ms": [
+        0.24325,
+        0.24071875,
+        0.2431375
+      ],
+      "mesh_bytes_before": 1761152,
+      "mesh_bytes_after": 1761152,
+      "index_count": 23994,
+      "changed_indices": 23994,
+      "before_geometryResidentAfterCycle": [
+        true,
+        true
+      ],
+      "after_geometryResidentAfterCycle": [
+        true,
+        true,
+        true
+      ],
+      "before_cachedIndexPayloadBytes": [
+        98304,
+        98304
+      ],
+      "after_cachedIndexPayloadBytes": [
+        98304,
+        98304,
+        98304
+      ],
+      "before_cachedVertexPayloadBytes": [
+        851968,
+        851968
+      ],
+      "after_cachedVertexPayloadBytes": [
+        851968,
+        851968,
+        851968
+      ]
+    },
+    {
+      "case": "large_cold_single",
+      "before_median_ms": 0.10735,
+      "after_median_ms": 0.0158,
+      "speedup": 6.794303797468354,
+      "before_p95_ms": 2.8091,
+      "after_p95_ms": 0.0207,
+      "before_allocated_bytes": [
+        928200,
+        928200
+      ],
+      "after_allocated_bytes": [
+        96048,
+        96048
+      ],
+      "before_run_medians_ms": [
+        0.101,
+        0.136
+      ],
+      "after_run_medians_ms": [
+        0.0158,
+        0.0159,
+        0.0157
+      ],
+      "mesh_bytes_before": 1761152,
+      "mesh_bytes_after": 1761152,
+      "index_count": 23994,
+      "changed_indices": 192,
+      "before_geometryResidentAfterCycle": [
+        true,
+        true
+      ],
+      "after_geometryResidentAfterCycle": [
+        false,
+        false,
+        false
+      ],
+      "before_cachedIndexPayloadBytes": [
+        95976,
+        95976
+      ],
+      "after_cachedIndexPayloadBytes": [
+        95976,
+        95976,
+        95976
+      ],
+      "before_cachedVertexPayloadBytes": [
+        831792,
+        831792
+      ],
+      "after_cachedVertexPayloadBytes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "large_uint32_single",
+      "before_median_ms": 0.00406875,
+      "after_median_ms": 0.00410625,
+      "speedup": 0.9908675799086759,
+      "before_p95_ms": 0.00435,
+      "after_p95_ms": 0.00460625,
+      "before_allocated_bytes": [
+        0,
+        0
+      ],
+      "after_allocated_bytes": [
+        0,
+        0
+      ],
+      "before_run_medians_ms": [
+        0.00409375,
+        0.00406875
+      ],
+      "after_run_medians_ms": [
+        0.00410625,
+        0.00403125,
+        0.0042125
+      ],
+      "mesh_bytes_before": 1857128,
+      "mesh_bytes_after": 1857128,
+      "index_count": 23994,
+      "changed_indices": 192,
+      "before_geometryResidentAfterCycle": [
+        true,
+        true
+      ],
+      "after_geometryResidentAfterCycle": [
+        true,
+        true,
+        true
+      ],
+      "before_cachedIndexPayloadBytes": [
+        98304,
+        98304
+      ],
+      "after_cachedIndexPayloadBytes": [
+        98304,
+        98304,
+        98304
+      ],
+      "before_cachedVertexPayloadBytes": [
+        851968,
+        851968
+      ],
+      "after_cachedVertexPayloadBytes": [
+        851968,
+        851968,
+        851968
+      ]
+    },
+    {
+      "case": "large_cold_adjacent",
+      "before_median_ms": 0.1191,
+      "after_median_ms": 0.0309,
+      "speedup": 3.854368932038835,
+      "before_p95_ms": 0.1578,
+      "after_p95_ms": 0.0594,
+      "before_allocated_bytes": [
+        928200,
+        928200
+      ],
+      "after_allocated_bytes": [
+        96048,
+        96048
+      ],
+      "before_run_medians_ms": [
+        0.1191,
+        0.119
+      ],
+      "after_run_medians_ms": [
+        0.0304,
+        0.0553,
+        0.0301
+      ],
+      "mesh_bytes_before": 1761152,
+      "mesh_bytes_after": 1761152,
+      "index_count": 23994,
+      "changed_indices": 1536,
+      "before_geometryResidentAfterCycle": [
+        true,
+        true
+      ],
+      "after_geometryResidentAfterCycle": [
+        false,
+        false,
+        false
+      ],
+      "before_cachedIndexPayloadBytes": [
+        95976,
+        95976
+      ],
+      "after_cachedIndexPayloadBytes": [
+        95976,
+        95976,
+        95976
+      ],
+      "before_cachedVertexPayloadBytes": [
+        831792,
+        831792
+      ],
+      "after_cachedVertexPayloadBytes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "large_cold_all",
+      "before_median_ms": 0.33865,
+      "after_median_ms": 0.226,
+      "speedup": 1.4984513274336284,
+      "before_p95_ms": 0.373,
+      "after_p95_ms": 0.4052,
+      "before_allocated_bytes": [
+        928200,
+        928200
+      ],
+      "after_allocated_bytes": [
+        96048,
+        96048
+      ],
+      "before_run_medians_ms": [
+        0.3379,
+        0.3398
+      ],
+      "after_run_medians_ms": [
+        0.2153,
+        0.3042,
+        0.2211
+      ],
+      "mesh_bytes_before": 1761152,
+      "mesh_bytes_after": 1761152,
+      "index_count": 23994,
+      "changed_indices": 23994,
+      "before_geometryResidentAfterCycle": [
+        true,
+        true
+      ],
+      "after_geometryResidentAfterCycle": [
+        false,
+        false,
+        false
+      ],
+      "before_cachedIndexPayloadBytes": [
+        95976,
+        95976
+      ],
+      "after_cachedIndexPayloadBytes": [
+        95976,
+        95976,
+        95976
+      ],
+      "before_cachedVertexPayloadBytes": [
+        831792,
+        831792
+      ],
+      "after_cachedVertexPayloadBytes": [
+        0,
+        0,
+        0
+      ]
+    },
+    {
+      "case": "large_cold_uint32_single",
+      "before_median_ms": 0.09855,
+      "after_median_ms": 0.0102,
+      "speedup": 9.661764705882351,
+      "before_p95_ms": 0.1278,
+      "after_p95_ms": 0.0188,
+      "before_allocated_bytes": [
+        928200,
+        928200
+      ],
+      "after_allocated_bytes": [
+        96048,
+        96048
+      ],
+      "before_run_medians_ms": [
+        0.1008,
+        0.0983
+      ],
+      "after_run_medians_ms": [
+        0.0095,
+        0.0143,
+        0.0099
+      ],
+      "mesh_bytes_before": 1857128,
+      "mesh_bytes_after": 1857128,
+      "index_count": 23994,
+      "changed_indices": 192,
+      "before_geometryResidentAfterCycle": [
+        true,
+        true
+      ],
+      "after_geometryResidentAfterCycle": [
+        false,
+        false,
+        false
+      ],
+      "before_cachedIndexPayloadBytes": [
+        95976,
+        95976
+      ],
+      "after_cachedIndexPayloadBytes": [
+        95976,
+        95976,
+        95976
+      ],
+      "before_cachedVertexPayloadBytes": [
+        831792,
+        831792
+      ],
+      "after_cachedVertexPayloadBytes": [
+        0,
+        0,
+        0
+      ]
+    }
+  ]
+}

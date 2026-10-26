@@ -1,0 +1,55 @@
+{
+  "status": "completed",
+  "duration": 0.32,
+  "summary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "skipped": 0,
+    "inconclusive": 0
+  },
+  "results": [
+    {
+      "FullName": "TiltBrush.TestBatchVisibility.EmptyRangeAndCleanFlushLeaveTopologyUntouched",
+      "Status": "Passed",
+      "Duration": 0.01831,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "TiltBrush.TestBatchVisibility.ScatteredEditsCoalesceAndRestoreWithoutMovingIndices",
+      "Status": "Passed",
+      "Duration": 0.0011936,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "TiltBrush.TestBatchVisibility.SingleSubsetRoundTripsWithoutChangingOtherIndicesOrBounds(False,False)",
+      "Status": "Passed",
+      "Duration": 0.0024164,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "TiltBrush.TestBatchVisibility.SingleSubsetRoundTripsWithoutChangingOtherIndicesOrBounds(False,True)",
+      "Status": "Passed",
+      "Duration": 0.0023271,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "TiltBrush.TestBatchVisibility.SingleSubsetRoundTripsWithoutChangingOtherIndicesOrBounds(True,False)",
+      "Status": "Passed",
+      "Duration": 0.0014,
+      "Message": null,
+      "StackTrace": null
+    },
+    {
+      "FullName": "TiltBrush.TestBatchVisibility.SingleSubsetRoundTripsWithoutChangingOtherIndicesOrBounds(True,True)",
+      "Status": "Passed",
+      "Duration": 0.0009517,
+      "Message": null,
+      "StackTrace": null
+    }
+  ]
+}
