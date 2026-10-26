@@ -364,7 +364,7 @@ namespace TiltBrush
             App.VrSdk.SetFixedFoveation(foveation);
 
             // Render-buffer settings belong to the session, not Unity's quality presets.
-            UrpPostProcessingController.Instance?.ReleaseQualityPipeline();
+            UrpPostProcessingController.Instance?.PrepareQualityLevelChange(value);
             QualitySettings.SetQualityLevel(value, applyExpensiveChanges: false);
             if (UrpPostProcessingController.Instance?.SessionMsaaLevel != null)
                 QualitySettings.antiAliasing = MSAALevel;

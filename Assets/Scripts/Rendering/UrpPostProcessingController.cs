@@ -328,8 +328,8 @@ namespace TiltBrush
 
         private void ApplyQuality(int qualityLevel)
         {
-            // A quality change selects a different authored pipeline asset. Keep the
-            // session's buffer settings on an owned runtime copy of that asset.
+            // Keep the session's buffer settings on an owned runtime copy of the
+            // tier's authored asset, reusing it across tiers that share the asset.
             if (SessionMsaaLevel.HasValue)
             {
                 ApplyMsaa(SessionMsaaLevel.Value);
@@ -403,7 +403,16 @@ namespace TiltBrush
             }
 
             var pipelineAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
-            if (pipelineAsset != m_MsaaPipelineAsset)
+            // PrepareQualityLevelChange restores the authored tier reference before Unity
+            // switches levels. Reattach our existing copy when the next tier uses the
+            // same asset; destroying it would tear down the live URP renderer and targets.
+            var authoredPipeline = m_PreviousQualityPipeline != null
+                ? m_PreviousQualityPipeline : GraphicsSettings.defaultRenderPipeline;
+            if (m_MsaaPipelineAsset != null && pipelineAsset == authoredPipeline)
+            {
+                QualitySettings.renderPipeline = m_MsaaPipelineAsset;
+            }
+            else if (pipelineAsset != m_MsaaPipelineAsset)
             {
                 ReleaseQualityPipeline();
                 if (pipelineAsset != null)
@@ -464,9 +473,33 @@ namespace TiltBrush
             return 1;
         }
 
-        // Restore the current tier's authored reference before selecting another tier.
-        // Do not reset XR buffer formats/sample counts during a quality change.
-        public void ReleaseQualityPipeline()
+        // QualitySettings.renderPipeline overrides the current tier, so restore that
+        // slot before switching. Keep the runtime asset alive across matching tiers:
+        // RenderPipelineAsset.OnDisable tears down the active render pipeline.
+        public void PrepareQualityLevelChange(int qualityLevel)
+        {
+            if (m_MsaaPipelineAsset == null) return;
+
+            RenderPipelineAsset nextPipeline = QualitySettings.GetRenderPipelineAssetAt(qualityLevel);
+            if (nextPipeline == m_MsaaPipelineAsset) nextPipeline = m_PreviousQualityPipeline;
+            RenderPipelineAsset currentPipeline = m_PreviousQualityPipeline != null
+                ? m_PreviousQualityPipeline : GraphicsSettings.defaultRenderPipeline;
+            RenderPipelineAsset nextEffectivePipeline = nextPipeline != null
+                ? nextPipeline : GraphicsSettings.defaultRenderPipeline;
+            bool reusePipeline = nextEffectivePipeline == currentPipeline;
+
+            string transition = $"{QualitySettings.GetQualityLevel()} -> {qualityLevel}";
+            var pipelineId = m_MsaaPipelineAsset.GetEntityId();
+            Debug.Log($"[OB_GPU_LIFETIME] Quality {transition}; reuse={reusePipeline}; pipeline={pipelineId}; fps={QualityControls.m_Instance?.FramesInLastSecond}; msaa={m_CurrentMsaa}");
+
+            if (QualitySettings.renderPipeline == m_MsaaPipelineAsset)
+                QualitySettings.renderPipeline = m_PreviousQualityPipeline;
+
+            if (reusePipeline) m_PreviousQualityPipeline = nextPipeline;
+            else ReleaseQualityPipeline();
+        }
+
+        private void ReleaseQualityPipeline()
         {
             if (m_MsaaPipelineAsset != null)
             {
