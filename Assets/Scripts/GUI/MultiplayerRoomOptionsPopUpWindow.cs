@@ -43,7 +43,6 @@ namespace TiltBrush
                     throw new InvalidOperationException("MultiplayerManager is not initialized.");
                 return MultiplayerManager.m_Instance.m_RemotePlayers;
             }
-
         }
 
         public ITransientData<PlayerRigData> m_LocalPlayer
@@ -172,29 +171,23 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.Null:
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerMutePlayerForMe:
-                    Debug.Log($"ToggleAudioMuteForPlayer: {button.IsToggledOn}::{button.playerId}");
                     MultiplayerManager.m_Instance.MutePlayerForMe(button.IsToggledOn, button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerPlayerMuteForAll:
-                    Debug.Log($"MutePlayerForAll: {button.IsToggledOn}::{button.playerId}");
                     MultiplayerManager.m_Instance.MutePlayerForAll(button.IsToggledOn, button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerTransferRoomOwnership:
-                    Debug.Log($"RoomOwnershipTransferToUser: {button.IsToggledOn}::{button.playerId}");
                     MultiplayerManager.m_Instance.RoomOwnershipTransferToUser(button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerViewOnlyMode:
-                    Debug.Log($"SetUserViewOnlyMode: {button.IsToggledOn}::{button.playerId}");
                     MultiplayerManager.m_Instance.SetUserViewOnlyMode(button.IsToggledOn, button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerKickPlayerOut:
-                    Debug.Log($"KickPlayerOut: {button.IsToggledOn}::{button.playerId}");
                     MultiplayerManager.m_Instance.KickPlayerOut(button.playerId);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerMuteAllForMe:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        Debug.Log($"ToggleAllUserAudio: {button.IsToggledOn}::{remotePlayer}");
                         MultiplayerAudioSourcesManager.m_Instance.SetMuteForPlayer(remotePlayer.PlayerId, button.IsToggledOn);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
                         if (playerComponent) playerComponent.SetAudioToggleState(button.IsToggledOn);
@@ -203,7 +196,6 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.MultiplayerMuteAllForAll:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        Debug.Log($"ToggleAllUserAudioForAll: {button.IsToggledOn}::{remotePlayer}");
                         MultiplayerManager.m_Instance.MutePlayerForAll(button.IsToggledOn, remotePlayer.PlayerId);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
                         if (playerComponent) playerComponent.SetAudioForAllToggleState(button.IsToggledOn);
@@ -212,18 +204,15 @@ namespace TiltBrush
                 case SketchControlsScript.GlobalCommands.MultiplayerSetAllViewOnly:
                     foreach (var remotePlayer in m_RemotePlayers.List)
                     {
-                        Debug.Log($"ToggleAllUserViewEditMode: {button.IsToggledOn}::{remotePlayer}");
                         MultiplayerManager.m_Instance.SetUserViewOnlyMode(button.IsToggledOn, remotePlayer.PlayerId);
                         PlayerListItemPrefab playerComponent = GetGameobjectWithPlayerId(remotePlayer.PlayerId);
                         if (playerComponent) playerComponent.SetViewOnlyToggleState(button.IsToggledOn);
                     }
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerSetRoomViewOnly:
-                    Debug.Log($"SetRoomViewOnly: {button.IsToggledOn}");
                     MultiplayerManager.m_Instance.SetRoomViewOnly(button.IsToggledOn);
                     break;
                 case SketchControlsScript.GlobalCommands.MultiplayerSetRoomSilent:
-                    Debug.Log($"SetRoomSilent: {button.IsToggledOn}");
                     MultiplayerManager.m_Instance.SetRoomSilent(button.IsToggledOn);
                     break;
             }
@@ -248,10 +237,8 @@ namespace TiltBrush
 
             Vector3 topEdgeCenter = (topLeft + topRight) / 2;
             UnityEditor.Handles.Label(topEdgeCenter, "Player List Area");
-
         }
 #endif
-
 
     }
 } // namespace TiltBrush

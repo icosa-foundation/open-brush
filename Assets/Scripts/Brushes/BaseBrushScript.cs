@@ -295,6 +295,14 @@ namespace TiltBrush
         /// render thread.
         public abstract void ApplyChangesToVisuals();
 
+        /// Flush pending geometry before FinalizeBatchedBrush consumes it. Brushes may avoid
+        /// updating their temporary display mesh, which is discarded immediately after batching.
+        /// The default preserves visual-update behavior for brushes without a separate geometry path.
+        public virtual void PrepareForBatching()
+        {
+            ApplyChangesToVisuals();
+        }
+
         public virtual void HideBrush(bool bHide)
         {
             gameObject.SetActive(!bHide);

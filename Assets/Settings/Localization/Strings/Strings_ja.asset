@@ -3451,7 +3451,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: 
+    m_Localized: "Open Brush スケッチビューアー"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3515,7 +3515,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: 
+    m_Localized: "パススルーに対応していないヘッドセットを使用しているユーザーがいる可能性があります"
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928
@@ -3584,6 +3584,778 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 326871757446639616
     m_Localized: "\u3059\u3079\u3066\u306E\u30D7\u30EC\u30A4\u30E4\u30FC\u306B\u7DE8\u96C6\u3092\u8A31\u53EF\u3059\u308B"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89041955544915968
+    m_Localized: "メディアライブラリ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Localized: "開く"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634182
+    m_Localized: "位置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022786
+    m_Localized: "ミラーを呼び出します"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: "閉じる"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312781662766833664
+    m_Localized: "ステータス："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641902376607744
+    m_Localized: "メディアライブラリ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930412489482241
+    m_Localized: "すべてのモデル"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977409
+    m_Localized: "すべてのモデル"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89043032713486336
+    m_Localized: "クリックして読み込む"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044237590224896
+    m_Localized: "ローカルモデル"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044379697438720
+    m_Localized: "ローカル動画"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044625424932864
+    m_Localized: "ローカル画像"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89061114353836032
+    m_Localized: "メディアを追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064741239808000
+    m_Localized: "手順を見る"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89072407659962368
+    m_Localized: "メディアを追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074692188299264
+    m_Localized: "後方にスキップ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074820936654848
+    m_Localized: "再生 / 一時停止"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074884501331968
+    m_Localized: "前方にスキップ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093320602312704
+    m_Localized: "左右の手を入れ替える"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207223535591424
+    m_Localized: "煙"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106429517453328384
+    m_Localized: "背景画像"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103924956079587328
+    m_Localized: "スケッチの名前を変更"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103943359016206336
+    m_Localized: "変形ツール"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109424659466551296
+    m_Localized: "選択範囲を塗り直す"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584125108224
+    m_Localized: "X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634183
+    m_Localized: "回転"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634184
+    m_Localized: "整列"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828482
+    m_Localized: "X 軸で整列"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828483
+    m_Localized: "Y 軸で整列"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828484
+    m_Localized: "Z 軸で整列"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828485
+    m_Localized: "整列基準:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828486
+    m_Localized: "左端 / 下端 / 前端"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828487
+    m_Localized: "中心"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828488
+    m_Localized: "右端 / 上端 / 後端"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828489
+    m_Localized: "回転を揃える"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828490
+    m_Localized: "分布:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828491
+    m_Localized: "X 軸に分布"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828492
+    m_Localized: "Y 軸に分布"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828493
+    m_Localized: "Z 軸に分布"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828494
+    m_Localized: "分布基準:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828495
+    m_Localized: "間隔"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828499
+    m_Localized: "オプション"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251051561549824
+    m_Localized: "ウェブカメラ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251441224974336
+    m_Localized: "前のデバイス"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251554584428544
+    m_Localized: "次のデバイス"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141243230077059072
+    m_Localized: "深度"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144201565051027456
+    m_Localized: "オーディオクリップ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Localized: "オーディオクリップ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 137988464450723840
+    m_Localized: "選択範囲を現在のレイヤーに移動"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094550989828096
+    m_Localized: "エラー"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147809767845167104
+    m_Localized: "言語を変更"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147811113256255488
+    m_Localized: "言語"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Localized: "キャンバスの位置をリセット"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Localized: "キャンバスの位置を固定"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Localized: "キャンバスの位置の固定を解除"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 224363142209691648
+    m_Localized: "サブフォルダーを選択"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 234808679492837376
+    m_Localized: "保存したストローク"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Localized: "保存したストローク"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238556149774557184
+    m_Localized: "画像が大きすぎて読み込めません"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238935604850335744
+    m_Localized: "画像が大きすぎて読み込めません"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 242372529028341760
+    m_Localized: "画像を読み込めませんでした"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276171365497266176
+    m_Localized: "ブラシサイズ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636550056648704
+    m_Localized: "接続"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637000357126144
+    m_Localized: "切断"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Localized: "オプション"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Localized: "タイトルで検索"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Localized: "絞り込みと並べ替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941283698237440
+    m_Localized: "全員に対してミュート"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941524061216768
+    m_Localized: "全員に対してミュート"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341358942189346816
+    m_Localized: "このルーム名は使用できます"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341359317994790912
+    m_Localized: "ルームはすでに存在します"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 369886448819200000
+    m_Localized: "すべて"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397532058527293440
+    m_Localized: "ログインしていません"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456507319803904
+    m_Localized: "Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456718544953344
+    m_Localized: "Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433407381692416
+    m_Localized: "次へ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Localized: "前へ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522174996334338048
+    m_Localized: "360"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 533423339270135808
+    m_Localized: "コードを手動で入力"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843705548800
+    m_Localized: "パネルを左に回転"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Localized: "パネルを右に回転"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634176
+    m_Localized: "現在の選択範囲をスナップ:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634177
+    m_Localized: "X 方向の位置スナップを切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634178
+    m_Localized: "Y 方向の位置スナップを切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634179
+    m_Localized: "Z 方向の位置スナップを切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634180
+    m_Localized: "選択範囲をグリッドにスナップ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634181
+    m_Localized: "選択範囲の回転角度をスナップ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634185
+    m_Localized: "X 方向の位置固定を切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634186
+    m_Localized: "Y 方向の位置固定を切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634187
+    m_Localized: "Z 方向の位置固定を切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634188
+    m_Localized: "X 軸の回転固定を切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828480
+    m_Localized: "Y 軸の回転固定を切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828481
+    m_Localized: "Z 軸の回転固定を切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828496
+    m_Localized: "マルチミラー"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828497
+    m_Localized: "点対称"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828498
+    m_Localized: "壁紙対称"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828500
+    m_Localized: "色相に影響"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828501
+    m_Localized: "彩度に影響"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828502
+    m_Localized: "明度に影響"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828505
+    m_Localized: "正弦波"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828506
+    m_Localized: "三角波"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828507
+    m_Localized: "のこぎり波"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022784
+    m_Localized: "矩形波"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022785
+    m_Localized: "ノイズ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128978688454426624
+    m_Localized: "つかんだオブジェクトをガイドにスナップしますか？"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128979151367176192
+    m_Localized: "ガイドへのスナップを切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129010807801118720
+    m_Localized: "対称次数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011310442315776
+    m_Localized: "X 方向の繰り返し"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011387676229632
+    m_Localized: "Y 方向の繰り返し"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011445721202688
+    m_Localized: "拡大縮小"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011519415123968
+    m_Localized: "X 方向の拡大縮小"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011554005549056
+    m_Localized: "Y 方向の拡大縮小"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011580064759808
+    m_Localized: "X 方向のせん断"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011621378654208
+    m_Localized: "Y 方向のせん断"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543626534051840
+    m_Localized: "X 軸の回転スナップを切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Localized: "Y 軸の回転スナップを切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Localized: "Z 軸の回転スナップを切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Localized: "画像やモデルを\n追加すると\nここに表示されます"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Localized: "デバイスに画像を\n追加すると\nここに表示されます"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093153698373632
+    m_Localized: "エクスポート時の互換性が低下します。ドキュメントをご覧ください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Localized: "次回起動時にチュートリアルを表示"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Localized: "詳細モードと実験モードをオフにします"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094689821290496
+    m_Localized: "このプラットフォームでは現在、アカウントへのログインを利用できません。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151489918612377600
+    m_Localized: "このデバイスでは動画の録画に対応していません。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Localized: "Mac または PC でスケッチを開くと、動画を作成できます。手順については、ドキュメントサイト https://docs.openbrush.app で「Exporting video」を検索してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: "Icosa にアップロードするには、\nIcosa アカウントにログインしてください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: "Icosa で共有"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: "作品を保存するため、Open Brush にファイルへのアクセスを許可してください！"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 172767995928834048
+    m_Localized: "スワイプして\nブラシサイズを調整"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: "Sketchfab への公開時にエラー 403 が発生する場合は、公開範囲をパブリックに変更してください（無料の Sketchfab アカウントでは非公開モデルを公開できません）。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Localized: "アルファ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: "選択したストロークをメディアライブラリに保存"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Localized: "マウス: 見回す、W,A,S,D: 前後左右に移動、Q,E: 上下に移動（Shift を押しながら移動すると加速）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: "ヘッドセットを外すか、ウェブブラウザーに切り替えてログインを続けてください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 381885131211235328
+    m_Localized: "スケッチを読み込んでいます。お待ちください..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Localized: "メッシュを分割しますか？"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Localized: "複雑なメッシュの分割には時間がかかる場合があります。スケッチをこまめに保存してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Localized: "Labs パネルの「選択したストロークを保存」で\nストロークを保存すると、ここに表示されます。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: "Open Blocks を試す"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: "Viverse で共有"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: "Quill キューブ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: "Quill 円柱"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: "Quill 楕円"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: "Quill リボン"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467449183412510720
+    m_Localized: "Quill スケッチライブラリ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Localized: "Quill ライブラリ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464424217206784
+    m_Localized: "Quill フォルダーに Quill スケッチが見つかりません"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Localized: "メディアライブラリに .imm ファイルが見つかりません"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520669196650635264
+    m_Localized: "<b>https://icosa.gallery/device</b> にアクセスして\nログインコードを取得してください"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Localized: "ポータルとして使用できるのは、Icosa Gallery で公開されたスケッチのみです"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641996467429376
+    m_Localized: "Quill ライブラリ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642256367476736
+    m_Localized: "メディアライブラリ内の Quill ファイル"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642327830028288
+    m_Localized: "Quill で保存した Quill ファイル"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542228906948255744
+    m_Localized: "直線ツールのストローク同士をスナップしますか？"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542389062831005696
+    m_Localized: "直線ツールのスナップを切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 482980427487338496
+    m_Localized: "ガウシアンポーズをエクスポート"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Localized: "ボックス型のキャプチャ領域を追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Localized: "球形のキャプチャ領域を追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Localized: "半球形のキャプチャ領域を追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Localized: "楕円体のキャプチャ領域を追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Localized: "ガウシアンスプラッティング用ポーズキャプチャ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000000
+    m_Localized: "プレイスペースを位置合わせ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000001
+    m_Localized: "共有の位置合わせを設定"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000002
+    m_Localized: "共有の位置合わせをリセット"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000003
+    m_Localized: "プレイスペースを再度位置合わせ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000004
+    m_Localized: "位置合わせが更新されました - 再度位置合わせ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000005
+    m_Localized: "共有の位置合わせが未設定です"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000006
+    m_Localized: "共有の位置合わせを記録中"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000007
+    m_Localized: "共有の位置合わせの準備ができました"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000008
+    m_Localized: "プレイスペースの位置合わせが完了しました"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000009
+    m_Localized: "位置合わせが変更されました - 再度位置合わせ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000010
+    m_Localized: "位置合わせエラー - 再試行してください"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000011
+    m_Localized: "コントローラーの先端を端点 A に置き、トリガーを押してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000012
+    m_Localized: "端点 A を記録しました。コントローラーの先端を端点 B に置き、トリガーを押してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000014
+    m_Localized: "基準が短すぎます。0.1 メートル以上離れた端点を選んでください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000015
+    m_Localized: "基準にはさらに水平方向の距離が必要です。より長い水平な辺を選んでください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000016
+    m_Localized: "コントローラーのポーズが無効です。トラッキングを確認し、端点 B を再試行してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000017
+    m_Localized: "基準を記録できませんでした。端点 B を再試行してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000018
+    m_Localized: "基準が無効です: {0}。端点 B を再試行してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000019
+    m_Localized: "基準の長さ: {0:F2} m。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000020
+    m_Localized: "位置合わせが無効です: {0}。端点 B を再試行してください。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000021
+    m_Localized: "測定した長さ: {0:F2} m。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000022
+    m_Localized: "警告: {0}。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 543158158396841984
+    m_Localized: "すべてのウィジェットと、表示されている場合は現在のカメラパスもキャプチャします"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146220882010112
+    m_Localized: "色の変更オン"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828504
+    m_Localized: "周波数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: "ポータルを配置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434881
+    m_Localized: "複雑さ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828503
+    m_Localized: "強さ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: "ハル（パススルー）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 415628836388560896
+    m_Localized: "暗くする"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
     m_Metadata:
       m_Items: []
   references:

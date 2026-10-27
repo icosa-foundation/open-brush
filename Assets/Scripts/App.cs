@@ -1579,9 +1579,21 @@ namespace TiltBrush
             if (path.StartsWith(kBuiltInSketchPrefix))
             {
                 path = path.Substring(kBuiltInSketchPrefix.Length);
+#if OPEN_BRUSH_VIEWER
+                var sketch = SketchCatalog.FindBundledSketch(
+                    SketchCatalog.m_Instance.GetSet(SketchSetType.User), path);
+                if (sketch == null)
+                {
+                    OutputWindowScript.Error("Couldn't open built-in sketch",
+                        $"No Featured sketch named '{path}' was found.");
+                    return true;
+                }
+                SketchControlsScript.m_Instance.LoadSketch(sketch);
+#else
                 path = Path.Join(FeaturedSketchesPath(), path);
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
                     SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+#endif
                 return true;
             }
 
@@ -1605,9 +1617,9 @@ namespace TiltBrush
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
                     SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: dstPath);
             }
-            catch (FileNotFoundException)
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
-                OutputWindowScript.Error(String.Format("Couldn't open {0}", path));
+                OutputWindowScript.Error($"Couldn't open {path}", e.Message);
                 return false;
             }
             return true;
@@ -2015,7 +2027,11 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
-#if OPEN_BRUSH_SCOPED_STORAGE
+#if OPEN_BRUSH_VIEWER
+                    // Viewer builds keep all user data in app-owned storage without a folder grant.
+                    m_UserPath = Application.persistentDataPath;
+                    m_OldUserPath = null;
+#elif OPEN_BRUSH_SCOPED_STORAGE
                     if (!AndroidDirectStorage.StartupReady)
                         throw new System.InvalidOperationException("OBDS_APP storage must initialize before Main.");
                     m_UserPath = Path.GetDirectoryName(AndroidDirectStorage.RootPath);
