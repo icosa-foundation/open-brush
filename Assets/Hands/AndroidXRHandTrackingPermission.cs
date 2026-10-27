@@ -17,7 +17,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.Hands;
 
-#if UNITY_ANDROID && OPEN_BRUSH_ANDROID_XR && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
 using UnityEngine.Android;
 #endif
 
@@ -30,13 +30,12 @@ namespace TiltBrush
     /// - Hand Interaction Profile can supply runtime pinch input independently.
     /// - This permission provides XRHandSubsystem joint data for articulated hand
     ///   visualisation, joint-based pinch detection and the bridge's fist grip gate.
-    /// - Only OPEN_BRUSH_ANDROID_XR builds use this permission flow.
+    /// - Every Android build runs this flow, but it only requests the permission on
+    ///   platforms that define it. Quest and Pico grant hand tracking through manifest
+    ///   declarations added by AndroidStoreManifest instead.
     /// </summary>
     public class AndroidXRHandTrackingPermission : MonoBehaviour
     {
-        // TODO: When extending full handtracking support to Pico or other platforms, add their permission
-        // and startup requirements here and in AndroidStoreManifest instead of reusing Android XR's
-        // permission. Quest's hand-tracking manifest declarations are supplied by the XR Hands package.
         public const string HandTrackingPermission =
             "android.permission.HAND_TRACKING";
 
@@ -64,7 +63,7 @@ namespace TiltBrush
         {
             get
             {
-#if UNITY_ANDROID && OPEN_BRUSH_ANDROID_XR && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
                 return Permission.HasUserAuthorizedPermission(
                     HandTrackingPermission);
 #else
@@ -75,7 +74,13 @@ namespace TiltBrush
 
         private void Start()
         {
-#if UNITY_ANDROID && OPEN_BRUSH_ANDROID_XR && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (!PermissionDefinedByPlatform)
+            {
+                Log("platform does not define " + HandTrackingPermission);
+                return;
+            }
+
             Log(
                 "startup " +
                 $"permissionGranted={IsPermissionGranted}");
@@ -125,7 +130,10 @@ namespace TiltBrush
         /// </summary>
         public void RequestPermission()
         {
-#if UNITY_ANDROID && OPEN_BRUSH_ANDROID_XR && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
+            if (!PermissionDefinedByPlatform)
+                return;
+
             if (m_RequestInFlight)
             {
                 Log("request already in flight");
@@ -169,7 +177,47 @@ namespace TiltBrush
 #endif
         }
 
-#if UNITY_ANDROID && OPEN_BRUSH_ANDROID_XR && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
+        private bool? m_PermissionDefinedByPlatform;
+
+        private bool PermissionDefinedByPlatform =>
+            m_PermissionDefinedByPlatform ??= IsPermissionDefinedByPlatform();
+
+        /// <summary>
+        /// Android XR defines this runtime permission. Other headsets don't, and requesting
+        /// an unknown permission is reported as a denial.
+        /// </summary>
+        private static bool IsPermissionDefinedByPlatform()
+        {
+            try
+            {
+                using var unityPlayer =
+                    new AndroidJavaClass(
+                        "com.unity3d.player.UnityPlayer");
+
+                using AndroidJavaObject activity =
+                    unityPlayer.GetStatic<AndroidJavaObject>(
+                        "currentActivity");
+
+                using AndroidJavaObject packageManager =
+                    activity.Call<AndroidJavaObject>(
+                        "getPackageManager");
+
+                using AndroidJavaObject info =
+                    packageManager.Call<AndroidJavaObject>(
+                        "getPermissionInfo",
+                        HandTrackingPermission,
+                        0);
+
+                return info != null;
+            }
+            catch (AndroidJavaException)
+            {
+                // PackageManager.NameNotFoundException: the platform doesn't define it.
+                return false;
+            }
+        }
+
         private void OnPermissionGranted(
             string permission)
         {
@@ -213,10 +261,10 @@ namespace TiltBrush
         private void OnApplicationFocus(
             bool hasFocus)
         {
-#if UNITY_ANDROID && OPEN_BRUSH_ANDROID_XR && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
             // Permission sheets temporarily remove focus. On return, verify the
             // real Android permission state rather than trusting only callbacks.
-            if (hasFocus && !m_WasFocused)
+            if (hasFocus && !m_WasFocused && PermissionDefinedByPlatform)
             {
                 bool granted =
                     IsPermissionGranted;
@@ -300,7 +348,7 @@ namespace TiltBrush
         /// </summary>
         public void OpenAppSettings()
         {
-#if UNITY_ANDROID && OPEN_BRUSH_ANDROID_XR && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
             try
             {
                 using var unityPlayer =

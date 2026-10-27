@@ -23,7 +23,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
-
 namespace TiltBrush
 {
     /// Class for responding to Http Requests. request handlers can be added for specific paths.
@@ -34,11 +33,6 @@ namespace TiltBrush
         private HttpListener m_HttpListener;
         private Dictionary<string, Action<HttpListenerContext>> m_HttpRequestHandlers =
             new Dictionary<string, Action<HttpListenerContext>>();
-        // LEPTON_HTTP_DIAGNOSTICS_BEGIN: Remove these counters, the call site below, and
-        // LogLeptonRequestDecision once the Lepton host gateway behavior is confirmed.
-        private int m_LoggedAcceptedLeptonRequest;
-        private int m_LoggedRejectedLeptonRequest;
-        // LEPTON_HTTP_DIAGNOSTICS_END
 
         void Awake()
         {
@@ -88,9 +82,7 @@ namespace TiltBrush
                             var allowRequest = ctx.Request.IsLocal ||
                                 App.UserConfig.Flags.EnableApiRemoteCalls ||
                                 isLeptonHostConnection;
-                            // LEPTON_HTTP_DIAGNOSTICS: Temporary; see the marked method below.
-                            LogLeptonRequestDecision(
-                                ctx.Request, allowRequest, isLeptonHostConnection);
+
                             if (allowRequest)
                             {
                                 var handlerKey = m_HttpRequestHandlers.Keys.FirstOrDefault(
@@ -189,7 +181,6 @@ namespace TiltBrush
             m_HttpRequestHandlers.Add(path, wrapper);
         }
 
-
         // Removes a path from the Http server.
         public void RemoveHttpHandler(string path)
         {
@@ -220,42 +211,5 @@ namespace TiltBrush
                  (IPAddress.TryParse(host, out var address) && IPAddress.IsLoopback(address)));
         }
 
-        // LEPTON_HTTP_DIAGNOSTICS_BEGIN: Remove this method after on-device confirmation.
-        private void LogLeptonRequestDecision(HttpListenerRequest request, bool allowed,
-            bool isLeptonHostConnection)
-        {
-            if (!SteamManager.RunningUnderLepton)
-            {
-                return;
-            }
-
-            if (allowed && !isLeptonHostConnection)
-            {
-                return;
-            }
-
-            var wasAlreadyLogged = isLeptonHostConnection
-                ? Interlocked.Exchange(ref m_LoggedAcceptedLeptonRequest, 1)
-                : Interlocked.Exchange(ref m_LoggedRejectedLeptonRequest, 1);
-            if (wasAlreadyLogged != 0)
-            {
-                return;
-            }
-
-            var matchedGateway = SteamManager.IsLeptonHostAddress(
-                request.RemoteEndPoint?.Address);
-            var requestDetails = string.Join("; ", new[]
-            {
-                $"remote={request.RemoteEndPoint}",
-                $"local={request.LocalEndPoint}",
-                $"host={request.UserHostName}",
-                $"isLocal={request.IsLocal}",
-                $"loopbackHost={IsLoopbackHost(request.Url?.Host)}",
-                $"matchedGateway={matchedGateway}",
-                $"trustedLeptonConnection={isLeptonHostConnection}",
-            });
-            Debug.Log($"[LEPTON_HTTP] HTTP request {(allowed ? "accepted" : "rejected")}; {requestDetails}");
-        }
-        // LEPTON_HTTP_DIAGNOSTICS_END
     }
 } // namespace TiltBrush
