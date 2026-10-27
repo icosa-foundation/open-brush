@@ -49,7 +49,6 @@ namespace OpenBrush.Multiplayer
                     // Linked mirrors aren't supported in multiplayer: strokes go out unlinked.
                     SketchWriter.WriteMemory(memoryStream, strokeSnapshots, new GroupIdMapping(),
                         SketchWriter.SymmetrySaveState.None());
-                    Debug.Log($"Serialization complete. Serialized data size: {memoryStream.Length} bytes.");
                     return memoryStream.ToArray();
                 }
             }
@@ -73,7 +72,6 @@ namespace OpenBrush.Multiplayer
 
                     if (strokes != null)
                     {
-                        Debug.Log($"Successfully deserialized {strokes.Count} strokes from network.");
                         return strokes;
                     }
                     else
@@ -102,7 +100,6 @@ namespace OpenBrush.Multiplayer
                 {
                     // Add the brush GUID to the list
                     brushGuids.Add(brush.m_Guid);
-                    Debug.Log($"Brush: {brush.name}, GUID: {brush.m_Guid}");
                 }
                 else
                 {
@@ -126,7 +123,6 @@ namespace OpenBrush.Multiplayer
                     brotliStream.Write(data, 0, data.Length);
                     brotliStream.Flush();
 
-                    Debug.Log($"Compression complete. Compressed data size: {outputStream.Length} bytes.");
 
                     return outputStream.ToArray();
                 });
@@ -149,7 +145,6 @@ namespace OpenBrush.Multiplayer
                     using var brotli = new BrotliStream(input, CompressionMode.Decompress);
                     using var output = new MemoryStream();
                     brotli.CopyTo(output);
-                    Debug.Log($"Decompression complete. Decompressed data size: {output.Length} bytes.");
                     return output.ToArray();
                 });
             }
@@ -159,6 +154,5 @@ namespace OpenBrush.Multiplayer
                 throw;
             }
         }
-
     }
 }

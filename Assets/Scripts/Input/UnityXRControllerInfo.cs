@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.XR;
@@ -27,9 +28,12 @@ namespace TiltBrush
     ///   - Right tracked hand -> Open Brush Brush
     ///   - AndroidXRHandBridge supplies Brush trigger and per-side Grip state
     ///   - Hand/controller routing is independent on each side
+    ///   - The physical controller device is re-resolved when it reappears mid-session
     /// </summary>
     public class UnityXRControllerInfo : ControllerInfo, IDisposable
     {
+        private static readonly List<UnityEngine.XR.InputDevice> s_NodeDevices = new();
+
         private UnityEngine.XR.InputDevice device;
         private readonly UnityXRInputAction actionSet = new();
         private bool m_IsDisposed;
@@ -70,10 +74,51 @@ namespace TiltBrush
             m_IsDisposed = true;
         }
 
+        /// <summary>
+        /// True for XR devices that report tracked hands at a hand node rather than a
+        /// physical controller (OpenXR Hand Interaction and Meta Hand Tracking Aim).
+        /// </summary>
+        public static bool IsTrackedHandDevice(string deviceName)
+        {
+            return !string.IsNullOrEmpty(deviceName) &&
+                   (deviceName.IndexOf("Hand Interaction", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    deviceName.IndexOf("Hand Tracking", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        /// <summary>
+        /// Re-resolve the physical controller for this side, e.g. after it is picked up
+        /// while hand tracking was in use.
+        /// </summary>
+        public void RefreshDevice()
+        {
+            UnityEngine.XR.InputDevice previous = device;
+            device = FindControllerDevice();
+            if (device != previous)
+            {
+                SetActionMask();
+            }
+        }
+
+        private UnityEngine.XR.InputDevice FindControllerDevice()
+        {
+            InputDevices.GetDevicesAtXRNode(
+                isBrush ? XRNode.RightHand : XRNode.LeftHand, s_NodeDevices);
+
+            foreach (UnityEngine.XR.InputDevice candidate in s_NodeDevices)
+            {
+                // Tracked-hand state comes from AndroidXRHandBridge, not this device.
+                if (candidate.isValid && !IsTrackedHandDevice(candidate.name))
+                {
+                    return candidate;
+                }
+            }
+
+            return default;
+        }
+
         private void Init()
         {
-            device = InputDevices.GetDeviceAtXRNode(
-                isBrush ? XRNode.RightHand : XRNode.LeftHand);
+            device = FindControllerDevice();
 
             SetActionMask();
 
@@ -104,7 +149,10 @@ namespace TiltBrush
                     break;
 
                 case ControllerStyle.OculusTouch:
-                    bindingGroup = actionSet.OculusTouchControllerScheme.bindingGroup;
+                    // AndroidXRHandBridge borrows Touch geometry for hands, which can leave
+                    // another controller type on the opposite side. Keep its real bindings.
+                    bindingGroup = GetBindingGroupForCurrentDevice(
+                        actionSet.OculusTouchControllerScheme.bindingGroup);
                     break;
 
                 case ControllerStyle.Wmr:
@@ -121,17 +169,19 @@ namespace TiltBrush
                     break;
 
                 case ControllerStyle.SteamFrame:
-                    bindingGroup = GetSteamFrameBindingGroupForCurrentDevice();
+                    bindingGroup = GetBindingGroupForCurrentDevice(
+                        actionSet.SteamFrameControllerScheme.bindingGroup);
                     break;
             }
 
             actionSet.bindingMask = InputBinding.MaskByGroup(bindingGroup);
         }
 
-        private string GetSteamFrameBindingGroupForCurrentDevice()
+        private string GetBindingGroupForCurrentDevice(string fallback)
         {
-            // When m_ForceControllerStyleForTesting is used, the geometry is Steam Frame but the
-            // physical controller can still be Quest/Index/etc. Keep the real hardware bindings.
+            // The geometry style may not match the physical controller: m_ForceControllerStyleForTesting
+            // can force Steam Frame geometry, and hand tracking borrows Touch geometry. Keep the
+            // real hardware bindings when the device is recognised.
             string deviceName = device.name ?? string.Empty;
 
             if (deviceName.Contains("Oculus Touch"))
@@ -155,7 +205,8 @@ namespace TiltBrush
                 return actionSet.WMRControllerScheme.bindingGroup;
             }
 
-            if (deviceName.Contains("PICO Controller"))
+            // Matches VrSdk's Pico style detection; Pico device names vary by profile.
+            if (deviceName.Contains("PICO"))
             {
                 return actionSet.PicoControllerScheme.bindingGroup;
             }
@@ -165,7 +216,12 @@ namespace TiltBrush
                 return actionSet.ZapboxControllerScheme.bindingGroup;
             }
 
-            return actionSet.SteamFrameControllerScheme.bindingGroup;
+            if (deviceName.Contains("Steam Frame Controller"))
+            {
+                return actionSet.SteamFrameControllerScheme.bindingGroup;
+            }
+
+            return fallback;
         }
 
         private InputAction FindAction(string actionName)
@@ -199,6 +255,11 @@ namespace TiltBrush
                     // AndroidXRHandBridge owns hand assignment:
                     // false = Wand/left hand, true = Brush/right hand.
                     return AndroidXRHandBridge.IsTracked(isBrush);
+                }
+
+                if (!device.isValid)
+                {
+                    RefreshDevice();
                 }
 
                 return device.isValid;

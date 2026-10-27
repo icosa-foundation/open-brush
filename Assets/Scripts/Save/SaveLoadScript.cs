@@ -322,7 +322,6 @@ namespace TiltBrush
             return null;
         }
 
-
         // Create a name that is guaranteed not to exist.
         public string GenerateNewUntitledFilename(string directory, string extension)
         {
@@ -1155,7 +1154,6 @@ namespace TiltBrush
                 try
                 {
                     byte[] fileBytes = File.ReadAllBytes(autosaveFile);
-                    Debug.Log($"Autosave complete. Loaded {fileBytes.Length} bytes from {autosaveFile}");
                     onComplete?.Invoke(fileBytes);
                 }
                 catch (IOException ex)
@@ -1187,11 +1185,7 @@ namespace TiltBrush
 
                 // Load the temporary file into the scene
                 var fileInfo = new DiskSceneFileInfo(tempFilePath);
-                if (Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
-                {
-                    Debug.Log("LoadFromBytes: Scene successfully loaded from bytes.");
-                }
-                else
+                if (!Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
                 {
                     Debug.LogError("LoadFromBytes: Failed to load scene.");
                 }

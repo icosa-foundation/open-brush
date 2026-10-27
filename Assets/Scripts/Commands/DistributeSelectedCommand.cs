@@ -89,10 +89,8 @@ namespace TiltBrush
                 float min = m_ObjectList.Select(x => x.Item1).Min();
                 float max = m_ObjectList.Select(x => x.Item1).Max();
                 float inc = (max - min) / (m_ObjectList.Count - 1);
-                Debug.Log($"Min: {min} Max: {max} = {(max - min)} :: inc: {inc}");
 
                 float pos = min + (inc * i);
-                Debug.Log($"pos: {pos}");
                 if (o.GetType() == typeof(Stroke))
                 {
                     Stroke stroke = o as Stroke;

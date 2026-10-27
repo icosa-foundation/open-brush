@@ -3479,7 +3479,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: 
+    m_Localized: "Visionneuse de croquis Open Brush"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3543,7 +3543,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: 
+    m_Localized: "Certains utilisateurs peuvent utiliser des casques ne prenant pas en charge la vue de l’environnement réel"
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928
@@ -3612,6 +3612,774 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 326871757446639616
     m_Localized: "Permettre \xE0 tous les joueurs de modifier"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89041955544915968
+    m_Localized: "Médiathèque"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Localized: "OUVRIR"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634182
+    m_Localized: "Position"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022786
+    m_Localized: "Invoquer le miroir"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: "Fermer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312781662766833664
+    m_Localized: "Statut: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641902376607744
+    m_Localized: "Médiathèque"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930412489482241
+    m_Localized: "Tous les modèles"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977409
+    m_Localized: "Tous les modèles"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89043032713486336
+    m_Localized: "Cliquez pour charger"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044237590224896
+    m_Localized: "Modèles locaux"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044379697438720
+    m_Localized: "Vidéos locales"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044625424932864
+    m_Localized: "Images locales"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89061114353836032
+    m_Localized: "Ajouter des médias"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064741239808000
+    m_Localized: "Voir comment faire"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89072407659962368
+    m_Localized: "Ajouter des médias"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074692188299264
+    m_Localized: "Reculer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074820936654848
+    m_Localized: "Lecture / Pause"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074884501331968
+    m_Localized: "Avancer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093320602312704
+    m_Localized: "Inverser les mains"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207223535591424
+    m_Localized: "Fumée"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106429517453328384
+    m_Localized: "Images d’arrière-plan"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103924956079587328
+    m_Localized: "Renommer le croquis"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103943359016206336
+    m_Localized: "Outils de transformation"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109424659466551296
+    m_Localized: "Repeindre la sélection"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584125108224
+    m_Localized: "X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634183
+    m_Localized: "Rotation"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634184
+    m_Localized: "Aligner"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828482
+    m_Localized: "Aligner sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828483
+    m_Localized: "Aligner sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828484
+    m_Localized: "Aligner sur Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828485
+    m_Localized: "Aligner selon :"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828486
+    m_Localized: "Bords gauche/inférieur/avant"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828487
+    m_Localized: "Centres"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828488
+    m_Localized: "Bords droit/supérieur/arrière"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828489
+    m_Localized: "Aligner la rotation"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828490
+    m_Localized: "Répartir :"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828491
+    m_Localized: "Répartir sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828492
+    m_Localized: "Répartir sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828493
+    m_Localized: "Répartir sur Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828494
+    m_Localized: "Répartir selon :"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828495
+    m_Localized: "Espacement"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828499
+    m_Localized: "Options"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251051561549824
+    m_Localized: "Webcam"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251441224974336
+    m_Localized: "Appareil précédent"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251554584428544
+    m_Localized: "Appareil suivant"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141243230077059072
+    m_Localized: "Profondeur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144201565051027456
+    m_Localized: "Clip audio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Localized: "Clips audio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 137988464450723840
+    m_Localized: "Déplacer la sélection vers le calque actif"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094550989828096
+    m_Localized: "Erreur"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147809767845167104
+    m_Localized: "Changer de langue"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147811113256255488
+    m_Localized: "Langue"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Localized: "Réinitialiser la position de la toile"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Localized: "Verrouiller la position de la toile"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Localized: "Déverrouiller la position de la toile"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 224363142209691648
+    m_Localized: "Choisir un sous-dossier"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 234808679492837376
+    m_Localized: "Traits enregistrés"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Localized: "Traits enregistrés"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238556149774557184
+    m_Localized: "Image trop volumineuse pour être chargée"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238935604850335744
+    m_Localized: "Image trop volumineuse pour être chargée"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 242372529028341760
+    m_Localized: "Échec du chargement de l’image"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276171365497266176
+    m_Localized: "Taille du pinceau"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636550056648704
+    m_Localized: "Se connecter"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637000357126144
+    m_Localized: "Se déconnecter"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Localized: "Options"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Localized: "Rechercher par titre"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Localized: "Filtrer et trier"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941283698237440
+    m_Localized: "Couper le son pour tout le monde"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941524061216768
+    m_Localized: "Couper le son pour tout le monde"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341358942189346816
+    m_Localized: "Le nom de la salle est disponible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341359317994790912
+    m_Localized: "La salle existe déjà"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 369886448819200000
+    m_Localized: "Tous"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397532058527293440
+    m_Localized: "Non connecté"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456507319803904
+    m_Localized: "Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456718544953344
+    m_Localized: "Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433407381692416
+    m_Localized: "Suivant"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Localized: "Précédent"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522174996334338048
+    m_Localized: "360"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 533423339270135808
+    m_Localized: "Saisir le code manuellement"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843705548800
+    m_Localized: "Tourner les panneaux vers la gauche"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Localized: "Tourner les panneaux vers la droite"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634176
+    m_Localized: "Aligner la sélection actuelle sur les repères :"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634177
+    m_Localized: "Activer/désactiver l’alignement de position sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634178
+    m_Localized: "Activer/désactiver l’alignement de position sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634179
+    m_Localized: "Activer/désactiver l’alignement de position sur Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634180
+    m_Localized: "Aligner la sélection sur la grille"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634181
+    m_Localized: "Aligner les angles de rotation de la sélection sur les repères"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634185
+    m_Localized: "Activer/désactiver le verrouillage de position sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634186
+    m_Localized: "Activer/désactiver le verrouillage de position sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634187
+    m_Localized: "Activer/désactiver le verrouillage de position sur Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634188
+    m_Localized: "Activer/désactiver le verrouillage de rotation sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828480
+    m_Localized: "Activer/désactiver le verrouillage de rotation sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828481
+    m_Localized: "Activer/désactiver le verrouillage de rotation sur Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828496
+    m_Localized: "Miroir multiple"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828497
+    m_Localized: "Symétrie ponctuelle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828498
+    m_Localized: "Symétrie de pavage"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828500
+    m_Localized: "Modifier la teinte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828501
+    m_Localized: "Modifier la saturation"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828502
+    m_Localized: "Modifier la luminosité"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828505
+    m_Localized: "Onde sinusoïdale"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828506
+    m_Localized: "Onde triangulaire"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828507
+    m_Localized: "Onde en dents de scie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022784
+    m_Localized: "Onde carrée"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022785
+    m_Localized: "Bruit"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128978688454426624
+    m_Localized: "Aligner les objets saisis sur les guides ?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128979151367176192
+    m_Localized: "Activer/désactiver l’alignement sur les guides"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129010807801118720
+    m_Localized: "Ordre de symétrie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011310442315776
+    m_Localized: "Répétitions sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011387676229632
+    m_Localized: "Répétitions sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011445721202688
+    m_Localized: "Échelle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011519415123968
+    m_Localized: "Échelle sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011554005549056
+    m_Localized: "Échelle sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011580064759808
+    m_Localized: "Inclinaison sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011621378654208
+    m_Localized: "Inclinaison sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543626534051840
+    m_Localized: "Activer/désactiver l’alignement de rotation sur X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Localized: "Activer/désactiver l’alignement de rotation sur Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Localized: "Activer/désactiver l’alignement de rotation sur Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Localized: "Ajoutez des images et\ndes modèles pour\nles voir ici"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Localized: "Ajoutez des images sur\nvotre appareil pour\nles voir ici"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093153698373632
+    m_Localized: "Compatibilité réduite à l’exportation. Consultez notre documentation."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Localized: "Tutoriel au prochain redémarrage"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Localized: "Désactive les modes avancé et expérimental"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094689821290496
+    m_Localized: "La connexion à un compte est actuellement indisponible sur cette plateforme."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151489918612377600
+    m_Localized: "L’enregistrement vidéo n’est pas pris en charge sur cet appareil."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Localized: "Vous pouvez créer une vidéo de votre croquis en l’ouvrant sur un Mac ou un PC. Recherchez « Exporting video » sur notre site de documentation https://docs.openbrush.app pour un guide étape par étape."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: "Connectez-vous à un compte Icosa pour\nimporter du contenu sur Icosa."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: "Partager sur Icosa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: "Autorisez Open Brush à accéder aux fichiers pour enregistrer vos créations !"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 172767995928834048
+    m_Localized: "Balayez pour régler\nla taille du pinceau"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: "Pour éviter l’erreur 403 lors de la publication sur Sketchfab, choisissez une visibilité publique (les comptes Sketchfab gratuits ne peuvent pas publier de modèles privés)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Localized: "ALPHA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: "Enregistrer les traits sélectionnés dans la bibliothèque multimédia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Localized: "Souris : regarder autour de soi, W,A,S,D : avancer/se déplacer latéralement, Q,E : monter/descendre (maintenir Maj pour accélérer)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: "Retirez votre casque ou passez à votre navigateur web pour poursuivre la connexion."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 381885131211235328
+    m_Localized: "Chargement des croquis. Veuillez patienter..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Localized: "Diviser le maillage ?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Localized: "La division de maillages complexes peut être lente. Enregistrez régulièrement votre croquis."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Localized: "Enregistrez des traits avec « Enregistrer les traits\nsélectionnés » (panneau Labs) pour les voir ici."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: "Essayer Open Blocks"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: "Partager sur Viverse"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: "Cube Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: "Cylindre Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: "Ellipse Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: "Ruban Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467449183412510720
+    m_Localized: "Bibliothèque de croquis Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Localized: "Bibliothèque Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464424217206784
+    m_Localized: "Aucun croquis Quill trouvé dans votre dossier Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Localized: "Aucun fichier .imm trouvé dans votre bibliothèque multimédia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520669196650635264
+    m_Localized: "Visitez <b>https://icosa.gallery/device</b>\npour obtenir un code de connexion"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Localized: "Seuls les croquis publiés sur Icosa Gallery peuvent servir de portails"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641996467429376
+    m_Localized: "Bibliothèque Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642256367476736
+    m_Localized: "Fichiers Quill dans votre bibliothèque multimédia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642327830028288
+    m_Localized: "Fichiers Quill enregistrés dans Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542228906948255744
+    m_Localized: "Aligner les traits de règle les uns sur les autres ?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542389062831005696
+    m_Localized: "Activer/désactiver l’alignement des traits de règle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 482980427487338496
+    m_Localized: "Exporter les poses gaussiennes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Localized: "Ajouter une zone de capture en forme de boîte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Localized: "Ajouter une zone de capture sphérique"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Localized: "Ajouter une zone de capture hémisphérique"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Localized: "Ajouter une zone de capture ellipsoïdale"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Localized: "Capture de poses pour Gaussian Splatting"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000000
+    m_Localized: "Aligner l’espace de jeu"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000001
+    m_Localized: "Définir l’alignement partagé"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000002
+    m_Localized: "Réinitialiser l’alignement partagé"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000003
+    m_Localized: "Réaligner l’espace de jeu"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000004
+    m_Localized: "Alignement mis à jour – réaligner"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000005
+    m_Localized: "Alignement partagé non défini"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000006
+    m_Localized: "Enregistrement de l’alignement partagé"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000007
+    m_Localized: "Alignement partagé prêt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000008
+    m_Localized: "Espace de jeu aligné"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000009
+    m_Localized: "Alignement modifié – réaligner"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000010
+    m_Localized: "Erreur d’alignement – réessayer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000011
+    m_Localized: "Placez la pointe du contrôleur à l’extrémité A et appuyez sur la gâchette."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000012
+    m_Localized: "Extrémité A enregistrée. Placez la pointe du contrôleur à l’extrémité B et appuyez sur la gâchette."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000014
+    m_Localized: "La référence est trop courte. Choisissez des extrémités distantes d’au moins 0,1 mètre."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000015
+    m_Localized: "La référence nécessite une plus grande distance horizontale. Choisissez une arête horizontale plus longue."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000016
+    m_Localized: "La pose du contrôleur n’est pas valide. Vérifiez le suivi et réessayez l’extrémité B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000017
+    m_Localized: "La référence n’a pas pu être enregistrée. Réessayez l’extrémité B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000018
+    m_Localized: "La référence n’est pas valide : {0}. Réessayez l’extrémité B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000019
+    m_Localized: "Longueur de référence : {0:F2} m."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000020
+    m_Localized: "L’alignement n’est pas valide : {0}. Réessayez l’extrémité B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000021
+    m_Localized: "Longueur mesurée : {0:F2} m."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000022
+    m_Localized: "Avertissement : {0}."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 543158158396841984
+    m_Localized: "Capture tous les objets ainsi que la trajectoire de caméra actuelle si elle est visible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828504
+    m_Localized: "Fréquence"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: "Placer un portail"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434881
+    m_Localized: "Complexité"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828503
+    m_Localized: "Intensité"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: "Coque transparente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 415628836388560896
+    m_Localized: "Assombrir"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: "Vérifiez la flèche de A vers B. La gâchette confirme ; celle de l’autre contrôleur inverse A et B ; Annuler pour quitter."
     m_Metadata:
       m_Items: []
   references:

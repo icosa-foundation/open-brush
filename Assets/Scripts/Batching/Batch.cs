@@ -29,6 +29,13 @@ namespace TiltBrush
         private MeshFilter m_MeshFilter;
         private bool m_bVertexDataDirty;
         private bool m_bTopologyDirty;
+        // Visibility edits do not change index count or vertex data. Coalesce their index span.
+        private int m_DirtyIndexStart = int.MaxValue;
+        private int m_DirtyIndexEnd;
+        // Shared main-thread scratch; never retain a converted index buffer per batch.
+        private const int kMaxCachedIndexCount = 16384;
+        private static ushort[] sm_IndexScratch = Array.Empty<ushort>();
+
         private GeometryPool m_Geometry;
         private Material m_InstantiatedMaterial;
         private int m_LastMeshUpdate; // BatchManager timestamp of the most-recent write to the Mesh
@@ -174,7 +181,7 @@ namespace TiltBrush
         /// Reduces memory usage, but causes the next mesh update to be a little more expensive.
         public void ClearCachedGeometry()
         {
-            if (m_Geometry.IsGeometryResident)
+            if (m_Geometry.HasCachedGeometry)
             {
                 SelfCheck();
                 UpdateMesh();
@@ -336,6 +343,60 @@ namespace TiltBrush
             UpdateMesh();
         }
 
+
+        private void MarkTopologyDirty(int indexStart, int indexEnd)
+        {
+            m_bTopologyDirty = true;
+            m_DirtyIndexStart = Math.Min(m_DirtyIndexStart, indexStart);
+            m_DirtyIndexEnd = Math.Max(m_DirtyIndexEnd, indexEnd);
+        }
+
+        private void ResetDirtyIndexRange()
+        {
+            m_DirtyIndexStart = int.MaxValue;
+            m_DirtyIndexEnd = 0;
+        }
+
+        private void UpdateTopology(Mesh mesh)
+        {
+            // A cold tail removal changes the submesh length, even when its dirty range is
+            // entirely beyond the remaining indices. Keep the vertex buffer and bounds intact.
+            if (mesh.GetIndexCount(0) != m_Geometry.NumTriIndices)
+            {
+                mesh.SetTriangles(m_Geometry.m_Tris, 0, calculateBounds: false);
+                return;
+            }
+            int start = m_DirtyIndexStart;
+            int count = m_DirtyIndexEnd - start;
+            if (count <= 0) return;
+
+            // Dense/scattered edits are cheaper to convert in Unity than in a managed loop.
+            // Preserve the existing conservative bounds: visibility edits never move vertices.
+            if (count >= m_Geometry.NumTriIndices / 2 ||
+                (mesh.indexFormat == IndexFormat.UInt16 && count > kMaxCachedIndexCount))
+            {
+                mesh.SetTriangles(m_Geometry.m_Tris, 0, calculateBounds: false);
+            }
+            else if (mesh.indexFormat == IndexFormat.UInt32)
+            {
+                mesh.SetIndexBufferData(m_Geometry.m_Tris, start, start, count);
+            }
+            else
+            {
+                if (sm_IndexScratch.Length < count)
+                {
+                    sm_IndexScratch = new ushort[Mathf.NextPowerOfTwo(count)];
+                }
+                var indices = m_Geometry.m_Tris.GetBackingArray();
+                for (int i = 0; i < count; ++i)
+                {
+                    sm_IndexScratch[i] = checked((ushort)indices[start + i]);
+                }
+                // The raw upload element width must match the mesh's UInt16 index format.
+                mesh.SetIndexBufferData(sm_IndexScratch, 0, start, count);
+            }
+        }
+
         void UpdateMesh()
         {
             // Intro sketch is weird and has Batch components with no parents, m_Geometry, etc
@@ -352,6 +413,7 @@ namespace TiltBrush
                 m_bVertexDataDirty = false;
                 m_bTopologyDirty = false; // The topology gets updated in CopyToMesh().
                 m_Geometry.CopyToMesh(m_MeshFilter.mesh);
+                ResetDirtyIndexRange();
                 Bounds bounds = m_MeshFilter.mesh.bounds;
                 bounds.Expand(Brush.m_BoundsPadding *
                     2 * App.METERS_TO_UNITS * Vector3.one);
@@ -360,10 +422,11 @@ namespace TiltBrush
             }
             else if (m_bTopologyDirty)
             {
-                // Same as above
-                Debug.Assert(m_Geometry.IsGeometryResident, "Impossible! Dirty but not resident");
+                // Visibility edits can have resident indices while vertex channels stay evicted.
+                Debug.Assert(m_Geometry.m_Tris != null, "Impossible! Dirty but no indices");
                 m_bTopologyDirty = false;
-                m_MeshFilter.mesh.SetTriangles(m_Geometry.m_Tris, 0);
+                UpdateTopology(m_MeshFilter.mesh);
+                ResetDirtyIndexRange();
                 m_LastMeshUpdate = m_ParentPool.Owner.CurrentTimestamp;
             }
             SelfCheck();
@@ -476,13 +539,17 @@ namespace TiltBrush
             child.m_VertLength = nVert;
             child.m_iTriIndex = m_Geometry.NumTriIndices;
             child.m_nTriIndex = nTriIndex;
-            geom.EnsureGeometryResident();
-            child.m_Bounds = GetBoundsFor(geom.m_Vertices, iVert, nVert, leftTransform);
-
             if (nVert > 0)
             {
                 m_Geometry.Append(geom, iVert, nVert, iTriIndex, nTriIndex, leftTransform);
+                // The destination already contains transformed positions. Computing bounds here
+                // avoids restoring an entire cold source batch just to read this subset's bounds.
+                child.m_Bounds = GetBoundsFor(m_Geometry.m_Vertices, child.m_StartVertIndex, nVert);
                 DelayedUpdateMesh();
+            }
+            else
+            {
+                child.m_Bounds = GetBoundsFor(Array.Empty<Vector3>(), 0, 0);
             }
 
             SelfCheck();
@@ -508,16 +575,10 @@ namespace TiltBrush
             {
                 int geomVert = m_Geometry.NumVerts;
                 int meshVert = m_MeshFilter.sharedMesh.vertexCount;
-                if (!m_bVertexDataDirty && geomVert != meshVert)
+                // Index-only truncation may leave an unused vertex-buffer tail.
+                if (!m_bVertexDataDirty && geomVert > meshVert)
                 {
-                    if (geomVert == 0 && meshVert == 1)
-                    {
-                        // Special case; the empty batch's initial mesh has a single vert
-                    }
-                    else
-                    {
-                        Debug.LogError("Failed self check: geom verts == mesh verts");
-                    }
+                    Debug.LogError("Failed self check: live geometry exceeds mesh vertices");
                 }
                 if (!m_bTopologyDirty && m_Geometry.NumTriIndices != m_MeshFilter.sharedMesh.GetIndexCount(0))
                 {
@@ -560,9 +621,12 @@ namespace TiltBrush
             // freed, we'll reclaim the space then.
             DisableSubset(subset);
 
+            bool updateVertices = false;
+            bool truncatedTail = false;
             // If this is the last subset, we can free up some space.
             if (iSubset == m_Groups.Count - 1)
             {
+                truncatedTail = true;
                 // It would be incorrect to simply subtract from Num{Verts,TriIndices}, because
                 // there may be dead space before this subset.
                 Debug.Assert(subset.m_StartVertIndex + subset.m_VertLength == m_Geometry.NumVerts);
@@ -579,13 +643,33 @@ namespace TiltBrush
                     newNumVert = newNumIndices = 0;
                 }
 
-                m_Geometry.NumVerts = newNumVert;
-                m_Geometry.NumTriIndices = newNumIndices;
-                DelayedUpdateMesh();
+                if (newNumVert == 0 && newNumIndices == 0)
+                {
+                    // NumVerts restores cold vertex channels before resizing. An empty batch
+                    // has nothing to preserve, so discard its backing data without reading it.
+                    // Reset retains the layout and reuses arrays that are already resident.
+                    m_Geometry.Reset();
+                    updateVertices = true;
+                }
+                // Cold pools keep their vertex buffer and need only the index update below.
+                else if (!m_Geometry.TryTruncateColdMesh(newNumVert, newNumIndices))
+                {
+                    m_Geometry.NumVerts = newNumVert;
+                    m_Geometry.NumTriIndices = newNumIndices;
+                    updateVertices = true;
+                }
             }
 
             m_Groups.RemoveAt(iSubset);
             subset.m_ParentBatch = null;
+            // Inactive batches upload immediately; their subset metadata must be consistent first.
+            if (updateVertices) DelayedUpdateMesh();
+            else if (truncatedTail)
+            {
+                // An already-hidden subset makes DisableSubset return without dirtying indices.
+                MarkTopologyDirty(m_Geometry.NumTriIndices, m_Geometry.NumTriIndices);
+                if (!gameObject.activeSelf) UpdateMesh();
+            }
             SelfCheck();
         }
 
@@ -604,7 +688,7 @@ namespace TiltBrush
                 subset.m_TriangleBackup = new ushort[subset.m_nTriIndex];
             }
 
-            m_Geometry.EnsureGeometryResident();
+            m_Geometry.EnsureIndicesResident();
             var aTris = m_Geometry.m_Tris.GetBackingArray();
             int t0 = subset.m_iTriIndex;
             int t1 = subset.m_iTriIndex + subset.m_nTriIndex;
@@ -614,7 +698,7 @@ namespace TiltBrush
                 subset.m_TriangleBackup[t - t0] = (ushort)aTris[t];
                 aTris[t] = 0;
             }
-            m_bTopologyDirty = true;
+            MarkTopologyDirty(t0, t1);
             SelfCheck();
         }
 
@@ -628,7 +712,7 @@ namespace TiltBrush
 
             Debug.Assert(!subset.m_Active);
             subset.m_Active = true;
-            m_Geometry.EnsureGeometryResident();
+            m_Geometry.EnsureIndicesResident();
             var aTris = m_Geometry.m_Tris.GetBackingArray();
             int t0 = subset.m_iTriIndex;
             int t1 = subset.m_iTriIndex + subset.m_nTriIndex;
@@ -636,7 +720,7 @@ namespace TiltBrush
             {
                 aTris[t] = subset.m_TriangleBackup[t - t0];
             }
-            m_bTopologyDirty = true;
+            MarkTopologyDirty(t0, t1);
             SelfCheck();
         }
 
