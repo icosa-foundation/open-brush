@@ -50,8 +50,7 @@ namespace TiltBrush
 
         public override string Serialize()
         {
-            //var data = Newtonsoft.Json.JsonConvert.SerializeObject(m_Stroke);
-            //UnityEngine.Debug.Log($"test: {data}");
+
             return JsonUtility.ToJson(m_Stroke);
         }
 

@@ -148,7 +148,6 @@ namespace TiltBrush
                 float fov = 2f * Mathf.Atan2(height, distance) * Mathf.Rad2Deg;
                 obj.m_CameraComponent.fieldOfView = fov;
                 obj.m_CameraComponent.nearClipPlane = distance;
-
             }
             else
             {
@@ -172,7 +171,6 @@ namespace TiltBrush
             float scale = App.ActiveCanvas.Pose.scale;
             obj.m_CameraComponent.nearClipPlane = obj.m_CameraClipPlanesBase.x * scale;
             obj.m_CameraComponent.farClipPlane = obj.m_CameraClipPlanesBase.y * scale;
-            Debug.Log($"machk: forcing clip: {obj.m_CameraClipPlanesBase.x}->{obj.m_CameraClipPlanesBase.y} x{scale}");
         }
 
         public ScreenshotManager ManagerFromStyle(MultiCamStyle style)
@@ -269,5 +267,4 @@ namespace TiltBrush
             screen.SetActive(false);
         }
     }
-
 } // namespace TiltBrush
