@@ -1159,6 +1159,12 @@ static class BuildTiltBrush
             m_name = PlayerSettings.productName;
             m_company = PlayerSettings.companyName;
             string new_name = App.kAppDisplayName;
+#if OPEN_BRUSH_VIEWER
+            if (m_Target == BuildTarget.Android)
+            {
+                new_name = "Open Brush Viewer";
+            }
+#endif
 
             string new_identifier = m_identifier;
             switch (m_Target)
@@ -1333,6 +1339,12 @@ static class BuildTiltBrush
             {
                 EnableAndroidXrFeatures(settings);
             }
+            else
+            {
+                // The Android XR package disables this in the normal Editor configuration.
+                // Preserve foveation for other Android OpenXR builds independently of that default.
+                EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature>(settings);
+            }
 #if USE_QUEST_PACKAGE_NAME
             // Meta store builds use OpenXR too, but must enable Meta's build hooks explicitly.
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.MetaQuestSupport.MetaQuestFeature>(settings);
@@ -1347,6 +1359,17 @@ static class BuildTiltBrush
             // and Android Viewer AndroidXR all support hands through the same XR Hands API.
             EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.HandTracking>(settings);
             EnableRequiredFeature<UnityEngine.XR.Hands.OpenXR.MetaHandTrackingAim>(settings);
+
+            // The hand bridge requires this profile for pinch and grasp input on every runtime.
+            // Select the concrete type: XR Hands' HandTracking and the Microsoft Hand Interaction
+            // profile currently publish the same feature ID. Runtimes without
+            // XR_EXT_hand_interaction ignore it, leaving controller input unchanged.
+            EnableRequiredFeature<
+                UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile>(settings);
+
+            // Alpha-blend passthrough (Steam Frame, Android XR). Runtimes that only list opaque
+            // blend modes leave it inactive.
+            EnableRequiredFeature<TiltBrush.EnvironmentBlendPassthroughFeature>(settings);
         }
 
         void EnableAndroidXrFeatures(UnityEngine.XR.OpenXR.OpenXRSettings settings)
@@ -1359,10 +1382,6 @@ static class BuildTiltBrush
             // Select concrete feature types, not feature IDs. XR Hands' HandTracking and the
             // Microsoft Hand Interaction profile currently publish the same feature ID, so an
             // ID lookup can silently enable the Microsoft profile and omit XRHandSubsystem.
-            // The Android XR hand bridge requires this profile for pinch and grasp input.
-            EnableRequiredFeature<
-                UnityEngine.XR.OpenXR.Features.Interactions.HandInteractionProfile>(settings);
-
             EnableRequiredFeature<OpenXR.Extensions.OpenXRAndroidSettings>(settings);
             EnableRequiredFeature<UnityEngine.XR.OpenXR.Features.Android.AndroidXRSupportFeature>(
                 settings);
@@ -1372,8 +1391,8 @@ static class BuildTiltBrush
                 "UnityEngine.XR.OpenXR.Features.Android.AndroidXRBuildProfileFeature");
 
             // Foveated rendering currently crashes Android AndroidXR and Android Viewer
-            // AndroidXR. AR Face is not used by Open Brush. Keep main's serialized defaults
-            // unchanged and override both features only for these builds.
+            // AndroidXR. AR Face is not used by Open Brush. Configure these features for
+            // this build, then restore the serialized Editor configuration afterward.
             DisableFeature<UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature>(settings);
             DisableFeature<UnityEngine.XR.OpenXR.Features.Android.ARFaceFeature>(settings);
 
@@ -1510,9 +1529,28 @@ static class BuildTiltBrush
             {
                 case XrSdkMode.OpenXR:
                     // Unity's OpenXR loader supports Standalone and Android, but not iOS.
-                    // An iOS Viewer build deliberately has no loader: it remains in the normal
-                    // UnityXR runtime mode and uses the existing no-HMD view-only fallback.
-                    if (tiltOptions.Target != BuildTarget.iOS)
+                    // An iOS Viewer build has only the ARKit loader, which HandheldArNavigation
+                    // keeps out of the headset search: it remains in the normal UnityXR runtime
+                    // mode and uses the no-HMD view-only fallback, with optional AR navigation.
+                    if (tiltOptions.Target == BuildTarget.iOS)
+                    {
+                        targetXrPluginsRequired = new string[] { kArKitLoader };
+                        ConfigureOptionalArKit();
+                    }
+                    else if (tiltOptions.Target == BuildTarget.Android)
+                    {
+                        targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+#if !USE_QUEST_PACKAGE_NAME
+                        // Generic Android OpenXR builds also run on phones, where the no-headset
+                        // view mode can offer handheld AR navigation. HandheldArNavigation keeps
+                        // this loader out of the headset search. The Meta store build excludes it,
+                        // as it would only add camera and ARCore declarations to the manifest.
+                        targetXrPluginsRequired = targetXrPluginsRequired
+                            .Append(kArCoreLoader).ToArray();
+                        ConfigureOptionalArCore();
+#endif
+                    }
+                    else
                     {
                         targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
                     }
@@ -1550,6 +1588,46 @@ static class BuildTiltBrush
 
             Debug.Log("Building with XR plugins: " + String.Join(", ", targetSettings.Manager.activeLoaders));
             EditorUtility.SetDirty(targetSettings);
+        }
+
+        const string kArCoreLoader = "UnityEngine.XR.ARCore.ARCoreLoader";
+        const string kArKitLoader = "UnityEngine.XR.ARKit.ARKitLoader";
+
+        static void ConfigureOptionalArCore()
+        {
+            // Required would stop the APK installing on headsets and phones without ARCore.
+            var settings = UnityEditor.XR.ARCore.ARCoreSettings.GetOrCreateSettings();
+            if (!EditorUtility.IsPersistent(settings))
+            {
+                AssetDatabase.CreateAsset(settings, "Assets/XR/Settings/ARCoreSettings.asset");
+                UnityEditor.XR.ARCore.ARCoreSettings.currentSettings = settings;
+            }
+            settings.requirement = UnityEditor.XR.ARCore.ARCoreSettings.Requirement.Optional;
+            settings.depth = UnityEditor.XR.ARCore.ARCoreSettings.Requirement.Optional;
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssetIfDirty(settings);
+        }
+
+        static void ConfigureOptionalArKit()
+        {
+            // Required would restrict the app to ARKit-capable devices in the App Store.
+            var settings = UnityEditor.XR.ARKit.ARKitSettings.GetOrCreateSettings();
+            if (!EditorUtility.IsPersistent(settings))
+            {
+                AssetDatabase.CreateAsset(settings, "Assets/XR/Settings/ARKitSettings.asset");
+                UnityEditor.XR.ARKit.ARKitSettings.currentSettings = settings;
+            }
+            settings.requirement = UnityEditor.XR.ARKit.ARKitSettings.Requirement.Optional;
+            settings.faceTracking = false;
+            EditorUtility.SetDirty(settings);
+            AssetDatabase.SaveAssetIfDirty(settings);
+
+            // ARKit's build processor fails without one; iOS shows it in the permission prompt.
+            if (string.IsNullOrEmpty(PlayerSettings.iOS.cameraUsageDescription))
+            {
+                PlayerSettings.iOS.cameraUsageDescription =
+                    "Open Brush uses the camera to place sketches in your surroundings.";
+            }
         }
 
         public void Dispose()

@@ -470,6 +470,14 @@ namespace TiltBrush
         [Serializable]
         public struct ExportConfig
         {
+            // Write float32 linear-depth TIFFs alongside Gaussian splat pose captures.
+            bool? m_ExportGaussianSplatDepth;
+            public bool ExportGaussianSplatDepth
+            {
+                get { return m_ExportGaussianSplatDepth ?? false; }
+                set { m_ExportGaussianSplatDepth = value; }
+            }
+
             bool? m_ExportBinaryFbx;
             public bool ExportBinaryFbx
             {
@@ -958,6 +966,25 @@ namespace TiltBrush
             }
 
             public float ViewportScaling { get; set; }
+            // Automatic-quality timings are real seconds, independent of display refresh rate.
+            private float? m_QualitySettlingSeconds;
+            public float QualitySettlingSeconds
+            {
+                get { return m_QualitySettlingSeconds ?? 1f; }
+                set { m_QualitySettlingSeconds = value; }
+            }
+            private float? m_QualityRecoverySeconds;
+            public float QualityRecoverySeconds
+            {
+                get { return m_QualityRecoverySeconds ?? 10f; }
+                set { m_QualityRecoverySeconds = value; }
+            }
+            private float? m_QualityRetrySeconds;
+            public float QualityRetrySeconds
+            {
+                get { return m_QualityRetrySeconds ?? 30f; }
+                set { m_QualityRetrySeconds = value; }
+            }
             public float EyeTextureScaling { get; set; }
             public int GlobalMaximumLOD { get; set; }
             // Startup override. Runtime quality changes keep this sample count fixed.
