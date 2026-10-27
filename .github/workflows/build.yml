@@ -407,7 +407,11 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
+          # Renew immutable caches on each run attempt; restore the newest compatible revision.
+          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ github.run_id }}_${{ github.run_attempt }}
+          restore-keys: |
+            Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_
+            Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
 
       - name: Restore Library/PackageCache
         id: cache_packagecache
@@ -605,7 +609,7 @@ jobs:
       - name: Clean Library before caching
         env:
           UNITY_LIBRARY_CACHE_PATHS: "DataStore ArtifactDB SourceAssetDB PlayerDataCache ShaderCache ShaderCache.db"
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true'  # Ideally, we'd save caches on branches, but they're too big, and branch caches can evict those from main, which is unacceptable.
+        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development  # Only prepare caches when this job can save them.
         run: |
           # Debugging
           echo "Library/ directories"
@@ -634,7 +638,7 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
+          key: ${{ steps.cache_library.outputs.cache-primary-key }}
 
   signmacosdev:
     name: Sign macOS app for Developer ID distribution
