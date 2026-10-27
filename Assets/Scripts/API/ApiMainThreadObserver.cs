@@ -27,6 +27,9 @@ public class ApiMainThreadObserver : MonoBehaviour
     }
 
     private static ApiMainThreadObserver m_Instance;
+    private static volatile string m_QualityStatus = "Quality status is not available yet.";
+    private float m_NextQualityStatusUpdate;
+    public static string QualityStatus => m_QualityStatus;
     [NonSerialized] public StatusTypes m_Status;
     [NonSerialized] public Vector3 SpectatorCamPosition;
     [NonSerialized] public Vector3 SpectatorCamTargetPosition;
@@ -43,6 +46,14 @@ public class ApiMainThreadObserver : MonoBehaviour
 
     void Update()
     {
+        // HTTP handlers run off the main thread. Publish a recent snapshot so they
+        // can return quality information without calling Unity rendering APIs.
+        if (Time.unscaledTime >= m_NextQualityStatusUpdate)
+        {
+            m_QualityStatus = ApiMethods.GetQualityLevel();
+            m_NextQualityStatusUpdate = Time.unscaledTime + 1f;
+        }
+
         // if (m_Status == StatusTypes.Requested)
         // {
         var spectator = SketchControlsScript.m_Instance.GetDropCampWidget();

@@ -97,6 +97,11 @@ namespace TiltBrush
             m_UpdateUVRequest.Set(iSegmentBack, iSegmentFront);
         }
 
+        public override void PrepareForBatching()
+        {
+            FlushUpdateUVRequest();
+        }
+
         override public void ApplyChangesToVisuals()
         {
             UnityEngine.Profiling.Profiler.BeginSample("QuadStripBrushStretchUV.ApplyChangesToVisuals");
