@@ -109,8 +109,6 @@ namespace TiltBrush
             m_LastRecordTime = Time.time - m_MinRecordingInterval;
             m_LastRecordedPosition = GetCameraWorldPosition();
 
-            Debug.Log("FlyPathRecorder: Started recording camera path");
-
             // Record initial frame
             RecordCurrentFrame();
 
@@ -132,8 +130,6 @@ namespace TiltBrush
             RecordCurrentFrame(force: true);
             m_IsRecording = false;
 
-            Debug.Log($"FlyPathRecorder: Stopped recording. Captured {m_RecordedFrames.Count} frames over {GetRecordingDuration():F2} seconds");
-
             return new List<RecordedFrame>(m_RecordedFrames);
         }
 
@@ -143,7 +139,6 @@ namespace TiltBrush
         public void ClearRecording()
         {
             m_RecordedFrames.Clear();
-            Debug.Log("FlyPathRecorder: Cleared recorded frames");
         }
 
         /// <summary>

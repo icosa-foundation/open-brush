@@ -347,7 +347,6 @@ namespace TiltBrush
             rNewLine.m_Text = string.Format(fmt, args);
             rNewLine.m_Type = type;
             m_LineQueue.Enqueue(rNewLine);
-            // Debug.Log(rNewLine.m_Text);
 
             ControllerConsoleScript.m_Instance.AddNewLine(rNewLine.m_Text);
         }

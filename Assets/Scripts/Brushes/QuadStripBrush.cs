@@ -707,6 +707,12 @@ namespace TiltBrush
             return k * m_LastSpawnPressure + (1 - k) * pressure01;
         }
 
+        public override void PrepareForBatching()
+        {
+            // Geometry is generated as control points arrive. Subclasses with deferred UV or
+            // tangent work must flush it here, without uploading this soon-to-be-discarded mesh.
+        }
+
         override public void ApplyChangesToVisuals()
         {
             MeshFilter mf = GetComponent<MeshFilter>();
