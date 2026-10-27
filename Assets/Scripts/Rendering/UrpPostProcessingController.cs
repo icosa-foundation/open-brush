@@ -60,6 +60,8 @@ namespace TiltBrush
         private bool m_CurrentFxaa;
         private int m_CurrentMsaa = 1;
         private UniversalRenderPipelineAsset m_MsaaPipelineAsset;
+        private RenderPipelineAsset m_PreviousQualityPipeline;
+        private bool m_HasSessionPipelineSettings;
         private int m_PreviousPipelineMsaa;
         private int m_PreviousUnityMsaa;
         private float m_PreviousRenderScale;
@@ -144,8 +146,6 @@ namespace TiltBrush
             DisableLegacyPostProcessing();
 
             Camera[] cameras = FindObjectsOfType<Camera>(includeInactive: true);
-            int mainCount = 0;
-            int captureCount = 0;
 
             foreach (Camera camera in cameras)
             {
@@ -166,7 +166,6 @@ namespace TiltBrush
                 if (cameraData == null)
                 {
                     cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
-                    Debug.Log($"{kLogPrefix} Added UniversalAdditionalCameraData to camera {camera.name}.");
                 }
 
                 // URP uses allowXRRendering when it builds eye passes, rather than
@@ -178,30 +177,19 @@ namespace TiltBrush
                     continue;
                 }
                 ApplyCameraBaseline(camera, cameraData, isCapture);
-
-                if (isCapture)
-                {
-                    captureCount++;
-                }
-                else
-                {
-                    mainCount++;
-                }
             }
-
-            Debug.Log($"{kLogPrefix} Camera baseline refreshed. main={mainCount} capture/offscreen={captureCount}.");
         }
 
         public void ConfigureScreenshotCamera(Camera camera, bool enableCaptureEffects)
         {
             RegisterCaptureCamera(camera);
-            ConfigureCaptureCamera(camera, enableCaptureEffects, m_RuntimeCaptureProfile);
+            ConfigureCaptureCamera(camera, enableCaptureEffects);
         }
 
         public void ConfigureDropCamCamera(Camera camera, bool enableCaptureEffects)
         {
             RegisterCaptureCamera(camera);
-            ConfigureCaptureCamera(camera, enableCaptureEffects, m_RuntimeCaptureProfile);
+            ConfigureCaptureCamera(camera, enableCaptureEffects);
         }
 
         public static void ConfigureOffscreenCaptureCamera(Camera camera)
@@ -227,13 +215,12 @@ namespace TiltBrush
         public void SetRecordingPostProcessing(Camera camera, bool enabled)
         {
             RegisterCaptureCamera(camera);
-            ConfigureCaptureCamera(camera, enabled, m_RuntimeCaptureProfile);
+            ConfigureCaptureCamera(camera, enabled);
         }
 
         public void SetCapturePostEffects(bool enabled)
         {
             CameraConfig.PostEffects = enabled;
-            Debug.Log($"{kLogPrefix} Capture post-processing default set to {enabled}.");
         }
 
         public void SetBloomAmount(float amount)
@@ -295,10 +282,7 @@ namespace TiltBrush
             }
 
             camera.allowHDR = m_CurrentHdr;
-            ConfigureCaptureCamera(camera, enablePostProcessing, m_RuntimeCaptureProfile);
-            Debug.Log(
-                $"{kLogPrefix} Capture override camera={camera.name} " +
-                $"post={enablePostProcessing} hdr={camera.allowHDR}.");
+            ConfigureCaptureCamera(camera, enablePostProcessing);
             return state;
         }
 
@@ -320,8 +304,7 @@ namespace TiltBrush
             state.cameraData.volumeTrigger = state.volumeTrigger;
         }
 
-
-        private void ConfigureCaptureCamera(Camera camera, bool enablePostProcessing, VolumeProfile profile)
+        private void ConfigureCaptureCamera(Camera camera, bool enablePostProcessing)
         {
             if (camera == null)
             {
@@ -341,15 +324,17 @@ namespace TiltBrush
             cameraData.renderPostProcessing = enablePostProcessing;
             cameraData.volumeLayerMask = m_VolumeLayerMask;
             cameraData.volumeTrigger = camera.transform;
-
-            if (profile == null)
-            {
-                Debug.Log($"{kLogPrefix} Capture camera {camera.name} has no capture profile yet.");
-            }
         }
 
         private void ApplyQuality(int qualityLevel)
         {
+            // Keep the session's buffer settings on an owned runtime copy of the
+            // tier's authored asset, reusing it across tiers that share the asset.
+            if (SessionMsaaLevel.HasValue)
+            {
+                ApplyMsaa(SessionMsaaLevel.Value);
+            }
+
             if (QualityControls.m_Instance == null)
             {
                 m_CurrentBloomMode = AppQualitySettingLevels.BloomMode.Full;
@@ -418,24 +403,43 @@ namespace TiltBrush
             }
 
             var pipelineAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
-            if (pipelineAsset != m_MsaaPipelineAsset)
+            // PrepareQualityLevelChange restores the authored tier reference before Unity
+            // switches levels. Reattach our existing copy when the next tier uses the
+            // same asset; destroying it would tear down the live URP renderer and targets.
+            var authoredPipeline = m_PreviousQualityPipeline != null
+                ? m_PreviousQualityPipeline : GraphicsSettings.defaultRenderPipeline;
+            if (m_MsaaPipelineAsset != null && pipelineAsset == authoredPipeline)
             {
-                RestorePipelineMsaa();
-                m_MsaaPipelineAsset = pipelineAsset;
+                QualitySettings.renderPipeline = m_MsaaPipelineAsset;
+            }
+            else if (pipelineAsset != m_MsaaPipelineAsset)
+            {
+                ReleaseQualityPipeline();
                 if (pipelineAsset != null)
                 {
-                    m_PreviousPipelineMsaa = pipelineAsset.msaaSampleCount;
-                    m_PreviousUnityMsaa = QualitySettings.antiAliasing;
+                    if (!m_HasSessionPipelineSettings)
+                    {
+                        m_PreviousPipelineMsaa = pipelineAsset.msaaSampleCount;
+                        m_PreviousUnityMsaa = QualitySettings.antiAliasing;
+                        m_HasSessionPipelineSettings = true;
+                    }
+                    m_PreviousQualityPipeline = QualitySettings.renderPipeline;
                     m_PreviousRenderScale = pipelineAsset.renderScale;
+                    m_MsaaPipelineAsset = Instantiate(pipelineAsset);
+                    m_MsaaPipelineAsset.name = $"{pipelineAsset.name} (Runtime)";
+                    m_MsaaPipelineAsset.hideFlags = HideFlags.DontSave;
+                    QualitySettings.renderPipeline = m_MsaaPipelineAsset;
                 }
             }
 
-            if (pipelineAsset != null)
+            if (m_MsaaPipelineAsset != null)
             {
-                pipelineAsset.msaaSampleCount = m_CurrentMsaa;
+                m_MsaaPipelineAsset.msaaSampleCount = m_CurrentMsaa;
                 QualitySettings.antiAliasing = m_CurrentMsaa;
                 // Configure the native sample count once, before XR starts rendering.
-                XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
+                // Later quality changes only replace the pipeline's shadow policy.
+                if (!SessionMsaaLevel.HasValue)
+                    XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
             }
         }
 
@@ -469,19 +473,56 @@ namespace TiltBrush
             return 1;
         }
 
-        private void RestorePipelineMsaa()
+        // QualitySettings.renderPipeline overrides the current tier, so restore that
+        // slot before switching. Keep the runtime asset alive across matching tiers:
+        // RenderPipelineAsset.OnDisable tears down the active render pipeline.
+        public void PrepareQualityLevelChange(int qualityLevel)
+        {
+            if (m_MsaaPipelineAsset == null) return;
+
+            RenderPipelineAsset nextPipeline = QualitySettings.GetRenderPipelineAssetAt(qualityLevel);
+            if (nextPipeline == m_MsaaPipelineAsset) nextPipeline = m_PreviousQualityPipeline;
+            RenderPipelineAsset currentPipeline = m_PreviousQualityPipeline != null
+                ? m_PreviousQualityPipeline : GraphicsSettings.defaultRenderPipeline;
+            RenderPipelineAsset nextEffectivePipeline = nextPipeline != null
+                ? nextPipeline : GraphicsSettings.defaultRenderPipeline;
+            bool reusePipeline = nextEffectivePipeline == currentPipeline;
+
+            string transition = $"{QualitySettings.GetQualityLevel()} -> {qualityLevel}";
+            var pipelineId = m_MsaaPipelineAsset.GetEntityId();
+            Debug.Log($"[OB_GPU_LIFETIME] Quality {transition}; reuse={reusePipeline}; pipeline={pipelineId}; fps={QualityControls.m_Instance?.FramesInLastSecond}; msaa={m_CurrentMsaa}");
+
+            if (QualitySettings.renderPipeline == m_MsaaPipelineAsset)
+                QualitySettings.renderPipeline = m_PreviousQualityPipeline;
+
+            if (reusePipeline) m_PreviousQualityPipeline = nextPipeline;
+            else ReleaseQualityPipeline();
+        }
+
+        private void ReleaseQualityPipeline()
         {
             if (m_MsaaPipelineAsset != null)
             {
-                m_MsaaPipelineAsset.msaaSampleCount = m_PreviousPipelineMsaa;
-                m_MsaaPipelineAsset.renderScale = m_PreviousRenderScale;
-                QualitySettings.antiAliasing = m_PreviousUnityMsaa;
-                var displays = new List<XRDisplaySubsystem>();
-                SubsystemManager.GetInstances(displays);
-                if (!displays.Exists(display => display.running))
-                    XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
+                if (QualitySettings.renderPipeline == m_MsaaPipelineAsset)
+                {
+                    QualitySettings.renderPipeline = m_PreviousQualityPipeline;
+                }
+                Destroy(m_MsaaPipelineAsset);
                 m_MsaaPipelineAsset = null;
+                m_PreviousQualityPipeline = null;
             }
+        }
+
+        private void RestorePipelineMsaa()
+        {
+            ReleaseQualityPipeline();
+            if (!m_HasSessionPipelineSettings) return;
+            QualitySettings.antiAliasing = m_PreviousUnityMsaa;
+            var displays = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetInstances(displays);
+            if (!displays.Exists(display => display.running))
+                XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
+            m_HasSessionPipelineSettings = false;
         }
 
         private void OnPostEffectsChanged()
@@ -499,6 +540,10 @@ namespace TiltBrush
             cameraData.renderPostProcessing =
                 (isCapture || m_EnablePostProcessingOnMainCameras) && CameraConfig.PostEffects;
             camera.allowHDR = m_CurrentHdr;
+#if OPEN_BRUSH_ANDROID_XR
+            // URP's intermediate textures and final XR viewport must use the same scale.
+            camera.allowDynamicResolution = !isCapture && cameraData.allowXRRendering;
+#endif
 
             if (!isCapture)
             {
@@ -588,8 +633,6 @@ namespace TiltBrush
             m_RuntimeVolume.priority = 0f;
             m_RuntimeVolume.weight = 1f;
             m_RuntimeVolume.sharedProfile = m_RuntimeMainProfile;
-
-            Debug.Log($"{kLogPrefix} Runtime global Volume created with baseline profile.");
         }
 
         private float GetBloomThreshold()
@@ -652,18 +695,12 @@ namespace TiltBrush
 
         public void DisableLegacyPostProcessing()
         {
-            int disabled = 0;
-            disabled += DisableAll<SENaturalBloomAndDirtyLens>();
-            disabled += DisableAll<FXAA>();
-            disabled += DisableAll<MobileBloom>();
-            disabled += DisableAll<TiltShift>();
-            disabled += DisableAll<Kino.Vignette>();
-            disabled += DisableAll<PostEffectsToggle>();
-
-            if (disabled > 0)
-            {
-                Debug.Log($"{kLogPrefix} Disabled {disabled} legacy post-processing components.");
-            }
+            DisableAll<SENaturalBloomAndDirtyLens>();
+            DisableAll<FXAA>();
+            DisableAll<MobileBloom>();
+            DisableAll<TiltShift>();
+            DisableAll<Kino.Vignette>();
+            DisableAll<PostEffectsToggle>();
         }
 
         private void DisableCompositionLayerEditorEmulationIfUnused()
@@ -701,22 +738,18 @@ namespace TiltBrush
             }
 
             method.Invoke(null, null);
-            Debug.Log($"{kLogPrefix} Disabled Composition Layers editor emulation method {typeName}.{methodName}.");
         }
 #endif
 
-        private static int DisableAll<T>() where T : MonoBehaviour
+        private static void DisableAll<T>() where T : MonoBehaviour
         {
-            int disabled = 0;
             foreach (T component in FindObjectsOfType<T>(includeInactive: true))
             {
                 if (component.enabled)
                 {
                     component.enabled = false;
-                    disabled++;
                 }
             }
-            return disabled;
         }
 
         private void EnsureProfilesIfNeeded()

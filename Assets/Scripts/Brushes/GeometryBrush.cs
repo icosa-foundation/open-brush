@@ -412,9 +412,23 @@ namespace TiltBrush
         /// Don't necessarily have to use the master's information to update the mesh.
         override public void ApplyChangesToVisuals()
         {
+            if (!ApplyChangesToGeometry()) { return; }
+
+            var mesh = GetComponent<MeshFilter>().mesh;
+            m_geometry.CopyToMesh(mesh);
+            mesh.RecalculateBounds();
+        }
+
+        public override void PrepareForBatching()
+        {
+            ApplyChangesToGeometry();
+        }
+
+        private bool ApplyChangesToGeometry()
+        {
             if (!m_geometry.VerifySizes())
             {
-                return;
+                return false;
             }
 
             if (m_FirstChangedControlPoint != null)
@@ -431,9 +445,7 @@ namespace TiltBrush
                 m_FirstChangedControlPoint = null;
             }
 
-            var mesh = GetComponent<MeshFilter>().mesh;
-            m_geometry.CopyToMesh(mesh);
-            mesh.RecalculateBounds();
+            return true;
         }
 
         override protected void InitUndoClone(GameObject clone)
