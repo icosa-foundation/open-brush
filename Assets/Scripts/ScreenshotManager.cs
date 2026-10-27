@@ -72,8 +72,6 @@ namespace TiltBrush
             public RenderTexture renderTexture;
         }
 
-        private const string kCapturePostLogPrefix = "[OB_URP_CAPTURE]";
-        private static int s_CapturePostLogCount;
 
         const float MM_TO_UNITS = .001f * App.METERS_TO_UNITS;
         const float HYSTERESIS_DEGREES = 10;
@@ -585,7 +583,6 @@ namespace TiltBrush
                 UrpPostProcessingController.CameraPostProcessingState controllerState =
                     UrpPostProcessingController.Instance.BeginCapturePostProcessing(
                         camera, includePostProcessing);
-                LogCapturePostProcessing(camera, includePostProcessing);
                 return controllerState;
             }
 
@@ -620,7 +617,6 @@ namespace TiltBrush
             cameraData.volumeLayerMask = ~0;
             cameraData.volumeTrigger = camera.transform;
 
-            LogCapturePostProcessing(camera, includePostProcessing);
 
             return state;
         }
@@ -647,19 +643,6 @@ namespace TiltBrush
             state.cameraData.renderPostProcessing = state.renderPostProcessing;
             state.cameraData.volumeLayerMask = state.volumeLayerMask;
             state.cameraData.volumeTrigger = state.volumeTrigger;
-        }
-
-        void LogCapturePostProcessing(Camera camera, bool includePostProcessing)
-        {
-            if (!includePostProcessing || camera == null || s_CapturePostLogCount >= 8)
-            {
-                return;
-            }
-
-            Debug.Log(
-                $"{kCapturePostLogPrefix} Enabled URP post-processing for capture camera " +
-                $"{camera.name} hdr={camera.allowHDR}.");
-            s_CapturePostLogCount++;
         }
 
         /// Renders depth-normal data to a texture for use with SaveNormals method.
@@ -1218,7 +1201,6 @@ namespace TiltBrush
                     {
                         Save(fs, tmp, bSaveAsPng: saveAsPng, preserveAlpha: removeBackground);
                     }
-
                 }
                 finally
                 {

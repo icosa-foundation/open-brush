@@ -86,21 +86,6 @@ URL=" + kExportDocumentationUrl;
             }
         }
 
-        public class AutoTimer : IDisposable
-        {
-            private System.Diagnostics.Stopwatch timer = new System.Diagnostics.Stopwatch();
-            private string m_tag;
-            public AutoTimer(string tag)
-            {
-                m_tag = tag;
-                timer.Start();
-            }
-            public void Dispose()
-            {
-                timer.Stop();
-                Debug.LogFormat("{0} time: {1}s", m_tag, timer.ElapsedMilliseconds / 1000.0f);
-            }
-        }
 
         static bool IsExportEnabled(string format)
         {
@@ -209,14 +194,11 @@ URL=" + kExportDocumentationUrl;
                 if (App.PlatformConfig.EnableExportJson && IsExportEnabled("json") &&
                     (filename = MakeExportPath(parent, basename, "json")) != null)
                 {
-                    using (var unused = new AutoTimer("raw export"))
-                    {
-                        OverlayManager.m_Instance.UpdateProgress(0.1f);
-                        ExportRaw.Export(filename);
+                    OverlayManager.m_Instance.UpdateProgress(0.1f);
+                    ExportRaw.Export(filename);
 
-                        // Also write the metadata that would normally go in the .tilt file
-                        SketchSnapshot.ExportMetadata(filename.Replace(".json", ".metadata.json"));
-                    }
+                    // Also write the metadata that would normally go in the .tilt file
+                    SketchSnapshot.ExportMetadata(filename.Replace(".json", ".metadata.json"));
                 }
             });
 
@@ -226,14 +208,11 @@ URL=" + kExportDocumentationUrl;
                 if (App.PlatformConfig.EnableExportFbx && IsExportEnabled("fbx") &&
                     (filename = MakeExportPath(parent, basename, "fbx")) != null)
                 {
-                    using (var unused = new AutoTimer("fbx export"))
-                    {
-                        OverlayManager.m_Instance.UpdateProgress(0.3f);
-                        ExportFbx.Export(filename,
-                            App.UserConfig.Export.ExportBinaryFbx ? ExportFbx.kFbxBinary : ExportFbx.kFbxAscii,
-                            App.UserConfig.Export.ExportFbxVersion);
-                        OverlayManager.m_Instance.UpdateProgress(0.5f);
-                    }
+                    OverlayManager.m_Instance.UpdateProgress(0.3f);
+                    ExportFbx.Export(filename,
+                        App.UserConfig.Export.ExportBinaryFbx ? ExportFbx.kFbxBinary : ExportFbx.kFbxAscii,
+                        App.UserConfig.Export.ExportFbxVersion);
+                    OverlayManager.m_Instance.UpdateProgress(0.5f);
                 }
             });
 
@@ -254,10 +233,7 @@ URL=" + kExportDocumentationUrl;
                 if (App.PlatformConfig.EnableExportUsd && IsExportEnabled("usd") &&
                     (filename = MakeExportPath(parent, basename, "usd")) != null)
                 {
-                    using (var unused = new AutoTimer("usd export"))
-                    {
-                        ExportUsd.ExportPayload(filename);
-                    }
+                    ExportUsd.ExportPayload(filename);
                 }
             });
 #endif
@@ -267,10 +243,7 @@ URL=" + kExportDocumentationUrl;
                 if (IsExportEnabled("latk") &&
                     (filename = MakeExportPath(parent, basename, "latk")) != null)
                 {
-                    using (var unused = new AutoTimer("latk export"))
-                    {
-                        ExportLatk.Export(filename);
-                    }
+                    ExportLatk.Export(filename);
                 }
             });
 
@@ -302,21 +275,18 @@ URL=" + kExportDocumentationUrl;
                     filename = MakeExportPath(parent, basename, extension);
                     if (filename != null)
                     {
-                        using (var unused = new AutoTimer("glb export"))
-                        {
-                            OverlayManager.m_Instance.UpdateProgress(0.6f);
+                        OverlayManager.m_Instance.UpdateProgress(0.6f);
 
-                            // TBT doesn't need (or want) brush textures in the output because it replaces all
-                            // the materials, so it's fine to keep those http:. However, Sketchfab doesn't support
-                            // http textures so if uploaded, this glb will have missing textures.
-                            var exporter = new ExportGlTF();
-                            exporter.ExportBrushStrokes(
-                                filename, AxisConvention.kGltf2, binary: true, doExtras: true,
-                                includeLocalMediaContent: true,
-                                gltfVersion: gltfVersion,
-                                selfContained: true
-                            );
-                        }
+                        // TBT doesn't need (or want) brush textures in the output because it replaces all
+                        // the materials, so it's fine to keep those http:. However, Sketchfab doesn't support
+                        // http textures so if uploaded, this glb will have missing textures.
+                        var exporter = new ExportGlTF();
+                        exporter.ExportBrushStrokes(
+                            filename, AxisConvention.kGltf2, binary: true, doExtras: true,
+                            includeLocalMediaContent: true,
+                            gltfVersion: gltfVersion,
+                            selfContained: true
+                        );
                     }
                 }
             });
@@ -325,11 +295,8 @@ URL=" + kExportDocumentationUrl;
             {
                 if (App.PlatformConfig.EnableExportGlb && IsExportEnabled("newglb"))
                 {
-                    using (var unused = new AutoTimer("glb export"))
-                    {
-                        OverlayManager.m_Instance.UpdateProgress(0.7f);
-                        ExportNewGlb(Path.Combine(parent, $"newglb"), basename, App.UserConfig.Export.ExportEnvironment);
-                    }
+                    OverlayManager.m_Instance.UpdateProgress(0.7f);
+                    ExportNewGlb(Path.Combine(parent, $"newglb"), basename, App.UserConfig.Export.ExportEnvironment);
                 }
             });
 

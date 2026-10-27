@@ -29,7 +29,6 @@ namespace TiltBrush
             // Set a new batchId on this light so it can be picked up in GPU intersections.
             m_BatchId = GpuIntersector.GetNextBatchId();
             WidgetManager.m_Instance.AddWidgetToBatchMap(this, m_BatchId);
-            Debug.Log($"Widget {name} assigned batchId {m_BatchId}");
         }
 
         public static List<LightWidget> FromModelWidget(
@@ -172,7 +171,6 @@ namespace TiltBrush
                     l.gameObject.SetActive(true);
                     activeLight = l;
                 }
-
             }
             if (activeLight == null)
             {
@@ -205,5 +203,4 @@ namespace TiltBrush
             return xf;
         }
     }
-
 } // namespace TiltBrush

@@ -530,7 +530,6 @@ namespace TiltBrush
         public void HandleRandomFileButton()
         {
             var path = m_Catalog.GetRandomFile();
-            Debug.Log($"Loading: {path}");
             _LoadFile(path, 0);
         }
     }
