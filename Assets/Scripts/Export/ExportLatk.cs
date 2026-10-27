@@ -35,7 +35,6 @@ namespace TiltBrush
         public static void Export(string writeFileName)
         {
             string ext = Path.GetExtension(writeFileName).ToLower();
-            Debug.Log("Found extension " + ext);
             bool useZip = (ext == ".latk" || ext == ".zip");
 
             List<string> FINAL_LAYER_LIST = new List<string>();
@@ -137,8 +136,6 @@ namespace TiltBrush
                 FINAL_LAYER_LIST.Add(string.Join("\n", sb.ToArray()));
             }
 
-            Debug.Log("+++ Parsing finished. Begin file writing.");
-
             List<string> s = new List<string>();
             s.Add("{");
             s.Add("\t\"creator\": \"unity\",");
@@ -180,8 +177,6 @@ namespace TiltBrush
             {
                 File.WriteAllText(writeFileName, string.Join("\n", s.ToArray()));
             }
-
-            Debug.Log("*** Wrote " + writeFileName);
         }
 
         private static JSONNode getJsonFromZip(byte[] bytes)
@@ -196,7 +191,6 @@ namespace TiltBrush
                     Stream zippedStream = zipFile.GetInputStream(entry);
                     StreamReader read = new StreamReader(zippedStream, true);
                     string json = read.ReadToEnd();
-                    Debug.Log(json);
                     return JSON.Parse(json);
                 }
             }
@@ -240,7 +234,5 @@ namespace TiltBrush
                 outputMemStream.Close();
             }
         }
-
     }
-
 }

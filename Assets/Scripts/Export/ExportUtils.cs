@@ -137,10 +137,11 @@ namespace TiltBrush
                 {
                     GeometryPool pool = group.Key;
 
-                    // If we have to bring the pool into memory, save off enough data so we can
-                    // push it back out.
+                    // Only re-evict pools that had no cached data before export. Cached indices
+                    // may contain visibility edits not yet uploaded to the backing mesh; leave
+                    // those for the owning batch to flush before clearing its cache.
                     Mesh previousBackingMesh = null;
-                    if (pool != null && !pool.IsGeometryResident)
+                    if (pool != null && !pool.HasCachedGeometry)
                     {
                         previousBackingMesh = pool.GetBackingMesh();
                         // We currently only eject batch-owned GeometryPool to Mesh, so this is unlikely to trip;
