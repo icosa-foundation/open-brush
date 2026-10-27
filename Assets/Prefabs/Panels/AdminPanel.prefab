@@ -187,8 +187,6 @@ MonoBehaviour:
   m_MemoryWarningColor: {r: 0.78676474, g: 0.09256055, b: 0.09256055, a: 1}
   m_MultiplayerButton: {fileID: 5787249127137797294}
   m_ButtonRotationAngle: 45
-  m_FlyToolButton: {fileID: 0}
-  m_TeleportToolButton: {fileID: 0}
   m_ShareButtonLoggedOutExtraText:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86

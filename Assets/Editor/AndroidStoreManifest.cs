@@ -23,9 +23,26 @@ internal static class AndroidStoreManifest
             ?? throw new InvalidOperationException("Missing Android application element.");
 
         // Android XR uses a different permission from Quest's com.oculus.permission.HAND_TRACKING.
-        // A removal marker also excludes declarations contributed by lower-priority XR libraries.
+        // Generic OpenXR APKs can also run on Android XR devices, so only the Meta store build
+        // drops it. A removal marker also excludes declarations from lower-priority XR libraries.
         var handTracking = GetOrCreate(doc, root, "uses-permission", "android.permission.HAND_TRACKING");
-        handTracking.SetAttribute("node", ToolsNamespace, androidXr ? "merge" : "remove");
+        handTracking.SetAttribute("node", ToolsNamespace, metaStore ? "remove" : "merge");
+
+        if (!androidXr)
+        {
+            // Quest only offers tracked hands to apps declaring them. Controllers remain the
+            // primary input, so hand tracking must not filter out controller-only devices.
+            GetOrCreate(doc, root, "uses-permission", "com.oculus.permission.HAND_TRACKING");
+            var questHands = GetOrCreate(doc, root, "uses-feature", "oculus.software.handtracking");
+            SetAndroid(questHands, "required", "false");
+            questHands.SetAttribute("replace", ToolsNamespace, "android:required");
+            // Pico declarations match PICO-Unity-OpenXR-SDK's "Controllers And Hands" mode
+            // (Editor/PICOModifyAndroidManifest.cs). Without controller=1 Pico treats a
+            // hand-tracking app as hands-only.
+            GetOrCreate(doc, root, "uses-permission", "com.picovr.permission.HAND_TRACKING");
+            SetMetadata(doc, app, "handtracking", "1");
+            SetMetadata(doc, app, "controller", "1");
+        }
 
         if (scopedStorage)
         {

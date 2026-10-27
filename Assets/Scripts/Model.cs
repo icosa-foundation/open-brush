@@ -688,7 +688,6 @@ namespace TiltBrush
                 Debug.LogException(ex);
                 return null;
             }
-
         }
 
         static bool IsGsplatPly(string path)
@@ -750,10 +749,6 @@ namespace TiltBrush
                     Gsplat.CompressionMode.Spark,
                     sourceCoordinates,
                     filter: App.UserConfig.Splats.CreateImportFilter());
-#if UNITY_EDITOR || DEBUG
-                Debug.Log($"[UNITYSPLATS_MIGRATION_20260728] Loaded {ext} '{path}' " +
-                    $"with {asset.SplatCount} splats, SH{asset.SHBands}, coordinates={sourceCoordinates}.");
-#endif
 
                 root = new GameObject("ImportedGsplatRoot");
                 GameObject rendererObject = new GameObject(Path.GetFileNameWithoutExtension(path));
@@ -1110,10 +1105,6 @@ namespace TiltBrush
                 bool isLocal = m_Location.GetLocationType() == Location.Type.LocalFile;
 
                 string ext = m_Location.Extension;
-                // [ICOSALOAD] instrumentation: wall-clock + frame span of the import. A long time
-                // over 1 frame == a main-thread freeze; a long time over many frames == time-sliced.
-                var __icosaSw = System.Diagnostics.Stopwatch.StartNew();
-                int __icosaStartFrame = Time.frameCount;
                 if (isLocal && ext == ".usd")
                 {
                     // Experimental usd loading.
@@ -1182,13 +1173,7 @@ namespace TiltBrush
                 {
                     m_LoadError = new LoadError("Unknown format", ext);
                 }
-                __icosaSw.Stop();
-                int __icosaFrames = Time.frameCount - __icosaStartFrame + 1;
-                Debug.Log($"[ICOSALOAD] import {m_Location} ext={ext} " +
-                    $"{__icosaSw.ElapsedMilliseconds}ms over {__icosaFrames} frame(s) " +
-                    $"(valid={m_Valid} error={m_LoadError.HasValue})");
             }
-
         }
 
         public void CalcBoundsGltf(GameObject go)
@@ -1259,7 +1244,6 @@ namespace TiltBrush
                 // There was no geometry
                 Debug.LogErrorFormat("No usable geometry in model. LoadModel({0})", go.name);
             }
-
         }
 
         public bool EndCreatePrefab(GameObject go, List<string> warnings)
@@ -1324,7 +1308,6 @@ namespace TiltBrush
             DisplayWarnings(warnings);
             return true;
         }
-
 
         // This method is called when the model has been loaded and the node tree is available
         // This method is necessary because (1) nodes in e.g glTF files don't need to have unique names
@@ -1501,7 +1484,6 @@ namespace TiltBrush
                 );
             }
         }
-
 
         public void SetMeshSplitData(IEnumerable<string> splitMeshPaths, IEnumerable<string> notSplittableMeshPaths)
         {

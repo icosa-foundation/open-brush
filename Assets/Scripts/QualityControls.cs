@@ -27,7 +27,6 @@ namespace TiltBrush
     {
         static public QualityControls m_Instance;
         private const string kAutoSimplificationEnabled = "Autosimplification Enabled";
-        private const string kLegacyPostLogPrefix = "[OB_URP_POST]";
 
         private List<Camera> m_Cameras;
 
@@ -61,8 +60,7 @@ namespace TiltBrush
         private double m_TimeSinceStart;
         private int m_FramesInLastSecond;
 
-        private int m_NumFramesFpsTooLow;
-        private int m_NumFramesFpsHighEnough;
+        private readonly AutomaticQualityPolicy m_AutomaticQualityPolicy = new AutomaticQualityPolicy();
         private readonly Dictionary<int, int> m_RuntimeFoveationOverrides = new Dictionary<int, int>();
         private float? m_RuntimeLowerFps;
         private float? m_RuntimeHigherFps;
@@ -70,6 +68,8 @@ namespace TiltBrush
         private int? m_RuntimeHigherFrames;
         private bool m_SessionRenderingPrepared;
         private bool m_AutomaticQualityEnabled = true;
+        private bool m_ApplicationPaused;
+        private bool m_HadMeasurementFocus;
         public bool SupportsAutomaticQuality => App.Config.IsMobileHardware;
         public bool AutomaticQualityEnabled
         {
@@ -79,7 +79,7 @@ namespace TiltBrush
                 if (value && !SupportsAutomaticQuality)
                     throw new InvalidOperationException("Automatic quality is only available on mobile hardware.");
                 m_AutomaticQualityEnabled = value;
-                m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+                m_AutomaticQualityPolicy.Reset(m_TimeSinceStart);
             }
         }
 
@@ -108,7 +108,7 @@ namespace TiltBrush
             m_RuntimeHigherFps = higherFps;
             m_RuntimeLowerFrames = lowerFrames;
             m_RuntimeHigherFrames = higherFrames;
-            m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+            m_AutomaticQualityPolicy.Reset(m_TimeSinceStart);
         }
 
         /// Index into the active platform's quality ladder, from lowest to highest.
@@ -138,7 +138,6 @@ namespace TiltBrush
             if (App.UserConfig.Profiling.HasStrokeSimplification)
             {
                 level = App.UserConfig.Profiling.StrokeSimplification;
-                Debug.Log($"Simplification overridden to be: {level}.");
             }
             StrokeSimplifier = new RdpStrokeSimplifier(level);
             UserStrokeSimplifier = new RdpStrokeSimplifier(Mathf.Min(level, maxUserStrokeLevel));
@@ -233,6 +232,17 @@ namespace TiltBrush
             SetQualityLevel(QualityLevel);
         }
 
+        void OnApplicationPause(bool paused)
+        {
+            m_ApplicationPaused = paused;
+            if (paused) m_HadMeasurementFocus = false;
+        }
+
+        void OnApplicationFocus(bool focused)
+        {
+            if (!focused) m_HadMeasurementFocus = false;
+        }
+
         void Update()
         {
             if (!App.Config.IsMobileHardware)
@@ -240,8 +250,26 @@ namespace TiltBrush
                 return;
             }
 
-            // Count actual frames in the last second
-            m_TimeSinceStart += Time.deltaTime;
+            m_TimeSinceStart += Time.unscaledDeltaTime;
+            bool focusBlocked = App.Config.m_SdkMode == SdkMode.UnityXR &&
+                App.VrSdk != null && App.VrSdk.IsAppFocusBlocked();
+            if (m_ApplicationPaused || !Application.isFocused || focusBlocked)
+            {
+                m_HadMeasurementFocus = false;
+                m_FrameTimeStamps.Clear();
+                m_FramesInLastSecond = 0;
+                return;
+            }
+            if (!m_HadMeasurementFocus)
+            {
+                // Compositor/pause timing is not a measurement of our rendering cost.
+                m_FrameTimeStamps.Clear();
+                m_FramesInLastSecond = 0;
+                m_AutomaticQualityPolicy.ResetMeasurement(m_TimeSinceStart);
+                m_HadMeasurementFocus = true;
+            }
+
+            // Count actual foreground frames in the last second.
             m_FrameTimeStamps.Enqueue(m_TimeSinceStart);
             m_FramesInLastSecond++;
             double oneSecondAgo = m_TimeSinceStart - 1;
@@ -251,61 +279,23 @@ namespace TiltBrush
                 m_FramesInLastSecond--;
             }
 
-            if (!AutomaticQualityEnabled)
+            if (!AutomaticQualityEnabled || SelectionQualityOverrideActive)
             {
-                m_NumFramesFpsTooLow = m_NumFramesFpsHighEnough = 0;
+                m_AutomaticQualityPolicy.Reset(m_TimeSinceStart);
                 return;
             }
 
-            // Update the frame counts. There is no cross-platform GPU load signal,
-            // so the scaler runs on framerate alone; see LlmDocs/openxr-perf-migration.md.
-            int fps = m_FramesInLastSecond;
-            if (fps <= (m_RuntimeLowerFps ?? AppQualityLevels.LowerQualityFpsTrigger))
-            {
-                m_NumFramesFpsTooLow++;
-            }
-            else
-            {
-                m_NumFramesFpsTooLow = 0;
-            }
-
-            if (fps >= (m_RuntimeHigherFps ?? AppQualityLevels.HigherQualityFpsTrigger))
-            {
-                m_NumFramesFpsHighEnough++;
-            }
-            else
-            {
-                m_NumFramesFpsHighEnough = 0;
-            }
-
-            if (SelectionQualityOverrideActive)
-            {
-                m_NumFramesFpsTooLow = 0;
-                m_NumFramesFpsHighEnough = 0;
-                return;
-            }
-
-            // Update quality level if needed
-            int limit = m_RuntimeLowerFrames ?? AppQualityLevels.FramesForLowerQuality;
-            if (m_NumFramesFpsTooLow >= limit)
-            {
-                if (QualityLevel > 0)
-                {
-                    QualityLevel--;
-                }
-                m_NumFramesFpsTooLow = 0;
-            }
-
-            limit = m_RuntimeHigherFrames ?? AppQualityLevels.FramesForHigherQuality;
-            if (m_NumFramesFpsHighEnough >= limit)
-            {
-                if (QualityLevel < AppQualityLevels.Length - 1)
-                {
-                    QualityLevel++;
-                }
-                m_NumFramesFpsHighEnough = 0;
-            }
-
+            var profiling = App.UserConfig.Profiling;
+            m_AutomaticQualityPolicy.SettlingSeconds = profiling.QualitySettlingSeconds;
+            m_AutomaticQualityPolicy.RecoverySeconds = profiling.QualityRecoverySeconds;
+            m_AutomaticQualityPolicy.RetrySeconds = profiling.QualityRetrySeconds;
+            int nextLevel = m_AutomaticQualityPolicy.Evaluate(m_TimeSinceStart, QualityLevel,
+                AppQualityLevels.Length - 1, m_FramesInLastSecond,
+                m_RuntimeLowerFps ?? AppQualityLevels.LowerQualityFpsTrigger,
+                m_RuntimeHigherFps ?? AppQualityLevels.HigherQualityFpsTrigger,
+                m_RuntimeLowerFrames ?? AppQualityLevels.FramesForLowerQuality,
+                m_RuntimeHigherFrames ?? AppQualityLevels.FramesForHigherQuality);
+            if (nextLevel != QualityLevel) QualityLevel = nextLevel;
         }
 
         private static bool SelectionQualityOverrideActive
@@ -325,6 +315,7 @@ namespace TiltBrush
 
         void SetQualityLevel(int value)
         {
+            if (value != QualityLevel) m_AutomaticQualityPolicy.ResetMeasurement(m_TimeSinceStart);
             AppQualitySettingLevels settingLevels = AppQualityLevels;
             if (settingLevels != null && (value < 0 || value >= settingLevels.Length))
                 throw new ArgumentOutOfRangeException(nameof(value));
@@ -373,6 +364,7 @@ namespace TiltBrush
             App.VrSdk.SetFixedFoveation(foveation);
 
             // Render-buffer settings belong to the session, not Unity's quality presets.
+            UrpPostProcessingController.Instance?.PrepareQualityLevelChange(value);
             QualitySettings.SetQualityLevel(value, applyExpensiveChanges: false);
             if (UrpPostProcessingController.Instance?.SessionMsaaLevel != null)
                 QualitySettings.antiAliasing = MSAALevel;
@@ -401,32 +393,23 @@ namespace TiltBrush
                 return;
             }
 
-            int disabled = 0;
-            disabled += DisableAll<SENaturalBloomAndDirtyLens>();
-            disabled += DisableAll<FXAA>();
-            disabled += DisableAll<MobileBloom>();
-            disabled += DisableAll<TiltShift>();
-            disabled += DisableAll<Kino.Vignette>();
-            disabled += DisableAll<PostEffectsToggle>();
-
-            if (disabled > 0)
-            {
-                Debug.Log($"{kLegacyPostLogPrefix} Disabled {disabled} legacy post-processing components.");
-            }
+            DisableAll<SENaturalBloomAndDirtyLens>();
+            DisableAll<FXAA>();
+            DisableAll<MobileBloom>();
+            DisableAll<TiltShift>();
+            DisableAll<Kino.Vignette>();
+            DisableAll<PostEffectsToggle>();
         }
 
-        int DisableAll<T>() where T : MonoBehaviour
+        void DisableAll<T>() where T : MonoBehaviour
         {
-            int disabled = 0;
             foreach (T component in FindObjectsOfType<T>(includeInactive: true))
             {
                 if (component.enabled)
                 {
                     component.enabled = false;
-                    disabled++;
                 }
             }
-            return disabled;
         }
 
         void EnableHDR(bool bEnable)
@@ -459,8 +442,6 @@ namespace TiltBrush
         {
             if (App.UserConfig.Profiling.HasStrokeSimplification)
             {
-                Debug.LogFormat("Simplification overridden to be: {0}.",
-                    App.UserConfig.Profiling.StrokeSimplification);
                 return;
             }
 
@@ -476,8 +457,6 @@ namespace TiltBrush
             }
             if (total < m_targetMaxControlPoints)
             {
-                Debug.LogFormat("Complexity ({0}) is less than {1}. No extra simplification required.",
-                    total, m_targetMaxControlPoints);
                 return;
             }
             float reduction = m_targetMaxControlPoints / total;
@@ -485,9 +464,6 @@ namespace TiltBrush
                 m_maxLoadingSimplification), StrokeSimplifier.Level);
             if (AutosimplifyEnabled)
             {
-                Debug.LogFormat(
-                    "Complexity ({0}) is greater than {1}. Reduction of {2} using level {3} simplification.",
-                    total, m_targetMaxControlPoints, reduction, level);
                 SimplificationLevel = level;
             }
         }
