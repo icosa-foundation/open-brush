@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if OCULUS_SUPPORTED
-#define PASSTHROUGH_SUPPORTED
-#endif
-
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -134,59 +130,61 @@ namespace TiltBrush
 
         private bool m_PassthroughEnabled;
         private bool m_CustomPassthroughEnabled;
+        private const string kPassthroughPrefabPath = "EnvironmentPrefabs/Passthrough";
+        private PassthroughManager m_BackdropPassthrough;
+
+        public bool CanEnablePassthrough => App.VrSdk != null &&
+            App.VrSdk.PassthroughMode != PassthroughMode.None;
 
         public bool CanLeavePassthrough => !PassthroughEnabled ||
-            MultiplayerManager.m_Instance == null ||
-            !MultiplayerManager.m_Instance.HasRemotePlayersInRoom();
+            (App.VrSdk.PassthroughMode != PassthroughMode.Zapbox &&
+             (MultiplayerManager.m_Instance == null ||
+              !MultiplayerManager.m_Instance.HasRemotePlayersInRoom()));
 
         public bool PassthroughEnabled
         {
-            get
-            {
-#if PASSTHROUGH_SUPPORTED
-                return m_PassthroughEnabled;
-#else
-                return false;
-#endif
-            }
+            get => m_PassthroughEnabled;
             set
             {
+                if (value && !CanEnablePassthrough) return;
                 if (!value && !CanLeavePassthrough) return;
-#if PASSTHROUGH_SUPPORTED
-                // Some environments intentionally have no geometry prefab. Disabling
-                // passthrough still restores rendering; enabling needs a layer holder.
-                if (value && m_RoomGeometry == null)
-                {
-                    m_RoomGeometry = new GameObject("Passthrough Environment");
-                    m_RoomGeometry.transform.SetParent(App.Instance.m_EnvironmentTransform, false);
-                }
-                var passthrough = m_RoomGeometry != null
-                    ? m_RoomGeometry.GetComponent<OVRPassthroughLayer>() : null;
-                if (value && passthrough == null)
-                {
-                    passthrough = m_RoomGeometry.AddComponent<OVRPassthroughLayer>();
-                    passthrough.overlayType = OVROverlay.OverlayType.Underlay;
-                }
                 if (value)
                 {
+                    if (m_BackdropPassthrough == null)
+                    {
+                        var prefab = Resources.Load<GameObject>(kPassthroughPrefabPath);
+                        if (prefab == null)
+                        {
+                            Debug.LogError("[OB_BACKDROP] Missing passthrough resource.");
+                            return;
+                        }
+                        var instance = Instantiate(prefab, App.Instance.m_EnvironmentTransform, false);
+                        instance.name = "Backdrop Passthrough";
+                        m_BackdropPassthrough = instance.GetComponent<PassthroughManager>();
+                        if (m_BackdropPassthrough == null)
+                        {
+                            Destroy(instance);
+                            Debug.LogError("[OB_BACKDROP] Passthrough resource has no controller.");
+                            return;
+                        }
+                    }
+                    if (!m_BackdropPassthrough.SetPassthroughActive(true)) return;
                     m_InGradient = false;
                     m_CustomSkyboxTextureName = null;
-                    passthrough.hidden = false;
                     RenderSettings.skybox = null;
                     RenderSettings.fog = false;
-                    for (int i = 0; i < m_Cameras.Count; ++i)
+                    foreach (var camera in m_Cameras)
                     {
-                        if (m_Cameras[i] != null)
-                        {
-                            m_Cameras[i].clearFlags = CameraClearFlags.SolidColor;
-                            m_Cameras[i].backgroundColor = Color.clear;
-                        }
+                        if (camera == null) continue;
+                        camera.clearFlags = CameraClearFlags.SolidColor;
+                        camera.backgroundColor = Color.clear;
                     }
                     m_PassthroughEnabled = true;
                 }
                 else
                 {
-                    if (passthrough != null) passthrough.hidden = true;
+                    if (m_BackdropPassthrough != null)
+                        m_BackdropPassthrough.SetPassthroughActive(false);
                     m_PassthroughEnabled = false;
                     if (CurrentEnvironment != null)
                     {
@@ -206,9 +204,6 @@ namespace TiltBrush
                         }
                     }
                 }
-#else
-                m_PassthroughEnabled = false;
-#endif // PASSTHROUGH_SUPPORTED
                 BackdropModeChanged?.Invoke();
             }
         }
@@ -518,6 +513,11 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            if (m_BackdropPassthrough != null)
+            {
+                m_BackdropPassthrough.SetPassthroughActive(false);
+                Destroy(m_BackdropPassthrough.gameObject);
+            }
             if (m_CustomSkyboxMaterial != null)
             {
                 Destroy(m_CustomSkyboxMaterial);
@@ -799,8 +799,8 @@ namespace TiltBrush
                 }
             }
 
-            // The passthrough layer belongs to the new room geometry. Apply it after
-            // geometry creation and skybox setup so neither destroys its state.
+            // Apply backdrop state after geometry and skybox setup; the runtime
+            // passthrough instance is independent of the room geometry.
             PassthroughEnabled = m_LoadingCustomEnvironment
                 ? m_CustomPassthroughEnabled : m_DesiredEnvironment.m_PassthroughEnabled;
 
@@ -1007,7 +1007,9 @@ namespace TiltBrush
             {
                 Destroy(m_RoomGeometry);
                 Destroy(m_RoomReverbZone);
-                GameObject rNewEnvironment = Resources.Load<GameObject>(env.m_EnvironmentPrefab);
+                // Passthrough is owned by the backdrop, not the room's lifetime.
+                GameObject rNewEnvironment = env.m_EnvironmentPrefab == kPassthroughPrefabPath
+                    ? null : Resources.Load<GameObject>(env.m_EnvironmentPrefab);
                 if (rNewEnvironment != null)
                 {
                     m_RoomGeometry = Instantiate(rNewEnvironment);

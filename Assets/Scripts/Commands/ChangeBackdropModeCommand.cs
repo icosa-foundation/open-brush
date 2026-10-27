@@ -41,8 +41,9 @@ namespace TiltBrush
 
         public override bool NeedsSave => true;
 
-        public override bool IsAvailable => m_NextMode == BackdropMode.Passthrough ||
-            SceneSettings.m_Instance.CanLeavePassthrough;
+        public override bool IsAvailable => m_NextMode == BackdropMode.Passthrough
+            ? SceneSettings.m_Instance.CanEnablePassthrough
+            : SceneSettings.m_Instance.CanLeavePassthrough;
 
         protected override void OnRedo() => Apply(m_NextMode, m_NextSkybox);
 
@@ -51,10 +52,13 @@ namespace TiltBrush
         private void Apply(BackdropMode mode, string customSkybox)
         {
             var settings = SceneSettings.m_Instance;
+            if (mode == BackdropMode.Passthrough && !settings.CanEnablePassthrough) return;
             if (mode != BackdropMode.Passthrough && !settings.CanLeavePassthrough) return;
 
+            bool passthrough = mode == BackdropMode.Passthrough;
+            settings.PassthroughEnabled = passthrough;
+            if (settings.PassthroughEnabled != passthrough) return;
             settings.ClearCustomSkybox();
-            settings.PassthroughEnabled = mode == BackdropMode.Passthrough;
             settings.InGradient = mode == BackdropMode.Gradient;
             if (mode == BackdropMode.Skybox)
             {

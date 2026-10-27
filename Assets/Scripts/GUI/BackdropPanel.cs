@@ -12,10 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#if OCULUS_SUPPORTED
-#define PASSTHROUGH_SUPPORTED
-#endif
-
 using UnityEngine;
 
 namespace TiltBrush
@@ -52,9 +48,8 @@ namespace TiltBrush
             SceneSettings.m_Instance.BackdropModeChanged += OnBackdropModeChanged;
             DetectCurrentBackdropMode();
             OnBackdropModeChanged();
-#if !PASSTHROUGH_SUPPORTED
-            m_ButtonShowPassthroughControls.SetButtonAvailable(false);
-#endif
+            m_ButtonShowPassthroughControls.SetButtonAvailable(
+                SceneSettings.m_Instance.CanEnablePassthrough);
         }
 
         private void DetectCurrentBackdropMode()
@@ -133,6 +128,8 @@ namespace TiltBrush
 
         void OnBackdropModeChanged()
         {
+            m_ButtonShowPassthroughControls.SetButtonAvailable(
+                SceneSettings.m_Instance.CanEnablePassthrough);
             DetectCurrentBackdropMode();
             bool hasCustom = SceneSettings.m_Instance.HasCustomSkybox;
             if (hasCustom)
