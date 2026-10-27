@@ -29,10 +29,16 @@ namespace TiltBrush
     public sealed class ZipSubfileReader_SharpZipLib : TiltBrush.WrappedStream
     {
         ZipFile m_file;
+        private System.IO.Stream m_OwnedStream;
 
         public ZipSubfileReader_SharpZipLib(string zipPath, string subPath)
+            : this(new ZipFile(zipPath), subPath) { }
+
+        public ZipSubfileReader_SharpZipLib(System.IO.Stream stream, string subPath)
+            : this(new ZipFile(stream), subPath) { m_OwnedStream = stream; }
+
+        private ZipSubfileReader_SharpZipLib(ZipFile zipfile, string subPath)
         {
-            ZipFile zipfile = new ZipFile(zipPath);
             try
             {
                 ZipEntry entry = zipfile.GetEntry(subPath);
@@ -62,15 +68,23 @@ namespace TiltBrush
                 m_file.Close();
                 m_file = null;
             }
+            m_OwnedStream?.Dispose();
+            m_OwnedStream = null;
         }
     }
 
     public sealed class ZipSubfileReader_DotNetZip : WrappedStream
     {
         Ionic.Zip.ZipFile m_file;
+        private System.IO.Stream m_OwnedStream;
         public ZipSubfileReader_DotNetZip(string zipPath, string subPath)
+            : this(new Ionic.Zip.ZipFile(zipPath), subPath) { }
+
+        public ZipSubfileReader_DotNetZip(System.IO.Stream stream, string subPath)
+            : this(Ionic.Zip.ZipFile.Read(stream), subPath) { m_OwnedStream = stream; }
+
+        private ZipSubfileReader_DotNetZip(Ionic.Zip.ZipFile zipfile, string subPath)
         {
-            var zipfile = new Ionic.Zip.ZipFile(zipPath);
             try
             {
                 Ionic.Zip.ZipEntry entry = zipfile[subPath];
@@ -100,6 +114,8 @@ namespace TiltBrush
                 m_file.Dispose();
                 m_file = null;
             }
+            m_OwnedStream?.Dispose();
+            m_OwnedStream = null;
         }
     }
 } // namespace TiltBrush

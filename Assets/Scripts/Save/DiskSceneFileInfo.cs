@@ -42,6 +42,7 @@ namespace TiltBrush
         private DateTime? m_creationTime;
 
         private TiltFile m_TiltFile;
+        private BundledSketchEntry m_BundledSketch;
 
         public FileInfoType InfoType
         {
@@ -108,6 +109,7 @@ namespace TiltBrush
             get
             {
                 if (!Valid) { return false; }
+                if (m_BundledSketch != null) { return true; }
                 if (m_embedded)
                 {
                     var meta = string.Format("{0}/{1}", m_fullpath, TiltFile.FN_METADATA);
@@ -154,6 +156,7 @@ namespace TiltBrush
 
         public DiskSceneFileInfo(string path, bool embedded = false, bool readOnly = false)
         {
+            m_BundledSketch = null;
             Debug.Assert(embedded == false || readOnly == true); // if embedded, should always be readonly.
             m_embedded = embedded;
             if (m_embedded)
@@ -174,6 +177,16 @@ namespace TiltBrush
             m_creationTime = null;
         }
 
+        public DiskSceneFileInfo(BundledSketchEntry entry) : this()
+        {
+            m_BundledSketch = entry;
+            m_fullpath = $"{BundledSketchManifest.AssetDirectory}/{entry.FileName}";
+            m_humanName = Path.GetFileNameWithoutExtension(entry.FileName);
+            m_embedded = true;
+            m_readOnly = true;
+            m_creationTime = DateTime.MinValue;
+        }
+
         public override string ToString()
         {
             return $"DiskFile name {m_humanName}";
@@ -190,7 +203,7 @@ namespace TiltBrush
 
         public void Delete()
         {
-            if (!Valid) { return; }
+            if (!Valid || m_BundledSketch != null) { return; }
 
             //look to delete the file version first
             if (File.Exists(m_fullpath))
@@ -237,6 +250,7 @@ namespace TiltBrush
 
         public string Rename(string newName)
         {
+            if (m_BundledSketch != null) return null;
             // Look to delete the file version first
             if (Valid && File.Exists(m_fullpath))
             {
@@ -270,6 +284,8 @@ namespace TiltBrush
         /// or null if the file format is invalid.
         public Stream GetReadStream(string subfileName)
         {
+            if (m_BundledSketch != null)
+                return BundledSketchAssets.OpenSubfile(m_BundledSketch, subfileName);
             if (!Valid)
             {
                 return null;

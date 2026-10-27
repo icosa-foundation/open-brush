@@ -3513,7 +3513,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: 
+    m_Localized: "Visor de bocetos de Open Brush"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3577,7 +3577,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: 
+    m_Localized: "Puede que algunos usuarios utilicen visores que no admitan la vista del entorno real"
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928
@@ -3646,6 +3646,778 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 326871757446639616
     m_Localized: Permitir que todos los jugadores editen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89041955544915968
+    m_Localized: "Biblioteca de medios"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Localized: "ABRIR"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634182
+    m_Localized: "Posición"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022786
+    m_Localized: "Convocar espejo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: "Cerrar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312781662766833664
+    m_Localized: "Estado: "
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641902376607744
+    m_Localized: "Biblioteca de medios"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930412489482241
+    m_Localized: "Todos los modelos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977409
+    m_Localized: "Todos los modelos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89043032713486336
+    m_Localized: "Haz clic para cargar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044237590224896
+    m_Localized: "Modelos locales"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044379697438720
+    m_Localized: "Vídeos locales"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044625424932864
+    m_Localized: "Imágenes locales"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89061114353836032
+    m_Localized: "Añadir contenido multimedia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064741239808000
+    m_Localized: "Aprende cómo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89072407659962368
+    m_Localized: "Añadir contenido multimedia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074692188299264
+    m_Localized: "Saltar hacia atrás"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074820936654848
+    m_Localized: "Reproducir / Pausar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074884501331968
+    m_Localized: "Saltar hacia delante"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093320602312704
+    m_Localized: "Intercambiar manos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207223535591424
+    m_Localized: "Humo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106429517453328384
+    m_Localized: "Imágenes de fondo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103924956079587328
+    m_Localized: "Renombrar boceto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103943359016206336
+    m_Localized: "Herramientas de transformación"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109424659466551296
+    m_Localized: "Repintar selección"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584125108224
+    m_Localized: "X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634183
+    m_Localized: "Rotación"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634184
+    m_Localized: "Alinear"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828482
+    m_Localized: "Alinear en X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828483
+    m_Localized: "Alinear en Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828484
+    m_Localized: "Alinear en Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828485
+    m_Localized: "Alinear por:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828486
+    m_Localized: "Bordes izquierdo/inferior/frontal"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828487
+    m_Localized: "Centros"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828488
+    m_Localized: "Bordes derecho/superior/trasero"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828489
+    m_Localized: "Alinear rotación"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828490
+    m_Localized: "Distribuir:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828491
+    m_Localized: "Distribuir en X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828492
+    m_Localized: "Distribuir en Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828493
+    m_Localized: "Distribuir en Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828494
+    m_Localized: "Distribuir por:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828495
+    m_Localized: "Espaciado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828499
+    m_Localized: "Opciones"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251051561549824
+    m_Localized: "Cámara web"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251441224974336
+    m_Localized: "Dispositivo anterior"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251554584428544
+    m_Localized: "Dispositivo siguiente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141243230077059072
+    m_Localized: "Profundidad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144201565051027456
+    m_Localized: "Clip de audio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Localized: "Clips de audio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 137988464450723840
+    m_Localized: "Mover selección a la capa actual"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094550989828096
+    m_Localized: "Error"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147809767845167104
+    m_Localized: "Cambiar idioma"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147811113256255488
+    m_Localized: "Idioma"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Localized: "Restablecer posición del lienzo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Localized: "Bloquear posición del lienzo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Localized: "Desbloquear posición del lienzo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 224363142209691648
+    m_Localized: "Elegir una subcarpeta"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 234808679492837376
+    m_Localized: "Trazos guardados"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Localized: "Trazos guardados"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238556149774557184
+    m_Localized: "La imagen es demasiado grande para cargarla"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238935604850335744
+    m_Localized: "La imagen es demasiado grande para cargarla"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 242372529028341760
+    m_Localized: "No se pudo cargar la imagen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276171365497266176
+    m_Localized: "Tamaño del pincel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636550056648704
+    m_Localized: "Conectar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637000357126144
+    m_Localized: "Desconectar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Localized: "Opciones"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Localized: "Buscar por título"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Localized: "Filtrar y ordenar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941283698237440
+    m_Localized: "Silenciar para todos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941524061216768
+    m_Localized: "Silenciar para todos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341358942189346816
+    m_Localized: "El nombre de la sala está disponible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341359317994790912
+    m_Localized: "La sala ya existe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 369886448819200000
+    m_Localized: "Todos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397532058527293440
+    m_Localized: "Sesión no iniciada"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456507319803904
+    m_Localized: "Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456718544953344
+    m_Localized: "Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433407381692416
+    m_Localized: "Siguiente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Localized: "Anterior"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522174996334338048
+    m_Localized: "360"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 533423339270135808
+    m_Localized: "Introducir código manualmente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843705548800
+    m_Localized: "Girar paneles a la izquierda"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Localized: "Girar paneles a la derecha"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634176
+    m_Localized: "Ajustar selección actual:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634177
+    m_Localized: "Activar/desactivar ajuste de posición en X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634178
+    m_Localized: "Activar/desactivar ajuste de posición en Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634179
+    m_Localized: "Activar/desactivar ajuste de posición en Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634180
+    m_Localized: "Ajustar selección a la cuadrícula"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634181
+    m_Localized: "Ajustar ángulos de rotación de la selección"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634185
+    m_Localized: "Activar/desactivar bloqueo de posición en X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634186
+    m_Localized: "Activar/desactivar bloqueo de posición en Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634187
+    m_Localized: "Activar/desactivar bloqueo de posición en Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634188
+    m_Localized: "Activar/desactivar bloqueo de rotación en X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828480
+    m_Localized: "Activar/desactivar bloqueo de rotación en Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828481
+    m_Localized: "Activar/desactivar bloqueo de rotación en Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828496
+    m_Localized: "Multiespejo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828497
+    m_Localized: "Simetría puntual"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828498
+    m_Localized: "Simetría de mosaico"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828500
+    m_Localized: "Afectar al tono"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828501
+    m_Localized: "Afectar a la saturación"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828502
+    m_Localized: "Afectar al brillo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828505
+    m_Localized: "Onda sinusoidal"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828506
+    m_Localized: "Onda triangular"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828507
+    m_Localized: "Onda de sierra"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022784
+    m_Localized: "Onda cuadrada"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022785
+    m_Localized: "Ruido"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128978688454426624
+    m_Localized: "¿Ajustar los objetos agarrados a las guías?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128979151367176192
+    m_Localized: "Activar/desactivar ajuste a guías"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129010807801118720
+    m_Localized: "Orden de simetría"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011310442315776
+    m_Localized: "Repeticiones en X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011387676229632
+    m_Localized: "Repeticiones en Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011445721202688
+    m_Localized: "Escala"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011519415123968
+    m_Localized: "Escala en X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011554005549056
+    m_Localized: "Escala en Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011580064759808
+    m_Localized: "Sesgo en X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011621378654208
+    m_Localized: "Sesgo en Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543626534051840
+    m_Localized: "Activar/desactivar ajuste de rotación en X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Localized: "Activar/desactivar ajuste de rotación en Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Localized: "Activar/desactivar ajuste de rotación en Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Localized: "Añade imágenes y\nmodelos para\nverlos aquí"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Localized: "Añade imágenes a\ntu dispositivo para\nverlas aquí"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093153698373632
+    m_Localized: "Menor compatibilidad al exportar. Consulta nuestra documentación."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Localized: "Tutorial en el próximo reinicio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Localized: "Desactiva los modos avanzado y experimental"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094689821290496
+    m_Localized: "El inicio de sesión no está disponible actualmente en esta plataforma."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151489918612377600
+    m_Localized: "Este dispositivo no admite la grabación de vídeo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Localized: "Puedes crear un vídeo de tu boceto abriéndolo en un Mac o PC. Busca \"Exporting video\" en nuestra documentación en https://docs.openbrush.app para ver una guía paso a paso."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: "Inicia sesión en una cuenta de Icosa para\nsubir contenido a Icosa."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: "Compartir en Icosa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: "¡Permite que Open Brush acceda a los archivos para guardar tus creaciones!"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 172767995928834048
+    m_Localized: "Desliza para ajustar\nel tamaño del pincel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: "Para evitar el error 403 al publicar en Sketchfab, cambia la visibilidad a pública (las cuentas gratuitas de Sketchfab no pueden publicar modelos privados)."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Localized: "ALFA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: "Guardar los trazos seleccionados en la biblioteca multimedia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Localized: "Ratón: mirar alrededor, W,A,S,D: avanzar/moverse lateralmente, Q,E: subir/bajar (mantén Mayús para acelerar)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: "Quítate el visor o cambia al navegador web para continuar con el inicio de sesión."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 381885131211235328
+    m_Localized: "Cargando bocetos. Espera..."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Localized: "¿Dividir malla?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Localized: "Dividir mallas complejas puede ser lento. Guarda tu boceto con frecuencia."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Localized: "Guarda trazos con \"Guardar trazos seleccionados\"\n(en el panel Labs) y aparecerán aquí."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: "Prueba Open Blocks"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: "Compartir en Viverse"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: "Cubo Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: "Cilindro Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: "Elipse Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: "Cinta Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467449183412510720
+    m_Localized: "Biblioteca de bocetos Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Localized: "Biblioteca de Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464424217206784
+    m_Localized: "No se encontraron bocetos Quill en tu carpeta de Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Localized: "No se encontraron archivos .imm en tu biblioteca multimedia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520669196650635264
+    m_Localized: "Visita <b>https://icosa.gallery/device</b>\npara obtener un código de inicio de sesión"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Localized: "Solo los bocetos publicados en Icosa Gallery pueden usarse como portales"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641996467429376
+    m_Localized: "Biblioteca de Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642256367476736
+    m_Localized: "Archivos Quill en tu biblioteca multimedia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642327830028288
+    m_Localized: "Archivos Quill guardados en Quill"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542228906948255744
+    m_Localized: "¿Ajustar entre sí los trazos de regla?"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542389062831005696
+    m_Localized: "Activar/desactivar ajuste de trazos de regla"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 482980427487338496
+    m_Localized: "Exportar poses gaussianas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Localized: "Añadir área de captura en forma de caja"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Localized: "Añadir área de captura esférica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Localized: "Añadir área de captura hemisférica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Localized: "Añadir área de captura elipsoidal"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Localized: "Captura de poses para Gaussian Splatting"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000000
+    m_Localized: "Alinear espacio de juego"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000001
+    m_Localized: "Establecer alineación compartida"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000002
+    m_Localized: "Restablecer alineación compartida"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000003
+    m_Localized: "Realinear espacio de juego"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000004
+    m_Localized: "Alineación actualizada: vuelve a alinear"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000005
+    m_Localized: "Alineación compartida sin establecer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000006
+    m_Localized: "Registrando alineación compartida"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000007
+    m_Localized: "Alineación compartida lista"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000008
+    m_Localized: "Espacio de juego alineado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000009
+    m_Localized: "La alineación ha cambiado: vuelve a alinear"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000010
+    m_Localized: "Error de alineación: vuelve a intentarlo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000011
+    m_Localized: "Coloca la punta del mando en el extremo A y pulsa el gatillo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000012
+    m_Localized: "Extremo A registrado. Coloca la punta del mando en el extremo B y pulsa el gatillo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000014
+    m_Localized: "La referencia es demasiado corta. Elige extremos separados al menos 0,1 metros."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000015
+    m_Localized: "La referencia necesita más separación horizontal. Elige un borde horizontal más largo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000016
+    m_Localized: "La pose del mando no es válida. Comprueba el seguimiento y vuelve a intentar el extremo B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000017
+    m_Localized: "No se pudo registrar la referencia. Vuelve a intentar el extremo B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000018
+    m_Localized: "La referencia no es válida: {0}. Vuelve a intentar el extremo B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000019
+    m_Localized: "Longitud de referencia: {0:F2} m."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000020
+    m_Localized: "La alineación no es válida: {0}. Vuelve a intentar el extremo B."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000021
+    m_Localized: "Longitud medida: {0:F2} m."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000022
+    m_Localized: "Advertencia: {0}."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 543158158396841984
+    m_Localized: "Captura todos los objetos y también la ruta de cámara actual si está visible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146220882010112
+    m_Localized: "Recolorear activado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828504
+    m_Localized: "Frecuencia"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: "Colocar portal"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434881
+    m_Localized: "Complejidad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828503
+    m_Localized: "Intensidad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: "Envolvente translúcida"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 415628836388560896
+    m_Localized: "Oscurecer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: "Comprueba la flecha de A a B. El gatillo confirma; el del otro mando intercambia A y B; Cancelar para salir."
     m_Metadata:
       m_Items: []
   references:
