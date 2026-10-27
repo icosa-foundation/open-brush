@@ -15,6 +15,42 @@ MonoBehaviour:
   m_TableCollectionName: Strings
   m_TableCollectionNameGuidString: c84355079ab3f3e4f8f3812258805f86
   m_Entries:
+  - m_Id: 82310000000000008
+    m_Key: VIEWER_FEATURED_SKETCHES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000009
+    m_Key: VIEWER_FEATURED_SKETCHES_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000001
+    m_Key: VIEWER_NAVIGATION_MENU
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000002
+    m_Key: VIEWER_NAVIGATION_VIEW
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000003
+    m_Key: VIEWER_NAVIGATION_VIEW_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000004
+    m_Key: VIEWER_NAVIGATION_FLY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000005
+    m_Key: VIEWER_NAVIGATION_FLY_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000006
+    m_Key: VIEWER_NAVIGATION_TELEPORT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000007
+    m_Key: VIEWER_NAVIGATION_TELEPORT_HINT
+    m_Metadata:
+      m_Items: []
   - m_Id: 5065710952488960
     m_Key: ADMIN_PANEL_ADVANCED_BUTTON_DESCRIPTION
     m_Metadata:
@@ -2919,10 +2955,6 @@ MonoBehaviour:
     m_Key: SETTINGS_PANEL_BUTTON_RESET_DESCRIPTION_EXTRA
     m_Metadata:
       m_Items: []
-  - m_Id: 95006156311494656
-    m_Key: LABS_PANEL_TRANSFORM_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
   - m_Id: 95221400803737600
     m_Key: KEYBOARD_UP
     m_Metadata:
@@ -3411,14 +3443,6 @@ MonoBehaviour:
     m_Key: erase text
     m_Metadata:
       m_Items: []
-  - m_Id: 310819533771841536
-    m_Key: New Entry
-    m_Metadata:
-      m_Items: []
-  - m_Id: 312729904472465408
-    m_Key: New Entry 1
-    m_Metadata:
-      m_Items: []
   - m_Id: 312730512516521984
     m_Key: ADMIN_PANEL_SAVE_SKETCH_BUTTON_DESCRIPTION
     m_Metadata:
@@ -3439,14 +3463,6 @@ MonoBehaviour:
     m_Key: MULTIPLAYER_PANEL_NICKNAME
     m_Metadata:
       m_Items: []
-  - m_Id: 312783415369342976
-    m_Key: New Entry 2
-    m_Metadata:
-      m_Items: []
-  - m_Id: 312962917202468864
-    m_Key: MULTIPLAYER_PANEL_ROOM_OWNER
-    m_Metadata:
-      m_Items: []
   - m_Id: 312963339069759488
     m_Key: MULTIPLAYER_PANEL_ROOM_OWNE
     m_Metadata:
@@ -3459,24 +3475,12 @@ MonoBehaviour:
     m_Key: MULTIPLAYER_PANEL_ALERT_BEGINNER_MODE
     m_Metadata:
       m_Items: []
-  - m_Id: 312967595889860608
-    m_Key: New Entry 3
-    m_Metadata:
-      m_Items: []
   - m_Id: 312967604588847104
     m_Key: MULTIPLAYER_PANEL_ALERT_ROOM_EXIST
     m_Metadata:
       m_Items: []
-  - m_Id: 313081115495178240
-    m_Key: MULTIPLAYER_PANEL_ALERT_PASSTHROUGH_EXIST
-    m_Metadata:
-      m_Items: []
   - m_Id: 313111533204348928
     m_Key: ADMIN_PANEL_MULTIPLAYER_BUTTON_DESCRIPTION
-    m_Metadata:
-      m_Items: []
-  - m_Id: 313111642914758656
-    m_Key: ADMIN_PANEL_MULTIPLAYER_DESCRIPTION
     m_Metadata:
       m_Items: []
   - m_Id: 317029250049335296
@@ -3869,6 +3873,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 554342843789434880
     m_Key: HANDTRACKING_ROTATE_PANELS_RIGHT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434881
+    m_Key: ICOSAPANEL_PANEL_FILTER_COMPLEXITY
     m_Metadata:
       m_Items: []
   m_Metadata:

@@ -632,7 +632,6 @@ namespace OpenBrush.Multiplayer
             m_LocalPlayer = playerData;
             m_LocalPlayer.PlayerId = id;
             ManualColocationManager.m_Instance?.OnLocalPlayerJoinedRoom();
-
         }
 
         void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
@@ -1367,7 +1366,6 @@ namespace OpenBrush.Multiplayer
             if (m_LocalPlayer.PlayerId == id)
             {
                 m_LocalPlayer = null;
-                Debug.Log("Possible to get here!");
                 return;
             }
 
@@ -1398,7 +1396,6 @@ namespace OpenBrush.Multiplayer
 
             // If the new owner is the local player, set the flag
             if (m_LocalPlayer.PlayerId == newOwner.PlayerId) isUserRoomOwner = true;
-
         }
 
         public async void OnCommandPerformed(BaseCommand command)
@@ -1457,11 +1454,6 @@ namespace OpenBrush.Multiplayer
             bool sent =
                 await m_Manager.RpcSendManualColocationReferenceToPlayer(
                     reference, playerId);
-            if (sent)
-            {
-                Debug.Log(
-                    $"[ManualColocation] Sent revision {reference.Revision} to late joiner {playerId}.");
-            }
             return sent;
         }
 

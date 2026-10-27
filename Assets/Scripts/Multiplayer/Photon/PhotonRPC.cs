@@ -209,7 +209,6 @@ namespace OpenBrush.Multiplayer
             if (SketchMemoryScript.m_Instance.IsCommandInStack(commandGuid) ||
                 m_pendingCommands.Any(pending => pending.Guid == commandGuid))
             {
-                //Debug.Log($"Command with Guid {commandGuid} already in stack.");
                 return true;
             }
             return false;
@@ -220,7 +219,6 @@ namespace OpenBrush.Multiplayer
 
             if (SketchMemoryScript.m_Instance.IsStrokeInMemory(strokeGuid))
             {
-                //Debug.Log($"Stroke with Guid {strokeGuid} already in memory.");
                 return true;
             }
             return false;
@@ -263,7 +261,6 @@ namespace OpenBrush.Multiplayer
         {
             if (CheckifCommandGuidIsInStack(commandGuid)) return;
 
-            Debug.Log($"Base command child count: {childCount}");
             var parentCommand = FindParentCommand(parentGuid);
             var command = new BaseCommand(
                 commandGuid, (int)(App.Instance.CurrentSketchTime * 1000),
@@ -1426,7 +1423,6 @@ namespace OpenBrush.Multiplayer
             NetworkRunner runner, string commandName, string guid, string[] data,
             RpcInfo info = default)
         {
-            Debug.Log($"Command recieved: {commandName}");
 
             if (commandName == k_LiveStrokeCapabilityCommand)
             {
@@ -1443,7 +1439,6 @@ namespace OpenBrush.Multiplayer
             if (commandName.Equals("TiltBrush.BrushStrokeCommand"))
             {
                 var asString = string.Join(string.Empty, data);
-                Debug.Log(asString);
                 // JsonUtility silently drops any field it cannot serialize, so this
                 // round trip loses StrokeData.m_BrushGuid and m_Guid (System.Guid) and
                 // m_OverrideColors (List<Color32?>). m_BrushGuid is restored below from

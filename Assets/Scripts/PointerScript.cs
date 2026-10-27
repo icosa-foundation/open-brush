@@ -692,6 +692,20 @@ namespace TiltBrush
             m_CurrentLine.ApplyChangesToVisuals();
         }
 
+        /// Prepare the last stroke update immediately before finalization. A batched stroke
+        /// needs its CPU geometry, but its temporary display mesh will not be rendered again.
+        public void PrepareLineForFinalization()
+        {
+            if (App.Config.m_UseBatchedBrushes && m_CurrentLine.m_bCanBatch)
+            {
+                m_CurrentLine.PrepareForBatching();
+            }
+            else
+            {
+                UpdateLineVisuals();
+            }
+        }
+
         public void SetPreviewLineDelayTimer()
         {
             m_AllowPreviewLineTimer = 0.25f;
@@ -1087,11 +1101,7 @@ namespace TiltBrush
 
             UpdateLineFromStroke(stroke);
 
-            // It's kind of warty that this needs to happen; brushes should probably track
-            // the mesh-dirty state and flush it in Finalize().
-            // TODO: Check if this is still necessary now that QuadStripBrushStretchUV
-            // flushes pending geometry changes in Finalize*Brush()
-            m_CurrentLine.ApplyChangesToVisuals();
+            PrepareLineForFinalization();
 
             // Copy in new contents
 

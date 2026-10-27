@@ -56,7 +56,6 @@ namespace TiltBrush
         {
             if (userOverride > 0)
             {
-                Debug.Log($"[MOBILE_VERTEX_LIMITS] User config override: warningVertices={userOverride}");
                 return userOverride;
             }
             if (userOverride < 0)
@@ -75,8 +74,6 @@ namespace TiltBrush
                 bool isSteamFrame = SteamManager.IsSteamFrame;
                 int limit = MobileVertexLimits.GetMemoryWarningVertCount(
                     manufacturer, model, device, product, MemoryWarningVertCount, isSteamFrame);
-                Debug.Log($"[MOBILE_VERTEX_LIMITS] manufacturer={manufacturer} model={model} " +
-                    $"device={device} product={product} steamFrame={isSteamFrame} warningVertices={limit}");
                 return limit;
             }
             catch (System.Exception ex)

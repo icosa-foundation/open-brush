@@ -41,7 +41,6 @@ namespace TiltBrush
 <head><meta charset='UTF-8'></head>
 <body>{0}</body></html>";
 
-
         private FileSystemWatcher m_FileWatcher;
         private string m_UserScriptsPath;
         private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
@@ -682,7 +681,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
             foreach (string commandString in commandStrings)
             {
-                if (commandString.StartsWith("query."))
+                if (commandString.StartsWith("query.") || commandString == "quality.get" ||
+                    commandString.StartsWith("quality.get=", StringComparison.Ordinal))
                 {
                     responses.Add(HandleApiQuery(commandString));
                 }
@@ -704,6 +704,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
             if (commandPair.Length < 1) return null;
             switch (commandPair[0])
             {
+                case "quality.get":
+                    return ApiMainThreadObserver.QualityStatus;
                 case "query.queue":
                     return m_OutgoingCommandQueue.Count.ToString();
                 case "query.quill.stats":
@@ -809,7 +811,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
         IEnumerator GetRequest(string uri)
         {
 #if  UNITY_EDITOR
-            Debug.Log($"GetRequest: {uri}");
 #endif
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
@@ -864,7 +865,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
             OutgoingApiCommand();
             UpdateCameraView();
         }
-
 
         IEnumerator ScreenCap()
         {

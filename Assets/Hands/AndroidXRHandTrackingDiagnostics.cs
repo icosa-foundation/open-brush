@@ -16,10 +16,10 @@ namespace TiltBrush
         private void Start()
         {
             if (!AndroidXRHandBridge.DebugLoggingEnabled) return;
-#if UNITY_ANDROID && OPEN_BRUSH_ANDROID_XR && !UNITY_EDITOR
+#if UNITY_ANDROID && !UNITY_EDITOR
             Debug.Log($"ANDROIDXR_HAND_PERMISSION granted={Permission.HasUserAuthorizedPermission(HandPermission)}");
 #else
-            Debug.Log("ANDROIDXR_HAND_PERMISSION editor/non-Android-XR");
+            Debug.Log("ANDROIDXR_HAND_PERMISSION editor/non-Android");
 #endif
         }
 
