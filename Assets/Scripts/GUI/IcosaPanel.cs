@@ -175,10 +175,6 @@ namespace TiltBrush
             m_NumPages = ((App.IcosaAssetCatalog.NumCloudModels(m_CurrentSet) - 1) / Icons.Count) + 1;
             int numCloudModels = App.IcosaAssetCatalog.NumCloudModels(m_CurrentSet);
 
-            // [ICOSALOAD] time the whole main-thread RefreshPage body and its sub-phases.
-            var __rpSw = System.Diagnostics.Stopwatch.StartNew();
-            long __unloadMs = 0;
-
             if (m_LastPageIndexForLoad != PageIndex || m_LastSetTypeForLoad != m_CurrentSet)
             {
                 // Unload the previous page's models.
@@ -188,7 +184,6 @@ namespace TiltBrush
                 m_LastPageIndexForLoad = PageIndex;
                 m_LastSetTypeForLoad = m_CurrentSet;
 
-                var __unloadSw = System.Diagnostics.Stopwatch.StartNew();
                 // Destroy the on-button preview instances so only the thumbnail is visible. This does
                 // NOT unload the underlying Model geometry - those stay cached in IcosaAssetCatalog
                 // (subject to its memory budget) so returning to this page/tab doesn't re-import them.
@@ -196,10 +191,8 @@ namespace TiltBrush
                 {
                     ((ModelButton)Icons[i]).DestroyModelPreview();
                 }
-                __unloadMs = __unloadSw.ElapsedMilliseconds;
             }
 
-            var __iconLoopSw = System.Diagnostics.Stopwatch.StartNew();
             var visibleAssetIds = new List<string>();
             for (int i = 0; i < Icons.Count; i++)
             {
@@ -232,11 +225,6 @@ namespace TiltBrush
                     bool tooManyTris = maxPreviewTris > 0 && asset.TriangleCount > maxPreviewTris;
                     bool measuredOversized = App.IcosaAssetCatalog.IsModelOversized(asset.AssetId);
                     bool tooComplexToPreview = tooManyTris || measuredOversized;
-                    if (tooComplexToPreview)
-                    {
-                        Debug.Log($"[ICOSALOAD] skip preview/preload {asset.AssetId} " +
-                            $"tris={asset.TriangleCount} (limit={maxPreviewTris}) oversized={measuredOversized}");
-                    }
                     bool canPreload = App.IcosaAssetCatalog.HasCachedModel(asset.AssetId)
                         || App.IcosaAssetCatalog.CanAutoDownloadForPreview(asset.AssetId);
                     if (App.UserConfig.Flags.IcosaModelPreload && !tooComplexToPreview && canPreload)
@@ -252,15 +240,11 @@ namespace TiltBrush
             // Pin the page we're showing so the memory budget can't evict (and thus thrash-reload) it.
             App.IcosaAssetCatalog.SetVisibleModels(visibleAssetIds);
 
-            long __iconLoopMs = __iconLoopSw.ElapsedMilliseconds;
-
             // Use featured model count as a proxy for "icosa is working"
             bool internetError = App.IcosaAssetCatalog.NumCloudModels(IcosaSetType.Featured) == 0;
             m_InternetError.SetActive(internetError);
 
-            var __panelTextSw = System.Diagnostics.Stopwatch.StartNew();
             RefreshPanelText();
-            long __panelTextMs = __panelTextSw.ElapsedMilliseconds;
             switch (m_CurrentSet)
             {
                 case IcosaSetType.User:
@@ -297,14 +281,6 @@ namespace TiltBrush
                     break;
             }
 
-            __rpSw.Stop();
-            if (__rpSw.ElapsedMilliseconds >= 5)
-            {
-                Debug.Log($"[ICOSALOAD] RefreshPage set={m_CurrentSet} total={__rpSw.ElapsedMilliseconds}ms " +
-                    $"(unload={__unloadMs}ms iconLoop={__iconLoopMs}ms panelText={__panelTextMs}ms)");
-            }
-
-
             m_FilterInfoIcon.SetDescriptionText($"Filtering {CurrentSetFriendlyName} by:");
             m_FilterInfoIcon.SetExtraDescriptionText(CurrentQuery.FriendlyString);
 
@@ -319,7 +295,6 @@ namespace TiltBrush
             IcosaSetType.AllModels => "All Models",
             _ => "Models"
         };
-
 
         void RefreshPanelText()
         {
@@ -387,7 +362,6 @@ namespace TiltBrush
                     icon.ResetState();
                     icon.SetButtonGrayscale(icon);
                 }
-
             }
             else if (m_CurrentState == PanelState.Available)
             {

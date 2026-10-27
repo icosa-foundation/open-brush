@@ -12,8 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -33,16 +35,31 @@ namespace TiltBrush
     {
         static public SketchCatalog m_Instance;
 
-        // This folder contains json files which define where to pull the sketch thumbnail and data
-        // from Poly.  These are used to populate the showcase when we can't query Poly.
-        // Obviously, if Poly as a database is deleted or moved, accessing these files will fail.
+        // Resource folders for showcase JSON and legacy example seeding.
         public const string kDefaultShowcaseSketchesFolder = "DefaultShowcaseSketches";
+        public const string kDefaultBundledSketchesFolder = "DefaultBundledSketches";
 
         private SketchSet[] m_Sets;
 
         public SketchSet GetSet(SketchSetType eType)
         {
             return m_Sets[(int)eType];
+        }
+
+        // Built-in URLs identify packaged filenames, not display names or seeded disk files.
+        public static SceneFileInfo FindBundledSketch(SketchSet sketches, string requestedName)
+        {
+            if (sketches == null || string.IsNullOrEmpty(requestedName)) return null;
+            string name = Uri.UnescapeDataString(requestedName);
+            if (name.IndexOfAny(new[] { '/', '\\' }) >= 0 || Path.IsPathRooted(name)) return null;
+            for (int i = 0; i < sketches.NumSketches; ++i)
+            {
+                var info = sketches.GetSketchSceneFileInfo(i);
+                if (info is DiskSceneFileInfo disk && disk.Embedded && disk.ReadOnly &&
+                    string.Equals(Path.GetFileName(info.FullPath), name, StringComparison.OrdinalIgnoreCase))
+                    return info;
+            }
+            return null;
         }
 
         void Awake()
@@ -58,6 +75,13 @@ namespace TiltBrush
                 System.Environment.SetEnvironmentVariable("MONO_MANAGED_WATCHER", "3");
             }
 
+#if OPEN_BRUSH_VIEWER
+            var localSketchSet = new FileSketchSet(SketchSetType.User,
+                BundledSketchAssets.ReadManifest().Sketches.Select(entry => new DiskSceneFileInfo(entry)));
+#else
+            var localSketchSet = new FileSketchSet(SketchSetType.User);
+#endif
+
             SketchSet featuredSketchSet = null;
 #if false
             // TODO this fails because of initialization order:
@@ -70,7 +94,7 @@ namespace TiltBrush
 
             m_Sets = new[]
             {
-                new FileSketchSet(SketchSetType.User),
+                localSketchSet,
                 featuredSketchSet,
                 new IcosaSketchSet(this, SketchSetType.Liked, needsLogin: true),
                 new GoogleDriveSketchSet(),
@@ -80,22 +104,38 @@ namespace TiltBrush
 
         public static bool InitFeaturedSketchesPath()
         {
-            string featuredPath = App.FeaturedSketchesPath();
-            if (!App.InitDirectoryAtPath(featuredPath)) { return false; }
+            return InitBundledSketchesPath(App.FeaturedSketchesPath());
+        }
+
+        private static bool InitBundledSketchesPath(string sketchesPath)
+        {
+            if (!App.InitDirectoryAtPath(sketchesPath)) { return false; }
 
             TextAsset[] textAssets =
-                Resources.LoadAll<TextAsset>(SketchCatalog.kDefaultShowcaseSketchesFolder);
-            foreach (var asset in textAssets)
+                Resources.LoadAll<TextAsset>(kDefaultBundledSketchesFolder);
+            try
             {
-                if (asset.name.EndsWith(".tilt"))
+                var defaults = new List<string>();
+                var assetsByPath = new Dictionary<string, TextAsset>();
+                foreach (var asset in textAssets)
                 {
-                    string filePath = Path.Combine(App.FeaturedSketchesPath(), asset.name);
-                    if (!File.Exists(filePath))
+                    if (asset.name.EndsWith(".tilt"))
                     {
-                        File.WriteAllBytes(filePath, asset.bytes);
+                        string resourcePath = $"{kDefaultBundledSketchesFolder}/{asset.name}";
+                        defaults.Add(resourcePath);
+                        assetsByPath.Add(resourcePath, asset);
                     }
                 }
-                Resources.UnloadAsset(asset);
+                DefaultMediaSeeder.Seed(sketchesPath, defaults.ToArray(), null,
+                    "Seeded bundled sketches", App.Instance.HasPlayedBefore,
+                    resourcePath => assetsByPath[resourcePath].bytes);
+            }
+            finally
+            {
+                foreach (var asset in textAssets)
+                {
+                    Resources.UnloadAsset(asset);
+                }
             }
 
             return true;

@@ -208,27 +208,28 @@ namespace TiltBrush
             LoadQuillConfirmUnsaved = 13000,
             LoadQuillFile = 13001,
             OpenQuillPanelSearchPopup = 13002,
-            ConvertSelectionToSdf = 14000,
-            EditSelectedSdf = 14001,
-            SdfPreviousComponent = 14002,
-            SdfNextComponent = 14003,
-            SdfMoveComponentUp = 14004,
-            SdfMoveComponentDown = 14005,
-            SdfCycleComponentOperation = 14006,
-            SdfRemoveComponent = 14007,
-            SdfEditorNextPage = 14008,
-            SdfAddPrimitive = 14009,
-            SdfNextPrimitiveDimension = 14010,
-            SdfAdjustPrimitiveDimension = 14011,
-            SdfAdjustComponentBlend = 14012,
-            SdfToggleComponentHandles = 14013,
-            CreateGuideFromSelectedModel = 14014,
-            SdfSetPrimitiveDimension = 14015,
-            SdfSetComponentBlend = 14016,
-            SdfNextTransformValue = 14017,
-            SdfSetTransformValue = 14018,
-            SdfToggleComponentFlip = 14019,
-            SdfDuplicateComponent = 14020,
+            ConvertSelectionToSdf = 15000,
+            EditSelectedSdf = 15001,
+            SdfPreviousComponent = 15002,
+            SdfNextComponent = 15003,
+            SdfMoveComponentUp = 15004,
+            SdfMoveComponentDown = 15005,
+            SdfCycleComponentOperation = 15006,
+            SdfRemoveComponent = 15007,
+            SdfEditorNextPage = 15008,
+            SdfAddPrimitive = 15009,
+            SdfNextPrimitiveDimension = 15010,
+            SdfAdjustPrimitiveDimension = 15011,
+            SdfAdjustComponentBlend = 15012,
+            SdfToggleComponentHandles = 15013,
+            CreateGuideFromSelectedModel = 15014,
+            SdfSetPrimitiveDimension = 15015,
+            SdfSetComponentBlend = 15016,
+            SdfNextTransformValue = 15017,
+            SdfSetTransformValue = 15018,
+            SdfToggleComponentFlip = 15019,
+            SdfDuplicateComponent = 15020,
+            OpenNavigationPopup = 14000,
         }
 
         public enum ControlsType
@@ -876,21 +877,6 @@ namespace TiltBrush
             facingDirection.Normalize();
             SetUIReticleTransform(hitPosition + facingDirection * 0.025f, facingDirection);
             m_UIReticle.SetActive(true);
-
-            if (Time.frameCount % 72 == 0)
-            {
-                foreach (Renderer renderer in m_UIReticle.GetComponentsInChildren<Renderer>(true))
-                {
-                    Debug.Log(
-                        $"ROTATE_RETICLE_RENDERER name={renderer.name} " +
-                        $"enabled={renderer.enabled} " +
-                        $"active={renderer.gameObject.activeInHierarchy} " +
-                        $"position={renderer.transform.position} " +
-                        $"forward={renderer.transform.forward} " +
-                        $"bounds={renderer.bounds.center} " +
-                        $"material={renderer.sharedMaterial?.name}");
-                }
-            }
         }
 
         public void SetUIReticleTransform(Vector3 vPos, Vector3 vForward)
@@ -2743,7 +2729,6 @@ namespace TiltBrush
             }
 
             return false;
-
         }
 
         void UpdateGrab_World()
@@ -5495,6 +5480,7 @@ namespace TiltBrush
                     CameraCaptureRuntime.m_Instance.StartAllCapture();
                     break;
                 case GlobalCommands.RepaintOptions:
+                case GlobalCommands.OpenNavigationPopup:
                 case GlobalCommands.MultiplayerPanelOptions:
                 case GlobalCommands.MultiplayerJoinRoom:
                 case GlobalCommands.MultiplayerLeaveRoom:
@@ -5527,7 +5513,7 @@ namespace TiltBrush
             m_ViewOnly = active;
             if (active)
             {
-                EnsureViewOnlyNavigationTool();
+                m_SketchSurfacePanel.EnableDefaultTool();
                 m_PanelManager.SetPanelAvailabilityMode(PanelManager.PanelAvailabilityMode.ViewOnly);
                 RequestPanelsVisibility(true);
             }
@@ -5538,10 +5524,6 @@ namespace TiltBrush
                 RequestPanelsVisibility(true);
             }
             PointerManager.m_Instance.RequestPointerRendering(!active);
-            // TODO - decide if this is a permanent change
-            // With this line, you can't set a tool such as fly or teleport
-            // and switch to View Only mode as the mode change disables all tools
-            //m_SketchSurface.SetActive(!m_ViewOnly);
             m_Decor.SetActive(!active);
             if (InitNoHeadsetMode.m_Instance != null)
             {
@@ -5554,19 +5536,20 @@ namespace TiltBrush
             return tool == BaseTool.ToolType.FlyTool || tool == BaseTool.ToolType.TeleportTool;
         }
 
-        public void EnsureViewOnlyNavigationTool()
-        {
-            if (!IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
-            {
-                m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.FlyTool);
-            }
-        }
-
         public void DisableViewOnlyNavigationTool()
         {
-            if (IsViewOnlyNavigationTool(m_SketchSurfacePanel.GetCurrentToolType()))
+            BaseTool.ToolType tool = m_SketchSurfacePanel.GetCurrentToolType();
+            if (tool == BaseTool.ToolType.EmptyTool || IsViewOnlyNavigationTool(tool))
             {
-                m_SketchSurfacePanel.EnableDefaultTool();
+                if (IsViewOnly)
+                {
+                    // The no-headset default is FlyTool; the sketch picker needs no navigation.
+                    m_SketchSurfacePanel.EnableSpecificTool(BaseTool.ToolType.EmptyTool);
+                }
+                else
+                {
+                    m_SketchSurfacePanel.EnableDefaultTool();
+                }
             }
         }
 
@@ -5754,6 +5737,11 @@ namespace TiltBrush
             // TODO: hide gallery view / publish if there are no saved sketches
             switch (rEnum)
             {
+#if OPEN_BRUSH_VIEWER
+                case GlobalCommands.DeleteSketch:
+                case GlobalCommands.RenameSketch:
+                    return false;
+#endif
                 case GlobalCommands.Undo:
                     return SketchMemoryScript.m_Instance.CanUndo() && !(MultiplayerManager.m_Instance.State == ConnectionState.IN_ROOM);
                 case GlobalCommands.Redo:
@@ -6042,5 +6030,4 @@ namespace TiltBrush
             }
         }
     }
-
 } // namespace TiltBrush
