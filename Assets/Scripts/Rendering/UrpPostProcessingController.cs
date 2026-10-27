@@ -60,6 +60,7 @@ namespace TiltBrush
         private bool m_CurrentFxaa;
         private int m_CurrentMsaa = 1;
         private UniversalRenderPipelineAsset m_MsaaPipelineAsset;
+        private UrpShadowOverrides m_ShadowOverrides;
         private RenderPipelineAsset m_PreviousQualityPipeline;
         private bool m_HasSessionPipelineSettings;
         private int m_PreviousPipelineMsaa;
@@ -334,6 +335,7 @@ namespace TiltBrush
             {
                 ApplyMsaa(SessionMsaaLevel.Value);
             }
+            ApplyShadowOverrides();
 
             if (QualityControls.m_Instance == null)
             {
@@ -378,6 +380,7 @@ namespace TiltBrush
             Shader.DisableKeyword("HDR_SIMPLE");
             Shader.DisableKeyword("HDR_EMULATED");
             ApplyMsaa(quality.MSAALevel);
+            ApplyShadowOverrides();
             SessionMsaaLevel = m_CurrentMsaa;
         }
 
@@ -425,6 +428,7 @@ namespace TiltBrush
                     }
                     m_PreviousQualityPipeline = QualitySettings.renderPipeline;
                     m_PreviousRenderScale = pipelineAsset.renderScale;
+                    m_ShadowOverrides = new UrpShadowOverrides(pipelineAsset);
                     m_MsaaPipelineAsset = Instantiate(pipelineAsset);
                     m_MsaaPipelineAsset.name = $"{pipelineAsset.name} (Runtime)";
                     m_MsaaPipelineAsset.hideFlags = HideFlags.DontSave;
@@ -441,6 +445,15 @@ namespace TiltBrush
                 if (!SessionMsaaLevel.HasValue)
                     XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
             }
+        }
+
+        private void ApplyShadowOverrides()
+        {
+            if (m_MsaaPipelineAsset == null || m_ShadowOverrides == null) return;
+            m_ShadowOverrides.Apply(m_MsaaPipelineAsset,
+                UserConfig.PerformanceOverrides.ShadowMode,
+                UserConfig.PerformanceOverrides.ShadowResolution,
+                UserConfig.PerformanceOverrides.ShadowDistance);
         }
 
         public int GetSupportedMsaa(int requestedSamples, bool hdr)
@@ -509,6 +522,7 @@ namespace TiltBrush
                 }
                 Destroy(m_MsaaPipelineAsset);
                 m_MsaaPipelineAsset = null;
+                m_ShadowOverrides = null;
                 m_PreviousQualityPipeline = null;
             }
         }
