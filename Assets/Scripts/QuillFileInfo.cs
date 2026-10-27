@@ -92,7 +92,6 @@ namespace TiltBrush
         {
             m_ChapterCountCache = null;
             m_ChapterCountCacheTime = null;
-            UnityEngine.Debug.Log($"[QUILL-CHAPTER] Cleared chapter count cache for '{DisplayName}'");
         }
 
         public bool HasMultipleChapters => ChapterCount > 1;
@@ -121,7 +120,6 @@ namespace TiltBrush
                     else
                     {
                         // Optimistically assume single chapter for IMM files
-                        UnityEngine.Debug.Log($"[QUILL-CHAPTER] Optimistically assuming '{DisplayName}' (IMM) has 1 chapter");
                         return false;
                     }
                 }

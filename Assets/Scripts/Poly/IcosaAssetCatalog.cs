@@ -1106,11 +1106,9 @@ namespace TiltBrush
                     long modelBytes = EstimateModelBytes(finished);
                     m_LoadedModelBytes[assetId] = modelBytes;
                     m_ModelLastUsedTime[assetId] = Time.realtimeSinceStartup;
-                    if (modelBytes > kOversizedModelByteThreshold && m_OversizedModelIds.Add(assetId))
+                    if (modelBytes > kOversizedModelByteThreshold)
                     {
-                        Debug.Log($"[ICOSALOAD] mark oversized {assetId} " +
-                            $"~{modelBytes / (1024 * 1024)}MB > {kOversizedModelByteThreshold / (1024 * 1024)}MB " +
-                            "- will not auto-preload");
+                        m_OversizedModelIds.Add(assetId);
                     }
                 }
             }
@@ -1119,11 +1117,6 @@ namespace TiltBrush
                 // A load just completed: refresh IsLoading() and let the panel update its buttons.
                 m_IsLoadingMemo = null;
                 m_NotifyListeners = true;
-                long __cacheTotal = 0;
-                foreach (var kv in m_LoadedModelBytes) { __cacheTotal += kv.Value; }
-                Debug.Log($"[ICOSALOAD] cache {m_LoadedModelBytes.Count} models " +
-                    $"~{__cacheTotal / (1024 * 1024)}MB (budget {kLoadedModelMemoryBudgetBytes / (1024 * 1024)}MB, " +
-                    $"visible={m_VisibleAssetIds.Count})");
                 EnforceMemoryBudget();
             }
 
@@ -1174,7 +1167,6 @@ namespace TiltBrush
         /// Pass the reason the Model is being pulled into memory, for logging purposes.
         public void RequestModelLoad(Model model, string reason)
         {
-            Debug.Log($"Requesting model load {model} for {reason}");
             // Verify assumption that byAssetId[model.asset] == model; otherwise, caller may wait
             // indefinitely for model's loaded state to change and that bug will be hard to track down.
             string assetId = model.GetLocation().AssetId;
@@ -2011,5 +2003,4 @@ namespace TiltBrush
             m_AssetJsonByAssetId[toString] = asset;
         }
     }
-
 } // namespace TiltBrush

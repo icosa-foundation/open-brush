@@ -41,6 +41,32 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpWatermarkRendererFeature
   m_Active: 1
   m_RenderPassEvent: 600
+--- !u!114 &4417583065209327411
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ae4d376c05df421b98c5b39b25b0d29, type: 3}
+  m_Name: AR Background
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARBackgroundRendererFeature
+  m_Active: 1
+--- !u!114 &-2981144582375113927
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01b019caa33e147829f48e2b15958f84, type: 3}
+  m_Name: AR Command Buffer Support
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARCommandBufferSupportRendererFeature
+  m_Active: 1
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -73,7 +99,9 @@ MonoBehaviour:
   - {fileID: -5352823065678073211}
   - {fileID: 5937264514657144174}
   - {fileID: -2519828145476762416}
-  m_RendererFeatureMap: 3448fbb468321b0a5999ec40bfdb0bb9bc470d47a72a1e2e5d05706ca21fd15485b2bd40c8f3b6b56ecdab7d9e666552d084d3fda6c507ddl
+  - {fileID: 4417583065209327411}
+  - {fileID: -2981144582375113927}
+  m_RendererFeatureMap: 3448fbb468321b0a5999ec40bfdb0bb9bc470d47a72a1e2e5d05706ca21fd15485b2bd40c8f3b6b56ecdab7d9e666552d084d3fda6c507dd334f957764684e3d397b730fccd8a0d6
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
   m_AssetVersion: 3
