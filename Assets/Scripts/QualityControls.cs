@@ -348,9 +348,15 @@ namespace TiltBrush
             m_targetMaxControlPoints = settings.TargetMaxControlPoints;
             m_maxLoadingSimplification = settings.MaxSimplification;
 
+#if OPEN_BRUSH_ANDROID_XR
+            // Sub-resolution XR viewports produce a top-edge band and vertical image
+            // shifts on Aura. Keep the full viewport until that rendering issue is resolved.
+            float viewportScale = 1f;
+#else
             float viewportScale = App.UserConfig.Profiling.ViewportScaling > 0 ?
                 App.UserConfig.Profiling.ViewportScaling :
                 settings.ViewportScale;
+#endif
 
             if (App.UserConfig.Profiling.GlobalMaximumLOD > 0)
             {
