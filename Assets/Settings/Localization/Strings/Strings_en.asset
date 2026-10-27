@@ -18,6 +18,42 @@ MonoBehaviour:
   m_Metadata:
     m_Items: []
   m_TableData:
+  - m_Id: 82310000000000008
+    m_Localized: Featured Sketches
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000009
+    m_Localized: Included with Open Brush Viewer. Available offline.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000001
+    m_Localized: Choose navigation mode
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000002
+    m_Localized: View
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000003
+    m_Localized: Two handed grab to move, rotate or scale the sketch.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000004
+    m_Localized: Fly
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000005
+    m_Localized: Hold pinch or trigger to fly in the direction you point.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000006
+    m_Localized: Teleport
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82310000000000007
+    m_Localized: Aim at a destination, then pinch or pull the trigger to teleport.
+    m_Metadata:
+      m_Items: []
   - m_Id: 6606866780160
     m_Localized: 'Use Grip To Grab
 
@@ -3962,7 +3998,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000013
-    m_Localized: Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; cancel retries later.
+    m_Localized: "Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; Cancel to exit."
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000014
@@ -4043,6 +4079,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 554342843789434880
     m_Localized: Rotate panels right
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434881
+    m_Localized: "Complexity"
     m_Metadata:
       m_Items: []
   references:

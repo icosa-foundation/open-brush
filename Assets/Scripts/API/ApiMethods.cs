@@ -1424,6 +1424,24 @@ namespace TiltBrush
             App.Instance.RamLoggingActive = active;
         }
 
+        [ApiEndpoint("passthrough.blendtype",
+            "Sets how the eye buffer composites over passthrough: alpha or premultiply. " +
+            "Leave empty to report the current value. Not saved; for testing.", "premultiply")]
+        public static string SetPassthroughBlendType(string blendType)
+        {
+            if (string.IsNullOrWhiteSpace(blendType))
+            {
+                return PassthroughManager.SetEyeBufferBlendType(null);
+            }
+            if (!Enum.TryParse(blendType.Trim(), true,
+                    out Unity.XR.CompositionLayers.Layers.BlendType parsed) ||
+                !Enum.IsDefined(typeof(Unity.XR.CompositionLayers.Layers.BlendType), parsed))
+            {
+                return $"Unknown blend type '{blendType}'. Use alpha or premultiply.";
+            }
+            return PassthroughManager.SetEyeBufferBlendType(parsed);
+        }
+
         [ApiEndpoint("audio.reactive", "Enable or disable audio-reactive mode", "true")]
         public static string EnableAudioReactiveMode(bool active)
         {
