@@ -33,7 +33,17 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_UnknownImageTexture;
         [SerializeField] private TextMeshPro m_PanelTextPro;
         [SerializeField] private LocalizedString m_PanelTextStandard;
-        public string PanelTextStandard { get { return m_PanelTextStandard.GetLocalizedStringAsync().Result; } }
+        public string PanelTextStandard
+        {
+            get
+            {
+#if OPEN_BRUSH_VIEWER
+                return ViewerSketchbookLabels.Featured.GetLocalizedStringAsync().Result;
+#else
+                return m_PanelTextStandard.GetLocalizedStringAsync().Result;
+#endif
+            }
+        }
         [SerializeField] private LocalizedString m_PanelTextShowcase;
         public string PanelTextShowcase { get { return m_PanelTextShowcase.GetLocalizedStringAsync().Result; } }
 

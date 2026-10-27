@@ -17,6 +17,8 @@ import com.unity3d.player.UnityPlayer;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -28,6 +30,18 @@ import org.json.JSONObject;
 
 public final class DirectStorage {
     private static final String AUTHORITY = "com.android.externalstorage.documents";
+
+    // Keep the read buffer in Java: JNI does not copy writes back into C# byte arrays.
+    public static byte[] readAsset(String path) throws IOException {
+        if (UnityPlayer.currentActivity == null) throw new IOException("Activity is unavailable");
+        try (InputStream input = UnityPlayer.currentActivity.getAssets().open(path);
+             ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[64 * 1024];
+            int count;
+            while ((count = input.read(buffer)) != -1) output.write(buffer, 0, count);
+            return output.toByteArray();
+        }
+    }
 
     public static String documentsRoot(String name) throws IOException {
         if (!validName(name)) throw new IOException("Invalid workspace folder name");

@@ -3451,7 +3451,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: 
+    m_Localized: "Open Brush 草图查看器"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3515,7 +3515,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: 
+    m_Localized: "部分用户可能正在使用不支持透视功能的头显"
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928
@@ -3584,6 +3584,778 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 326871757446639616
     m_Localized: "\u5141\u8BB8\u6240\u6709\u73A9\u5BB6\u7F16\u8F91"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89041955544915968
+    m_Localized: "媒体库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060975102943232
+    m_Localized: "打开"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634182
+    m_Localized: "位置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022786
+    m_Localized: "召唤镜面"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 157582826200739840
+    m_Localized: "关闭"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 312781662766833664
+    m_Localized: " 状态："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641902376607744
+    m_Localized: "媒体库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7930412489482241
+    m_Localized: "所有模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 7932160536977409
+    m_Localized: "所有模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89043032713486336
+    m_Localized: "点击加载"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044237590224896
+    m_Localized: "本地模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044379697438720
+    m_Localized: "本地视频"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89044625424932864
+    m_Localized: "本地图像"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89061114353836032
+    m_Localized: "添加媒体"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064741239808000
+    m_Localized: "了解方法"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89072407659962368
+    m_Localized: "添加媒体"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074692188299264
+    m_Localized: "向后跳转"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074820936654848
+    m_Localized: "播放 / 暂停"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89074884501331968
+    m_Localized: "向前跳转"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093320602312704
+    m_Localized: "交换左右手"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 81207223535591424
+    m_Localized: "烟雾"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 106429517453328384
+    m_Localized: "背景图像"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103924956079587328
+    m_Localized: "重命名草图"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 103943359016206336
+    m_Localized: "变换工具"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 109424659466551296
+    m_Localized: "重新绘制所选内容"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584125108224
+    m_Localized: "X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634183
+    m_Localized: "旋转"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634184
+    m_Localized: "对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828482
+    m_Localized: "沿 X 轴对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828483
+    m_Localized: "沿 Y 轴对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828484
+    m_Localized: "沿 Z 轴对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828485
+    m_Localized: "对齐依据："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828486
+    m_Localized: "左侧/底部/前侧边缘"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828487
+    m_Localized: "中心"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828488
+    m_Localized: "右侧/顶部/后侧边缘"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828489
+    m_Localized: "对齐旋转"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828490
+    m_Localized: "分布："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828491
+    m_Localized: "沿 X 轴分布"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828492
+    m_Localized: "沿 Y 轴分布"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828493
+    m_Localized: "沿 Z 轴分布"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828494
+    m_Localized: "分布依据："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828495
+    m_Localized: "间距"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828499
+    m_Localized: "选项"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251051561549824
+    m_Localized: "网络摄像头"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251441224974336
+    m_Localized: "上一个设备"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129251554584428544
+    m_Localized: "下一个设备"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 141243230077059072
+    m_Localized: "深度"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144201565051027456
+    m_Localized: "音频片段"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 144204798700027904
+    m_Localized: "音频片段"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 137988464450723840
+    m_Localized: "将所选内容移至当前图层"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094550989828096
+    m_Localized: "错误"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147809767845167104
+    m_Localized: "更改语言"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147811113256255488
+    m_Localized: "语言"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791089062830080
+    m_Localized: "重置画布位置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188791266398003200
+    m_Localized: "锁定画布位置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 188792931159203840
+    m_Localized: "解锁画布位置"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 224363142209691648
+    m_Localized: "选择子文件夹"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 234808679492837376
+    m_Localized: "已保存的笔划"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235163428054458368
+    m_Localized: "已保存的笔划"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238556149774557184
+    m_Localized: "图像过大，无法加载"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 238935604850335744
+    m_Localized: "图像过大，无法加载"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 242372529028341760
+    m_Localized: "图像加载失败"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276171365497266176
+    m_Localized: "笔刷大小"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294636550056648704
+    m_Localized: "连接"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 294637000357126144
+    m_Localized: "断开连接"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332314407106863104
+    m_Localized: "选项"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332573810292776960
+    m_Localized: "按标题搜索"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 332574165927813120
+    m_Localized: "筛选和排序"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941283698237440
+    m_Localized: "对所有人静音"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 340941524061216768
+    m_Localized: "对所有人静音"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341358942189346816
+    m_Localized: "房间名称可用"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 341359317994790912
+    m_Localized: "房间已存在"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 369886448819200000
+    m_Localized: "全部"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 397532058527293440
+    m_Localized: "未登录"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456507319803904
+    m_Localized: "Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 422456718544953344
+    m_Localized: "Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433407381692416
+    m_Localized: "下一步"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436433674365919232
+    m_Localized: "上一步"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522174996334338048
+    m_Localized: "360"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 533423339270135808
+    m_Localized: "手动输入代码"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843705548800
+    m_Localized: "向左旋转面板"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Localized: "向右旋转面板"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634176
+    m_Localized: "吸附当前所选内容："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634177
+    m_Localized: "切换 X 轴位置吸附"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634178
+    m_Localized: "切换 Y 轴位置吸附"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634179
+    m_Localized: "切换 Z 轴位置吸附"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634180
+    m_Localized: "将所选内容吸附到网格"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634181
+    m_Localized: "吸附所选内容的旋转角度"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634185
+    m_Localized: "切换 X 轴位置锁定"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634186
+    m_Localized: "切换 Y 轴位置锁定"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634187
+    m_Localized: "切换 Z 轴位置锁定"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584179634188
+    m_Localized: "切换 X 轴旋转锁定"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828480
+    m_Localized: "切换 Y 轴旋转锁定"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828481
+    m_Localized: "切换 Z 轴旋转锁定"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828496
+    m_Localized: "多重镜像"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828497
+    m_Localized: "点对称"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828498
+    m_Localized: "壁纸对称"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828500
+    m_Localized: "影响色相"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828501
+    m_Localized: "影响饱和度"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828502
+    m_Localized: "影响亮度"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828505
+    m_Localized: "正弦波"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828506
+    m_Localized: "三角波"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828507
+    m_Localized: "锯齿波"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022784
+    m_Localized: "方波"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584188022785
+    m_Localized: "噪声"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128978688454426624
+    m_Localized: "将抓取的对象吸附到辅助形状？"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128979151367176192
+    m_Localized: "切换辅助形状吸附"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129010807801118720
+    m_Localized: "对称阶数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011310442315776
+    m_Localized: "X 轴重复次数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011387676229632
+    m_Localized: "Y 轴重复次数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011445721202688
+    m_Localized: "缩放"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011519415123968
+    m_Localized: "X 轴缩放"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011554005549056
+    m_Localized: "Y 轴缩放"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011580064759808
+    m_Localized: "X 轴错切"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011621378654208
+    m_Localized: "Y 轴错切"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543626534051840
+    m_Localized: "切换 X 轴旋转吸附"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543779617759232
+    m_Localized: "切换 Y 轴旋转吸附"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 439543840074457088
+    m_Localized: "切换 Z 轴旋转吸附"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89060241993129984
+    m_Localized: "添加图像和\n模型后即可\n在此查看"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89064000617996288
+    m_Localized: "将图像添加到\n设备后即可\n在此查看"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093153698373632
+    m_Localized: "导出时兼容性较低。请参阅我们的文档。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093701847769088
+    m_Localized: "下次重启时显示教程"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 89093763399180288
+    m_Localized: "关闭高级和实验模式"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 147094689821290496
+    m_Localized: "此平台目前无法登录账户。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151489918612377600
+    m_Localized: "此设备不支持视频录制。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151490030713540608
+    m_Localized: "在 Mac 或 PC 上打开草图即可创建视频。请在文档网站 https://docs.openbrush.app 搜索“Exporting video”，查看分步指南。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911761917042688
+    m_Localized: "登录 Icosa 账户以\n向 Icosa 上传内容。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 164911966586494976
+    m_Localized: "分享到 Icosa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 170004956477833216
+    m_Localized: "请允许 Open Brush 访问文件，以保存您的作品！"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 172767995928834048
+    m_Localized: "滑动以调整\n笔刷大小"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 189087250755706880
+    m_Localized: "为避免在 Sketchfab 上发布时出现 403 错误，请将可见性设为公开（免费 Sketchfab 账户无法发布私有模型）。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176097607781543936
+    m_Localized: "ALPHA"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 235160207315525632
+    m_Localized: "将所选笔划保存到媒体库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 317029250049335296
+    m_Localized: "鼠标：环顾四周，W,A,S,D：前后/左右移动，Q,E：上升/下降（按住 Shift 加速）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 380760416547594240
+    m_Localized: "请摘下头显或切换到网页浏览器以继续登录。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 381885131211235328
+    m_Localized: "正在加载草图，请稍候……"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175499957428224
+    m_Localized: "拆分网格？"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 393175792879230976
+    m_Localized: "拆分复杂网格可能较慢。请定期保存草图。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 401824908597354496
+    m_Localized: "使用 Labs 面板中的“保存所选笔划”\n保存笔划后，即可在此查看。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 436974612083466240
+    m_Localized: "试用 Open Blocks"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 423748078849216512
+    m_Localized: "分享到 Viverse"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073616801390592
+    m_Localized: "Quill 立方体"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073689002139648
+    m_Localized: "Quill 圆柱体"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073748024385536
+    m_Localized: "Quill 椭圆"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 455073795705233408
+    m_Localized: "Quill 丝带"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467449183412510720
+    m_Localized: "Quill 草图库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467452096813817856
+    m_Localized: "Quill 库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464424217206784
+    m_Localized: "在 Quill 文件夹中未找到 Quill 草图"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467464562255945728
+    m_Localized: "在媒体库中未找到 .imm 文件"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520669196650635264
+    m_Localized: "访问 <b>https://icosa.gallery/device</b>\n获取登录代码"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 526462189999579136
+    m_Localized: "只有发布到 Icosa Gallery 的草图才能用作传送门"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540641996467429376
+    m_Localized: "Quill 库"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642256367476736
+    m_Localized: "媒体库中的 Quill 文件"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 540642327830028288
+    m_Localized: "在 Quill 中保存的 Quill 文件"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542228906948255744
+    m_Localized: "将直尺笔划相互吸附？"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 542389062831005696
+    m_Localized: "切换直尺吸附"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 482980427487338496
+    m_Localized: "导出高斯位姿"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000004
+    m_Localized: "添加长方体捕获区域"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000001
+    m_Localized: "添加球形捕获区域"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000003
+    m_Localized: "添加半球形捕获区域"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 520000000000000002
+    m_Localized: "添加椭球形捕获区域"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 522559370036862976
+    m_Localized: "高斯泼溅位姿捕获"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000000
+    m_Localized: "对齐游玩空间"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000001
+    m_Localized: "设置共享对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000002
+    m_Localized: "重置共享对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000003
+    m_Localized: "重新对齐游玩空间"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000004
+    m_Localized: "对齐已更新 - 请重新对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000005
+    m_Localized: "尚未设置共享对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000006
+    m_Localized: "正在记录共享对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000007
+    m_Localized: "共享对齐已就绪"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000008
+    m_Localized: "游玩空间已对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000009
+    m_Localized: "对齐已更改 - 请重新对齐"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000010
+    m_Localized: "对齐错误 - 请重试"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000011
+    m_Localized: "将控制器尖端放在端点 A，然后按下扳机。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000012
+    m_Localized: "端点 A 已记录。将控制器尖端放在端点 B，然后按下扳机。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000014
+    m_Localized: "参考线过短。请选择相距至少 0.1 米的端点。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000015
+    m_Localized: "参考线需要更大的水平间距。请选择更长的水平边缘。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000016
+    m_Localized: "控制器位姿无效。请检查追踪状态，然后重试端点 B。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000017
+    m_Localized: "无法记录参考线。请重试端点 B。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000018
+    m_Localized: "参考线无效：{0}。请重试端点 B。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000019
+    m_Localized: "参考长度：{0:F2} 米。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000020
+    m_Localized: "对齐无效：{0}。请重试端点 B。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000021
+    m_Localized: "测量长度：{0:F2} 米。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000022
+    m_Localized: "警告：{0}。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 543158158396841984
+    m_Localized: "捕获所有控件，以及当前相机路径（如果可见）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 5146220882010112
+    m_Localized: "重新着色已开启"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828504
+    m_Localized: "频率"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 475814063085543424
+    m_Localized: "放置传送门"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434881
+    m_Localized: "复杂度"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 128947584183828503
+    m_Localized: "强度"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 176764812224364544
+    m_Localized: "透视包"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 415628836388560896
+    m_Localized: "变暗"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 521000000000000013
+    m_Localized: "检查从 A 到 B 的箭头。按扳机确认；另一只控制器的扳机交换 A 和 B；取消以退出。"
     m_Metadata:
       m_Items: []
   references:
