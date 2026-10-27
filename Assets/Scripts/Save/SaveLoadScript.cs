@@ -322,6 +322,7 @@ namespace TiltBrush
             return null;
         }
 
+
         // Create a name that is guaranteed not to exist.
         public string GenerateNewUntitledFilename(string directory, string extension)
         {
@@ -831,3 +832,412 @@ namespace TiltBrush
                     }
                 }
 
+
+
+                // It's proving to be rather complex to merge widgets/models etc.
+                // For now skip all that when loading additively with the if (!bAdditive) below
+                // This should cover the majority of use cases.
+
+                // (For when we do support merging widgets:)
+                // It's much simpler to change the group ids in the JSON
+                // before we pass it to WidgetManager
+                //GroupManager.UpdateWidgetJsonToNewGroups(jsonData, oldGroupToNewGroup);
+
+                if (!bAdditive)
+                {
+                    ModelCatalog.m_Instance.ClearMissingModels();
+                    SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
+
+                    if (jsonData.ModelIndex != null)
+                    {
+                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex);
+                    }
+
+                    if (jsonData.LightIndex != null)
+                    {
+                        WidgetManager.m_Instance.SetLightDataFromTilt(jsonData.LightIndex);
+                    }
+
+                    if (jsonData.GuideIndex != null)
+                    {
+                        foreach (Guides guides in jsonData.GuideIndex)
+                        {
+                            StencilWidget.FromGuideIndex(guides);
+                        }
+                    }
+                    if (jsonData.Lights != null)
+                    {
+                        LightsControlScript.m_Instance.CustomLights = jsonData.Lights;
+                    }
+                    // Pass even if null; null is treated as empty
+                    CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
+                    // Images are not stored on Poly either.
+                    // TODO - will this assumption still hold with Icosa?
+                    if (!(fileInfo is IcosaSceneFileInfo))
+                    {
+                        if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
+                        {
+                            WidgetManager.m_Instance.SetImageDataFromTilt(jsonData.ImageIndex);
+                        }
+                        if (VideoCatalog.Instance != null && jsonData.Videos != null)
+                        {
+                            WidgetManager.m_Instance.SetVideoDataFromTilt(jsonData.Videos);
+                        }
+                        if (jsonData.TextWidgets != null)
+                        {
+                            WidgetManager.m_Instance.SetTextDataFromTilt(jsonData.TextWidgets);
+                        }
+                        if (SoundClipCatalog.Instance != null && jsonData.SoundClips != null)
+                        {
+                            WidgetManager.m_Instance.SetSoundDataFromTilt(jsonData.SoundClips);
+                        }
+                    }
+                    if (jsonData.Portals != null)
+                    {
+                        WidgetManager.m_Instance.SetPortalDataFromTilt(jsonData.Portals);
+                    }
+                    if (jsonData.GaussianCaptures != null)
+                    {
+                        WidgetManager.m_Instance.SetGaussianCaptureDataFromTilt(jsonData.GaussianCaptures);
+                    }
+                    if (jsonData.Mirror != null)
+                    {
+                        PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
+                    }
+                    if (jsonData.CameraPaths != null)
+                    {
+                        WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);
+                    }
+                    if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
+                    {
+                        gdInfo.SourceId = jsonData.SourceId;
+                    }
+                    if (WidgetManager.m_Instance.CreatingMediaWidgets)
+                    {
+                        StartCoroutine(
+                            OverlayManager.m_Instance.RunInCompositor(
+                                OverlayType.LoadMedia,
+                                WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
+                                0.5f));
+                    }
+                    m_LastSceneFile = fileInfo;
+                }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Given an array of brush Guids, and an array of fallback brush Guids, will create any brushes
+        /// missing from the BrushCatalog by duplicating the appropriate fallback brush.
+        /// </summary>
+        /// <param name="brushes">Guids of the required brushes.</param>
+        /// <param name="fallbacks">Guids of the brushes to fall back to if a brush is missing.</param>
+        /// <returns>Returns true if a creation took place; otherwise false.</returns>
+        private bool CreateMissingBrushes(Guid[] brushes, Guid[] fallbacks)
+        {
+            bool brushesMissing = false;
+            for (int i = 0; i < brushes.Length; ++i)
+            {
+                var brush = BrushCatalog.m_Instance.GetBrush(brushes[i]);
+                if (!brush)
+                {
+                    if (i >= fallbacks.Length)
+                    {
+                        Debug.LogWarning(
+                          $"Brush {brushes[i]} cannot be found but there is no fallback specified in the sketch.");
+                        return true;
+                    }
+                    BrushCatalog.m_Instance.AddMissingSceneBrushFromBase(brushes[i], fallbacks[i]);
+                    ControllerConsoleScript.m_Instance.AddNewLine(
+                      $"Brush {brushes[i]} is used in the sketch but cannot be found.");
+                    brushesMissing = true;
+                }
+            }
+            return brushesMissing;
+        }
+
+        public SketchMetadata DeserializeMetadata(JsonTextReader jsonReader)
+        {
+            m_LastJsonMetadatError = null;
+            var metadata = m_JsonSerializer.Deserialize<SketchMetadata>(jsonReader);
+            if (metadata != null)
+            {
+                MetadataUtils.VerifyMetadataVersion(metadata);
+            }
+            return metadata;
+        }
+
+        private void HandleDeserializationError(object sender,
+                                                Newtonsoft.Json.Serialization.ErrorEventArgs errorArgs)
+        {
+            var currentError = errorArgs.ErrorContext.Error.Message;
+            Debug.LogWarning(currentError);
+            m_LastJsonMetadatError = currentError;
+            errorArgs.ErrorContext.Handled = true;
+        }
+
+        public void SignalPlaybackCompletion()
+        {
+            if (DevOptions.I.ResaveLegacyScenes && m_LastSceneIsLegacy)
+            {
+                Debug.Log("Rewriting legacy file: " + m_LastSceneFile.HumanName + TILT_SUFFIX);
+                SketchControlsScript.m_Instance.GenerateBoundingBoxSaveIcon();
+                StartCoroutine(SaveOverwrite());
+            }
+        }
+
+        public void MarkAsAutosaveDone()
+        {
+            m_SecondsUntilNextAutosave = -1f;
+        }
+
+        public void SketchChanged()
+        {
+            if (m_AutosaveCoroutine != null)
+            {
+                AbortAutosave();
+            }
+            if (App.CurrentState != App.AppState.Standard)
+            {
+                return;
+            }
+            m_SecondsUntilNextAutosave = m_AutosaveTriggerSeconds;
+        }
+
+        private void Update()
+        {
+            if (!AutosaveEnabled)
+            {
+                return;
+            }
+
+            if (PointerManager.m_Instance.MainPointer.IsCreatingStroke())
+            {
+                SketchChanged();
+            }
+
+            if (m_SecondsUntilNextAutosave >= 0f)
+            {
+                m_SecondsUntilNextAutosave -= Time.unscaledDeltaTime;
+                if (m_SecondsUntilNextAutosave < 0f && m_AutosaveCoroutine == null)
+                {
+                    m_AutosaveCoroutine = AutosaveCoroutine();
+                    StartCoroutine(m_AutosaveCoroutine);
+                }
+            }
+        }
+
+        private IEnumerator<Timeslice> AutosaveCoroutine()
+        {
+            if (!AutosaveEnabled)
+            {
+                yield break;
+            }
+
+            // Despite not actually creating a thumbnail for autosaves, we need to create a valid thumbnail
+            // camera position so that if the autosave gets loaded the user can do a quicksave and the
+            // created thumbnail will be in the right place.
+            var iconCameraRig = new SaveIconTool.CameraRigState();
+            iconCameraRig.SetLossyTransform(ReasonableThumbnail_SS);
+
+            IEnumerator<Timeslice> timeslicedConstructor;
+            SketchSnapshot snapshot = new SketchSnapshot(
+                m_JsonSerializer, m_SaveIconCapture, out timeslicedConstructor, false);
+            while (timeslicedConstructor.MoveNext())
+            {
+                yield return timeslicedConstructor.Current;
+            }
+            snapshot.Thumbnail = m_AutosaveThumbnailBytes;
+
+            // We can clear the reference to the coroutine here because  at this point we already have a
+            // full snapshot of the save and can just go ahead and write it.
+            m_AutosaveCoroutine = null;
+
+            string error = null;
+            if (m_LastSceneFile.Valid)
+            {
+                snapshot.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
+            }
+            var writeFuture = new Future<string>(
+                () => snapshot.WriteSnapshotToFile(m_AutosaveFileInfo.FullPath),
+                null, true);
+            while (!writeFuture.TryGetResult(out error))
+            {
+                yield return null;
+            }
+
+            if (error != null)
+            {
+                m_AutosaveFailed = true;
+                OutputWindowScript.Error("Error with autosave! Autosave disabled.");
+                Debug.LogWarning(error);
+                ControllerConsoleScript.m_Instance.AddNewLine(error);
+            }
+            MarkAsAutosaveDone();
+
+            App.Instance.AutosaveRestoreFileExists = true;
+        }
+
+        private void AbortAutosave()
+        {
+            if (m_AutosaveCoroutine != null)
+            {
+                StopCoroutine(m_AutosaveCoroutine);
+                m_AutosaveCoroutine = null;
+            }
+        }
+
+        /// Creates a new filename for the autosave file and deletes old autosaves.
+        /// It uses the date and time that the sketch was started or loaded.
+        public void NewAutosaveFile()
+        {
+            if (!AutosaveEnabled)
+            {
+                return;
+            }
+
+            string autosaveStart = m_AutosaveFilenamePattern.Substring(
+                0, m_AutosaveFilenamePattern.IndexOf("{"));
+            try
+            {
+                if (!Directory.Exists(App.AutosavePath()))
+                {
+                    Directory.CreateDirectory(App.AutosavePath());
+                }
+                var files = new DirectoryInfo(App.AutosavePath()).GetFiles()
+                                              .Where(x => x.Name.StartsWith(autosaveStart))
+                                              .OrderBy(x => x.LastWriteTimeUtc).ToArray();
+                if (files.Length >= m_AutosaveFileCount)
+                {
+                    for (int i = files.Length - m_AutosaveFileCount; i >= 0; i--)
+                    {
+                        File.Delete(files[i].FullName);
+                    }
+                }
+
+                m_AutosaveTargetFilename = Path.Combine(
+                    App.AutosavePath(), string.Format(m_AutosaveFilenamePattern, DateTime.Now));
+
+                m_AutosaveFileInfo = new DiskSceneFileInfo(m_AutosaveTargetFilename);
+            }
+            catch (Exception exception)
+            {
+                m_AutosaveFailed = true;
+                // wait a couple of seconds before showing the error, so it doesn't get lost if at startup.
+                StartCoroutine(ShowErrorAfterDelay("Error with autosave! Autosave disabled.", 2f));
+                ControllerConsoleScript.m_Instance.AddNewLine(exception.Message);
+                Debug.LogWarningFormat("{0}\n{1}", exception.Message, exception.StackTrace);
+                if (!(exception is IOException || exception is AccessViolationException ||
+                      exception is UnauthorizedAccessException))
+                {
+                    throw;
+                }
+            }
+        }
+
+        public string MostRecentAutosaveFile()
+        {
+            string autosaveDir = App.AutosavePath();
+            if (!Directory.Exists(autosaveDir))
+            {
+                return null;
+            }
+            var lastFile = Directory.GetFiles(autosaveDir, "*.tilt").Select(x => new FileInfo(x)).
+              OrderByDescending(x => x.CreationTimeUtc).FirstOrDefault();
+
+            return lastFile.FullName;
+        }
+
+        private IEnumerator ShowErrorAfterDelay(string error, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            OutputWindowScript.Error(error);
+        }
+
+        /// Like the SketchSnapshot constructor, but also populates the snapshot with icons.
+        public async Task<SketchSnapshot> CreateSnapshotWithIconsAsync()
+        {
+            var snapshot = CreateSnapshotWithIcons(out var coroutine, false);
+            await coroutine; // finishes off the snapshot
+            return snapshot;
+        }
+
+        /// Like the SketchSnapshot constructor, but also populates the snapshot with icons.
+        /// As with the constructor, you must run the coroutine to completion before the snapshot
+        /// is usable.
+        public SketchSnapshot CreateSnapshotWithIcons(out IEnumerator<Timeslice> coroutine, bool selectedOnly)
+        {
+            IEnumerator<Timeslice> timeslicedConstructor;
+            SketchSnapshot snapshot = new SketchSnapshot(
+                m_JsonSerializer, m_SaveIconCapture, out timeslicedConstructor, selectedOnly);
+            coroutine = CoroutineUtil.Sequence(
+                timeslicedConstructor,
+                snapshot.CreateSnapshotIcons(m_SaveIconRenderTexture,
+                    m_CaptureHiResSaveIcon ? m_SaveIconHiResRenderTexture : null,
+                    m_CaptureGifSaveIcon ? m_SaveGifRenderTextures : null));
+            return snapshot;
+        }
+
+        public IEnumerator GetLastAutosaveBytes(Action<byte[]> onComplete)
+        {
+
+            while (m_AutosaveCoroutine != null) yield return null;
+
+            // Retrieve the autosaved file
+            string autosaveFile = MostRecentAutosaveFile();
+            if (!string.IsNullOrEmpty(autosaveFile) && File.Exists(autosaveFile))
+            {
+                try
+                {
+                    byte[] fileBytes = File.ReadAllBytes(autosaveFile);
+                    onComplete?.Invoke(fileBytes);
+                }
+                catch (IOException ex)
+                {
+                    Debug.LogError($"Failed to read autosave file: {ex.Message}");
+                    onComplete?.Invoke(null);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Autosave file not found or doesn't exist.");
+                onComplete?.Invoke(null);
+            }
+        }
+
+        public void LoadFromBytes(byte[] data)
+        {
+            if (data == null || data.Length == 0)
+            {
+                Debug.LogError("LoadFromBytes: Data is null or empty.");
+                return;
+            }
+
+            try
+            {
+                // Write the byte array to a temporary file
+                string tempFilePath = Path.Combine(Application.temporaryCachePath, "temp_autosave.tilt");
+                File.WriteAllBytes(tempFilePath, data);
+
+                // Load the temporary file into the scene
+                var fileInfo = new DiskSceneFileInfo(tempFilePath);
+                if (!Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
+                {
+                    Debug.LogError("LoadFromBytes: Failed to load scene.");
+                }
+
+                // Clean up the temporary file
+                if (File.Exists(tempFilePath))
+                {
+                    File.Delete(tempFilePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"LoadFromBytes: Error while loading scene from bytes. Exception: {ex.Message}");
+            }
+        }
+    }
+
+}  // namespace TiltBrush
