@@ -795,10 +795,10 @@ namespace TiltBrush
                 {
                     BrushCatalog.m_Instance.ClearSceneBrushes();
                 }
-                foreach (var brushName in m_LastSceneFile.GetContentsAt("Brushes"))
+                foreach (var brushName in fileInfo.GetContentsAt("Brushes"))
                 {
                     Debug.Log($"Brush found at {brushName}");
-                    var brush = UserVariantBrush.Create(m_LastSceneFile, Path.Combine("Brushes", brushName));
+                    var brush = UserVariantBrush.Create(fileInfo, Path.Combine("Brushes", brushName));
                     if (brush != null)
                     {
                         BrushCatalog.m_Instance.AddSceneBrush(brush.Descriptor);

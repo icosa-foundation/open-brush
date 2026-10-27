@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -411,6 +411,8 @@ namespace TiltBrush
 
         public IEnumerable<string> GetContentsAt(string path)
         {
+            if (m_BundledSketch != null)
+                return BundledSketchAssets.GetContentsAt(m_BundledSketch, path);
             return m_TiltFile == null ? new List<string>() : m_TiltFile.GetContentsAt(path);
         }
     }

@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Open Brush Authors
+// Copyright 2020 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -234,7 +234,7 @@ public class UserVariantBrush
 
             brushFile.SetRootFolder(Path.GetDirectoryName(configDir));
         }
-        if (brush.Initialize(brushFile, forceInGui: true))
+        if (brush.Initialize(brushFile.GetReadStream, forceInGui: true))
         {
             return brush;
         }
@@ -253,44 +253,63 @@ public class UserVariantBrush
         var brush = new UserVariantBrush();
         brush.m_Location = Path.GetFileName(
             subfolder.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        FolderOrZipReader brushFile = new FolderOrZipReader(fileInfo.FullPath);
-        brushFile.SetRootFolder(subfolder);
-        string configDir = brushFile.Find(kConfigFile);
-        if (configDir == null)
+        var openRead = CreateSceneBrushReader(fileInfo, subfolder, out string configData);
+        return openRead != null && brush.Initialize(openRead, configData: configData) ? brush : null;
+    }
+
+    internal static Func<string, Stream> CreateSceneBrushReader(
+        SceneFileInfo fileInfo, string subfolder, out string configData)
+    {
+        var pending = new Queue<string>();
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        pending.Enqueue(subfolder.Replace('\\', '/').Trim('/'));
+        while (pending.Count > 0)
         {
-            return null;
+            string folder = pending.Dequeue();
+            if (!visited.Add(folder)) continue;
+            string prefix = folder.Length == 0 ? "" : $"{folder}/";
+            using (Stream config = fileInfo.GetReadStream($"{prefix}{kConfigFile}"))
+            {
+                if (config != null)
+                {
+                    using (var reader = new StreamReader(config))
+                        configData = reader.ReadToEnd();
+                    return filename => fileInfo.GetReadStream(
+                        $"{prefix}{filename.Replace('\\', '/')}");
+                }
+            }
+            foreach (string child in fileInfo.GetContentsAt(folder))
+                pending.Enqueue($"{prefix}{child.Replace('\\', '/').Trim('/')}");
         }
-        brushFile.SetRootFolder(Path.GetDirectoryName(configDir));
-        if (brush.Initialize(brushFile))
-        {
-            return brush;
-        }
+        configData = null;
         return null;
     }
 
     /// <summary>
     /// Initialize a brush from a file or folder.
     /// </summary>
-    /// <param name="brushFile">The FolderOrZipReader used to read the brush.</param>
+    /// <param name="openRead">Opens a stream relative to the brush configuration.</param>
+    /// <param name="configData">An already-read configuration, if supplied by scene discovery.</param>
     /// <param name="forceInGui">Whether to force inclusion of the brush into the brushes panel.</param>
     /// <returns>Success or failure.</returns>
-    private bool Initialize(FolderOrZipReader brushFile, bool forceInGui = false)
+    private bool Initialize(Func<string, Stream> openRead, bool forceInGui = false, string configData = null)
     {
         m_FileData = new Dictionary<string, byte[]>();
-
-        if (!brushFile.Exists(kConfigFile))
-        {
-            return false;
-        }
 
         string warning;
         try
         {
-            using (var fileReader = new StreamReader(brushFile.GetReadStream(kConfigFile)))
+            m_ConfigData = configData;
+            if (m_ConfigData == null)
             {
-                m_ConfigData = fileReader.ReadToEnd();
-                m_BrushProperties = App.DeserializeObjectWithWarning<BrushProperties>(m_ConfigData, out warning);
+                using (Stream config = openRead(kConfigFile))
+                {
+                    if (config == null) return false;
+                    using (var reader = new StreamReader(config))
+                        m_ConfigData = reader.ReadToEnd();
+                }
             }
+            m_BrushProperties = App.DeserializeObjectWithWarning<BrushProperties>(m_ConfigData, out warning);
         }
         catch (JsonException e)
         {
@@ -342,7 +361,7 @@ public class UserVariantBrush
 
         if (!string.IsNullOrEmpty(m_BrushProperties.ButtonIcon))
         {
-            Texture2D icon = LoadTexture(brushFile, m_BrushProperties.ButtonIcon);
+            Texture2D icon = LoadTexture(openRead, m_BrushProperties.ButtonIcon);
             if (icon == null)
             {
                 Debug.Log($"Brush at {m_Location} has no icon texture.");
@@ -352,7 +371,7 @@ public class UserVariantBrush
         }
 
         CopyPropertiesToDescriptor(m_BrushProperties, Descriptor);
-        ApplyMaterialProperties(brushFile, m_BrushProperties.Material);
+        ApplyMaterialProperties(openRead, m_BrushProperties.Material);
 
         return true;
     }
@@ -407,9 +426,9 @@ public class UserVariantBrush
     /// <summary>
     /// Applies material properties from BrushProperties to the User Brush.
     /// </summary>
-    /// <param name="brushFile">FileOrZipReader to load textures from.</param>
+    /// <param name="openRead">Opens a stream relative to the brush configuration.</param>
     /// <param name="properties">Material properties to read from.</param>
-    private void ApplyMaterialProperties(FolderOrZipReader brushFile,
+    private void ApplyMaterialProperties(Func<string, Stream> openRead,
         BrushProperties.MaterialProperties properties)
     {
         Descriptor.Material = new Material(Descriptor.Material);
@@ -492,7 +511,7 @@ public class UserVariantBrush
                 }
                 if (!string.IsNullOrEmpty(item.Value))
                 {
-                    Texture2D texture = LoadTexture(brushFile, item.Value);
+                    Texture2D texture = LoadTexture(openRead, item.Value);
                     if (texture != null)
                     {
                         Descriptor.Material.SetTexture(item.Key, texture);
@@ -506,28 +525,24 @@ public class UserVariantBrush
         }
     }
 
-    /// <summary>
-    /// Loads a texture from a FolderOrZipReader.
-    /// </summary>
-    /// <param name="brushFile">FolderOrZipReader to load the texture from.</param>
-    /// <param name="filename">Texture filename.</param>
-    /// <returns>A Texture2D, or null if it could not be loaded.</returns>
-    private Texture2D LoadTexture(FolderOrZipReader brushFile, string filename)
+    /// <summary>Loads a texture relative to the brush configuration.</summary>
+    private Texture2D LoadTexture(Func<string, Stream> openRead, string filename)
     {
-        if (brushFile.Exists(filename))
+        using (Stream input = openRead(filename))
         {
-            Texture2D texture = new Texture2D(16, 16);
-            var buffer = new MemoryStream();
-            using (var bufferStream = brushFile.GetReadStream(filename))
+            if (input == null) return null;
+            using (var buffer = new MemoryStream())
             {
-                bufferStream.CopyTo(buffer);
-            }
-            byte[] data = buffer.ToArray();
-            m_FileData[filename] = data;
-            if (ImageConversion.LoadImage(texture, data, true))
-            {
-                texture.name = Path.GetFileNameWithoutExtension(filename);
-                return texture;
+                input.CopyTo(buffer);
+                byte[] data = buffer.ToArray();
+                m_FileData[filename] = data;
+                var texture = new Texture2D(16, 16);
+                if (ImageConversion.LoadImage(texture, data, true))
+                {
+                    texture.name = Path.GetFileNameWithoutExtension(filename);
+                    return texture;
+                }
+                UnityEngine.Object.Destroy(texture);
             }
         }
         return null;
