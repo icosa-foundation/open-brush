@@ -27,8 +27,6 @@ namespace TiltBrush
         private XRManagerSettings m_Xr;
         private bool m_OwnsXr;
         private Material m_RayMaterial;
-        private float m_NextInputDiagnostic;
-        private readonly HashSet<int> m_LoggedPressedDevices = new HashSet<int>();
         private readonly Dictionary<int, Cursor> m_Cursors = new Dictionary<int, Cursor>();
 
         private sealed class Cursor
@@ -64,7 +62,6 @@ namespace TiltBrush
                     while (!HasTrackedHead() && Time.realtimeSinceStartupAsDouble < deadline);
                 }
                 dialog.Build(overlay.Status.font, folderName, retry, xrReady);
-                LogStartup($"explanation shown retry={retry} xr={xrReady}");
                 while (!dialog.m_Done) yield return null;
                 accepted = dialog.m_Accepted;
             }
@@ -81,7 +78,6 @@ namespace TiltBrush
             }
             // Destroy the EventSystem and release OpenXR before entering Android's system UI.
             yield return null;
-            LogStartup($"explanation accepted={accepted}; startup XR released");
             completed(accepted);
         }
 
@@ -172,8 +168,6 @@ namespace TiltBrush
             click.AddBinding("<KHRSimpleController>/select");
             click.AddBinding("<Mouse>/leftButton");
             click.AddBinding("<Touchscreen>/touch*/press");
-            click.performed += LogClickInput;
-            click.canceled += LogClickInput;
             var point = map.AddAction("Point", InputActionType.PassThrough, expectedControlLayout: "Vector2");
             point.AddBinding("<Mouse>/position");
             point.AddBinding("<Touchscreen>/touch*/position");
@@ -192,7 +186,6 @@ namespace TiltBrush
             // InputSystemUIInputModule does all hover/press/release processing. No custom pinch.
             events.SetActive(true);
             m_Actions.Enable();
-            LogStartup($"UI controls position={position.controls.Count} rotation={rotation.controls.Count} click={click.controls.Count}");
         }
 
         private InputActionReference Reference(InputAction action) => InputActionReference.Create(action);
@@ -246,66 +239,12 @@ namespace TiltBrush
             colors.selectedColor = colors.highlightedColor;
             button.colors = colors;
             button.onClick.AddListener(() => { m_Accepted = accept; m_Done = true; });
-            var events = image.gameObject.AddComponent<EventTrigger>();
-            LogButtonEvent(events, EventTriggerType.PointerEnter, title);
-            LogButtonEvent(events, EventTriggerType.PointerExit, title);
-            LogButtonEvent(events, EventTriggerType.PointerDown, title);
-            LogButtonEvent(events, EventTriggerType.PointerUp, title);
-            LogButtonEvent(events, EventTriggerType.PointerClick, title);
             TextAt(font, (RectTransform)image.transform, title, Vector2.zero, new Vector2(350, 90), 36);
-        }
-
-        private static void LogButtonEvent(EventTrigger events, EventTriggerType type, string title)
-        {
-            var entry = new EventTrigger.Entry { eventID = type };
-            entry.callback.AddListener(data =>
-            {
-                var pointer = (PointerEventData)data;
-                LogStartup($"button={title} event={type} pointer={pointer.pointerId}");
-            });
-            events.triggers.Add(entry);
-        }
-
-        private static void LogStartup(string message)
-        {
-#if UNITY_ANDROID && !UNITY_EDITOR
-            // Keep these diagnostics available even when Unity's player logging is disabled.
-            using (var log = new AndroidJavaClass("android.util.Log"))
-                log.CallStatic<int>("i", "OBDS_STARTUP", message);
-#else
-            Debug.Log($"OBDS_STARTUP {message}");
-#endif
-        }
-
-        private void LogClickInput(InputAction.CallbackContext context)
-        {
-            // Diagnostics only: Unity UI independently processes this same action.
-            if (context.control == null) return;
-            int deviceId = context.control.device.deviceId;
-            bool pressed = context.ReadValueAsButton();
-            bool changed = pressed ? m_LoggedPressedDevices.Add(deviceId) : m_LoggedPressedDevices.Remove(deviceId);
-            if (changed) LogStartup($"clickInput device={deviceId} control={context.control.path} pressed={pressed}");
-        }
-
-        private void LogInputState()
-        {
-            if (Time.unscaledTime < m_NextInputDiagnostic) return;
-            m_NextInputDiagnostic = Time.unscaledTime + 2;
-            foreach (var device in InputSystem.devices)
-            {
-                if (device.TryGetChildControl<Vector3Control>("pointerPosition") == null) continue;
-                var pinch = device.TryGetChildControl<AxisControl>("pinchValue");
-                var aimActivate = device.TryGetChildControl<AxisControl>("pointerActivateValue");
-                var trigger = device.TryGetChildControl<ButtonControl>("triggerPressed");
-                var hit = m_Input.GetLastRaycastResult(device.deviceId);
-                LogStartup($"device={device.deviceId} layout={device.layout} focused={Application.isFocused} pinch={pinch?.ReadValue():F2} aimActivate={aimActivate?.ReadValue():F2} trigger={trigger?.isPressed} hit={hit.gameObject?.name}");
-            }
         }
 
         private void LateUpdate()
         {
             if (m_Input == null || m_Canvas.renderMode != RenderMode.WorldSpace) return;
-            LogInputState();
             foreach (var cursor in m_Cursors.Values)
             {
                 cursor.ray.enabled = false;

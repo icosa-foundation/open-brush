@@ -85,7 +85,7 @@ namespace TiltBrush
                 for (int i = 0; i < m_Batches.Count - BatchManager.kBatchesToLeaveMutable; ++i)
                 {
                     Batch batch = m_Batches[i];
-                    if (batch.Geometry.IsGeometryResident)
+                    if (batch.Geometry.HasCachedGeometry)
                     {
                         int timeSinceLastUpdate = currentTime - batch.LastMeshUpdate;
                         if (timeSinceLastUpdate > BatchManager.kTimeUntilBatchImmutable)

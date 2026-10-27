@@ -1,0 +1,463 @@
+// Copyright 2026 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.Management;
+
+namespace TiltBrush
+{
+    /// Optional handheld AR navigation for the no-headset view mode on phones and tablets.
+    ///
+    /// While active, the device's tracked pose drives the camera's local pose, just as a
+    /// headset's pose does in VR, so touch navigation keeps moving the scene rather than the
+    /// camera. The camera feed can replace the sketch's environment, placing it in the room.
+    ///
+    /// AR Foundation hides the ARCore/ARKit differences. Its loader is kept out of the
+    /// automatic loader search: otherwise a device without an OpenXR runtime would fall
+    /// through to the AR loader and be mistaken for a headset.
+    public class HandheldArNavigation : MonoBehaviour
+    {
+        public enum State
+        {
+            Off,
+            Starting,
+            Active,
+        }
+
+        // By name: each provider's runtime assembly only exists on its own platform.
+        private static readonly string[] kArLoaderTypes =
+        {
+            "UnityEngine.XR.ARCore.ARCoreLoader",
+            "UnityEngine.XR.ARKit.ARKitLoader",
+        };
+        private const string kCameraFeedPref = "HandheldArCameraFeed";
+        // Not applied while ARCore is being installed from the Play Store.
+        private const float kStartupTimeout = 20f;
+
+        private static XRLoader sm_ArLoader;
+        private static List<XRLoader> sm_HeadsetLoaders;
+        private static HandheldArNavigation sm_Instance;
+        private static State sm_State = State.Off;
+        private static bool? sm_CameraFeed;
+
+        public static event Action StateChanged;
+
+        /// Why the last attempt to start failed, or null.
+        public static string LastError { get; private set; }
+
+        public static State CurrentState => sm_State;
+        public static bool IsActive => sm_State == State.Active;
+
+        /// Whether the camera feed is shown in place of the environment. Remembered per device.
+        public static bool CameraFeed
+        {
+            get => sm_CameraFeed ??= PlayerPrefs.GetInt(kCameraFeedPref, 1) != 0;
+            set
+            {
+                sm_CameraFeed = value;
+                PlayerPrefs.SetInt(kCameraFeedPref, value ? 1 : 0);
+                if (sm_Instance != null && sm_State == State.Active)
+                {
+                    sm_Instance.ApplyCameraFeed();
+                }
+                StateChanged?.Invoke();
+            }
+        }
+
+        /// True only in the no-headset fallback of a build that includes an AR loader.
+        public static bool IsSupported =>
+            sm_ArLoader != null &&
+            App.Config.m_SdkMode == SdkMode.UnityXR &&
+            !App.VrSdk.IsHmdInitialized();
+
+        public static bool IsArLoader(XRLoader loader) => loader != null && loader == sm_ArLoader;
+
+        private ARSession m_Session;
+        private ARInputManager m_InputManager;
+        private ARCameraManager m_CameraManager;
+        private bool m_OwnsCameraManager;
+        private bool m_CameraManagerWasEnabled;
+        private ARCameraBackground m_CameraBackground;
+        private bool m_HidingEnvironment;
+        private UnityEngine.SpatialTracking.TrackedPoseDriver m_PoseDriver;
+        private bool m_PoseDriverWasEnabled;
+        private InputAction m_PositionAction;
+        private InputAction m_RotationAction;
+
+        private Vector3 m_CameraStartPosition;
+        private Quaternion m_CameraStartRotation;
+        private bool m_Anchored;
+        private Vector3 m_ArStartPosition;
+        private Quaternion m_YawOffset;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void ExcludeArLoaderFromHeadsetSearch()
+        {
+            // Editor play mode modifies the settings asset in place, and AR only runs on device.
+            if (Application.platform != RuntimePlatform.Android &&
+                Application.platform != RuntimePlatform.IPhonePlayer)
+            {
+                return;
+            }
+            XRManagerSettings manager = XRGeneralSettings.Instance?.Manager;
+            if (manager == null)
+            {
+                return;
+            }
+            XRLoader loader = manager.activeLoaders.FirstOrDefault(
+                l => l != null && kArLoaderTypes.Contains(l.GetType().FullName));
+            if (loader == null)
+            {
+                return;
+            }
+            if (!manager.TryRemoveLoader(loader))
+            {
+                Debug.LogWarning("HandheldArNavigation: could not remove the AR loader from the XR loader list");
+                return;
+            }
+            sm_ArLoader = loader;
+            sm_HeadsetLoaders = manager.activeLoaders.ToList();
+        }
+
+        public static void Toggle()
+        {
+            SetActive(sm_State == State.Off);
+        }
+
+        public static void SetActive(bool active)
+        {
+            if (active)
+            {
+                if (sm_State != State.Off || !IsSupported)
+                {
+                    return;
+                }
+                LastError = null;
+                var go = new GameObject("Handheld AR Navigation");
+                go.transform.SetParent(App.Instance.transform, false);
+                sm_Instance = go.AddComponent<HandheldArNavigation>();
+                SetState(State.Starting);
+                sm_Instance.StartCoroutine(sm_Instance.Startup());
+            }
+            else if (sm_Instance != null)
+            {
+                sm_Instance.Shutdown(null);
+            }
+        }
+
+        private static void SetState(State state)
+        {
+            sm_State = state;
+            StateChanged?.Invoke();
+        }
+
+        private IEnumerator Startup()
+        {
+#if UNITY_ANDROID && !UNITY_EDITOR
+            // Ask up front so a refusal can be reported, rather than leaving a session that
+            // never tracks. ARKit asks for itself when the session starts.
+            if (!UnityEngine.Android.Permission.HasUserAuthorizedPermission(
+                UnityEngine.Android.Permission.Camera))
+            {
+                bool? granted = null;
+                var callbacks = new UnityEngine.Android.PermissionCallbacks();
+                callbacks.PermissionGranted += _ => granted = true;
+                callbacks.PermissionDenied += _ => granted = false;
+                UnityEngine.Android.Permission.RequestUserPermission(
+                    UnityEngine.Android.Permission.Camera, callbacks);
+                while (granted == null)
+                {
+                    yield return null;
+                }
+                if (granted == false)
+                {
+                    Shutdown("AR navigation needs camera access");
+                    yield break;
+                }
+            }
+#endif
+
+            XRManagerSettings manager = XRGeneralSettings.Instance?.Manager;
+            if (manager == null || manager.activeLoader != null ||
+                !manager.TrySetLoaders(new List<XRLoader> { sm_ArLoader }))
+            {
+                Shutdown("AR could not be initialized");
+                yield break;
+            }
+            // Save the non-AR view before starting any subsystem that can update the pose.
+            Camera camera = App.VrSdk.GetVrCamera();
+            m_CameraStartPosition = camera.transform.localPosition;
+            m_CameraStartRotation = camera.transform.localRotation;
+            m_PoseDriver = camera.GetComponent<UnityEngine.SpatialTracking.TrackedPoseDriver>();
+            if (m_PoseDriver != null)
+            {
+                m_PoseDriverWasEnabled = m_PoseDriver.enabled;
+                m_PoseDriver.enabled = false;
+            }
+
+            manager.InitializeLoaderSync();
+            if (manager.activeLoader != sm_ArLoader)
+            {
+                Shutdown("AR could not be initialized");
+                yield break;
+            }
+            manager.StartSubsystems();
+
+            // ARSession checks availability, and on Android offers to install ARCore.
+            var sessionObject = new GameObject("AR Session");
+            sessionObject.transform.SetParent(transform, false);
+            // AR loaders create the input subsystem, but ARInputManager starts it so
+            // device poses and the motion sensors needed for tracking become available.
+            m_InputManager = sessionObject.AddComponent<ARInputManager>();
+            m_Session = sessionObject.AddComponent<ARSession>();
+            Debug.Log($"[OB_HANDHELD_AR] Input subsystem running={m_InputManager.subsystem?.running == true}");
+            // Otherwise the app is limited to the camera's frame rate.
+            m_Session.matchFrameRateRequested = false;
+
+            float deadline = Time.realtimeSinceStartup + kStartupTimeout;
+            bool sawInstall = false;
+            while (true)
+            {
+                ARSessionState state = ARSession.state;
+                if (state == ARSessionState.Installing)
+                {
+                    sawInstall = true;
+                    deadline = Time.realtimeSinceStartup + kStartupTimeout;
+                }
+                if (state >= ARSessionState.Ready || state == ARSessionState.Unsupported ||
+                    (state == ARSessionState.NeedsInstall && sawInstall) ||
+                    Time.realtimeSinceStartup > deadline)
+                {
+                    break;
+                }
+                yield return null;
+            }
+            if (ARSession.state < ARSessionState.Ready)
+            {
+                Shutdown(ARSession.state == ARSessionState.Unsupported
+                    ? "AR is not supported on this device"
+                    : "AR services are not available");
+                yield break;
+            }
+
+            // AR only produces frames, and so poses, while its camera is running, even when
+            // the feed isn't shown.
+            m_CameraManager = camera.GetComponent<ARCameraManager>();
+            m_OwnsCameraManager = m_CameraManager == null;
+            if (m_OwnsCameraManager)
+            {
+                m_CameraManager = camera.gameObject.AddComponent<ARCameraManager>();
+            }
+            m_CameraManagerWasEnabled = m_CameraManager.enabled;
+            m_CameraManager.enabled = true;
+
+            m_PositionAction = new InputAction("AR Device Position", InputActionType.Value,
+                "<HandheldARInputDevice>/devicePosition", expectedControlType: "Vector3");
+            m_RotationAction = new InputAction("AR Device Rotation", InputActionType.Value,
+                "<HandheldARInputDevice>/deviceRotation", expectedControlType: "Quaternion");
+            m_PositionAction.Enable();
+            m_RotationAction.Enable();
+
+            m_Anchored = false;
+            Application.onBeforeRender += ApplyPose;
+            ApplyCameraFeed();
+            SetState(State.Active);
+        }
+
+        private void ApplyCameraFeed()
+        {
+            Camera camera = App.VrSdk.GetVrCamera();
+            bool show = CameraFeed;
+            if (show && m_CameraBackground == null)
+            {
+                // Draws the feed through the renderer's ARBackgroundRendererFeature. While
+                // enabled it also stops the camera clearing to the skybox and matches the
+                // camera's projection to the device camera, so strokes line up with the room.
+                m_CameraBackground = camera.gameObject.AddComponent<ARCameraBackground>();
+            }
+            if (m_CameraBackground != null)
+            {
+                m_CameraBackground.enabled = show;
+            }
+
+            // Environment geometry would cover the room. Its lights live elsewhere, so the
+            // sketch stays lit as before.
+            int environmentMask = LayerMask.GetMask("Environment");
+            if (show && !m_HidingEnvironment && (camera.cullingMask & environmentMask) != 0)
+            {
+                camera.cullingMask &= ~environmentMask;
+                m_HidingEnvironment = true;
+            }
+            else if (!show && m_HidingEnvironment)
+            {
+                camera.cullingMask |= environmentMask;
+                m_HidingEnvironment = false;
+            }
+        }
+
+        void Update()
+        {
+            if (sm_State == State.Active)
+            {
+                ApplyPose();
+            }
+        }
+
+        private void ApplyPose()
+        {
+            if (ARSession.state != ARSessionState.SessionTracking ||
+                m_RotationAction.activeControl == null)
+            {
+                // Hold the last pose while tracking is lost.
+                return;
+            }
+
+            Vector3 position = m_PositionAction.ReadValue<Vector3>();
+            Quaternion rotation = m_RotationAction.ReadValue<Quaternion>();
+            if (!m_Anchored)
+            {
+                // Continue from the current view. Only yaw is realigned, so the phone's
+                // gravity stays the scene's gravity.
+                m_YawOffset = Quaternion.Euler(0,
+                    Yaw(m_CameraStartRotation) - Yaw(rotation), 0);
+                m_ArStartPosition = position;
+                m_Anchored = true;
+                Debug.Log($"[OB_HANDHELD_AR] Pose tracking anchored position={position} rotation={rotation.eulerAngles}");
+            }
+
+            Transform cameraXf = App.VrSdk.GetVrCamera().transform;
+            cameraXf.localRotation = m_YawOffset * rotation;
+            cameraXf.localPosition = m_CameraStartPosition +
+                m_YawOffset * (position - m_ArStartPosition);
+        }
+
+        private static float Yaw(Quaternion rotation)
+        {
+            Vector3 forward = rotation * Vector3.forward;
+            if (new Vector2(forward.x, forward.z).sqrMagnitude < 1e-4f)
+            {
+                // Looking straight up or down: the top of the screen gives the heading.
+                forward = rotation * (forward.y < 0 ? Vector3.up : Vector3.down);
+            }
+            return Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
+        }
+
+        private void Shutdown(string error)
+        {
+            Application.onBeforeRender -= ApplyPose;
+            m_PositionAction?.Dispose();
+            m_RotationAction?.Dispose();
+            m_PositionAction = null;
+            m_RotationAction = null;
+
+            // Disable before the subsystems go away so the managers stop them cleanly. The
+            // background restores the camera's clear flags and projection as it's disabled,
+            // and must go first: it requires the camera manager.
+            if (m_CameraBackground != null)
+            {
+                m_CameraBackground.enabled = false;
+                DestroyImmediate(m_CameraBackground);
+            }
+            if (m_HidingEnvironment)
+            {
+                App.VrSdk.GetVrCamera().cullingMask |= LayerMask.GetMask("Environment");
+                m_HidingEnvironment = false;
+            }
+            if (m_CameraManager != null)
+            {
+                m_CameraManager.enabled = false;
+                if (m_OwnsCameraManager)
+                {
+                    DestroyImmediate(m_CameraManager);
+                }
+            }
+            if (m_InputManager != null)
+            {
+                m_InputManager.enabled = false;
+            }
+            if (m_Session != null)
+            {
+                m_Session.enabled = false;
+                Destroy(m_Session.gameObject);
+            }
+
+            XRManagerSettings manager = XRGeneralSettings.Instance?.Manager;
+            if (manager != null)
+            {
+                if (manager.activeLoader == sm_ArLoader)
+                {
+                    manager.StopSubsystems();
+                    manager.DeinitializeLoader();
+                }
+                if (manager.activeLoader == null)
+                {
+                    manager.TrySetLoaders(sm_HeadsetLoaders);
+                }
+            }
+
+            // Leave the rig's existing camera manager intact and restore its state only
+            // after the AR subsystems have stopped.
+            if (!m_OwnsCameraManager && m_CameraManager != null)
+            {
+                m_CameraManager.enabled = m_CameraManagerWasEnabled;
+            }
+
+            if (m_PoseDriver != null)
+            {
+                m_PoseDriver.enabled = m_PoseDriverWasEnabled;
+            }
+
+            if (m_Anchored)
+            {
+                // Hand the view back to touch navigation where AR left it, minus any roll,
+                // which touch look never introduces or removes.
+                Transform cameraXf = App.VrSdk.GetVrCamera().transform;
+                Vector3 euler = cameraXf.localEulerAngles;
+                cameraXf.localEulerAngles = new Vector3(euler.x, euler.y, 0);
+                Vector3 finalCameraPosition = Coords.AsRoom[cameraXf].translation;
+                cameraXf.localPosition = m_CameraStartPosition;
+                TrTransform scenePose = App.Scene.Pose;
+                scenePose.translation += Coords.AsRoom[cameraXf].translation - finalCameraPosition;
+                App.Scene.Pose = scenePose;
+            }
+
+            if (error != null)
+            {
+                Debug.LogWarning($"HandheldArNavigation: {error}");
+            }
+            LastError = error;
+            sm_Instance = null;
+            Destroy(gameObject);
+            SetState(State.Off);
+        }
+
+        void OnDestroy()
+        {
+            if (sm_Instance == this)
+            {
+                Application.onBeforeRender -= ApplyPose;
+                m_PositionAction?.Dispose();
+                m_RotationAction?.Dispose();
+                sm_Instance = null;
+                sm_State = State.Off;
+            }
+        }
+    }
+}
