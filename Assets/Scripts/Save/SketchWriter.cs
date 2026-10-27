@@ -336,7 +336,6 @@ namespace TiltBrush
             }
         }
 
-
         /// Serializes brush GUIDs directly instead of maintaining an internal mapping or list.
         public static void WriteMemory(Stream stream, IList<AdjustedMemoryBrushStroke> strokeCopies,
                                        GroupIdMapping groupIdMapping)
@@ -466,7 +465,6 @@ namespace TiltBrush
             }
         }
 
-
         /// Leaves stream in indeterminate state; caller should Close() upon return.
         public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, int targetLayer,
             out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup, out List<Stroke> strokes)
@@ -474,9 +472,6 @@ namespace TiltBrush
             bool allowFastPath = BitConverter.IsLittleEndian;
             // Buffering speeds up fast path ~1.4x, slow path ~2.3x
             var bufferedStream = new BufferedStream(stream, 4096);
-
-            // var stopwatch = new System.Diagnostics.Stopwatch();
-            // stopwatch.Start();
 
             isLegacy = false;
             SketchMemoryScript.m_Instance.ClearRedo();
@@ -534,8 +529,6 @@ namespace TiltBrush
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
             }
 
-            // stopwatch.Stop();
-            // Debug.LogFormat("Reading took {0}", stopwatch.Elapsed);
             if (bAdditive)
             {
                 GroupManager.MoveStrokesToNewGroups(strokes, oldGroupToNewGroup);

@@ -39,11 +39,8 @@ namespace TiltBrush
                 return null;
             }
 
-            Debug.Log($"CameraPathFromFrames: Creating camera path from {frames.Count} frames");
-
             // Simplify the frame data by removing redundant points
             List<FlyPathRecorder.RecordedFrame> simplifiedFrames = SimplifyFrames(frames, simplificationThreshold, maxKnots);
-            Debug.Log($"CameraPathFromFrames: Simplified to {simplifiedFrames.Count} key frames");
 
             CreateCameraPathFromFramesCommand command =
                 new CreateCameraPathFromFramesCommand(simplifiedFrames);
@@ -55,8 +52,6 @@ namespace TiltBrush
                 Debug.LogError("CameraPathFromFrames: Failed to create camera path widget");
                 return null;
             }
-
-            Debug.Log($"CameraPathFromFrames: Created camera path with {pathWidget.Path.PositionKnots.Count} position knots");
 
             return pathWidget;
         }
