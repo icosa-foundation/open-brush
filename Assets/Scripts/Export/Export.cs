@@ -334,13 +334,10 @@ URL=" + kExportDocumentationUrl;
             RunExport("static-glb", () =>
             {
                 if (!App.PlatformConfig.EnableExportGlb || !IsExportEnabled("static-glb")) return;
-                using (var unused = new AutoTimer("static glb export"))
-                {
-                    OverlayManager.m_Instance.UpdateProgress(0.8f);
-                    ExportStaticGlb(
-                        Path.Combine(parent, "static-glb"), basename,
-                        App.UserConfig.Export.ExportEnvironment);
-                }
+                OverlayManager.m_Instance.UpdateProgress(0.8f);
+                ExportStaticGlb(
+                    Path.Combine(parent, "static-glb"), basename,
+                    App.UserConfig.Export.ExportEnvironment);
             });
 
             OutputWindowScript.m_Instance.CreateInfoCardAtController(
