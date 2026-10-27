@@ -656,8 +656,14 @@ public class CameraCaptureRuntime : MonoBehaviour
         string outAdd)
     {
         isRunning = true;
+        bool exportTrainingDepth = App.UserConfig.Export.ExportGaussianSplatDepth;
         string folderPath = PathCombineSafe(captureOutputFolder, outAdd);
-        Directory.CreateDirectory(folderPath);
+        string imagesFolderPath = Path.Combine(folderPath, "images");
+        string sparseFolderPath = Path.Combine(folderPath, "sparse", "0");
+        Directory.CreateDirectory(imagesFolderPath);
+        Directory.CreateDirectory(sparseFolderPath);
+        string depthFolderPath = Path.Combine(folderPath, "depth");
+        if (exportTrainingDepth) { Directory.CreateDirectory(depthFolderPath); }
         DepthTextureMode previousDepthTextureMode = cameraToUse.depthTextureMode;
 
         try
@@ -665,7 +671,7 @@ public class CameraCaptureRuntime : MonoBehaviour
             PauseSceneForCapture();
             m_LoggedNativeDepthStats = false;
             cameraToUse.depthTextureMode |= DepthTextureMode.Depth;
-            string camerasTxt = Path.Combine(folderPath, "cameras.txt");
+            string camerasTxt = Path.Combine(sparseFolderPath, "cameras.txt");
             float fov = cameraToUse.fieldOfView;
             float fy = 0.5f * height / Mathf.Tan(0.5f * fov * Mathf.Deg2Rad);
             // Unity's fieldOfView is vertical. With square pixels, the horizontal and
@@ -681,7 +687,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                 camWriter.WriteLine($"1 PINHOLE {width} {height} {fx.ToString(CultureInfo.InvariantCulture)} {fy.ToString(CultureInfo.InvariantCulture)} {cx} {cy}");
             }
 
-            string imagesTxt = Path.Combine(folderPath, "images.txt");
+            string imagesTxt = Path.Combine(sparseFolderPath, "images.txt");
             using (StreamWriter imgWriter = new StreamWriter(imagesTxt))
             {
                 imgWriter.WriteLine("# Image list with two lines per image:");
@@ -728,7 +734,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                     yield break;
                 }
 
-                using (StreamWriter writer3D = new StreamWriter(Path.Combine(folderPath, "points3D.txt")))
+                using (StreamWriter writer3D = new StreamWriter(Path.Combine(sparseFolderPath, "points3D.txt")))
                 {
                     writer3D.WriteLine("# 3D point list with one line of data per point:");
                     writer3D.WriteLine("# POINT3D_ID, X, Y, Z, R, G, B, ERROR, TRACK[] as (IMAGE_ID, POINT2D_IDX)");
@@ -754,7 +760,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                             Vector3 t = new Vector3(colmapMatrix.m03, colmapMatrix.m13, colmapMatrix.m23);
 
                             string imageName = $"{poseTarget.FilePrefix}_view_{imageId:D4}.png";
-                            string imagePath = Path.Combine(folderPath, imageName);
+                            string imagePath = Path.Combine(imagesFolderPath, imageName);
                             SetupCaptureCamera();
                             Texture2D capturedOpaqueDepth =
                                 RenderColorCaptureToTexture(tex, rt, resolvedRt);
@@ -770,7 +776,10 @@ public class CameraCaptureRuntime : MonoBehaviour
                                     ref pointId,
                                     debugOutputBasePath: Path.Combine(
                                         folderPath, Path.GetFileNameWithoutExtension(imageName)),
-                                    capturedOpaqueDepth: capturedOpaqueDepth);
+                                    capturedOpaqueDepth: capturedOpaqueDepth,
+                                    trainingDepthPath: exportTrainingDepth
+                                        ? Path.Combine(depthFolderPath, $"{Path.GetFileNameWithoutExtension(imageName)}.tiff")
+                                        : null);
                             }
                             finally
                             {
@@ -838,7 +847,7 @@ public class CameraCaptureRuntime : MonoBehaviour
                                 Vector3 t = new Vector3(colmapMatrix.m03, colmapMatrix.m13, colmapMatrix.m23);
 
                                 string imageName = $"{volumeTarget.FilePrefix}_view_{imageId:D4}.png";
-                                string imagePath = Path.Combine(folderPath, imageName);
+                                string imagePath = Path.Combine(imagesFolderPath, imageName);
 
                                 SetupCaptureCamera();
                                 Texture2D capturedOpaqueDepth =
@@ -855,7 +864,10 @@ public class CameraCaptureRuntime : MonoBehaviour
                                         ref pointId,
                                         debugOutputBasePath: Path.Combine(
                                             folderPath, Path.GetFileNameWithoutExtension(imageName)),
-                                        capturedOpaqueDepth: capturedOpaqueDepth);
+                                        capturedOpaqueDepth: capturedOpaqueDepth,
+                                        trainingDepthPath: exportTrainingDepth
+                                            ? Path.Combine(depthFolderPath, $"{Path.GetFileNameWithoutExtension(imageName)}.tiff")
+                                            : null);
                                 }
                                 finally
                                 {
@@ -1376,7 +1388,10 @@ public class CameraCaptureRuntime : MonoBehaviour
         depthCam.backgroundColor = new Color(srcCam.farClipPlane, 0, 0, 1);
         depthCam.cullingMask = srcCam.cullingMask;
 
-        var rt = RenderTexture.GetTemporary(w, h, 24, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Linear);
+        var depthFormat = SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RFloat)
+            ? RenderTextureFormat.RFloat
+            : RenderTextureFormat.ARGBFloat;
+        var rt = RenderTexture.GetTemporary(w, h, 24, depthFormat, RenderTextureReadWrite.Linear);
         depthCam.targetTexture = rt;
 
         Shader.SetGlobalFloat("_CaptureFar", srcCam.farClipPlane);
@@ -1389,7 +1404,10 @@ public class CameraCaptureRuntime : MonoBehaviour
 
         var prev = RenderTexture.active;
         RenderTexture.active = rt;
-        var depthTex = new Texture2D(w, h, TextureFormat.RGBAHalf, false, true);
+        var textureFormat = depthFormat == RenderTextureFormat.RFloat
+            ? TextureFormat.RFloat
+            : TextureFormat.RGBAFloat;
+        var depthTex = new Texture2D(w, h, textureFormat, false, true);
         depthTex.ReadPixels(new Rect(0, 0, w, h), 0, 0);
         depthTex.Apply(false, false);
         RenderTexture.active = prev;
@@ -1644,10 +1662,12 @@ public class CameraCaptureRuntime : MonoBehaviour
         float clampMinMeters = 0f,
         float clampMaxMeters = 0f,
         bool useFloat32 = false,
-        Texture2D capturedOpaqueDepth = null
+        Texture2D capturedOpaqueDepth = null,
+        string trainingDepthPath = null
     )
     {
         if (cam == null || colorTex == null || writer == null) return;
+        useFloat32 |= !string.IsNullOrEmpty(trainingDepthPath);
 
         if (capturedOpaqueDepth == null && _eyeDepthMat == null)
         {
@@ -1719,6 +1739,12 @@ public class CameraCaptureRuntime : MonoBehaviour
             float skipThreshold = skipMaxDepthPlane
                 ? Mathf.Max(0f, maxValidDepth - farDepthTolerance)
                 : float.PositiveInfinity;
+
+            if (!string.IsNullOrEmpty(trainingDepthPath))
+            {
+                GaussianDepthTiffWriter.Write(
+                    trainingDepthPath, depthTex, cam.nearClipPlane, skipThreshold);
+            }
 
             SaveDepthDebugFiles(depthTex, cam, debugOutputBasePath, skipThreshold);
             if (saveOpaqueDepthReference && includeTransparentsAndParticles && eyeDepthShader != null)
@@ -1950,10 +1976,16 @@ public class CameraCaptureRuntime : MonoBehaviour
             return;
         }
 
-        var subDirs = Directory.GetDirectories(captureOutputFolder);
-        List<string> foldersToProcess = subDirs.Length > 0
-            ? new List<string>(subDirs)
-            : new List<string> { captureOutputFolder };
+        // A single capture now has images/ and sparse/ subdirectories. Only
+        // sequence frame directories should become separate training inputs.
+        bool isSingleCapture = Directory.Exists(Path.Combine(captureOutputFolder, "sparse", "0"))
+            || File.Exists(Path.Combine(captureOutputFolder, "cameras.txt"));
+        List<string> foldersToProcess = isSingleCapture
+            ? new List<string> { captureOutputFolder }
+            : Directory.GetDirectories(captureOutputFolder)
+                .Where(folder => Directory.Exists(Path.Combine(folder, "sparse", "0"))
+                    || File.Exists(Path.Combine(folder, "cameras.txt")))
+                .ToList();
 
         List<string> commands = new List<string>();
         foreach (string folder in foldersToProcess)

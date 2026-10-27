@@ -68,7 +68,6 @@ namespace OpenBrush.Multiplayer
                 m_Runner.AddCallbacks(this);
 
 
-
             }
             catch (Exception ex)
             {
@@ -190,7 +189,6 @@ namespace OpenBrush.Multiplayer
             }
 
             return result.Ok;
-
         }
 
         public async Task<bool> Disconnect()
@@ -245,7 +243,6 @@ namespace OpenBrush.Multiplayer
                 return true;
             }
             return false;
-
         }
 
         #endregion
@@ -659,11 +656,9 @@ namespace OpenBrush.Multiplayer
 
         public void OnReliableDataReceived(NetworkRunner runner, PlayerRef player, ReliableKey key, ReadOnlySpan<byte> data)
         {
-            //Debug.Log("Server received complete reliable data");
 
             int percentage;
             key.GetInts(out _, out _, out _, out percentage);
-            //Debug.Log($"Data received with percentage: {percentage}%");
 
             if (data.IsEmpty)
             {
@@ -678,8 +673,6 @@ namespace OpenBrush.Multiplayer
 
         public void OnReliableDataProgress(NetworkRunner runner, PlayerRef player, ReliableKey key, float progress)
         {
-
-            //Debug.Log("Server received Partial reliable data");
         }
 
         #endregion
