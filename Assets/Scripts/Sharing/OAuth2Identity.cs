@@ -377,8 +377,6 @@ namespace TiltBrush
 
                     await request.SendWebRequest();
 
-                    Debug.Log($"VIVERSE Profile API: {request.responseCode} - {request.downloadHandler.text}");
-
                     if (request.result != UnityWebRequest.Result.Success)
                     {
                         Debug.LogWarning($"VIVERSE: Profile API failed (Attempt {i + 1}/{maxRetries}) - {request.error}");

@@ -186,7 +186,6 @@ namespace TiltBrush
                 DocumentCount = scan.documents;
                 s_Files = scan.files;
                 s_Directories = scan.directories;
-                Debug.Log($"OBDS_APP prepared documents={scan.documents} inaccessible={scan.failed}");
                 StartupReady = true;
                 IsRefreshing = false;
                 Refreshed?.Invoke();
@@ -212,11 +211,9 @@ namespace TiltBrush
         {
             if (StartupReady)
             {
-                Debug.Log("OBDS_APP folder refresh canceled; keeping the current file index");
                 IsRefreshing = false;
                 return;
             }
-            Debug.Log("OBDS_APP folder connection deferred; exiting before shared configuration loads");
             StartupCanceled = true;
             Application.Quit();
         }
