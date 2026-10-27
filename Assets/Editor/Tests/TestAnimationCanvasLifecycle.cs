@@ -494,12 +494,14 @@ namespace TiltBrush.Tests
                 new List<bool> { true });
             CanvasScript drawingCanvas = manager.GetOrCreateContentCanvas(0, 1);
             Stroke stroke = LoadFirstPerformanceStroke("Simple.tilt");
+            drawingCanvas.gameObject.SetActive(false);
             BatchSubset subset = TestBrush.CreateSubsetFromStroke(drawingCanvas, stroke);
             Assert.IsNotNull(subset);
             stroke.m_Type = Stroke.Type.BatchedBrushStroke;
             stroke.m_BatchSubset = subset;
             subset.m_Stroke = stroke;
-            drawingCanvas.BatchManager.FlushMeshUpdates();
+            int expectedVertexCount = subset.m_ParentBatch.Geometry.NumVerts;
+            int[] expectedIndices = subset.m_ParentBatch.Geometry.m_Tris.ToArray();
             manager.NotifyStrokeAdded(stroke);
 
             manager.ConfigureDrawingRenderProxiesForTests(enabled: true);
@@ -511,6 +513,12 @@ namespace TiltBrush.Tests
                 manager.Timeline[0].Id, out CanvasBatchRenderProxy proxy));
             Assert.AreEqual(
                 FrameDrawingRenderMetrics.CaptureBatches(drawingCanvas), proxy.Metrics);
+            Mesh sourceMesh = subset.m_ParentBatch.GetComponent<MeshFilter>().sharedMesh;
+            Assert.AreEqual(expectedVertexCount, sourceMesh.vertexCount,
+                "Proxy synchronization must upload pending geometry on an inactive canvas");
+            CollectionAssert.AreEqual(expectedIndices, sourceMesh.triangles);
+            Assert.IsTrue(proxy.Root.GetComponentsInChildren<MeshFilter>(true)
+                .Any(filter => filter.sharedMesh == sourceMesh));
             var initialWork = manager.GetDrawingRenderProxyWorkCountsForTests();
             manager.ApplyPlaybackFrameForTests(1);
             manager.ApplyPlaybackFrameForTests(1);

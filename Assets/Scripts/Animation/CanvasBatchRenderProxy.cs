@@ -57,6 +57,9 @@ namespace TiltBrush.FrameAnimation
             Batch[] sourceBatches = drawing.Canvas.GetComponentsInChildren<Batch>(true);
             foreach (Batch sourceBatch in sourceBatches)
             {
+                // The source canvas may be inactive, or playback may begin before LateUpdate.
+                // Flush once per content revision before the proxy takes over rendering.
+                sourceBatch.FlushMeshUpdates();
                 MeshFilter sourceFilter = sourceBatch.GetComponent<MeshFilter>();
                 MeshRenderer sourceRenderer = sourceBatch.GetComponent<MeshRenderer>();
                 if (sourceFilter == null || sourceFilter.sharedMesh == null ||
