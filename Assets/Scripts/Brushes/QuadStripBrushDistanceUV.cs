@@ -148,6 +148,11 @@ namespace TiltBrush
             base.ApplyChangesToVisuals();
         }
 
+        public override void PrepareForBatching()
+        {
+            FlushUpdateTangentRequest();
+        }
+
         void LazyUpdateTangentsForSegment(int iQuad0, int iQuad1)
         {
             if (m_UpdateTangentRequest.IsValid && m_UpdateTangentRequest.back != iQuad0)

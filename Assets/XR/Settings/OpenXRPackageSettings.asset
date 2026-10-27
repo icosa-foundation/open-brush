@@ -265,6 +265,7 @@ MonoBehaviour:
   - {fileID: 4856277442140917248}
   - {fileID: 2235076403440218077}
   - {fileID: 900000000000000001}
+  - {fileID: 900000000000000003}
   - {fileID: 5142876501055731027}
   - {fileID: 8495471343331722905}
   - {fileID: 1398439646816929820}
@@ -2027,6 +2028,50 @@ MonoBehaviour:
   targetOpenXRApiVersion: 
   required: 0
   customRuntimeLoaderName: 
+--- !u!114 &900000000000000003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 775f31f60ddb49b8a79fe53a9cdaaec3, type: 3}
+  m_Name: EnvironmentBlendPassthroughFeature Standalone
+  m_EditorClassIdentifier: 
+  m_enabled: 1
+  nameUi: 'Open Brush: Environment Blend Passthrough'
+  version: 0.1.0
+  featureIdInternal: org.openbrush.openxr.environmentblendpassthrough
+  openxrExtensionStrings: 
+  company: Open Brush
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
+--- !u!114 &900000000000000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 775f31f60ddb49b8a79fe53a9cdaaec3, type: 3}
+  m_Name: EnvironmentBlendPassthroughFeature Android
+  m_EditorClassIdentifier: 
+  m_enabled: 1
+  nameUi: 'Open Brush: Environment Blend Passthrough'
+  version: 0.1.0
+  featureIdInternal: org.openbrush.openxr.environmentblendpassthrough
+  openxrExtensionStrings: 
+  company: Open Brush
+  priority: 0
+  targetOpenXRApiVersion: 
+  required: 0
+  customRuntimeLoaderName: 
 --- !u!114 &908514120324412924
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2437,6 +2482,7 @@ MonoBehaviour:
   - {fileID: 1062572759309084341}
   - {fileID: 1982624024592441971}
   - {fileID: 900000000000000002}
+  - {fileID: 900000000000000004}
   - {fileID: -3073224496492989694}
   - {fileID: -5408656732855109852}
   - {fileID: 1299576178316161198}
@@ -2703,7 +2749,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f6a75d1f5ff90154ea2a8e58222a1f59, type: 3}
   m_Name: FoveatedRenderingFeature Android
   m_EditorClassIdentifier: Unity.XR.OpenXR::UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature
-  m_enabled: 1
+  m_enabled: 0
   nameUi: Foveated Rendering
   version: 1
   featureIdInternal: com.unity.openxr.feature.foveatedrendering

@@ -122,7 +122,14 @@ namespace TiltBrush
 
             if (needMeshUpdate)
             {
-                rPointerScript.UpdateLineVisuals();
+                if (strokeFinished)
+                {
+                    rPointerScript.PrepareLineForFinalization();
+                }
+                else
+                {
+                    rPointerScript.UpdateLineVisuals();
+                }
             }
             if (needPointerUpdate)
             {

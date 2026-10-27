@@ -379,17 +379,6 @@ namespace TiltBrush
                 // Make sure we have a folder for the device
                 await m_DriveAccess.CreateDeviceFolderAsync(token);
 
-                if (m_DriveAccess.HasSpaceQuota)
-                {
-                    Debug.Log($"User has {m_DriveAccess.DriveFreeSpace} free space on Drive.\n" +
-                        $"That's {m_DriveAccess.DriveFreeSpace - kMinimumFreeSpace} " +
-                        "before hitting low free space.");
-                }
-                else
-                {
-                    Debug.Log("User has no quota on their Drive.");
-                }
-
                 m_Initialized = true;
 
                 // TODO: Do an upload-only sync for Export, Snapshots and Videos.
@@ -685,7 +674,6 @@ namespace TiltBrush
             m_Folders.Add(folder);
         }
 
-
         /// Enumerates the transfers required to sync all folders, sorts those transfers in descending
         /// order of modification date, and stores the transfer information in the transfer queue.
         private async Task PrepareAllFolderTransfersAsync(CancellationToken token)
@@ -743,13 +731,11 @@ namespace TiltBrush
         {
             if (folder.Local == null && folder.Download)
             {
-                Debug.Log($"Creating new local directory at {folder.AbsoluteLocalPath}.");
                 folder.Local = Directory.CreateDirectory(folder.AbsoluteLocalPath);
             }
 
             if (folder.Drive == null && folder.Upload)
             {
-                Debug.Log($"Creating new Drive folder called {folder.Name}.");
                 folder.Drive = await m_DriveAccess.CreateFolderAsync(
                     folder.Name, folder.ParentDriveId, CancellationToken.None);
             }
