@@ -57,7 +57,6 @@ namespace TiltBrush
                 // Init must be called after all popup.ColorPicked actions have been assigned.
                 popup.ColorPicker.ColorPicked += OnColorPicked;
                 popup.ColorPicker.Controller.CurrentColor = SceneSettings.m_Instance.SkyColorA;
-                popup.ColorPicker.ColorFinalized += ColorFinalized;
             }
         }
 
@@ -76,11 +75,6 @@ namespace TiltBrush
         {
             m_Action.Invoke((ColorPropertyName, color));
             ChosenColor = color;
-        }
-
-        void ColorFinalized()
-        {
-            Debug.Log($"ColorFinalized");
         }
     }
 } // namespace TiltBrush

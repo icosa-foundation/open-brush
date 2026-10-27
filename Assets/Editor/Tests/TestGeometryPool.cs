@@ -199,6 +199,96 @@ namespace TiltBrush
             Assert.AreEqual(0, pool.m_Texcoord2.v4.Count);
         }
 
+        [TestCase(true)]
+        [TestCase(false)]
+        public void ResetReloadedPoolWithoutOptionalChannels(bool keepVertexLayout)
+        {
+            var layout = new VertexLayout();
+            var pool = new GeometryPool { Layout = layout };
+            var mesh = new Mesh();
+            try
+            {
+                pool.m_Vertices.AddRange(new[] { Vector3.zero, Vector3.right, Vector3.up });
+                pool.m_Tris.AddRange(new[] { 0, 1, 2 });
+                mesh.vertices = pool.m_Vertices.ToArray();
+                mesh.triangles = pool.m_Tris.ToArray();
+                pool.MakeGeometryNotResident(mesh);
+                pool.EnsureGeometryResident();
+                Assert.IsNull(pool.m_Normals);
+                Assert.IsNull(pool.m_Colors);
+                Assert.IsNull(pool.m_Tangents);
+
+                pool.Reset(keepVertexLayout);
+                Assert.AreEqual(0, pool.NumVerts);
+                Assert.AreEqual(0, pool.NumTriIndices);
+                if (keepVertexLayout) Assert.AreEqual(layout, pool.Layout);
+
+                // A reused batch can enable channels that were absent from the backing mesh.
+                pool.Layout = new VertexLayout { bUseNormals = true, bUseColors = true, bUseTangents = true };
+                pool.NumVerts = 3;
+                Assert.AreEqual(3, pool.m_Normals.Count);
+                Assert.AreEqual(3, pool.m_Colors.Count);
+                Assert.AreEqual(3, pool.m_Tangents.Count);
+            }
+            finally
+            {
+                pool.Destroy();
+                Object.DestroyImmediate(mesh);
+            }
+        }
+
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ColdTruncationSurvivesCopyReloadAndAppend(bool uint32)
+        {
+            var pool = new GeometryPool
+            {
+                Layout = new VertexLayout
+                {
+                    bUseNormals = true, bUseColors = true, bUseTangents = true,
+                    texcoord0 = new TexcoordInfo { size = 2 }
+                }
+            };
+            var copy = new GeometryPool { Layout = pool.Layout };
+            var mesh = new Mesh { indexFormat = uint32 ? UnityEngine.Rendering.IndexFormat.UInt32 : UnityEngine.Rendering.IndexFormat.UInt16 };
+            try
+            {
+                for (int i = 0; i < 9; i++)
+                {
+                    pool.m_Vertices.Add(new Vector3(i, 0, 0));
+                    pool.m_Normals.Add(Vector3.up);
+                    pool.m_Colors.Add(new Color32((byte)i, 0, 0, 255));
+                    pool.m_Tangents.Add(new Vector4(1, 0, 0, 1));
+                    pool.m_Texcoord0.v2.Add(new Vector2(i, 0));
+                    pool.m_Tris.Add(i);
+                }
+                mesh.SetVertices(pool.m_Vertices); mesh.SetNormals(pool.m_Normals);
+                mesh.SetColors(pool.m_Colors); mesh.SetTangents(pool.m_Tangents);
+                mesh.SetUVs(0, pool.m_Texcoord0.v2); mesh.SetTriangles(pool.m_Tris, 0);
+                pool.MakeGeometryNotResident(mesh);
+                Assert.IsFalse(pool.TryTruncateColdMesh(3, 3));
+                Assert.AreEqual(9, pool.NumVerts);
+                Assert.AreEqual(9, pool.NumTriIndices);
+                Assert.IsFalse(pool.HasCachedGeometry);
+                Assert.IsTrue(pool.TryTruncateColdMesh(6, 6));
+                pool.m_Tris[0] = pool.m_Tris[1] = pool.m_Tris[2] = 0;
+                Assert.IsFalse(pool.IsGeometryResident);
+                copy.Append(pool, 0, 6, 0, 6);
+                Assert.IsFalse(pool.IsGeometryResident);
+                Assert.Throws<ArgumentOutOfRangeException>(() => copy.Append(pool, 6, 3, 0, 3));
+                Assert.Throws<ArgumentOutOfRangeException>(() => copy.Append(pool, 0, 3, 6, 3));
+                pool.EnsureGeometryResident();
+                string why = "";
+                Assert.IsTrue(AreEqual(pool, copy, ref why), why);
+                CollectionAssert.AreEqual(new[] { 0, 0, 0, 3, 4, 5 }, pool.m_Tris);
+                pool.Append(copy, 3, 3, 3, 3);
+                Assert.AreEqual(9, pool.NumVerts);
+                Assert.AreEqual(copy.m_Vertices[3], pool.m_Vertices[6]);
+                CollectionAssert.AreEqual(new[] { 0, 0, 0, 3, 4, 5, 6, 7, 8 }, pool.m_Tris);
+            }
+            finally { pool.Destroy(); copy.Destroy(); Object.DestroyImmediate(mesh); }
+        }
+
         [Test]
         public void TestLayoutEquality()
         {
@@ -262,6 +352,25 @@ namespace TiltBrush
             pool.MakeGeometryNotResident(filename);
             pool.EnsureGeometryResident();
             AssertAreEqual(expected, pool);
+        }
+
+        [Test]
+        public void IndexOnlyRequestForBackingFileRetainsFullReloadBehavior()
+        {
+            var pool = RandomGeometryPool();
+            var expected = pool.Clone();
+            try
+            {
+                pool.MakeGeometryNotResident(Path.Combine(TemporaryData, "indices-from-backing-file.bin"));
+                pool.EnsureIndicesResident();
+                Assert.IsTrue(pool.IsGeometryResident);
+                AssertAreEqual(expected, pool);
+            }
+            finally
+            {
+                pool.Destroy();
+                expected.Destroy();
+            }
         }
 
         [Test]
@@ -343,6 +452,105 @@ namespace TiltBrush
             Object.DestroyImmediate(mesh);
 
         }
+        // Exercise fallback generation even on desktop GPUs with geometry shader support.
+        // The input topology is shared-vertex geometry; unreferenced vertices must remain zero.
+        [TestCase(0, 0)]
+        [TestCase(4, 3)]
+        public void TriangleIdsUseSourceRangesAndLocalDestinationIndices(int vertexStart, int indexStart)
+        {
+            var pool = new GeometryPool { Layout = new VertexLayout() };
+            pool.NumVerts = vertexStart + 5;
+            if (indexStart != 0) pool.m_Tris.AddRange(new[] { 0, 1, 2 });
+            pool.m_Tris.AddRange(new[]
+            {
+                vertexStart, vertexStart + 1, vertexStart + 2,
+                vertexStart, vertexStart + 2, vertexStart + 3
+            });
+            // This triangle must not be included in the copied subset.
+            pool.m_Tris.AddRange(new[] { vertexStart + 4, vertexStart + 4, vertexStart + 4 });
+            var mesh = new Mesh();
+            var indices = new[] { 0, 1, 2, 0, 2, 3 };
+            try
+            {
+                mesh.vertices = new Vector3[5];
+                mesh.triangles = indices;
+                GenerateTriangleIdsForTest(pool, mesh, vertexStart, 5, indexStart, 6);
+                var ids = new List<Vector2>();
+                mesh.GetUVs(4, ids);
+                CollectionAssert.AreEqual(new[]
+                {
+                    new Vector2(1, 0), Vector2.zero, new Vector2(1, 0),
+                    new Vector2(1, 0), Vector2.zero
+                }, ids);
+                CollectionAssert.AreEqual(indices, mesh.triangles);
+                Assert.AreEqual(5, mesh.vertexCount);
+
+                // Reuse the shared scratch with a smaller mesh and no referenced vertices.
+                mesh.Clear();
+                mesh.vertices = new Vector3[3];
+                GenerateTriangleIdsForTest(pool, mesh, 0, 3, 0, 0);
+                mesh.GetUVs(4, ids);
+                CollectionAssert.AreEqual(new[] { Vector2.zero, Vector2.zero, Vector2.zero }, ids);
+            }
+            finally
+            {
+                Object.DestroyImmediate(mesh);
+                pool.Destroy();
+            }
+        }
+
+        [TestCase(0)]
+        [TestCase(16384)]
+        [TestCase(65540)]
+        public void TriangleIdsHandleEmptyAndOversizedMeshesWithoutGrowingCache(int vertexCount)
+        {
+            var pool = new GeometryPool { Layout = new VertexLayout() };
+            pool.NumVerts = vertexCount;
+            if (vertexCount > 0)
+            {
+                pool.m_Tris.AddRange(new[]
+                {
+                    vertexCount - 4, vertexCount - 3, vertexCount - 2,
+                    vertexCount - 3, vertexCount - 2, vertexCount - 1
+                });
+            }
+            var mesh = new Mesh { indexFormat = UnityEngine.Rendering.IndexFormat.UInt32 };
+            try
+            {
+                mesh.SetVertices(pool.m_Vertices);
+                mesh.SetTriangles(pool.m_Tris, 0);
+                var method = typeof(GeometryPool).GetMethod("GenerateTriangleIds",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+                    null, new[] { typeof(Mesh) }, null);
+                method.Invoke(pool, new object[] { mesh });
+                var ids = new List<Vector2>();
+                mesh.GetUVs(4, ids);
+                Assert.AreEqual(vertexCount, ids.Count);
+                if (vertexCount > 0)
+                {
+                    Assert.AreEqual(Vector2.zero, ids[vertexCount - 4]);
+                    Assert.AreEqual(new Vector2(1, 0), ids[vertexCount - 1]);
+                }
+                var cache = (Vector2[])typeof(GeometryPool).GetField("sm_TriangleIds",
+                    System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).GetValue(null);
+                Assert.LessOrEqual(cache.Length, 16384);
+            }
+            finally
+            {
+                Object.DestroyImmediate(mesh);
+                pool.Destroy();
+            }
+        }
+
+        private static void GenerateTriangleIdsForTest(GeometryPool pool, Mesh mesh,
+            int vertexStart, int vertexCount, int indexStart, int indexCount)
+        {
+            var method = typeof(GeometryPool).GetMethod("GenerateTriangleIds",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic,
+                null, new[] { typeof(Mesh), typeof(int), typeof(int), typeof(int), typeof(int) }, null);
+            method.Invoke(pool, new object[] { mesh, vertexStart, vertexCount, indexStart, indexCount });
+        }
+
     }
 
 }
