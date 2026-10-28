@@ -232,6 +232,14 @@ namespace TiltBrush
             SetQualityLevel(QualityLevel);
         }
 
+        public void ResetFrameMeasurement()
+        {
+            m_HadMeasurementFocus = false;
+            m_FrameTimeStamps?.Clear();
+            m_FramesInLastSecond = 0;
+            m_AutomaticQualityPolicy.ResetMeasurement(m_TimeSinceStart);
+        }
+
         void OnApplicationPause(bool paused)
         {
             m_ApplicationPaused = paused;
@@ -253,7 +261,9 @@ namespace TiltBrush
             m_TimeSinceStart += Time.unscaledDeltaTime;
             bool focusBlocked = App.Config.m_SdkMode == SdkMode.UnityXR &&
                 App.VrSdk != null && App.VrSdk.IsAppFocusBlocked();
-            if (m_ApplicationPaused || !Application.isFocused || focusBlocked)
+            bool compositorBlocked = OverlayManager.m_Instance != null &&
+                OverlayManager.m_Instance.BlocksQualityMeasurement;
+            if (m_ApplicationPaused || !Application.isFocused || focusBlocked || compositorBlocked)
             {
                 m_HadMeasurementFocus = false;
                 m_FrameTimeStamps.Clear();
@@ -337,9 +347,15 @@ namespace TiltBrush
             m_targetMaxControlPoints = settings.TargetMaxControlPoints;
             m_maxLoadingSimplification = settings.MaxSimplification;
 
+#if OPEN_BRUSH_ANDROID_XR
+            // Sub-resolution XR viewports produce a top-edge band and vertical image
+            // shifts on Aura. Keep the full viewport until that rendering issue is resolved.
+            float viewportScale = 1f;
+#else
             float viewportScale = App.UserConfig.Profiling.ViewportScaling > 0 ?
                 App.UserConfig.Profiling.ViewportScaling :
                 settings.ViewportScale;
+#endif
 
             if (App.UserConfig.Profiling.GlobalMaximumLOD > 0)
             {

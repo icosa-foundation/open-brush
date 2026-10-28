@@ -350,13 +350,16 @@ namespace TiltBrush
             m_CurrentFxaa = settings.Fxaa;
             m_CurrentBloomMode = settings.Bloom;
 
-            // Scale the viewport in XR; scale URP's internal target in desktop view mode.
-            var displays = new List<XRDisplaySubsystem>();
-            SubsystemManager.GetInstances(displays);
-            if (!displays.Exists(display => display.running) && m_MsaaPipelineAsset != null)
+            // A suspended/not-yet-started XR display is still an XR session. Do not
+            // turn viewport quality into eye-buffer resizing while it is stopped.
+            if (m_MsaaPipelineAsset != null)
             {
-                float scale = App.UserConfig.Profiling.ViewportScaling > 0
-                    ? App.UserConfig.Profiling.ViewportScaling : settings.ViewportScale;
+                float scale = 1f;
+                if (App.Config.m_SdkMode != SdkMode.UnityXR)
+                {
+                    scale = App.UserConfig.Profiling.ViewportScaling > 0
+                        ? App.UserConfig.Profiling.ViewportScaling : settings.ViewportScale;
+                }
                 m_MsaaPipelineAsset.renderScale = m_PreviousRenderScale * scale;
             }
             ApplyBloomMode(settings.Bloom);
