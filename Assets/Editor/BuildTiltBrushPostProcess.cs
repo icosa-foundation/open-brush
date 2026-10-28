@@ -51,11 +51,13 @@ public class BuildTiltBrushPostProcess
 #endif
             AndroidStoreManifest.Configure(doc, metaStore,
                 BuildTiltBrush.CurrentBuildXrSdk == TiltBrush.XrSdkMode.AndroidXR,
-                BuildTiltBrush.CurrentBuildUsesScopedStorage);
+                BuildTiltBrush.CurrentBuildUsesScopedStorage,
+                BuildTiltBrush.CurrentBuildIsHandheldViewer);
 
             doc.Save(file);
             UnityEngine.Debug.Log($"[OB-STORE-MANIFEST] Applied Android manifest settings: " +
-                $"MetaStore={metaStore}, XR={BuildTiltBrush.CurrentBuildXrSdk}.");
+                $"MetaStore={metaStore}, XR={BuildTiltBrush.CurrentBuildXrSdk}, " +
+                $"HandheldViewer={BuildTiltBrush.CurrentBuildIsHandheldViewer}.");
         }
         catch (System.Exception e)
         {
