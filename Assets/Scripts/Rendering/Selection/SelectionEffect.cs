@@ -97,16 +97,18 @@ namespace TiltBrush
         {
             public Material[] OriginalMaterials;
             public Material[] HighlightMaterials;
+            public MaterialPropertyBlock OriginalRendererPropertyBlock;
+            public MaterialPropertyBlock[] OriginalPropertyBlocks;
+            public bool HadOriginalRendererPropertyBlock;
+            public bool[] HadOriginalPropertyBlocks;
             public bool OriginalEnabled;
             public bool OriginalForceRenderingOff;
             public int RegisteredFrame;
+            public bool Applied;
         }
 
         private Dictionary<Renderer, MobileHighlightState> m_MobileHighlightStates;
-        private Dictionary<Material, Material> m_MobileHighlightMaterials;
-        private Dictionary<Material, Color> m_MobileHighlightBaseColors;
-        private HashSet<Material> m_ActiveMobileHighlightMaterials;
-        private Material m_MobileFallbackHighlightMaterial;
+        private Material m_MobileHighlightMaterial;
         private Shader m_MobileHighlightShader;
 #endif
 
@@ -118,9 +120,8 @@ namespace TiltBrush
             m_CmrRequestedSkinnedMeshes = new List<SkinnedMeshRenderer>();
             m_UrpDiagnosticMeshes = new List<MeshFilter>();
             m_MobileHighlightStates = new Dictionary<Renderer, MobileHighlightState>();
-            m_MobileHighlightMaterials = new Dictionary<Material, Material>();
-            m_MobileHighlightBaseColors = new Dictionary<Material, Color>();
-            m_ActiveMobileHighlightMaterials = new HashSet<Material>();
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
 #endif
             InputManager.m_Instance.ControllerPosesApplied += OnPosesApplied;
             Shader.SetGlobalColor("_LeftEyeSelectionColor", Color.white);
@@ -259,7 +260,7 @@ namespace TiltBrush
 #if FEATURE_CUSTOM_MESH_RENDER
             if (UseMobileMaterialHighlights)
             {
-                RestoreMobileHighlight(meshFilter != null
+                RemoveMobileHighlight(meshFilter != null
                     ? meshFilter.GetComponent<Renderer>()
                     : null);
                 return;
@@ -274,7 +275,7 @@ namespace TiltBrush
 #if FEATURE_CUSTOM_MESH_RENDER
             if (UseMobileMaterialHighlights)
             {
-                RestoreMobileHighlight(renderer);
+                RemoveMobileHighlight(renderer);
                 return;
             }
 
@@ -301,204 +302,144 @@ namespace TiltBrush
                 return;
             }
 
-            Material[] originals = renderer.sharedMaterials;
-            int materialCount = Mathf.Max(1, originals.Length);
-            Material[] replacements = new Material[materialCount];
-            for (int i = 0; i < materialCount; ++i)
+            m_MobileHighlightStates.Add(renderer, new MobileHighlightState
             {
-                Material original = i < originals.Length ? originals[i] : null;
-                replacements[i] = GetMobileHighlightMaterial(original);
-                if (replacements[i] == null)
-                {
-                    return;
-                }
-            }
-
-            state = new MobileHighlightState
-            {
-                OriginalMaterials = originals,
-                HighlightMaterials = replacements,
-                OriginalEnabled = renderer.enabled,
-                OriginalForceRenderingOff = renderer.forceRenderingOff,
                 RegisteredFrame = Time.frameCount
-            };
-            m_MobileHighlightStates.Add(renderer, state);
-
-            renderer.sharedMaterials = replacements;
-            renderer.forceRenderingOff = false;
-            renderer.enabled = true;
+            });
         }
 
-        private Material GetMobileHighlightMaterial(Material source)
+        private bool EnsureMobileHighlightMaterial()
         {
-            if (source == null)
+            if (m_MobileHighlightMaterial != null)
             {
-                if (m_MobileFallbackHighlightMaterial == null)
-                {
-                    m_MobileFallbackHighlightMaterial = CreateMobileHighlightMaterial(null);
-                }
-                return m_MobileFallbackHighlightMaterial;
+                return true;
             }
-
-            m_MobileHighlightMaterials ??= new Dictionary<Material, Material>();
-            if (!m_MobileHighlightMaterials.TryGetValue(source, out Material replacement) ||
-                replacement == null)
-            {
-                replacement = CreateMobileHighlightMaterial(source);
-                if (replacement != null)
-                {
-                    m_MobileHighlightMaterials[source] = replacement;
-                }
-            }
-            return replacement;
-        }
-
-        private Material CreateMobileHighlightMaterial(Material source)
-        {
-            if (m_MobileHighlightShader == null)
-            {
-                m_MobileHighlightShader = Shader.Find("Universal Render Pipeline/Lit");
-            }
+            m_MobileHighlightShader ??= Shader.Find("Universal Render Pipeline/Lit");
             if (m_MobileHighlightShader == null)
             {
                 Debug.LogError("The URP Lit shader is unavailable for mobile selection highlighting.");
-                return null;
+                return false;
             }
 
-            Material replacement = new Material(m_MobileHighlightShader)
+            m_MobileHighlightMaterial = new Material(m_MobileHighlightShader)
             {
-                name = source != null
-                    ? $"{source.name} (Mobile Highlight)"
-                    : "Mobile Highlight",
+                name = "Mobile Selection Highlight",
                 hideFlags = HideFlags.HideAndDontSave
             };
-
-            CopyMobileBaseColor(source, replacement);
-            m_MobileHighlightBaseColors ??= new Dictionary<Material, Color>();
-            m_MobileHighlightBaseColors[replacement] = replacement.GetColor("_BaseColor");
-            replacement.SetFloat("_Metallic", 0.0f);
-            replacement.SetFloat("_Smoothness", 0.3f);
-            replacement.SetFloat("_Cull", 0.0f);
-            replacement.SetFloat("_Surface", 0.0f);
-            replacement.SetFloat("_ZWrite", 1.0f);
-            replacement.EnableKeyword("_EMISSION");
-            replacement.SetColor(
+            m_MobileHighlightMaterial.SetFloat("_Metallic", 0.0f);
+            m_MobileHighlightMaterial.SetFloat("_Smoothness", 0.3f);
+            m_MobileHighlightMaterial.SetFloat("_Cull", 0.0f);
+            m_MobileHighlightMaterial.SetFloat("_Surface", 0.0f);
+            m_MobileHighlightMaterial.SetFloat("_ZWrite", 1.0f);
+            m_MobileHighlightMaterial.SetColor("_BaseColor", new Color(0.55f, 0.55f, 0.55f, 1.0f));
+            m_MobileHighlightMaterial.EnableKeyword("_EMISSION");
+            m_MobileHighlightMaterial.SetColor(
                 "_EmissionColor",
                 Shader.GetGlobalColor("_LeftEyeSelectionColor") * 0.55f);
-
-            float alphaCutoff = GetAlphaCutoff(source);
-            if (alphaCutoff > 0.0f)
-            {
-                replacement.SetFloat("_AlphaClip", 1.0f);
-                replacement.SetFloat("_Cutoff", alphaCutoff);
-                replacement.EnableKeyword("_ALPHATEST_ON");
-                replacement.renderQueue = (int)RenderQueue.AlphaTest;
-            }
-            else
-            {
-                replacement.renderQueue = (int)RenderQueue.Geometry;
-            }
-
-            return replacement;
+            m_MobileHighlightMaterial.renderQueue = (int)RenderQueue.Geometry;
+            return true;
         }
 
-        private static void CopyMobileBaseColor(Material source, Material destination)
-        {
-            Color color = Color.white;
-            Texture texture = null;
-            string textureProperty = null;
-
-            if (source != null)
-            {
-                string[] colorProperties = { "baseColorFactor", "_BaseColor", "_Color" };
-                foreach (string property in colorProperties)
-                {
-                    if (source.HasProperty(property))
-                    {
-                        color = source.GetColor(property);
-                        break;
-                    }
-                }
-
-                string[] textureProperties = { "baseColorTexture", "_BaseMap", "_MainTex" };
-                foreach (string property in textureProperties)
-                {
-                    if (source.HasProperty(property) && source.GetTexture(property) != null)
-                    {
-                        texture = source.GetTexture(property);
-                        textureProperty = property;
-                        break;
-                    }
-                }
-            }
-
-            destination.SetColor("_BaseColor", color);
-            destination.SetTexture("_BaseMap", texture);
-            if (source != null && textureProperty != null)
-            {
-                destination.SetTextureScale("_BaseMap", source.GetTextureScale(textureProperty));
-                destination.SetTextureOffset("_BaseMap", source.GetTextureOffset(textureProperty));
-            }
-        }
-
-        private static float GetAlphaCutoff(Material material)
-        {
-            if (material == null)
-            {
-                return 0.0f;
-            }
-            if (material.HasProperty("alphaCutoff"))
-            {
-                return material.GetFloat("alphaCutoff");
-            }
-            bool alphaClipped =
-                (material.HasProperty("_AlphaClip") && material.GetFloat("_AlphaClip") > 0.5f) ||
-                material.IsKeywordEnabled("_ALPHATEST_ON");
-            if (alphaClipped && material.HasProperty("_Cutoff"))
-            {
-                return material.GetFloat("_Cutoff");
-            }
-            return 0.0f;
-        }
-
-        private void UpdateMobileHighlightColor(Color color)
+        private void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
         {
             if (!UseMobileMaterialHighlights)
             {
                 return;
             }
 
-            float pulse = 0.45f + 0.2f * Mathf.Sin(Time.realtimeSinceStartup * 5.0f);
-            Color emission = color * pulse;
-            if (m_MobileHighlightStates == null ||
-                m_MobileHighlightStates.Count == 0 ||
-                m_MobileHighlightBaseColors == null)
+            RestoreAppliedMobileHighlights();
+            Camera vrCamera = App.VrSdk != null ? App.VrSdk.GetVrCamera() : null;
+            if (DisableSelectionEffects || camera == null || camera != vrCamera ||
+                m_MobileHighlightStates == null || m_MobileHighlightStates.Count == 0 ||
+                !EnsureMobileHighlightMaterial())
             {
                 return;
             }
 
-            m_ActiveMobileHighlightMaterials ??= new HashSet<Material>();
-            m_ActiveMobileHighlightMaterials.Clear();
-            foreach (MobileHighlightState state in m_MobileHighlightStates.Values)
+            foreach (var pair in m_MobileHighlightStates)
             {
-                foreach (Material material in state.HighlightMaterials)
+                ApplyMobileHighlight(pair.Key, pair.Value);
+            }
+        }
+
+        private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            RestoreAppliedMobileHighlights();
+        }
+
+        private void ApplyMobileHighlight(Renderer renderer, MobileHighlightState state)
+        {
+            if (renderer == null || state.Applied || !renderer.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            state.OriginalMaterials = renderer.sharedMaterials;
+            int originalMaterialCount = state.OriginalMaterials.Length;
+            int highlightMaterialCount = Mathf.Max(1, originalMaterialCount);
+            EnsureMobileHighlightStateCapacity(state, highlightMaterialCount);
+
+            state.OriginalEnabled = renderer.enabled;
+            state.OriginalForceRenderingOff = renderer.forceRenderingOff;
+            state.OriginalRendererPropertyBlock ??= new MaterialPropertyBlock();
+            state.OriginalRendererPropertyBlock.Clear();
+            renderer.GetPropertyBlock(state.OriginalRendererPropertyBlock);
+            state.HadOriginalRendererPropertyBlock =
+                !state.OriginalRendererPropertyBlock.isEmpty;
+            for (int i = 0; i < highlightMaterialCount; ++i)
+            {
+                state.HighlightMaterials[i] = m_MobileHighlightMaterial;
+
+                if (i < originalMaterialCount)
                 {
-                    if (material != null)
-                    {
-                        m_ActiveMobileHighlightMaterials.Add(material);
-                    }
+                    MaterialPropertyBlock originalProperties = state.OriginalPropertyBlocks[i];
+                    originalProperties.Clear();
+                    renderer.GetPropertyBlock(originalProperties, i);
+                    state.HadOriginalPropertyBlocks[i] = !originalProperties.isEmpty;
                 }
             }
-            foreach (Material material in m_ActiveMobileHighlightMaterials)
+
+            renderer.sharedMaterials = state.HighlightMaterials;
+            renderer.SetPropertyBlock(null);
+            for (int i = 0; i < highlightMaterialCount; ++i)
             {
-                if (m_MobileHighlightBaseColors.TryGetValue(material, out Color baseColor))
-                {
-                    Color tinted = Color.Lerp(baseColor, color, 0.35f);
-                    tinted.a = baseColor.a;
-                    material.SetColor("_BaseColor", tinted);
-                    material.SetColor("_EmissionColor", emission);
-                }
+                renderer.SetPropertyBlock(null, i);
             }
+            renderer.forceRenderingOff = false;
+            renderer.enabled = true;
+            state.Applied = true;
+        }
+
+        private static void EnsureMobileHighlightStateCapacity(
+            MobileHighlightState state, int materialCount)
+        {
+            if (state.HighlightMaterials != null && state.HighlightMaterials.Length == materialCount)
+            {
+                return;
+            }
+
+            state.HighlightMaterials = new Material[materialCount];
+            state.OriginalPropertyBlocks = new MaterialPropertyBlock[materialCount];
+            state.HadOriginalPropertyBlocks = new bool[materialCount];
+            for (int i = 0; i < materialCount; ++i)
+            {
+                state.OriginalPropertyBlocks[i] = new MaterialPropertyBlock();
+            }
+        }
+
+        private void UpdateMobileHighlightColor(Color color)
+        {
+            if (!UseMobileMaterialHighlights ||
+                m_MobileHighlightStates == null || m_MobileHighlightStates.Count == 0 ||
+                !EnsureMobileHighlightMaterial())
+            {
+                return;
+            }
+
+            float pulse = 0.45f + 0.2f * Mathf.Sin(Time.realtimeSinceStartup * 5.0f);
+            m_MobileHighlightMaterial.SetColor(
+                "_BaseColor", Color.Lerp(new Color(0.55f, 0.55f, 0.55f), color, 0.2f));
+            m_MobileHighlightMaterial.SetColor("_EmissionColor", color * pulse);
         }
 
         private void RestoreStaleMobileHighlights()
@@ -524,11 +465,58 @@ namespace TiltBrush
             }
             foreach (Renderer renderer in stale)
             {
-                RestoreMobileHighlight(renderer);
+                RemoveMobileHighlight(renderer);
             }
         }
 
-        private void RestoreMobileHighlight(Renderer renderer)
+        private void RestoreAppliedMobileHighlights()
+        {
+            if (m_MobileHighlightStates == null)
+            {
+                return;
+            }
+            foreach (var pair in m_MobileHighlightStates)
+            {
+                RestoreAppliedMobileHighlight(pair.Key, pair.Value);
+            }
+        }
+
+        private static void RestoreAppliedMobileHighlight(
+            Renderer renderer, MobileHighlightState state)
+        {
+            if (!state.Applied)
+            {
+                return;
+            }
+
+            state.Applied = false;
+            if (renderer == null)
+            {
+                state.OriginalMaterials = null;
+                return;
+            }
+
+            for (int i = 0; i < state.HighlightMaterials.Length; ++i)
+            {
+                renderer.SetPropertyBlock(null, i);
+            }
+            renderer.sharedMaterials = state.OriginalMaterials;
+            renderer.SetPropertyBlock(
+                state.HadOriginalRendererPropertyBlock
+                    ? state.OriginalRendererPropertyBlock
+                    : null);
+            for (int i = 0; i < state.OriginalMaterials.Length; ++i)
+            {
+                renderer.SetPropertyBlock(
+                    state.HadOriginalPropertyBlocks[i] ? state.OriginalPropertyBlocks[i] : null,
+                    i);
+            }
+            renderer.forceRenderingOff = state.OriginalForceRenderingOff;
+            renderer.enabled = state.OriginalEnabled;
+            state.OriginalMaterials = null;
+        }
+
+        private void RemoveMobileHighlight(Renderer renderer)
         {
             if (ReferenceEquals(renderer, null) ||
                 m_MobileHighlightStates == null ||
@@ -537,13 +525,8 @@ namespace TiltBrush
                 return;
             }
 
+            RestoreAppliedMobileHighlight(renderer, state);
             m_MobileHighlightStates.Remove(renderer);
-            if (renderer != null)
-            {
-                renderer.sharedMaterials = state.OriginalMaterials;
-                renderer.forceRenderingOff = state.OriginalForceRenderingOff;
-                renderer.enabled = state.OriginalEnabled;
-            }
         }
 
         private void OnDestroy()
@@ -552,26 +535,18 @@ namespace TiltBrush
             {
                 InputManager.m_Instance.ControllerPosesApplied -= OnPosesApplied;
             }
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
 
             if (m_MobileHighlightStates != null)
             {
                 var renderers = new List<Renderer>(m_MobileHighlightStates.Keys);
                 foreach (Renderer renderer in renderers)
                 {
-                    RestoreMobileHighlight(renderer);
+                    RemoveMobileHighlight(renderer);
                 }
             }
-            if (m_MobileHighlightMaterials != null)
-            {
-                foreach (Material material in m_MobileHighlightMaterials.Values)
-                {
-                    Destroy(material);
-                }
-                m_MobileHighlightMaterials.Clear();
-            }
-            m_MobileHighlightBaseColors?.Clear();
-            m_ActiveMobileHighlightMaterials?.Clear();
-            Destroy(m_MobileFallbackHighlightMaterial);
+            Destroy(m_MobileHighlightMaterial);
         }
 #endif
 
