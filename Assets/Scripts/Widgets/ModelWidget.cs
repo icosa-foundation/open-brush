@@ -767,14 +767,7 @@ namespace TiltBrush
         {
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
-#if UNITY_ANDROID || UNITY_IOS
-                // Mobile selection is applied directly by the imported model materials.
-                // This path bypasses GrabWidget.RegisterHighlight(), so mirror the base
-                // implementation's keyword state instead of relying on the URP outline pass.
-                m_Highlighted = true;
-#else
                 m_ObjModelScript.RegisterHighlight();
-#endif
                 return;
             }
             if (UpdateGsplatSelectionHighlight())
@@ -789,11 +782,7 @@ namespace TiltBrush
             RestoreGsplatBrightness();
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
-#if UNITY_ANDROID || UNITY_IOS
-                m_Highlighted = false;
-#else
                 m_ObjModelScript.UnregisterHighlight();
-#endif
                 return;
             }
             base.UnregisterHighlight();
