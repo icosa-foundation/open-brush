@@ -253,7 +253,11 @@ namespace TiltBrush
             // Skip the rest of the VR setup if we're not using XR
             if (App.UserConfig.Flags.DisableXrMode || App.UserConfig.Flags.EnableMonoscopicMode) return;
 
-            UnityEngine.XR.OpenXR.OpenXRSettings.SetAllowRecentering(false);
+            // Handheld AR and no-headset builds may omit the OpenXR native plugin.
+            if (XRGeneralSettings.Instance?.Manager?.activeLoader is OpenXRLoader)
+            {
+                OpenXRSettings.SetAllowRecentering(false);
+            }
         }
 
         void Start()
