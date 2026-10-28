@@ -35,11 +35,16 @@ namespace TiltBrush
                 return;
             }
 
+            // Both passthrough paths composite the eye buffer over the camera feed using its
+            // alpha, so the default scene layer's premultiplied flag decides how additive
+            // brushes look. Set it explicitly rather than inheriting Unity's hidden fallback
+            // layer (FB path) or native default (blend mode path), so the two paths match.
+            // Must precede the FB layer: once the fallback exists, ours is destroyed as a
+            // duplicate.
+            SetDefaultSceneLayer(true);
+
             if (App.VrSdk.PassthroughMode == PassthroughMode.FBPassthrough)
             {
-                // Quest's FB passthrough path must retain Unity's fallback projection layer.
-                // Registering an explicit Default Scene Layer causes the mobile selection
-                // render pass to leave the Quest GPU waiting indefinitely on eye-buffer fences.
                 m_PassthroughLayer.enabled = true;
                 if (METABoundaryVisibility.FeatureEnabled)
                 {
@@ -48,9 +53,6 @@ namespace TiltBrush
             }
             else if (App.VrSdk.PassthroughMode == PassthroughMode.OpenXREnvionmentBlendMode)
             {
-                // Environment-blend runtimes need an explicit default layer so its blend type
-                // is consistent and can be changed at runtime.
-                SetDefaultSceneLayer(true);
                 SetBlendModePassthrough(true);
             }
         }
@@ -66,7 +68,7 @@ namespace TiltBrush
             {
                 SetBlendModePassthrough(false);
             }
-            if (App.VrSdk.PassthroughMode == PassthroughMode.OpenXREnvionmentBlendMode)
+            if (App.VrSdk.PassthroughMode != PassthroughMode.None)
             {
                 SetDefaultSceneLayer(false);
             }
