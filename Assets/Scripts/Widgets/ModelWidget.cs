@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -785,13 +785,19 @@ namespace TiltBrush
             if (UsesBoundsHighlight)
             {
                 RegisterBoundsHighlight();
+#if UNITY_ANDROID || UNITY_IOS
+                // Mobile skips the outline renderer and needs the base material-tint state.
+                base.RegisterHighlight();
+#endif
                 return;
             }
+#if !(UNITY_ANDROID || UNITY_IOS)
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.RegisterHighlight();
                 return;
             }
+#endif
             base.RegisterHighlight();
         }
 
@@ -801,12 +807,20 @@ namespace TiltBrush
             {
                 App.Instance.SelectionEffect.UnregisterMesh(m_BoundsHighlight);
             }
-            if (UsesBoundsHighlight) return;
+            if (UsesBoundsHighlight)
+            {
+#if UNITY_ANDROID || UNITY_IOS
+                base.UnregisterHighlight();
+#endif
+                return;
+            }
+#if !(UNITY_ANDROID || UNITY_IOS)
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.UnregisterHighlight();
                 return;
             }
+#endif
             base.UnregisterHighlight();
         }
 
