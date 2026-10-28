@@ -1048,6 +1048,18 @@ jobs:
           name: Android OpenXR
           path: build_android_openxr
 
+      - name: Download Build Artifacts (Android Viewer Handheld)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android Viewer Handheld
+          path: build_android_viewer_handheld
+
+      - name: Download Build Artifacts (Android Viewer OpenXR)
+        uses: actions/download-artifact@v8
+        with:
+          name: Android Viewer OpenXR
+          path: build_android_viewer_headset
+
       - name: Download Build Artifacts (Android Quest)
         uses: actions/download-artifact@v8
         with:
@@ -1072,6 +1084,8 @@ jobs:
         run: |
           mkdir releases
           mv build_android_openxr/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Android_$VERSION.apk
+          mv build_android_viewer_handheld/*/com.Icosa.OpenBrush*apk releases/OpenBrushViewer_Android_Handheld_$VERSION.apk
+          mv build_android_viewer_headset/*/com.Icosa.OpenBrush*apk releases/OpenBrushViewer_Android_Headset_$VERSION.apk
           mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
           mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
@@ -1084,7 +1098,10 @@ jobs:
       - name: Publish
         uses: softprops/action-gh-release@v3
         with:
-          body: ${{ steps.changelog.outputs.changelog }}
+          body: |
+            ${{ steps.changelog.outputs.changelog }}
+
+            Android Viewer downloads: choose `OpenBrushViewer_Android_Handheld_${{ needs.configuration.outputs.version }}.apk` for a phone or tablet, or `OpenBrushViewer_Android_Headset_${{ needs.configuration.outputs.version }}.apk` for a headset. These two Viewer APKs replace each other when installed on the same device.
           prerelease: ${{ needs.configuration.outputs.prerelease }}
           target_commitish: ${{ needs.configuration.outputs.currentrelease }}
           tag_name: ${{ needs.configuration.outputs.version }}
