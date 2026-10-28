@@ -112,6 +112,7 @@ static class BuildTiltBrush
         {
             // Monoscopic
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.StandaloneWindows64),
+            new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.Monoscopic, BuildTarget.Android),
 
             // OpenXR
             new KeyValuePair<XrSdkMode, BuildTarget>(XrSdkMode.OpenXR, BuildTarget.StandaloneWindows64),
@@ -173,6 +174,17 @@ static class BuildTiltBrush
     static PostBuildInfo m_forPostBuild;
     internal static XrSdkMode CurrentBuildXrSdk => m_forPostBuild?.xrSdk ?? GuiSelectedSdk;
     internal static bool CurrentBuildUsesScopedStorage => m_forPostBuild?.scopedStorage ?? false;
+    internal static bool CurrentBuildIsHandheldViewer =>
+        IsHandheldViewer(BuildTarget.Android, CurrentBuildXrSdk);
+
+    internal static bool IsHandheldViewer(BuildTarget target, XrSdkMode sdk)
+    {
+#if OPEN_BRUSH_VIEWER
+        return target == BuildTarget.Android && sdk == XrSdkMode.Monoscopic;
+#else
+        return false;
+#endif
+    }
 
     /// Called on the main thread once the background build is finished
     public static event Action<int> OnBackgroundBuildFinish;
@@ -257,6 +269,8 @@ static class BuildTiltBrush
 
     public static bool BuildTargetSupported(XrSdkMode mode, BuildTarget target)
     {
+        if (target == BuildTarget.Android && mode == XrSdkMode.Monoscopic)
+            return IsHandheldViewer(target, mode);
         return kValidSdkTargets.Any(x => x.Key == mode && x.Value == target);
     }
 
@@ -1511,97 +1525,119 @@ static class BuildTiltBrush
         List<XRLoader> m_plugins;
         bool m_xrEnabled;
         BuildTargetGroup m_targetGroup;
+        UnityEditor.XR.ARCore.ARCoreSettings m_ArCoreSettings;
+        UnityEditor.XR.ARCore.ARCoreSettings m_PreviousArCoreSettings;
+        string m_ArCoreJson;
+        bool m_CreatedArCoreAsset;
+        const string kArCoreSettingsPath = "Assets/XR/Settings/ARCoreSettings.asset";
 
         public TempSetXrPlugin(TiltBuildOptions tiltOptions)
         {
-            m_plugins = new();
             string[] targetXrPluginsRequired = new string[] { };
 
             m_targetGroup = TargetToGroup(tiltOptions.Target);
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
             if (targetSettings == null)
             {
+                if (IsHandheldViewer(tiltOptions.Target, tiltOptions.XrSdk))
+                    throw new BuildFailedException("Handheld Viewer requires Android XR Management settings.");
                 return;
             }
             m_xrEnabled = targetSettings.InitManagerOnStart;
+            m_plugins = targetSettings.Manager.activeLoaders.ToList();
 
-            switch (tiltOptions.XrSdk)
+            try
             {
-                case XrSdkMode.OpenXR:
-                    // Unity's OpenXR loader supports Standalone and Android, but not iOS.
-                    // An iOS Viewer build has only the ARKit loader, which HandheldArNavigation
-                    // keeps out of the headset search: it remains in the normal UnityXR runtime
-                    // mode and uses the no-HMD view-only fallback, with optional AR navigation.
-                    if (tiltOptions.Target == BuildTarget.iOS)
-                    {
-                        targetXrPluginsRequired = new string[] { kArKitLoader };
-                        ConfigureOptionalArKit();
-                    }
-                    else if (tiltOptions.Target == BuildTarget.Android)
-                    {
-                        targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
-#if !USE_QUEST_PACKAGE_NAME
-                        // Generic Android OpenXR builds also run on phones, where the no-headset
-                        // view mode can offer handheld AR navigation. HandheldArNavigation keeps
-                        // this loader out of the headset search. The Meta store build excludes it,
-                        // as it would only add camera and ARCore declarations to the manifest.
-                        targetXrPluginsRequired = targetXrPluginsRequired
-                            .Append(kArCoreLoader).ToArray();
-                        ConfigureOptionalArCore();
-#endif
-                    }
-                    else
-                    {
-                        targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
-                    }
-                    break;
-                case XrSdkMode.AndroidXR:
-                    targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
-                    break;
-                case XrSdkMode.Zapbox:
-                    targetXrPluginsRequired = new string[] { "Zappar.XR.ZapboxLoader" };
-                    break;
-                default:
-                    break;
-            }
-
-
-            m_plugins = targetSettings.Manager.activeLoaders.ToList(); // Note, copy of loaders here to avoid iterating changing container
-            // Remove unwanted loaders
-            foreach (var loader in m_plugins)
-            {
-                // If loader not in required list, remove it.
-                if (!targetXrPluginsRequired.Any(s => s == loader.GetType().FullName))
+                switch (tiltOptions.XrSdk)
                 {
-                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
+                    case XrSdkMode.Monoscopic:
+                        if (IsHandheldViewer(tiltOptions.Target, tiltOptions.XrSdk))
+                        {
+                            targetXrPluginsRequired = new[] { kArCoreLoader };
+                            ConfigureOptionalArCore();
+                            // VrSdk initializes headset loaders manually. HandheldArNavigation
+                            // first reserves ARCore for explicit user activation.
+                            targetSettings.InitManagerOnStart = false;
+                        }
+                        break;
+                    case XrSdkMode.OpenXR:
+                        // Unity's OpenXR loader supports Standalone and Android, but not iOS.
+                        // An iOS Viewer build has only the ARKit loader, which HandheldArNavigation
+                        // keeps out of the headset search: it remains in the normal UnityXR runtime
+                        // mode and uses the no-HMD view-only fallback, with optional AR navigation.
+                        if (tiltOptions.Target == BuildTarget.iOS)
+                        {
+                            targetXrPluginsRequired = new string[] { kArKitLoader };
+                            ConfigureOptionalArKit();
+                        }
+                        else if (tiltOptions.Target == BuildTarget.Android)
+                        {
+                            targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                        }
+                        else
+                        {
+                            targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                        }
+                        break;
+                    case XrSdkMode.AndroidXR:
+                        targetXrPluginsRequired = new string[] { "UnityEngine.XR.OpenXR.OpenXRLoader" };
+                        break;
+                    case XrSdkMode.Zapbox:
+                        targetXrPluginsRequired = new string[] { "Zappar.XR.ZapboxLoader" };
+                        break;
+                    default:
+                        break;
                 }
-            }
-            // Add any missing loaders.
-            foreach (var loaderName in targetXrPluginsRequired.ToList())
-            {
-                if (!targetSettings.Manager.activeLoaders.Any(s => s.GetType().FullName == loaderName))
-                {
-                    if (!UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loaderName, m_targetGroup))
-                        throw new BuildFailedException($"Could not load XR plugin {loaderName}. Is it installed?");
-                }
-            }
 
-            Debug.Log("Building with XR plugins: " + String.Join(", ", targetSettings.Manager.activeLoaders));
-            EditorUtility.SetDirty(targetSettings);
+
+                // Remove unwanted loaders
+                foreach (var loader in m_plugins)
+                {
+                    // If loader not in required list, remove it.
+                    if (!targetXrPluginsRequired.Any(s => s == loader.GetType().FullName))
+                    {
+                        UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
+                    }
+                }
+                // Add any missing loaders.
+                foreach (var loaderName in targetXrPluginsRequired.ToList())
+                {
+                    if (!targetSettings.Manager.activeLoaders.Any(s => s.GetType().FullName == loaderName))
+                    {
+                        if (!UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loaderName, m_targetGroup))
+                            throw new BuildFailedException($"Could not load XR plugin {loaderName}. Is it installed?");
+                    }
+                }
+
+                Debug.Log($"[OB_ANDROID_BUILD_SPLIT] HandheldViewer={IsHandheldViewer(tiltOptions.Target, tiltOptions.XrSdk)}, " +
+                    $"XR plugins: {String.Join(", ", targetSettings.Manager.activeLoaders)}");
+                EditorUtility.SetDirty(targetSettings);
+            }
+            catch
+            {
+                Dispose();
+                throw;
+            }
         }
 
         const string kArCoreLoader = "UnityEngine.XR.ARCore.ARCoreLoader";
         const string kArKitLoader = "UnityEngine.XR.ARKit.ARKitLoader";
 
-        static void ConfigureOptionalArCore()
+        void ConfigureOptionalArCore()
         {
-            // Required would stop the APK installing on headsets and phones without ARCore.
-            var settings = UnityEditor.XR.ARCore.ARCoreSettings.GetOrCreateSettings();
+            m_PreviousArCoreSettings = UnityEditor.XR.ARCore.ARCoreSettings.currentSettings;
+            var settings = m_PreviousArCoreSettings ??
+                AssetDatabase.LoadAssetAtPath<UnityEditor.XR.ARCore.ARCoreSettings>(kArCoreSettingsPath) ??
+                UnityEditor.XR.ARCore.ARCoreSettings.GetOrCreateSettings();
+            m_ArCoreSettings = settings;
+            m_ArCoreJson = EditorJsonUtility.ToJson(settings);
             if (!EditorUtility.IsPersistent(settings))
             {
-                AssetDatabase.CreateAsset(settings, "Assets/XR/Settings/ARCoreSettings.asset");
-                UnityEditor.XR.ARCore.ARCoreSettings.currentSettings = settings;
+                AssetDatabase.CreateAsset(settings, kArCoreSettingsPath);
+                m_CreatedArCoreAsset = true;
             }
+            UnityEditor.XR.ARCore.ARCoreSettings.currentSettings = settings;
+            // Unsupported phones must still be able to use touch navigation.
             settings.requirement = UnityEditor.XR.ARCore.ARCoreSettings.Requirement.Optional;
             settings.depth = UnityEditor.XR.ARCore.ARCoreSettings.Requirement.Optional;
             EditorUtility.SetDirty(settings);
@@ -1632,31 +1668,27 @@ static class BuildTiltBrush
 
         public void Dispose()
         {
+            if (m_ArCoreSettings != null)
+            {
+                EditorJsonUtility.FromJsonOverwrite(m_ArCoreJson, m_ArCoreSettings);
+                EditorUtility.SetDirty(m_ArCoreSettings);
+                AssetDatabase.SaveAssetIfDirty(m_ArCoreSettings);
+                UnityEditor.XR.ARCore.ARCoreSettings.currentSettings = m_PreviousArCoreSettings;
+                if (m_CreatedArCoreAsset)
+                    AssetDatabase.DeleteAsset(kArCoreSettingsPath);
+                m_ArCoreSettings = null;
+            }
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
-            if (targetSettings == null)
+            if (targetSettings == null || m_plugins == null)
             {
                 return;
             }
             targetSettings.InitManagerOnStart = m_xrEnabled;
 
-            // Remove build loaders.
-            foreach (var loader in targetSettings.Manager.activeLoaders.ToList())
-            {
-                // Remove plugins not in the original list.
-                if (!m_plugins.Any(s => s.GetType() == loader.GetType()))
-                {
-                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.RemoveLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
-                }
-            }
-            // Restore any missing plugins
-            foreach (var loader in m_plugins)
-            {
-                if (!targetSettings.Manager.activeLoaders.Any(s => s.GetType() == loader.GetType()))
-                {
-                    UnityEditor.XR.Management.Metadata.XRPackageMetadataStore.AssignLoader(targetSettings.Manager, loader.GetType().FullName, m_targetGroup);
-                }
-            }
+            if (!targetSettings.Manager.TrySetLoaders(m_plugins))
+                throw new BuildFailedException("Could not restore the original XR loader order.");
 
+            EditorUtility.SetDirty(targetSettings.Manager);
             EditorUtility.SetDirty(targetSettings);
         }
     }
@@ -1913,6 +1945,13 @@ static class BuildTiltBrush
     //
     public static void DoBuild(TiltBuildOptions tiltOptions)
     {
+        if (tiltOptions.Target == BuildTarget.Android && tiltOptions.XrSdk == XrSdkMode.Monoscopic &&
+            !IsHandheldViewer(tiltOptions.Target, tiltOptions.XrSdk))
+            throw new BuildFailedException("Android Monoscopic is supported only for OPEN_BRUSH_VIEWER builds.");
+#if USE_QUEST_PACKAGE_NAME
+        if (IsHandheldViewer(tiltOptions.Target, tiltOptions.XrSdk))
+            throw new BuildFailedException("Handheld Viewer cannot use the Meta store build flavor.");
+#endif
         BuildTarget target = tiltOptions.Target;
         string location = tiltOptions.Location;
         string stamp = tiltOptions.Stamp;
