@@ -227,7 +227,7 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Viewer Handheld, Android Meta Quest, iOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -264,9 +264,7 @@ jobs:
             androidExportType: androidAppBundle
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
-          # The Viewer is a product variant, not a flat-only runtime. Keep a generic
-          # OpenXR APK alongside the AndroidXR AAB so both of its runtime modes are
-          # exercised without conflating the Google Play and non-Google artifacts.
+          # Preserve both headset Viewer products alongside the separate handheld APK.
           - name: Android Viewer OpenXR
             targetPlatform: Android
             androidTargetSdkVersion: AndroidApiLevel35
@@ -283,6 +281,15 @@ jobs:
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             androidExportType: androidAppBundle
+            extra_defines: OPEN_BRUSH_VIEWER
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: Android Viewer Handheld
+            targetPlatform: Android
+            androidTargetSdkVersion: AndroidApiLevel35
+            vrsdk: Monoscopic
+            cache: Android_Handheld
+            extraoptions: -btb-il2cpp
             extra_defines: OPEN_BRUSH_VIEWER
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
@@ -449,6 +456,9 @@ jobs:
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
             echo "filename=$BASENAME.app" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "Android" ]]; then
+            if [[ "${{ matrix.name }}" == "Android Viewer Handheld" ]]; then
+              BASENAME="${BASENAME}_Viewer_Handheld"
+            fi
             if [[ "${{ matrix.androidExportType || 'androidPackage' }}" == "androidAppBundle" ]]; then
               echo "filename=com.Icosa.$BASENAME.aab" >> $GITHUB_ENV
             else
@@ -541,23 +551,27 @@ jobs:
             androidKeyaliasName: ${{ secrets.ANDROID_KEYALIAS_NAME || 'openbrush-non-official' }}
             androidKeyaliasPass: ${{ secrets.ANDROID_KEYALIAS_PASS || 'FakeKey' }}
 
-      - name: Validate packaged Android XR manifest
-        if: matrix.targetPlatform == 'Android' && matrix.vrsdk == 'AndroidXR'
+      - name: Validate packaged Android providers and manifest
+        if: matrix.targetPlatform == 'Android'
         shell: bash
         run: |
           set -euo pipefail
-          bundletool="$RUNNER_TEMP/bundletool-all-1.18.3.jar"
-          curl --fail --location --retry 3 --silent --show-error \
-            https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar \
-            --output "$bundletool"
-          mapfile -d '' bundles < <(find 'build/${{ matrix.vrsdk }}' -type f -name '*.aab' -print0)
-          if [ "${#bundles[@]}" -ne 1 ]; then
-            echo "Expected exactly one Android XR AAB, found ${#bundles[@]}" >&2
-            exit 1
+          archive='build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }}'
+          test -f "$archive"
+          manifest="$RUNNER_TEMP/android-manifest.xml"
+          mode=headset
+          if [[ "${{ matrix.vrsdk }}" == "AndroidXR" ]]; then
+            bundletool="$RUNNER_TEMP/bundletool-all-1.18.3.jar"
+            curl --fail --location --retry 3 --silent --show-error \
+              https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar \
+              --output "$bundletool"
+            java -jar "$bundletool" dump manifest --bundle="$archive" --module=base > "$manifest"
+            python3 Support/Python/verify-androidxr-manifest.py "$manifest"
+          else
+            "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest print "$archive" > "$manifest"
           fi
-          manifest="$RUNNER_TEMP/androidxr-manifest.xml"
-          java -jar "$bundletool" dump manifest --bundle="${bundles[0]}" --module=base > "$manifest"
-          python3 Support/Python/verify-androidxr-manifest.py "$manifest"
+          if [[ "${{ matrix.name }}" == "Android Viewer Handheld" ]]; then mode=handheld; fi
+          python3 Support/Python/verify-android-providers.py "$archive" "$manifest" --mode "$mode"
 
       - name: Prepare for packaging (permissions and compression, OSX only)
         if: matrix.targetPlatform == 'StandaloneOSX'
