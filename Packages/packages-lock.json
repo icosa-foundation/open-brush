@@ -31,13 +31,13 @@
       "hash": "3db7af04f838179ebcc74fcc2ac01be39090de04"
     },
     "com.immersive-foundation.imm-stroke-reader": {
-      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
+      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#ec25a5d7d6832730dcbcbd7bcd4f1e9529506a01",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1"
       },
-      "hash": "0c747b344715e878f26744069324ef617957da02"
+      "hash": "ec25a5d7d6832730dcbcbd7bcd4f1e9529506a01"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
