@@ -96,6 +96,7 @@ namespace TiltBrush
         private sealed class MobileHighlightState
         {
             public Material[] OriginalMaterials;
+            public Material[] HighlightMaterials;
             public bool OriginalEnabled;
             public bool OriginalForceRenderingOff;
             public int RegisteredFrame;
@@ -104,6 +105,7 @@ namespace TiltBrush
         private Dictionary<Renderer, MobileHighlightState> m_MobileHighlightStates;
         private Dictionary<Material, Material> m_MobileHighlightMaterials;
         private Dictionary<Material, Color> m_MobileHighlightBaseColors;
+        private HashSet<Material> m_ActiveMobileHighlightMaterials;
         private Material m_MobileFallbackHighlightMaterial;
         private Shader m_MobileHighlightShader;
 #endif
@@ -118,6 +120,7 @@ namespace TiltBrush
             m_MobileHighlightStates = new Dictionary<Renderer, MobileHighlightState>();
             m_MobileHighlightMaterials = new Dictionary<Material, Material>();
             m_MobileHighlightBaseColors = new Dictionary<Material, Color>();
+            m_ActiveMobileHighlightMaterials = new HashSet<Material>();
 #endif
             InputManager.m_Instance.ControllerPosesApplied += OnPosesApplied;
             Shader.SetGlobalColor("_LeftEyeSelectionColor", Color.white);
@@ -314,6 +317,7 @@ namespace TiltBrush
             state = new MobileHighlightState
             {
                 OriginalMaterials = originals,
+                HighlightMaterials = replacements,
                 OriginalEnabled = renderer.enabled,
                 OriginalForceRenderingOff = renderer.forceRenderingOff,
                 RegisteredFrame = Time.frameCount
@@ -466,16 +470,29 @@ namespace TiltBrush
 
             float pulse = 0.45f + 0.2f * Mathf.Sin(Time.realtimeSinceStartup * 5.0f);
             Color emission = color * pulse;
-            if (m_MobileHighlightBaseColors == null)
+            if (m_MobileHighlightStates == null ||
+                m_MobileHighlightStates.Count == 0 ||
+                m_MobileHighlightBaseColors == null)
             {
                 return;
             }
-            foreach (var pair in m_MobileHighlightBaseColors)
+
+            m_ActiveMobileHighlightMaterials ??= new HashSet<Material>();
+            m_ActiveMobileHighlightMaterials.Clear();
+            foreach (MobileHighlightState state in m_MobileHighlightStates.Values)
             {
-                Material material = pair.Key;
-                if (material != null)
+                foreach (Material material in state.HighlightMaterials)
                 {
-                    Color baseColor = pair.Value;
+                    if (material != null)
+                    {
+                        m_ActiveMobileHighlightMaterials.Add(material);
+                    }
+                }
+            }
+            foreach (Material material in m_ActiveMobileHighlightMaterials)
+            {
+                if (m_MobileHighlightBaseColors.TryGetValue(material, out Color baseColor))
+                {
                     Color tinted = Color.Lerp(baseColor, color, 0.35f);
                     tinted.a = baseColor.a;
                     material.SetColor("_BaseColor", tinted);
@@ -553,6 +570,7 @@ namespace TiltBrush
                 m_MobileHighlightMaterials.Clear();
             }
             m_MobileHighlightBaseColors?.Clear();
+            m_ActiveMobileHighlightMaterials?.Clear();
             Destroy(m_MobileFallbackHighlightMaterial);
         }
 #endif
