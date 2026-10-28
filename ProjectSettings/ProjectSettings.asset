@@ -322,42 +322,42 @@ PlayerSettings:
   - m_BuildTarget: Android
     m_Icons:
     - m_Textures:
-      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b, type: 3}
+      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b8, type: 3}
       - {fileID: 2800000, guid: 9fc8dc14fcad2bad8c8793bede0d1900, type: 3}
       m_Width: 432
       m_Height: 432
       m_Kind: 2
       m_SubKind: 
     - m_Textures:
-      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b, type: 3}
+      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b8, type: 3}
       - {fileID: 2800000, guid: 9fc8dc14fcad2bad8c8793bede0d1900, type: 3}
       m_Width: 324
       m_Height: 324
       m_Kind: 2
       m_SubKind: 
     - m_Textures:
-      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b, type: 3}
+      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b8, type: 3}
       - {fileID: 2800000, guid: 9fc8dc14fcad2bad8c8793bede0d1900, type: 3}
       m_Width: 216
       m_Height: 216
       m_Kind: 2
       m_SubKind: 
     - m_Textures:
-      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b, type: 3}
+      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b8, type: 3}
       - {fileID: 2800000, guid: 9fc8dc14fcad2bad8c8793bede0d1900, type: 3}
       m_Width: 162
       m_Height: 162
       m_Kind: 2
       m_SubKind: 
     - m_Textures:
-      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b, type: 3}
+      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b8, type: 3}
       - {fileID: 2800000, guid: 9fc8dc14fcad2bad8c8793bede0d1900, type: 3}
       m_Width: 108
       m_Height: 108
       m_Kind: 2
       m_SubKind: 
     - m_Textures:
-      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b, type: 3}
+      - {fileID: 2800000, guid: 5b6805e84e6a9ae9e515deba4dae78b8, type: 3}
       - {fileID: 2800000, guid: 9fc8dc14fcad2bad8c8793bede0d1900, type: 3}
       m_Width: 81
       m_Height: 81
