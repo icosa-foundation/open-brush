@@ -92,6 +92,20 @@ namespace TiltBrush
         private bool m_UrpDiagnosticUseStrokePostEffect;
         private bool m_bCmrPosesApplied;
         private bool m_bCmrPreCulled;
+
+        private sealed class MobileHighlightState
+        {
+            public Material[] OriginalMaterials;
+            public bool OriginalEnabled;
+            public bool OriginalForceRenderingOff;
+            public int RegisteredFrame;
+        }
+
+        private Dictionary<Renderer, MobileHighlightState> m_MobileHighlightStates;
+        private Dictionary<Material, Material> m_MobileHighlightMaterials;
+        private Dictionary<Material, Color> m_MobileHighlightBaseColors;
+        private Material m_MobileFallbackHighlightMaterial;
+        private Shader m_MobileHighlightShader;
 #endif
 
         void Start()
@@ -101,6 +115,9 @@ namespace TiltBrush
             m_CmrRequestedMeshes = new List<MeshFilter>();
             m_CmrRequestedSkinnedMeshes = new List<SkinnedMeshRenderer>();
             m_UrpDiagnosticMeshes = new List<MeshFilter>();
+            m_MobileHighlightStates = new Dictionary<Renderer, MobileHighlightState>();
+            m_MobileHighlightMaterials = new Dictionary<Material, Material>();
+            m_MobileHighlightBaseColors = new Dictionary<Material, Color>();
 #endif
             InputManager.m_Instance.ControllerPosesApplied += OnPosesApplied;
             Shader.SetGlobalColor("_LeftEyeSelectionColor", Color.white);
@@ -110,6 +127,8 @@ namespace TiltBrush
         void LateUpdate()
         {
 #if FEATURE_CUSTOM_MESH_RENDER
+            RestoreStaleMobileHighlights();
+
             if (m_UrpDiagnosticFramesRemaining <= 0 ||
                 GraphicsSettings.currentRenderPipeline == null)
             {
@@ -150,6 +169,10 @@ namespace TiltBrush
             Shader.SetGlobalColor("_LeftEyeSelectionColor", left);
             Shader.SetGlobalColor("_RightEyeSelectionColor", right);
 
+#if FEATURE_CUSTOM_MESH_RENDER
+            UpdateMobileHighlightColor(Color.Lerp(left, right, 0.5f));
+#endif
+
 #if FEATURE_MOBILE_SELECTION
     TrTransform worldToTransform = App.Scene.SelectionCanvas.Pose;
     // Keep the scale within 0.5 and 2
@@ -175,6 +198,14 @@ namespace TiltBrush
         public void RegisterMesh(MeshFilter meshFilter)
         {
 #if FEATURE_CUSTOM_MESH_RENDER
+            if (UseMobileMaterialHighlights)
+            {
+                RegisterMobileHighlight(meshFilter != null
+                    ? meshFilter.GetComponent<Renderer>()
+                    : null);
+                return;
+            }
+
             if (m_CmrRequestedMeshes == null)
             {
                 m_CmrRequestedMeshes = new List<MeshFilter>();
@@ -196,6 +227,12 @@ namespace TiltBrush
         public void RegisterMesh(SkinnedMeshRenderer renderer)
         {
 #if FEATURE_CUSTOM_MESH_RENDER
+            if (UseMobileMaterialHighlights)
+            {
+                RegisterMobileHighlight(renderer);
+                return;
+            }
+
             if (m_CmrRequestedMeshes == null)
             {
                 m_CmrRequestedMeshes = new List<MeshFilter>();
@@ -217,6 +254,14 @@ namespace TiltBrush
         public void UnregisterMesh(MeshFilter meshFilter)
         {
 #if FEATURE_CUSTOM_MESH_RENDER
+            if (UseMobileMaterialHighlights)
+            {
+                RestoreMobileHighlight(meshFilter != null
+                    ? meshFilter.GetComponent<Renderer>()
+                    : null);
+                return;
+            }
+
             m_CmrRequestedMeshes?.RemoveAll(x => x == meshFilter);
 #endif
         }
@@ -224,9 +269,293 @@ namespace TiltBrush
         public void UnregisterMesh(SkinnedMeshRenderer renderer)
         {
 #if FEATURE_CUSTOM_MESH_RENDER
+            if (UseMobileMaterialHighlights)
+            {
+                RestoreMobileHighlight(renderer);
+                return;
+            }
+
             m_CmrRequestedSkinnedMeshes?.RemoveAll(x => x == renderer);
 #endif
         }
+
+#if FEATURE_CUSTOM_MESH_RENDER
+        private bool UseMobileMaterialHighlights =>
+            Application.isMobilePlatform &&
+            GraphicsSettings.currentRenderPipeline != null;
+
+        private void RegisterMobileHighlight(Renderer renderer)
+        {
+            if (renderer == null || !renderer.gameObject.activeInHierarchy || DisableSelectionEffects)
+            {
+                return;
+            }
+
+            m_MobileHighlightStates ??= new Dictionary<Renderer, MobileHighlightState>();
+            if (m_MobileHighlightStates.TryGetValue(renderer, out MobileHighlightState state))
+            {
+                state.RegisteredFrame = Time.frameCount;
+                return;
+            }
+
+            Material[] originals = renderer.sharedMaterials;
+            int materialCount = Mathf.Max(1, originals.Length);
+            Material[] replacements = new Material[materialCount];
+            for (int i = 0; i < materialCount; ++i)
+            {
+                Material original = i < originals.Length ? originals[i] : null;
+                replacements[i] = GetMobileHighlightMaterial(original);
+                if (replacements[i] == null)
+                {
+                    return;
+                }
+            }
+
+            state = new MobileHighlightState
+            {
+                OriginalMaterials = originals,
+                OriginalEnabled = renderer.enabled,
+                OriginalForceRenderingOff = renderer.forceRenderingOff,
+                RegisteredFrame = Time.frameCount
+            };
+            m_MobileHighlightStates.Add(renderer, state);
+
+            renderer.sharedMaterials = replacements;
+            renderer.forceRenderingOff = false;
+            renderer.enabled = true;
+        }
+
+        private Material GetMobileHighlightMaterial(Material source)
+        {
+            if (source == null)
+            {
+                if (m_MobileFallbackHighlightMaterial == null)
+                {
+                    m_MobileFallbackHighlightMaterial = CreateMobileHighlightMaterial(null);
+                }
+                return m_MobileFallbackHighlightMaterial;
+            }
+
+            m_MobileHighlightMaterials ??= new Dictionary<Material, Material>();
+            if (!m_MobileHighlightMaterials.TryGetValue(source, out Material replacement) ||
+                replacement == null)
+            {
+                replacement = CreateMobileHighlightMaterial(source);
+                if (replacement != null)
+                {
+                    m_MobileHighlightMaterials[source] = replacement;
+                }
+            }
+            return replacement;
+        }
+
+        private Material CreateMobileHighlightMaterial(Material source)
+        {
+            if (m_MobileHighlightShader == null)
+            {
+                m_MobileHighlightShader = Shader.Find("Universal Render Pipeline/Lit");
+            }
+            if (m_MobileHighlightShader == null)
+            {
+                Debug.LogError("The URP Lit shader is unavailable for mobile selection highlighting.");
+                return null;
+            }
+
+            Material replacement = new Material(m_MobileHighlightShader)
+            {
+                name = source != null
+                    ? $"{source.name} (Mobile Highlight)"
+                    : "Mobile Highlight",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+
+            CopyMobileBaseColor(source, replacement);
+            m_MobileHighlightBaseColors ??= new Dictionary<Material, Color>();
+            m_MobileHighlightBaseColors[replacement] = replacement.GetColor("_BaseColor");
+            replacement.SetFloat("_Metallic", 0.0f);
+            replacement.SetFloat("_Smoothness", 0.3f);
+            replacement.SetFloat("_Cull", 0.0f);
+            replacement.SetFloat("_Surface", 0.0f);
+            replacement.SetFloat("_ZWrite", 1.0f);
+            replacement.EnableKeyword("_EMISSION");
+            replacement.SetColor(
+                "_EmissionColor",
+                Shader.GetGlobalColor("_LeftEyeSelectionColor") * 0.55f);
+
+            float alphaCutoff = GetAlphaCutoff(source);
+            if (alphaCutoff > 0.0f)
+            {
+                replacement.SetFloat("_AlphaClip", 1.0f);
+                replacement.SetFloat("_Cutoff", alphaCutoff);
+                replacement.EnableKeyword("_ALPHATEST_ON");
+                replacement.renderQueue = (int)RenderQueue.AlphaTest;
+            }
+            else
+            {
+                replacement.renderQueue = (int)RenderQueue.Geometry;
+            }
+
+            return replacement;
+        }
+
+        private static void CopyMobileBaseColor(Material source, Material destination)
+        {
+            Color color = Color.white;
+            Texture texture = null;
+            string textureProperty = null;
+
+            if (source != null)
+            {
+                string[] colorProperties = { "baseColorFactor", "_BaseColor", "_Color" };
+                foreach (string property in colorProperties)
+                {
+                    if (source.HasProperty(property))
+                    {
+                        color = source.GetColor(property);
+                        break;
+                    }
+                }
+
+                string[] textureProperties = { "baseColorTexture", "_BaseMap", "_MainTex" };
+                foreach (string property in textureProperties)
+                {
+                    if (source.HasProperty(property) && source.GetTexture(property) != null)
+                    {
+                        texture = source.GetTexture(property);
+                        textureProperty = property;
+                        break;
+                    }
+                }
+            }
+
+            destination.SetColor("_BaseColor", color);
+            destination.SetTexture("_BaseMap", texture);
+            if (source != null && textureProperty != null)
+            {
+                destination.SetTextureScale("_BaseMap", source.GetTextureScale(textureProperty));
+                destination.SetTextureOffset("_BaseMap", source.GetTextureOffset(textureProperty));
+            }
+        }
+
+        private static float GetAlphaCutoff(Material material)
+        {
+            if (material == null)
+            {
+                return 0.0f;
+            }
+            if (material.HasProperty("alphaCutoff"))
+            {
+                return material.GetFloat("alphaCutoff");
+            }
+            bool alphaClipped =
+                (material.HasProperty("_AlphaClip") && material.GetFloat("_AlphaClip") > 0.5f) ||
+                material.IsKeywordEnabled("_ALPHATEST_ON");
+            if (alphaClipped && material.HasProperty("_Cutoff"))
+            {
+                return material.GetFloat("_Cutoff");
+            }
+            return 0.0f;
+        }
+
+        private void UpdateMobileHighlightColor(Color color)
+        {
+            if (!UseMobileMaterialHighlights)
+            {
+                return;
+            }
+
+            float pulse = 0.45f + 0.2f * Mathf.Sin(Time.realtimeSinceStartup * 5.0f);
+            Color emission = color * pulse;
+            if (m_MobileHighlightBaseColors == null)
+            {
+                return;
+            }
+            foreach (var pair in m_MobileHighlightBaseColors)
+            {
+                Material material = pair.Key;
+                if (material != null)
+                {
+                    Color baseColor = pair.Value;
+                    Color tinted = Color.Lerp(baseColor, color, 0.35f);
+                    tinted.a = baseColor.a;
+                    material.SetColor("_BaseColor", tinted);
+                    material.SetColor("_EmissionColor", emission);
+                }
+            }
+        }
+
+        private void RestoreStaleMobileHighlights()
+        {
+            if (m_MobileHighlightStates == null || m_MobileHighlightStates.Count == 0)
+            {
+                return;
+            }
+
+            List<Renderer> stale = null;
+            foreach (var pair in m_MobileHighlightStates)
+            {
+                if (pair.Key == null || DisableSelectionEffects ||
+                    pair.Value.RegisteredFrame != Time.frameCount)
+                {
+                    stale ??= new List<Renderer>();
+                    stale.Add(pair.Key);
+                }
+            }
+            if (stale == null)
+            {
+                return;
+            }
+            foreach (Renderer renderer in stale)
+            {
+                RestoreMobileHighlight(renderer);
+            }
+        }
+
+        private void RestoreMobileHighlight(Renderer renderer)
+        {
+            if (ReferenceEquals(renderer, null) ||
+                m_MobileHighlightStates == null ||
+                !m_MobileHighlightStates.TryGetValue(renderer, out MobileHighlightState state))
+            {
+                return;
+            }
+
+            m_MobileHighlightStates.Remove(renderer);
+            if (renderer != null)
+            {
+                renderer.sharedMaterials = state.OriginalMaterials;
+                renderer.forceRenderingOff = state.OriginalForceRenderingOff;
+                renderer.enabled = state.OriginalEnabled;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (InputManager.m_Instance != null)
+            {
+                InputManager.m_Instance.ControllerPosesApplied -= OnPosesApplied;
+            }
+
+            if (m_MobileHighlightStates != null)
+            {
+                var renderers = new List<Renderer>(m_MobileHighlightStates.Keys);
+                foreach (Renderer renderer in renderers)
+                {
+                    RestoreMobileHighlight(renderer);
+                }
+            }
+            if (m_MobileHighlightMaterials != null)
+            {
+                foreach (Material material in m_MobileHighlightMaterials.Values)
+                {
+                    Destroy(material);
+                }
+                m_MobileHighlightMaterials.Clear();
+            }
+            m_MobileHighlightBaseColors?.Clear();
+            Destroy(m_MobileFallbackHighlightMaterial);
+        }
+#endif
 
         public bool RenderHighlight()
         {
