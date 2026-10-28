@@ -1522,7 +1522,7 @@ static class BuildTiltBrush
 
     class TempSetXrPlugin : IDisposable
     {
-        List<XRLoader> m_plugins;
+        List<string> m_PluginPaths;
         bool m_xrEnabled;
         BuildTargetGroup m_targetGroup;
         UnityEditor.XR.ARCore.ARCoreSettings m_ArCoreSettings;
@@ -1544,7 +1544,10 @@ static class BuildTiltBrush
                 return;
             }
             m_xrEnabled = targetSettings.InitManagerOnStart;
-            m_plugins = targetSettings.Manager.activeLoaders.ToList();
+            var plugins = targetSettings.Manager.activeLoaders.ToList();
+            // BuildPlayer can unload loaders removed from XR settings. Keep their asset
+            // paths so cleanup can reload them instead of using destroyed Unity objects.
+            m_PluginPaths = plugins.Select(AssetDatabase.GetAssetPath).ToList();
 
             try
             {
@@ -1591,7 +1594,7 @@ static class BuildTiltBrush
 
 
                 // Remove unwanted loaders
-                foreach (var loader in m_plugins)
+                foreach (var loader in plugins)
                 {
                     // If loader not in required list, remove it.
                     if (!targetXrPluginsRequired.Any(s => s == loader.GetType().FullName))
@@ -1679,13 +1682,20 @@ static class BuildTiltBrush
                 m_ArCoreSettings = null;
             }
             var targetSettings = XRGeneralSettingsPerBuildTarget.XRGeneralSettingsForBuildTarget(m_targetGroup);
-            if (targetSettings == null || m_plugins == null)
+            if (targetSettings == null || m_PluginPaths == null)
             {
                 return;
             }
             targetSettings.InitManagerOnStart = m_xrEnabled;
 
-            if (!targetSettings.Manager.TrySetLoaders(m_plugins))
+            var plugins = m_PluginPaths.Select(path =>
+            {
+                var loader = AssetDatabase.LoadAssetAtPath<XRLoader>(path);
+                if (loader == null)
+                    throw new BuildFailedException($"Could not reload original XR loader at '{path}'.");
+                return loader;
+            }).ToList();
+            if (!targetSettings.Manager.TrySetLoaders(plugins))
                 throw new BuildFailedException("Could not restore the original XR loader order.");
 
             EditorUtility.SetDirty(targetSettings.Manager);
