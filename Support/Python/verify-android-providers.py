@@ -26,13 +26,69 @@ HEADSET_FEATURES = {
     "com.oculus.feature.PASSTHROUGH",
 }
 HEADSET_METADATA = {
-    "pvr.app.type", "handtracking", "controller", "com.oculus.supportedDevices",
-    "com.samsung.android.vr.application.mode", "com.oculus.vr.focusaware",
+    "pvr.app.type",
+    "handtracking",
+    "controller",
+    "com.oculus.supportedDevices",
+    "com.samsung.android.vr.application.mode",
+    "com.oculus.vr.focusaware",
 }
 HEADSET_PERMISSIONS = {
-    "android.permission.HAND_TRACKING", "com.oculus.permission.HAND_TRACKING",
-    "com.oculus.permission.USE_SCENE", "com.picovr.permission.HAND_TRACKING",
+    "android.permission.HAND_TRACKING",
+    "com.oculus.permission.HAND_TRACKING",
+    "com.oculus.permission.USE_SCENE",
+    "com.picovr.permission.HAND_TRACKING",
 }
+
+
+def validate_handheld_manifest(root, features, metadata):
+    errors = []
+    if metadata.get("com.google.ar.core") != "optional":
+        errors.append("Handheld Viewer must declare ARCore optional")
+    for name in sorted(features.keys() & HEADSET_FEATURES):
+        errors.append(f"Handheld Viewer includes headset feature: {name}")
+    for name in ("android.hardware.camera.ar", "com.google.ar.core.depth"):
+        if (
+            name in features
+            and features[name].get(f"{ANDROID}required", "true") != "false"
+        ):
+            errors.append(f"Handheld Viewer requires optional AR capability: {name}")
+    for name in sorted(metadata.keys() & HEADSET_METADATA):
+        errors.append(f"Handheld Viewer includes headset metadata: {name}")
+    permissions = {
+        node.get(f"{ANDROID}name")
+        for tag in ("uses-permission", "uses-permission-sdk-23")
+        for node in root.findall(tag)
+    }
+    for name in sorted(permissions & HEADSET_PERMISSIONS):
+        errors.append(f"Handheld Viewer includes headset permission: {name}")
+    if "android.permission.CAMERA" not in permissions:
+        errors.append("Handheld Viewer is missing its AR camera permission")
+    for node in root.findall(".//category"):
+        if node.get(f"{ANDROID}name") in {
+            "com.oculus.intent.category.VR",
+            "org.khronos.openxr.intent.category.IMMERSIVE_HMD",
+        }:
+            errors.append("Handheld Viewer includes a headset launcher category")
+    launchers = [
+        activity
+        for activity in root.findall("application/activity")
+        if activity.get(f"{ANDROID}enabled", "true") != "false"
+        and any(
+            any(
+                n.get(f"{ANDROID}name") == "android.intent.action.MAIN"
+                for n in intent.findall("action")
+            )
+            and any(
+                n.get(f"{ANDROID}name") == "android.intent.category.LAUNCHER"
+                for n in intent.findall("category")
+            )
+            for intent in activity.findall("intent-filter")
+        )
+    ]
+    if not launchers:
+        errors.append("Handheld Viewer has no enabled MAIN/LAUNCHER activity")
+    return errors
 
 
 def validate(archive, root, handheld):
@@ -40,19 +96,37 @@ def validate(archive, root, handheld):
     with ZipFile(archive) as package:
         entries = package.namelist()
     # APK: lib/<abi>/*.so; AAB: base/lib/<abi>/*.so.
-    libraries = {Path(name).name for name in entries if "/lib/" in f"/{name}" and name.endswith(".so")}
+    libraries = {
+        Path(name).name
+        for name in entries
+        if "/lib/" in f"/{name}" and name.endswith(".so")
+    }
     arcore = libraries & ARCORE_LIBRARIES
     openxr = {name for name in libraries if "openxr" in name.lower()}
     print(f"{PREFIX} ARCore libraries: {', '.join(sorted(arcore)) or '(none)'}")
     print(f"{PREFIX} OpenXR libraries: {', '.join(sorted(openxr)) or '(none)'}")
 
-    features = {node.get(f"{ANDROID}name"): node for node in root.findall("uses-feature")}
-    metadata = {node.get(f"{ANDROID}name"): node.get(f"{ANDROID}value")
-                for node in root.findall(".//meta-data")}
-    relevant = HEADSET_FEATURES | {"android.hardware.camera.ar", "com.google.ar.core.depth"}
-    print(f"{PREFIX} Relevant features: " + (", ".join(
-        f"{name}:required={features[name].get(f'{ANDROID}required', 'true')}"
-        for name in sorted(features.keys() & relevant)) or "(none)"))
+    features = {
+        node.get(f"{ANDROID}name"): node for node in root.findall("uses-feature")
+    }
+    metadata = {
+        node.get(f"{ANDROID}name"): node.get(f"{ANDROID}value")
+        for node in root.findall(".//meta-data")
+    }
+    relevant = HEADSET_FEATURES | {
+        "android.hardware.camera.ar",
+        "com.google.ar.core.depth",
+    }
+    print(
+        f"{PREFIX} Relevant features: "
+        + (
+            ", ".join(
+                f"{name}:required={features[name].get(f'{ANDROID}required', 'true')}"
+                for name in sorted(features.keys() & relevant)
+            )
+            or "(none)"
+        )
+    )
 
     if handheld:
         missing = ARCORE_LIBRARIES - arcore
@@ -60,34 +134,7 @@ def validate(archive, root, handheld):
             errors.append(f"Missing ARCore libraries: {', '.join(sorted(missing))}")
         if openxr:
             errors.append("Handheld Viewer includes OpenXR native libraries")
-        if metadata.get("com.google.ar.core") != "optional":
-            errors.append("Handheld Viewer must declare ARCore optional")
-        for name in sorted(features.keys() & HEADSET_FEATURES):
-            errors.append(f"Handheld Viewer includes headset feature: {name}")
-        for name in ("android.hardware.camera.ar", "com.google.ar.core.depth"):
-            if name in features and features[name].get(f"{ANDROID}required", "true") != "false":
-                errors.append(f"Handheld Viewer requires optional AR capability: {name}")
-        for name in sorted(metadata.keys() & HEADSET_METADATA):
-            errors.append(f"Handheld Viewer includes headset metadata: {name}")
-        permissions = {node.get(f"{ANDROID}name") for tag in ("uses-permission", "uses-permission-sdk-23")
-                       for node in root.findall(tag)}
-        for name in sorted(permissions & HEADSET_PERMISSIONS):
-            errors.append(f"Handheld Viewer includes headset permission: {name}")
-        if "android.permission.CAMERA" not in permissions:
-            errors.append("Handheld Viewer is missing its AR camera permission")
-        for node in root.findall(".//category"):
-            if node.get(f"{ANDROID}name") in {
-                "com.oculus.intent.category.VR", "org.khronos.openxr.intent.category.IMMERSIVE_HMD"
-            }:
-                errors.append("Handheld Viewer includes a headset launcher category")
-        launchers = [activity for activity in root.findall("application/activity")
-                     if activity.get(f"{ANDROID}enabled", "true") != "false"
-                     and any(
-                         any(n.get(f"{ANDROID}name") == "android.intent.action.MAIN" for n in intent.findall("action"))
-                         and any(n.get(f"{ANDROID}name") == "android.intent.category.LAUNCHER" for n in intent.findall("category"))
-                         for intent in activity.findall("intent-filter"))]
-        if not launchers:
-            errors.append("Handheld Viewer has no enabled MAIN/LAUNCHER activity")
+        errors.extend(validate_handheld_manifest(root, features, metadata))
     else:
         if arcore:
             errors.append("Headset package includes ARCore native libraries")
@@ -104,7 +151,9 @@ def main():
     parser.add_argument("manifest", type=Path, help="Final manifest decoded to XML")
     parser.add_argument("--mode", required=True, choices=("handheld", "headset"))
     args = parser.parse_args()
-    errors = validate(args.archive, ET.parse(args.manifest).getroot(), args.mode == "handheld")
+    errors = validate(
+        args.archive, ET.parse(args.manifest).getroot(), args.mode == "handheld"
+    )
     for error in errors:
         print(f"{PREFIX} {error}", file=sys.stderr)
     if errors:
