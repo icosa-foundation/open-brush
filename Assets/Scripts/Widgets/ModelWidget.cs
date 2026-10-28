@@ -765,11 +765,13 @@ namespace TiltBrush
 
         public override void RegisterHighlight()
         {
+#if !(UNITY_ANDROID || UNITY_IOS)
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.RegisterHighlight();
                 return;
             }
+#endif
             if (UpdateGsplatSelectionHighlight())
             {
                 return;
@@ -780,11 +782,13 @@ namespace TiltBrush
         protected override void UnregisterHighlight()
         {
             RestoreGsplatBrightness();
+#if !(UNITY_ANDROID || UNITY_IOS)
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.UnregisterHighlight();
                 return;
             }
+#endif
             base.UnregisterHighlight();
         }
 
