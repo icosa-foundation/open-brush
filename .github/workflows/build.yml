@@ -288,7 +288,7 @@ jobs:
             targetPlatform: Android
             androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: Monoscopic
-            cache: Android_Handheld
+            cache: Android_Vulkan
             extraoptions: -btb-il2cpp
             extra_defines: OPEN_BRUSH_VIEWER
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
