@@ -95,6 +95,17 @@ namespace TiltBrush
             ScriptableRenderer renderer,
             ref RenderingData renderingData)
         {
+            // Mobile shaders already apply SELECTION_ON and HIGHLIGHT_ON while drawing the
+            // selected geometry. Running the desktop outline path as well redraws a mask,
+            // copies both XR eye buffers, and composites them back for a redundant effect.
+            // Besides the cost, sampling the live eye buffer introduces a GPU dependency that
+            // passthrough compositors cannot reliably synchronize. Keep the outline on desktop;
+            // mobile uses its direct material tint without any intermediate render targets.
+            if (Application.isMobilePlatform)
+            {
+                return;
+            }
+
             Camera camera = renderingData.cameraData.camera;
             SelectionEffect selection = null;
             if (camera != null)
