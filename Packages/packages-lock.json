@@ -24,11 +24,11 @@
       "hash": "5bcb9f4f8e2216c05bb49f2dd94e70241ab489a2"
     },
     "com.icosa.unitytinyexr": {
-      "version": "https://github.com/icosa-mirror/UnityTinyEXR.git#7d86cd3109a02be80a91846d69c59802dba05665",
+      "version": "https://github.com/icosa-mirror/UnityTinyEXR.git#3db7af04f838179ebcc74fcc2ac01be39090de04",
       "depth": 0,
       "source": "git",
       "dependencies": {},
-      "hash": "7d86cd3109a02be80a91846d69c59802dba05665"
+      "hash": "3db7af04f838179ebcc74fcc2ac01be39090de04"
     },
     "com.immersive-foundation.imm-stroke-reader": {
       "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#upm",
