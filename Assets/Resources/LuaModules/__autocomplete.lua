@@ -3049,8 +3049,14 @@ ColorOverrideMode.Add = nil
 
 
 
+---@class ControlPointPathList
+---@field count number Number of preview paths, including symmetry copies
+---@field items ControlPointList[] Enumerate the preview paths
+ControlPointPathList = {}
+
 ---@class Tool
 ---@field latestControlPoints ControlPointList Control points for the single path selected by the active Tool Script stroke preview
+---@field latestControlPointPaths ControlPointPathList All paths emitted by the latest stroke preview, including symmetry copies. Canvas-space control points omit terminal transforms; only paths selected by the preview mode are included.
 ---@field latestControlPointSpace ScriptCoordSpace The coordinate space for the latest Tool Script control points
 ---@field startPoint Transform The position and orientation of the point where the trigger was pressed
 ---@field endPoint Transform The position and full controller orientation of the point where the trigger was released. Use endPoint.rotation to match the scripted tool preview orientation.
