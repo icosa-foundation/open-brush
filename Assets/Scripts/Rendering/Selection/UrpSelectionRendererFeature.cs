@@ -95,12 +95,11 @@ namespace TiltBrush
             ScriptableRenderer renderer,
             ref RenderingData renderingData)
         {
-            // Mobile shaders already apply SELECTION_ON and HIGHLIGHT_ON while drawing the
-            // selected geometry. Running the desktop outline path as well redraws a mask,
-            // copies both XR eye buffers, and composites them back for a redundant effect.
-            // Besides the cost, sampling the live eye buffer introduces a GPU dependency that
-            // passthrough compositors cannot reliably synchronize. Keep the outline on desktop;
-            // mobile uses its direct material tint without any intermediate render targets.
+            // Mobile highlights are drawn by the normal forward renderer, using either the
+            // object's selection keyword or a temporary URP Lit material. Running the desktop
+            // outline path as well would redraw a mask, copy both XR eye buffers, and composite
+            // them back. Sampling the live eye buffer also introduces a GPU dependency that
+            // passthrough compositors cannot reliably synchronize.
             if (Application.isMobilePlatform)
             {
                 return;
