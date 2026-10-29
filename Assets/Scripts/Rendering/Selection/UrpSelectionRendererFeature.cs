@@ -95,6 +95,16 @@ namespace TiltBrush
             ScriptableRenderer renderer,
             ref RenderingData renderingData)
         {
+            // Mobile highlights are drawn by the normal forward renderer, using either the
+            // object's selection keyword or a temporary URP Lit material. Running the desktop
+            // outline path as well would redraw a mask, copy both XR eye buffers, and composite
+            // them back. Sampling the live eye buffer also introduces a GPU dependency that
+            // passthrough compositors cannot reliably synchronize.
+            if (Application.isMobilePlatform)
+            {
+                return;
+            }
+
             Camera camera = renderingData.cameraData.camera;
             SelectionEffect selection = null;
             if (camera != null)

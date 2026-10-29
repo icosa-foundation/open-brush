@@ -71,6 +71,26 @@ namespace TiltBrush
         private bool m_ApplicationPaused;
         private bool m_HadMeasurementFocus;
         public bool SupportsAutomaticQuality => App.Config.IsMobileHardware;
+
+        // Temporary Steam Frame/Lepton compatibility policy.
+        // Frame reproduces corruption only when reduced viewports and foveation
+        // are combined. Aura retains its separate full-viewport workaround.
+        internal static bool RequiresUnfoveatedReducedViewport
+        {
+            get
+            {
+#if UNITY_ANDROID && !UNITY_EDITOR
+                // ARCore-only and no-headset builds may omit the native OpenXR plugin.
+                return UnityEngine.XR.Management.XRGeneralSettings.Instance?.Manager?.activeLoader
+                    is UnityEngine.XR.OpenXR.OpenXRLoader &&
+                    string.Equals(UnityEngine.XR.OpenXR.OpenXRRuntime.name, "SteamVR/OpenXR",
+                        StringComparison.Ordinal);
+#else
+                return false;
+#endif
+            }
+        }
+
         public bool AutomaticQualityEnabled
         {
             get => SupportsAutomaticQuality && m_AutomaticQualityEnabled;
@@ -232,6 +252,14 @@ namespace TiltBrush
             SetQualityLevel(QualityLevel);
         }
 
+        public void ResetFrameMeasurement()
+        {
+            m_HadMeasurementFocus = false;
+            m_FrameTimeStamps?.Clear();
+            m_FramesInLastSecond = 0;
+            m_AutomaticQualityPolicy.ResetMeasurement(m_TimeSinceStart);
+        }
+
         void OnApplicationPause(bool paused)
         {
             m_ApplicationPaused = paused;
@@ -253,7 +281,9 @@ namespace TiltBrush
             m_TimeSinceStart += Time.unscaledDeltaTime;
             bool focusBlocked = App.Config.m_SdkMode == SdkMode.UnityXR &&
                 App.VrSdk != null && App.VrSdk.IsAppFocusBlocked();
-            if (m_ApplicationPaused || !Application.isFocused || focusBlocked)
+            bool compositorBlocked = OverlayManager.m_Instance != null &&
+                OverlayManager.m_Instance.BlocksQualityMeasurement;
+            if (m_ApplicationPaused || !Application.isFocused || focusBlocked || compositorBlocked)
             {
                 m_HadMeasurementFocus = false;
                 m_FrameTimeStamps.Clear();
@@ -338,9 +368,15 @@ namespace TiltBrush
             m_targetMaxControlPoints = settings.TargetMaxControlPoints;
             m_maxLoadingSimplification = settings.MaxSimplification;
 
+#if OPEN_BRUSH_ANDROID_XR
+            // Aura's band and vertical shifts reproduce even with foveation off.
+            // Keep its full-viewport workaround separate from the Frame restriction.
+            float viewportScale = 1f;
+#else
             float viewportScale = App.UserConfig.Profiling.ViewportScaling > 0 ?
                 App.UserConfig.Profiling.ViewportScaling :
                 settings.ViewportScale;
+#endif
 
             if (App.UserConfig.Profiling.GlobalMaximumLOD > 0)
             {
@@ -350,6 +386,14 @@ namespace TiltBrush
             int foveation = settings.FixedFoveationLevel;
             if (m_RuntimeFoveationOverrides.TryGetValue(value, out var runtimeFoveation))
                 foveation = runtimeFoveation;
+
+            // Preserve resolution scaling while avoiding the unsupported combination
+            // of reduced URP intermediate-texture viewports and fixed foveation.
+            if (viewportScale < 1f && foveation > 0 && RequiresUnfoveatedReducedViewport)
+            {
+                Debug.Log($"[OB_XR_VIEWPORT] Disabling foveation at viewport scale {viewportScale}, quality {value}.");
+                foveation = 0;
+            }
 
             UnityEngine.XR.XRSettings.renderViewportScale = viewportScale;
 
