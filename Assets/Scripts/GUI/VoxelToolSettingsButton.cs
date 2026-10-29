@@ -61,38 +61,54 @@ namespace TiltBrush
             }
 
             string label;
+            string title;
             string description;
             switch (m_Setting)
             {
                 case Setting.Mode:
                     label = $"Mode\n{tool.Mode}";
-                    description = tool.Mode == VoxelTool.EditMode.Select
-                        ? "Touch an editable voxel and press the trigger to select its model without editing"
-                        : $"Edit mode: {tool.Mode}. Cycle to Select to change the active model";
+                    title = $"Edit Mode: {tool.Mode}";
+                    description = tool.Mode switch
+                    {
+                        VoxelTool.EditMode.Add => "Add or recolor voxels. Press to switch to Erase.",
+                        VoxelTool.EditMode.Erase => "Remove voxels. Press to switch to Paint.",
+                        VoxelTool.EditMode.Paint => "Recolor existing voxels. Press to switch to Select.",
+                        _ => "Select an editable model without editing. Press to switch to Add.",
+                    };
                     break;
                 case Setting.VoxelSize:
                     label = $"Voxel\n{tool.VoxelSize:0.###} m";
-                    description = $"Voxel size for new models: {tool.VoxelSize:0.###} metres";
+                    title = "New Model Voxel Size";
+                    description = $"{tool.VoxelSize:0.###} metres. Press to cycle; existing models keep their size.";
                     break;
                 case Setting.ModelSize:
                     label = $"Volume\n{tool.ModelSize}³";
-                    description = $"New model dimensions: {tool.ModelSize} x {tool.ModelSize} x {tool.ModelSize}";
+                    title = "New Model Dimensions";
+                    description = $"{tool.ModelSize} x {tool.ModelSize} x {tool.ModelSize} voxels. Press to cycle; existing models are unchanged.";
                     break;
                 case Setting.Grid:
                     label = $"Grid\n{(tool.ShowGrid ? "On" : "Off")}";
-                    description = $"Local voxel grid: {(tool.ShowGrid ? "shown" : "hidden")}";
+                    title = "Voxel Grid";
+                    description = tool.ShowGrid
+                        ? "Press to hide the local grid. The volume and cell markers remain visible."
+                        : "Press to show the local grid. The volume and cell markers remain visible.";
                     break;
                 case Setting.NewModel:
                     label = tool.CreatingNewModel ? "New Model\nReady" : "New\nModel";
-                    description = "Arm creation of a new model; the next trigger press places it";
+                    title = "New Voxel Model";
+                    description = "Close settings, then press the trigger to place a separate editable voxel model.";
                     break;
                 default:
                     label = "Close";
-                    description = "Close voxel tool settings";
+                    title = "Close Settings";
+                    description = "Return to voxel editing.";
                     break;
             }
             m_Label.text = label;
-            SetExtraDescriptionText(description);
+            if (m_DescriptionText != title || m_DescriptionTextExtra != description)
+            {
+                SetDescriptionText(title, description);
+            }
         }
 
         protected override void OnButtonPressed()
