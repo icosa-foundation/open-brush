@@ -581,8 +581,16 @@ namespace TiltBrush
             var quality = QualityControls.m_Instance;
             var pipeline = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline
                 as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
+            var display = UnityEngine.XR.Management.XRGeneralSettings.Instance?.Manager?.activeLoader
+                ?.GetLoadedSubsystem<UnityEngine.XR.XRDisplaySubsystem>();
+            var foveationFeature = UnityEngine.XR.OpenXR.OpenXRSettings.Instance
+                ?.GetFeature<UnityEngine.XR.OpenXR.Features.FoveatedRenderingFeature>();
             return $"Quality level={quality.QualityLevel} levels={quality.AppQualityLevels.Length} " +
                 $"automatic={quality.AutomaticQualityEnabled} fps={quality.FramesInLastSecond} " +
+                $"viewportRequested={UnityEngine.XR.XRSettings.renderViewportScale} " +
+                $"viewportApplied={UnityEngine.XR.XRSettings.appliedRenderViewportScale} " +
+                $"foveationFeature={foveationFeature?.enabled} foveationLevel={display?.foveatedRenderingLevel} " +
+                $"foveationCaps={UnityEngine.SystemInfo.foveatedRenderingCaps} " +
                 $"sessionMsaa={quality.MSAALevel} pipelineMsaa={pipeline?.msaaSampleCount} " +
                 $"unityMsaa={UnityEngine.QualitySettings.antiAliasing} " +
                 $"xrCachedMsaa={UnityEngine.Experimental.Rendering.XRSystem.GetDisplayMSAASamples()}.";
