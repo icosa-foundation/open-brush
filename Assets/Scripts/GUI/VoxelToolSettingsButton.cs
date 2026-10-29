@@ -66,7 +66,9 @@ namespace TiltBrush
             {
                 case Setting.Mode:
                     label = $"Mode\n{tool.Mode}";
-                    description = $"Edit mode: {tool.Mode}";
+                    description = tool.Mode == VoxelTool.EditMode.Select
+                        ? "Touch a voxel and press the trigger to select its model without editing"
+                        : $"Edit mode: {tool.Mode}. Cycle to Select to change the active model";
                     break;
                 case Setting.VoxelSize:
                     label = $"Voxel\n{tool.VoxelSize:0.###} m";
@@ -81,8 +83,8 @@ namespace TiltBrush
                     description = $"Local voxel grid: {(tool.ShowGrid ? "shown" : "hidden")}";
                     break;
                 case Setting.NewModel:
-                    label = "New\nModel";
-                    description = "Start a new voxel model on the next Add action";
+                    label = tool.CreatingNewModel ? "New Model\nReady" : "New\nModel";
+                    description = "Arm creation of a new model; the next trigger press places it";
                     break;
                 default:
                     label = "Close";
@@ -117,6 +119,7 @@ namespace TiltBrush
                     break;
                 case Setting.NewModel:
                     tool.RequestNewModel();
+                    GetComponentInParent<VoxelToolSettingsPopUpWindow>()?.Close();
                     break;
                 default:
                     GetComponentInParent<VoxelToolSettingsPopUpWindow>()?.Close();
