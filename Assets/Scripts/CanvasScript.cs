@@ -172,7 +172,9 @@ namespace TiltBrush
 
         public void RegisterHighlight()
         {
+#if !(UNITY_ANDROID || UNITY_IOS)
             m_BatchManager.RegisterHighlight();
+#endif
         }
 
         // Returns a bounds object that encompasses all strokes on the canvas.
