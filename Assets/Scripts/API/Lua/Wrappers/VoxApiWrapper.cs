@@ -218,6 +218,24 @@ namespace TiltBrush
             return changed;
         }
 
+        [LuaDocsDescription("Detaches this placed model from any shared voxel definition")]
+        public bool MakeUnique()
+        {
+            m_DocumentWrapper.PrepareStructuralEdit();
+            bool changed = m_Document.MakeModelUnique(_Model);
+            if (changed) m_DocumentWrapper.OnDocumentMutated();
+            return changed;
+        }
+
+        [LuaDocsDescription("Removes this placed model from the document; other instances are retained")]
+        public bool Remove()
+        {
+            m_DocumentWrapper.PrepareStructuralEdit();
+            bool changed = m_Document.RemoveModel(_Model);
+            if (changed) m_DocumentWrapper.OnDocumentMutated();
+            return changed;
+        }
+
         [LuaDocsDescription("Moves one voxel")]
         public bool MoveVoxel(int fromX, int fromY, int fromZ, int toX, int toY, int toZ, bool overwrite = true)
         {
@@ -378,6 +396,7 @@ namespace TiltBrush
         [LuaDocsExample("local m = doc:AddModel(16,16,16,'model_1')")]
         public VoxModelApiWrapper AddModel(int sizeX, int sizeY, int sizeZ, string name = null)
         {
+            PrepareStructuralEdit();
             string modelName = string.IsNullOrWhiteSpace(name)
                 ? $"model_{_Document.Models.Count}"
                 : name;
@@ -543,6 +562,13 @@ namespace TiltBrush
             {
                 Refresh();
             }
+        }
+
+        [MoonSharpHidden]
+        internal void PrepareStructuralEdit()
+        {
+            var tool = SketchSurfacePanel.m_Instance?.GetToolOfType(BaseTool.ToolType.VoxelTool) as VoxelTool;
+            tool?.FinishEditing();
         }
 
         [MoonSharpHidden]

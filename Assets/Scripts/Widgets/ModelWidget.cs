@@ -551,6 +551,9 @@ namespace TiltBrush
             m_HasEditableVoxVisuals = true;
             m_EditableVoxOptimized = optimized;
 
+            HideRemovedVoxModelNodes(m_ModelInstance);
+            if (m_SnapGhost != null) HideRemovedVoxModelNodes(m_SnapGhost);
+
             int previousTiltMeterCost = GetTiltMeterCost();
             m_ObjModelScript.UpdateAllMeshChildren();
             int currentTiltMeterCost = GetTiltMeterCost();
@@ -565,6 +568,17 @@ namespace TiltBrush
             WidgetManager.m_Instance.AdjustModelVertCount(m_NumVertsTrackedByWidgetManager);
 
             RecalculateColliderBounds();
+        }
+
+        private void HideRemovedVoxModelNodes(Transform root)
+        {
+            foreach (Transform child in root)
+            {
+                string[] parts = child.name.Split('_');
+                if (parts.Length > 2 && parts[0] == "Model" &&
+                    int.TryParse(parts[1], out int index) && index >= m_EditableVoxDocument.Models.Count)
+                    child.gameObject.SetActive(false);
+            }
         }
 
         private MeshFilter GetOrCreateVoxModelFilter(

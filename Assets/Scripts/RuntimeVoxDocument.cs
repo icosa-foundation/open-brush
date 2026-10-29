@@ -379,19 +379,25 @@ namespace TiltBrush
 
         public RuntimeModel CreateModel(string name, Vector3Int size)
         {
-            if (HasPreservedSourceData)
-            {
-                throw new InvalidOperationException(
-                    "Adding models to an imported VOX document is not supported because its scene graph is preserved read-only.");
-            }
-
             var model = new RuntimeModel(
                 name,
                 size,
-                sourceModelId: m_models.Count,
+                sourceModelId: -1,
                 isCopy: false);
             m_models.Add(model);
             return model;
+        }
+
+        public bool RemoveModel(RuntimeModel model) => m_models.Remove(model);
+
+        public bool MakeModelUnique(RuntimeModel model)
+        {
+            if (!ContainsModel(model)) throw new InvalidOperationException("The VOX model is not in this document.");
+            if (!m_models.Any(other => !ReferenceEquals(other, model) &&
+                ReferenceEquals(other.Definition, model.Definition))) return false;
+            model.Definition = new VoxelDefinition(model.Size, model.SourceModelId,
+                new Dictionary<Vector3Int, byte>(model.Voxels));
+            return true;
         }
 
         public bool ReplacePaletteEntry(int oneBasedIndex, Color32 color)

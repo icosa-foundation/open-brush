@@ -74,27 +74,41 @@ namespace TiltBrush
 
             var contentChunks = new List<byte[]>();
 
-            if (document.Models.Count > 1)
+            var definitions = document.Models.GroupBy(model => model.Definition)
+                .Select(group => group.First()).ToList();
+            var definitionIds = definitions.Select((model, index) => (model.Definition, index))
+                .ToDictionary(pair => pair.Definition, pair => pair.index);
+            if (definitions.Count > 1)
             {
-                contentChunks.Add(BuildPackChunk(document.Models.Count));
+                contentChunks.Add(BuildPackChunk(definitions.Count));
             }
 
-            for (int i = 0; i < document.Models.Count; i++)
+            foreach (RuntimeVoxDocument.RuntimeModel model in definitions)
             {
-                RuntimeVoxDocument.RuntimeModel model = document.Models[i];
                 contentChunks.Add(BuildSizeChunk(model.Size.x, model.Size.y, model.Size.z));
                 contentChunks.Add(BuildXyziChunk(model));
             }
 
             if (document.Models.Count > 1 ||
                 document.Models.Any(model => model.TransformOffset != Vector3.zero ||
+                    model.GlobalRotation != Matrix4x4.identity || !model.IsVisible ||
                     !string.IsNullOrEmpty(model.Name)))
             {
-                contentChunks.AddRange(BuildSceneGraphChunks(document.Models));
+                contentChunks.AddRange(BuildSceneGraphChunks(document.Models, definitionIds));
             }
 
             byte[] rgbaChunk = BuildRgbaChunk(document.Palette);
             contentChunks.Add(rgbaChunk);
+            foreach (RuntimeVoxDocument.RuntimeMaterial material in document.Materials.Values)
+            {
+                using (var materialStream = new MemoryStream())
+                using (var materialWriter = new BinaryWriter(materialStream))
+                {
+                    materialWriter.Write(material.PaletteIndex);
+                    WriteDictionary(materialWriter, new Dictionary<string, string>(material.Properties));
+                    contentChunks.Add(WrapChunk("MATL", materialStream.ToArray()));
+                }
+            }
 
             int childrenLength = contentChunks.Sum(chunk => chunk.Length);
 
@@ -191,7 +205,9 @@ namespace TiltBrush
             }
         }
 
-        private static IEnumerable<byte[]> BuildSceneGraphChunks(IReadOnlyList<RuntimeVoxDocument.RuntimeModel> models)
+        private static IEnumerable<byte[]> BuildSceneGraphChunks(
+            IReadOnlyList<RuntimeVoxDocument.RuntimeModel> models,
+            IReadOnlyDictionary<RuntimeVoxDocument.VoxelDefinition, int> definitionIds)
         {
             const int rootTransformNodeId = 0;
             const int rootGroupNodeId = 1;
@@ -222,15 +238,17 @@ namespace TiltBrush
 
                 yield return BuildTransformNodeChunk(
                     transformNodeId,
-                    attributes: new Dictionary<string, string>(),
+                    attributes: model.IsVisible ? new Dictionary<string, string>()
+                        : new Dictionary<string, string> { ["_hidden"] = "1" },
                     childNodeId: shapeNodeId,
                     layerId: -1,
                     // VOX translations are integers; round to the nearest voxel on export.
                     translation: Vector3Int.RoundToInt(
                         RuntimeVoxDocument.GetSceneTranslation(model)),
-                    name: model.Name);
+                    name: model.Name,
+                    rotation: model.GlobalRotation);
 
-                yield return BuildShapeNodeChunk(shapeNodeId, i);
+                yield return BuildShapeNodeChunk(shapeNodeId, definitionIds[model.Definition]);
             }
         }
 
@@ -240,7 +258,8 @@ namespace TiltBrush
             int childNodeId,
             int layerId,
             Vector3Int translation,
-            string name)
+            string name,
+            Matrix4x4? rotation = null)
         {
             using (var stream = new MemoryStream())
             using (var writer = new BinaryWriter(stream))
@@ -260,6 +279,11 @@ namespace TiltBrush
                 writer.Write(1); // Frame count.
 
                 var frameDictionary = new Dictionary<string, string>();
+                if (rotation.HasValue)
+                {
+                    frameDictionary["_r"] = EncodeRotation(rotation.Value).ToString(
+                        System.Globalization.CultureInfo.InvariantCulture);
+                }
                 if (translation != Vector3Int.zero)
                 {
                     frameDictionary["_t"] = $"{translation.x} {translation.y} {translation.z}";
@@ -340,14 +364,16 @@ namespace TiltBrush
             }
 
             var modelsBySourceId = new Dictionary<int, RuntimeVoxDocument.RuntimeModel>();
+            var definitionIds = new Dictionary<RuntimeVoxDocument.VoxelDefinition, int>();
+            int nextDefinitionId = sizeChunks.Count;
             foreach (RuntimeVoxDocument.RuntimeModel model in document.Models)
             {
-                if (model.SourceModelId < 0 || model.SourceModelId >= sizeChunks.Count)
-                {
-                    throw new InvalidOperationException(
-                        "Adding model definitions to an imported VOX scene is not supported yet.");
-                }
-                modelsBySourceId.TryAdd(model.SourceModelId, model);
+                if (definitionIds.ContainsKey(model.Definition)) continue;
+                int id = model.SourceModelId;
+                if (id < 0 || id >= sizeChunks.Count || modelsBySourceId.ContainsKey(id))
+                    id = nextDefinitionId++;
+                definitionIds.Add(model.Definition, id);
+                modelsBySourceId.Add(id, model);
             }
 
             byte[] runtimeToStoredPalette = Enumerable.Range(1, 255).Select(value => (byte)value).ToArray();
@@ -424,7 +450,192 @@ namespace TiltBrush
                 });
             }
 
+            for (int id = sizeChunks.Count; id < nextDefinitionId; ++id)
+            {
+                RuntimeVoxDocument.RuntimeModel model = modelsBySourceId[id];
+                chunks.Add(FromChunkBytes(BuildSizeChunk(model.Size.x, model.Size.y, model.Size.z)));
+                chunks.Add(FromChunkBytes(BuildXyziChunk(model, runtimeToStoredPalette)));
+            }
+            PreservedChunk pack = chunks.FirstOrDefault(chunk => chunk.Id == "PACK");
+            if (pack != null) pack.Content = ExtractChunkContent(BuildPackChunk(nextDefinitionId));
+            else if (nextDefinitionId > 1) chunks.Insert(0, FromChunkBytes(BuildPackChunk(nextDefinitionId)));
+            UpdateSceneGraph(chunks, document.Models, definitionIds);
             return source.Write();
+        }
+
+        private static PreservedChunk FromChunkBytes(byte[] chunk)
+            => new PreservedChunk
+            {
+                Id = Encoding.ASCII.GetString(chunk, 0, 4),
+                Content = ExtractChunkContent(chunk),
+                Children = new List<PreservedChunk>(),
+            };
+
+        private static int EncodeRotation(Matrix4x4 rotation)
+        {
+            int first = -1, second = -1;
+            for (int axis = 0; axis < 3; ++axis)
+            {
+                if (Mathf.Abs(rotation[0, axis]) > 0.5f) first = axis;
+                if (Mathf.Abs(rotation[1, axis]) > 0.5f) second = axis;
+            }
+            if (first < 0 || second < 0 || first == second)
+                throw new InvalidDataException("VOX rotation must be a signed axis permutation.");
+            int third = 3 - first - second;
+            return first | (second << 2) | (rotation[0, first] < 0 ? 16 : 0) |
+                (rotation[1, second] < 0 ? 32 : 0) | (rotation[2, third] < 0 ? 64 : 0);
+        }
+
+        // Keep existing nodes/attributes/frames intact. Changed shape bindings get a new
+        // shape node per placement, so detaching one instance never changes another.
+        private static void UpdateSceneGraph(List<PreservedChunk> chunks,
+            IReadOnlyList<RuntimeVoxDocument.RuntimeModel> models,
+            IReadOnlyDictionary<RuntimeVoxDocument.VoxelDefinition, int> definitionIds)
+        {
+            var transforms = chunks.Where(chunk => chunk.Id == "nTRN").ToList();
+            if (transforms.Count == 0)
+            {
+                foreach (byte[] chunk in BuildSceneGraphChunks(models, definitionIds))
+                    chunks.Add(FromChunkBytes(chunk));
+                return;
+            }
+            var shapes = chunks.Where(chunk => chunk.Id == "nSHP")
+                .ToDictionary(chunk => BitConverter.ToInt32(chunk.Content, 0));
+            int nextNodeId = checked(chunks.Where(chunk => chunk.Id == "nTRN" ||
+                    chunk.Id == "nGRP" || chunk.Id == "nSHP")
+                .Max(chunk => BitConverter.ToInt32(chunk.Content, 0)) + 1);
+            var removedNodes = new HashSet<int>();
+            var placements = models.Where(model => model.SceneNodeId >= 0)
+                .GroupBy(model => model.SceneNodeId).ToDictionary(group => group.Key, group => group.ToList());
+            foreach (PreservedChunk transform in transforms)
+            {
+                using (var reader = new BinaryReader(new MemoryStream(transform.Content, false), Encoding.UTF8))
+                {
+                    int nodeId = reader.ReadInt32();
+                    ReadDictionary(reader);
+                    int childOffset = checked((int)reader.BaseStream.Position);
+                    int childId = reader.ReadInt32();
+                    if (!shapes.TryGetValue(childId, out PreservedChunk shape)) continue;
+                    if (!placements.TryGetValue(nodeId, out var active))
+                    {
+                        removedNodes.Add(nodeId);
+                        chunks.Remove(transform);
+                        continue;
+                    }
+                    using (var shapeReader = new BinaryReader(new MemoryStream(shape.Content, false), Encoding.UTF8))
+                    using (var stream = new MemoryStream())
+                    using (var writer = new BinaryWriter(stream))
+                    {
+                        shapeReader.ReadInt32();
+                        Dictionary<string, string> attributes = ReadDictionary(shapeReader);
+                        int count = shapeReader.ReadInt32();
+                        var slots = active.ToDictionary(model => model.SceneModelSlot);
+                        int replacementId = nextNodeId++;
+                        writer.Write(replacementId);
+                        WriteDictionary(writer, attributes);
+                        writer.Write(active.Count);
+                        bool changed = active.Count != count;
+                        for (int slot = 0; slot < count; ++slot)
+                        {
+                            int oldDefinition = shapeReader.ReadInt32();
+                            Dictionary<string, string> frame = ReadDictionary(shapeReader);
+                            if (!slots.TryGetValue(slot, out var model)) continue;
+                            int definition = definitionIds[model.Definition];
+                            changed |= definition != oldDefinition;
+                            writer.Write(definition);
+                            WriteDictionary(writer, frame);
+                        }
+                        if (!changed) continue;
+                        Array.Copy(BitConverter.GetBytes(replacementId), 0, transform.Content, childOffset, 4);
+                        chunks.Add(new PreservedChunk
+                        {
+                            Id = "nSHP", Content = stream.ToArray(), Children = new List<PreservedChunk>(),
+                        });
+                    }
+                }
+            }
+            if (removedNodes.Count > 0)
+            {
+                foreach (PreservedChunk group in chunks.Where(chunk => chunk.Id == "nGRP"))
+                {
+                    using (var reader = new BinaryReader(new MemoryStream(group.Content, false), Encoding.UTF8))
+                    using (var stream = new MemoryStream())
+                    using (var writer = new BinaryWriter(stream))
+                    {
+                        int id = reader.ReadInt32();
+                        Dictionary<string, string> attributes = ReadDictionary(reader);
+                        int count = reader.ReadInt32();
+                        var children = new List<int>();
+                        for (int i = 0; i < count; ++i)
+                        {
+                            int child = reader.ReadInt32();
+                            if (!removedNodes.Contains(child)) children.Add(child);
+                        }
+                        writer.Write(id);
+                        WriteDictionary(writer, attributes);
+                        writer.Write(children.Count);
+                        foreach (int child in children) writer.Write(child);
+                        group.Content = stream.ToArray();
+                    }
+                }
+            }
+            var added = models.Where(model => model.SceneNodeId < 0).ToList();
+            if (added.Count == 0) return;
+            var rootCandidates = new HashSet<int>();
+            var referenced = new HashSet<int>();
+            foreach (PreservedChunk chunk in chunks.Where(chunk => chunk.Id == "nTRN" || chunk.Id == "nGRP"))
+            {
+                using (var reader = new BinaryReader(new MemoryStream(chunk.Content, false), Encoding.UTF8))
+                {
+                    rootCandidates.Add(reader.ReadInt32());
+                    ReadDictionary(reader);
+                    if (chunk.Id == "nTRN") referenced.Add(reader.ReadInt32());
+                    else
+                    {
+                        int count = reader.ReadInt32();
+                        for (int i = 0; i < count; ++i) referenced.Add(reader.ReadInt32());
+                    }
+                }
+            }
+            rootCandidates.ExceptWith(referenced);
+            var rootChildren = rootCandidates.OrderBy(id => id).ToList();
+            foreach (var model in added)
+            {
+                int transformId = nextNodeId++, shapeId = nextNodeId++;
+                rootChildren.Add(transformId);
+                chunks.Add(FromChunkBytes(BuildTransformNodeChunk(transformId,
+                    model.IsVisible ? new Dictionary<string, string>()
+                        : new Dictionary<string, string> { ["_hidden"] = "1" },
+                    shapeId, -1, Vector3Int.RoundToInt(RuntimeVoxDocument.GetSceneTranslation(model)),
+                    model.Name, model.GlobalRotation)));
+                chunks.Add(FromChunkBytes(BuildShapeNodeChunk(shapeId, definitionIds[model.Definition])));
+            }
+            int rootTransform = nextNodeId++, rootGroup = nextNodeId++;
+            chunks.Add(FromChunkBytes(BuildTransformNodeChunk(rootTransform,
+                new Dictionary<string, string>(), rootGroup, -1, Vector3Int.zero, null)));
+            chunks.Add(FromChunkBytes(BuildGroupNodeChunk(rootGroup, rootChildren)));
+        }
+
+        private static Dictionary<string, string> ReadDictionary(BinaryReader reader)
+        {
+            int count = reader.ReadInt32();
+            if (count < 0 || count > (reader.BaseStream.Length - reader.BaseStream.Position) / 8)
+                throw new InvalidDataException("Invalid VOX dictionary count.");
+            var result = new Dictionary<string, string>();
+            for (int i = 0; i < count; ++i)
+            {
+                string key = ReadString(reader);
+                result[key] = ReadString(reader);
+            }
+            return result;
+        }
+
+        private static string ReadString(BinaryReader reader)
+        {
+            int length = reader.ReadInt32();
+            if (length < 0 || length > reader.BaseStream.Length - reader.BaseStream.Position)
+                throw new InvalidDataException("Invalid VOX string length.");
+            return Encoding.UTF8.GetString(reader.ReadBytes(length));
         }
 
         private static byte[] BuildPreservedRgbaContent(

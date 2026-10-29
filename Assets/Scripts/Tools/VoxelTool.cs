@@ -306,6 +306,8 @@ namespace TiltBrush
             }
         }
 
+        internal void FinishEditing() => EndGesture();
+
         private void EndGesture()
         {
             if (!m_GestureActive)
