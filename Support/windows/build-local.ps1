@@ -7,11 +7,14 @@ $builds = @(
     @{ Name='Android AndroidXR'; Target='Android'; Sdk='AndroidXR'; Api=35; Bundle=$true }
     @{ Name='Android Viewer OpenXR'; Target='Android'; Sdk='OpenXR'; Api=35; Bundle=$false; Define='OPEN_BRUSH_VIEWER' }
     @{ Name='Android Viewer AndroidXR'; Target='Android'; Sdk='AndroidXR'; Api=35; Bundle=$true; Define='OPEN_BRUSH_VIEWER' }
+    @{ Name='Android Viewer Handheld'; Target='Android'; Sdk='Monoscopic'; Api=35; Bundle=$false; Define='OPEN_BRUSH_VIEWER' }
     @{ Name='Android Meta Quest'; Target='Android'; Sdk='OpenXR'; Api=34; Bundle=$false; Define='USE_QUEST_PACKAGE_NAME' }
 )
 for ($i=0; $i -lt $builds.Count; $i++) { Write-Host "$($i+1). $($builds[$i].Name)" }
-$choice = Read-Host 'Select build (1-6)'
-if ($choice -notmatch '^[1-6]$') { throw 'Choose a number from 1 to 6.' }
+$choice = Read-Host "Select build (1-$($builds.Count))"
+if ($choice -notmatch '^\d+$' -or [int]$choice -lt 1 -or [int]$choice -gt $builds.Count) {
+    throw "Choose a number from 1 to $($builds.Count)."
+}
 $selected = $builds[[int]$choice-1]
 $development = (Read-Host 'Development build? [y/N]') -match '^y(es)?$'
 
