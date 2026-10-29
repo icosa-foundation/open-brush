@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using Es.InkPainter;
 using UnityEngine;
 
 namespace TiltBrush
@@ -27,7 +28,17 @@ namespace TiltBrush
                 obj == null ||
                 (skipUI && obj.gameObject.layer == LayerMask.NameToLayer("UI"))
             ) { return; }
-            obj.gameObject.layer = layer;
+
+            if (layer == LayerMask.NameToLayer("MainCanvas") && obj.GetComponent<InkCanvas>())
+            {
+                // Special case for ink canvases
+                obj.gameObject.layer = LayerMask.NameToLayer("TexturePaint");
+            }
+            else
+            {
+                obj.gameObject.layer = layer;
+            }
+
             for (int i = 0; i < obj.childCount; ++i)
             {
                 RecursivelySetLayer(obj.GetChild(i), layer, skipUI);
