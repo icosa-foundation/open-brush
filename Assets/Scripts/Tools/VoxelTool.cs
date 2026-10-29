@@ -105,6 +105,14 @@ namespace TiltBrush
             base.UpdateTool();
             EnsureCurrentTarget();
 
+            // Resolve targeting and previews using the mode selected this frame.
+            if (!IsEatingInput &&
+                InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
+            {
+                CycleMode();
+                InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+            }
+
             Transform attachPoint = InputManager.Brush.Geometry.ToolAttachPoint;
             PointerManager.m_Instance.SetMainPointerPosition(attachPoint.position);
             Vector3 canvasPosition = App.Scene.ActiveCanvas.AsCanvas[attachPoint].translation;
@@ -137,12 +145,6 @@ namespace TiltBrush
             if (IsEatingInput)
             {
                 return;
-            }
-
-            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
-            {
-                CycleMode();
-                InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
             }
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
