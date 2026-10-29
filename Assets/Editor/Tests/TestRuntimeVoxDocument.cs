@@ -548,14 +548,22 @@ namespace TiltBrush
                 "undoable",
                 new Vector3Int(4, 4, 4));
             model.AddOrUpdateVoxel(Vector3Int.zero, 1);
-            byte[] before = document.ToVoxBytes();
+            RuntimeVoxDocument.Snapshot before = document.CaptureSnapshot();
             model.AddOrUpdateVoxel(Vector3Int.one, 2);
 
             var documentWrapper = new VoxDocumentApiWrapper(document);
             VoxModelApiWrapper modelWrapper = documentWrapper.Model();
-            document.RestoreFromBytes(before, preserveSourceData: false);
+            document.RemoveModel(model);
+            Assert.IsFalse(modelWrapper.isValid);
+            RuntimeVoxDocument.RuntimeModel replacement = document.CreateModel(
+                "replacement", new Vector3Int(2, 2, 2));
+            VoxModelApiWrapper replacementWrapper = documentWrapper.Model();
+            document.RestoreSnapshot(before);
 
             Assert.AreSame(document, documentWrapper._Document);
+            Assert.IsTrue(modelWrapper.isValid);
+            Assert.IsFalse(replacementWrapper.isValid);
+            Assert.IsFalse(document.ContainsModel(replacement));
             Assert.AreSame(model, modelWrapper._Model);
             Assert.AreEqual(1, modelWrapper.voxelCount);
             Assert.IsTrue(modelWrapper.SetVoxel(2, 2, 2, 3));

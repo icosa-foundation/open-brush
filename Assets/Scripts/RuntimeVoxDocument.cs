@@ -136,15 +136,6 @@ namespace TiltBrush
                 return m_voxels.Remove(position);
             }
 
-            internal void RestoreVoxels(IReadOnlyDictionary<Vector3Int, byte> voxels)
-            {
-                m_voxels.Clear();
-                foreach (KeyValuePair<Vector3Int, byte> voxel in voxels)
-                {
-                    m_voxels[voxel.Key] = voxel.Value;
-                }
-            }
-
             public bool MoveVoxel(Vector3Int from, Vector3Int to, bool overwrite = true)
             {
                 if (!IsInBounds(to) || !m_voxels.TryGetValue(from, out byte paletteIndex))
@@ -362,8 +353,6 @@ namespace TiltBrush
         }
 
         public bool ContainsModel(RuntimeModel model) => m_models.Contains(model);
-
-
 
         // Palette is 1-based from VOX perspective. Palette[0] corresponds to index 1.
         public Color32[] Palette { get; } = new Color32[256];
@@ -586,43 +575,6 @@ namespace TiltBrush
         public static RuntimeVoxDocument FromBytes(ReadOnlyMemory<byte> bytes, bool preserveSourceData = true)
         {
             return FromBytes(bytes.ToArray(), preserveSourceData);
-        }
-
-        internal void RestoreFromBytes(byte[] bytes, bool preserveSourceData)
-        {
-            RuntimeVoxDocument restored = FromBytes(bytes, preserveSourceData);
-            if (restored.m_models.Count != m_models.Count)
-            {
-                throw new InvalidDataException(
-                    "A VOX edit snapshot cannot change the document's model count.");
-            }
-
-            for (int i = 0; i < m_models.Count; i++)
-            {
-                RuntimeModel current = m_models[i];
-                RuntimeModel replacement = restored.m_models[i];
-                if (current.Name != replacement.Name || current.Size != replacement.Size ||
-                    current.SourceModelId != replacement.SourceModelId ||
-                    current.IsCopy != replacement.IsCopy || current.IsVisible != replacement.IsVisible ||
-                    current.LocalTransformOffset != replacement.LocalTransformOffset ||
-                    current.GlobalRotation != replacement.GlobalRotation ||
-                    current.LocalRotation != replacement.LocalRotation)
-                {
-                    throw new InvalidDataException(
-                        "A VOX edit snapshot cannot change the document's model structure.");
-                }
-
-                current.RestoreVoxels(replacement.Voxels);
-                current.TransformOffset = replacement.TransformOffset;
-            }
-
-            Array.Copy(restored.Palette, Palette, Palette.Length);
-            m_materials.Clear();
-            foreach (KeyValuePair<int, RuntimeMaterial> material in restored.m_materials)
-            {
-                m_materials[material.Key] = material.Value;
-            }
-            m_sourceVoxBytes = restored.m_sourceVoxBytes;
         }
 
         public static RuntimeVoxDocument FromStream(Stream stream, bool preserveSourceData = true)
