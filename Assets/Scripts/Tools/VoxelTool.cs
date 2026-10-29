@@ -206,7 +206,6 @@ namespace TiltBrush
                 EditMode.Paint => EditMode.Select,
                 _ => EditMode.Add,
             };
-            ControllerConsoleScript.m_Instance?.AddNewLine($"Voxel mode: {Mode}", true);
             return Mode;
         }
 
@@ -214,24 +213,18 @@ namespace TiltBrush
         {
             ModelSize = CyclePreset(kModelSizes, Mathf.Clamp(ModelSize, 1,
                 RuntimeVoxDocument.MaxModelDimension));
-            ControllerConsoleScript.m_Instance?.AddNewLine(
-                $"New voxel model size: {ModelSize}x{ModelSize}x{ModelSize}", true);
             return ModelSize;
         }
 
         public float CycleVoxelSize()
         {
             VoxelSize = CyclePreset(kVoxelSizes, Mathf.Max(VoxelSize, 0.0001f));
-            ControllerConsoleScript.m_Instance?.AddNewLine(
-                $"New voxel size: {VoxelSize:0.###} m", true);
             return VoxelSize;
         }
 
         public bool ToggleGrid()
         {
             ShowGrid = !ShowGrid;
-            ControllerConsoleScript.m_Instance?.AddNewLine(
-                $"Voxel grid: {(ShowGrid ? "shown" : "hidden")}", true);
             return ShowGrid;
         }
 
@@ -242,8 +235,6 @@ namespace TiltBrush
             m_CurrentModel = null;
             Mode = EditMode.Add;
             m_CreateNewOnNextAdd = true;
-            ControllerConsoleScript.m_Instance?.AddNewLine(
-                "Voxel tool: trigger to place a new model", true);
         }
 
         internal void RequestModelSelection()
@@ -453,19 +444,11 @@ namespace TiltBrush
 
         private void SetCurrentModel(VoxModelApiWrapper model)
         {
-            bool targetChanged = !HasCurrentTarget ||
-                !ReferenceEquals(m_CurrentDocument?._Document, model.document._Document) ||
-                !ReferenceEquals(m_CurrentModel?._Model, model._Model);
             m_CurrentModel = model;
             m_CurrentDocument = model.document;
             m_CurrentDocument.SetAutoVisuals(true, true);
             VoxelSize = model.voxelSize;
             m_CreateNewOnNextAdd = false;
-            if (targetChanged)
-            {
-                ControllerConsoleScript.m_Instance?.AddNewLine(
-                    $"Voxel target: {CurrentTargetDescription}", true);
-            }
         }
 
         private void EnsureCurrentTarget()
