@@ -581,7 +581,7 @@ namespace TiltBrush
             Vector3 before = wrapper.VoxelToCanvas(Vector3.one);
             var snapshot = document.CaptureSnapshot();
             var lower = new Vector3Int(2, 0, 1);
-            Assert.IsTrue(document.ExpandModelBounds(document.Models[0], lower, new Vector3Int(1, 3, 0)));
+            Assert.IsTrue(document.ResizeModelBounds(document.Models[0], lower, new Vector3Int(1, 3, 0)));
             Assert.AreEqual(new Vector3Int(6, 6, 4), document.Models[0].Size);
             Vector3Int shifted = Vector3Int.one + lower;
             Assert.Less((wrapper.VoxelToCanvas(shifted) - before).sqrMagnitude, 0.000001f);

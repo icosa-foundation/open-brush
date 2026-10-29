@@ -87,7 +87,7 @@ namespace TiltBrush
                 var before = m_ExpansionDocument.CaptureSnapshot();
                 try
                 {
-                    m_ExpansionDocument.ExpandModelBounds(m_ExpansionModel, lower, upper);
+                    m_ExpansionDocument.ResizeModelBounds(m_ExpansionModel, lower, upper);
                     var after = m_ExpansionDocument.CaptureSnapshot();
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                         new ModifyVoxDocumentCommand(m_ExpansionWidget, before, after));

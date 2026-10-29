@@ -367,30 +367,37 @@ namespace TiltBrush
 
         public bool ContainsModel(RuntimeModel model) => m_models.Contains(model);
 
-        // Expand a shared definition once, keeping every placed instance visually fixed.
-        // New lower-side cells shift indices and each instance's origin together.
-        public bool ExpandModelBounds(RuntimeModel model, Vector3Int lower, Vector3Int upper)
+        // Resize a shared definition once, keeping every placed instance visually fixed.
+        // Signed face padding shifts cell indices and each instance's origin together.
+        public bool ResizeModelBounds(RuntimeModel model, Vector3Int lower, Vector3Int upper)
         {
             if (!ContainsModel(model)) throw new InvalidOperationException("The VOX model is not in this document.");
             Vector3Int size = model.Size;
             for (int axis = 0; axis < 3; ++axis)
             {
-                if (lower[axis] < 0 || upper[axis] < 0 ||
-                    lower[axis] > MaxModelDimension - size[axis] ||
-                    upper[axis] > MaxModelDimension - size[axis] - lower[axis])
+                long dimension = (long)size[axis] + lower[axis] + upper[axis];
+                // Preserve already smaller imports, but do not shrink them further.
+                if (dimension < Math.Min(3, size[axis]) || dimension > MaxModelDimension)
                     throw new ArgumentOutOfRangeException(nameof(lower),
-                        "Expanded VOX dimensions must remain between 1 and 256 cells per axis.");
-                size[axis] += lower[axis] + upper[axis];
+                        "Resized VOX dimensions must retain at least 3 cells per axis (or the existing smaller size) and at most 256.");
+                size[axis] = (int)dimension;
             }
-            if (size == model.Size) return false;
+            if (lower == Vector3Int.zero && upper == Vector3Int.zero) return false;
             VoxelDefinition previous = model.Definition;
             var cells = new Dictionary<Vector3Int, byte>(previous.Cells.Count);
-            foreach (var cell in previous.Cells) cells.Add(cell.Key + lower, cell.Value);
-            var expanded = new VoxelDefinition(size, previous.SourceModelId, cells);
+            foreach (var cell in previous.Cells)
+            {
+                Vector3Int position = cell.Key + lower;
+                if (position.x < 0 || position.y < 0 || position.z < 0 ||
+                    position.x >= size.x || position.y >= size.y || position.z >= size.z)
+                    throw new ArgumentOutOfRangeException(nameof(lower), "Resizing must not remove existing voxels.");
+                cells.Add(position, cell.Value);
+            }
+            var resized = new VoxelDefinition(size, previous.SourceModelId, cells);
             foreach (RuntimeModel instance in m_models)
             {
                 if (!ReferenceEquals(instance.Definition, previous)) continue;
-                instance.Definition = expanded;
+                instance.Definition = resized;
                 instance.TransformOffset -= instance.GlobalRotation.MultiplyVector(lower);
                 instance.SourceCellOffset += lower;
             }
