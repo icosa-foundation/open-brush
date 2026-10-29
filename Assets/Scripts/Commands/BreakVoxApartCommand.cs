@@ -56,13 +56,18 @@ namespace TiltBrush
                     throw;
                 }
             }
-            SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_Original });
+            if (SelectionManager.m_Instance.IsWidgetSelected(m_Original))
+                SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_Original });
+            CanvasScript sourceCanvas = m_Original.Canvas;
             m_Original.gameObject.SetActive(false);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_Original.GetTiltMeterCost(), up: false);
             foreach (ModelWidget widget in m_Widgets)
             {
                 widget.gameObject.SetActive(true);
                 if (!creating) TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: true);
+                // Clones of a selected original initially live on SelectionCanvas. Move
+                // them to their real layer before SelectWidget records the return canvas.
+                if (widget.Canvas != sourceCanvas) widget.SetCanvas(sourceCanvas);
                 SelectionManager.m_Instance.SelectWidget(widget);
             }
             SelectionManager.m_Instance.UpdateSelectionWidget();
