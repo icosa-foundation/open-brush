@@ -45,6 +45,8 @@ As the original repo is archived we cannot submit PRs, so feel free to submit th
 
 ## Bleeding Edge Releases
 
+For the Android Viewer, choose `OpenBrushViewer_Android_Handheld_<version>.apk` for a phone or tablet, or `OpenBrushViewer_Android_Headset_<version>.apk` for a headset from the [GitHub releases page](https://github.com/icosa-foundation/open-brush/releases). The phone/tablet Viewer retains touch navigation and optional AR. These two Viewer APKs replace each other when installed on the same device.
+
 Instead of waiting for a formal release, you can download a ZIP from Github containing an automatically built release for either Windows (SteamVR) or Oculus Quest / Quest 2 from the [Github releases page](https://github.com/icosa-foundation/open-brush/releases). Versions of the form "vX.Y.0" are official releases, whereas versions that do not end in .0 are made available for testing purposes only, with no guarantees as to their quality. Additionally, these releases are marked as "pre-release". However, if you'd like to test a recent change prior to the official release, you can use these either in place of or in parallel with the formal Open Brush releases.
 
 These builds share a save location with the official Open Brush release, but can be installed alongside the formal version. The Oculus build, like all sideloaded content, will be listed in "Unknown Sources", and will have the word "Github" appended to the name (with a different package name as well) to differentiate it from the official release).
