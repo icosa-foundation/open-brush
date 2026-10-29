@@ -80,8 +80,11 @@ namespace TiltBrush
             get
             {
 #if UNITY_ANDROID && !UNITY_EDITOR
-                return string.Equals(UnityEngine.XR.OpenXR.OpenXRRuntime.name, "SteamVR/OpenXR",
-                    StringComparison.Ordinal);
+                // ARCore-only and no-headset builds may omit the native OpenXR plugin.
+                return UnityEngine.XR.Management.XRGeneralSettings.Instance?.Manager?.activeLoader
+                    is UnityEngine.XR.OpenXR.OpenXRLoader &&
+                    string.Equals(UnityEngine.XR.OpenXR.OpenXRRuntime.name, "SteamVR/OpenXR",
+                        StringComparison.Ordinal);
 #else
                 return false;
 #endif
