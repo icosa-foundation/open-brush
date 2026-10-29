@@ -40,7 +40,7 @@ namespace TiltBrush
             private string m_FileName;
             private TiltFile m_TiltFile;
             private FileStream m_DownloadStream;
-            private string m_SourceId; // If this is a derivative work of a poly asset, that asset id.
+            private string m_SourceId;  // If this is a derivative work of a poly asset, that asset id.
             private string m_Source;
             private bool m_InvalidDownloadThisSession;
 
@@ -54,7 +54,9 @@ namespace TiltBrush
 
             public bool Available => m_TiltFile != null;
 
-            public string FullPath => Path.Combine(App.UserSketchPath(), HumanName);
+            public string FullPath => m_FileName;
+
+            public string OriginalPath => Path.Combine(App.UserSketchPath(), HumanName);
 
             public bool Exists => true;
 
@@ -133,7 +135,7 @@ namespace TiltBrush
             public IEnumerator LoadThumbnail()
             {
                 UnityWebRequest request = UnityWebRequestTexture.GetTexture(m_File.ThumbnailLink,
-                    nonReadable: true);
+                                                                            nonReadable: true);
                 var operation = request.SendWebRequest();
                 m_AbortLoad = false;
                 while (!operation.isDone && !m_AbortLoad)
@@ -214,6 +216,12 @@ namespace TiltBrush
                 }
                 return false;
             }
+
+            public IEnumerable<string> GetContentsAt(string path)
+            {
+                return m_TiltFile.GetContentsAt(path);
+            }
+
         }
 
 
@@ -405,7 +413,7 @@ namespace TiltBrush
                 {
                     if (deviceFolders[i].Id == App.DriveAccess.DeviceFolder)
                     {
-                        sketchList.AddRange(sketchTasks[i].Result.Where(x => !File.Exists(x.FullPath)));
+                        sketchList.AddRange(sketchTasks[i].Result.Where(x => !File.Exists(x.OriginalPath)));
                     }
                     else
                     {
