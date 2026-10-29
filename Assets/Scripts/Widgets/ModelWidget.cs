@@ -114,6 +114,10 @@ namespace TiltBrush
         // Owned by this widget. Never shared with the catalog Model or another widget.
         public RuntimeVoxDocument EditableVoxDocument => m_EditableVoxDocument;
 
+        private bool HasEmptyEditableVoxGrid => m_EditableVoxDocument != null &&
+            m_EditableVoxDocument.Models.Any(model => model.IsVisible) &&
+            !m_EditableVoxDocument.Models.Any(model => model.IsVisible && model.Voxels.Count > 0);
+
         public bool IsExternalVox => IsVoxModel() && m_EditableVoxDocument == null;
 
         internal void RestoreExternalVoxContent()
@@ -1053,6 +1057,23 @@ namespace TiltBrush
             return -1.0f;
         }
 
+        public bool TryIntersectNonGpuModel(Vector3 center_GS, float radius_GS, out float score)
+        {
+            if (TryIntersectGsplat(center_GS, radius_GS, out score)) return true;
+            if (!HasEmptyEditableVoxGrid || !Showing || !gameObject.activeInHierarchy || radius_GS < 0)
+                return false;
+            Vector3 local = m_BoxCollider.transform.InverseTransformPoint(center_GS);
+            Vector3 min = m_BoxCollider.center - m_BoxCollider.size * 0.5f;
+            Vector3 max = m_BoxCollider.center + m_BoxCollider.size * 0.5f;
+            Vector3 closest = m_BoxCollider.transform.TransformPoint(new Vector3(
+                Mathf.Clamp(local.x, min.x, max.x), Mathf.Clamp(local.y, min.y, max.y),
+                Mathf.Clamp(local.z, min.z, max.z)));
+            float distance = Vector3.Distance(closest, center_GS);
+            if (distance > radius_GS) return false;
+            score = 1f - distance / Mathf.Max(radius_GS, 0.000001f);
+            return true;
+        }
+
         public bool TryIntersectGsplat(Vector3 center_GS, float radius_GS, out float score)
         {
             score = -1.0f;
@@ -1577,7 +1598,8 @@ namespace TiltBrush
 
         override public bool HasGPUIntersectionObject()
         {
-            return m_ModelInstance != null && (m_Model == null || !m_Model.IsGsplatModel);
+            return m_ModelInstance != null && !HasEmptyEditableVoxGrid &&
+                (m_Model == null || !m_Model.IsGsplatModel);
         }
 
         override public void SetGPUIntersectionObjectLayer(int layer)

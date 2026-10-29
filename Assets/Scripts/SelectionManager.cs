@@ -1121,7 +1121,7 @@ namespace TiltBrush
             {
                 if (widget is not ModelWidget modelWidget ||
                     modelWidget.HasGPUIntersectionObject() ||
-                    !modelWidget.TryIntersectGsplat(center_GS, radius_GS, out float widgetScore))
+                    !modelWidget.TryIntersectNonGpuModel(center_GS, radius_GS, out float widgetScore))
                 {
                     continue;
                 }
