@@ -51,6 +51,7 @@ jobs:
       uid: ${{ steps.github.outputs.uid }}
       gid: ${{ steps.github.outputs.gid }}
       flavors: ${{ steps.flavors.outputs.flavors }}
+      refreshcache: ${{ steps.cache_policy.outputs.refresh }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -207,6 +208,16 @@ jobs:
           echo "uid=$(id -u)" >> $GITHUB_OUTPUT
           echo "gid=$(id -g)" >> $GITHUB_OUTPUT
 
+      - name: Check head commit for cache refresh request
+        id: cache_policy
+        run: |
+          # Preserve this marker in the squash commit message when merging to main.
+          if [[ $(git log -1 --format=%B) == *'[REFRESH CACHE]'* ]]; then
+            echo 'refresh=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'refresh=false' >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Determine whether to build Development builds or not
         id: flavors
         run: |
@@ -222,6 +233,9 @@ jobs:
   build:
     name: ${{ matrix.name }} ${{ matrix.flavors.title }}
     needs: configuration
+    permissions:
+      contents: read
+      actions: write  # Delete superseded Library caches on explicitly requested main builds.
     runs-on: ${{ matrix.runner || 'ubuntu-latest' }}
     strategy:
       fail-fast: false
@@ -233,18 +247,21 @@ jobs:
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+            cache_writer: true
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: Linux
             targetPlatform: StandaloneLinux64
             vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
             cache: Linux
+            cache_writer: true
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: MacOS
             targetPlatform: StandaloneOSX
             vrsdk: Monoscopic
             cache: MacOS
+            cache_writer: true
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: Android OpenXR
@@ -252,6 +269,7 @@ jobs:
             androidTargetSdkVersion: AndroidApiLevel35
             vrsdk: OpenXR
             cache: Android_Vulkan
+            cache_writer: true
             extraoptions: -btb-il2cpp
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
@@ -307,6 +325,7 @@ jobs:
             targetPlatform: iOS
             vrsdk: OpenXR
             cache: iOS
+            cache_writer: true
             extraoptions: -btb-il2cpp
             extra_defines: OPEN_BRUSH_VIEWER
             packages_to_remove: com.unity.formats.usd
@@ -414,7 +433,7 @@ jobs:
         with:
           path: Library
           # Some platforms share a cache; it's not a 1:1 mapping of either targetPlatform or vrsdk, so we have a distinct variable for which cache to use
-          # Renew immutable caches on each run attempt; restore the newest compatible revision.
+          # Restore the newest compatible revision. Only marked main pushes save a new one.
           key: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_${{ github.run_id }}_${{ github.run_attempt }}
           restore-keys: |
             Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}_
@@ -621,9 +640,10 @@ jobs:
           key: Library_PackageCache_${{ env.UNITY_VERSION }}_${{ hashFiles('Packages/packages-lock.json') }}
 
       - name: Clean Library before caching
+        id: prepare_library_cache
         env:
           UNITY_LIBRARY_CACHE_PATHS: "DataStore ArtifactDB SourceAssetDB PlayerDataCache ShaderCache ShaderCache.db"
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development  # Only prepare caches when this job can save them.
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.configuration.outputs.refreshcache == 'true' && matrix.cache_writer && !matrix.flavors.development && steps.cache_library.outputs.cache-hit != 'true'
         run: |
           # Debugging
           echo "Library/ directories"
@@ -644,9 +664,29 @@ jobs:
           echo "Final space used"
           du -mcsh Library/*
 
+      - name: Delete superseded Library caches before saving
+        id: delete_library_cache
+        if: steps.prepare_library_cache.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CACHE_KEY_PREFIX: Library_${{ matrix.cache }}_${{ env.UNITY_VERSION }}
+        run: |
+          # Collect all pages before deleting, so pagination cannot skip entries.
+          # Delete first to avoid storing two full copies; a failed save leaves a cold cache.
+          cache_entries=$(gh api --method GET "repos/$GITHUB_REPOSITORY/actions/caches" \
+            -f ref=refs/heads/main -f key="$CACHE_KEY_PREFIX" -f per_page=100 \
+            --paginate --jq '.actions_caches[] | [.id, .key] | @tsv')
+          while IFS=$'\t' read -r cache_id cache_key; do
+            # The API filters by prefix; also enforce the group/version boundary.
+            if [[ "$cache_key" == "$CACHE_KEY_PREFIX" || "$cache_key" == "${CACHE_KEY_PREFIX}_"* ]]; then
+              echo "Deleting superseded cache $cache_key ($cache_id)"
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/actions/caches/$cache_id"
+            fi
+          done <<< "$cache_entries"
+
       - name: Save Library/ cache
         uses: actions/cache/save@v6
-        if: github.ref == 'refs/heads/main' && steps.cache_library.outputs.cache-hit != 'true' && !matrix.flavors.development
+        if: steps.delete_library_cache.outcome == 'success'
         env:
           SEGMENT_DOWNLOAD_TIMEOUT_MINS: 10
         with:
