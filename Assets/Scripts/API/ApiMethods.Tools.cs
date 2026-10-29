@@ -164,7 +164,7 @@
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.VoxelTool);
         }
 
-        [ApiEndpoint("tool.voxel.mode", "Sets the Voxel Tool mode: Add, Erase, or Paint")]
+        [ApiEndpoint("tool.voxel.mode", "Sets the Voxel Tool mode: Add, Erase, Paint, or Expand")]
         public static void SetVoxelToolMode(string mode)
         {
             var tool = SketchSurfacePanel.m_Instance.GetToolOfType(

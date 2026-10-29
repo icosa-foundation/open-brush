@@ -65,13 +65,14 @@ namespace TiltBrush
             switch (m_Setting)
             {
                 case Setting.Mode:
-                    label = $"Mode\n{tool.Mode}";
+                    label = tool.Mode == VoxelTool.EditMode.Expand ? "Mode\nExpand Grid" : $"Mode\n{tool.Mode}";
                     title = $"Edit Mode: {tool.Mode}";
                     description = tool.Mode switch
                     {
                         VoxelTool.EditMode.Add => "Add or recolor voxels. Press to switch to Erase.",
                         VoxelTool.EditMode.Erase => "Remove voxels. Press to switch to Paint.",
-                        _ => "Recolor existing voxels. Press to switch to Add.",
+                        VoxelTool.EditMode.Paint => "Recolor existing voxels. Press to switch to Expand Grid.",
+                        _ => "Drag a face handle outward to expand the grid without moving voxels. Press to switch to Add.",
                     };
                     break;
                 case Setting.VoxelSize:

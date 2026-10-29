@@ -21,13 +21,14 @@ using UnityEngine;
 namespace TiltBrush
 {
     /// Native interaction tool for editing widget-backed VOX documents.
-    public sealed class VoxelTool : BaseTool
+    public sealed partial class VoxelTool : BaseTool
     {
         public enum EditMode
         {
             Add,
             Erase,
             Paint,
+            Expand,
         }
 
         private const float kDefaultVoxelSize = 0.1f;
@@ -63,6 +64,7 @@ namespace TiltBrush
             set
             {
                 if (m_Mode == value) { return; }
+                CancelExpansion();
                 EndGesture();
                 m_Mode = value;
                 m_CreateNewGrid = false;
@@ -134,6 +136,7 @@ namespace TiltBrush
             if (enable) EnsureCurrentTarget();
             if (!enable)
             {
+                CancelExpansion();
                 CancelGridDrag();
                 EndGesture();
             }
@@ -148,6 +151,7 @@ namespace TiltBrush
         {
             if (hide)
             {
+                CancelExpansion();
                 CancelGridDrag();
                 EndGesture();
             }
@@ -177,6 +181,11 @@ namespace TiltBrush
             if (CreatingNewModel)
             {
                 UpdateGridCreation(attachPoint, canvasPosition);
+                return;
+            }
+            if (Mode == EditMode.Expand)
+            {
+                UpdateGridExpansion(attachPoint, canvasPosition);
                 return;
             }
             var previewModel = m_GestureActive ? m_GestureModel : FindTargetModelAt(canvasPosition);
@@ -238,6 +247,7 @@ namespace TiltBrush
             {
                 EditMode.Add => EditMode.Erase,
                 EditMode.Erase => EditMode.Paint,
+                EditMode.Paint => EditMode.Expand,
                 _ => EditMode.Add,
             };
             return Mode;
@@ -257,6 +267,7 @@ namespace TiltBrush
 
         public void RequestNewModel()
         {
+            CancelExpansion();
             EndGesture();
             m_DefiningGrid = false;
             m_TargetWidget = null;
@@ -271,7 +282,7 @@ namespace TiltBrush
         internal void SetTargetWidget(ModelWidget widget)
         {
             if (!IsAvailableTarget(widget)) return;
-            if (m_GestureActive)
+            if (m_GestureActive || m_ExpandingGrid)
             {
                 // A grab/selection from the other hand cannot redirect an active stroke.
                 m_PendingTargetWidget = widget;
@@ -390,7 +401,11 @@ namespace TiltBrush
             }
         }
 
-        internal void FinishEditing() => EndGesture();
+        internal void FinishEditing()
+        {
+            CancelExpansion();
+            EndGesture();
+        }
 
         private void EndGesture()
         {
@@ -440,6 +455,11 @@ namespace TiltBrush
             m_GestureBeforePalette = null;
             m_GestureWidget = null;
             m_GestureModel = null;
+            ApplyPendingTarget();
+        }
+
+        private void ApplyPendingTarget()
+        {
             if (m_HasPendingTarget)
             {
                 ModelWidget pending = m_PendingTargetWidget;
@@ -561,7 +581,7 @@ namespace TiltBrush
         }
 
         private void UpdateTargetLabel(
-            Transform attachPoint, bool insideTarget, string creationHint = null)
+            Transform attachPoint, bool insideTarget, string actionHint = null)
         {
             if (m_TargetLabel == null)
             {
@@ -582,7 +602,7 @@ namespace TiltBrush
                 attachPoint.position + head.up * 0.06f, head.rotation);
             m_TargetLabel.transform.localScale = Vector3.one * 0.05f;
             m_TargetLabel.color = CreatingNewModel ? Color.yellow : Color.white;
-            string action = creationHint ?? (CreatingNewModel
+            string action = actionHint ?? (CreatingNewModel
                 ? "Hold trigger and drag to size a new grid"
                 : !HasCurrentTarget
                     ? CurrentTargetWidget != null && CurrentTargetWidget.IsExternalVox
