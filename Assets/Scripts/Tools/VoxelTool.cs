@@ -324,7 +324,7 @@ namespace TiltBrush
             {
                 var command = new ModifyVoxDocumentCommand(
                     m_GestureWidget,
-                    gestureDocument,
+                    gestureDocument._Document,
                     m_GestureModel,
                     m_GestureBeforeCells,
                     m_GestureAfterCells,
