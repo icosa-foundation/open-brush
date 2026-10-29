@@ -13,36 +13,17 @@ internal static class AndroidStoreManifest
     internal const string AndroidNamespace = "http://schemas.android.com/apk/res/android";
     private const string ToolsNamespace = "http://schemas.android.com/tools";
 
-    internal static void Configure(XmlDocument doc, bool metaStore, bool androidXr, bool scopedStorage = false)
+    internal static void Configure(XmlDocument doc, bool metaStore, bool androidXr,
+        bool scopedStorage = false, bool handheldViewer = false)
     {
+        if (handheldViewer && (metaStore || androidXr))
+            throw new InvalidOperationException("Handheld Viewer cannot use a headset store configuration.");
         if (metaStore && scopedStorage)
             throw new InvalidOperationException("Scoped storage must use a separate build from the Meta store flavor.");
         var root = doc.DocumentElement ?? throw new InvalidOperationException("Missing Android manifest.");
         root.SetAttribute("xmlns:tools", ToolsNamespace);
         var app = root.SelectSingleNode("application") as XmlElement
             ?? throw new InvalidOperationException("Missing Android application element.");
-
-        // Android XR uses a different permission from Quest's com.oculus.permission.HAND_TRACKING.
-        // Generic OpenXR APKs can also run on Android XR devices, so only the Meta store build
-        // drops it. A removal marker also excludes declarations from lower-priority XR libraries.
-        var handTracking = GetOrCreate(doc, root, "uses-permission", "android.permission.HAND_TRACKING");
-        handTracking.SetAttribute("node", ToolsNamespace, metaStore ? "remove" : "merge");
-
-        if (!androidXr)
-        {
-            // Quest only offers tracked hands to apps declaring them. Controllers remain the
-            // primary input, so hand tracking must not filter out controller-only devices.
-            GetOrCreate(doc, root, "uses-permission", "com.oculus.permission.HAND_TRACKING");
-            var questHands = GetOrCreate(doc, root, "uses-feature", "oculus.software.handtracking");
-            SetAndroid(questHands, "required", "false");
-            questHands.SetAttribute("replace", ToolsNamespace, "android:required");
-            // Pico declarations match PICO-Unity-OpenXR-SDK's "Controllers And Hands" mode
-            // (Editor/PICOModifyAndroidManifest.cs). Without controller=1 Pico treats a
-            // hand-tracking app as hands-only.
-            GetOrCreate(doc, root, "uses-permission", "com.picovr.permission.HAND_TRACKING");
-            SetMetadata(doc, app, "handtracking", "1");
-            SetMetadata(doc, app, "controller", "1");
-        }
 
         if (scopedStorage)
         {
@@ -64,6 +45,34 @@ internal static class AndroidStoreManifest
                     GetOrCreate(doc, root, tag, $"android.permission.{permission}")
                         .SetAttribute("node", ToolsNamespace, "remove");
             }
+        }
+
+        if (handheldViewer)
+        {
+            ConfigureHandheld(doc, root, app);
+            return;
+        }
+
+        // Android XR uses a different permission from Quest's com.oculus.permission.HAND_TRACKING.
+        // Generic OpenXR APKs can also run on Android XR devices, so only the Meta store build
+        // drops it. A removal marker also excludes declarations from lower-priority XR libraries.
+        var handTracking = GetOrCreate(doc, root, "uses-permission", "android.permission.HAND_TRACKING");
+        handTracking.SetAttribute("node", ToolsNamespace, metaStore ? "remove" : "merge");
+
+        if (!androidXr)
+        {
+            // Quest only offers tracked hands to apps declaring them. Controllers remain the
+            // primary input, so hand tracking must not filter out controller-only devices.
+            GetOrCreate(doc, root, "uses-permission", "com.oculus.permission.HAND_TRACKING");
+            var questHands = GetOrCreate(doc, root, "uses-feature", "oculus.software.handtracking");
+            SetAndroid(questHands, "required", "false");
+            questHands.SetAttribute("replace", ToolsNamespace, "android:required");
+            // Pico declarations match PICO-Unity-OpenXR-SDK's "Controllers And Hands" mode
+            // (Editor/PICOModifyAndroidManifest.cs). Without controller=1 Pico treats a
+            // hand-tracking app as hands-only.
+            GetOrCreate(doc, root, "uses-permission", "com.picovr.permission.HAND_TRACKING");
+            SetMetadata(doc, app, "handtracking", "1");
+            SetMetadata(doc, app, "controller", "1");
         }
 
         // AndroidXR derives hardware requirements from the foveation feature's extension list,
@@ -145,6 +154,49 @@ internal static class AndroidStoreManifest
         var headTracking = GetOrCreate(doc, root, "uses-feature", "android.hardware.vr.headtracking");
         SetAndroid(headTracking, "required", "true");
         SetAndroid(headTracking, "version", "1");
+    }
+
+    private static void ConfigureHandheld(XmlDocument doc, XmlElement root, XmlElement app)
+    {
+        // Removal markers also suppress declarations contributed by library manifests.
+        foreach (string feature in new[]
+        {
+            "android.software.xr.api.openxr", "android.software.xr.api.spatial",
+            "android.hardware.vr.headtracking", "android.hardware.xr.input.hand_tracking",
+            "oculus.software.handtracking", "com.oculus.feature.PASSTHROUGH"
+        })
+            GetOrCreate(doc, root, "uses-feature", feature).SetAttribute("node", ToolsNamespace, "remove");
+
+        foreach (string permission in new[]
+        {
+            "android.permission.HAND_TRACKING", "com.oculus.permission.HAND_TRACKING",
+            "com.oculus.permission.USE_SCENE", "com.picovr.permission.HAND_TRACKING"
+        })
+            GetOrCreate(doc, root, "uses-permission", permission).SetAttribute("node", ToolsNamespace, "remove");
+
+        foreach (string metadata in new[]
+        {
+            "pvr.app.type", "handtracking", "controller", "com.oculus.supportedDevices",
+            "com.samsung.android.vr.application.mode"
+        })
+            GetOrCreate(doc, app, "meta-data", metadata).SetAttribute("node", ToolsNamespace, "remove");
+
+        foreach (XmlElement activity in app.SelectNodes("activity"))
+        {
+            GetOrCreate(doc, activity, "meta-data", "com.oculus.vr.focusaware")
+                .SetAttribute("node", ToolsNamespace, "remove");
+            foreach (XmlElement intent in activity.SelectNodes("intent-filter"))
+            {
+                // Intent filters are not merged across manifests; remove categories locally.
+                foreach (XmlElement category in intent.SelectNodes("category"))
+                {
+                    string name = category.GetAttribute("name", AndroidNamespace);
+                    if (name == "com.oculus.intent.category.VR" ||
+                        name == "org.khronos.openxr.intent.category.IMMERSIVE_HMD")
+                        intent.RemoveChild(category);
+                }
+            }
+        }
     }
 
     private static void SetMetadata(XmlDocument doc, XmlElement parent, string name, string value)
