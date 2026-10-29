@@ -147,6 +147,17 @@ namespace TiltBrush
             }
         }
 
+        public static void DrawEmptyGridBounds(TrTransform modelToCanvas, Vector3Int size)
+        {
+            if (!TryGetMaterial()) return;
+            TrTransform modelToWorld = App.Scene.ActiveCanvas.Pose * modelToCanvas;
+            float diameter = ((Vector3)size).magnitude * Mathf.Abs(modelToWorld.scale);
+            var worldBounds = new Bounds(modelToWorld * (((Vector3)size - Vector3.one) * 0.5f),
+                Vector3.one * Mathf.Max(diameter, 0.1f));
+            DrawBox(modelToWorld, Vector3.one * -0.5f, (Vector3)size - Vector3.one * 0.5f,
+                new Color(0.9f, 0.7f, 0.2f, 0.65f), 0.035f, worldBounds, ref s_BoundsProperties);
+        }
+
         public static void DrawCreationBounds(Vector3 min, Vector3 max, float voxelSize)
         {
             if (!TryGetMaterial()) return;

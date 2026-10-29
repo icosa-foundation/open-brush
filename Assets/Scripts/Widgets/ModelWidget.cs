@@ -1136,6 +1136,21 @@ namespace TiltBrush
 
         protected override void OnUpdate()
         {
+            if (HasEmptyEditableVoxGrid && Showing && App.Scene?.ActiveCanvas != null)
+            {
+                var tool = SketchSurfacePanel.m_Instance?.ActiveTool as VoxelTool;
+                // The active voxel tool already draws its target volume and cell guide.
+                if (tool == null || tool.ToolHidden() || tool.CurrentTargetWidget != this)
+                {
+                    TrTransform widgetToCanvas = App.Scene.ActiveCanvas.AsCanvas[transform];
+                    foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
+                    {
+                        if (model.IsVisible)
+                            VoxEditPreviewRenderer.DrawEmptyGridBounds(
+                                widgetToCanvas * VoxMeshBuilder.GetModelTransform(model), model.Size);
+                    }
+                }
+            }
             // During transitions, scale up and down.
             if (m_CurrentState == State.Hiding)
             {
