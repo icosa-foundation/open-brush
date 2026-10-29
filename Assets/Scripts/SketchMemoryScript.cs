@@ -48,8 +48,12 @@ namespace TiltBrush
         public GameObject m_UndoBatchMesh;
         public bool m_SanityCheckStrokes = false;
 
+        /// A temporary place to store all the sculpted geometry data retrieved from a savefile.
+        public Queue<SculptedGeometryData> m_SavedSculptedGeometry;
         private int m_LastCheckedVertCount;
         private int m_MemoryWarningVertCount;
+
+
 
         [Flags]
         public enum StrokeFlags
@@ -140,6 +144,8 @@ namespace TiltBrush
         // Non-null if there are strokes that should be repainted this frame.
         // TODO: give this the same treatment as m_DeleteStrokes?
         private BaseCommand m_RepaintStrokeParent;
+
+        private BaseCommand m_SculptParent;
 
         private TrTransform m_xfSketchInitial_RS;
 
@@ -817,6 +823,20 @@ namespace TiltBrush
             return false;
         }
 
+        public bool MemorizeStrokeSculpt(BatchSubset rGroup, List<Vector3> newVertices, int startIndex, bool isInitial)
+        {
+            if (m_SculptParent == null || isInitial)
+            {
+                m_SculptParent = new SculptCommand(rGroup, newVertices, startIndex, isInitial, null);
+                PerformAndRecordCommand(m_SculptParent);
+            }
+            else
+            {
+                PerformAndRecordCommand(new SculptCommand(rGroup, newVertices, startIndex, isInitial, m_SculptParent));
+            }
+            return true;
+        }
+
         /// Removes stroke from our list only.
         /// It's the caller's responsibility to destroy if (if desired).
         public void RemoveMemoryObject(Stroke stroke)
@@ -1227,6 +1247,62 @@ namespace TiltBrush
             }
         }
 
+        /// If any strokes inside the file were sculpted, reinstate their sculpted
+        /// geometry, overriding any re-generated geometry.
+        public void RestoreAllSculptedGeometry()
+        {
+            if (m_SavedSculptedGeometry != null)
+            {
+                bool warned = false;
+                foreach (var stroke in m_MemoryList)
+                {
+                    if (!stroke.m_MeshIsEdited) continue;
+                    if (m_SavedSculptedGeometry.Count > 0)
+                    {
+                        InsertSculptedGeometry(m_SavedSculptedGeometry.Dequeue(), stroke);
+                    }
+                    else
+                    {
+                        stroke.m_MeshIsEdited = false;
+                        if (!warned)
+                        {
+                            Debug.LogWarning("[OB_REVIEW_SCULPT] Missing saved sculpt geometry; retaining regenerated strokes.");
+                            warned = true;
+                        }
+                    }
+                }
+                // Clear everything just in case.
+                m_SavedSculptedGeometry = null;
+            }
+        }
+
+        /// Insert new geometry data into a stroke.
+        public bool InsertSculptedGeometry(SculptedGeometryData sculptedGeometry, Stroke stroke)
+        {
+            var subset = stroke.m_BatchSubset;
+            if (subset == null || subset.m_VertLength <= 0 || sculptedGeometry.vertices == null ||
+                sculptedGeometry.normals == null ||
+                sculptedGeometry.vertices.Count != subset.m_VertLength ||
+                sculptedGeometry.normals.Count != subset.m_VertLength)
+            {
+                stroke.m_MeshIsEdited = false;
+                Debug.LogWarning("[OB_REVIEW_SCULPT] Sculpt geometry does not match regenerated stroke topology.");
+                return false;
+            }
+
+            int startIndex = subset.m_StartVertIndex;
+            int endIndex = startIndex + subset.m_VertLength;
+            subset.m_ParentBatch.Geometry.EnsureGeometryResident();
+            for (int i = startIndex; i < endIndex; i++)
+            {
+                subset.m_ParentBatch.Geometry.m_Vertices[i] = sculptedGeometry.vertices[i - startIndex];
+                subset.m_ParentBatch.Geometry.m_Normals[i] = sculptedGeometry.normals[i - startIndex];
+            }
+            stroke.m_MeshIsEdited = true;
+            subset.RecalculateBounds();
+            subset.m_ParentBatch.DelayedUpdateMesh();
+            return true;
+        }
         //
         // Sanity-checking geometry generation
         //
