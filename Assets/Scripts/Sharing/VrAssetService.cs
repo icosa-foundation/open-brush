@@ -686,7 +686,8 @@ namespace TiltBrush
         {
             // Until gallery viewer support for new glb files, prefer legacy
             // unless we have elements that the old format can't handle
-            bool hasModels = WidgetManager.m_Instance.ActiveModelWidgets.Count > 0;
+            bool hasModels = WidgetManager.m_Instance.ActiveModelWidgets.Count > 0 ||
+                WidgetManager.m_Instance.ActiveEditableModelWidgets.Count > 0;
             bool hasImages = WidgetManager.m_Instance.ActiveImageWidgets.Count > 0;
             bool hasTexts = WidgetManager.m_Instance.ActiveTextWidgets.Count > 0;
             //bool publishLegacyGltf = !(hasModels || hasImages || hasTexts);

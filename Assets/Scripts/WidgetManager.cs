@@ -103,6 +103,7 @@ namespace TiltBrush
         static public WidgetManager m_Instance;
 
         [SerializeField] ModelWidget m_ModelWidgetPrefab;
+        [SerializeField] EditableModelWidget m_EditableModelWidgetPrefab;
         [SerializeField] GameObject m_WidgetPinPrefab;
         [SerializeField] ImageWidget m_ImageWidgetPrefab;
         [SerializeField] VideoWidget m_VideoWidgetPrefab;
@@ -152,6 +153,7 @@ namespace TiltBrush
         // Widgets will be in the most specific list.
         private List<GrabWidgetData> m_GrabWidgets;
         private List<TypedWidgetData<ModelWidget>> m_ModelWidgets;
+        private List<TypedWidgetData<EditableModelWidget>> m_EditableModelWidgets;
         private List<TypedWidgetData<LightWidget>> m_LightWidgets;
         private List<TypedWidgetData<PortalWidgetBase>> m_PortalWidgets;
         private List<TypedWidgetData<GaussianCaptureWidgetBase>> m_GaussianCaptureWidgets;
@@ -322,6 +324,7 @@ namespace TiltBrush
 
             m_GrabWidgets = new List<GrabWidgetData>();
             m_ModelWidgets = new List<TypedWidgetData<ModelWidget>>();
+            m_EditableModelWidgets = new List<TypedWidgetData<EditableModelWidget>>();
             m_LightWidgets = new List<TypedWidgetData<LightWidget>>();
             m_PortalWidgets = new List<TypedWidgetData<PortalWidgetBase>>();
             m_GaussianCaptureWidgets = new List<TypedWidgetData<GaussianCaptureWidgetBase>>();
@@ -366,6 +369,8 @@ namespace TiltBrush
         }
 
         public ModelWidget ModelWidgetPrefab { get { return m_ModelWidgetPrefab; } }
+        public EditableModelWidget EditableModelWidgetPrefab => m_EditableModelWidgetPrefab ??=
+            Resources.Load<EditableModelWidget>("EditableModelWidget");
         public ImageWidget ImageWidgetPrefab { get { return m_ImageWidgetPrefab; } }
         public VideoWidget VideoWidgetPrefab { get { return m_VideoWidgetPrefab; } }
         public TextWidget TextWidgetPrefab { get { return m_TextWidgetPrefab; } }
@@ -452,6 +457,13 @@ namespace TiltBrush
                     yield return m_ModelWidgets[i];
                 }
             }
+            for (int i = 0; i < m_EditableModelWidgets.Count; ++i)
+            {
+                if (IsWidgetObjectActive(m_EditableModelWidgets[i]))
+                {
+                    yield return m_EditableModelWidgets[i];
+                }
+            }
             for (int i = 0; i < m_LightWidgets.Count; ++i)
             {
                 if (IsWidgetObjectActive(m_LightWidgets[i]))
@@ -522,7 +534,7 @@ namespace TiltBrush
             get
             {
                 IEnumerable<GrabWidgetData> ret = m_ModelWidgets;
-                return ret.Concat(m_ImageWidgets)
+                return ret.Concat(m_EditableModelWidgets).Concat(m_ImageWidgets)
                     .Concat(m_VideoWidgets)
                     .Concat(m_TextWidgets)
                     .Concat(m_SoundClipWidgets)
@@ -725,7 +737,7 @@ namespace TiltBrush
 
         public bool HasSelectableWidgets()
         {
-            return m_ModelWidgets.Count > 0 ||
+            return m_ModelWidgets.Count > 0 || m_EditableModelWidgets.Count > 0 ||
                 m_ImageWidgets.Count > 0 ||
                 m_TextWidgets.Count > 0 ||
                 m_VideoWidgets.Count > 0 ||
@@ -1186,6 +1198,9 @@ namespace TiltBrush
             return ActiveGrabWidgets.Any(elt => elt.m_WidgetScript.IsCollisionEnabled());
         }
 
+        public IEnumerable<EditableModelWidget> EditableModelWidgets =>
+            m_EditableModelWidgets.Select(widget => widget.WidgetScript).Where(widget => widget != null);
+
         public IEnumerable<ModelWidget> ModelWidgets
         {
             get
@@ -1240,9 +1255,7 @@ namespace TiltBrush
         {
             get
             {
-                return m_ModelWidgets
-                    .Select(w => w == null ? null : w.WidgetScript)
-                    .Where(w => w != null).Where(w => !w.Model.AllowExport);
+                return ModelWidgets.Concat(EditableModelWidgets).Where(widget => widget.Model != null && !widget.Model.AllowExport);
             }
         }
 
@@ -1250,9 +1263,7 @@ namespace TiltBrush
         {
             get
             {
-                return m_ModelWidgets
-                    .Select(w => w == null ? null : w.WidgetScript)
-                    .Where(w => w != null).Where(w => w.Model.AllowExport);
+                return ModelWidgets.Concat(EditableModelWidgets).Where(widget => widget.Model != null && widget.Model.AllowExport);
             }
         }
 
@@ -1294,6 +1305,7 @@ namespace TiltBrush
             List<GrabWidget> widgets = new List<GrabWidget>();
             if (canvas == null) return widgets; // Return empty list
             GetUnselectedActiveWidgetsInList(m_ModelWidgets);
+            GetUnselectedActiveWidgetsInList(m_EditableModelWidgets);
             GetUnselectedActiveWidgetsInList(m_LightWidgets);
             GetUnselectedActiveWidgetsInList(m_PortalWidgets);
             GetUnselectedActiveWidgetsInList(m_GaussianCaptureWidgets);
@@ -1333,6 +1345,7 @@ namespace TiltBrush
                 m_CanBeUnpinnedWidgets.Clear();
 
                 RefreshPinUnpinWidgetList(m_ModelWidgets);
+                RefreshPinUnpinWidgetList(m_EditableModelWidgets);
                 RefreshPinUnpinWidgetList(m_LightWidgets);
                 RefreshPinUnpinWidgetList(m_PortalWidgets);
                 RefreshPinUnpinWidgetList(m_GaussianCaptureWidgets);
@@ -1403,7 +1416,11 @@ namespace TiltBrush
                 throw new InvalidOperationException($"Object {rWidget.name} is not a GrabWidget");
             }
 
-            if (generic is ModelWidget mw)
+            if (generic is EditableModelWidget editable)
+            {
+                m_EditableModelWidgets.Add(new TypedWidgetData<EditableModelWidget>(editable));
+            }
+            else if (generic is ModelWidget mw)
             {
                 m_ModelWidgets.Add(new TypedWidgetData<ModelWidget>(mw));
             }
@@ -1486,6 +1503,7 @@ namespace TiltBrush
             }
 
             if (RemoveFrom(m_ModelWidgets, rWidget)) { return; }
+            if (RemoveFrom(m_EditableModelWidgets, rWidget)) { return; }
             if (RemoveFrom(m_LightWidgets, rWidget)) { return; }
             if (RemoveFrom(m_PortalWidgets, rWidget)) { return; }
             if (RemoveFrom(m_GaussianCaptureWidgets, rWidget)) { return; }
@@ -1698,6 +1716,7 @@ namespace TiltBrush
         public void DestroyAllWidgets()
         {
             DestroyWidgetList(m_ModelWidgets);
+            DestroyWidgetList(m_EditableModelWidgets);
             DestroyWidgetList(m_LightWidgets);
             DestroyWidgetList(m_PortalWidgets);
             DestroyWidgetList(m_GaussianCaptureWidgets);
@@ -1895,6 +1914,9 @@ namespace TiltBrush
             m_PortalWidgets.Where(IsWidgetObjectActive).ToList();
         public List<TypedWidgetData<GaussianCaptureWidgetBase>> ActiveGaussianCaptureWidgets =>
             m_GaussianCaptureWidgets.Where(IsWidgetObjectActive).ToList();
+        public List<TypedWidgetData<EditableModelWidget>> ActiveEditableModelWidgets =>
+            m_EditableModelWidgets.Where(IsWidgetObjectActive).ToList();
+
         public List<TypedWidgetData<ModelWidget>> ActiveModelWidgets =>
             m_ModelWidgets.Where(IsWidgetObjectActive).ToList();
         public List<TypedWidgetData<VideoWidget>> ActiveVideoWidgets =>

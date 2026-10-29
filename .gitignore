@@ -135,3 +135,6 @@
 /Assets/Generated/ShaderWarmup/OpenBrushBrushVariants.shadervariants.meta
 /Assets/Generated/ShaderWarmup/open-brush-brush-variant-inventory.json
 /Assets/Generated/ShaderWarmup/open-brush-brush-variant-inventory.json.meta
+
+# Local interchange fixtures and analysis (must survive Unity clearing Temp).
+/Support/DocumentImportAnalysis/

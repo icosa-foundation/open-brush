@@ -29,6 +29,7 @@ namespace TiltBrush
         private TrTransform m_EndXf;
         private Quaternion? m_DesiredEndForward;
         private bool m_ForceTransform;
+        private bool m_SkipIntroAnimation;
         private float m_SnapGridSize;
         private float m_SnapAngle;
         private CanvasScript m_Canvas;
@@ -42,7 +43,8 @@ namespace TiltBrush
             bool forceTransform = false,
             float snapGrid = 0,
             float snapAngle = 0,
-            BaseCommand parent = null)
+            BaseCommand parent = null,
+            bool skipIntroAnimation = false)
             : base(parent)
         {
             Transform controller = InputManager.m_Instance.GetController(
@@ -56,6 +58,7 @@ namespace TiltBrush
             m_Prefab = widgetPrefab;
             m_DesiredEndForward = desiredEndForward;
             m_ForceTransform = forceTransform;
+            m_SkipIntroAnimation = skipIntroAnimation;
             m_SnapGridSize = snapGrid;
             m_SnapAngle = snapAngle;
         }
@@ -92,6 +95,7 @@ namespace TiltBrush
             else
             {
                 m_Widget = Object.Instantiate(m_Prefab);
+                if (m_SkipIntroAnimation && m_Widget is MediaWidget mediaWidget) { mediaWidget.LoadingFromSketch = true; }
                 m_Widget.transform.position = m_SpawnXf.translation;
 
                 switch (m_Widget)
@@ -103,11 +107,15 @@ namespace TiltBrush
                     case GaussianCaptureBoxWidget:
                     case GaussianCaptureEllipsoidWidget:
                     case GaussianCaptureSphereWidget:
-                    case LightWidget:
                     case ImageWidget:
                     case TextWidget:
                     case VideoWidget:
                     case SoundClipWidget:
+                        m_Widget.transform.parent = m_Canvas.transform;
+                        m_Widget.Show(true);
+                        break;
+                    case LightWidget lightWidget:
+                        lightWidget.SetLightType(LightType.Point);
                         m_Widget.transform.parent = m_Canvas.transform;
                         m_Widget.Show(true);
                         break;
@@ -126,6 +134,7 @@ namespace TiltBrush
                 }
 
                 m_Widget.InitIntroAnim(m_SpawnXf, m_EndXf, false, m_DesiredEndForward, m_ForceTransform, m_SnapGridSize, m_SnapAngle);
+                if (m_SkipIntroAnimation) { m_Widget.LocalTransform = m_Canvas.Pose.inverse * m_EndXf; }
                 m_TiltMeterCost = m_Widget.GetTiltMeterCost();
             }
 

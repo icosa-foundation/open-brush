@@ -1,0 +1,10 @@
+{
+  "name": "OpenBrush.DocumentImport.Tests",
+  "references": ["OpenBrush.DocumentImport"],
+  "includePlatforms": ["Editor"],
+  "optionalUnityReferences": ["TestAssemblies"],
+  "overrideReferences": true,
+  "precompiledReferences": ["Newtonsoft.Json.dll", "nunit.framework.dll"],
+  "autoReferenced": false,
+  "noEngineReferences": false
+}
