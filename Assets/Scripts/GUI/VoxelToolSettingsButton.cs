@@ -72,8 +72,7 @@ namespace TiltBrush
                     {
                         VoxelTool.EditMode.Add => "Add or recolor voxels. Press to switch to Erase.",
                         VoxelTool.EditMode.Erase => "Remove voxels. Press to switch to Paint.",
-                        VoxelTool.EditMode.Paint => "Recolor existing voxels. Press to switch to Select.",
-                        _ => "Select an editable model without editing. Press to switch to Add.",
+                        _ => "Recolor existing voxels. Press to switch to Add.",
                     };
                     break;
                 case Setting.VoxelSize:

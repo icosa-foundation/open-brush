@@ -230,7 +230,7 @@ namespace TiltBrush
                 m_InitialWidget.AdoptEditableVoxDocument(m_ConversionDocument);
                 var voxelTool = SketchSurfacePanel.m_Instance?.GetToolOfType(
                     BaseTool.ToolType.VoxelTool) as VoxelTool;
-                voxelTool?.RequestModelSelection();
+                voxelTool?.SetTargetWidget(m_InitialWidget);
                 SaveLoadScript.m_Instance?.SketchChanged();
                 return;
             }

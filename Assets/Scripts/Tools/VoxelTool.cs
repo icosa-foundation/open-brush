@@ -28,7 +28,6 @@ namespace TiltBrush
             Add,
             Erase,
             Paint,
-            Select,
         }
 
         private const int kDefaultModelSize = 128;
@@ -38,6 +37,10 @@ namespace TiltBrush
 
         private VoxDocumentApiWrapper m_CurrentDocument;
         private VoxModelApiWrapper m_CurrentModel;
+        private ModelWidget m_TargetWidget;
+        private ModelWidget m_PendingTargetWidget;
+        private bool m_HasPendingTarget;
+        private Switchboard m_TargetEvents;
         private bool m_CreateNewOnNextAdd;
         private bool m_GestureActive;
         private bool m_GestureChanged;
@@ -67,20 +70,58 @@ namespace TiltBrush
         public int ModelSize { get; set; } = kDefaultModelSize;
         public float VoxelSize { get; set; } = kDefaultVoxelSize;
         public bool ShowGrid { get; set; } = true;
-        public bool HasCurrentTarget
+        public ModelWidget CurrentTargetWidget => IsAvailableTarget(m_TargetWidget) ? m_TargetWidget : null;
+        public bool HasCurrentTarget => CurrentTargetWidget != null &&
+            m_CurrentModel != null && m_CurrentModel.isValid && m_CurrentModel._Model.IsVisible;
+        public bool CreatingNewModel => m_CreateNewOnNextAdd;
+        public string CurrentTargetDescription
         {
             get
             {
-                if (m_CurrentModel == null || !m_CurrentModel.isValid) return false;
-                ModelWidget widget = m_CurrentDocument?.Widget;
-                return widget != null && widget.Showing && widget.gameObject.activeInHierarchy &&
-                    string.IsNullOrEmpty(widget.Subtree) && m_CurrentModel._Model.IsVisible;
+                if (CreatingNewModel) return "New model ready — trigger to place";
+                ModelWidget widget = CurrentTargetWidget;
+                if (widget == null) return "No active voxel model — grab or select one";
+                string name = widget.GetExportName();
+                if (widget.EditableVoxDocument == null) return $"{name} — Break Apart to make it editable";
+                if (widget.EditableVoxDocument.Models.Count == 1 &&
+                    !string.IsNullOrEmpty(widget.EditableVoxDocument.Models[0].Name))
+                    name = widget.EditableVoxDocument.Models[0].Name;
+                return $"Active: {name}";
             }
         }
-        public bool CreatingNewModel => m_CreateNewOnNextAdd;
-        public string CurrentTargetDescription => !HasCurrentTarget
-            ? (CreatingNewModel ? "New model ready — trigger to place" : "No active model — select editable voxels")
-            : $"Active: {m_CurrentModel.name} ({m_CurrentModel.sizeX}x{m_CurrentModel.sizeY}x{m_CurrentModel.sizeZ})";
+
+        public override void Init()
+        {
+            base.Init();
+            m_TargetEvents = App.Switchboard;
+            m_TargetEvents.ModelWidgetGrabbed += SetTargetWidget;
+            m_TargetEvents.SelectionChanged += OnSelectionChanged;
+            OnSelectionChanged();
+        }
+
+        protected override void OnDestroy()
+        {
+            if (m_TargetEvents != null)
+            {
+                m_TargetEvents.ModelWidgetGrabbed -= SetTargetWidget;
+                m_TargetEvents.SelectionChanged -= OnSelectionChanged;
+            }
+            base.OnDestroy();
+        }
+
+        private void OnSelectionChanged()
+        {
+            var selection = SelectionManager.m_Instance;
+            if (selection == null || selection.SelectedStrokes.Any()) return;
+            GrabWidget[] widgets = selection.SelectedWidgets.Take(2).ToArray();
+            if (widgets.Length == 1 && widgets[0] is ModelWidget widget)
+                SetTargetWidget(widget);
+        }
+
+        private static bool IsAvailableTarget(ModelWidget widget)
+            => widget != null && widget.Showing && widget.gameObject.activeInHierarchy &&
+                string.IsNullOrEmpty(widget.Subtree) &&
+                (widget.IsExternalVox || widget.EditableVoxDocument != null);
 
         public override bool ShouldShowPointer() => true;
 
@@ -128,30 +169,26 @@ namespace TiltBrush
             Transform attachPoint = InputManager.Brush.Geometry.ToolAttachPoint;
             PointerManager.m_Instance.SetMainPointerPosition(attachPoint.position);
             Vector3 canvasPosition = App.Scene.ActiveCanvas.AsCanvas[attachPoint].translation;
-            // Resolve a candidate only while selecting, never during an edit gesture.
-            VoxModelApiWrapper candidate = !m_GestureActive && !CreatingNewModel &&
-                (Mode == EditMode.Select || !HasCurrentTarget)
-                ? VoxApiWrapper.FindModelAt(canvasPosition)
-                : null;
-            UpdateTargetLabel(attachPoint, canvasPosition, candidate);
-
-            if (m_CurrentModel != null && candidate == null)
+            var previewModel = m_GestureActive ? m_GestureModel : FindTargetModelAt(canvasPosition);
+            bool insideTarget = m_GestureActive
+                ? HasCurrentTarget && m_CurrentModel.ContainsAt(canvasPosition)
+                : previewModel != null;
+            UpdateTargetLabel(attachPoint, insideTarget);
+            if (HasCurrentTarget)
             {
-                Color guideColor = Mode switch
+                var model = previewModel;
+                if (model != null)
                 {
-                    EditMode.Erase => new Color(0.9f, 0.12f, 0.08f),
-                    EditMode.Paint => new Color(0.18f, 0.48f, 0.95f),
-                    EditMode.Select => Color.cyan,
-                    _ => new Color(0.12f, 0.8f, 0.28f),
-                };
-                Color targetColor = Mode == EditMode.Erase
-                    ? guideColor
-                    : App.BrushColor.CurrentColor;
-                m_CurrentModel.PreviewForTool(canvasPosition, targetColor, guideColor, ShowGrid);
-            }
-            if (candidate != null)
-            {
-                candidate.PreviewForTool(canvasPosition, Color.cyan, Color.cyan, ShowGrid);
+                    Color guideColor = Mode switch
+                    {
+                        EditMode.Erase => new Color(0.9f, 0.12f, 0.08f),
+                        EditMode.Paint => new Color(0.18f, 0.48f, 0.95f),
+                        _ => new Color(0.12f, 0.8f, 0.28f),
+                    };
+                    Color targetColor = Mode == EditMode.Erase ? guideColor : App.BrushColor.CurrentColor;
+                    var preview = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
+                    preview.PreviewForTool(canvasPosition, targetColor, guideColor, ShowGrid);
+                }
             }
 
             if (IsEatingInput)
@@ -161,19 +198,7 @@ namespace TiltBrush
 
             if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
             {
-                if (Mode == EditMode.Select || (!HasCurrentTarget && !CreatingNewModel))
-                {
-                    if (candidate != null)
-                    {
-                        SetCurrentModel(candidate);
-                        Mode = EditMode.Add;
-                    }
-                    // Selecting never edits on the same trigger press.
-                }
-                else
-                {
-                    BeginGesture(canvasPosition);
-                }
+                BeginGesture(canvasPosition);
             }
 
             if (m_GestureActive &&
@@ -203,7 +228,6 @@ namespace TiltBrush
             {
                 EditMode.Add => EditMode.Erase,
                 EditMode.Erase => EditMode.Paint,
-                EditMode.Paint => EditMode.Select,
                 _ => EditMode.Add,
             };
             return Mode;
@@ -231,34 +255,77 @@ namespace TiltBrush
         public void RequestNewModel()
         {
             EndGesture();
+            m_TargetWidget = null;
+            m_PendingTargetWidget = null;
+            m_HasPendingTarget = false;
             m_CurrentDocument = null;
             m_CurrentModel = null;
             Mode = EditMode.Add;
             m_CreateNewOnNextAdd = true;
         }
 
-        internal void RequestModelSelection()
+        internal void SetTargetWidget(ModelWidget widget)
         {
-            EndGesture();
+            if (!IsAvailableTarget(widget)) return;
+            if (m_GestureActive)
+            {
+                // A grab/selection from the other hand cannot redirect an active stroke.
+                m_PendingTargetWidget = widget;
+                m_HasPendingTarget = true;
+                return;
+            }
+            m_CreateNewOnNextAdd = false;
+            BindTargetWidget(widget);
+        }
+
+        private void BindTargetWidget(ModelWidget widget)
+        {
+            if (!IsAvailableTarget(widget)) widget = null;
+            if (m_TargetWidget == widget && HasCurrentTarget) return;
+            m_TargetWidget = widget;
             m_CurrentDocument = null;
             m_CurrentModel = null;
-            m_CreateNewOnNextAdd = false;
-            Mode = EditMode.Select;
+            if (widget == null || widget.EditableVoxDocument == null) return;
+            var document = widget.EditableVoxDocument;
+            var model = document.Models.FirstOrDefault(item => item.IsVisible && item.Voxels.Count > 0)
+                ?? document.Models.FirstOrDefault(item => item.IsVisible);
+            if (model == null) return;
+            m_CurrentDocument = new VoxDocumentApiWrapper(document, widget);
+            m_CurrentModel = new VoxModelApiWrapper(document, model, m_CurrentDocument);
+            VoxelSize = m_CurrentModel.voxelSize;
+        }
+
+        private RuntimeVoxDocument.RuntimeModel FindTargetModelAt(Vector3 canvasPosition)
+        {
+            if (!HasCurrentTarget) return null;
+            var document = m_CurrentDocument._Document;
+            RuntimeVoxDocument.RuntimeModel emptyCandidate = null;
+            for (int i = document.Models.Count - 1; i >= 0; --i)
+            {
+                var model = document.Models[i];
+                if (!model.IsVisible) continue;
+                Vector3Int cell = Vector3Int.RoundToInt(
+                    m_CurrentDocument.GetModelTransform(model).inverse * canvasPosition);
+                if (!model.IsInBounds(cell)) continue;
+                if (model.TryGetPaletteIndex(cell, out _)) return model;
+                if (emptyCandidate == null) emptyCandidate = model;
+            }
+            if (m_CurrentModel.ContainsAt(canvasPosition)) return m_CurrentModel._Model;
+            return emptyCandidate;
         }
 
         private void BeginGesture(Vector3 canvasPosition)
         {
             EndGesture();
-            if (m_CurrentModel == null)
+            if (CreatingNewModel)
             {
-                if (!CreatingNewModel || Mode != EditMode.Add || !CreateWidgetAt(canvasPosition))
-                {
-                    return;
-                }
+                if (Mode != EditMode.Add || !CreateWidgetAt(canvasPosition)) return;
             }
-            else if (!m_CurrentModel.ContainsAt(canvasPosition))
+            else
             {
-                return;
+                RuntimeVoxDocument.RuntimeModel model = FindTargetModelAt(canvasPosition);
+                if (model == null) return;
+                m_CurrentModel = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
             }
 
             bool createdThisGesture = m_CreateWidgetCommand != null;
@@ -381,6 +448,13 @@ namespace TiltBrush
             m_GestureWidget = null;
             m_GestureModel = null;
             m_CreateWidgetCommand = null;
+            if (m_HasPendingTarget)
+            {
+                ModelWidget pending = m_PendingTargetWidget;
+                m_PendingTargetWidget = null;
+                m_HasPendingTarget = false;
+                BindTargetWidget(pending);
+            }
         }
 
         private bool CreateWidgetAt(Vector3 canvasPosition)
@@ -419,6 +493,7 @@ namespace TiltBrush
                 widget.AdoptEditableVoxDocument(document);
                 widget.Show(true);
 
+                m_TargetWidget = widget;
                 m_CurrentDocument = new VoxDocumentApiWrapper(document, widget);
                 m_CurrentDocument.SetAutoVisuals(true, true);
                 m_CurrentModel = m_CurrentDocument.Model();
@@ -442,25 +517,17 @@ namespace TiltBrush
             }
         }
 
-        private void SetCurrentModel(VoxModelApiWrapper model)
-        {
-            m_CurrentModel = model;
-            m_CurrentDocument = model.document;
-            m_CurrentDocument.SetAutoVisuals(true, true);
-            VoxelSize = model.voxelSize;
-            m_CreateNewOnNextAdd = false;
-        }
-
         private void EnsureCurrentTarget()
         {
             if (HasCurrentTarget) return;
             EndGesture();
-            m_CurrentDocument = null;
-            m_CurrentModel = null;
+            ModelWidget widget = CurrentTargetWidget;
+            // Keep the contextual external target, but never convert it implicitly.
+            BindTargetWidget(widget);
         }
 
         private void UpdateTargetLabel(
-            Transform attachPoint, Vector3 canvasPosition, VoxModelApiWrapper candidate)
+            Transform attachPoint, bool insideTarget)
         {
             if (m_TargetLabel == null)
             {
@@ -483,12 +550,12 @@ namespace TiltBrush
             m_TargetLabel.color = CreatingNewModel ? Color.yellow : Color.white;
             string action = CreatingNewModel
                 ? "Trigger: create new model"
-                : Mode == EditMode.Select || !HasCurrentTarget
-                    ? candidate == null ? "Break Apart imported VOX to edit; New Model is in settings"
-                        : $"Trigger: select {candidate.name}"
-                    : m_CurrentModel.ContainsAt(canvasPosition)
-                        ? $"Trigger: {Mode} · Select mode changes target"
-                        : "Outside active model · Select mode changes target";
+                : !HasCurrentTarget
+                    ? CurrentTargetWidget != null ? "Use Break Apart to make this model editable"
+                        : "Grab or select a voxel model; New Model is in settings"
+                    : insideTarget
+                        ? $"Trigger: {Mode}"
+                        : "Outside active model — grab or select another to change target";
             m_TargetLabel.text = $"{CurrentTargetDescription}\n{action}";
         }
 
