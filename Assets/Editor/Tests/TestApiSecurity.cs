@@ -13,6 +13,8 @@
 // limitations under the License.
 
 using System;
+using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using MoonSharp.Interpreter;
@@ -455,6 +457,162 @@ namespace TiltBrush
             Assert.Throws<InvalidOperationException>(() =>
                 ApiManager.InvokeEndpointForStatus(() =>
                     throw new InvalidOperationException("unexpected failure")));
+        }
+
+        [Test]
+        public void TestPostFormCommandsAreSplitBeforeDecoding()
+        {
+            var commands = ApiManager.ParseFormCommands(
+                "listenfor.strokes.poll=team%2520one&test.value=space+and%2Bplus");
+
+            CollectionAssert.AreEqual(
+                new[]
+                {
+                    "listenfor.strokes.poll=team%2520one",
+                    "test.value=space%20and%2Bplus"
+                },
+                commands);
+
+            var owner = new GameObject("Polling POST decode test");
+            owner.SetActive(false);
+            try
+            {
+                var manager = owner.AddComponent<ApiManager>();
+                var enqueue = typeof(ApiManager).GetMethod("EnqueueCommand",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                object queued = enqueue.Invoke(manager, new object[] { commands[0] });
+                Assert.AreEqual("team%20one",
+                    queued.GetType().GetProperty("Parameters").GetValue(queued));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(owner);
+            }
+        }
+
+        [Test]
+        public void TestStrokeListenerCommandsUseInvariantNumberFormatting()
+        {
+            CultureInfo originalCulture = CultureInfo.CurrentCulture;
+            try
+            {
+                CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("fr-FR");
+                var controlPoints = new[]
+                {
+                    new PointerManager.ControlPoint
+                    {
+                        m_Pos = new Vector3(1.5f, 2.25f, 3.75f),
+                        m_Orient = Quaternion.identity,
+                        m_Pressure = 0.25f
+                    }
+                };
+
+                var commands = ApiManager.FormatStrokeListenerCommands(
+                    controlPoints, Guid.Empty, new Color(0.5f, 0.25f, 0.75f), 0.125f);
+
+                Assert.AreEqual("0.125", commands.Single(x => x.Key == "brush.size.set").Value);
+                Assert.AreEqual("0.5,0.25,0.75", commands.Single(x => x.Key == "color.set.rgb").Value);
+                Assert.AreEqual(
+                    "[1.5,2.25,3.75,0,0,0,0.25]",
+                    commands.Single(x => x.Key == "draw.stroke").Value);
+            }
+            finally
+            {
+                CultureInfo.CurrentCulture = originalCulture;
+            }
+        }
+
+        [Test]
+        public void TestPollingListenersExpireAndReregisterWithoutOldCommands()
+        {
+            double now = 0;
+            var listeners = new ApiManager.PollingListenerRegistry(10, () => now);
+            listeners.Register("client");
+            listeners.Enqueue(new KeyValuePair<string, string>("old", "command"));
+
+            now = 10;
+            Assert.AreEqual(1, listeners.RemoveExpiredListeners());
+            Assert.IsFalse(listeners.HasListeners);
+            Assert.IsNull(listeners.Drain("client"));
+            Assert.IsTrue(listeners.Register("client"));
+            Assert.IsEmpty(listeners.Drain("client"));
+        }
+
+        [Test]
+        public void TestPollingActivityKeepsOnlyActiveClientsAlive()
+        {
+            double now = 0;
+            var listeners = new ApiManager.PollingListenerRegistry(10, () => now);
+            listeners.Register("active");
+            listeners.Register("abandoned");
+
+            now = 9;
+            Assert.IsEmpty(listeners.Drain("active"));
+            listeners.Enqueue(new KeyValuePair<string, string>("new", "command"));
+            now = 10;
+            Assert.AreEqual(1, listeners.RemoveExpiredListeners());
+            Assert.IsNull(listeners.Drain("abandoned"));
+            Assert.AreEqual(1, listeners.Drain("active").Count);
+        }
+
+        [Test]
+        public void TestPollingReregistrationRenewsWithoutDiscardingCommands()
+        {
+            double now = 0;
+            var listeners = new ApiManager.PollingListenerRegistry(10, () => now);
+            listeners.Register("client");
+            listeners.Enqueue(new KeyValuePair<string, string>("retained", "command"));
+
+            now = 9;
+            Assert.IsTrue(listeners.Register("client"));
+            now = 10;
+            Assert.AreEqual(0, listeners.RemoveExpiredListeners());
+            Assert.AreEqual("retained", listeners.Drain("client")[0].Key);
+        }
+
+        [Test]
+        public void TestPollingListenersCanBeUnregistered()
+        {
+            var listeners = new ApiManager.PollingListenerRegistry();
+
+            Assert.IsTrue(listeners.Register("first-client"));
+            Assert.IsTrue(listeners.Register("second-client"));
+            Assert.IsTrue(listeners.Unregister("first-client"));
+            Assert.IsTrue(listeners.HasListeners);
+            Assert.IsFalse(listeners.Unregister("missing-client"));
+            Assert.IsTrue(listeners.Unregister("second-client"));
+            Assert.IsFalse(listeners.HasListeners);
+        }
+
+        [Test]
+        public void TestPollingResponseDistinguishesUnknownClientFromEmptyQueue()
+        {
+            var listeners = new ApiManager.PollingListenerRegistry();
+            Assert.IsTrue(listeners.Register("registered-client"));
+
+            Assert.AreEqual(
+                "",
+                ApiManager.FormatPollingResponse(listeners.Drain("registered-client")));
+            Assert.AreEqual(
+                ApiManager.POLLING_LISTENER_NOT_REGISTERED_ERROR,
+                ApiManager.FormatPollingResponse(listeners.Drain("unknown-client")));
+        }
+
+        [Test]
+        public void TestPollingListenersReceiveOnlyCommandsGeneratedWhileRegistered()
+        {
+            var listeners = new ApiManager.PollingListenerRegistry();
+            Assert.IsTrue(listeners.Register("first-client"));
+            listeners.Enqueue(new KeyValuePair<string, string>("old", "command"));
+            Assert.IsTrue(listeners.Unregister("first-client"));
+
+            Assert.IsTrue(listeners.Register("second-client"));
+            Assert.IsEmpty(listeners.Drain("second-client"));
+
+            listeners.Enqueue(new KeyValuePair<string, string>("new", "command"));
+            var commands = listeners.Drain("second-client");
+            Assert.AreEqual(1, commands.Count);
+            Assert.AreEqual("new", commands[0].Key);
         }
     }
 }
