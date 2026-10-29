@@ -28,7 +28,6 @@ namespace TiltBrush
             Add,
             Erase,
             Paint,
-            Expand,
         }
 
         private const float kDefaultVoxelSize = 0.1f;
@@ -188,11 +187,6 @@ namespace TiltBrush
                 UpdateGridCreation(attachPoint, canvasPosition);
                 return;
             }
-            if (Mode == EditMode.Expand)
-            {
-                UpdateGridExpansion(attachPoint, canvasPosition);
-                return;
-            }
             var previewModel = m_GestureActive ? m_GestureModel : FindTargetModelAt(canvasPosition);
             bool insideTarget = m_GestureActive
                 ? HasCurrentTarget && m_CurrentModel.ContainsAt(canvasPosition)
@@ -252,7 +246,6 @@ namespace TiltBrush
             {
                 EditMode.Add => EditMode.Erase,
                 EditMode.Erase => EditMode.Paint,
-                EditMode.Paint => EditMode.Expand,
                 _ => EditMode.Add,
             };
             return Mode;

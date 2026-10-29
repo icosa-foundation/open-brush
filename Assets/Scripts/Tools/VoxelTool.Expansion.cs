@@ -178,8 +178,5 @@ namespace TiltBrush
                     $"{size.x} x {size.y} x {size.z} voxels — release grip to expand");
             }
         }
-
-        private void UpdateGridExpansion(Transform attachPoint, Vector3 canvasPosition)
-            => UpdateTargetLabel(attachPoint, false, "Grip a face handle and pull outward to expand the grid");
     }
 }
