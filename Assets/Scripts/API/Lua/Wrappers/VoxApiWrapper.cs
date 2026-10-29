@@ -435,7 +435,8 @@ namespace TiltBrush
             m_ViewState.OptimizedMesh = optimized;
             if (m_ViewState.WidgetBacked)
             {
-                if (!_Document.Models.Any(model => model.Voxels.Count > 0))
+                if (!_Document.Models.Any(model => model.Voxels.Count > 0) &&
+                    (m_ViewState.Widget == null || !m_ViewState.Widget.Showing))
                 {
                     m_ViewState.Widget?.Hide();
                     m_ViewState.VisualsDirty = false;

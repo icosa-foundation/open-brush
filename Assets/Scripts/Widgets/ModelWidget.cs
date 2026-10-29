@@ -696,6 +696,25 @@ namespace TiltBrush
                             }
                 }
             }
+            if (first)
+            {
+                // Newly created empty grids use their declared volume until they contain
+                // voxels. Once painted, the usual occupied-cell grab bounds take over.
+                foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
+                {
+                    if (!model.IsVisible) continue;
+                    TrTransform modelTransform = VoxMeshBuilder.GetModelTransform(model);
+                    for (int corner = 0; corner < 8; ++corner)
+                    {
+                        Vector3 position = modelTransform * new Vector3(
+                            (corner & 1) == 0 ? -0.5f : model.Size.x - 0.5f,
+                            (corner & 2) == 0 ? -0.5f : model.Size.y - 0.5f,
+                            (corner & 4) == 0 ? -0.5f : model.Size.z - 0.5f);
+                        if (first) { bounds = new Bounds(position, Vector3.zero); first = false; }
+                        else bounds.Encapsulate(position);
+                    }
+                }
+            }
             return bounds;
         }
 

@@ -139,12 +139,6 @@ namespace TiltBrush
                 {
                     RuntimeVoxDocument.RuntimeModel model = models[i];
 
-                    if (model.Voxels.Count == 0)
-                    {
-                        m_warnings.Add($"Model {i} ({model.Name}) contains no voxels");
-                        continue;
-                    }
-
                     GameObject modelObject = new GameObject($"Model_{i}_{model.Name}");
                     modelObject.transform.SetParent(parent.transform, false);
                     TrTransform modelTransform = VoxMeshBuilder.GetModelTransform(model);
@@ -159,6 +153,11 @@ namespace TiltBrush
 
                     if (mesh != null)
                     {
+                        // An empty editable grid still has dimensions, a grab volume,
+                        // and a valid template for sketch save/reopen. It has no triangles.
+                        if (model.Voxels.Count == 0)
+                            mesh.bounds = new Bounds(((Vector3)model.Size - Vector3.one) * 0.5f,
+                                (Vector3)model.Size);
                         var mf = modelObject.AddComponent<MeshFilter>();
                         mf.mesh = mesh;
 
