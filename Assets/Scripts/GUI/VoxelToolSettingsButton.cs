@@ -67,7 +67,7 @@ namespace TiltBrush
                 case Setting.Mode:
                     label = $"Mode\n{tool.Mode}";
                     description = tool.Mode == VoxelTool.EditMode.Select
-                        ? "Touch a voxel and press the trigger to select its model without editing"
+                        ? "Touch an editable voxel and press the trigger to select its model without editing"
                         : $"Edit mode: {tool.Mode}. Cycle to Select to change the active model";
                     break;
                 case Setting.VoxelSize:

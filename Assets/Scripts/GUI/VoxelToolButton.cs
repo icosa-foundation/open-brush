@@ -41,7 +41,7 @@ namespace TiltBrush
             m_LastTargetDescription = targetDescription;
             SetExtraDescriptionText(active
                 ? $"Mode: {mode}. Target: {targetDescription}. Press again for settings"
-                : "Select an existing voxel model, or choose New Model in settings");
+                : "Break Apart an imported VOX to edit it, or choose New Model in settings");
         }
 
         protected override void OnButtonPressed()

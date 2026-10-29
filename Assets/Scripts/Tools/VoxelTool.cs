@@ -70,7 +70,7 @@ namespace TiltBrush
         public bool HasCurrentTarget => m_CurrentModel != null;
         public bool CreatingNewModel => m_CreateNewOnNextAdd;
         public string CurrentTargetDescription => m_CurrentModel == null
-            ? (CreatingNewModel ? "New model ready — trigger to place" : "No active model — touch a voxel to select")
+            ? (CreatingNewModel ? "New model ready — trigger to place" : "No active model — select editable voxels")
             : $"Active: {m_CurrentModel.name} ({m_CurrentModel.sizeX}x{m_CurrentModel.sizeY}x{m_CurrentModel.sizeZ})";
 
         public override bool ShouldShowPointer() => true;
@@ -503,7 +503,7 @@ namespace TiltBrush
             string action = CreatingNewModel
                 ? "Trigger: create new model"
                 : Mode == EditMode.Select || !HasCurrentTarget
-                    ? candidate == null ? "Touch an existing voxel; New Model is in settings"
+                    ? candidate == null ? "Break Apart imported VOX to edit; New Model is in settings"
                         : $"Trigger: select {candidate.name}"
                     : m_CurrentModel.ContainsAt(canvasPosition)
                         ? $"Trigger: {Mode} · Select mode changes target"
