@@ -65,6 +65,8 @@ namespace TiltBrush
                 if (!creating) TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: true);
                 SelectionManager.m_Instance.SelectWidget(widget);
             }
+            SelectionManager.m_Instance.UpdateSelectionWidget();
+            App.Switchboard.TriggerSelectionChanged();
             WidgetManager.m_Instance.RefreshPinAndUnpinLists();
             SaveLoadScript.m_Instance?.SketchChanged();
         }
@@ -80,6 +82,8 @@ namespace TiltBrush
             m_Original.gameObject.SetActive(true);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_Original.GetTiltMeterCost(), up: true);
             SelectionManager.m_Instance.SelectWidget(m_Original);
+            SelectionManager.m_Instance.UpdateSelectionWidget();
+            App.Switchboard.TriggerSelectionChanged();
             WidgetManager.m_Instance.RefreshPinAndUnpinLists();
             SaveLoadScript.m_Instance?.SketchChanged();
         }
