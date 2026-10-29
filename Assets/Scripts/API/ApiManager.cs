@@ -15,6 +15,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -23,6 +24,8 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
+using NativeWebSocket;
 using Newtonsoft.Json;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -46,7 +49,10 @@ namespace TiltBrush
         private Queue m_RequestedCommandQueue = Queue.Synchronized(new Queue());
         private Dictionary<string, string> m_CommandStatuses;
         private Queue m_OutgoingCommandQueue = Queue.Synchronized(new Queue());
-        private List<Uri> m_OutgoingApiListeners;
+        private List<Uri> m_OutgoingHttpListeners;
+        private Dictionary<Uri, WebSocket> m_OutgoingWebsocketListeners;
+        private Dictionary<Uri, Queue<string>> m_PendingOutgoingWebsocketCommands;
+        private bool m_StoppingOutgoingWebsocketListeners;
         private static ApiManager m_Instance;
         private Dictionary<string, ApiEndpoint> endpoints;
         private byte[] CameraViewPng;
@@ -172,6 +178,44 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 .Select(ApiFriendlyBrushName)
                 .ToArray();
             m_BrushesJson = JsonConvert.SerializeObject(brushNameList, Formatting.Indented);
+        }
+
+        private void OnDestroy()
+        {
+            StopOutgoingWebsocketListeners();
+        }
+
+        private void OnApplicationQuit()
+        {
+            StopOutgoingWebsocketListeners();
+        }
+
+        private void StopOutgoingWebsocketListeners()
+        {
+            m_StoppingOutgoingWebsocketListeners = true;
+            if (m_OutgoingWebsocketListeners == null) return;
+
+            foreach (var listener in m_OutgoingWebsocketListeners)
+            {
+                try
+                {
+#if !UNITY_WEBGL || UNITY_EDITOR
+                    // Cancellation also terminates a connection that has not opened yet.
+                    listener.Value.CancelConnection();
+#else
+                    _ = ObserveOutgoingWebsocketOperation(
+                        listener.Key, () => listener.Value.Close(), "close");
+#endif
+                }
+                catch (Exception exception)
+                {
+                    Debug.LogWarning(
+                        $"[OB_WS_LISTENERS] Unable to close {listener.Key}: {exception.Message}");
+                }
+            }
+
+            m_OutgoingWebsocketListeners.Clear();
+            m_PendingOutgoingWebsocketCommands?.Clear();
         }
 
         public void ResetBrushTransform()
@@ -729,7 +773,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
             return "unknown query";
         }
 
-        public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;
+        public bool HasOutgoingListeners =>
+            m_OutgoingHttpListeners is { Count: > 0 } || m_OutgoingWebsocketListeners is { Count: > 0 };
 
         // TODO Find a better home for this. It won't always be API specific
         public CHRFont TextFont
@@ -765,17 +810,70 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
         }
 
-        public void AddOutgoingCommandListener(Uri uri)
+        public void AddOutgoingHttpListener(Uri uri)
         {
-            if (m_OutgoingApiListeners == null) m_OutgoingApiListeners = new List<Uri>();
-            if (m_OutgoingApiListeners.Contains(uri)) return;
-            m_OutgoingApiListeners.Add(uri);
+            if (m_OutgoingHttpListeners == null) m_OutgoingHttpListeners = new List<Uri>();
+            if (m_OutgoingHttpListeners.Contains(uri)) return;
+            m_OutgoingHttpListeners.Add(uri);
+        }
 
+        public void AddOutgoingWebsocketListener(Uri uri)
+        {
+            if (m_OutgoingWebsocketListeners == null) m_OutgoingWebsocketListeners = new Dictionary<Uri, WebSocket>();
+            if (m_PendingOutgoingWebsocketCommands == null)
+            {
+                m_PendingOutgoingWebsocketCommands = new Dictionary<Uri, Queue<string>>();
+            }
+            if (!m_PendingOutgoingWebsocketCommands.ContainsKey(uri))
+            {
+                m_PendingOutgoingWebsocketCommands[uri] = new Queue<string>();
+            }
+            if (m_OutgoingWebsocketListeners.TryGetValue(uri, out var existing) &&
+                existing.State != WebSocketState.Closed)
+            {
+                return;
+            }
+            var ws = new WebSocket(uri.ToString());
+            // The package reports some connection failures through OnError without faulting Connect.
+            ws.OnError += error =>
+            {
+                if (!m_StoppingOutgoingWebsocketListeners)
+                {
+                    ReportOutgoingWebsocketError(uri, "transport", error);
+                }
+            };
+            m_OutgoingWebsocketListeners[uri] = ws;
+            _ = ObserveOutgoingWebsocketOperation(uri, () => ws.Connect(), "connect");
+        }
+
+        private async Task ObserveOutgoingWebsocketOperation(
+            Uri uri, Func<Task> operation, string action)
+        {
+            try
+            {
+                // Invoke inside the try so synchronous and asynchronous failures are observed.
+                await operation();
+            }
+            catch (OperationCanceledException) when (m_StoppingOutgoingWebsocketListeners)
+            {
+                // Native connections are canceled when their owning manager shuts down.
+            }
+            catch (Exception exception)
+            {
+                ReportOutgoingWebsocketError(uri, action, exception.Message);
+            }
+        }
+
+        private static void ReportOutgoingWebsocketError(Uri uri, string action, string message)
+        {
+            Debug.LogWarning($"[OB_WS_OUTCOME] Outgoing listener {uri} failed to {action}: {message}");
         }
 
         private void OutgoingApiCommand()
         {
             if (!HasOutgoingListeners) return;
+
+            FlushPendingOutgoingWebsocketCommands();
 
             KeyValuePair<string, string> command;
             try
@@ -787,12 +885,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 return;
             }
 
-            foreach (var listenerUrl in m_OutgoingApiListeners)
+            string cmd = $"{command.Key}={command.Value}";
+            foreach (var httpListenerUrl in m_OutgoingHttpListeners ?? Enumerable.Empty<Uri>())
             {
-                string getUri = $"{listenerUrl}?{command.Key}={command.Value}";
-                if (getUri.Length < 512)  // Actually limit is 2083 but let's be conservative
+                string uri = $"{httpListenerUrl}?{cmd}";
+                IEnumerator request;
+                if (uri.Length < 512)  // Actually limit is 2083 but let's be conservative
                 {
-                    StartCoroutine(GetRequest(getUri));
+                    request = GetRequest(uri);
                 }
                 else
                 {
@@ -800,7 +900,55 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     {
                         {command.Key, command.Value}
                     };
-                    StartCoroutine(PostRequest(listenerUrl.ToString(), formData));
+                    request = PostRequest(httpListenerUrl.ToString(), formData);
+                }
+                StartCoroutine(request);
+            }
+
+            foreach (var listener in m_OutgoingWebsocketListeners ??
+                Enumerable.Empty<KeyValuePair<Uri, WebSocket>>())
+            {
+                if (listener.Value.State == WebSocketState.Open)
+                {
+                    _ = ObserveOutgoingWebsocketOperation(
+                        listener.Key, () => listener.Value.SendText(cmd), "send");
+                }
+                else if (listener.Value.State == WebSocketState.Connecting)
+                {
+                    // Bound the startup backlog even if the connection never completes.
+                    Queue<string> pending = m_PendingOutgoingWebsocketCommands[listener.Key];
+                    if (pending.Count >= 256) pending.Dequeue();
+                    pending.Enqueue(cmd);
+                }
+            }
+        }
+
+        private void FlushPendingOutgoingWebsocketCommands()
+        {
+            // Snapshot the listeners so failed/disconnected sockets can be removed.
+            foreach (var listener in m_OutgoingWebsocketListeners?.ToArray() ??
+                Array.Empty<KeyValuePair<Uri, WebSocket>>())
+            {
+#if !UNITY_WEBGL || UNITY_EDITOR
+                // NativeWebSocket buffers incoming frames even without an OnMessage handler.
+                listener.Value.DispatchMessageQueue();
+#endif
+                if (listener.Value.State == WebSocketState.Closed ||
+                    listener.Value.State == WebSocketState.Closing)
+                {
+                    m_PendingOutgoingWebsocketCommands.Remove(listener.Key);
+                    m_OutgoingWebsocketListeners.Remove(listener.Key);
+                    Debug.LogWarning($"[OB_REVIEW_WEBSOCKET] Removed disconnected listener {listener.Key}");
+                    continue;
+                }
+                if (listener.Value.State != WebSocketState.Open) continue;
+
+                Queue<string> pendingCommands = m_PendingOutgoingWebsocketCommands[listener.Key];
+                while (pendingCommands.Count > 0)
+                {
+                    string pendingCommand = pendingCommands.Dequeue();
+                    _ = ObserveOutgoingWebsocketOperation(
+                        listener.Key, () => listener.Value.SendText(pendingCommand), "send");
                 }
             }
         }
@@ -1005,14 +1153,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 var pos = cp.m_Pos;
                 var rot = cp.m_Orient.eulerAngles;
-                pointsAsStrings.Add($"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]");
+                pointsAsStrings.Add(FormattableString.Invariant($"[{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{cp.m_Pressure}]"));
             }
             EnqueueOutgoingCommands(
                 new List<KeyValuePair<string, string>>
                 {
                     new ("brush.type", guid.ToString()),
-                    new ("brush.size.set", size.ToString()),
-                    new ("color.set.rgb", $"{color.r},{color.g},{color.b}"),
+                    new ("brush.size.set", size.ToString(CultureInfo.InvariantCulture)),
+                    new ("color.set.rgb", FormattableString.Invariant($"{color.r},{color.g},{color.b}")),
                     new ("draw.stroke", string.Join(",", pointsAsStrings))
                 }
             );

@@ -81,6 +81,7 @@
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
+    "com.endel.nativewebsocket": "https://github.com/endel/NativeWebSocket.git#upm",
     "com.icosa.unitytinyexr": "https://github.com/icosa-mirror/UnityTinyEXR.git#3db7af04f838179ebcc74fcc2ac01be39090de04"
   },
   "scopedRegistries": [

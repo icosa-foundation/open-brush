@@ -20,7 +20,7 @@ public static class IEnumeratorAwaitExtensions
         return GetAwaiterReturnVoid(instruction);
     }
 
-    public static SimpleCoroutineAwaiter GetAwaiter(this WaitForUpdate instruction)
+    public static SimpleCoroutineAwaiter GetAwaiter(this UnityAsyncAwaitUtil.WaitForUpdate instruction)
     {
         return GetAwaiterReturnVoid(instruction);
     }
