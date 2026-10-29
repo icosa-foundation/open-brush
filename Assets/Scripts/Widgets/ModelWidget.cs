@@ -603,6 +603,12 @@ namespace TiltBrush
             WidgetManager.m_Instance.AdjustModelVertCount(m_NumVertsTrackedByWidgetManager);
 
             RecalculateColliderBounds();
+            if (SelectionManager.m_Instance != null && SelectionManager.m_Instance.IsWidgetSelected(this))
+            {
+                // Empty-grid expansion and painting can change the selected grab volume
+                // without changing selection membership or the contextual edit target.
+                SelectionManager.m_Instance.UpdateSelectionWidget();
+            }
         }
 
         private void HideRemovedVoxModelNodes(Transform root)
