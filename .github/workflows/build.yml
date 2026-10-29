@@ -34,6 +34,7 @@ jobs:
     outputs:
       version: ${{ steps.version.outputs.version}}
       androidVersionCode: ${{ steps.version.outputs.androidVersionCode }}
+      androidHandheldVersionCode: ${{ steps.version.outputs.androidHandheldVersionCode }}
       stamp: ${{ steps.version.outputs.stamp }}
       prerelease: ${{ steps.version.outputs.prerelease }}
       previousrelease: ${{ steps.rawchangelogdata.outputs.previousrelease }}
@@ -135,21 +136,21 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
           # One sequence for PR and production builds, independent of versionName.
-          # Reserve 100 codes per workflow run so reruns also get unused codes.
+          # Reserve 1,000 codes per run: 10 per attempt, with distinct handheld
+          # and XR Viewer codes because both bundles share a Play listing.
           # Rerunning an older run does not make it newer than subsequent runs.
           if (( GITHUB_RUN_ATTEMPT >= 100 )); then
             echo "::error::Start a new workflow run after 99 attempts."
             exit 1
           fi
-          # Both apps' latest internal releases used 20320370 on 2026-10-17.
-          # Viewer also has an unapproved old timestamp release; acceptance of
-          # this lower range must be verified when uploading to Play.
-          ANDROID_VERSION_CODE=$((21000000 + GITHUB_RUN_NUMBER * 100 + GITHUB_RUN_ATTEMPT))
-          if (( ANDROID_VERSION_CODE < 1 || ANDROID_VERSION_CODE > 2100000000 )); then
+          ANDROID_VERSION_CODE=$((21000000 + GITHUB_RUN_NUMBER * 1000 + GITHUB_RUN_ATTEMPT * 10))
+          ANDROID_HANDHELD_VERSION_CODE=$((ANDROID_VERSION_CODE + 1))
+          if (( ANDROID_VERSION_CODE < 1 || ANDROID_HANDHELD_VERSION_CODE > 2100000000 )); then
             echo "::error::Android version code is outside Google Play's supported range."
             exit 1
           fi
           echo "androidVersionCode=$ANDROID_VERSION_CODE" >> $GITHUB_OUTPUT
+          echo "androidHandheldVersionCode=$ANDROID_HANDHELD_VERSION_CODE" >> $GITHUB_OUTPUT
           echo "Version $VERSION stamp=$STAMP androidVersionCode=$ANDROID_VERSION_CODE"
       - name: Calculate Release tags for Changelog and raw changelog
         id: rawchangelogdata
@@ -227,7 +228,7 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Viewer Handheld, Android Meta Quest, iOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Viewer Handheld, Android Viewer Handheld Play, Android Meta Quest, iOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
@@ -290,6 +291,16 @@ jobs:
             vrsdk: Monoscopic
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
+            extra_defines: OPEN_BRUSH_VIEWER
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: Android Viewer Handheld Play
+            targetPlatform: Android
+            androidTargetSdkVersion: AndroidApiLevel35
+            vrsdk: Monoscopic
+            cache: Android_Vulkan
+            extraoptions: -btb-il2cpp
+            androidExportType: androidAppBundle
             extra_defines: OPEN_BRUSH_VIEWER
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT MOBILE_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
@@ -456,7 +467,7 @@ jobs:
           elif [[ "${{ matrix.targetPlatform}}" == "StandaloneOSX" ]]; then
             echo "filename=$BASENAME.app" >> $GITHUB_ENV
           elif [[ "${{ matrix.targetPlatform}}" == "Android" ]]; then
-            if [[ "${{ matrix.name }}" == "Android Viewer Handheld" ]]; then
+            if [[ "${{ matrix.vrsdk }}" == "Monoscopic" ]]; then
               BASENAME="${BASENAME}_Viewer_Handheld"
             fi
             if [[ "${{ matrix.androidExportType || 'androidPackage' }}" == "androidAppBundle" ]]; then
@@ -537,7 +548,7 @@ jobs:
             targetPlatform: ${{ matrix.targetPlatform }}
             customParameters: -btb-target ${{ matrix.targetPlatform }} -btb-display ${{ matrix.vrsdk }} -btb-out build/${{ matrix.vrsdk }}/${{ matrix.targetPlatform }}/${{ env.filename }} ${{ matrix.androidExportType != 'androidAppBundle' && needs.configuration.outputs.description || '' }} ${{ env.stamp }} ${{ env.btbbopts }} ${{ matrix.extraoptions }}
             versioning: Custom
-            androidVersionCode: "${{ needs.configuration.outputs.androidVersionCode }}"
+            androidVersionCode: "${{ matrix.targetPlatform == 'Android' && matrix.vrsdk == 'Monoscopic' && needs.configuration.outputs.androidHandheldVersionCode || needs.configuration.outputs.androidVersionCode }}"
             version: ${{ needs.configuration.outputs.version }}
             buildName: ${{ needs.configuration.outputs.basename }}
             buildsPath: build/${{ matrix.vrsdk }}
@@ -560,17 +571,19 @@ jobs:
           test -f "$archive"
           manifest="$RUNNER_TEMP/android-manifest.xml"
           mode=headset
-          if [[ "${{ matrix.vrsdk }}" == "AndroidXR" ]]; then
+          if [[ "${{ matrix.androidExportType }}" == "androidAppBundle" ]]; then
             bundletool="$RUNNER_TEMP/bundletool-all-1.18.3.jar"
             curl --fail --location --retry 3 --silent --show-error \
               https://github.com/google/bundletool/releases/download/1.18.3/bundletool-all-1.18.3.jar \
               --output "$bundletool"
             java -jar "$bundletool" dump manifest --bundle="$archive" --module=base > "$manifest"
-            python3 Support/Python/verify-androidxr-manifest.py "$manifest"
+            if [[ "${{ matrix.vrsdk }}" == "AndroidXR" ]]; then
+              python3 Support/Python/verify-androidxr-manifest.py "$manifest"
+            fi
           else
             "$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer" manifest print "$archive" > "$manifest"
           fi
-          if [[ "${{ matrix.name }}" == "Android Viewer Handheld" ]]; then mode=handheld; fi
+          if [[ "${{ matrix.vrsdk }}" == "Monoscopic" ]]; then mode=handheld; fi
           python3 Support/Python/verify-android-providers.py "$archive" "$manifest" --mode "$mode"
 
       - name: Prepare for packaging (permissions and compression, OSX only)
