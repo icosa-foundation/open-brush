@@ -18,82 +18,63 @@ namespace TiltBrush
             Vector3Int.down, Vector3Int.forward, Vector3Int.back,
         };
 
-        private readonly struct PlacedCell
-        {
-            public readonly RuntimeModel Model;
-            public readonly Vector3Int LocalPosition;
-            public readonly byte PaletteIndex;
-
-            public PlacedCell(RuntimeModel model, Vector3Int localPosition, byte paletteIndex)
-            {
-                Model = model;
-                LocalPosition = localPosition;
-                PaletteIndex = paletteIndex;
-            }
-        }
-
-        // All instances within a widget use one voxel scale. Signed axis permutations
-        // put their cell centers on the same integer VOX-world lattice, before Z-up conversion.
+        // Split each placed grid independently in its own local coordinates. Touching
+        // or overlapping grids never merge, and each result fits its original dimensions.
         public IReadOnlyList<RuntimeVoxDocument> CreateFaceConnectedRegions()
         {
-            var placed = new Dictionary<Vector3Int, List<PlacedCell>>();
+            var components = new List<(RuntimeModel Model, Dictionary<Vector3Int, byte> Cells)>();
+            var queue = new Queue<Vector3Int>();
             foreach (RuntimeModel model in m_models)
             {
                 if (!model.IsVisible) continue;
-                foreach (var cell in model.Voxels)
+                var remaining = new HashSet<Vector3Int>(model.Voxels.Keys);
+                foreach (Vector3Int seed in model.Voxels.Keys)
                 {
-                    Vector3 world = model.TransformOffset + model.GlobalRotation.MultiplyVector(cell.Key);
-                    Vector3Int position = Vector3Int.RoundToInt(world);
-                    if ((world - (Vector3)position).sqrMagnitude > 0.000001f)
-                        throw new InvalidOperationException("VOX region splitting requires cell-aligned placements.");
-                    if (!placed.TryGetValue(position, out var occupants))
+                    if (!remaining.Remove(seed)) continue;
+                    var cells = new Dictionary<Vector3Int, byte>();
+                    queue.Enqueue(seed);
+                    while (queue.Count > 0)
                     {
-                        occupants = new List<PlacedCell>();
-                        placed.Add(position, occupants);
+                        Vector3Int position = queue.Dequeue();
+                        cells.Add(position, model.Voxels[position]);
+                        foreach (Vector3Int direction in s_FaceNeighbors)
+                        {
+                            Vector3Int neighbor = position + direction;
+                            if (remaining.Remove(neighbor)) queue.Enqueue(neighbor);
+                        }
                     }
-                    occupants.Add(new PlacedCell(model, cell.Key, cell.Value));
+                    components.Add((model, cells));
                 }
-            }
-
-            var remaining = new HashSet<Vector3Int>(placed.Keys);
-            var components = new List<List<PlacedCell>>();
-            var queue = new Queue<Vector3Int>();
-            // Dictionary order fixes component ordering for a given document, without
-            // sorting every voxel or depending on an arbitrary HashSet enumeration.
-            foreach (Vector3Int seed in placed.Keys)
-            {
-                if (!remaining.Remove(seed)) continue;
-                var component = new List<PlacedCell>();
-                queue.Enqueue(seed);
-                while (queue.Count > 0)
-                {
-                    Vector3Int position = queue.Dequeue();
-                    component.AddRange(placed[position]);
-                    foreach (Vector3Int direction in s_FaceNeighbors)
-                    {
-                        Vector3Int neighbor = position + direction;
-                        if (remaining.Remove(neighbor)) queue.Enqueue(neighbor);
-                    }
-                }
-                components.Add(component);
             }
             if (components.Count <= 1) return Array.Empty<RuntimeVoxDocument>();
 
             var result = new List<RuntimeVoxDocument>(components.Count);
-            foreach (List<PlacedCell> component in components)
+            foreach (var component in components)
             {
-                var selectedCells = component.GroupBy(cell => cell.Model).ToDictionary(
-                    group => group.Key,
-                    group => group.ToDictionary(cell => cell.LocalPosition, cell => cell.PaletteIndex));
-                result.Add(CopyDocument(selectedCells));
+                RuntimeModel model = component.Model;
+                // A split output is fresh internal content, not a filtered source file.
+                var region = new RuntimeVoxDocument();
+                Array.Copy(Palette, region.Palette, Palette.Length);
+                foreach (byte index in component.Cells.Values.Distinct())
+                {
+                    if (m_materials.TryGetValue(index, out RuntimeMaterial material))
+                        region.m_materials.Add(index, material);
+                }
+                string name = string.IsNullOrWhiteSpace(model.Name) ? "Voxel" : model.Name;
+                var instance = new RuntimeModel($"{name} Region {result.Count + 1}",
+                    model.Size, sourceModelId: -1, isCopy: false, voxels: component.Cells,
+                    localTransformOffset: GetSceneTranslation(model),
+                    globalRotation: model.GlobalRotation, localRotation: model.GlobalRotation)
+                {
+                    TransformOffset = model.TransformOffset,
+                };
+                region.m_models.Add(instance);
+                result.Add(region);
             }
             return result;
         }
 
-        public RuntimeVoxDocument CloneDocument() => CopyDocument(null);
-
-        private RuntimeVoxDocument CopyDocument(
-            IReadOnlyDictionary<RuntimeModel, Dictionary<Vector3Int, byte>> selectedCells)
+        public RuntimeVoxDocument CloneDocument()
         {
             var copy = new RuntimeVoxDocument { m_sourceVoxBytes = m_sourceVoxBytes };
             Array.Copy(Palette, copy.Palette, Palette.Length);
@@ -102,14 +83,7 @@ namespace TiltBrush
             foreach (RuntimeModel model in m_models)
             {
                 VoxelDefinition definition;
-                if (selectedCells != null && model.IsVisible)
-                {
-                    if (!selectedCells.TryGetValue(model, out var cells)) continue;
-                    // Clipped instances must own definitions independently of other placements.
-                    definition = new VoxelDefinition(model.Size, model.SourceModelId,
-                        new Dictionary<Vector3Int, byte>(cells));
-                }
-                else if (!sharedDefinitions.TryGetValue(model.Definition, out definition))
+                if (!sharedDefinitions.TryGetValue(model.Definition, out definition))
                 {
                     definition = new VoxelDefinition(model.Size, model.SourceModelId,
                         new Dictionary<Vector3Int, byte>(model.Voxels));
