@@ -67,9 +67,18 @@ namespace TiltBrush
         public int ModelSize { get; set; } = kDefaultModelSize;
         public float VoxelSize { get; set; } = kDefaultVoxelSize;
         public bool ShowGrid { get; set; } = true;
-        public bool HasCurrentTarget => m_CurrentModel != null;
+        public bool HasCurrentTarget
+        {
+            get
+            {
+                if (m_CurrentModel == null || !m_CurrentModel.isValid) return false;
+                ModelWidget widget = m_CurrentDocument?.Widget;
+                return widget != null && widget.Showing && widget.gameObject.activeInHierarchy &&
+                    string.IsNullOrEmpty(widget.Subtree) && m_CurrentModel._Model.IsVisible;
+            }
+        }
         public bool CreatingNewModel => m_CreateNewOnNextAdd;
-        public string CurrentTargetDescription => m_CurrentModel == null
+        public string CurrentTargetDescription => !HasCurrentTarget
             ? (CreatingNewModel ? "New model ready — trigger to place" : "No active model — select editable voxels")
             : $"Active: {m_CurrentModel.name} ({m_CurrentModel.sizeX}x{m_CurrentModel.sizeY}x{m_CurrentModel.sizeZ})";
 
@@ -77,6 +86,8 @@ namespace TiltBrush
 
         public override void EnableTool(bool enable)
         {
+            // Tool-change notifications can read status before the first UpdateTool call.
+            if (enable) EnsureCurrentTarget();
             if (!enable)
             {
                 EndGesture();
@@ -424,7 +435,8 @@ namespace TiltBrush
 
         private void SetCurrentModel(VoxModelApiWrapper model)
         {
-            bool targetChanged = !ReferenceEquals(m_CurrentDocument?._Document, model.document._Document) ||
+            bool targetChanged = !HasCurrentTarget ||
+                !ReferenceEquals(m_CurrentDocument?._Document, model.document._Document) ||
                 !ReferenceEquals(m_CurrentModel?._Model, model._Model);
             m_CurrentModel = model;
             m_CurrentDocument = model.document;
@@ -440,42 +452,10 @@ namespace TiltBrush
 
         private void EnsureCurrentTarget()
         {
-            if (m_CurrentDocument == null)
-            {
-                return;
-            }
-            ModelWidget widget = m_CurrentDocument.Widget;
-            if (!m_CurrentDocument.isValid || m_CurrentModel == null || !m_CurrentModel.isValid ||
-                widget == null || !widget.Showing ||
-                !widget.gameObject.activeInHierarchy || !string.IsNullOrEmpty(widget.Subtree))
-            {
-                EndGesture();
-                m_CurrentDocument = null;
-                m_CurrentModel = null;
-                return;
-            }
-
-            if (widget != null && !ReferenceEquals(widget.EditableVoxDocument, m_CurrentDocument._Document))
-            {
-                if (widget.EditableVoxDocument == null || widget.EditableVoxDocument.Models.Count == 0)
-                {
-                    EndGesture();
-                    m_CurrentDocument = null;
-                    m_CurrentModel = null;
-                    return;
-                }
-                int modelIndex = Mathf.Clamp(m_CurrentModel?.index ?? 0, 0,
-                    widget.EditableVoxDocument.Models.Count - 1);
-                m_CurrentDocument = new VoxDocumentApiWrapper(widget.EditableVoxDocument, widget);
-                m_CurrentDocument.SetAutoVisuals(true, true);
-                m_CurrentModel = m_CurrentDocument.Model(modelIndex);
-            }
-            if (!m_CurrentModel._Model.IsVisible)
-            {
-                EndGesture();
-                m_CurrentDocument = null;
-                m_CurrentModel = null;
-            }
+            if (HasCurrentTarget) return;
+            EndGesture();
+            m_CurrentDocument = null;
+            m_CurrentModel = null;
         }
 
         private void UpdateTargetLabel(
