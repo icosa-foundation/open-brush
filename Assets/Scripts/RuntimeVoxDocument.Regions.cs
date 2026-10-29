@@ -93,7 +93,8 @@ namespace TiltBrush
                     model.IsCopy, localTransformOffset: model.LocalTransformOffset,
                     globalRotation: model.GlobalRotation, localRotation: model.LocalRotation,
                     isVisible: model.IsVisible, definition: definition,
-                    sceneNodeId: model.SceneNodeId, sceneModelSlot: model.SceneModelSlot)
+                    sceneNodeId: model.SceneNodeId, sceneModelSlot: model.SceneModelSlot,
+                    sourceSize: model.SourceSize, sourceCellOffset: model.SourceCellOffset)
                 {
                     TransformOffset = model.TransformOffset,
                 };

@@ -486,6 +486,89 @@ namespace TiltBrush
                 (rotation[1, second] < 0 ? 32 : 0) | (rotation[2, third] < 0 ? 64 : 0);
         }
 
+        private static Matrix4x4 DecodeRotation(int packed)
+        {
+            int first = packed & 3, second = (packed >> 2) & 3;
+            if (first > 2 || second > 2 || first == second)
+                throw new InvalidDataException("Invalid VOX signed axis rotation.");
+            int[] axes = { first, second, 3 - first - second };
+            var rotation = Matrix4x4.identity;
+            for (int row = 0; row < 3; ++row)
+            {
+                for (int column = 0; column < 3; ++column) rotation[row, column] = 0;
+                rotation[row, axes[row]] = (packed & (16 << row)) == 0 ? 1 : -1;
+            }
+            return rotation;
+        }
+
+        private static byte[] RewriteTransformPivot(byte[] content, Vector3Int shift,
+            int? replacementId = null, int? replacementChild = null)
+        {
+            using (var reader = new BinaryReader(new MemoryStream(content, false), Encoding.UTF8))
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                int id = reader.ReadInt32();
+                writer.Write(replacementId ?? id);
+                WriteDictionary(writer, ReadDictionary(reader));
+                int child = reader.ReadInt32();
+                writer.Write(replacementChild ?? child);
+                writer.Write(reader.ReadInt32()); // Reserved.
+                writer.Write(reader.ReadInt32()); // Layer.
+                int count = reader.ReadInt32();
+                if (count < 1 || count > (reader.BaseStream.Length - reader.BaseStream.Position) / 4)
+                    throw new InvalidDataException("Invalid VOX transform frame count.");
+                writer.Write(count);
+                for (int frameIndex = 0; frameIndex < count; ++frameIndex)
+                {
+                    Dictionary<string, string> frame = ReadDictionary(reader);
+                    if (shift != Vector3Int.zero)
+                    {
+                        int packed = frame.TryGetValue("_r", out string rotation) ? int.Parse(
+                            rotation, System.Globalization.CultureInfo.InvariantCulture) : 4;
+                        Vector3Int translation = Vector3Int.zero;
+                        if (frame.TryGetValue("_t", out string position))
+                        {
+                            string[] parts = position.Split((char[])null, StringSplitOptions.RemoveEmptyEntries);
+                            if (parts.Length != 3) throw new InvalidDataException("Invalid VOX translation.");
+                            for (int axis = 0; axis < 3; ++axis)
+                                translation[axis] = int.Parse(parts[axis], System.Globalization.CultureInfo.InvariantCulture);
+                        }
+                        translation += Vector3Int.RoundToInt(DecodeRotation(packed).MultiplyVector(shift));
+                        frame["_t"] = $"{translation.x} {translation.y} {translation.z}";
+                    }
+                    WriteDictionary(writer, frame);
+                }
+                writer.Write(reader.ReadBytes(checked((int)(reader.BaseStream.Length - reader.BaseStream.Position))));
+                return stream.ToArray();
+            }
+        }
+
+        private static byte[] BuildSingleShapeBinding(PreservedChunk shape, int slot,
+            int nodeId, int definitionId)
+        {
+            using (var reader = new BinaryReader(new MemoryStream(shape.Content, false), Encoding.UTF8))
+            using (var stream = new MemoryStream())
+            using (var writer = new BinaryWriter(stream))
+            {
+                reader.ReadInt32();
+                writer.Write(nodeId);
+                WriteDictionary(writer, ReadDictionary(reader));
+                int count = reader.ReadInt32();
+                if (slot < 0 || slot >= count) throw new InvalidDataException("Invalid VOX shape model slot.");
+                writer.Write(1);
+                for (int index = 0; index < count; ++index)
+                {
+                    reader.ReadInt32();
+                    Dictionary<string, string> attributes = ReadDictionary(reader);
+                    if (index != slot) continue;
+                    writer.Write(definitionId);
+                    WriteDictionary(writer, attributes);
+                }
+                return stream.ToArray();
+            }
+        }
+
         // Keep existing nodes/attributes/frames intact. Changed shape bindings get a new
         // shape node per placement, so detaching one instance never changes another.
         private static void UpdateSceneGraph(List<PreservedChunk> chunks,
@@ -505,6 +588,7 @@ namespace TiltBrush
                     chunk.Id == "nGRP" || chunk.Id == "nSHP")
                 .Max(chunk => BitConverter.ToInt32(chunk.Content, 0)) + 1);
             var removedNodes = new HashSet<int>();
+            var replacementNodes = new Dictionary<int, List<int>>();
             var placements = models.Where(model => model.SceneNodeId >= 0)
                 .GroupBy(model => model.SceneNodeId).ToDictionary(group => group.Key, group => group.ToList());
             foreach (PreservedChunk transform in transforms)
@@ -522,6 +606,36 @@ namespace TiltBrush
                         chunks.Remove(transform);
                         continue;
                     }
+                    Vector3Int pivotShift = active[0].SourcePivotShift;
+                    if (active.Any(model => model.SourcePivotShift != pivotShift))
+                    {
+                        // Different model slots can require different pivots after a resize.
+                        // Keep their parent/attributes/frames but give each its own binding.
+                        var replacements = new List<int>();
+                        foreach (var model in active)
+                        {
+                            int transformId = nextNodeId++, shapeId = nextNodeId++;
+                            replacements.Add(transformId);
+                            chunks.Add(new PreservedChunk
+                            {
+                                Id = "nTRN", Content = RewriteTransformPivot(transform.Content,
+                                    model.SourcePivotShift, transformId, shapeId),
+                                Children = new List<PreservedChunk>(transform.Children),
+                            });
+                            chunks.Add(new PreservedChunk
+                            {
+                                Id = "nSHP", Content = BuildSingleShapeBinding(shape, model.SceneModelSlot,
+                                    shapeId, definitionIds[model.Definition]),
+                                Children = new List<PreservedChunk>(shape.Children),
+                            });
+                        }
+                        replacementNodes.Add(nodeId, replacements);
+                        removedNodes.Add(nodeId);
+                        chunks.Remove(transform);
+                        continue;
+                    }
+                    if (pivotShift != Vector3Int.zero)
+                        transform.Content = RewriteTransformPivot(transform.Content, pivotShift);
                     using (var shapeReader = new BinaryReader(new MemoryStream(shape.Content, false), Encoding.UTF8))
                     using (var stream = new MemoryStream())
                     using (var writer = new BinaryWriter(stream))
@@ -569,7 +683,8 @@ namespace TiltBrush
                         for (int i = 0; i < count; ++i)
                         {
                             int child = reader.ReadInt32();
-                            if (!removedNodes.Contains(child)) children.Add(child);
+                            if (replacementNodes.TryGetValue(child, out var replacements)) children.AddRange(replacements);
+                            else if (!removedNodes.Contains(child)) children.Add(child);
                         }
                         writer.Write(id);
                         WriteDictionary(writer, attributes);
@@ -580,7 +695,7 @@ namespace TiltBrush
                 }
             }
             var added = models.Where(model => model.SceneNodeId < 0).ToList();
-            if (added.Count == 0) return;
+            if (added.Count == 0 && replacementNodes.Count == 0) return;
             var rootCandidates = new HashSet<int>();
             var referenced = new HashSet<int>();
             foreach (PreservedChunk chunk in chunks.Where(chunk => chunk.Id == "nTRN" || chunk.Id == "nGRP"))
@@ -598,6 +713,7 @@ namespace TiltBrush
                 }
             }
             rootCandidates.ExceptWith(referenced);
+            if (added.Count == 0 && rootCandidates.Count <= 1) return;
             var rootChildren = rootCandidates.OrderBy(id => id).ToList();
             foreach (var model in added)
             {

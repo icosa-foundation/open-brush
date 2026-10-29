@@ -75,6 +75,12 @@ namespace TiltBrush
             public int SourceModelId => Definition.SourceModelId;
             internal int SceneNodeId { get; }
             internal int SceneModelSlot { get; }
+            internal Vector3Int SourceSize { get; }
+            internal Vector3Int SourceCellOffset { get; set; }
+            internal Vector3Int SourcePivotShift => new Vector3Int(
+                Size.x / 2 - SourceSize.x / 2,
+                Size.y / 2 - SourceSize.y / 2,
+                Size.z / 2 - SourceSize.z / 2) - SourceCellOffset;
             public bool IsCopy { get; }
             public bool IsVisible { get; }
             public IReadOnlyDictionary<Vector3Int, byte> Voxels => m_voxels;
@@ -96,7 +102,9 @@ namespace TiltBrush
                 bool isVisible = true,
                 VoxelDefinition definition = null,
                 int sceneNodeId = -1,
-                int sceneModelSlot = 0)
+                int sceneModelSlot = 0,
+                Vector3Int? sourceSize = null,
+                Vector3Int? sourceCellOffset = null)
             {
                 if (size.x <= 0 || size.y <= 0 || size.z <= 0 ||
                     size.x > MaxModelDimension ||
@@ -112,6 +120,8 @@ namespace TiltBrush
                 Definition = definition ?? new VoxelDefinition(size, sourceModelId, voxels);
                 SceneNodeId = sceneNodeId;
                 SceneModelSlot = sceneModelSlot;
+                SourceSize = sourceSize ?? size;
+                SourceCellOffset = sourceCellOffset ?? Vector3Int.zero;
                 IsCopy = isCopy;
                 LocalTransformOffset = localTransformOffset ?? Vector3.zero;
                 GlobalRotation = globalRotation ?? Matrix4x4.identity;
@@ -303,6 +313,7 @@ namespace TiltBrush
             internal RuntimeModel[] Models;
             internal VoxelDefinition[] Definitions;
             internal Vector3[] Offsets;
+            internal Vector3Int[] SourceCellOffsets;
             internal Dictionary<VoxelDefinition, Dictionary<Vector3Int, byte>> Cells;
             internal Color32[] Palette;
             internal Dictionary<int, RuntimeMaterial> Materials;
@@ -317,6 +328,7 @@ namespace TiltBrush
                 Models = m_models.ToArray(),
                 Definitions = m_models.Select(model => model.Definition).ToArray(),
                 Offsets = m_models.Select(model => model.TransformOffset).ToArray(),
+                SourceCellOffsets = m_models.Select(model => model.SourceCellOffset).ToArray(),
                 Cells = m_models.Select(model => model.Definition).Distinct().ToDictionary(
                     definition => definition,
                     definition => new Dictionary<Vector3Int, byte>(definition.Cells)),
@@ -344,6 +356,7 @@ namespace TiltBrush
                 RuntimeModel model = snapshot.Models[i];
                 model.Definition = snapshot.Definitions[i];
                 model.TransformOffset = snapshot.Offsets[i];
+                model.SourceCellOffset = snapshot.SourceCellOffsets[i];
                 m_models.Add(model);
             }
             Array.Copy(snapshot.Palette, Palette, Palette.Length);
@@ -353,6 +366,37 @@ namespace TiltBrush
         }
 
         public bool ContainsModel(RuntimeModel model) => m_models.Contains(model);
+
+        // Expand a shared definition once, keeping every placed instance visually fixed.
+        // New lower-side cells shift indices and each instance's origin together.
+        public bool ExpandModelBounds(RuntimeModel model, Vector3Int lower, Vector3Int upper)
+        {
+            if (!ContainsModel(model)) throw new InvalidOperationException("The VOX model is not in this document.");
+            Vector3Int size = model.Size;
+            for (int axis = 0; axis < 3; ++axis)
+            {
+                if (lower[axis] < 0 || upper[axis] < 0 ||
+                    lower[axis] > MaxModelDimension - size[axis] ||
+                    upper[axis] > MaxModelDimension - size[axis] - lower[axis])
+                    throw new ArgumentOutOfRangeException(nameof(lower),
+                        "Expanded VOX dimensions must remain between 1 and 256 cells per axis.");
+                size[axis] += lower[axis] + upper[axis];
+            }
+            if (size == model.Size) return false;
+            VoxelDefinition previous = model.Definition;
+            var cells = new Dictionary<Vector3Int, byte>(previous.Cells.Count);
+            foreach (var cell in previous.Cells) cells.Add(cell.Key + lower, cell.Value);
+            var expanded = new VoxelDefinition(size, previous.SourceModelId, cells);
+            foreach (RuntimeModel instance in m_models)
+            {
+                if (!ReferenceEquals(instance.Definition, previous)) continue;
+                instance.Definition = expanded;
+                instance.TransformOffset -= instance.GlobalRotation.MultiplyVector(lower);
+                instance.SourceCellOffset += lower;
+            }
+            ViewState.VisualsDirty = true;
+            return true;
+        }
 
         // Palette is 1-based from VOX perspective. Palette[0] corresponds to index 1.
         public Color32[] Palette { get; } = new Color32[256];

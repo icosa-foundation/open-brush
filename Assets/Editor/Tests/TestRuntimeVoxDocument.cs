@@ -571,6 +571,32 @@ namespace TiltBrush
         }
 
         [Test]
+        public void RuntimeVoxDocument_ExpansionPreservesPlacementThroughSaveAndUndo()
+        {
+            var source = new RuntimeVoxDocument();
+            var original = source.CreateModel("expand", new Vector3Int(3, 3, 3));
+            original.AddOrUpdateVoxel(Vector3Int.one, 7);
+            var document = RuntimeVoxDocument.FromBytes(source.ToVoxBytes());
+            var wrapper = new VoxDocumentApiWrapper(document).Model();
+            Vector3 before = wrapper.VoxelToCanvas(Vector3.one);
+            var snapshot = document.CaptureSnapshot();
+            var lower = new Vector3Int(2, 0, 1);
+            Assert.IsTrue(document.ExpandModelBounds(document.Models[0], lower, new Vector3Int(1, 3, 0)));
+            Assert.AreEqual(new Vector3Int(6, 6, 4), document.Models[0].Size);
+            Vector3Int shifted = Vector3Int.one + lower;
+            Assert.Less((wrapper.VoxelToCanvas(shifted) - before).sqrMagnitude, 0.000001f);
+            var reopened = RuntimeVoxDocument.FromBytes(document.ToVoxBytes());
+            var reopenedModel = new VoxDocumentApiWrapper(reopened).Model();
+            Assert.Less((reopenedModel.VoxelToCanvas(shifted) - before).sqrMagnitude, 0.000001f);
+            Assert.IsTrue(reopened.Models[0].TryGetPaletteIndex(shifted, out byte color));
+            Assert.AreEqual(7, color);
+            document.RestoreSnapshot(snapshot);
+            Assert.AreSame(document.Models[0], wrapper._Model);
+            Assert.AreEqual(new Vector3Int(3, 3, 3), wrapper._Model.Size);
+            Assert.Less((wrapper.VoxelToCanvas(Vector3.one) - before).sqrMagnitude, 0.000001f);
+        }
+
+        [Test]
         public void RuntimeVoxDocument_ReadsAndPreservesLegacyMaterialProperties()
         {
             var source = new RuntimeVoxDocument();
