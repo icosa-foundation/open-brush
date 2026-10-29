@@ -360,9 +360,9 @@ MonoBehaviour:
   m_DescriptionText: Voxel size for new models
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableCollectionName:
     m_TableEntryReference:
-      m_KeyId: 5146583311818752
+      m_KeyId: 0
       m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -523,9 +523,9 @@ MonoBehaviour:
   m_DescriptionText: Voxel grid visibility
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableCollectionName:
     m_TableEntryReference:
-      m_KeyId: 5147011692863488
+      m_KeyId: 0
       m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -686,9 +686,9 @@ MonoBehaviour:
   m_DescriptionText: Voxel edit mode
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableCollectionName:
     m_TableEntryReference:
-      m_KeyId: 5145561143156736
+      m_KeyId: 0
       m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -939,9 +939,9 @@ MonoBehaviour:
   m_DescriptionText: New voxel model
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableCollectionName:
     m_TableEntryReference:
-      m_KeyId: 5145561143156736
+      m_KeyId: 0
       m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1102,9 +1102,9 @@ MonoBehaviour:
   m_DescriptionText: Volume dimensions for new models
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+      m_TableCollectionName:
     m_TableEntryReference:
-      m_KeyId: 5146868541267968
+      m_KeyId: 0
       m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
