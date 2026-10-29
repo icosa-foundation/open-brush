@@ -94,7 +94,7 @@ namespace TiltBrush
                 default:
                     label = "Close";
                     title = "Close Settings";
-                    description = "Return to voxel editing. Grip a face handle and pull outward to expand the grid.";
+                    description = "Return to voxel editing. Grip a face handle to resize the grid. Push inward to trim empty space; existing voxels stay in place.";
                     break;
             }
             m_Label.text = label;

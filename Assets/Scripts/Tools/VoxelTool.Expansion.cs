@@ -18,6 +18,7 @@ namespace TiltBrush
         private Vector3 m_ExpansionPointerStart;
         private int m_ExpansionFace;
         private int m_ExpansionGrowth;
+        private int m_MinResizeGrowth;
 
         private bool ExpansionIsValid => m_ExpandingGrid && HasCurrentTarget &&
             m_ExpansionWidget == CurrentTargetWidget &&
@@ -50,6 +51,16 @@ namespace TiltBrush
             m_ExpansionWidget = CurrentTargetWidget;
             m_ExpansionFace = handle.Face;
             m_ExpansionGrowth = 0;
+            int axis = handle.Face / 2;
+            int size = handle.Model.Size[axis];
+            int removable = size - Mathf.Min(3, size);
+            // Scan occupied cells once per grab, not per frame or per handle.
+            foreach (var cell in handle.Model.Voxels.Keys)
+            {
+                int padding = handle.Face % 2 == 0 ? cell[axis] : size - 1 - cell[axis];
+                removable = Mathf.Min(removable, padding);
+            }
+            m_MinResizeGrowth = -removable;
             m_ExpansionPointerStart = m_CurrentDocument.GetModelTransform(handle.Model).inverse *
                 (App.Scene.ActiveCanvas.Pose.inverse * worldPointer);
         }
@@ -71,7 +82,7 @@ namespace TiltBrush
             float direction = m_ExpansionFace % 2 == 0 ? -1f : 1f;
             m_ExpansionGrowth = Mathf.Clamp(Mathf.RoundToInt(
                 direction * (local[axis] - m_ExpansionPointerStart[axis])),
-                0, RuntimeVoxDocument.MaxModelDimension - m_ExpansionModel.Size[axis]);
+                m_MinResizeGrowth, RuntimeVoxDocument.MaxModelDimension - m_ExpansionModel.Size[axis]);
         }
 
         internal void EndGridResize(VoxelGridResizeHandle handle)
@@ -166,7 +177,7 @@ namespace TiltBrush
                     handle.Configure(this, model, face, pose, min, max);
                     if (!expanding && handle.Hovered) highlighted = face;
                 }
-                VoxEditPreviewRenderer.DrawExpansionHandles(pose, model.Size, min, max, highlighted);
+                VoxEditPreviewRenderer.DrawExpansionHandles(pose, min, max, highlighted);
             }
             for (; index < m_ResizeHandles.Count; ++index)
                 if (m_ResizeHandles[index] != null) m_ResizeHandles[index].SetAvailable(false);
@@ -175,7 +186,7 @@ namespace TiltBrush
                 var size = m_ExpansionModel.Size;
                 size[m_ExpansionFace / 2] += m_ExpansionGrowth;
                 UpdateTargetLabel(InputManager.Brush.Geometry.ToolAttachPoint, false,
-                    $"{size.x} x {size.y} x {size.z} voxels — release grip to expand");
+                    $"{size.x} x {size.y} x {size.z} voxels — release grip to resize");
             }
         }
     }

@@ -40,7 +40,8 @@ namespace TiltBrush
             center[face / 2] = face % 2 == 0 ? min[face / 2] : max[face / 2];
             LocalTransform = TrTransform.TRS(pose * center, pose.rotation,
                 Mathf.Abs(pose.scale) * VoxEditPreviewRenderer.GetExpansionHandleSize(pose));
-            SetAvailable(model.Size[face / 2] < RuntimeVoxDocument.MaxModelDimension);
+            // A capped grid can still be shrunk using this handle.
+            SetAvailable(true);
         }
 
         internal void SetAvailable(bool available)

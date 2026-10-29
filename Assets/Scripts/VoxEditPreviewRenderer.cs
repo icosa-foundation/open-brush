@@ -154,7 +154,7 @@ namespace TiltBrush
             return Mathf.Max(0.6f, 0.015f / Mathf.Max(scale, 0.000001f));
         }
 
-        public static void DrawExpansionHandles(TrTransform modelToCanvas, Vector3Int originalSize,
+        public static void DrawExpansionHandles(TrTransform modelToCanvas,
             Vector3 min, Vector3 max, int highlightedFace)
         {
             if (!TryGetMaterial()) return;
@@ -169,9 +169,7 @@ namespace TiltBrush
                 Vector3 center = (min + max) * 0.5f;
                 int axis = face / 2;
                 center[axis] = face % 2 == 0 ? min[axis] : max[axis];
-                Color color = originalSize[axis] >= RuntimeVoxDocument.MaxModelDimension
-                    ? new Color(0.9f, 0.15f, 0.1f, 0.7f)
-                    : face == highlightedFace ? new Color(1f, 0.85f, 0.1f, 1f)
+                Color color = face == highlightedFace ? new Color(1f, 0.85f, 0.1f, 1f)
                     : new Color(0.1f, 0.7f, 1f, 0.8f);
                 var handleBounds = new Bounds(pose * center, Vector3.one * size * Mathf.Abs(pose.scale) * 2f);
                 DrawBox(pose, center - Vector3.one * size * 0.5f, center + Vector3.one * size * 0.5f,
