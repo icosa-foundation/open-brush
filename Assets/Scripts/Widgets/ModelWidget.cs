@@ -791,13 +791,11 @@ namespace TiltBrush
 #endif
                 return;
             }
-#if !(UNITY_ANDROID || UNITY_IOS)
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.RegisterHighlight();
                 return;
             }
-#endif
             base.RegisterHighlight();
         }
 
@@ -814,13 +812,11 @@ namespace TiltBrush
 #endif
                 return;
             }
-#if !(UNITY_ANDROID || UNITY_IOS)
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.UnregisterHighlight();
                 return;
             }
-#endif
             base.UnregisterHighlight();
         }
 
