@@ -118,8 +118,11 @@ namespace TiltBrush
 
         internal void RestoreExternalVoxContent()
         {
+            int previousCost = GetTiltMeterCost();
             m_EditableVoxDocument = null;
             LoadModel();
+            TiltMeterScript.m_Instance.AdjustMeterWithWidget(previousCost, up: false);
+            TiltMeterScript.m_Instance.AdjustMeterWithWidget(GetTiltMeterCost(), up: true);
             SetSignedWidgetSize(m_Size);
             if (transform.parent != null)
             {
@@ -215,6 +218,13 @@ namespace TiltBrush
         }
 
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
+            => CloneWithVoxDocument(position, rotation, size, null);
+
+        internal ModelWidget CloneWithVoxDocument(RuntimeVoxDocument document)
+            => CloneWithVoxDocument(transform.position, transform.rotation, m_Size, document);
+
+        private ModelWidget CloneWithVoxDocument(Vector3 position, Quaternion rotation, float size,
+            RuntimeVoxDocument document)
         {
             ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab);
             clone.m_PreviousCanvas = m_PreviousCanvas;
@@ -222,17 +232,20 @@ namespace TiltBrush
             clone.transform.rotation = rotation;
             clone.m_Subtree = m_Subtree;
             clone.Model = Model;
-            if (m_EditableVoxDocument != null)
+            if (document != null)
             {
-                clone.m_EditableVoxDocument = RuntimeVoxDocument.FromBytes(
-                    m_EditableVoxDocument.ToVoxBytes(),
-                    m_EditableVoxDocument.HasPreservedSourceData);
+                clone.AdoptEditableVoxDocument(document);
+            }
+            else if (m_EditableVoxDocument != null)
+            {
+                clone.AdoptEditableVoxDocument(m_EditableVoxDocument.CloneDocument());
             }
             // We're obviously not loading from a sketch.  This is to prevent the intro animation.
             // TODO: Change variable name to something more explicit of what this flag does.
             clone.m_LoadingFromSketch = true;
             clone.Show(true, false);
-            if (m_HasEditableVoxVisuals)
+            TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
+            if (m_HasEditableVoxVisuals || document != null)
             {
                 clone.RefreshEditableVoxMeshes(m_EditableVoxOptimized);
             }
@@ -240,7 +253,6 @@ namespace TiltBrush
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
-            TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
 
             CanvasScript canvas = transform.parent.GetComponent<CanvasScript>();
             if (canvas != null)
@@ -721,7 +733,7 @@ namespace TiltBrush
 
         public bool HasMultipleNodes()
         {
-            if (IsExternalVox && string.IsNullOrEmpty(Subtree)) { return true; }
+            if (IsVoxModel() && string.IsNullOrEmpty(Subtree)) { return true; }
             // VOX internal models remain document implementation details. Exposing the generic
             // model Break Apart operation would create subtree widgets that no longer own a
             // complete editable document.
@@ -751,7 +763,7 @@ namespace TiltBrush
 
         public bool MeshSplitPossible()
         {
-            if (IsExternalVox && string.IsNullOrEmpty(Subtree)) { return true; }
+            if (IsVoxModel() && string.IsNullOrEmpty(Subtree)) { return true; }
             if (m_EditableVoxDocument != null)
             {
                 return false;

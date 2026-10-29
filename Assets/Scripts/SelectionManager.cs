@@ -1084,6 +1084,8 @@ namespace TiltBrush
 
             if (SelectionIsMeshSplittable)
             {
+                var voxelTool = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.VoxelTool) as VoxelTool;
+                voxelTool?.FinishEditing();
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new BreakModelApartCommand(m_SelectedWidgets.First() as ModelWidget));
             }

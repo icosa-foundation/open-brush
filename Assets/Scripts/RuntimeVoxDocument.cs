@@ -23,7 +23,7 @@ using VoxReader.Interfaces;
 
 namespace TiltBrush
 {
-    public sealed class RuntimeVoxDocument
+    public sealed partial class RuntimeVoxDocument
     {
         // XYZI stores each voxel coordinate in one byte, so valid coordinates are
         // 0..255 and each model dimension can contain at most 256 cells.

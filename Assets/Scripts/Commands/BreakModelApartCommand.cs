@@ -29,10 +29,13 @@ namespace TiltBrush
         private List<SoundClipWidget> m_NewSoundClipWidgets;
         private List<string> m_NodePaths;
         private RuntimeVoxDocument m_ConversionDocument;
+        private BreakVoxApartCommand m_VoxSplit;
+
+        public override bool IsAvailable => m_InitialWidget != null && (m_VoxSplit?.IsAvailable ?? true);
 
         override public bool NeedsSave
         {
-            get => true;
+            get => m_VoxSplit?.NeedsSave ?? true;
         }
 
         private static List<string> ExtractPaths(Transform root)
@@ -172,8 +175,8 @@ namespace TiltBrush
             }
             if (initialWidget.EditableVoxDocument != null)
             {
-                throw new InvalidOperationException(
-                    "Editable VOX widgets cannot be broken apart.");
+                m_VoxSplit = new BreakVoxApartCommand(initialWidget, this);
+                return;
             }
             m_InitialWidget = initialWidget;
             m_NewModelWidgets = new List<ModelWidget>();
@@ -221,6 +224,7 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            if (m_VoxSplit != null) return; // BaseCommand dispatches the child command.
             if (m_ConversionDocument != null)
             {
                 m_InitialWidget.AdoptEditableVoxDocument(m_ConversionDocument);
@@ -343,6 +347,7 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            if (m_VoxSplit != null) return;
             if (m_ConversionDocument != null)
             {
                 m_InitialWidget.RestoreExternalVoxContent();
