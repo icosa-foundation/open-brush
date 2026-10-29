@@ -164,12 +164,13 @@
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.VoxelTool);
         }
 
-        [ApiEndpoint("tool.voxel.mode", "Sets the Voxel Tool mode: Add, Erase, or Paint")]
+        [ApiEndpoint("tool.voxel.mode", "Sets the Voxel Tool mode: Add, Erase, Paint, or Select")]
         public static void SetVoxelToolMode(string mode)
         {
             var tool = SketchSurfacePanel.m_Instance.GetToolOfType(
                 BaseTool.ToolType.VoxelTool) as VoxelTool;
-            if (tool == null || !System.Enum.TryParse(mode, true, out VoxelTool.EditMode parsed))
+            if (tool == null || !System.Enum.TryParse(mode, true, out VoxelTool.EditMode parsed) ||
+                !System.Enum.IsDefined(typeof(VoxelTool.EditMode), parsed))
             {
                 throw new System.ArgumentException($"Unknown voxel tool mode '{mode}'.", nameof(mode));
             }
