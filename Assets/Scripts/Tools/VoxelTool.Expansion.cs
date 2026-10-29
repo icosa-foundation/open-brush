@@ -89,8 +89,8 @@ namespace TiltBrush
                 Vector3 local = m_CurrentDocument.GetModelTransform(m_ExpansionModel).inverse * canvasPosition;
                 int axis = m_ExpansionFace / 2;
                 float direction = m_ExpansionFace % 2 == 0 ? -1f : 1f;
-                growth = Mathf.Clamp(Mathf.CeilToInt(
-                    direction * (local[axis] - m_ExpansionPointerStart[axis]) - 0.0001f),
+                growth = Mathf.Clamp(Mathf.RoundToInt(
+                    direction * (local[axis] - m_ExpansionPointerStart[axis])),
                     0, RuntimeVoxDocument.MaxModelDimension - m_ExpansionModel.Size[axis]);
             }
             foreach (var model in m_CurrentDocument._Document.Models)
