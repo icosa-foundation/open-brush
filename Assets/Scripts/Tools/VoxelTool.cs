@@ -180,6 +180,14 @@ namespace TiltBrush
                 InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
                 ApplyAt(canvasPosition);
+                // Interpolation can change many cells in one frame. Show the actual edits
+                // once after that batch; Refresh skips a clean document. Never revive a
+                // widget hidden by final-voxel erasure or another action during the gesture.
+                if (m_GestureWidget != null && m_GestureWidget.Showing &&
+                    m_GestureWidget.gameObject.activeInHierarchy)
+                {
+                    m_CurrentDocument.Refresh();
+                }
             }
 
             if (m_GestureActive &&
@@ -270,6 +278,7 @@ namespace TiltBrush
             m_GestureModel = m_CurrentModel._Model;
             m_GestureAutoVisuals = m_CurrentDocument.autoVisuals;
             m_CurrentDocument.SuppressDirtyTracking = true;
+            // Batch per-cell mutations; UpdateTool explicitly refreshes once per frame.
             m_CurrentDocument.SetAutoVisuals(false, true);
             m_GestureChanged = createdThisGesture;
             m_GestureActive = true;
