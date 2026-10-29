@@ -227,54 +227,67 @@ namespace TiltBrush
             RuntimeVoxDocument document)
         {
             ModelWidget clone = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab);
-            clone.m_PreviousCanvas = m_PreviousCanvas;
-            clone.transform.position = position;
-            clone.transform.rotation = rotation;
-            clone.m_Subtree = m_Subtree;
-            clone.Model = Model;
-            if (document != null)
+            bool metered = false;
+            try
             {
-                clone.AdoptEditableVoxDocument(document);
-            }
-            else if (m_EditableVoxDocument != null)
-            {
-                clone.AdoptEditableVoxDocument(m_EditableVoxDocument.CloneDocument());
-            }
-            // We're obviously not loading from a sketch.  This is to prevent the intro animation.
-            // TODO: Change variable name to something more explicit of what this flag does.
-            clone.m_LoadingFromSketch = true;
-            clone.Show(true, false);
-            TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
-            if (m_HasEditableVoxVisuals || document != null)
-            {
-                clone.RefreshEditableVoxMeshes(m_EditableVoxOptimized);
-            }
-            clone.AddSceneLightGizmos();
-            clone.transform.parent = transform.parent;
-            clone.SetSignedWidgetSize(size);
-            HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
-
-            CanvasScript canvas = transform.parent.GetComponent<CanvasScript>();
-            if (canvas != null)
-            {
-                var materials = clone.GetComponentsInChildren<Renderer>().SelectMany(x => x.materials);
-                foreach (var material in materials)
+                clone.m_PreviousCanvas = m_PreviousCanvas;
+                clone.transform.position = position;
+                clone.transform.rotation = rotation;
+                clone.m_Subtree = m_Subtree;
+                clone.Model = Model;
+                if (document != null)
                 {
-                    foreach (string keyword in canvas.BatchManager.MaterialKeywords)
+                    clone.AdoptEditableVoxDocument(document);
+                }
+                else if (m_EditableVoxDocument != null)
+                {
+                    clone.AdoptEditableVoxDocument(m_EditableVoxDocument.CloneDocument());
+                }
+                // We're obviously not loading from a sketch.  This is to prevent the intro animation.
+                // TODO: Change variable name to something more explicit of what this flag does.
+                clone.m_LoadingFromSketch = true;
+                clone.Show(true, false);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
+                metered = true;
+                if (m_HasEditableVoxVisuals || document != null)
+                {
+                    clone.RefreshEditableVoxMeshes(m_EditableVoxOptimized);
+                }
+                clone.AddSceneLightGizmos();
+                clone.transform.parent = transform.parent;
+                clone.SetSignedWidgetSize(size);
+                HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
+
+                CanvasScript canvas = transform.parent.GetComponent<CanvasScript>();
+                if (canvas != null)
+                {
+                    var materials = clone.GetComponentsInChildren<Renderer>().SelectMany(x => x.materials);
+                    foreach (var material in materials)
                     {
-                        material.EnableKeyword(keyword);
+                        foreach (string keyword in canvas.BatchManager.MaterialKeywords)
+                        {
+                            material.EnableKeyword(keyword);
+                        }
                     }
                 }
-            }
 
-            if (!clone.Model.m_Valid)
-            {
-                App.IcosaAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
-                clone.m_PolyCallbackActive = true;
+                if (!clone.Model.m_Valid)
+                {
+                    App.IcosaAssetCatalog.CatalogChanged += clone.OnPacCatalogChanged;
+                    clone.m_PolyCallbackActive = true;
+                }
+                clone.CloneInitialMaterials(this);
+                clone.TrySetCanvasKeywordsFromObject(transform);
+                return clone;
             }
-            clone.CloneInitialMaterials(this);
-            clone.TrySetCanvasKeywordsFromObject(transform);
-            return clone;
+            catch
+            {
+                if (metered)
+                    TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: false);
+                WidgetManager.m_Instance.UnregisterGrabWidget(clone.gameObject);
+                Destroy(clone.gameObject);
+                throw;
+            }
         }
 
         protected override void OnHideStart()

@@ -45,13 +45,13 @@ namespace TiltBrush
         }
 
         public ModifyVoxDocumentCommand(
-            ModelWidget widget, RuntimeVoxDocument.RuntimeModel model,
+            ModelWidget widget, RuntimeVoxDocument document, RuntimeVoxDocument.RuntimeModel model,
             Dictionary<Vector3Int, byte> before, Dictionary<Vector3Int, byte> after,
             Color32[] beforePalette, Color32[] afterPalette, BaseCommand parent = null)
             : base(parent)
         {
             m_Widget = widget;
-            m_Document = widget.EditableVoxDocument;
+            m_Document = document;
             m_Model = model;
             m_BeforeCells = new Dictionary<Vector3Int, byte>(before);
             m_AfterCells = new Dictionary<Vector3Int, byte>(after);

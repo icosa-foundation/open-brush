@@ -408,6 +408,7 @@ namespace TiltBrush
         [LuaDocsDescription("Sets one palette entry")]
         public bool SetPalette(int paletteIndex, int r, int g, int b, int a = 255)
         {
+            RequireValidDocument();
             var color = new Color32(
                 (byte)Mathf.Clamp(r, 0, 255),
                 (byte)Mathf.Clamp(g, 0, 255),
@@ -430,6 +431,7 @@ namespace TiltBrush
         [LuaDocsExample("doc:Show(true)")]
         public void Show(bool optimized = true)
         {
+            RequireValidDocument();
             m_ViewState.OptimizedMesh = optimized;
             if (m_ViewState.WidgetBacked)
             {
@@ -474,6 +476,7 @@ namespace TiltBrush
         [LuaDocsExample("doc:SetTransform(Transform:New(Vector3:New(0,1,0), 0.1))")]
         public void SetTransform(TrTransform transform)
         {
+            RequireValidDocument();
             if (transform.scale <= 0 || float.IsNaN(transform.scale) || float.IsInfinity(transform.scale))
             {
                 throw new ArgumentOutOfRangeException(nameof(transform), "VOX scene scale must be positive and finite.");
@@ -516,6 +519,7 @@ namespace TiltBrush
         [LuaDocsDescription("Shows pending edits, or shows this document's widget if hidden. Does nothing if the visuals are already current.")]
         public void Refresh()
         {
+            if (!isValid) return;
             if (m_ViewState.VisualsDirty || m_ViewState.Widget == null ||
                 !m_ViewState.Widget.Showing)
             {
@@ -526,6 +530,7 @@ namespace TiltBrush
         [LuaDocsDescription("Hides this document's model widget; hidden widgets are omitted from sketch saves")]
         public void Hide()
         {
+            RequireValidDocument();
             if (m_ViewState.Widget == null || !m_ViewState.Widget.Showing) return;
             m_ViewState.WidgetTransform = GetSceneTransform();
             m_ViewState.Widget.Show(false, false);
@@ -567,8 +572,16 @@ namespace TiltBrush
         [MoonSharpHidden]
         internal void PrepareStructuralEdit()
         {
+            RequireValidDocument();
             var tool = SketchSurfacePanel.m_Instance?.GetToolOfType(BaseTool.ToolType.VoxelTool) as VoxelTool;
             tool?.FinishEditing();
+        }
+
+        [MoonSharpHidden]
+        private void RequireValidDocument()
+        {
+            if (!isValid) throw new InvalidOperationException(
+                "This VOX document is no longer attached to its editable widget.");
         }
 
         [MoonSharpHidden]
