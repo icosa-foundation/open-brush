@@ -30,9 +30,7 @@ namespace TiltBrush
             Paint,
         }
 
-        private const int kDefaultModelSize = 128;
         private const float kDefaultVoxelSize = 0.1f;
-        private static readonly int[] kModelSizes = { 16, 32, 64, 128, 256 };
         private static readonly float[] kVoxelSizes = { 0.025f, 0.05f, 0.1f, 0.2f, 0.4f };
 
         private VoxDocumentApiWrapper m_CurrentDocument;
@@ -41,7 +39,7 @@ namespace TiltBrush
         private ModelWidget m_PendingTargetWidget;
         private bool m_HasPendingTarget;
         private Switchboard m_TargetEvents;
-        private bool m_CreateNewOnNextAdd;
+        private bool m_CreateNewGrid;
         private bool m_GestureActive;
         private bool m_GestureChanged;
         private bool m_HasLastCell;
@@ -52,7 +50,10 @@ namespace TiltBrush
         private bool m_GestureAutoVisuals;
         private ModelWidget m_GestureWidget;
         private RuntimeVoxDocument.RuntimeModel m_GestureModel;
-        private CreateWidgetCommand m_CreateWidgetCommand;
+        private bool m_DefiningGrid;
+        private Vector3 m_GridStart;
+        private float m_GridVoxelSize;
+        private CanvasScript m_GridCanvas;
         private TextMeshPro m_TargetLabel;
         private EditMode m_Mode;
 
@@ -64,21 +65,22 @@ namespace TiltBrush
                 if (m_Mode == value) { return; }
                 EndGesture();
                 m_Mode = value;
-                m_CreateNewOnNextAdd = false;
+                m_CreateNewGrid = false;
+                m_DefiningGrid = false;
             }
         }
-        public int ModelSize { get; set; } = kDefaultModelSize;
         public float VoxelSize { get; set; } = kDefaultVoxelSize;
         public bool ShowGrid { get; set; } = true;
         public ModelWidget CurrentTargetWidget => IsAvailableTarget(m_TargetWidget) ? m_TargetWidget : null;
         public bool HasCurrentTarget => CurrentTargetWidget != null &&
             m_CurrentModel != null && m_CurrentModel.isValid && m_CurrentModel._Model.IsVisible;
-        public bool CreatingNewModel => m_CreateNewOnNextAdd;
+        public bool CreatingNewModel => m_CreateNewGrid;
         public string CurrentTargetDescription
         {
             get
             {
-                if (CreatingNewModel) return "New model ready — trigger to place";
+                if (CreatingNewModel) return m_DefiningGrid ? "Sizing new voxel grid"
+                    : "New grid — hold trigger and drag";
                 ModelWidget widget = CurrentTargetWidget;
                 if (widget == null) return "No active voxel model — grab or select one";
                 string name = widget.GetExportName();
@@ -132,6 +134,7 @@ namespace TiltBrush
             if (enable) EnsureCurrentTarget();
             if (!enable)
             {
+                CancelGridDrag();
                 EndGesture();
             }
             base.EnableTool(enable);
@@ -145,6 +148,7 @@ namespace TiltBrush
         {
             if (hide)
             {
+                CancelGridDrag();
                 EndGesture();
             }
             base.HideTool(hide);
@@ -159,7 +163,7 @@ namespace TiltBrush
             base.UpdateTool();
             EnsureCurrentTarget();
 
-            // Resolve targeting and previews using the mode selected this frame.
+            // Process mode changes before interpreting this frame's drawing input.
             if (!IsEatingInput &&
                 InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
             {
@@ -170,6 +174,11 @@ namespace TiltBrush
             Transform attachPoint = InputManager.Brush.Geometry.ToolAttachPoint;
             PointerManager.m_Instance.SetMainPointerPosition(attachPoint.position);
             Vector3 canvasPosition = App.Scene.ActiveCanvas.AsCanvas[attachPoint].translation;
+            if (CreatingNewModel)
+            {
+                UpdateGridCreation(attachPoint, canvasPosition);
+                return;
+            }
             var previewModel = m_GestureActive ? m_GestureModel : FindTargetModelAt(canvasPosition);
             bool insideTarget = m_GestureActive
                 ? HasCurrentTarget && m_CurrentModel.ContainsAt(canvasPosition)
@@ -234,13 +243,6 @@ namespace TiltBrush
             return Mode;
         }
 
-        public int CycleModelSize()
-        {
-            ModelSize = CyclePreset(kModelSizes, Mathf.Clamp(ModelSize, 1,
-                RuntimeVoxDocument.MaxModelDimension));
-            return ModelSize;
-        }
-
         public float CycleVoxelSize()
         {
             VoxelSize = CyclePreset(kVoxelSizes, Mathf.Max(VoxelSize, 0.0001f));
@@ -256,13 +258,14 @@ namespace TiltBrush
         public void RequestNewModel()
         {
             EndGesture();
+            m_DefiningGrid = false;
             m_TargetWidget = null;
             m_PendingTargetWidget = null;
             m_HasPendingTarget = false;
             m_CurrentDocument = null;
             m_CurrentModel = null;
             Mode = EditMode.Add;
-            m_CreateNewOnNextAdd = true;
+            m_CreateNewGrid = true;
         }
 
         internal void SetTargetWidget(ModelWidget widget)
@@ -275,7 +278,8 @@ namespace TiltBrush
                 m_HasPendingTarget = true;
                 return;
             }
-            m_CreateNewOnNextAdd = false;
+            m_DefiningGrid = false;
+            m_CreateNewGrid = false;
             BindTargetWidget(widget);
         }
 
@@ -318,18 +322,10 @@ namespace TiltBrush
         private void BeginGesture(Vector3 canvasPosition)
         {
             EndGesture();
-            if (CreatingNewModel)
-            {
-                if (Mode != EditMode.Add || !CreateWidgetAt(canvasPosition)) return;
-            }
-            else
-            {
-                RuntimeVoxDocument.RuntimeModel model = FindTargetModelAt(canvasPosition);
-                if (model == null) return;
-                m_CurrentModel = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
-            }
+            RuntimeVoxDocument.RuntimeModel model = FindTargetModelAt(canvasPosition);
+            if (model == null) return;
+            m_CurrentModel = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
 
-            bool createdThisGesture = m_CreateWidgetCommand != null;
             m_GestureBeforeCells = new Dictionary<Vector3Int, byte>();
             m_GestureAfterCells = new Dictionary<Vector3Int, byte>();
             m_GestureBeforePalette = (Color32[])m_CurrentDocument._Document.Palette.Clone();
@@ -339,7 +335,7 @@ namespace TiltBrush
             m_CurrentDocument.SuppressDirtyTracking = true;
             // Batch per-cell mutations; UpdateTool explicitly refreshes once per frame.
             m_CurrentDocument.SetAutoVisuals(false, true);
-            m_GestureChanged = createdThisGesture;
+            m_GestureChanged = false;
             m_GestureActive = true;
             m_HasLastCell = false;
         }
@@ -417,16 +413,12 @@ namespace TiltBrush
                     m_GestureBeforeCells,
                     m_GestureAfterCells,
                     m_GestureBeforePalette,
-                    m_CurrentDocument._Document.Palette,
-                    m_CreateWidgetCommand);
+                    m_CurrentDocument._Document.Palette);
                 if (documentIsEmpty)
                 {
                     new HideWidgetCommand(m_GestureWidget, command);
                 }
-                if (m_CreateWidgetCommand == null)
-                {
-                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
-                }
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
                 if (documentIsEmpty)
                 {
                     m_CurrentDocument = null;
@@ -448,7 +440,6 @@ namespace TiltBrush
             m_GestureBeforePalette = null;
             m_GestureWidget = null;
             m_GestureModel = null;
-            m_CreateWidgetCommand = null;
             if (m_HasPendingTarget)
             {
                 ModelWidget pending = m_PendingTargetWidget;
@@ -458,9 +449,60 @@ namespace TiltBrush
             }
         }
 
-        private bool CreateWidgetAt(Vector3 canvasPosition)
+        private void CancelGridDrag()
         {
-            int size = Mathf.Clamp(ModelSize, 1, RuntimeVoxDocument.MaxModelDimension);
+            if (!m_DefiningGrid) return;
+            m_DefiningGrid = false;
+            m_CreateNewGrid = false;
+        }
+
+        private void UpdateGridCreation(Transform attachPoint, Vector3 canvasPosition)
+        {
+            if (IsEatingInput)
+            {
+                CancelGridDrag();
+                UpdateTargetLabel(attachPoint, false);
+                return;
+            }
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
+            {
+                m_DefiningGrid = true;
+                m_GridStart = canvasPosition;
+                m_GridVoxelSize = Mathf.Max(VoxelSize, 0.0001f);
+                m_GridCanvas = App.Scene.ActiveCanvas;
+            }
+            if (m_DefiningGrid && m_GridCanvas != App.Scene.ActiveCanvas)
+            {
+                CancelGridDrag();
+                return;
+            }
+            float voxelSize = m_DefiningGrid ? m_GridVoxelSize : Mathf.Max(VoxelSize, 0.0001f);
+            Vector3 start = m_DefiningGrid ? m_GridStart : canvasPosition;
+            Vector3 delta = canvasPosition - start;
+            Vector3 min = start;
+            var dimensions = Vector3Int.one;
+            for (int axis = 0; axis < 3; ++axis)
+            {
+                dimensions[axis] = Mathf.Clamp(Mathf.CeilToInt(Mathf.Abs(delta[axis]) / voxelSize - 0.0001f),
+                    1, RuntimeVoxDocument.MaxModelDimension);
+                if (delta[axis] < 0) min[axis] -= dimensions[axis] * voxelSize;
+            }
+            Vector3 size = (Vector3)dimensions * voxelSize;
+            VoxEditPreviewRenderer.DrawCreationBounds(min, min + size, voxelSize);
+            string hint = m_DefiningGrid
+                ? $"{dimensions.x} x {dimensions.y} x {dimensions.z} voxels — release to create"
+                : "Hold trigger and drag opposite corners of the grid";
+            UpdateTargetLabel(attachPoint, false, hint);
+            if (m_DefiningGrid &&
+                !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                m_DefiningGrid = false;
+                if (CreateGrid(min, dimensions, voxelSize)) m_CreateNewGrid = false;
+            }
+        }
+
+        private bool CreateGrid(Vector3 canvasMin, Vector3Int canvasDimensions, float voxelSize)
+        {
             var document = new RuntimeVoxDocument();
             int modelNumber = 1;
             while (WidgetManager.m_Instance.ModelWidgets.Any(widget =>
@@ -469,47 +511,38 @@ namespace TiltBrush
             {
                 ++modelNumber;
             }
-            RuntimeVoxDocument.RuntimeModel runtimeModel = document.CreateModel(
-                $"Voxel Model {modelNumber}", new Vector3Int(size, size, size));
-            byte paletteIndex = document.GetOrAddPaletteColor(App.BrushColor.CurrentColor);
-            int center = size / 2;
-            runtimeModel.AddOrUpdateVoxel(new Vector3Int(center, center, center), paletteIndex);
+            // VOX is Z-up: local Y points towards negative canvas Z, local Z towards canvas Y.
+            var dimensions = new Vector3Int(canvasDimensions.x, canvasDimensions.z, canvasDimensions.y);
+            document.CreateModel($"Voxel Model {modelNumber}", dimensions);
             Model model = Model.CreateEditableVoxModelFromBytes(document.ToVoxBytes());
-            if (model == null)
-            {
-                return false;
-            }
+            if (model == null) return false;
 
             try
             {
-                Transform attachPoint = InputManager.Brush.Geometry.ToolAttachPoint;
-                m_CreateWidgetCommand = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.ModelWidgetPrefab,
-                    TrTransform.TRS(attachPoint.position, attachPoint.rotation, VoxelSize),
-                    forceTransform: true);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(m_CreateWidgetCommand);
-                var widget = m_CreateWidgetCommand.Widget as ModelWidget;
+                Vector3 origin = canvasMin + new Vector3(0.5f, 0.5f, canvasDimensions.z - 0.5f) * voxelSize;
+                TrTransform canvasPose = TrTransform.TRS(origin, Quaternion.identity, voxelSize);
+                var command = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab,
+                    App.Scene.ActiveCanvas.Pose * canvasPose, forceTransform: true);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                var widget = command.Widget as ModelWidget;
                 widget.LoadingFromSketch = true;
                 widget.Model = model;
                 widget.AdoptEditableVoxDocument(document);
-                widget.Show(true);
-
+                widget.Show(true, false);
                 m_TargetWidget = widget;
                 m_CurrentDocument = new VoxDocumentApiWrapper(document, widget);
-                m_CurrentDocument.SetAutoVisuals(true, true);
-                m_CurrentModel = m_CurrentDocument.Model();
-                // Initial placement belongs to the creation command, not an untracked Lua edit.
                 m_CurrentDocument.SuppressDirtyTracking = true;
                 try
                 {
-                    m_CurrentModel.PlaceAt(canvasPosition, Mathf.Max(VoxelSize, 0.0001f));
+                    m_CurrentDocument.SetTransform(canvasPose);
                 }
                 finally
                 {
                     m_CurrentDocument.SuppressDirtyTracking = false;
                 }
-                m_CreateWidgetCommand.SetWidgetCost(widget.GetTiltMeterCost());
-                m_CreateNewOnNextAdd = false;
+                m_CurrentDocument.SetAutoVisuals(true, true);
+                m_CurrentModel = m_CurrentDocument.Model();
+                command.SetWidgetCost(widget.GetTiltMeterCost());
                 return true;
             }
             finally
@@ -528,7 +561,7 @@ namespace TiltBrush
         }
 
         private void UpdateTargetLabel(
-            Transform attachPoint, bool insideTarget)
+            Transform attachPoint, bool insideTarget, string creationHint = null)
         {
             if (m_TargetLabel == null)
             {
@@ -549,27 +582,16 @@ namespace TiltBrush
                 attachPoint.position + head.up * 0.06f, head.rotation);
             m_TargetLabel.transform.localScale = Vector3.one * 0.05f;
             m_TargetLabel.color = CreatingNewModel ? Color.yellow : Color.white;
-            string action = CreatingNewModel
-                ? "Trigger: create new model"
+            string action = creationHint ?? (CreatingNewModel
+                ? "Hold trigger and drag to size a new grid"
                 : !HasCurrentTarget
                     ? CurrentTargetWidget != null && CurrentTargetWidget.IsExternalVox
                         ? "Use Break Apart to make this model editable"
                         : "Grab or select an editable voxel model; New Model is in settings"
                     : insideTarget
                         ? $"Trigger: {Mode}"
-                        : "Outside active model — grab or select another to change target";
+                        : "Outside active model — grab or select another to change target");
             m_TargetLabel.text = $"{CurrentTargetDescription}\n{action}";
-        }
-
-        private static int CyclePreset(int[] presets, int current)
-        {
-            int currentIndex = Array.IndexOf(presets, current);
-            if (currentIndex >= 0)
-            {
-                return presets[(currentIndex + 1) % presets.Length];
-            }
-            int nextIndex = Array.FindIndex(presets, value => value > current);
-            return presets[nextIndex >= 0 ? nextIndex : 0];
         }
 
         private static float CyclePreset(float[] presets, float current)

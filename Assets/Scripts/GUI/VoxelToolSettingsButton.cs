@@ -89,7 +89,7 @@ namespace TiltBrush
                 case Setting.NewModel:
                     label = tool.CreatingNewModel ? "New Model\nReady" : "New\nModel";
                     title = "New Voxel Model";
-                    description = "Close settings, then press the trigger to place a separate editable voxel model.";
+                    description = "Close settings, then hold the trigger and drag to size an axis-aligned empty grid. Release to create.";
                     break;
                 default:
                     label = "Close";

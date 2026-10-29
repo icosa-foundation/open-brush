@@ -177,7 +177,7 @@
             tool.Mode = parsed;
         }
 
-        [ApiEndpoint("tool.voxel.new", "Makes the Voxel Tool create a new model on its next Add gesture")]
+        [ApiEndpoint("tool.voxel.new", "Arms a trigger drag to size and create an axis-aligned empty voxel grid")]
         public static void RequestNewVoxelModel()
         {
             var tool = SketchSurfacePanel.m_Instance.GetToolOfType(
