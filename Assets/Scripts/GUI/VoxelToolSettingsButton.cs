@@ -23,7 +23,6 @@ namespace TiltBrush
         {
             Mode,
             VoxelSize,
-            ModelSize,
             Grid,
             NewModel,
             Close,
@@ -80,11 +79,6 @@ namespace TiltBrush
                     title = "New Model Voxel Size";
                     description = $"{tool.VoxelSize:0.###} metres. Press to cycle; existing models keep their size.";
                     break;
-                case Setting.ModelSize:
-                    label = $"Volume\n{tool.ModelSize}³";
-                    title = "New Model Dimensions";
-                    description = $"{tool.ModelSize} x {tool.ModelSize} x {tool.ModelSize} voxels. Press to cycle; existing models are unchanged.";
-                    break;
                 case Setting.Grid:
                     label = $"Grid\n{(tool.ShowGrid ? "On" : "Off")}";
                     title = "Voxel Grid";
@@ -125,9 +119,6 @@ namespace TiltBrush
                     break;
                 case Setting.VoxelSize:
                     tool.CycleVoxelSize();
-                    break;
-                case Setting.ModelSize:
-                    tool.CycleModelSize();
                     break;
                 case Setting.Grid:
                     tool.ToggleGrid();
