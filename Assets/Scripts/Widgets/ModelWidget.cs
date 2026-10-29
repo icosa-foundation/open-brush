@@ -199,6 +199,12 @@ namespace TiltBrush
             m_PinScalar = 0.5f;
         }
 
+        protected override void OnUserBeginInteracting()
+        {
+            base.OnUserBeginInteracting();
+            App.Switchboard.TriggerModelWidgetGrabbed(this);
+        }
+
         override public void OnPreDestroy()
         {
             base.OnPreDestroy();
