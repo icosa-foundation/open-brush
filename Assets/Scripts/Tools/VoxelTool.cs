@@ -111,6 +111,7 @@ namespace TiltBrush
                 m_TargetEvents.ModelWidgetGrabbed -= SetTargetWidget;
                 m_TargetEvents.SelectionChanged -= OnSelectionChanged;
             }
+            DestroyResizeHandles();
             base.OnDestroy();
         }
 
@@ -137,6 +138,7 @@ namespace TiltBrush
             if (!enable)
             {
                 CancelExpansion();
+                HideResizeHandles();
                 CancelGridDrag();
                 EndGesture();
             }
@@ -151,14 +153,15 @@ namespace TiltBrush
         {
             if (hide)
             {
-                CancelExpansion();
+                // Native grip hides the painting tool after starting the handle grab.
+                if (!m_ExpandingGrid) HideResizeHandles();
                 CancelGridDrag();
                 EndGesture();
             }
             base.HideTool(hide);
             if (m_TargetLabel != null)
             {
-                m_TargetLabel.gameObject.SetActive(!hide);
+                m_TargetLabel.gameObject.SetActive(!hide || m_ExpandingGrid);
             }
         }
 
@@ -166,6 +169,8 @@ namespace TiltBrush
         {
             base.UpdateTool();
             EnsureCurrentTarget();
+            UpdateResizeHandles();
+            if (m_ExpandingGrid || ToolHidden()) return;
 
             // Process mode changes before interpreting this frame's drawing input.
             if (!IsEatingInput &&
