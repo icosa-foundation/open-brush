@@ -71,6 +71,23 @@ namespace TiltBrush
         private bool m_ApplicationPaused;
         private bool m_HadMeasurementFocus;
         public bool SupportsAutomaticQuality => App.Config.IsMobileHardware;
+
+        // Temporary Steam Frame/Lepton compatibility policy.
+        // Frame reproduces corruption only when reduced viewports and foveation
+        // are combined. Aura retains its separate full-viewport workaround.
+        internal static bool RequiresUnfoveatedReducedViewport
+        {
+            get
+            {
+#if UNITY_ANDROID && !UNITY_EDITOR
+                return string.Equals(UnityEngine.XR.OpenXR.OpenXRRuntime.name, "SteamVR/OpenXR",
+                    StringComparison.Ordinal);
+#else
+                return false;
+#endif
+            }
+        }
+
         public bool AutomaticQualityEnabled
         {
             get => SupportsAutomaticQuality && m_AutomaticQualityEnabled;
@@ -349,8 +366,8 @@ namespace TiltBrush
             m_maxLoadingSimplification = settings.MaxSimplification;
 
 #if OPEN_BRUSH_ANDROID_XR
-            // Sub-resolution XR viewports produce a top-edge band and vertical image
-            // shifts on Aura. Keep the full viewport until that rendering issue is resolved.
+            // Aura's band and vertical shifts reproduce even with foveation off.
+            // Keep its full-viewport workaround separate from the Frame restriction.
             float viewportScale = 1f;
 #else
             float viewportScale = App.UserConfig.Profiling.ViewportScaling > 0 ?
@@ -366,6 +383,14 @@ namespace TiltBrush
             int foveation = settings.FixedFoveationLevel;
             if (m_RuntimeFoveationOverrides.TryGetValue(value, out var runtimeFoveation))
                 foveation = runtimeFoveation;
+
+            // Preserve resolution scaling while avoiding the unsupported combination
+            // of reduced URP intermediate-texture viewports and fixed foveation.
+            if (viewportScale < 1f && foveation > 0 && RequiresUnfoveatedReducedViewport)
+            {
+                Debug.Log($"[OB_XR_VIEWPORT] Disabling foveation at viewport scale {viewportScale}, quality {value}.");
+                foveation = 0;
+            }
 
             UnityEngine.XR.XRSettings.renderViewportScale = viewportScale;
 
