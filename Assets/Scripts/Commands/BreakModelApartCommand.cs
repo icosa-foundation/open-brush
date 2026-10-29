@@ -28,6 +28,7 @@ namespace TiltBrush
         private List<LightWidget> m_NewLightWidgets;
         private List<SoundClipWidget> m_NewSoundClipWidgets;
         private List<string> m_NodePaths;
+        private RuntimeVoxDocument m_ConversionDocument;
 
         override public bool NeedsSave
         {
@@ -162,6 +163,13 @@ namespace TiltBrush
 
         public BreakModelApartCommand(ModelWidget initialWidget, BaseCommand parent = null) : base(parent)
         {
+            m_InitialWidget = initialWidget;
+            if (initialWidget.IsExternalVox && string.IsNullOrEmpty(initialWidget.Subtree))
+            {
+                m_ConversionDocument = initialWidget.Model.CreateEditableVoxDocument()
+                    ?? throw new InvalidOperationException("The imported VOX source is not loaded.");
+                return;
+            }
             if (initialWidget.EditableVoxDocument != null)
             {
                 throw new InvalidOperationException(
@@ -213,6 +221,12 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            if (m_ConversionDocument != null)
+            {
+                m_InitialWidget.AdoptEditableVoxDocument(m_ConversionDocument);
+                SaveLoadScript.m_Instance?.SketchChanged();
+                return;
+            }
             SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_InitialWidget });
 
             var widgetObjScript = m_InitialWidget.GetComponentInChildren<ObjModelScript>();
@@ -329,6 +343,12 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            if (m_ConversionDocument != null)
+            {
+                m_InitialWidget.RestoreExternalVoxContent();
+                SaveLoadScript.m_Instance?.SketchChanged();
+                return;
+            }
             SelectionManager.m_Instance.DeselectWidgets(m_NewModelWidgets);
             foreach (var widget in m_NewModelWidgets)
             {

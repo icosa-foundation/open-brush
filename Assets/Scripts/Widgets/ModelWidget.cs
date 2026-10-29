@@ -97,13 +97,9 @@ namespace TiltBrush
                     m_Model.ReleaseUsage();
                 }
                 m_Model = value;
-                // A broken-apart model widget represents only one imported hierarchy subtree,
-                // while an editable VOX document owns the complete file. Keep legacy split VOX
-                // widgets on the ordinary mesh-model path rather than attaching a document that
-                // cannot be refreshed without recreating the omitted subtrees.
-                m_EditableVoxDocument = string.IsNullOrEmpty(Subtree)
-                    ? m_Model?.CreateEditableVoxDocument()
-                    : null;
+                // Importing a catalog model never converts it to embedded sketch content.
+                // Generated/embedded content is adopted explicitly by its creator/loader.
+                m_EditableVoxDocument = null;
                 // Increment usage count on new model.
                 if (m_Model != null)
                 {
@@ -117,6 +113,19 @@ namespace TiltBrush
 
         // Owned by this widget. Never shared with the catalog Model or another widget.
         public RuntimeVoxDocument EditableVoxDocument => m_EditableVoxDocument;
+
+        public bool IsExternalVox => IsVoxModel() && m_EditableVoxDocument == null;
+
+        internal void RestoreExternalVoxContent()
+        {
+            m_EditableVoxDocument = null;
+            LoadModel();
+            SetSignedWidgetSize(m_Size);
+            if (transform.parent != null)
+            {
+                HierarchyUtils.RecursivelySetLayer(transform, transform.parent.gameObject.layer);
+            }
+        }
 
         internal void AdoptEditableVoxDocument(RuntimeVoxDocument document)
         {
@@ -325,6 +334,8 @@ namespace TiltBrush
             ReleaseOwnedVoxMaterials();
             if (m_ModelInstance != null)
             {
+                // Stop old geometry participating in hierarchy queries until deferred destruction.
+                m_ModelInstance.gameObject.SetActive(false);
                 GameObject.Destroy(m_ModelInstance.gameObject);
             }
             m_GsplatRenderer = null;
@@ -402,7 +413,7 @@ namespace TiltBrush
             WidgetManager.m_Instance.AdjustModelVertCount(-m_NumVertsTrackedByWidgetManager);
             m_NumVertsTrackedByWidgetManager = 0;
 
-            m_ObjModelScript = GetComponentInChildren<ObjModelScript>();
+            m_ObjModelScript = m_ModelInstance.GetComponentInChildren<ObjModelScript>();
             if (m_ObjModelScript == null)
             {
                 OutputWindowScript.Error("Failed to find ObjModelScript on loaded model");
@@ -696,6 +707,7 @@ namespace TiltBrush
 
         public bool HasMultipleNodes()
         {
+            if (IsExternalVox && string.IsNullOrEmpty(Subtree)) { return true; }
             // VOX internal models remain document implementation details. Exposing the generic
             // model Break Apart operation would create subtree widgets that no longer own a
             // complete editable document.
@@ -725,6 +737,7 @@ namespace TiltBrush
 
         public bool MeshSplitPossible()
         {
+            if (IsExternalVox && string.IsNullOrEmpty(Subtree)) { return true; }
             if (m_EditableVoxDocument != null)
             {
                 return false;
