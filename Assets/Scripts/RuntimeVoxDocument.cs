@@ -16,6 +16,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 using VoxReader.Interfaces;
@@ -39,19 +40,41 @@ namespace TiltBrush
             public TrTransform WidgetTransform = TrTransform.identity;
         }
 
+        // A definition owns cells. Multiple scene placements may reference the same definition.
+        public sealed class VoxelDefinition
+        {
+            public Guid Id { get; } = Guid.NewGuid();
+            public Vector3Int Size { get; }
+            public int SourceModelId { get; }
+            internal Dictionary<Vector3Int, byte> Cells { get; }
+
+            internal VoxelDefinition(Vector3Int size, int sourceModelId,
+                Dictionary<Vector3Int, byte> cells = null)
+            {
+                Size = size;
+                SourceModelId = sourceModelId;
+                Cells = cells ?? new Dictionary<Vector3Int, byte>();
+            }
+        }
+
+        // A model is a placed scene instance, with an identity independent of list order.
         public sealed class RuntimeModel
         {
-            private readonly Dictionary<Vector3Int, byte> m_voxels;
+            public Guid Id { get; } = Guid.NewGuid();
+            public VoxelDefinition Definition { get; internal set; }
+            private Dictionary<Vector3Int, byte> m_voxels => Definition.Cells;
 
             public string Name { get; }
-            public Vector3Int Size { get; }
+            public Vector3Int Size => Definition.Size;
             // VOX-world position of local voxel (0, 0, 0). Together with GlobalRotation,
             // this is the affine transform used for rendering and editing.
             public Vector3 TransformOffset { get; set; }
             public Vector3 LocalTransformOffset { get; }
             public Matrix4x4 GlobalRotation { get; }
             public Matrix4x4 LocalRotation { get; }
-            public int SourceModelId { get; }
+            public int SourceModelId => Definition.SourceModelId;
+            internal int SceneNodeId { get; }
+            internal int SceneModelSlot { get; }
             public bool IsCopy { get; }
             public bool IsVisible { get; }
             public IReadOnlyDictionary<Vector3Int, byte> Voxels => m_voxels;
@@ -70,7 +93,10 @@ namespace TiltBrush
                 Vector3? localTransformOffset = null,
                 Matrix4x4? globalRotation = null,
                 Matrix4x4? localRotation = null,
-                bool isVisible = true)
+                bool isVisible = true,
+                VoxelDefinition definition = null,
+                int sceneNodeId = -1,
+                int sceneModelSlot = 0)
             {
                 if (size.x <= 0 || size.y <= 0 || size.z <= 0 ||
                     size.x > MaxModelDimension ||
@@ -83,10 +109,10 @@ namespace TiltBrush
                 }
 
                 Name = name;
-                Size = size;
-                SourceModelId = sourceModelId;
+                Definition = definition ?? new VoxelDefinition(size, sourceModelId, voxels);
+                SceneNodeId = sceneNodeId;
+                SceneModelSlot = sceneModelSlot;
                 IsCopy = isCopy;
-                m_voxels = voxels ?? new Dictionary<Vector3Int, byte>();
                 LocalTransformOffset = localTransformOffset ?? Vector3.zero;
                 GlobalRotation = globalRotation ?? Matrix4x4.identity;
                 LocalRotation = localRotation ?? Matrix4x4.identity;
@@ -278,6 +304,67 @@ namespace TiltBrush
         // Transient scene/API state. This is deliberately not included in VOX serialization.
         internal WidgetViewState ViewState { get; } = new WidgetViewState();
 
+        // Undo snapshots retain the actual identities, including removed objects. Serialized
+        // VOX indices cannot provide this guarantee when definitions are added or detached.
+        public sealed class Snapshot
+        {
+            internal RuntimeVoxDocument Owner;
+            internal RuntimeModel[] Models;
+            internal VoxelDefinition[] Definitions;
+            internal Vector3[] Offsets;
+            internal Dictionary<VoxelDefinition, Dictionary<Vector3Int, byte>> Cells;
+            internal Color32[] Palette;
+            internal Dictionary<int, RuntimeMaterial> Materials;
+            internal byte[] Source;
+        }
+
+        public Snapshot CaptureSnapshot()
+        {
+            return new Snapshot
+            {
+                Owner = this,
+                Models = m_models.ToArray(),
+                Definitions = m_models.Select(model => model.Definition).ToArray(),
+                Offsets = m_models.Select(model => model.TransformOffset).ToArray(),
+                Cells = m_models.Select(model => model.Definition).Distinct().ToDictionary(
+                    definition => definition,
+                    definition => new Dictionary<Vector3Int, byte>(definition.Cells)),
+                Palette = (Color32[])Palette.Clone(),
+                Materials = new Dictionary<int, RuntimeMaterial>(m_materials),
+                // This private buffer is immutable; writers parse their own chunk copies.
+                Source = m_sourceVoxBytes,
+            };
+        }
+
+        public void RestoreSnapshot(Snapshot snapshot)
+        {
+            if (snapshot == null || !ReferenceEquals(snapshot.Owner, this))
+            {
+                throw new InvalidOperationException("A VOX snapshot belongs to its original document.");
+            }
+            foreach (var entry in snapshot.Cells)
+            {
+                entry.Key.Cells.Clear();
+                foreach (var cell in entry.Value) entry.Key.Cells.Add(cell.Key, cell.Value);
+            }
+            m_models.Clear();
+            for (int i = 0; i < snapshot.Models.Length; ++i)
+            {
+                RuntimeModel model = snapshot.Models[i];
+                model.Definition = snapshot.Definitions[i];
+                model.TransformOffset = snapshot.Offsets[i];
+                m_models.Add(model);
+            }
+            Array.Copy(snapshot.Palette, Palette, Palette.Length);
+            m_materials.Clear();
+            foreach (var material in snapshot.Materials) m_materials.Add(material.Key, material.Value);
+            m_sourceVoxBytes = snapshot.Source;
+        }
+
+        public bool ContainsModel(RuntimeModel model) => m_models.Contains(model);
+
+
+
         // Palette is 1-based from VOX perspective. Palette[0] corresponds to index 1.
         public Color32[] Palette { get; } = new Color32[256];
 
@@ -413,8 +500,9 @@ namespace TiltBrush
                 }
             }
 
-            var voxelDataBySourceId = new Dictionary<int, Dictionary<Vector3Int, byte>>();
-            IReadOnlyList<bool> modelVisibility = GetModelVisibility(voxFile);
+            var definitionsBySourceId = new Dictionary<int, VoxelDefinition>();
+            IReadOnlyList<bool> modelVisibility = GetModelVisibility(
+                voxFile, out var sceneNodes, out var sceneSlots);
             int modelIndex = 0;
 
             foreach (IModel sourceModel in voxFile.Models)
@@ -425,12 +513,12 @@ namespace TiltBrush
                     sourceModel.LocalSize.Z);
                 Matrix4x4 globalRotation = ToUnityMatrix(sourceModel.GlobalRotation);
 
-                if (!voxelDataBySourceId.TryGetValue(
+                if (!definitionsBySourceId.TryGetValue(
                         sourceModel.Id,
-                        out Dictionary<Vector3Int, byte> sharedVoxels))
+                        out VoxelDefinition definition))
                 {
-                    sharedVoxels = new Dictionary<Vector3Int, byte>();
-                    voxelDataBySourceId.Add(sourceModel.Id, sharedVoxels);
+                    definition = new VoxelDefinition(modelSize, sourceModel.Id);
+                    definitionsBySourceId.Add(sourceModel.Id, definition);
                 }
 
                 var runtimeModel = new RuntimeModel(
@@ -438,14 +526,18 @@ namespace TiltBrush
                     modelSize,
                     sourceModel.Id,
                     sourceModel.IsCopy,
-                    sharedVoxels,
+                    null,
                     new Vector3(
                         sourceModel.LocalPosition.X,
                         sourceModel.LocalPosition.Y,
                         sourceModel.LocalPosition.Z),
                     globalRotation,
                     ToUnityMatrix(sourceModel.LocalRotation),
-                    modelVisibility[modelIndex++]);
+                    modelVisibility[modelIndex],
+                    definition,
+                    sceneNodes[modelIndex],
+                    sceneSlots[modelIndex]);
+                ++modelIndex;
                 document.m_models.Add(runtimeModel);
                 runtimeModel.TransformOffset = GetTransformOffset(sourceModel, globalRotation);
 
@@ -627,8 +719,11 @@ namespace TiltBrush
             return result;
         }
 
-        private static IReadOnlyList<bool> GetModelVisibility(IVoxFile voxFile)
+        private static IReadOnlyList<bool> GetModelVisibility(
+            IVoxFile voxFile, out List<int> sceneNodes, out List<int> sceneSlots)
         {
+            sceneNodes = new List<int>(voxFile.Models.Length);
+            sceneSlots = new List<int>(voxFile.Models.Length);
             var transforms = new List<SceneTransform>();
             var transformsByChild = new Dictionary<int, SceneTransform>();
             var parentGroupByChild = new Dictionary<int, SceneGroup>();
@@ -675,6 +770,11 @@ namespace TiltBrush
 
             if (transforms.Count == 0)
             {
+                for (int i = 0; i < voxFile.Models.Length; ++i)
+                {
+                    sceneNodes.Add(-1);
+                    sceneSlots.Add(0);
+                }
                 var legacyVisibility = new bool[voxFile.Models.Length];
                 Array.Fill(legacyVisibility, true);
                 return legacyVisibility;
@@ -693,9 +793,11 @@ namespace TiltBrush
                     hiddenLayers,
                     parentGroupByChild,
                     transformsByChild);
-                foreach (int unused in shape.ModelIds)
+                for (int slot = 0; slot < shape.ModelIds.Count; ++slot)
                 {
                     result.Add(visible);
+                    sceneNodes.Add(transform.NodeId);
+                    sceneSlots.Add(slot);
                 }
             }
 

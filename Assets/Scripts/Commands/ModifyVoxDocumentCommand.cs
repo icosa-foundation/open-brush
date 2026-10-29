@@ -22,10 +22,10 @@ namespace TiltBrush
     public sealed class ModifyVoxDocumentCommand : BaseCommand
     {
         private readonly ModelWidget m_Widget;
-        private readonly byte[] m_Before;
-        private readonly byte[] m_After;
-        private readonly bool m_PreserveSourceData;
-        private readonly int m_ModelIndex;
+        private readonly RuntimeVoxDocument m_Document;
+        private readonly RuntimeVoxDocument.Snapshot m_Before;
+        private readonly RuntimeVoxDocument.Snapshot m_After;
+        private readonly RuntimeVoxDocument.RuntimeModel m_Model;
         private readonly Dictionary<Vector3Int, byte> m_BeforeCells;
         private readonly Dictionary<Vector3Int, byte> m_AfterCells;
         private readonly Color32[] m_BeforePalette;
@@ -33,25 +33,26 @@ namespace TiltBrush
 
         public ModifyVoxDocumentCommand(
             ModelWidget widget,
-            byte[] before,
-            byte[] after,
+            RuntimeVoxDocument.Snapshot before,
+            RuntimeVoxDocument.Snapshot after,
             BaseCommand parent = null)
             : base(parent)
         {
             m_Widget = widget;
-            m_Before = (byte[])before.Clone();
-            m_After = (byte[])after.Clone();
-            m_PreserveSourceData = widget.EditableVoxDocument.HasPreservedSourceData;
+            m_Document = widget.EditableVoxDocument;
+            m_Before = before;
+            m_After = after;
         }
 
         public ModifyVoxDocumentCommand(
-            ModelWidget widget, int modelIndex,
+            ModelWidget widget, RuntimeVoxDocument.RuntimeModel model,
             Dictionary<Vector3Int, byte> before, Dictionary<Vector3Int, byte> after,
             Color32[] beforePalette, Color32[] afterPalette, BaseCommand parent = null)
             : base(parent)
         {
             m_Widget = widget;
-            m_ModelIndex = modelIndex;
+            m_Document = widget.EditableVoxDocument;
+            m_Model = model;
             m_BeforeCells = new Dictionary<Vector3Int, byte>(before);
             m_AfterCells = new Dictionary<Vector3Int, byte>(after);
             m_BeforePalette = (Color32[])beforePalette.Clone();
@@ -75,10 +76,10 @@ namespace TiltBrush
 
         private void ApplyCells(Dictionary<Vector3Int, byte> cells, Color32[] palette)
         {
-            if (m_Widget == null || m_Widget.EditableVoxDocument == null ||
-                m_ModelIndex < 0 || m_ModelIndex >= m_Widget.EditableVoxDocument.Models.Count) return;
-            var document = m_Widget.EditableVoxDocument;
-            var model = document.Models[m_ModelIndex];
+            if (m_Widget == null || !ReferenceEquals(m_Widget.EditableVoxDocument, m_Document) ||
+                !m_Document.ContainsModel(m_Model)) return;
+            var document = m_Document;
+            var model = m_Model;
             Array.Copy(palette, document.Palette, palette.Length);
             foreach (var cell in cells)
             {
@@ -93,14 +94,14 @@ namespace TiltBrush
             SaveLoadScript.m_Instance?.SketchChanged();
         }
 
-        private void Apply(byte[] bytes)
+        private void Apply(RuntimeVoxDocument.Snapshot snapshot)
         {
-            if (m_Widget == null)
+            if (m_Widget == null || !ReferenceEquals(m_Widget.EditableVoxDocument, m_Document))
             {
                 return;
             }
 
-            m_Widget.EditableVoxDocument.RestoreFromBytes(bytes, m_PreserveSourceData);
+            m_Document.RestoreSnapshot(snapshot);
             if (m_Widget.Showing && m_Widget.gameObject.activeInHierarchy)
             {
                 m_Widget.RefreshEditableVoxMeshes();

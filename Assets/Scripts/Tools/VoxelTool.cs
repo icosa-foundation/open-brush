@@ -48,6 +48,7 @@ namespace TiltBrush
         private Color32[] m_GestureBeforePalette;
         private bool m_GestureAutoVisuals;
         private ModelWidget m_GestureWidget;
+        private RuntimeVoxDocument.RuntimeModel m_GestureModel;
         private CreateWidgetCommand m_CreateWidgetCommand;
         private TextMeshPro m_TargetLabel;
         private EditMode m_Mode;
@@ -246,6 +247,7 @@ namespace TiltBrush
             m_GestureAfterCells = new Dictionary<Vector3Int, byte>();
             m_GestureBeforePalette = (Color32[])m_CurrentDocument._Document.Palette.Clone();
             m_GestureWidget = m_CurrentDocument.Widget;
+            m_GestureModel = m_CurrentModel._Model;
             m_GestureAutoVisuals = m_CurrentDocument.autoVisuals;
             m_CurrentDocument.SuppressDirtyTracking = true;
             m_CurrentDocument.SetAutoVisuals(false, true);
@@ -320,7 +322,7 @@ namespace TiltBrush
             {
                 var command = new ModifyVoxDocumentCommand(
                     m_GestureWidget,
-                    m_CurrentModel.index,
+                    m_GestureModel,
                     m_GestureBeforeCells,
                     m_GestureAfterCells,
                     m_GestureBeforePalette,
@@ -354,6 +356,7 @@ namespace TiltBrush
             m_GestureAfterCells = null;
             m_GestureBeforePalette = null;
             m_GestureWidget = null;
+            m_GestureModel = null;
             m_CreateWidgetCommand = null;
         }
 
@@ -439,7 +442,8 @@ namespace TiltBrush
                 return;
             }
             ModelWidget widget = m_CurrentDocument.Widget;
-            if (!m_CurrentDocument.isValid || widget == null || !widget.Showing ||
+            if (!m_CurrentDocument.isValid || m_CurrentModel == null || !m_CurrentModel.isValid ||
+                widget == null || !widget.Showing ||
                 !widget.gameObject.activeInHierarchy || !string.IsNullOrEmpty(widget.Subtree))
             {
                 EndGesture();

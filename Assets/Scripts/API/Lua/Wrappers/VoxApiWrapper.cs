@@ -54,7 +54,12 @@ namespace TiltBrush
     {
         [MoonSharpHidden] private readonly RuntimeVoxDocument m_Document;
         [MoonSharpHidden] private readonly VoxDocumentApiWrapper m_DocumentWrapper;
-        [MoonSharpHidden] public RuntimeVoxDocument.RuntimeModel _Model;
+        [MoonSharpHidden] private readonly RuntimeVoxDocument.RuntimeModel m_Model;
+        [MoonSharpHidden] public RuntimeVoxDocument.RuntimeModel _Model => isValid
+            ? m_Model : throw new InvalidOperationException("This VOX model is no longer in its document.");
+
+        [LuaDocsDescription("False while this model is removed; undo can restore the same model")]
+        public bool isValid => m_Document.ContainsModel(m_Model) && m_DocumentWrapper.isValid;
 
         public VoxModelApiWrapper(
             RuntimeVoxDocument document,
@@ -62,7 +67,7 @@ namespace TiltBrush
             VoxDocumentApiWrapper documentWrapper = null)
         {
             m_Document = document;
-            _Model = model;
+            m_Model = model;
             m_DocumentWrapper = documentWrapper ?? new VoxDocumentApiWrapper(document);
         }
 
@@ -76,7 +81,7 @@ namespace TiltBrush
             {
                 for (int i = 0; i < m_Document.Models.Count; i++)
                 {
-                    if (ReferenceEquals(m_Document.Models[i], _Model))
+                    if (ReferenceEquals(m_Document.Models[i], m_Model))
                     {
                         return i;
                     }
@@ -353,9 +358,10 @@ namespace TiltBrush
         [LuaDocsDescription("If true, model/palette edits automatically rebuild scene geometry")]
         public bool autoVisuals => m_ViewState.AutoVisuals;
 
-        [LuaDocsDescription("False after this document's widget has been deleted")]
+        [LuaDocsDescription("False after the widget is deleted or restored to external content")]
         public bool isValid => !m_ViewState.WidgetBacked ||
-            !m_ViewState.WidgetWasCreated || m_ViewState.Widget != null;
+            !m_ViewState.WidgetWasCreated || (m_ViewState.Widget != null &&
+                ReferenceEquals(m_ViewState.Widget.EditableVoxDocument, _Document));
 
         [MoonSharpHidden]
         internal ModelWidget Widget => m_ViewState.Widget;
