@@ -238,6 +238,15 @@ namespace TiltBrush
                 "Voxel tool: trigger to place a new model", true);
         }
 
+        internal void RequestModelSelection()
+        {
+            EndGesture();
+            m_CurrentDocument = null;
+            m_CurrentModel = null;
+            m_CreateNewOnNextAdd = false;
+            Mode = EditMode.Select;
+        }
+
         private void BeginGesture(Vector3 canvasPosition)
         {
             EndGesture();

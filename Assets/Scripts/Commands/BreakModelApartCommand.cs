@@ -228,6 +228,9 @@ namespace TiltBrush
             if (m_ConversionDocument != null)
             {
                 m_InitialWidget.AdoptEditableVoxDocument(m_ConversionDocument);
+                var voxelTool = SketchSurfacePanel.m_Instance?.GetToolOfType(
+                    BaseTool.ToolType.VoxelTool) as VoxelTool;
+                voxelTool?.RequestModelSelection();
                 SaveLoadScript.m_Instance?.SketchChanged();
                 return;
             }
