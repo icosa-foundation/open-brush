@@ -227,12 +227,18 @@ jobs:
       fail-fast: false
       matrix:
         flavors: ${{ fromJson(needs.configuration.outputs.flavors) }}
-        name: [Windows OpenXR, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
+        name: [Windows OpenXR, Linux, MacOS, Android OpenXR, Android AndroidXR, Android Viewer OpenXR, Android Viewer AndroidXR, Android Meta Quest, iOS Viewer, iOS Zapbox]  # These will all be overwritten, but because we have the flavors matrix as well, we can't just add configurations via include; they'll overwrite each other. This way ensures that we get each one
         include:
           - name: Windows OpenXR
             targetPlatform: StandaloneWindows64
             vrsdk: OpenXR
             cache: Windows
+            extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
+
+          - name: Linux
+            targetPlatform: StandaloneLinux64
+            vrsdk: Monoscopic  # All builds include monoscopic, but this one has no additional XrSdk, so we'll keep the name monoscopic
+            cache: Linux
             extra_photon_defines: MP_PHOTON CROSS_PLATFORM_INPUT PHOTON_VOICE_DEFINED FUSION_WEAVER FUSION2 FUSION_2_1_OR_NEWER
 
           - name: MacOS
@@ -1038,6 +1044,12 @@ jobs:
           name: Android Meta Quest
           path: build_android_quest
 
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v8
+        with:
+          name: Linux
+          path: build_linux
+
       - name: Download Build Artifacts (Mac)
         uses: actions/download-artifact@v8
         with:
@@ -1053,9 +1065,11 @@ jobs:
           mv build_android_quest/*/com.Icosa.OpenBrush*apk releases/OpenBrush_Quest_$VERSION.apk
           mv build_windows_openxr/StandaloneWindows64/ releases/OpenBrush_Desktop_$VERSION/
           mv build_macos/*.dmg releases/OpenBrush_Mac_$VERSION.dmg
+          mv build_linux/StandaloneLinux64/ releases/OpenBrush_Linux_$VERSION/
           cd releases
           zip -r OpenBrush_Desktop_$VERSION.zip OpenBrush_Desktop_$VERSION/
           rm -rf OpenBrush_Desktop_$VERSION
+          zip -r OpenBrush_Linux_$VERSION.zip OpenBrush_Linux_$VERSION/
 
       - name: Publish
         uses: softprops/action-gh-release@v3
@@ -1176,6 +1190,11 @@ jobs:
         with:
           name: MacOS (signed)
           path: build_macos
+      - name: Download Build Artifacts (Linux)
+        uses: actions/download-artifact@v8
+        with:
+          name: Linux
+          path: build_linux
       - name: Download Build Artifacts (Android OpenXR)
         uses: actions/download-artifact@v8
         with:
@@ -1190,6 +1209,7 @@ jobs:
           jinjanate Support/steam/app.vdf.j2 > app.vdf
           jinjanate Support/steam/main_depot.win.vdf.j2 > build_windows_openxr/main_depot.vdf
           jinjanate Support/steam/main_depot.mac.vdf.j2 > build_macos/main_depot.vdf
+          jinjanate Support/steam/main_depot.linux.vdf.j2 > build_linux/main_depot.vdf
           jinjanate Support/steam/main_depot.android.vdf.j2 > build_android_openxr/main_depot.vdf
           jinjanate Support/steam/installscript_win.vdf.j2 > build_windows_openxr/installscript_win.vdf
           steamcmd +login $STEAM_USERNAME +run_app_build $(pwd)/app.vdf +quit
@@ -1200,6 +1220,7 @@ jobs:
           OPEN_BRUSH_APP_ID: ${{ vars.STEAM_APP_ID }}
           OPEN_BRUSH_WINDOWS_DEPOT_ID: ${{ vars.STEAM_WINDOWS_DEPOT_ID }}
           OPEN_BRUSH_MAC_DEPOT_ID: ${{ vars.STEAM_MAC_DEPOT_ID }}
+          OPEN_BRUSH_LINUX_DEPOT_ID: ${{ vars.STEAM_LINUX_DEPOT_ID }}
           OPEN_BRUSH_ANDROID_DEPOT_ID: ${{ vars.STEAM_ANDROID_DEPOT_ID }}
           OPEN_BRUSH_WINDOWS_EXECUTABLE: ${{ needs.configuration.outputs.basename}}.exe
           CHANNEL: beta
