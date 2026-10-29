@@ -83,6 +83,7 @@ namespace TiltBrush
                 if (widget == null) return "No active voxel model — grab or select one";
                 string name = widget.GetExportName();
                 if (widget.EditableVoxDocument == null) return $"{name} — Break Apart to make it editable";
+                if (!HasCurrentTarget) return $"No visible voxel grid in {name}";
                 if (widget.EditableVoxDocument.Models.Count == 1 &&
                     !string.IsNullOrEmpty(widget.EditableVoxDocument.Models[0].Name))
                     name = widget.EditableVoxDocument.Models[0].Name;
@@ -551,8 +552,9 @@ namespace TiltBrush
             string action = CreatingNewModel
                 ? "Trigger: create new model"
                 : !HasCurrentTarget
-                    ? CurrentTargetWidget != null ? "Use Break Apart to make this model editable"
-                        : "Grab or select a voxel model; New Model is in settings"
+                    ? CurrentTargetWidget != null && CurrentTargetWidget.IsExternalVox
+                        ? "Use Break Apart to make this model editable"
+                        : "Grab or select an editable voxel model; New Model is in settings"
                     : insideTarget
                         ? $"Trigger: {Mode}"
                         : "Outside active model — grab or select another to change target";
