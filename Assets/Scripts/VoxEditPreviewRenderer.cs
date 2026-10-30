@@ -33,7 +33,6 @@ namespace TiltBrush
         private static MaterialPropertyBlock s_GridProperties;
         private static MaterialPropertyBlock s_BoundsProperties;
         private static MaterialPropertyBlock s_TargetProperties;
-        private static MaterialPropertyBlock s_HandleProperties;
 
         public static void Draw(
             RuntimeVoxDocument.RuntimeModel model,
@@ -145,35 +144,6 @@ namespace TiltBrush
                     0.075f,
                     worldBounds,
                     ref s_TargetProperties);
-            }
-        }
-
-        public static float GetExpansionHandleSize(TrTransform modelToCanvas)
-        {
-            float scale = Mathf.Abs((App.Scene.ActiveCanvas.Pose * modelToCanvas).scale);
-            return Mathf.Max(0.6f, 0.015f / Mathf.Max(scale, 0.000001f));
-        }
-
-        public static void DrawExpansionHandles(TrTransform modelToCanvas,
-            Vector3 min, Vector3 max, int highlightedFace)
-        {
-            if (!TryGetMaterial()) return;
-            TrTransform pose = App.Scene.ActiveCanvas.Pose * modelToCanvas;
-            var worldBounds = new Bounds(pose * ((min + max) * 0.5f),
-                Vector3.one * Mathf.Max((max - min).magnitude * Mathf.Abs(pose.scale), 0.1f));
-            DrawBox(pose, min, max, new Color(0.1f, 0.7f, 1f, 0.5f),
-                0.035f, worldBounds, ref s_BoundsProperties);
-            float size = GetExpansionHandleSize(modelToCanvas);
-            for (int face = 0; face < 6; ++face)
-            {
-                Vector3 center = (min + max) * 0.5f;
-                int axis = face / 2;
-                center[axis] = face % 2 == 0 ? min[axis] : max[axis];
-                Color color = face == highlightedFace ? new Color(1f, 0.85f, 0.1f, 1f)
-                    : new Color(0.1f, 0.7f, 1f, 0.8f);
-                var handleBounds = new Bounds(pose * center, Vector3.one * size * Mathf.Abs(pose.scale) * 2f);
-                DrawBox(pose, center - Vector3.one * size * 0.5f, center + Vector3.one * size * 0.5f,
-                    color, size * 0.06f, handleBounds, ref s_HandleProperties);
             }
         }
 
