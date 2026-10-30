@@ -47,20 +47,28 @@ namespace TiltBrush
             Vector3 canvasPosition,
             Color targetColor,
             Color guideColor,
-            bool showGrid = true)
+            bool showGrid = true,
+            int brushSizeStep = 0,
+            bool allowOutside = false)
         {
             if (model == null || !TryGetMaterial())
             {
                 return;
             }
 
-            Vector3Int gridCount = new Vector3Int(
+            var footprint = new VoxBrushFootprint(brushSizeStep);
+            Vector3Int gridCount = allowOutside ? Vector3Int.one * kGridDiameter : new Vector3Int(
                 Mathf.Min(kGridDiameter, model.Size.x),
                 Mathf.Min(kGridDiameter, model.Size.y),
                 Mathf.Min(kGridDiameter, model.Size.z));
             Vector3Int cell = Vector3Int.RoundToInt(modelToCanvas.inverse * canvasPosition);
-            bool isInside = model.IsInBounds(cell);
-            Vector3Int gridOrigin = new Vector3Int(
+            bool overlaps = footprint.IntersectsVolume(cell, model.Size);
+            bool validTarget = allowOutside
+                ? RuntimeVoxDocument.TryGetDrawingPadding(model.Size, cell, footprint.Extent, out _, out _)
+                : overlaps;
+            Vector3Int gridOrigin = allowOutside
+                ? cell - gridCount / 2
+                : new Vector3Int(
                 Mathf.Clamp(cell.x - gridCount.x / 2, 0, model.Size.x - gridCount.x),
                 Mathf.Clamp(cell.y - gridCount.y / 2, 0, model.Size.y - gridCount.y),
                 Mathf.Clamp(cell.z - gridCount.z / 2, 0, model.Size.z - gridCount.z));
@@ -78,6 +86,10 @@ namespace TiltBrush
             var worldBounds = new Bounds(
                 modelToWorld * localCenter,
                 Vector3.one * Mathf.Max(worldDiameter, 0.1f));
+            // Procedural culling bounds must cover the cursor/guide even outside the old model.
+            float previewSpan = Mathf.Max(footprint.Extent * 2 + 1, ((Vector3)gridCount).magnitude + 1f);
+            worldBounds.Encapsulate(new Bounds(modelToWorld * (Vector3)cell,
+                Vector3.one * previewSpan * Mathf.Abs(modelToWorld.scale) * 2f));
             if (showGrid)
             {
                 s_GridProperties ??= new MaterialPropertyBlock();
@@ -122,7 +134,7 @@ namespace TiltBrush
                 Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, vertexCount);
             }
 
-            Color boundsColor = isInside
+            Color boundsColor = validTarget
                 ? new Color(guideColor.r, guideColor.g, guideColor.b, 0.35f)
                 : new Color(0.65f, 0.08f, 0.08f, 0.5f);
             DrawBox(
@@ -134,16 +146,23 @@ namespace TiltBrush
                 worldBounds,
                 ref s_BoundsProperties);
 
-            if (isInside)
+            if (allowOutside || overlaps)
             {
-                DrawBox(
-                    modelToWorld,
-                    (Vector3)cell - Vector3.one * 0.5f,
-                    (Vector3)cell + Vector3.one * 0.5f,
-                    new Color(targetColor.r, targetColor.g, targetColor.b, 0.9f),
-                    0.075f,
-                    worldBounds,
-                    ref s_TargetProperties);
+                Color color = validTarget
+                    ? new Color(targetColor.r, targetColor.g, targetColor.b, 0.9f)
+                    : new Color(0.9f, 0.12f, 0.08f, 0.9f);
+                DrawFootprint(modelToWorld, cell, footprint, color, worldBounds);
+            }
+        }
+
+        private static void DrawFootprint(TrTransform pose, Vector3Int cell, VoxBrushFootprint footprint,
+            Color color, Bounds worldBounds)
+        {
+            for (int box = 0; box < footprint.BoxCount; ++box)
+            {
+                footprint.GetBox(box, out var min, out var max);
+                DrawBox(pose, (Vector3)cell + min - Vector3.one * 0.5f,
+                    (Vector3)cell + max + Vector3.one * 0.5f, color, 0.075f, worldBounds, ref s_TargetProperties);
             }
         }
 
@@ -158,15 +177,14 @@ namespace TiltBrush
                 new Color(0.9f, 0.7f, 0.2f, 0.65f), 0.035f, worldBounds, ref s_BoundsProperties);
         }
 
-        public static void DrawCreationBounds(Vector3 min, Vector3 max, float voxelSize)
+        public static void DrawCreationFootprint(Vector3 center, float voxelSize, int brushSizeStep)
         {
             if (!TryGetMaterial()) return;
-            TrTransform canvasToWorld = App.Scene.ActiveCanvas.Pose;
-            float diameter = (max - min).magnitude * Mathf.Abs(canvasToWorld.scale);
-            var worldBounds = new Bounds(canvasToWorld * ((min + max) * 0.5f),
-                Vector3.one * Mathf.Max(diameter, 0.1f));
-            DrawBox(canvasToWorld, min, max, new Color(1f, 0.8f, 0.1f, 0.8f),
-                voxelSize * 0.035f, worldBounds, ref s_BoundsProperties);
+            var footprint = new VoxBrushFootprint(brushSizeStep);
+            TrTransform pose = App.Scene.ActiveCanvas.Pose * TrTransform.TRS(center, Quaternion.identity, voxelSize);
+            float diameter = (footprint.Extent * 2 + 1) * Mathf.Abs(pose.scale) * 2f;
+            var worldBounds = new Bounds(pose.translation, Vector3.one * Mathf.Max(diameter, 0.1f));
+            DrawFootprint(pose, Vector3Int.zero, footprint, new Color(1f, 0.8f, 0.1f, 0.8f), worldBounds);
         }
 
         private static void DrawBox(

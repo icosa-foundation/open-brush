@@ -195,7 +195,7 @@ namespace TiltBrush
                     };
                     Color targetColor = Mode == EditMode.Erase ? guideColor : App.BrushColor.CurrentColor;
                     var preview = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
-                    preview.PreviewForTool(canvasPosition, targetColor, guideColor, ShowGrid);
+                    preview.PreviewForTool(canvasPosition, targetColor, guideColor, ShowGrid, m_BrushSizeStep, Mode == EditMode.Add);
                 }
             }
 
@@ -495,8 +495,7 @@ namespace TiltBrush
             // Snap-grid points define voxel corners; centers sit halfway through each cell.
             // Floor also chooses the containing cell correctly at negative coordinates.
             Vector3 center = GetNewModelCellCenter(canvasPosition, voxelSize);
-            Vector3 min = center - Vector3.one * 1.5f * voxelSize;
-            VoxEditPreviewRenderer.DrawCreationBounds(min, min + Vector3.one * 3f * voxelSize, voxelSize);
+            VoxEditPreviewRenderer.DrawCreationFootprint(center, voxelSize, m_BrushSizeStep);
             if (IsEatingInput || !InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate)) return;
             if (!CreateGrid(center, voxelSize)) return;
             m_CreateNewGrid = false;
