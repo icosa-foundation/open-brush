@@ -52,6 +52,9 @@ namespace TiltBrush
         private RuntimeVoxDocument.RuntimeModel m_GestureModel;
         private TextMeshPro m_TargetLabel;
         private EditMode m_Mode;
+        private Texture2D m_AddIcon;
+        private Texture2D m_EraseIcon;
+        private Texture2D m_PaintIcon;
 
         public EditMode Mode
         {
@@ -93,6 +96,9 @@ namespace TiltBrush
         public override void Init()
         {
             base.Init();
+            m_AddIcon = Resources.Load<Texture2D>("Icons/guide_cube");
+            m_EraseIcon = Resources.Load<Texture2D>("Icons/eraser");
+            m_PaintIcon = Resources.Load<Texture2D>("Icons/repaint");
             m_TargetEvents = App.Switchboard;
             m_TargetEvents.ModelWidgetGrabbed += SetTargetWidget;
             m_TargetEvents.SelectionChanged += OnSelectionChanged;
@@ -124,6 +130,18 @@ namespace TiltBrush
                 (widget.IsExternalVox || widget.EditableVoxDocument != null);
 
         public override bool ShouldShowPointer() => true;
+
+        public override void AssignControllerMaterials(InputManager.ControllerName controller)
+        {
+            if (controller != InputManager.ControllerName.Brush) return;
+            Texture2D icon = Mode switch
+            {
+                EditMode.Erase => m_EraseIcon,
+                EditMode.Paint => m_PaintIcon,
+                _ => m_AddIcon,
+            };
+            InputManager.Brush.Geometry.ShowModeIcon(true, icon);
+        }
 
         public override void EnableTool(bool enable)
         {

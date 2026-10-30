@@ -1449,7 +1449,10 @@ namespace TiltBrush
             }
         }
 
-        public void ShowTintMode(bool isOn, Texture2D icon)
+        public void ShowTintMode(bool isOn, Texture2D icon) => ShowModeIcon(isOn, icon);
+
+        // Context mode icons use the same surfaces across the supported controller styles.
+        public void ShowModeIcon(bool isOn, Texture2D icon)
         {
             Material mat = isOn ? Materials.ToggleSelectionOn : Materials.ToggleSelectionOff;
 
