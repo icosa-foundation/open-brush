@@ -692,6 +692,11 @@ namespace TiltBrush
                 modelTransform.gameObject.layer = LayerMask.NameToLayer("Panels");
                 renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
+            else
+            {
+                modelTransform.gameObject.layer = m_ModelInstance.gameObject.layer;
+                HierarchyUtils.RecursivelySetMaterialBatchID(modelTransform, m_BatchId);
+            }
             return filter;
         }
 
