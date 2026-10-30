@@ -327,6 +327,9 @@ namespace TiltBrush
             if (model == null) return;
             m_CurrentModel = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
 
+            // TODO(VOX undo): For large/dense documents, replace these before/after full-cell
+            // snapshots with changed-cell deltas plus bounds/origin metadata. Retained undo
+            // memory currently scales with the whole document, even for a one-cell gesture.
             m_GestureBefore = m_CurrentDocument._Document.CaptureSnapshot();
             m_GestureWidget = CurrentTargetWidget;
             m_GestureModel = m_CurrentModel._Model;
