@@ -40,7 +40,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 476484630553911933}
-  m_Mesh: {fileID: 4300002, guid: 11317568e61c2684b91c8a663a4a0485, type: 3}
+  m_Mesh: {fileID: 4300002, guid: ad2b096ae39ea9145b5740079de25bee, type: 3}
 --- !u!23 &4762863158303114322
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -118,15 +118,15 @@ Transform:
   m_GameObject: {fileID: 1178614306003409665}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 5, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1047925397328369547}
   - {fileID: 1045067198216821643}
+  - {fileID: 3363691237868252833}
   - {fileID: 549405971166888862}
   - {fileID: 9110463919992814132}
-  - {fileID: 3363691237868252833}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &1389211290116024308
@@ -160,8 +160,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &4941547235599569958
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -172,7 +172,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0223abf4e0d2fec4d8fe26c08656686a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxelToolSettingsPopUpWindow
   m_Background: {fileID: 476484630553911933}
   m_TopBorder: {fileID: 5437985645377639230}
@@ -205,7 +205,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9110463919992814132}
   m_Layer: 0
-  m_Name: 3x2PopupMesh
+  m_Name: Mesh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -220,8 +220,8 @@ Transform:
   m_GameObject: {fileID: 2061534157426573465}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.022, y: 0.21, z: 0}
-  m_LocalScale: {x: 0.91, y: 0.94, z: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3569789324779524837}
@@ -257,7 +257,7 @@ Transform:
   m_GameObject: {fileID: 4017275944400388961}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.21, y: 0.21, z: -0.02}
+  m_LocalPosition: {x: 0, y: 0, z: -0.02}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -351,33 +351,33 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44051b9852a548a4fadb88b5f0b63c98, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxelToolSettingsButton
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Voxel grid visibility
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra:
+  m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 0}
+  m_ButtonTexture: {fileID: 2800000, guid: 6ccc0d6136b1bb146b0b7a2e09378dc2, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -420,7 +420,7 @@ Transform:
   m_GameObject: {fileID: 5360913732169536751}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.21, y: 0.21, z: -0.02}
+  m_LocalPosition: {x: -0.45, y: 0, z: -0.02}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -514,33 +514,33 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44051b9852a548a4fadb88b5f0b63c98, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxelToolSettingsButton
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Voxel edit mode
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra:
+  m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 0}
+  m_ButtonTexture: {fileID: 2800000, guid: 0141ac6bf9f578f4e95706cdd2117914, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -594,7 +594,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5437985645377639230}
-  m_Mesh: {fileID: 4300000, guid: 11317568e61c2684b91c8a663a4a0485, type: 3}
+  m_Mesh: {fileID: 4300000, guid: ad2b096ae39ea9145b5740079de25bee, type: 3}
 --- !u!23 &8152016964960376035
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -673,7 +673,7 @@ Transform:
   m_GameObject: {fileID: 5731307640084062576}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.21, y: -0.21, z: -0.02}
+  m_LocalPosition: {x: 0.45, y: 0, z: -0.02}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -767,33 +767,33 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44051b9852a548a4fadb88b5f0b63c98, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxelToolSettingsButton
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: New voxel model
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra:
+  m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 0}
+  m_ButtonTexture: {fileID: 2800000, guid: 8e8ff83a9fcd53a47aa617cca57a09f3, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -825,15 +825,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3119358216769951300, guid: a7473e75b4665ed42b3684d25b02af6f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.21
+      value: 0.72
       objectReference: {fileID: 0}
     - target: {fileID: 3119358216769951300, guid: a7473e75b4665ed42b3684d25b02af6f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.21
+      value: -0.294
       objectReference: {fileID: 0}
     - target: {fileID: 3119358216769951300, guid: a7473e75b4665ed42b3684d25b02af6f, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.02
+      value: -0.025
       objectReference: {fileID: 0}
     - target: {fileID: 3119358216769951300, guid: a7473e75b4665ed42b3684d25b02af6f, type: 3}
       propertyPath: m_LocalRotation.w
@@ -887,27 +887,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 44051b9852a548a4fadb88b5f0b63c98, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxelToolSettingsButton
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
   m_DescriptionText: Close voxel settings
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra:
+  m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
