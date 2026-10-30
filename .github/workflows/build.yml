@@ -283,7 +283,7 @@ jobs:
 
           - name: Android Viewer Handheld Play
             targetPlatform: Android
-            androidTargetSdkVersion: AndroidApiLevel35
+            androidTargetSdkVersion: AndroidApiLevel36  # Google Play mobile updates require API 36.
             vrsdk: Monoscopic
             cache: Android_Vulkan
             extraoptions: -btb-il2cpp
