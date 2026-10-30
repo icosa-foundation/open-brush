@@ -113,10 +113,11 @@ jobs:
           VERSION=$(echo "$MAJOR_MINOR.$PATCH_VERSION" | sed -e 's/^v//')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "stamp=$STAMP" >> $GITHUB_OUTPUT
-          # One sequence for PR and production builds, independent of versionName.
-          # Distinct handheld and XR Viewer codes share the same run number.
-          # Retries reuse these codes; start a new run when a new upload is needed.
-          ANDROID_VERSION_CODE=$((21000000 + GITHUB_RUN_NUMBER * 100))
+          # Use the shared app version for every Android build. The fixed offset
+          # keeps codes above previously published run-based Play and Quest codes.
+          # Reserve the final digit for variants sharing the Viewer listing.
+          IFS=. read -r MAJOR MINOR _ <<< "$VERSION"
+          ANDROID_VERSION_CODE=$((2000000 + (MAJOR * 1000000 + MINOR * 1000 + PATCH_VERSION) * 10))
           ANDROID_HANDHELD_VERSION_CODE=$((ANDROID_VERSION_CODE + 1))
           if (( ANDROID_VERSION_CODE < 1 || ANDROID_HANDHELD_VERSION_CODE > 2100000000 )); then
             echo "::error::Android version code is outside Google Play's supported range."
