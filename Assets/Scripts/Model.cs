@@ -302,14 +302,16 @@ namespace TiltBrush
                 ? $"GeneratedVox_{Guid.NewGuid():N}.vox"
                 : relativePath;
             var model = new Model(modelPath);
-            var importer = new VoxImporter(voxBytes);
-            var (root, warnings, _) = importer.Import();
+            var importer = new VoxImporter(voxBytes, sourceName: modelPath);
+            var (root, warnings, collector) = importer.Import();
+            model.m_ImportMaterialCollector = collector;
             model.CalcBoundsNonGltf(root);
             if (!model.EndCreatePrefab(root, warnings))
             {
                 model.ReleaseFromCatalog();
                 return null;
             }
+            model.m_AllowExport = collector != null;
             model.SetEditableVoxSource(voxBytes);
             return model;
         }
