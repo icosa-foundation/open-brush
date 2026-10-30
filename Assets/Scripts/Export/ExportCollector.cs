@@ -474,10 +474,16 @@ namespace TiltBrush
             {
                 Model prefab = group.Key;
                 // Each element represents a GameObject in the "prefab"
-                List<PrefabGeometry[]> prefabObjs = GetPrefabGameObjs(payload, prefab).ToList();
+                List<PrefabGeometry[]> prefabObjs = group.Any(widget => widget.EditableVoxDocument == null)
+                    ? GetPrefabGameObjs(payload, prefab).ToList() : null;
 
                 foreach ((ModelWidget widget, int widgetIndex) in group.WithIndex())
                 {
+                    if (widget.EditableVoxDocument != null)
+                    {
+                        BuildEditableVoxModelMeshes(payload, widget, widgetIndex);
+                        continue;
+                    }
                     Matrix4x4 widgetXform = ExportUtils.ChangeBasis(widget.transform, payload);
                     // Acts like our AsScene[], AsCanvas[] accessors
                     var AsWidget = new TransformExtensions.RelativeAccessor(widget.transform);
@@ -526,6 +532,44 @@ namespace TiltBrush
             }
         }
 
+        private static void BuildEditableVoxModelMeshes(SceneStatePayload payload, ModelWidget widget, int widgetIndex)
+        {
+            // Edited widgets can share their catalog Model while owning different geometry.
+            // Convert each instance's current meshes and canonical materials independently.
+            int materialSeed = payload.idGenerator.GetIdFromInstanceId(widget.gameObject);
+            var collector = new ImportMaterialCollector(string.Empty, $"editable-vox-{materialSeed}");
+            Matrix4x4 widgetXform = ExportUtils.ChangeBasis(widget.transform, payload);
+            var asWidget = new TransformExtensions.RelativeAccessor(widget.transform);
+            foreach ((MeshFilter filter, int index) in widget.GetMeshes().WithIndex())
+            {
+                if (filter == null || !filter.gameObject.activeInHierarchy || filter.sharedMesh == null ||
+                    filter.sharedMesh.vertexCount == 0) continue;
+                var renderer = filter.GetComponent<MeshRenderer>();
+                if (renderer == null) continue;
+                Material[] materials = widget.GetEditableVoxExportMaterials(renderer);
+                foreach (Material material in materials.Distinct())
+                    if (material != null && collector.GetExportableMaterial(material) == null) collector.Add(material);
+                int objId = payload.idGenerator.GetIdFromInstanceId(filter.gameObject);
+                foreach (PrefabGeometry geometry in GetPrefabGameObjMeshes(filter.sharedMesh, materials,
+                    payload, widget.Model, index, collector))
+                {
+                    payload.modelMeshes.Add(new ExportUtils.ModelMeshPayload(payload.groupIdMapping.GetId(widget.Group))
+                    {
+                        model = widget.Model,
+                        geometry = geometry.pool,
+                        exportableMaterial = geometry.exportableMaterial,
+                        geometryName = geometry.name,
+                        legacyUniqueName = $"{geometry.name}_i{objId}",
+                        nodeName = $"{geometry.name}_{widgetIndex}",
+                        parentXform = widgetXform,
+                        localXform = ExportUtils.ChangeBasis(asWidget[filter.transform], payload),
+                        modelId = widgetIndex,
+                        xform = ExportUtils.ChangeBasis(filter.transform, payload),
+                    });
+                }
+            }
+        }
+
         // Helper for GetModelMeshPayloads() -- this is the level 3 iteration.
         // Enumerates all the GameObjects in a "prefab" and creates geometry for them.
         // Because Unity, the result is an array; but it'll almost certainly be length 1.
@@ -563,7 +607,7 @@ namespace TiltBrush
         //   meshIndex - the index of this Mesh within its owner "prefab"
         static IEnumerable<PrefabGeometry> GetPrefabGameObjMeshes(
             Mesh mesh, Material[] meshMaterials,
-            SceneStatePayload payload, Model prefab, int meshIndex)
+            SceneStatePayload payload, Model prefab, int meshIndex, ImportMaterialCollector collector = null)
         {
             if (meshMaterials.Length != mesh.subMeshCount)
             {
@@ -572,7 +616,7 @@ namespace TiltBrush
             string exportName = prefab.GetExportName();
 
             IExportableMaterial[] exportableMaterials = meshMaterials.Select(
-                mat => prefab.GetExportableMaterial(mat)).ToArray();
+                mat => collector != null ? collector.GetExportableMaterial(mat) : prefab.GetExportableMaterial(mat)).ToArray();
             VertexLayout?[] layouts = exportableMaterials.Select(iem => iem?.VertexLayout).ToArray();
             // TODO(b/142396408)
             // Is it better to write color/texcoord that we don't need, just to satisfy the layout?

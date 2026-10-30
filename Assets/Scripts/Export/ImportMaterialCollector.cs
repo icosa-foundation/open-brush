@@ -103,7 +103,16 @@ namespace TiltBrush
 
             Color color = Color.white;
             bool hasColor = false;
-            if (unityMaterial.shader.name.StartsWith("UnityGLTF"))
+            if (unityMaterial.HasColor("_BaseColorFactor"))
+            {
+                // Runtime VOX PBR materials use the toolkit property names.
+                color = unityMaterial.GetColor("_BaseColorFactor");
+                hasColor = true;
+                pbrInfo = unityMaterial.shader == TbtSettings.Instance.m_PbrBlendDoubleSided.material.shader
+                    ? TbtSettings.Instance.m_PbrBlendDoubleSided
+                    : TbtSettings.Instance.m_PbrOpaqueDoubleSided;
+            }
+            else if (unityMaterial.shader.name.StartsWith("UnityGLTF"))
             {
                 if (unityMaterial.HasColor("baseColorFactor"))
                 {
@@ -146,6 +155,10 @@ namespace TiltBrush
                 uriBase: m_AssetLocation);
 
             dynMat.BaseColorFactor = color;
+            if (unityMaterial.HasProperty("_MetallicFactor"))
+                dynMat.MetallicFactor = unityMaterial.GetFloat("_MetallicFactor");
+            if (unityMaterial.HasProperty("_RoughnessFactor"))
+                dynMat.RoughnessFactor = unityMaterial.GetFloat("_RoughnessFactor");
 
             m_MaterialToIem.Add(unityMaterial, dynMat);
 

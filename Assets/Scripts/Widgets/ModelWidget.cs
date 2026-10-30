@@ -86,6 +86,11 @@ namespace TiltBrush
             return m_ObjModelScript?.m_MeshChildren ?? Array.Empty<MeshFilter>();
         }
 
+        // Export the actual VOX materials, not selection/highlight clones or catalog originals.
+        internal Material[] GetEditableVoxExportMaterials(Renderer renderer)
+            => m_InitialMaterials != null && m_InitialMaterials.TryGetValue(renderer, out var materials)
+                ? materials : renderer.sharedMaterials;
+
         public Model Model
         {
             get { return m_Model; }
