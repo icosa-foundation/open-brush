@@ -14,19 +14,26 @@ namespace TiltBrush
     {
         private readonly ModelWidget m_Original;
         private readonly RuntimeVoxDocument m_Document;
+        private readonly Model m_ExternalSource;
         private readonly IReadOnlyList<RuntimeVoxDocument> m_Regions;
         private readonly List<ModelWidget> m_Widgets = new List<ModelWidget>();
 
-        public BreakVoxApartCommand(ModelWidget widget, BaseCommand parent = null) : base(parent)
+        public BreakVoxApartCommand(ModelWidget widget, BaseCommand parent = null)
+            : this(widget, widget.EditableVoxDocument, parent) { }
+
+        internal BreakVoxApartCommand(ModelWidget widget, RuntimeVoxDocument document, BaseCommand parent)
+            : base(parent)
         {
             m_Original = widget;
-            m_Document = widget.EditableVoxDocument;
+            m_Document = document;
+            m_ExternalSource = widget.IsExternalVox ? widget.Model : null;
             m_Regions = m_Document.CreateFaceConnectedRegions();
         }
 
         public override bool NeedsSave => m_Regions.Count > 1;
         public override bool IsAvailable => m_Original != null && m_Regions.Count > 1 &&
-            ReferenceEquals(m_Original.EditableVoxDocument, m_Document);
+            (ReferenceEquals(m_Original.EditableVoxDocument, m_Document) ||
+                (m_Original.IsExternalVox && m_ExternalSource != null && m_Original.Model == m_ExternalSource));
 
         protected override void OnRedo()
         {
