@@ -20,13 +20,14 @@ namespace TiltBrush
     {
         public enum Setting
         {
-            Mode,
+            AlignToGrid,
             Grid,
             NewModel,
             Close,
         }
 
         [SerializeField] private Setting m_Setting;
+        private bool m_Available = true;
 
         public override void UpdateVisuals()
         {
@@ -37,18 +38,20 @@ namespace TiltBrush
                 return;
             }
 
+            bool available = m_Setting != Setting.AlignToGrid || tool.HasCurrentTarget;
+            if (available != m_Available)
+            {
+                m_Available = available;
+                SetButtonAvailable(available);
+            }
+
             string title;
             string description;
             switch (m_Setting)
             {
-                case Setting.Mode:
-                    title = $"Edit Mode: {tool.Mode}";
-                    description = tool.Mode switch
-                    {
-                        VoxelTool.EditMode.Add => "Add or recolor voxels. Press to switch to Erase.",
-                        VoxelTool.EditMode.Erase => "Remove voxels. Press to switch to Paint.",
-                        _ => "Recolor existing voxels. Press to switch to Add.",
-                    };
+                case Setting.AlignToGrid:
+                    title = "Align Voxel Model to Grid";
+                    description = "Match voxel size to the snap-grid spacing, align voxel axes to the grid, and snap the model into place.";
                     break;
                 case Setting.Grid:
                     title = "Voxel Grid";
@@ -92,8 +95,8 @@ namespace TiltBrush
 
             switch (m_Setting)
             {
-                case Setting.Mode:
-                    tool.CycleMode();
+                case Setting.AlignToGrid:
+                    if (!tool.AlignCurrentModelToGrid()) AudioManager.m_Instance.DisabledItemSelect(transform.position);
                     break;
                 case Setting.Grid:
                     tool.ToggleGrid();

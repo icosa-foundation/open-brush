@@ -405,7 +405,7 @@ GameObject:
   - component: {fileID: 4456199344690023265}
   - component: {fileID: 6859174514402543577}
   m_Layer: 16
-  m_Name: Mode
+  m_Name: Align to Grid
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -518,7 +518,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxelToolSettingsButton
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Voxel edit mode
+  m_DescriptionText: Align Voxel Model to Grid
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: 
@@ -540,7 +540,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 0141ac6bf9f578f4e95706cdd2117914, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: a68fb700064025245af41e5c5c784e6c, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
