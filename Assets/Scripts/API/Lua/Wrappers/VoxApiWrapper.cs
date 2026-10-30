@@ -559,7 +559,8 @@ namespace TiltBrush
                     SketchMemoryScript.m_Instance?.MarkUnrecordedChange();
                 }
                 SaveLoadScript.m_Instance?.SketchChanged();
-                if (!_Document.Models.Any(model => model.Voxels.Count > 0))
+                // Native gestures record their own lifecycle and retain an empty drawing grid.
+                if (!SuppressDirtyTracking && !_Document.Models.Any(model => model.Voxels.Count > 0))
                 {
                     m_ViewState.Widget?.Hide();
                 }
