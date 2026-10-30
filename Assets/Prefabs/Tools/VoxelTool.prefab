@@ -47,7 +47,10 @@ MonoBehaviour:
   m_Type: 6002
   m_ShowTransformGizmo: 0
   m_ExitOnAbortCommand: 1
-  m_ScalingSupported: 0
+  m_ScalingSupported: 1
   m_AddIcon: {fileID: 2800000, guid: cb045f6f64d141b78f1caf726f043795, type: 3}
   m_EraseIcon: {fileID: 2800000, guid: f388b6632f404b519bcc556d6e4b8a5d, type: 3}
   m_PaintIcon: {fileID: 2800000, guid: 39fbb521e0f04af39480523cf5f803e7, type: 3}
+  m_MaxBrushRadius: 7
+  m_HapticSizeUp: 0.01
+  m_HapticSizeDown: 0.01
