@@ -49,9 +49,9 @@ namespace TiltBrush
         private RuntimeVoxDocument.RuntimeModel m_GestureModel;
         private TextMeshPro m_TargetLabel;
         private EditMode m_Mode;
-        private Texture2D m_AddIcon;
-        private Texture2D m_EraseIcon;
-        private Texture2D m_PaintIcon;
+        [SerializeField] private Texture2D m_AddIcon;
+        [SerializeField] private Texture2D m_EraseIcon;
+        [SerializeField] private Texture2D m_PaintIcon;
 
         public EditMode Mode
         {
@@ -92,9 +92,6 @@ namespace TiltBrush
         public override void Init()
         {
             base.Init();
-            m_AddIcon = Resources.Load<Texture2D>("Icons/guide_cube");
-            m_EraseIcon = Resources.Load<Texture2D>("Icons/eraser");
-            m_PaintIcon = Resources.Load<Texture2D>("Icons/repaint");
             m_TargetEvents = App.Switchboard;
             m_TargetEvents.ModelWidgetGrabbed += SetTargetWidget;
             m_TargetEvents.SelectionChanged += OnSelectionChanged;
