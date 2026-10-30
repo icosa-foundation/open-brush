@@ -1356,6 +1356,15 @@ namespace TiltBrush
                 Quaternion.Angle(inputXf.rotation, snappedXf.rotation) > rotationEpsilon;
         }
 
+        // Most widgets snap their pivot. Grid-backed widgets can supply a face/corner anchor.
+        protected virtual Vector3 GetGridSnapOffset_GS(Quaternion rotation_GS) => Vector3.zero;
+
+        internal Vector3 SnapPositionToGrid_GS(Vector3 position_GS, Quaternion rotation_GS)
+        {
+            Vector3 offset = GetGridSnapOffset_GS(rotation_GS);
+            return SelectionManager.m_Instance.SnapToGrid_GS(position_GS + offset) - offset;
+        }
+
         // The "new" snapping - based on the settings on the Snap Panel
         private TrTransform GetSnapPanelTransform(TrTransform xf_GS)
         {
@@ -1376,7 +1385,7 @@ namespace TiltBrush
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
-                outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid_GS(outXf_GS.translation);
+                outXf_GS.translation = SnapPositionToGrid_GS(outXf_GS.translation, outXf_GS.rotation);
             }
 
             return outXf_GS;
@@ -1400,7 +1409,7 @@ namespace TiltBrush
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
-                outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid_GS(outXf_GS.translation);
+                outXf_GS.translation = SnapPositionToGrid_GS(outXf_GS.translation, outXf_GS.rotation);
             }
 
             return outXf_GS;

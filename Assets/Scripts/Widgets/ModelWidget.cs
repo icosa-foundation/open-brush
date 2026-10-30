@@ -150,6 +150,27 @@ namespace TiltBrush
             m_EditableVoxDocument = document;
         }
 
+        internal bool TryGetVoxelGridCorner_GS(out Vector3 corner_GS)
+        {
+            var grid = m_EditableVoxDocument?.Models.FirstOrDefault(model => model.IsVisible);
+            if (grid == null)
+            {
+                corner_GS = default;
+                return false;
+            }
+            Vector3 corner = VoxMeshBuilder.GetModelTransform(grid) * (Vector3.one * -0.5f);
+            corner_GS = transform.TransformPoint(corner);
+            return true;
+        }
+
+        protected override Vector3 GetGridSnapOffset_GS(Quaternion rotation_GS)
+        {
+            if (!TryGetVoxelGridCorner_GS(out Vector3 corner_GS)) return Vector3.zero;
+            // Input pose scale is ignored by RecordAndSetPosRot. The current widget
+            // transform already includes its size and canvas scale.
+            return rotation_GS * Quaternion.Inverse(transform.rotation) * (corner_GS - transform.position);
+        }
+
         protected override Vector3 HomeSnapOffset
         {
             get
