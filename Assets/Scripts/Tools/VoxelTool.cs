@@ -35,6 +35,7 @@ namespace TiltBrush
         private VoxDocumentApiWrapper m_CurrentDocument;
         private VoxModelApiWrapper m_CurrentModel;
         private ModelWidget m_TargetWidget;
+        private Model m_ExternalPreviewSource;
         private ModelWidget m_PendingTargetWidget;
         private bool m_HasPendingTarget;
         private Switchboard m_TargetEvents;
@@ -45,6 +46,7 @@ namespace TiltBrush
         private Vector3Int m_LastCell;
         private RuntimeVoxDocument.Snapshot m_GestureBefore;
         private CreateWidgetCommand m_GestureCreationCommand;
+        private EmbedVoxModelCommand m_GestureEmbeddingCommand;
         private bool m_GestureAutoVisuals;
         private ModelWidget m_GestureWidget;
         private RuntimeVoxDocument.RuntimeModel m_GestureModel;
@@ -66,7 +68,10 @@ namespace TiltBrush
         public bool ShowGrid { get; set; } = true;
         public ModelWidget CurrentTargetWidget => IsAvailableTarget(m_TargetWidget) ? m_TargetWidget : null;
         public bool HasCurrentTarget => CurrentTargetWidget != null &&
-            m_CurrentModel != null && m_CurrentModel.isValid && m_CurrentModel._Model.IsVisible;
+            m_CurrentModel != null && m_CurrentModel.isValid && m_CurrentModel._Model.IsVisible &&
+            (ReferenceEquals(CurrentTargetWidget.EditableVoxDocument, m_CurrentDocument._Document) ||
+                (CurrentTargetWidget.IsExternalVox && m_ExternalPreviewSource == CurrentTargetWidget.Model &&
+                    m_CurrentDocument._Document.ViewState.Widget == null));
         public bool CreatingNewModel => m_CreateNewGrid;
         public string CurrentTargetDescription
         {
@@ -76,7 +81,7 @@ namespace TiltBrush
                 ModelWidget widget = CurrentTargetWidget;
                 if (widget == null) return "No active voxel model — grab or select one";
                 string name = widget.GetExportName();
-                if (widget.EditableVoxDocument == null) return $"{name} — Break Apart to make it editable";
+                if (widget.IsExternalVox) return $"{name} — editing embeds a copy in this sketch";
                 if (!HasCurrentTarget) return $"No visible voxel grid in {name}";
                 if (widget.EditableVoxDocument.Models.Count == 1 &&
                     !string.IsNullOrEmpty(widget.EditableVoxDocument.Models[0].Name))
@@ -210,7 +215,8 @@ namespace TiltBrush
                 // once after that batch; Refresh skips a clean document. Never revive a
                 // widget hidden by final-voxel erasure or another action during the gesture.
                 if (m_GestureWidget != null && m_GestureWidget.Showing &&
-                    m_GestureWidget.gameObject.activeInHierarchy)
+                    m_GestureWidget.gameObject.activeInHierarchy &&
+                    ReferenceEquals(m_GestureWidget.EditableVoxDocument, m_CurrentDocument._Document))
                 {
                     m_CurrentDocument.Refresh();
                 }
@@ -279,12 +285,22 @@ namespace TiltBrush
             m_TargetWidget = widget;
             m_CurrentDocument = null;
             m_CurrentModel = null;
-            if (widget == null || widget.EditableVoxDocument == null) return;
-            var document = widget.EditableVoxDocument;
+            m_ExternalPreviewSource = null;
+            if (widget == null) return;
+            var document = widget.EditableVoxDocument ?? widget.Model.CreateEditableVoxDocument();
+            if (document == null) return;
             var model = document.Models.FirstOrDefault(item => item.IsVisible && item.Voxels.Count > 0)
                 ?? document.Models.FirstOrDefault(item => item.IsVisible);
             if (model == null) return;
-            m_CurrentDocument = new VoxDocumentApiWrapper(document, widget);
+            if (widget.IsExternalVox)
+            {
+                // Preview a private document without adopting it, creating a widget or dirtying the sketch.
+                m_ExternalPreviewSource = widget.Model;
+                document.ViewState.WidgetTransform = App.Scene.ActiveCanvas.AsCanvas[widget.transform];
+                m_CurrentDocument = new VoxDocumentApiWrapper(document);
+                m_CurrentDocument.SetAutoVisuals(false);
+            }
+            else m_CurrentDocument = new VoxDocumentApiWrapper(document, widget);
             m_CurrentModel = new VoxModelApiWrapper(document, model, m_CurrentDocument);
             VoxelSize = m_CurrentModel.voxelSize;
         }
@@ -316,7 +332,7 @@ namespace TiltBrush
             m_CurrentModel = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
 
             m_GestureBefore = m_CurrentDocument._Document.CaptureSnapshot();
-            m_GestureWidget = m_CurrentDocument.Widget;
+            m_GestureWidget = CurrentTargetWidget;
             m_GestureModel = m_CurrentModel._Model;
             m_GestureAutoVisuals = m_CurrentDocument.autoVisuals;
             m_CurrentDocument.SuppressDirtyTracking = true;
@@ -340,7 +356,9 @@ namespace TiltBrush
                     return;
                 }
                 if (m_HasLastCell) m_LastCell += shift;
-                m_GestureChanged |= !ReferenceEquals(previousDefinition, m_CurrentModel._Model.Definition);
+                // Structural preview work alone must not embed an external model.
+                if (!m_GestureWidget.IsExternalVox)
+                    m_GestureChanged |= !ReferenceEquals(previousDefinition, m_CurrentModel._Model.Definition);
             }
             else if (!m_CurrentModel._Model.IsInBounds(cell))
             {
@@ -379,6 +397,17 @@ namespace TiltBrush
                 EditMode.Paint => m_CurrentModel.RecolorAt(canvasPosition, App.BrushColor.CurrentColor),
                 _ => m_CurrentModel.PaintAt(canvasPosition, App.BrushColor.CurrentColor),
             };
+            if (changed && m_GestureWidget.IsExternalVox)
+            {
+                var document = m_CurrentDocument._Document;
+                m_GestureEmbeddingCommand = new EmbedVoxModelCommand(m_GestureWidget, document);
+                m_GestureEmbeddingCommand.Redo();
+                m_CurrentDocument = new VoxDocumentApiWrapper(document, m_GestureWidget)
+                    { SuppressDirtyTracking = true };
+                m_CurrentModel = new VoxModelApiWrapper(document, m_GestureModel, m_CurrentDocument);
+                m_GestureAutoVisuals = true;
+                m_ExternalPreviewSource = null;
+            }
             m_GestureChanged |= changed;
         }
 
@@ -401,9 +430,12 @@ namespace TiltBrush
             if (m_GestureChanged && m_GestureWidget != null)
             {
                 if (Mode != EditMode.Paint) gestureDocument._Document.FitDrawingBounds(m_GestureModel);
+                BaseCommand parent = m_GestureEmbeddingCommand ?? (BaseCommand)m_GestureCreationCommand;
                 var command = new ModifyVoxDocumentCommand(m_GestureWidget, m_GestureBefore,
-                    gestureDocument._Document.CaptureSnapshot(), m_GestureCreationCommand);
-                if (m_GestureCreationCommand == null)
+                    gestureDocument._Document.CaptureSnapshot(), parent);
+                if (m_GestureEmbeddingCommand != null)
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(m_GestureEmbeddingCommand);
+                else if (m_GestureCreationCommand == null)
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
                 else
                 {
@@ -414,6 +446,9 @@ namespace TiltBrush
                 }
             }
 
+            // An attempted Add may have grown detached preview bounds without changing a cell.
+            if (!m_GestureChanged && m_GestureWidget != null && m_GestureWidget.IsExternalVox)
+                gestureDocument._Document.RestoreSnapshot(m_GestureBefore);
             gestureDocument.SuppressDirtyTracking = false;
             gestureDocument.SetAutoVisuals(m_GestureAutoVisuals && targetShowing, true);
             m_GestureActive = false;
@@ -421,6 +456,7 @@ namespace TiltBrush
             m_HasLastCell = false;
             m_GestureBefore = null;
             m_GestureCreationCommand = null;
+            m_GestureEmbeddingCommand = null;
             m_GestureWidget = null;
             m_GestureModel = null;
             ApplyPendingTarget();
@@ -504,10 +540,16 @@ namespace TiltBrush
 
         private void EnsureCurrentTarget()
         {
-            if (HasCurrentTarget) return;
+            if (HasCurrentTarget)
+            {
+                if (CurrentTargetWidget.IsExternalVox)
+                    m_CurrentDocument._Document.ViewState.WidgetTransform =
+                        App.Scene.ActiveCanvas.AsCanvas[CurrentTargetWidget.transform];
+                return;
+            }
             EndGesture();
             ModelWidget widget = CurrentTargetWidget;
-            // Keep the contextual external target, but never convert it implicitly.
+            // Rebind after undo/redo changes between embedded content and an external reference.
             BindTargetWidget(widget);
         }
 
@@ -537,8 +579,8 @@ namespace TiltBrush
                 ? "Press trigger to start drawing a new model"
                 : !HasCurrentTarget
                     ? CurrentTargetWidget != null && CurrentTargetWidget.IsExternalVox
-                        ? "Use Break Apart to make this model editable"
-                        : "Grab or select an editable voxel model; New Model is in settings"
+                        ? "VOX source is not loaded yet"
+                        : "Grab or select a voxel model; New Model is in settings"
                     : insideTarget
                         ? $"Trigger: {Mode} — grid follows the voxels"
                         : "Outside active model — grab or select another to change target");

@@ -132,6 +132,8 @@ namespace TiltBrush
             {
                 HierarchyUtils.RecursivelySetLayer(transform, transform.parent.gameObject.layer);
             }
+            if (SelectionManager.m_Instance != null && SelectionManager.m_Instance.IsWidgetSelected(this))
+                SelectionManager.m_Instance.UpdateSelectionWidget();
         }
 
         internal void AdoptEditableVoxDocument(RuntimeVoxDocument document)
