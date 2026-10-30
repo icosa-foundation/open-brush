@@ -74,6 +74,7 @@ namespace TiltBrush
 
         private float m_snappingAngle;
         private float m_snappingGridSize;
+        private float m_ConfiguredSnappingGridSize = 0.1f;
         private float[] m_AngleSnaps;
         private float[] m_GridSnaps;
         private int m_CurrentSnapAngleIndex;
@@ -352,6 +353,8 @@ namespace TiltBrush
         public int CurrentSnapGridIndex => m_CurrentSnapGridIndex;
         public float SnappingAngle => m_snappingAngle;
         public float SnappingGridSize => m_snappingGridSize;
+        // Keep the chosen spacing available when the snap-grid option is Off.
+        public float ConfiguredSnappingGridSize => m_ConfiguredSnappingGridSize;
 
         // Mainly stored for use in scripts
         private Stroke m_LastSelectedStroke;
@@ -1287,6 +1290,7 @@ namespace TiltBrush
             }
             if (m_snappingGridSize > 0)
             {
+                m_ConfiguredSnappingGridSize = m_snappingGridSize;
                 m_SnapGridVisualization.enabled = true;
                 m_SnapGridVisualization.gridInterval = m_snappingGridSize;
             }

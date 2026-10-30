@@ -29,9 +29,6 @@ namespace TiltBrush
             Paint,
         }
 
-        private const float kDefaultVoxelSize = 0.1f;
-        private static readonly float[] kVoxelSizes = { 0.025f, 0.05f, 0.1f, 0.2f, 0.4f };
-
         private VoxDocumentApiWrapper m_CurrentDocument;
         private VoxModelApiWrapper m_CurrentModel;
         private ModelWidget m_TargetWidget;
@@ -67,7 +64,6 @@ namespace TiltBrush
                 m_CreateNewGrid = false;
             }
         }
-        public float VoxelSize { get; set; } = kDefaultVoxelSize;
         public bool ShowGrid { get; set; } = true;
         public ModelWidget CurrentTargetWidget => IsAvailableTarget(m_TargetWidget) ? m_TargetWidget : null;
         public bool HasCurrentTarget => CurrentTargetWidget != null &&
@@ -258,12 +254,6 @@ namespace TiltBrush
             return Mode;
         }
 
-        public float CycleVoxelSize()
-        {
-            VoxelSize = CyclePreset(kVoxelSizes, Mathf.Max(VoxelSize, 0.0001f));
-            return VoxelSize;
-        }
-
         public bool ToggleGrid()
         {
             ShowGrid = !ShowGrid;
@@ -320,7 +310,6 @@ namespace TiltBrush
             }
             else m_CurrentDocument = new VoxDocumentApiWrapper(document, widget);
             m_CurrentModel = new VoxModelApiWrapper(document, model, m_CurrentDocument);
-            VoxelSize = m_CurrentModel.voxelSize;
         }
 
         private RuntimeVoxDocument.RuntimeModel FindTargetModelAt(Vector3 canvasPosition)
@@ -494,18 +483,21 @@ namespace TiltBrush
         private void UpdateNewModelDrawing(Transform attachPoint, Vector3 canvasPosition)
         {
             UpdateTargetLabel(attachPoint, false);
-            float voxelSize = Mathf.Max(VoxelSize, 0.0001f);
-            Vector3 min = canvasPosition - Vector3.one * 1.5f * voxelSize;
+            float voxelSize = SelectionManager.m_Instance.ConfiguredSnappingGridSize;
+            // Snap-grid points are at integer multiples of spacing in active-canvas coordinates.
+            // Align voxel centers to those points, including when snapping is currently off.
+            Vector3 center = (Vector3)Vector3Int.RoundToInt(canvasPosition / voxelSize) * voxelSize;
+            Vector3 min = center - Vector3.one * 1.5f * voxelSize;
             VoxEditPreviewRenderer.DrawCreationBounds(min, min + Vector3.one * 3f * voxelSize, voxelSize);
             if (IsEatingInput || !InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate)) return;
-            if (!CreateGrid(min, Vector3Int.one * 3, voxelSize)) return;
+            if (!CreateGrid(center, voxelSize)) return;
             m_CreateNewGrid = false;
-            BeginGesture(canvasPosition);
-            ApplyAt(canvasPosition);
+            BeginGesture(center);
+            ApplyAt(center);
             m_CurrentDocument.Refresh();
         }
 
-        private bool CreateGrid(Vector3 canvasMin, Vector3Int canvasDimensions, float voxelSize)
+        private bool CreateGrid(Vector3 center, float voxelSize)
         {
             var document = new RuntimeVoxDocument();
             int modelNumber = 1;
@@ -516,14 +508,13 @@ namespace TiltBrush
                 ++modelNumber;
             }
             // VOX is Z-up: local Y points towards negative canvas Z, local Z towards canvas Y.
-            var dimensions = new Vector3Int(canvasDimensions.x, canvasDimensions.z, canvasDimensions.y);
-            document.CreateModel($"Voxel Model {modelNumber}", dimensions);
+            document.CreateModel($"Voxel Model {modelNumber}", Vector3Int.one * 3);
             Model model = Model.CreateEditableVoxModelFromBytes(document.ToVoxBytes());
             if (model == null) return false;
 
             try
             {
-                Vector3 origin = canvasMin + new Vector3(0.5f, 0.5f, canvasDimensions.z - 0.5f) * voxelSize;
+                Vector3 origin = center + new Vector3(-1f, -1f, 1f) * voxelSize;
                 TrTransform canvasPose = TrTransform.TRS(origin, Quaternion.identity, voxelSize);
                 var command = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab,
                     App.Scene.ActiveCanvas.Pose * canvasPose, forceTransform: true);
@@ -605,16 +596,5 @@ namespace TiltBrush
             m_TargetLabel.text = $"{CurrentTargetDescription}\n{action}";
         }
 
-        private static float CyclePreset(float[] presets, float current)
-        {
-            int currentIndex = Array.FindIndex(presets,
-                value => Mathf.Abs(value - current) < 0.0001f);
-            if (currentIndex >= 0)
-            {
-                return presets[(currentIndex + 1) % presets.Length];
-            }
-            int nextIndex = Array.FindIndex(presets, value => value > current);
-            return presets[nextIndex >= 0 ? nextIndex : 0];
-        }
     }
 }

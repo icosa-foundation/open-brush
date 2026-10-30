@@ -22,7 +22,6 @@ namespace TiltBrush
         public enum Setting
         {
             Mode,
-            VoxelSize,
             Grid,
             NewModel,
             Close,
@@ -74,11 +73,6 @@ namespace TiltBrush
                         _ => "Recolor existing voxels. Press to switch to Add.",
                     };
                     break;
-                case Setting.VoxelSize:
-                    label = $"Voxel\n{tool.VoxelSize:0.###} m";
-                    title = "New Model Voxel Size";
-                    description = $"{tool.VoxelSize:0.###} metres. Press to cycle; existing models keep their size.";
-                    break;
                 case Setting.Grid:
                     label = $"Grid\n{(tool.ShowGrid ? "On" : "Off")}";
                     title = "Voxel Grid";
@@ -89,7 +83,7 @@ namespace TiltBrush
                 case Setting.NewModel:
                     label = tool.CreatingNewModel ? "New Model\nReady" : "New\nModel";
                     title = "New Voxel Model";
-                    description = "Close settings, then press the trigger to start drawing a new model. Its grid follows the voxels.";
+                    description = "Close settings, then press the trigger to draw a new model aligned to the snap grid. Its voxel size uses the last chosen snap-grid spacing, even when snapping is off.";
                     break;
                 default:
                     label = "Close";
@@ -116,9 +110,6 @@ namespace TiltBrush
             {
                 case Setting.Mode:
                     tool.CycleMode();
-                    break;
-                case Setting.VoxelSize:
-                    tool.CycleVoxelSize();
                     break;
                 case Setting.Grid:
                     tool.ToggleGrid();
