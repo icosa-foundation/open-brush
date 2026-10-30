@@ -8,26 +8,34 @@ namespace TiltBrush
 {
     public sealed partial class RuntimeVoxDocument
     {
-        // Include a drawing cell with one empty cell beyond it where the format permits.
-        // Call once per drawing frame, before applying its interpolated cells.
-        internal bool TryGrowDrawingBounds(RuntimeModel model, ref Vector3Int cell, out Vector3Int shift)
+        // Plan without mutating so preview and painting use the same format-limit check.
+        internal static bool TryGetDrawingPadding(Vector3Int size, Vector3Int cell, int extent,
+            out Vector3Int lower, out Vector3Int upper, Vector3Int? previousCell = null)
         {
-            shift = Vector3Int.zero;
-            var upper = Vector3Int.zero;
+            lower = upper = Vector3Int.zero;
             for (int axis = 0; axis < 3; ++axis)
             {
-                int size = model.Size[axis];
-                long requiredLower = Math.Max(0L, -(long)cell[axis]);
-                long requiredUpper = Math.Max(0L, (long)cell[axis] + 1 - size);
-                if (size + requiredLower + requiredUpper > MaxModelDimension) return false;
-                int spare = MaxModelDimension - size - (int)requiredLower - (int)requiredUpper;
-                int lower = (int)requiredLower;
-                int higher = (int)requiredUpper;
-                if (cell[axis] - (long)1 < 0 && spare > 0) { ++lower; --spare; }
-                if ((long)cell[axis] + 2 > size && spare > 0) ++higher;
-                shift[axis] = lower;
-                upper[axis] = higher;
+                long min = (long)Math.Min(cell[axis], previousCell?[axis] ?? cell[axis]) - extent;
+                long max = (long)Math.Max(cell[axis], previousCell?[axis] ?? cell[axis]) + extent;
+                long requiredLower = Math.Max(0L, -min);
+                long requiredUpper = Math.Max(0L, max + 1 - size[axis]);
+                if (size[axis] + requiredLower + requiredUpper > MaxModelDimension) return false;
+                int spare = MaxModelDimension - size[axis] - (int)requiredLower - (int)requiredUpper;
+                int low = (int)requiredLower;
+                int high = (int)requiredUpper;
+                if (min - 1 < 0 && spare > 0) { ++low; --spare; }
+                if (max + 2 > size[axis] && spare > 0) ++high;
+                lower[axis] = low;
+                upper[axis] = high;
             }
+            return true;
+        }
+
+        // Grow once for the entire frame's interpolated footprint, not once per cell.
+        internal bool TryGrowDrawingBounds(RuntimeModel model, ref Vector3Int cell, out Vector3Int shift,
+            int extent = 0, Vector3Int? previousCell = null)
+        {
+            if (!TryGetDrawingPadding(model.Size, cell, extent, out shift, out var upper, previousCell)) return false;
             ResizeModelBounds(model, shift, upper);
             cell += shift;
             return true;
