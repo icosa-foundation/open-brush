@@ -81,9 +81,9 @@ namespace TiltBrush
             RuntimeVoxDocument.RuntimeModel model,
             Color32[] palette,
             IReadOnlyList<int> paletteSubmeshIndices,
-            int submeshCount)
+            int submeshCount, IReadOnlyList<bool> paletteOccludesFaces = null)
         {
-            RuntimeVoxelGrid grid = new RuntimeVoxelGrid(model, palette, paletteSubmeshIndices);
+            RuntimeVoxelGrid grid = new RuntimeVoxelGrid(model, palette, paletteSubmeshIndices, paletteOccludesFaces);
             MeshData meshData = GreedyMesh(grid, submeshCount);
             return CreateMesh($"{model.Name}_Optimized", meshData);
         }
@@ -396,14 +396,20 @@ namespace TiltBrush
                         bool current = pos[axis] < dims[axis] && grid.HasVoxel(checkPos);
                         bool neighbor = pos[axis] > 0 && grid.HasVoxel(neighborPos);
 
-                        if (current != neighbor)
+                        // Transparent neighbors do not hide opaque surfaces. Internal
+                        // faces between two transparent cells remain culled.
+                        bool showCurrent = current && (!neighbor ||
+                            (grid.OccludesFaces(checkPos) && !grid.OccludesFaces(neighborPos)));
+                        bool showNeighbor = neighbor && (!current ||
+                            (grid.OccludesFaces(neighborPos) && !grid.OccludesFaces(checkPos)));
+                        if (showCurrent || showNeighbor)
                         {
                             mask[pos[u], pos[v]] = true;
-                            faceTowardsPositive[pos[u], pos[v]] = neighbor;
-                            colorMask[pos[u], pos[v]] = current
+                            faceTowardsPositive[pos[u], pos[v]] = showNeighbor;
+                            colorMask[pos[u], pos[v]] = showCurrent
                                 ? grid.GetColor(checkPos)
                                 : grid.GetColor(neighborPos);
-                            submeshMask[pos[u], pos[v]] = current
+                            submeshMask[pos[u], pos[v]] = showCurrent
                                 ? grid.GetSubmeshIndex(checkPos)
                                 : grid.GetSubmeshIndex(neighborPos);
                         }
@@ -628,7 +634,7 @@ namespace TiltBrush
             public RuntimeVoxelGrid(
                 RuntimeVoxDocument.RuntimeModel model,
                 Color32[] palette,
-                IReadOnlyList<int> paletteSubmeshIndices)
+                IReadOnlyList<int> paletteSubmeshIndices, IReadOnlyList<bool> paletteOccludesFaces)
             {
                 int minX = int.MaxValue;
                 int minY = int.MaxValue;
@@ -669,9 +675,13 @@ namespace TiltBrush
                         voxel.Color,
                         VoxMeshBuilder.GetSubmeshIndex(
                             voxel.PaletteIndex,
-                            paletteSubmeshIndices));
+                            paletteSubmeshIndices),
+                        paletteOccludesFaces == null || paletteOccludesFaces[voxel.PaletteIndex - 1]);
                 }
             }
+
+            public bool OccludesFaces(Vector3Int pos)
+                => m_voxels.TryGetValue(pos, out RuntimeVoxelCell voxel) && voxel.OccludesFaces;
 
             public bool HasVoxel(Vector3Int pos)
             {
@@ -700,11 +710,13 @@ namespace TiltBrush
         {
             public Color32 Color { get; }
             public int SubmeshIndex { get; }
+            public bool OccludesFaces { get; }
 
-            public RuntimeVoxelCell(Color32 color, int submeshIndex)
+            public RuntimeVoxelCell(Color32 color, int submeshIndex, bool occludesFaces)
             {
                 Color = color;
                 SubmeshIndex = submeshIndex;
+                OccludesFaces = occludesFaces;
             }
         }
 

@@ -26,6 +26,7 @@ namespace TiltBrush
 
         public IReadOnlyList<Material> Materials { get; }
         public IReadOnlyList<int> PaletteSubmeshIndices { get; }
+        public IReadOnlyList<bool> PaletteOccludesFaces { get; }
         public IReadOnlyList<Material> OwnedMaterials { get; }
 
         public VoxMaterialSet(RuntimeVoxDocument document, Material defaultMaterial)
@@ -42,6 +43,7 @@ namespace TiltBrush
             var materials = new List<Material> { defaultMaterial };
             var ownedMaterials = new List<Material>();
             var paletteSubmeshIndices = new int[256];
+            var paletteOccludesFaces = Enumerable.Repeat(true, 256).ToArray();
             var slotByProperties = new Dictionary<string, int>(StringComparer.Ordinal);
             var usedPaletteIndices = new HashSet<int>(
                 document.Models.SelectMany(model => model.Voxels.Values).Select(value => (int)value));
@@ -69,10 +71,19 @@ namespace TiltBrush
                     ownedMaterials.Add(material);
                 }
                 paletteSubmeshIndices[paletteIndex - 1] = slot;
+                if (voxMaterial.Type == RuntimeVoxDocument.MaterialType.Glass)
+                {
+                    Material material = materials[slot];
+                    float alpha = material.HasProperty("_BaseColorFactor")
+                        ? material.GetColor("_BaseColorFactor").a : 1f;
+                    paletteOccludesFaces[paletteIndex - 1] =
+                        alpha * document.Palette[paletteIndex - 1].a / 255f >= 1f;
+                }
             }
 
             Materials = materials;
             PaletteSubmeshIndices = paletteSubmeshIndices;
+            PaletteOccludesFaces = paletteOccludesFaces;
             OwnedMaterials = ownedMaterials;
         }
 

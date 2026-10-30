@@ -110,6 +110,40 @@ namespace TiltBrush
         }
 
         [Test]
+        public void VoxMeshBuilder_PreservesOpaqueFacesInsideTransparentShell()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("glass-shell", Vector3Int.one * 3);
+            for (int x = 0; x < 3; ++x)
+            for (int y = 0; y < 3; ++y)
+            for (int z = 0; z < 3; ++z)
+            {
+                var cell = new Vector3Int(x, y, z);
+                model.AddOrUpdateVoxel(cell, cell == Vector3Int.one ? (byte)1 : (byte)2);
+            }
+            var submeshes = new int[256];
+            submeshes[1] = 1;
+            var occludes = new bool[256];
+            occludes[0] = true;
+            var builder = new VoxMeshBuilder();
+            Mesh glass = null;
+            Mesh opaque = null;
+            try
+            {
+                glass = builder.GenerateOptimizedMesh(model, document.Palette, submeshes, 2, occludes);
+                Assert.AreEqual(36, glass.GetTriangles(0).Length, "The enclosed opaque voxel retains all six faces.");
+                occludes[1] = true;
+                opaque = builder.GenerateOptimizedMesh(model, document.Palette, submeshes, 2, occludes);
+                Assert.AreEqual(0, opaque.GetTriangles(0).Length, "An opaque shell still hides the interior voxel.");
+            }
+            finally
+            {
+                if (glass != null) UnityEngine.Object.DestroyImmediate(glass);
+                if (opaque != null) UnityEngine.Object.DestroyImmediate(opaque);
+            }
+        }
+
+        [Test]
         public void VoxMeshBuilder_AssignsMaterialGroupsToSubmeshes()
         {
             var document = new RuntimeVoxDocument();

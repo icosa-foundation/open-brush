@@ -241,7 +241,8 @@ namespace TiltBrush
                         model,
                         palette,
                         materialSet.PaletteSubmeshIndices,
-                        materialSet.Materials.Count);
+                        materialSet.Materials.Count,
+                        materialSet.PaletteOccludesFaces);
             }
             catch (Exception ex)
             {

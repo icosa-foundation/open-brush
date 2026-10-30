@@ -535,7 +535,8 @@ namespace TiltBrush
                             model,
                             m_EditableVoxDocument.Palette,
                             materialSet.PaletteSubmeshIndices,
-                            materialSet.Materials.Count)
+                            materialSet.Materials.Count,
+                            materialSet.PaletteOccludesFaces)
                         : builder.GenerateSeparateCubesMesh(
                             model,
                             m_EditableVoxDocument.Palette,
