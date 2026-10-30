@@ -596,6 +596,7 @@ namespace TiltBrush
                 throw;
             }
 
+            RefreshEditableVoxMaterialCaches(previousMaterials.Select(entry => (Renderer)entry.renderer));
             ReleaseOwnedVoxMeshes();
             ReleaseOwnedVoxMaterials();
             foreach (Mesh mesh in replacementMeshes)
@@ -698,6 +699,32 @@ namespace TiltBrush
                 HierarchyUtils.RecursivelySetMaterialBatchID(modelTransform, m_BatchId);
             }
             return filter;
+        }
+
+        private void RefreshEditableVoxMaterialCaches(IEnumerable<Renderer> replacedRenderers)
+        {
+            var replaced = new HashSet<Renderer>(replacedRenderers);
+            if (m_InitialMaterials != null && m_NewMaterials != null)
+            {
+                // Non-VOX renderers (e.g. the selection indicator) may still be using
+                // keyword instances. Restore their originals before rebuilding the cache.
+                foreach (var entry in m_InitialMaterials)
+                {
+                    if (entry.Key != null && !replaced.Contains(entry.Key))
+                        entry.Key.sharedMaterials = entry.Value;
+                }
+                // Native drawing can refresh every frame. Do not leak the old cached
+                // instances, and never destroy original/catalog materials here.
+                foreach (var material in m_NewMaterials.Values.SelectMany(materials => materials)
+                    .Except(m_InitialMaterials.Values.SelectMany(materials => materials)))
+                    DestroyOwnedVoxMaterial(material);
+            }
+            CloneInitialMaterials(null);
+            foreach (var materials in m_NewMaterials.Values)
+            foreach (var material in materials)
+            foreach (string keyword in m_Keywords)
+                if (material != null) material.EnableKeyword(keyword);
+            TrySetCanvasKeywordsFromObject(transform);
         }
 
         private Bounds GetEditableVoxModelBounds()
