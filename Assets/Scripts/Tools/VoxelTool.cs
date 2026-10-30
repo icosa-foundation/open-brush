@@ -484,9 +484,10 @@ namespace TiltBrush
         {
             UpdateTargetLabel(attachPoint, false);
             float voxelSize = SelectionManager.m_Instance.ConfiguredSnappingGridSize;
-            // Snap-grid points are at integer multiples of spacing in active-canvas coordinates.
-            // Align voxel centers to those points, including when snapping is currently off.
-            Vector3 center = (Vector3)Vector3Int.RoundToInt(canvasPosition / voxelSize) * voxelSize;
+            // Snap-grid points define voxel corners; centers sit halfway through each cell.
+            // Floor also chooses the containing cell correctly at negative coordinates.
+            Vector3 center = ((Vector3)Vector3Int.FloorToInt(canvasPosition / voxelSize) +
+                Vector3.one * 0.5f) * voxelSize;
             Vector3 min = center - Vector3.one * 1.5f * voxelSize;
             VoxEditPreviewRenderer.DrawCreationBounds(min, min + Vector3.one * 3f * voxelSize, voxelSize);
             if (IsEatingInput || !InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate)) return;
