@@ -107,7 +107,7 @@ namespace TiltBrush
             // Do nothing to strokes as there's no intuitive "natural" rotation for brush strokes.
             _SnapSelection(
                 strokeCenter => strokeCenter,
-                widgetTr =>
+                (widget, widgetTr) =>
                 {
                     widgetTr.rotation = SelectionManager.m_Instance.QuantizeAngle(widgetTr.rotation);
                     return widgetTr;
@@ -119,9 +119,17 @@ namespace TiltBrush
         {
             _SnapSelection(
                 strokeCenter => SelectionManager.m_Instance.SnapToGrid_CS(strokeCenter),
-                widgetTr =>
+                (widget, widgetTr) =>
                 {
-                    widgetTr.translation = SelectionManager.m_Instance.SnapToGrid_CS(widgetTr.translation);
+                    if (!(widget is ModelWidget model) || model.EditableVoxDocument == null)
+                    {
+                        widgetTr.translation = SelectionManager.m_Instance.SnapToGrid_CS(widgetTr.translation);
+                        return widgetTr;
+                    }
+                    TrTransform canvasToWorld = widget.Canvas.Pose;
+                    TrTransform world = canvasToWorld * widgetTr;
+                    world.translation = widget.SnapPositionToGrid_GS(world.translation, world.rotation);
+                    widgetTr.translation = canvasToWorld.inverse * world.translation;
                     return widgetTr;
                 }
             );
@@ -129,9 +137,9 @@ namespace TiltBrush
 
         // Applies a per-item snapping function to the selection and records it as a single command.
         // strokeSnap maps a stroke's bounds center to its new position; widgetSnap maps a widget's
-        // local transform to its new one. Either can be the identity if that item type is unaffected.
+        // local transform to its new one using that widget's snap anchor. Either can be the identity.
         private static void _SnapSelection(System.Func<Vector3, Vector3> strokeSnap,
-                                          System.Func<TrTransform, TrTransform> widgetSnap)
+                                          System.Func<GrabWidget, TrTransform, TrTransform> widgetSnap)
         {
             var xforms = new List<TrTransform>();
             var strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
@@ -150,7 +158,7 @@ namespace TiltBrush
             }
             foreach (var widget in widgets)
             {
-                xforms.Add(widgetSnap(widget.LocalTransform));
+                xforms.Add(widgetSnap(widget, widget.LocalTransform));
             }
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new SetTransformsFromListCommand(strokes, widgets, xforms)
