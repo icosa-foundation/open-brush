@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -28,43 +27,21 @@ namespace TiltBrush
         }
 
         [SerializeField] private Setting m_Setting;
-        private TextMeshPro m_Label;
-
-        protected override void Awake()
-        {
-            base.Awake();
-            GameObject labelObject = new GameObject("Label");
-            labelObject.layer = gameObject.layer;
-            labelObject.transform.SetParent(transform, false);
-            labelObject.transform.localPosition = new Vector3(0, 0, -0.004f);
-            labelObject.transform.localRotation = Quaternion.identity;
-            labelObject.transform.localScale = Vector3.one * 0.1f;
-            m_Label = labelObject.AddComponent<TextMeshPro>();
-            m_Label.alignment = TextAlignmentOptions.Center;
-            m_Label.enableAutoSizing = true;
-            m_Label.fontSizeMin = 1;
-            m_Label.fontSizeMax = 4f;
-            m_Label.color = Color.black;
-            m_Label.rectTransform.sizeDelta = new Vector2(9f, 8f);
-            UpdateVisuals();
-        }
 
         public override void UpdateVisuals()
         {
             base.UpdateVisuals();
             VoxelTool tool = GetTool();
-            if (tool == null || m_Label == null)
+            if (tool == null)
             {
                 return;
             }
 
-            string label;
             string title;
             string description;
             switch (m_Setting)
             {
                 case Setting.Mode:
-                    label = $"Mode\n{tool.Mode}";
                     title = $"Edit Mode: {tool.Mode}";
                     description = tool.Mode switch
                     {
@@ -74,24 +51,31 @@ namespace TiltBrush
                     };
                     break;
                 case Setting.Grid:
-                    label = $"Grid\n{(tool.ShowGrid ? "On" : "Off")}";
                     title = "Voxel Grid";
                     description = tool.ShowGrid
                         ? "Press to hide the local grid. The volume and cell markers remain visible."
                         : "Press to show the local grid. The volume and cell markers remain visible.";
                     break;
                 case Setting.NewModel:
-                    label = tool.CreatingNewModel ? "New Model\nReady" : "New\nModel";
                     title = "New Voxel Model";
                     description = "Close settings, then press the trigger to draw a new model aligned to the snap grid. Its voxel size uses the last chosen snap-grid spacing, even when snapping is off.";
                     break;
                 default:
-                    label = "Close";
                     title = "Close Settings";
                     description = "Return to voxel editing. The grid grows as you draw and tightens on release, with a 3-cell minimum per axis.";
                     break;
             }
-            m_Label.text = label;
+            bool active = m_Setting switch
+            {
+                Setting.Grid => tool.ShowGrid,
+                Setting.NewModel => tool.CreatingNewModel,
+                _ => false,
+            };
+            if (m_ToggleActive != active)
+            {
+                m_ToggleActive = active;
+                SetButtonActivated(active);
+            }
             if (m_DescriptionText != title || m_DescriptionTextExtra != description)
             {
                 SetDescriptionText(title, description);

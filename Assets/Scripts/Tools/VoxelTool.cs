@@ -14,7 +14,6 @@
 
 using System;
 using System.Linq;
-using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -47,7 +46,6 @@ namespace TiltBrush
         private bool m_GestureAutoVisuals;
         private ModelWidget m_GestureWidget;
         private RuntimeVoxDocument.RuntimeModel m_GestureModel;
-        private TextMeshPro m_TargetLabel;
         private EditMode m_Mode;
         [SerializeField] private Texture2D m_AddIcon;
         [SerializeField] private Texture2D m_EraseIcon;
@@ -122,8 +120,6 @@ namespace TiltBrush
                 string.IsNullOrEmpty(widget.Subtree) &&
                 (widget.IsExternalVox || widget.EditableVoxDocument != null);
 
-        public override bool ShouldShowPointer() => true;
-
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
         {
             if (controller != InputManager.ControllerName.Brush) return;
@@ -162,10 +158,6 @@ namespace TiltBrush
                 EndGesture();
             }
             base.HideTool(hide);
-            if (m_TargetLabel != null)
-            {
-                m_TargetLabel.gameObject.SetActive(!hide);
-            }
         }
 
         public override void UpdateTool()
@@ -183,18 +175,13 @@ namespace TiltBrush
             }
 
             Transform attachPoint = InputManager.Brush.Geometry.ToolAttachPoint;
-            PointerManager.m_Instance.SetMainPointerPosition(attachPoint.position);
             Vector3 canvasPosition = App.Scene.ActiveCanvas.AsCanvas[attachPoint].translation;
             if (CreatingNewModel)
             {
-                UpdateNewModelDrawing(attachPoint, canvasPosition);
+                UpdateNewModelDrawing(canvasPosition);
                 return;
             }
             var previewModel = m_GestureActive ? m_GestureModel : FindTargetModelAt(canvasPosition);
-            bool insideTarget = m_GestureActive
-                ? HasCurrentTarget && m_CurrentModel.ContainsAt(canvasPosition)
-                : previewModel != null;
-            UpdateTargetLabel(attachPoint, insideTarget);
             if (HasCurrentTarget)
             {
                 var model = previewModel;
@@ -481,9 +468,8 @@ namespace TiltBrush
             }
         }
 
-        private void UpdateNewModelDrawing(Transform attachPoint, Vector3 canvasPosition)
+        private void UpdateNewModelDrawing(Vector3 canvasPosition)
         {
-            UpdateTargetLabel(attachPoint, false);
             float voxelSize = SelectionManager.m_Instance.ConfiguredSnappingGridSize;
             // Snap-grid points define voxel corners; centers sit halfway through each cell.
             // Floor also chooses the containing cell correctly at negative coordinates.
@@ -564,40 +550,6 @@ namespace TiltBrush
             ModelWidget widget = CurrentTargetWidget;
             // Rebind after undo/redo changes between embedded content and an external reference.
             BindTargetWidget(widget);
-        }
-
-        private void UpdateTargetLabel(
-            Transform attachPoint, bool insideTarget, string actionHint = null)
-        {
-            if (m_TargetLabel == null)
-            {
-                var labelObject = new GameObject("VoxelTargetStatus");
-                labelObject.layer = attachPoint.gameObject.layer;
-                labelObject.transform.SetParent(transform, false);
-                m_TargetLabel = labelObject.AddComponent<TextMeshPro>();
-                m_TargetLabel.alignment = TextAlignmentOptions.Center;
-                m_TargetLabel.enableAutoSizing = true;
-                m_TargetLabel.fontSizeMin = 1;
-                m_TargetLabel.fontSizeMax = 2;
-                m_TargetLabel.richText = false;
-                m_TargetLabel.rectTransform.sizeDelta = new Vector2(8, 1.5f);
-            }
-
-            Transform head = ViewpointScript.Head;
-            m_TargetLabel.transform.SetPositionAndRotation(
-                attachPoint.position + head.up * 0.06f, head.rotation);
-            m_TargetLabel.transform.localScale = Vector3.one * 0.05f;
-            m_TargetLabel.color = CreatingNewModel ? Color.yellow : Color.white;
-            string action = actionHint ?? (CreatingNewModel
-                ? "Press trigger to start drawing a new model"
-                : !HasCurrentTarget
-                    ? CurrentTargetWidget != null && CurrentTargetWidget.IsExternalVox
-                        ? "VOX source is not loaded yet"
-                        : "Grab or select a voxel model; New Model is in settings"
-                    : insideTarget
-                        ? $"Trigger: {Mode} — grid follows the voxels"
-                        : "Outside active model — grab or select another to change target");
-            m_TargetLabel.text = $"{CurrentTargetDescription}\n{action}";
         }
 
     }
