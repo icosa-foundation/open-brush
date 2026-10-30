@@ -467,7 +467,7 @@ namespace TiltBrush
         public void ShowAt(float x, float y, float z, bool optimized = true)
         {
             m_ViewState.OptimizedMesh = optimized;
-            var transform = m_ViewState.WidgetTransform;
+            var transform = GetSceneTransform();
             transform.translation = new Vector3(x, y, z);
             SetTransform(transform);
             Show(optimized);
