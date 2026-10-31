@@ -46,7 +46,7 @@ namespace TiltBrush
             Transform head = ViewpointScript.Head;
             Vector3 worldPosition = head.position + head.forward * (0.4f * App.METERS_TO_UNITS);
             Vector3 position = App.Scene.ActiveCanvas.Pose.inverse * worldPosition;
-            float size = SelectionManager.m_Instance.ConfiguredSnappingGridSize;
+            float size = GetVoxelGridSize(useLastModelWhenSnappingDisabled: true);
             Vector3 center = GetNewModelCellCenter(position, size);
             Mode = EditMode.Add;
             if (CreateGrid(center, size))

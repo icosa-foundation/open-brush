@@ -19,7 +19,7 @@ namespace TiltBrush
             var canvas = App.Scene.ActiveCanvas.Pose;
             var before = TrTransform.FromTransform(widget.transform);
             var selection = SelectionManager.m_Instance;
-            float spacing = selection.ConfiguredSnappingGridSize;
+            float spacing = GetVoxelGridSize(useLastModelWhenSnappingDisabled: false);
 
             // Align the voxel axes, accounting for VOX's axis convention and any
             // authored grid rotation, rather than just resetting the widget rotation.

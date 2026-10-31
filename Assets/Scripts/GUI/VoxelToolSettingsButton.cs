@@ -50,7 +50,7 @@ namespace TiltBrush
             {
                 case Setting.AlignToGrid:
                     title = "Align Voxel Model to Grid";
-                    description = "Match voxel size to the snap-grid spacing, align voxel axes to the grid, and snap the model into place.";
+                    description = "Align voxel axes and snap the model into place. Cell size matches the active snap grid, or the default grid size when snapping is off.";
                     break;
                 case Setting.Grid:
                     title = "Voxel Grid";
@@ -60,7 +60,7 @@ namespace TiltBrush
                     break;
                 case Setting.NewModel:
                     title = "New Voxel Model";
-                    description = "Press the trigger to draw a new model aligned to the snap grid. Its voxel size uses the last chosen snap-grid spacing, even when snapping is off.";
+                    description = "Press the trigger to draw a new model. Its voxel size matches the snap grid when snapping is on, or the last voxel model you interacted with when snapping is off.";
                     break;
                 default:
                     return;

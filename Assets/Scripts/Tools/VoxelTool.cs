@@ -31,6 +31,9 @@ namespace TiltBrush
         private VoxDocumentApiWrapper m_CurrentDocument;
         private VoxModelApiWrapper m_CurrentModel;
         private ModelWidget m_TargetWidget;
+        private ModelWidget m_LastInteractedVoxWidget;
+        private const float kDefaultVoxelSize = 0.1f;
+        private float m_LastVoxelSize = kDefaultVoxelSize;
         private Model m_ExternalPreviewSource;
         private ModelWidget m_PendingTargetWidget;
         private bool m_HasPendingTarget;
@@ -252,6 +255,7 @@ namespace TiltBrush
         public void RequestNewModel()
         {
             EndGesture();
+            RememberVoxelSize(m_LastInteractedVoxWidget);
             m_TargetWidget = null;
             m_PendingTargetWidget = null;
             m_HasPendingTarget = false;
@@ -264,6 +268,7 @@ namespace TiltBrush
         internal void SetTargetWidget(ModelWidget widget)
         {
             if (!IsAvailableTarget(widget)) return;
+            RememberVoxelSize(widget);
             if (m_GestureActive)
             {
                 // A grab/selection from the other hand cannot redirect an active stroke.
@@ -278,6 +283,7 @@ namespace TiltBrush
         private void BindTargetWidget(ModelWidget widget)
         {
             if (!IsAvailableTarget(widget)) widget = null;
+            RememberVoxelSize(widget);
             if (m_TargetWidget == widget && HasCurrentTarget) return;
             m_TargetWidget = widget;
             m_CurrentDocument = null;
@@ -524,7 +530,7 @@ namespace TiltBrush
 
         private void UpdateNewModelDrawing(Vector3 canvasPosition)
         {
-            float voxelSize = SelectionManager.m_Instance.ConfiguredSnappingGridSize;
+            float voxelSize = GetVoxelGridSize(useLastModelWhenSnappingDisabled: true);
             // Snap-grid points define voxel corners; centers sit halfway through each cell.
             // Floor also chooses the containing cell correctly at negative coordinates.
             Vector3 center = GetNewModelCellCenter(canvasPosition, voxelSize);
@@ -539,6 +545,26 @@ namespace TiltBrush
 
         private static Vector3 GetNewModelCellCenter(Vector3 canvasPosition, float voxelSize)
             => ((Vector3)Vector3Int.FloorToInt(canvasPosition / voxelSize) + Vector3.one * 0.5f) * voxelSize;
+
+        private void RememberVoxelSize(ModelWidget widget)
+        {
+            if (widget == null) return;
+            m_LastInteractedVoxWidget = widget;
+            m_LastVoxelSize = Mathf.Abs(App.Scene.ActiveCanvas.AsCanvas[widget.transform].scale);
+        }
+
+        // Creation can inherit the last model's size; explicit grid alignment uses
+        // the default grid when snapping is disabled, never the target's own size.
+        private float GetVoxelGridSize(bool useLastModelWhenSnappingDisabled)
+        {
+            var selection = SelectionManager.m_Instance;
+            if (selection.SnappingGridSize > 0) return selection.SnappingGridSize;
+            if (!useLastModelWhenSnappingDisabled) return kDefaultVoxelSize;
+            // Read at use time so resizing the last target is reflected, even
+            // if the voxel tool was inactive during the grab. Retain the value if deleted.
+            RememberVoxelSize(m_LastInteractedVoxWidget);
+            return m_LastVoxelSize;
+        }
 
         private bool CreateGrid(Vector3 center, float voxelSize)
         {
@@ -580,6 +606,7 @@ namespace TiltBrush
                 }
                 m_CurrentDocument.SetAutoVisuals(true, true);
                 m_CurrentModel = m_CurrentDocument.Model();
+                RememberVoxelSize(widget);
                 command.SetWidgetCost(widget.GetTiltMeterCost());
                 m_GestureCreationCommand = command;
                 return true;
