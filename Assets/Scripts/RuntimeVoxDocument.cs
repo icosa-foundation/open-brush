@@ -466,8 +466,8 @@ namespace TiltBrush
             // Scan usage only when allocating, normally after a brush colour change.
             var used = new bool[byte.MaxValue + 1];
             foreach (RuntimeModel model in m_models)
-            foreach (byte index in model.Voxels.Values)
-                used[index] = true;
+                foreach (byte index in model.Voxels.Values)
+                    used[index] = true;
 
             for (int index = 1; index <= byte.MaxValue; index++)
             {
@@ -493,13 +493,13 @@ namespace TiltBrush
             if (existingType != requestedType) return false;
             int existingCount = 0;
             if (existing != null)
-            foreach (var entry in existing)
-            {
-                if (entry.Key == "_type") continue;
-                if (requested == null || !requested.TryGetValue(entry.Key, out var value) || value != entry.Value)
-                    return false;
-                existingCount++;
-            }
+                foreach (var entry in existing)
+                {
+                    if (entry.Key == "_type") continue;
+                    if (requested == null || !requested.TryGetValue(entry.Key, out var value) || value != entry.Value)
+                        return false;
+                    existingCount++;
+                }
             int requestedCount = requested?.Count ?? 0;
             if (requested != null && requested.ContainsKey("_type")) requestedCount--;
             return existingCount == requestedCount;
