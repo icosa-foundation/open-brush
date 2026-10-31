@@ -73,7 +73,8 @@ namespace TiltBrush
             m_Audio = root.GetComponentsInChildren<AudioSource>(true);
             m_AudioPendingSeek = new bool[m_Audio.Length];
             m_AudioSeekTime = 0;
-            m_AudioGains = m_Audio.Select(source => source.GetComponent<GltfAudioSource>()?.Gain ?? source.volume).ToArray();
+            m_AudioGains = m_Audio.Select(source => source.GetComponents<GltfAudioSource>()
+                .FirstOrDefault(gltfAudio => gltfAudio.AudioSource == source)?.Gain ?? source.volume).ToArray();
         }
 
         public ModelPlaybackState GetSaveState()
