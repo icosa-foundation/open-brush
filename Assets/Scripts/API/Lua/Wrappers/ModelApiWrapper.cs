@@ -86,5 +86,20 @@ namespace TiltBrush
         [LuaDocsDescription(@"Deletes this model")]
         [LuaDocsExample(@"myModel:Delete()")]
         public void Delete() => ApiMethods.DeleteWidget(_ModelWidget);
+
+        [LuaDocsDescription(@"Converts this model to a stencil/guide for painting")]
+        [LuaDocsExample(@"myStencil = myModel:ConvertToGuide()")]
+        [LuaDocsReturnValue(@"Returns a Guide instance")]
+        public GuideApiWrapper ConvertToGuide()
+        {
+            if (_ModelWidget == null)
+            {
+                Debug.LogWarning("ModelApiWrapper: Cannot convert null widget to stencil");
+                return null;
+            }
+
+            ModelStencil stencil = _ModelWidget.ConvertToStencil();
+            return stencil == null ? null : new GuideApiWrapper(stencil);
+        }
     }
 }

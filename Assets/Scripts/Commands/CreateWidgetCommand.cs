@@ -42,12 +42,13 @@ namespace TiltBrush
             bool forceTransform = false,
             float snapGrid = 0,
             float snapAngle = 0,
-            BaseCommand parent = null)
+            BaseCommand parent = null,
+            CanvasScript canvas = null)
             : base(parent)
         {
             Transform controller = InputManager.m_Instance.GetController(
                 InputManager.ControllerName.Brush).transform;
-            m_Canvas = App.ActiveCanvas;
+            m_Canvas = canvas ?? App.ActiveCanvas;
             m_SpawnXf = spawnXf;
             m_EndXf = forceTransform ? m_SpawnXf : TrTransform.TRS(
                 Vector3.Lerp(m_SpawnXf.translation, controller.position, m_SpawnAggression),

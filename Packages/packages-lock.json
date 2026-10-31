@@ -655,6 +655,13 @@
       "dependencies": {},
       "hash": "731ce73482c74c1bccb84d53c1771f9c4a0d511b"
     },
+    "tw.hoba.isomesh": {
+      "version": "https://github.com/icosa-mirror/IsoMesh.git#upm",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "b90e2973741d64706e768f997b31e80cd2aecbdf"
+    },
     "com.unity.modules.accessibility": {
       "version": "1.0.0",
       "depth": 0,
