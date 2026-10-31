@@ -119,6 +119,15 @@ namespace TiltBrush
         override public GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             TextWidget clone = Instantiate(WidgetManager.m_Instance.TextWidgetPrefab);
+            clone.AssignFont(m_TextMeshPro.font);
+            clone.TextColor = TextColor;
+            clone.StrokeColor = StrokeColor;
+            clone.Text = Text;
+            if (m_MeshFilter != null && clone.m_MeshFilter != null)
+            {
+                clone.m_MeshFilter.sharedMesh = m_MeshFilter.sharedMesh;
+            }
+            clone.Mode = Mode;
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
