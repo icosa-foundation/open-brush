@@ -531,7 +531,8 @@ namespace TiltBrush
                 if (mesh == null) { return; }
                 for (int submesh = 0; submesh < mesh.subMeshCount; ++submesh)
                 {
-                    combine.Add(new CombineInstance {
+                    combine.Add(new CombineInstance
+                    {
                         mesh = mesh, subMeshIndex = submesh,
                         transform = toLocal * source.localToWorldMatrix
                     });
@@ -795,7 +796,8 @@ namespace TiltBrush
             {
                 throw new InvalidOperationException("The model guide has no geometry to save.");
             }
-            state.ModelGuide = new Guides.ModelGuideState {
+            state.ModelGuide = new Guides.ModelGuideState
+            {
                 Vertices = m_SourceVertices, Triangles = m_SourceTriangles
             };
         }

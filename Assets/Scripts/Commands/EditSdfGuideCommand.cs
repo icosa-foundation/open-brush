@@ -238,13 +238,15 @@ namespace TiltBrush
             {
                 return new SdfStencil.ComponentDefinition(
                     component.MeshAsset, updatedTransform, updatedOperation,
-                    updatedBlend, updatedFlip) { Identity = component.Identity };
+                    updatedBlend, updatedFlip)
+                { Identity = component.Identity };
             }
 
             SdfStencil.PrimitiveDefinition primitive = component.Primitive.Value;
             return new SdfStencil.ComponentDefinition(new SdfStencil.PrimitiveDefinition(
                 primitive.Type, primitive.Geometry, updatedTransform, updatedOperation,
-                updatedBlend, updatedFlip)) { Identity = component.Identity };
+                updatedBlend, updatedFlip))
+            { Identity = component.Identity };
         }
 
         private static void NormalizeFirstOperation(
