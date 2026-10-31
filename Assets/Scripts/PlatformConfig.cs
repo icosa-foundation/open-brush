@@ -48,6 +48,10 @@ namespace TiltBrush
 
         public int MemoryWarningVertCount;
 
+        [Header("Multiplayer")]
+        [Tooltip("Maximum pointers in one drawing action eligible for live multiplayer streaming.")]
+        public int MaxStreamedPointers;
+
         public int GetMemoryWarningVertCount(int userOverride = 0)
         {
             if (userOverride > 0)

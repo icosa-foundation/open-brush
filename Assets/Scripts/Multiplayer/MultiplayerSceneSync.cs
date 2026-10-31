@@ -59,13 +59,13 @@ namespace OpenBrush.Multiplayer
             onLargeDataReceived -= OnLargeDataReceived;
         }
 
-        public void StartSyncronizationForUser(int id)
+        public void StartSyncronizationForUser(int id, List<Stroke> initialStrokes = null)
         {
 
             switch (m_SyncType)
             {
                 case SyncType.Strokes:
-                    SendStrokesToPlayer(id);
+                    SendStrokesToPlayer(id, initialStrokes);
                     break;
                 case SyncType.Commands:
                     StartCoroutine(SendCommandHistory(id));
@@ -75,16 +75,21 @@ namespace OpenBrush.Multiplayer
 
         #region Syncronization Logic Strokes
 
-        async void SendStrokesToPlayer(int id)
+        async void SendStrokesToPlayer(int id, List<Stroke> initialStrokes)
         {
-            LinkedList<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList;
+            List<Stroke> strokes = initialStrokes ??
+                SketchMemoryScript.m_Instance.GetMemoryList.ToList();
 
             if (strokes.Count == 0) return;
 
+            MultiplayerManager.m_Instance.SyncSketchTimeToPlayer(
+                GetCurrentSketchTimeMs(), id);
             SendCurrentTargetEnvironmentCommand();
 
             const int chunkSize = 5;
             List<Stroke> strokeList = strokes.ToList();
+            bool useEnrichedStrokeTransport = MultiplayerManager.m_Instance
+                .IsPlayerLiveStrokeCompatible(id);
 
             int counter = 0;
             for (int i = 0; i < strokeList.Count; i += chunkSize)
@@ -93,7 +98,11 @@ namespace OpenBrush.Multiplayer
                 var chunk = strokeList.Skip(i).Take(chunkSize).ToList();
                 counter += chunk.Count;
                 int percentage = (int)((counter / (float)strokeList.Count) * 100);
-                byte[] strokesData = await MultiplayerStrokeSerialization.SerializeAndCompressMemoryListAsync(chunk);
+                byte[] strokesData = useEnrichedStrokeTransport
+                    ? await MultiplayerStrokeSerialization
+                        .SerializeAndCompressContributorMemoryListAsync(chunk)
+                    : await MultiplayerStrokeSerialization
+                        .SerializeAndCompressMemoryListAsync(chunk);
                 MultiplayerManager.m_Instance.SendLargeDataToPlayer(id, strokesData, percentage);
             }
         }
@@ -102,12 +111,20 @@ namespace OpenBrush.Multiplayer
         {
 
             // Decompress and deserialize strokes asynchronously
-            List<Stroke> strokes = await MultiplayerStrokeSerialization.DecompressAndDeserializeMemoryListAsync(largeData);
+            List<Stroke> strokes = await MultiplayerStrokeSerialization
+                .DecompressAndDeserializeContributorMemoryListAsync(largeData);
 
+
+            if (strokes.Count > 0)
+            {
+                MultiplayerManager.m_Instance.ApplySketchTimeSync(
+                    strokes.Max(stroke => stroke.TailTimestampMs));
+            }
 
             // Handle the strokes (e.g., add them to the scene or memory)
             foreach (var stroke in strokes)
             {
+                MultiplayerManager.m_Instance.PlaceStrokeOnContributorLayer(stroke);
                 BrushStrokeCommand c = new BrushStrokeCommand(stroke);
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(c, true);
@@ -163,9 +180,31 @@ namespace OpenBrush.Multiplayer
 
             SendCurrentTargetEnvironmentCommand();
 
-            foreach (BaseCommand command in commands) MultiplayerManager.m_Instance.OnCommandPerformed(command);
+            // History keeps the owner's timestamp domain. Advance the late joiner's sketch
+            // clock before sending it so subsequently rebased live strokes cannot precede it.
+            MultiplayerManager.m_Instance.SyncSketchTimeToPlayer(
+                GetCurrentSketchTimeMs(), id);
+
+            foreach (BaseCommand command in commands)
+            {
+                MultiplayerManager.m_Instance.SendCommandToPlayer(command, id);
+            }
 
             _isSendingCommandHistory = false;
+        }
+
+        private static uint GetCurrentSketchTimeMs()
+        {
+            uint sketchTimeMs = (uint)Math.Min(
+                uint.MaxValue, Math.Max(0, App.Instance.CurrentSketchTime * 1000.0));
+            if (SketchMemoryScript.m_Instance.GetMemoryList.Count > 0)
+            {
+                sketchTimeMs = Math.Max(
+                    sketchTimeMs,
+                    SketchMemoryScript.m_Instance.GetMemoryList.Max(
+                        stroke => stroke.TailTimestampMs));
+            }
+            return sketchTimeMs;
         }
 
         private void CreateBrushStrokeCommands(List<Stroke> strokes, int LastTimestamp)
