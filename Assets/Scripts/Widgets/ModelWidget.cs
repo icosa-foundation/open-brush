@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ using UnityEngine;
 using System.Linq;
 using System.Threading.Tasks;
 using Gsplat;
+
 
 namespace TiltBrush
 {
@@ -39,7 +40,7 @@ namespace TiltBrush
         // then when the model is broken apart, we create a separate ModelWidget for each Chair1,Chair2,Chair3
         // e.g for Chair1, Subtree = "Root/Chair1"
         /*
-         Root (empty node) 
+         Root (empty node)
             Chair1 (mesh)
             Chair2 (mesh)
             Chair3 (mesh)
@@ -295,12 +296,21 @@ namespace TiltBrush
             {
                 return;
             }
-
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
             m_ModelInstance.parent = this.transform;
             m_ModelInstance.gameObject.SetActive(true);
             m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(includeInactive: true);
             CaptureGsplatBaseBrightness();
+
+
+
+
+            var uiManager = App.Scene.animationUI_manager;
+
+
+
+
+
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
@@ -920,7 +930,8 @@ namespace TiltBrush
                     modelDatas.GroupIds,
                     modelDatas.LayerIds,
                     modelDatas.SplitMeshPaths,
-                    modelDatas.NotSplittableMeshPaths
+                    modelDatas.NotSplittableMeshPaths,
+                    modelDatas.FrameIds
                 );
                 ok = await okTask;
 
@@ -935,7 +946,8 @@ namespace TiltBrush
                     modelDatas.GroupIds,
                     modelDatas.LayerIds,
                     modelDatas.SplitMeshPaths,
-                    modelDatas.NotSplittableMeshPaths
+                    modelDatas.NotSplittableMeshPaths,
+                    modelDatas.FrameIds
                 );
             }
             else
@@ -955,8 +967,16 @@ namespace TiltBrush
         /// Returns false if the model can't be loaded -- in this case, caller is responsible
         /// for creating the missing-model placeholder.
         public static async Task<bool> CreateModelsFromRelativePath(
-            string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs,
-            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
+            string relativePath,
+            string[] subtrees,
+            TrTransform[] xfs,
+            TrTransform[] rawXfs,
+            bool[] pinStates,
+            uint[] groupIds,
+            int[] layerIds,
+            List<string> splitMeshPaths,
+            List<string> noSplitMeshPaths,
+            int[] frameIds)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = ModelCatalog.m_Instance.GetModel(relativePath);
@@ -984,7 +1004,7 @@ namespace TiltBrush
                 {
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                    CreateModel(model, subtrees[i], xfs[i], pin, isNonRawTransform: true, groupId, 0);
+                    CreateModel(model, subtrees[i], xfs[i], pin, isNonRawTransform: true, groupId, 0, 0);
                 }
             }
             if (rawXfs != null)
@@ -995,7 +1015,8 @@ namespace TiltBrush
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                     int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                    CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId);
+                    int frameId = (frameIds != null && i < frameIds.Length) ? frameIds[i] : 0;
+                    CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, frameId);
                 }
             }
             return true;
@@ -1003,15 +1024,18 @@ namespace TiltBrush
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
         static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
-                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
+                                bool isNonRawTransform, uint groupId, int layerId, int frameId, string assetId = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
-            modelWidget.transform.localPosition = xf.translation;
-            modelWidget.transform.localRotation = xf.rotation;
             modelWidget.m_Subtree = subtree;
             modelWidget.Model = model;
             modelWidget.m_LoadingFromSketch = true;
+            // Saved pose and size are local to this frame, including when it is not active.
+            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId, frameId));
+            modelWidget.transform.localPosition = xf.translation;
+            modelWidget.transform.localRotation = xf.rotation;
             modelWidget.Show(true, false);
+
             if (isNonRawTransform)
             {
                 modelWidget.SetWidgetSizeNonRaw(xf.scale);
@@ -1034,12 +1058,18 @@ namespace TiltBrush
                 modelWidget.m_PolyCallbackActive = true;
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
-            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
-        static async Task<bool> CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
-                bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths)
+        static async Task<bool> CreateModelsFromAssetId(
+            string assetId, string[] subtrees,
+            TrTransform[] rawXfs,
+            bool[] pinStates,
+            uint[] groupIds,
+            int[] layerIds,
+            List<string> splitMeshPaths,
+            List<string> noSplitMeshPaths,
+            int[] frameIds)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
@@ -1080,9 +1110,10 @@ namespace TiltBrush
                 bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
+                int frameId = (frameIds != null && i < frameIds.Length) ? frameIds[i] : 0;
                 string subtree = (subtrees != null && i < subtrees.Length) ? subtrees[i] : null;
                 CreateModel(model, subtree, rawXfs[i], pin, isNonRawTransform: false,
-                    groupId, layerId, assetId);
+                    groupId, layerId, frameId, assetId);
             }
             return true;
         }

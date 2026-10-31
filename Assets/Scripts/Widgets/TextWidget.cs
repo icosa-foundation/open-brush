@@ -146,6 +146,8 @@ namespace TiltBrush
             textWidget.transform.localScale = Vector3.one;
 
             textWidget.Text = tiltText.Text;
+            // Apply saved local coordinates only after binding the authored frame.
+            textWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltText.LayerId, tiltText.FrameId));
             textWidget.SetSignedWidgetSize(tiltText.Transform.scale);
             textWidget.Show(bShow: true, bPlayAudio: false);
             textWidget.transform.localPosition = tiltText.Transform.translation;
@@ -159,7 +161,6 @@ namespace TiltBrush
             textWidget.Text = tiltText.Text;
             textWidget.Mode = tiltText.Mode;
             textWidget.Group = App.GroupManager.GetGroupFromId(tiltText.GroupId);
-            textWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltText.LayerId));
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(textWidget.GetTiltMeterCost(), up: true);
             textWidget.UpdateScale();
