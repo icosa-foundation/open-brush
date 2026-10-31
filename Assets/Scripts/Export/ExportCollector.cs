@@ -17,6 +17,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using TiltBrush.MeshEditing;
 using SceneStatePayload = TiltBrush.ExportUtils.SceneStatePayload;
 using VertexLayout = TiltBrush.GeometryPool.VertexLayout;
 using static TiltBrush.ExportUtils;
@@ -482,7 +483,9 @@ namespace TiltBrush
             {
                 Model prefab = group.Key;
                 // Each element represents a GameObject in the "prefab"
-                List<PrefabGeometry[]> prefabObjs = GetPrefabGameObjs(payload, prefab).ToList();
+                List<PrefabGeometry[]> sharedObjs = group.Any(widget => widget is not EditableModelWidget)
+                    ? GetPrefabGameObjs(payload, prefab).ToList()
+                    : null;
 
                 foreach ((ModelWidget widget, int widgetIndex) in group.WithIndex())
                 {
@@ -493,6 +496,11 @@ namespace TiltBrush
                     // Verify that it's okay to parallel-iterate over the prefab and instance gameObjs.
                     // It should be, unless one or the other has mucked with their m_MeshChildren.
                     MeshFilter[] instanceObjs = widget.GetMeshes();
+                    // Editable geometry and appearance belong to the instance, not the template.
+                    List<PrefabGeometry[]> prefabObjs = widget is EditableModelWidget editableWidget
+                        ? GetPrefabGameObjs(payload, prefab, instanceObjs,
+                            EditableModelManager.m_Instance.m_ExportableMaterials[editableWidget.m_PolyRecipe.CurrentMaterial]).ToList()
+                        : sharedObjs;
                     if (prefabObjs.Count != instanceObjs.Length)
                     {
                         Debug.LogError($"Bad Model instance: {prefabObjs.Count} {instanceObjs.Length}");
@@ -538,9 +546,10 @@ namespace TiltBrush
         // Enumerates all the GameObjects in a "prefab" and creates geometry for them.
         // Because Unity, the result is an array; but it'll almost certainly be length 1.
         static IEnumerable<PrefabGeometry[]> GetPrefabGameObjs(
-            SceneStatePayload payload, Model prefab)
+            SceneStatePayload payload, Model prefab, MeshFilter[] instanceMeshes = null,
+            IExportableMaterial editableMaterial = null)
         {
-            foreach ((MeshFilter meshFilter, int index) in prefab.GetMeshes().WithIndex())
+            foreach ((MeshFilter meshFilter, int index) in (instanceMeshes ?? prefab.GetMeshes()).WithIndex())
             {
                 // Previous code let these nulls pass silently. I'm not sure why; it was definitely
                 // not okay because skipping elements could cause the paired iteration in GetModelMeshes
@@ -559,7 +568,7 @@ namespace TiltBrush
                 }
                 yield return GetPrefabGameObjMeshes(
                     meshFilter.sharedMesh, renderer.sharedMaterials,
-                    payload, prefab, index).ToArray();
+                    payload, prefab, index, editableMaterial).ToArray();
             }
         }
 
@@ -571,7 +580,7 @@ namespace TiltBrush
         //   meshIndex - the index of this Mesh within its owner "prefab"
         static IEnumerable<PrefabGeometry> GetPrefabGameObjMeshes(
             Mesh mesh, Material[] meshMaterials,
-            SceneStatePayload payload, Model prefab, int meshIndex)
+            SceneStatePayload payload, Model prefab, int meshIndex, IExportableMaterial editableMaterial = null)
         {
             if (meshMaterials.Length != mesh.subMeshCount)
             {
@@ -580,7 +589,10 @@ namespace TiltBrush
             string exportName = prefab.GetExportName();
 
             IExportableMaterial[] exportableMaterials = meshMaterials.Select(
-                mat => prefab.GetExportableMaterial(mat)).ToArray();
+                mat => editableMaterial != null && EditableModelManager.m_Instance.m_ExportableMaterials.TryGetValue(mat, out var material)
+                    ? material
+                    // Per-instance keyword changes can clone the recipe's material.
+                    : prefab.GetExportableMaterial(mat) ?? editableMaterial).ToArray();
             VertexLayout?[] layouts = exportableMaterials.Select(iem => iem?.VertexLayout).ToArray();
             // TODO(b/142396408)
             // Is it better to write color/texcoord that we don't need, just to satisfy the layout?
