@@ -161,6 +161,19 @@ namespace TiltBrush
 
         internal bool TryGetVoxelGridCorner_GS(out Vector3 corner_GS)
         {
+            if (IsVoxModel())
+            {
+                // Imported and editable VOX meshes both use cell centres at integer
+                // coordinates. Follow the rendered hierarchy so external imports use
+                // the same face corner, including their authored grid transform.
+                var gridMesh = GetMeshes().FirstOrDefault(mesh =>
+                    mesh != null && mesh.gameObject.activeInHierarchy);
+                if (gridMesh != null)
+                {
+                    corner_GS = gridMesh.transform.TransformPoint(Vector3.one * -0.5f);
+                    return true;
+                }
+            }
             var grid = m_EditableVoxDocument?.Models.FirstOrDefault(model => model.IsVisible);
             if (grid == null)
             {

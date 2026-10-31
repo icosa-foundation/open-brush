@@ -121,7 +121,7 @@ namespace TiltBrush
                 strokeCenter => SelectionManager.m_Instance.SnapToGrid_CS(strokeCenter),
                 (widget, widgetTr) =>
                 {
-                    if (!(widget is ModelWidget model) || model.EditableVoxDocument == null)
+                    if (!(widget is ModelWidget model) || !model.TryGetVoxelGridCorner_GS(out _))
                     {
                         widgetTr.translation = SelectionManager.m_Instance.SnapToGrid_CS(widgetTr.translation);
                         return widgetTr;
