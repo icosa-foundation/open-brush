@@ -63,7 +63,8 @@ namespace TiltBrush
             EditableModelWidget clone = EditableModelManager.m_Instance.GeneratePolyMesh(
                 m_PolyMesh,
                 m_PolyRecipe.Clone(),
-                TrTransform.FromLocalTransform(transform)
+                TrTransform.FromLocalTransform(transform),
+                recordCommand: false
             );
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
