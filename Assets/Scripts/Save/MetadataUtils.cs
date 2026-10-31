@@ -26,6 +26,7 @@ namespace TiltBrush
             public TrTransform xf;
             public string subtree;
             public bool pinned;
+            public ModelPlaybackState playback;
             public bool tinted;
             public uint groupId;
             public int layerId;
@@ -116,6 +117,7 @@ namespace TiltBrush
                 newEntry.xf = widget.GetSaveTransform();
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
+                newEntry.playback = widget.GetComponent<ModelPlaybackController>()?.GetSaveState();
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
                 newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
@@ -129,10 +131,15 @@ namespace TiltBrush
                     Location = elem.Key,
                     SplitMeshPaths = modelSplitsMap[elem.Key].m_SplitMeshPaths,
                     NotSplittableMeshPaths = modelSplitsMap[elem.Key].m_NotSplittableMeshPaths,
+                    ImmSketch = NativeImmImport.IsSketchLocation(elem.Key),
+                    ImmModel = widgetModels.Any(model => model.IsNativeImmModel &&
+                        model.GetLocation().Equals(elem.Key)),
                 };
 
                 // Order and align the metadata.
                 WidgetMetadata[] ordered = elem.Value.OrderBy(ByTranslation).ToArray();
+                val.PlaybackStates = ordered.Any(entry => entry.playback != null)
+                    ? ordered.Select(entry => entry.playback).ToArray() : null;
                 val.PinStates = new bool[ordered.Length];
                 val.Subtrees = new string[ordered.Length];
                 val.RawTransforms = new TrTransform[ordered.Length];

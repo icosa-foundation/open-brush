@@ -840,6 +840,7 @@ namespace TiltBrush
         // Returns: path starting after Models/ or null if the path is not to the Models directory
         public static string GetModelSubpath(string fullPath)
         {
+            fullPath = fullPath.Replace('\\', '/');
             string media = GetPathRootedAtMedia(fullPath);
             string blocks = GetPathRootedAtBlocks(fullPath);
             string modelPath = "Media Library/Models/";
@@ -847,6 +848,11 @@ namespace TiltBrush
             if (media != null && media.StartsWith(modelPath))
             {
                 return media.Substring(modelPath.Length);
+            }
+
+            if (media != null && media.StartsWith("Media Library/Quill/", StringComparison.OrdinalIgnoreCase))
+            {
+                return System.IO.Path.GetRelativePath(App.ModelLibraryPath(), fullPath).Replace('\\', '/');
             }
 
             if (blocks != null)
@@ -1830,6 +1836,10 @@ namespace TiltBrush
             IcosaAssetCatalog pac = App.IcosaAssetCatalog;
             foreach (var gwd in m_ModelWidgets)
             {
+                var playback = gwd.WidgetScript.GetComponent<ModelPlaybackController>();
+                if (playback != null && playback.IsRestoring) return true;
+                var nativeReference = gwd.WidgetScript.GetComponentInChildren<NativeImmReference>();
+                if (nativeReference != null && nativeReference.IsLoading) return true;
                 Model.Location loc = gwd.WidgetScript.Model.GetLocation();
                 if (loc.GetLocationType() == Model.Location.Type.IcosaAssetId)
                 {

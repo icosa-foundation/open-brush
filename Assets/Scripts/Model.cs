@@ -91,7 +91,8 @@ namespace TiltBrush
                     {
                         case Type.LocalFile:
                             string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
-                            if (System.IO.File.Exists(blocksPath))
+                            if (!path.StartsWith("../") && !path.StartsWith("..\\") &&
+                                System.IO.File.Exists(blocksPath))
                             {
                                 return blocksPath.Replace("\\", "/");
                             }
@@ -235,6 +236,7 @@ namespace TiltBrush
         // Store SVG scene info for SVG models (persists across instantiation)
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
 
+        public bool IsNativeImmModel => m_Location.Extension == ".imm";
         public bool IsGsplatModel { get; private set; }
         private GsplatAsset m_OwnedGsplatAsset;
 
@@ -309,6 +311,33 @@ namespace TiltBrush
             m_Location = Location.IcosaAsset(assetId, path);
             Init();
         }
+
+        /// <summary>Creates a bounded template; each widget owns its native document separately.</summary>
+        public static Model CreateNativeImm(string assetId, string path, Bounds bounds)
+        {
+            var model = assetId == null ? new Model(path) : new Model(assetId, path);
+            model.CreateNativeImmPrefab(bounds);
+            return model;
+        }
+
+        internal void CreateNativeImmPrefab(Bounds bounds)
+        {
+            var size = bounds.size;
+            if (!IsFinite(bounds.center) || !IsFinite(size) ||
+                size.x < 0 || size.y < 0 || size.z < 0 || Mathf.Max(size.x, Mathf.Max(size.y, size.z)) <= Mathf.Epsilon)
+                throw new ArgumentException("IMM document has no usable bounds", nameof(bounds));
+
+            m_MeshBounds = bounds;
+            var root = new GameObject("Native IMM reference template");
+            root.SetActive(false);
+            if (!EndCreatePrefab(root, new List<string>()))
+                throw new InvalidOperationException("Could not create IMM reference template");
+        }
+
+        private static bool IsFinite(Vector3 value) =>
+            !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+            !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+            !float.IsNaN(value.z) && !float.IsInfinity(value.z);
 
         public Location GetLocation() { return m_Location; }
 
@@ -1072,6 +1101,11 @@ namespace TiltBrush
                     go = LoadUsd(warnings);
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
+                }
+                else if (ext == ".imm")
+                {
+                    if (!await NativeImmReference.LoadModelAsync(this))
+                        m_LoadError = new LoadError("Could not load IMM reference", m_Location.AbsolutePath);
                 }
                 else if (ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {

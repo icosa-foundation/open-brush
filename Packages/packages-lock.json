@@ -39,6 +39,17 @@
       },
       "hash": "ec25a5d7d6832730dcbcbd7bcd4f1e9529506a01"
     },
+    "com.immersive-foundation.imm-unity": {
+      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-unity#ddf73d5610afef30d26e1bcdf38eaf19a56dcd8c",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.immersive-foundation.imm-stroke-reader": "0.1.0",
+        "com.unity.ugui": "1.0.0",
+        "com.unity.render-pipelines.universal": "17.6.0"
+      },
+      "hash": "ddf73d5610afef30d26e1bcdf38eaf19a56dcd8c"
+    },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
       "depth": 0,
