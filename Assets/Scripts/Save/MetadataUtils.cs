@@ -107,10 +107,20 @@ namespace TiltBrush
             return App.Scene.AnimationTracksSerialized();
         }
 
+        private static bool ShouldSerializeWidget(GrabWidget widget)
+        {
+            if (!widget.gameObject.activeSelf) return false;
+
+            // Undo can retain widgets on drawings that no longer belong to the timeline.
+            // Resolve selected widgets through their original canvas, regardless of visibility.
+            (int layerId, int frameId) = App.Scene.GetSerializableIndexOfCanvas(widget);
+            return layerId >= 0 && frameId >= 0;
+        }
+
         public static TiltModels75[] GetTiltModels(GroupIdMapping groupIdMapping)
         {
             var widgets =
-                WidgetManager.m_Instance.ModelWidgets.Where(w => w.gameObject.activeSelf).ToArray();
+                WidgetManager.m_Instance.ModelWidgets.Where(ShouldSerializeWidget).ToArray();
             if (widgets.Length == 0 && !ModelCatalog.m_Instance.MissingModels.Any())
             {
                 return null;
@@ -175,7 +185,7 @@ namespace TiltBrush
 
         public static TiltText[] GetTiltText(GroupIdMapping groupIdMapping)
         {
-            return WidgetManager.m_Instance.TextWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertTextWidgetToTiltText(x)).ToArray();
+            return WidgetManager.m_Instance.TextWidgets.Where(ShouldSerializeWidget).Select(x => ConvertTextWidgetToTiltText(x)).ToArray();
 
             TiltText ConvertTextWidgetToTiltText(TextWidget widget)
             {
@@ -200,7 +210,7 @@ namespace TiltBrush
 
         public static TiltSoundClip[] GetTiltSoundClip(GroupIdMapping groupIdMapping)
         {
-            return WidgetManager.m_Instance.SoundClipWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertSoundClipWidgetToTiltSoundClip(x)).ToArray();
+            return WidgetManager.m_Instance.SoundClipWidgets.Where(ShouldSerializeWidget).Select(x => ConvertSoundClipWidgetToTiltSoundClip(x)).ToArray();
 
             TiltSoundClip ConvertSoundClipWidgetToTiltSoundClip(SoundClipWidget widget)
             {
@@ -232,7 +242,7 @@ namespace TiltBrush
         {
             var portals = WidgetManager.m_Instance.ActivePortalWidgets
                 .Select(x => x.WidgetScript)
-                .Where(x => x.gameObject.activeSelf)
+                .Where(ShouldSerializeWidget)
                 .ToArray();
             if (portals.Length == 0)
             {
@@ -263,7 +273,7 @@ namespace TiltBrush
         {
             var captures = WidgetManager.m_Instance.ActiveGaussianCaptureWidgets
                 .Select(x => x.WidgetScript)
-                .Where(x => x.gameObject.activeSelf);
+                .Where(ShouldSerializeWidget);
 
             var results = captures
                 .Select(widget =>
@@ -330,7 +340,7 @@ namespace TiltBrush
 
         public static TiltVideo[] GetTiltVideos(GroupIdMapping groupIdMapping)
         {
-            return WidgetManager.m_Instance.VideoWidgets.Where(x => x.gameObject.activeSelf).Select(x => ConvertVideoToTiltVideo(x)).ToArray();
+            return WidgetManager.m_Instance.VideoWidgets.Where(ShouldSerializeWidget).Select(x => ConvertVideoToTiltVideo(x)).ToArray();
 
             TiltVideo ConvertVideoToTiltVideo(VideoWidget widget)
             {
@@ -363,7 +373,7 @@ namespace TiltBrush
         public static Guides[] GetGuideIndex(GroupIdMapping groupIdMapping)
         {
             var stencils =
-                WidgetManager.m_Instance.StencilWidgets.Where(s => s.gameObject.activeSelf).ToList();
+                WidgetManager.m_Instance.StencilWidgets.Where(ShouldSerializeWidget).ToList();
             if (stencils.Count == 0)
             {
                 return null;
@@ -393,7 +403,7 @@ namespace TiltBrush
         public static TiltLights[] GetTiltLights(GroupIdMapping groupIdMapping)
         {
             var imports = WidgetManager.m_Instance.LightWidgets
-                .Where(w => w.gameObject.activeSelf).ToArray();
+                .Where(ShouldSerializeWidget).ToArray();
             if (imports.Length == 0)
             {
                 return null;
@@ -433,7 +443,7 @@ namespace TiltBrush
         public static TiltImages75[] GetTiltImages(GroupIdMapping groupIdMapping)
         {
             var imports = WidgetManager.m_Instance.ImageWidgets
-                .Where(w => w.gameObject.activeSelf).ToArray();
+                .Where(ShouldSerializeWidget).ToArray();
             if (imports.Length == 0)
             {
                 return null;
