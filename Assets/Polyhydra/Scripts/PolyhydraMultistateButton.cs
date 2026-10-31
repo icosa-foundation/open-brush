@@ -57,5 +57,17 @@ namespace TiltBrush
 
         }
 
+        public override void UpdateVisuals()
+        {
+            base.UpdateVisuals();
+            if (ModeType != ModeTypes.ModifyMode) { return; }
+            var tool = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.PolyhydraTool) as PolyhydraTool;
+            // Reuse the existing mode description instead of adding a controller label or a modal.
+            string description = tool != null && tool.CanMakeTargetEditable
+                ? "Make Editable"
+                : CurrentOption.m_Description;
+            if (DescriptionExtra != description) { SetDescriptionText(Description, description); }
+        }
+
     }
 }

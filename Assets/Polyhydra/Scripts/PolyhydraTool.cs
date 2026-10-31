@@ -63,6 +63,9 @@ namespace TiltBrush
 
         private bool m_ValidWidgetFoundThisFrame;
         private EditableModelWidget LastIntersectedEditableModelWidget;
+        private ModelWidget m_ConvertibleModel;
+        private bool m_ConversionPressConsumed;
+        public bool CanMakeTargetEditable => m_ConvertibleModel != null;
         private CreateModes m_CurrentCreateMode;
         private ModifyModes m_CurrentModifyMode;
 
@@ -152,6 +155,8 @@ namespace TiltBrush
             //always default to resetting detection
             m_ResetDetection = true;
             m_ValidWidgetFoundThisFrame = false;
+            LastIntersectedEditableModelWidget = null;
+            m_ConvertibleModel = null;
 
             if (App.Config.m_UseBatchedBrushes)
             {
@@ -175,7 +180,16 @@ namespace TiltBrush
             PointerManager.m_Instance.SetMainPointerPosition(rAttachPoint.position);
             m_toolDirectionIndicator.transform.localRotation = Quaternion.Euler(PointerManager.m_Instance.FreePaintPointerAngle, 0f, 0f);
 
-            if (m_ValidWidgetFoundThisFrame &&
+            bool secondaryPressed = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.DuplicateSelection);
+            if (!secondaryPressed) { m_ConversionPressConsumed = false; }
+            if (m_ConvertibleModel != null &&
+                InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.DuplicateSelection))
+            {
+                m_ConversionPressConsumed = true;
+                MakeTargetEditable();
+            }
+
+            if (!m_ConversionPressConsumed && m_ValidWidgetFoundThisFrame &&
                 LastIntersectedEditableModelWidget != null &&
                 !m_WidgetsModifiedThisClick.Contains(LastIntersectedEditableModelWidget) && // Don't modify widgets more than once per interaction
                 InputManager.m_Instance.GetCommand(InputManager.SketchCommands.DuplicateSelection))
@@ -733,14 +747,45 @@ namespace TiltBrush
 
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
-            // Only intersect with EditableModelWidget instances
             if (widget is not EditableModelWidget editableModelWidget)
             {
+                if (widget is ModelWidget modelWidget && modelWidget.Model != null &&
+                    modelWidget.Model.m_Valid && !modelWidget.Model.IsGsplatModel &&
+                    modelWidget.GetMeshes().Any(mesh => mesh != null && mesh.gameObject.activeInHierarchy &&
+                        mesh.sharedMesh != null && mesh.sharedMesh.isReadable && mesh.sharedMesh.vertexCount > 0))
+                {
+                    m_ConvertibleModel = modelWidget;
+                    return true;
+                }
                 return false;
             }
             LastIntersectedEditableModelWidget = editableModelWidget;
             m_ValidWidgetFoundThisFrame = true;
             return true;
+        }
+
+        private void MakeTargetEditable()
+        {
+            try
+            {
+                PolyMesh poly;
+                PolyRecipe recipe;
+                if (!m_ConvertibleModel.Model.IsNativeBlocksModel || !string.IsNullOrEmpty(m_ConvertibleModel.Subtree) ||
+                    !m_ConvertibleModel.Model.TryGetEditableGeometry(out poly, out recipe))
+                {
+                    (poly, recipe) = Model.CreateEditableGeometry(
+                        m_ConvertibleModel.GetMeshes().Where(mesh => mesh != null && mesh.gameObject.activeInHierarchy),
+                        m_ConvertibleModel.transform);
+                }
+                if (poly == null) { return; }
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new MakeModelEditableCommand(m_ConvertibleModel, poly, recipe));
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError($"[EDITABLE_CONVERSION] Could not convert model: {exception}");
+                OutputWindowScript.Error("Could not make this model editable.");
+            }
         }
 
         public override float GetSize()

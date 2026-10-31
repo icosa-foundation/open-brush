@@ -820,7 +820,7 @@ namespace TiltBrush
                                        Color[] colors, ColorMethods colorMethod, int materialIndex,
                                        GeneratorTypes generatorType, Dictionary<string, object> generatorParameters,
                                        List<Dictionary<string, object>> operations,
-                                       float? autoSmoothAngle = null)
+                                       float? autoSmoothAngle = null, string geometryFile = null)
         {
             Vertices = vertices;
             Faces = faces;
@@ -834,6 +834,7 @@ namespace TiltBrush
             GeneratorParameters = generatorParameters;
             Operations = operations;
             AutoSmoothAngle = autoSmoothAngle;
+            GeometryFile = geometryFile;
         }
 
         public EditableModelDefinition(PolyRecipe recipe)
@@ -1096,11 +1097,18 @@ namespace TiltBrush
         public int MaterialIndex { get; }
         public GeneratorTypes GeneratorType { get; }
         public Dictionary<string, object> GeneratorParameters { get; }
-        public Vector3[] Vertices { get; }
-        public List<int>[] Faces { get; }
-        public List<Roles> FaceRoles { get; }
-        public List<Roles> VertexRoles { get; }
-        public List<HashSet<string>> FaceTags { get; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string GeometryFile { get; internal set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Vector3[] Vertices { get; internal set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<int>[] Faces { get; internal set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<Roles> FaceRoles { get; internal set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<Roles> VertexRoles { get; internal set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<HashSet<string>> FaceTags { get; internal set; }
         public List<Dictionary<string, object>> Operations { get; }
         public float? AutoSmoothAngle { get; }
 

@@ -210,8 +210,8 @@ namespace TiltBrush
             var tr = _CurrentBrushTransform().TransformBy(Coords.CanvasPose);
             var model = new Model(relativePath);
 
-            // Native Blocks geometry is inherently editable, so bypass the ordinary model-widget path.
-            if (model.IsNativeBlocksModel)
+            // Only an explicit editable import embeds the native Blocks geometry.
+            if (editable && model.IsNativeBlocksModel)
             {
                 AsyncHelpers.RunSync(() => model.LoadModelAsync());
                 if (!model.m_Valid)
@@ -241,23 +241,7 @@ namespace TiltBrush
                     return null;
                 }
 
-                CreateWidgetCommand createCommand = new CreateWidgetCommand(
-                    WidgetManager.m_Instance.EditableModelWidgetPrefab, tr);
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(createCommand);
-                var emodelWidget = createCommand.Widget as EditableModelWidget;
-                if (emodelWidget != null)
-                {
-                    emodelWidget.Model = model;
-                    emodelWidget.m_PolyMesh = poly;
-                    emodelWidget.m_PolyRecipe = recipe;
-                    emodelWidget.Show(true);
-                    createCommand.SetWidgetCost(emodelWidget.GetTiltMeterCost());
-                }
-                else
-                {
-                    Debug.LogWarning("Failed to create EditableModelWidget");
-                    return null;
-                }
+                var emodelWidget = EditableModelManager.m_Instance.GeneratePolyMesh(poly, recipe, tr);
 
                 WidgetManager.m_Instance.WidgetsDormant = false;
                 SketchControlsScript.m_Instance.EatGazeObjectInput();

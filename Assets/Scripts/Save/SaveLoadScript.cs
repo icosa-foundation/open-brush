@@ -838,7 +838,8 @@ namespace TiltBrush
 
                         foreach (var model in jsonData.EditableModelIndex)
                         {
-                            if (jsonData.EditableModelDefinitions != null && jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
+                            if (model.AssetId != null && jsonData.EditableModelDefinitions != null &&
+                                jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
                             {
                                 generatedModels.Add(model);
                             }
@@ -854,7 +855,24 @@ namespace TiltBrush
                         // Rebuild generated models
                         foreach (TiltEditableModels model in generatedModels)
                         {
-                            PolyRecipe recipe = PolyRecipe.FromDef(jsonData.EditableModelDefinitions[model.AssetId]);
+                            var definition = jsonData.EditableModelDefinitions[model.AssetId];
+                            if (definition.GeometryFile != null)
+                            {
+                                // Do not allow an archive reference to escape an unpacked .tilt directory.
+                                if (!definition.GeometryFile.StartsWith("editable-model-", StringComparison.Ordinal) ||
+                                    !definition.GeometryFile.EndsWith(".bin", StringComparison.Ordinal) ||
+                                    Path.GetFileName(definition.GeometryFile) != definition.GeometryFile)
+                                {
+                                    throw new InvalidDataException("Invalid editable geometry filename.");
+                                }
+                                using var geometry = fileInfo.GetReadStream(definition.GeometryFile);
+                                if (geometry == null)
+                                {
+                                    throw new InvalidDataException($"Missing editable geometry: {definition.GeometryFile}");
+                                }
+                                EditableModelGeometry.Read(geometry, definition);
+                            }
+                            PolyRecipe recipe = PolyRecipe.FromDef(definition);
 
                             // Handle saves with missing colors (legacy)
                             if (recipe.Colors == null || recipe.Colors.Length == 0)

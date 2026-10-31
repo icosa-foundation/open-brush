@@ -34,6 +34,7 @@ namespace TiltBrush
         private TrTransform m_LastThumbnail_SS;
         private List<SketchWriter.AdjustedMemoryBrushStroke> m_Strokes;
         private SketchMetadata m_Metadata;
+        private readonly Dictionary<string, byte[]> m_EditableGeometry = new();
 
         private JsonSerializer m_JsonSerializer;
         private SaveIconCaptureScript m_SaveIconCapture;
@@ -123,11 +124,33 @@ namespace TiltBrush
             stopwatch.Stop();
 
             m_Metadata = GetSketchMetadata();
+            CaptureEditableGeometry();
             if (m_SelectedOnly)
             {
                 // Reselect strokes
                 SelectionManager.m_Instance.SelectionTransform = TrTransform.identity;
                 SelectionManager.m_Instance.SelectStrokes(strokes, true);
+            }
+        }
+
+        private void CaptureEditableGeometry()
+        {
+            if (m_Metadata.EditableModelDefinitions == null) { return; }
+            foreach (var entry in m_Metadata.EditableModelDefinitions)
+            {
+                var definition = entry.Value;
+                if (definition.Vertices == null || definition.Faces == null) { continue; }
+                // IDs generated here are archive-local, not paths supplied by imported models.
+                string filename = $"editable-model-{m_EditableGeometry.Count}.bin";
+                using var stream = new MemoryStream();
+                EditableModelGeometry.Write(stream, definition);
+                m_EditableGeometry.Add(filename, stream.ToArray());
+                definition.GeometryFile = filename;
+                definition.Vertices = null;
+                definition.Faces = null;
+                definition.FaceRoles = null;
+                definition.VertexRoles = null;
+                definition.FaceTags = null;
             }
         }
 
@@ -241,6 +264,7 @@ namespace TiltBrush
         {
             try
             {
+                CaptureEditableGeometry();
                 using (var zip = new ZipOutputStream(outputStream))
                 {
                     zip.SetLevel(9); // Set compression level
@@ -252,6 +276,13 @@ namespace TiltBrush
                         m_JsonSerializer.Serialize(writer, m_Metadata);
                     }
                     zip.CloseEntry();
+
+                    foreach (var geometry in m_EditableGeometry)
+                    {
+                        zip.PutNextEntry(new ZipEntry(geometry.Key));
+                        zip.Write(geometry.Value, 0, geometry.Value.Length);
+                        zip.CloseEntry();
+                    }
 
                     // Prepare the necessary data for WriteMemory
                     List<Stroke> strokes = new List<Stroke>(SketchMemoryScript.m_Instance.GetMemoryList);
@@ -290,6 +321,7 @@ namespace TiltBrush
         {
             try
             {
+                CaptureEditableGeometry();
                 using (var tiltWriter = new TiltFile.AtomicWriter(path))
                 {
                     if (m_ThumbnailBytes != null)
@@ -321,6 +353,11 @@ namespace TiltBrush
                         m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
                     }
 
+                    foreach (var geometry in m_EditableGeometry)
+                    {
+                        using var stream = tiltWriter.GetWriteStream(geometry.Key);
+                        stream.Write(geometry.Value, 0, geometry.Value.Length);
+                    }
                     tiltWriter.Commit();
                 }
             }

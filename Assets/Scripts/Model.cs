@@ -1358,9 +1358,15 @@ namespace TiltBrush
 
         private void CreateEditableGeometryFromLoadedModel()
         {
+            (m_EditablePolyMesh, m_EditablePolyRecipe) = CreateEditableGeometry(GetMeshes(), m_ModelParent);
+        }
+
+        internal static (PolyMesh poly, PolyRecipe recipe) CreateEditableGeometry(
+            IEnumerable<MeshFilter> meshes, Transform modelRoot)
+        {
             var vertices = new List<Vector3>();
             var faces = new List<List<int>>();
-            foreach (MeshFilter meshFilter in GetMeshes())
+            foreach (MeshFilter meshFilter in meshes)
             {
                 Mesh mesh = meshFilter.sharedMesh;
                 if (mesh == null)
@@ -1370,7 +1376,7 @@ namespace TiltBrush
 
                 int firstVertex = vertices.Count;
                 Matrix4x4 toModel =
-                    m_ModelParent.worldToLocalMatrix * meshFilter.transform.localToWorldMatrix;
+                    modelRoot.worldToLocalMatrix * meshFilter.transform.localToWorldMatrix;
                 vertices.AddRange(mesh.vertices.Select(toModel.MultiplyPoint3x4));
                 int[] triangles = mesh.triangles;
                 for (int i = 0; i < triangles.Length; i += 3)
@@ -1386,28 +1392,29 @@ namespace TiltBrush
 
             if (vertices.Count == 0 || faces.Count == 0)
             {
-                return;
+                return (null, default);
             }
 
-            m_EditablePolyMesh = new PolyMesh(vertices, faces);
-            m_EditablePolyMesh.MergeCoplanarFaces(0.01f);
-            m_EditablePolyRecipe = new PolyRecipe
+            var poly = new PolyMesh(vertices, faces);
+            poly.MergeCoplanarFaces(0.01f);
+            var recipe = new PolyRecipe
             {
                 GeneratorType = GeneratorTypes.GeometryData,
-                Vertices = m_EditablePolyMesh.Vertices
+                Vertices = poly.Vertices
                     .Select(vertex => vertex.Position).ToList(),
-                Faces = m_EditablePolyMesh.ListFacesByVertexIndices().ToList(),
+                Faces = poly.ListFacesByVertexIndices().ToList(),
                 FaceRoles = Enumerable.Repeat(
-                    (int)Roles.New, m_EditablePolyMesh.Faces.Count).ToList(),
+                    (int)Roles.New, poly.Faces.Count).ToList(),
                 VertexRoles = Enumerable.Repeat(
-                    (int)Roles.New, m_EditablePolyMesh.Vertices.Count).ToList(),
-                FaceTags = m_EditablePolyMesh.FaceTags?
+                    (int)Roles.New, poly.Vertices.Count).ToList(),
+                FaceTags = poly.FaceTags?
                     .Select(tags => new HashSet<string>(tags)).ToList(),
                 Operators = new List<PreviewPolyhedron.OpDefinition>(),
                 MaterialIndex = 0,
                 ColorMethod = ColorMethods.ByTags,
                 Colors = (Color[])PolyMesh.DefaultFaceColors.Clone(),
             };
+            return (poly, recipe);
         }
 
         public void CalcBoundsGltf(GameObject go)
