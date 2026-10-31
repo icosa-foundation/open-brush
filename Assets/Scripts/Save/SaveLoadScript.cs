@@ -791,6 +791,10 @@ namespace TiltBrush
                                 layer.Transform = tr;
                             }
                             canvas.LocalPose = layer.Transform;
+                            if (jsonData.AnimationTracks == null)
+                            {
+                                App.Scene.animationUI_manager.SetTrackVisibility(i, layer.Visible);
+                            }
                         }
                     }
 
