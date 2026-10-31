@@ -59,7 +59,6 @@ namespace TiltBrush
             set { m_Command = new WeakReference<BrushStrokeCommand>(value); }
         }
 
-
         /// This creates a copy of the given stroke.
         public StrokeData(StrokeData existing = null)
         {
