@@ -2695,8 +2695,10 @@ namespace TiltBrush.FrameAnimation
                 {
                     continue;
                 }
+                TrTransform localTransform = widget.LocalTransform;
                 GrabWidget clone = widget.Clone();
                 clone.SetCanvas(newCanvas);
+                clone.LocalTransform = localTransform;
                 clone.Group = widget.Group;
                 clone.SetPinned(widget.Pinned, fromSave: true);
             }
