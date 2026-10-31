@@ -26,52 +26,87 @@ namespace TiltBrush
     {
         [SerializeField] CompositionLayer m_PassthroughLayer;
 
-        // Lives on the passthrough environment prefab, so Start and OnDestroy bracket the time
-        // the passthrough environment is active.
-        void Start()
+        private bool m_Active;
+        private bool m_RequestedActive;
+        private PassthroughMode m_ActiveMode;
+        private CompositionLayer m_DefaultSceneLayer;
+        private bool m_OwnsDefaultSceneLayer;
+
+        // SceneSettings owns this instance independently of the room geometry.
+        // In particular, creating an environment prefab must not activate passthrough.
+        public bool SetPassthroughActive(bool active)
         {
-            if (App.VrSdk.PassthroughMode == PassthroughMode.None)
-            {
-                return;
-            }
-
-            // Both passthrough paths composite the eye buffer over the camera feed using its
-            // alpha, so the default scene layer's premultiplied flag decides how additive
-            // brushes look. Set it explicitly rather than inheriting Unity's hidden fallback
-            // layer (FB path) or native default (blend mode path), so the two paths match.
-            // Must precede the FB layer: once the fallback exists, ours is destroyed as a
-            // duplicate.
-            SetDefaultSceneLayer(true);
-
-            if (App.VrSdk.PassthroughMode == PassthroughMode.FBPassthrough)
-            {
-                m_PassthroughLayer.enabled = true;
-                if (METABoundaryVisibility.FeatureEnabled)
-                {
-                    METABoundaryVisibility.SuppressBoundaryVisibility(false);
-                }
-            }
-            else if (App.VrSdk.PassthroughMode == PassthroughMode.OpenXREnvionmentBlendMode)
-            {
-                SetBlendModePassthrough(true);
-            }
+            if (active && !isActiveAndEnabled) return false;
+            if (!ApplyPassthroughActive(active)) return false;
+            m_RequestedActive = active;
+            return true;
         }
 
-        void OnDestroy()
+        private bool ApplyPassthroughActive(bool active)
         {
-            // Also runs on quit, after App has gone.
-            if (App.Instance == null || App.VrSdk == null)
+            if (active == m_Active) return true;
+            if (active)
             {
-                return;
+                if (App.Instance == null || App.VrSdk == null ||
+                    App.VrSdk.PassthroughMode == PassthroughMode.None) return false;
+                m_ActiveMode = App.VrSdk.PassthroughMode;
+                bool needsLayer = m_ActiveMode == PassthroughMode.FBPassthrough ||
+                    m_ActiveMode == PassthroughMode.OpenXREnvionmentBlendMode;
+                if (needsLayer)
+                {
+                    m_DefaultSceneLayer = FindDefaultSceneLayer();
+                    var current = CompositionLayerManager.Instance?.DefaultSceneCompositionLayer;
+                    if (m_DefaultSceneLayer == null ||
+                        (current != null && current != m_DefaultSceneLayer))
+                    {
+                        Debug.LogWarning("[OB_BACKDROP] Cannot acquire the rig's default scene layer.");
+                        return false;
+                    }
+                    if (m_ActiveMode == PassthroughMode.FBPassthrough && m_PassthroughLayer == null)
+                        return false;
+                    m_OwnsDefaultSceneLayer = !m_DefaultSceneLayer.enabled;
+                    // Register this before enabling FB passthrough, which may create a fallback.
+                    m_DefaultSceneLayer.enabled = true;
+                }
+                m_Active = true;
+                if (m_ActiveMode == PassthroughMode.FBPassthrough)
+                {
+                    m_PassthroughLayer.enabled = true;
+                    if (METABoundaryVisibility.FeatureEnabled)
+                        METABoundaryVisibility.SuppressBoundaryVisibility(false);
+                }
+                else if (m_ActiveMode == PassthroughMode.OpenXREnvionmentBlendMode)
+                {
+                    SetBlendModePassthrough(true);
+                }
             }
-            if (App.VrSdk.PassthroughMode == PassthroughMode.OpenXREnvionmentBlendMode)
+            else
             {
-                SetBlendModePassthrough(false);
+                // Clear ownership before any disabling callback can re-enter cleanup.
+                m_Active = false;
+                if (m_ActiveMode == PassthroughMode.FBPassthrough && m_PassthroughLayer != null)
+                    m_PassthroughLayer.enabled = false;
+                if (m_ActiveMode == PassthroughMode.OpenXREnvionmentBlendMode &&
+                    App.Instance != null && App.VrSdk != null)
+                    SetBlendModePassthrough(false);
+                if (m_OwnsDefaultSceneLayer && m_DefaultSceneLayer != null)
+                    m_DefaultSceneLayer.enabled = false;
+                m_OwnsDefaultSceneLayer = false;
+                m_DefaultSceneLayer = null;
             }
-            if (App.VrSdk.PassthroughMode != PassthroughMode.None)
-            {
-                SetDefaultSceneLayer(false);
-            }
+            return true;
+        }
+
+        private void OnEnable()
+        {
+            if (m_RequestedActive) ApplyPassthroughActive(true);
+        }
+
+        private void OnDisable() => ApplyPassthroughActive(false);
+        private void OnDestroy()
+        {
+            m_RequestedActive = false;
+            ApplyPassthroughActive(false);
         }
 
         // The rig's Default Scene Layer carries the blend type for the eye buffer.
@@ -90,23 +125,6 @@ namespace TiltBrush
                 }
             }
             return null;
-        }
-
-        static void SetDefaultSceneLayer(bool active)
-        {
-            var layer = FindDefaultSceneLayer();
-            if (layer == null)
-            {
-                return;
-            }
-            var current = CompositionLayerManager.Instance?.DefaultSceneCompositionLayer;
-            if (active && current != null && current != layer)
-            {
-                Debug.LogWarning("[Passthrough] Another default scene layer is already " +
-                    $"registered; eye buffer blend type stays {current.LayerData.BlendType}.");
-                return;
-            }
-            layer.enabled = active;
         }
 
         /// Runtime override of the eye buffer blend type, for comparing how brushes composite

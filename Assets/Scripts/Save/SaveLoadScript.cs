@@ -730,18 +730,13 @@ namespace TiltBrush
                     if (environment != null)
                     {
                         SceneSettings.m_Instance.RecordSkyColorsForFading();
-                        if (jsonData.Environment != null)
+                        if (jsonData.Environment == null ||
+                            SceneSettings.m_Instance.SetCustomEnvironment(jsonData.Environment, environment))
                         {
-                            SceneSettings.m_Instance.SetCustomEnvironment(jsonData.Environment, environment);
-                        }
-                        SceneSettings.m_Instance.SetDesiredPreset(
-                            environment, forceTransition: true,
-                            keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
-                        );
-                        // This will have been overwritten by Set
-                        if (jsonData.Environment != null && jsonData.Environment.Skybox != null)
-                        {
-                            SceneSettings.m_Instance.LoadCustomSkybox(jsonData.Environment.Skybox);
+                            SceneSettings.m_Instance.SetDesiredPreset(
+                                environment, forceTransition: true,
+                                keepSceneTransform: true, hasCustomLights: jsonData.Lights != null
+                            );
                         }
                     }
                     else
