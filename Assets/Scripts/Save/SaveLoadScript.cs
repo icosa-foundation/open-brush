@@ -837,6 +837,23 @@ namespace TiltBrush
                     additiveStrokeTimeSessions = SketchMemoryScript.m_Instance
                         .AddAdditiveStrokeTimeSessions(
                             jsonData.StrokeTimeSessions, timestampOffset);
+
+                    // Keep subsequent drawing sessions outside the imported clock ranges.
+                    // Undo leaves the clock advanced so those ranges remain reserved for redo.
+                    uint latestImportedTimestampMs = 0;
+                    foreach (var stroke in strokes)
+                    {
+                        latestImportedTimestampMs = Math.Max(
+                            latestImportedTimestampMs, stroke.TailTimestampMs);
+                    }
+                    foreach (var session in additiveStrokeTimeSessions)
+                    {
+                        latestImportedTimestampMs = Math.Max(
+                            latestImportedTimestampMs, session.EndSketchTimeMs);
+                    }
+                    App.Instance.CurrentSketchTime = Math.Max(
+                        App.Instance.CurrentSketchTime,
+                        ((double)latestImportedTimestampMs + 1) / 1000.0);
                 }
                 else
                 {
