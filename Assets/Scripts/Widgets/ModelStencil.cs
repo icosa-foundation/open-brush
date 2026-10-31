@@ -355,18 +355,31 @@ namespace TiltBrush
             groupField.SetValue(m_MeshGenerator, m_SDFGroup);
 
             // Configure mesh generator settings using reflection (properties are read-only)
-            // VoxelSettings: Set cell count (SamplesPerSide = CellCount + 1)
+            // Fit the sampling grid to the source geometry without increasing resolution.
             var voxelSettings = m_MeshGenerator.VoxelSettings;
-            var cellCountField = typeof(VoxelSettings).GetField("m_cellCount",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-            if (cellCountField == null)
+            const System.Reflection.BindingFlags voxelFields =
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance;
+            var cellCountField = typeof(VoxelSettings).GetField("m_cellCount", voxelFields);
+            var cellSizeField = typeof(VoxelSettings).GetField("m_cellSize", voxelFields);
+            var cellSizeModeField = typeof(VoxelSettings).GetField("m_cellSizeMode", voxelFields);
+            if (cellCountField == null || cellSizeField == null || cellSizeModeField == null)
             {
                 Debug.LogError(
                     $"{k_LogPrefix} The installed IsoMesh version does not expose its " +
-                    "preview-resolution field.");
+                    "preview-grid fields.");
                 return;
             }
-            cellCountField.SetValue(voxelSettings, m_PreviewResolution - 1);
+            int cellCount = m_PreviewResolution - 1;
+            Bounds bounds = m_SourceMesh.bounds;
+            // Reserve two cells on each side so extraction stays clear of the volume edge.
+            float cellSize = Mathf.Max(0.0001f, bounds.size.Max() / (cellCount - 4));
+            cellSizeModeField.SetValue(voxelSettings, CellSizeMode.Fixed);
+            cellCountField.SetValue(voxelSettings, cellCount);
+            cellSizeField.SetValue(voxelSettings, cellSize);
+            Transform meshTransform = m_MeshGenerator.MeshRenderer.transform;
+            Vector3 meshPosition = meshTransform.position;
+            m_MeshGenerator.transform.localPosition = bounds.center;
+            meshTransform.position = meshPosition;
 
             // MainSettings: Set output mode and auto-update
             var mainSettings = m_MeshGenerator.MainSettings;
@@ -404,6 +417,7 @@ namespace TiltBrush
 
             // Notify the mesh generator about setting changes
             m_MeshGenerator.OnCellCountChanged();
+            m_MeshGenerator.OnCellSizeChanged();
             m_MeshGenerator.OnOutputModeChanged();
             m_MeshGenerator.OnIsosurfaceExtractionTypeChanged();
 
