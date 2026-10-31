@@ -452,51 +452,57 @@ namespace TiltBrush
             return true;
         }
 
-        // Reuse exact colors first. Only scan voxel usage when allocating a new color,
-        // which normally happens when the user changes their brush color, not per frame.
-        // Never overwrite a palette entry referenced by any model in the document.
-        public byte GetOrAddPaletteColor(Color32 color)
+        // Palette index zero means no compatible slot is available. Never approximate a
+        // requested material or alter an existing slot's material definition.
+        public byte GetOrAddPaletteColor(
+            Color32 color, IReadOnlyDictionary<string, string> materialProperties = null)
         {
-            int nearestIndex = 1;
-            int nearestDistance = int.MaxValue;
             for (int index = 1; index <= byte.MaxValue; index++)
             {
-                Color32 candidate = Palette[index - 1];
-                int r = candidate.r - color.r;
-                int g = candidate.g - color.g;
-                int b = candidate.b - color.b;
-                int a = candidate.a - color.a;
-                int distance = r * r + g * g + b * b + a * a;
-                if (distance == 0)
-                {
+                if (Palette[index - 1].Equals(color) && PaletteMaterialMatches(index, materialProperties))
                     return (byte)index;
-                }
-                if (distance < nearestDistance)
-                {
-                    nearestDistance = distance;
-                    nearestIndex = index;
-                }
             }
 
+            // Scan usage only when allocating, normally after a brush colour change.
             var used = new bool[byte.MaxValue + 1];
             foreach (RuntimeModel model in m_models)
-            {
-                foreach (byte index in model.Voxels.Values)
-                {
-                    used[index] = true;
-                }
-            }
+            foreach (byte index in model.Voxels.Values)
+                used[index] = true;
+
             for (int index = 1; index <= byte.MaxValue; index++)
             {
-                if (!used[index])
+                if (!used[index] && PaletteMaterialMatches(index, materialProperties))
                 {
                     Palette[index - 1] = color;
                     return (byte)index;
                 }
             }
+            return 0;
+        }
 
-            // A VOX document can represent only 255 occupied colors.
-            return (byte)nearestIndex;
+        private bool PaletteMaterialMatches(
+            int index, IReadOnlyDictionary<string, string> requested)
+        {
+            var existing = m_materials.TryGetValue(index, out var material) ? material.Properties : null;
+            // An omitted type is ordinary diffuse. All other properties, including unknown
+            // imported properties, participate in matching and remain untouched.
+            string existingType = existing != null && existing.TryGetValue("_type", out var type)
+                ? type : "_diffuse";
+            string requestedType = requested != null && requested.TryGetValue("_type", out type)
+                ? type : "_diffuse";
+            if (existingType != requestedType) return false;
+            int existingCount = 0;
+            if (existing != null)
+            foreach (var entry in existing)
+            {
+                if (entry.Key == "_type") continue;
+                if (requested == null || !requested.TryGetValue(entry.Key, out var value) || value != entry.Value)
+                    return false;
+                existingCount++;
+            }
+            int requestedCount = requested?.Count ?? 0;
+            if (requested != null && requested.ContainsKey("_type")) requestedCount--;
+            return existingCount == requestedCount;
         }
 
         public static RuntimeVoxDocument FromVoxFile(IVoxFile voxFile)

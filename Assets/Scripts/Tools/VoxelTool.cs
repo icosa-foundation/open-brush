@@ -38,6 +38,7 @@ namespace TiltBrush
         private bool m_CreateNewGrid;
         private bool m_GestureActive;
         private bool m_GestureChanged;
+        private bool m_ReportedPaletteFull;
         private bool m_HasLastCell;
         private Vector3Int m_LastCell;
         private RuntimeVoxDocument.Snapshot m_GestureBefore;
@@ -338,6 +339,7 @@ namespace TiltBrush
             // Batch per-cell mutations; UpdateTool explicitly refreshes once per frame.
             m_CurrentDocument.SetAutoVisuals(false, true);
             m_GestureChanged = false;
+            m_ReportedPaletteFull = false;
             m_GestureActive = true;
             m_HasLastCell = false;
         }
@@ -347,6 +349,19 @@ namespace TiltBrush
             if (m_CurrentModel == null) return;
             Vector3Int cell = Vector3Int.RoundToInt(m_CurrentModel.CanvasToVoxel(canvasPosition));
             var footprint = BrushFootprint;
+            Color32 color = App.BrushColor.CurrentColor;
+            int paletteIndex = -1;
+            if (Mode == EditMode.Add)
+            {
+                // Resolve before growing bounds so a full palette leaves the model unchanged.
+                paletteIndex = m_CurrentDocument._Document.GetOrAddPaletteColor(color);
+                if (paletteIndex == 0)
+                {
+                    ReportPaletteFull();
+                    m_HasLastCell = false;
+                    return;
+                }
+            }
             if (Mode == EditMode.Add)
             {
                 var previousDefinition = m_CurrentModel._Model.Definition;
@@ -368,8 +383,6 @@ namespace TiltBrush
             }
             if (m_HasLastCell && cell == m_LastCell) return;
             Vector3Int current = m_HasLastCell ? m_LastCell : cell;
-            byte paletteIndex = 0;
-            Color32 color = App.BrushColor.CurrentColor;
             bool changed = !m_HasLastCell && ApplyStamp(current, footprint, color, ref paletteIndex);
             Vector3Int delta = cell - current;
             Vector3Int step = new Vector3Int(System.Math.Sign(delta.x), System.Math.Sign(delta.y), System.Math.Sign(delta.z));
@@ -405,8 +418,9 @@ namespace TiltBrush
             m_GestureChanged = true;
         }
 
-        private bool ApplyStamp(Vector3Int center, VoxBrushFootprint footprint, Color32 color, ref byte paletteIndex)
+        private bool ApplyStamp(Vector3Int center, VoxBrushFootprint footprint, Color32 color, ref int paletteIndex)
         {
+            if (paletteIndex == 0) return false;
             bool changed = false;
             var model = m_CurrentModel._Model;
             for (int box = 0; box < footprint.BoxCount; ++box)
@@ -422,12 +436,27 @@ namespace TiltBrush
                             else
                             {
                                 if (Mode == EditMode.Paint && !model.TryGetPaletteIndex(cell, out _)) continue;
-                                if (paletteIndex == 0) paletteIndex = m_CurrentDocument._Document.GetOrAddPaletteColor(color);
-                                changed |= model.AddOrUpdateVoxel(cell, paletteIndex);
+                                if (paletteIndex < 0) paletteIndex = m_CurrentDocument._Document.GetOrAddPaletteColor(color);
+                                if (paletteIndex == 0)
+                                {
+                                    ReportPaletteFull();
+                                    return false;
+                                }
+                                changed |= model.AddOrUpdateVoxel(cell, (byte)paletteIndex);
                             }
                         }
             }
             return changed;
+        }
+
+        private void ReportPaletteFull()
+        {
+            if (m_ReportedPaletteFull) return;
+            m_ReportedPaletteFull = true;
+            OutputWindowScript.m_Instance?.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush,
+                "Voxel palette full: no slot is available for this colour and material.",
+                alsoConsole: false);
         }
 
         internal void FinishEditing()
@@ -472,6 +501,7 @@ namespace TiltBrush
             gestureDocument.SetAutoVisuals(m_GestureAutoVisuals && targetShowing, true);
             m_GestureActive = false;
             m_GestureChanged = false;
+            m_ReportedPaletteFull = false;
             m_HasLastCell = false;
             m_GestureBefore = null;
             m_GestureCreationCommand = null;

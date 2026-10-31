@@ -499,6 +499,47 @@ namespace TiltBrush
         }
 
         [Test]
+        public void PaletteAllocation_MatchesMaterialsAndPreservesImportedDefinitions()
+        {
+            var source = new RuntimeVoxDocument();
+            source.CreateModel("palette", new Vector3Int(3, 3, 3)).AddOrUpdateVoxel(Vector3Int.zero, 1);
+            var color = new Color32(12, 34, 56, 255);
+            source.ReplacePaletteEntry(2, color);
+            byte[] bytes = source.ToVoxBytes();
+            string[] types = { "_glass", "_metal", "_emit" };
+            for (int i = 0; i < types.Length; i++)
+                bytes = AppendMainChild(bytes, "MATL", BuildMaterialContent(i + 2,
+                    new[] { ("_type", types[i]), ("_future", "preserve") }));
+            var document = RuntimeVoxDocument.FromBytes(bytes);
+            // An exact colour match on glass must not satisfy a diffuse request.
+            Assert.AreEqual(5, document.GetOrAddPaletteColor(color));
+            var glass = new System.Collections.Generic.Dictionary<string, string>
+                { { "_type", "_glass" }, { "_future", "preserve" } };
+            Assert.AreEqual(2, document.GetOrAddPaletteColor(color, glass));
+            // A new glass colour may reuse an unoccupied glass slot without changing its properties.
+            Assert.AreEqual(2, document.GetOrAddPaletteColor(new Color32(21, 43, 65, 255), glass));
+            byte[] saved = document.ToVoxBytes();
+            for (int i = 0; i < types.Length; i++)
+                CollectionAssert.AreEqual(FindMainChildContent(bytes, "MATL", i),
+                    FindMainChildContent(saved, "MATL", i));
+            var reloaded = RuntimeVoxDocument.FromBytes(saved);
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Glass, reloaded.Materials[2].Type);
+            Assert.AreEqual(color, reloaded.Palette[4]);
+        }
+
+        [Test]
+        public void PaletteAllocation_FullPaletteLeavesVoxelsAndPaletteUnchanged()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("full", new Vector3Int(255, 3, 3));
+            for (int i = 1; i <= byte.MaxValue; i++)
+                model.AddOrUpdateVoxel(new Vector3Int(i - 1, 0, 0), (byte)i);
+            byte[] before = document.ToVoxBytes();
+            Assert.AreEqual(0, document.GetOrAddPaletteColor(new Color32(1, 2, 3, 255)));
+            CollectionAssert.AreEqual(before, document.ToVoxBytes());
+        }
+
+        [Test]
         public void RuntimeVoxDocument_ReadsAndPreservesMaterialProperties()
         {
             var source = new RuntimeVoxDocument();

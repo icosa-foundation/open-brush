@@ -159,7 +159,7 @@ namespace TiltBrush
                 guideColor,
                 showGrid, brushSizeStep, allowOutside);
 
-        [LuaDocsDescription("Paints the voxel at a canvas position using an RGB color. Allocates an unused palette entry, or uses the nearest color if all 255 entries are occupied. Returns false outside the model or if unchanged.")]
+        [LuaDocsDescription("Paints the voxel at a canvas position using an RGB color. Uses a matching diffuse palette entry or a compatible unused slot. Returns false outside the model, if unchanged, or if the palette is full.")]
         [LuaDocsExample("model:PaintAt(Brush.position, Brush.colorRgb)")]
         public bool PaintAt(Vector3 canvasPosition, Color color)
         {
@@ -168,10 +168,11 @@ namespace TiltBrush
             {
                 return false;
             }
-            return SetVoxel(cell.x, cell.y, cell.z, m_Document.GetOrAddPaletteColor(color));
+            byte paletteIndex = m_Document.GetOrAddPaletteColor(color);
+            return paletteIndex != 0 && SetVoxel(cell.x, cell.y, cell.z, paletteIndex);
         }
 
-        [LuaDocsDescription("Changes the color of an existing voxel at a canvas position. Returns false if the cell is empty or unchanged; never creates a voxel.")]
+        [LuaDocsDescription("Changes the color of an existing voxel at a canvas position. Returns false if the cell is empty, unchanged, or the palette is full; never creates a voxel.")]
         [LuaDocsExample("model:RecolorAt(Brush.position, Brush.colorRgb)")]
         public bool RecolorAt(Vector3 canvasPosition, Color color)
         {
@@ -180,7 +181,8 @@ namespace TiltBrush
             {
                 return false;
             }
-            return SetVoxel(cell.x, cell.y, cell.z, m_Document.GetOrAddPaletteColor(color));
+            byte paletteIndex = m_Document.GetOrAddPaletteColor(color);
+            return paletteIndex != 0 && SetVoxel(cell.x, cell.y, cell.z, paletteIndex);
         }
 
         [LuaDocsDescription("Erases the voxel at a canvas position. Returns false if the cell is empty or outside the model.")]
