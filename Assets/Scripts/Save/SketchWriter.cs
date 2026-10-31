@@ -160,43 +160,19 @@ namespace TiltBrush
                     snapshot.adjustedStrokeFlags &= ~StrokeFlags.IsGroupContinue;
                     resetGroupContinue = false;
                 }
-                if (stroke.IsGeometryEnabled)
+                CanvasScript canvas = stroke.Canvas == App.Scene.SelectionCanvas
+                    ? stroke.m_PreviousCanvas : stroke.Canvas;
+                if (stroke.IsGeometryEnabled && canvas != null &&
+                    canvasToIndexMap.TryGetValue(canvas, out var location))
                 {
-                    if (stroke.Canvas == App.Scene.SelectionCanvas)
-                    {
-                        if (canvasToIndexMap.ContainsKey(stroke.m_PreviousCanvas))
-                        {
-                            snapshot.frameIndex = canvasToIndexMap[stroke.m_PreviousCanvas].Item1;
-                            snapshot.trackIndex = canvasToIndexMap[stroke.m_PreviousCanvas].Item2;
-                        }
-                        else
-                        {
-                            // Previous canvas has been deleted?
-                            snapshot.frameIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item1;
-                            snapshot.trackIndex = canvasToIndexMap[App.Scene.ActiveCanvas].Item2;
-                        }
-                        yield return snapshot;
-                    }
-                    else if (canvasToIndexMap.ContainsKey(stroke.Canvas))
-                    {
-                        // Don't use the method in SceneScript as they count deleted layers
-                        snapshot.frameIndex = canvasToIndexMap[stroke.Canvas].Item1;
-                        snapshot.trackIndex = canvasToIndexMap[stroke.Canvas].Item2;
-
-                        yield return snapshot;
-                    }
-                    else
-                    {
-                        // This shouldn't happen
-                        Debug.Log($"Saving layerless stroke {stroke.m_BrushGuid} on the main canvas");
-                        snapshot.frameIndex = canvasToIndexMap[App.Scene.MainCanvas].Item1;
-                        snapshot.trackIndex = canvasToIndexMap[App.Scene.MainCanvas].Item2;
-                        yield return snapshot;
-                    }
+                    snapshot.frameIndex = location.Item1;
+                    snapshot.trackIndex = location.Item2;
+                    yield return snapshot;
                 }
                 else
                 {
-                    // Effectively, if the lead stroke of group is inactive (erased), we promote
+                    // Drawings retained only for undo are omitted just like erased strokes.
+                    // Effectively, if the lead stroke of group is omitted, we promote
                     // subsequent strokes to lead until one such stroke is active.
                     resetGroupContinue = !snapshot.adjustedStrokeFlags.HasFlag(StrokeFlags.IsGroupContinue);
                 }
