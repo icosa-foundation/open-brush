@@ -14,11 +14,8 @@
 
 namespace TiltBrush
 {
-    public sealed class VoxelToolSettingsPopUpWindow : OptionsPopUpWindow
+    /// Tool-driven tray; visibility and animation follow the standard BaseTray lifecycle.
+    public sealed class VoxelToolTray : BaseTray
     {
-        public void Close()
-        {
-            RequestClose(true);
-        }
     }
 }

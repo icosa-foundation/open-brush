@@ -14,10 +14,9 @@
 
 namespace TiltBrush
 {
-    /// Tool button that exposes the voxel tool's current state and settings popup.
+    /// Tool button that exposes the voxel tool's current state.
     public sealed class VoxelToolButton : ToolButton
     {
-        [UnityEngine.SerializeField] private UnityEngine.GameObject m_SettingsPopup;
         private VoxelTool.EditMode? m_LastMode;
         private bool m_LastActive;
         private string m_LastTargetDescription;
@@ -40,24 +39,8 @@ namespace TiltBrush
             m_LastActive = active;
             m_LastTargetDescription = targetDescription;
             SetExtraDescriptionText(active
-                ? $"Mode: {mode}. Target: {targetDescription}. Context button cycles modes. Press again for settings"
-                : "Grab or select a voxel model. Editing an import embeds a copy in this sketch. New Model is in settings.");
-        }
-
-        protected override void OnButtonPressed()
-        {
-            if (SketchSurfacePanel.m_Instance.ActiveTool is VoxelTool)
-            {
-                BasePanel panel = m_Manager?.GetPanelForPopUps();
-                if (panel != null && m_SettingsPopup != null)
-                {
-                    panel.CreatePopUp(m_SettingsPopup, UnityEngine.Vector3.zero, false, false);
-                    ResetState();
-                }
-                return;
-            }
-
-            base.OnButtonPressed();
+                ? $"Mode: {mode}. Target: {targetDescription}. Context button cycles modes. Options are in the tray."
+                : "Grab or select a voxel model. Editing an import embeds a copy in this sketch. New Model is in the tray.");
         }
     }
 }

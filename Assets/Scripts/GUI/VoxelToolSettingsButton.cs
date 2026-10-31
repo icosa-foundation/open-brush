@@ -23,7 +23,6 @@ namespace TiltBrush
             AlignToGrid,
             Grid,
             NewModel,
-            Close,
         }
 
         [SerializeField] private Setting m_Setting;
@@ -61,12 +60,10 @@ namespace TiltBrush
                     break;
                 case Setting.NewModel:
                     title = "New Voxel Model";
-                    description = "Close settings, then press the trigger to draw a new model aligned to the snap grid. Its voxel size uses the last chosen snap-grid spacing, even when snapping is off.";
+                    description = "Press the trigger to draw a new model aligned to the snap grid. Its voxel size uses the last chosen snap-grid spacing, even when snapping is off.";
                     break;
                 default:
-                    title = "Close Settings";
-                    description = "Return to voxel editing. The grid grows as you draw and tightens on release, with a 3-cell minimum per axis.";
-                    break;
+                    return;
             }
             bool active = m_Setting switch
             {
@@ -103,10 +100,6 @@ namespace TiltBrush
                     break;
                 case Setting.NewModel:
                     tool.RequestNewModel();
-                    GetComponentInParent<VoxelToolSettingsPopUpWindow>()?.Close();
-                    break;
-                default:
-                    GetComponentInParent<VoxelToolSettingsPopUpWindow>()?.Close();
                     break;
             }
             UpdateVisuals();

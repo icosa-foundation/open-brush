@@ -1468,11 +1468,11 @@ Transform:
   - {fileID: 5132072297439473359}
   - {fileID: 5566995999782226336}
   - {fileID: 2329771398596852252}
+  - {fileID: 1675231389977377927}
   - {fileID: 4487744745540934}
   - {fileID: 4913046734195790}
   - {fileID: 4084186664612276}
   - {fileID: 4961560007330260}
-  - {fileID: 6973522848604882650}
   m_Father: {fileID: 4661729169517730}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1652457776899484
@@ -2533,7 +2533,7 @@ MonoBehaviour:
   references:
     version: 2
     RefIds: []
---- !u!1 &341949722745420667
+--- !u!1 &1669215978016760425
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2541,48 +2541,48 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6973522848604882650}
-  - component: {fileID: 1309728082083505309}
-  - component: {fileID: 833481837647873070}
-  - component: {fileID: 4709743279037718069}
-  - component: {fileID: 2839034634235165640}
+  - component: {fileID: 1675231389977377927}
+  - component: {fileID: 1682806823609558109}
+  - component: {fileID: 1691936692650505921}
+  - component: {fileID: 1713704881742663223}
+  - component: {fileID: 1637582561092858425}
   m_Layer: 16
-  m_Name: Button_Voxel
+  m_Name: ToolButton_Pin
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6973522848604882650
+--- !u!4 &1675231389977377927
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 341949722745420667}
+  m_GameObject: {fileID: 1669215978016760425}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.422, y: -0.634, z: 0.05}
+  m_LocalPosition: {x: 0.422, y: -0.63400006, z: 0.049999237}
   m_LocalScale: {x: 0.35, y: 0.35, z: 0.35}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4067220476156272}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!33 &1309728082083505309
+--- !u!33 &1682806823609558109
 MeshFilter:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 341949722745420667}
+  m_GameObject: {fileID: 1669215978016760425}
   m_Mesh: {fileID: 4300000, guid: 5501f437160666942ae970f3648fbeb8, type: 3}
---- !u!23 &833481837647873070
+--- !u!23 &1691936692650505921
 MeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 341949722745420667}
+  m_GameObject: {fileID: 1669215978016760425}
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
@@ -2625,13 +2625,13 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!65 &4709743279037718069
+--- !u!65 &1713704881742663223
 BoxCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 341949722745420667}
+  m_GameObject: {fileID: 1669215978016760425}
   m_Material: {fileID: 0}
   m_IncludeLayers:
     serializedVersion: 2
@@ -2646,43 +2646,43 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1, y: 1, z: 0.01}
   m_Center: {x: 0, y: 0, z: -0.05}
---- !u!114 &2839034634235165640
+--- !u!114 &1637582561092858425
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 341949722745420667}
+  m_GameObject: {fileID: 1669215978016760425}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 94af55572ac6b254fa2744deb13b5b5f, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxelToolButton
+  m_Script: {fileID: 11500000, guid: 962894c5495cabc458506a8548e8a1e2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: Voxel Tool
+  m_DescriptionText: LABS_PANEL_MODELPIN_BUTTON_DESCRIPTION
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
-      m_Key:
+      m_KeyId: 7868186579673088
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra:
+  m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 5ee3d2fc6f002374eba64243efe2a149, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 334e26aacccdac644b46ff8b05ec93e3, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -2692,9 +2692,8 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Tool: 6002
-  m_EatGazeInputOnPress: 0
-  m_SettingsPopup: {fileID: 1178614306003409665, guid: 76ceeb08d7b22c946aa5d92cea965ef0, type: 3}
+  m_Tool: 22
+  m_EatGazeInputOnPress: 1
   references:
     version: 2
     RefIds: []
