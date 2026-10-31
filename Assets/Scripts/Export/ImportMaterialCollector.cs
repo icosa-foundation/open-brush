@@ -160,6 +160,16 @@ namespace TiltBrush
             if (unityMaterial.HasProperty("_RoughnessFactor"))
                 dynMat.RoughnessFactor = unityMaterial.GetFloat("_RoughnessFactor");
 
+            if (unityMaterial.HasProperty("_EmissionGain"))
+            {
+                // VOX emission uses the Light brush. Preserve its configured gain in the
+                // exporter's emission units for both imported and subsequently edited meshes.
+                var lightBrush = Resources.Load<BrushDescriptor>("Brushes/Basic/Light/Light");
+                if (lightBrush != null && unityMaterial.shader == lightBrush.Material.shader)
+                    dynMat.EmissiveFactor = lightBrush.EmissiveFactor *
+                        Mathf.Clamp01(unityMaterial.GetFloat("_EmissionGain"));
+            }
+
             m_MaterialToIem.Add(unityMaterial, dynMat);
 
         }

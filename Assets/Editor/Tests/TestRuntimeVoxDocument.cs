@@ -539,6 +539,29 @@ namespace TiltBrush
             CollectionAssert.AreEqual(before, document.ToVoxBytes());
         }
 
+        [TestCase(0f)]
+        [TestCase(0.5f)]
+        [TestCase(1f)]
+        public void VoxLightMaterial_ExportsConfiguredEmission(float gain)
+        {
+            var lightBrush = Resources.Load<BrushDescriptor>("Brushes/Basic/Light/Light");
+            Assert.IsNotNull(lightBrush);
+            var material = new Material(lightBrush.Material);
+            try
+            {
+                material.SetFloat("_EmissionGain", gain);
+                var collector = new ImportMaterialCollector(string.Empty, "vox-emission-test");
+                collector.Add(material);
+                Assert.AreEqual(lightBrush.EmissiveFactor * gain,
+                    collector.GetExportableMaterial(material).EmissiveFactor);
+                Assert.AreEqual(gain, material.GetFloat("_EmissionGain"));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(material);
+            }
+        }
+
         [Test]
         public void RuntimeVoxDocument_ReadsAndPreservesMaterialProperties()
         {
