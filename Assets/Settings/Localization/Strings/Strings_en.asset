@@ -3348,7 +3348,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828499
-    m_Localized: Options
+    m_Localized: Colors
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828500
@@ -4021,6 +4021,102 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 543158158396841984
     m_Localized: Captures all widgets and also the current camera path if visible
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337584721920
+    m_Localized: Helical symmetry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522560
+    m_Localized: Helical copies, including the original
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522561
+    m_Localized: Rotation per copy in degrees
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522562
+    m_Localized: Advance per copy in canvas units
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522563
+    m_Localized: Space groups
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522564
+    m_Localized: Next crystal system
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522565
+    m_Localized: Next space-group preset
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522566
+    m_Localized: "Space group number (1\u2013230)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522567
+    m_Localized: Cell repeats along X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522568
+    m_Localized: Cell repeats along Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522569
+    m_Localized: Cell repeats along Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522570
+    m_Localized: Cell size in canvas units
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522571
+    m_Localized: Line groups
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522572
+    m_Localized: Next line-group family
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522573
+    m_Localized: Axial rotation order
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522574
+    m_Localized: Number of generalized steps
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522575
+    m_Localized: Step advance along Z in canvas units
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522576
+    m_Localized: Twist per step in degrees
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522577
+    m_Localized: Penrose tiling
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522578
+    m_Localized: 'Next tile selection: both, thin or thick'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522579
+    m_Localized: Subdivision depth
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522580
+    m_Localized: Patch radius in canvas units
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553016172624830464
+    m_Localized: Simple Symmetry
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553297782469386240
+    m_Localized: Hold button down for more option
     m_Metadata:
       m_Items: []
   - m_Id: 554342843705548800

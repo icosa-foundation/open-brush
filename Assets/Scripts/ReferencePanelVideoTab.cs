@@ -79,7 +79,8 @@ namespace TiltBrush
             {
                 if (SelectedVideo != null)
                 {
-                    SelectedVideo.Playing = !SelectedVideo.Playing;
+                    WidgetPropertyCommand.Set(m_SelectedVideoWidget, "VideoPlaying", !SelectedVideo.Playing,
+                        w => w.VideoController.Playing, (w, v) => { if (w.VideoController.Playing != v) { w.VideoController.Playing = v; } });
                 }
             }
         }
@@ -97,7 +98,8 @@ namespace TiltBrush
             {
                 if (SelectedVideo != null)
                 {
-                    SelectedVideo.Volume = value;
+                    WidgetPropertyCommand.Set(m_SelectedVideoWidget, "VideoVolume", value,
+                        w => w.VideoController.Volume, (w, v) => w.VideoController.Volume = v);
                 }
             }
         }

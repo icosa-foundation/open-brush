@@ -190,6 +190,7 @@ namespace TiltBrush
 
         public void ResetLayers(bool notify = false)
         {
+
             if (m_LayerCanvases != null)
             {
                 foreach (var canvas in m_LayerCanvases.ToArray())
