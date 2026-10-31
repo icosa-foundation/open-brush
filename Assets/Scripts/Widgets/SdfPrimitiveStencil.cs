@@ -42,6 +42,7 @@ namespace TiltBrush
                 m_Size = 1f;
                 m_AspectRatio = value;
                 UpdateScale();
+                UpdatePrimitiveGeometry();
             }
         }
 
@@ -51,8 +52,13 @@ namespace TiltBrush
             set
             {
                 ValidateExtents(value);
+                bool dimensionsChanged = m_AspectRatio != value;
                 m_AspectRatio = value;
                 UpdateScale();
+                if (dimensionsChanged)
+                {
+                    UpdatePrimitiveGeometry();
+                }
             }
         }
 
@@ -69,6 +75,7 @@ namespace TiltBrush
             });
             m_ResizePrimitiveIdentity = GetComponentIdentity(GetComponents()[0]);
             UpdateScale();
+            UpdatePrimitiveGeometry();
         }
 
         protected override void UpdateScale()
@@ -101,7 +108,11 @@ namespace TiltBrush
                     Mathf.Max(k_MinimumAspectRatio, m_AspectRatio.z));
             }
             transform.localScale = Vector3.one * m_Size;
+            UpdateMaterialScale();
+        }
 
+        private void UpdatePrimitiveGeometry()
+        {
             var components = GetComponents();
             if (components.Count > 0 && components[0] is SDFPrimitive primitive &&
                 primitive.Type == m_PrimitiveType &&
@@ -109,7 +120,6 @@ namespace TiltBrush
             {
                 SetComponentPrimitiveGeometry(0, GeometryFromAspectRatio());
             }
-            UpdateMaterialScale();
         }
 
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
@@ -228,8 +238,7 @@ namespace TiltBrush
             }
             else
             {
-                m_AspectRatio = newDimensions;
-                UpdateScale();
+                CustomDimension = newDimensions;
             }
         }
 
