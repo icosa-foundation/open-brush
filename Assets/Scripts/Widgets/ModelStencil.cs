@@ -48,6 +48,8 @@ namespace TiltBrush
         private Material m_GuideMaterial;
         private Mesh m_SourceMesh;
         private string m_Subtree;
+        private Transform m_SourceSubtree;
+        private bool m_ExcludeSubtreeChildren;
         private Vector3[] m_SourceVertices;
         private int[] m_SourceTriangles;
         private bool m_OwnsSdfAsset;
@@ -160,11 +162,21 @@ namespace TiltBrush
                 {
                     throw new ArgumentException($"Model guide subtree '{m_Subtree}' was not found.");
                 }
+                m_SourceSubtree = node;
+                m_ExcludeSubtreeChildren = excludeChildren;
                 foreach (Transform child in m_ModelInstance.GetComponentsInChildren<Transform>())
                 {
                     bool keep = child == node || node.IsChildOf(child) ||
                         (!excludeChildren && child.IsChildOf(node));
                     if (!keep) { child.gameObject.SetActive(false); }
+                    else if (child != node && node.IsChildOf(child))
+                    {
+                        // Ancestors retain placement and bone transforms, but not visible geometry.
+                        foreach (Renderer renderer in child.GetComponents<Renderer>())
+                        {
+                            renderer.enabled = false;
+                        }
+                    }
                 }
             }
             m_SourceMesh = CombineSourceMeshes();
@@ -176,8 +188,8 @@ namespace TiltBrush
             m_SourceVertices = m_SourceMesh.vertices;
             m_SourceTriangles = m_SourceMesh.triangles;
             m_TotalTriangleCount = m_SourceTriangles.Length / 3;
-            m_TintableMeshes = m_ModelInstance.GetComponentsInChildren<Renderer>();
-            m_HighlightMeshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
+            m_TintableMeshes = GetSourceComponents<Renderer>();
+            m_HighlightMeshFilters = GetSourceComponents<MeshFilter>();
             RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
             // Generate SDF at runtime if not manually assigned
             if (m_SDFMeshAsset == null)
@@ -467,8 +479,8 @@ namespace TiltBrush
             else if (m_ModelInstance != null)
             {
                 m_MeshGenerator.MeshRenderer.enabled = false;
-                m_TintableMeshes = m_ModelInstance.GetComponentsInChildren<Renderer>();
-                m_HighlightMeshFilters = m_ModelInstance.GetComponentsInChildren<MeshFilter>();
+                m_TintableMeshes = GetSourceComponents<Renderer>();
+                m_HighlightMeshFilters = GetSourceComponents<MeshFilter>();
                 RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
             }
         }
@@ -499,6 +511,16 @@ namespace TiltBrush
         /// <summary>
         /// Combine all meshes into a single mesh for SDF generation
         /// </summary>
+        private T[] GetSourceComponents<T>() where T : Component
+        {
+            if (m_SourceSubtree != null)
+            {
+                return m_ExcludeSubtreeChildren ? m_SourceSubtree.GetComponents<T>() :
+                    m_SourceSubtree.GetComponentsInChildren<T>();
+            }
+            return m_ModelInstance.GetComponentsInChildren<T>();
+        }
+
         private Mesh CombineSourceMeshes()
         {
             var combine = new System.Collections.Generic.List<CombineInstance>();
@@ -515,12 +537,12 @@ namespace TiltBrush
                     });
                 }
             }
-            foreach (MeshFilter filter in m_ModelInstance.GetComponentsInChildren<MeshFilter>())
+            foreach (MeshFilter filter in GetSourceComponents<MeshFilter>())
             {
                 AddMesh(filter.sharedMesh, filter.transform);
             }
             foreach (SkinnedMeshRenderer renderer in
-                m_ModelInstance.GetComponentsInChildren<SkinnedMeshRenderer>())
+                GetSourceComponents<SkinnedMeshRenderer>())
             {
                 var baked = new Mesh();
                 renderer.BakeMesh(baked);
