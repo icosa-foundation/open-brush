@@ -27,15 +27,6 @@ namespace TiltBrush
         const string EXPORT_TEXTURE_DIR = "Support/ExportTextures";
         const string EXPORT_TEXTURE_EXTENSION = ".png";
 
-        public void OnEnable()
-        {
-            m_BrushScript = m_BrushPrefab.GetComponent<BaseBrushScript>();
-            if (m_BrushScript == null)
-            {
-                throw new ApplicationException("BaseBrushScript not found for brush prefab");
-            }
-        }
-
         /// Use this attribute on fields that are stored as a string guid, but
         /// which want user-friendly UI that looks like a BrushDescriptor.
         /// One reason to use a string rather than a direct reference is
@@ -229,7 +220,17 @@ namespace TiltBrush
             {
                 if (m_BrushScript == null)
                 {
-                    throw new ApplicationException("BaseBrushScript not found for brush prefab");
+                    // Prefab dependencies may not be available during OnEnable while importing.
+                    // Resolve the component when the layout is actually needed instead.
+                    if (m_BrushPrefab == null)
+                    {
+                        throw new ApplicationException($"Brush prefab not found for brush '{name}'");
+                    }
+                    m_BrushScript = m_BrushPrefab.GetComponent<BaseBrushScript>();
+                    if (m_BrushScript == null)
+                    {
+                        throw new ApplicationException($"BaseBrushScript not found for brush prefab '{m_BrushPrefab.name}' (brush '{name}')");
+                    }
                 }
                 return m_BrushScript.GetVertexLayout(this);
             }
