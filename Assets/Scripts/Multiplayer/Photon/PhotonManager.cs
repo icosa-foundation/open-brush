@@ -375,14 +375,15 @@ namespace OpenBrush.Multiplayer
             return success;
         }
 
-        public async Task<bool> SendCommandToPlayer(BaseCommand command, int playerId)
+        public async Task<bool> SendCommandToPlayer(
+            BaseCommand command, int playerId, bool rebaseTimestamps = false)
         {
             await Task.Yield();
             PlayerRef playerRef = PlayerRef.FromEncoded(playerId);
             bool useEnrichedStrokeTransport =
                 m_Manager.IsPlayerLiveStrokeCompatible(playerId);
             return ProcessCommand(
-                command, playerRef, rebaseTimestamps: false,
+                command, playerRef, rebaseTimestamps,
                 useEnrichedStrokeTransport);
         }
 

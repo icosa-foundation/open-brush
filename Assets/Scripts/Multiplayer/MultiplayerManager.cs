@@ -1195,7 +1195,8 @@ namespace OpenBrush.Multiplayer
                         return true;
                     }
                     if (!IsRemotePlayerStillConnected(playerId)) break;
-                    await manager.SendCommandToPlayer(deltaRoot, playerId);
+                    await manager.SendCommandToPlayer(
+                        deltaRoot, playerId, rebaseTimestamps: true);
                 }
             }
             return true;
@@ -1280,7 +1281,7 @@ namespace OpenBrush.Multiplayer
                     $"[LiveStrokeStreaming] Repair unavailable for stream {streamId}, command {commandGuid}.");
                 return;
             }
-            SendCommandToPlayer(retained.Command, playerId);
+            SendCommandToPlayer(retained.Command, playerId, rebaseTimestamps: true);
         }
 
         public void RequestLiveStrokeRepair(
@@ -1463,11 +1464,12 @@ namespace OpenBrush.Multiplayer
             ManualColocationManager.m_Instance?.ApplyReceivedReference(reference);
         }
 
-        public async void SendCommandToPlayer(BaseCommand command, int playerID)
+        public async void SendCommandToPlayer(
+            BaseCommand command, int playerID, bool rebaseTimestamps = false)
         {
             if (State == ConnectionState.IN_ROOM)
             {
-                await m_Manager.SendCommandToPlayer(command, playerID);
+                await m_Manager.SendCommandToPlayer(command, playerID, rebaseTimestamps);
             }
         }
 

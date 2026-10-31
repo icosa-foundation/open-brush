@@ -42,7 +42,8 @@ namespace OpenBrush.Multiplayer
         GameObject GetPlayerPrefab(int playerId);
         void SendLargeDataToPlayer(int playerId, byte[] largeData, int percentage);
         Task<bool> PerformCommand(BaseCommand command);
-        Task<bool> SendCommandToPlayer(BaseCommand command, int playerId);
+        Task<bool> SendCommandToPlayer(
+            BaseCommand command, int playerId, bool rebaseTimestamps = false);
         bool RpcSyncSketchTimeToPlayer(uint sketchTimeMs, int playerId);
         Task<bool> CheckCommandReception(BaseCommand command, int playerId);
         Task<bool> CheckStrokeReception(Stroke stroke, int playerId);
