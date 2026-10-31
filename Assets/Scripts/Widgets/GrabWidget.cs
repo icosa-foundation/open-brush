@@ -1358,11 +1358,14 @@ namespace TiltBrush
 
         // Most widgets snap their pivot. Grid-backed widgets can supply a face/corner anchor.
         protected virtual Vector3 GetGridSnapOffset_GS(Quaternion rotation_GS) => Vector3.zero;
+        protected virtual float QuickSnapGridSize_CS => 0;
 
-        internal Vector3 SnapPositionToGrid_GS(Vector3 position_GS, Quaternion rotation_GS)
+        internal Vector3 SnapPositionToGrid_GS(
+            Vector3 position_GS, Quaternion rotation_GS, float? gridSize_CS = null)
         {
             Vector3 offset = GetGridSnapOffset_GS(rotation_GS);
-            return SelectionManager.m_Instance.SnapToGrid_GS(position_GS + offset) - offset;
+            return SelectionManager.m_Instance.SnapToGrid_GS(
+                position_GS + offset, gridSize_CS ?? SelectionManager.m_Instance.SnappingGridSize) - offset;
         }
 
         // The "new" snapping - based on the settings on the Snap Panel
@@ -1407,7 +1410,15 @@ namespace TiltBrush
                 outXf_GS.translation = grabSpot + qDelta * grabToCenter;
             }
 
-            if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
+            // This path is used for quick snap with panel snapping disabled. VOX
+            // models add cell-sized position snapping without changing panel overrides.
+            float quickGridSize = QuickSnapGridSize_CS;
+            if (quickGridSize > 0)
+            {
+                outXf_GS.translation = SnapPositionToGrid_GS(
+                    outXf_GS.translation, outXf_GS.rotation, quickGridSize);
+            }
+            else if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
                 outXf_GS.translation = SnapPositionToGrid_GS(outXf_GS.translation, outXf_GS.rotation);
             }

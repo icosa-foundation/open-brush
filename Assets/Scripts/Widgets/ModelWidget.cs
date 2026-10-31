@@ -161,6 +161,19 @@ namespace TiltBrush
 
         internal bool TryGetVoxelGridCorner_GS(out Vector3 corner_GS)
         {
+            bool found = TryGetVoxelGridTransform_GS(out var grid);
+            corner_GS = found ? grid * (Vector3.one * -0.5f) : default;
+            return found;
+        }
+
+        internal float GetVoxelGridSize_CS()
+            => TryGetVoxelGridTransform_GS(out var grid)
+                ? Mathf.Abs((App.Scene.ActiveCanvas.Pose.inverse * grid).scale) : 0;
+
+        protected override float QuickSnapGridSize_CS => GetVoxelGridSize_CS();
+
+        private bool TryGetVoxelGridTransform_GS(out TrTransform grid_GS)
+        {
             if (IsVoxModel())
             {
                 // Imported and editable VOX meshes both use cell centres at integer
@@ -170,18 +183,17 @@ namespace TiltBrush
                     mesh != null && mesh.gameObject.activeInHierarchy);
                 if (gridMesh != null)
                 {
-                    corner_GS = gridMesh.transform.TransformPoint(Vector3.one * -0.5f);
+                    grid_GS = TrTransform.FromTransform(gridMesh.transform);
                     return true;
                 }
             }
             var grid = m_EditableVoxDocument?.Models.FirstOrDefault(model => model.IsVisible);
             if (grid == null)
             {
-                corner_GS = default;
+                grid_GS = default;
                 return false;
             }
-            Vector3 corner = VoxMeshBuilder.GetModelTransform(grid) * (Vector3.one * -0.5f);
-            corner_GS = transform.TransformPoint(corner);
+            grid_GS = TrTransform.FromTransform(transform) * VoxMeshBuilder.GetModelTransform(grid);
             return true;
         }
 

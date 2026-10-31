@@ -550,7 +550,8 @@ namespace TiltBrush
         {
             if (widget == null) return;
             m_LastInteractedVoxWidget = widget;
-            m_LastVoxelSize = Mathf.Abs(App.Scene.ActiveCanvas.AsCanvas[widget.transform].scale);
+            float size = widget.GetVoxelGridSize_CS();
+            if (size > 0) m_LastVoxelSize = size;
         }
 
         // Creation can inherit the last model's size; explicit grid alignment uses
