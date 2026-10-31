@@ -115,12 +115,12 @@ namespace TiltBrush
             var document = new RuntimeVoxDocument();
             var model = document.CreateModel("glass-shell", Vector3Int.one * 3);
             for (int x = 0; x < 3; ++x)
-            for (int y = 0; y < 3; ++y)
-            for (int z = 0; z < 3; ++z)
-            {
-                var cell = new Vector3Int(x, y, z);
-                model.AddOrUpdateVoxel(cell, cell == Vector3Int.one ? (byte)1 : (byte)2);
-            }
+                for (int y = 0; y < 3; ++y)
+                    for (int z = 0; z < 3; ++z)
+                    {
+                        var cell = new Vector3Int(x, y, z);
+                        model.AddOrUpdateVoxel(cell, cell == Vector3Int.one ? (byte)1 : (byte)2);
+                    }
             var submeshes = new int[256];
             submeshes[1] = 1;
             var occludes = new bool[256];

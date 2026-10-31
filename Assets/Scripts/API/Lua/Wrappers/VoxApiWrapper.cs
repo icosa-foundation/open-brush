@@ -55,7 +55,8 @@ namespace TiltBrush
         [MoonSharpHidden] private readonly RuntimeVoxDocument m_Document;
         [MoonSharpHidden] private readonly VoxDocumentApiWrapper m_DocumentWrapper;
         [MoonSharpHidden] private readonly RuntimeVoxDocument.RuntimeModel m_Model;
-        [MoonSharpHidden] public RuntimeVoxDocument.RuntimeModel _Model => isValid
+        [MoonSharpHidden]
+        public RuntimeVoxDocument.RuntimeModel _Model => isValid
             ? m_Model : throw new InvalidOperationException("This VOX model is no longer in its document.");
 
         [LuaDocsDescription("False while this model is removed; undo can restore the same model")]

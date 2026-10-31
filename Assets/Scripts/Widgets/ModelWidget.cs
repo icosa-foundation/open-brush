@@ -731,9 +731,9 @@ namespace TiltBrush
             }
             CloneInitialMaterials(null);
             foreach (var materials in m_NewMaterials.Values)
-            foreach (var material in materials)
-            foreach (string keyword in m_Keywords)
-                if (material != null) material.EnableKeyword(keyword);
+                foreach (var material in materials)
+                    foreach (string keyword in m_Keywords)
+                        if (material != null) material.EnableKeyword(keyword);
             TrySetCanvasKeywordsFromObject(transform);
         }
 

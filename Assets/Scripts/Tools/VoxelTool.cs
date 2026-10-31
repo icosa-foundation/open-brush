@@ -396,7 +396,7 @@ namespace TiltBrush
                 m_GestureEmbeddingCommand = new EmbedVoxModelCommand(m_GestureWidget, document);
                 m_GestureEmbeddingCommand.Redo();
                 m_CurrentDocument = new VoxDocumentApiWrapper(document, m_GestureWidget)
-                    { SuppressDirtyTracking = true };
+                { SuppressDirtyTracking = true };
                 m_CurrentModel = new VoxModelApiWrapper(document, m_GestureModel, m_CurrentDocument);
                 m_GestureAutoVisuals = true;
                 m_ExternalPreviewSource = null;
@@ -413,19 +413,19 @@ namespace TiltBrush
             {
                 footprint.GetBox(box, out var min, out var max);
                 for (int x = min.x; x <= max.x; ++x)
-                for (int y = min.y; y <= max.y; ++y)
-                for (int z = min.z; z <= max.z; ++z)
-                {
-                    Vector3Int cell = center + new Vector3Int(x, y, z);
-                    if (!model.IsInBounds(cell)) continue;
-                    if (Mode == EditMode.Erase) changed |= model.RemoveVoxel(cell);
-                    else
-                    {
-                        if (Mode == EditMode.Paint && !model.TryGetPaletteIndex(cell, out _)) continue;
-                        if (paletteIndex == 0) paletteIndex = m_CurrentDocument._Document.GetOrAddPaletteColor(color);
-                        changed |= model.AddOrUpdateVoxel(cell, paletteIndex);
-                    }
-                }
+                    for (int y = min.y; y <= max.y; ++y)
+                        for (int z = min.z; z <= max.z; ++z)
+                        {
+                            Vector3Int cell = center + new Vector3Int(x, y, z);
+                            if (!model.IsInBounds(cell)) continue;
+                            if (Mode == EditMode.Erase) changed |= model.RemoveVoxel(cell);
+                            else
+                            {
+                                if (Mode == EditMode.Paint && !model.TryGetPaletteIndex(cell, out _)) continue;
+                                if (paletteIndex == 0) paletteIndex = m_CurrentDocument._Document.GetOrAddPaletteColor(color);
+                                changed |= model.AddOrUpdateVoxel(cell, paletteIndex);
+                            }
+                        }
             }
             return changed;
         }
