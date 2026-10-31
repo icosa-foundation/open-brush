@@ -2014,6 +2014,7 @@ namespace TiltBrush.FrameAnimation
             App.Scene.ActiveCanvas = Timeline[trackNum].Frames[frameNum].Canvas;
             m_FrameOn = Math.Clamp((int)frameNum, 0, Timeline[trackNum].Frames.Count - 1);
             FocusFrame(frameNum);
+            UpdateLayerTransforms();
             UpdateNodes();
             UpdateTimelineNob();
         }
