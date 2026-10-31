@@ -303,22 +303,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxelToolSettingsButton
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText: New voxel model
+  m_DescriptionText: New voxel
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 559927936423649280
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: Press the trigger to draw a new model. Its voxel size matches the snap grid when snapping is on, or the last voxel model you interacted with when snapping is off.
+  m_DescriptionTextExtra: Press the trigger to create a new voxel model.
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 559927936520118272
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -469,19 +469,19 @@ MonoBehaviour:
   m_DescriptionText: Align Voxel Model to Grid
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 559927936520118273
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: Align voxel axes and snap the model into place. Cell size matches the active snap grid, or the default grid size when snapping is off.
+  m_DescriptionTextExtra: Align the current model with your grid settings
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 559927936524312576
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0

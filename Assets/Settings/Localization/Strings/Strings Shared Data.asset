@@ -3859,6 +3859,22 @@ MonoBehaviour:
     m_Key: ICOSAPANEL_PANEL_FILTER_COMPLEXITY
     m_Metadata:
       m_Items: []
+  - m_Id: 559927936423649280
+    m_Key: LABS_PANEL_VOXEL_TRAY_NEW_MODEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Key: LABS_PANEL_VOXEL_TRAY_NEW_MODEL_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Key: LABS_PANEL_VOXEL_TRAY_ALIGN_TO_GRID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Key: LABS_PANEL_VOXEL_TRAY_ALIGN_TO_GRID_EXTRA
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

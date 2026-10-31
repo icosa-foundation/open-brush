@@ -3948,7 +3948,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000013
-    m_Localized: "Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; Cancel to exit."
+    m_Localized: Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; Cancel to exit.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000014
@@ -4032,7 +4032,23 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 554342843789434881
-    m_Localized: "Complexity"
+    m_Localized: Complexity
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: New voxel model
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: Press the trigger to draw a new model. Its voxel size matches the snap grid when snapping is on, or the last voxel model you interacted with when snapping is off.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: Align Voxel Model to Grid
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: Align voxel axes and snap the model into place. Cell size matches the active snap grid, or the default grid size when snapping is off.
     m_Metadata:
       m_Items: []
   references:
