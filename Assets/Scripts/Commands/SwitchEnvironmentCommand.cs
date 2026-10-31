@@ -79,10 +79,8 @@ namespace TiltBrush
         protected override void OnUndo()
         {
             SceneSettings.m_Instance.RecordSkyColorsForFading();
-            if (m_PrevBackdrop != null)
-            {
-                SceneSettings.m_Instance.SetCustomEnvironment(m_PrevBackdrop, m_PrevEnvironment);
-            }
+            if (m_PrevBackdrop != null &&
+                !SceneSettings.m_Instance.SetCustomEnvironment(m_PrevBackdrop, m_PrevEnvironment)) return;
             SceneSettings.m_Instance.SetDesiredPreset(m_PrevEnvironment,
                 keepSceneTransform: true,
                 forceTransition:

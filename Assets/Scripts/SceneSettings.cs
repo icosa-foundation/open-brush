@@ -627,9 +627,9 @@ namespace TiltBrush
             }
         }
 
-        public void SetCustomEnvironment(CustomEnvironment custom, Environment env)
+        public bool SetCustomEnvironment(CustomEnvironment custom, Environment env)
         {
-            if (ShouldBlockLeavingPassthroughInMultiplayer(env)) return;
+            if (!custom.PassthroughEnabled && !CanLeavePassthrough) return false;
             m_LoadingCustomEnvironment = true;
             m_CustomSkyboxToRestore = custom.Skybox;
             m_CustomFogColor = (Color)custom.FogColor;
@@ -653,6 +653,7 @@ namespace TiltBrush
             // registered to listen for gradient changes.
             InGradient = hasCustomGradient;
             m_CustomPassthroughEnabled = custom.PassthroughEnabled;
+            return true;
         }
 
         public void UpdateReflectionIntensity()
@@ -1069,6 +1070,10 @@ namespace TiltBrush
             bool hasCustomLights = false,
             bool skipFade = false)
         {
+            bool requestedPassthrough = m_LoadingCustomEnvironment
+                ? m_CustomPassthroughEnabled : env != null && env.m_PassthroughEnabled;
+            if (env != null && !requestedPassthrough && !CanLeavePassthrough) return;
+
             m_SkipFade = skipFade;
             if (m_RequestInstantSceneSwitch > 0)
             {
@@ -1079,10 +1084,6 @@ namespace TiltBrush
             if (env == null)
             {
                 Debug.Log("null environment");
-            }
-            else if (ShouldBlockLeavingPassthroughInMultiplayer(env))
-            {
-                return;
             }
             else if (env == m_DesiredEnvironment && !bEnvironmentModified &&
                      !hasCustomLights && !m_LoadingCustomEnvironment && !forceTransition)
@@ -1138,16 +1139,6 @@ namespace TiltBrush
                 RenderSettings.ambientMode = AmbientMode.Skybox;
                 BackdropModeChanged?.Invoke();
             }
-        }
-
-        private bool ShouldBlockLeavingPassthroughInMultiplayer(Environment env)
-        {
-            if (MultiplayerManager.m_Instance == null || !MultiplayerManager.m_Instance.HasRemotePlayersInRoom())
-            {
-                return false;
-            }
-
-            return !CanLeavePassthrough && env != null && !env.m_PassthroughEnabled;
         }
 
         public Environment GetDesiredPreset()
