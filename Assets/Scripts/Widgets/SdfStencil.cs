@@ -1248,13 +1248,52 @@ namespace TiltBrush
             // scene or guide is scaled. Keep the world-space gradient's magnitude to
             // convert the field value into a world-space displacement.
             Mapper mapper = m_SdfManager.Mapper;
-            float distance = mapper.Map(pos);
-            Vector3 gradient = mapper.MapGradient(pos);
-            float gradientSquared = gradient.sqrMagnitude;
-            surfacePos = gradientSquared > 0f
-                ? pos - gradient * (distance / gradientSquared)
-                : distance == 0f ? pos : ProjectStationaryPointToSurface(mapper, pos);
+            float radius = m_Collider != null ? m_Collider.bounds.extents.magnitude :
+                Mathf.Abs(GetSignedWidgetSize() * Coords.CanvasPose.scale);
+            radius = Mathf.Max(radius, 0.0001f);
+            if (!TryProjectToSurface(mapper, pos, radius, out surfacePos))
+            {
+                surfacePos = ProjectStationaryPointToSurface(mapper, pos, radius);
+            }
             surfaceNorm = m_SdfManager.GetSurfaceNormal(surfacePos);
+        }
+
+        private static bool TryProjectToSurface(
+            Mapper mapper, Vector3 query, float radius, out Vector3 surfacePos)
+        {
+            surfacePos = query;
+            float tolerance = radius * 0.0001f;
+            for (int iteration = 0; iteration <= 12; ++iteration)
+            {
+                float value = mapper.Map(surfacePos);
+                if (value == 0f) return true;
+                Vector3 gradient = mapper.MapGradient(surfacePos);
+                float gradientSquared = gradient.sqrMagnitude;
+                if (!(gradientSquared > 0f) || float.IsInfinity(gradientSquared)) return false;
+                Vector3 displacement = gradient * (value / gradientSquared);
+                float displacementSquared = displacement.sqrMagnitude;
+                if (float.IsNaN(displacementSquared) || float.IsInfinity(displacementSquared)) return false;
+                if (displacementSquared <= tolerance * tolerance) return true;
+                if (iteration == 12) return false;
+
+                // Blends can have small gradients. Limit Newton steps and backtrack until
+                // the field residual decreases instead of accepting an overshoot.
+                displacement = Vector3.ClampMagnitude(displacement, radius * 2f);
+                bool improved = false;
+                for (int backtrack = 0; backtrack < 8; ++backtrack)
+                {
+                    Vector3 candidate = surfacePos - displacement;
+                    if (Mathf.Abs(mapper.Map(candidate)) < Mathf.Abs(value))
+                    {
+                        surfacePos = candidate;
+                        improved = true;
+                        break;
+                    }
+                    displacement *= 0.5f;
+                }
+                if (!improved) return false;
+            }
+            return false;
         }
 
         private static readonly Vector3[] sm_ProjectionDirections =
@@ -1263,37 +1302,23 @@ namespace TiltBrush
             Vector3.down, Vector3.forward, Vector3.back,
         };
 
-        private Vector3 ProjectStationaryPointToSurface(Mapper mapper, Vector3 query)
+        private Vector3 ProjectStationaryPointToSurface(Mapper mapper, Vector3 query, float radius)
         {
-            // A sphere centre (or another field extremum) has no projection direction.
-            // Only this rare branch probes nearby points; ordinary queries stay one-step.
-            float radius = m_Collider != null ? m_Collider.bounds.extents.magnitude :
-                Mathf.Abs(GetSignedWidgetSize() * Coords.CanvasPose.scale);
-            radius = Mathf.Max(radius, 0.0001f);
-            float toleranceSquared = radius * radius * 1e-8f;
+            // A field extremum has no projection direction. Probe nearby points when
+            // the direct projection cannot converge, then retain the nearest result.
             Vector3 closest = query;
             float closestSquared = float.PositiveInfinity;
             foreach (Vector3 direction in sm_ProjectionDirections)
             {
                 Vector3 candidate = query + direction * (radius * 0.01f);
-                for (int iteration = 0; iteration < 8; ++iteration)
+                if (TryProjectToSurface(mapper, candidate, radius, out candidate))
                 {
-                    float value = mapper.Map(candidate);
-                    Vector3 gradient = mapper.MapGradient(candidate);
-                    float gradientSquared = gradient.sqrMagnitude;
-                    if (!(gradientSquared > 0f) || float.IsInfinity(gradientSquared)) break;
-                    Vector3 displacement = gradient * (value / gradientSquared);
-                    float displacementSquared = displacement.sqrMagnitude;
-                    if (float.IsNaN(displacementSquared) || float.IsInfinity(displacementSquared)) break;
-                    candidate -= Vector3.ClampMagnitude(displacement, radius * 2f);
-                    if (displacementSquared > toleranceSquared) continue;
                     float candidateSquared = (candidate - query).sqrMagnitude;
                     if (candidateSquared < closestSquared)
                     {
                         closest = candidate;
                         closestSquared = candidateSquared;
                     }
-                    break;
                 }
             }
             return closest;
