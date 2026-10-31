@@ -47,7 +47,6 @@ namespace TiltBrush
             Vector3 canvasPosition,
             Color targetColor,
             Color guideColor,
-            bool showGrid = true,
             int brushSizeStep = 0,
             bool allowOutside = false)
         {
@@ -90,49 +89,46 @@ namespace TiltBrush
             float previewSpan = Mathf.Max(footprint.Extent * 2 + 1, ((Vector3)gridCount).magnitude + 1f);
             worldBounds.Encapsulate(new Bounds(modelToWorld * (Vector3)cell,
                 Vector3.one * previewSpan * Mathf.Abs(modelToWorld.scale) * 2f));
-            if (showGrid)
-            {
-                s_GridProperties ??= new MaterialPropertyBlock();
-                s_GridProperties.Clear();
-                s_GridProperties.SetMatrix(
-                    SnapGrid3D.ShaderParam.CanvasToWorldMatrix,
-                    modelToWorld.ToMatrix4x4());
-                s_GridProperties.SetMatrix(
-                    SnapGrid3D.ShaderParam.WorldToCanvasMatrix,
-                    modelToWorld.inverse.ToMatrix4x4());
-                s_GridProperties.SetVector(SnapGrid3D.ShaderParam.Pointer, pointerWorld);
-                s_GridProperties.SetVector(
-                    SnapGrid3D.ShaderParam.CanvasOrigin,
-                    modelToWorld.translation);
-                s_GridProperties.SetColor(
-                    SnapGrid3D.ShaderParam.Color,
-                    new Color(
-                        guideColor.r * 0.45f,
-                        guideColor.g * 0.45f,
-                        guideColor.b * 0.45f,
-                        0.5f));
-                s_GridProperties.SetVector(
-                    SnapGrid3D.ShaderParam.GridCount,
-                    (Vector3)gridCount);
-                s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.GridInterval, 1f);
-                s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.LineWidth, 0.03f);
-                s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.LineLength, 0.32f);
-                s_GridProperties.SetFloat(
-                    SnapGrid3D.ShaderParam.CanvasScale,
-                    Mathf.Abs(modelToWorld.scale));
-                s_GridProperties.SetFloat(kUseGridOrigin, 1f);
-                s_GridProperties.SetVector(kGridOrigin, (Vector3)gridOrigin);
-                s_GridProperties.SetFloat(kPreviewMode, 0f);
+            s_GridProperties ??= new MaterialPropertyBlock();
+            s_GridProperties.Clear();
+            s_GridProperties.SetMatrix(
+                SnapGrid3D.ShaderParam.CanvasToWorldMatrix,
+                modelToWorld.ToMatrix4x4());
+            s_GridProperties.SetMatrix(
+                SnapGrid3D.ShaderParam.WorldToCanvasMatrix,
+                modelToWorld.inverse.ToMatrix4x4());
+            s_GridProperties.SetVector(SnapGrid3D.ShaderParam.Pointer, pointerWorld);
+            s_GridProperties.SetVector(
+                SnapGrid3D.ShaderParam.CanvasOrigin,
+                modelToWorld.translation);
+            s_GridProperties.SetColor(
+                SnapGrid3D.ShaderParam.Color,
+                new Color(
+                    guideColor.r * 0.45f,
+                    guideColor.g * 0.45f,
+                    guideColor.b * 0.45f,
+                    0.5f));
+            s_GridProperties.SetVector(
+                SnapGrid3D.ShaderParam.GridCount,
+                (Vector3)gridCount);
+            s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.GridInterval, 1f);
+            s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.LineWidth, 0.03f);
+            s_GridProperties.SetFloat(SnapGrid3D.ShaderParam.LineLength, 0.32f);
+            s_GridProperties.SetFloat(
+                SnapGrid3D.ShaderParam.CanvasScale,
+                Mathf.Abs(modelToWorld.scale));
+            s_GridProperties.SetFloat(kUseGridOrigin, 1f);
+            s_GridProperties.SetVector(kGridOrigin, (Vector3)gridOrigin);
+            s_GridProperties.SetFloat(kPreviewMode, 0f);
 
-                var renderParams = new RenderParams(s_Material)
-                {
-                    layer = s_Layer,
-                    matProps = s_GridProperties,
-                    worldBounds = worldBounds,
-                };
-                int vertexCount = gridCount.x * gridCount.y * gridCount.z * kVerticesPerGridPoint;
-                Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, vertexCount);
-            }
+            var renderParams = new RenderParams(s_Material)
+            {
+                layer = s_Layer,
+                matProps = s_GridProperties,
+                worldBounds = worldBounds,
+            };
+            int vertexCount = gridCount.x * gridCount.y * gridCount.z * kVerticesPerGridPoint;
+            Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, vertexCount);
 
             Color boundsColor = validTarget
                 ? new Color(guideColor.r, guideColor.g, guideColor.b, 0.35f)

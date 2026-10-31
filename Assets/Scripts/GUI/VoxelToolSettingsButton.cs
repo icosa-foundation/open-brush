@@ -21,7 +21,6 @@ namespace TiltBrush
         public enum Setting
         {
             AlignToGrid,
-            Grid,
             NewModel,
         }
 
@@ -52,12 +51,6 @@ namespace TiltBrush
                     title = "Align Voxel Model to Grid";
                     description = "Align voxel axes and snap the model into place. Cell size matches the active snap grid, or the default grid size when snapping is off.";
                     break;
-                case Setting.Grid:
-                    title = "Voxel Grid";
-                    description = tool.ShowGrid
-                        ? "Press to hide the local grid. The volume and cell markers remain visible."
-                        : "Press to show the local grid. The volume and cell markers remain visible.";
-                    break;
                 case Setting.NewModel:
                     title = "New Voxel Model";
                     description = "Press the trigger to draw a new model. Its voxel size matches the snap grid when snapping is on, or the last voxel model you interacted with when snapping is off.";
@@ -65,12 +58,7 @@ namespace TiltBrush
                 default:
                     return;
             }
-            bool active = m_Setting switch
-            {
-                Setting.Grid => tool.ShowGrid,
-                Setting.NewModel => tool.CreatingNewModel,
-                _ => false,
-            };
+            bool active = m_Setting == Setting.NewModel && tool.CreatingNewModel;
             if (m_ToggleActive != active)
             {
                 m_ToggleActive = active;
@@ -94,9 +82,6 @@ namespace TiltBrush
             {
                 case Setting.AlignToGrid:
                     if (!tool.AlignCurrentModelToGrid()) AudioManager.m_Instance.DisabledItemSelect(transform.position);
-                    break;
-                case Setting.Grid:
-                    tool.ToggleGrid();
                     break;
                 case Setting.NewModel:
                     tool.RequestNewModel();

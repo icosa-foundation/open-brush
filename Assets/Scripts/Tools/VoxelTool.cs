@@ -66,7 +66,6 @@ namespace TiltBrush
                 m_CreateNewGrid = false;
             }
         }
-        public bool ShowGrid { get; set; } = true;
         public ModelWidget CurrentTargetWidget => IsAvailableTarget(m_TargetWidget) ? m_TargetWidget : null;
         public bool HasCurrentTarget => CurrentTargetWidget != null &&
             m_CurrentModel != null && m_CurrentModel.isValid && m_CurrentModel._Model.IsVisible &&
@@ -199,7 +198,7 @@ namespace TiltBrush
                     };
                     Color targetColor = Mode == EditMode.Erase ? guideColor : App.BrushColor.CurrentColor;
                     var preview = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
-                    preview.PreviewForTool(canvasPosition, targetColor, guideColor, ShowGrid, m_BrushSizeStep, Mode == EditMode.Add);
+                    preview.PreviewForTool(canvasPosition, targetColor, guideColor, m_BrushSizeStep, Mode == EditMode.Add);
                 }
             }
 
@@ -244,12 +243,6 @@ namespace TiltBrush
                 _ => EditMode.Add,
             };
             return Mode;
-        }
-
-        public bool ToggleGrid()
-        {
-            ShowGrid = !ShowGrid;
-            return ShowGrid;
         }
 
         public void RequestNewModel()
