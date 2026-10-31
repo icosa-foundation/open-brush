@@ -43,30 +43,11 @@ namespace TiltBrush
                 SetButtonAvailable(available);
             }
 
-            string title;
-            string description;
-            switch (m_Setting)
-            {
-                case Setting.AlignToGrid:
-                    title = "Align Voxel Model to Grid";
-                    description = "Align voxel axes and snap the model into place. Cell size matches the active snap grid, or the default grid size when snapping is off.";
-                    break;
-                case Setting.NewModel:
-                    title = "New Voxel Model";
-                    description = "Press the trigger to draw a new model. Its voxel size matches the snap grid when snapping is on, or the last voxel model you interacted with when snapping is off.";
-                    break;
-                default:
-                    return;
-            }
             bool active = m_Setting == Setting.NewModel && tool.CreatingNewModel;
             if (m_ToggleActive != active)
             {
                 m_ToggleActive = active;
                 SetButtonActivated(active);
-            }
-            if (m_DescriptionText != title || m_DescriptionTextExtra != description)
-            {
-                SetDescriptionText(title, description);
             }
         }
 

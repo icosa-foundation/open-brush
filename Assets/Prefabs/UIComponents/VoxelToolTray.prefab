@@ -313,7 +313,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra: Press the trigger to draw a new model. Its voxel size matches the snap grid when snapping is on, or the last voxel model you interacted with when snapping is off.
   m_LocalizedDescriptionExtra:
     m_TableReference:
       m_TableCollectionName: 
@@ -476,7 +476,7 @@ MonoBehaviour:
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra: 
+  m_DescriptionTextExtra: Align voxel axes and snap the model into place. Cell size matches the active snap grid, or the default grid size when snapping is off.
   m_LocalizedDescriptionExtra:
     m_TableReference:
       m_TableCollectionName: 
