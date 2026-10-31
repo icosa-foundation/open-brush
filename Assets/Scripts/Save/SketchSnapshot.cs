@@ -105,36 +105,45 @@ namespace TiltBrush
             var selection = SelectionManager.m_Instance;
             var selectedStrokes = selection.SelectedStrokes.ToList();
             var selectedWidgets = selection.SelectedWidgets.ToList();
-            if (selection.HasSelection) { selection.ClearActiveSelection(recordCommand: false); }
-            IEnumerable<Stroke> strokes = m_SelectedOnly
-                ? selectedStrokes.Concat(SymmetryPeerEditing.PeersOutside(selectedStrokes)).ToList()
-                : SketchMemoryScript.AllStrokes();
-            m_WidgetLinks = new WidgetLinkSaveContext(m_SelectedOnly
-                ? selectedWidgets : SymmetryWidgetGroup.ActiveWidgets, m_SelectedOnly);
-            m_SymmetryState = SketchWriter.SymmetrySaveState.Capture(includeUnreferenced: !m_SelectedOnly);
-            m_Metadata = GetSketchMetadata();
-            foreach (var mirror in m_WidgetLinks.Mirrors)
+            var deselectCommand = selection.HasSelection ? selection.CreateEndSelectionCommand() : null;
+            try
             {
-                m_SymmetryState.WidgetMirrors.Add(mirror);
-                m_SymmetryState.Settings[mirror] = mirror.Settings;
-            }
-            m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
-            foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
-            {
-                if (stopwatch.ElapsedTicks > maxTicks)
+                if (deselectCommand != null)
                 {
-                    stopwatch.Reset();
-                    yield return null;
-                    stopwatch.Start();
+                    deselectCommand.Redo();
+                    App.Scene.MainCanvas.gameObject.SetActive(true);
                 }
-                m_Strokes.Add(strokeSnapshot);
+                IEnumerable<Stroke> strokes = m_SelectedOnly
+                    ? selectedStrokes.Concat(SymmetryPeerEditing.PeersOutside(selectedStrokes)).ToList()
+                    : SketchMemoryScript.AllStrokes();
+                m_WidgetLinks = new WidgetLinkSaveContext(m_SelectedOnly
+                    ? selectedWidgets : SymmetryWidgetGroup.ActiveWidgets, m_SelectedOnly);
+                m_SymmetryState = SketchWriter.SymmetrySaveState.Capture(includeUnreferenced: !m_SelectedOnly);
+                m_Metadata = GetSketchMetadata();
+                foreach (var mirror in m_WidgetLinks.Mirrors)
+                {
+                    m_SymmetryState.WidgetMirrors.Add(mirror);
+                    m_SymmetryState.Settings[mirror] = mirror.Settings;
+                }
+                m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
+                foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
+                {
+                    if (stopwatch.ElapsedTicks > maxTicks)
+                    {
+                        stopwatch.Reset();
+                        yield return null;
+                        stopwatch.Start();
+                    }
+                    m_Strokes.Add(strokeSnapshot);
+                }
             }
-            stopwatch.Stop();
-
-            selection.SelectionTransform = TrTransform.identity;
-            if (selectedStrokes.Count > 0) { selection.SelectStrokes(selectedStrokes, true); }
-            if (selectedWidgets.Count > 0) { selection.SelectWidgets(selectedWidgets); }
-            selection.UpdateSelectionWidget();
+            finally
+            {
+                stopwatch.Stop();
+                // Reverse the temporary bake, including peer movement and selection join baselines,
+                // without adding a command to undo history, even if capture fails or is disposed.
+                deselectCommand?.Undo();
+            }
         }
 
         public SketchMetadata GetSketchMetadata()
