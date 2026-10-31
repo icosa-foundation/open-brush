@@ -68,12 +68,17 @@ namespace TiltBrush
 
             if (hasGeneratedAtlasData)
             {
-                // The public reset also clears OpenType features, unlike TMP's build
-                // and shutdown reset. Preserve those settings while clearing the cache.
-                string fontFeatures = JsonUtility.ToJson(fontAsset.fontFeatureTable);
+                // Preserve saved OpenType features only when they are not collected
+                // dynamically. Otherwise, clear generated features with the atlas cache.
+                string fontFeatures = fontAsset.getFontFeatures
+                    ? null
+                    : JsonUtility.ToJson(fontAsset.fontFeatureTable);
                 fontAsset.ClearFontAssetData(true);
-                JsonUtility.FromJsonOverwrite(fontFeatures, fontAsset.fontFeatureTable);
-                fontAsset.ReadFontAssetDefinition();
+                if (fontFeatures != null)
+                {
+                    JsonUtility.FromJsonOverwrite(fontFeatures, fontAsset.fontFeatureTable);
+                    fontAsset.ReadFontAssetDefinition();
+                }
             }
         }
     }
