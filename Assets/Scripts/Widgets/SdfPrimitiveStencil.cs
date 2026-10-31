@@ -39,10 +39,11 @@ namespace TiltBrush
             set
             {
                 ValidateExtents(value);
+                Vector4 previousGeometry = GeometryFromAspectRatio();
                 m_Size = 1f;
                 m_AspectRatio = value;
                 UpdateScale();
-                UpdatePrimitiveGeometry();
+                UpdatePrimitiveGeometry(previousGeometry);
             }
         }
 
@@ -111,14 +112,32 @@ namespace TiltBrush
             UpdateMaterialScale();
         }
 
-        private void UpdatePrimitiveGeometry()
+        private void UpdatePrimitiveGeometry(Vector4? previousGeometry = null)
         {
             var components = GetComponents();
             if (components.Count > 0 && components[0] is SDFPrimitive primitive &&
                 primitive.Type == m_PrimitiveType &&
                 GetComponentIdentity(primitive) == m_ResizePrimitiveIdentity)
             {
-                SetComponentPrimitiveGeometry(0, GeometryFromAspectRatio());
+                Vector4 geometry = GeometryFromAspectRatio();
+                if (previousGeometry.HasValue)
+                {
+                    // Extents also changes during brush lift and reverse lift on undo.
+                    // Apply the dimension ratios to edited geometry rather than replacing
+                    // it with the prefab dimensions. CustomDimension still handles an
+                    // explicit axis resize through the normal aspect-ratio path.
+                    Vector4 previous = previousGeometry.Value;
+                    Vector4 edited = primitive.Data;
+                    for (int i = 0; i < 4; ++i)
+                    {
+                        if (previous[i] != 0f)
+                        {
+                            edited[i] *= geometry[i] / previous[i];
+                        }
+                    }
+                    geometry = edited;
+                }
+                SetComponentPrimitiveGeometry(0, geometry);
             }
         }
 
