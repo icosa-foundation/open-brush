@@ -128,6 +128,9 @@ namespace TiltBrush
         internal void RestoreExternalVoxContent()
         {
             int previousCost = GetTiltMeterCost();
+            var replacedRenderers = m_ModelInstance != null
+                ? m_ModelInstance.GetComponentsInChildren<Renderer>(includeInactive: true)
+                : Array.Empty<Renderer>();
             m_EditableVoxDocument = null;
             LoadModel();
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(previousCost, up: false);
@@ -137,6 +140,7 @@ namespace TiltBrush
             {
                 HierarchyUtils.RecursivelySetLayer(transform, transform.parent.gameObject.layer);
             }
+            RefreshVoxMaterialCaches(replacedRenderers);
             if (SelectionManager.m_Instance != null && SelectionManager.m_Instance.IsWidgetSelected(this))
                 SelectionManager.m_Instance.UpdateSelectionWidget();
         }
@@ -602,7 +606,7 @@ namespace TiltBrush
                 throw;
             }
 
-            RefreshEditableVoxMaterialCaches(previousMaterials.Select(entry => (Renderer)entry.renderer));
+            RefreshVoxMaterialCaches(previousMaterials.Select(entry => (Renderer)entry.renderer));
             ReleaseOwnedVoxMeshes();
             ReleaseOwnedVoxMaterials();
             foreach (Mesh mesh in replacementMeshes)
@@ -707,7 +711,7 @@ namespace TiltBrush
             return filter;
         }
 
-        private void RefreshEditableVoxMaterialCaches(IEnumerable<Renderer> replacedRenderers)
+        private void RefreshVoxMaterialCaches(IEnumerable<Renderer> replacedRenderers)
         {
             var replaced = new HashSet<Renderer>(replacedRenderers);
             if (m_InitialMaterials != null && m_NewMaterials != null)
