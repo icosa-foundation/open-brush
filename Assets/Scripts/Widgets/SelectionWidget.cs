@@ -23,6 +23,22 @@ namespace TiltBrush
     {
         public event System.Action<TrTransform> SelectionTransformed;
 
+        protected override Vector3 GetGridSnapOffset_GS(Quaternion rotation_GS)
+        {
+            var selection = SelectionManager.m_Instance;
+            if (selection.SelectedStrokeCount != 0) return Vector3.zero;
+            ModelWidget model = null;
+            foreach (var widget in selection.SelectedWidgets)
+            {
+                if (model != null || !(widget is ModelWidget candidate)) return Vector3.zero;
+                model = candidate;
+            }
+            if (model == null || !model.TryGetVoxelGridCorner_GS(out Vector3 corner_GS)) return Vector3.zero;
+            // A single-model selection should snap the same grid corner as a direct grab,
+            // independent of the selection bounds center and collision padding.
+            return rotation_GS * Quaternion.Inverse(transform.rotation) * (corner_GS - transform.position);
+        }
+
         [SerializeField] private CanvasScript m_SelectionCanvas;
 
         private TrTransform m_xfOriginal_SS = TrTransform.identity;

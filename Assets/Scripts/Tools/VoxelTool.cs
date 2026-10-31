@@ -1,0 +1,609 @@
+// Copyright 2026 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Linq;
+using UnityEngine;
+
+namespace TiltBrush
+{
+    /// Native interaction tool for editing widget-backed VOX documents.
+    public sealed partial class VoxelTool : BaseTool
+    {
+        public enum EditMode
+        {
+            Add,
+            Erase,
+            Paint,
+        }
+
+        private VoxDocumentApiWrapper m_CurrentDocument;
+        private VoxModelApiWrapper m_CurrentModel;
+        private ModelWidget m_TargetWidget;
+        private Model m_ExternalPreviewSource;
+        private ModelWidget m_PendingTargetWidget;
+        private bool m_HasPendingTarget;
+        private Switchboard m_TargetEvents;
+        private bool m_CreateNewGrid;
+        private bool m_GestureActive;
+        private bool m_GestureChanged;
+        private bool m_ReportedPaletteFull;
+        private bool m_HasLastCell;
+        private Vector3Int m_LastCell;
+        private RuntimeVoxDocument.Snapshot m_GestureBefore;
+        private CreateWidgetCommand m_GestureCreationCommand;
+        private EmbedVoxModelCommand m_GestureEmbeddingCommand;
+        private bool m_GestureAutoVisuals;
+        private ModelWidget m_GestureWidget;
+        private RuntimeVoxDocument.RuntimeModel m_GestureModel;
+        private EditMode m_Mode;
+        [SerializeField] private Texture2D m_AddIcon;
+        [SerializeField] private Texture2D m_EraseIcon;
+        [SerializeField] private Texture2D m_PaintIcon;
+
+        public EditMode Mode
+        {
+            get => m_Mode;
+            set
+            {
+                if (m_Mode == value) { return; }
+                EndGesture();
+                m_Mode = value;
+                m_CreateNewGrid = false;
+            }
+        }
+        public bool ShowGrid { get; set; } = true;
+        public ModelWidget CurrentTargetWidget => IsAvailableTarget(m_TargetWidget) ? m_TargetWidget : null;
+        public bool HasCurrentTarget => CurrentTargetWidget != null &&
+            m_CurrentModel != null && m_CurrentModel.isValid && m_CurrentModel._Model.IsVisible &&
+            (ReferenceEquals(CurrentTargetWidget.EditableVoxDocument, m_CurrentDocument._Document) ||
+                (CurrentTargetWidget.IsExternalVox && m_ExternalPreviewSource == CurrentTargetWidget.Model &&
+                    m_CurrentDocument._Document.ViewState.Widget == null));
+        public bool CreatingNewModel => m_CreateNewGrid;
+        public string CurrentTargetDescription
+        {
+            get
+            {
+                if (CreatingNewModel) return "New model — press trigger to start drawing";
+                ModelWidget widget = CurrentTargetWidget;
+                if (widget == null) return "No active voxel model — grab or select one";
+                string name = widget.GetExportName();
+                if (widget.IsExternalVox) return $"{name} — editing embeds a copy in this sketch";
+                if (!HasCurrentTarget) return $"No visible voxel grid in {name}";
+                if (widget.EditableVoxDocument.Models.Count == 1 &&
+                    !string.IsNullOrEmpty(widget.EditableVoxDocument.Models[0].Name))
+                    name = widget.EditableVoxDocument.Models[0].Name;
+                return $"Active: {name}";
+            }
+        }
+
+        public override void Init()
+        {
+            base.Init();
+            m_TargetEvents = App.Switchboard;
+            m_TargetEvents.ModelWidgetGrabbed += SetTargetWidget;
+            m_TargetEvents.SelectionChanged += OnSelectionChanged;
+            OnSelectionChanged();
+        }
+
+        protected override void OnDestroy()
+        {
+            if (m_TargetEvents != null)
+            {
+                m_TargetEvents.ModelWidgetGrabbed -= SetTargetWidget;
+                m_TargetEvents.SelectionChanged -= OnSelectionChanged;
+            }
+            base.OnDestroy();
+        }
+
+        private void OnSelectionChanged()
+        {
+            var selection = SelectionManager.m_Instance;
+            if (selection == null || selection.SelectedStrokes.Any()) return;
+            GrabWidget[] widgets = selection.SelectedWidgets.Take(2).ToArray();
+            if (widgets.Length == 1 && widgets[0] is ModelWidget widget)
+                SetTargetWidget(widget);
+        }
+
+        private static bool IsAvailableTarget(ModelWidget widget)
+            => widget != null && widget.Showing && widget.gameObject.activeInHierarchy &&
+                string.IsNullOrEmpty(widget.Subtree) &&
+                (widget.IsExternalVox || widget.EditableVoxDocument != null);
+
+        public override void AssignControllerMaterials(InputManager.ControllerName controller)
+        {
+            if (controller != InputManager.ControllerName.Brush) return;
+            Texture2D icon = Mode switch
+            {
+                EditMode.Erase => m_EraseIcon,
+                EditMode.Paint => m_PaintIcon,
+                _ => m_AddIcon,
+            };
+            InputManager.Brush.Geometry.ShowModeIcon(true, icon);
+        }
+
+        public override void EnableTool(bool enable)
+        {
+            // Tool-change notifications can read status before the first UpdateTool call.
+            if (enable)
+            {
+                EnsureCurrentTarget();
+                if (!HasCurrentTarget && !CreatingNewModel) ChooseActivationTarget();
+            }
+            if (!enable)
+            {
+                EndGesture();
+            }
+            base.EnableTool(enable);
+            if (enable)
+            {
+                EatInput();
+            }
+        }
+
+        public override void HideTool(bool hide)
+        {
+            if (hide)
+            {
+                EndGesture();
+            }
+            base.HideTool(hide);
+        }
+
+        public override void UpdateTool()
+        {
+            base.UpdateTool();
+            EnsureCurrentTarget();
+            if (ToolHidden()) return;
+
+            // Process mode changes before interpreting this frame's drawing input.
+            if (!IsEatingInput &&
+                InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
+            {
+                CycleMode();
+                InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+            }
+
+            Transform attachPoint = InputManager.Brush.Geometry.ToolAttachPoint;
+            Vector3 canvasPosition = App.Scene.ActiveCanvas.AsCanvas[attachPoint].translation;
+            if (CreatingNewModel)
+            {
+                UpdateNewModelDrawing(canvasPosition);
+                return;
+            }
+            var previewModel = m_GestureActive ? m_GestureModel : FindTargetModelAt(canvasPosition);
+            if (HasCurrentTarget)
+            {
+                var model = previewModel;
+                if (model != null)
+                {
+                    Color guideColor = Mode switch
+                    {
+                        EditMode.Erase => new Color(0.9f, 0.12f, 0.08f),
+                        EditMode.Paint => new Color(0.18f, 0.48f, 0.95f),
+                        _ => new Color(0.12f, 0.8f, 0.28f),
+                    };
+                    Color targetColor = Mode == EditMode.Erase ? guideColor : App.BrushColor.CurrentColor;
+                    var preview = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
+                    preview.PreviewForTool(canvasPosition, targetColor, guideColor, ShowGrid, m_BrushSizeStep, Mode == EditMode.Add);
+                }
+            }
+
+            if (IsEatingInput)
+            {
+                return;
+            }
+
+            if (InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
+            {
+                BeginGesture(canvasPosition);
+            }
+
+            if (m_GestureActive &&
+                InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                ApplyAt(canvasPosition);
+                // Interpolation can change many cells in one frame. Show the actual edits
+                // once after that batch; Refresh skips a clean document. Never revive a
+                // widget hidden by final-voxel erasure or another action during the gesture.
+                if (m_GestureWidget != null && m_GestureWidget.Showing &&
+                    m_GestureWidget.gameObject.activeInHierarchy &&
+                    ReferenceEquals(m_GestureWidget.EditableVoxDocument, m_CurrentDocument._Document))
+                {
+                    m_CurrentDocument.Refresh();
+                }
+            }
+
+            if (m_GestureActive &&
+                !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+            {
+                EndGesture();
+            }
+        }
+
+        public EditMode CycleMode()
+        {
+            Mode = Mode switch
+            {
+                EditMode.Add => EditMode.Erase,
+                EditMode.Erase => EditMode.Paint,
+                _ => EditMode.Add,
+            };
+            return Mode;
+        }
+
+        public bool ToggleGrid()
+        {
+            ShowGrid = !ShowGrid;
+            return ShowGrid;
+        }
+
+        public void RequestNewModel()
+        {
+            EndGesture();
+            m_TargetWidget = null;
+            m_PendingTargetWidget = null;
+            m_HasPendingTarget = false;
+            m_CurrentDocument = null;
+            m_CurrentModel = null;
+            Mode = EditMode.Add;
+            m_CreateNewGrid = true;
+        }
+
+        internal void SetTargetWidget(ModelWidget widget)
+        {
+            if (!IsAvailableTarget(widget)) return;
+            if (m_GestureActive)
+            {
+                // A grab/selection from the other hand cannot redirect an active stroke.
+                m_PendingTargetWidget = widget;
+                m_HasPendingTarget = true;
+                return;
+            }
+            m_CreateNewGrid = false;
+            BindTargetWidget(widget);
+        }
+
+        private void BindTargetWidget(ModelWidget widget)
+        {
+            if (!IsAvailableTarget(widget)) widget = null;
+            if (m_TargetWidget == widget && HasCurrentTarget) return;
+            m_TargetWidget = widget;
+            m_CurrentDocument = null;
+            m_CurrentModel = null;
+            m_ExternalPreviewSource = null;
+            if (widget == null) return;
+            var document = widget.EditableVoxDocument ?? widget.Model.CreateEditableVoxDocument();
+            if (document == null) return;
+            var model = document.Models.FirstOrDefault(item => item.IsVisible && item.Voxels.Count > 0)
+                ?? document.Models.FirstOrDefault(item => item.IsVisible);
+            if (model == null) return;
+            if (widget.IsExternalVox)
+            {
+                // Preview a private document without adopting it, creating a widget or dirtying the sketch.
+                m_ExternalPreviewSource = widget.Model;
+                document.ViewState.WidgetTransform = App.Scene.ActiveCanvas.AsCanvas[widget.transform];
+                m_CurrentDocument = new VoxDocumentApiWrapper(document);
+                m_CurrentDocument.SetAutoVisuals(false);
+            }
+            else m_CurrentDocument = new VoxDocumentApiWrapper(document, widget);
+            m_CurrentModel = new VoxModelApiWrapper(document, model, m_CurrentDocument);
+        }
+
+        private RuntimeVoxDocument.RuntimeModel FindTargetModelAt(Vector3 canvasPosition)
+        {
+            if (!HasCurrentTarget) return null;
+            var document = m_CurrentDocument._Document;
+            RuntimeVoxDocument.RuntimeModel emptyCandidate = null;
+            for (int i = document.Models.Count - 1; i >= 0; --i)
+            {
+                var model = document.Models[i];
+                if (!model.IsVisible) continue;
+                Vector3Int cell = Vector3Int.RoundToInt(
+                    m_CurrentDocument.GetModelTransform(model).inverse * canvasPosition);
+                if (!BrushFootprint.IntersectsVolume(cell, model.Size)) continue;
+                if (model.TryGetPaletteIndex(cell, out _)) return model;
+                if (emptyCandidate == null) emptyCandidate = model;
+            }
+            Vector3Int currentCell = Vector3Int.RoundToInt(m_CurrentModel.CanvasToVoxel(canvasPosition));
+            if (BrushFootprint.IntersectsVolume(currentCell, m_CurrentModel._Model.Size)) return m_CurrentModel._Model;
+            return emptyCandidate ?? (Mode == EditMode.Add ? m_CurrentModel._Model : null);
+        }
+
+        private void BeginGesture(Vector3 canvasPosition)
+        {
+            EndGesture();
+            RuntimeVoxDocument.RuntimeModel model = FindTargetModelAt(canvasPosition);
+            if (model == null) return;
+            m_CurrentModel = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
+
+            // TODO(VOX undo): For large/dense documents, replace these before/after full-cell
+            // snapshots with changed-cell deltas plus bounds/origin metadata. Retained undo
+            // memory currently scales with the whole document, even for a one-cell gesture.
+            m_GestureBefore = m_CurrentDocument._Document.CaptureSnapshot();
+            m_GestureWidget = CurrentTargetWidget;
+            m_GestureModel = m_CurrentModel._Model;
+            m_GestureAutoVisuals = m_CurrentDocument.autoVisuals;
+            m_CurrentDocument.SuppressDirtyTracking = true;
+            // Batch per-cell mutations; UpdateTool explicitly refreshes once per frame.
+            m_CurrentDocument.SetAutoVisuals(false, true);
+            m_GestureChanged = false;
+            m_ReportedPaletteFull = false;
+            m_GestureActive = true;
+            m_HasLastCell = false;
+        }
+
+        private void ApplyAt(Vector3 canvasPosition)
+        {
+            if (m_CurrentModel == null) return;
+            Vector3Int cell = Vector3Int.RoundToInt(m_CurrentModel.CanvasToVoxel(canvasPosition));
+            var footprint = BrushFootprint;
+            Color32 color = App.BrushColor.CurrentColor;
+            int paletteIndex = -1;
+            if (Mode == EditMode.Add)
+            {
+                // Resolve before growing bounds so a full palette leaves the model unchanged.
+                paletteIndex = m_CurrentDocument._Document.GetOrAddPaletteColor(color);
+                if (paletteIndex == 0)
+                {
+                    ReportPaletteFull();
+                    m_HasLastCell = false;
+                    return;
+                }
+            }
+            if (Mode == EditMode.Add)
+            {
+                var previousDefinition = m_CurrentModel._Model.Definition;
+                if (!m_CurrentDocument._Document.TryGrowDrawingBounds(m_CurrentModel._Model, ref cell,
+                    out var shift, footprint.Extent, m_HasLastCell ? m_LastCell : (Vector3Int?)null))
+                {
+                    m_HasLastCell = false;
+                    return;
+                }
+                if (m_HasLastCell) m_LastCell += shift;
+                // Structural preview work alone must not embed an external model.
+                if (!m_GestureWidget.IsExternalVox)
+                    m_GestureChanged |= !ReferenceEquals(previousDefinition, m_CurrentModel._Model.Definition);
+            }
+            else if (!footprint.IntersectsVolume(cell, m_CurrentModel._Model.Size))
+            {
+                m_HasLastCell = false;
+                return;
+            }
+            if (m_HasLastCell && cell == m_LastCell) return;
+            Vector3Int current = m_HasLastCell ? m_LastCell : cell;
+            bool changed = !m_HasLastCell && ApplyStamp(current, footprint, color, ref paletteIndex);
+            Vector3Int delta = cell - current;
+            Vector3Int step = new Vector3Int(System.Math.Sign(delta.x), System.Math.Sign(delta.y), System.Math.Sign(delta.z));
+            Vector3 interval = new Vector3(
+                delta.x == 0 ? float.PositiveInfinity : 1f / Mathf.Abs(delta.x),
+                delta.y == 0 ? float.PositiveInfinity : 1f / Mathf.Abs(delta.y),
+                delta.z == 0 ? float.PositiveInfinity : 1f / Mathf.Abs(delta.z));
+            Vector3 next = interval * 0.5f;
+            // Traverse every voxel crossed between successive cell centers.
+            while (current != cell)
+            {
+                float crossing = Mathf.Min(next.x, Mathf.Min(next.y, next.z));
+                if (next.x <= crossing) { current.x += step.x; next.x += interval.x; }
+                if (next.y <= crossing) { current.y += step.y; next.y += interval.y; }
+                if (next.z <= crossing) { current.z += step.z; next.z += interval.z; }
+                changed |= ApplyStamp(current, footprint, color, ref paletteIndex);
+            }
+            m_LastCell = cell;
+            m_HasLastCell = true;
+            if (!changed) return;
+            if (m_GestureWidget.IsExternalVox)
+            {
+                var document = m_CurrentDocument._Document;
+                m_GestureEmbeddingCommand = new EmbedVoxModelCommand(m_GestureWidget, document);
+                m_GestureEmbeddingCommand.Redo();
+                m_CurrentDocument = new VoxDocumentApiWrapper(document, m_GestureWidget)
+                { SuppressDirtyTracking = true };
+                m_CurrentModel = new VoxModelApiWrapper(document, m_GestureModel, m_CurrentDocument);
+                m_GestureAutoVisuals = true;
+                m_ExternalPreviewSource = null;
+            }
+            m_CurrentDocument.OnDocumentMutated();
+            m_GestureChanged = true;
+        }
+
+        private bool ApplyStamp(Vector3Int center, VoxBrushFootprint footprint, Color32 color, ref int paletteIndex)
+        {
+            if (paletteIndex == 0) return false;
+            bool changed = false;
+            var model = m_CurrentModel._Model;
+            for (int box = 0; box < footprint.BoxCount; ++box)
+            {
+                footprint.GetBox(box, out var min, out var max);
+                for (int x = min.x; x <= max.x; ++x)
+                    for (int y = min.y; y <= max.y; ++y)
+                        for (int z = min.z; z <= max.z; ++z)
+                        {
+                            Vector3Int cell = center + new Vector3Int(x, y, z);
+                            if (!model.IsInBounds(cell)) continue;
+                            if (Mode == EditMode.Erase) changed |= model.RemoveVoxel(cell);
+                            else
+                            {
+                                if (Mode == EditMode.Paint && !model.TryGetPaletteIndex(cell, out _)) continue;
+                                if (paletteIndex < 0) paletteIndex = m_CurrentDocument._Document.GetOrAddPaletteColor(color);
+                                if (paletteIndex == 0)
+                                {
+                                    ReportPaletteFull();
+                                    return false;
+                                }
+                                changed |= model.AddOrUpdateVoxel(cell, (byte)paletteIndex);
+                            }
+                        }
+            }
+            return changed;
+        }
+
+        private void ReportPaletteFull()
+        {
+            if (m_ReportedPaletteFull) return;
+            m_ReportedPaletteFull = true;
+            OutputWindowScript.m_Instance?.CreateInfoCardAtController(
+                InputManager.ControllerName.Brush,
+                "Voxel palette full: no slot is available for this colour and material.",
+                alsoConsole: false);
+        }
+
+        internal void FinishEditing()
+        {
+            EndGesture();
+        }
+
+        private void EndGesture()
+        {
+            if (!m_GestureActive)
+            {
+                return;
+            }
+
+            var gestureDocument = m_CurrentDocument;
+            bool targetShowing = m_GestureWidget != null && m_GestureWidget.Showing &&
+                m_GestureWidget.gameObject.activeInHierarchy;
+            // Keep a fully erased model as an editable 3x3x3 grid.
+            if (m_GestureChanged && m_GestureWidget != null)
+            {
+                if (Mode != EditMode.Paint) gestureDocument._Document.FitDrawingBounds(m_GestureModel);
+                BaseCommand parent = m_GestureEmbeddingCommand ?? (BaseCommand)m_GestureCreationCommand;
+                var command = new ModifyVoxDocumentCommand(m_GestureWidget, m_GestureBefore,
+                    gestureDocument._Document.CaptureSnapshot(), parent);
+                if (m_GestureEmbeddingCommand != null)
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(m_GestureEmbeddingCommand);
+                else if (m_GestureCreationCommand == null)
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                else
+                {
+                    // Creation is already on the undo stack; its first stroke is a child.
+                    if (targetShowing) gestureDocument.Refresh();
+                    m_GestureCreationCommand.SetWidgetCost(m_GestureWidget.GetTiltMeterCost());
+                    SaveLoadScript.m_Instance?.SketchChanged();
+                }
+            }
+
+            // An attempted Add may have grown detached preview bounds without changing a cell.
+            if (!m_GestureChanged && m_GestureWidget != null && m_GestureWidget.IsExternalVox)
+                gestureDocument._Document.RestoreSnapshot(m_GestureBefore);
+            gestureDocument.SuppressDirtyTracking = false;
+            gestureDocument.SetAutoVisuals(m_GestureAutoVisuals && targetShowing, true);
+            m_GestureActive = false;
+            m_GestureChanged = false;
+            m_ReportedPaletteFull = false;
+            m_HasLastCell = false;
+            m_GestureBefore = null;
+            m_GestureCreationCommand = null;
+            m_GestureEmbeddingCommand = null;
+            m_GestureWidget = null;
+            m_GestureModel = null;
+            ApplyPendingTarget();
+        }
+
+        private void ApplyPendingTarget()
+        {
+            if (m_HasPendingTarget)
+            {
+                ModelWidget pending = m_PendingTargetWidget;
+                m_PendingTargetWidget = null;
+                m_HasPendingTarget = false;
+                BindTargetWidget(pending);
+            }
+        }
+
+        private void UpdateNewModelDrawing(Vector3 canvasPosition)
+        {
+            float voxelSize = SelectionManager.m_Instance.ConfiguredSnappingGridSize;
+            // Snap-grid points define voxel corners; centers sit halfway through each cell.
+            // Floor also chooses the containing cell correctly at negative coordinates.
+            Vector3 center = GetNewModelCellCenter(canvasPosition, voxelSize);
+            VoxEditPreviewRenderer.DrawCreationFootprint(center, voxelSize, m_BrushSizeStep);
+            if (IsEatingInput || !InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate)) return;
+            if (!CreateGrid(center, voxelSize)) return;
+            m_CreateNewGrid = false;
+            BeginGesture(center);
+            ApplyAt(center);
+            m_CurrentDocument.Refresh();
+        }
+
+        private static Vector3 GetNewModelCellCenter(Vector3 canvasPosition, float voxelSize)
+            => ((Vector3)Vector3Int.FloorToInt(canvasPosition / voxelSize) + Vector3.one * 0.5f) * voxelSize;
+
+        private bool CreateGrid(Vector3 center, float voxelSize)
+        {
+            var document = new RuntimeVoxDocument();
+            int modelNumber = 1;
+            while (WidgetManager.m_Instance.ModelWidgets.Any(widget =>
+                widget.EditableVoxDocument?.Models.Any(model =>
+                    model.Name == $"Voxel Model {modelNumber}") == true))
+            {
+                ++modelNumber;
+            }
+            // VOX is Z-up: local Y points towards negative canvas Z, local Z towards canvas Y.
+            document.CreateModel($"Voxel Model {modelNumber}", Vector3Int.one * 3);
+            Model model = Model.CreateEditableVoxModelFromBytes(document.ToVoxBytes());
+            if (model == null) return false;
+
+            try
+            {
+                Vector3 origin = center + new Vector3(-1f, -1f, 1f) * voxelSize;
+                TrTransform canvasPose = TrTransform.TRS(origin, Quaternion.identity, voxelSize);
+                var command = new CreateWidgetCommand(WidgetManager.m_Instance.ModelWidgetPrefab,
+                    App.Scene.ActiveCanvas.Pose * canvasPose, forceTransform: true);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
+                var widget = command.Widget as ModelWidget;
+                widget.LoadingFromSketch = true;
+                widget.Model = model;
+                widget.AdoptEditableVoxDocument(document);
+                widget.Show(true, false);
+                m_TargetWidget = widget;
+                m_CurrentDocument = new VoxDocumentApiWrapper(document, widget);
+                m_CurrentDocument.SuppressDirtyTracking = true;
+                try
+                {
+                    m_CurrentDocument.SetTransform(canvasPose);
+                }
+                finally
+                {
+                    m_CurrentDocument.SuppressDirtyTracking = false;
+                }
+                m_CurrentDocument.SetAutoVisuals(true, true);
+                m_CurrentModel = m_CurrentDocument.Model();
+                command.SetWidgetCost(widget.GetTiltMeterCost());
+                m_GestureCreationCommand = command;
+                return true;
+            }
+            finally
+            {
+                model.ReleaseFromCatalog();
+            }
+        }
+
+        private void EnsureCurrentTarget()
+        {
+            if (HasCurrentTarget)
+            {
+                if (CurrentTargetWidget.IsExternalVox)
+                    m_CurrentDocument._Document.ViewState.WidgetTransform =
+                        App.Scene.ActiveCanvas.AsCanvas[CurrentTargetWidget.transform];
+                return;
+            }
+            EndGesture();
+            ModelWidget widget = CurrentTargetWidget;
+            // Rebind after undo/redo changes between embedded content and an external reference.
+            BindTargetWidget(widget);
+        }
+
+    }
+}

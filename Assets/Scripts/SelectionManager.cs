@@ -74,6 +74,7 @@ namespace TiltBrush
 
         private float m_snappingAngle;
         private float m_snappingGridSize;
+        private float m_ConfiguredSnappingGridSize = 0.1f;
         private float[] m_AngleSnaps;
         private float[] m_GridSnaps;
         private int m_CurrentSnapAngleIndex;
@@ -352,6 +353,8 @@ namespace TiltBrush
         public int CurrentSnapGridIndex => m_CurrentSnapGridIndex;
         public float SnappingAngle => m_snappingAngle;
         public float SnappingGridSize => m_snappingGridSize;
+        // Keep the chosen spacing available when the snap-grid option is Off.
+        public float ConfiguredSnappingGridSize => m_ConfiguredSnappingGridSize;
 
         // Mainly stored for use in scripts
         private Stroke m_LastSelectedStroke;
@@ -1084,6 +1087,8 @@ namespace TiltBrush
 
             if (SelectionIsMeshSplittable)
             {
+                var voxelTool = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.VoxelTool) as VoxelTool;
+                voxelTool?.FinishEditing();
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new BreakModelApartCommand(m_SelectedWidgets.First() as ModelWidget));
             }
@@ -1119,7 +1124,7 @@ namespace TiltBrush
             {
                 if (widget is not ModelWidget modelWidget ||
                     modelWidget.HasGPUIntersectionObject() ||
-                    !modelWidget.TryIntersectGsplat(center_GS, radius_GS, out float widgetScore))
+                    !modelWidget.TryIntersectNonGpuModel(center_GS, radius_GS, out float widgetScore))
                 {
                     continue;
                 }
@@ -1285,6 +1290,7 @@ namespace TiltBrush
             }
             if (m_snappingGridSize > 0)
             {
+                m_ConfiguredSnappingGridSize = m_snappingGridSize;
                 m_SnapGridVisualization.enabled = true;
                 m_SnapGridVisualization.gridInterval = m_snappingGridSize;
             }
@@ -1311,8 +1317,10 @@ namespace TiltBrush
         // Input is in global space, the snapping is done in canvas space
         // And the result is returned in global space
         public Vector3 SnapToGrid_GS(Vector3 position_GS)
+            => SnapToGrid_GS(position_GS, SnappingGridSize);
+
+        internal Vector3 SnapToGrid_GS(Vector3 position_GS, float gridSize)
         {
-            float gridSize = SnappingGridSize;
             if (gridSize == 0) return position_GS;
             Vector3 localCanvasPos = App.ActiveCanvas.transform.worldToLocalMatrix.MultiplyPoint3x4(position_GS);
             float round(float val) { return Mathf.Round(val / gridSize) * gridSize; }

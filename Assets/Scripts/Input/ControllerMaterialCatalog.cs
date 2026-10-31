@@ -211,13 +211,20 @@ namespace TiltBrush
         // the material is instanced.  Our pattern is to liberally assign from the catalog, so this
         // function prevents orphaned materials.
         public void Assign(Renderer renderer, Material catalogMat)
+            => GetMaterialCache(renderer).AssignMaterial(catalogMat);
+
+        public void AssignModeIcon(Renderer renderer, Material catalogMat, Texture2D icon)
+        {
+            GetMaterialCache(renderer).AssignMaterial(catalogMat, forModeIcon: true);
+            // SelectionToggle samples _MainTex; _EmissionMap is not a shader property.
+            renderer.material.SetTexture("_MainTex", icon != null ? icon : catalogMat.mainTexture);
+        }
+
+        private static MaterialCache GetMaterialCache(Renderer renderer)
         {
             MaterialCache mc = renderer.GetComponent<MaterialCache>();
-            if (mc == null)
-            {
-                mc = renderer.gameObject.AddComponent<MaterialCache>();
-            }
-            mc.AssignMaterial(catalogMat);
+            if (mc == null) mc = renderer.gameObject.AddComponent<MaterialCache>();
+            return mc;
         }
     }
 } // namespace TiltBrush
