@@ -39,7 +39,7 @@ namespace TiltBrush
         // Convert library content only after an edit succeeds, and undo the conversion
         // together with the edit. Read-only targeting never dirties a sketch.
         internal static bool Edit(ModelWidget widget, RuntimeVoxDocument preview,
-            Func<RuntimeVoxDocument, bool> edit)
+            Func<RuntimeVoxDocument, bool> edit, Action<BaseCommand> addChildren = null)
         {
             bool external = widget.IsExternalVox;
             var document = external ? preview.CloneDocument() : preview;
@@ -56,7 +56,9 @@ namespace TiltBrush
                 embedding.Redo();
             }
             var command = new ModifyVoxDocumentCommand(widget, before, document.CaptureSnapshot(), embedding);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(embedding ?? (BaseCommand)command);
+            BaseCommand root = embedding ?? (BaseCommand)command;
+            addChildren?.Invoke(root);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(root);
             return true;
         }
 

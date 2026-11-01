@@ -24,6 +24,71 @@ namespace TiltBrush
     internal class TestRuntimeVoxDocument
     {
         [Test]
+        public void JoinVoxelGrids_AllowsSmallDifferencesAndRejectsResampling()
+        {
+            var target = TrTransform.identity;
+            // Explicit half-angle quaternions also let this math test run outside an Editor.
+            var close = TrTransform.TRS(new Vector3(2.1f, 0, 0), new Quaternion(0, 0.004363309f, 0, 0.99999048f), 1.005f);
+            Assert.IsTrue(RuntimeVoxDocument.TryGetJoinOffset(target, close, out var offset));
+            Assert.AreEqual(new Vector3Int(2, 0, 0), offset);
+            Assert.IsFalse(RuntimeVoxDocument.TryGetJoinOffset(target,
+                TrTransform.S(1.02f), out _));
+            Assert.IsFalse(RuntimeVoxDocument.TryGetJoinOffset(target,
+                TrTransform.R(new Quaternion(0, 0.017452406f, 0, 0.9998477f)), out _));
+            Assert.IsFalse(RuntimeVoxDocument.TryGetJoinOffset(target, TrTransform.S(-1), out _));
+        }
+
+        [Test]
+        public void JoinVoxelGrids_PreservesTargetOverlapAndRemapsSourceMaterial()
+        {
+            var target = new RuntimeVoxDocument();
+            var original = target.CreateModel("target", new Vector3Int(3, 3, 3));
+            original.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            var source = new RuntimeVoxDocument();
+            var sourceModel = source.CreateModel("source", new Vector3Int(3, 3, 3));
+            sourceModel.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            sourceModel.AddOrUpdateVoxel(Vector3Int.right, 1);
+            source.ReplacePaletteEntry(1, new Color32(12, 34, 56, 255));
+            source = RuntimeVoxDocument.FromBytes(AppendMainChild(source.ToVoxBytes(), "MATL",
+                BuildMaterialContent(1, new[] { ("_type", "_glass"), ("_rough", "0.2") })));
+            var before = target.CaptureSnapshot();
+            var grids = new[] { TrTransform.identity };
+
+            Assert.IsTrue(target.TryJoin(source, grids, grids, 0));
+            var merged = target.Models[0];
+            Assert.AreEqual(2, merged.Voxels.Count);
+            Assert.AreEqual(1, merged.Voxels[Vector3Int.zero]);
+            byte imported = merged.Voxels[Vector3Int.right];
+            Assert.AreNotEqual(1, imported);
+            Assert.AreEqual(source.Palette[0], target.Palette[imported - 1]);
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Glass, target.Materials[imported].Type);
+            Assert.AreEqual(2, source.Models[0].Voxels.Count);
+            target.RestoreSnapshot(before);
+            Assert.AreSame(original, target.Models[0]);
+            Assert.AreEqual(1, original.Voxels.Count);
+            Assert.IsFalse(target.Materials.ContainsKey(imported));
+        }
+
+        [Test]
+        public void JoinVoxelGrids_RejectsOversizedBoundsAndFullPaletteWithoutChanges()
+        {
+            var target = new RuntimeVoxDocument();
+            var model = target.CreateModel("full", new Vector3Int(255, 1, 1));
+            for (int i = 1; i <= byte.MaxValue; ++i)
+                model.AddOrUpdateVoxel(new Vector3Int(i - 1, 0, 0), (byte)i);
+            var source = new RuntimeVoxDocument();
+            source.CreateModel("source", Vector3Int.one).AddOrUpdateVoxel(Vector3Int.zero, 1);
+            source.ReplacePaletteEntry(1, new Color32(12, 34, 56, 255));
+            byte[] before = target.ToVoxBytes();
+            Assert.IsFalse(target.TryJoin(source, new[] { TrTransform.identity },
+                new[] { TrTransform.T(new Vector3(256, 0, 0)) }, 0));
+            CollectionAssert.AreEqual(before, target.ToVoxBytes());
+            Assert.IsFalse(target.TryJoin(source, new[] { TrTransform.identity },
+                new[] { TrTransform.T(new Vector3(255, 0, 0)) }, 0));
+            CollectionAssert.AreEqual(before, target.ToVoxBytes());
+        }
+
+        [Test]
         public void RemoveConnectedRegion_RemovesFaceNeighborsButKeepsDiagonalAndOtherGrid()
         {
             var document = new RuntimeVoxDocument();
