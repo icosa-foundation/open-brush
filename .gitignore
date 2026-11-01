@@ -129,6 +129,7 @@
 # Generated Addressables content-update state (retain with release artifacts)
 /Assets/AddressableAssetsData/**/addressables_content_state.bin
 /Assets/AddressableAssetsData/**/addressables_content_state.bin.meta
+/Assets/AddressableAssetsData/Windows.meta
 
 # Generated brush shader coverage and diagnostic inventory
 /Assets/Generated/ShaderWarmup/OpenBrushBrushVariants.shadervariants
