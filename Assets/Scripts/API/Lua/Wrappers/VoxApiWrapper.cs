@@ -239,7 +239,8 @@ namespace TiltBrush
         [LuaDocsDescription("Moves one voxel")]
         public bool MoveVoxel(int fromX, int fromY, int fromZ, int toX, int toY, int toZ, bool overwrite = true)
         {
-            return m_DocumentWrapper.Mutate(() => _Model.MoveVoxel(
+            return m_DocumentWrapper.Mutate(() =>
+                (fromX != toX || fromY != toY || fromZ != toZ) && _Model.MoveVoxel(
                 new Vector3Int(fromX, fromY, fromZ),
                 new Vector3Int(toX, toY, toZ),
                 overwrite));
