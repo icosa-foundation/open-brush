@@ -32,6 +32,7 @@ namespace TiltBrush
         private BrushDescriptor m_SelectionBrush;
         private Stroke m_SelectionStroke;
         private readonly VoxToolTarget m_VoxTarget = new();
+        private bool m_VoxSnippedThisGesture;
 
         private enum State
         {
@@ -75,6 +76,7 @@ namespace TiltBrush
         {
             base.EnableTool(bEnable);
             m_VoxTarget.Clear();
+            m_VoxSnippedThisGesture = false;
             ResetDetection();
             if (bEnable)
             {
@@ -132,19 +134,22 @@ namespace TiltBrush
             //keep description locked to controller
             SnapIntersectionObjectToController();
 
+            if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+                m_VoxSnippedThisGesture = false;
             if (m_VoxTarget.TryFindCell(App.ActiveCanvas, m_DropperTransform.position, GetSize(), out var voxel))
             {
                 ResetDetection();
                 if (!m_EatInput && !m_ToolHidden && !OpenBrush.Multiplayer.MultiplayerManager.m_Instance.IsViewOnly &&
-                    !voxel.Widget.Pinned && InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+                    !voxel.Widget.Pinned && !m_VoxSnippedThisGesture &&
+                    InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
                 {
+                    m_VoxSnippedThisGesture = true;
+                    RuntimeVoxDocument region = null;
                     if (VoxToolTarget.Edit(voxel.Widget, voxel.Document, document =>
                         {
-                            var model = document.Models[voxel.ModelIndex];
-                            if (!document.RemoveConnectedRegion(model, voxel.Cell)) return false;
-                            document.FitDrawingBounds(model);
-                            return true;
-                        }))
+                            region = document.DetachConnectedRegion(document.Models[voxel.ModelIndex], voxel.Cell);
+                            return region != null;
+                        }, parent => { new CreateVoxRegionWidgetCommand(voxel.Widget, region, parent); }))
                         AudioManager.m_Instance.PlayDropperPickSound(m_DropperRenderer.transform.position);
                 }
                 return;

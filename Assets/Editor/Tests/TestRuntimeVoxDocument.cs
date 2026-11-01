@@ -15,6 +15,7 @@
 using NUnit.Framework;
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text;
 using UnityEngine;
@@ -110,7 +111,7 @@ namespace TiltBrush
         }
 
         [Test]
-        public void RemoveConnectedRegion_RemovesFaceNeighborsButKeepsDiagonalAndOtherGrid()
+        public void DetachConnectedRegion_PreservesBothPartsAndRestoresWithSnapshot()
         {
             var document = new RuntimeVoxDocument();
             var model = document.CreateModel("regions", new Vector3Int(4, 4, 4));
@@ -121,13 +122,68 @@ namespace TiltBrush
             other.AddOrUpdateVoxel(Vector3Int.zero, 1);
             var before = document.CaptureSnapshot();
 
-            Assert.IsTrue(document.RemoveConnectedRegion(model, Vector3Int.zero));
+            var region = document.DetachConnectedRegion(model, Vector3Int.zero);
+            Assert.IsNotNull(region);
+            Assert.AreEqual(2, region.Models[0].Voxels.Count);
             Assert.AreEqual(1, model.Voxels.Count);
-            Assert.IsTrue(model.Voxels.ContainsKey(new Vector3Int(2, 1, 0)));
+            Assert.AreEqual(new Vector3(2, 1, 0), model.TransformOffset +
+                model.GlobalRotation.MultiplyVector(model.Voxels.Keys.Single()));
+            CollectionAssert.AreEquivalent(new[] { Vector3.zero, Vector3.right },
+                region.Models[0].Voxels.Keys.Select(cell => region.Models[0].TransformOffset +
+                    region.Models[0].GlobalRotation.MultiplyVector(cell)).ToArray());
             Assert.AreEqual(1, other.Voxels.Count);
-            Assert.IsFalse(document.RemoveConnectedRegion(model, Vector3Int.zero));
             document.RestoreSnapshot(before);
             Assert.AreEqual(3, model.Voxels.Count);
+        }
+
+        [Test]
+        public void DetachConnectedRegion_DoesNothingForAnAlreadySeparateIsland()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("single", new Vector3Int(3, 3, 3));
+            model.AddOrUpdateVoxel(Vector3Int.one, 1);
+            byte[] before = document.ToVoxBytes();
+            Assert.IsNull(document.DetachConnectedRegion(model, Vector3Int.one));
+            CollectionAssert.AreEqual(before, document.ToVoxBytes());
+        }
+
+        [Test]
+        public void DetachConnectedRegion_LeavesOtherSharedInstancesIntact()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("shared", new Vector3Int(4, 4, 4));
+            model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            model.AddOrUpdateVoxel(Vector3Int.right, 1);
+            model.AddOrUpdateVoxel(Vector3Int.one * 3, 1);
+            var instance = document.CreateModel("instance", model.Size);
+            instance.Definition = model.Definition;
+            var region = document.DetachConnectedRegion(model, Vector3Int.zero);
+            Assert.IsNotNull(region);
+            Assert.AreEqual(2, region.Models[0].Voxels.Count);
+            Assert.AreEqual(1, model.Voxels.Count);
+            Assert.AreEqual(3, instance.Voxels.Count);
+            Assert.IsTrue(instance.Voxels.ContainsKey(Vector3Int.zero));
+            Assert.AreNotSame(model.Definition, instance.Definition);
+        }
+
+        [Test]
+        public void DetachConnectedRegion_PreservesMaterialAndVoxRoundTripPlacement()
+        {
+            var source = new RuntimeVoxDocument();
+            var model = source.CreateModel("colored", new Vector3Int(4, 4, 4));
+            model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            model.AddOrUpdateVoxel(Vector3Int.one * 3, 2);
+            source.ReplacePaletteEntry(1, new Color32(12, 34, 56, 255));
+            var document = RuntimeVoxDocument.FromBytes(AppendMainChild(source.ToVoxBytes(), "MATL",
+                BuildMaterialContent(1, new[] { ("_type", "_glass"), ("_rough", "0.2") })));
+            Vector3 expected = document.Models[0].TransformOffset;
+            var region = document.DetachConnectedRegion(document.Models[0], Vector3Int.zero);
+            Assert.AreEqual(new Color32(12, 34, 56, 255), region.Palette[0]);
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Glass, region.Materials[1].Type);
+            var saved = RuntimeVoxDocument.FromBytes(region.ToVoxBytes());
+            var detached = saved.Models[0];
+            Assert.AreEqual(expected, detached.TransformOffset + detached.GlobalRotation.MultiplyVector(detached.Voxels.Keys.Single()));
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Glass, saved.Materials[1].Type);
         }
 
         [Test]
