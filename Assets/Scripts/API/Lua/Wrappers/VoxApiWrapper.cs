@@ -324,19 +324,22 @@ namespace TiltBrush
 
     [LuaDocsDescription("An experimental editable VOX widget document")]
     [MoonSharpUserData]
-    public class VoxDocumentApiWrapper
+    public partial class VoxDocumentApiWrapper
     {
         [MoonSharpHidden] public RuntimeVoxDocument _Document;
         [MoonSharpHidden] private readonly RuntimeVoxDocument.WidgetViewState m_ViewState;
         [MoonSharpHidden] internal bool SuppressDirtyTracking { get; set; }
+        [MoonSharpHidden] private readonly Model m_ExternalSource;
 
 
         public VoxDocumentApiWrapper(
             RuntimeVoxDocument document,
             ModelWidget widget = null,
-            bool createWidgetOnRefresh = false)
+            bool createWidgetOnRefresh = false,
+            Model externalSource = null)
         {
             _Document = document;
+            m_ExternalSource = externalSource;
             m_ViewState = document.ViewState;
             if (widget != null)
             {
@@ -379,10 +382,12 @@ namespace TiltBrush
         [LuaDocsDescription("If true, model/palette edits automatically rebuild scene geometry")]
         public bool autoVisuals => m_ViewState.AutoVisuals;
 
-        [LuaDocsDescription("False after the widget is deleted or restored to external content")]
+        [LuaDocsDescription("False after the widget is deleted or its document is replaced")]
         public bool isValid => !m_ViewState.WidgetBacked ||
             !m_ViewState.WidgetWasCreated || (m_ViewState.Widget != null &&
-                ReferenceEquals(m_ViewState.Widget.EditableVoxDocument, _Document));
+                (ReferenceEquals(m_ViewState.Widget.EditableVoxDocument, _Document) ||
+                    (m_ExternalSource != null && m_ViewState.Widget.IsExternalVox &&
+                        m_ViewState.Widget.Model == m_ExternalSource)));
 
         [MoonSharpHidden]
         internal ModelWidget Widget => m_ViewState.Widget;
@@ -561,6 +566,9 @@ namespace TiltBrush
         [MoonSharpHidden]
         internal void OnDocumentMutated()
         {
+            if (m_ExternalSource != null && m_ViewState.Widget != null && m_ViewState.Widget.IsExternalVox &&
+                m_ViewState.Widget.Model == m_ExternalSource)
+                m_ViewState.Widget.AdoptEditableVoxDocument(_Document);
             m_ViewState.VisualsDirty = true;
             if (m_ViewState.WidgetBacked)
             {
@@ -655,7 +663,7 @@ namespace TiltBrush
 
     [LuaDocsDescription("Experimental editable VOX widget API")]
     [MoonSharpUserData]
-    public class VoxApiWrapper
+    public partial class VoxApiWrapper
     {
         [LuaDocsDescription("Finds an occupied voxel in a visible editable VOX widget. Returns nil if none is found.")]
         [LuaDocsExample("local model = Vox:FindModelAt(Brush.position)")]

@@ -24,6 +24,27 @@ namespace TiltBrush
     internal class TestRuntimeVoxDocument
     {
         [Test]
+        public void VoxelHitQuery_FindsOccupiedCellsWithCanvasScaleAndRejectsEmptySpace()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("hit", new Vector3Int(4, 4, 4));
+            model.AddOrUpdateVoxel(Vector3Int.one, 2);
+            var grid = TrTransform.TRS(new Vector3(3, 4, 5), Quaternion.identity, 2f);
+
+            Assert.IsTrue(VoxToolTarget.TryFindCell(model, grid, grid * Vector3.one,
+                0f, out var cell, out _));
+            Assert.AreEqual(Vector3Int.one, cell);
+            // A sphere can touch the occupied cell even when its center is in empty space.
+            Assert.IsTrue(VoxToolTarget.TryFindCell(model, grid, grid * new Vector3(1.6f, 1, 1),
+                0.21f, out cell, out _));
+            Assert.AreEqual(Vector3Int.one, cell);
+            Assert.IsFalse(VoxToolTarget.TryFindCell(model, grid, grid * new Vector3(1.6f, 1, 1),
+                0.19f, out _, out _));
+            Assert.AreEqual(1, model.Voxels.Count);
+            Assert.AreEqual(2, model.Voxels[Vector3Int.one]);
+        }
+
+        [Test]
         public void JoinVoxelGrids_AllowsSmallDifferencesAndRejectsResampling()
         {
             var target = TrTransform.identity;

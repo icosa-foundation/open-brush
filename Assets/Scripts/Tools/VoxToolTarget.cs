@@ -21,6 +21,12 @@ namespace TiltBrush
         }
 
         private readonly Dictionary<Model, RuntimeVoxDocument> m_Previews = new();
+        private readonly Func<ModelWidget, RuntimeVoxDocument> m_DocumentLookup;
+
+        internal VoxToolTarget(Func<ModelWidget, RuntimeVoxDocument> documentLookup = null)
+        {
+            m_DocumentLookup = documentLookup;
+        }
 
         internal void Clear() => m_Previews.Clear();
 
@@ -28,6 +34,7 @@ namespace TiltBrush
         {
             if (widget.EditableVoxDocument != null) return widget.EditableVoxDocument;
             if (!widget.IsExternalVox || !string.IsNullOrEmpty(widget.Subtree)) return null;
+            if (m_DocumentLookup != null) return m_DocumentLookup(widget);
             if (!m_Previews.TryGetValue(widget.Model, out var document))
             {
                 document = widget.Model.CreateEditableVoxDocument();

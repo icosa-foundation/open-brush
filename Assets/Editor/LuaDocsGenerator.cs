@@ -55,6 +55,7 @@ namespace TiltBrush
             LuaDocsRegistration.RegisterForDocs(typeof(VoxModelApiWrapper), false);
             LuaDocsRegistration.RegisterForDocs(typeof(VoxModelListApiWrapper), false);
             LuaDocsRegistration.RegisterForDocs(typeof(VoxMeshStatsApiWrapper), false);
+            LuaDocsRegistration.RegisterForDocs(typeof(VoxHitApiWrapper), false);
 
             // Add the per-frame Tool Script state to the Tool helper API registered above.
             var transformProp = new LuaDocsType { PrimitiveType = LuaDocsPrimitiveType.UserData, CustomTypeName = "Transform" };
