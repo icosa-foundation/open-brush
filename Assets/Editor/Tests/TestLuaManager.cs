@@ -20,6 +20,57 @@ namespace TiltBrush
     internal class TestLuaManager
     {
         [Test]
+        public void VoxelCrossStamp_PaintsSevenCellsOncePerTriggerAndSkipsPreview()
+        {
+            var script = new MoonSharp.Interpreter.Script();
+            script.DoString(@"
+                Brush = { triggerIsPressed = false, position = {}, colorRgb = {} }
+                Tool = { isPreview = false }
+                Vector3 = { New = function(self, x, y, z) return { x=x, y=y, z=z } end }
+                painted = 0
+                visualUpdates = 0
+                hitAvailable = true
+                local doc = { SetAutoVisuals = function(self, enabled)
+                    if enabled then visualUpdates = visualUpdates + 1 end
+                end }
+                local model = {
+                    isValid = true, document = doc,
+                    VoxelToCanvas = function(self, cell) return cell end,
+                    PaintAt = function(self, position, color)
+                        assert(color == Brush.colorRgb)
+                        painted = painted + 1
+                        return true
+                    end
+                }
+                Vox = { FindHit = function(self, position, radius)
+                    if hitAvailable then return { model=model, cell={ x=1, y=1, z=1 } } end
+                end }");
+            script.DoString(System.IO.File.ReadAllText(
+                "Assets/Resources/LuaScriptExamples/ToolScript.VoxelCrossStamp.lua"));
+            script.DoString(@"
+                Start()
+                Main()
+                assert(painted == 0)
+                Brush.triggerIsPressed = true
+                Tool.isPreview = true
+                Main()
+                assert(painted == 0)
+                Tool.isPreview = false
+                Main()
+                Main()
+                assert(painted == 7 and visualUpdates == 1)
+                Brush.triggerIsPressed = false
+                Main()
+                Brush.triggerIsPressed = true
+                hitAvailable = false
+                Main()
+                assert(painted == 7)
+                hitAvailable = true
+                Main()
+                assert(painted == 14 and visualUpdates == 2)");
+        }
+
+        [Test]
         public void VoxelScriptPreviewCannotChangeCellsPaletteOrModelStructure()
         {
             var document = new RuntimeVoxDocument();
