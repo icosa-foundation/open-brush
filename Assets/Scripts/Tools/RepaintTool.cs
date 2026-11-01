@@ -71,6 +71,16 @@ namespace TiltBrush
             InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.05f);
         }
 
+        override protected bool HandleNonGpuWidgetIntersections(Vector3 center_GS, float radius_GS)
+        {
+            // Batched GPU detection already supplies model widget hits. The CPU stroke
+            // paths need their own occupied-cell query for voxel recoloring.
+            if (!PointerManager.m_Instance.RecolorOn ||
+                (App.Config.m_UseBatchedBrushes && App.Config.m_GpuIntersectionEnabled)) return false;
+            return m_VoxTarget.TryFindCell(m_CurrentCanvas, center_GS, radius_GS, out var voxel) &&
+                HandleIntersectionWithWidget(voxel.Widget);
+        }
+
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
             // Rebrush, resize and jitter have no voxel equivalent.
