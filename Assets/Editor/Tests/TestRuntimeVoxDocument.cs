@@ -24,6 +24,49 @@ namespace TiltBrush
     internal class TestRuntimeVoxDocument
     {
         [Test]
+        public void RecolorAllVoxels_ChangesEveryGridAndRestoresWithSnapshot()
+        {
+            var document = new RuntimeVoxDocument();
+            var first = document.CreateModel("first", new Vector3Int(3, 3, 3));
+            var second = document.CreateModel("second", new Vector3Int(3, 3, 3));
+            first.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            second.AddOrUpdateVoxel(Vector3Int.one, 2);
+            var before = document.CaptureSnapshot();
+            var color = new Color32(12, 34, 56, 255);
+
+            Assert.IsTrue(document.RecolorAllVoxels(color));
+            Assert.IsTrue(first.TryGetPaletteIndex(Vector3Int.zero, out byte firstIndex));
+            Assert.IsTrue(second.TryGetPaletteIndex(Vector3Int.one, out byte secondIndex));
+            Assert.AreEqual(firstIndex, secondIndex);
+            Assert.AreEqual(color, document.Palette[firstIndex - 1]);
+            Assert.AreEqual(1, first.Voxels.Count);
+            Assert.AreEqual(1, second.Voxels.Count);
+            Assert.IsFalse(document.RecolorAllVoxels(color));
+
+            document.RestoreSnapshot(before);
+            Assert.AreEqual(1, first.Voxels[Vector3Int.zero]);
+            Assert.AreEqual(2, second.Voxels[Vector3Int.one]);
+        }
+
+        [Test]
+        public void RecolorAllVoxels_UsesDiffusePaintInsteadOfImportedMaterial()
+        {
+            var source = new RuntimeVoxDocument();
+            source.CreateModel("glass", Vector3Int.one).AddOrUpdateVoxel(Vector3Int.zero, 1);
+            var color = new Color32(12, 34, 56, 255);
+            source.ReplacePaletteEntry(1, color);
+            var document = RuntimeVoxDocument.FromBytes(AppendMainChild(source.ToVoxBytes(), "MATL",
+                BuildMaterialContent(1, new[] { ("_type", "_glass"), ("_rough", "0.2") })));
+
+            Assert.IsTrue(document.RecolorAllVoxels(color));
+            byte index = document.Models[0].Voxels[Vector3Int.zero];
+            Assert.AreNotEqual(1, index);
+            Assert.AreEqual(color, document.Palette[index - 1]);
+            Assert.IsFalse(document.Materials.ContainsKey(index));
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Glass, document.Materials[1].Type);
+        }
+
+        [Test]
         public void RuntimeModel_AddMoveSetRemoveVoxel_Works()
         {
             var document = new RuntimeVoxDocument();

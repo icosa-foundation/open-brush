@@ -1,6 +1,7 @@
 // Copyright 2026 The Open Brush Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -33,6 +34,30 @@ namespace TiltBrush
                 m_Previews.Add(widget.Model, document);
             }
             return document;
+        }
+
+        // Convert library content only after an edit succeeds, and undo the conversion
+        // together with the edit. Read-only targeting never dirties a sketch.
+        internal static bool Edit(ModelWidget widget, RuntimeVoxDocument preview,
+            Func<RuntimeVoxDocument, bool> edit)
+        {
+            bool external = widget.IsExternalVox;
+            var document = external ? preview.CloneDocument() : preview;
+            var before = document.CaptureSnapshot();
+            if (!edit(document))
+            {
+                document.RestoreSnapshot(before);
+                return false;
+            }
+            EmbedVoxModelCommand embedding = null;
+            if (external)
+            {
+                embedding = new EmbedVoxModelCommand(widget, document);
+                embedding.Redo();
+            }
+            var command = new ModifyVoxDocumentCommand(widget, before, document.CaptureSnapshot(), embedding);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(embedding ?? (BaseCommand)command);
+            return true;
         }
 
         internal bool TryFindCell(CanvasScript canvas, Vector3 center_GS, float radius_GS, out Hit hit)
