@@ -24,6 +24,27 @@ namespace TiltBrush
     internal class TestRuntimeVoxDocument
     {
         [Test]
+        public void RemoveConnectedRegion_RemovesFaceNeighborsButKeepsDiagonalAndOtherGrid()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("regions", new Vector3Int(4, 4, 4));
+            model.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            model.AddOrUpdateVoxel(Vector3Int.right, 2);
+            model.AddOrUpdateVoxel(new Vector3Int(2, 1, 0), 1);
+            var other = document.CreateModel("other", Vector3Int.one);
+            other.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            var before = document.CaptureSnapshot();
+
+            Assert.IsTrue(document.RemoveConnectedRegion(model, Vector3Int.zero));
+            Assert.AreEqual(1, model.Voxels.Count);
+            Assert.IsTrue(model.Voxels.ContainsKey(new Vector3Int(2, 1, 0)));
+            Assert.AreEqual(1, other.Voxels.Count);
+            Assert.IsFalse(document.RemoveConnectedRegion(model, Vector3Int.zero));
+            document.RestoreSnapshot(before);
+            Assert.AreEqual(3, model.Voxels.Count);
+        }
+
+        [Test]
         public void RecolorAllVoxels_ChangesEveryGridAndRestoresWithSnapshot()
         {
             var document = new RuntimeVoxDocument();
