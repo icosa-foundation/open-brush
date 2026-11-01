@@ -1377,9 +1377,11 @@ namespace TiltBrush
 
         public ToolScriptExecutionResult DoToolScript(
             string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS,
-            bool quickSnapPressed = false)
+            bool quickSnapPressed = false, bool isPreview = false)
         {
-            var pathWrapper = CallActiveToolScript(fnName);
+            PathListApiWrapper pathWrapper;
+            using (VoxScriptEditGroup.BeginExecution(isPreview))
+                pathWrapper = CallActiveToolScript(fnName);
             if (pathWrapper == null)
             {
                 SetLatestToolScriptControlPoints(null, ScriptCoordSpace.Canvas);

@@ -24,7 +24,11 @@ namespace TiltBrush
         private readonly ModelWidget m_Widget;
         private readonly RuntimeVoxDocument m_Document;
         private readonly RuntimeVoxDocument.Snapshot m_Before;
-        private readonly RuntimeVoxDocument.Snapshot m_After;
+        private RuntimeVoxDocument.Snapshot m_After;
+        private readonly bool? m_BeforeShowing;
+        private bool? m_AfterShowing;
+        private readonly TrTransform? m_BeforeTransform;
+        private TrTransform? m_AfterTransform;
         private readonly RuntimeVoxDocument.RuntimeModel m_Model;
         private readonly Dictionary<Vector3Int, byte> m_BeforeCells;
         private readonly Dictionary<Vector3Int, byte> m_AfterCells;
@@ -35,13 +39,17 @@ namespace TiltBrush
             ModelWidget widget,
             RuntimeVoxDocument.Snapshot before,
             RuntimeVoxDocument.Snapshot after,
-            BaseCommand parent = null)
+            BaseCommand parent = null, bool? beforeShowing = null, TrTransform? beforeTransform = null)
             : base(parent)
         {
             m_Widget = widget;
             m_Document = widget.EditableVoxDocument;
             m_Before = before;
             m_After = after;
+            m_BeforeShowing = beforeShowing;
+            m_AfterShowing = beforeShowing;
+            m_BeforeTransform = beforeTransform;
+            m_AfterTransform = beforeTransform;
         }
 
         public ModifyVoxDocumentCommand(
@@ -62,16 +70,26 @@ namespace TiltBrush
         public override bool NeedsSave => true;
         public override bool IsAvailable => m_Widget != null;
 
+        internal void UpdateEndState(RuntimeVoxDocument.Snapshot snapshot, bool? showing = null,
+            TrTransform? transform = null)
+        {
+            if (snapshot == null || !ReferenceEquals(snapshot.Owner, m_Document))
+                throw new ArgumentException("The edit snapshot belongs to another VOX document.", nameof(snapshot));
+            m_After = snapshot;
+            m_AfterShowing = showing;
+            m_AfterTransform = transform;
+        }
+
         protected override void OnUndo()
         {
             if (m_BeforeCells != null) ApplyCells(m_BeforeCells, m_BeforePalette);
-            else Apply(m_Before);
+            else Apply(m_Before, m_BeforeShowing, m_BeforeTransform);
         }
 
         protected override void OnRedo()
         {
             if (m_AfterCells != null) ApplyCells(m_AfterCells, m_AfterPalette);
-            else Apply(m_After);
+            else Apply(m_After, m_AfterShowing, m_AfterTransform);
         }
 
         private void ApplyCells(Dictionary<Vector3Int, byte> cells, Color32[] palette)
@@ -94,7 +112,7 @@ namespace TiltBrush
             SaveLoadScript.m_Instance?.SketchChanged();
         }
 
-        private void Apply(RuntimeVoxDocument.Snapshot snapshot)
+        private void Apply(RuntimeVoxDocument.Snapshot snapshot, bool? showing, TrTransform? transform)
         {
             if (m_Widget == null || !ReferenceEquals(m_Widget.EditableVoxDocument, m_Document))
             {
@@ -102,6 +120,23 @@ namespace TiltBrush
             }
 
             m_Document.RestoreSnapshot(snapshot);
+            if (showing.HasValue && m_Widget.Showing != showing.Value)
+            {
+                // Showing a model normally starts its import animation at the default
+                // size. Undo restores visibility at the model's saved placement instead.
+                if (showing.Value)
+                {
+                    m_Widget.gameObject.SetActive(true);
+                    m_Widget.RestoreFromToss();
+                }
+                else m_Widget.Show(false, false);
+                if (showing.Value && transform.HasValue)
+                {
+                    m_Widget.transform.localPosition = transform.Value.translation;
+                    m_Widget.transform.localRotation = transform.Value.rotation;
+                    m_Widget.SetSignedWidgetSize(transform.Value.scale);
+                }
+            }
             if (m_Widget.Showing && m_Widget.gameObject.activeInHierarchy)
             {
                 m_Widget.RefreshEditableVoxMeshes();

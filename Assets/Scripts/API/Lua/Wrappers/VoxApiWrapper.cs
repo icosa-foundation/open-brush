@@ -168,8 +168,11 @@ namespace TiltBrush
             {
                 return false;
             }
-            byte paletteIndex = m_Document.GetOrAddPaletteColor(color);
-            return paletteIndex != 0 && SetVoxel(cell.x, cell.y, cell.z, paletteIndex);
+            return m_DocumentWrapper.Mutate(() =>
+            {
+                byte paletteIndex = m_Document.GetOrAddPaletteColor(color);
+                return paletteIndex != 0 && _Model.AddOrUpdateVoxel(cell, paletteIndex);
+            });
         }
 
         [LuaDocsDescription("Changes the color of an existing voxel at a canvas position. Returns false if the cell is empty, unchanged, or the palette is full; never creates a voxel.")]
@@ -181,8 +184,11 @@ namespace TiltBrush
             {
                 return false;
             }
-            byte paletteIndex = m_Document.GetOrAddPaletteColor(color);
-            return paletteIndex != 0 && SetVoxel(cell.x, cell.y, cell.z, paletteIndex);
+            return m_DocumentWrapper.Mutate(() =>
+            {
+                byte paletteIndex = m_Document.GetOrAddPaletteColor(color);
+                return paletteIndex != 0 && _Model.AddOrUpdateVoxel(cell, paletteIndex);
+            });
         }
 
         [LuaDocsDescription("Erases the voxel at a canvas position. Returns false if the cell is empty or outside the model.")]
@@ -200,58 +206,43 @@ namespace TiltBrush
         [LuaDocsExample("model:SetVoxel(1,2,3,5)")]
         public bool SetVoxel(int x, int y, int z, int paletteIndex)
         {
-            bool changed = _Model.AddOrUpdateVoxel(new Vector3Int(x, y, z), (byte)Mathf.Clamp(paletteIndex, 0, 255));
-            if (changed)
-            {
-                m_DocumentWrapper?.OnDocumentMutated();
-            }
-
-            return changed;
+            return m_DocumentWrapper.Mutate(() =>
+                _Model.AddOrUpdateVoxel(new Vector3Int(x, y, z), (byte)Mathf.Clamp(paletteIndex, 0, 255)));
         }
 
         [LuaDocsDescription("Removes one voxel")]
         public bool RemoveVoxel(int x, int y, int z)
         {
-            bool changed = _Model.RemoveVoxel(new Vector3Int(x, y, z));
-            if (changed)
-            {
-                m_DocumentWrapper?.OnDocumentMutated();
-            }
-
-            return changed;
+            return m_DocumentWrapper.Mutate(() => _Model.RemoveVoxel(new Vector3Int(x, y, z)));
         }
 
         [LuaDocsDescription("Detaches this placed model from any shared voxel definition")]
         public bool MakeUnique()
         {
-            m_DocumentWrapper.PrepareStructuralEdit();
-            bool changed = m_Document.MakeModelUnique(_Model);
-            if (changed) m_DocumentWrapper.OnDocumentMutated();
-            return changed;
+            return m_DocumentWrapper.Mutate(() =>
+            {
+                m_DocumentWrapper.PrepareStructuralEdit();
+                return m_Document.MakeModelUnique(_Model);
+            });
         }
 
         [LuaDocsDescription("Removes this placed model from the document; other instances are retained")]
         public bool Remove()
         {
-            m_DocumentWrapper.PrepareStructuralEdit();
-            bool changed = m_Document.RemoveModel(_Model);
-            if (changed) m_DocumentWrapper.OnDocumentMutated();
-            return changed;
+            return m_DocumentWrapper.Mutate(() =>
+            {
+                m_DocumentWrapper.PrepareStructuralEdit();
+                return m_Document.RemoveModel(_Model);
+            });
         }
 
         [LuaDocsDescription("Moves one voxel")]
         public bool MoveVoxel(int fromX, int fromY, int fromZ, int toX, int toY, int toZ, bool overwrite = true)
         {
-            bool changed = _Model.MoveVoxel(
+            return m_DocumentWrapper.Mutate(() => _Model.MoveVoxel(
                 new Vector3Int(fromX, fromY, fromZ),
                 new Vector3Int(toX, toY, toZ),
-                overwrite);
-            if (changed)
-            {
-                m_DocumentWrapper?.OnDocumentMutated();
-            }
-
-            return changed;
+                overwrite));
         }
 
         [LuaDocsDescription("Alias for SetVoxel, intended for quick interactive editing")]
@@ -330,6 +321,7 @@ namespace TiltBrush
         [MoonSharpHidden] private readonly RuntimeVoxDocument.WidgetViewState m_ViewState;
         [MoonSharpHidden] internal bool SuppressDirtyTracking { get; set; }
         [MoonSharpHidden] private readonly Model m_ExternalSource;
+        [MoonSharpHidden] private bool m_RecordedMutation;
 
 
         public VoxDocumentApiWrapper(
@@ -404,31 +396,31 @@ namespace TiltBrush
         [LuaDocsExample("local m = doc:AddModel(16,16,16,'model_1')")]
         public VoxModelApiWrapper AddModel(int sizeX, int sizeY, int sizeZ, string name = null)
         {
-            PrepareStructuralEdit();
-            string modelName = string.IsNullOrWhiteSpace(name)
-                ? $"model_{_Document.Models.Count}"
-                : name;
-            RuntimeVoxDocument.RuntimeModel model = _Document.CreateModel(modelName, new Vector3Int(sizeX, sizeY, sizeZ));
-            OnDocumentMutated();
-            return new VoxModelApiWrapper(_Document, model, this);
+            RuntimeVoxDocument.RuntimeModel model = null;
+            Mutate(() =>
+            {
+                PrepareStructuralEdit();
+                string modelName = string.IsNullOrWhiteSpace(name) ? $"model_{_Document.Models.Count}" : name;
+                model = _Document.CreateModel(modelName, new Vector3Int(sizeX, sizeY, sizeZ));
+                return true;
+            });
+            return model == null ? null : new VoxModelApiWrapper(_Document, model, this);
         }
 
         [LuaDocsDescription("Sets one palette entry")]
         public bool SetPalette(int paletteIndex, int r, int g, int b, int a = 255)
         {
-            RequireValidDocument();
             var color = new Color32(
                 (byte)Mathf.Clamp(r, 0, 255),
                 (byte)Mathf.Clamp(g, 0, 255),
                 (byte)Mathf.Clamp(b, 0, 255),
                 (byte)Mathf.Clamp(a, 0, 255));
-            bool changed = _Document.ReplacePaletteEntry(paletteIndex, color);
-            if (changed)
+            return Mutate(() =>
             {
-                OnDocumentMutated();
-            }
-
-            return changed;
+                if (paletteIndex >= 1 && paletteIndex <= byte.MaxValue && _Document.Palette[paletteIndex - 1].Equals(color))
+                    return false;
+                return _Document.ReplacePaletteEntry(paletteIndex, color);
+            });
         }
 
         [LuaDocsDescription("Exports this document as base64 VOX bytes")]
@@ -440,6 +432,7 @@ namespace TiltBrush
         public void Show(bool optimized = true)
         {
             RequireValidDocument();
+            if (VoxScriptEditGroup.IsPreview) return;
             m_ViewState.OptimizedMesh = optimized;
             if (m_ViewState.WidgetBacked)
             {
@@ -474,6 +467,7 @@ namespace TiltBrush
         [LuaDocsExample("doc:ShowAt(0, 0, 0, true)")]
         public void ShowAt(float x, float y, float z, bool optimized = true)
         {
+            if (VoxScriptEditGroup.IsPreview) return;
             m_ViewState.OptimizedMesh = optimized;
             var transform = GetSceneTransform();
             transform.translation = new Vector3(x, y, z);
@@ -486,6 +480,7 @@ namespace TiltBrush
         public void SetTransform(TrTransform transform)
         {
             RequireValidDocument();
+            if (VoxScriptEditGroup.IsPreview) return;
             if (transform.scale <= 0 || float.IsNaN(transform.scale) || float.IsInfinity(transform.scale))
             {
                 throw new ArgumentOutOfRangeException(nameof(transform), "VOX scene scale must be positive and finite.");
@@ -523,6 +518,7 @@ namespace TiltBrush
         [LuaDocsExample("doc:SetAutoVisuals(true, true)")]
         public void SetAutoVisuals(bool enabled = true, bool optimized = true)
         {
+            if (VoxScriptEditGroup.IsPreview) return;
             m_ViewState.VisualsDirty |= m_ViewState.OptimizedMesh != optimized;
             m_ViewState.AutoVisuals = enabled;
             m_ViewState.OptimizedMesh = optimized;
@@ -547,6 +543,7 @@ namespace TiltBrush
         public void Hide()
         {
             RequireValidDocument();
+            if (VoxScriptEditGroup.IsPreview) return;
             if (m_ViewState.Widget == null || !m_ViewState.Widget.Showing) return;
             m_ViewState.WidgetTransform = GetSceneTransform();
             m_ViewState.Widget.Show(false, false);
@@ -556,7 +553,7 @@ namespace TiltBrush
         [MoonSharpHidden]
         private void MarkWidgetVisibilityChanged()
         {
-            if (!SuppressDirtyTracking)
+            if (!SuppressDirtyTracking && !m_RecordedMutation && !(ApiManager.Instance?.HasVoxEdit(_Document) ?? false))
             {
                 SketchMemoryScript.m_Instance?.MarkUnrecordedChange();
             }
@@ -564,7 +561,7 @@ namespace TiltBrush
         }
 
         [MoonSharpHidden]
-        internal void OnDocumentMutated()
+        internal void OnDocumentMutated(bool undoRecorded = false)
         {
             if (m_ExternalSource != null && m_ViewState.Widget != null && m_ViewState.Widget.IsExternalVox &&
                 m_ViewState.Widget.Model == m_ExternalSource)
@@ -572,12 +569,13 @@ namespace TiltBrush
             m_ViewState.VisualsDirty = true;
             if (m_ViewState.WidgetBacked)
             {
-                if (!SuppressDirtyTracking)
+                if (!SuppressDirtyTracking && !undoRecorded)
                 {
                     SketchMemoryScript.m_Instance?.MarkUnrecordedChange();
                 }
                 SaveLoadScript.m_Instance?.SketchChanged();
-                // Native gestures record their own lifecycle and retain an empty drawing grid.
+                // Native gestures retain an empty grid. Scripted undo also records
+                // visibility, so it can preserve the scripting API's hide-when-empty behavior.
                 if (!SuppressDirtyTracking && !_Document.Models.Any(model => model.Voxels.Count > 0))
                 {
                     m_ViewState.Widget?.Hide();
@@ -585,7 +583,10 @@ namespace TiltBrush
             }
             if (m_ViewState.AutoVisuals)
             {
-                Refresh();
+                bool previous = m_RecordedMutation;
+                m_RecordedMutation |= undoRecorded;
+                try { Refresh(); }
+                finally { m_RecordedMutation = previous; }
             }
         }
 

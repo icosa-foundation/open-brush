@@ -20,6 +20,33 @@ namespace TiltBrush
     internal class TestLuaManager
     {
         [Test]
+        public void VoxelScriptPreviewCannotChangeCellsPaletteOrModelStructure()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("preview", UnityEngine.Vector3Int.one);
+            var wrapper = new VoxDocumentApiWrapper(document);
+            var voxel = wrapper.Model();
+            var originalColor = document.Palette[0];
+
+            using (VoxScriptEditGroup.BeginExecution(preview: true))
+            {
+                Assert.IsFalse(voxel.SetVoxel(0, 0, 0, 1));
+                Assert.IsFalse(wrapper.SetPalette(1, 12, 34, 56));
+                Assert.IsNull(wrapper.AddModel(2, 2, 2));
+                Assert.IsFalse(voxel.Remove());
+                // A nested final invocation must not escape an outer preview.
+                using (VoxScriptEditGroup.BeginExecution(preview: false))
+                    Assert.IsFalse(voxel.SetVoxel(0, 0, 0, 1));
+            }
+
+            Assert.AreEqual(0, model.Voxels.Count);
+            Assert.AreEqual(1, document.Models.Count);
+            Assert.AreEqual(originalColor, document.Palette[0]);
+            Assert.IsTrue(voxel.SetVoxel(0, 0, 0, 1));
+            Assert.AreEqual(1, model.Voxels.Count);
+        }
+
+        [Test]
         public void FindFirstDrawableToolScriptPathIndexSkipsShortPaths()
         {
             var paths = new List<List<TrTransform>>
