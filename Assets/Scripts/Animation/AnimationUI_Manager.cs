@@ -2683,9 +2683,10 @@ namespace TiltBrush.FrameAnimation
                 }
             }
 
+            var oldGroupToNewGroup = new Dictionary<int, int>();
             foreach (var sg in strokeGroups)
             {
-                GroupManager.MoveStrokesToNewGroups(sg.Value, null);
+                GroupManager.MoveStrokesToNewGroups(sg.Value, oldGroupToNewGroup);
             }
 
             foreach (GrabWidget widget in oldCanvas.GetComponentsInChildren<GrabWidget>(true))
@@ -2699,7 +2700,20 @@ namespace TiltBrush.FrameAnimation
                 GrabWidget clone = widget.Clone();
                 clone.SetCanvas(newCanvas);
                 clone.LocalTransform = localTransform;
-                clone.Group = widget.Group;
+                if (widget.Group != SketchGroupTag.None)
+                {
+                    int oldGroup = widget.Group.GetHashCode();
+                    if (!oldGroupToNewGroup.TryGetValue(oldGroup, out int newGroup))
+                    {
+                        newGroup = App.GroupManager.NewUnusedGroup().GetHashCode();
+                        oldGroupToNewGroup.Add(oldGroup, newGroup);
+                    }
+                    clone.Group = new SketchGroupTag((uint)newGroup);
+                }
+                else
+                {
+                    clone.Group = SketchGroupTag.None;
+                }
                 clone.SetPinned(widget.Pinned, fromSave: true);
             }
 
