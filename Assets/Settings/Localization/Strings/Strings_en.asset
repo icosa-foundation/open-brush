@@ -4036,11 +4036,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 559927936423649280
-    m_Localized: New voxel model
+    m_Localized: New voxel
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118272
-    m_Localized: Press the trigger to draw a new model. Its voxel size matches the snap grid when snapping is on, or the last voxel model you interacted with when snapping is off.
+    m_Localized: 
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118273
@@ -4048,7 +4048,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 559927936524312576
-    m_Localized: Align voxel axes and snap the model into place. Cell size matches the active snap grid, or the default grid size when snapping is off.
+    m_Localized: Align the current model with your grid settings
     m_Metadata:
       m_Items: []
   references:
