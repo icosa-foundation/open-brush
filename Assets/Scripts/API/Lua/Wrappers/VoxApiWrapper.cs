@@ -494,9 +494,16 @@ namespace TiltBrush
                 {
                     return;
                 }
-                m_ViewState.Widget.SetSignedWidgetSize(transform.scale);
-                transform.scale = m_ViewState.Widget.GetSignedWidgetSize();
-                App.Scene.ActiveCanvas.AsCanvas[m_ViewState.Widget.transform] = transform;
+                var widget = m_ViewState.Widget;
+                var canvas = App.Scene.ActiveCanvas.AsCanvas;
+                // The widget stores its size relative to its parent, which may be a
+                // scaled SelectionCanvas rather than the active drawing canvas.
+                float parentScale = canvas[widget.transform.parent].scale;
+                widget.SetSignedWidgetSize(transform.scale / parentScale);
+                // Apply the actual (possibly clamped) size back in canvas space so
+                // the transform and stored size still agree when deselecting.
+                transform.scale = widget.GetSignedWidgetSize() * parentScale;
+                canvas[widget.transform] = transform;
                 m_ViewState.WidgetTransform = GetSceneTransform();
                 if (!SuppressDirtyTracking)
                 {
