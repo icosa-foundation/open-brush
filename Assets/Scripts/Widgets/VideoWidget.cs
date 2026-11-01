@@ -114,12 +114,8 @@ namespace TiltBrush
             // store off the video state so that if the widget gets shown again it will reset to that.
             if (VideoController != null)
             {
-                m_InitialState = new VideoState
-                {
-                    Paused = !VideoController.Playing,
-                    Time = VideoController.Time,
-                    Volume = VideoController.Volume,
-                };
+                m_InitialState = GetPlaybackState();
+                ImageTexture = m_NoImageTexture;
                 VideoController.Dispose();
                 VideoController = null;
             }
@@ -138,32 +134,40 @@ namespace TiltBrush
             {
                 return;
             }
-            // If instances of the video already exist, don't override with new state.
-            if (m_Video.HasInstances)
+            VideoController = m_Video.CreateController();
+            if (m_InitialState != null)
             {
+                VideoController.Volume = m_InitialState.Volume;
+                if (m_InitialState.Time.HasValue) VideoController.Time = m_InitialState.Time.Value;
+                VideoController.Playing = !m_InitialState.Paused;
                 m_InitialState = null;
             }
-            VideoController = m_Video.CreateController();
             VideoController.OnVideoInitialized += OnVideoInitialized;
+        }
+
+        private VideoState GetPlaybackState()
+        {
+            if (VideoController != null)
+            {
+                return new VideoState
+                {
+                    Paused = !VideoController.Playing,
+                    Time = VideoController.Time,
+                    Volume = VideoController.Volume,
+                };
+            }
+            return m_InitialState == null ? null : new VideoState
+            {
+                Paused = m_InitialState.Paused,
+                Time = m_InitialState.Time,
+                Volume = m_InitialState.Volume,
+            };
         }
 
         private void OnVideoInitialized()
         {
             ImageTexture = VideoController.VideoTexture;
             UpdateScale();
-            if (m_InitialState != null)
-            {
-                VideoController.Volume = m_InitialState.Volume;
-                if (m_InitialState.Time.HasValue)
-                {
-                    VideoController.Time = m_InitialState.Time.Value;
-                }
-                if (m_InitialState.Paused)
-                {
-                    VideoController.Playing = false;
-                }
-                m_InitialState = null;
-            }
         }
 
         public static VideoWidget FromTiltVideo(TiltVideo tiltVideo)
@@ -180,7 +184,6 @@ namespace TiltBrush
                 ControllerConsoleScript.m_Instance.AddNewLine(
                     $"Could not find video {App.VideoLibraryPath()}\\{tiltVideo.FilePath}.");
             }
-            videoWidget.SetVideo(video);
             videoWidget.m_InitialState = new VideoState
             {
                 Volume = tiltVideo.Volume,
@@ -190,6 +193,7 @@ namespace TiltBrush
             {
                 videoWidget.m_InitialState.Time = tiltVideo.Time;
             }
+            videoWidget.SetVideo(video);
             videoWidget.SetSignedWidgetSize(tiltVideo.Transform.scale);
             videoWidget.Show(bShow: true, bPlayAudio: false);
             videoWidget.transform.localPosition = tiltVideo.Transform.translation;
@@ -218,6 +222,7 @@ namespace TiltBrush
             clone.m_LoadingFromSketch = true; // prevents intro animation
             clone.m_TransitionScale = 1.0f;
             clone.transform.parent = transform.parent;
+            clone.m_InitialState = GetPlaybackState();
             clone.SetVideo(m_Video);
             clone.SetSignedWidgetSize(size);
             clone.Show(bShow: true, bPlayAudio: false);

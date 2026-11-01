@@ -173,10 +173,7 @@ namespace TiltBrush
         public void OnVideoWidgetActivated(VideoWidget widget)
         {
             m_SelectedVideoWidget = widget;
-            if (widget.VideoController != null)
-            {
-                m_PreviewMaterial.mainTexture = widget.VideoController.VideoTexture;
-            }
+            m_PreviewMaterial.mainTexture = widget.VideoController?.VideoTexture ?? Texture2D.blackTexture;
             m_Preview.transform.localScale = new Vector3(widget.Video.Aspect, 1f, 1f);
             m_Scrubber.VideoWidget = widget;
             RefreshVideoControlsVisibility();
@@ -185,6 +182,10 @@ namespace TiltBrush
         public override void UpdateTab()
         {
             base.UpdateTab();
+            // Preparation and hide/undo can replace the selected instance's texture asynchronously.
+            m_PreviewMaterial.mainTexture = SelectedVideo?.VideoTexture ?? Texture2D.blackTexture;
+            if (m_SelectedVideoWidget != null)
+                m_Preview.transform.localScale = new Vector3(m_SelectedVideoWidget.Video.Aspect, 1f, 1f);
             if (!m_AllIconTexturesAssigned)
             {
                 m_AllIconTexturesAssigned = true;
