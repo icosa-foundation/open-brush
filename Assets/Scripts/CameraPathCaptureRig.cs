@@ -215,6 +215,7 @@ namespace TiltBrush
                 var currentPath = WidgetManager.m_Instance.GetCurrentCameraPath();
                 m_Object.SetActive(
                     currentPath != null &&
+                    !currentPath.WidgetScript.Path.belongsToAnimation &&
                     // Current path's layer is visible.
                     currentPath.m_WidgetObject.activeInHierarchy &&
                     // Camera paths in general are visible

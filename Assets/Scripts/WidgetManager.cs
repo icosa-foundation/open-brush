@@ -620,7 +620,8 @@ namespace TiltBrush
                 if (m_CameraPathsVisible && m_CurrentCameraPath != null)
                 {
                     CameraPathWidget cpw = m_CurrentCameraPath.WidgetScript;
-                    return (cpw != null) && cpw.gameObject.activeSelf && cpw.Path.NumPositionKnots > 1;
+                    return (cpw != null) && !cpw.Path.belongsToAnimation &&
+                        cpw.gameObject.activeSelf && cpw.Path.NumPositionKnots > 1;
                 }
             }
             return false;

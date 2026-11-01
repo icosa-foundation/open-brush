@@ -443,7 +443,6 @@ namespace TiltBrush
 
         override protected void OnUserBeginInteracting()
         {
-            App.Scene.captureRig.SetActive(!m_Path.belongsToAnimation);
             GrabWidgetData data = WidgetManager.m_Instance.GetCurrentCameraPath();
             m_EatInteractingInput = (data == null) ? false : data.m_WidgetScript != this;
             WidgetManager.m_Instance.SetCurrentCameraPath(this);
