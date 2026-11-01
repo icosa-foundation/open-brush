@@ -9,7 +9,7 @@ namespace TiltBrush
 {
     // Tool-local, read-only previews avoid reparsing external VOX files every frame.
     // Editing callers clone an external preview before adopting it into a widget.
-    internal sealed class VoxToolTarget
+    internal sealed partial class VoxToolTarget
     {
         internal struct Hit
         {

@@ -3093,6 +3093,12 @@ function Vox:NewWidget(sizeX, sizeY, sizeZ) end
 ---@return VoxHit #
 function Vox:FindHit(canvasPosition, radius) end
 
+---@param origin Vector3
+---@param direction Vector3
+---@param maxDistance? number
+---@return VoxRayHit #
+function Vox:Raycast(origin, direction, maxDistance) end
+
 
 
 
@@ -3103,6 +3109,20 @@ function Vox:FindHit(canvasPosition, radius) end
 ---@field paletteIndex number The cell's palette index, from 1 to 255
 ---@field color Color The cell's RGB color and alpha from its palette entry
 VoxHit = {}
+
+
+
+---@class VoxRayHit
+---@field point Vector3 The surface intersection point in canvas coordinates
+---@field normal Vector3 The outward unit surface normal in canvas coordinates
+---@field face Vector3 The outward face direction in the model's local voxel grid: one of the six signed axis vectors
+---@field distance number The distance from the ray origin to the surface, in canvas units
+---@field model VoxModel The editable model containing this voxel; check model.isValid before reusing a stored hit
+---@field cell Vector3 Integer cell coordinates in the model's local voxel grid
+---@field position Vector3 The center of this cell in canvas coordinates
+---@field paletteIndex number The cell's palette index, from 1 to 255
+---@field color Color The cell's RGB color and alpha from its palette entry
+VoxRayHit = {}
 
 
 
