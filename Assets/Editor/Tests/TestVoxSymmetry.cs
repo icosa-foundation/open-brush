@@ -9,6 +9,94 @@ namespace TiltBrush
 {
     internal class TestVoxSymmetry
     {
+        [Test]
+        public void StraightEdgePreviewReplacesEndpointWithoutLeavingACurvedTrail()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("line", Vector3Int.one * 16);
+            var copy = Copy(new Vector3Int(5, 5, 1), new Color32(220, 10, 20, 255));
+            copy.Last = Vector3Int.one;
+            copy.HasLast = true;
+            var edits = new VoxSymmetryEdits();
+            var preview = new Dictionary<Vector3Int, Color32>();
+            byte[] before = document.ToVoxBytes();
+            edits.CollectPreview(model, new[] { copy }, new VoxBrushFootprint(0), VoxelTool.EditMode.Add, true, preview);
+            Assert.IsTrue(preview.ContainsKey(new Vector3Int(2, 2, 1)));
+            copy.Center = new Vector3Int(5, 1, 1);
+            edits.CollectPreview(model, new[] { copy }, new VoxBrushFootprint(0), VoxelTool.EditMode.Add, true, preview);
+            Assert.IsFalse(preview.ContainsKey(new Vector3Int(2, 2, 1)));
+            CollectionAssert.AreEqual(before, document.ToVoxBytes());
+            Assert.IsTrue(edits.Apply(document, model, new[] { copy }, new VoxBrushFootprint(0), VoxelTool.EditMode.Add, true).Changed);
+            Assert.AreEqual(5, model.Voxels.Count);
+            for (int x = 1; x <= 5; ++x) Assert.IsTrue(model.Voxels.ContainsKey(new Vector3Int(x, 1, 1)));
+        }
+
+        [Test]
+        public void StraightEdgeMirrorCopiesKeepTheirOwnAnchors()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("mirrored lines", Vector3Int.one * 32);
+            var copies = new[] { Copy(new Vector3Int(5, 1, 1), new Color32(220, 10, 20, 255)),
+                Copy(new Vector3Int(15, 1, 1), new Color32(10, 20, 220, 255)) };
+            copies[0].Last = Vector3Int.one;
+            copies[1].Last = new Vector3Int(11, 1, 1);
+            foreach (var copy in copies) copy.HasLast = true;
+            var edits = new VoxSymmetryEdits();
+            var preview = new Dictionary<Vector3Int, Color32>();
+            edits.CollectPreview(model, copies, new VoxBrushFootprint(0), VoxelTool.EditMode.Add, true, preview);
+            Assert.AreEqual(10, preview.Count);
+            Assert.AreEqual(0, model.Voxels.Count);
+            edits.Apply(document, model, copies, new VoxBrushFootprint(0), VoxelTool.EditMode.Add, true);
+            Assert.AreEqual(10, model.Voxels.Count);
+            for (int x = 6; x <= 10; ++x) Assert.IsFalse(model.Voxels.ContainsKey(new Vector3Int(x, 1, 1)));
+        }
+
+        [Test]
+        public void StraightEdgePaintAndErasePreviewDoNotModifyDiscardedPositions()
+        {
+            foreach (var mode in new[] { VoxelTool.EditMode.Paint, VoxelTool.EditMode.Erase })
+            {
+                var document = new RuntimeVoxDocument();
+                var model = document.CreateModel("line", Vector3Int.one * 16);
+                for (int x = 1; x <= 5; ++x) model.AddOrUpdateVoxel(new Vector3Int(x, 1, 1), 1);
+                var untouched = new Vector3Int(2, 2, 1);
+                model.AddOrUpdateVoxel(untouched, 1);
+                var copy = Copy(new Vector3Int(5, 5, 1), new Color32(10, 220, 20, 255));
+                copy.Last = Vector3Int.one;
+                copy.HasLast = true;
+                var edits = new VoxSymmetryEdits();
+                var preview = new Dictionary<Vector3Int, Color32>();
+                byte[] before = document.ToVoxBytes();
+                edits.CollectPreview(model, new[] { copy }, new VoxBrushFootprint(0), mode, true, preview);
+                copy.Center = new Vector3Int(5, 1, 1);
+                edits.CollectPreview(model, new[] { copy }, new VoxBrushFootprint(0), mode, true, preview);
+                CollectionAssert.AreEqual(before, document.ToVoxBytes());
+                Assert.IsFalse(preview.ContainsKey(untouched));
+                Assert.AreEqual(5, preview.Count);
+                edits.Apply(document, model, new[] { copy }, new VoxBrushFootprint(0), mode, false);
+                Assert.AreEqual(mode == VoxelTool.EditMode.Erase ? 1 : 6, model.Voxels.Count);
+                Assert.AreEqual(1, model.Voxels[untouched]);
+            }
+        }
+
+        [Test]
+        public void StraightEdgePreviewChecksTheWholeLineAgainstFormatLimits()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("limits", Vector3Int.one * 16);
+            var copy = Copy(new Vector3Int(400, 1, 1), new Color32(220, 10, 20, 255));
+            copy.Last = Vector3Int.one;
+            copy.HasLast = true;
+            var edits = new VoxSymmetryEdits();
+            var preview = new Dictionary<Vector3Int, Color32>();
+            edits.CollectPreview(model, new[] { copy }, new VoxBrushFootprint(0), VoxelTool.EditMode.Add, true, preview);
+            Assert.IsTrue(copy.PreviewInvalid);
+            Assert.AreEqual(0, preview.Count);
+            Assert.IsFalse(edits.Apply(document, model, new[] { copy }, new VoxBrushFootprint(0), VoxelTool.EditMode.Add, true).Changed);
+            Assert.AreEqual(0, model.Voxels.Count);
+            Assert.AreEqual(Vector3Int.one * 16, model.Size);
+        }
+
         private static VoxSymmetryEdits.Copy Copy(Vector3Int center, Color32 color)
         {
             var copy = new VoxSymmetryEdits.Copy { Center = center, Color = color, Valid = true,

@@ -217,6 +217,7 @@ namespace TiltBrush
         private StoredBrushInfo? m_StoredBrushInfo;
 
         private bool m_StraightEdgeEnabled; // whether the mode is enabled
+        internal bool VoxelStraightEdgeGuideActive { get; set; }
         // Brushes which return true for NeedsStraightEdgeProxy() use a proxy brush when displaying the
         // initial straight edge and redraw the line with the real brush at the end. This specifies
         // whether that proxy is currently active:
@@ -642,7 +643,7 @@ namespace TiltBrush
         void Update()
         {
             bool endpointSnapActive = false;
-            if (m_StraightEdgeEnabled && m_CurrentLineCreationState == LineCreationState.RecordingInput)
+            if (!VoxelStraightEdgeGuideActive && m_StraightEdgeEnabled && m_CurrentLineCreationState == LineCreationState.RecordingInput)
             {
                 m_StraightEdgeGuide.SnapEnabled =
                     InputManager.Brush.GetCommand(InputManager.SketchCommands.MenuContextClick) &&
@@ -668,7 +669,7 @@ namespace TiltBrush
             }
 
             // Preview endpoint snapping when not actively drawing
-            if (m_StraightEdgeEnabled &&
+            if (!VoxelStraightEdgeGuideActive && m_StraightEdgeEnabled &&
                 m_CurrentLineCreationState == LineCreationState.WaitingForInput &&
                 StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line)
             {
@@ -680,7 +681,7 @@ namespace TiltBrush
                 }
             }
 
-            m_StraightEdgeGuide.UpdateEndpointSnapHaptics(endpointSnapActive);
+            if (!VoxelStraightEdgeGuideActive) m_StraightEdgeGuide.UpdateEndpointSnapHaptics(endpointSnapActive);
 
             if (SymmetryModeEnabled)
             {

@@ -10,7 +10,6 @@ namespace TiltBrush
     {
         private readonly List<Matrix4x4> m_VoxelMirrors = new();
         private readonly List<VoxSymmetryEdits.Copy> m_VoxelCopies = new();
-        private readonly List<Vector3Int> m_VoxelStamp = new();
         private readonly VoxSymmetryEdits m_SymmetryEdits = new();
         private readonly Dictionary<Vector3Int, Color32> m_PreviewVoxels = new();
         private readonly VoxSymmetryPreviewRenderer m_SymmetryPreview = new();
@@ -56,12 +55,14 @@ namespace TiltBrush
             }
         }
 
-        private void ApplyAt(Vector3 canvasPosition)
+        private void ApplyAt(Vector3 canvasPosition, bool straightEdge = false)
         {
             if (m_CurrentModel == null) return;
             var document = m_CurrentDocument._Document;
             var model = m_CurrentModel._Model;
-            BuildSymmetryCopies(m_CurrentDocument.GetModelTransform(model), canvasPosition);
+            var grid = m_CurrentDocument.GetModelTransform(model);
+            BuildSymmetryCopies(grid, canvasPosition);
+            if (straightEdge && !RestoreStraightEdgeOrigins(grid)) return;
             var result = m_SymmetryEdits.Apply(document, model, m_VoxelCopies, BrushFootprint, Mode,
                 countBoundsChanges: !m_GestureWidget.IsExternalVox);
             if (result.PaletteFull) ReportPaletteFull();
@@ -81,33 +82,15 @@ namespace TiltBrush
         private void DrawSymmetryPreview(RuntimeVoxDocument.RuntimeModel model, TrTransform gridToCanvas, Vector3 canvasPosition)
         {
             BuildSymmetryCopies(gridToCanvas, canvasPosition);
-            m_PreviewVoxels.Clear();
+            if (m_StraightEdgeGesture && !RestoreStraightEdgeOrigins(gridToCanvas)) return;
             m_SymmetryPreview.Clear();
-            Vector3Int virtualSize = model.Size;
-            Vector3Int virtualShift = Vector3Int.zero;
             Color guide = Mode == EditMode.Erase ? new Color(0.9f, 0.12f, 0.08f) :
                 Mode == EditMode.Paint ? new Color(0.18f, 0.48f, 0.95f) : new Color(0.12f, 0.8f, 0.28f);
             VoxEditPreviewRenderer.Draw(model, gridToCanvas, canvasPosition, App.BrushColor.CurrentColor,
                 guide, m_BrushSizeStep, Mode == EditMode.Add, drawFootprint: false);
+            m_SymmetryEdits.CollectPreview(model, m_VoxelCopies, BrushFootprint, Mode, m_StraightEdgeGesture, m_PreviewVoxels);
             foreach (var copy in m_VoxelCopies)
-            {
-                if (!copy.Valid) continue;
-                if (Mode == EditMode.Add)
-                {
-                    if (!RuntimeVoxDocument.TryGetDrawingPadding(virtualSize, copy.Center + virtualShift + copy.Min,
-                            0, out var lower, out var upper, copy.Center + virtualShift + copy.Max))
-                    {
-                        m_SymmetryPreview.AddInvalid(copy.Center + copy.Min, copy.Center + copy.Max);
-                        continue;
-                    }
-                    virtualSize += lower + upper;
-                    virtualShift += lower;
-                }
-                VoxBrushRasterizer.GetCells(BrushFootprint, copy.Linear, copy.Inverse, copy.Center,
-                    copy.Min, copy.Max, model, Mode != EditMode.Add, m_VoxelStamp);
-                Color32 color = Mode == EditMode.Erase ? (Color32)guide : copy.Color;
-                foreach (var cell in m_VoxelStamp) m_PreviewVoxels.TryAdd(cell, color);
-            }
+                if (copy.PreviewInvalid) m_SymmetryPreview.AddInvalid(copy.PreviewMin, copy.PreviewMax);
             m_SymmetryPreview.Draw(gridToCanvas, m_PreviewVoxels);
         }
     }

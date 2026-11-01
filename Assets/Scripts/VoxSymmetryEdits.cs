@@ -14,6 +14,8 @@ namespace TiltBrush
             internal Vector3Int Center, Min, Max, Last;
             internal Color32 Color;
             internal bool Valid, HasLast;
+            internal bool PreviewInvalid;
+            internal Vector3Int PreviewMin, PreviewMax;
         }
 
         internal struct Result
@@ -25,6 +27,44 @@ namespace TiltBrush
         private readonly List<Vector3Int> m_Path = new();
         private readonly List<Vector3Int> m_Stamp = new();
         private readonly HashSet<Vector3Int> m_Claimed = new();
+
+        internal void CollectPreview(RuntimeVoxDocument.RuntimeModel model, IList<Copy> copies,
+            VoxBrushFootprint footprint, VoxelTool.EditMode mode, bool wholePath,
+            Dictionary<Vector3Int, Color32> cells)
+        {
+            cells.Clear();
+            Vector3Int virtualSize = model.Size;
+            Vector3Int virtualShift = Vector3Int.zero;
+            foreach (var copy in copies)
+            {
+                copy.PreviewInvalid = false;
+                if (!copy.Valid) continue;
+                Vector3Int from = wholePath && copy.HasLast ? copy.Last : copy.Center;
+                copy.PreviewMin = Vector3Int.Min(from, copy.Center) + copy.Min;
+                copy.PreviewMax = Vector3Int.Max(from, copy.Center) + copy.Max;
+                if (mode == VoxelTool.EditMode.Add)
+                {
+                    if (!RuntimeVoxDocument.TryGetDrawingPadding(virtualSize, copy.PreviewMin + virtualShift,
+                            0, out var lower, out var upper, copy.PreviewMax + virtualShift))
+                    {
+                        copy.PreviewInvalid = true;
+                        continue;
+                    }
+                    virtualSize += lower + upper;
+                    virtualShift += lower;
+                }
+                Vector3Int min = mode == VoxelTool.EditMode.Add ? Vector3Int.Min(from, copy.Center) : -copy.Max;
+                Vector3Int max = mode == VoxelTool.EditMode.Add ? Vector3Int.Max(from, copy.Center) : model.Size - Vector3Int.one - copy.Min;
+                VoxBrushRasterizer.GetPath(from, copy.Center, min, max, m_Path);
+                foreach (var center in m_Path)
+                {
+                    VoxBrushRasterizer.GetCells(footprint, copy.Linear, copy.Inverse, center,
+                        copy.Min, copy.Max, model, mode != VoxelTool.EditMode.Add, m_Stamp);
+                    Color32 color = mode == VoxelTool.EditMode.Erase ? new Color32(230, 31, 20, 255) : copy.Color;
+                    foreach (var cell in m_Stamp) cells.TryAdd(cell, color);
+                }
+            }
+        }
 
         internal Result Apply(RuntimeVoxDocument document, RuntimeVoxDocument.RuntimeModel model,
             IList<Copy> copies, VoxBrushFootprint footprint, VoxelTool.EditMode mode, bool countBoundsChanges)

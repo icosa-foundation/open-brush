@@ -99,6 +99,7 @@ namespace TiltBrush
 
         protected override void OnDestroy()
         {
+            ClearVoxelStraightEdge();
             m_SymmetryPreview.Dispose();
             if (m_TargetEvents != null)
             {
@@ -108,7 +109,11 @@ namespace TiltBrush
             base.OnDestroy();
         }
 
-        private void OnDisable() => m_SymmetryPreview.Dispose();
+        private void OnDisable()
+        {
+            ClearVoxelStraightEdge();
+            m_SymmetryPreview.Dispose();
+        }
 
         private void OnSelectionChanged()
         {
@@ -127,6 +132,11 @@ namespace TiltBrush
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
         {
             if (controller != InputManager.ControllerName.Brush) return;
+            if (m_StraightEdgeGesture)
+            {
+                InputManager.Brush.Geometry.TogglePadSnapHint(PointerManager.m_Instance.StraightEdgeGuide.SnapEnabled, enabled: true);
+                return;
+            }
             Texture2D icon = Mode switch
             {
                 EditMode.Erase => m_EraseIcon,
@@ -171,7 +181,9 @@ namespace TiltBrush
             if (ToolHidden()) return;
 
             // Process mode changes before interpreting this frame's drawing input.
-            if (!IsEatingInput &&
+            if (!IsEatingInput && !m_StraightEdgeGesture &&
+                !(PointerManager.m_Instance.StraightEdgeModeEnabled &&
+                    InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate)) &&
                 InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.ToggleReshape))
             {
                 CycleMode();
@@ -185,6 +197,8 @@ namespace TiltBrush
                 UpdateNewModelDrawing(canvasPosition);
                 return;
             }
+            if (m_GestureActive && m_StraightEdgeGesture)
+                canvasPosition = UpdateVoxelStraightEdge(canvasPosition);
             var previewModel = m_GestureActive ? m_GestureModel : FindTargetModelAt(canvasPosition);
             if (HasCurrentTarget)
             {
@@ -206,7 +220,7 @@ namespace TiltBrush
             }
 
             if (m_GestureActive &&
-                InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+                InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate) && !m_StraightEdgeGesture)
             {
                 ApplyAt(canvasPosition);
                 // Interpolation can change many cells in one frame. Show the actual edits
@@ -223,6 +237,7 @@ namespace TiltBrush
             if (m_GestureActive &&
                 !InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
+                if (m_StraightEdgeGesture) ApplyAt(canvasPosition, straightEdge: true);
                 EndGesture();
             }
         }
@@ -336,6 +351,7 @@ namespace TiltBrush
             m_ReportedPaletteFull = false;
             m_GestureActive = true;
             ResetSymmetryPaths();
+            if (PointerManager.m_Instance.StraightEdgeModeEnabled) BeginVoxelStraightEdge(canvasPosition);
         }
 
         private void ReportPaletteFull()
@@ -355,6 +371,7 @@ namespace TiltBrush
 
         private void EndGesture()
         {
+            ClearVoxelStraightEdge();
             if (!m_GestureActive)
             {
                 return;
@@ -424,8 +441,11 @@ namespace TiltBrush
             if (!CreateGrid(center, voxelSize)) return;
             m_CreateNewGrid = false;
             BeginGesture(center);
-            ApplyAt(center);
-            m_CurrentDocument.Refresh();
+            if (!m_StraightEdgeGesture)
+            {
+                ApplyAt(center);
+                m_CurrentDocument.Refresh();
+            }
         }
 
         private static Vector3 GetNewModelCellCenter(Vector3 canvasPosition, float voxelSize)
