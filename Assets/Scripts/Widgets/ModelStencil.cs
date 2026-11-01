@@ -665,6 +665,7 @@ namespace TiltBrush
             // retained source triangles instead; the fallback is limited to small meshes.
             Vector3 query = transform.InverseTransformPoint(pos);
             float closestSquared = float.PositiveInfinity;
+            float closestAlignment = -1f;
             Vector3 closest = Vector3.zero;
             Vector3 normal = Vector3.up;
             if (m_SourceTriangles == null)
@@ -681,9 +682,14 @@ namespace TiltBrush
                 Vector3 triangleNormal = Vector3.Cross(b - a, c - a);
                 Vector3 candidate = ClosestTrianglePoint(query, a, b, c, triangleNormal);
                 float squared = (candidate - query).sqrMagnitude;
-                if (squared < closestSquared)
+                float alignment = Mathf.Abs(Vector3.Dot(query - candidate, triangleNormal.normalized));
+                bool tied = Mathf.Approximately(squared, closestSquared);
+                // At a shared edge, prefer a non-tangent normal so exterior queries
+                // retain their positive signed distance regardless of triangle order.
+                if ((squared < closestSquared && !tied) || (tied && alignment > closestAlignment))
                 {
                     closestSquared = squared;
+                    closestAlignment = alignment;
                     closest = candidate;
                     // Source winding defines outward orientation for interior and exterior
                     // queries alike, without guessing from the model origin.
