@@ -88,7 +88,7 @@ namespace TiltBrush
                 modelWidget.Pinned || m_RecoloredVoxWidgets.Contains(modelWidget)) return false;
             var document = m_VoxTarget.GetDocument(modelWidget);
             if (document == null) return false;
-            Color32 color = PointerManager.m_Instance.PointerColor;
+            Color32 color = App.BrushColor.CurrentColor;
             bool changed = VoxToolTarget.Edit(modelWidget, document, vox => vox.RecolorAllVoxels(color));
             m_RecoloredVoxWidgets.Add(modelWidget);
             if (changed) PlayModifyStrokeSound();
@@ -97,7 +97,7 @@ namespace TiltBrush
 
         override protected void UpdateDetection()
         {
-            Color32 color = PointerManager.m_Instance.PointerColor;
+            Color32 color = App.BrushColor.CurrentColor;
             if (!IsHot || !color.Equals(m_VoxColor)) m_RecoloredVoxWidgets.Clear();
             m_VoxColor = color;
             // If we just went cold, reset our detection lists.
