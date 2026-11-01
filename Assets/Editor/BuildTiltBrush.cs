@@ -945,14 +945,22 @@ static class BuildTiltBrush
         BuildTargetGroup m_group;
 
         // For convenience, the extra symbols can be "" or null
-        public TempDefineSymbols(BuildTarget target, params string[] symbols)
+        public TempDefineSymbols(TiltBuildOptions tiltOptions, params string[] symbols)
         {
-            m_group = BuildTiltBrush.TargetToGroup(target);
+            m_group = BuildTiltBrush.TargetToGroup(tiltOptions.Target);
             m_prevSymbols = PlayerSettings.GetScriptingDefineSymbolsForGroup(m_group);
+            // Zapbox removes the ARKit loader, so its native library is not included.
+            // ARKit's batch-mode define updater starts with loaderEnabled=false and
+            // can leave inherited defines intact when the loader is already absent.
+            bool excludeArKit = tiltOptions.Target == BuildTarget.iOS &&
+                tiltOptions.XrSdk == XrSdkMode.Zapbox;
             var newSymbols = m_prevSymbols.Split(';') // might be [""]
                 .Concat(symbols.Where(elt => elt != null))
                 .Select(elt => elt.Trim())
                 .Where(elt => elt != "")
+                .Where(elt => !excludeArKit ||
+                    (elt != "UNITY_XR_ARKIT_LOADER_ENABLED" &&
+                     elt != "UNITY_XR_ARKIT_FACE_TRACKING_ENABLED"))
                 .ToArray();
             var newDefs = string.Join(";", newSymbols);
             PlayerSettings.SetScriptingDefineSymbolsForGroup(m_group, newDefs);
@@ -1991,7 +1999,7 @@ static class BuildTiltBrush
         using (var unused11 = new TempSetStereoRenderPath(target == BuildTarget.Android
             ? StereoRenderingPath.SinglePass : StereoRenderingPath.MultiPass))
         using (var unused3 = new TempDefineSymbols(
-            target,
+            tiltOptions,
             tiltOptions.Il2Cpp ? "DISABLE_SYSTEM_AUDIO_CAPTURE" : null,
             tiltOptions.AutoProfile ? "AUTOPROFILE_ENABLED" : null,
             tiltOptions.XrSdk == XrSdkMode.AndroidXR ? "OPEN_BRUSH_ANDROID_XR" : null,
