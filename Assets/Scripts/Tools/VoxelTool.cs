@@ -42,8 +42,6 @@ namespace TiltBrush
         private bool m_GestureActive;
         private bool m_GestureChanged;
         private bool m_ReportedPaletteFull;
-        private bool m_HasLastCell;
-        private Vector3Int m_LastCell;
         private RuntimeVoxDocument.Snapshot m_GestureBefore;
         private CreateWidgetCommand m_GestureCreationCommand;
         private EmbedVoxModelCommand m_GestureEmbeddingCommand;
@@ -101,6 +99,7 @@ namespace TiltBrush
 
         protected override void OnDestroy()
         {
+            m_SymmetryPreview.Dispose();
             if (m_TargetEvents != null)
             {
                 m_TargetEvents.ModelWidgetGrabbed -= SetTargetWidget;
@@ -108,6 +107,8 @@ namespace TiltBrush
             }
             base.OnDestroy();
         }
+
+        private void OnDisable() => m_SymmetryPreview.Dispose();
 
         private void OnSelectionChanged()
         {
@@ -190,15 +191,7 @@ namespace TiltBrush
                 var model = previewModel;
                 if (model != null)
                 {
-                    Color guideColor = Mode switch
-                    {
-                        EditMode.Erase => new Color(0.9f, 0.12f, 0.08f),
-                        EditMode.Paint => new Color(0.18f, 0.48f, 0.95f),
-                        _ => new Color(0.12f, 0.8f, 0.28f),
-                    };
-                    Color targetColor = Mode == EditMode.Erase ? guideColor : App.BrushColor.CurrentColor;
-                    var preview = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);
-                    preview.PreviewForTool(canvasPosition, targetColor, guideColor, m_BrushSizeStep, Mode == EditMode.Add);
+                    DrawSymmetryPreview(model, m_CurrentDocument.GetModelTransform(model), canvasPosition);
                 }
             }
 
@@ -317,7 +310,9 @@ namespace TiltBrush
             }
             Vector3Int currentCell = Vector3Int.RoundToInt(m_CurrentModel.CanvasToVoxel(canvasPosition));
             if (BrushFootprint.IntersectsVolume(currentCell, m_CurrentModel._Model.Size)) return m_CurrentModel._Model;
-            return emptyCandidate ?? (Mode == EditMode.Add ? m_CurrentModel._Model : null);
+            var symmetry = PointerManager.m_Instance.CurrentSymmetryMode;
+            bool mirrored = symmetry == PointerManager.SymmetryMode.SinglePlane || symmetry == PointerManager.SymmetryMode.MultiMirror;
+            return emptyCandidate ?? (Mode == EditMode.Add || mirrored ? m_CurrentModel._Model : null);
         }
 
         private void BeginGesture(Vector3 canvasPosition)
@@ -340,112 +335,7 @@ namespace TiltBrush
             m_GestureChanged = false;
             m_ReportedPaletteFull = false;
             m_GestureActive = true;
-            m_HasLastCell = false;
-        }
-
-        private void ApplyAt(Vector3 canvasPosition)
-        {
-            if (m_CurrentModel == null) return;
-            Vector3Int cell = Vector3Int.RoundToInt(m_CurrentModel.CanvasToVoxel(canvasPosition));
-            var footprint = BrushFootprint;
-            Color32 color = App.BrushColor.CurrentColor;
-            int paletteIndex = -1;
-            if (Mode == EditMode.Add)
-            {
-                // Resolve before growing bounds so a full palette leaves the model unchanged.
-                paletteIndex = m_CurrentDocument._Document.GetOrAddPaletteColor(color);
-                if (paletteIndex == 0)
-                {
-                    ReportPaletteFull();
-                    m_HasLastCell = false;
-                    return;
-                }
-            }
-            if (Mode == EditMode.Add)
-            {
-                var previousDefinition = m_CurrentModel._Model.Definition;
-                if (!m_CurrentDocument._Document.TryGrowDrawingBounds(m_CurrentModel._Model, ref cell,
-                    out var shift, footprint.Extent, m_HasLastCell ? m_LastCell : (Vector3Int?)null))
-                {
-                    m_HasLastCell = false;
-                    return;
-                }
-                if (m_HasLastCell) m_LastCell += shift;
-                // Structural preview work alone must not embed an external model.
-                if (!m_GestureWidget.IsExternalVox)
-                    m_GestureChanged |= !ReferenceEquals(previousDefinition, m_CurrentModel._Model.Definition);
-            }
-            else if (!footprint.IntersectsVolume(cell, m_CurrentModel._Model.Size))
-            {
-                m_HasLastCell = false;
-                return;
-            }
-            if (m_HasLastCell && cell == m_LastCell) return;
-            Vector3Int current = m_HasLastCell ? m_LastCell : cell;
-            bool changed = !m_HasLastCell && ApplyStamp(current, footprint, color, ref paletteIndex);
-            Vector3Int delta = cell - current;
-            Vector3Int step = new Vector3Int(System.Math.Sign(delta.x), System.Math.Sign(delta.y), System.Math.Sign(delta.z));
-            Vector3 interval = new Vector3(
-                delta.x == 0 ? float.PositiveInfinity : 1f / Mathf.Abs(delta.x),
-                delta.y == 0 ? float.PositiveInfinity : 1f / Mathf.Abs(delta.y),
-                delta.z == 0 ? float.PositiveInfinity : 1f / Mathf.Abs(delta.z));
-            Vector3 next = interval * 0.5f;
-            // Traverse every voxel crossed between successive cell centers.
-            while (current != cell)
-            {
-                float crossing = Mathf.Min(next.x, Mathf.Min(next.y, next.z));
-                if (next.x <= crossing) { current.x += step.x; next.x += interval.x; }
-                if (next.y <= crossing) { current.y += step.y; next.y += interval.y; }
-                if (next.z <= crossing) { current.z += step.z; next.z += interval.z; }
-                changed |= ApplyStamp(current, footprint, color, ref paletteIndex);
-            }
-            m_LastCell = cell;
-            m_HasLastCell = true;
-            if (!changed) return;
-            if (m_GestureWidget.IsExternalVox)
-            {
-                var document = m_CurrentDocument._Document;
-                m_GestureEmbeddingCommand = new EmbedVoxModelCommand(m_GestureWidget, document);
-                m_GestureEmbeddingCommand.Redo();
-                m_CurrentDocument = new VoxDocumentApiWrapper(document, m_GestureWidget)
-                { SuppressDirtyTracking = true };
-                m_CurrentModel = new VoxModelApiWrapper(document, m_GestureModel, m_CurrentDocument);
-                m_GestureAutoVisuals = true;
-                m_ExternalPreviewSource = null;
-            }
-            m_CurrentDocument.OnDocumentMutated();
-            m_GestureChanged = true;
-        }
-
-        private bool ApplyStamp(Vector3Int center, VoxBrushFootprint footprint, Color32 color, ref int paletteIndex)
-        {
-            if (paletteIndex == 0) return false;
-            bool changed = false;
-            var model = m_CurrentModel._Model;
-            for (int box = 0; box < footprint.BoxCount; ++box)
-            {
-                footprint.GetBox(box, out var min, out var max);
-                for (int x = min.x; x <= max.x; ++x)
-                    for (int y = min.y; y <= max.y; ++y)
-                        for (int z = min.z; z <= max.z; ++z)
-                        {
-                            Vector3Int cell = center + new Vector3Int(x, y, z);
-                            if (!model.IsInBounds(cell)) continue;
-                            if (Mode == EditMode.Erase) changed |= model.RemoveVoxel(cell);
-                            else
-                            {
-                                if (Mode == EditMode.Paint && !model.TryGetPaletteIndex(cell, out _)) continue;
-                                if (paletteIndex < 0) paletteIndex = m_CurrentDocument._Document.GetOrAddPaletteColor(color);
-                                if (paletteIndex == 0)
-                                {
-                                    ReportPaletteFull();
-                                    return false;
-                                }
-                                changed |= model.AddOrUpdateVoxel(cell, (byte)paletteIndex);
-                            }
-                        }
-            }
-            return changed;
+            ResetSymmetryPaths();
         }
 
         private void ReportPaletteFull()
@@ -501,7 +391,7 @@ namespace TiltBrush
             m_GestureActive = false;
             m_GestureChanged = false;
             m_ReportedPaletteFull = false;
-            m_HasLastCell = false;
+            ResetSymmetryPaths();
             m_GestureBefore = null;
             m_GestureCreationCommand = null;
             m_GestureEmbeddingCommand = null;
@@ -527,7 +417,9 @@ namespace TiltBrush
             // Snap-grid points define voxel corners; centers sit halfway through each cell.
             // Floor also chooses the containing cell correctly at negative coordinates.
             Vector3 center = GetNewModelCellCenter(canvasPosition, voxelSize);
-            VoxEditPreviewRenderer.DrawCreationFootprint(center, voxelSize, m_BrushSizeStep);
+            Vector3 origin = center + new Vector3(-1f, -1f, 1f) * voxelSize;
+            var grid = TrTransform.TRS(origin, Quaternion.identity, voxelSize) * VoxMeshBuilder.GetModelTransform(m_CreationPreviewModel);
+            DrawSymmetryPreview(m_CreationPreviewModel, grid, center);
             if (IsEatingInput || !InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate)) return;
             if (!CreateGrid(center, voxelSize)) return;
             m_CreateNewGrid = false;

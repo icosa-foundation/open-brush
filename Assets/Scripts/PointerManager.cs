@@ -1879,6 +1879,27 @@ namespace TiltBrush
             return canvasScale * m_WallpaperSymmetryScale;
         }
 
+        // Volumetric tools need the actual reflection, before the extra handedness
+        // fix used to orient stroke brushes. Preserve the same mirror frame/scale.
+        internal void GetVoxelSymmetryMatrices(TrTransform primaryPose_GS, List<Matrix4x4> matrices)
+        {
+            matrices.Clear();
+            if (m_CurrentSymmetryMode == SymmetryMode.MultiMirror && m_CustomMirrorMatrices.Count > 0)
+            {
+                var center = m_SymmetryLockedToController ? primaryPose_GS : TrTransform.FromTransform(m_SymmetryWidget);
+                var toWorld = center.ToMatrix4x4();
+                var fromWorld = center.inverse.ToMatrix4x4();
+                foreach (var matrix in m_CustomMirrorMatrices)
+                    matrices.Add(toWorld * TrFromMatrix(matrix).ToMatrix4x4() * fromWorld);
+            }
+            else
+            {
+                matrices.Add(Matrix4x4.identity);
+                if (m_CurrentSymmetryMode == SymmetryMode.SinglePlane)
+                    matrices.Add(m_SymmetryWidgetScript.ReflectionPlane.ToTrTransform().ToMatrix4x4());
+            }
+        }
+
         public TrTransform TrFromMatrix(Matrix4x4 m)
         {
             var tr = TrTransform.FromMatrix4x4(m);

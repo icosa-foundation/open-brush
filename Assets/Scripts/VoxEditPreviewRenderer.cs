@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -30,6 +31,7 @@ namespace TiltBrush
 
         private static Material s_Material;
         private static int s_Layer;
+        internal static int PreviewLayer => s_Layer;
         private static MaterialPropertyBlock s_GridProperties;
         private static MaterialPropertyBlock s_BoundsProperties;
         private static MaterialPropertyBlock s_TargetProperties;
@@ -48,7 +50,8 @@ namespace TiltBrush
             Color targetColor,
             Color guideColor,
             int brushSizeStep = 0,
-            bool allowOutside = false)
+            bool allowOutside = false,
+            bool drawFootprint = true)
         {
             if (model == null || !TryGetMaterial())
             {
@@ -142,7 +145,7 @@ namespace TiltBrush
                 worldBounds,
                 ref s_BoundsProperties);
 
-            if (allowOutside || overlaps)
+            if (drawFootprint && (allowOutside || overlaps))
             {
                 Color color = validTarget
                     ? new Color(targetColor.r, targetColor.g, targetColor.b, 0.9f)
@@ -160,6 +163,14 @@ namespace TiltBrush
                 DrawBox(pose, (Vector3)cell + min - Vector3.one * 0.5f,
                     (Vector3)cell + max + Vector3.one * 0.5f, color, 0.075f, worldBounds, ref s_TargetProperties);
             }
+        }
+
+        internal static void DrawQuantizedBoxesFallback(TrTransform modelToCanvas, List<VoxPreviewBox> boxes, Bounds worldBounds)
+        {
+            if (!TryGetMaterial()) return;
+            TrTransform pose = App.Scene.ActiveCanvas.Pose * modelToCanvas;
+            foreach (var box in boxes)
+                DrawBox(pose, box.Min, box.Max, box.Color, 0.075f, worldBounds, ref s_TargetProperties);
         }
 
         public static void DrawEmptyGridBounds(TrTransform modelToCanvas, Vector3Int size)
