@@ -456,6 +456,9 @@ namespace TiltBrush
                 if (!m_ViewState.Widget.Showing)
                 {
                     m_ViewState.Widget.Show(true, false);
+                    // Hiding animates both size and position. Generated widgets skip
+                    // the import animation, so restore their saved canvas pose here.
+                    SetTransform(m_ViewState.WidgetTransform);
                 }
                 if (visibilityChanged) MarkWidgetVisibilityChanged();
                 m_ViewState.Widget.RefreshEditableVoxMeshes(optimized);
