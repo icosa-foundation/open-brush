@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -137,31 +137,19 @@ namespace TiltBrush
 
         public SketchMetadata GetSketchMetadata()
         {
-            TiltModels75[] modelIndex = MetadataUtils.GetTiltModels(
-                m_GroupIdMapping, out m_EditableVoxPayloads);
             // Note: This assumes Room space == Global space.
             TrTransform xfThumbnail_RS = SketchControlsScript.m_Instance.GetSaveIconTool()
                 .LastSaveCameraRigState.GetLossyTrTransform();
 
             bool hasAuthor = !string.IsNullOrEmpty(App.UserConfig.User.Author);
 
-            return new SketchMetadata
+            var metadata = new SketchMetadata
             {
                 //      BrushIndex = brushGuids.ToArray(), // Need to do this on actual save!
                 EnvironmentPreset = SceneSettings.m_Instance.GetDesiredPreset().m_Guid.ToString("D"),
                 AudioPreset = null,
                 ThumbnailCameraTransformInRoomSpace = xfThumbnail_RS,
                 Authors = hasAuthor ? new[] { App.UserConfig.User.Author } : null,
-                ModelIndex = modelIndex,
-                LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping),
-                ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping),
-                Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping),
-                TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping),
-                SoundClips = MetadataUtils.GetTiltSoundClip(m_GroupIdMapping),
-                Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping),
-                GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping),
-                Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror(),
-                GuideIndex = MetadataUtils.GetGuideIndex(m_GroupIdMapping),
                 Palette = CustomColorPaletteStorage.m_Instance.GetPaletteForSaving(),
                 Lights = LightsControlScript.m_Instance.CustomLights,
                 Environment = SceneSettings.m_Instance.CustomEnvironment,
@@ -169,12 +157,30 @@ namespace TiltBrush
                 SourceId =
                     SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
-                CameraPaths = MetadataUtils.GetCameraPaths(),
                 Layers = MetadataUtils.GetLayers(),
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
             };
+
+            // Saved strokes contain no widgets, even when the selection includes widgets.
+            if (!m_SelectedOnly)
+            {
+                metadata.ModelIndex = MetadataUtils.GetTiltModels(
+                    m_GroupIdMapping, out m_EditableVoxPayloads);
+                metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping);
+                metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping);
+                metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping);
+                metadata.TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping);
+                metadata.SoundClips = MetadataUtils.GetTiltSoundClip(m_GroupIdMapping);
+                metadata.Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping);
+                metadata.GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping);
+                metadata.Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror();
+                metadata.GuideIndex = MetadataUtils.GetGuideIndex(m_GroupIdMapping);
+                metadata.CameraPaths = MetadataUtils.GetCameraPaths();
+            }
+
+            return metadata;
         }
 
         public IEnumerator<Timeslice> CreateSnapshotIcons(RenderTexture saveIconTexture,
