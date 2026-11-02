@@ -1576,16 +1576,16 @@ namespace TiltBrush
 
         // Rebuilds the scrub/playback timeline in place, keeping the current sketch time - used
         // when post-production per-layer time offsets change (the timeline captures them on
-        // construction). Rewinds the old playback to 0 first, which correctly clears any
-        // strokes drawn partway (as Redraw's timeline-edit branch does), then starts a fresh
-        // playback in the current mode, so a real-time timeline stays real-time.
+        // construction). Rewinds first to release in-flight playback pointers, then clears
+        // all geometry, including strokes whose offset puts their end at or before zero.
+        // Starts fresh in the current mode, so a real-time timeline stays real-time.
         public void RebuildPlaybackKeepingTime()
         {
             if (m_ScenePlayback == null) { return; }
             var savedSketchTime = App.Instance.CurrentSketchTime;
             App.Instance.CurrentSketchTime = 0;
             m_ScenePlayback.Update();
-            BeginDrawingFromMemory(bDrawFromStart: true, forEdit: true, playAudio: false);
+            RestartScrubPlayback();
             App.Instance.CurrentSketchTime = savedSketchTime;
             m_ScenePlayback.Update();
         }
