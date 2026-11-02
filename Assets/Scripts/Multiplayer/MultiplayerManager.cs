@@ -101,6 +101,7 @@ namespace OpenBrush.Multiplayer
             new Dictionary<Guid, OutgoingLiveStroke>();
         private readonly Dictionary<Guid, RetainedLiveStrokeCommand> m_RetainedLiveStrokeCommands =
             new Dictionary<Guid, RetainedLiveStrokeCommand>();
+        private HashSet<Guid> m_SentBrushCommandGuids = new HashSet<Guid>();
 
         private const int k_MaxLiveStrokeControlPoints = 32768;
         private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
@@ -1097,6 +1098,8 @@ namespace OpenBrush.Multiplayer
 
         private async Task<bool> TryCompleteOutgoingLiveStrokeTree(BaseCommand rootCommand)
         {
+            // Keep delivery evidence scoped to this room even if a send yields across disconnect.
+            HashSet<Guid> sentBrushCommandGuids = m_SentBrushCommandGuids;
             List<BrushStrokeCommand> allBrushCommands =
                 EnumerateBrushStrokeCommands(rootCommand).ToList();
             List<BrushStrokeCommand> brushCommands = allBrushCommands.Where(
@@ -1111,8 +1114,13 @@ namespace OpenBrush.Multiplayer
             var deltaCommandGuids = brushCommands
                 .Select(command => command.Guid)
                 .ToHashSet();
+            // A missing stream can be canceled, not just an already-sent ancestor.
+            // Children cannot execute remotely until their parent command is present.
             bool deltaTreeIsClosed = brushCommands.All(command =>
-                command.Children.All(child => deltaCommandGuids.Contains(child.Guid)));
+                command.Children.All(child => deltaCommandGuids.Contains(child.Guid)) &&
+                (command.ParentGuid == Guid.Empty ||
+                    deltaCommandGuids.Contains(command.ParentGuid) ||
+                    sentBrushCommandGuids.Contains(command.ParentGuid)));
             if (!deltaTreeIsClosed)
             {
                 foreach (BrushStrokeCommand command in brushCommands)
@@ -1186,6 +1194,7 @@ namespace OpenBrush.Multiplayer
                 .Select(player => player.PlayerId)
                 .ToArray();
             var manager = m_Manager;
+            bool allFallbacksSent = true;
             foreach (int playerId in fallbackRecipientIds)
             {
                 foreach (BrushStrokeCommand deltaRoot in deltaRoots)
@@ -1195,9 +1204,13 @@ namespace OpenBrush.Multiplayer
                         return true;
                     }
                     if (!IsRemotePlayerStillConnected(playerId)) break;
-                    await manager.SendCommandToPlayer(
+                    allFallbacksSent &= await manager.SendCommandToPlayer(
                         deltaRoot, playerId, rebaseTimestamps: true);
                 }
+            }
+            if (allFallbacksSent)
+            {
+                sentBrushCommandGuids.UnionWith(deltaCommandGuids);
             }
             return true;
         }
@@ -1402,6 +1415,7 @@ namespace OpenBrush.Multiplayer
         public async void OnCommandPerformed(BaseCommand command)
         {
             if (State != ConnectionState.IN_ROOM) return;
+            HashSet<Guid> sentBrushCommandGuids = m_SentBrushCommandGuids;
             if (EnumerateBrushStrokeCommands(command).Any())
             {
                 // DetachLine computes user simplification after recording the stroke command.
@@ -1422,7 +1436,11 @@ namespace OpenBrush.Multiplayer
                         return;
                     }
                 }
-                await m_Manager.PerformCommand(command);
+                if (await m_Manager.PerformCommand(command))
+                {
+                    sentBrushCommandGuids.UnionWith(
+                        EnumerateBrushStrokeCommands(command).Select(brushCommand => brushCommand.Guid));
+                }
             }
         }
 
@@ -1553,6 +1571,7 @@ namespace OpenBrush.Multiplayer
             m_OutgoingLiveStrokesBySeed.Clear();
             m_OutgoingLiveStrokesById.Clear();
             m_RetainedLiveStrokeCommands.Clear();
+            m_SentBrushCommandGuids = new HashSet<Guid>();
             m_LocalPlayer = null;// Clean up local player reference
             m_RemotePlayers.ClearList();// Clean up remote player references
             m_LiveStrokeCapablePlayers.Clear();
