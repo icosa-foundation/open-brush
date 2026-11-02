@@ -160,6 +160,17 @@ namespace TiltBrush
         public CanvasScript SelectionCanvas { get { return m_SelectionCanvas; } }
         public Transform CanvasTransformPrefab { get { return m_CanvasTransformPrefab; } }
 
+        public void SetMainCanvasVisibility(bool visible)
+        {
+            CanvasScript canvas = CurrentMainCanvas;
+            if (canvas == null) return;
+            if (animationUI_manager != null && animationUI_manager.Timeline?.Count > 0)
+            {
+                visible &= animationUI_manager.IsCanvasVisibleAtCurrentFrame(canvas);
+            }
+            canvas.gameObject.SetActive(visible);
+        }
+
         public IEnumerable<CanvasScript> AllCanvases
         {
             get

@@ -306,8 +306,8 @@ namespace TiltBrush
                 m_RemoveFromSelection = false;
             }
 
-            // Hide the main canvas if and only if we are in deselect mode.
-            App.Scene.MainCanvas.gameObject.SetActive(!m_RemoveFromSelection);
+            // Deselect mode hides the current main drawing; restoring it respects timeline visibility.
+            App.Scene.SetMainCanvasVisibility(!m_RemoveFromSelection);
 
             // Start the animation to toggle the tool. At the end of the animation, the visual
             // representation of the tool will match the mode.
@@ -775,7 +775,7 @@ namespace TiltBrush
             {
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     CreateEndSelectionCommand());
-                App.Scene.MainCanvas.gameObject.SetActive(true);
+                App.Scene.SetMainCanvasVisibility(true);
             }
         }
 

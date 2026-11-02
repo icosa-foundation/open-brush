@@ -2080,6 +2080,11 @@ namespace TiltBrush.FrameAnimation
             FocusFrame(frameNum);
         }
 
+        public bool IsCanvasVisibleAtCurrentFrame(CanvasScript canvas)
+        {
+            return GetVisibleCanvasesAtFrame(FrameOn, includeEmptyCanvases: true).Contains(canvas);
+        }
+
         private HashSet<CanvasScript> GetVisibleCanvasesAtFrame(
             int frameIndex, bool includeEmptyCanvases = false)
         {
