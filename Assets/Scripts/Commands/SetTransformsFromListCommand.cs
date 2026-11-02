@@ -33,6 +33,8 @@ namespace TiltBrush
             m_Widgets = widgets ?? new List<GrabWidget>();
             m_StartingTransforms = m_Strokes.Select(s => TrTransform.T(s.m_BatchSubset.m_Bounds.center)).ToList();
             m_StartingTransforms.AddRange(m_Widgets.Select(x => x.LocalTransform).ToList());
+            TransformSymmetryCopiesCommand.ForSelectionEdit(m_Strokes.Select((s, i) =>
+                (s, m_FinalTransforms[i] * m_StartingTransforms[i].inverse)), this);
             TransformWidgetPeersCommand.ForEdits(m_Widgets.Select((w, i) =>
                 (w, m_FinalTransforms[i + m_Strokes.Count] * w.LocalTransform.inverse)), this);
         }
