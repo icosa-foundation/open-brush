@@ -539,6 +539,37 @@ namespace TiltBrush
         }
 
         [Test]
+        public void BreakApart_PreservesHiddenContentInFirstRegionThroughSave()
+        {
+            var source = new RuntimeVoxDocument();
+            source.CreateModel("hidden", new Vector3Int(4, 4, 4)).AddOrUpdateVoxel(Vector3Int.one, 2);
+            var visible = source.CreateModel("visible", new Vector3Int(4, 4, 4));
+            visible.AddOrUpdateVoxel(Vector3Int.zero, 1);
+            visible.AddOrUpdateVoxel(new Vector3Int(3, 3, 3), 1);
+            byte[] bytes = ReplaceMainChildContent(source.ToVoxBytes(), "nTRN", 1,
+                BuildTransformContent(10, 12, -1, hidden: true));
+            bytes = AppendMainChild(bytes, "MATL", BuildMaterialContent(2,
+                new[] { ("_type", "_glass"), ("_rough", "0.2") }));
+            var document = RuntimeVoxDocument.FromBytes(bytes);
+            var hidden = document.Models.Single(model => !model.IsVisible);
+            hidden.TransformOffset = new Vector3(10, 20, 30);
+
+            var regions = document.CreateFaceConnectedRegions();
+            Assert.AreEqual(2, regions.Count);
+            Assert.AreEqual(1, regions.Sum(region => region.Models.Count(model => !model.IsVisible)));
+            var saved = RuntimeVoxDocument.FromBytes(regions[0].ToVoxBytes());
+            var retained = saved.Models.Single(model => !model.IsVisible);
+            Assert.AreEqual(hidden.Name, retained.Name);
+            Assert.AreEqual(hidden.Size, retained.Size);
+            Assert.AreEqual(hidden.TransformOffset, retained.TransformOffset);
+            Assert.AreEqual(hidden.GlobalRotation, retained.GlobalRotation);
+            CollectionAssert.AreEquivalent(hidden.Voxels, retained.Voxels);
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Glass, saved.Materials[2].Type);
+            Assert.AreEqual(2, document.Models.Count);
+            Assert.AreEqual(2, document.Models.Single(model => model.IsVisible).Voxels.Count);
+        }
+
+        [Test]
         public void RuntimeVoxDocument_RoundTripsThroughVoxBytes()
         {
             var source = new RuntimeVoxDocument();

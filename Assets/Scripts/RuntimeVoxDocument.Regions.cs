@@ -71,6 +71,15 @@ namespace TiltBrush
                 region.m_models.Add(instance);
                 result.Add(region);
             }
+            // The original widget is removed after splitting. Keep its hidden content
+            // on the first region so saving the active outputs cannot discard it.
+            if (m_models.Any(model => !model.IsVisible))
+            {
+                var hidden = CloneDocument();
+                result[0].m_models.AddRange(hidden.m_models.Where(model => !model.IsVisible));
+                foreach (var material in hidden.m_materials)
+                    result[0].m_materials[material.Key] = material.Value;
+            }
             return result;
         }
 
