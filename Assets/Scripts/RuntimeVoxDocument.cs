@@ -930,7 +930,7 @@ namespace TiltBrush
             return result;
         }
 
-        private static RuntimeMaterial ReadMaterial(byte[] content)
+        internal static RuntimeMaterial ReadMaterial(byte[] content)
         {
             using (var stream = new MemoryStream(content, writable: false))
             using (var reader = new BinaryReader(stream, Encoding.UTF8))
@@ -978,7 +978,7 @@ namespace TiltBrush
             return storedToRuntime;
         }
 
-        private static RuntimeMaterial ReadLegacyMaterial(byte[] content)
+        internal static RuntimeMaterial ReadLegacyMaterial(byte[] content)
         {
             using (var stream = new MemoryStream(content, writable: false))
             using (var reader = new BinaryReader(stream, Encoding.UTF8))

@@ -397,6 +397,8 @@ namespace TiltBrush
                 }
             }
 
+            SynchronizeMaterials(chunks, document, runtimeToStoredPalette);
+
             int sizeIndex = 0;
             int voxelIndex = 0;
             bool hasRgba = false;
@@ -461,6 +463,56 @@ namespace TiltBrush
             else if (nextDefinitionId > 1) chunks.Insert(0, FromChunkBytes(BuildPackChunk(nextDefinitionId)));
             UpdateSceneGraph(chunks, document.Models, definitionIds);
             return source.Write();
+        }
+
+        private static void SynchronizeMaterials(List<PreservedChunk> chunks,
+            RuntimeVoxDocument document, IReadOnlyList<byte> runtimeToStoredPalette)
+        {
+            // Keep untouched MATL/MATT chunks byte-for-byte, including unknown properties.
+            var original = new Dictionary<int, RuntimeVoxDocument.RuntimeMaterial>();
+            foreach (var chunk in chunks)
+            {
+                if (chunk.Id == "MATL")
+                {
+                    var material = RuntimeVoxDocument.ReadMaterial(chunk.Content);
+                    original[material.PaletteIndex] = material;
+                }
+                else if (chunk.Id == "MATT")
+                {
+                    var material = RuntimeVoxDocument.ReadLegacyMaterial(chunk.Content);
+                    original[material.PaletteIndex] = material;
+                }
+            }
+
+            var changed = new HashSet<int>();
+            for (int index = 1; index <= byte.MaxValue; ++index)
+            {
+                int storedIndex = runtimeToStoredPalette[index - 1];
+                original.TryGetValue(storedIndex, out var before);
+                document.Materials.TryGetValue(index, out var after);
+                if (before == null && after == null) continue;
+                if (before != null && after != null &&
+                    before.Properties.Count == after.Properties.Count &&
+                    before.Properties.All(property => after.Properties.TryGetValue(property.Key, out var value) &&
+                        value == property.Value)) continue;
+                changed.Add(storedIndex);
+            }
+
+            // Remove every definition of a changed slot so an old MATT cannot override it.
+            chunks.RemoveAll(chunk => (chunk.Id == "MATL" || chunk.Id == "MATT") &&
+                changed.Contains(BitConverter.ToInt32(chunk.Content, 0)));
+            foreach (var material in document.Materials.Values)
+            {
+                int storedIndex = runtimeToStoredPalette[material.PaletteIndex - 1];
+                if (!changed.Contains(storedIndex)) continue;
+                using (var stream = new MemoryStream())
+                using (var writer = new BinaryWriter(stream))
+                {
+                    writer.Write(storedIndex);
+                    WriteDictionary(writer, new Dictionary<string, string>(material.Properties));
+                    chunks.Add(FromChunkBytes(WrapChunk("MATL", stream.ToArray())));
+                }
+            }
         }
 
         private static PreservedChunk FromChunkBytes(byte[] chunk)

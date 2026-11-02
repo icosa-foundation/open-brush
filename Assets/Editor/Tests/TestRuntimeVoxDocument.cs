@@ -91,6 +91,52 @@ namespace TiltBrush
             Assert.IsFalse(target.Materials.ContainsKey(imported));
         }
 
+        [TestCase("none", false, "_glass")]
+        [TestCase("MATL", true, "_emit")]
+        [TestCase("MATT", true, "_metal")]
+        [TestCase("MATT", false, null)]
+        public void JoinVoxelGrids_PreservesImportedMaterialsThroughSave(
+            string previousChunk, bool mapped, string joinedType)
+        {
+            var target = new RuntimeVoxDocument();
+            target.CreateModel("target", new Vector3Int(3, 3, 3)).AddOrUpdateVoxel(Vector3Int.zero, 1);
+            byte[] bytes = target.ToVoxBytes();
+            if (mapped)
+            {
+                var map = Enumerable.Range(1, 255).Select(index => (byte)index).Concat(new byte[1]).ToArray();
+                map[0] = 2;
+                map[1] = 3;
+                map[2] = 1;
+                bytes = AppendMainChild(bytes, "IMAP", map);
+            }
+            int storedSlot = mapped ? 3 : 2;
+            if (previousChunk == "MATL")
+                bytes = AppendMainChild(bytes, "MATL", BuildMaterialContent(storedSlot,
+                    new[] { ("_type", "_glass") }));
+            else if (previousChunk == "MATT")
+                bytes = AppendMainChild(bytes, "MATT", BuildLegacyMaterialContent(storedSlot,
+                    2, 0.5f, 0, Array.Empty<float>()));
+            target = RuntimeVoxDocument.FromBytes(bytes);
+            target.Models[0].AddOrUpdateVoxel(Vector3Int.zero, 1);
+
+            var source = new RuntimeVoxDocument();
+            source.CreateModel("source", new Vector3Int(3, 3, 3)).AddOrUpdateVoxel(Vector3Int.right, 1);
+            source.ReplacePaletteEntry(1, new Color32(12, 34, 56, 255));
+            if (joinedType != null)
+                source = RuntimeVoxDocument.FromBytes(AppendMainChild(source.ToVoxBytes(), "MATL",
+                    BuildMaterialContent(1, new[] { ("_type", joinedType), ("_rough", "0.2") })));
+            var grids = new[] { TrTransform.identity };
+            Assert.IsTrue(target.TryJoin(source, grids, grids, 0));
+            byte imported = target.Models[0].Voxels[Vector3Int.right];
+            Assert.AreEqual(2, imported);
+
+            var saved = RuntimeVoxDocument.FromBytes(target.ToVoxBytes());
+            Assert.AreEqual(imported, saved.Models[0].Voxels[Vector3Int.right]);
+            Assert.AreEqual(source.Palette[0], saved.Palette[imported - 1]);
+            if (joinedType == null) Assert.IsFalse(saved.Materials.ContainsKey(imported));
+            else CollectionAssert.AreEquivalent(source.Materials[1].Properties, saved.Materials[imported].Properties);
+        }
+
         [Test]
         public void JoinVoxelGrids_RejectsOversizedBoundsAndFullPaletteWithoutChanges()
         {
