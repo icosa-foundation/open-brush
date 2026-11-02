@@ -1464,6 +1464,7 @@ namespace TiltBrush.FrameAnimation
                     "Animation span durations and visibility must have equal track counts");
             }
 
+            TrTransform mainCanvasPose = App.Scene.MainCanvas.LocalPose;
             ApplySparseTimelineEdit(tracks =>
             {
                 while (tracks.Count < spanDurations.Count)
@@ -1488,6 +1489,14 @@ namespace TiltBrush.FrameAnimation
                     }
                 }
             });
+            if (spanDurations.Count > 0 && spanDurations[0].Count > 0)
+            {
+                foreach (CanvasScript canvas in Timeline[0].Frames.SpanFrames
+                    .Select(frame => frame.Canvas).Where(canvas => canvas != null).Distinct())
+                {
+                    canvas.LocalPose = mainCanvasPose;
+                }
+            }
         }
 
         public (int, int) GetCanvasLocation(CanvasScript canvas)
