@@ -294,6 +294,7 @@ namespace TiltBrush
         public bool Start(string source, string outputFile, int width, int height, float sampleRate,
                           bool blocking, string customArguments = null)
         {
+            FailureMessage = null;
             m_outputFile = "";
             if (!LaunchEncoder(source, outputFile, width, height, sampleRate, blocking, customArguments))
             {
@@ -740,6 +741,8 @@ namespace TiltBrush
             // holds, so the frame a consumer has just dequeued (and may still be copying) isn't
             // overwritten by the next one read: with exactly Capacity buffers, dequeuing from a
             // full ring frees the oldest slot and the very next read refills that same buffer.
+            // Consumers must finish using a dequeued frame before requesting another one.
+            // The extra two RGBA buffers cost about 63 MiB at 3840x2160 per active decoder.
             Bytable[] localRefs = new Bytable[m_framesOut.Capacity + 2];
 
             // Init local refs.
