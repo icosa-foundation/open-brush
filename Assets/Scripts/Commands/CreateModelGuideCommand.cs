@@ -61,7 +61,8 @@ namespace TiltBrush
                 parent: this,
                 canvas: targetCanvas);
             new ConfigureModelGuideCommand(
-                m_CreateCommand, source.Model, source.Subtree, source.Group, source.Pinned, this);
+                m_CreateCommand, source.Model, source.Subtree, source.Group, source.Pinned,
+                (targetCanvas.Pose.inverse * pose).scale, this);
             new SelectModelGuideCommand(m_CreateCommand, source, targetCanvas, this);
         }
 
@@ -78,16 +79,18 @@ namespace TiltBrush
             private readonly string m_Subtree;
             private readonly SketchGroupTag m_Group;
             private readonly bool m_Pinned;
+            private readonly float m_Size;
 
             internal ConfigureModelGuideCommand(
                 CreateWidgetCommand createCommand, Model model, string subtree, SketchGroupTag group,
-                bool pinned, BaseCommand parent) : base(parent)
+                bool pinned, float size, BaseCommand parent) : base(parent)
             {
                 m_CreateCommand = createCommand;
                 m_Model = model;
                 m_Subtree = subtree;
                 m_Group = group;
                 m_Pinned = pinned;
+                m_Size = size;
             }
 
             protected override void OnRedo()
@@ -98,6 +101,8 @@ namespace TiltBrush
                         "The model-guide prefab did not create a model guide.");
                 }
 
+                // Intro animation preserves widget size rather than applying the spawn scale.
+                stencil.SetSignedWidgetSize(m_Size);
                 stencil.Subtree = m_Subtree;
                 stencil.Model = m_Model;
                 stencil.Group = m_Group;
