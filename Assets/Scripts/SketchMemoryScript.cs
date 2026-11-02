@@ -295,7 +295,7 @@ namespace TiltBrush
             if (!m_MemoryExceeded && !m_MemoryWarningAccepted)
             {
                 int vertCount = numVerts +
-                    App.Scene.AllCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
+                    App.Scene.ResidentCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
                     WidgetManager.m_Instance.WidgetsVertCount;
                 return vertCount > m_MemoryWarningVertCount;
             }
@@ -311,7 +311,7 @@ namespace TiltBrush
                 if (App.CurrentState == App.AppState.Standard)
                 {
                     m_LastCheckedVertCount =
-                        App.Scene.AllCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
+                        App.Scene.ResidentCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
                         WidgetManager.m_Instance.WidgetsVertCount;
                     if (m_LastCheckedVertCount > m_MemoryWarningVertCount)
                     {

@@ -192,6 +192,13 @@ namespace TiltBrush
             }
         }
 
+        // Includes off-playhead and undo-retained drawings whose geometry remains allocated.
+        public IEnumerable<CanvasScript> ResidentCanvases => AllCanvases
+            .Concat(animationUI_manager != null
+                ? animationUI_manager.ResidentDrawingCanvases
+                : Enumerable.Empty<CanvasScript>())
+            .Where(canvas => canvas != null).Distinct();
+
         // Same as AllCanvases except it ignores the selection canvas and excludes "deleted" layers
         public IEnumerable<CanvasScript> LayerCanvases
         {

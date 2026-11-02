@@ -2080,6 +2080,9 @@ namespace TiltBrush.FrameAnimation
             FocusFrame(frameNum);
         }
 
+        public IEnumerable<CanvasScript> ResidentDrawingCanvases => m_Drawings.Canvases
+            .Concat(m_EmptyCanvases).Concat(m_PendingEmptyCanvasDestruction);
+
         public bool IsCanvasVisibleAtCurrentFrame(CanvasScript canvas)
         {
             return GetVisibleCanvasesAtFrame(FrameOn, includeEmptyCanvases: true).Contains(canvas);
