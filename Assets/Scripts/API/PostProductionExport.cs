@@ -301,6 +301,10 @@ namespace TiltBrush
             int? start = PostProductionSettings.CropStartFrame, end = PostProductionSettings.CropEndFrame;
             if (start == null || end == null) { return "set the trim start and end frames first"; }
             if (end < start) { return $"trim end {end} is before trim start {start}"; }
+            if (PostProductionSettings.C006FrameToSketchTimeMs(start.Value) < 0)
+            {
+                return "trim start maps to a sketch time before zero; move the trim start later or change the global time offset";
+            }
 
             // The clip's export depth set if it has one (e.g. full resolution, every frame),
             // otherwise the preview's (depth sets with roles, 2026-10-25).
