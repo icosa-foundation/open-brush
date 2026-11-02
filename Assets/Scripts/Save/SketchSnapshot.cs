@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -154,7 +154,6 @@ namespace TiltBrush
 
             bool hasAuthor = !string.IsNullOrEmpty(App.UserConfig.User.Author);
 
-            m_WidgetLinks ??= new WidgetLinkSaveContext(SymmetryWidgetGroup.ActiveWidgets, false);
             var metadata = new SketchMetadata
             {
                 //      BrushIndex = brushGuids.ToArray(), // Need to do this on actual save!
@@ -162,16 +161,6 @@ namespace TiltBrush
                 AudioPreset = null,
                 ThumbnailCameraTransformInRoomSpace = xfThumbnail_RS,
                 Authors = hasAuthor ? new[] { App.UserConfig.User.Author } : null,
-                ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping, m_WidgetLinks),
-                LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping, m_WidgetLinks),
-                ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping, m_WidgetLinks),
-                Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping, m_WidgetLinks),
-                TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping, m_WidgetLinks),
-                SoundClips = MetadataUtils.GetTiltSoundClip(m_GroupIdMapping, m_WidgetLinks),
-                Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping, m_WidgetLinks),
-                GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping, m_WidgetLinks),
-                Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror(),
-                GuideIndex = MetadataUtils.GetGuideIndex(m_GroupIdMapping, m_WidgetLinks),
                 Palette = CustomColorPaletteStorage.m_Instance.GetPaletteForSaving(),
                 Lights = LightsControlScript.m_Instance.CustomLights,
                 Environment = SceneSettings.m_Instance.CustomEnvironment,
@@ -179,13 +168,30 @@ namespace TiltBrush
                 SourceId =
                     SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
-                CameraPaths = MetadataUtils.GetCameraPaths(m_WidgetLinks),
                 Layers = MetadataUtils.GetLayers(),
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
             };
-            metadata.WidgetLinks = m_WidgetLinks.Table;
+
+            // Saved strokes contain no widgets, even when the selection includes widgets.
+            if (!m_SelectedOnly)
+            {
+                m_WidgetLinks ??= new WidgetLinkSaveContext(SymmetryWidgetGroup.ActiveWidgets, false);
+                metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping, m_WidgetLinks);
+                metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping, m_WidgetLinks);
+                metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping, m_WidgetLinks);
+                metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping, m_WidgetLinks);
+                metadata.TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping, m_WidgetLinks);
+                metadata.SoundClips = MetadataUtils.GetTiltSoundClip(m_GroupIdMapping, m_WidgetLinks);
+                metadata.Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping, m_WidgetLinks);
+                metadata.GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping, m_WidgetLinks);
+                metadata.Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror();
+                metadata.GuideIndex = MetadataUtils.GetGuideIndex(m_GroupIdMapping, m_WidgetLinks);
+                metadata.CameraPaths = MetadataUtils.GetCameraPaths(m_WidgetLinks);
+                metadata.WidgetLinks = m_WidgetLinks.Table;
+            }
+
             return metadata;
         }
 
