@@ -645,7 +645,6 @@ namespace TiltBrush
                 SetTransform(m_ViewState.WidgetTransform);
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: true);
                 model.ReleaseFromCatalog();
-                return true;
             }
             catch
             {
@@ -658,6 +657,14 @@ namespace TiltBrush
                 m_ViewState.WidgetWasCreated = false;
                 throw;
             }
+
+            // Edits made before this widget existed were document construction.
+            // Record the resulting widget in the same gesture as subsequent edits.
+            BaseCommand parent = ApiManager.Instance?.ActiveUndo;
+            var creation = new CreateScriptVoxWidgetCommand(widget, parent);
+            if (parent != null) creation.Redo();
+            else SketchMemoryScript.m_Instance.PerformAndRecordCommand(creation);
+            return true;
         }
 
         [MoonSharpHidden]
