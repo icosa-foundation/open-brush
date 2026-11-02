@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -247,6 +248,10 @@ namespace TiltBrush
             new List<RederiveSymmetryGroupCommand>();
         private bool m_Applied;
 
+        // Continuous slider edits need only their first and final endpoints. Retaining every
+        // intermediate edit as a child makes Undo rebuild all strokes once per input frame.
+        private MoveMirrorSettingsCommand m_LastMerged;
+
         internal MoveMirrorSettingsCommand(SymmetryMirror mirror,
             SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after, BaseCommand parent = null)
             : base(parent)
@@ -287,14 +292,32 @@ namespace TiltBrush
             if (base.Merge(other)) { return true; }
             if (other is MoveMirrorSettingsCommand next && ReferenceEquals(next.m_Mirror, m_Mirror))
             {
+                if (CanMergeEndpoints(next))
+                {
+                    m_LastMerged = next.m_LastMerged ?? next;
+                    return true;
+                }
                 m_Children.Add(next);
                 return true;
             }
             return false;
         }
 
+        private bool CanMergeEndpoints(MoveMirrorSettingsCommand next) =>
+            m_Children.Count == 0 && next.m_Children.Count == 0 &&
+            m_BrokenLinks.Count == 0 && next.m_BrokenLinks.Count == 0 &&
+            m_Rederives.Count == 0 && next.m_Rederives.Count == 0 &&
+            m_Members.Count == next.m_Members.Count &&
+            m_Members.Zip(next.m_Members, (a, b) => ReferenceEquals(a.Stroke, b.Stroke))
+                .All(same => same) && m_Widgets.HasSameMembers(next.m_Widgets);
+
         protected override void OnRedo()
         {
+            if (m_LastMerged != null)
+            {
+                m_LastMerged.OnRedo();
+                return;
+            }
             foreach (var link in m_BrokenLinks) { link.Break(); }
             foreach (var member in m_Members)
             {

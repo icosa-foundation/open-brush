@@ -55,6 +55,10 @@ namespace TiltBrush
                 if (member.Widget != null) { (after ? member.After : member.Before).Restore(member.Widget); }
             }
         }
+
+        internal bool HasSameMembers(MirrorWidgetEdits other) =>
+            m_Members.Count == other.m_Members.Count && m_Members.Zip(other.m_Members,
+                (a, b) => ReferenceEquals(a.Widget, b.Widget) && a.Index == b.Index).All(same => same);
     }
 
     /// Retains surviving objects and owns additions/removals for undo and redo.
