@@ -159,7 +159,7 @@ namespace TiltBrush
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
-                PostProduction = GetPostProductionMetadata(),
+                PostProduction = m_SelectedOnly ? null : GetPostProductionMetadata(),
             };
 
             // Saved strokes contain no widgets, even when the selection includes widgets.
@@ -188,6 +188,10 @@ namespace TiltBrush
         // duplicating this logic.
         public static PostProductionMetadata GetPostProductionMetadata()
         {
+            if (!PostProductionSettings.IsSessionActive)
+            {
+                return PostProductionSettings.PreservedMetadata;
+            }
             var metadata = new PostProductionMetadata
             {
                 SpatialOffset = PostProductionSettings.GlobalSpatialOffset,

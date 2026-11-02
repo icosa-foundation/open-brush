@@ -281,7 +281,7 @@ namespace TiltBrush
         )]
         public static void SetSketchScrubbing(bool enable)
         {
-            if (enable) { _ = PostProductionPreviewController.Instance; }
+            if (enable) { PostProductionSettings.BeginSession(); }
             var sketchMemory = SketchMemoryScript.m_Instance;
             sketchMemory.m_KeepPlaybackAliveForScrubbing = enable;
 
@@ -478,10 +478,7 @@ namespace TiltBrush
         public static void LoadPostProdSketch(string filename)
         {
             PostProductionExport.ThrowIfExporting("postprod.load");
-            // Before the load, so the new playback is kept alive (no need to rebuild the old one).
-            SketchMemoryScript.m_Instance.m_KeepPlaybackAliveForScrubbing = true;
-            LoadNamedFile(filename, realTime: true, quickload: true);
-            PostProductionPreviewController.MovePlayheadAfterLoad();
+            LoadNamedFile(filename, realTime: true, quickload: true, postProduction: true);
         }
 
         [ApiEndpoint(
@@ -728,7 +725,7 @@ namespace TiltBrush
             PostProdCompositor.DebugDepthColorAlignment(cgColorPath, cgDepthPath, outputPath);
         }
 
-        private static void LoadNamedFile(string filename, bool realTime, bool quickload = false)
+        private static void LoadNamedFile(string filename, bool realTime, bool quickload = false, bool postProduction = false)
         {
             PostProductionExport.ThrowIfExporting("load");
             if (!filename.EndsWith(SaveLoadScript.TILT_SUFFIX))
@@ -736,6 +733,11 @@ namespace TiltBrush
                 filename += SaveLoadScript.TILT_SUFFIX;
             }
             string path = GetSafePathInDirectory(App.UserSketchPath(), filename, "sketch filename");
+            if (postProduction)
+            {
+                if (!System.IO.File.Exists(path)) { throw new System.IO.FileNotFoundException("Sketch not found", path); }
+                PostProductionSettings.RequestLoad(path);
+            }
             // A playback kept alive by sketch.scrub must be finished while the old strokes'
             // layers still exist, as New Sketch does: the load resets the layers before its own
             // ClearMemory, which would then finish the playback into destroyed geometry.

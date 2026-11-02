@@ -68,6 +68,10 @@ namespace TiltBrush
 
         public object Invoke(System.Object[] parameters)
         {
+            if (Endpoint.StartsWith("postprod.", StringComparison.Ordinal) && Endpoint != "postprod.load")
+            {
+                PostProductionSettings.BeginSession();
+            }
             return methodInfo.Invoke(instance, parameters);
         }
 

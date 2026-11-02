@@ -1457,6 +1457,12 @@ namespace TiltBrush
         }
 
         /// timeline edit mode: if forEdit is true, play audio countdown and keep user pointers enabled
+        private static IStrokePlaybackTimeline GetPlaybackTimeline(IStrokePlaybackTimeline timeline = null)
+        {
+            if (!PostProductionSettings.IsSessionActive) { return timeline; }
+            return PostProductionLayerTimeline.Wrap(timeline ?? new SketchTimeStrokePlaybackTimeline());
+        }
+
         public void BeginDrawingFromMemory(bool bDrawFromStart, bool forEdit = false, bool playAudio = true)
         {
             BeginDrawingFromMemory(m_MemoryList, bDrawFromStart, forEdit, playAudio);
@@ -1479,7 +1485,7 @@ namespace TiltBrush
                         break;
                     case PlaybackMode.Timestamps:
                         App.Instance.CurrentSketchTime = m_MemoryList.Count == 0 ? 0 : GetEarliestTimestamp();
-                        m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender);
+                        m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender, GetPlaybackTimeline());
                         break;
                     case PlaybackMode.RealTime:
                         if (RealTimeStrokePlaybackTimeline.TryCreate(
@@ -1490,13 +1496,13 @@ namespace TiltBrush
                                 .ToArray();
                             App.Instance.CurrentSketchTime = 0;
                             m_ScenePlayback = new ScenePlaybackByTimeLayered(
-                                strokesInWallClockOrder, realTimeTimeline);
+                                strokesInWallClockOrder, GetPlaybackTimeline(realTimeTimeline));
                         }
                         else
                         {
                             Debug.LogWarning("[RealTimePlayback] Sketch does not contain complete wall-clock metadata; using ordinary timestamp playback.");
                             App.Instance.CurrentSketchTime = m_MemoryList.Count == 0 ? 0 : GetEarliestTimestamp();
-                            m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender);
+                            m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender, GetPlaybackTimeline());
                         }
                         break;
                 }
@@ -1597,7 +1603,7 @@ namespace TiltBrush
                 App.Instance.CurrentSketchTime = 0;
                 m_ScenePlayback.Update();
                 if (doSort) { SortMemoryList(); }
-                m_ScenePlayback = new ScenePlaybackByTimeLayered(m_MemoryList);
+                m_ScenePlayback = new ScenePlaybackByTimeLayered(m_MemoryList, GetPlaybackTimeline());
                 App.Instance.CurrentSketchTime = savedSketchTime;
                 m_ScenePlayback.Update();
             }

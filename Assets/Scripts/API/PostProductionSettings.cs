@@ -27,6 +27,125 @@ namespace TiltBrush
     // this is a pure data layer with no visual effect, same as the temporal offsets.
     public static class PostProductionSettings
     {
+        public static bool IsSessionActive { get; private set; }
+        public static PostProductionMetadata PreservedMetadata { get; private set; }
+        private static string s_RequestedSketchPath;
+        private static readonly Dictionary<CanvasScript, LayerMetadata> s_PreservedLayers =
+            new Dictionary<CanvasScript, LayerMetadata>();
+
+        public static void RequestLoad(string path) => s_RequestedSketchPath = path;
+
+        public static bool ConsumeLoadRequest(string path)
+        {
+            bool requested = string.Equals(s_RequestedSketchPath, path,
+                System.StringComparison.OrdinalIgnoreCase);
+            s_RequestedSketchPath = null;
+            return requested;
+        }
+
+        public static void PreserveMetadata(PostProductionMetadata metadata)
+        {
+            PreservedMetadata = metadata;
+        }
+
+        public static void PreserveLayer(CanvasScript canvas, LayerMetadata metadata)
+        {
+            s_PreservedLayers[canvas] = metadata;
+        }
+
+        public static TrTransform GetLayerSpatialOffsetForSaving(CanvasScript canvas, int index)
+        {
+            return IsSessionActive ? GetLayerSpatialOffset(index) :
+                s_PreservedLayers.TryGetValue(canvas, out var saved) ? saved.PostProdOffset : TrTransform.identity;
+        }
+
+        public static int GetLayerTimeOffsetForSaving(CanvasScript canvas, int index)
+        {
+            return IsSessionActive ? GetLayerTimeOffsetMs(index) :
+                s_PreservedLayers.TryGetValue(canvas, out var saved) ? saved.TimeOffsetMs : 0;
+        }
+
+        // Only explicit post-production commands activate saved camera, media and timing state.
+        public static void BeginSession()
+        {
+            if (IsSessionActive) { return; }
+            IsSessionActive = true;
+            _ = PostProductionPreviewController.Instance;
+            var ppMetadata = PreservedMetadata;
+            GlobalSpatialOffset = ppMetadata?.SpatialOffset ?? TrTransform.identity;
+            SavedGlobalSpatialOffset = GlobalSpatialOffset;
+            GlobalTimeOffsetMs = ppMetadata?.TimeOffsetMs ?? 0;
+            CropStartFrame = ppMetadata?.CropStartFrame;
+            CropEndFrame = ppMetadata?.CropEndFrame;
+            DepthNearest = ppMetadata?.DepthFilter != "bilinear";
+            int index = 0;
+            foreach (var canvas in App.Scene.LayerCanvases)
+            {
+                if (s_PreservedLayers.TryGetValue(canvas, out var layer))
+                {
+                    SetLayerSpatialOffset(index, layer.PostProdOffset);
+                    SetSavedLayerSpatialOffset(index, layer.PostProdOffset);
+                    SetLayerTimeOffsetMs(index, layer.TimeOffsetMs);
+                }
+                if (ppMetadata?.VisibleLayers != null &&
+                    System.Array.IndexOf(ppMetadata.VisibleLayers, index) < 0)
+                {
+                    canvas.gameObject.SetActive(false);
+                }
+                index++;
+            }
+            RestoreCameraAndMedia(ppMetadata);
+            if (PostProductionClip.IsLoaded) { PostProductionPreviewController.StartPreviewForClip(); }
+        }
+
+        private static void RestoreCameraAndMedia(PostProductionMetadata ppMetadata)
+        {
+            if (!string.IsNullOrEmpty(ppMetadata?.ClipDir))
+            {
+                // Clip manifest (added 2026-10-23): camera, lens, fps and plates all
+                // come from <ClipDir>/clip.json. If it can't be read, the camera is
+                // left unset and query.postprod.clip.status says CLIP OFFLINE.
+                PostProductionLens.Undistort = ppMetadata.LensUndistort ?? false;
+                PostProductionClip.Load(ppMetadata.ClipDir);
+            }
+            else if (!string.IsNullOrEmpty(ppMetadata?.AutoPlateClipDir))
+            {
+                PostProductionPreviewController.SetAutoPlateClipDir(ppMetadata.AutoPlateClipDir);
+            }
+            // Calibrated camera setup (added 2026-09-08, user request) - restores
+            // exactly what camera.intrinsics/camera.clip/postprod.preview.camera/
+            // postprod.preview.pose would have set, so it doesn't need re-running
+            // by hand after every load. Only sketches saved before clip manifests
+            // have these; with ClipDir they are null.
+            if (ppMetadata?.CameraIntrinsics != null && ppMetadata.CameraIntrinsics.Length == 6)
+            {
+                var ci = ppMetadata.CameraIntrinsics;
+                ScreenshotManager.SetCalibratedIntrinsics(ci[0], ci[1], ci[2], ci[3], ci[4], ci[5]);
+            }
+            if (ppMetadata?.CameraClip != null && ppMetadata.CameraClip.Length == 2)
+            {
+                ScreenshotManager.SetCalibratedClip(ppMetadata.CameraClip[0], ppMetadata.CameraClip[1]);
+            }
+            // After the intrinsics above: the undistorted working frame is built on them.
+            if (ppMetadata?.LensCalibration != null && ppMetadata.LensCalibration.Length == 9)
+            {
+                var lc = ppMetadata.LensCalibration;
+                PostProductionLens.Undistort = ppMetadata.LensUndistort ?? false;
+                PostProductionLens.SetCalibration(lc[0], lc[1], lc[2], lc[3], lc[4], lc[5], lc[6], lc[7], lc[8]);
+            }
+            if (!string.IsNullOrEmpty(ppMetadata?.CameraName))
+            {
+                PostProductionPreviewController.SetTargetCameraName(ppMetadata.CameraName);
+            }
+            if (ppMetadata?.CameraPose != null && ppMetadata.CameraPose.Length == 7)
+            {
+                var cp = ppMetadata.CameraPose;
+                PostProductionPreviewController.SetTargetPose(
+                    new Vector3(cp[0], cp[1], cp[2]),
+                    new Quaternion(cp[3], cp[4], cp[5], cp[6]));
+            }
+        }
+
         // The Editor's Enter Play Mode Options keep static state between Play sessions (no
         // domain reload), so each session starts with nothing loaded, as a build does.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -39,6 +158,10 @@ namespace TiltBrush
         // Everything a sketch or clip set up for post-production (New Sketch ends the session).
         public static void ClearSession()
         {
+            IsSessionActive = false;
+            PreservedMetadata = null;
+            s_PreservedLayers.Clear();
+            s_RequestedSketchPath = null;
             GlobalTimeOffsetMs = 0;
             LoadedSketchName = "";
             SourceFps = DefaultSourceFps;

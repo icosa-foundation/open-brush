@@ -271,6 +271,7 @@ namespace TiltBrush
         // offset, range and setting are cleared, as at the start of a session.
         public static void EndSession()
         {
+            App.Instance.StateChanged -= OnAppStateChangedAfterLoad;
             PostProductionExport.Cancel();
             if (m_Instance != null && m_Instance.Enabled) { m_Instance.SetEnabled(false); }
             PostProductionPlateCache.SetEnabled(false, null);
@@ -285,6 +286,7 @@ namespace TiltBrush
             PostProductionCompositeImageEffect.NaiveMode = false;
             PostProductionCompositeImageEffect.CgOnlyMode = false;
             PostProductionLiveCg.Bloom = false;
+            PostProductionLiveCg.Enabled = false;
             PostProductionClip.Clear();
             PostProductionLens.Clear();
             ScreenshotManager.ClearCalibratedCamera();

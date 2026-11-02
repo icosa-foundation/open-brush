@@ -232,8 +232,7 @@ namespace TiltBrush
             IEnumerable<Stroke> strokes,
             IStrokePlaybackTimeline timeline = null)
         {
-            // Per-layer post-production time offsets (no-op when all are zero).
-            m_timeline = PostProductionLayerTimeline.Wrap(timeline ?? new SketchTimeStrokePlaybackTimeline());
+            m_timeline = timeline ?? new SketchTimeStrokePlaybackTimeline();
             m_targetCanvas = App.ActiveCanvas;
             m_unrenderedStrokes = new SortedLinkedList<Stroke>(
                 (a, b) => (m_timeline.GetHeadTimeMs(a) < m_timeline.GetHeadTimeMs(b)),

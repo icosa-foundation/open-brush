@@ -734,8 +734,11 @@ namespace TiltBrush
                     }
                 }
 
+                bool activatePostProduction = false;
                 if (!bAdditive)
                 {
+                    activatePostProduction = PostProductionSettings.ConsumeLoadRequest(fileInfo.FullPath);
+                    PostProductionPreviewController.EndSession();
                     var environment = EnvironmentCatalog.m_Instance
                         .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
                     if (environment != null)
@@ -767,69 +770,7 @@ namespace TiltBrush
                     LastThumbnail_SS = App.Scene.Pose.inverse *
                         jsonData.ThumbnailCameraTransformInRoomSpace;
 
-                    // Post-production preview settings (stage 8, added 2026-09-08) -
-                    // restore in-memory PostProductionSettings state from the sketch,
-                    // or reset to defaults if this sketch never had any (rather than
-                    // leaving whatever a PREVIOUSLY loaded sketch left behind).
-                    var ppMetadata = jsonData.PostProduction;
-                    PostProductionSettings.GlobalSpatialOffset =
-                        ppMetadata?.SpatialOffset ?? TrTransform.identity;
-                    PostProductionSettings.SavedGlobalSpatialOffset = PostProductionSettings.GlobalSpatialOffset;
-                    PostProductionSettings.GlobalTimeOffsetMs = ppMetadata?.TimeOffsetMs ?? 0;
-                    PostProductionSettings.CropStartFrame = ppMetadata?.CropStartFrame;
-                    PostProductionSettings.CropEndFrame = ppMetadata?.CropEndFrame;
-                    PostProductionSettings.DepthNearest = ppMetadata?.DepthFilter != "bilinear";
-                    PostProductionClip.Clear();
-                    PostProductionSettings.SourceFps = PostProductionSettings.DefaultSourceFps;
-                    if (!string.IsNullOrEmpty(ppMetadata?.ClipDir))
-                    {
-                        // Clip manifest (added 2026-10-23): camera, lens, fps and plates all
-                        // come from <ClipDir>/clip.json. If it can't be read, the camera is
-                        // left unset and query.postprod.clip.status says CLIP OFFLINE.
-                        PostProductionLens.Undistort = ppMetadata.LensUndistort ?? false;
-                        PostProductionClip.Load(ppMetadata.ClipDir);
-                    }
-                    else if (!string.IsNullOrEmpty(ppMetadata?.AutoPlateClipDir))
-                    {
-                        PostProductionPreviewController.SetAutoPlateClipDir(ppMetadata.AutoPlateClipDir);
-                    }
-                    // Calibrated camera setup (added 2026-09-08, user request) - restores
-                    // exactly what camera.intrinsics/camera.clip/postprod.preview.camera/
-                    // postprod.preview.pose would have set, so it doesn't need re-running
-                    // by hand after every load. Only sketches saved before clip manifests
-                    // have these; with ClipDir they are null.
-                    if (ppMetadata?.CameraIntrinsics != null && ppMetadata.CameraIntrinsics.Length == 6)
-                    {
-                        var ci = ppMetadata.CameraIntrinsics;
-                        ScreenshotManager.SetCalibratedIntrinsics(ci[0], ci[1], ci[2], ci[3], ci[4], ci[5]);
-                    }
-                    if (ppMetadata?.CameraClip != null && ppMetadata.CameraClip.Length == 2)
-                    {
-                        ScreenshotManager.SetCalibratedClip(ppMetadata.CameraClip[0], ppMetadata.CameraClip[1]);
-                    }
-                    // After the intrinsics above: the undistorted working frame is built on them.
-                    if (ppMetadata?.LensCalibration != null && ppMetadata.LensCalibration.Length == 9)
-                    {
-                        var lc = ppMetadata.LensCalibration;
-                        PostProductionLens.Undistort = ppMetadata.LensUndistort ?? false;
-                        PostProductionLens.SetCalibration(lc[0], lc[1], lc[2], lc[3], lc[4], lc[5], lc[6], lc[7], lc[8]);
-                    }
-                    if (!string.IsNullOrEmpty(ppMetadata?.CameraName))
-                    {
-                        PostProductionPreviewController.SetTargetCameraName(ppMetadata.CameraName);
-                    }
-                    if (ppMetadata?.CameraPose != null && ppMetadata.CameraPose.Length == 7)
-                    {
-                        var cp = ppMetadata.CameraPose;
-                        PostProductionPreviewController.SetTargetPose(
-                            new Vector3(cp[0], cp[1], cp[2]),
-                            new Quaternion(cp[3], cp[4], cp[5], cp[6]));
-                    }
-                    // After the camera name above: a sketch with a clip opens straight into the
-                    // preview (2026-10-24).
-                    if (PostProductionClip.IsLoaded)
-                    {
-                        PostProductionPreviewController.StartPreviewForClip();                    }
+
                 }
 
                 SketchControlsScript.m_Instance.SketchPlaybackMode =
@@ -863,29 +804,16 @@ namespace TiltBrush
                             }
                             canvas.LocalPose = layer.Transform;
 
-                            // Post-production per-layer offsets (stage 8, added
-                            // 2026-09-08) - PostProdOffset/TimeOffsetMs default to
-                            // TrTransform.identity/0 on a LayerMetadata that never had
-                            // them, so this is correct even for older sketches.
-                            PostProductionSettings.SetLayerSpatialOffset(i, layer.PostProdOffset);
-                            PostProductionSettings.SetSavedLayerSpatialOffset(i, layer.PostProdOffset);
-                            PostProductionSettings.SetLayerTimeOffsetMs(i, layer.TimeOffsetMs);
+                            PostProductionSettings.PreserveLayer(canvas, layer);
                         }
                     }
-                    // Post-production layer visibility (added 2026-10-23), on top of the
-                    // authored Layers[].Visible applied above.
-                    var visibleLayers = jsonData.PostProduction?.VisibleLayers;
-                    if (visibleLayers != null)
+                    // Keep saved settings inert unless this load was explicitly requested for post-production.
+                    PostProductionSettings.PreserveMetadata(jsonData.PostProduction);
+                    if (activatePostProduction)
                     {
-                        int layerIndex = 0;
-                        foreach (var canvas in App.Scene.LayerCanvases)
-                        {
-                            if (System.Array.IndexOf(visibleLayers, layerIndex) < 0)
-                            {
-                                canvas.gameObject.SetActive(false);
-                            }
-                            layerIndex++;
-                        }
+                        PostProductionSettings.BeginSession();
+                        SketchMemoryScript.m_Instance.m_KeepPlaybackAliveForScrubbing = true;
+                        PostProductionPreviewController.MovePlayheadAfterLoad();
                     }
                     PostProductionSettings.LoadedSketchName =
                         System.IO.Path.GetFileNameWithoutExtension(fileInfo.FullPath ?? "");
