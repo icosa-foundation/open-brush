@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using OpenBrush.Multiplayer;
 using System;
 using System.Linq;
 using UnityEngine;
@@ -149,7 +150,7 @@ namespace TiltBrush
         public override void EnableTool(bool enable)
         {
             // Tool-change notifications can read status before the first UpdateTool call.
-            if (enable)
+            if (enable && !MultiplayerManager.m_Instance.IsViewOnly)
             {
                 EnsureCurrentTarget();
                 if (!HasCurrentTarget && !CreatingNewModel) ChooseActivationTarget();
@@ -177,6 +178,12 @@ namespace TiltBrush
         public override void UpdateTool()
         {
             base.UpdateTool();
+            if (MultiplayerManager.m_Instance.IsViewOnly)
+            {
+                EndGesture();
+                EatInput();
+                return;
+            }
             EnsureCurrentTarget();
             if (ToolHidden()) return;
 
