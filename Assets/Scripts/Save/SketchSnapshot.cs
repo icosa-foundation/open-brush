@@ -124,6 +124,8 @@ namespace TiltBrush
             }
             stopwatch.Stop();
 
+            // Capture with the metadata, after any yields, so later edits remain unsaved.
+            UnrecordedChangesRevision = SketchMemoryScript.m_Instance.UnrecordedChangesRevision;
             m_Metadata = GetSketchMetadata();
             if (m_SelectedOnly)
             {
