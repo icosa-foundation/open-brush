@@ -1837,7 +1837,8 @@ namespace TiltBrush
             foreach (var gwd in m_ModelWidgets)
             {
                 var playback = gwd.WidgetScript.GetComponent<ModelPlaybackController>();
-                if (playback != null && playback.IsRestoring) return true;
+                // Hidden layers retain pending restoration until their controllers can update.
+                if (IsWidgetObjectActiveInHierarchy(gwd) && playback != null && playback.IsRestoring) return true;
                 var nativeReference = gwd.WidgetScript.GetComponentInChildren<NativeImmReference>();
                 if (nativeReference != null && nativeReference.IsLoading) return true;
                 Model.Location loc = gwd.WidgetScript.Model.GetLocation();
