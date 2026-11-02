@@ -1760,6 +1760,7 @@ namespace TiltBrush.FrameAnimation
             if (canvasIndex.Item2 != -1)
             {
                 ApplySparseTimelineEdit(tracks => tracks[canvasIndex.Item1].Deleted = false);
+                FocusFrame(FrameOn);
             }
             ResetTimeline();
         }
