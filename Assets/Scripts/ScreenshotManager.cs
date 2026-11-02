@@ -1140,7 +1140,7 @@ namespace TiltBrush
         /// Same approach as ApiMainThreadObserver.
         public static volatile string s_ProjectionReportJson = "{\"calibrated\":false}";
 
-        /// Where the capture camera actually was for the most recent snapshot, in world space.
+        /// Where the capture camera was for the most recent calibrated snapshot, in world space.
         /// A camera is pose AND projection: reporting only intrinsics can't distinguish "camera
         /// set up correctly" from "camera aimed at empty space", which is exactly the failure
         /// that cost a rebuild to diagnose. Null until the first capture.
@@ -1350,6 +1350,36 @@ namespace TiltBrush
             bool renderNormals = false,
             bool includePostProcessing = false)
         {
+            CaptureSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals, includePostProcessing, useCalibratedCamera: false);
+        }
+
+        // Explicit calibrated capture; ordinary callers never inherit global calibration state.
+        public static void TakeCalibratedSnapshot(
+            TrTransform tr,
+            string filename,
+            int width,
+            int height,
+            float superSampling = 1f,
+            bool removeBackground = false,
+            bool renderDepth = false,
+            bool renderNormals = false,
+            bool includePostProcessing = false)
+        {
+            CaptureSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals, includePostProcessing, useCalibratedCamera: true);
+        }
+
+        private static void CaptureSnapshot(
+            TrTransform tr,
+            string filename,
+            int width,
+            int height,
+            float superSampling,
+            bool removeBackground,
+            bool renderDepth,
+            bool renderNormals,
+            bool includePostProcessing,
+            bool useCalibratedCamera)
+        {
 
             bool saveAsPng;
             if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
@@ -1372,179 +1402,174 @@ namespace TiltBrush
 
             if (cam != null)
             {
+                var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+
+                App.Scene.AsScene[rig.gameObject.transform] = tr;
+                var rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
+
+                var initialState = rig.gameObject.activeSelf;
+                RenderTexture tmp = null;
+                RenderWrapper wrapper = null;
+                float ssaaRestore = 0;
+                Camera calibratedCam = null;
+                float fovRestore = 0;
+                float nearRestore = 0, farRestore = 0;
                 try
                 {
-                    var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+                    rig.gameObject.SetActive(true);
 
-                    App.Scene.AsScene[rig.gameObject.transform] = tr;
-                    var rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
+                    tmp = rMgr.CreateTemporaryTargetForSave(width, height);
 
-                    var initialState = rig.gameObject.activeSelf;
-                    RenderTexture tmp = null;
-                    RenderWrapper wrapper = null;
-                    float ssaaRestore = 0;
-                    Camera calibratedCam = null;
-                    float fovRestore = 0;
-                    float nearRestore = 0, farRestore = 0;
+                    wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
+
+                    ssaaRestore = wrapper.SuperSampling;
+                    wrapper.SuperSampling = superSampling;
+
+                    // Applied around ALL passes so colour, depth and normals share one
+                    // projection - they get composited against each other later, so any
+                    // disagreement between them would be baked into the result.
+                    if (useCalibratedCamera && (s_UseCalibratedProjection || s_UseCalibratedClip))
+                    {
+                        calibratedCam = rMgr.LeftEye;
+                        fovRestore = calibratedCam.fieldOfView;
+                        nearRestore = calibratedCam.nearClipPlane;
+                        farRestore = calibratedCam.farClipPlane;
+
+                        // Clip planes go on first: the projection matrix below is built
+                        // from them, and the depth sidecar's near/far metres come from
+                        // them too.
+                        if (s_UseCalibratedClip)
+                        {
+                            calibratedCam.nearClipPlane = s_NearClip;
+                            calibratedCam.farClipPlane = s_FarClip;
+
+                        }
+                    }
+
+                    if (useCalibratedCamera && s_UseCalibratedProjection)
+                    {
+                        // Intrinsics are stored against the resolution they were
+                        // calibrated at; rescale to whatever we're actually rendering.
+                        float sx = width / s_RefWidth;
+                        float sy = height / s_RefHeight;
+                        float fx = s_Fx * sx, fy = s_Fy * sy;
+                        float cx = s_Cx * sx, cy = s_Cy * sy;
+
+                        // EncodeDepthCapture writes camera.fieldOfView into the depth
+                        // sidecar that the compositing step reads, so keep it consistent
+                        // with the projection we're about to install rather than leaving
+                        // a stale value behind.
+                        float vFovDeg = 2f * Mathf.Atan(height / (2f * fy)) * Mathf.Rad2Deg;
+                        calibratedCam.fieldOfView = vFovDeg;
+
+                        // Assign the projection last - setting fieldOfView can invalidate
+                        // an explicitly-assigned projection matrix.
+                        calibratedCam.projectionMatrix = BuildProjectionFromIntrinsics(
+                            fx, fy, cx, cy, width, height,
+                            calibratedCam.nearClipPlane, calibratedCam.farClipPlane);
+
+                        RefreshProjectionReport(
+                            fx, fy, cx, cy, width, height,
+                            calibratedCam.nearClipPlane, calibratedCam.farClipPlane,
+                            "lastRender");
+
+                    }
+
+                    // Record where the capture camera actually ended up, AFTER everything
+                    // that might have moved it. If something else is driving the rig (as
+                    // MultiCamTool does while it is the active tool) this is where it shows
+                    // up - the requested pose and the real one will disagree.
+                    if (useCalibratedCamera)
+                    {
+                        Transform camXf = rMgr.LeftEye.transform;
+                        Vector3 p = camXf.position;
+                        Quaternion q = camXf.rotation;
+                        Vector3 e = q.eulerAngles;
+                        Vector3 f = camXf.forward;
+                        s_LastCaptureExtrinsicsJson =
+                            "{" +
+                            $"\"worldPosition\":[{p.x:F6},{p.y:F6},{p.z:F6}]," +
+                            $"\"rotationQuaternion\":[{q.x:F6},{q.y:F6},{q.z:F6},{q.w:F6}]," +
+                            $"\"rotationEulerDegrees\":[{e.x:F4},{e.y:F4},{e.z:F4}]," +
+                            $"\"forward\":[{f.x:F6},{f.y:F6},{f.z:F6}]," +
+                            $"\"requestedPosition\":[{tr.translation.x:F6},{tr.translation.y:F6},{tr.translation.z:F6}]," +
+                            $"\"requestedRotation\":[{tr.rotation.x:F6},{tr.rotation.y:F6},{tr.rotation.z:F6},{tr.rotation.w:F6}]" +
+                            "}";
+
+                    }
+
+                    bool watermarkEnabled = CameraConfig.Watermark;
+                    bool postEffectsEnabled = CameraConfig.PostEffects;
+                    bool suppressPostEffectsRestore = wrapper.SuppressPostEffects;
                     try
                     {
-                        rig.gameObject.SetActive(true);
+                        CameraConfig.Watermark = false;
+                        CameraConfig.PostEffects = false;
+                        wrapper.SuppressPostEffects = true;
 
-                        tmp = rMgr.CreateTemporaryTargetForSave(width, height);
-
-                        wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
-
-                        ssaaRestore = wrapper.SuperSampling;
-                        wrapper.SuperSampling = superSampling;
-
-                        // Applied around ALL passes so colour, depth and normals share one
-                        // projection - they get composited against each other later, so any
-                        // disagreement between them would be baked into the result.
-                        if (s_UseCalibratedProjection || s_UseCalibratedClip)
+                        if (renderDepth)
                         {
-                            calibratedCam = rMgr.LeftEye;
-                            fovRestore = calibratedCam.fieldOfView;
-                            nearRestore = calibratedCam.nearClipPlane;
-                            farRestore = calibratedCam.farClipPlane;
 
-                            // Clip planes go on first: the projection matrix below is built
-                            // from them, and the depth sidecar's near/far metres come from
-                            // them too.
-                            if (s_UseCalibratedClip)
+                            rMgr.RenderDepthToTexture(tmp);
+
+                            var depthFiles = rMgr.EncodeDepthCapture(tmp);
+
+                            SaveDepthCaptureFiles(path, depthFiles);
+
+                        }
+
+                        if (renderNormals)
+                        {
+
+                            rMgr.RenderDepthNormalToTexture(tmp);
+                            var normalPath = $"{GetCaptureBasePath(path)}_normals.png";
+                            using (var fs = new FileStream(normalPath, FileMode.Create))
                             {
-                                calibratedCam.nearClipPlane = s_NearClip;
-                                calibratedCam.farClipPlane = s_FarClip;
-
-                            }
-                        }
-
-                        if (s_UseCalibratedProjection)
-                        {
-                            // Intrinsics are stored against the resolution they were
-                            // calibrated at; rescale to whatever we're actually rendering.
-                            float sx = width / s_RefWidth;
-                            float sy = height / s_RefHeight;
-                            float fx = s_Fx * sx, fy = s_Fy * sy;
-                            float cx = s_Cx * sx, cy = s_Cy * sy;
-
-                            // EncodeDepthCapture writes camera.fieldOfView into the depth
-                            // sidecar that the compositing step reads, so keep it consistent
-                            // with the projection we're about to install rather than leaving
-                            // a stale value behind.
-                            float vFovDeg = 2f * Mathf.Atan(height / (2f * fy)) * Mathf.Rad2Deg;
-                            calibratedCam.fieldOfView = vFovDeg;
-
-                            // Assign the projection last - setting fieldOfView can invalidate
-                            // an explicitly-assigned projection matrix.
-                            calibratedCam.projectionMatrix = BuildProjectionFromIntrinsics(
-                                fx, fy, cx, cy, width, height,
-                                calibratedCam.nearClipPlane, calibratedCam.farClipPlane);
-
-                            RefreshProjectionReport(
-                                fx, fy, cx, cy, width, height,
-                                calibratedCam.nearClipPlane, calibratedCam.farClipPlane,
-                                "lastRender");
-
-                        }
-
-                        // Record where the capture camera actually ended up, AFTER everything
-                        // that might have moved it. If something else is driving the rig (as
-                        // MultiCamTool does while it is the active tool) this is where it shows
-                        // up - the requested pose and the real one will disagree.
-                        {
-                            Transform camXf = rMgr.LeftEye.transform;
-                            Vector3 p = camXf.position;
-                            Quaternion q = camXf.rotation;
-                            Vector3 e = q.eulerAngles;
-                            Vector3 f = camXf.forward;
-                            s_LastCaptureExtrinsicsJson =
-                                "{" +
-                                $"\"worldPosition\":[{p.x:F6},{p.y:F6},{p.z:F6}]," +
-                                $"\"rotationQuaternion\":[{q.x:F6},{q.y:F6},{q.z:F6},{q.w:F6}]," +
-                                $"\"rotationEulerDegrees\":[{e.x:F4},{e.y:F4},{e.z:F4}]," +
-                                $"\"forward\":[{f.x:F6},{f.y:F6},{f.z:F6}]," +
-                                $"\"requestedPosition\":[{tr.translation.x:F6},{tr.translation.y:F6},{tr.translation.z:F6}]," +
-                                $"\"requestedRotation\":[{tr.rotation.x:F6},{tr.rotation.y:F6},{tr.rotation.z:F6},{tr.rotation.w:F6}]" +
-                                "}";
-
-                        }
-
-                        bool watermarkEnabled = CameraConfig.Watermark;
-                        bool postEffectsEnabled = CameraConfig.PostEffects;
-                        bool suppressPostEffectsRestore = wrapper.SuppressPostEffects;
-                        try
-                        {
-                            CameraConfig.Watermark = false;
-                            CameraConfig.PostEffects = false;
-                            wrapper.SuppressPostEffects = true;
-
-                            if (renderDepth)
-                            {
-
-                                rMgr.RenderDepthToTexture(tmp);
-
-                                var depthFiles = rMgr.EncodeDepthCapture(tmp);
-
-                                SaveDepthCaptureFiles(path, depthFiles);
-
+                                SaveNormals(fs, tmp);
                             }
 
-                            if (renderNormals)
-                            {
-
-                                rMgr.RenderDepthNormalToTexture(tmp);
-                                var normalPath = $"{GetCaptureBasePath(path)}_normals.png";
-                                using (var fs = new FileStream(normalPath, FileMode.Create))
-                                {
-                                    SaveNormals(fs, tmp);
-                                }
-
-                            }
                         }
-                        finally
-                        {
-                            wrapper.SuppressPostEffects = suppressPostEffectsRestore;
-                            CameraConfig.Watermark = watermarkEnabled;
-                            CameraConfig.PostEffects = postEffectsEnabled;
-                        }
-
-                        rMgr.RenderToTexture(tmp, removeBackground: removeBackground,
-                            includePostProcessing: includePostProcessing);
-
-                        using (var fs = new FileStream(path, FileMode.Create))
-                        {
-                            Save(fs, tmp, bSaveAsPng: saveAsPng, preserveAlpha: removeBackground);
-                        }
-
-
                     }
                     finally
                     {
-                        if (wrapper != null)
-                        {
-                            wrapper.SuperSampling = ssaaRestore;
-                        }
-                        if (calibratedCam != null)
-                        {
-                            // ResetProjectionMatrix hands control back to Unity's own
-                            // fieldOfView-driven projection, so the normal in-app camera
-                            // isn't left with our calibrated one.
-                            calibratedCam.fieldOfView = fovRestore;
-                            calibratedCam.nearClipPlane = nearRestore;
-                            calibratedCam.farClipPlane = farRestore;
-                            calibratedCam.ResetProjectionMatrix();
-                        }
-                        rig.gameObject.SetActive(initialState);
-                        if (tmp != null)
-                        {
-                            RenderTexture.ReleaseTemporary(tmp);
-                        }
+                        wrapper.SuppressPostEffects = suppressPostEffectsRestore;
+                        CameraConfig.Watermark = watermarkEnabled;
+                        CameraConfig.PostEffects = postEffectsEnabled;
+                    }
+
+                    rMgr.RenderToTexture(tmp, removeBackground: removeBackground,
+                        includePostProcessing: includePostProcessing);
+
+                    using (var fs = new FileStream(path, FileMode.Create))
+                    {
+                        Save(fs, tmp, bSaveAsPng: saveAsPng, preserveAlpha: removeBackground);
+                    }
+
+
+                }
+                finally
+                {
+                    if (wrapper != null)
+                    {
+                        wrapper.SuperSampling = ssaaRestore;
+                    }
+                    if (calibratedCam != null)
+                    {
+                        // ResetProjectionMatrix hands control back to Unity's own
+                        // fieldOfView-driven projection, so the normal in-app camera
+                        // isn't left with our calibrated one.
+                        calibratedCam.fieldOfView = fovRestore;
+                        calibratedCam.nearClipPlane = nearRestore;
+                        calibratedCam.farClipPlane = farRestore;
+                        calibratedCam.ResetProjectionMatrix();
+                    }
+                    rig.gameObject.SetActive(initialState);
+                    if (tmp != null)
+                    {
+                        RenderTexture.ReleaseTemporary(tmp);
                     }
                 }
-                catch (System.Exception)
-                {
-                    throw;
-                }
+
             }
         }
     }

@@ -588,7 +588,7 @@ namespace TiltBrush
                 return;
             }
             TrTransform tr = TrTransform.TR(s_TargetPosition, s_TargetRotation);
-            ScreenshotManager.TakeSnapshot(
+            ScreenshotManager.TakeCalibratedSnapshot(
                 tr, CgCaptureFilename, width, height,
                 superSampling: 1f, removeBackground: false, renderDepth: true, renderNormals: false);
             PostProductionCompositeImageEffect.InvalidateCgCache();

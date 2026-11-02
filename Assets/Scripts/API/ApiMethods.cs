@@ -2161,7 +2161,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "app.snapshot.quat",
-            "Takes a color snapshot and saves depth and normals sidecars, using a directly-supplied quaternion (x,y,z,w) for camera rotation instead of Euler angles",
+            "Takes a calibrated color snapshot and depth and normals sidecars, using camera.intrinsics/camera.clip when configured and a quaternion (x,y,z,w) for rotation",
             "0,10,0,0,0,0,1,hello,1024,768"
         )]
         public static void TakeSnapshotQuat(Vector3 position, Quaternion rotation, string filename, int width, int height)
@@ -2176,7 +2176,7 @@ namespace TiltBrush
             bool removeBackground = false;
             bool renderDepth = true;
             bool renderNormals = true;
-            ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
+            ScreenshotManager.TakeCalibratedSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
         }
 
         [ApiEndpoint(
