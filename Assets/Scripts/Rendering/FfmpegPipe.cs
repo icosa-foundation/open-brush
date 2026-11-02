@@ -538,6 +538,10 @@ namespace TiltBrush
             m_dataReader = null;
         }
 
+        // Available after the process exits; no process is not a successful encode.
+        public int? ExitCode => m_encoderProc != null && m_encoderProc.HasExited
+            ? m_encoderProc.ExitCode : (int?)null;
+
         public bool WaitForEncoderExit(int milliseconds)
         {
             if (m_encoderProc == null)

@@ -652,6 +652,11 @@ namespace TiltBrush
                 bool exited = encoder.WaitForEncoderExit(120000);
                 if (generation != s_Generation) { return; }
                 if (!exited) { Fail("ffmpeg did not finish writing the file within 2 minutes"); return; }
+                if (encoder.ExitCode != 0)
+                {
+                    Fail($"ffmpeg failed with exit code {encoder.ExitCode} (see the Unity log)");
+                    return;
+                }
                 if (!File.Exists(s_Output) || new FileInfo(s_Output).Length == 0)
                 {
                     Fail("ffmpeg exited without writing the file (see the Unity log)");
