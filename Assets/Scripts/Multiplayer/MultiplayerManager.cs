@@ -102,6 +102,7 @@ namespace OpenBrush.Multiplayer
         private readonly Dictionary<Guid, RetainedLiveStrokeCommand> m_RetainedLiveStrokeCommands =
             new Dictionary<Guid, RetainedLiveStrokeCommand>();
         private HashSet<Guid> m_SentBrushCommandGuids = new HashSet<Guid>();
+        private Queue<BaseCommand> m_OutgoingCommands = new Queue<BaseCommand>();
 
         private const int k_MaxLiveStrokeControlPoints = 32768;
         private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
@@ -1415,31 +1416,52 @@ namespace OpenBrush.Multiplayer
         public async void OnCommandPerformed(BaseCommand command)
         {
             if (State != ConnectionState.IN_ROOM) return;
+            Queue<BaseCommand> outgoingCommands = m_OutgoingCommands;
+            outgoingCommands.Enqueue(command);
+            // Keep the in-flight command at the head so later callbacks cannot start another drain.
+            if (outgoingCommands.Count != 1) return;
             HashSet<Guid> sentBrushCommandGuids = m_SentBrushCommandGuids;
-            if (EnumerateBrushStrokeCommands(command).Any())
+            while (outgoingCommands.Count > 0 &&
+                ReferenceEquals(outgoingCommands, m_OutgoingCommands) &&
+                State == ConnectionState.IN_ROOM)
             {
-                // DetachLine computes user simplification after recording the stroke command.
-                // Resume after that synchronous work before inspecting or serializing drop flags.
-                await Task.Yield();
-            }
-            if (State == ConnectionState.IN_ROOM)
-            {
-                foreach (BrushStrokeCommand brushCommand in
-                    EnumerateBrushStrokeCommands(command))
+                command = outgoingCommands.Peek();
+                try
                 {
-                    TagStrokeWithLocalContributor(brushCommand.m_Stroke);
-                }
-                if (command is BrushStrokeCommand brushStrokeCommand)
-                {
-                    if (await TryCompleteOutgoingLiveStrokeTree(brushStrokeCommand))
+                    if (EnumerateBrushStrokeCommands(command).Any())
+                    {
+                        // DetachLine computes user simplification after recording the stroke command.
+                        // Resume after that synchronous work before inspecting or serializing drop flags.
+                        await Task.Yield();
+                    }
+                    if (State != ConnectionState.IN_ROOM ||
+                        !ReferenceEquals(outgoingCommands, m_OutgoingCommands))
                     {
                         return;
                     }
+                    foreach (BrushStrokeCommand brushCommand in
+                        EnumerateBrushStrokeCommands(command))
+                    {
+                        TagStrokeWithLocalContributor(brushCommand.m_Stroke);
+                    }
+                    if (command is BrushStrokeCommand brushStrokeCommand &&
+                        await TryCompleteOutgoingLiveStrokeTree(brushStrokeCommand))
+                    {
+                        continue;
+                    }
+                    if (await m_Manager.PerformCommand(command))
+                    {
+                        sentBrushCommandGuids.UnionWith(
+                            EnumerateBrushStrokeCommands(command).Select(brushCommand => brushCommand.Guid));
+                    }
                 }
-                if (await m_Manager.PerformCommand(command))
+                catch (Exception exception)
                 {
-                    sentBrushCommandGuids.UnionWith(
-                        EnumerateBrushStrokeCommands(command).Select(brushCommand => brushCommand.Guid));
+                    Debug.LogError($"[MultiplayerCommandQueue] Failed to send command {command.Guid}: {exception}");
+                }
+                finally
+                {
+                    outgoingCommands.Dequeue();
                 }
             }
         }
@@ -1572,6 +1594,8 @@ namespace OpenBrush.Multiplayer
             m_OutgoingLiveStrokesById.Clear();
             m_RetainedLiveStrokeCommands.Clear();
             m_SentBrushCommandGuids = new HashSet<Guid>();
+            // An old drain may still be awaiting a send; it must not consume a new room's commands.
+            m_OutgoingCommands = new Queue<BaseCommand>();
             m_LocalPlayer = null;// Clean up local player reference
             m_RemotePlayers.ClearList();// Clean up remote player references
             m_LiveStrokeCapablePlayers.Clear();
