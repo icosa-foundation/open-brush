@@ -144,12 +144,17 @@ namespace OpenBrush.Multiplayer
                 : address;
         }
 
-        public async Task<bool> Connect()
+        private void ApplyConfiguredTransport()
         {
             // Keep Photon's default transport unless the user needs a restricted-network fallback.
             m_PhotonAppSettings.Protocol = App.UserConfig.Multiplayer.UseSecureWebSockets
                 ? ConnectionProtocol.WebSocketSecure
                 : new FusionAppSettings().Protocol;
+        }
+
+        public async Task<bool> Connect()
+        {
+            ApplyConfiguredTransport();
             State = ConnectionState.CONNECTING;
 
             await Task.Yield();
@@ -178,6 +183,7 @@ namespace OpenBrush.Multiplayer
 
             if (m_Runner == null) Init();
 
+            ApplyConfiguredTransport();
             State = ConnectionState.JOINING_ROOM;
 
             var sceneRef = SceneRef.FromIndex(SceneManager.GetActiveScene().buildIndex);
