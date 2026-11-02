@@ -90,8 +90,11 @@ namespace TiltBrush
                         distance >= bestDistance) continue;
                     bestDistance = distance;
                     model.TryGetPaletteIndex(cell, out byte paletteIndex);
-                    hit = new Hit { Widget = widget, Document = document, ModelIndex = i,
-                        Cell = cell, PaletteIndex = paletteIndex };
+                    hit = new Hit
+                    {
+                        Widget = widget, Document = document, ModelIndex = i,
+                        Cell = cell, PaletteIndex = paletteIndex
+                    };
                 }
             }
             return hit.Widget != null;

@@ -38,8 +38,11 @@ namespace TiltBrush
                         for (int z = min.z; z <= max.z; ++z) visited.Add(new Vector3Int(x, y, z));
                 Color color = entry.Value;
                 color.a = 0.85f;
-                boxes.Add(new VoxPreviewBox { Min = (Vector3)min - Vector3.one * 0.5f,
-                    Max = (Vector3)max + Vector3.one * 0.5f, Color = color });
+                boxes.Add(new VoxPreviewBox
+                {
+                    Min = (Vector3)min - Vector3.one * 0.5f,
+                    Max = (Vector3)max + Vector3.one * 0.5f, Color = color
+                });
             }
         }
 
@@ -68,8 +71,11 @@ namespace TiltBrush
         internal void Clear() => m_Boxes.Clear();
 
         internal void AddInvalid(Vector3Int min, Vector3Int max)
-            => m_Boxes.Add(new VoxPreviewBox { Min = (Vector3)min - Vector3.one * 0.5f,
-                Max = (Vector3)max + Vector3.one * 0.5f, Color = new Color(0.9f, 0.12f, 0.08f, 0.85f) });
+            => m_Boxes.Add(new VoxPreviewBox
+            {
+                Min = (Vector3)min - Vector3.one * 0.5f,
+                Max = (Vector3)max + Vector3.one * 0.5f, Color = new Color(0.9f, 0.12f, 0.08f, 0.85f)
+            });
 
         internal void Draw(TrTransform gridToCanvas, Dictionary<Vector3Int, Color32> cells)
         {

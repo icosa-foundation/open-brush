@@ -32,7 +32,8 @@ namespace TiltBrush
             string name = string.IsNullOrWhiteSpace(model.Name) ? "Voxel Region" : $"{model.Name} Region";
             var detached = new RuntimeModel(name, model.Size, sourceModelId: -1, isCopy: false,
                 voxels: cells, globalRotation: model.GlobalRotation, localRotation: model.GlobalRotation,
-                localTransformOffset: GetSceneTranslation(model)) { TransformOffset = model.TransformOffset };
+                localTransformOffset: GetSceneTranslation(model))
+            { TransformOffset = model.TransformOffset };
             region.m_models.Add(detached);
             region.FitDrawingBounds(detached);
 

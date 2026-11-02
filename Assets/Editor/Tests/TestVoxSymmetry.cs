@@ -99,8 +99,11 @@ namespace TiltBrush
 
         private static VoxSymmetryEdits.Copy Copy(Vector3Int center, Color32 color)
         {
-            var copy = new VoxSymmetryEdits.Copy { Center = center, Color = color, Valid = true,
-                Linear = Matrix4x4.identity, Inverse = Matrix4x4.identity };
+            var copy = new VoxSymmetryEdits.Copy
+            {
+                Center = center, Color = color, Valid = true,
+                Linear = Matrix4x4.identity, Inverse = Matrix4x4.identity
+            };
             VoxBrushRasterizer.TryGetBounds(new VoxBrushFootprint(0), copy.Linear, out copy.Min, out copy.Max);
             return copy;
         }

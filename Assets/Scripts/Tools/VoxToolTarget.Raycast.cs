@@ -51,8 +51,11 @@ namespace TiltBrush
                     model.TryGetPaletteIndex(cellHit.Cell, out byte paletteIndex);
                     hit = new RayHit
                     {
-                        Voxel = new Hit { Widget = widget, Document = document, ModelIndex = i,
-                            Cell = cellHit.Cell, PaletteIndex = paletteIndex },
+                        Voxel = new Hit
+                        {
+                            Widget = widget, Document = document, ModelIndex = i,
+                            Cell = cellHit.Cell, PaletteIndex = paletteIndex
+                        },
                         Face = cellHit.Face,
                         Point_GS = cellHit.Point_GS,
                         Normal_GS = cellHit.Normal_GS,

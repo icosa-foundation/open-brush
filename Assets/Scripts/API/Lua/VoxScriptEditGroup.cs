@@ -42,8 +42,11 @@ namespace TiltBrush
             var document = wrapper._Document;
             if (!m_Edits.TryGetValue(document, out var edit))
             {
-                edit = new Edit { Before = document.CaptureSnapshot(), Widget = wrapper.Widget,
-                    BeforeShowing = wrapper.Widget.Showing, BeforeTransform = GetTransform(wrapper.Widget) };
+                edit = new Edit
+                {
+                    Before = document.CaptureSnapshot(), Widget = wrapper.Widget,
+                    BeforeShowing = wrapper.Widget.Showing, BeforeTransform = GetTransform(wrapper.Widget)
+                };
                 m_Edits.Add(document, edit);
             }
             if (!mutation()) return false;
