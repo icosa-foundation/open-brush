@@ -228,7 +228,6 @@ namespace TiltBrush
 
                 m_HasCg = true;
                 LastStatus = $"CG loaded: {m_CgColorTex.width}x{m_CgColorTex.height}, depth {w}x{h}";
-                LastCgLoadTiming = $"CG reload from disk: {cgTimer.ElapsedMilliseconds}ms";
             }
             catch (Exception e)
             {
@@ -290,7 +289,6 @@ namespace TiltBrush
                 m_PlateDepthTex = PostProdCompositor.BuildDepthTexture(depthPixels, w, h, bilinear: true);
                 m_HasPlateDepth = true;
                 LastStatus = $"plate loaded: {m_PlateColorTex.width}x{m_PlateColorTex.height}, depth {w}x{h}";
-                LastPlateLoadTiming = $"plate reload from disk (colour+depth): {plateTimer.ElapsedMilliseconds}ms";
             }
             catch (Exception e)
             {
