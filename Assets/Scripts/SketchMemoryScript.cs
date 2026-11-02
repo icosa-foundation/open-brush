@@ -1542,6 +1542,28 @@ namespace TiltBrush
             return true;
         }
 
+        // Normal snapshots serialize enabled geometry. Finish scrubbing first so later strokes
+        // are not silently omitted, leaving the playhead paused at the end after saving.
+        public IEnumerator FinishScrubPlaybackForSave()
+        {
+            if (!m_KeepPlaybackAliveForScrubbing ||
+                !(m_ScenePlayback is ScenePlaybackByTimeLayered playback))
+            {
+                yield break;
+            }
+
+            // One millisecond beyond the final point avoids truncating a fractional-second
+            // clock conversion, and also renders zero-timestamp strokes (playback skips 0).
+            double endTimeSeconds = (playback.GetEndTimeMs(m_MemoryList) + 1.0) / 1000.0;
+            PostProductionPreviewController.HoldAt(endTimeSeconds);
+            while (playback.Update())
+            {
+                yield return null;
+            }
+            // Do not use QuickLoadRemaining: its latched flag prevents subsequent scrubbing.
+            PostProductionPreviewController.HoldAt(endTimeSeconds);
+        }
+
         private void SortMemoryList()
         {
             var sorted = m_MemoryList.OrderBy(obj => obj.HeadTimestampMs).ToArray();

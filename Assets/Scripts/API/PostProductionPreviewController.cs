@@ -412,6 +412,14 @@ namespace TiltBrush
             Time.timeScale = 1f;
         }
 
+        public static void HoldAt(double sketchTimeSeconds)
+        {
+            SetShuttleRate(0f);
+            App.Instance.CurrentSketchTime = sketchTimeSeconds;
+            s_LastSetSketchTime = sketchTimeSeconds;
+            s_HaveLastSet = true;
+        }
+
         private static void UpdateTransport()
         {
             if (s_Transport == Transport.Off || !SketchMemoryScript.m_Instance.IsPlayingBack) { return; }

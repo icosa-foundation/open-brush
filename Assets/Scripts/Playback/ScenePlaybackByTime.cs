@@ -257,6 +257,16 @@ namespace TiltBrush
             return ConvertSketchTimeToMilliseconds(App.Instance.CurrentSketchTime);
         }
 
+        internal long GetEndTimeMs(IEnumerable<Stroke> strokes)
+        {
+            long endTimeMs = 0;
+            foreach (var stroke in strokes)
+            {
+                endTimeMs = Math.Max(endTimeMs, m_timeline.GetTailTimeMs(stroke));
+            }
+            return endTimeMs;
+        }
+
         // Continue drawing stroke for this frame, returning true if more rendering is pending.
         public bool Update()
         {

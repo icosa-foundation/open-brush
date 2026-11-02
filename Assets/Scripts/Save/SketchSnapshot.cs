@@ -94,6 +94,15 @@ namespace TiltBrush
 
         private IEnumerator<Timeslice> TimeslicedConstructor()
         {
+            if (!m_SelectedOnly)
+            {
+                var finishPlayback = SketchMemoryScript.m_Instance.FinishScrubPlaybackForSave();
+                while (finishPlayback.MoveNext())
+                {
+                    yield return null;
+                }
+            }
+
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
             long maxTicks =
