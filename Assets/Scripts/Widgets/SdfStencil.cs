@@ -1251,15 +1251,20 @@ namespace TiltBrush
             float radius = m_Collider != null ? m_Collider.bounds.extents.magnitude :
                 Mathf.Abs(GetSignedWidgetSize() * Coords.CanvasPose.scale);
             radius = Mathf.Max(radius, 0.0001f);
-            if (!TryProjectToSurface(mapper, pos, radius, out surfacePos))
+            // Include the distance to the bounds so distant queries can reach the guide
+            // within the iteration limit without removing the Newton-step safeguard.
+            float distanceToBounds = m_Collider != null ?
+                Mathf.Sqrt(m_Collider.bounds.SqrDistance(pos)) : Vector3.Distance(pos, transform.position);
+            float maxStep = distanceToBounds + radius * 2f;
+            if (!TryProjectToSurface(mapper, pos, radius, maxStep, out surfacePos))
             {
-                surfacePos = ProjectStationaryPointToSurface(mapper, pos, radius);
+                surfacePos = ProjectStationaryPointToSurface(mapper, pos, radius, maxStep);
             }
             surfaceNorm = m_SdfManager.GetSurfaceNormal(surfacePos);
         }
 
         private static bool TryProjectToSurface(
-            Mapper mapper, Vector3 query, float radius, out Vector3 surfacePos)
+            Mapper mapper, Vector3 query, float radius, float maxStep, out Vector3 surfacePos)
         {
             surfacePos = query;
             float tolerance = radius * 0.0001f;
@@ -1278,7 +1283,7 @@ namespace TiltBrush
 
                 // Blends can have small gradients. Limit Newton steps and backtrack until
                 // the field residual decreases instead of accepting an overshoot.
-                displacement = Vector3.ClampMagnitude(displacement, radius * 2f);
+                displacement = Vector3.ClampMagnitude(displacement, maxStep);
                 bool improved = false;
                 for (int backtrack = 0; backtrack < 8; ++backtrack)
                 {
@@ -1302,7 +1307,8 @@ namespace TiltBrush
             Vector3.down, Vector3.forward, Vector3.back,
         };
 
-        private Vector3 ProjectStationaryPointToSurface(Mapper mapper, Vector3 query, float radius)
+        private Vector3 ProjectStationaryPointToSurface(
+            Mapper mapper, Vector3 query, float radius, float maxStep)
         {
             // A field extremum has no projection direction. Probe nearby points when
             // the direct projection cannot converge, then retain the nearest result.
@@ -1311,7 +1317,7 @@ namespace TiltBrush
             foreach (Vector3 direction in sm_ProjectionDirections)
             {
                 Vector3 candidate = query + direction * (radius * 0.01f);
-                if (TryProjectToSurface(mapper, candidate, radius, out candidate))
+                if (TryProjectToSurface(mapper, candidate, radius, maxStep, out candidate))
                 {
                     float candidateSquared = (candidate - query).sqrMagnitude;
                     if (candidateSquared < closestSquared)
