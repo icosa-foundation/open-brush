@@ -22,6 +22,7 @@ namespace TiltBrush
         {
             AlignToGrid,
             NewModel,
+            SelectRegion,
         }
 
         [SerializeField] private Setting m_Setting;
@@ -43,7 +44,8 @@ namespace TiltBrush
                 SetButtonAvailable(available);
             }
 
-            bool active = m_Setting == Setting.NewModel && tool.CreatingNewModel;
+            bool active = (m_Setting == Setting.NewModel && tool.CreatingNewModel) ||
+                (m_Setting == Setting.SelectRegion && tool.SelectingRegion);
             if (m_ToggleActive != active)
             {
                 m_ToggleActive = active;
@@ -61,6 +63,11 @@ namespace TiltBrush
 
             switch (m_Setting)
             {
+                case Setting.SelectRegion:
+                    tool.ToggleRegionSelection();
+                    if (tool.SelectingRegion)
+                        SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.VoxelTool);
+                    break;
                 case Setting.AlignToGrid:
                     if (!tool.AlignCurrentModelToGrid()) AudioManager.m_Instance.DisabledItemSelect(transform.position);
                     break;

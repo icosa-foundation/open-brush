@@ -3875,6 +3875,14 @@ MonoBehaviour:
     m_Key: LABS_PANEL_VOXEL_TRAY_ALIGN_TO_GRID_EXTRA
     m_Metadata:
       m_Items: []
+  - m_Id: 560634138304536576
+    m_Key: LABS_PANEL_VOXEL_TRAY_SELECT_REGION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Key: LABS_PANEL_VOXEL_TRAY_SELECT_REGION_EXTRA
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

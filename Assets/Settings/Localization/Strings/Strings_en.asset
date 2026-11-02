@@ -4051,6 +4051,14 @@ MonoBehaviour:
     m_Localized: Align the current model with your grid settings
     m_Metadata:
       m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: Select voxel region
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: Drag the trigger to select a cuboid. Double press in empty space to clear. Hold the duplicate button when grabbing to move a copy.
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
