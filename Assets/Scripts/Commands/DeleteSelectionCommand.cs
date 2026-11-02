@@ -22,6 +22,12 @@ namespace TiltBrush
         private Stroke[] m_Strokes;
         private List<GrabWidget> m_Widgets;
         private TrTransform m_InitialSelectionTransform;
+        private readonly Dictionary<Stroke, TrTransform> m_StrokeJoins =
+            new Dictionary<Stroke, TrTransform>(new ReferenceComparer<Stroke>());
+        private readonly Dictionary<GrabWidget, TrTransform> m_WidgetJoins =
+            new Dictionary<GrabWidget, TrTransform>();
+        private readonly Dictionary<GrabWidget, CanvasScript> m_WidgetCanvases =
+            new Dictionary<GrabWidget, CanvasScript>();
         private readonly Dictionary<GrabWidget, int> m_LinkedWidgetCosts = new Dictionary<GrabWidget, int>();
 
         public DeleteSelectionCommand(
@@ -33,6 +39,10 @@ namespace TiltBrush
             {
                 m_Strokes = new Stroke[strokes.Count];
                 strokes.CopyTo(m_Strokes, 0);
+                foreach (var stroke in m_Strokes)
+                {
+                    m_StrokeJoins[stroke] = SelectionManager.m_Instance.SelectionTransformWhenSelected(stroke);
+                }
             }
             if (widgets != null)
             {
@@ -41,6 +51,8 @@ namespace TiltBrush
                 var seen = new HashSet<GrabWidget>(m_Widgets);
                 foreach (var widget in widgets)
                 {
+                    m_WidgetJoins[widget] = SelectionManager.m_Instance.SelectionTransformWhenSelected(widget);
+                    m_WidgetCanvases[widget] = widget.m_PreviousCanvas;
                     if (widget.SymmetryPeerGroup == null) { continue; }
                     m_LinkedWidgetCosts[widget] = widget.GetTiltMeterCost();
                     foreach (var peer in widget.SymmetryPeerGroup.ActiveMembers)
@@ -147,6 +159,8 @@ namespace TiltBrush
 
             SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_Strokes);
             SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_Widgets);
+            SelectionManager.m_Instance.RestoreSelectionJoinTransforms(m_StrokeJoins);
+            SelectionManager.m_Instance.RestoreWidgetSelectionJoins(m_WidgetJoins, m_WidgetCanvases);
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);
         }
     }
