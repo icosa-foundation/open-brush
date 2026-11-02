@@ -113,7 +113,8 @@ namespace TiltBrush
             public Controller(ReferenceVideo referenceVideo) : this(referenceVideo, true, 0, 0) { }
 
             public Controller(Controller other) : this(other.m_ReferenceVideo,
-                other.Playing, other.Volume, other.Time) { }
+                other.Playing, other.Volume, other.Time)
+            { }
 
             private Controller(ReferenceVideo referenceVideo, bool playing, float volume, float time)
             {
