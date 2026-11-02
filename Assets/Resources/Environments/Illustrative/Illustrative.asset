@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Guid:
     m_storage: e65cde1a-a177-4bfb-b93f-f673c99a32bc
-  m_Description: ENVIRONMENT_ILLUSTRATIVE
   m_EnvironmentDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -62,6 +61,7 @@ MonoBehaviour:
   m_WidgetHome: {x: 0, y: 0, z: 0}
   m_SkyboxColorA: {r: 0.7647059, g: 0.7647059, b: 0.7647059, a: 1}
   m_SkyboxColorB: {r: 0.62352943, g: 0.62352943, b: 0.62352943, a: 1}
+  isPassthrough: 0
   references:
     version: 2
     RefIds: []

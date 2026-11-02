@@ -656,6 +656,9 @@ namespace TiltBrush
 
             // Note, we add "unityeditor" to the package name - Unity appends this.
             string packageName = exeTitle + "unityeditor";
+            string playerActivity = BuildTiltBrush.GuiSelectedSdk == XrSdkMode.AndroidXR
+                ? "com.unity3d.player.UnityPlayerGameActivity"
+                : "com.unity3d.player.UnityPlayerActivity";
 
             if (m_upload != null)
             {
@@ -676,7 +679,7 @@ namespace TiltBrush
                 // adb args:
                 "-s", m_selectedAndroid,
                 //  -S will force stop any previous instance.
-                "shell", "am", "start", "-S", packageName + "/com.unity3d.player.UnityPlayerActivity"
+                "shell", "am", "start", "-S", packageName + "/" + playerActivity
             );
 
             if (m_terminate != null) { m_terminate.Cancel(); }
@@ -703,7 +706,7 @@ namespace TiltBrush
                 (results) => results.Any(x => x.Contains("Starting: Intent")),
                 // adb args:
                 "-s", m_selectedAndroid,
-                "shell", "am", "start", packageName + "/com.unity3d.player.UnityPlayerActivity",
+                "shell", "am", "start", packageName + "/" + playerActivity,
                 "-e", "unity", "-deepprofiling"
             );
         }

@@ -20,7 +20,7 @@ Properties {
 }
 
 CGINCLUDE
-  #include "Assets/Shaders/Include/PackInt.cginc"
+  #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/PackInt.cginc"
 
   struct appdata_t {
     float4 pos : POSITION;

@@ -835,7 +835,6 @@ namespace TiltBrush
                 string downloadKey = GetDownloadKey(entry);
                 if (!m_DownloadingSketchKeys.Add(downloadKey))
                 {
-                    Debug.Log($"{LogPrefix} download already in flight for {downloadKey}");
                     RecoverFromSketchLoadFailure("Download already in progress.");
                     return;
                 }
@@ -961,7 +960,6 @@ namespace TiltBrush
             }
 
             SetLoadingMessage("Loading sketch...");
-            Debug.Log($"{LogPrefix} showing loading message and waiting for sketch playback to start");
         }
 
         private void RecoverFromSketchLoadFailure(string message)
@@ -1032,7 +1030,7 @@ namespace TiltBrush
                 if (m_PcControlsText != null)
                 {
                     // TODO We should really do a specific "is mouse/keyboard" check here
-                    m_PcControlsText.SetActive(!Application.isMobilePlatform);
+                    m_PcControlsText.SetActive(!App.Config.IsMobileHardware);
                 }
             }
             RefreshViewOnlyUi();
@@ -1162,8 +1160,6 @@ namespace TiltBrush
             {
                 AttachPointerCursorHandler(scrollRect.verticalScrollbar.gameObject);
             }
-
-            Debug.Log($"{LogPrefix} bound authored sketch grid scroll view");
         }
 
         private void BindExistingGridUi(RectTransform uiParent)
@@ -1554,7 +1550,7 @@ namespace TiltBrush
             text.fontSize = fontSize;
             text.color = color;
             text.alignment = TextAlignmentOptions.MidlineLeft;
-            text.enableWordWrapping = false;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
             text.overflowMode = TextOverflowModes.Ellipsis;
             text.raycastTarget = false;
             return text;
@@ -1827,11 +1823,23 @@ namespace TiltBrush
             switch (setType)
             {
                 case SketchSetType.User:
+#if OPEN_BRUSH_VIEWER
+                    return ViewerSketchbookLabels.Featured.GetLocalizedStringAsync().Result;
+#else
                     return "Your Sketches";
+#endif
                 case SketchSetType.Curated:
+#if OPEN_BRUSH_VIEWER
+                    return ViewerSketchbookLabels.All.GetLocalizedStringAsync().Result;
+#else
                     return "Featured Sketches";
+#endif
                 case SketchSetType.Liked:
+#if OPEN_BRUSH_VIEWER
+                    return ViewerSketchbookLabels.Liked.GetLocalizedStringAsync().Result;
+#else
                     return "Liked Sketches";
+#endif
                 default:
                     return setType.ToString();
             }

@@ -27,15 +27,6 @@ namespace TiltBrush
         const string EXPORT_TEXTURE_DIR = "Support/ExportTextures";
         const string EXPORT_TEXTURE_EXTENSION = ".png";
 
-        public void OnEnable()
-        {
-            m_BrushScript = m_BrushPrefab.GetComponent<BaseBrushScript>();
-            if (m_BrushScript == null)
-            {
-                throw new ApplicationException("BaseBrushScript not found for brush prefab");
-            }
-        }
-
         /// Use this attribute on fields that are stored as a string guid, but
         /// which want user-friendly UI that looks like a BrushDescriptor.
         /// One reason to use a string rather than a direct reference is
@@ -138,6 +129,8 @@ namespace TiltBrush
 
         [Header("Material")]
         [SerializeField] private Material m_Material;
+        [SerializeField] private Material m_TestingMaterial;
+        public Material m_OverlayMaterial;
         // Number of atlas textures in the V direction
         public int m_TextureAtlasV;
         public float m_TileRate;
@@ -227,7 +220,17 @@ namespace TiltBrush
             {
                 if (m_BrushScript == null)
                 {
-                    throw new ApplicationException("BaseBrushScript not found for brush prefab");
+                    // Prefab dependencies may not be available during OnEnable while importing.
+                    // Resolve the component when the layout is actually needed instead.
+                    if (m_BrushPrefab == null)
+                    {
+                        throw new ApplicationException($"Brush prefab not found for brush '{name}'");
+                    }
+                    m_BrushScript = m_BrushPrefab.GetComponent<BaseBrushScript>();
+                    if (m_BrushScript == null)
+                    {
+                        throw new ApplicationException($"BaseBrushScript not found for brush prefab '{m_BrushPrefab.name}' (brush '{name}')");
+                    }
                 }
                 return m_BrushScript.GetVertexLayout(this);
             }
@@ -235,10 +238,11 @@ namespace TiltBrush
 
         public bool HasExportTexture()
         {
-            if (m_Material != null)
+            Material material = Material;
+            if (material != null)
             {
-                return m_Material.HasProperty("_MainTex") &&
-                    m_Material.mainTexture is Texture2D;
+                return material.HasProperty("_MainTex") &&
+                    material.mainTexture is Texture2D;
             }
             return false;
         }
@@ -359,6 +363,13 @@ namespace TiltBrush
         {
             get
             {
+                if (DevOptions.I != null &&
+                    DevOptions.I.UseBrushTestingMaterial &&
+                    m_TestingMaterial != null)
+                {
+                    return m_TestingMaterial;
+                }
+
                 return m_Material;
             }
         }
@@ -434,8 +445,9 @@ namespace TiltBrush
 #if UNITY_EDITOR
         private string GetExportTextureFilenameEditor()
         {
-            Debug.Assert(m_Material != null);
-            Texture2D mainTex = (Texture2D)m_Material.mainTexture;
+            Material material = Material;
+            Debug.Assert(material != null);
+            Texture2D mainTex = (Texture2D)material.mainTexture;
             if (mainTex != null)
             {
                 // Kind of junky... this is because we hardcode this extension

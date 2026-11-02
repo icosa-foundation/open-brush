@@ -15,7 +15,6 @@
 #if MP_PHOTON
 
 using OpenBrush.Multiplayer;
-using Photon.Pun;
 using Photon.Realtime;
 using Photon.Voice.Unity;
 using System;
@@ -39,7 +38,6 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
     private AppSettings m_PhotonVoiceAppSettings;
     private Recorder m_Recorder;
     private bool ConnectedToMaster = false;
-    private bool wasTransmitting = false;
 #if UNITY_ANDROID
     private bool m_RequestingMicrophonePermission = false;
     private bool m_StartSpeakingWhenMicrophonePermissionGranted = false;
@@ -55,7 +53,7 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         isTransmitting = false;
     }
 
-    public async Task<bool> Init()
+    public bool Init()
     {
 
         try
@@ -63,7 +61,6 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
             State = ConnectionState.INITIALIZING;
             m_VoiceConnection = GameObject.FindFirstObjectByType<VoiceConnection>();
             if (m_VoiceConnection == null) throw new Exception("[PhotonVoiceManager] VoiceConnection component not found in scene");
-            PhotonNetwork.LogLevel = PunLogLevel.ErrorsOnly;
             m_VoiceConnection.VoiceLogger.LogLevel = Photon.Voice.LogLevel.Error;
 
             m_VoiceConnection.Settings = new AppSettings
@@ -86,7 +83,6 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         ControllerConsoleScript.m_Instance.AddNewLine("[PhotonVoiceManager] Succesfully initialized");
         State = ConnectionState.INITIALIZED;
         return true;
-
     }
 
     void OnDestroy()
@@ -330,17 +326,6 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
         }
 
         isTransmitting = m_Recorder.IsCurrentlyTransmitting;
-
-        if (isTransmitting && !wasTransmitting)
-        {;
-            Debug.Log("[PhotonVoiceManager] Speech started.");
-        }
-        else if (!isTransmitting && wasTransmitting)
-        {
-            Debug.Log("[PhotonVoiceManager] Speech stopped.");
-        }
-
-        wasTransmitting = isTransmitting;
     }
 
     private async void WaitForSpeaker(string speakerName, Action<GameObject> onSpeakerFound)
@@ -369,7 +354,6 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
     public void OnCreatedRoom()
     {
-
     }
 
     public void OnCreateRoomFailed(short returnCode, string message)
@@ -379,7 +363,6 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
     public void OnFriendListUpdate(List<FriendInfo> friendList)
     {
-
     }
 
     public void OnJoinedRoom()
@@ -398,7 +381,6 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
     public void OnLeftRoom()
     {
-
     }
 
     #endregion
@@ -407,7 +389,6 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
     public void OnConnected()
     {
-
     }
 
     public void OnConnectedToMaster()
@@ -427,21 +408,17 @@ public class PhotonVoiceManager : IVoiceConnectionHandler, IConnectionCallbacks,
 
     public void OnRegionListReceived(RegionHandler regionHandler)
     {
-
     }
 
     public void OnCustomAuthenticationResponse(Dictionary<string, object> data)
     {
-
     }
 
     public void OnCustomAuthenticationFailed(string debugMessage)
     {
-
     }
 
 
     #endregion
-
 }
 #endif

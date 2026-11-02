@@ -199,6 +199,12 @@ namespace TiltBrush
             return WidgetManager.m_Instance.ActiveVideoWidgets[index].WidgetScript;
         }
 
+        private static SoundClipWidget _GetActiveSoundClip(int index)
+        {
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveSoundClipWidgets);
+            return WidgetManager.m_Instance.ActiveSoundClipWidgets[index].WidgetScript;
+        }
+
         private static ModelWidget _GetActiveModel(int index)
         {
             index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveModelWidgets);
@@ -289,9 +295,8 @@ namespace TiltBrush
             }
 
             // TODO - make this smarter
-            if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg") ||
-                filename.ToLower().EndsWith(".png") || filename.ToLower().EndsWith(".mp4") ||
-                filename.ToLower().EndsWith(".hdr") || filename.ToLower().EndsWith(".svg") ||
+            if (ReferenceImageFormat.IsSupportedFile(filename) ||
+                filename.ToLower().EndsWith(".mp4") ||
                 filename.ToLower().EndsWith(".obj") || filename.ToLower().EndsWith(".off") ||
                 filename.ToLower().EndsWith(".gltf") || filename.ToLower().EndsWith(".glb") ||
                 filename.ToLower().EndsWith(".usd") || filename.ToLower().EndsWith(".fbx"))

@@ -29,15 +29,18 @@ namespace TiltBrush
             // Set a new batchId on this light so it can be picked up in GPU intersections.
             m_BatchId = GpuIntersector.GetNextBatchId();
             WidgetManager.m_Instance.AddWidgetToBatchMap(this, m_BatchId);
-            Debug.Log($"Widget {name} assigned batchId {m_BatchId}");
         }
 
-        public static List<LightWidget> FromModelWidget(ModelWidget modelWidget)
+        public static List<LightWidget> FromModelWidget(
+            ModelWidget modelWidget, bool destroyModelWidget = true)
         {
             var go = modelWidget.gameObject;
             string baseName = go.name.Replace("ModelWidget", "LightWidget");
-            go.SetActive(false);
-            go.name = go.name.Replace("ModelWidget", "OldModelWidget");
+            if (destroyModelWidget)
+            {
+                go.SetActive(false);
+                go.name = go.name.Replace("ModelWidget", "OldModelWidget");
+            }
             var lightWidgets = new List<LightWidget>();
             var layer = go.layer;
             foreach (var gizmo in go.GetComponentsInChildren<SceneLightGizmo>())
@@ -59,9 +62,12 @@ namespace TiltBrush
                 WidgetManager.m_Instance.RegisterGrabWidget(lightWidget.gameObject);
                 lightWidgets.Add(lightWidget);
             }
-            modelWidget.Hide();
-            WidgetManager.m_Instance.UnregisterGrabWidget(modelWidget.gameObject);
-            Destroy(modelWidget.gameObject);
+            if (destroyModelWidget)
+            {
+                modelWidget.Hide();
+                WidgetManager.m_Instance.UnregisterGrabWidget(modelWidget.gameObject);
+                Destroy(modelWidget.gameObject);
+            }
             return lightWidgets;
         }
 
@@ -169,7 +175,6 @@ namespace TiltBrush
                     l.gameObject.SetActive(true);
                     activeLight = l;
                 }
-
             }
             return activeLight;
         }
@@ -181,5 +186,4 @@ namespace TiltBrush
             return xf;
         }
     }
-
 } // namespace TiltBrush

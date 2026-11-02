@@ -34,25 +34,17 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityGLTF;
 
-#if OCULUS_SUPPORTED
-using Unity.XR.Oculus;
-#endif
-
 namespace TiltBrush
 {
     public enum XrSdkMode
     {
         Monoscopic = -1,
         OpenXR = 0,
-        Oculus,
-        Wave,
-        Pico,
         Zapbox,
+        AndroidXR,
     }
 
     // The sdk mode indicates which SDK that we're using to drive the display.
-    //  - These names are used in our analytics, so they must be protected from obfuscation.
-    //    Do not change the names of any of them, unless they've never been released.
     [Serializable]
     public enum SdkMode
     {
@@ -60,6 +52,15 @@ namespace TiltBrush
         UnityXR,
         Monoscopic,
         Ods,    // Video rendering
+    }
+
+    [Serializable]
+    public enum PassthroughMode
+    {
+        None,
+        OpenXREnvionmentBlendMode,
+        FBPassthrough,
+        Zapbox,
     }
 
     /// These are not used in analytics. They indicate the type of tool tip description that will appear
@@ -205,9 +206,6 @@ namespace TiltBrush
         public bool m_AllowWidgetPinning;
         public bool m_DebugWebRequest;
         public bool m_ToggleProfileOnAppButton = false;
-
-        [Header("Global Shaders")]
-        public Shader m_BlitToComputeShader;
 
         [Header("Upload and Export")]
         // Some brushes put a birth time in the vertex attributes; because we export
@@ -372,26 +370,18 @@ namespace TiltBrush
                 {
                     // Skip "TiltBrush.exe"
                     continue;
-
                 }
                 else if (args[i] == "--captureOds")
                 {
                     m_SdkMode = SdkMode.Ods;
-                    UnityEngine.XR.XRSettings.enabled = false;
-                    Debug.Log("CaptureODS: Enable ");
-
                 }
                 else if (args[i] == "--noQuickLoad")
                 {
                     m_QuickLoad = false;
-                    Debug.Log("QuickLoad: Disable ");
-
                 }
                 else if (args[i].EndsWith(SaveLoadScript.TILT_SUFFIX))
                 {
                     files.Add(args[i]);
-                    Debug.LogFormat("Sketch: {0}", args[i]);
-
                 }
                 else if (args[i] == "--outputPath")
                 {
@@ -400,8 +390,6 @@ namespace TiltBrush
                         throw new ApplicationException("Invalid outputPath argument, path expected");
                     }
                     m_OdsOutputPath = args[++i];
-                    Debug.LogFormat("ODS Output Path: {0}", args[i]);
-
                 }
                 else if (args[i] == "--outputPrefix")
                 {
@@ -409,9 +397,7 @@ namespace TiltBrush
                     {
                         throw new ApplicationException("Invalid prefix argument, name expected");
                     }
-                    m_OdsOutputPrefix = args[i];
-                    Debug.LogFormat("ODS Output Prefix: {0}", args[i]);
-
+                    m_OdsOutputPrefix = args[++i];
                 }
                 else if (args[i] == "--preview")
                 {
@@ -419,14 +405,10 @@ namespace TiltBrush
                     // to see a preview. To some people, 2k may look good enough to ship, but is horribly
                     // aliased in the HMD, so let's not give an option for that.
                     m_OdsPreview = true;
-                    Debug.LogFormat("Enable: ODS Preview");
-
                 }
                 else if (args[i] == "--noCorrection")
                 {
                     m_OdsCollapseIpd = false;
-                    Debug.LogFormat("Enable: NO Correction");
-
                 }
                 else if (args[i] == "--turnTable")
                 {
@@ -439,8 +421,6 @@ namespace TiltBrush
                         throw new ApplicationException("Invalid turnTable rotation argument, " +
                             "angle in degrees expected");
                     }
-                    Debug.LogFormat("Enable: Turntable {0}", m_OdsTurnTableDegrees);
-
                 }
                 else if (args[i] == "--numFrames")
                 {
@@ -453,8 +433,6 @@ namespace TiltBrush
                         throw new ApplicationException("Invalid numFrames argument, " +
                             "integer frame count expected");
                     }
-                    Debug.LogFormat("ODS Num Frames: {0}", m_OdsNumFrames);
-
                 }
                 else if (args[i] == "--fps")
                 {
@@ -467,8 +445,6 @@ namespace TiltBrush
                         throw new ApplicationException("Invalid fps argument, " +
                             "floating point frame rate expected");
                     }
-                    Debug.LogFormat("ODS FPS: {0}", m_OdsFps);
-
                 }
                 else if (args[i] == "--export")
                 {
@@ -506,7 +482,6 @@ namespace TiltBrush
                     }
                     m_VideoPathToRender = args[++i];
                     m_SdkMode = SdkMode.Monoscopic;
-                    UnityEngine.XR.XRSettings.enabled = false;
                 }
                 else if (args[i] == "--EnableMonoscopicMode")
                 {
@@ -523,7 +498,6 @@ namespace TiltBrush
                 else if (args[i] == "--forceSteamOverlayBrowser")
                 {
                     CanReachLocalhostDisabled = true;
-                    Debug.Log("[STEAM_BROWSER] Steam overlay browser forced by command line");
                 }
                 else if (args[i].Contains("."))
                 {
@@ -564,10 +538,6 @@ namespace TiltBrush
         {
             get
             {
-#if OCULUS_SUPPORTED
-                SystemHeadset headset = Unity.XR.Oculus.Utils.GetSystemHeadsetType();
-                return headset != SystemHeadset.Oculus_Quest;
-#endif // OCULUS_SUPPORTED
 #if ZAPBOX_SUPPORTED
                 return false;
 #endif
@@ -625,18 +595,15 @@ namespace TiltBrush
                 {
                     ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
                     m_SdkMode = SdkMode.Monoscopic;
-                    UnityEngine.XR.XRSettings.enabled = false;
                 }
                 else if (disableXr)
                 {
                     ParseUserSetting("--Flags.DisableXrMode", "true");
-                    UnityEngine.XR.XRSettings.enabled = false;
                 }
 
                 string openBrushArgs = intent.Call<string>("getStringExtra", "OpenBrushArgs");
                 if (!string.IsNullOrWhiteSpace(openBrushArgs))
                 {
-                    Debug.Log("[OB_ANDROID_ARGS] Parsing OpenBrushArgs intent extra");
                     ParseArgString(openBrushArgs);
                 }
 
@@ -778,7 +745,7 @@ namespace TiltBrush
             }
             try
             {
-                change.value = Convert.ChangeType(value, memberType);
+                change.value = Convert.ChangeType(value, Nullable.GetUnderlyingType(memberType) ?? memberType);
             }
             catch (Exception)
             {
@@ -824,12 +791,10 @@ namespace TiltBrush
 
 #if UNITY_EDITOR
         /// Called at build time, just before this Config instance is saved to Main.unity
-        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target, bool disableAccountLogins = false)
+        public void DoBuildTimeConfiguration(UnityEditor.BuildTarget target)
         {
             m_PlatformConfig = EditTimeAssetReferences.Instance.GetConfigForBuildTarget(target);
-            DisableAccountLogins = disableAccountLogins;
         }
 #endif
     }
-
 } // namespace TiltBrush

@@ -66,7 +66,7 @@ public class FbxPropertyDouble3 : FbxProperty {
     return ret;
   }
 
-  public new FbxFileTexture GetSrcObject_FileTexture() {
+  public FbxFileTexture GetSrcObject_FileTexture() {
     global::System.IntPtr cPtr = NativeMethods.FbxPropertyDouble3_GetSrcObject_FileTexture(swigCPtr);
     FbxFileTexture ret = (cPtr == global::System.IntPtr.Zero) ? null : new FbxFileTexture(cPtr, false);
     if (NativeMethods.SWIGPendingException.Pending) throw NativeMethods.SWIGPendingException.Retrieve();

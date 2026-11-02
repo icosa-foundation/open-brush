@@ -194,7 +194,10 @@ namespace TiltBrush
 
         public ReferenceVideo(string filePath)
         {
-            NetworkVideo = filePath.EndsWith(".txt");
+            // Case-insensitively, because discovery accepts extensions in any case. A
+            // .TXT pointer that classified as an ordinary video would be handed to
+            // VideoPlayer as the text file itself rather than the URL it contains.
+            NetworkVideo = filePath.EndsWith(".txt", System.StringComparison.OrdinalIgnoreCase);
             PersistentPath = _GetPersistentPath(filePath);
             HumanName = System.IO.Path.GetFileName(PersistentPath);
             AbsolutePath = filePath;

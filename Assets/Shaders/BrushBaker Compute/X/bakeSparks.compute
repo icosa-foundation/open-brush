@@ -21,7 +21,7 @@ void CSMain(uint3 id : SV_DispatchThreadID) {
 
     float displacementExponent = 2.84;
     float displacementAmount = 1.45;
-    vertex += normal * pow(uv0.x, displacementExponent) * displacementAmount;
+    vertex += normal * pow(max(uv0.x, 0.0), displacementExponent) * displacementAmount;
 
     vertexBuffer[id.x] = vertex;
 }

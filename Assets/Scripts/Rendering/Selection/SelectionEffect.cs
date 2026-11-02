@@ -13,7 +13,7 @@
 // limitations under the License.
 
 #if UNITY_ANDROID || UNITY_IOS
-# undef  FEATURE_CUSTOM_MESH_RENDER
+# define FEATURE_CUSTOM_MESH_RENDER
 # define FEATURE_MOBILE_SELECTION
 #else
 # define FEATURE_CUSTOM_MESH_RENDER
@@ -23,6 +23,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -84,8 +85,31 @@ namespace TiltBrush
         private bool m_CmrRenderHighlight;
         private bool m_CmrUseStrokePostEffect;
         private List<MeshFilter> m_CmrRequestedMeshes;
+        private List<SkinnedMeshRenderer> m_CmrRequestedSkinnedMeshes;
+        private int m_CmrRequestedMeshesFrame = -1;
+        private List<MeshFilter> m_UrpDiagnosticMeshes;
+        private int m_UrpDiagnosticFramesRemaining;
+        private bool m_UrpDiagnosticUseStrokePostEffect;
         private bool m_bCmrPosesApplied;
         private bool m_bCmrPreCulled;
+
+        private sealed class MobileHighlightState
+        {
+            public Material[] OriginalMaterials;
+            public Material[] HighlightMaterials;
+            public MaterialPropertyBlock OriginalRendererPropertyBlock;
+            public MaterialPropertyBlock[] OriginalPropertyBlocks;
+            public bool HadOriginalRendererPropertyBlock;
+            public bool[] HadOriginalPropertyBlocks;
+            public bool OriginalEnabled;
+            public bool OriginalForceRenderingOff;
+            public int RegisteredFrame;
+            public bool Applied;
+        }
+
+        private Dictionary<Renderer, MobileHighlightState> m_MobileHighlightStates;
+        private Material m_MobileHighlightMaterial;
+        private Shader m_MobileHighlightShader;
 #endif
 
         void Start()
@@ -93,10 +117,35 @@ namespace TiltBrush
 #if FEATURE_CUSTOM_MESH_RENDER
             m_CmrRenderWrapper = GetComponent<RenderWrapper>();
             m_CmrRequestedMeshes = new List<MeshFilter>();
+            m_CmrRequestedSkinnedMeshes = new List<SkinnedMeshRenderer>();
+            m_UrpDiagnosticMeshes = new List<MeshFilter>();
+            m_MobileHighlightStates = new Dictionary<Renderer, MobileHighlightState>();
+            RenderPipelineManager.beginCameraRendering += OnBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
 #endif
             InputManager.m_Instance.ControllerPosesApplied += OnPosesApplied;
             Shader.SetGlobalColor("_LeftEyeSelectionColor", Color.white);
             Shader.SetGlobalColor("_RightEyeSelectionColor", Color.white);
+        }
+
+        void LateUpdate()
+        {
+#if FEATURE_CUSTOM_MESH_RENDER
+            RestoreStaleMobileHighlights();
+
+            if (m_UrpDiagnosticFramesRemaining <= 0 ||
+                GraphicsSettings.currentRenderPipeline == null)
+            {
+                return;
+            }
+
+            m_CmrUseStrokePostEffect = m_UrpDiagnosticUseStrokePostEffect;
+            m_UrpDiagnosticFramesRemaining--;
+            if (m_UrpDiagnosticFramesRemaining <= 0)
+            {
+                m_UrpDiagnosticMeshes.Clear();
+            }
+#endif
         }
 
         void OnPreCull()
@@ -124,6 +173,10 @@ namespace TiltBrush
             Shader.SetGlobalColor("_LeftEyeSelectionColor", left);
             Shader.SetGlobalColor("_RightEyeSelectionColor", right);
 
+#if FEATURE_CUSTOM_MESH_RENDER
+            UpdateMobileHighlightColor(Color.Lerp(left, right, 0.5f));
+#endif
+
 #if FEATURE_MOBILE_SELECTION
     TrTransform worldToTransform = App.Scene.SelectionCanvas.Pose;
     // Keep the scale within 0.5 and 2
@@ -149,16 +202,353 @@ namespace TiltBrush
         public void RegisterMesh(MeshFilter meshFilter)
         {
 #if FEATURE_CUSTOM_MESH_RENDER
+            if (UseMobileMaterialHighlights)
+            {
+                RegisterMobileHighlight(meshFilter != null
+                    ? meshFilter.GetComponent<Renderer>()
+                    : null);
+                return;
+            }
+
+            if (m_CmrRequestedMeshes == null)
+            {
+                m_CmrRequestedMeshes = new List<MeshFilter>();
+            }
+            if (m_CmrRequestedSkinnedMeshes == null)
+            {
+                m_CmrRequestedSkinnedMeshes = new List<SkinnedMeshRenderer>();
+            }
+            if (m_CmrRequestedMeshesFrame != Time.frameCount)
+            {
+                m_CmrRequestedMeshes.Clear();
+                m_CmrRequestedSkinnedMeshes.Clear();
+                m_CmrRequestedMeshesFrame = Time.frameCount;
+            }
             m_CmrRequestedMeshes.Add(meshFilter);
+#endif
+        }
+
+        public void RegisterMesh(SkinnedMeshRenderer renderer)
+        {
+#if FEATURE_CUSTOM_MESH_RENDER
+            if (UseMobileMaterialHighlights)
+            {
+                RegisterMobileHighlight(renderer);
+                return;
+            }
+
+            if (m_CmrRequestedMeshes == null)
+            {
+                m_CmrRequestedMeshes = new List<MeshFilter>();
+            }
+            if (m_CmrRequestedSkinnedMeshes == null)
+            {
+                m_CmrRequestedSkinnedMeshes = new List<SkinnedMeshRenderer>();
+            }
+            if (m_CmrRequestedMeshesFrame != Time.frameCount)
+            {
+                m_CmrRequestedMeshes.Clear();
+                m_CmrRequestedSkinnedMeshes.Clear();
+                m_CmrRequestedMeshesFrame = Time.frameCount;
+            }
+            m_CmrRequestedSkinnedMeshes.Add(renderer);
 #endif
         }
 
         public void UnregisterMesh(MeshFilter meshFilter)
         {
 #if FEATURE_CUSTOM_MESH_RENDER
-            m_CmrRequestedMeshes.RemoveAll(x => x == meshFilter);
+            if (UseMobileMaterialHighlights)
+            {
+                RemoveMobileHighlight(meshFilter != null
+                    ? meshFilter.GetComponent<Renderer>()
+                    : null);
+                return;
+            }
+
+            m_CmrRequestedMeshes?.RemoveAll(x => x == meshFilter);
 #endif
         }
+
+        public void UnregisterMesh(SkinnedMeshRenderer renderer)
+        {
+#if FEATURE_CUSTOM_MESH_RENDER
+            if (UseMobileMaterialHighlights)
+            {
+                RemoveMobileHighlight(renderer);
+                return;
+            }
+
+            m_CmrRequestedSkinnedMeshes?.RemoveAll(x => x == renderer);
+#endif
+        }
+
+#if FEATURE_CUSTOM_MESH_RENDER
+        private bool UseMobileMaterialHighlights =>
+            Application.isMobilePlatform &&
+            GraphicsSettings.currentRenderPipeline != null;
+
+        private void RegisterMobileHighlight(Renderer renderer)
+        {
+            if (renderer == null || !renderer.gameObject.activeInHierarchy || DisableSelectionEffects)
+            {
+                return;
+            }
+
+            m_MobileHighlightStates ??= new Dictionary<Renderer, MobileHighlightState>();
+            if (m_MobileHighlightStates.TryGetValue(renderer, out MobileHighlightState state))
+            {
+                state.RegisteredFrame = Time.frameCount;
+                return;
+            }
+
+            m_MobileHighlightStates.Add(renderer, new MobileHighlightState
+            {
+                RegisteredFrame = Time.frameCount
+            });
+        }
+
+        private bool EnsureMobileHighlightMaterial()
+        {
+            if (m_MobileHighlightMaterial != null)
+            {
+                return true;
+            }
+            m_MobileHighlightShader ??= Shader.Find("Universal Render Pipeline/Lit");
+            if (m_MobileHighlightShader == null)
+            {
+                Debug.LogError("The URP Lit shader is unavailable for mobile selection highlighting.");
+                return false;
+            }
+
+            m_MobileHighlightMaterial = new Material(m_MobileHighlightShader)
+            {
+                name = "Mobile Selection Highlight",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            m_MobileHighlightMaterial.SetFloat("_Metallic", 0.0f);
+            m_MobileHighlightMaterial.SetFloat("_Smoothness", 0.3f);
+            m_MobileHighlightMaterial.SetFloat("_Cull", 0.0f);
+            m_MobileHighlightMaterial.SetFloat("_Surface", 0.0f);
+            m_MobileHighlightMaterial.SetFloat("_ZWrite", 1.0f);
+            m_MobileHighlightMaterial.SetColor("_BaseColor", new Color(0.55f, 0.55f, 0.55f, 1.0f));
+            m_MobileHighlightMaterial.EnableKeyword("_EMISSION");
+            m_MobileHighlightMaterial.SetColor(
+                "_EmissionColor",
+                Shader.GetGlobalColor("_LeftEyeSelectionColor") * 0.55f);
+            m_MobileHighlightMaterial.renderQueue = (int)RenderQueue.Geometry;
+            return true;
+        }
+
+        private void OnBeginCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            if (!UseMobileMaterialHighlights)
+            {
+                return;
+            }
+
+            RestoreAppliedMobileHighlights();
+            Camera vrCamera = App.VrSdk != null ? App.VrSdk.GetVrCamera() : null;
+            if (DisableSelectionEffects || camera == null || camera != vrCamera ||
+                m_MobileHighlightStates == null || m_MobileHighlightStates.Count == 0 ||
+                !EnsureMobileHighlightMaterial())
+            {
+                return;
+            }
+
+            foreach (var pair in m_MobileHighlightStates)
+            {
+                ApplyMobileHighlight(pair.Key, pair.Value);
+            }
+        }
+
+        private void OnEndCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            RestoreAppliedMobileHighlights();
+        }
+
+        private void ApplyMobileHighlight(Renderer renderer, MobileHighlightState state)
+        {
+            if (renderer == null || state.Applied || !renderer.gameObject.activeInHierarchy)
+            {
+                return;
+            }
+
+            state.OriginalMaterials = renderer.sharedMaterials;
+            int originalMaterialCount = state.OriginalMaterials.Length;
+            int highlightMaterialCount = Mathf.Max(1, originalMaterialCount);
+            EnsureMobileHighlightStateCapacity(state, highlightMaterialCount);
+
+            state.OriginalEnabled = renderer.enabled;
+            state.OriginalForceRenderingOff = renderer.forceRenderingOff;
+            state.OriginalRendererPropertyBlock ??= new MaterialPropertyBlock();
+            state.OriginalRendererPropertyBlock.Clear();
+            renderer.GetPropertyBlock(state.OriginalRendererPropertyBlock);
+            state.HadOriginalRendererPropertyBlock =
+                !state.OriginalRendererPropertyBlock.isEmpty;
+            for (int i = 0; i < highlightMaterialCount; ++i)
+            {
+                state.HighlightMaterials[i] = m_MobileHighlightMaterial;
+
+                if (i < originalMaterialCount)
+                {
+                    MaterialPropertyBlock originalProperties = state.OriginalPropertyBlocks[i];
+                    originalProperties.Clear();
+                    renderer.GetPropertyBlock(originalProperties, i);
+                    state.HadOriginalPropertyBlocks[i] = !originalProperties.isEmpty;
+                }
+            }
+
+            renderer.sharedMaterials = state.HighlightMaterials;
+            renderer.SetPropertyBlock(null);
+            for (int i = 0; i < highlightMaterialCount; ++i)
+            {
+                renderer.SetPropertyBlock(null, i);
+            }
+            renderer.forceRenderingOff = false;
+            renderer.enabled = true;
+            state.Applied = true;
+        }
+
+        private static void EnsureMobileHighlightStateCapacity(
+            MobileHighlightState state, int materialCount)
+        {
+            if (state.HighlightMaterials != null && state.HighlightMaterials.Length == materialCount)
+            {
+                return;
+            }
+
+            state.HighlightMaterials = new Material[materialCount];
+            state.OriginalPropertyBlocks = new MaterialPropertyBlock[materialCount];
+            state.HadOriginalPropertyBlocks = new bool[materialCount];
+            for (int i = 0; i < materialCount; ++i)
+            {
+                state.OriginalPropertyBlocks[i] = new MaterialPropertyBlock();
+            }
+        }
+
+        private void UpdateMobileHighlightColor(Color color)
+        {
+            if (!UseMobileMaterialHighlights ||
+                m_MobileHighlightStates == null || m_MobileHighlightStates.Count == 0 ||
+                !EnsureMobileHighlightMaterial())
+            {
+                return;
+            }
+
+            float pulse = 0.45f + 0.2f * Mathf.Sin(Time.realtimeSinceStartup * 5.0f);
+            m_MobileHighlightMaterial.SetColor(
+                "_BaseColor", Color.Lerp(new Color(0.55f, 0.55f, 0.55f), color, 0.2f));
+            m_MobileHighlightMaterial.SetColor("_EmissionColor", color * pulse);
+        }
+
+        private void RestoreStaleMobileHighlights()
+        {
+            if (m_MobileHighlightStates == null || m_MobileHighlightStates.Count == 0)
+            {
+                return;
+            }
+
+            List<Renderer> stale = null;
+            foreach (var pair in m_MobileHighlightStates)
+            {
+                if (pair.Key == null || DisableSelectionEffects ||
+                    pair.Value.RegisteredFrame != Time.frameCount)
+                {
+                    stale ??= new List<Renderer>();
+                    stale.Add(pair.Key);
+                }
+            }
+            if (stale == null)
+            {
+                return;
+            }
+            foreach (Renderer renderer in stale)
+            {
+                RemoveMobileHighlight(renderer);
+            }
+        }
+
+        private void RestoreAppliedMobileHighlights()
+        {
+            if (m_MobileHighlightStates == null)
+            {
+                return;
+            }
+            foreach (var pair in m_MobileHighlightStates)
+            {
+                RestoreAppliedMobileHighlight(pair.Key, pair.Value);
+            }
+        }
+
+        private static void RestoreAppliedMobileHighlight(
+            Renderer renderer, MobileHighlightState state)
+        {
+            if (!state.Applied)
+            {
+                return;
+            }
+
+            state.Applied = false;
+            if (renderer == null)
+            {
+                state.OriginalMaterials = null;
+                return;
+            }
+
+            for (int i = 0; i < state.HighlightMaterials.Length; ++i)
+            {
+                renderer.SetPropertyBlock(null, i);
+            }
+            renderer.sharedMaterials = state.OriginalMaterials;
+            renderer.SetPropertyBlock(
+                state.HadOriginalRendererPropertyBlock
+                    ? state.OriginalRendererPropertyBlock
+                    : null);
+            for (int i = 0; i < state.OriginalMaterials.Length; ++i)
+            {
+                renderer.SetPropertyBlock(
+                    state.HadOriginalPropertyBlocks[i] ? state.OriginalPropertyBlocks[i] : null,
+                    i);
+            }
+            renderer.forceRenderingOff = state.OriginalForceRenderingOff;
+            renderer.enabled = state.OriginalEnabled;
+            state.OriginalMaterials = null;
+        }
+
+        private void RemoveMobileHighlight(Renderer renderer)
+        {
+            if (ReferenceEquals(renderer, null) ||
+                m_MobileHighlightStates == null ||
+                !m_MobileHighlightStates.TryGetValue(renderer, out MobileHighlightState state))
+            {
+                return;
+            }
+
+            RestoreAppliedMobileHighlight(renderer, state);
+            m_MobileHighlightStates.Remove(renderer);
+        }
+
+        private void OnDestroy()
+        {
+            if (InputManager.m_Instance != null)
+            {
+                InputManager.m_Instance.ControllerPosesApplied -= OnPosesApplied;
+            }
+            RenderPipelineManager.beginCameraRendering -= OnBeginCameraRendering;
+            RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+
+            if (m_MobileHighlightStates != null)
+            {
+                var renderers = new List<Renderer>(m_MobileHighlightStates.Keys);
+                foreach (Renderer renderer in renderers)
+                {
+                    RemoveMobileHighlight(renderer);
+                }
+            }
+            Destroy(m_MobileHighlightMaterial);
+        }
+#endif
 
         public bool RenderHighlight()
         {
@@ -176,6 +566,188 @@ namespace TiltBrush
 #endif
         }
 
+        public void QueueUrpDiagnosticHighlight(
+            MeshFilter meshFilter,
+            int frameCount,
+            bool useStrokePostEffect)
+        {
+#if FEATURE_CUSTOM_MESH_RENDER
+            if (meshFilter == null || frameCount <= 0)
+            {
+                return;
+            }
+
+            m_UrpDiagnosticMeshes.Clear();
+            m_UrpDiagnosticMeshes.Add(meshFilter);
+            m_UrpDiagnosticFramesRemaining = frameCount;
+            m_UrpDiagnosticUseStrokePostEffect = useStrokePostEffect;
+            m_CmrUseStrokePostEffect = useStrokePostEffect;
+            Shader.SetGlobalFloat("_GrabHighlightIntensity", 1.0f);
+            Shader.SetGlobalFloat("_NoGrabHighlightIntensity", useStrokePostEffect ? 0.0f : 1.0f);
+            Shader.SetGlobalColor("_GrabHighlightActiveColor", Color.white);
+#endif
+        }
+
+#if FEATURE_CUSTOM_MESH_RENDER
+        public bool ShouldRenderUrpSelection
+        {
+            get
+            {
+                return GetUrpSelectionBlockReason() == null;
+            }
+        }
+
+        public string UrpSelectionDebugStatus =>
+            GetUrpSelectionBlockReason() ??
+            $"ready meshes={m_CmrRequestedMeshes.Count} " +
+            $"skinned={m_CmrRequestedSkinnedMeshes.Count} frame={m_CmrRequestedMeshesFrame}";
+
+        private string GetUrpSelectionBlockReason()
+        {
+            if (!Application.isPlaying) { return "not playing"; }
+            if (GraphicsSettings.currentRenderPipeline == null) { return "no SRP"; }
+            if (VideoRecorderUtils.ActiveVideoRecording?.IsCapturing == true) { return "video recording"; }
+            if (DisableSelectionEffects) { return "selection effects disabled"; }
+            if (OverlayManager.m_Instance == null) { return "overlay manager missing"; }
+            if (OverlayManager.m_Instance.OverlayEnabled) { return "overlay enabled"; }
+            // URP mask/composite uses materials owned by UrpSelectionRendererFeature.
+            // Legacy post-effect materials are only required by the non-SRP OnRenderImage path.
+            if (m_CmrRequestedMeshes == null) { return "requested mesh list missing"; }
+            if (m_CmrRequestedSkinnedMeshes == null) { return "requested skinned mesh list missing"; }
+            if (!HasActiveUrpRequestedMeshes && !HasActiveUrpDiagnosticMeshes)
+            {
+                return "no requested meshes";
+            }
+            return null;
+        }
+
+        private bool HasActiveUrpRequestedMeshes =>
+            m_CmrRequestedMeshesFrame == Time.frameCount &&
+            ((m_CmrRequestedMeshes != null &&
+                m_CmrRequestedMeshes.Count > 0) ||
+                (m_CmrRequestedSkinnedMeshes != null &&
+                m_CmrRequestedSkinnedMeshes.Count > 0));
+
+        private bool HasActiveUrpDiagnosticMeshes =>
+            m_UrpDiagnosticFramesRemaining > 0 &&
+            m_UrpDiagnosticMeshes != null &&
+            m_UrpDiagnosticMeshes.Count > 0;
+
+        public Material UrpStencilToMaskMaterial =>
+            m_CmrRenderWrapper != null ? m_CmrRenderWrapper.m_StencilToMaskMaterial : null;
+
+        public Material UrpPostEffectMaterial => ActivePostEffect();
+
+        public float UrpBlurWidth => m_BlurWidth;
+
+        public bool HasPreparedUrpSelectionFrame =>
+            ShouldRenderUrpSelection;
+
+        public void DrawUrpHighlightMeshes(CommandBuffer cmd, Material maskMaterial)
+        {
+            if (!ShouldRenderUrpSelection || maskMaterial == null)
+            {
+                return;
+            }
+
+            m_CmrRenderHighlight = true;
+            int meshDraws = DrawMeshFilters(cmd, maskMaterial, m_CmrRequestedMeshes);
+            int skinnedDraws = DrawSkinnedMeshRenderers(cmd, maskMaterial, m_CmrRequestedSkinnedMeshes);
+            int diagnosticDraws = 0;
+            if (HasActiveUrpDiagnosticMeshes)
+            {
+                diagnosticDraws = DrawMeshFilters(cmd, maskMaterial, m_UrpDiagnosticMeshes);
+            }
+        }
+
+        private static int DrawMeshFilters(
+            CommandBuffer cmd,
+            Material maskMaterial,
+            List<MeshFilter> meshFilters)
+        {
+            int draws = 0;
+            for (int i = 0; i < meshFilters.Count; i++)
+            {
+                MeshFilter meshFilter = meshFilters[i];
+                if (meshFilter == null)
+                {
+                    continue;
+                }
+
+                Mesh mesh = meshFilter.sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                Transform xf = meshFilter.transform;
+                for (int iSubMesh = 0; iSubMesh < mesh.subMeshCount; iSubMesh++)
+                {
+                    cmd.DrawMesh(
+                        mesh,
+                        xf.localToWorldMatrix,
+                        maskMaterial,
+                        iSubMesh);
+                    draws++;
+                }
+            }
+
+            return draws;
+        }
+
+        private static int DrawSkinnedMeshRenderers(
+            CommandBuffer cmd,
+            Material maskMaterial,
+            List<SkinnedMeshRenderer> renderers)
+        {
+            int draws = 0;
+            for (int i = 0; i < renderers.Count; i++)
+            {
+                SkinnedMeshRenderer renderer = renderers[i];
+                if (renderer == null ||
+                    renderer.sharedMesh == null)
+                {
+                    continue;
+                }
+                if (!renderer.enabled ||
+                    !renderer.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                Mesh mesh = renderer.sharedMesh;
+                for (int iSubMesh = 0; iSubMesh < mesh.subMeshCount; iSubMesh++)
+                {
+                    cmd.DrawRenderer(renderer, maskMaterial, iSubMesh);
+                    draws++;
+                }
+            }
+
+            return draws;
+        }
+
+        public void EndUrpSelectionFrame()
+        {
+            m_bCmrPosesApplied = false;
+            m_bCmrPreCulled = false;
+            m_CmrRenderHighlight = false;
+        }
+#else
+        public bool ShouldRenderUrpSelection => false;
+
+        public string UrpSelectionDebugStatus => "custom mesh selection disabled";
+
+        public Material UrpPostEffectMaterial => null;
+
+        public float UrpBlurWidth => 0.0f;
+
+        public bool HasPreparedUrpSelectionFrame => false;
+
+        public void DrawUrpHighlightMeshes(CommandBuffer cmd, Material maskMaterial) {}
+
+        public void EndUrpSelectionFrame() {}
+#endif
+
         // Internal API for FEATURE_CUSTOM_MESH_RENDER
 
         // If highlight meshes have been populated, render them using our special grab mask material
@@ -188,8 +760,20 @@ namespace TiltBrush
 
         private void RenderHighlightsIfReady()
         {
-            if (Application.isMobilePlatform)
+            // Deliberately Application.isMobilePlatform rather than Config.IsMobileHardware:
+            // this gates on the actual graphics device, which spoofing mobile in the Editor
+            // does not change.
+            if (Application.isMobilePlatform &&
+                GraphicsSettings.currentRenderPipeline == null)
             {
+                return;
+            }
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                if (ShouldRenderUrpSelection)
+                {
+                    m_CmrRenderHighlight = true;
+                }
                 return;
             }
             if (m_bCmrPreCulled && m_bCmrPosesApplied)
@@ -210,6 +794,7 @@ namespace TiltBrush
                     // Also, we clear the m_bPosesApplied and m_bPreCulled flags later on OnRenderImage()
                     // to guarantee that poses and cull have been done before clearing those flags.
                     m_CmrRequestedMeshes.Clear();
+                    m_CmrRequestedSkinnedMeshes.Clear();
                 }
             }
         }
@@ -250,6 +835,12 @@ namespace TiltBrush
             // Clear flags for the next frame.
             m_bCmrPosesApplied = false;
             m_bCmrPreCulled = false;
+
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                Graphics.Blit(source, destination);
+                return;
+            }
 
             // Early out, if possible
             Material postEffect = ActivePostEffect();

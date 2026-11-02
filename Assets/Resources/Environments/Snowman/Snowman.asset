@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Guid:
     m_storage: ab080511-e565-4a6d-8587-53bf495af68b
-  m_Description: ENVIRONMENT_SNOWMAN
   m_EnvironmentDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -38,8 +37,7 @@ MonoBehaviour:
     m_EnvironmentPrefab: EnvironmentPrefabs/Snowman
     m_EnvironmentReverbZonePrefab: EnvironmentAudio/ReverbZone_PaddedCell
     m_SkyboxCubemap: {fileID: 8900000, guid: da6800679da80df4880f051d0edd1714, type: 3}
-    m_ReflectionCubemap: {fileID: 8900000, guid: f83cc5a806898db42b092b6dbda6bd0d,
-      type: 3}
+    m_ReflectionCubemap: {fileID: 8900000, guid: f83cc5a806898db42b092b6dbda6bd0d, type: 3}
     m_ReflectionIntensity: 0.3
   m_Lights:
   - m_Color: {r: 0.5137255, g: 0.49803922, b: 0.7372549, a: 1}
@@ -63,6 +61,7 @@ MonoBehaviour:
   m_WidgetHome: {x: 0, y: 0, z: 0}
   m_SkyboxColorA: {r: 0.4627451, g: 0.5647059, b: 0.7058824, a: 1}
   m_SkyboxColorB: {r: 0.7607843, g: 0.8156863, b: 0.972549, a: 1}
+  isPassthrough: 0
   references:
     version: 2
     RefIds: []

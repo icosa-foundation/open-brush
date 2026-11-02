@@ -14,7 +14,7 @@
 
 #pragma kernel CopyToBuffer
 
-#include "Assets/Shaders/Include/PackInt.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/PackInt.cginc"
 
 RWStructuredBuffer<uint> OutputBuffer;
 Texture2D<float4> InputTexture;

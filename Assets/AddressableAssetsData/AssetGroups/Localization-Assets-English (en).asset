@@ -13,8 +13,6 @@ MonoBehaviour:
   m_Name: Localization-Assets-English (en)
   m_EditorClassIdentifier: 
   m_GroupName: Localization-Assets-English (en)
-  m_Data:
-    m_SerializedData: []
   m_GUID: 006caf1e99b3ca64ca92abede5461884
   m_SerializeEntries:
   - m_GUID: cf27b662697c1e54b9e71fe339bd1ea5
@@ -22,11 +20,13 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: e862e2e18e005674c9d7fce9a8c2f618
     m_Address: logowatermarklabs
     m_ReadOnly: 1
     m_SerializedLabels:
     - Locale-en
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 1
   m_Settings: {fileID: 11400000, guid: 6a7373c58080f5b4b9733a6655fc804f, type: 2}
   m_SchemaSet:

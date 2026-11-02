@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections;
+using Gsplat;
 using UnityEngine;
 using UnityEngine.Localization;
 
@@ -57,6 +58,11 @@ namespace TiltBrush
 
             // Build the actual preview.
             m_ModelPreview = Instantiate(m_Model.m_ModelParent);
+            foreach (var gsplatRenderer in
+                     m_ModelPreview.GetComponentsInChildren<GsplatRenderer>(includeInactive: true))
+            {
+                gsplatRenderer.ParticipateInGlobalSort = false;
+            }
             // Disable model lights when it's a panel preview
             foreach (var light in m_ModelPreview.GetComponentsInChildren<Light>())
             {

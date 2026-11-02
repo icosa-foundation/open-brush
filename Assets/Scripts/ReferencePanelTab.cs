@@ -76,6 +76,7 @@ namespace TiltBrush
         public virtual void RefreshTab(bool selected)
         {
             m_IndexOffset = PageIndex * m_Icons.Length;
+
             for (int i = 0; i < m_Icons.Length; ++i)
             {
                 int index = m_IndexOffset + i;

@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -108,6 +109,7 @@ namespace TiltBrush
             m_CameraInfo = CamInfo;
 
             SceneSettings.m_Instance.RegisterCamera(m_CameraInfo.camera);
+            ConfigureUrpCaptureCamera(m_CameraInfo.camera);
 
             if (App.Config.IsMobileHardware)
             {
@@ -124,33 +126,46 @@ namespace TiltBrush
                 {
                     m_CameraInfo.camera.allowHDR = false;
                 }
-                var mobileBloom = GetComponent<MobileBloom>();
-                if (mobileBloom != null)
-                {
-                    mobileBloom.enabled = true;
-                }
-                else
-                {
-                    Debug.LogAssertion("No MobileBloom on the Screenshot Manager.");
-                }
-                var pcBloom = m_Camera.GetComponent<SENaturalBloomAndDirtyLens>();
-                if (pcBloom != null)
-                {
-                    pcBloom.enabled = false;
-                }
-                else
-                {
-                    Debug.LogAssertion("No SENaturalBloomAndDirtyLens on the Screenshot Manager.");
-                }
+                DisableOptionalBuiltInCapturePostEffects();
             }
             CreateDisplayRenderTextures();
         }
 
+        void ConfigureUrpCaptureCamera(Camera camera)
+        {
+            if (camera == null || UrpPostProcessingController.Instance == null)
+            {
+                return;
+            }
+
+            UrpPostProcessingController.Instance.ConfigureDropCamCamera(
+                camera, enableCaptureEffects: CameraConfig.PostEffects);
+        }
+
+        void DisableOptionalBuiltInCapturePostEffects()
+        {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                return;
+            }
+
+            MobileBloom mobileBloom = GetComponent<MobileBloom>();
+            if (mobileBloom != null)
+            {
+                mobileBloom.enabled = false;
+            }
+
+            SENaturalBloomAndDirtyLens pcBloom =
+                m_Camera != null ? m_Camera.GetComponent<SENaturalBloomAndDirtyLens>() : null;
+            if (pcBloom != null)
+            {
+                pcBloom.enabled = false;
+            }
+        }
+
         RenderTextureFormat CameraFormat()
         {
-            return m_Camera.allowHDR
-                ? RenderTextureFormat.ARGBFloat
-                : RenderTextureFormat.ARGB32;
+            return CaptureColorUtils.GetFormat(m_Camera);
         }
 
         void CreateDisplayRenderTextures()
@@ -172,18 +187,25 @@ namespace TiltBrush
                 return;
             }
 
+            UrpPostProcessingController.ConfigureOffscreenCaptureCamera(info.camera);
             info.camera.targetTexture = null;
             Destroy(info.renderTexture);
 
-            info.renderTexture = new RenderTexture(width, height, 0, format);
+            info.renderTexture = CreatePreviewRenderTexture(width, height, format);
             info.renderTexture.name = "SshotTex" + tag;
-            info.renderTexture.depth = 24;
             Debug.Assert(info.renderer != null);
             Debug.Assert(info.renderer.material != null);
             Material material;
             (material = info.renderer.material).SetTexture("_MainTex", info.renderTexture);
             material.name = "SshotMat" + tag;
             info.camera.targetTexture = info.renderTexture;
+        }
+
+        private static RenderTexture CreatePreviewRenderTexture(
+            int width, int height, RenderTextureFormat format)
+        {
+            var descriptor = CaptureColorUtils.CreateDescriptor(width, height, format);
+            return new RenderTexture(descriptor);
         }
     }
 } // namespace TiltBrush

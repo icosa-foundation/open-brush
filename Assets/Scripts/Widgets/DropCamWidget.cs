@@ -93,6 +93,7 @@ namespace TiltBrush
 
             // Register the drop camera with scene settings
             Camera camera = GetComponentInChildren<Camera>();
+            ConfigureSpectatorCamera(camera);
             SceneSettings.m_Instance.RegisterCamera(camera);
 
             InitSnapGhost(m_GhostMesh, transform);
@@ -127,13 +128,24 @@ namespace TiltBrush
         {
             base.Show(bShow, bPlayAudio);
 
+            ConfigureSpectatorCamera(GetComponentInChildren<Camera>(includeInactive: true));
             RefreshRenderers();
         }
 
         public void ShowInstantly(bool bShow)
         {
+            bool wasActive = gameObject.activeSelf;
             gameObject.SetActive(bShow);
-            m_CurrentState = bShow ? State.Showing : State.Hiding;
+            m_CurrentState = bShow ? State.Visible : State.Invisible;
+            m_ShowTimer = bShow ? m_ShowDuration : 0.0f;
+            m_IntroAnimState = bShow ? IntroAnimState.On : IntroAnimState.Off;
+            m_IntroAnimValue = bShow ? 1.0f : 0.0f;
+            if (bShow && !wasActive)
+            {
+                ResetCam();
+            }
+            ConfigureSpectatorCamera(GetComponentInChildren<Camera>(includeInactive: true));
+            RefreshRenderers();
         }
 
         override protected void OnShow()
@@ -353,9 +365,7 @@ namespace TiltBrush
 
             if (currentPathWidget != null && currentPathWidget.Path.NumPositionKnots > 1)
             {
-                float speed = Mathf.Max(currentPathWidget.Path.GetSpeed(pathT),
-                    CameraPathSpeedKnot.kMinSpeed);
-                bool completed = currentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
+                bool completed = currentPathWidget.Path.MoveAlongPathByTime(Time.deltaTime,
                     pathT, out pathT);
                 if (completed)
                 {
@@ -411,6 +421,17 @@ namespace TiltBrush
         {
             return (m_CurrentMode != Mode.SlowFollow) &&
                 (m_CurrentState == State.Showing || m_CurrentState == State.Visible);
+        }
+
+        private static void ConfigureSpectatorCamera(Camera camera)
+        {
+            if (camera == null)
+            {
+                return;
+            }
+
+            camera.targetDisplay = 0;
+            UrpPostProcessingController.ConfigureOffscreenCaptureCamera(camera);
         }
     }
 } // namespace TiltBrush

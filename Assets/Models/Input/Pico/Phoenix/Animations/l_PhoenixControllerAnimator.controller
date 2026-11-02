@@ -7,7 +7,7 @@ AnimatorController:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: l_PhoenixControllerAnimator
-  serializedVersion: 5
+  serializedVersion: 6
   m_AnimatorParameters:
   - m_Name: Trigger
     m_Type: 1
@@ -82,6 +82,7 @@ AnimatorController:
     m_IKPass: 0
     m_SyncedLayerAffectsTiming: 0
     m_Controller: {fileID: 9100000}
+  m_EvaluateTransitionsOnStart: 0
 --- !u!206 &206695736890750574
 BlendTree:
   m_ObjectHideFlags: 1
@@ -224,7 +225,7 @@ AnimatorState:
   m_TimeParameter: 
 --- !u!1107 &1107452100837280218
 AnimatorStateMachine:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -246,7 +247,7 @@ AnimatorStateMachine:
   m_DefaultState: {fileID: 1102168572209795832}
 --- !u!1107 &1107459804177561800
 AnimatorStateMachine:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -268,7 +269,7 @@ AnimatorStateMachine:
   m_DefaultState: {fileID: 1102276529555987200}
 --- !u!1107 &1107851180222780996
 AnimatorStateMachine:
-  serializedVersion: 6
+  serializedVersion: 7
   m_ObjectHideFlags: 1
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}

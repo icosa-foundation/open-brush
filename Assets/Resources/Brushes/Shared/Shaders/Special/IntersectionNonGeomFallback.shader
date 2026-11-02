@@ -35,8 +35,8 @@ Shader "Brush/Special/Intersection" {
 #pragma fragment frag
 
 #include "UnityCG.cginc"
-#include "Assets/Shaders/Include/Brush.cginc"
-#include "Assets/Shaders/Include/PackInt.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/PackInt.cginc"
 
       struct appdata_t {
         float4 vertex : POSITION;
@@ -70,12 +70,13 @@ Shader "Brush/Special/Intersection" {
       half4 frag(v2f i) : COLOR
       {
         uint triangleIndex = uint(i.triangleids.x);
-        return PackUint16x2ToRgba8(uint2(_BatchID, triangleIndex));
+        return PackUint16x2ToRgba8(uint2((uint)_BatchID, triangleIndex));
       }
         ENDCG
     }
   }
 
-  Fallback "Unlit/Diffuse"
+  // No Fallback by design: see Intersection.shader for rationale. Failing visibly
+  // (empty RT, zero hits) is preferable to failing silently with garbage IDs.
 
 }

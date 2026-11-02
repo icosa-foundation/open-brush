@@ -16,7 +16,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -39,8 +41,8 @@ namespace TiltBrush
     /// EnsureGeometryResident() if necessary. This is convenient, but means that callers might
     /// inadvertently reload the buffers when they don't mean to.
     ///
-    /// public fields like m_Triangles will not (cannot) be auto-reloaded; they will be null
-    /// if geometry is not resident, and users must explicitly call EnsureGeometryResident().
+    /// Public buffers cannot auto-reload. Call EnsureGeometryResident() before accessing them,
+    /// or EnsureIndicesResident() when only m_Tris is needed from mesh-backed geometry.
     public class GeometryPool
     {
         const UInt32 kMagic = 0x6f6f7047; // 'Gpoo'
@@ -340,6 +342,8 @@ namespace TiltBrush
         // It is not owned by us; and it's up to the owner of the Mesh to ensure
         // that the Mesh is neither modified nor deleted while we reference it.
         private Mesh m_BackingMesh;
+        // The mesh can retain unused trailing vertices after an index-only tail removal.
+        private int m_LiveBackingMeshVertices;
 
         // This file contains data that can be used to re-fill our buffers.
         // It is owned by us, and we need to delete it when we're finished with it.
@@ -352,6 +356,9 @@ namespace TiltBrush
         {
             get { return m_IsResident; }
         }
+
+        /// Includes an index-only cache on otherwise nonresident mesh-backed geometry.
+        public bool HasCachedGeometry => m_IsResident || m_Tris != null;
 
         /// All writes must go through the setter.
         ///
@@ -384,7 +391,7 @@ namespace TiltBrush
                 }
                 else if (!ReferenceEquals(m_BackingMesh, null))
                 {
-                    return m_BackingMesh.vertexCount;
+                    return m_LiveBackingMeshVertices;
                 }
                 else if (m_BackingFileInfo != null)
                 {
@@ -402,8 +409,6 @@ namespace TiltBrush
                 {
                     return;
                 }
-                // TODO: it would be nice if we could reduce the # verts without forcing the
-                // data resident -- when we reload the data we can always ignore part of it.
                 EnsureGeometryResident();
                 m_Vertices.SetCount(value);
                 if (m_Layout.bUseNormals)
@@ -444,7 +449,7 @@ namespace TiltBrush
         {
             get
             {
-                if (IsGeometryResident)
+                if (m_Tris != null)
                 {
                     return m_Tris.Count;
                 }
@@ -557,12 +562,14 @@ namespace TiltBrush
                 // when these instances are used later.
                 m_Vertices.Clear();
                 m_Tris.Clear();
-                m_Normals.Clear();
+                // ReloadFromMesh restores only enabled channels. Recreate empty containers
+                // for missing channels so this pool can be reused with a different layout.
+                (m_Normals ??= new List<Vector3>()).Clear();
                 m_Texcoord0.Clear();
                 m_Texcoord1.Clear();
                 m_Texcoord2.Clear();
-                m_Colors.Clear();
-                m_Tangents.Clear();
+                (m_Colors ??= new List<Color32>()).Clear();
+                (m_Tangents ??= new List<Vector4>()).Clear();
             }
             else
             {
@@ -660,13 +667,14 @@ namespace TiltBrush
         ///     Caller retains (conceptual) ownership of the Mesh.
         public void MakeGeometryNotResident(Mesh mesh)
         {
-            Debug.Assert(m_IsResident);
-            Debug.Assert(m_BackingMesh == null);
+            Debug.Assert(m_IsResident || m_BackingMesh == mesh);
+            Debug.Assert(m_BackingMesh == null || m_BackingMesh == mesh);
             Debug.Assert(m_BackingFileInfo == null);
             int oldVertexCount = NumVerts;
             int oldIndexCount = NumTriIndices;
             m_IsResident = false;
             m_BackingMesh = mesh;
+            m_LiveBackingMeshVertices = oldVertexCount;
             ClearBuffers();
             if (oldVertexCount != NumVerts || oldIndexCount != NumTriIndices)
             {
@@ -695,6 +703,40 @@ namespace TiltBrush
         public Mesh GetBackingMesh()
         {
             return m_BackingMesh;
+        }
+
+        /// Load only indices for mesh-backed visibility edits. Vertex channels stay evicted.
+        /// File-backed pools retain their existing full reload behavior.
+        public void EnsureIndicesResident()
+        {
+            if (m_Tris != null) return;
+            if (ReferenceEquals(m_BackingMesh, null))
+            {
+                EnsureGeometryResident();
+                return;
+            }
+            if (m_BackingMesh == null)
+                throw new InvalidOperationException("Backing mesh was destroyed");
+            var indices = new List<int>(NumTriIndices);
+            m_BackingMesh.GetTriangles(indices, 0);
+            m_Tris = indices;
+        }
+
+        /// Shorten a mesh-backed pool without reading its vertex channels. The owner must
+        /// upload the shorter index list; the unchanged vertex buffer may retain an unused tail.
+        public bool TryTruncateColdMesh(int numVerts, int numTriIndices)
+        {
+            if (IsGeometryResident || ReferenceEquals(m_BackingMesh, null)) return false;
+            if (numVerts < 0 || numVerts > NumVerts || numTriIndices < 0 ||
+                numTriIndices > NumTriIndices || numTriIndices % 3 != 0)
+                throw new ArgumentOutOfRangeException();
+            // Bound retained buffer space, including earlier cold trims. Aggressive trims
+            // use the existing full update so a tiny live prefix cannot pin a large mesh.
+            if (m_BackingMesh.vertexCount - numVerts > numVerts) return false;
+            EnsureIndicesResident();
+            m_LiveBackingMeshVertices = numVerts;
+            m_Tris.SetCount(numTriIndices);
+            return true;
         }
 
         /// Re-fills internal buffers if necessary; after this, IsGeometryResident == true.
@@ -735,10 +777,12 @@ namespace TiltBrush
             }
 
             Mesh mesh = m_BackingMesh;
+            int liveVertices = m_LiveBackingMeshVertices;
             m_BackingMesh = null;
             m_IsResident = true;
 
-            m_Tris = StealArrayForList(mesh.triangles);
+            // Index-only edits may not have been flushed to the mesh yet.
+            if (m_Tris == null) m_Tris = StealArrayForList(mesh.triangles);
 
             m_Vertices = StealArrayForList(mesh.vertices);
             if (m_Layout.bUseNormals)
@@ -759,6 +803,8 @@ namespace TiltBrush
                 TexcoordData fromMesh = GetTexcoordDataFromMesh(mesh, channel, txcInfo.size);
                 InternalGetTexcoordDataRef(channel) = fromMesh;
             }
+            // Later vertex edits must not bring a previously removed tail back into the pool.
+            NumVerts = liveVertices;
         }
 
         // Goes from state (m_BackingFileInfo != null) to state (m_IsResident = true).
@@ -888,37 +934,47 @@ namespace TiltBrush
             }
         }
 
+        // Mesh writes are main-thread-only. Share bounded scratch across all pools rather than
+        // retaining another attribute array per batch. Oversized meshes use temporary storage.
+        private const int kMaxCachedTriangleIdVertices = 16384;
+        private static Vector2[] sm_TriangleIds = Array.Empty<Vector2>();
+
         private void GenerateTriangleIds(Mesh mesh)
         {
-            var triangleIds = new Vector2[mesh.vertexCount];
-            int triCount = mesh.triangles.Length / 3;
-            var tris = mesh.triangles;
-            for (int i = 0; i < triCount; i++)
-            {
-                Vector2 uv = new Vector2(i, 0);
-                int triIndex = i * 3;
-                triangleIds[tris[triIndex]] = uv;
-                triangleIds[tris[triIndex + 1]] = uv;
-                triangleIds[tris[triIndex + 2]] = uv;
-            }
-            mesh.SetUVs(4, triangleIds);
+            GenerateTriangleIds(mesh, 0, NumVerts, 0, NumTriIndices);
         }
 
-        private void GenerateTriangleIds(Mesh mesh, int iVert, int nVert)
+        private void GenerateTriangleIds(Mesh mesh, int iVert, int nVert,
+                                         int iTriIndex, int nTriIndex)
         {
-            var triangleIds = new Vector2[nVert];
-            for (int i = 0; i < mesh.triangles.Length; i += 3)
+            Vector2[] triangleIds;
+            if (nVert <= kMaxCachedTriangleIdVertices)
             {
-                int triIndex = Mathf.FloorToInt(i / 3);
-                Vector2 uv = new Vector2(triIndex, 0);
-                if (mesh.triangles[i] >= iVert && mesh.triangles[i] < iVert + nVert)
-                    triangleIds[mesh.triangles[i] - iVert] = uv;
-                if (mesh.triangles[i + 1] >= iVert && mesh.triangles[i + 1] < iVert + nVert)
-                    triangleIds[mesh.triangles[i + 1] - iVert] = uv;
-                if (mesh.triangles[i + 2] >= iVert && mesh.triangles[i + 2] < iVert + nVert)
-                    triangleIds[mesh.triangles[i + 2] - iVert] = uv;
+                if (sm_TriangleIds.Length < nVert)
+                {
+                    sm_TriangleIds = new Vector2[Mathf.NextPowerOfTwo(nVert)];
+                }
+                triangleIds = sm_TriangleIds;
+                // Unreferenced vertices must remain zero, including after reusing a larger buffer.
+                Array.Clear(triangleIds, 0, nVert);
             }
-            mesh.SetUVs(4, triangleIds);
+            else
+            {
+                triangleIds = new Vector2[nVert];
+            }
+
+            // Read the existing CPU topology. Mesh.triangles returns a new array on every access.
+            // Source indices are absolute; destination vertices and triangle IDs are subset-local.
+            var tris = m_Tris.GetBackingArray();
+            for (int i = 0; i < nTriIndex; i += 3)
+            {
+                var uv = new Vector2(i / 3, 0);
+                triangleIds[tris[iTriIndex + i] - iVert] = uv;
+                triangleIds[tris[iTriIndex + i + 1] - iVert] = uv;
+                triangleIds[tris[iTriIndex + i + 2] - iVert] = uv;
+            }
+            // Shared vertices intentionally retain the last incident triangle's ID, as before.
+            mesh.SetUVs(4, triangleIds, 0, nVert);
         }
 
         /// Like CopyToMesh(), except copies a sub-chunk of verts and triangles.
@@ -974,7 +1030,7 @@ namespace TiltBrush
             // If we aren't using the geometry shader, we need to generate triangle IDs
             if (!App.Config.GeometryShaderSuppported)
             {
-                GenerateTriangleIds(mesh, iVert, nVert);
+                GenerateTriangleIds(mesh, iVert, nVert, iTriIndex, nTriIndex);
             }
         }
 
@@ -1188,11 +1244,12 @@ namespace TiltBrush
             TrTransform? leftTransform = null)
         {
             EnsureGeometryResident();
-            rhs.EnsureGeometryResident();
             if (m_Layout != rhs.m_Layout)
             {
                 throw new ArgumentException("rhs: must have same layout");
             }
+            if (TryAppendColdMesh(rhs, iVert, nVert, iTriIndex, nTriIndex, leftTransform)) { return; }
+            rhs.EnsureGeometryResident();
 
             // base vert index is shifting from iVert to m_Vertices.Count
             int iVertDest = m_Vertices.Count;
@@ -1247,6 +1304,125 @@ namespace TiltBrush
             for (int i = 0; i < nTriIndex; ++i)
             {
                 destTris[iTriDest + i] = indexOffset + aTriIndices[iTriIndex + i];
+            }
+        }
+
+        // Read only the requested range from a cold batch. Holding MeshData past this call would
+        // force Unity to copy its snapshot on a later mesh write, so dispose it before returning.
+        private bool TryAppendColdMesh(GeometryPool rhs, int iVert, int nVert,
+                                      int iTriIndex, int nTriIndex, TrTransform? leftTransform)
+        {
+            if (rhs.IsGeometryResident || rhs.m_BackingMesh == null) { return false; }
+            using (var snapshot = Mesh.AcquireReadOnlyMeshData(rhs.m_BackingMesh))
+            {
+                var data = snapshot[0];
+                if (data.subMeshCount != 1 || !HasFloatChannel(data, VertexAttribute.Position, 3) ||
+                    (m_Layout.bUseNormals && !HasFloatChannel(data, VertexAttribute.Normal, 3)) ||
+                    (m_Layout.bUseTangents && !HasFloatChannel(data, VertexAttribute.Tangent, 4)) ||
+                    (m_Layout.bUseColors && (!data.HasVertexAttribute(VertexAttribute.Color) ||
+                        data.GetVertexAttributeFormat(VertexAttribute.Color) != VertexAttributeFormat.UNorm8 ||
+                        data.GetVertexAttributeDimension(VertexAttribute.Color) != 4)))
+                {
+                    return false;
+                }
+                for (int channel = 0; channel < kNumTexcoords; ++channel)
+                {
+                    int size = m_Layout.GetTexcoordInfo(channel).size;
+                    if (size != 0 && !HasFloatChannel(data, VertexAttribute.TexCoord0 + channel, size))
+                    {
+                        return false;
+                    }
+                }
+
+                var subMesh = data.GetSubMesh(0);
+                if (iVert < 0 || nVert < 0 || iVert > rhs.NumVerts - nVert ||
+                    iTriIndex < 0 || nTriIndex < 0 || iTriIndex > rhs.NumTriIndices - nTriIndex)
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
+                int first = NumVerts;
+                AppendMeshChannel(data, VertexAttribute.Position, iVert, nVert, m_Vertices);
+                if (m_Layout.bUseNormals)
+                {
+                    AppendMeshChannel(data, VertexAttribute.Normal, iVert, nVert, m_Normals);
+                }
+                if (m_Layout.bUseTangents)
+                {
+                    AppendMeshChannel(data, VertexAttribute.Tangent, iVert, nVert, m_Tangents);
+                }
+                for (int channel = 0; channel < kNumTexcoords; ++channel)
+                {
+                    if (m_Layout.GetTexcoordInfo(channel).size == 0) { continue; }
+                    var texcoord = GetTexcoordData(channel);
+                    var attribute = VertexAttribute.TexCoord0 + channel;
+                    switch (m_Layout.GetTexcoordInfo(channel).size)
+                    {
+                        case 2: AppendMeshChannel(data, attribute, iVert, nVert, texcoord.v2); break;
+                        case 3: AppendMeshChannel(data, attribute, iVert, nVert, texcoord.v3); break;
+                        case 4: AppendMeshChannel(data, attribute, iVert, nVert, texcoord.v4); break;
+                    }
+                }
+                if (m_Layout.bUseColors)
+                {
+                    AppendMeshChannel(data, VertexAttribute.Color, iVert, nVert, m_Colors);
+                }
+                if (leftTransform.HasValue) { ApplyTransform(leftTransform.Value, first, nVert); }
+
+                int indexOffset = first - iVert;
+                int firstIndex = m_Tris.Count;
+                m_Tris.SetCount(firstIndex + nTriIndex);
+                var indices = m_Tris.GetBackingArray();
+                if (rhs.m_Tris != null)
+                {
+                    // A visibility edit can leave cached indices newer than the backing mesh.
+                    for (int i = 0; i < nTriIndex; ++i)
+                    {
+                        indices[firstIndex + i] = rhs.m_Tris[iTriIndex + i] + indexOffset;
+                    }
+                }
+                else if (data.indexFormat == IndexFormat.UInt16)
+                {
+                    var source = data.GetIndexData<ushort>();
+                    for (int i = 0; i < nTriIndex; ++i)
+                    {
+                        indices[firstIndex + i] = source[subMesh.indexStart + iTriIndex + i] + subMesh.baseVertex + indexOffset;
+                    }
+                }
+                else
+                {
+                    var source = data.GetIndexData<int>();
+                    for (int i = 0; i < nTriIndex; ++i)
+                    {
+                        indices[firstIndex + i] = source[subMesh.indexStart + iTriIndex + i] + subMesh.baseVertex + indexOffset;
+                    }
+                }
+            }
+            return true;
+        }
+
+        private static bool HasFloatChannel(Mesh.MeshData data, VertexAttribute attribute, int dimension)
+        {
+            return data.HasVertexAttribute(attribute) &&
+                data.GetVertexAttributeFormat(attribute) == VertexAttributeFormat.Float32 &&
+                data.GetVertexAttributeDimension(attribute) == dimension;
+        }
+
+        private static unsafe void AppendMeshChannel<T>(Mesh.MeshData data, VertexAttribute attribute,
+            int first, int count, List<T> destination) where T : unmanaged
+        {
+            if (count == 0) { return; }
+            int stream = data.GetVertexAttributeStream(attribute);
+            var bytes = data.GetVertexData<byte>(stream);
+            int stride = data.GetVertexBufferStride(stream);
+            int offset = data.GetVertexAttributeOffset(attribute);
+            int dest = destination.Count;
+            destination.SetCount(dest + count);
+            // The caller validates format, dimension and range before any channel is appended.
+            // Pin only while copying; retain neither a native pointer nor the MeshData snapshot.
+            byte* source = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(bytes) + first * stride + offset;
+            fixed (T* target = destination.GetBackingArray())
+            {
+                UnsafeUtility.MemCpyStride(target + dest, sizeof(T), source, stride, sizeof(T), count);
             }
         }
 

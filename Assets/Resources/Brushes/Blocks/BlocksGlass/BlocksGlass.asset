@@ -17,14 +17,21 @@ MonoBehaviour:
   m_DurableName: BlocksGlass
   m_CreationVersion: 14.0
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 1000010482034202, guid: c285351e01d69194e9333b9cb1511fd7,
-    type: 3}
+  m_BrushPrefab: {fileID: 1000010482034202, guid: c285351e01d69194e9333b9cb1511fd7, type: 3}
   m_Tags: []
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 0}
-  m_Description: 
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
   m_DescriptionExtra: 
   m_BrushAudioLayers: []
   m_BrushAudioBasePitch: 0
@@ -35,7 +42,9 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 1
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: 537db0387b31e004888533b91562f23d, type: 2}
+  m_Material: {fileID: 2100000, guid: ea98d47c97114267b85ea1133cfb3259, type: 2}
+  m_TestingMaterial: {fileID: 0}
+  m_OverlayMaterial: {fileID: 0}
   m_TextureAtlasV: 0
   m_TileRate: 0
   m_UseBloomSwatchOnColorPicker: 0
@@ -72,3 +81,6 @@ MonoBehaviour:
   m_TailMinPoints: 1
   m_TailPointStep: 1
   m_MiddlePointStep: 0
+  references:
+    version: 2
+    RefIds: []

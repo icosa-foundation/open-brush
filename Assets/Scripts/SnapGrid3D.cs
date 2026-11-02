@@ -51,8 +51,9 @@ public class SnapGrid3D : MonoBehaviour
 
     private Transform toolTransform;
     private Transform canvasTransform;
+    private MaterialPropertyBlock materialProperties;
 
-    private void OnRenderObject()
+    private void LateUpdate()
     {
         var currentTool = SketchSurfacePanel.m_Instance.ActiveTool;
         if (currentTool is StrokeModificationTool)
@@ -71,25 +72,34 @@ public class SnapGrid3D : MonoBehaviour
 
         canvasTransform = App.Scene.ActiveCanvas.transform;
 
-        if ((Camera.current.cullingMask & (1 << gameObject.layer)) != 0)
+        materialProperties ??= new MaterialPropertyBlock();
+        materialProperties.SetMatrix(ShaderParam.CanvasToWorldMatrix, canvasTransform.localToWorldMatrix);
+        materialProperties.SetMatrix(ShaderParam.WorldToCanvasMatrix, canvasTransform.worldToLocalMatrix);
+        materialProperties.SetVector(ShaderParam.Pointer, toolTransform.position);
+        materialProperties.SetVector(ShaderParam.CanvasOrigin, canvasTransform.position);
+        materialProperties.SetColor(ShaderParam.Color, color);
+        materialProperties.SetVector(ShaderParam.GridCount, (Vector3)gridCount);
+        materialProperties.SetFloat(ShaderParam.GridInterval, gridInterval);
+        materialProperties.SetFloat(ShaderParam.LineWidth, lineWidth);
+        materialProperties.SetFloat(ShaderParam.LineLength, lineLength);
+        materialProperties.SetFloat(ShaderParam.CanvasScale,
+            canvasTransform.lossyScale.x); // Presumed always uniform
+
+        var lineVertexCount = 6 * 2;
+        var starVertexCount = lineVertexCount * 3;
+        var vertexCount = gridCount.x * gridCount.y * gridCount.z * starVertexCount;
+
+        // RenderPrimitives submits the grid through the active render pipeline. OnRenderObject and
+        // DrawProceduralNow rely on Camera.current, which is not set reliably while URP renders.
+        float canvasScale = Mathf.Abs(canvasTransform.lossyScale.x);
+        float maxGridCount = Mathf.Max(gridCount.x, Mathf.Max(gridCount.y, gridCount.z));
+        float boundsSize = gridInterval * (maxGridCount + lineLength + 2f) * canvasScale;
+        var renderParams = new RenderParams(material)
         {
-            var lineVertexCount = 6 * 2;
-            var starVertexCount = lineVertexCount * 3;
-
-            var vertexCount = gridCount.x * gridCount.y * gridCount.z * starVertexCount;
-
-            material.SetMatrix(ShaderParam.CanvasToWorldMatrix, canvasTransform.localToWorldMatrix);
-            material.SetMatrix(ShaderParam.WorldToCanvasMatrix, canvasTransform.worldToLocalMatrix);
-            material.SetVector(ShaderParam.Pointer, toolTransform.position);
-            material.SetVector(ShaderParam.CanvasOrigin, canvasTransform.position);
-            material.SetColor(ShaderParam.Color, color);
-            material.SetVector(ShaderParam.GridCount, (Vector3)gridCount);
-            material.SetFloat(ShaderParam.GridInterval, gridInterval);
-            material.SetFloat(ShaderParam.LineWidth, lineWidth);
-            material.SetFloat(ShaderParam.LineLength, lineLength);
-            material.SetFloat(ShaderParam.CanvasScale, canvasTransform.lossyScale.x); // Presumed always uniform
-            material.SetPass(0);
-            Graphics.DrawProceduralNow(MeshTopology.Triangles, vertexCount);
-        }
+            layer = gameObject.layer,
+            matProps = materialProperties,
+            worldBounds = new Bounds(toolTransform.position, Vector3.one * boundsSize),
+        };
+        Graphics.RenderPrimitives(renderParams, MeshTopology.Triangles, vertexCount);
     }
 }

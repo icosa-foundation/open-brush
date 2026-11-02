@@ -137,10 +137,11 @@ namespace TiltBrush
                 {
                     GeometryPool pool = group.Key;
 
-                    // If we have to bring the pool into memory, save off enough data so we can
-                    // push it back out.
+                    // Only re-evict pools that had no cached data before export. Cached indices
+                    // may contain visibility edits not yet uploaded to the backing mesh; leave
+                    // those for the owning batch to flush before clearing its cache.
                     Mesh previousBackingMesh = null;
-                    if (pool != null && !pool.IsGeometryResident)
+                    if (pool != null && !pool.HasCachedGeometry)
                     {
                         previousBackingMesh = pool.GetBackingMesh();
                         // We currently only eject batch-owned GeometryPool to Mesh, so this is unlikely to trip;
@@ -278,20 +279,20 @@ namespace TiltBrush
         // This class uses the order of export to determine the id.
         public class DeterministicIdGenerator
         {
-            private Dictionary<int, int> m_instanceIdToId = new Dictionary<int, int>();
+            private Dictionary<UnityEngine.Object, int> m_objectToId =
+                new Dictionary<UnityEngine.Object, int>();
             private int m_nextAvailable = 1;
             public int GetIdFromInstanceId(UnityEngine.Object obj)
             {
-                int instanceId = obj.GetInstanceID();
-                if (m_instanceIdToId.ContainsKey(instanceId))
+                if (m_objectToId.ContainsKey(obj))
                 {
-                    return m_instanceIdToId[instanceId];
+                    return m_objectToId[obj];
                 }
                 else
                 {
                     var ret = m_nextAvailable;
                     m_nextAvailable += 1;
-                    m_instanceIdToId[instanceId] = ret;
+                    m_objectToId[obj] = ret;
                     return ret;
                 }
             }

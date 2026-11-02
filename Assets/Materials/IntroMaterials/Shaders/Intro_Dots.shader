@@ -23,7 +23,7 @@ Properties {
 }
 
 Category {
-  Tags { "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" "DisableBatching"="True" }
+  Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="Transparent" "DisableBatching"="True" }
   Blend One One
   BlendOp Add, Min
   AlphaTest Greater .01
@@ -32,18 +32,20 @@ Category {
 
   SubShader {
     Pass {
+      Tags { "LightMode"="UniversalForward" }
 
       CGPROGRAM
+      #pragma multi_compile_instancing
       #pragma vertex vert
       #pragma fragment frag
       #pragma target 3.0
       #pragma glsl
       #pragma multi_compile __ HDR_EMULATED HDR_SIMPLE
       #include "UnityCG.cginc"
-      #include "Assets/Shaders/Include/Brush.cginc"
-      #include "Assets/Shaders/Include/Hdr.cginc"
-      #include "Assets/Shaders/Include/Particles.cginc"
-      #include "Assets/ThirdParty/Shaders/Noise.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Particles.cginc"
+      #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/ThirdParty/Noise.cginc"
 
       sampler2D _MainTex;
       fixed4 _TintColor;
@@ -53,6 +55,7 @@ Category {
         fixed4 color : COLOR;
         float2 texcoord : TEXCOORD0;
         float waveform : TEXCOORD1;
+        UNITY_VERTEX_OUTPUT_STEREO
       };
 
       float4 _MainTex_ST;
@@ -63,8 +66,10 @@ Category {
       half _IntroDissolve;
       v2f vert (ParticleVertex_t v)
       {
+        UNITY_SETUP_INSTANCE_ID(v);
         v.color = TbVertToSrgb(v.color);
-        v2f o;
+        v2f o = (v2f)0;
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
         float birthTime = v.texcoord.w;
         float rotation = v.texcoord.z;
         float halfSize = GetParticleHalfSize(v.corner.xyz, v.center, birthTime);
@@ -83,6 +88,7 @@ Category {
       // Input color is srgb
       fixed4 frag (v2f i) : SV_Target
       {
+        UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
         float4 tex = tex2D(_MainTex, i.texcoord);
         float4 c = i.color * _TintColor * tex;
 

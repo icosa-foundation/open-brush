@@ -27,15 +27,16 @@ Shader "Custom/VisualizerRing" {
     Cull Off Lighting Off ZWrite Off Fog{ Color(0,0,0,0) }
 
     SubShader{
+    Tags { "RenderPipeline"="UniversalPipeline" }
     Pass{
 
-    CGPROGRAM
+    HLSLPROGRAM
     #pragma vertex vert
     #pragma fragment frag
     #pragma multi_compile_particles
 
     #include "UnityCG.cginc"
-    #include "Assets/Shaders/Include/Brush.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
 
     sampler2D _MainTex;
     float4 _MainTex_ST;
@@ -82,8 +83,9 @@ Shader "Custom/VisualizerRing" {
   c.w = 1;
   return i.color * c * _Color;
   }
-    ENDCG
+    ENDHLSL
   }
   }
   }
 }
+

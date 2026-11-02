@@ -32,8 +32,7 @@ MonoBehaviour:
     version: 2
     RefIds:
     - rid: 6394126504544960536
-      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables,
-        asm: Unity.Localization}
+      type: {class: DistributedUIDGenerator, ns: UnityEngine.Localization.Tables, asm: Unity.Localization}
       data:
         m_CustomEpoch: 1659976615253
     - rid: 6394126504544960537
@@ -46,5 +45,4 @@ MonoBehaviour:
         - m_KeyId: 402119626752
           m_TableCodes:
           - en
-        m_TypeString: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0,
-          Culture=neutral, PublicKeyToken=null
+        m_TypeString: UnityEngine.Sprite, UnityEngine.CoreModule, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null

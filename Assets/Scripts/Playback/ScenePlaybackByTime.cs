@@ -121,7 +121,25 @@ namespace TiltBrush
 
         public long GetControlPointTimeMs(Stroke stroke, uint timestampMs)
         {
-            var session = m_strokeSessions[stroke];
+            if (!m_strokeSessions.TryGetValue(stroke, out var session))
+            {
+                if (!SketchMemoryScript.m_Instance.TryGetStrokeTimeSession(stroke, out session))
+                {
+                    // Completed network strokes enter the rendered list immediately. Anchor
+                    // metadata-free additions at their arrival playhead and retain that anchor
+                    // so rewinding uses the same coordinates.
+                    long arrivalTimeMs = Math.Max(0, Math.Min(uint.MaxValue,
+                        ScenePlaybackByTimeLayered.ConvertSketchTimeToMilliseconds(
+                            App.Instance.CurrentSketchTime)));
+                    session = new StrokeTimeSessionMetadata
+                    {
+                        StartUtcMs = checked(m_startUtcMs + arrivalTimeMs),
+                        StartSketchTimeMs = stroke.TailTimestampMs,
+                        EndSketchTimeMs = stroke.TailTimestampMs,
+                    };
+                }
+                m_strokeSessions.Add(stroke, session);
+            }
             return checked(
                 session.StartUtcMs + ((long)timestampMs - session.StartSketchTimeMs) -
                 m_startUtcMs);
@@ -195,6 +213,20 @@ namespace TiltBrush
         public int MaxPointerUnderrun { get { return m_maxPointerUnderrun; } }
         public int MemoryObjectsDrawn { get { return 0; } } // unimplemented
 
+        internal static long ConvertSketchTimeToMilliseconds(double sketchTimeSeconds)
+        {
+            double milliseconds = sketchTimeSeconds * 1000.0;
+            if (milliseconds >= long.MaxValue)
+            {
+                return long.MaxValue;
+            }
+            if (milliseconds <= long.MinValue)
+            {
+                return long.MinValue;
+            }
+            return (long)milliseconds;
+        }
+
         // Input strokes must be ordered by head timestamp
         public ScenePlaybackByTimeLayered(
             IEnumerable<Stroke> strokes,
@@ -248,8 +280,7 @@ namespace TiltBrush
         // load finishing a part-drawn stroke and made ClearMemory rewind instead).
         internal static long CurrentSketchTimeMs()
         {
-            double ms = App.Instance.CurrentSketchTime * 1000.0;
-            return ms >= long.MaxValue ? long.MaxValue : (long)ms;
+            return ConvertSketchTimeToMilliseconds(App.Instance.CurrentSketchTime);
         }
 
         private bool UpdateInternal()

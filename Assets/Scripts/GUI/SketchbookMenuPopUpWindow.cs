@@ -54,7 +54,8 @@ namespace TiltBrush
             // The rename button should only be enabled for categories that support renaming
             var renameButton = GetComponentInChildren<KeyboardPopupButton>();
             SketchSetType sketchSetType = (SketchSetType)iCommandParam2;
-            renameButton.SetButtonAvailable(sketchSetType == SketchSetType.User);
+            renameButton.SetButtonAvailable(sketchSetType == SketchSetType.User &&
+                GetSceneFileInfo(iCommandParam, sketchSetType)?.ReadOnly == false);
         }
 
         public void SetInitialKeyboardText(KeyboardPopupButton btn)

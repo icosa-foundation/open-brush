@@ -1,84 +1,208 @@
 fileFormatVersion: 2
 guid: 5bc0a5b8483061a459ff0c8be235175f
 ModelImporter:
-  serializedVersion: 23
-  fileIDToRecycleName:
-    100000: Endcap
-    100002: Grip Left
-    100004: Grip Right
-    100006: Logi Logo Left
-    100008: Logi Logo Right
-    100010: //RootNode
-    100012: Menu Button
-    100014: Nib
-    100016: NibAccent
-    100018: Primary Button
-    100020: Touchpad Button
-    400000: Endcap
-    400002: Grip Left
-    400004: Grip Right
-    400006: Logi Logo Left
-    400008: Logi Logo Right
-    400010: //RootNode
-    400012: Menu Button
-    400014: Nib
-    400016: NibAccent
-    400018: Primary Button
-    400020: Touchpad Button
-    2100000: PenBody
-    2100002: BodyAccent
-    2100004: PenButtonsMat
-    2100006: NibAccent
-    2100008: Nib
-    2100010: LogiLogo.003
-    2300000: Endcap
-    2300002: Grip Left
-    2300004: Grip Right
-    2300006: Logi Logo Left
-    2300008: Logi Logo Right
-    2300010: //RootNode
-    2300012: Menu Button
-    2300014: Nib
-    2300016: NibAccent
-    2300018: Primary Button
-    2300020: Touchpad Button
-    3300000: Endcap
-    3300002: Grip Left
-    3300004: Grip Right
-    3300006: Logi Logo Left
-    3300008: Logi Logo Right
-    3300010: //RootNode
-    3300012: Menu Button
-    3300014: Nib
-    3300016: NibAccent
-    3300018: Primary Button
-    3300020: Touchpad Button
-    4300000: LogiPen
-    4300002: Primary Button
-    4300004: Touchpad Button
-    4300006: Grip Right
-    4300008: Menu Button
-    4300010: Grip Left
-    4300012: NibAccent
-    4300014: Endcap
-    4300016: Nib
-    4300018: Logi Logo Left
-    4300020: Logi Logo Right
-    2186277476908879412: ImportLogs
+  serializedVersion: 24600
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: Endcap
+  - first:
+      1: 100002
+    second: Grip Left
+  - first:
+      1: 100004
+    second: Grip Right
+  - first:
+      1: 100006
+    second: Logi Logo Left
+  - first:
+      1: 100008
+    second: Logi Logo Right
+  - first:
+      1: 100010
+    second: //RootNode
+  - first:
+      1: 100012
+    second: Menu Button
+  - first:
+      1: 100014
+    second: Nib
+  - first:
+      1: 100016
+    second: NibAccent
+  - first:
+      1: 100018
+    second: Primary Button
+  - first:
+      1: 100020
+    second: Touchpad Button
+  - first:
+      4: 400000
+    second: Endcap
+  - first:
+      4: 400002
+    second: Grip Left
+  - first:
+      4: 400004
+    second: Grip Right
+  - first:
+      4: 400006
+    second: Logi Logo Left
+  - first:
+      4: 400008
+    second: Logi Logo Right
+  - first:
+      4: 400010
+    second: //RootNode
+  - first:
+      4: 400012
+    second: Menu Button
+  - first:
+      4: 400014
+    second: Nib
+  - first:
+      4: 400016
+    second: NibAccent
+  - first:
+      4: 400018
+    second: Primary Button
+  - first:
+      4: 400020
+    second: Touchpad Button
+  - first:
+      21: 2100000
+    second: PenBody
+  - first:
+      21: 2100002
+    second: BodyAccent
+  - first:
+      21: 2100004
+    second: PenButtonsMat
+  - first:
+      21: 2100006
+    second: NibAccent
+  - first:
+      21: 2100008
+    second: Nib
+  - first:
+      21: 2100010
+    second: LogiLogo.003
+  - first:
+      23: 2300000
+    second: Endcap
+  - first:
+      23: 2300002
+    second: Grip Left
+  - first:
+      23: 2300004
+    second: Grip Right
+  - first:
+      23: 2300006
+    second: Logi Logo Left
+  - first:
+      23: 2300008
+    second: Logi Logo Right
+  - first:
+      23: 2300010
+    second: //RootNode
+  - first:
+      23: 2300012
+    second: Menu Button
+  - first:
+      23: 2300014
+    second: Nib
+  - first:
+      23: 2300016
+    second: NibAccent
+  - first:
+      23: 2300018
+    second: Primary Button
+  - first:
+      23: 2300020
+    second: Touchpad Button
+  - first:
+      33: 3300000
+    second: Endcap
+  - first:
+      33: 3300002
+    second: Grip Left
+  - first:
+      33: 3300004
+    second: Grip Right
+  - first:
+      33: 3300006
+    second: Logi Logo Left
+  - first:
+      33: 3300008
+    second: Logi Logo Right
+  - first:
+      33: 3300010
+    second: //RootNode
+  - first:
+      33: 3300012
+    second: Menu Button
+  - first:
+      33: 3300014
+    second: Nib
+  - first:
+      33: 3300016
+    second: NibAccent
+  - first:
+      33: 3300018
+    second: Primary Button
+  - first:
+      33: 3300020
+    second: Touchpad Button
+  - first:
+      43: 4300000
+    second: LogiPen
+  - first:
+      43: 4300002
+    second: Primary Button
+  - first:
+      43: 4300004
+    second: Touchpad Button
+  - first:
+      43: 4300006
+    second: Grip Right
+  - first:
+      43: 4300008
+    second: Menu Button
+  - first:
+      43: 4300010
+    second: Grip Left
+  - first:
+      43: 4300012
+    second: NibAccent
+  - first:
+      43: 4300014
+    second: Endcap
+  - first:
+      43: 4300016
+    second: Nib
+  - first:
+      43: 4300018
+    second: Logi Logo Left
+  - first:
+      43: 4300020
+    second: Logi Logo Right
+  - first:
+      41386430: 2186277476908879412
+    second: ImportLogs
   externalObjects: {}
   materials:
-    importMaterials: 1
+    materialImportMode: 1
     materialName: 0
     materialSearch: 1
     materialLocation: 1
+    searchTexturesGlobally: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -100,25 +224,43 @@ ModelImporter:
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    preBakeConvexCollisionMesh: 0
+    preBakeTriangleCollisionMesh: 0
+    importPhysicalCameras: 1
     importVisibility: 1
     importBlendShapes: 1
     importCameras: 1
     importLights: 1
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
     indexFormat: 0
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
-    previousCalculatedGlobalScale: 1
-    hasPreviousCalculatedGlobalScale: 0
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
@@ -127,10 +269,11 @@ ModelImporter:
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 1
+  referencedClips: []
   importAnimation: 1
-  copyAvatar: 0
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -140,13 +283,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 1
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 1
   lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 0
   humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

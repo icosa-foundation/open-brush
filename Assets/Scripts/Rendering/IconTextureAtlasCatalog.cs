@@ -207,8 +207,6 @@ namespace TiltBrush
             {
                 EditorUtility.ClearProgressBar();
             }
-
-            Debug.LogFormat("{0}: Packed {1} textures.", name, m_entries.Length);
         }
 
         private void Progress(string action, float p)

@@ -14,9 +14,6 @@ namespace TiltBrush
             }
             List<MeshFilter> splits = new List<MeshFilter>();
 
-            // System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
-            // stopwatch.Start();
-
             // Step 1: Extract all mesh data on main thread
             var mesh = sourceMf.sharedMesh ?? sourceMf.mesh;
             var renderer = sourceMf.GetComponent<MeshRenderer>();
@@ -114,9 +111,6 @@ namespace TiltBrush
                 go.transform.SetParent(meshFilter.transform, false);
                 splits.Add(split);
             }
-
-            // stopwatch.Stop();
-            // Debug.Log($"Mesh splitting completed in {stopwatch.ElapsedMilliseconds / 1000f} seconds.");
 
             return splits;
         }

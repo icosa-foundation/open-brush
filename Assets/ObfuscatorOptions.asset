@@ -153,7 +153,6 @@ MonoBehaviour:
   skipClasses:
   - MonoPInvokeCallbackAttribute
   - CloudRegionCode
-  - PhotonNetworkingMessage
   - PhotonLogLevel
   - PhotonTargets
   - CloudRegionFlag
@@ -187,9 +186,7 @@ MonoBehaviour:
   - BoltExecutionOrderAttribute
   - BoltNetworkUtils
   - BoltRuntimeConfigs
-  alternateRPCAnnotations:
-  - PunRPC
-  - Photon.Pun.PunRPC
+  alternateRPCAnnotations: []
   includePublicClasses: 1
   includePublicMethods: 1
   includePublicFields: 1
@@ -251,7 +248,6 @@ MonoBehaviour:
   includeParametersOnProtectedMethods: 1
   abstractMonoBehaviours:
   - Photon.MonoBehaviour
-  - Photon.PunBehaviour
   - SupportLogging
   useSimplifiedObfuscateLiterals: 0
   translateFakeMethods: 0

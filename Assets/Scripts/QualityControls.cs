@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -29,10 +29,6 @@ namespace TiltBrush
         private const string kAutoSimplificationEnabled = "Autosimplification Enabled";
 
         private List<Camera> m_Cameras;
-        private List<SENaturalBloomAndDirtyLens> m_Bloom;
-        private List<FXAA> m_Fxaa;
-        private List<MobileBloom> m_MobileBloom;
-        private float m_MobileBloomAmount;
 
         public event Action<int> OnQualityLevelChange;
 
@@ -53,7 +49,6 @@ namespace TiltBrush
         [SerializeField] private AppQualitySettingLevels m_QualityLevels;
         [UsedImplicitly] // on Android
         [SerializeField] private AppQualitySettingLevels m_MobileQualityLevels;
-        [SerializeField] private GpuTextRender m_DebugText;
 
         /// Used to track when quality level actually changes.
         private int m_lastQualityLevel = -1;
@@ -65,13 +60,78 @@ namespace TiltBrush
         private double m_TimeSinceStart;
         private int m_FramesInLastSecond;
 
-        private int m_NumFramesFpsTooLow;
-        private int m_NumFramesFpsHighEnough;
-        private int m_NumFramesGpuTooHigh;
-        private int m_NumFramesGpuLowEnough;
-        private float m_DesiredBloom;
+        private readonly AutomaticQualityPolicy m_AutomaticQualityPolicy = new AutomaticQualityPolicy();
+        private readonly Dictionary<int, int> m_RuntimeFoveationOverrides = new Dictionary<int, int>();
+        private float? m_RuntimeLowerFps;
+        private float? m_RuntimeHigherFps;
+        private int? m_RuntimeLowerFrames;
+        private int? m_RuntimeHigherFrames;
+        private bool m_SessionRenderingPrepared;
+        private bool m_AutomaticQualityEnabled = true;
+        private bool m_ApplicationPaused;
+        private bool m_HadMeasurementFocus;
+        public bool SupportsAutomaticQuality => App.Config.IsMobileHardware;
 
-        /// A number from 0 (mobile, lowest) to 3 (future, highest)
+        // Temporary Steam Frame/Lepton compatibility policy.
+        // Frame reproduces corruption only when reduced viewports and foveation
+        // are combined. Aura retains its separate full-viewport workaround.
+        internal static bool RequiresUnfoveatedReducedViewport
+        {
+            get
+            {
+#if UNITY_ANDROID && !UNITY_EDITOR
+                // ARCore-only and no-headset builds may omit the native OpenXR plugin.
+                return UnityEngine.XR.Management.XRGeneralSettings.Instance?.Manager?.activeLoader
+                    is UnityEngine.XR.OpenXR.OpenXRLoader &&
+                    string.Equals(UnityEngine.XR.OpenXR.OpenXRRuntime.name, "SteamVR/OpenXR",
+                        StringComparison.Ordinal);
+#else
+                return false;
+#endif
+            }
+        }
+
+        public bool AutomaticQualityEnabled
+        {
+            get => SupportsAutomaticQuality && m_AutomaticQualityEnabled;
+            set
+            {
+                if (value && !SupportsAutomaticQuality)
+                    throw new InvalidOperationException("Automatic quality is only available on mobile hardware.");
+                m_AutomaticQualityEnabled = value;
+                m_AutomaticQualityPolicy.Reset(m_TimeSinceStart);
+            }
+        }
+
+        public void ConfigureQualityLevel(int level, int msaa, int foveation)
+        {
+            if (level < 0 || level >= AppQualityLevels.Length)
+                throw new ArgumentOutOfRangeException(nameof(level));
+            if (msaa != 1 && msaa != 2 && msaa != 4 && msaa != 8)
+                throw new ArgumentOutOfRangeException(nameof(msaa));
+            if (foveation < 0 || foveation > 3)
+                throw new ArgumentOutOfRangeException(nameof(foveation));
+            if (msaa != MSAALevel)
+                throw new InvalidOperationException($"Session MSAA is fixed at {MSAALevel}x; set Profiling.MsaaLevel and restart to change it.");
+            m_RuntimeFoveationOverrides[level] = foveation;
+            if (level == QualityLevel) SetQualityLevel(level);
+        }
+
+        public void ConfigureQualityThresholds(float lowerFps, float higherFps,
+            int lowerFrames, int higherFrames)
+        {
+            if (float.IsNaN(lowerFps) || float.IsInfinity(lowerFps) || lowerFps <= 0 ||
+                float.IsNaN(higherFps) || float.IsInfinity(higherFps) || higherFps <= lowerFps ||
+                lowerFrames < 1 || higherFrames < 1)
+                throw new ArgumentException("Use positive FPS thresholds with higher > lower, and frame counts >= 1.");
+            m_RuntimeLowerFps = lowerFps;
+            m_RuntimeHigherFps = higherFps;
+            m_RuntimeLowerFrames = lowerFrames;
+            m_RuntimeHigherFrames = higherFrames;
+            m_AutomaticQualityPolicy.Reset(m_TimeSinceStart);
+        }
+
+        /// Index into the active platform's quality ladder, from lowest to highest.
         public int QualityLevel
         {
             get { return QualitySettings.GetQualityLevel(); }
@@ -89,22 +149,26 @@ namespace TiltBrush
             get { return (StrokeSimplifier == null) ? 0.0f : StrokeSimplifier.Level; }
             set
             {
-                float level = value;
-                if (App.UserConfig.Profiling.HasStrokeSimplification)
-                {
-                    level = App.UserConfig.Profiling.StrokeSimplification;
-                    Debug.LogFormat("Simplification overridden to be: {0}.", level);
-                }
-                StrokeSimplifier = new RdpStrokeSimplifier(level);
-                UserStrokeSimplifier = new RdpStrokeSimplifier(
-                    Mathf.Min(level, AppQualityLevels[QualityLevel].MaxSimplificationUserStrokes));
+                SetSimplificationLevel(value, AppQualityLevels[QualityLevel].MaxSimplificationUserStrokes);
             }
+        }
+
+        private void SetSimplificationLevel(float level, float maxUserStrokeLevel)
+        {
+            if (App.UserConfig.Profiling.HasStrokeSimplification)
+            {
+                level = App.UserConfig.Profiling.StrokeSimplification;
+            }
+            StrokeSimplifier = new RdpStrokeSimplifier(level);
+            UserStrokeSimplifier = new RdpStrokeSimplifier(Mathf.Min(level, maxUserStrokeLevel));
         }
 
         public int MSAALevel
         {
-            get { return m_msaaLevel; }
+            get { return UrpPostProcessingController.Instance?.SessionMsaaLevel ?? m_msaaLevel; }
         }
+
+        public bool SessionHdr => m_enableHdr;
 
         public int FramesInLastSecond => m_FramesInLastSecond;
 
@@ -133,39 +197,44 @@ namespace TiltBrush
             get { return AppQualityLevels[QualityLevel]; }
         }
 
+        public int InitialQualityLevel
+        {
+            get
+            {
+                int defaultLevel = App.Config.IsMobileHardware ? AppQualityLevels.Length - 1 : 2;
+                int configuredLevel = App.UserConfig.Profiling.QualityLevel;
+                return configuredLevel >= 0 && configuredLevel < AppQualityLevels.Length
+                    ? configuredLevel : defaultLevel;
+            }
+        }
+
+        public void PrepareSessionRendering()
+        {
+            if (m_SessionRenderingPrepared) return;
+            m_SessionRenderingPrepared = true;
+            m_enableHdr = AppQualityLevels.Hdr;
+            m_msaaLevel = App.UserConfig.Profiling.MsaaLevel > 0
+                ? App.UserConfig.Profiling.MsaaLevel : AppQualityLevels.MsaaLevel;
+            float eyeScale = App.UserConfig.Profiling.EyeTextureScaling > 0
+                ? App.UserConfig.Profiling.EyeTextureScaling : AppQualityLevels.EyeTextureScale;
+            UnityEngine.XR.XRSettings.eyeTextureResolutionScale = eyeScale;
+        }
+
         void Awake()
         {
             m_Instance = this;
 
             m_Cameras = new List<Camera>();
-            m_Bloom = new List<SENaturalBloomAndDirtyLens>();
-            m_Fxaa = new List<FXAA>();
-            m_MobileBloom = new List<MobileBloom>();
-
-            // Simple desktop vs. mobile quality for now.  May need more control if e.g.
-            // we need to set this differently for Win vs. Linux, or mobile level fragments
-            // into bloom and non-bloom variants.
-            int newLevel = App.Config.IsMobileHardware ? AppQualityLevels.Length - 1 : 2;
-
-            // Override from user config, if valid.
-            int configQuality = App.UserConfig.Profiling.QualityLevel;
-            if (configQuality >= 0 && configQuality <= AppQualityLevels.Length)
-            {
-                newLevel = configQuality;
-            }
 
             // Apply the quality level.
-            QualityLevel = newLevel;
+            PrepareSessionRendering();
+            QualityLevel = InitialQualityLevel;
             SimplificationLevel = 0.0f;
         }
 
         /// Should be called after correct cameras are enabled
         public void Init()
         {
-            m_Bloom.Clear();
-            m_Fxaa.Clear();
-            m_MobileBloom.Clear();
-
             var cameras = new HashSet<Camera>(
                 FindObjectsOfType<Camera>(), new ReferenceComparer<Camera>());
             if (!App.Config.IsMobileHardware)
@@ -175,42 +244,31 @@ namespace TiltBrush
             }
             m_Cameras = cameras.Where(x => x.tag != "Ignore").ToList();
 
-            foreach (var camera in m_Cameras)
-            {
-                var rBloom = camera.GetComponent<SENaturalBloomAndDirtyLens>();
-                if (rBloom)
-                {
-                    m_Bloom.Add(rBloom);
-                }
-                var rFxaa = camera.GetComponent<FXAA>();
-                if (rFxaa)
-                {
-                    m_Fxaa.Add(rFxaa);
-                }
-                var mobileBloom = camera.GetComponent<MobileBloom>();
-                if (mobileBloom)
-                {
-                    m_MobileBloom.Add(mobileBloom);
-                }
-            }
+            DisableLegacyPostProcessing();
 
             m_FrameTimeStamps = new Queue<double>();
 
-            m_MobileBloomAmount = 0;
-            m_DesiredBloom = 1;
-
-            // Set up the OVR overlay for the dynamic quality debug readout.
-#if OCULUS_SUPPORTED
-            if (m_DebugText && m_DebugText.gameObject.activeInHierarchy)
-            {
-                OVROverlay overlay = m_DebugText.gameObject.AddComponent<OVROverlay>();
-                overlay.textures = new Texture[] { m_DebugText.RenderedTexture };
-                overlay.isDynamic = true;
-            }
-#endif // OCULUS_SUPPORTED
-
             // Push current level to camera settings.
             SetQualityLevel(QualityLevel);
+        }
+
+        public void ResetFrameMeasurement()
+        {
+            m_HadMeasurementFocus = false;
+            m_FrameTimeStamps?.Clear();
+            m_FramesInLastSecond = 0;
+            m_AutomaticQualityPolicy.ResetMeasurement(m_TimeSinceStart);
+        }
+
+        void OnApplicationPause(bool paused)
+        {
+            m_ApplicationPaused = paused;
+            if (paused) m_HadMeasurementFocus = false;
+        }
+
+        void OnApplicationFocus(bool focused)
+        {
+            if (!focused) m_HadMeasurementFocus = false;
         }
 
         void Update()
@@ -220,8 +278,28 @@ namespace TiltBrush
                 return;
             }
 
-            // Count actual frames in the last second
-            m_TimeSinceStart += Time.deltaTime;
+            m_TimeSinceStart += Time.unscaledDeltaTime;
+            bool focusBlocked = App.Config.m_SdkMode == SdkMode.UnityXR &&
+                App.VrSdk != null && App.VrSdk.IsAppFocusBlocked();
+            bool compositorBlocked = OverlayManager.m_Instance != null &&
+                OverlayManager.m_Instance.BlocksQualityMeasurement;
+            if (m_ApplicationPaused || !Application.isFocused || focusBlocked || compositorBlocked)
+            {
+                m_HadMeasurementFocus = false;
+                m_FrameTimeStamps.Clear();
+                m_FramesInLastSecond = 0;
+                return;
+            }
+            if (!m_HadMeasurementFocus)
+            {
+                // Compositor/pause timing is not a measurement of our rendering cost.
+                m_FrameTimeStamps.Clear();
+                m_FramesInLastSecond = 0;
+                m_AutomaticQualityPolicy.ResetMeasurement(m_TimeSinceStart);
+                m_HadMeasurementFocus = true;
+            }
+
+            // Count actual foreground frames in the last second.
             m_FrameTimeStamps.Enqueue(m_TimeSinceStart);
             m_FramesInLastSecond++;
             double oneSecondAgo = m_TimeSinceStart - 1;
@@ -231,116 +309,46 @@ namespace TiltBrush
                 m_FramesInLastSecond--;
             }
 
-            // Update the counts for fps / gpu levels high or low
-            int fps = m_FramesInLastSecond;
-            if (fps <= AppQualityLevels.LowerQualityFpsTrigger)
+            if (!AutomaticQualityEnabled || SelectionQualityOverrideActive)
             {
-                m_NumFramesFpsTooLow++;
-            }
-            else
-            {
-                m_NumFramesFpsTooLow = 0;
+                m_AutomaticQualityPolicy.Reset(m_TimeSinceStart);
+                return;
             }
 
-            if (fps >= AppQualityLevels.HigherQualityFpsTrigger)
-            {
-                m_NumFramesFpsHighEnough++;
-            }
-            else
-            {
-                m_NumFramesFpsHighEnough = 0;
-            }
+            var profiling = App.UserConfig.Profiling;
+            m_AutomaticQualityPolicy.SettlingSeconds = profiling.QualitySettlingSeconds;
+            m_AutomaticQualityPolicy.RecoverySeconds = profiling.QualityRecoverySeconds;
+            m_AutomaticQualityPolicy.RetrySeconds = profiling.QualityRetrySeconds;
+            int nextLevel = m_AutomaticQualityPolicy.Evaluate(m_TimeSinceStart, QualityLevel,
+                AppQualityLevels.Length - 1, m_FramesInLastSecond,
+                m_RuntimeLowerFps ?? AppQualityLevels.LowerQualityFpsTrigger,
+                m_RuntimeHigherFps ?? AppQualityLevels.HigherQualityFpsTrigger,
+                m_RuntimeLowerFrames ?? AppQualityLevels.FramesForLowerQuality,
+                m_RuntimeHigherFrames ?? AppQualityLevels.FramesForHigherQuality);
+            if (nextLevel != QualityLevel) QualityLevel = nextLevel;
+        }
 
-            float gpuUtilization = App.VrSdk.GetGpuUtilization() * 100f;
-            if (gpuUtilization >= AppQualityLevels.LowerQualityGpuTrigger)
+        private static bool SelectionQualityOverrideActive
+        {
+            get
             {
-                m_NumFramesGpuTooHigh++;
-            }
-            else
-            {
-                m_NumFramesGpuTooHigh = 0;
-            }
-
-            if (gpuUtilization <= AppQualityLevels.HigherQualityGpuTrigger)
-            {
-                m_NumFramesGpuLowEnough++;
-            }
-            else
-            {
-                m_NumFramesGpuLowEnough = 0;
-            }
-
-            // Update quality level if needed
-            int limit = AppQualityLevels.FramesForLowerQuality;
-            if (m_NumFramesFpsTooLow >= limit)
-            {
-                if (QualityLevel > 0)
+                if (UrpSelectionRendererFeature.MobileSelectionQualityOverrideActive)
                 {
-                    QualityLevel--;
+                    return true;
                 }
-                m_NumFramesFpsTooLow = 0;
-            }
 
-            if (m_NumFramesGpuTooHigh >= limit)
-            {
-                if (QualityLevel > 0)
-                {
-                    QualityLevel--;
-                }
-                m_NumFramesGpuTooHigh = 0;
+                return SelectionManager.m_Instance != null &&
+                    SelectionManager.m_Instance.HasSelection &&
+                    !SelectionEffect.DisableSelectionEffects;
             }
-
-            limit = AppQualityLevels.FramesForHigherQuality;
-            if (m_NumFramesGpuLowEnough >= limit && m_NumFramesFpsHighEnough >= limit)
-            {
-                if (QualityLevel < AppQualityLevels.Length - 1)
-                {
-                    QualityLevel++;
-                }
-                m_NumFramesGpuLowEnough = 0;
-                m_NumFramesFpsHighEnough = 0;
-            }
-
-            // Update the mobile bloom level for fade in / out
-            if (m_MobileBloomAmount != m_DesiredBloom)
-            {
-                float change = (Mathf.Sign(m_DesiredBloom - m_MobileBloomAmount) * Time.deltaTime)
-                    / AppQualityLevels.BloomFadeTime;
-                m_MobileBloomAmount = Mathf.Clamp01(m_MobileBloomAmount + change);
-                foreach (var bloom in m_MobileBloom)
-                {
-                    bloom.enabled = true;
-                    bloom.BloomAmount = m_MobileBloomAmount;
-                }
-                if (m_MobileBloomAmount == m_DesiredBloom)
-                {
-                    foreach (var bloom in m_MobileBloom)
-                    {
-                        bloom.enabled = m_DesiredBloom == 1;
-                    }
-                }
-            }
-#if OCULUS_SUPPORTED
-            if (m_DebugText != null && m_DebugText.gameObject.activeInHierarchy)
-            {
-                m_DebugText.SetData(0, fps);
-                m_DebugText.SetData(1, gpuUtilization);
-                m_DebugText.SetData(2, QualityLevel);
-                m_DebugText.SetData(3, m_NumFramesFpsHighEnough);
-                m_DebugText.SetData(4, AppQualityLevels.HigherQualityFpsTrigger);
-                m_DebugText.SetData(5, m_NumFramesGpuLowEnough);
-                m_DebugText.SetData(6, AppQualityLevels.HigherQualityGpuTrigger);
-                m_DebugText.SetData(7, m_NumFramesFpsTooLow);
-                m_DebugText.SetData(8, AppQualityLevels.LowerQualityFpsTrigger);
-                m_DebugText.SetData(9, m_NumFramesGpuTooHigh);
-                m_DebugText.SetData(10, AppQualityLevels.LowerQualityGpuTrigger);
-            }
-#endif // OCULUS_SUPPORTED
         }
 
         void SetQualityLevel(int value)
         {
+            if (value != QualityLevel) m_AutomaticQualityPolicy.ResetMeasurement(m_TimeSinceStart);
             AppQualitySettingLevels settingLevels = AppQualityLevels;
+            if (settingLevels != null && (value < 0 || value >= settingLevels.Length))
+                throw new ArgumentOutOfRangeException(nameof(value));
             var settings = new AppQualitySettingLevels.AppQualitySettings();
             if (settingLevels == null)
             {
@@ -352,50 +360,58 @@ namespace TiltBrush
             }
 
             SetBloomMode(settings.Bloom);
-            EnableHDR(settings.Hdr);
+            EnableHDR(SessionHdr);
             EnableFxaa(settings.Fxaa);
             Shader.globalMaximumLOD = settings.MaxLod;
-            m_msaaLevel = settings.MsaaLevel;
             QualitySettings.anisotropicFiltering = settings.Anisotropic;
-            SimplificationLevel = settings.StrokeSimplification;
+            SetSimplificationLevel(settings.StrokeSimplification, settings.MaxSimplificationUserStrokes);
             m_targetMaxControlPoints = settings.TargetMaxControlPoints;
             m_maxLoadingSimplification = settings.MaxSimplification;
 
+#if OPEN_BRUSH_ANDROID_XR
+            // Aura's band and vertical shifts reproduce even with foveation off.
+            // Keep its full-viewport workaround separate from the Frame restriction.
+            float viewportScale = 1f;
+#else
             float viewportScale = App.UserConfig.Profiling.ViewportScaling > 0 ?
                 App.UserConfig.Profiling.ViewportScaling :
                 settings.ViewportScale;
-
-            float eyeScale = App.UserConfig.Profiling.EyeTextureScaling > 0 ?
-                App.UserConfig.Profiling.EyeTextureScaling :
-                settings.EyeTextureScale;
+#endif
 
             if (App.UserConfig.Profiling.GlobalMaximumLOD > 0)
             {
                 Shader.globalMaximumLOD = App.UserConfig.Profiling.GlobalMaximumLOD;
             }
 
-            if (App.UserConfig.Profiling.MsaaLevel > 0)
+            int foveation = settings.FixedFoveationLevel;
+            if (m_RuntimeFoveationOverrides.TryGetValue(value, out var runtimeFoveation))
+                foveation = runtimeFoveation;
+
+            // Preserve resolution scaling while avoiding the unsupported combination
+            // of reduced URP intermediate-texture viewports and fixed foveation.
+            if (viewportScale < 1f && foveation > 0 && RequiresUnfoveatedReducedViewport)
             {
-                m_msaaLevel = App.UserConfig.Profiling.MsaaLevel;
+                Debug.Log($"[OB_XR_VIEWPORT] Disabling foveation at viewport scale {viewportScale}, quality {value}.");
+                foveation = 0;
             }
 
             UnityEngine.XR.XRSettings.renderViewportScale = viewportScale;
-            UnityEngine.XR.XRSettings.eyeTextureResolutionScale = eyeScale;
 
             if (value != m_lastQualityLevel && Debug.isDebugBuild && App.UserConfig.Profiling.AutoProfile)
             {
-                Debug.Log("Profile: Quality Level: " + value
-                    + " renderViewportScale: " + viewportScale
-                    + " eyeTexture scale: " + eyeScale
-                    + " MSAA: " + m_msaaLevel
-                    + " GlobalMaximumLOD: " + Shader.globalMaximumLOD);
+                Debug.Log($"Profile: Quality Level: {value} renderViewportScale: {viewportScale} " +
+                    $"MSAA: {MSAALevel} GlobalMaximumLOD: {Shader.globalMaximumLOD}");
                 m_lastQualityLevel = value;
             }
 
-            App.VrSdk.SetGpuClockLevel(AppQualitySettings.GpuLevel);
-            App.VrSdk.SetFixedFoveation(AppQualitySettings.FixedFoveationLevel);
+            App.VrSdk.SetGpuClockLevel(settings.GpuLevel);
+            App.VrSdk.SetFixedFoveation(foveation);
 
-            QualitySettings.SetQualityLevel(value, applyExpensiveChanges: !App.Config.IsMobileHardware);
+            // Render-buffer settings belong to the session, not Unity's quality presets.
+            UrpPostProcessingController.Instance?.PrepareQualityLevelChange(value);
+            QualitySettings.SetQualityLevel(value, applyExpensiveChanges: false);
+            if (UrpPostProcessingController.Instance?.SessionMsaaLevel != null)
+                QualitySettings.antiAliasing = MSAALevel;
 
             if (OnQualityLevelChange != null)
             {
@@ -405,25 +421,49 @@ namespace TiltBrush
 
         void SetBloomMode(BloomMode rMode)
         {
-            for (int i = 0; i < m_Bloom.Count; ++i)
-            {
-                m_Bloom[i].enabled = (rMode == BloomMode.Full || rMode == BloomMode.Fast);
-            }
-
-            m_DesiredBloom = rMode == BloomMode.None ? 0 : 1;
+            // URP bloom is owned by UrpPostProcessingController during the migration.
         }
 
         void EnableFxaa(bool bEnable)
         {
-            foreach (var fxaa in m_Fxaa)
+            // Legacy FXAA is disabled during the URP migration. URP camera/post settings own AA.
+        }
+
+        void DisableLegacyPostProcessing()
+        {
+            if (UrpPostProcessingController.Instance != null)
             {
-                fxaa.enabled = bEnable;
+                UrpPostProcessingController.Instance.DisableLegacyPostProcessing();
+                return;
+            }
+
+            DisableAll<SENaturalBloomAndDirtyLens>();
+            DisableAll<FXAA>();
+            DisableAll<MobileBloom>();
+            DisableAll<TiltShift>();
+            DisableAll<Kino.Vignette>();
+            DisableAll<PostEffectsToggle>();
+        }
+
+        void DisableAll<T>() where T : MonoBehaviour
+        {
+            foreach (T component in FindObjectsOfType<T>(includeInactive: true))
+            {
+                if (component.enabled)
+                {
+                    component.enabled = false;
+                }
             }
         }
 
         void EnableHDR(bool bEnable)
         {
             m_enableHdr = bEnable;
+            if (UrpPostProcessingController.Instance != null)
+            {
+                return;
+            }
+
             foreach (var camera in m_Cameras)
             {
                 if (camera.gameObject.activeSelf)
@@ -446,8 +486,6 @@ namespace TiltBrush
         {
             if (App.UserConfig.Profiling.HasStrokeSimplification)
             {
-                Debug.LogFormat("Simplification overridden to be: {0}.",
-                    App.UserConfig.Profiling.StrokeSimplification);
                 return;
             }
 
@@ -463,8 +501,6 @@ namespace TiltBrush
             }
             if (total < m_targetMaxControlPoints)
             {
-                Debug.LogFormat("Complexity ({0}) is less than {1}. No extra simplification required.",
-                    total, m_targetMaxControlPoints);
                 return;
             }
             float reduction = m_targetMaxControlPoints / total;
@@ -472,9 +508,6 @@ namespace TiltBrush
                 m_maxLoadingSimplification), StrokeSimplifier.Level);
             if (AutosimplifyEnabled)
             {
-                Debug.LogFormat(
-                    "Complexity ({0}) is greater than {1}. Reduction of {2} using level {3} simplification.",
-                    total, m_targetMaxControlPoints, reduction, level);
                 SimplificationLevel = level;
             }
         }

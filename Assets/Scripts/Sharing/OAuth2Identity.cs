@@ -330,7 +330,7 @@ namespace TiltBrush
             }
         }
 
-        private async Task LoginViverseAsync()
+        private void LoginViverse()
         {
             if (m_ViverseAuthManager == null)
             {
@@ -376,8 +376,6 @@ namespace TiltBrush
                     request.SetRequestHeader("Expires", "0");
 
                     await request.SendWebRequest();
-
-                    Debug.Log($"VIVERSE Profile API: {request.responseCode} - {request.downloadHandler.text}");
 
                     if (request.result != UnityWebRequest.Result.Success)
                     {
@@ -467,7 +465,7 @@ namespace TiltBrush
         {
             if (m_Service == SecretsConfig.Service.Vive)
             {
-                await LoginViverseAsync();
+                LoginViverse();
                 return;
             }
 

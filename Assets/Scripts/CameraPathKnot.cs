@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System;
 using UnityEngine;
 
 namespace TiltBrush
@@ -37,8 +38,11 @@ namespace TiltBrush
         [SerializeField] protected Color m_ActiveColor;
         [SerializeField] protected Color m_InactiveColor;
 
-        // Used by derived classes that are fixed to the path.
-        [HideInInspector] public PathT PathT;
+        // Used by derived classes that are fixed to the path. CameraPath assigns this
+        // whenever a knot is created or moved, so it is pure runtime state.
+        // [HideInInspector] used to sit here, which implied Unity serialized it - it
+        // never did, because PathT is not a serializable type.
+        [NonSerialized] public PathT PathT;
         protected float m_DistanceAlongSegment;
 
         protected Type m_Type;

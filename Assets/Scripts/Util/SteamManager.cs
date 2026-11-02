@@ -33,13 +33,34 @@ namespace TiltBrush
         private static bool m_Initialized;
         private static bool? m_RunningUnderSteam;
         private static IPAddress[] m_LeptonHostGatewayAddresses = Array.Empty<IPAddress>();
-        private static string m_LastLeptonGatewayDiagnostic;
         private const float kLeptonGatewayRetrySeconds = 1.0f;
         private const float kLeptonGatewayRefreshSeconds = 5.0f;
         private float m_NextLeptonGatewayRefreshTime;
 
         public static bool RunningUnderLepton =>
             Application.platform == RuntimePlatform.Android && RunningUnderSteam;
+
+        public static bool IsSteamFrame
+        {
+            get
+            {
+#if UNITY_ANDROID && !UNITY_EDITOR
+                EnsureInstance();
+                if (m_Initialized)
+                {
+                    try
+                    {
+                        return SteamClientApi.IsSteamFrame();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.LogWarning($"[MOBILE_VERTEX_LIMITS] Steam hardware detection unavailable: {ex.Message}");
+                    }
+                }
+#endif
+                return false;
+            }
+        }
 
         public static bool RunningUnderSteam
         {
@@ -57,7 +78,6 @@ namespace TiltBrush
             m_Initialized = false;
             m_RunningUnderSteam = null;
             m_LeptonHostGatewayAddresses = Array.Empty<IPAddress>();
-            m_LastLeptonGatewayDiagnostic = null;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -93,7 +113,6 @@ namespace TiltBrush
                 }
 
                 SteamClientApi.OpenOverlayUrl(url);
-                Debug.Log($"[STEAM_BROWSER] Requested overlay URL: {url}");
                 return true;
             }
             catch (Exception ex)
@@ -165,8 +184,7 @@ namespace TiltBrush
                     connectivityManager.Call<AndroidJavaObject>("getActiveNetwork");
                 if (activeNetwork == null)
                 {
-                    SetLeptonHostGateways(
-                        Array.Empty<IPAddress>(), "Android has no active network");
+                    m_LeptonHostGatewayAddresses = Array.Empty<IPAddress>();
                     return;
                 }
 
@@ -174,12 +192,10 @@ namespace TiltBrush
                     "getLinkProperties", activeNetwork);
                 if (linkProperties == null)
                 {
-                    SetLeptonHostGateways(
-                        Array.Empty<IPAddress>(), "No link properties for the active network");
+                    m_LeptonHostGatewayAddresses = Array.Empty<IPAddress>();
                     return;
                 }
 
-                var interfaceName = linkProperties.Call<string>("getInterfaceName");
                 using var routes = linkProperties.Call<AndroidJavaObject>("getRoutes");
                 var routeCount = routes.Call<int>("size");
                 for (var i = 0; i < routeCount; ++i)
@@ -201,33 +217,13 @@ namespace TiltBrush
                     }
                 }
 
-                SetLeptonHostGateways(
-                    detectedGateways.ToArray(), $"Active interface: {interfaceName}");
+                m_LeptonHostGatewayAddresses = detectedGateways.ToArray();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                SetLeptonHostGateways(
-                    Array.Empty<IPAddress>(), $"Failed to detect host gateways: {ex.Message}");
+                m_LeptonHostGatewayAddresses = Array.Empty<IPAddress>();
             }
 #endif
-        }
-
-        private static void SetLeptonHostGateways(IPAddress[] gateways, string context)
-        {
-            m_LeptonHostGatewayAddresses = gateways;
-
-            // LEPTON_HTTP_DIAGNOSTICS_BEGIN: Remove this diagnostic state and logging once the
-            // Lepton host gateway behavior has been confirmed on hardware.
-            var gatewayList = gateways.Length == 0
-                ? "none"
-                : string.Join(", ", gateways.Select(x => x.ToString()));
-            var diagnostic = $"{context}; default gateways: {gatewayList}";
-            if (diagnostic != m_LastLeptonGatewayDiagnostic)
-            {
-                m_LastLeptonGatewayDiagnostic = diagnostic;
-                Debug.Log($"[LEPTON_HTTP] {diagnostic}");
-            }
-            // LEPTON_HTTP_DIAGNOSTICS_END
         }
 
         private void ScheduleLeptonGatewayRefresh()
@@ -279,7 +275,6 @@ namespace TiltBrush
             try
             {
                 m_RunningUnderSteam = SteamClientApi.IsSteamRunning();
-                Debug.Log($"[STEAM_BROWSER] Steam client running: {m_RunningUnderSteam.Value}");
             }
             catch (Exception ex)
             {
@@ -311,7 +306,6 @@ namespace TiltBrush
                     // process was launched by Steam with a valid SteamAppId. A successful
                     // SteamAPI_InitFlat call is authoritative here.
                     m_RunningUnderSteam = true;
-                    Debug.Log("[STEAM_BROWSER] Steamworks initialized");
                 }
                 else
                 {
@@ -336,7 +330,7 @@ namespace TiltBrush
             private const int OverlayPageModeDefault = 0;
             private const string SteamClientVersion = "SteamClient023";
             private const string SteamFriendsVersion = "SteamFriends018";
-            private const string SteamUtilsVersion = "SteamUtils010";
+            private const string SteamUtilsVersion = "SteamUtils011";
 
             private static IntPtr m_SteamFriends;
             private static IntPtr m_SteamUtils;
@@ -386,6 +380,13 @@ namespace TiltBrush
             }
 
             public static bool IsOverlayEnabled() => NativeIsOverlayEnabled(m_SteamUtils);
+
+            public static bool IsSteamFrame()
+            {
+                return m_SteamUtils != IntPtr.Zero &&
+                    NativeIsRunningOnSteamHardware(m_SteamUtils) ==
+                    Steamworks.ESteamHardwareType.k_ESteamHardwareTypeSteamFrame;
+            }
 
             public static void OpenOverlayUrl(string url)
             {
@@ -450,6 +451,10 @@ namespace TiltBrush
                 CallingConvention = CallingConvention.Cdecl)]
             [return: MarshalAs(UnmanagedType.I1)]
             private static extern bool NativeIsOverlayEnabled(IntPtr steamUtils);
+
+            [DllImport(NativeLibrary, EntryPoint = "SteamAPI_ISteamUtils_IsRunningOnSteamHardware",
+                CallingConvention = CallingConvention.Cdecl)]
+            private static extern Steamworks.ESteamHardwareType NativeIsRunningOnSteamHardware(IntPtr steamUtils);
 
             [DllImport(NativeLibrary,
                 EntryPoint = "SteamAPI_ISteamFriends_ActivateGameOverlayToWebPage",

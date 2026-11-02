@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Guid:
     m_storage: c504347a-c96d-4505-853b-87b484acff9a
-  m_Description: ENVIRONMENT_NIGHTSKY
   m_EnvironmentDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -38,8 +37,7 @@ MonoBehaviour:
     m_EnvironmentPrefab: EnvironmentPrefabs/NightSky
     m_EnvironmentReverbZonePrefab: EnvironmentAudio/ReverbZone_Mountains
     m_SkyboxCubemap: {fileID: 8900000, guid: 0fe76f477192a9b438d948b19b05e3af, type: 3}
-    m_ReflectionCubemap: {fileID: 8900000, guid: 0d8ea665785ee6547ab32b35b3672036,
-      type: 3}
+    m_ReflectionCubemap: {fileID: 8900000, guid: 0d8ea665785ee6547ab32b35b3672036, type: 3}
     m_ReflectionIntensity: 3
   m_Lights:
   - m_Color: {r: 0.68235296, g: 0.50980395, b: 0.61960787, a: 1}
@@ -63,6 +61,7 @@ MonoBehaviour:
   m_WidgetHome: {x: 0, y: 0, z: 0}
   m_SkyboxColorA: {r: 0.08235294, g: 0.047058824, b: 0.18431373, a: 1}
   m_SkyboxColorB: {r: 0, g: 0, b: 0, a: 1}
+  isPassthrough: 0
   references:
     version: 2
     RefIds: []

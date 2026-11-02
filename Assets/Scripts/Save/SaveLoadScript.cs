@@ -41,6 +41,14 @@ namespace TiltBrush
 
         public static IEnumerable<DiskSceneFileInfo> IterScenes(DirectoryInfo di, bool makeReadOnly = false)
         {
+            if (AndroidDirectStorage.ContainsPath(di.FullName))
+            {
+                foreach (string path in AndroidDirectStorage.GetFiles(di.FullName)
+                    .Concat(AndroidDirectStorage.GetDirectories(di.FullName))
+                    .Where(path => path.EndsWith(TILT_SUFFIX, StringComparison.OrdinalIgnoreCase)))
+                    yield return new DiskSceneFileInfo(path, readOnly: makeReadOnly);
+                yield break;
+            }
             foreach (var sub in di.GetFiles("*" + TILT_SUFFIX))
             {
                 yield return new DiskSceneFileInfo(sub.FullName, readOnly: makeReadOnly);
@@ -92,8 +100,10 @@ namespace TiltBrush
         static SaveLoadScript()
         {
 #if UNITY_2018_4_OR_NEWER
+            // Use Unity's namespaced package: Mono players also ship a legacy
+            // ICSharpCode.SharpZipLib.dll that does not contain ZipStrings.
             // 2018 doesn't include ANSICodePage any more -- or maybe it's only if we use .net 4.6?
-            ICSharpCode.SharpZipLib.Zip.ZipStrings.CodePage = kAsciiCodePage;
+            Unity.SharpZipLib.Zip.ZipStrings.CodePage = kAsciiCodePage;
 #else
             // There's an ancient mono bug (that Unity inherits) that prevents builds
             // from including the proper set of code pages, causing runtime errors when
@@ -117,6 +127,7 @@ namespace TiltBrush
         private string m_SaveDir;
         private string m_SaveSelectedDir;
         private SceneFileInfo m_LastSceneFile;
+        private string m_PreferredNewSketchFilenameBase;
         private bool m_LastSceneIsLegacy;
 
         private int m_LastNonexistentFileIndex = 0;
@@ -267,6 +278,22 @@ namespace TiltBrush
         public void ResetLastFilename()
         {
             m_LastSceneFile = new DiskSceneFileInfo();
+            m_PreferredNewSketchFilenameBase = null;
+        }
+
+        public void SetPreferredNewSketchFilenameFromPath(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                m_PreferredNewSketchFilenameBase = null;
+                return;
+            }
+
+            string trimmedPath = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string leafName = Path.GetFileName(trimmedPath);
+            string baseName = Path.GetFileNameWithoutExtension(leafName);
+            string validName = FileUtils.GetValidFilename(baseName);
+            m_PreferredNewSketchFilenameBase = string.IsNullOrWhiteSpace(validName) ? null : validName;
         }
 
         // Create a name that is guaranteed not to exist.
@@ -294,7 +321,6 @@ namespace TiltBrush
             Debug.Assert(false, "Could not generate a name");
             return null;
         }
-
 
         // Create a name that is guaranteed not to exist.
         public string GenerateNewUntitledFilename(string directory, string extension)
@@ -362,7 +388,9 @@ namespace TiltBrush
             {
                 uniquePath = tiltasaurusMode
                     ? GenerateNewTiltasaurusFilename(m_SaveDir, TILT_SUFFIX)
-                    : GenerateNewUntitledFilename(m_SaveDir, TILT_SUFFIX);
+                    : (!string.IsNullOrEmpty(m_PreferredNewSketchFilenameBase)
+                        ? GenerateNewFilename(m_PreferredNewSketchFilenameBase, m_SaveDir, TILT_SUFFIX)
+                        : GenerateNewUntitledFilename(m_SaveDir, TILT_SUFFIX));
             }
             else
             {
@@ -886,7 +914,6 @@ namespace TiltBrush
                     }
                 }
 
-
                 // It's proving to be rather complex to merge widgets/models etc.
                 // For now skip all that when loading additively with the if (!bAdditive) below
                 // This should cover the majority of use cases.
@@ -902,6 +929,23 @@ namespace TiltBrush
                     additiveStrokeTimeSessions = SketchMemoryScript.m_Instance
                         .AddAdditiveStrokeTimeSessions(
                             jsonData.StrokeTimeSessions, timestampOffset);
+
+                    // Keep subsequent drawing sessions outside the imported clock ranges.
+                    // Undo leaves the clock advanced so those ranges remain reserved for redo.
+                    uint latestImportedTimestampMs = 0;
+                    foreach (var stroke in strokes)
+                    {
+                        latestImportedTimestampMs = Math.Max(
+                            latestImportedTimestampMs, stroke.TailTimestampMs);
+                    }
+                    foreach (var session in additiveStrokeTimeSessions)
+                    {
+                        latestImportedTimestampMs = Math.Max(
+                            latestImportedTimestampMs, session.EndSketchTimeMs);
+                    }
+                    App.Instance.CurrentSketchTime = Math.Max(
+                        App.Instance.CurrentSketchTime,
+                        ((double)latestImportedTimestampMs + 1) / 1000.0);
                 }
                 else
                 {
@@ -948,6 +992,10 @@ namespace TiltBrush
                         if (jsonData.TextWidgets != null)
                         {
                             WidgetManager.m_Instance.SetTextDataFromTilt(jsonData.TextWidgets);
+                        }
+                        if (SoundClipCatalog.Instance != null && jsonData.SoundClips != null)
+                        {
+                            WidgetManager.m_Instance.SetSoundDataFromTilt(jsonData.SoundClips);
                         }
                     }
                     if (jsonData.Portals != null)
@@ -1218,7 +1266,6 @@ namespace TiltBrush
                 try
                 {
                     byte[] fileBytes = File.ReadAllBytes(autosaveFile);
-                    Debug.Log($"Autosave complete. Loaded {fileBytes.Length} bytes from {autosaveFile}");
                     onComplete?.Invoke(fileBytes);
                 }
                 catch (IOException ex)
@@ -1250,11 +1297,7 @@ namespace TiltBrush
 
                 // Load the temporary file into the scene
                 var fileInfo = new DiskSceneFileInfo(tempFilePath);
-                if (Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
-                {
-                    Debug.Log("LoadFromBytes: Scene successfully loaded from bytes.");
-                }
-                else
+                if (!Load(fileInfo, bAdditive: false, targetLayer: -1, out List<Stroke> _))
                 {
                     Debug.LogError("LoadFromBytes: Failed to load scene.");
                 }

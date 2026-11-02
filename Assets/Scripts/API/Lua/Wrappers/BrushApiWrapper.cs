@@ -68,6 +68,18 @@ namespace TiltBrush
             set => ApiMethods.BrushSizeSet(value);
         }
 
+        [LuaDocsDescription("The brush size in absolute room-space units")]
+        public static float sizeAbsolute
+        {
+            get => PointerManager.m_Instance.MainPointer.BrushSizeAbsolute;
+            set
+            {
+                var pointer = PointerManager.m_Instance.MainPointer;
+                pointer.BrushSizeAbsolute = value;
+                pointer.MarkBrushSizeUsed();
+            }
+        }
+
         [LuaDocsDescription("Brush pressure is determined by how far the trigger is pressed in")]
         public static float pressure
         {
@@ -128,6 +140,22 @@ namespace TiltBrush
         [LuaDocsDescription("Applies the current jitter settings to the brush color")]
         [LuaDocsExample("Brush:JitterColor()")]
         public static void JitterColor() => LuaApiMethods.JitterColor();
+
+        [LuaDocsDescription("Sets the brush override color")]
+        [LuaDocsParameter("color", "The color to set")]
+        [LuaDocsExample("Brush:SetColorOverride(Color.red)")]
+        public static void SetColorOverride(Color color)
+        {
+            PointerManager.m_Instance.MainPointer.CurrentColorOverride = color;
+        }
+
+        [LuaDocsDescription("Sets the brush override color mode")]
+        [LuaDocsParameter("mode", "The mode to set")]
+        [LuaDocsExample("Brush:SetColorOverrideMode(ColorOverrideMode.Blend)")]
+        public static void SetColorOverrideMode(ColorOverrideMode mode)
+        {
+            PointerManager.m_Instance.MainPointer.CurrentColorOverrideMode = mode;
+        }
 
         [LuaDocsDescription("The last color picked by the brush.")]
         public static Color lastColorPicked => PointerManager.m_Instance.m_lastChosenColor;

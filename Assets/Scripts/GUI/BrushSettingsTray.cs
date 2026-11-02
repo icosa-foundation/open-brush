@@ -21,6 +21,7 @@ namespace TiltBrush
     public class BrushSettingsTray : BaseTray
     {
         [SerializeField] private AdvancedSlider m_BrushSizeSlider;
+        [SerializeField] private GameObject m_UndoRedoButtons;
 
         protected override void Awake()
         {
@@ -31,29 +32,28 @@ namespace TiltBrush
         protected override void OnDestroy()
         {
             base.OnDestroy();
-            App.Switchboard.ToolChanged -= UpdateSliderToMatchCurrentSize;
+            App.Switchboard.BrushSizeChanged -= UpdateSliderToMatchCurrentSize;
         }
 
         private void DetectSupportedDevices()
         {
-            // Currently only the Logitech stylus needs this panel
-            bool needsBrushSizeUI = VrStylusHandler.m_Instance.CurrentState.isActive;
+            // Advanced mode has no dedicated undo/redo buttons when using this tray.
+            m_UndoRedoButtons.SetActive(PanelManager.m_Instance.AdvancedModeActive());
 
-            // DoAnimateIn performs a toggle so we have to also check the state
-            if (needsBrushSizeUI)
+            // Show the brush size panel when either:
+            // 1. The Logitech VR stylus is active, or
+            // 2. The Brush/right side is currently controlled by Android XR hand tracking.
+            bool needsBrushSizeUI =
+                VrStylusHandler.m_Instance?.CurrentState?.isActive == true ||
+                AndroidXRHandBridge.UseHand(true);
+
+            bool wasShowing = m_AnimateIn;
+
+            EnableTray(needsBrushSizeUI);
+
+            if (needsBrushSizeUI && !wasShowing)
             {
-                if (!m_AnimateIn)
-                {
-                    DoAnimateIn();
-                    UpdateSliderToMatchCurrentSize();
-                }
-            }
-            else
-            {
-                if (m_AnimateIn)
-                {
-                    DoAnimateIn();
-                }
+                UpdateSliderToMatchCurrentSize();
             }
         }
 
@@ -68,8 +68,8 @@ namespace TiltBrush
         {
             base.Start();
 
-            // Call DetectSupportedDevice every second
-            InvokeRepeating(nameof(DetectSupportedDevices), 0.0f, 1);
+            // Check supported input devices every few seconds.
+            InvokeRepeating(nameof(DetectSupportedDevices), 0.0f, 3);
         }
 
         protected override void OnToolChanged()

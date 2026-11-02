@@ -35,7 +35,6 @@ namespace TiltBrush
 
         private float m_BimanualGuideLineT;
         private float m_BimanualGuideIntensity = 1;
-        [SerializeField] private float m_BimanualGuideLineHorizontalOffset = 0.75f;
         [SerializeField] private float m_BimanualGuideLineOutlineWidth = 0.05f;
         [SerializeField] private float m_BimanualGuideLineBaseWidth = 0.015f;
         [SerializeField] private float m_BimanualGuideHintIntensity = 0.75f;

@@ -18,6 +18,7 @@ namespace TiltBrush
     public class ControllerBehaviorWand : BaseControllerBehavior
     {
         private bool m_QuickLoadHintRequested;
+        private bool m_HandQuickLoadHintShown;
         // Fist time the promo appears for this sketch loading
         // (Promo is hidden if user presses the grip button, and we don't want to play the audio again
         // when the promo comes back)
@@ -31,6 +32,7 @@ namespace TiltBrush
         public void EnableQuickLoadHintObject(bool bEnable)
         {
             m_QuickLoadHintFirstAppearance = true;
+            m_HandQuickLoadHintShown = false;
             m_QuickLoadHintRequested = bEnable;
         }
 
@@ -49,6 +51,21 @@ namespace TiltBrush
                 bool bCanShow = !SketchControlsScript.m_Instance.IsUserInteractingWithAnyWidget() &&
                     !SketchControlsScript.m_Instance.IsUserGrabbingWorld() &&
                     (VideoRecorderUtils.ActiveVideoRecording == null);
+                if (AndroidXRHandBridge.UseHand(false))
+                {
+                    // Controller-model renderers are hidden for hands. Use an independent
+                    // info card so the loading shortcut is still discoverable.
+                    quickLoadHintObject.gameObject.SetActive(false);
+                    if (bCanShow && AndroidXRHandBridge.LeftTracked &&
+                        !m_HandQuickLoadHintShown && OutputWindowScript.m_Instance != null)
+                    {
+                        OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                            InputManager.ControllerName.Wand,
+                            "Pinch left thumb and index finger to finish loading");
+                        m_HandQuickLoadHintShown = true;
+                    }
+                    return;
+                }
                 if (bCanShow && !quickLoadHintObject.gameObject.activeSelf
                     && m_QuickLoadHintFirstAppearance)
                 {

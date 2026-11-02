@@ -169,7 +169,6 @@ namespace TiltBrush
                         break;
                 }
             }
-
         }
 
         public override bool AllowWorldTransformation()
@@ -463,7 +462,6 @@ namespace TiltBrush
 
         private static void ShowInstruction(string message)
         {
-            Debug.Log($"[ManualColocation] {message}");
             if (OutputWindowScript.m_Instance != null)
             {
                 OutputWindowScript.m_Instance.CreateInfoCardAtController(

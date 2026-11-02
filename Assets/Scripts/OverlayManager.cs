@@ -75,6 +75,33 @@ namespace TiltBrush
         private GvrOverlay m_Overlay;
         private OverlayMode m_OverlayMode = OverlayMode.None;
         private bool m_OverlayOn;
+        private int m_CompositorOperationCount;
+        private bool m_RenderingPaused;
+
+        public bool BlocksQualityMeasurement =>
+            m_CompositorOperationCount > 0 || m_RenderingPaused || OverlayEnabled;
+
+        private IDisposable BeginCompositorOperation()
+        {
+            ++m_CompositorOperationCount;
+            QualityControls.m_Instance?.ResetFrameMeasurement();
+            return new CompositorOperationScope(this);
+        }
+
+        private sealed class CompositorOperationScope : IDisposable
+        {
+            private OverlayManager m_Owner;
+
+            public CompositorOperationScope(OverlayManager owner) { m_Owner = owner; }
+
+            public void Dispose()
+            {
+                if (m_Owner == null) return;
+                --m_Owner.m_CompositorOperationCount;
+                QualityControls.m_Instance?.ResetFrameMeasurement();
+                m_Owner = null;
+            }
+        }
 
         private Progress<double> m_progress;
         private RenderTexture m_GUILogo;
@@ -245,6 +272,11 @@ namespace TiltBrush
 
         public void PauseRendering(bool bPause)
         {
+            if (m_RenderingPaused != bPause)
+            {
+                m_RenderingPaused = bPause;
+                QualityControls.m_Instance?.ResetFrameMeasurement();
+            }
             switch (m_OverlayMode)
             {
                 default:
@@ -418,6 +450,7 @@ namespace TiltBrush
             bool bFullProgress,
             bool showSuccessText)
         {
+            using var compositorScope = BeginCompositorOperation();
             SetOverlayFromType(overlayType);
             UpdateProgress(bFullProgress ? 1.0f : 0.0f);
 
@@ -528,6 +561,7 @@ namespace TiltBrush
             float fadeDuration,
             bool showSuccessText = false)
         {
+            using var compositorScope = BeginCompositorOperation();
             SetOverlayFromType(overlayType);
             bool bFullProgress = false;
             UpdateProgress(bFullProgress ? 1.0f : 0.0f);
@@ -584,6 +618,7 @@ namespace TiltBrush
             float fadeDuration,
             bool showSuccessText = false)
         {
+            using var compositorScope = BeginCompositorOperation();
             SetOverlayFromType(overlayType);
             bool bFullProgress = false;
             UpdateProgress(bFullProgress ? 1.0f : 0.0f);

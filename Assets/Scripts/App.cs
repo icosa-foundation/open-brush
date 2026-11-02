@@ -33,7 +33,7 @@ using ZipSubfileReader = ZipSubfileReader_DotNetZip;
 using ZipLibrary = Ionic.Zip;
 #else
 using ZipSubfileReader = TiltBrush.ZipSubfileReader_SharpZipLib;
-using ZipLibrary = ICSharpCode.SharpZipLib.Zip;
+using ZipLibrary = Unity.SharpZipLib.Zip;
 #endif
 
 #if !UNITY_2020_3_OR_NEWER
@@ -67,10 +67,12 @@ namespace TiltBrush
 
         public const string kPlayerPrefHasPlayedBefore = "Has played before";
         public const string kPlayerPrefSeededDefaultModels = "SeededDefaultModels";
+        public const string kPlayerPrefSeededDefaultQuillFiles = "SeededDefaultQuillFiles";
         public const string kPlayerPrefSeededDefaultBackgroundImages = "SeededDefaultBackgroundImages";
         public const string kPlayerPrefSeededDefaultReferenceImages = "SeededDefaultReferenceImages";
         public const string kPlayerPrefSeededDefaultVideos = "SeededDefaultVideos";
         public const string kPlayerPrefSeededDefaultSavedStrokes = "SeededDefaultSavedStrokes";
+        public const string kPlayerPrefSeededDefaultSoundClips = "SeededDefaultSoundClips";
 
         private const string kDefaultConfigPath = "DefaultConfig";
 
@@ -321,6 +323,8 @@ namespace TiltBrush
         private DriveSync m_DriveSync;
         private GoogleUserSettings m_GoogleUserSettings;
 
+        public bool AccountLoginsDisabled { get; private set; }
+
         // ------------------------------------------------------------
         // Properties
         // ------------------------------------------------------------
@@ -533,10 +537,21 @@ namespace TiltBrush
                 m_IntroSketchRenderers = m_IntroSketch.GetComponentsInChildren<Renderer>();
                 for (int i = 0; i < m_IntroSketchRenderers.Length; ++i)
                 {
-                    m_IntroSketchRenderers[i].material.SetFloat("_IntroDissolve", 1);
-                    m_IntroSketchRenderers[i].material.SetFloat("_GreyScale", 0);
+                    SetIntroSketchMaterialFade(m_IntroSketchRenderers[i].material, 1);
                 }
             }
+        }
+
+        void SetIntroSketchMaterialFade(Material material, float introDissolve)
+        {
+            material.SetFloat("_IntroDissolve", introDissolve);
+
+            if (material.HasProperty("_Dissolve"))
+            {
+                material.SetFloat("_Dissolve", 1 - introDissolve);
+            }
+
+            material.SetFloat("_GreyScale", 0);
         }
 
         void DestroyIntroSketch()
@@ -577,7 +592,12 @@ namespace TiltBrush
             Log($"SdkMode: {App.Config.m_SdkMode}.");
 
             // Begone, physics! You were using 0.3 - 1.3ms per frame on Quest!
-            Physics.autoSimulation = false;
+            Physics.simulationMode = SimulationMode.Script;
+
+#if UNITY_ANDROID
+            // TODO
+            // AccountLoginsDisabled = AndroidUtils.IsGreatFirewalled();
+#endif // UNITY_ANDROID
 
             // See if this is the first time
             HasPlayedBefore = PlayerPrefs.GetInt(kPlayerPrefHasPlayedBefore, 0) == 1;
@@ -601,10 +621,19 @@ namespace TiltBrush
             {
                 PlayerPrefs.DeleteKey(kPlayerPrefHasPlayedBefore);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultModels);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultModels);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultQuillFiles);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultQuillFiles);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultBackgroundImages);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultBackgroundImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultReferenceImages);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultReferenceImages);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultVideos);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultVideos);
                 PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultSavedStrokes);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultSavedStrokes);
+                PlayerPrefs.DeleteKey(kPlayerPrefSeededDefaultSoundClips);
+                DefaultMediaSeeder.Reset(kPlayerPrefSeededDefaultSoundClips);
                 PlayerPrefs.DeleteKey(PanelManager.kPlayerPrefAdvancedMode);
                 AdvancedPanelLayouts.ClearPlayerPrefs();
                 PointerManager.ClearPlayerPrefs();
@@ -1559,9 +1588,21 @@ namespace TiltBrush
             if (path.StartsWith(kBuiltInSketchPrefix))
             {
                 path = path.Substring(kBuiltInSketchPrefix.Length);
+#if OPEN_BRUSH_VIEWER
+                var sketch = SketchCatalog.FindBundledSketch(
+                    SketchCatalog.m_Instance.GetSet(SketchSetType.User), path);
+                if (sketch == null)
+                {
+                    OutputWindowScript.Error("Couldn't open built-in sketch",
+                        $"No Featured sketch named '{path}' was found.");
+                    return true;
+                }
+                SketchControlsScript.m_Instance.LoadSketch(sketch);
+#else
                 path = Path.Join(FeaturedSketchesPath(), path);
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
                     SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: path);
+#endif
                 return true;
             }
 
@@ -1585,9 +1626,9 @@ namespace TiltBrush
                 SketchControlsScript.m_Instance.IssueGlobalCommand(
                     SketchControlsScript.GlobalCommands.LoadNamedFile, sParam: dstPath);
             }
-            catch (FileNotFoundException)
+            catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
             {
-                OutputWindowScript.Error(String.Format("Couldn't open {0}", path));
+                OutputWindowScript.Error($"Couldn't open {path}", e.Message);
                 return false;
             }
             return true;
@@ -1781,7 +1822,8 @@ namespace TiltBrush
 
             for (int i = 0; i < m_IntroSketchRenderers.Length; ++i)
             {
-                m_IntroSketchRenderers[i].material.SetFloat("_IntroDissolve",
+                SetIntroSketchMaterialFade(
+                    m_IntroSketchRenderers[i].material,
                     Mathf.SmoothStep(0, 1, Math.Abs(1 - m_IntroFadeTimer)));
             }
 
@@ -1834,22 +1876,6 @@ namespace TiltBrush
             }
         }
 
-        internal static UserConfig DeserializeUserConfigWithDefaults(
-            string defaultConfigText, string userConfigText, out string warning)
-        {
-            UserConfig defaults = DeserializeObjectWithWarning<UserConfig>(
-                defaultConfigText, out _);
-            UserConfig config = DeserializeObjectWithWarning<UserConfig>(
-                userConfigText, out warning);
-
-            // Treat an explicit null like a missing value. An explicit [] remains an empty list.
-            if (config.Flags.PluginWebRequestRules == null)
-            {
-                config.Flags.PluginWebRequestRules = defaults.Flags.PluginWebRequestRules;
-            }
-            return config;
-        }
-
         void CreateDefaultConfig()
         {
             // If we don't have a .cfg in our Tilt Brush directory, drop a default one.
@@ -1868,8 +1894,6 @@ namespace TiltBrush
 
         public void RefreshUserConfig()
         {
-            TextAsset defaultConfigAsset = Resources.Load<TextAsset>(kDefaultConfigPath);
-            string defaultConfigText = defaultConfigAsset != null ? defaultConfigAsset.text : "{}";
             m_UserConfig = new UserConfig();
 
             try
@@ -1895,8 +1919,7 @@ namespace TiltBrush
                 try
                 {
                     string warning;
-                    m_UserConfig = DeserializeUserConfigWithDefaults(
-                        defaultConfigText, text, out warning);
+                    m_UserConfig = DeserializeObjectWithWarning<UserConfig>(text, out warning);
                     if (warning != null)
                     {
                         OutputWindowScript.Error($"Warning reading {kConfigFileName}", warning);
@@ -2013,8 +2036,21 @@ namespace TiltBrush
                         "Documents");
                     break;
                 case RuntimePlatform.Android:
-                    m_UserPath = "/sdcard/";
+#if OPEN_BRUSH_VIEWER
+                    // Viewer builds keep all user data in app-owned storage without a folder grant.
+                    m_UserPath = Application.persistentDataPath;
+                    m_OldUserPath = null;
+#elif OPEN_BRUSH_SCOPED_STORAGE
+                    if (!AndroidDirectStorage.StartupReady)
+                        throw new System.InvalidOperationException("OBDS_APP storage must initialize before Main.");
+                    m_UserPath = Path.GetDirectoryName(AndroidDirectStorage.RootPath);
+                    m_OldUserPath = null; // Scoped builds use the granted workspace without legacy migration.
+#else
+                    m_UserPath = SteamManager.RunningUnderLepton
+                        ? "/sdcard/Documents"
+                        : "/sdcard/";
                     m_OldUserPath = Application.persistentDataPath;
+#endif
                     break;
                 case RuntimePlatform.IPhonePlayer:
                 default:
@@ -2112,178 +2148,85 @@ namespace TiltBrush
             return true;
         }
 
-        /// Creates the Model Catalog directory and copies in the provided default models.
-        /// Returns true if the directory already exists or if it is created successfully, false if the
-        /// directory could not be created.
+        // Frozen migration baseline from tag v2.31, Assets/Scenes/Main.unity.
+        // Do not add later defaults here: upgrading users must receive those files.
         public static void InitModelLibraryPath(string[] defaultModels)
         {
-            string modelsDirectory = ModelLibraryPath();
-
-            if (!Directory.Exists(modelsDirectory))
-            {
-                if (!InitDirectoryAtPath(modelsDirectory))
-                {
-                    return;
-                }
-            }
-
-            // Copy if the directory is empty
-            bool shouldCopy = Directory.GetFileSystemEntries(modelsDirectory).Length == 0;
-
-            // But only once per clean install
-            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultModels, 0) != 0)
-            {
-                shouldCopy = false;
-            }
-
-            if (shouldCopy)
-            {
-                foreach (string fileName in defaultModels)
-                {
-                    string[] path = fileName.Split(
-                        new[] { '\\', '/' }, 3, StringSplitOptions.RemoveEmptyEntries);
-                    string newModel = Path.Combine(modelsDirectory, path[1]);
-                    FileUtils.WriteBytesFromResources(fileName, newModel);
-                }
-                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultModels, 1);
-            }
+            SeedDefaultMedia(ModelLibraryPath(), defaultModels, kPlayerPrefSeededDefaultModels,
+                new[] { "DefaultModels/Andy.glb", "DefaultModels/Tiltasaurus.glb" });
         }
 
-        /// Creates the Background Images directory and copies in the provided default images.
-        /// Returns true if the directory already exists or if it is created successfully, false if the
-        /// directory could not be created.
         public static void InitBackgroundImagesPath(string[] defaultBackgroundImages)
         {
-            string path = BackgroundImagesLibraryPath();
-
-            if (!Directory.Exists(path))
-            {
-                if (!FileUtils.InitializeDirectoryWithUserError(path))
-                {
-                    return;
-                }
-            }
-
-            // Copy if the directory is empty
-            bool shouldCopy = Directory.GetFileSystemEntries(path).Length == 0;
-
-            // But only once per clean install
-            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultBackgroundImages, 0) != 0)
-            {
-                shouldCopy = false;
-            }
-
-            if (shouldCopy)
-            {
-                foreach (string fileName in defaultBackgroundImages)
-                {
-                    string dest = Path.Combine(path, Path.GetFileName(fileName.Replace(".bytes", "")));
-                    FileUtils.WriteBytesFromResources(fileName, dest);
-                }
-                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultBackgroundImages, 1);
-            }
+            SeedDefaultMedia(BackgroundImagesLibraryPath(), defaultBackgroundImages,
+                kPlayerPrefSeededDefaultBackgroundImages,
+                new[] { "DefaultBackgroundImages/panorama.jpg",
+                    "DefaultBackgroundImages/stereopanorama.jpg",
+                    "DefaultBackgroundImages/ATTRIBUTION.txt" }, stripBytes: true);
         }
 
-        /// Creates the Reference Images directory and copies in the provided default images.
-        /// Returns true if the directory already exists or if it is created successfully, false if the
-        /// directory could not be created.
         public static void InitReferenceImagePath(string[] defaultImages)
         {
-            string path = ReferenceImagePath();
-
-            if (!Directory.Exists(path))
-            {
-                if (!FileUtils.InitializeDirectoryWithUserError(path))
-                {
-                    return;
-                }
-            }
-
-            // Copy if the directory is empty
-            bool shouldCopy = Directory.GetFileSystemEntries(path).Length == 0;
-
-            // But only once per clean install
-            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultReferenceImages, 0) != 0)
-            {
-                shouldCopy = false;
-            }
-
-
-            if (shouldCopy)
-            {
-                foreach (string fileName in defaultImages)
-                {
-                    string dest = Path.Combine(path, Path.GetFileName(fileName));
-                    FileUtils.WriteTextureFromResources(fileName, dest);
-                }
-                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultReferenceImages, 1);
-            }
+            SeedDefaultMedia(ReferenceImagePath(), defaultImages,
+                kPlayerPrefSeededDefaultReferenceImages,
+                new[] { "DefaultImages/OpenBrushLogo.png" }, texture: true);
         }
 
         public static void InitVideoLibraryPath(string[] defaultVideos)
         {
-            string videosDirectory = VideoLibraryPath();
-
-            if (!Directory.Exists(videosDirectory))
-            {
-                if (!InitDirectoryAtPath(videosDirectory))
-                {
-                    return;
-                }
-            }
-
-            // Copy if the directory is empty
-            bool shouldCopy = Directory.GetFileSystemEntries(videosDirectory).Length == 0;
-
-            // But only once per clean install
-            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultVideos, 0) != 0)
-            {
-                shouldCopy = false;
-            }
-
-            if (shouldCopy)
-            {
-                foreach (var video in defaultVideos)
-                {
-                    string destFilename = Path.GetFileName(video);
-                    FileUtils.WriteBytesFromResources(video, Path.Combine(videosDirectory, destFilename));
-                }
-                PlayerPrefs.SetInt(kPlayerPrefSeededDefaultVideos, 1);
-            }
+            SeedDefaultMedia(VideoLibraryPath(), defaultVideos, kPlayerPrefSeededDefaultVideos,
+                new[] { "DefaultVideos/animated-logo.mp4" });
         }
 
         public static void InitSavedStrokesLibraryPath(string[] defaultSavedStrokes)
         {
-            string savedStrokesDirectory = SavedStrokesPath();
-
-            if (!Directory.Exists(savedStrokesDirectory))
-            {
-                if (!InitDirectoryAtPath(savedStrokesDirectory))
-                {
-                    return;
-                }
-            }
-
-            // Copy if the directory is empty
-            bool shouldCopy = Directory.GetFileSystemEntries(savedStrokesDirectory).Length == 0;
-
-            // But only once per clean install
-            if (PlayerPrefs.GetInt(kPlayerPrefSeededDefaultSavedStrokes, 0) != 0)
-            {
-                shouldCopy = false;
-            }
-
-            if (shouldCopy)
-            {
-                foreach (var savedStroke in defaultSavedStrokes)
-                {
-                    string destFilename = Path.GetFileName(savedStroke);
-                    FileUtils.WriteBytesFromResources(savedStroke, Path.Combine(savedStrokesDirectory, destFilename));
-                }
-            }
+            SeedDefaultMedia(SavedStrokesPath(), defaultSavedStrokes,
+                kPlayerPrefSeededDefaultSavedStrokes,
+                new[] { "DefaultSavedStrokes/Cell.tilt", "DefaultSavedStrokes/Knot.tilt",
+                    "DefaultSavedStrokes/Star.tilt", "DefaultSavedStrokes/Snowflake.tilt" });
         }
 
+        // v2.31 did not ship Quill defaults.
+        public static void InitQuillMediaLibraryPath(string[] defaultQuillFiles)
+        {
+            SeedDefaultMedia(QuillMediaLibraryPath(), defaultQuillFiles,
+                kPlayerPrefSeededDefaultQuillFiles);
+        }
 
+        public static bool InitSoundClipLibraryPath(string[] defaultSoundClips)
+        {
+            // The pre-migration build shipped underwater.wav; preserve user deletions.
+            return SeedDefaultMedia(SoundClipLibraryPath(), defaultSoundClips,
+                kPlayerPrefSeededDefaultSoundClips,
+                new[] { "DefaultSoundClips/underwater.wav" });
+        }
+
+        private static bool SeedDefaultMedia(string directory, string[] defaults, string legacyKey,
+            string[] legacyDefaults = null, bool texture = false, bool stripBytes = false)
+        {
+            if (!InitDirectoryAtPath(directory)) { return false; }
+            DefaultMediaSeeder.Seed(directory, defaults, legacyDefaults, legacyKey,
+                m_Instance.HasPlayedBefore, resourcePath =>
+                {
+                    if (texture)
+                    {
+                        var image = Resources.Load<Texture2D>(
+                            resourcePath.Substring(0, resourcePath.IndexOf('.')));
+                        if (image == null)
+                        {
+                            throw new InvalidOperationException($"Missing default image: {resourcePath}");
+                        }
+                        return image.EncodeToPNG();
+                    }
+                    var asset = Resources.Load<TextAsset>(resourcePath);
+                    if (asset == null)
+                    {
+                        throw new InvalidOperationException($"Missing default media: {resourcePath}");
+                    }
+                    return asset.bytes;
+                }, stripBytes);
+            return true;
+        }
 
         public static string FeaturedSketchesPath()
         {
@@ -2318,6 +2261,11 @@ namespace TiltBrush
             return Path.Combine(MediaLibraryPath(), "Videos");
         }
 
+        public static string SoundClipLibraryPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Sound Clips");
+        }
+
         public static string BackgroundImagesLibraryPath()
         {
             return Path.Combine(MediaLibraryPath(), "BackgroundImages");
@@ -2336,6 +2284,17 @@ namespace TiltBrush
         public static string SplatPosesPath()
         {
             return Path.Combine(UserPath(), "SplatPoses");
+        }
+
+        static public string QuillLibraryPath()
+        {
+            return Path.Combine(System.Environment.GetFolderPath(
+                System.Environment.SpecialFolder.Personal), "Quill");
+        }
+
+        static public string QuillMediaLibraryPath()
+        {
+            return Path.Combine(MediaLibraryPath(), "Quill");
         }
 
         static public string AutosavePath()
@@ -2414,10 +2373,11 @@ namespace TiltBrush
         {
             SaveLoadScript.m_Instance.SignalPlaybackCompletion();
             if (SketchMemoryScript.m_Instance.CurrentPlaybackMode !=
-                SketchMemoryScript.PlaybackMode.Timestamps)
+                SketchMemoryScript.PlaybackMode.Timestamps ||
+                CurrentSketchTime >= float.MaxValue)
             {
 
-                // For non-timestamp playback mode, adjust current time to last stroke in drawing.
+                // Restore the drawing clock after playback, including timestamp quick-load.
                 try
                 {
                     this.CurrentSketchTime = SketchMemoryScript.m_Instance.GetApproximateLatestTimestamp();

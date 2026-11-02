@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -22,7 +21,7 @@ namespace TiltBrush
     {
         const ushort kVertsInClosedCircle = 9;
 
-        public BubbleWandBrush() : base(false) { }
+        public BubbleWandBrush() : base(true) { }
 
         protected override void InitBrush(BrushDescriptor desc, TrTransform localPointerXf)
         {
@@ -54,54 +53,18 @@ namespace TiltBrush
                 uvw[1] = y / (kVertsInClosedCircle - 1);
                 m_geometry.m_Texcoord0.v3[i] = uvw;
             }
-
-            // Update the currently moving verts.
-            int iVert0 = m_knots[iKnot0].iVert;
-            for (int i = iVert0; i < numUvws; i++)
-            {
-                Vector3 uvw = m_geometry.m_Texcoord0.v3[i];
-                uvw[2] = Time.time;
-                m_geometry.m_Texcoord0.v3[i] = uvw;
-            }
-
-            // Construct a list of the tube centers.
-            var tubeCenters = new List<Vector3>();
-            var radii = new List<float>();
-            int numVerts = m_geometry.m_Vertices.Count;
-            for (int i = kVertsInClosedCircle - 1; i < numVerts - kVertsInClosedCircle + 1; i += kVertsInClosedCircle)
-            {
-                Vector3 vertexSumCircle = new Vector3(0, 0, 0);
-                for (int j = 0; j < kVertsInClosedCircle - 1; j++)
-                {
-                    vertexSumCircle += m_geometry.m_Vertices[i + j];
-                }
-                vertexSumCircle /= kVertsInClosedCircle - 1;
-                tubeCenters.Add(vertexSumCircle);
-                radii.Add(Vector3.Distance(vertexSumCircle, m_geometry.m_Vertices[i]));
-            }
-
-            // Calculate volume.
-            float volume = 0;
-            int numCircles = tubeCenters.Count;
-            for (int i = 1; i < numCircles; i++)
-            {
-                volume += Vector3.Distance(tubeCenters[i], tubeCenters[i - 1]) *
-                    Mathf.PI * (radii[i] + radii[i - 1]);
-            }
-            float radius = Mathf.Pow(0.75f * volume / Mathf.PI, 1.0f / 3.0f);
-            GetComponent<MeshRenderer>().material.SetFloat("_Radius", radius);
-
-            // Find geometry center.
-            Vector3 vertexSum = new Vector3(0, 0, 0);
-            for (int i = 0; i < numVerts; i++)
-            {
-                vertexSum += m_geometry.m_Vertices[i];
-            }
-            vertexSum /= numVerts;
-            GetComponent<MeshRenderer>().material.SetVector("_BubbleCenter", vertexSum);
         }
 
-        override public void FinalizeSolitaryBrush()
+        /// Prepares the geometry shared by solitary and batched finalization.
+        ///
+        /// The original experimental implementation also stamped Time.time into uv0.z and
+        /// assigned per-stroke _Radius, _BubbleCenter, and _ReleaseTime material properties.
+        /// Its apparent intent was to animate the smoothed tube into a released spherical
+        /// bubble, using the original positions stored in uv1. Neither the Built-in nor URP
+        /// BubbleWand shader consumes those material properties, while both interpret uv0.z
+        /// as the tube radius. Keep this note as a reference if that release effect is revived;
+        /// its per-stroke data will need to be stored in vertex attributes to remain batchable.
+        void PrepareGeometryForFinalization()
         {
             int numVerts = m_geometry.m_Vertices.Count;
 
@@ -153,10 +116,18 @@ namespace TiltBrush
                     m_geometry.m_Vertices[i] = vertexSum;
                 }
             }
+        }
 
-            GetComponent<MeshRenderer>().material.SetFloat("_ReleaseTime", Time.time);
-
+        override public void FinalizeSolitaryBrush()
+        {
+            PrepareGeometryForFinalization();
             base.FinalizeSolitaryBrush();
+        }
+
+        override public BatchSubset FinalizeBatchedBrush()
+        {
+            PrepareGeometryForFinalization();
+            return base.FinalizeBatchedBrush();
         }
 
     }

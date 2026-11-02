@@ -1,4 +1,4 @@
-﻿// Copyright 2021 The Open Brush Authors
+// Copyright 2021 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -40,7 +40,6 @@ namespace TiltBrush
         private const string BASE_HTML = @"<!doctype html><html lang='en'>
 <head><meta charset='UTF-8'></head>
 <body>{0}</body></html>";
-
 
         private FileSystemWatcher m_FileWatcher;
         private string m_UserScriptsPath;
@@ -368,11 +367,9 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
             if (Directory.Exists(m_UserScriptsPath))
             {
-                var dirInfo = new DirectoryInfo(m_UserScriptsPath);
-                FileInfo[] AllFileInfo = dirInfo.GetFiles();
-                foreach (FileInfo fileinfo in AllFileInfo)
+                foreach (string path in AndroidDirectStorage.GetFiles(m_UserScriptsPath))
                 {
-                    RegisterUserScript(fileinfo);
+                    RegisterUserScript(new FileInfo(path));
                 }
             }
         }
@@ -395,8 +392,10 @@ Success. If you are not automatically redirected, please visit <a href='{success
         private void PopulateApi()
         {
             endpoints = new Dictionary<string, ApiEndpoint>();
-            var types = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(t => t.GetTypes())
+            // AppDomain.GetAssemblies() can hand back already-unloaded assemblies in
+            // Unity. Every TiltBrush type lives in this assembly - nothing outside
+            // Photon has an asmdef - so scan it directly.
+            var types = typeof(ApiManager).Assembly.GetTypes()
                 .Where(t => t.IsClass && t.Namespace == "TiltBrush");
 
             foreach (var type in types)
@@ -690,7 +689,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
             foreach (string commandString in commandStrings)
             {
-                if (commandString.StartsWith("query."))
+                if (commandString.StartsWith("query.") || commandString == "quality.get" ||
+                    commandString.StartsWith("quality.get=", StringComparison.Ordinal))
                 {
                     responses.Add(HandleApiQuery(commandString));
                 }
@@ -712,8 +712,12 @@ Success. If you are not automatically redirected, please visit <a href='{success
             if (commandPair.Length < 1) return null;
             switch (commandPair[0])
             {
+                case "quality.get":
+                    return ApiMainThreadObserver.QualityStatus;
                 case "query.queue":
                     return m_OutgoingCommandQueue.Count.ToString();
+                case "query.quill.stats":
+                    return JsonConvert.SerializeObject(Quill.QuillDiagnostics.LastLoad, Formatting.Indented);
                 case "query.command":
                     if (m_CommandStatuses.ContainsKey(commandPair[1]))
                     {
@@ -996,7 +1000,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
         IEnumerator GetRequest(string uri)
         {
 #if  UNITY_EDITOR
-            Debug.Log($"GetRequest: {uri}");
 #endif
             using (UnityWebRequest webRequest = UnityWebRequest.Get(uri))
             {
@@ -1051,7 +1054,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
             OutgoingApiCommand();
             UpdateCameraView();
         }
-
 
         IEnumerator ScreenCap()
         {

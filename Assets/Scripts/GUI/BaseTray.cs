@@ -24,9 +24,13 @@ namespace TiltBrush
         [SerializeField] private Renderer m_Border;
         [SerializeField] private float m_AnimateSpeed;
         [SerializeField] protected Vector2 m_AnimateRange;
+        [Tooltip("Horizontal spacing used when more than one tray on this panel is showing.")]
+        [SerializeField] private float m_TrayWidth = 0.45f;
 
         private UIComponentManager m_UIComponentManager;
         private Coroutine m_AnimationCoroutine;
+        private Coroutine m_SlideCoroutine;
+        private float m_BaseLocalX;
         protected bool m_AnimateIn;
         private bool m_AnimateWhenEnabled;
         public BaseTool.ToolType m_ShowOnToolType;
@@ -35,6 +39,8 @@ namespace TiltBrush
         {
             base.Awake();
             m_UIComponentManager = GetComponent<UIComponentManager>();
+            // Cache before anything can shift us into a different column.
+            m_BaseLocalX = transform.localPosition.x;
             App.Switchboard.ToolChanged += OnToolChanged;
             App.Switchboard.SelectionChanged += OnSelectionChanged;
         }
@@ -71,6 +77,12 @@ namespace TiltBrush
 
         override protected void OnDisable()
         {
+            if (m_SlideCoroutine != null)
+            {
+                StopCoroutine(m_SlideCoroutine);
+                m_SlideCoroutine = null;
+                SetLocalX(ColumnLocalX());
+            }
             if (m_AnimationCoroutine != null)
             {
                 // Skip to the end of animation
@@ -124,6 +136,13 @@ namespace TiltBrush
             return BasePanel.DoesRayHitCollider(ray, GetCollider(), out hitInfo);
         }
 
+        /// UnityEvent target for trays that are driven by a toggle button rather than by
+        /// tool state.
+        public void ToggleTray(ActionToggleButton btn)
+        {
+            EnableTray(btn.ToggleState);
+        }
+
         public void EnableTray(bool activate)
         {
             if (activate != m_AnimateIn)
@@ -147,6 +166,9 @@ namespace TiltBrush
             }
             m_AnimateIn = !m_AnimateIn;
 
+            // Our showing state just changed, so every tray on this panel may need to move.
+            RefreshSiblingColumns();
+
             // If we get a callback that our tool changed while we're inactive, don't try to
             // start our coroutine until we've been enabled.
             if (isActiveAndEnabled)
@@ -161,6 +183,89 @@ namespace TiltBrush
 
         protected virtual void OnSelectionChanged()
         {
+        }
+
+        /// Trays share a column on the panel, so a tray that is showing while trays before it
+        /// are also showing has to step aside. Ordering comes from sibling index, so the layout
+        /// depends only on which trays are open, never on the order they were opened.
+        private void RefreshSiblingColumns()
+        {
+            Transform parent = transform.parent;
+            if (parent == null)
+            {
+                RefreshColumn();
+                return;
+            }
+            for (int i = 0; i < parent.childCount; ++i)
+            {
+                BaseTray tray = parent.GetChild(i).GetComponent<BaseTray>();
+                if (tray != null)
+                {
+                    tray.RefreshColumn();
+                }
+            }
+        }
+
+        private void RefreshColumn()
+        {
+            SlideTo(ColumnLocalX());
+        }
+
+        private float ColumnLocalX()
+        {
+            int column = 0;
+            Transform parent = transform.parent;
+            if (parent != null)
+            {
+                for (int i = 0; i < parent.childCount; ++i)
+                {
+                    Transform child = parent.GetChild(i);
+                    if (child == transform)
+                    {
+                        break;
+                    }
+                    BaseTray tray = child.GetComponent<BaseTray>();
+                    if (tray != null && tray.m_AnimateIn)
+                    {
+                        ++column;
+                    }
+                }
+            }
+            return m_BaseLocalX + column * m_TrayWidth;
+        }
+
+        private void SlideTo(float targetX)
+        {
+            if (m_SlideCoroutine != null)
+            {
+                StopCoroutine(m_SlideCoroutine);
+                m_SlideCoroutine = null;
+            }
+            // Nothing to animate if we're hidden or off; just be in the right place.
+            if (!isActiveAndEnabled || !m_AnimateIn)
+            {
+                SetLocalX(targetX);
+                return;
+            }
+            m_SlideCoroutine = StartCoroutine(Slide(targetX));
+        }
+
+        private void SetLocalX(float x)
+        {
+            Vector3 localPos = transform.localPosition;
+            localPos.x = x;
+            transform.localPosition = localPos;
+        }
+
+        IEnumerator Slide(float targetX)
+        {
+            while (transform.localPosition.x != targetX)
+            {
+                SetLocalX(Mathf.MoveTowards(
+                    transform.localPosition.x, targetX, Time.deltaTime * m_AnimateSpeed));
+                yield return null;
+            }
+            m_SlideCoroutine = null;
         }
 
         IEnumerator Animate()

@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Open Brush Authors
+// Copyright 2022 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,6 +43,54 @@ namespace TiltBrush
             var stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
             SelectionManager.m_Instance.SelectStrokes(new List<Stroke> { stroke });
         }
+
+#if UNITY_EDITOR || DEBUG
+        [ApiEndpoint(
+            "debug.selection.highlight-stroke",
+            "Queues a selected stroke batch mesh through the URP selection highlight path for diagnosis.",
+            "0,30,true"
+        )]
+        public static string DebugHighlightStrokeSelection(
+            int index,
+            int frames = 30,
+            bool useStrokePostEffect = true)
+        {
+            const string logPrefix = "[OB_URP_SELECTION_DIAG]";
+            var stroke = SketchMemoryScript.m_Instance.GetStrokeAtIndex(index);
+            if (stroke == null ||
+                stroke.m_BatchSubset == null ||
+                stroke.m_BatchSubset.m_ParentBatch == null)
+            {
+                string message = $"{logPrefix} Cannot queue highlight for stroke={index}; batch missing.";
+                Debug.LogWarning(message);
+                return message;
+            }
+
+            Batch parentBatch = stroke.m_BatchSubset.m_ParentBatch;
+            parentBatch.RegisterHighlight();
+            MeshFilter meshFilter = parentBatch.GetComponent<MeshFilter>();
+            if (meshFilter == null)
+            {
+                string message =
+                    $"{logPrefix} Cannot queue highlight for stroke={index}; mesh filter missing.";
+                Debug.LogWarning(message);
+                return message;
+            }
+
+            int safeFrames = Mathf.Clamp(frames, 1, 120);
+            App.Instance.SelectionEffect.QueueUrpDiagnosticHighlight(
+                meshFilter,
+                safeFrames,
+                useStrokePostEffect);
+
+            string result =
+                $"{logPrefix} Queued diagnostic highlight stroke={index} " +
+                $"batch={parentBatch.name} frames={safeFrames} " +
+                $"strokePost={useStrokePostEffect}.";
+            Debug.Log(result);
+            return result;
+        }
+#endif
 
         [ApiEndpoint(
             "strokes.select",
@@ -195,6 +243,7 @@ namespace TiltBrush
 
         public static Stroke JoinStrokes(Stroke stroke1, Stroke stroke2)
         {
+            MergeJoinedStrokeColors(new[] { stroke2, stroke1 }, stroke2);
             stroke2.m_ControlPoints = stroke2.m_ControlPoints.Concat(stroke1.m_ControlPoints).ToArray();
             stroke2.Uncreate();
             stroke2.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke2.m_ControlPoints.Length).ToArray();
@@ -212,6 +261,7 @@ namespace TiltBrush
         {
             var strokesToJoin = SketchMemoryScript.GetStrokesBetween(from, to);
             var firstStroke = strokesToJoin[0];
+            MergeJoinedStrokeColors(strokesToJoin, firstStroke);
             firstStroke.m_ControlPoints = strokesToJoin.SelectMany(x => x.m_ControlPoints).ToArray();
             for (int i = 1; i < strokesToJoin.Count; i++)
             {
@@ -223,6 +273,36 @@ namespace TiltBrush
             firstStroke.m_ControlPointsToDrop = Enumerable.Repeat(false, firstStroke.m_ControlPoints.Length).ToArray();
             firstStroke.Recreate(null, firstStroke.Canvas);
             return firstStroke;
+        }
+
+        internal static void MergeJoinedStrokeColors(
+            IReadOnlyList<Stroke> strokes, Stroke destination)
+        {
+            ColorOverrideMode mode = destination.m_ColorOverrideMode;
+            Color baseColor = destination.m_Color;
+            bool compatible = strokes.All(
+                stroke => stroke.m_ColorOverrideMode == mode && stroke.m_Color.Equals(baseColor));
+
+            if (compatible)
+            {
+                if (strokes.All(stroke => stroke.m_OverrideColors == null))
+                {
+                    destination.m_OverrideColors = null;
+                    return;
+                }
+
+                destination.m_OverrideColors = strokes.SelectMany(stroke =>
+                    Enumerable.Range(0, stroke.m_ControlPoints.Length).Select(index =>
+                        stroke.m_OverrideColors != null && index < stroke.m_OverrideColors.Count
+                            ? stroke.m_OverrideColors[index]
+                            : null)).ToList();
+                return;
+            }
+
+            destination.m_OverrideColors = strokes.SelectMany(stroke =>
+                Enumerable.Range(0, stroke.m_ControlPoints.Length).Select(
+                    index => (Color32?)stroke.GetColor(index))).ToList();
+            destination.m_ColorOverrideMode = ColorOverrideMode.Replace;
         }
 
         [ApiEndpoint(
@@ -248,6 +328,52 @@ namespace TiltBrush
             stroke.Uncreate();
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
             stroke.Recreate(null, stroke.Canvas);
+        }
+
+        [ApiEndpoint(
+            "strokes.crop.sphere",
+            "Crops all strokes to the spherical volume defined by center and radius",
+            "0,0,0,5"
+        )]
+        public static void CropStrokesToSphere(Vector3 center, float radius, bool keepInside = true)
+        {
+            var scenePose = App.Scene.Pose;
+            StrokeCropping.CropStrokesToSphere(scenePose * center, scenePose.scale * radius, keepInside: keepInside);
+        }
+
+        [ApiEndpoint("strokes.crop.box", "Crops all strokes to a box defined by center, size and optional Euler rotation",
+            "0,0,0,10,10,10")]
+        public static void CropStrokesToBox(Vector3 center, Vector3 size, Vector3 rotation = default, bool keepInside = true)
+        {
+            var scenePose = App.Scene.Pose;
+            StrokeCropping.CropStrokesToBox(scenePose * center, scenePose.scale * size,
+                scenePose.rotation * Quaternion.Euler(rotation), keepInside: keepInside);
+        }
+
+        [ApiEndpoint("strokes.crop.capsule", "Crops all strokes to a capsule defined by center, radius, height and optional Euler rotation. The capsule's axis is Y before rotation",
+            "0,0,0,5,10")]
+        public static void CropStrokesToCapsule(Vector3 center, float radius, float height, Vector3 rotation = default, bool keepInside = true)
+        {
+            var scenePose = App.Scene.Pose;
+            StrokeCropping.CropStrokesToCapsule(scenePose * center, scenePose.scale * radius,
+                scenePose.scale * height, scenePose.rotation * Quaternion.Euler(rotation), keepInside: keepInside);
+        }
+
+        [ApiEndpoint("strokes.crop.ellipsoid", "Crops all strokes to an ellipsoid defined by center, full size and optional Euler rotation",
+            "0,0,0,10,20,10")]
+        public static void CropStrokesToEllipsoid(Vector3 center, Vector3 size, Vector3 rotation = default, bool keepInside = true)
+        {
+            var pose = App.Scene.Pose;
+            StrokeCropping.CropStrokesToEllipsoid(pose * center, pose.scale * size,
+                pose.rotation * Quaternion.Euler(rotation), keepInside: keepInside);
+        }
+
+        [ApiEndpoint("strokes.crop.plane", "Crops all strokes to the side of a plane its normal points toward, defined by a point and normal",
+            "0,10,0,0,1,0")]
+        public static void CropStrokesToPlane(Vector3 point, Vector3 normal, bool keepInside = true)
+        {
+            var pose = App.Scene.Pose;
+            StrokeCropping.CropStrokesToPlane(pose * point, pose.rotation * normal, keepInside: keepInside);
         }
     }
 }

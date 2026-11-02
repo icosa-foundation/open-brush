@@ -60,13 +60,8 @@ namespace TiltBrush
                 if (m_OverridePathT == null && !m_UserInteracting &&
                     WidgetManager.m_Instance.FollowingPath)
                 {
-                    // It's possible for Path.GetSpeed() to return a value <= 0, which makes the
-                    // camera path stop advancing.  To correct this, ensure the minimum speed is
-                    // the lowest speed available for a speed knot.
-                    float speed = Mathf.Max(m_CurrentPathWidget.Path.GetSpeed(m_PathT),
-                        CameraPathSpeedKnot.kMinSpeed);
-                    bool completed = m_CurrentPathWidget.Path.MoveAlongPath(speed * Time.deltaTime,
-                        m_PathT, out m_PathT);
+                    bool completed = m_CurrentPathWidget.Path.MoveAlongPathByTime(
+                        Time.deltaTime, m_PathT, out m_PathT);
 
                     if ((VideoRecorderUtils.ActiveVideoRecording != null || VideoRecorderUtils.ActiveStillFrameExporter != null) && completed)
                     {
@@ -143,7 +138,6 @@ namespace TiltBrush
 
         override public void RegisterHighlight()
         {
-#if !(UNITY_ANDROID || UNITY_IOS)
             // Intentionally do not call base class.
             if (m_HighlightMeshFilters != null)
             {
@@ -155,7 +149,6 @@ namespace TiltBrush
                     }
                 }
             }
-#endif
         }
 
         override public float GetActivationScore(
@@ -171,6 +164,12 @@ namespace TiltBrush
         public void ResetToPathStart()
         {
             m_PathT.Zero();
+            // The cache is normally refreshed in OnUpdate, which hasn't run if the widget was inactive.
+            CacheCurrentPathWidget();
+            if (m_CurrentPathWidget == null)
+            {
+                return;
+            }
             transform.position = m_CurrentPathWidget.Path.GetPosition(m_PathT);
             if (m_CurrentPathWidget.Path.RotationKnots.Count > 0)
             {

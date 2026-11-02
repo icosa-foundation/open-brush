@@ -15,6 +15,8 @@
 using System.IO;
 using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
@@ -69,6 +71,7 @@ namespace TiltBrush
             public Camera camera;
             public RenderTexture renderTexture;
         }
+
 
         const float MM_TO_UNITS = .001f * App.METERS_TO_UNITS;
         const float HYSTERESIS_DEGREES = 10;
@@ -211,6 +214,11 @@ namespace TiltBrush
             {
                 SceneSettings.m_Instance.RegisterCamera(m_RightInfo.camera);
             }
+            ConfigureUrpCaptureCamera(m_LeftInfo.camera);
+            if (m_RightInfo != null)
+            {
+                ConfigureUrpCaptureCamera(m_RightInfo.camera);
+            }
 
             if (!App.Config.PlatformConfig.EnableMulticamPreview)
             {
@@ -234,24 +242,7 @@ namespace TiltBrush
                 {
                     m_LeftInfo.camera.allowHDR = false;
                 }
-                var mobileBloom = GetComponent<MobileBloom>();
-                if (mobileBloom != null)
-                {
-                    mobileBloom.enabled = false;
-                }
-                else
-                {
-                    Debug.LogAssertion("No MobileBloom on the Screenshot Manager.");
-                }
-                var pcBloom = GetComponent<SENaturalBloomAndDirtyLens>();
-                if (pcBloom != null)
-                {
-                    pcBloom.enabled = false;
-                }
-                else
-                {
-                    Debug.LogAssertion("No SENaturalBloomAndDirtyLens on the Screenshot Manager.");
-                }
+                DisableOptionalBuiltInCapturePostEffects();
             }
             if (m_UseDisplayWidthFromConfigFile)
             {
@@ -261,6 +252,61 @@ namespace TiltBrush
 
             CameraConfig.FovChanged += RefreshFovs;
             RefreshFovs();
+        }
+
+        void ConfigureUrpCaptureCamera(Camera camera)
+        {
+            if (camera == null)
+            {
+                return;
+            }
+
+            EnsureCaptureVisibleLayers(camera);
+
+            if (UrpPostProcessingController.Instance == null)
+            {
+                return;
+            }
+
+            UrpPostProcessingController.Instance.ConfigureScreenshotCamera(
+                camera, enableCaptureEffects: CameraConfig.PostEffects);
+        }
+
+        void EnsureCaptureVisibleLayers(Camera camera)
+        {
+            AddLayerToCullingMask(camera, "Environment");
+        }
+
+        void AddLayerToCullingMask(Camera camera, string layerName)
+        {
+            int layer = LayerMask.NameToLayer(layerName);
+            if (layer < 0)
+            {
+                return;
+            }
+
+            camera.cullingMask |= 1 << layer;
+        }
+
+        void DisableOptionalBuiltInCapturePostEffects()
+        {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                return;
+            }
+
+            MobileBloom mobileBloom = GetComponent<MobileBloom>();
+            if (mobileBloom != null)
+            {
+                mobileBloom.enabled = false;
+            }
+
+            SENaturalBloomAndDirtyLens pcBloom =
+                GetComponent<SENaturalBloomAndDirtyLens>();
+            if (pcBloom != null)
+            {
+                pcBloom.enabled = false;
+            }
         }
 
         void RefreshFovs()
@@ -387,9 +433,7 @@ namespace TiltBrush
 
         RenderTextureFormat CameraFormat()
         {
-            return GetComponent<Camera>().allowHDR
-                ? RenderTextureFormat.ARGBFloat
-                : RenderTextureFormat.ARGB32;
+            return CaptureColorUtils.GetFormat(GetComponent<Camera>());
         }
 
         void UpdateCameraAspect()
@@ -425,17 +469,24 @@ namespace TiltBrush
                 return;
             }
 
+            UrpPostProcessingController.ConfigureOffscreenCaptureCamera(info.camera);
             info.camera.targetTexture = null;
             Destroy(info.renderTexture);
 
-            info.renderTexture = new RenderTexture(width, height, 0, format);
+            info.renderTexture = CreatePreviewRenderTexture(width, height, format);
             info.renderTexture.name = "SshotTex" + tag;
-            info.renderTexture.depth = 24;
             Debug.Assert(info.renderer != null);
             Debug.Assert(info.renderer.material != null);
             info.renderer.material.SetTexture("_MainTex", info.renderTexture);
             info.renderer.material.name = "SshotMat" + tag;
             info.camera.targetTexture = info.renderTexture;
+        }
+
+        private static RenderTexture CreatePreviewRenderTexture(
+            int width, int height, RenderTextureFormat format)
+        {
+            var descriptor = CaptureColorUtils.CreateDescriptor(width, height, format);
+            return new RenderTexture(descriptor);
         }
 
         /// Creates an ARGB32 save target. May transpose width and height if camera
@@ -454,48 +505,144 @@ namespace TiltBrush
 
         /// If m_AutoAlignRig is set, you should pass in a RenderTexture created
         /// with CreateTemporaryTargetForSave().
-        public void RenderToTexture(RenderTexture rTexture, bool removeBackground = false)
+        public void RenderToTexture(
+            RenderTexture rTexture,
+            bool removeBackground = false,
+            bool includePostProcessing = false)
         {
+            bool usePostProcessing = includePostProcessing && !removeBackground;
             RenderTextureFormat format = CameraFormat();
-            int depth = 24;
 
             // Use a temporary rather than rendering to rTexture because we don't know
             // what format rTexture is... it may not be the correct format.
             RenderTexture targetA = RenderTexture.GetTemporary(
-                rTexture.width, rTexture.height, depthBuffer: depth, format: format);
+                CaptureColorUtils.CreateDescriptor(rTexture.width, rTexture.height, format));
 
+            try
             {
                 // Instead of doing a new Render(), it might seem tempting to copy from
                 // the camera target.  That would be wrong, because the camera target's
                 // resolution might be much lower than rTexture.
                 var camera = LeftInfo.camera;
-                var prev = camera.targetTexture;
-                camera.targetTexture = targetA;
-                if (removeBackground)
+                UrpPostProcessingController.CameraPostProcessingState postProcessingState =
+                    BeginCapturePostProcessing(camera, usePostProcessing);
+                RenderTexture prev = camera.targetTexture;
+                CameraClearFlags prevClearFlags = camera.clearFlags;
+                Color prevBackgroundColor = camera.backgroundColor;
+                int prevCullingMask = camera.cullingMask;
+                bool prevAllowMsaa = camera.allowMSAA;
+                StereoTargetEyeMask prevStereoTargetEye = StereoTargetEyeMask.None;
+                bool restoreStereoTargetEye = GraphicsSettings.currentRenderPipeline == null;
+                if (restoreStereoTargetEye)
                 {
-                    var prevClearFlags = camera.clearFlags;
-                    var prevBackgroundColor = camera.backgroundColor;
-                    var prevCullingMask = camera.cullingMask;
-                    camera.clearFlags = CameraClearFlags.SolidColor;
-                    camera.backgroundColor = new Color(0, 0, 0, 0);
-                    camera.cullingMask = LayerMask.GetMask("MainCanvas");
+                    prevStereoTargetEye = camera.stereoTargetEye;
+                }
+                try
+                {
+                    if (restoreStereoTargetEye)
+                    {
+                        camera.stereoTargetEye = StereoTargetEyeMask.None;
+                    }
+                    camera.targetTexture = targetA;
+                    camera.allowMSAA = targetA.antiAliasing > 1;
+                    if (removeBackground)
+                    {
+                        camera.clearFlags = CameraClearFlags.SolidColor;
+                        camera.backgroundColor = new Color(0, 0, 0, 0);
+                        camera.cullingMask = LayerMask.GetMask("MainCanvas");
+                    }
                     camera.Render();
+                }
+                finally
+                {
                     camera.clearFlags = prevClearFlags;
                     camera.backgroundColor = prevBackgroundColor;
                     camera.cullingMask = prevCullingMask;
+                    camera.targetTexture = prev;
+                    camera.allowMSAA = prevAllowMsaa;
+                    if (restoreStereoTargetEye)
+                    {
+                        camera.stereoTargetEye = prevStereoTargetEye;
+                    }
+                    EndCapturePostProcessing(postProcessingState);
                 }
-                else
-                {
-                    camera.Render();
-                }
-                camera.targetTexture = prev;
-            }
 
-            if (targetA != rTexture)
+                CaptureColorUtils.Resolve(targetA, rTexture, removeBackground);
+            }
+            finally
             {
-                Graphics.Blit(targetA, rTexture);
                 RenderTexture.ReleaseTemporary(targetA);
             }
+        }
+
+        UrpPostProcessingController.CameraPostProcessingState BeginCapturePostProcessing(
+            Camera camera, bool includePostProcessing)
+        {
+            if (UrpPostProcessingController.Instance != null)
+            {
+                UrpPostProcessingController.CameraPostProcessingState controllerState =
+                    UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                        camera, includePostProcessing);
+                return controllerState;
+            }
+
+            UrpPostProcessingController.CameraPostProcessingState state =
+                new UrpPostProcessingController.CameraPostProcessingState
+                {
+                    camera = camera,
+                    allowHDR = camera.allowHDR
+                };
+
+            UniversalAdditionalCameraData cameraData =
+                camera.GetComponent<UniversalAdditionalCameraData>();
+            if (cameraData == null)
+            {
+                if (!includePostProcessing) return state;
+                cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            }
+
+            state.cameraData = cameraData;
+            state.renderPostProcessing = cameraData.renderPostProcessing;
+            state.volumeLayerMask = cameraData.volumeLayerMask;
+            state.volumeTrigger = cameraData.volumeTrigger;
+
+            if (!includePostProcessing)
+            {
+                cameraData.renderPostProcessing = false;
+                return state;
+            }
+
+            camera.allowHDR = true;
+            cameraData.renderPostProcessing = true;
+            cameraData.volumeLayerMask = ~0;
+            cameraData.volumeTrigger = camera.transform;
+
+
+            return state;
+        }
+
+        void EndCapturePostProcessing(UrpPostProcessingController.CameraPostProcessingState state)
+        {
+            if (UrpPostProcessingController.Instance != null)
+            {
+                UrpPostProcessingController.Instance.EndCapturePostProcessing(state);
+                return;
+            }
+
+            if (state.camera == null)
+            {
+                return;
+            }
+
+            state.camera.allowHDR = state.allowHDR;
+            if (state.cameraData == null)
+            {
+                return;
+            }
+
+            state.cameraData.renderPostProcessing = state.renderPostProcessing;
+            state.cameraData.volumeLayerMask = state.volumeLayerMask;
+            state.cameraData.volumeTrigger = state.volumeTrigger;
         }
 
         /// Renders depth-normal data to a texture for use with SaveNormals method.
@@ -516,14 +663,25 @@ namespace TiltBrush
             RenderTexture targetA = RenderTexture.GetTemporary(
                 rTexture.width, rTexture.height, depthBuffer: depth, format: format);
 
+            try
             {
                 var camera = LeftInfo.camera;
                 var prev = camera.targetTexture;
                 var prevDepthTextureMode = camera.depthTextureMode;
                 var prevClearFlags = camera.clearFlags;
                 var prevBackgroundColor = camera.backgroundColor;
+                StereoTargetEyeMask prevStereoTargetEye = StereoTargetEyeMask.None;
+                bool restoreStereoTargetEye = GraphicsSettings.currentRenderPipeline == null;
+                if (restoreStereoTargetEye)
+                {
+                    prevStereoTargetEye = camera.stereoTargetEye;
+                }
                 try
                 {
+                    if (restoreStereoTargetEye)
+                    {
+                        camera.stereoTargetEye = StereoTargetEyeMask.None;
+                    }
                     camera.targetTexture = targetA;
                     camera.depthTextureMode = DepthTextureMode.Depth;
                     camera.clearFlags = CameraClearFlags.SolidColor;
@@ -539,12 +697,16 @@ namespace TiltBrush
                     camera.clearFlags = prevClearFlags;
                     camera.depthTextureMode = prevDepthTextureMode;
                     camera.targetTexture = prev;
+                    if (restoreStereoTargetEye)
+                    {
+                        camera.stereoTargetEye = prevStereoTargetEye;
+                    }
                 }
-            }
 
-            if (targetA != rTexture)
-            {
                 Graphics.Blit(targetA, rTexture);
+            }
+            finally
+            {
                 RenderTexture.ReleaseTemporary(targetA);
             }
         }
@@ -557,9 +719,10 @@ namespace TiltBrush
             RenderEncodedDepthNormalsToTexture(rTexture);
         }
 
-        static public void Save(Stream outf, RenderTexture rTextureToSave, bool bSaveAsPng)
+        static public void Save(Stream outf, RenderTexture rTextureToSave, bool bSaveAsPng,
+            bool preserveAlpha = false)
         {
-            var buffer = SaveToMemory(rTextureToSave, bSaveAsPng);
+            var buffer = SaveToMemory(rTextureToSave, bSaveAsPng, preserveAlpha);
             outf.Write(buffer, 0, buffer.Length);
         }
 
@@ -640,32 +803,35 @@ namespace TiltBrush
             outf.Write(buffer, 0, buffer.Length);
         }
 
-        static public byte[] SaveToMemory(RenderTexture rTextureToSave, bool bSaveAsPng)
+        static public byte[] SaveToMemory(RenderTexture rTextureToSave, bool bSaveAsPng,
+            bool preserveAlpha = false)
         {
-            Debug.Assert(rTextureToSave.format == RenderTextureFormat.ARGB32);
-
-            // Copy out of the RenderTexture
-            Texture2D rNoAlphaTexture;
+            // CPU readback needs resolved pixels, even when the caller renders directly
+            // into an MSAA target (rather than through RenderToTexture).
+            RenderTexture resolved = null;
+            Texture2D texture = null;
+            RenderTexture previous = RenderTexture.active;
+            try
             {
-                RenderTexture prev = RenderTexture.active;
-                RenderTexture.active = rTextureToSave;
-                rNoAlphaTexture = new Texture2D(rTextureToSave.width, rTextureToSave.height, TextureFormat.RGB24, false);
-                rNoAlphaTexture.ReadPixels(new Rect(0, 0, rTextureToSave.width, rTextureToSave.height), 0, 0);
-                RenderTexture.active = prev;
+                bool exportAlpha = bSaveAsPng && preserveAlpha;
+                if (rTextureToSave.antiAliasing > 1)
+                {
+                    resolved = RenderTexture.GetTemporary(rTextureToSave.width,
+                        rTextureToSave.height, 0, RenderTextureFormat.ARGB32);
+                    CaptureColorUtils.Resolve(rTextureToSave, resolved, exportAlpha);
+                }
+                RenderTexture.active = resolved != null ? resolved : rTextureToSave;
+                var format = exportAlpha ? TextureFormat.RGBA32 : TextureFormat.RGB24;
+                texture = new Texture2D(rTextureToSave.width, rTextureToSave.height, format, false);
+                texture.ReadPixels(new Rect(0, 0, rTextureToSave.width, rTextureToSave.height), 0, 0);
+                return bSaveAsPng ? texture.EncodeToPNG() : texture.EncodeToJPG();
             }
-
-            byte[] bytes = null;
-            if (bSaveAsPng)
+            finally
             {
-                bytes = rNoAlphaTexture.EncodeToPNG();
+                RenderTexture.active = previous;
+                if (texture != null) Destroy(texture);
+                if (resolved != null) RenderTexture.ReleaseTemporary(resolved);
             }
-            else
-            {
-                bytes = rNoAlphaTexture.EncodeToJPG();
-            }
-            Destroy(rNoAlphaTexture);
-
-            return bytes;
         }
 
         static public byte[] SaveDepthToMemory(RenderTexture depthTexture)
@@ -1192,7 +1358,16 @@ namespace TiltBrush
             return sb.ToString();
         }
 
-        public static void TakeSnapshot(TrTransform tr, string filename, int width, int height, float superSampling = 1f, bool removeBackground = false, bool renderDepth = false, bool renderNormals = false)
+        public static void TakeSnapshot(
+            TrTransform tr,
+            string filename,
+            int width,
+            int height,
+            float superSampling = 1f,
+            bool removeBackground = false,
+            bool renderDepth = false,
+            bool renderNormals = false,
+            bool includePostProcessing = false)
         {
             DebugLogToFile($"TakeSnapshot called: filename={filename} width={width} height={height} renderDepth={renderDepth} renderNormals={renderNormals}");
             bool saveAsPng;
@@ -1355,11 +1530,12 @@ namespace TiltBrush
                         }
 
                         DebugLogToFile("rendering color...");
-                        rMgr.RenderToTexture(tmp, removeBackground: removeBackground);
+                        rMgr.RenderToTexture(tmp, removeBackground: removeBackground,
+                            includePostProcessing: includePostProcessing);
                         DebugLogToFile("color rendered");
                         using (var fs = new FileStream(path, FileMode.Create))
                         {
-                            Save(fs, tmp, bSaveAsPng: saveAsPng);
+                            Save(fs, tmp, bSaveAsPng: saveAsPng, preserveAlpha: removeBackground);
                         }
                         DebugLogToFile("color file saved - TakeSnapshot completed successfully");
 

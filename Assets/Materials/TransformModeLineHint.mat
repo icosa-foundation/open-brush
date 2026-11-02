@@ -9,6 +9,8 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: TransformModeLineHint
   m_Shader: {fileID: 4800000, guid: bf7cbe89278355042844dba0296e9b4c, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
   m_InvalidKeywords: []
   m_LightmapFlags: 5
@@ -17,6 +19,7 @@ Material:
   m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -83,3 +86,4 @@ Material:
     - _EmissionColor: {r: 0.9117647, g: 0.9117647, b: 0.9117647, a: 1}
     - _TintColor: {r: 0.034482956, g: 0, b: 1, a: 0.519}
   m_BuildTextureStacks: []
+  m_AllowLocking: 1

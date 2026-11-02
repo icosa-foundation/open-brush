@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -35,14 +36,52 @@ namespace TiltBrush
 
         public Shader shader;
         private Material m_Material;
+        private static readonly int BlitTexture = Shader.PropertyToID("_BlitTexture");
+
+        public Material Material
+        {
+            get
+            {
+                EnsureMaterial();
+                return m_Material;
+            }
+        }
+
+        public bool ShouldRender => enabled && CameraConfig.Watermark && m_overlayTexture != null;
 
         protected virtual void Start()
+        {
+            EnsureMaterial();
+        }
+
+        private void EnsureMaterial()
         {
             Reset();
             if (m_Material == null)
             {
                 m_Material = new Material(shader);
             }
+        }
+
+        public void ConfigureMaterial(int width, int height)
+        {
+            if (!ShouldRender)
+            {
+                return;
+            }
+
+            EnsureMaterial();
+            float pixelHeight = m_Size * Mathf.Min(width, height);
+            float pixelWidth = pixelHeight / m_overlayTexture.height * m_overlayTexture.width;
+            var uvSize = new Vector2(pixelWidth / width, pixelHeight / height);
+
+            Vector4 uvMax = m_uvDestination + uvSize;
+            Vector4 range = new Vector4(
+                m_uvDestination[0], m_uvDestination[1],
+                uvMax[0], uvMax[1]);
+
+            m_Material.SetVector("_OverlayUvRange", range);
+            m_Material.SetTexture("_OverlayTex", m_overlayTexture);
         }
 
         void Reset()
@@ -59,20 +98,16 @@ namespace TiltBrush
         // Called by camera to apply image effect
         void OnRenderImage(RenderTexture source, RenderTexture destination)
         {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                Graphics.Blit(source, destination);
+                return;
+            }
+
             if (CameraConfig.Watermark)
             {
-                float pixelHeight = m_Size * Mathf.Min(source.width, source.height);
-                float pixelWidth = pixelHeight / m_overlayTexture.height * m_overlayTexture.width;
-                var uvSize = new Vector2(pixelWidth / source.width,
-                    pixelHeight / source.height);
-
-                Vector4 uvMax = m_uvDestination + uvSize;
-                Vector4 range = new Vector4(
-                    m_uvDestination[0], m_uvDestination[1],
-                    uvMax[0], uvMax[1]);
-
-                m_Material.SetVector("_OverlayUvRange", range);
-                m_Material.SetTexture("_OverlayTex", m_overlayTexture);
+                ConfigureMaterial(source.width, source.height);
+                m_Material.SetTexture(BlitTexture, source);
                 Graphics.Blit(source, destination, m_Material);
             }
             else

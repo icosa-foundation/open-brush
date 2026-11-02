@@ -209,7 +209,6 @@ namespace TiltBrush
         private void ResetViewedVersion()
         {
             PlayerPrefs.DeleteKey(kPlayerPrefsKey);
-            Debug.Log("WhatsNew viewed version reset");
         }
 #endif
     }

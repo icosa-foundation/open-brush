@@ -11,13 +11,16 @@ Shader "Point Cloud/Point"
     }
     SubShader
     {
+    Tags { "RenderPipeline"="UniversalPipeline" }
         Tags { "RenderType"="Opaque" }
         Pass
         {
+            Tags { "LightMode"="UniversalForward" }
             CGPROGRAM
 
             #pragma vertex Vertex
             #pragma fragment Fragment
+            #pragma multi_compile_instancing
 
             #pragma multi_compile_fog
             #pragma multi_compile _ UNITY_COLORSPACE_GAMMA
@@ -27,18 +30,21 @@ Shader "Point Cloud/Point"
             #include "UnityCG.cginc"
             #include "Common.cginc"
 
-            struct Attributes
-            {
+            struct Attributes {
                 float4 position : POSITION;
                 half3 color : COLOR;
+
+              UNITY_VERTEX_INPUT_INSTANCE_ID
             };
 
-            struct Varyings
-            {
+            struct Varyings {
                 float4 position : SV_Position;
                 half3 color : COLOR;
                 half psize : PSIZE;
                 UNITY_FOG_COORDS(0)
+
+              UNITY_VERTEX_INPUT_INSTANCE_ID
+              UNITY_VERTEX_OUTPUT_STEREO
             };
 
             half4 _Tint;
@@ -73,8 +79,11 @@ Shader "Point Cloud/Point"
 
                 Varyings o;
 
-                UNITY_SETUP_INSTANCE_ID(v);
                 UNITY_INITIALIZE_OUTPUT(Varyings, o);
+            #if !_COMPUTE_BUFFER
+                UNITY_SETUP_INSTANCE_ID(input);
+                UNITY_TRANSFER_INSTANCE_ID(input, o);
+            #endif
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 o.position = UnityObjectToClipPos(pos);
@@ -90,6 +99,7 @@ Shader "Point Cloud/Point"
 
             half4 Fragment(Varyings input) : SV_Target
             {
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(input);
                 half4 c = half4(input.color, _Tint.a);
                 UNITY_APPLY_FOG(input.fogCoord, c);
                 return c;

@@ -297,11 +297,17 @@ namespace TiltBrush
             }
         }
 
-        public bool RaycastAgainstCustomColliders(Ray ray, out RaycastHit hitInfo, float dist)
+        public bool RaycastAgainstCustomColliders(Ray ray, out RaycastHit hitInfo, float dist,
+            bool detachedOnly = false)
         {
             hitInfo = new RaycastHit();
             for (int i = 0; i < m_UIComponents.Count; ++i)
             {
+                // Detached controls retain this manager, but have their own position and orientation.
+                if (detachedOnly && m_UIComponents[i].transform.IsChildOf(transform))
+                {
+                    continue;
+                }
                 // There's an order of operations issue here.  In practice, UIComponents don't have
                 // overlapping colliders, so it shouldn't matter.
                 if (m_UIComponents[i].RaycastAgainstCustomCollider(ray, out hitInfo, dist))

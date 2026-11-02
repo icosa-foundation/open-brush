@@ -1,0 +1,180 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-5352823065678073211
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e5c559f0d2ea804bb8171fd6b11d590, type: 3}
+  m_Name: Open Brush capture depth
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpCaptureDepthRendererFeature
+  m_Active: 1
+  m_DepthShader: {fileID: 4800000, guid: 5f2e1d3cb8944e9b8f657386a6b6e5ce, type: 3}
+--- !u!114 &-5112751337474582183
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ce42899d4a15fa48aab17617f0bc29b, type: 3}
+  m_Name: Open Brush Watermark
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpWatermarkRendererFeature
+  m_Active: 1
+  m_RenderPassEvent: 600
+--- !u!114 &4417583065209327411
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ae4d376c05df421b98c5b39b25b0d29, type: 3}
+  m_Name: AR Background
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARBackgroundRendererFeature
+  m_Active: 1
+--- !u!114 &-2981144582375113927
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 01b019caa33e147829f48e2b15958f84, type: 3}
+  m_Name: AR Command Buffer Support
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARCommandBufferSupportRendererFeature
+  m_Active: 1
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: de640fe3d0db1804a85f9fc8f5cadab6, type: 3}
+  m_Name: Open Brush Universal Render Pipeline Asset_Renderer
+  m_EditorClassIdentifier: 
+  debugShaders:
+    debugReplacementPS: {fileID: 4800000, guid: cf852408f2e174538bcd9b7fda1c5ae7, type: 3}
+    hdrDebugViewPS: {fileID: 4800000, guid: 573620ae32aec764abd4d728906d2587, type: 3}
+    probeVolumeSamplingDebugComputeShader: {fileID: 7200000, guid: 53626a513ea68ce47b59dc1299fe3959, type: 3}
+  probeVolumeResources:
+    probeVolumeDebugShader: {fileID: 0}
+    probeVolumeFragmentationDebugShader: {fileID: 0}
+    probeVolumeOffsetDebugShader: {fileID: 0}
+    probeVolumeSamplingDebugShader: {fileID: 0}
+    probeSamplingDebugMesh: {fileID: 0}
+    probeSamplingDebugTexture: {fileID: 0}
+    probeVolumeBlendStatesCS: {fileID: 0}
+  m_RendererFeatures:
+  - {fileID: 728231190044821556}
+  - {fileID: -5112751337474582183}
+  - {fileID: 3323140472985962428}
+  - {fileID: 6111700951782917469}
+  - {fileID: -5352823065678073211}
+  - {fileID: 5937264514657144174}
+  - {fileID: 4417583065209327411}
+  - {fileID: -2981144582375113927}
+  m_RendererFeatureMap: 3448fbb468321b0a5999ec40bfdb0bb9bc470d47a72a1e2e5d05706ca21fd15485b2bd40c8f3b6b56ecdab7d9e666552334f957764684e3d397b730fccd8a0d6l
+  xrSystemData: {fileID: 0}
+  postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
+  m_AssetVersion: 3
+  m_PrepassLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_OpaqueLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_TransparentLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_DefaultStencilState:
+    overrideStencilState: 0
+    stencilReference: 0
+    stencilCompareFunction: 8
+    passOperation: 2
+    failOperation: 0
+    zFailOperation: 0
+  m_ShadowTransparentReceive: 1
+  m_RenderingMode: 0
+  m_DepthPrimingMode: 0
+  m_CopyDepthMode: 1
+  m_DepthAttachmentFormat: 0
+  m_DepthTextureFormat: 0
+  m_AccurateGbufferNormals: 0
+  m_IntermediateTextureMode: 1
+  m_TileOnlyMode: 0
+--- !u!114 &3323140472985962428
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 94fdf69fc8f8d8d4bb44458a05a9557a, type: 3}
+  m_Name: Open Brush Selection
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpSelectionRendererFeature
+  m_Active: 1
+  m_RenderPassEvent: 600
+  m_DebugOutput: 0
+  m_SimpleCompositeMode: 0
+  m_UseMobileCompositeMode: 1
+  m_MobileCompositeMode: 0
+  m_UseAdaptiveMobileCompositeMode: 1
+  m_AdaptiveMobileLowFps: 72
+--- !u!114 &5937264514657144174
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e678ce3b53bf941418b16b9b6a388baf, type: 3}
+  m_Name: Open Brush HDR targets
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpHdrRendererFeature
+  m_Active: 1
+
+--- !u!114 &6111700951782917469
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efbf998eb66045d5813ca6bd148cf83c, type: 3}
+  m_Name: Gsplat URP Feature
+  m_EditorClassIdentifier: Gsplat::Gsplat.GsplatURPFeature
+  m_Active: 1
+--- !u!114 &728231190044821556
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02b9b32886e24dcbb3f63e181e2f06fa, type: 3}
+  m_Name: Open Brush Capture Effects
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.UrpCaptureEffectsRendererFeature
+  m_Active: 1
+  m_VignetteShader: {fileID: 4800000, guid: 1927722e19c340ccb0b4df0f890d424a, type: 3}
+  m_TiltShiftShader: {fileID: 4800000, guid: ee8b0fb8af3b4b618299c9d7a073026d, type: 3}

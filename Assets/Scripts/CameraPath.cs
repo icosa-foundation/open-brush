@@ -137,6 +137,11 @@ namespace TiltBrush
     {
         private const int kNumSegmentPoints = 30;
         private const float kEpsilon = 0.0001f;
+        // Longest slice of playback time MoveAlongPathByTime will move without re-reading
+        // the path speed.  Matches a 60fps frame so time based movement lines up with the
+        // per-frame movement done during normal playback.
+        private const float kMaxTimeSubstepSeconds = 1.0f / 60.0f;
+        private const int kMaxTimeSubsteps = 1024;
 
         public enum EndType
         {
@@ -1693,6 +1698,33 @@ namespace TiltBrush
                 return index;
             }
             return Mathf.Clamp(index, min, max);
+        }
+
+        // Advances along the path by an amount of playback time, taking path speed into
+        // account.  Speed is re-evaluated in bounded substeps so that varying speed knots are
+        // integrated over the interval instead of being sampled once at its start.
+        // Returns true if the movement rolled past the end of the path.
+        public bool MoveAlongPathByTime(float deltaSeconds, PathT startT, out PathT endT)
+        {
+            endT = startT;
+            if (PositionKnots.Count < 2 || deltaSeconds <= 0.0f)
+            {
+                return false;
+            }
+
+            int substeps = Mathf.Clamp(
+                Mathf.CeilToInt(deltaSeconds / kMaxTimeSubstepSeconds), 1, kMaxTimeSubsteps);
+            float substepSeconds = deltaSeconds / substeps;
+
+            bool rolled = false;
+            for (int i = 0; i < substeps; ++i)
+            {
+                // It's possible for GetSpeed() to return a value <= 0, which makes the path
+                // stop advancing.  Clamp to the lowest speed available for a speed knot.
+                float speed = Mathf.Max(GetSpeed(endT), CameraPathSpeedKnot.kMinSpeed);
+                rolled |= MoveAlongPath(speed * substepSeconds, endT, out endT);
+            }
+            return rolled;
         }
 
         public bool MoveAlongPath(float movementAmount, PathT startT, out PathT endT)

@@ -303,7 +303,6 @@ namespace TiltBrush
                           string method = UnityWebRequest.kHttpVerbGET, bool compress = false)
         {
 #if UNITY_EDITOR
-            Debug.Log($"WebRequest: {uri}");
 #endif
             if (string.IsNullOrEmpty(uri))
             {

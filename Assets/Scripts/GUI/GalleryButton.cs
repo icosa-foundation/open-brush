@@ -31,6 +31,18 @@ namespace TiltBrush
 
         public Type m_ButtonType;
 
+        protected override void Awake()
+        {
+#if OPEN_BRUSH_VIEWER
+            if (m_ButtonType == Type.Local)
+            {
+                m_LocalizedDescription = ViewerSketchbookLabels.Featured;
+                m_LocalizedDescriptionExtra = ViewerSketchbookLabels.FeaturedHint;
+            }
+#endif
+            base.Awake();
+        }
+
         override protected void OnButtonPressed()
         {
             SketchbookPanel panel = m_Manager.GetComponent<SketchbookPanel>();

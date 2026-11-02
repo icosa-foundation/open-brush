@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Unity.VectorGraphics;
+using Unity.VectorGraphics.OpenBrush;
 using UnityEngine;
 
 namespace TiltBrush

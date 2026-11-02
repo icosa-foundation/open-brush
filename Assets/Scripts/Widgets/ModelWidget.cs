@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.Linq;
 using System.Threading.Tasks;
+using Gsplat;
 
 namespace TiltBrush
 {
@@ -54,6 +55,10 @@ namespace TiltBrush
 
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
+        private GsplatRenderer m_GsplatRenderer;
+        private int m_GsplatHighlightFrame = -1;
+        private float m_GsplatBaseBrightness;
+        private bool m_HasGsplatBaseBrightness;
         private bool m_SyncHierarchyPending;
         private float m_InitSize_CS;
         public float InitSize_CS => m_InitSize_CS;
@@ -83,13 +88,13 @@ namespace TiltBrush
                 // Reduce usage count on old model.
                 if (m_Model != null)
                 {
-                    m_Model.m_UsageCount--;
+                    m_Model.ReleaseUsage();
                 }
                 m_Model = value;
                 // Increment usage count on new model.
                 if (m_Model != null)
                 {
-                    m_Model.m_UsageCount++;
+                    m_Model.AcquireUsage();
                 }
 
                 m_SyncHierarchyPending = m_Model != null && !string.IsNullOrEmpty(Subtree);
@@ -280,6 +285,9 @@ namespace TiltBrush
             {
                 GameObject.Destroy(m_ModelInstance.gameObject);
             }
+            m_GsplatRenderer = null;
+            m_GsplatHighlightFrame = -1;
+            m_HasGsplatBaseBrightness = false;
 
             // Early out if we don't have a model to clone.
             // This can happen if model loading is deferred.
@@ -289,8 +297,10 @@ namespace TiltBrush
             }
 
             m_ModelInstance = Instantiate(m_Model.m_ModelParent);
-            m_ModelInstance.gameObject.SetActive(true);
             m_ModelInstance.parent = this.transform;
+            m_ModelInstance.gameObject.SetActive(true);
+            m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(includeInactive: true);
+            CaptureGsplatBaseBrightness();
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
@@ -327,12 +337,19 @@ namespace TiltBrush
             HierarchyUtils.RecursivelySetMaterialBatchID(m_ModelInstance, m_BatchId);
             WidgetManager.m_Instance.AddWidgetToBatchMap(this, m_BatchId);
 
-            Vector3 ratios = GetBoundsRatios(m_Model.m_MeshBounds);
-            m_ContainerBloat.x = Mathf.Max(0, m_MinContainerRatio - ratios.x);
-            m_ContainerBloat.y = Mathf.Max(0, m_MinContainerRatio - ratios.y);
-            m_ContainerBloat.z = Mathf.Max(0, m_MinContainerRatio - ratios.z);
-            m_ContainerBloat /= m_MinContainerRatio;               // Normalize for the min ratio.
-            m_ContainerBloat *= m_MaxBloat / App.Scene.Pose.scale; // Apply bloat to appropriate axes.
+            if (m_Model.IsGsplatModel)
+            {
+                m_ContainerBloat = Vector3.zero;
+            }
+            else
+            {
+                Vector3 ratios = GetBoundsRatios(m_Model.m_MeshBounds);
+                m_ContainerBloat.x = Mathf.Max(0, m_MinContainerRatio - ratios.x);
+                m_ContainerBloat.y = Mathf.Max(0, m_MinContainerRatio - ratios.y);
+                m_ContainerBloat.z = Mathf.Max(0, m_MinContainerRatio - ratios.z);
+                m_ContainerBloat /= m_MinContainerRatio;               // Normalize for the min ratio.
+                m_ContainerBloat *= m_MaxBloat / App.Scene.Pose.scale; // Apply bloat to appropriate axes.
+            }
 
             m_BoxCollider.size = m_Model.m_MeshBounds.size + m_ContainerBloat;
             m_BoxCollider.transform.localPosition = m_Model.m_MeshBounds.center;
@@ -356,7 +373,7 @@ namespace TiltBrush
                 SyncHierarchyToSubtree();
                 m_SyncHierarchyPending = false;
             }
-            if (m_ObjModelScript.NumMeshes == 0)
+            if (m_ObjModelScript.NumMeshes == 0 && !m_Model.IsGsplatModel)
             {
                 OutputWindowScript.Error("No usable geometry in model");
             }
@@ -609,6 +626,16 @@ namespace TiltBrush
 
         public override float GetActivationScore(Vector3 vControllerPos, InputManager.ControllerName name)
         {
+            if (TryIntersectGsplat(vControllerPos, m_CollisionRadius, out float gsplatScore))
+            {
+                return gsplatScore;
+            }
+
+            if (m_Model != null && m_Model.IsGsplatModel)
+            {
+                return -1.0f;
+            }
+
             Vector3 vInvTransformedPos = m_BoxCollider.transform.InverseTransformPoint(vControllerPos);
             Vector3 vSize = m_BoxCollider.size * 0.5f;
             float xDiff = vSize.x - Mathf.Abs(vInvTransformedPos.x);
@@ -621,6 +648,31 @@ namespace TiltBrush
                 return (xDiff / vSize.x + yDiff / vSize.y + zDiff / vSize.z) / 3 / (minSize + 1);
             }
             return -1.0f;
+        }
+
+        public bool TryIntersectGsplat(Vector3 center_GS, float radius_GS, out float score)
+        {
+            score = -1.0f;
+            if (m_Model == null || !m_Model.IsGsplatModel)
+            {
+                return false;
+            }
+
+            Collider collider = GrabCollider;
+            if (collider == null || collider.bounds.SqrDistance(center_GS) > radius_GS * radius_GS)
+            {
+                return false;
+            }
+
+            if (m_GsplatRenderer == null && m_ModelInstance != null)
+            {
+                m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(
+                    includeInactive: true);
+            }
+
+            return m_GsplatRenderer != null &&
+                m_GsplatRenderer.SupportsSpatialQueries &&
+                m_GsplatRenderer.TryIntersectSphere(center_GS, radius_GS, out score);
         }
 
         private static Vector3 GetBoundsRatios(Bounds bounds)
@@ -665,6 +717,11 @@ namespace TiltBrush
             {
                 SetWidgetSizeAboutCenterOfMass(m_HideSize_CS * GetShowRatio());
             }
+
+            if (m_GsplatRenderer != null && m_GsplatHighlightFrame != Time.frameCount)
+            {
+                RestoreGsplatBrightness();
+            }
         }
 
         protected override void UpdateIntroAnim()
@@ -708,26 +765,66 @@ namespace TiltBrush
 
         public override void RegisterHighlight()
         {
-#if !(UNITY_ANDROID || UNITY_IOS)
-            if (m_ObjModelScript != null)
+            if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.RegisterHighlight();
                 return;
             }
-#endif
+            if (UpdateGsplatSelectionHighlight())
+            {
+                return;
+            }
             base.RegisterHighlight();
         }
 
         protected override void UnregisterHighlight()
         {
-#if !(UNITY_ANDROID || UNITY_IOS)
-            if (m_ObjModelScript != null)
+            RestoreGsplatBrightness();
+            if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.UnregisterHighlight();
                 return;
             }
-#endif
             base.UnregisterHighlight();
+        }
+
+        private bool UpdateGsplatSelectionHighlight()
+        {
+            if (m_GsplatRenderer == null && m_ModelInstance != null)
+            {
+                m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(
+                    includeInactive: true);
+            }
+            if (m_GsplatRenderer == null)
+            {
+                return false;
+            }
+
+            CaptureGsplatBaseBrightness();
+            m_GsplatHighlightFrame = Time.frameCount;
+            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.realtimeSinceStartup * 4.0f);
+            m_GsplatRenderer.Brightness = m_GsplatBaseBrightness * Mathf.Lerp(1.5f, 2.0f, pulse);
+            return true;
+        }
+
+        private void CaptureGsplatBaseBrightness()
+        {
+            if (m_GsplatRenderer == null || m_HasGsplatBaseBrightness)
+            {
+                return;
+            }
+            m_GsplatBaseBrightness = m_GsplatRenderer.Brightness;
+            m_HasGsplatBaseBrightness = true;
+        }
+
+        private void RestoreGsplatBrightness()
+        {
+            if (m_GsplatRenderer == null || !m_HasGsplatBaseBrightness)
+            {
+                return;
+            }
+            m_GsplatRenderer.Brightness = m_GsplatBaseBrightness;
+            m_GsplatHighlightFrame = -1;
         }
 
         public TrTransform GetSaveTransform()
@@ -951,6 +1048,7 @@ namespace TiltBrush
                 // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
                 // as soon as the Icosa Asset Catalog loads it.
                 model = new Model(assetId, null);
+                model.ReleaseFromCatalog();
             }
             // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits.
             // Set this before loading so mesh splits are available when the prefab is built.
@@ -991,7 +1089,7 @@ namespace TiltBrush
 
         override public bool HasGPUIntersectionObject()
         {
-            return m_ModelInstance != null;
+            return m_ModelInstance != null && (m_Model == null || !m_Model.IsGsplatModel);
         }
 
         override public void SetGPUIntersectionObjectLayer(int layer)

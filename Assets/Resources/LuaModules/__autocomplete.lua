@@ -82,7 +82,8 @@ function App:SetFont(fontData) end
 ---@param renderDepth? boolean If true, also save a depth map with the suffix _depth.png
 ---@param removeBackground? boolean If true then render with a transparent background
 ---@param renderNormals? boolean If true, also save a normals map with the suffix _normals.png
-function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground, renderNormals) end
+---@param includePostProcessing? boolean If true then include capture post-processing. If omitted, uses App:PostProcessing state
+function App:TakeSnapshot(tr, filename, width, height, superSampling, renderDepth, removeBackground, renderNormals, includePostProcessing) end
 
 ---@param tr Transform Determines the position and orientation of the camera used to take the snapshot
 ---@param filename string A filename in the Snapshots folder. Directory separators, rooted paths, and parent-directory traversal are rejected
@@ -141,6 +142,7 @@ function Bounds:Contains(point) end
 ---@field rotation Rotation | number[] The 3D orientation of the Brush Controller's tip
 ---@field direction Vector3 | number[] The vector representing the forward direction of the brush
 ---@field size number The current brush size
+---@field sizeAbsolute number The brush size in absolute room-space units
 ---@field pressure number Brush pressure is determined by how far the trigger is pressed in
 ---@field type string The current brush type
 ---@field types string[] All brush types available via the UI
@@ -159,6 +161,12 @@ function Brush:GetTypes(includeTags, excludeTags) end
 
 
 function Brush:JitterColor() end
+
+---@param color Color The color to set
+function Brush:SetColorOverride(color) end
+
+---@param mode ColorOverrideMode The mode to set
+function Brush:SetColorOverrideMode(mode) end
 
 ---@param size number How many frames of position/rotation to remember
 function Brush:ResizeHistory(size) end
@@ -1704,6 +1712,11 @@ function Rotation:SlerpUnclamped(a, b, t) end
 ---@return Rotation # The rotation that represents applying both rotations in turn
 function Rotation:Multiply(other) end
 
+---@param rotation Rotation The rotation to apply
+---@param vector Vector3 The vector to rotate
+---@return Vector3 # The rotated vector
+function Rotation:RotateVector(rotation, vector) end
+
 ---@param other Rotation The rotation to compare
 ---@return boolean # true if this rotation is not equal to the specified rotation; otherwise, false
 function Rotation:NotEquals(other) end
@@ -1888,6 +1901,40 @@ function StrokeList:Deselect() end
 
 function StrokeList:Delete() end
 
+---Crops these strokes to a sphere and updates this list with the remaining strokes
+---@param center Vector3 The center of the sphere
+---@param radius number The radius of the sphere
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropSphere(center, radius, keepInside) end
+
+---Crops these strokes to a box and updates this list with the remaining strokes
+---@param center Vector3 The center of the box
+---@param size Vector3 The full width, height and depth
+---@param rotation? Vector3 Euler rotation in degrees
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropBox(center, size, rotation, keepInside) end
+
+---Crops these strokes to a capsule and updates this list with the remaining strokes
+---@param center Vector3 The center of the capsule
+---@param radius number The radius of the capsule
+---@param height number The full height of the capsule
+---@param rotation? Vector3 Euler rotation in degrees (axis is Y before rotation)
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropCapsule(center, radius, height, rotation, keepInside) end
+
+---Crops these strokes to an ellipsoid and updates this list with the remaining strokes
+---@param center Vector3 The center of the ellipsoid
+---@param size Vector3 The full width, height and depth
+---@param rotation? Vector3 Euler rotation in degrees
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropEllipsoid(center, size, rotation, keepInside) end
+
+---Keeps the side of a plane its normal points toward and updates this list with the remaining strokes
+---@param point Vector3 A point on the plane
+---@param normal Vector3 Direction of the side to keep
+---@param keepInside? boolean True keeps inside; false keeps outside (default true)
+function StrokeList:CropPlane(point, normal, keepInside) end
+
 ---@param clipStart number The amount of the stroke to hide from the start (0-1)
 ---@param clipEnd number The amount of the stroke to hide from the end (0-1)
 function StrokeList:SetShaderClipping(clipStart, clipEnd) end
@@ -1938,6 +1985,7 @@ function Svg:DrawDocument(svg, tr, includeColors) end
 
 ---@class Symmetry
 ---@field current SymmetrySettings The current symmetry settings
+---@field pointerPose Transform The current physical brush pointer pose in the active canvas
 ---@field brushOffset Vector3 | number[] Gets the offset between the current brush position and the symmetry widget
 ---@field wandOffset Vector3 | number[] Gets the offset between the current wand position and the symmetry widget
 Symmetry = {}
@@ -1978,6 +2026,9 @@ function Symmetry:ClearColors() end
 ---@param color Color The color to add
 function Symmetry:AddColor(color) end
 
+---@param color Color The color to set
+function Symmetry:SetColors(color) end
+
 ---@param colors Color[] The list of colors to set
 function Symmetry:SetColors(colors) end
 
@@ -1993,6 +2044,15 @@ function Symmetry:ClearBrushes() end
 
 ---@param brushes string[] The list of brushes to set. Either the names or the GUIDs of the brushes
 function Symmetry:SetBrushes(brushes) end
+
+---@param color Color The color to set
+function Symmetry:SetColorOverrides(color) end
+
+---@param mode ColorOverrideMode The mode to set
+function Symmetry:SetColorOverrideModes(mode) end
+
+
+function Symmetry:ClearColorOverrides() end
 
 
 ---@return string[] # 
@@ -2018,6 +2078,9 @@ function Symmetry:GetPointerPaintMode(pointerIndex) end
 ---@return System.Collections.Generic.List`1[SymmetryPointerPaintMode] # 
 function Symmetry:GetPointerPaintModes() end
 
+---@param modes SymmetryPointerPaintMode[] One painting mode per returned pointer transform
+function Symmetry:SetPointerPaintModes(modes) end
+
 ---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
 function Symmetry:StartPointer(pointerIndex) end
 
@@ -2026,6 +2089,17 @@ function Symmetry:StopPointer(pointerIndex) end
 
 ---@param pointerIndex number Zero-based pointer index matching the transform order returned by the symmetry script.
 function Symmetry:ForcePointerNewStroke(pointerIndex) end
+
+---@param pose Transform The pointer pose
+---@param frame Transform The frame in which the action is expressed, in the same space as the pose
+---@param action Transform The local translation, rotation and scale to apply
+---@return Transform # The transformed pointer pose in the same space
+function Symmetry:ApplyPoseAction(pose, frame, action) end
+
+---@param pose Transform The pointer pose
+---@param frame Transform The frame defining the reflection plane, in the same space as the pose
+---@return Transform # The reflected pose with handedness preserved
+function Symmetry:ReflectPose(pose, frame) end
 
 ---@param path Path The path to duplicate
 ---@return PathList # 
@@ -2958,13 +3032,31 @@ SymmetryWallpaperType.pmg = nil
 SymmetryWallpaperType.pmm = nil
 SymmetryWallpaperType.cmm = nil
 
+---@class SymmetryPointerPaintMode
+SymmetryPointerPaintMode = {}
+SymmetryPointerPaintMode.Inherit = nil
+SymmetryPointerPaintMode.ForcedOn = nil
+SymmetryPointerPaintMode.ForcedOff = nil
+
+
+
+---@class ColorOverrideMode
+ColorOverrideMode = {}
+ColorOverrideMode.None = nil
+ColorOverrideMode.Replace = nil
+ColorOverrideMode.Multiply = nil
+ColorOverrideMode.Add = nil
+
 
 
 ---@class Tool
+---@field latestControlPoints ControlPointList Control points for the single path selected by the active Tool Script stroke preview
+---@field latestControlPointSpace ScriptCoordSpace The coordinate space for the latest Tool Script control points
 ---@field startPoint Transform The position and orientation of the point where the trigger was pressed
----@field endPoint Transform The position and orientation of the point where the trigger was released
+---@field endPoint Transform The position and full controller orientation of the point where the trigger was released. Use endPoint.rotation to match the scripted tool preview orientation.
 ---@field vector Vector3 The vector from startPoint to endPoint
----@field rotation Rotation The rotation from startPoint to endPoint
+---@field rotation Vector3 Legacy controller-up vector at release. Use endPoint.rotation for full release orientation.
+---@field isPreview boolean True for a live stroke-preview invocation and false for the single final invocation. Tool Scripts using previewType=stroke are invoked only during those phases.
 Tool = {}
 
 ---@class json

@@ -102,8 +102,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ControllerName: 1
-  m_ControllerGeometryPrefab: {fileID: 114000012796927648, guid: 9c034ec8bf1a86745b108976f56c383f,
-    type: 3}
+  m_ControllerGeometryPrefab: {fileID: 114000012796927648, guid: 9c034ec8bf1a86745b108976f56c383f, type: 3}
   m_GeometryOffset: {x: -0.03, y: -0.182, z: 0.379}
   m_GeometryRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
 --- !u!114 &114000013512061632
@@ -120,10 +119,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HapticBuzzLength: 0.01
   m_HapticPulses: 7
-  m_MeshMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c,
-    type: 2}
-  m_TriggerMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c,
-    type: 2}
+  m_MeshMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c, type: 2}
+  m_TriggerMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c, type: 2}
 --- !u!114 &5733822967690520026
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -189,8 +186,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_ControllerName: 0
-  m_ControllerGeometryPrefab: {fileID: 114346084812737864, guid: 0dd88f51a14b0a647be6603d144874b0,
-    type: 3}
+  m_ControllerGeometryPrefab: {fileID: 114346084812737864, guid: 0dd88f51a14b0a647be6603d144874b0, type: 3}
   m_GeometryOffset: {x: 0.03, y: -0.182, z: 0.379}
   m_GeometryRotation: {x: 0.5, y: 0, z: 0, w: 0.8660254}
 --- !u!114 &114000011013631904
@@ -207,10 +203,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_HapticBuzzLength: 0.01
   m_HapticPulses: 7
-  m_MeshMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c,
-    type: 2}
-  m_TriggerMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c,
-    type: 2}
+  m_MeshMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c, type: 2}
+  m_TriggerMaterialInactive: {fileID: 2100000, guid: 944168a567ae63548980d921b5cbcc5c, type: 2}
 --- !u!114 &1658141134665010823
 MonoBehaviour:
   m_ObjectHideFlags: 0

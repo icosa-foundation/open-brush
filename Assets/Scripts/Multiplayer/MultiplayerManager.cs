@@ -20,9 +20,6 @@ using System.Threading.Tasks;
 using Fusion;
 #endif
 using UnityEngine;
-#if OCULUS_SUPPORTED
-using OVRPlatform = Oculus.Platform;
-#endif
 using TiltBrush;
 using UnityEngine.Serialization;
 
@@ -47,6 +44,8 @@ namespace OpenBrush.Multiplayer
         private bool m_IsLocalVoiceEnabled = true;
         private bool m_IsRoomVoiceEnabled = true;
         private bool m_IsVoiceEnabled = true;
+        private bool m_HasReceivedRoomVoicePolicy;
+        private int m_RoomVoicePolicyGeneration;
 
         public bool IsLocalVoiceEnabled => m_IsLocalVoiceEnabled;
         public bool IsRoomVoiceEnabled => m_IsRoomVoiceEnabled;
@@ -64,8 +63,6 @@ namespace OpenBrush.Multiplayer
 
         public event Action<ConnectionState> StateUpdated;
         public event Action<bool> RoomOwnershipUpdated;
-        public event Action<ConnectionUserInfo> UserInfoStateUpdated;
-
         private List<RoomData> m_RoomData = new List<RoomData>();
         private double? m_NetworkOffsetTimestamp = null;
         private readonly Dictionary<Guid, CanvasScript> m_ContributorLayers =
@@ -104,11 +101,13 @@ namespace OpenBrush.Multiplayer
             new Dictionary<Guid, OutgoingLiveStroke>();
         private readonly Dictionary<Guid, RetainedLiveStrokeCommand> m_RetainedLiveStrokeCommands =
             new Dictionary<Guid, RetainedLiveStrokeCommand>();
+        private HashSet<Guid> m_SentBrushCommandGuids = new HashSet<Guid>();
 
         private const int k_MaxLiveStrokeControlPoints = 32768;
         private const float k_LiveStrokeUpdateIntervalSeconds = 0.1f;
         private const float k_LiveStrokeRepairRetentionSeconds = 30f;
         private const int k_CapabilityDiscoveryTimeoutMs = 2000;
+        private readonly Dictionary<int, List<Stroke>> m_InitialSceneStrokeSnapshots = new();
 
         public bool IsLiveStrokeStreamingEnabled { get; private set; }
         public bool IsLiveStrokeRoomStateReady { get; private set; }
@@ -117,9 +116,6 @@ namespace OpenBrush.Multiplayer
 
         public Guid LocalContributorId { get; private set; }
 
-        ulong myOculusUserId;
-
-        List<ulong> oculusPlayerIds;
         internal string UserId;
         [HideInInspector] public string CurrentRoomName;
 
@@ -151,8 +147,6 @@ namespace OpenBrush.Multiplayer
                 }
             }
         }
-        private string m_oldNickName = null;
-
         [HideInInspector] public RoomCreateData CurrentRoomData;
 
         private bool _isUserRoomOwner = false;
@@ -189,7 +183,6 @@ namespace OpenBrush.Multiplayer
         {
             m_Instance = this;
             LocalContributorId = Guid.NewGuid();
-            oculusPlayerIds = new List<ulong>();
             if (GetComponent<ManualColocationManager>() == null)
             {
                 gameObject.AddComponent<ManualColocationManager>();
@@ -198,20 +191,6 @@ namespace OpenBrush.Multiplayer
 
         void Start()
         {
-#if OCULUS_SUPPORTED
-            OVRPlatform.Users.GetLoggedInUser().OnComplete((msg) => {
-                if (!msg.IsError)
-                {
-                    myOculusUserId = msg.GetUser().ID;
-                    Debug.Log($"OculusID: {myOculusUserId}");
-                    oculusPlayerIds.Add(myOculusUserId);
-                }
-                else
-                {
-                    Debug.LogError(msg.GetError());
-                }
-            });
-#endif
 
             State = ConnectionState.INITIALIZING;
             switch (m_MultiplayerType)
@@ -291,7 +270,13 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> JoinRoom(RoomCreateData RoomData)
         {
-            m_IsRoomVoiceEnabled = !RoomData.voiceDisabled;
+            int voicePolicyGeneration = ++m_RoomVoicePolicyGeneration;
+            m_HasReceivedRoomVoicePolicy = false;
+            // A joining client does not know an existing room's authoritative voice policy
+            // until the owner sends it after capability negotiation. Fail closed in the
+            // meantime so the local microphone is never published using the joiner's defaults.
+            m_IsRoomVoiceEnabled = CalculateInitialRoomVoiceEnabled(
+                isUserRoomOwner, !RoomData.voiceDisabled);
             m_IsVoiceEnabled = m_IsLocalVoiceEnabled && m_IsRoomVoiceEnabled;
 
             if (State == ConnectionState.INITIALIZED || State == ConnectionState.DISCONNECTED)
@@ -314,10 +299,19 @@ namespace OpenBrush.Multiplayer
             bool successData = false;
             if (m_Manager != null) successData = await m_Manager.JoinRoom(RoomData);
 
-            bool successVoice = true;
-            if (m_IsVoiceEnabled && m_VoiceManager != null)
+            if (successData)
             {
-                successVoice = await m_VoiceManager.JoinRoom(RoomData);
+                // HTTP joins establish room ownership only during the data-room callback.
+                m_IsRoomVoiceEnabled = CalculateInitialRoomVoiceEnabled(
+                    isUserRoomOwner, !RoomData.voiceDisabled);
+                m_IsVoiceEnabled = m_IsLocalVoiceEnabled && m_IsRoomVoiceEnabled;
+            }
+
+            bool successVoice = true;
+            if (successData && m_IsVoiceEnabled && m_VoiceManager != null)
+            {
+                successVoice = await m_VoiceManager.Connect() &&
+                    await m_VoiceManager.JoinRoom(RoomData);
                 if (successVoice)
                 {
                     m_VoiceManager.StartSpeaking();
@@ -349,6 +343,7 @@ namespace OpenBrush.Multiplayer
                     IsLiveStrokeRoomStateReady = false;
                 }
                 await m_Manager.RpcAdvertiseLiveStrokeSupport(MaxStreamedPointers);
+                if (!isUserRoomOwner) _ = ApplyLegacyOwnerVoiceFallback(voicePolicyGeneration);
             }
 
             return successData & successVoice;
@@ -562,7 +557,6 @@ namespace OpenBrush.Multiplayer
 
             if (State != ConnectionState.IN_ROOM)
             {
-                m_oldNickName = null;
                 return;
             }
 
@@ -599,7 +593,8 @@ namespace OpenBrush.Multiplayer
                 },
                 ExtraData = new ExtraData
                 {
-                    OculusPlayerId = myOculusUserId,
+                    // Kept at 0 so the networked payload shape is unchanged.
+                    OculusPlayerId = 0,
                 },
                 IsRoomOwner = isUserRoomOwner,
                 SceneScale = App.Scene.Pose.scale,
@@ -616,7 +611,6 @@ namespace OpenBrush.Multiplayer
 
 
             // Update remote user refs, and send Anchors if new player joins.
-            bool newUser = false;
             foreach (var playerData in m_RemotePlayers.List)
             {
                 ITransientData<PlayerRigData> player = playerData.TransientData;
@@ -624,21 +618,6 @@ namespace OpenBrush.Multiplayer
                 if (!player.IsSpawned) continue;
 
                 data = player.ReceiveData();
-#if OCULUS_SUPPORTED
-                // New user, share the anchor with them
-                if (data.ExtraData.OculusPlayerId != 0 && !oculusPlayerIds.Contains(data.ExtraData.OculusPlayerId))
-                {
-                    Debug.Log("detected new user!");
-                    Debug.Log(data.ExtraData.OculusPlayerId);
-                    oculusPlayerIds.Add(data.ExtraData.OculusPlayerId);
-                    newUser = true;
-                }
-#endif // OCULUS_SUPPORTED
-            }
-
-            if (newUser)
-            {
-                ShareAnchors();
             }
         }
 
@@ -654,7 +633,6 @@ namespace OpenBrush.Multiplayer
             m_LocalPlayer = playerData;
             m_LocalPlayer.PlayerId = id;
             ManualColocationManager.m_Instance?.OnLocalPlayerJoinedRoom();
-
         }
 
         void OnRemotePlayerJoined(RemotePlayer newRemotePlayer)
@@ -714,6 +692,9 @@ namespace OpenBrush.Multiplayer
         private void ScheduleInitialSceneSync(int playerId)
         {
             m_PendingSceneSyncPlayerIds.Add(playerId);
+            // Capture the membership before capability discovery; later strokes arrive as deltas.
+            m_InitialSceneStrokeSnapshots[playerId] =
+                SketchMemoryScript.m_Instance.GetMemoryList.ToList();
             if (IsPlayerLiveStrokeCompatible(playerId))
             {
                 CompletePendingSceneSync(playerId, "known capability");
@@ -740,7 +721,9 @@ namespace OpenBrush.Multiplayer
             Debug.Log(
                 $"[LiveStrokeCapabilitySync] Starting scene sync for player {playerId}; " +
                 $"reason={reason}, enriched={IsPlayerLiveStrokeCompatible(playerId)}.");
-            MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(playerId);
+            m_InitialSceneStrokeSnapshots.TryGetValue(playerId, out var initialStrokes);
+            m_InitialSceneStrokeSnapshots.Remove(playerId);
+            MultiplayerSceneSync.m_Instance.StartSyncronizationForUser(playerId, initialStrokes);
         }
 
         public bool IsPlayerLiveStrokeCompatible(int playerId)
@@ -797,6 +780,15 @@ namespace OpenBrush.Multiplayer
 
         private void ApplyLiveStrokeRoomStateLocally(bool enabled)
         {
+            if (!enabled)
+            {
+                CancelAllOutgoingLiveStrokes();
+                foreach (int playerId in m_LiveStrokeCapablePlayers.ToList())
+                {
+                    m_Manager?.RemoveLiveStrokePreviewsForPlayer(playerId);
+                }
+            }
+
             IsLiveStrokeStreamingEnabled = enabled;
             IsLiveStrokeRoomStateReady = true;
             CurrentRoomData.liveStrokeStreaming = enabled;
@@ -1043,6 +1035,12 @@ namespace OpenBrush.Multiplayer
 
         private void UpdateOutgoingLiveStrokes()
         {
+            if (!IsLiveStrokeRoomStateReady || !IsLiveStrokeStreamingEnabled)
+            {
+                CancelAllOutgoingLiveStrokes();
+                return;
+            }
+
             if (m_OutgoingLiveStrokes.Count == 0)
             {
                 return;
@@ -1100,6 +1098,8 @@ namespace OpenBrush.Multiplayer
 
         private async Task<bool> TryCompleteOutgoingLiveStrokeTree(BaseCommand rootCommand)
         {
+            // Keep delivery evidence scoped to this room even if a send yields across disconnect.
+            HashSet<Guid> sentBrushCommandGuids = m_SentBrushCommandGuids;
             List<BrushStrokeCommand> allBrushCommands =
                 EnumerateBrushStrokeCommands(rootCommand).ToList();
             List<BrushStrokeCommand> brushCommands = allBrushCommands.Where(
@@ -1114,8 +1114,13 @@ namespace OpenBrush.Multiplayer
             var deltaCommandGuids = brushCommands
                 .Select(command => command.Guid)
                 .ToHashSet();
+            // A missing stream can be canceled, not just an already-sent ancestor.
+            // Children cannot execute remotely until their parent command is present.
             bool deltaTreeIsClosed = brushCommands.All(command =>
-                command.Children.All(child => deltaCommandGuids.Contains(child.Guid)));
+                command.Children.All(child => deltaCommandGuids.Contains(child.Guid)) &&
+                (command.ParentGuid == Guid.Empty ||
+                    deltaCommandGuids.Contains(command.ParentGuid) ||
+                    sentBrushCommandGuids.Contains(command.ParentGuid)));
             if (!deltaTreeIsClosed)
             {
                 foreach (BrushStrokeCommand command in brushCommands)
@@ -1183,15 +1188,29 @@ namespace OpenBrush.Multiplayer
                     item.Command, item.Stream, fullyStreamedRecipients);
             }
 
-            foreach (RemotePlayer player in m_RemotePlayers.List)
+            // Sending yields; room membership can change before the next recipient.
+            int[] fallbackRecipientIds = m_RemotePlayers.List
+                .Where(player => !fullyStreamedRecipients.Contains(player.PlayerId))
+                .Select(player => player.PlayerId)
+                .ToArray();
+            var manager = m_Manager;
+            bool allFallbacksSent = true;
+            foreach (int playerId in fallbackRecipientIds)
             {
-                if (!fullyStreamedRecipients.Contains(player.PlayerId))
+                foreach (BrushStrokeCommand deltaRoot in deltaRoots)
                 {
-                    foreach (BrushStrokeCommand deltaRoot in deltaRoots)
+                    if (manager == null || State != ConnectionState.IN_ROOM || m_Manager != manager)
                     {
-                        await m_Manager.SendCommandToPlayer(deltaRoot, player.PlayerId);
+                        return true;
                     }
+                    if (!IsRemotePlayerStillConnected(playerId)) break;
+                    allFallbacksSent &= await manager.SendCommandToPlayer(
+                        deltaRoot, playerId, rebaseTimestamps: true);
                 }
+            }
+            if (allFallbacksSent)
+            {
+                sentBrushCommandGuids.UnionWith(deltaCommandGuids);
             }
             return true;
         }
@@ -1275,7 +1294,7 @@ namespace OpenBrush.Multiplayer
                     $"[LiveStrokeStreaming] Repair unavailable for stream {streamId}, command {commandGuid}.");
                 return;
             }
-            SendCommandToPlayer(retained.Command, playerId);
+            SendCommandToPlayer(retained.Command, playerId, rebaseTimestamps: true);
         }
 
         public void RequestLiveStrokeRepair(
@@ -1315,6 +1334,14 @@ namespace OpenBrush.Multiplayer
             m_OutgoingLiveStrokesById.Remove(stream.StreamId);
         }
 
+        private void CancelAllOutgoingLiveStrokes()
+        {
+            foreach (PointerScript pointer in m_OutgoingLiveStrokes.Keys.ToList())
+            {
+                CancelLocalLiveStroke(pointer);
+            }
+        }
+
         private void ExpireRetainedLiveStrokeCommands()
         {
             float now = Time.realtimeSinceStartup;
@@ -1343,6 +1370,7 @@ namespace OpenBrush.Multiplayer
         {
             m_LiveStrokeCapablePlayers.Remove(id);
             m_PendingSceneSyncPlayerIds.Remove(id);
+            m_InitialSceneStrokeSnapshots.Remove(id);
             m_LiveStrokePointerCapacities.Remove(id);
             m_Manager?.RemoveLiveStrokePreviewsForPlayer(id);
             foreach (OutgoingLiveStroke stream in m_OutgoingLiveStrokes.Values)
@@ -1352,7 +1380,6 @@ namespace OpenBrush.Multiplayer
             if (m_LocalPlayer.PlayerId == id)
             {
                 m_LocalPlayer = null;
-                Debug.Log("Possible to get here!");
                 return;
             }
 
@@ -1383,11 +1410,18 @@ namespace OpenBrush.Multiplayer
 
             // If the new owner is the local player, set the flag
             if (m_LocalPlayer.PlayerId == newOwner.PlayerId) isUserRoomOwner = true;
-
         }
 
         public async void OnCommandPerformed(BaseCommand command)
         {
+            if (State != ConnectionState.IN_ROOM) return;
+            HashSet<Guid> sentBrushCommandGuids = m_SentBrushCommandGuids;
+            if (EnumerateBrushStrokeCommands(command).Any())
+            {
+                // DetachLine computes user simplification after recording the stroke command.
+                // Resume after that synchronous work before inspecting or serializing drop flags.
+                await Task.Yield();
+            }
             if (State == ConnectionState.IN_ROOM)
             {
                 foreach (BrushStrokeCommand brushCommand in
@@ -1402,7 +1436,11 @@ namespace OpenBrush.Multiplayer
                         return;
                     }
                 }
-                await m_Manager.PerformCommand(command);
+                if (await m_Manager.PerformCommand(command))
+                {
+                    sentBrushCommandGuids.UnionWith(
+                        EnumerateBrushStrokeCommands(command).Select(brushCommand => brushCommand.Guid));
+                }
             }
         }
 
@@ -1435,11 +1473,6 @@ namespace OpenBrush.Multiplayer
             bool sent =
                 await m_Manager.RpcSendManualColocationReferenceToPlayer(
                     reference, playerId);
-            if (sent)
-            {
-                Debug.Log(
-                    $"[ManualColocation] Sent revision {reference.Revision} to late joiner {playerId}.");
-            }
             return sent;
         }
 
@@ -1449,11 +1482,12 @@ namespace OpenBrush.Multiplayer
             ManualColocationManager.m_Instance?.ApplyReceivedReference(reference);
         }
 
-        public async void SendCommandToPlayer(BaseCommand command, int playerID)
+        public async void SendCommandToPlayer(
+            BaseCommand command, int playerID, bool rebaseTimestamps = false)
         {
             if (State == ConnectionState.IN_ROOM)
             {
-                await m_Manager.SendCommandToPlayer(command, playerID);
+                await m_Manager.SendCommandToPlayer(command, playerID, rebaseTimestamps);
             }
         }
 
@@ -1471,10 +1505,22 @@ namespace OpenBrush.Multiplayer
             return Math.Max(localSketchTime, sourceSketchTimeMs / 1000.0);
         }
 
+        internal static bool CalculateInitialRoomVoiceEnabled(
+            bool isRoomOwner, bool requestedRoomVoiceEnabled)
+        {
+            return isRoomOwner && requestedRoomVoiceEnabled;
+        }
+
         public void ApplySketchTimeSync(uint sourceSketchTimeMs)
         {
-            App.Instance.CurrentSketchTime = CalculateSynchronizedSketchTime(
-                App.Instance.CurrentSketchTime, sourceSketchTimeMs);
+            double currentSketchTime = App.Instance.CurrentSketchTime;
+            double synchronizedSketchTime = CalculateSynchronizedSketchTime(
+                currentSketchTime, sourceSketchTimeMs);
+            if (synchronizedSketchTime > currentSketchTime)
+            {
+                SketchMemoryScript.m_Instance.EndCurrentStrokeTimeSession();
+            }
+            App.Instance.CurrentSketchTime = synchronizedSketchTime;
         }
 
         public async Task<bool> CheckCommandReception(BaseCommand command, int id)
@@ -1513,24 +1559,10 @@ namespace OpenBrush.Multiplayer
             }
         }
 
-        async void ShareAnchors()
-        {
-#if OCULUS_SUPPORTED
-            Debug.Log($"sharing to {oculusPlayerIds.Count} Ids");
-            var success = await OculusMRController.m_Instance.m_SpatialAnchorManager.ShareAnchors(oculusPlayerIds);
-
-            if (success)
-            {
-                if (!OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid.Equals(String.Empty))
-                {
-                    await m_Manager.RpcSyncToSharedAnchor(OculusMRController.m_Instance.m_SpatialAnchorManager.AnchorUuid);
-                }
-            }
-#endif // OCULUS_SUPPORTED
-        }
-
         private void OnConnectionHandlerDisconnected()
         {
+            ++m_RoomVoicePolicyGeneration;
+            m_HasReceivedRoomVoicePolicy = false;
             foreach (RemotePlayer player in m_RemotePlayers.List.ToList())
             {
                 m_Manager?.RemoveLiveStrokePreviewsForPlayer(player.PlayerId);
@@ -1539,10 +1571,12 @@ namespace OpenBrush.Multiplayer
             m_OutgoingLiveStrokesBySeed.Clear();
             m_OutgoingLiveStrokesById.Clear();
             m_RetainedLiveStrokeCommands.Clear();
+            m_SentBrushCommandGuids = new HashSet<Guid>();
             m_LocalPlayer = null;// Clean up local player reference
             m_RemotePlayers.ClearList();// Clean up remote player references
             m_LiveStrokeCapablePlayers.Clear();
             m_PendingSceneSyncPlayerIds.Clear();
+            m_InitialSceneStrokeSnapshots.Clear();
             m_LiveStrokePointerCapacities.Clear();
             IsLiveStrokeStreamingEnabled = false;
             IsLiveStrokeRoomStateReady = false;
@@ -1590,8 +1624,35 @@ namespace OpenBrush.Multiplayer
             return appliedLocally && sentToRoom;
         }
 
+        private async Task ApplyLegacyOwnerVoiceFallback(int generation)
+        {
+            await Task.Delay(k_CapabilityDiscoveryTimeoutMs);
+            while (generation == m_RoomVoicePolicyGeneration &&
+                State == ConnectionState.IN_ROOM && !isUserRoomOwner &&
+                !m_HasReceivedRoomVoicePolicy)
+            {
+                RemotePlayer owner = m_RemotePlayers.List.FirstOrDefault(player =>
+                    m_Manager.GetPlayerRoomOwnershipStatus(player.PlayerId));
+                if (owner == null)
+                {
+                    // Ownership data may arrive after the room join. Keep waiting for it
+                    // rather than enabling voice while a modern owner's policy is unknown.
+                    await Task.Delay(250);
+                    continue;
+                }
+                if (IsPlayerLiveStrokeCompatible(owner.PlayerId)) return;
+                // Legacy owners cannot advertise the new room voice policy. Preserve their
+                // historical voice behavior while still respecting the local voice toggle.
+                m_IsRoomVoiceEnabled = true;
+                CurrentRoomData.voiceDisabled = false;
+                await ApplyVoiceEnabled(m_IsLocalVoiceEnabled);
+                return;
+            }
+        }
+
         public async void ApplyRoomVoiceEnabled(bool enabled)
         {
+            m_HasReceivedRoomVoicePolicy = true;
             CurrentRoomData.voiceDisabled = !enabled;
             m_IsRoomVoiceEnabled = enabled;
             if (!await ApplyVoiceEnabled(m_IsLocalVoiceEnabled && m_IsRoomVoiceEnabled))

@@ -19,7 +19,7 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using Newtonsoft.Json;
-using ICSharpCode.SharpZipLib.Zip;
+using Unity.SharpZipLib.Zip;
 using static TiltBrush.SketchWriter;
 
 namespace TiltBrush
@@ -139,22 +139,13 @@ namespace TiltBrush
 
             bool hasAuthor = !string.IsNullOrEmpty(App.UserConfig.User.Author);
 
-            return new SketchMetadata
+            var metadata = new SketchMetadata
             {
                 //      BrushIndex = brushGuids.ToArray(), // Need to do this on actual save!
                 EnvironmentPreset = SceneSettings.m_Instance.GetDesiredPreset().m_Guid.ToString("D"),
                 AudioPreset = null,
                 ThumbnailCameraTransformInRoomSpace = xfThumbnail_RS,
                 Authors = hasAuthor ? new[] { App.UserConfig.User.Author } : null,
-                ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping),
-                LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping),
-                ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping),
-                Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping),
-                TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping),
-                Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping),
-                GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping),
-                Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror(),
-                GuideIndex = MetadataUtils.GetGuideIndex(m_GroupIdMapping),
                 Palette = CustomColorPaletteStorage.m_Instance.GetPaletteForSaving(),
                 Lights = LightsControlScript.m_Instance.CustomLights,
                 Environment = SceneSettings.m_Instance.CustomEnvironment,
@@ -162,7 +153,6 @@ namespace TiltBrush
                 SourceId =
                     SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
-                CameraPaths = MetadataUtils.GetCameraPaths(),
                 Layers = MetadataUtils.GetLayers(),
                 StrokeTimeSessions =
                     SketchMemoryScript.m_Instance.GetStrokeTimeSessionsForSaving(),
@@ -171,6 +161,24 @@ namespace TiltBrush
                 ApplicationVersion = App.Config.m_VersionNumber,
                 PostProduction = GetPostProductionMetadata(),
             };
+
+            // Saved strokes contain no widgets, even when the selection includes widgets.
+            if (!m_SelectedOnly)
+            {
+                metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping);
+                metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping);
+                metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping);
+                metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping);
+                metadata.TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping);
+                metadata.SoundClips = MetadataUtils.GetTiltSoundClip(m_GroupIdMapping);
+                metadata.Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping);
+                metadata.GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping);
+                metadata.Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror();
+                metadata.GuideIndex = MetadataUtils.GetGuideIndex(m_GroupIdMapping);
+                metadata.CameraPaths = MetadataUtils.GetCameraPaths();
+            }
+
+            return metadata;
         }
 
         // Returns null (rather than an all-default block) so ordinary sketches that
@@ -253,7 +261,7 @@ namespace TiltBrush
             if (hiResTexture != null)
             {
                 tool.CurrentCameraRigState = iconXform;
-                saveIconScreenshotManager.RenderToTexture(hiResTexture);
+                saveIconScreenshotManager.RenderToTexture(hiResTexture, includePostProcessing: true);
                 yield return null;
             }
 
@@ -266,7 +274,7 @@ namespace TiltBrush
                 for (int i = 0; i < gifTextures.Length; ++i)
                 {
                     m_SaveIconCapture.SetSaveIconTransformForGifFrame(basePos, baseRot, i);
-                    saveIconScreenshotManager.RenderToTexture(gifTextures[i]);
+                    saveIconScreenshotManager.RenderToTexture(gifTextures[i], includePostProcessing: true);
                     yield return null;
                 }
             }

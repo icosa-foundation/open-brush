@@ -476,6 +476,31 @@ public class OBJ : MonoBehaviour
         }
     }
 
+    /// Looks up one of the materials wired into BrushCatalog.m_BlocksMaterials by durable
+    /// name. Indexing that array by position is fragile - the entries are ordered by
+    /// whoever last edited the scene - so match on the descriptor instead.
+    private static Material GetTemplateMaterial(string durableName)
+    {
+        var blocksMaterials = BrushCatalog.m_Instance == null
+            ? null
+            : BrushCatalog.m_Instance.m_BlocksMaterials;
+        if (blocksMaterials == null)
+        {
+            Debug.LogError("Brush catalog is not initialized. Cannot get material: " + durableName);
+            return null;
+        }
+        foreach (var entry in blocksMaterials)
+        {
+            var desc = entry.brushDescriptor;
+            if (desc != null && desc.m_DurableName == durableName)
+            {
+                return desc.Material;
+            }
+        }
+        Debug.LogError("No material named " + durableName + " in BrushCatalog.m_BlocksMaterials.");
+        return null;
+    }
+
     private Material GetMaterial(MaterialData md)
     {
         Material m;
@@ -495,31 +520,27 @@ public class OBJ : MonoBehaviour
         // m.SetColor("_SpecColor", md.specular);
         float roughness = Mathf.Sqrt(2f / (md.shininess + 2));
 
-        if (md.illumType is 2 or 3 or 5)
+        // These clone the PbrTemplate / PbrTransparentTemplate materials wired into
+        // BrushCatalog.m_BlocksMaterials. The old code did Shader.Find("Poly/Pbr...")
+        // instead, which only ever resolved to the legacy built-in surface shaders in
+        // ThirdParty/TiltBrushToolkit/Materials. Those have no URP LightMode pass so
+        // URP never drew them, and because nothing referenced them they were stripped
+        // from player builds, making Shader.Find return null there.
+        Material opaqueTemplate = GetTemplateMaterial("PbrTemplate");
+        Material blendTemplate = GetTemplateMaterial("PbrTransparentTemplate");
+
+        if (md.illumType is 4 or 6 or 7 or 9)
         {
-            string shaderName = "Poly/PbrOpaqueDoubleSided";
-            m = new Material(Shader.Find(shaderName));
-            m.SetFloat("_RoughnessFactor", roughness);
-        }
-        else if (md.illumType is 4 or 6 or 7 or 9)
-        {
-            string shaderName = "Poly/PbrBlendDoubleSided";
-            m = new Material(Shader.Find(shaderName));
+            if (blendTemplate == null) { return null; }
+            m = new Material(blendTemplate);
             md.diffuse.a = md.alpha;
-            if (md.illumType is 9)
-            {
-                m.SetFloat("_RoughnessFactor", roughness);
-            }
-            else
-            {
-                m.SetFloat("_RoughnessFactor", 1f);
-            }
+            m.SetFloat("_RoughnessFactor", md.illumType is 9 ? roughness : 1f);
         }
         else
         {
-            string shaderName = "Poly/PbrOpaqueDoubleSided";
-            m = new Material(Shader.Find(shaderName));
-            m.SetFloat("_RoughnessFactor", 1f);
+            if (opaqueTemplate == null) { return null; }
+            m = new Material(opaqueTemplate);
+            m.SetFloat("_RoughnessFactor", md.illumType is 2 or 3 or 5 ? roughness : 1f);
         }
 
         if (md.diffuseTex != null)
@@ -676,7 +697,13 @@ public class OBJ : MonoBehaviour
         }
         else
         {
-            materials.Add("default", new Material(Shader.Find("VertexLit")));
+            // Shader.Find("VertexLit") used to be the fallback, but that is a built-in
+            // legacy shader which does not exist under URP, so it returned null.
+            Material fallback = GetTemplateMaterial("PbrTemplate");
+            if (fallback != null)
+            {
+                materials.Add("default", new Material(fallback));
+            }
         }
 
         GameObject[] ms = new GameObject[buffer.numObjects];
@@ -706,32 +733,32 @@ public class OBJ : MonoBehaviour
 
     private Material GetBlocksMaterial(MaterialData md)
     {
-        if (BrushCatalog.m_Instance.m_BlocksMaterials == null)
-        {
-            Debug.LogError("Brush catalog is not initialized. Cannot get Blocks material.");
-            return null;
-        }
+        // Blocks writes these ids into the mtl as "#!openblocks-material:<n>".
+        // In OpenBlocks MaterialRegistry, GLASS_ID = rawColors.Length (24) and
+        // GEM_ID = GLASS_ID + 1 (25); everything below that is a plain colour.
+        // This used to index m_BlocksMaterials positionally as [1] = glass and
+        // [2] = gem, but the scene orders them BlocksPaper, BlocksGem, BlocksGlass,
+        // so glass and gem came out swapped.
+        const int kGlassId = 24;
+        const int kGemId = 25;
 
-        Material mat = null;
-        var blocksMaterials = BrushCatalog.m_Instance.m_BlocksMaterials;
-        var paper = blocksMaterials[0].brushDescriptor.Material;
-        var glass = blocksMaterials[1].brushDescriptor.Material;
-        var gem = blocksMaterials[2].brushDescriptor.Material;
-
-        if (md.blocksMaterialIndex == 24)
+        Material source;
+        if (md.blocksMaterialIndex == kGlassId)
         {
-            mat = new Material(glass);
+            source = GetTemplateMaterial("BlocksGlass");
         }
-        else if (md.blocksMaterialIndex == 25)
+        else if (md.blocksMaterialIndex == kGemId)
         {
-            mat = new Material(gem);
+            source = GetTemplateMaterial("BlocksGem");
         }
         else
         {
-            mat = new Material(paper);
-            mat.SetColor("_Color", md.diffuse);
-
+            source = GetTemplateMaterial("BlocksBasic");
+            if (source == null) { return null; }
+            var paperMat = new Material(source);
+            paperMat.SetColor("_Color", md.diffuse);
+            return paperMat;
         }
-        return mat;
+        return source == null ? null : new Material(source);
     }
 }

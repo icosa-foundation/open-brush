@@ -17,15 +17,13 @@ MonoBehaviour:
   m_DurableName: Spikes
   m_CreationVersion: 16.0
   m_ShaderVersion: 10.0
-  m_BrushPrefab: {fileID: 1000010618154826, guid: d64b7a73ce0b30941b03e7d9fbb8367e,
-    type: 3}
+  m_BrushPrefab: {fileID: 1000010618154826, guid: d64b7a73ce0b30941b03e7d9fbb8367e, type: 3}
   m_Tags:
   - default
   m_Nondeterministic: 0
   m_Supersedes: {fileID: 0}
   m_LooksIdentical: 0
   m_ButtonTexture: {fileID: 2800000, guid: cb6b7ca16015bea4296953a3a21293e0, type: 3}
-  m_Description: BRUSH_SPIKES
   m_LocalizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
@@ -47,7 +45,9 @@ MonoBehaviour:
   m_VolumeVelocityRangeMultiplier: 1.5
   m_AudioReactive: 0
   m_ButtonAudio: {fileID: 0}
-  m_Material: {fileID: 2100000, guid: fbc5a22330a50414eb2dffd3d2cc9282, type: 2}
+  m_Material: {fileID: 2100000, guid: b96680bd138273a4bbcf96685df738a6, type: 2}
+  m_TestingMaterial: {fileID: 0}
+  m_OverlayMaterial: {fileID: 0}
   m_TextureAtlasV: 1
   m_TileRate: 1
   m_UseBloomSwatchOnColorPicker: 0

@@ -49,16 +49,20 @@ namespace TiltBrush
 
         public void ChangeDirectory(string newPath)
         {
+            StopWatchingCurrentDirectory();
             m_CurrentSavedStrokesDirectory = newPath;
             m_SavedStrokeFiles = new List<SavedStrokeFile>();
             m_ChangedFiles = new HashSet<string>();
 
-            StartCoroutine(ScanReferenceDirectory());
+            // The sketch set is a library-wide tree index, so wait for it to rebuild before
+            // this folder page is populated from it.
+            RequestScanAfterSketchSetRefresh();
 
             if (Directory.Exists(m_CurrentSavedStrokesDirectory))
             {
                 m_FileWatcher = new FileWatcher(m_CurrentSavedStrokesDirectory);
-                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite;
+                m_FileWatcher.NotifyFilter = NotifyFilters.LastWrite
+                    | NotifyFilters.FileName | NotifyFilters.DirectoryName;
                 m_FileWatcher.FileChanged += OnDirectoryChanged;
                 m_FileWatcher.FileCreated += OnDirectoryChanged;
                 m_FileWatcher.FileDeleted += OnDirectoryChanged;
@@ -71,7 +75,33 @@ namespace TiltBrush
 
         public bool IsSubDirectoryOfHome()
         {
-            return m_CurrentSavedStrokesDirectory.StartsWith(HomeDirectory);
+            return IsPathWithinDirectory(HomeDirectory, m_CurrentSavedStrokesDirectory);
+        }
+
+        /// True when path is root or lives beneath it. Compares whole path segments, so
+        /// a sibling whose name merely starts with root's is not treated as contained.
+        internal static bool IsPathWithinDirectory(string root, string path)
+        {
+            string fullRoot = Path.GetFullPath(root).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string fullPath = Path.GetFullPath(path).TrimEnd(
+                Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            StringComparison comparison = Path.DirectorySeparatorChar == '\\'
+                ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+            return fullPath.Equals(fullRoot, comparison) ||
+                fullPath.StartsWith(fullRoot + Path.DirectorySeparatorChar, comparison);
+        }
+
+        /// True when path is a direct child of directory, one level down and no further.
+        internal static bool IsDirectChildPath(string directory, string path)
+        {
+            return string.Equals(
+                Path.GetFullPath(Path.GetDirectoryName(path) ?? "").TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                Path.GetFullPath(directory).TrimEnd(
+                    Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar),
+                Path.DirectorySeparatorChar == '\\'
+                    ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
         }
 
         public string GetCurrentDirectory()
@@ -87,7 +117,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
-            m_FileWatcher.EnableRaisingEvents = false;
+            StopWatchingCurrentDirectory();
 
             // Clean up event subscription if still active
             if (m_WaitingForSketchSetUpdate)
@@ -135,23 +165,50 @@ namespace TiltBrush
 
         private void OnDirectoryChanged(object source, FileSystemEventArgs e)
         {
-            m_DirectoryScanRequired = true;
+            // A watcher replaced by a directory change can still deliver an event.
+            if (!ReferenceEquals(source, m_FileWatcher)) { return; }
+            RequestScanAfterSketchSetRefresh();
+        }
+
+        /// This catalog holds no index of its own - its scan copies FileSketchSet's list - so it
+        /// must run after that set has re-read the folder, never alongside it. Scanning first
+        /// copies the old list, and because the scan clears its own flag while nothing is
+        /// subscribed to OnChanged, the panel then stays stale until some later filesystem event
+        /// happens to trigger another pass.
+        private void RequestScanAfterSketchSetRefresh()
+        {
+            if (m_WaitingForSketchSetUpdate) { return; }
+            var sketchSet = SketchCatalog.m_Instance?.GetSet(SketchSetType.SavedStrokes);
+            if (sketchSet == null)
+            {
+                // Nothing to wait for. Scanning on the next Update is worse than waiting but
+                // much better than never refreshing at all.
+                m_DirectoryScanRequired = true;
+                return;
+            }
+            sketchSet.OnChanged += OnFileSketchSetChanged;
+            m_WaitingForSketchSetUpdate = true;
+            // Subscribe before requesting so an independent watcher cannot complete the
+            // refresh before this catalog is listening for it.
+            sketchSet.RequestRefresh();
+        }
+
+        private void StopWatchingCurrentDirectory()
+        {
+            if (m_FileWatcher == null) { return; }
+            m_FileWatcher.EnableRaisingEvents = false;
+            m_FileWatcher.FileChanged -= OnDirectoryChanged;
+            m_FileWatcher.FileCreated -= OnDirectoryChanged;
+            m_FileWatcher.FileDeleted -= OnDirectoryChanged;
+            m_FileWatcher.Dispose();
+            m_FileWatcher = null;
         }
 
         public void NotifyFileCreated(string fullpath)
         {
-            if (fullpath.StartsWith(m_CurrentSavedStrokesDirectory))
+            if (IsPathWithinDirectory(m_CurrentSavedStrokesDirectory, fullpath))
             {
-                // Don't scan immediately - wait for FileSketchSet to process the file
-                if (!m_WaitingForSketchSetUpdate)
-                {
-                    var sketchSet = SketchCatalog.m_Instance.GetSet(SketchSetType.SavedStrokes);
-                    if (sketchSet != null)
-                    {
-                        sketchSet.OnChanged += OnFileSketchSetChanged;
-                        m_WaitingForSketchSetUpdate = true;
-                    }
-                }
+                RequestScanAfterSketchSetRefresh();
             }
         }
 
@@ -191,7 +248,10 @@ namespace TiltBrush
             for (int i = 0; i < catalog.NumSketches; i++)
             {
                 var sketchFileInfo = catalog.GetSketchSceneFileInfo(i);
-                if (!sketchFileInfo.FullPath.StartsWith(m_CurrentSavedStrokesDirectory)) continue;
+                if (!IsInCurrentDirectory(sketchFileInfo))
+                {
+                    continue;
+                }
                 catalog.GetSketchIcon(i, out var icon, out _, out _);
                 var savedStrokeFile = new SavedStrokeFile(i, sketchFileInfo, icon);
                 m_SavedStrokeFiles.Add(savedStrokeFile);
@@ -199,6 +259,18 @@ namespace TiltBrush
 
             m_ScanningDirectory = false;
             CatalogChanged?.Invoke();
+        }
+
+        // The sketch set indexes the whole Saved Strokes tree, because saved strokes may
+        // be organised into subfolders. This panel is a folder page, so it shows the
+        // direct children of the selected folder only.
+        private bool IsInCurrentDirectory(SceneFileInfo fileInfo)
+        {
+            if (fileInfo == null)
+            {
+                return false;
+            }
+            return IsDirectChildPath(m_CurrentSavedStrokesDirectory, fileInfo.FullPath);
         }
     }
 }

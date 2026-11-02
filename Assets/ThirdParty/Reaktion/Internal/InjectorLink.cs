@@ -20,6 +20,24 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
+// UAC1002 reports this type's [Serializable] hierarchy as incomplete, because the
+// GenericLink<T> and GenericLinkBase base classes lack the attribute while holding all
+// the link state (_mode, _reference, _name, _forceUpdate).
+//
+// In practice Unity only requires [Serializable] on the concrete type and serializes
+// inherited fields regardless. Confirmed by reading the serialized data rather than
+// assuming: Assets/Prefabs/Pointer_Main.prefab stores
+//     reaktor:
+//       _mode: 3
+//       _reference: {fileID: 0}
+//       _name: SystemAudio
+// so the link survives correctly and the analyzer is being over-strict here.
+//
+// A pragma is used rather than an .editorconfig entry because Unity compiles through
+// Bee and does not pass the analyzer config through, so severity settings there have
+// no effect.
+#pragma warning disable UAC1002
+
 using UnityEngine;
 using System.Collections;
 

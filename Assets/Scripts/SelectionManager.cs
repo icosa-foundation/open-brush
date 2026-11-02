@@ -17,6 +17,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace TiltBrush
 {
@@ -325,6 +326,10 @@ namespace TiltBrush
         {
             get
             {
+                if (GraphicsSettings.currentRenderPipeline != null)
+                {
+                    return true;
+                }
                 return !m_SelectionTool.IsHot || ShouldRemoveFromSelection();
             }
         }
@@ -491,7 +496,10 @@ namespace TiltBrush
             if (oldGroup != SketchGroupTag.None)
             {
                 // Remove this stroke from the dictionary entry for the old group.
-                m_GroupToStrokes[oldGroup].Remove(stroke);
+                if (m_GroupToStrokes.TryGetValue(oldGroup, out var oldGroupStrokes))
+                {
+                    oldGroupStrokes.Remove(stroke);
+                }
             }
         }
 
@@ -628,6 +636,16 @@ namespace TiltBrush
         // Register highlights for all selected objects
         void RegisterHighlights()
         {
+            if (GraphicsSettings.currentRenderPipeline != null)
+            {
+                foreach (GrabWidget widget in m_SelectedWidgets)
+                {
+                    widget.RegisterHighlight();
+                }
+                App.Scene.SelectionCanvas.RegisterHighlight();
+                return;
+            }
+
             bool showHighlight =
                 !SketchControlsScript.m_Instance.IsUserAbleToInteractWithAnyWidget() ||
                 SketchControlsScript.m_Instance.IsUserIntersectingWithSelectionWidget() ||
@@ -638,9 +656,7 @@ namespace TiltBrush
                 {
                     widget.RegisterHighlight();
                 }
-#if !(UNITY_ANDROID || UNITY_IOS)
                 App.Scene.SelectionCanvas.RegisterHighlight();
-#endif
             }
         }
 
@@ -700,7 +716,7 @@ namespace TiltBrush
         {
             if (m_bSelectionWidgetNeedsUpdate)
             {
-                m_SelectionWidget.SelectionTransform = SelectionTransform;
+                m_SelectionWidget.SelectionTransform = SelectionTransformToScene(SelectionTransform);
                 if (HasSelection)
                 {
                     Bounds selectionBounds;
@@ -747,6 +763,7 @@ namespace TiltBrush
                     AudioManager.m_Instance.SelectionHighlightLoop(false);
                 }
                 m_bSelectionWidgetNeedsUpdate = false;
+                SketchControlsScript.m_Instance.RefreshGrabWidgetControllerInfoIfHolding(m_SelectionWidget);
             }
         }
 
@@ -1094,6 +1111,25 @@ namespace TiltBrush
             m_bSelectionWidgetNeedsUpdate = true;
         }
 
+        public bool TryIntersectNonGpuSelectionWidgets(Vector3 center_GS, float radius_GS,
+            out float score)
+        {
+            score = -1.0f;
+            foreach (GrabWidget widget in m_SelectedWidgets)
+            {
+                if (widget is not ModelWidget modelWidget ||
+                    modelWidget.HasGPUIntersectionObject() ||
+                    !modelWidget.TryIntersectGsplat(center_GS, radius_GS, out float widgetScore))
+                {
+                    continue;
+                }
+
+                score = Mathf.Max(score, widgetScore);
+            }
+
+            return score >= 0.0f;
+        }
+
         public bool IsStrokeSelected(Stroke stroke)
         {
             return m_SelectedStrokes.Contains(stroke);
@@ -1154,7 +1190,23 @@ namespace TiltBrush
 
         private void OnSelectionTransformed(TrTransform xf_SS)
         {
-            SelectionTransform = xf_SS;
+            // The widget's SelectionTransform is in scene space, but
+            // SelectionManager.SelectionTransform applies the delta relative
+            // to the ActiveCanvas. Conjugate by the canvas's scene-space pose
+            // to convert between the two frames.
+            SelectionTransform = SceneToSelectionTransform(xf_SS);
+        }
+
+        public TrTransform SelectionTransformToScene(TrTransform xf)
+        {
+            TrTransform canvasPose_SS = App.Scene.AsScene[App.ActiveCanvas.transform];
+            return canvasPose_SS * xf * canvasPose_SS.inverse;
+        }
+
+        public TrTransform SceneToSelectionTransform(TrTransform xf_SS)
+        {
+            TrTransform canvasPose_SS = App.Scene.AsScene[App.ActiveCanvas.transform];
+            return canvasPose_SS.inverse * xf_SS * canvasPose_SS;
         }
 
         Bounds GetBoundsOfSelectedWidgets_SelectionCanvasSpace()
@@ -1186,6 +1238,13 @@ namespace TiltBrush
                 CurrentSnapAngleIndex != 0 ||
                 CurrentSnapGridIndex != 0
             );
+        }
+
+        public bool IsQuickSnapPressed(InputManager.ControllerName controller)
+        {
+            return InputManager.Controllers[(int)controller].GetCommand(
+                InputManager.SketchCommands.MenuContextClick) &&
+                SketchControlsScript.m_Instance.ShouldRespondToPadInput(controller);
         }
 
         public void SetSnappingAngle(string angleAsString)
@@ -1267,17 +1326,38 @@ namespace TiltBrush
 
         public Quaternion QuantizeAngle(Quaternion rotation)
         {
-            var snapAngle = SnappingAngle;
+            return QuantizeAngle(rotation, SnappingAngle, useEnabledAxes: true);
+        }
+
+        public Quaternion QuantizeAngle(
+            Quaternion rotation, float snapAngle, bool useEnabledAxes)
+        {
             if (snapAngle == 0) return rotation;
             float round(float val) { return Mathf.Round(val / snapAngle) * snapAngle; }
 
             Vector3 euler = rotation.eulerAngles;
             euler = new Vector3(
-                m_EnableSnapRotationX ? round(euler.x) : euler.x,
-                m_EnableSnapRotationY ? round(euler.y) : euler.y,
-                m_EnableSnapRotationZ ? round(euler.z) : euler.z
+                !useEnabledAxes || m_EnableSnapRotationX ? round(euler.x) : euler.x,
+                !useEnabledAxes || m_EnableSnapRotationY ? round(euler.y) : euler.y,
+                !useEnabledAxes || m_EnableSnapRotationZ ? round(euler.z) : euler.z
             );
             return Quaternion.Euler(euler);
+        }
+
+        public Quaternion QuantizeAngle_CS(Quaternion rotation_CS)
+        {
+            return QuantizeAngle_CS(rotation_CS, SnappingAngle, useEnabledAxes: true);
+        }
+
+        public Quaternion QuantizeAngle_CS(
+            Quaternion rotation_CS, float snapAngle, bool useEnabledAxes)
+        {
+            var canvasPose = App.Scene.ActiveCanvas.Pose;
+            var rotation_SC = Quaternion.Inverse(App.Scene.Pose.rotation) *
+                canvasPose.rotation * rotation_CS;
+            var snappedRotation_SC = QuantizeAngle(rotation_SC, snapAngle, useEnabledAxes);
+            var rotation_GS = App.Scene.Pose.rotation * snappedRotation_SC;
+            return Quaternion.Inverse(canvasPose.rotation) * rotation_GS;
         }
 
         public float ScalarSnap(float val)

@@ -322,7 +322,6 @@ namespace TiltBrush
 
         void OnOperationStackChanged()
         {
-            Debug.Log($"Checking state");
             // An embedded media warning only shows up if the user has tried to upload and there was non-
             // exportable content. So we only need to be concerned with the case that the embedded warning
             // is showing and is no longer relevant.

@@ -59,26 +59,26 @@ namespace OpenBrush.Multiplayer
             onLargeDataReceived -= OnLargeDataReceived;
         }
 
-        public void StartSyncronizationForUser(int id)
+        public void StartSyncronizationForUser(int id, List<Stroke> initialStrokes = null)
         {
 
             switch (m_SyncType)
             {
                 case SyncType.Strokes:
-                    SendStrokesToPlayer(id);
+                    SendStrokesToPlayer(id, initialStrokes);
                     break;
                 case SyncType.Commands:
                     StartCoroutine(SendCommandHistory(id));
                     break;
             }
-
         }
 
         #region Syncronization Logic Strokes
 
-        async void SendStrokesToPlayer(int id)
+        async void SendStrokesToPlayer(int id, List<Stroke> initialStrokes)
         {
-            LinkedList<Stroke> strokes = SketchMemoryScript.m_Instance.GetMemoryList;
+            List<Stroke> strokes = initialStrokes ??
+                SketchMemoryScript.m_Instance.GetMemoryList.ToList();
 
             if (strokes.Count == 0) return;
 
@@ -104,7 +104,6 @@ namespace OpenBrush.Multiplayer
                     : await MultiplayerStrokeSerialization
                         .SerializeAndCompressMemoryListAsync(chunk);
                 MultiplayerManager.m_Instance.SendLargeDataToPlayer(id, strokesData, percentage);
-                //Debug.Log($"Sent {strokesData.Length} bytes of serialized stroke data (batch {(i / chunkSize) + 1}) to player {id}.");
             }
         }
 
@@ -115,7 +114,6 @@ namespace OpenBrush.Multiplayer
             List<Stroke> strokes = await MultiplayerStrokeSerialization
                 .DecompressAndDeserializeContributorMemoryListAsync(largeData);
 
-            Debug.Log($"Successfully deserialized {strokes.Count} strokes.");
 
             if (strokes.Count > 0)
             {
@@ -131,12 +129,10 @@ namespace OpenBrush.Multiplayer
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(c, true);
             }
-
         }
 
         void OnLargeDataReceived(byte[] largeData, int percentage)
         {
-            //Debug.Log($"[Multiplayer Scene Sync]Successfully received {largeData.Length} bytes from the autosave.");
 
             SynchInfoPercentageUpdate(percentage);
             DeserializeReceivedStrokes(largeData, percentage);
@@ -195,7 +191,6 @@ namespace OpenBrush.Multiplayer
             }
 
             _isSendingCommandHistory = false;
-
         }
 
         private static uint GetCurrentSketchTimeMs()
@@ -321,7 +316,6 @@ namespace OpenBrush.Multiplayer
         }
 
         #endregion
-
     }
 
     public enum SyncType

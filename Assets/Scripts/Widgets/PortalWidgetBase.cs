@@ -57,7 +57,7 @@ namespace TiltBrush
             }
         }
 
-        public TrTransform GetSaveTransform()
+        public new TrTransform GetSaveTransform()
         {
             var xf = TrTransform.FromLocalTransform(transform);
             xf.scale = GetSignedWidgetSize();

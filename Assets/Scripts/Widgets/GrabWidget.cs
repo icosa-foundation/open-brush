@@ -776,7 +776,10 @@ namespace TiltBrush
 
         void RegisterWithWidgetManager()
         {
-            if (!m_Registered && WidgetManager.m_Instance != null)
+            // Awake can run before SketchControlsScript calls WidgetManager.Init, so the
+            // manager may exist without its lists. Start registers us once it is ready.
+            if (!m_Registered && WidgetManager.m_Instance != null &&
+                WidgetManager.m_Instance.IsInitialized)
             {
                 WidgetManager.m_Instance.RegisterGrabWidget(gameObject);
                 m_Registered = true;
@@ -1745,7 +1748,7 @@ namespace TiltBrush
 
         virtual public void RegisterHighlight()
         {
-#if !UNITY_ANDROID
+#if !(UNITY_ANDROID || UNITY_IOS)
             if (m_HighlightMeshFilters != null)
             {
                 for (int i = 0; i < m_HighlightMeshFilters.Length; i++)
@@ -1753,8 +1756,9 @@ namespace TiltBrush
                     App.Instance.SelectionEffect.RegisterMesh(m_HighlightMeshFilters[i]);
                 }
             }
-#else
-    m_Highlighted = true;
+#endif
+#if UNITY_ANDROID || UNITY_IOS
+            m_Highlighted = true;
 #endif
         }
 
@@ -1768,8 +1772,9 @@ namespace TiltBrush
                     App.Instance.SelectionEffect.UnregisterMesh(m_HighlightMeshFilters[i]);
                 }
             }
-#else
-    m_Highlighted = false;
+#endif
+#if UNITY_ANDROID || UNITY_IOS
+            m_Highlighted = false;
 #endif
         }
 

@@ -25,7 +25,8 @@ namespace TiltBrush
         public int ImageIndex { get; set; }
 
         // Scripts can define a limited set of images to display in the picker
-        public List<ReferenceImage> ImageSet;
+        // Populated at runtime from the media library.
+        [System.NonSerialized] public List<ReferenceImage> ImageSet;
 
         public ReferenceImage GetImage(int index)
         {

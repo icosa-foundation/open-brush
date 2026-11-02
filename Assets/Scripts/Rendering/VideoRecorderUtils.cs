@@ -24,7 +24,6 @@ namespace TiltBrush
 
     static public class VideoRecorderUtils
     {
-        static private float m_VideoCaptureResolutionScale = 1.0f;
         static private int m_DebugVideoCaptureQualityLevel = -1;
         static private int m_PreCaptureQualityLevel = -1;
 
@@ -55,6 +54,59 @@ namespace TiltBrush
             get { return m_UsingStillFrameFallback; }
         }
 
+        static public bool IsCapturing
+        {
+            get { return m_ActiveVideoRecording != null || m_ActiveStillFrameExporter != null; }
+        }
+
+        static public string ActiveCaptureFilePath
+        {
+            get
+            {
+                if (m_ActiveVideoRecording != null)
+                {
+                    return m_ActiveVideoRecording.FilePath;
+                }
+                if (m_ActiveStillFrameExporter != null)
+                {
+                    return m_ActiveStillFrameExporter.FilePath;
+                }
+                return null;
+            }
+        }
+
+        static public int ActiveCaptureFrameCount
+        {
+            get
+            {
+                if (m_ActiveVideoRecording != null)
+                {
+                    return m_ActiveVideoRecording.FrameCount;
+                }
+                if (m_ActiveStillFrameExporter != null)
+                {
+                    return m_ActiveStillFrameExporter.FrameCount;
+                }
+                return 0;
+            }
+        }
+
+        static public float ActiveCaptureFPS
+        {
+            get
+            {
+                if (m_ActiveVideoRecording != null)
+                {
+                    return (float)m_ActiveVideoRecording.FPS;
+                }
+                if (m_ActiveStillFrameExporter != null)
+                {
+                    return m_ActiveStillFrameExporter.FPS;
+                }
+                return App.UserConfig.Video.FPS;
+            }
+        }
+
         static public int NumFramesInUsdSerializer
         {
             get
@@ -62,7 +114,7 @@ namespace TiltBrush
                 if (m_UsdPathSerializer != null && !m_UsdPathSerializer.IsRecording)
                 {
                     return Mathf.CeilToInt((float)m_UsdPathSerializer.Duration *
-                        (int)m_ActiveVideoRecording.FPS);
+                        (int)ActiveCaptureFPS);
                 }
                 return 0;
             }
@@ -112,6 +164,12 @@ namespace TiltBrush
                     m_ActiveStillFrameExporter.CaptureFrame(currentTime);
                 }
             }
+            else if (m_UsdPathSerializer != null && m_UsingStillFrameFallback &&
+                m_ActiveStillFrameExporter != null)
+            {
+                // Offline render: the camera has been moved along the path for this frame.
+                m_ActiveStillFrameExporter.CaptureFrame((float)m_UsdPathSerializer.Time);
+            }
         }
 
         static public bool StartVideoCapture(string filePath, VideoRecorder recorder,
@@ -140,8 +198,19 @@ namespace TiltBrush
 
             if (stillFrameCapture)
             {
-                return StartStillFrameSequenceCapture(filePath, recorder, usdPathSerializer);
+                return StartStillFrameSequenceCapture(filePath, recorder, usdPathSerializer, offlineRender);
             }
+
+#if UNITY_EDITOR_LINUX || (!UNITY_EDITOR && UNITY_STANDALONE_LINUX)
+            if (FfmpegPipe.GetFfmpegExe() == null)
+            {
+                const string message = "FFmpeg was not found on PATH. Install FFmpeg using your distribution's package manager, then restart Open Brush and retry.";
+                Debug.LogError($"[LinuxFFmpeg] {message}");
+                OutputWindowScript.ReportFileSaved(message, null,
+                    OutputWindowScript.InfoCardSpawnPos.Brush);
+                return false;
+            }
+#endif
 
             // Vertical video is disabled.
             recorder.IsPortrait = false;
@@ -214,7 +283,8 @@ namespace TiltBrush
         }
 
         static private bool StartStillFrameSequenceCapture(string filePath, VideoRecorder recorder,
-                                                          UsdPathSerializer usdPathSerializer)
+                                                          UsdPathSerializer usdPathSerializer,
+                                                          bool offlineRender)
         {
             // Get or create the still frame exporter component
             StillFrameSequenceExporter exporter = recorder.gameObject.GetComponent<StillFrameSequenceExporter>();
@@ -223,9 +293,10 @@ namespace TiltBrush
                 exporter = recorder.gameObject.AddComponent<StillFrameSequenceExporter>();
             }
 
-            float fps = App.UserConfig.Video.FPS;
+            float fps = offlineRender ? App.UserConfig.Video.OfflineFPS : App.UserConfig.Video.FPS;
 
-            if (!exporter.StartCapture(filePath, fps))
+            // Offline renders step time by exactly one frame per update, so every update is a frame.
+            if (!exporter.StartCapture(filePath, fps, captureEveryFrame: offlineRender))
             {
                 OutputWindowScript.ReportFileSaved("Failed to start still frame sequence capture!", null,
                     OutputWindowScript.InfoCardSpawnPos.Brush);
@@ -250,8 +321,25 @@ namespace TiltBrush
                 wrapper.SuperSampling = m_SuperSampling;
             }
 
-            // Handle USD path serialization for camera path recording
+            // Handle USD path serialization: play back the path for offline renders, record it otherwise.
             m_UsdPathSerializer = usdPathSerializer;
+            if (offlineRender)
+            {
+                recorder.SetCaptureFramerate(Mathf.RoundToInt(fps));
+                m_UsdPath = null;
+                if (m_UsdPathSerializer != null && m_UsdPathSerializer.Load(App.Config.m_VideoPathToRender))
+                {
+                    m_UsdPathSerializer.StartPlayback();
+                }
+                else
+                {
+                    Debug.LogWarning("USD Path Serializer failed to load camera path for offline render");
+                    UnityEngine.Object.Destroy(m_UsdPathSerializer);
+                    m_UsdPathSerializer = null;
+                }
+                return true;
+            }
+
             m_UsdPath = SaveLoadScript.m_Instance.SceneFile.Valid ?
                 Path.ChangeExtension(filePath, "usda") : null;
             m_RecordingStopwatch = new System.Diagnostics.Stopwatch();
@@ -280,6 +368,13 @@ namespace TiltBrush
             {
                 // Stop still frame sequence capture
                 m_ActiveStillFrameExporter.StopCapture(saveCapture);
+
+                // Undo the fixed capture framerate set for offline renders.
+                var recorder = m_ActiveStillFrameExporter.gameObject.GetComponent<VideoRecorder>();
+                if (recorder != null)
+                {
+                    recorder.SetCaptureFramerate(0);
+                }
 
                 // Reset render wrapper if it exists
                 var wrapper = m_ActiveStillFrameExporter.gameObject.GetComponent<RenderWrapper>();
@@ -328,7 +423,7 @@ namespace TiltBrush
         /// has just been recorded.
         static void CreateOfflineRenderBatchFile(string sketchFile, string usdaFile)
         {
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+#if UNITY_EDITOR_WIN || (!UNITY_EDITOR && UNITY_STANDALONE_WIN)
             string batFile = Path.ChangeExtension(usdaFile, ".HQ_Render.bat");
             var pathSections = Application.dataPath.Split('/').ToArray();
             var exePath = String.Join("/", pathSections.Take(pathSections.Length - 1).ToArray());
@@ -336,12 +431,15 @@ namespace TiltBrush
             // It would be nice to think of a way to get this to do something sensible in the editor!
             string offlineRenderExePath = Process.GetCurrentProcess().MainModule.FileName;
 
-            string batText = string.Format(
-                "@\"{0}/Support/bin/renderVideo.cmd\" ^\n\t\"{1}\" ^\n\t\"{2}\" ^\n\t\"{3}\"",
-                exePath, sketchFile, usdaFile, offlineRenderExePath);
-            File.WriteAllText(batFile, batText);
-#endif
-#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+            string batText =
+                "@echo off\r\nchcp 65001 >nul\r\n\r\n" +
+                $"call \"{exePath}/Support/bin/renderVideo.cmd\" ^\r\n" +
+                $"  \"{sketchFile}\" ^\r\n" +
+                $"  \"{usdaFile}\" ^\r\n" +
+                $"  \"{offlineRenderExePath}\"\r\n";
+            // cmd.exe needs UTF-8 without a BOM so it can read the code page command first.
+            File.WriteAllText(batFile, batText, new System.Text.UTF8Encoding(false));
+#elif UNITY_EDITOR_OSX || UNITY_EDITOR_LINUX || (!UNITY_EDITOR && (UNITY_STANDALONE_OSX || UNITY_STANDALONE_LINUX))
             string shFile = Path.ChangeExtension(usdaFile, ".HQ_Render.sh");
             var pathSections = Application.dataPath.Split('/').ToArray();
             var exePath = String.Join("/", pathSections.Take(pathSections.Length - 1).ToArray());
@@ -349,10 +447,33 @@ namespace TiltBrush
             // It would be nice to think of a way to get this to do something sensible in the editor!
             string offlineRenderExePath = Process.GetCurrentProcess().MainModule.FileName;
 
-            string batText = $"\"{exePath}/Support/bin/renderVideo.sh\" \\\n\t\"{sketchFile}\" \\\n\t\"{usdaFile}\" \\\n\t\"{offlineRenderExePath}\"";
-            File.WriteAllText(shFile, batText);
+            string batText = $"bash {QuoteBashArgument($"{exePath}/Support/bin/renderVideo.sh")} \\\n\t{QuoteBashArgument(sketchFile)} \\\n\t{QuoteBashArgument(usdaFile)} \\\n\t{QuoteBashArgument(offlineRenderExePath)}";
+            File.WriteAllText(shFile, $"#!/bin/bash\n{batText}\n", new System.Text.UTF8Encoding(false));
+#if UNITY_EDITOR_LINUX || (!UNITY_EDITOR && UNITY_STANDALONE_LINUX)
+            // Allow the generated launcher to be run directly, including paths with spaces or quotes.
+            string quotedShFile = shFile.Replace("\\", "\\\\").Replace("\"", "\\\"");
+            using (var chmod = Process.Start(new ProcessStartInfo
+            {
+                FileName = "chmod",
+                Arguments = $"u+x -- \"{quotedShFile}\"",
+                UseShellExecute = false,
+                CreateNoWindow = true
+            }))
+            {
+                chmod.WaitForExit();
+                if (chmod.ExitCode != 0)
+                {
+                    Debug.LogWarning($"[OfflineRenderLauncher] Could not make {shFile} executable. Run it with bash instead.");
+                }
+            }
+#endif
 #endif
 
+        }
+        // Single quotes preserve shell metacharacters; embedded quotes must be emitted separately.
+        private static string QuoteBashArgument(string value)
+        {
+            return $"'{value.Replace("'", "'\"'\"'")}'";
         }
     }
 } // namespace TiltBrush

@@ -67,6 +67,12 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
   private Dictionary<IExportableMaterial, GlTF_Technique.States> m_techniqueStates =
       new Dictionary<IExportableMaterial, GlTF_Technique.States>();
 
+  // Materials we couldn't export because we have no detailed material info for them.
+  // In practice this means experimental brushes, which aren't in exportManifest.json.
+  // Geometry using these materials is skipped rather than failing the whole export.
+  private HashSet<IExportableMaterial> m_skippedMaterials =
+      new HashSet<IExportableMaterial>();
+
   // Handles low-level write operations into glTF files.
   private GlTF_Globals m_globals;
   // Output path to .gltf file.
@@ -84,6 +90,11 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
 
   // Total number of triangles exported.
   public int NumTris { get; private set; }
+
+  /// Human-readable names of materials whose geometry was omitted from the export
+  /// because no detailed material info was available for them.
+  public IEnumerable<string> SkippedMaterialNames =>
+      m_skippedMaterials.Select(m => m.DurableName).Distinct().OrderBy(n => n);
   public GlTF_Globals G { get { return m_globals; } }
 
   /// Allows the use of absolute http:// URIs; leave this false for maximum compatibility.
@@ -264,6 +275,17 @@ public sealed class GlTF_ScriptableExporter : IDisposable {
       BaseMeshPayload meshPayload,
       [CanBeNull] GlTF_Node parent,
       Matrix4x4? localXf = null) {
+    // Some materials (experimental brushes) have no entry in exportManifest.json, so we can't
+    // describe them in the gltf. Skip their geometry instead of aborting the entire export.
+    if (!meshPayload.exportableMaterial.SupportsDetailedMaterialInfo) {
+      if (m_skippedMaterials.Add(meshPayload.exportableMaterial)) {
+        Debug.LogWarning(
+            $"glTF export: skipping geometry for {meshPayload.exportableMaterial.DurableName}; " +
+            "no detailed material info (not in exportManifest.json).");
+      }
+      return null;
+    }
+
     var node = ExportMeshPayload_NoMaterial(meshPayload, parent, localXf);
 
     if (node != null) {

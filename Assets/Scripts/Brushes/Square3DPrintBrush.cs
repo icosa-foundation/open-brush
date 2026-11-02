@@ -373,40 +373,43 @@ namespace TiltBrush
 
         void AddStartCapVerts(ref Knot cur, Vector3 pos, GeometryBasis gb)
         {
+            Color32 color = cur.color;
             AppendVertSquare(
                 ref cur, pos + gb.widthVectorToBevel - gb.thicknessVectorToBevel - gb.capNormalOffset,
-                m_Color);
+                color);
             AppendVertSquare(
                 ref cur, pos - gb.widthVectorToBevel - gb.thicknessVectorToBevel - gb.capNormalOffset,
-                m_Color);
+                color);
             AppendVertSquare(
                 ref cur, pos - gb.widthVectorToBevel + gb.thicknessVectorToBevel - gb.capNormalOffset,
-                m_Color);
+                color);
             AppendVertSquare(
                 ref cur, pos + gb.widthVectorToBevel + gb.thicknessVectorToBevel - gb.capNormalOffset,
-                m_Color);
+                color);
         }
 
         void AddEndCapVerts(ref Knot cur, Vector3 pos, GeometryBasis gb)
         {
+            Color32 color = cur.color;
             AppendVertSquare(
                 ref cur, pos + gb.widthVectorToBevel - gb.thicknessVectorToBevel + gb.capNormalOffset,
-                m_Color);
+                color);
             AppendVertSquare(
                 ref cur, pos - gb.widthVectorToBevel - gb.thicknessVectorToBevel + gb.capNormalOffset,
-                m_Color);
+                color);
             AppendVertSquare(
                 ref cur, pos - gb.widthVectorToBevel + gb.thicknessVectorToBevel + gb.capNormalOffset,
-                m_Color);
+                color);
             AppendVertSquare(
                 ref cur, pos + gb.widthVectorToBevel + gb.thicknessVectorToBevel + gb.capNormalOffset,
-                m_Color);
+                color);
         }
 
         void AddRingVerts(ref Knot cur, Vector3 pos, GeometryBasis gb)
         {
-            Color32 c1 = m_Color;
-            Color32 c2 = m_Color;
+            Color32 color = cur.color;
+            Color32 c1 = color;
+            Color32 c2 = color;
             if (m_debugShowSurfaceOrientation)
             {
                 c1 = Color.blue;

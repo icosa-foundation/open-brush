@@ -31,6 +31,13 @@ namespace TiltBrush
         [SerializeField] private LocalizedString m_HintDescription;
         [SerializeField] private UIComponentDescription m_HintText;
 
+        // The controller geometries that still use the pre-i18n hint design have a plain
+        // TextMesh rather than a UIComponentDescription. Before f678ff8bf this field was a
+        // TextMesh and SetHintText wrote straight to it; when it was retyped those prefabs
+        // were never re-assigned, so their references went null and dynamic hint text has
+        // been silently dropped on Rift, Cosmos, LogiPen and Zapbox ever since.
+        [SerializeField] private TextMesh m_LegacyHintText;
+
 
         private float m_ActivateSpeed = 6.0f;
         private float m_ActivateTimer;
@@ -56,6 +63,10 @@ namespace TiltBrush
             if (m_HintText)
             {
                 m_HintText.SetDescription(text);
+            }
+            else if (m_LegacyHintText)
+            {
+                m_LegacyHintText.text = text;
             }
         }
 

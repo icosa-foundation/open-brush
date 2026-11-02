@@ -13,16 +13,20 @@
 // limitations under the License.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
     // ReSharper disable once UnusedType.Global
     public static partial class ApiMethods
     {
+        private const float kMinLookDistance_RS = 0.001f;
+
         private static readonly HashSet<string> kSupportedReferenceImageExtensions =
             new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -30,6 +34,7 @@ namespace TiltBrush
                 ".jpeg",
                 ".png",
                 ".hdr",
+                ".exr",
                 ".svg"
             };
 
@@ -61,6 +66,553 @@ namespace TiltBrush
         public static void OpenExportFolder()
         {
             OpenUserFolder(App.UserExportPath());
+        }
+
+        [ApiEndpoint(
+            "capture.snapshot",
+            "Saves a MultiCam snapshot to the user's Snapshots folder",
+            "snapshot.png,1024,768,1,true"
+        )]
+        public static string CaptureSnapshot(
+            string filename,
+            int width,
+            int height,
+            float superSampling,
+            string includePostProcessing = "")
+        {
+            ValidateSnapshotDimensions(width, height, includesSidecars: false);
+
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            if (width <= 0 || width > ODS.HybridCamera.MaxImageWidth)
+            {
+                Debug.LogError(
+                    $"{logPrefix} Width must be between 1 and {ODS.HybridCamera.MaxImageWidth}; received {width}.");
+                return null;
+            }
+
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "snapshot");
+
+            string fullPath = BuildCapturePath(filename, "snapshot.png", ".png");
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            if (rig == null)
+            {
+                Debug.LogError($"{logPrefix} Snapshot failed: MultiCamCaptureRig is missing.");
+                return null;
+            }
+
+            ScreenshotManager rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
+            if (rMgr == null)
+            {
+                Debug.LogError($"{logPrefix} Snapshot failed: snapshot ScreenshotManager is missing.");
+                return null;
+            }
+
+            RenderTexture tmp = null;
+            RenderWrapper wrapper = null;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                rig.gameObject.SetActive(true);
+                rig.EnableCamera(true);
+
+                tmp = rMgr.CreateTemporaryTargetForSave(width, height);
+                wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
+                float ssaaRestore = wrapper != null ? wrapper.SuperSampling : 1f;
+                if (wrapper != null)
+                {
+                    wrapper.SuperSampling = superSampling;
+                }
+
+                try
+                {
+                    rMgr.RenderToTexture(tmp, includePostProcessing: usePostProcessing);
+                }
+                finally
+                {
+                    if (wrapper != null)
+                    {
+                        wrapper.SuperSampling = ssaaRestore;
+                    }
+                }
+
+                using (var fs = new FileStream(fullPath, FileMode.Create))
+                {
+                    ScreenshotManager.Save(fs, tmp, bSaveAsPng: true);
+                }
+
+                Debug.Log(
+                    $"{logPrefix} Saved snapshot path={fullPath} size={width}x{height} " +
+                    $"superSampling={superSampling} post={usePostProcessing}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} Snapshot failed: {e}");
+                return null;
+            }
+            finally
+            {
+                if (tmp != null)
+                {
+                    RenderTexture.ReleaseTemporary(tmp);
+                }
+
+                rig.EnableCamera(App.PlatformConfig.EnableMulticamPreview);
+                rig.gameObject.SetActive(initialRigActive);
+            }
+        }
+
+        [ApiEndpoint(
+            "capture.snapshot360",
+            "Queues a stereo 360 snapshot (top/bottom equirectangular) to the user's Snapshots folder",
+            "snapshot360.png,4096,true"
+        )]
+        public static string CaptureSnapshot360(
+            string filename,
+            int width = 4096,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            if (width <= 0 || width > ODS.HybridCamera.MaxImageWidth)
+            {
+                Debug.LogError(
+                    $"{logPrefix} Width must be between 1 and {ODS.HybridCamera.MaxImageWidth}; received {width}.");
+                return null;
+            }
+
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "snapshot360");
+
+            MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
+            if (cam == null)
+            {
+                return null;
+            }
+
+            string fullPath = BuildCapturePath(filename, "snapshot360.png", ".png");
+            return cam.CaptureSnapshot360ForApi(fullPath, width, usePostProcessing);
+        }
+
+        [ApiEndpoint(
+            "capture.autogif",
+            "Queues an Auto GIF capture to the user's Snapshots folder",
+            "autogif.gif,true"
+        )]
+        public static string CaptureAutoGif(string filename, string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "autogif");
+
+            MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
+            if (cam == null)
+            {
+                return null;
+            }
+
+            string fullPath = BuildCapturePath(filename, "autogif.gif", ".gif");
+            return cam.CaptureAutoGifForApi(fullPath, usePostProcessing);
+        }
+
+        [ApiEndpoint(
+            "capture.timegif",
+            "Queues a Time GIF capture to the user's Snapshots folder",
+            "timegif.gif,true"
+        )]
+        public static string CaptureTimeGif(string filename, string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "timegif");
+
+            MultiCamTool cam = GetMultiCamToolForCaptureApi(logPrefix);
+            if (cam == null)
+            {
+                return null;
+            }
+
+            string fullPath = BuildCapturePath(filename, "timegif.gif", ".gif");
+            return cam.CaptureTimeGifForApi(fullPath, usePostProcessing);
+        }
+
+        [ApiEndpoint(
+            "capture.saveicon",
+            "Renders the save-icon/sketch-thumbnail camera to a PNG in the user's Snapshots folder",
+            "saveicon.png"
+        )]
+        public static string CaptureSaveIcon(string filename)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            string fullPath = BuildCapturePath(filename, "saveicon.png", ".png");
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                SketchControlsScript.m_Instance.GenerateBestGuessSaveIcon();
+                using (var fs = new FileStream(fullPath, FileMode.Create))
+                {
+                    ScreenshotManager.Save(
+                        fs,
+                        SaveLoadScript.m_Instance.GetSaveIconRenderTexture(),
+                        bSaveAsPng: true);
+                }
+
+                Debug.Log($"{logPrefix} Saved save-icon capture path={fullPath}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} Save-icon capture failed: {e}");
+                return null;
+            }
+        }
+
+        [ApiEndpoint(
+            "capture.dropcam",
+            "Renders the spectator/dropcam camera to a PNG in the user's Snapshots folder",
+            "dropcam.png,1024,576,true"
+        )]
+        public static string CaptureDropCam(
+            string filename,
+            int width = 1024,
+            int height = 576,
+            string includePostProcessing = "")
+        {
+            ValidateSnapshotDimensions(width, height, includesSidecars: false);
+
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "dropcam");
+
+            string fullPath = BuildCapturePath(filename, "dropcam.png", ".png");
+            DropCamWidget dropCam = null;
+            bool wasActive = false;
+            Vector3 previousPosition = default;
+            Quaternion previousRotation = default;
+            bool shouldRestoreDropCam = false;
+            try
+            {
+                dropCam = SketchControlsScript.m_Instance.GetDropCampWidget();
+                wasActive = dropCam.gameObject.activeSelf;
+                previousPosition = dropCam.transform.position;
+                previousRotation = dropCam.transform.rotation;
+                shouldRestoreDropCam = true;
+                dropCam.ShowInstantly(true);
+
+                Camera camera = dropCam.GetComponentInChildren<Camera>(includeInactive: true);
+                if (camera == null)
+                {
+                    Debug.LogError($"{logPrefix} Dropcam capture failed: camera is missing.");
+                    return null;
+                }
+
+                RenderCameraToPng(camera, fullPath, width, height, usePostProcessing);
+
+                Debug.Log(
+                    $"{logPrefix} Saved dropcam capture path={fullPath} size={width}x{height} " +
+                    $"post={usePostProcessing}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} Dropcam capture failed: {e}");
+                return null;
+            }
+            finally
+            {
+                if (shouldRestoreDropCam && dropCam != null)
+                {
+                    dropCam.ShowInstantly(wasActive);
+                    if (!wasActive)
+                    {
+                        dropCam.transform.SetPositionAndRotation(
+                            previousPosition, previousRotation);
+                    }
+                }
+            }
+        }
+
+        [ApiEndpoint(
+            "capture.video",
+            "Records a short MultiCam video-camera frame-sequence smoke test into the user's Videos folder",
+            "video.mp4,1.0,true"
+        )]
+        public static string CaptureVideo(
+            string filename,
+            float seconds = 1.0f,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "video");
+
+            string fullPath = BuildCapturePath(filename, "video.mp4", ".mp4", App.VideosPath());
+            string outputDirectory = StillFrameSequenceExporter.GetOutputDirectory(fullPath);
+            App.Instance.StartCoroutine(CaptureVideoCoroutine(
+                fullPath,
+                Mathf.Max(0.1f, seconds),
+                usePostProcessing));
+            Debug.Log(
+                $"{logPrefix} Queued video frame-sequence capture path={outputDirectory} " +
+                $"seconds={seconds} post={usePostProcessing}.");
+            return outputDirectory;
+        }
+
+        [ApiEndpoint(
+            "capture.360",
+            "Queues a 360/ODS snapshot to the user's Snapshots folder",
+            "snapshot360.png,1024,true"
+        )]
+        public static string Capture360(
+            string filename,
+            int width = 1024,
+            string includePostProcessing = "")
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+            bool usePostProcessing = ParseCapturePostProcessingOption(
+                includePostProcessing,
+                logPrefix,
+                "360");
+
+            string safeFilename = Path.GetFileName(filename);
+            if (string.IsNullOrWhiteSpace(safeFilename))
+            {
+                safeFilename = "snapshot360.png";
+            }
+            if (!safeFilename.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+            {
+                safeFilename += ".png";
+            }
+
+            try
+            {
+                TrTransform captureTransform = TrTransform.T(new Vector3(0f, 12f, 3f));
+                AppApiWrapper.Take360Snapshot(
+                    captureTransform,
+                    safeFilename,
+                    width,
+                    usePostProcessing);
+                string fullPath = Path.Combine(App.SnapshotPath(), safeFilename);
+                Debug.Log(
+                    $"{logPrefix} Queued 360 capture path={fullPath} " +
+                    $"width={width} post={usePostProcessing}.");
+                return fullPath;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"{logPrefix} 360 capture failed: {e}");
+                return null;
+            }
+        }
+
+        private static MultiCamTool GetMultiCamToolForCaptureApi(string logPrefix)
+        {
+            if (SketchSurfacePanel.m_Instance == null)
+            {
+                Debug.LogError($"{logPrefix} Capture failed: SketchSurfacePanel is missing.");
+                return null;
+            }
+
+            MultiCamTool cam =
+                SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
+            if (cam == null)
+            {
+                Debug.LogError($"{logPrefix} Capture failed: MultiCamTool is missing.");
+                return null;
+            }
+
+            return cam;
+        }
+
+        private static bool ParseCapturePostProcessingOption(
+            string value,
+            string logPrefix,
+            string captureKind)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return CameraConfig.PostEffects;
+            }
+
+            if (bool.TryParse(value, out bool result))
+            {
+                return result;
+            }
+
+            Debug.LogWarning(
+                $"{logPrefix} Invalid post-processing value '{value}' for {captureKind}; " +
+                $"using CameraConfig.PostEffects={CameraConfig.PostEffects}.");
+            return CameraConfig.PostEffects;
+        }
+
+        private static IEnumerator CaptureVideoCoroutine(
+            string fullPath,
+            float seconds,
+            bool includePostProcessing)
+        {
+            const string logPrefix = "[OB_URP_CAPTURE_API]";
+
+            MultiCamCaptureRig rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
+            bool initialRigActive = rig.gameObject.activeSelf;
+            bool initialVideoObjectActive = rig.IsCaptureObjectEnabled(MultiCamStyle.Video);
+            bool forceFrameSequenceRestore = App.UserConfig.Video.ForceFrameSequenceRender;
+            bool usePngRestore = App.UserConfig.Video.UsePngForFrameSequence;
+            UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
+            VideoRecorder ownedVideoRecording = null;
+            StillFrameSequenceExporter ownedStillFrameExporter = null;
+
+            bool OwnsActiveCapture()
+            {
+                return (ownedVideoRecording != null &&
+                        ReferenceEquals(VideoRecorderUtils.ActiveVideoRecording, ownedVideoRecording)) ||
+                    (ownedStillFrameExporter != null &&
+                     ReferenceEquals(VideoRecorderUtils.ActiveStillFrameExporter, ownedStillFrameExporter));
+            }
+
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                rig.gameObject.SetActive(true);
+                rig.EnableCaptureObject(MultiCamStyle.Video, true);
+
+                ScreenshotManager manager = rig.ManagerFromStyle(MultiCamStyle.Video);
+                VideoRecorder recorder = manager.GetComponent<VideoRecorder>();
+                Camera camera = manager.LeftEye;
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    postProcessingState =
+                        UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                            camera, includePostProcessing);
+                }
+
+                App.UserConfig.Video.ForceFrameSequenceRender = true;
+                App.UserConfig.Video.UsePngForFrameSequence = true;
+
+                if (!VideoRecorderUtils.StartVideoCapture(fullPath, recorder, null))
+                {
+                    Debug.LogError($"{logPrefix} Video capture failed to start path={fullPath}.");
+                    yield break;
+                }
+
+                ownedVideoRecording = VideoRecorderUtils.ActiveVideoRecording;
+                ownedStillFrameExporter = VideoRecorderUtils.ActiveStillFrameExporter;
+
+                float endTime = Time.time + seconds;
+                float captureTime = 0f;
+                while (Time.time < endTime)
+                {
+                    VideoRecorderUtils.SerializerNewUsdFrame();
+                    if (ownedStillFrameExporter != null)
+                    {
+                        captureTime += 1f / App.UserConfig.Video.FPS;
+                        ownedStillFrameExporter.CaptureFrame(captureTime, includePostProcessing);
+                    }
+                    yield return null;
+                }
+
+                if (OwnsActiveCapture())
+                {
+                    VideoRecorderUtils.StopVideoCapture(saveCapture: true);
+                }
+                ownedVideoRecording = null;
+                ownedStillFrameExporter = null;
+                Debug.Log(
+                    $"{logPrefix} Video frame-sequence capture finished " +
+                    $"path={StillFrameSequenceExporter.GetOutputDirectory(fullPath)} " +
+                    $"seconds={seconds} post={includePostProcessing}.");
+            }
+            finally
+            {
+                if (OwnsActiveCapture())
+                {
+                    VideoRecorderUtils.StopVideoCapture(saveCapture: true);
+                }
+
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
+                }
+
+                App.UserConfig.Video.ForceFrameSequenceRender = forceFrameSequenceRestore;
+                App.UserConfig.Video.UsePngForFrameSequence = usePngRestore;
+                rig.EnableCaptureObject(MultiCamStyle.Video, initialVideoObjectActive);
+                rig.gameObject.SetActive(initialRigActive);
+            }
+        }
+
+        private static void RenderCameraToPng(
+            Camera camera, string fullPath, int width, int height, bool includePostProcessing)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+
+            RenderTexture target = RenderTexture.GetTemporary(CaptureColorUtils.CreateDescriptor(
+                width, height,
+                CaptureColorUtils.GetFormat(camera)));
+            RenderTexture previousTarget = camera.targetTexture;
+            bool previousAllowMsaa = camera.allowMSAA;
+            UrpPostProcessingController.CameraPostProcessingState postProcessingState = default;
+            try
+            {
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    postProcessingState =
+                        UrpPostProcessingController.Instance.BeginCapturePostProcessing(
+                            camera, includePostProcessing);
+                }
+
+                camera.targetTexture = target;
+                camera.allowMSAA = target.antiAliasing > 1;
+                camera.Render();
+                using (var fs = new FileStream(fullPath, FileMode.Create))
+                {
+                    ScreenshotManager.Save(fs, target, bSaveAsPng: true);
+                }
+            }
+            finally
+            {
+                camera.targetTexture = previousTarget;
+                camera.allowMSAA = previousAllowMsaa;
+                if (UrpPostProcessingController.Instance != null)
+                {
+                    UrpPostProcessingController.Instance.EndCapturePostProcessing(postProcessingState);
+                }
+                RenderTexture.ReleaseTemporary(target);
+            }
+        }
+
+        private static string BuildCapturePath(string filename, string defaultFilename, string extension)
+        {
+            return BuildCapturePath(filename, defaultFilename, extension, App.SnapshotPath());
+        }
+
+        private static string BuildCapturePath(
+            string filename, string defaultFilename, string extension, string folder)
+        {
+            string safeFilename = Path.GetFileName(filename);
+            if (string.IsNullOrWhiteSpace(safeFilename))
+            {
+                safeFilename = defaultFilename;
+            }
+            if (!safeFilename.EndsWith(extension, StringComparison.OrdinalIgnoreCase))
+            {
+                safeFilename += extension;
+            }
+
+            return Path.Combine(folder, safeFilename);
         }
 
         private static void OpenUserFolder(string path)
@@ -240,9 +792,20 @@ namespace TiltBrush
         )]
         public static void UserDirection(Vector3 direction)
         {
+            if (App.VrSdk.GetHmdDof() != VrSdk.DoF.None)
+            {
+                return;
+            }
             TrTransform lookPose = App.Scene.Pose;
+            Vector3 userPosition = lookPose.inverse * ViewpointScript.Head.position;
             Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-            lookPose.rotation = qNewRotation;
+            lookPose.rotation = ViewpointScript.Head.rotation * Quaternion.Inverse(qNewRotation);
+            lookPose.translation = ViewpointScript.Head.position -
+                lookPose.rotation * (lookPose.scale * userPosition);
+            if (Vector3.Dot(lookPose.rotation * Vector3.up, Vector3.up) < 1.0f - 1e-6f)
+            {
+                App.Scene.disableTiltProtection = true;
+            }
             App.Scene.Pose = lookPose;
         }
 
@@ -262,16 +825,52 @@ namespace TiltBrush
             "Points the user camera towards a specific point (In VR this only changes the y axis. In monoscopic mode it changes all 3 axes)",
             "1,2,3"
         )]
-        public static void UserLookAt(Vector3 direction)
+        public static void UserLookAt(Vector3 position)
         {
             TrTransform lookPose = App.Scene.Pose;
-            Quaternion qNewRotation = Quaternion.Euler(direction.x, direction.y, direction.z);
-            ScreenshotManager.DebugLogToFile(
-                $"UserLookAt: input_direction(euler)={direction} " +
-                $"preAssign.translation={lookPose.translation} " +
-                $"resulting_quaternion=(x={qNewRotation.x:F6},y={qNewRotation.y:F6},z={qNewRotation.z:F6},w={qNewRotation.w:F6}) " +
-                $"resulting_quaternion.eulerAngles={qNewRotation.eulerAngles}");
-            lookPose.rotation = qNewRotation;
+            Vector3 userPosition = lookPose.inverse * ViewpointScript.Head.position;
+            Vector3 direction = position - userPosition;
+            if ((direction * lookPose.scale).sqrMagnitude <
+                kMinLookDistance_RS * kMinLookDistance_RS)
+            {
+                return;
+            }
+            bool isVr = App.VrSdk.GetHmdDof() != VrSdk.DoF.None;
+            Quaternion headRotation = ViewpointScript.Head.rotation;
+            Vector3 up = Vector3.up;
+            if (isVr)
+            {
+                direction.y = 0;
+                if ((direction * lookPose.scale).sqrMagnitude <
+                    kMinLookDistance_RS * kMinLookDistance_RS)
+                {
+                    return;
+                }
+                Vector3 headDirection = ViewpointScript.Head.forward;
+                headDirection.y = 0;
+                if (headDirection.sqrMagnitude < 1e-6f)
+                {
+                    Vector3 headRight = ViewpointScript.Head.right;
+                    headRight.y = 0;
+                    headDirection = Vector3.Cross(headRight, Vector3.up);
+                }
+                headRotation = Quaternion.LookRotation(headDirection, Vector3.up);
+            }
+            direction.Normalize();
+            if (!isVr && Vector3.Cross(direction, up).sqrMagnitude < 1e-6f)
+            {
+                up = Vector3.forward;
+            }
+            lookPose.rotation = headRotation *
+                Quaternion.Inverse(Quaternion.LookRotation(direction, up));
+            lookPose.translation = ViewpointScript.Head.position -
+                lookPose.rotation * (lookPose.scale * userPosition);
+
+            if (!isVr &&
+                Vector3.Dot(lookPose.rotation * Vector3.up, Vector3.up) < 1.0f - 1e-6f)
+            {
+                App.Scene.disableTiltProtection = true;
+            }
             App.Scene.Pose = lookPose;
             TrTransform readBack = App.Scene.Pose;
             ScreenshotManager.DebugLogToFile(
@@ -303,7 +902,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "spectator.mode",
-            "Sets the spectator camera mode to one of stationary, slowFollow, wobble, circular",
+            "Sets the spectator camera mode to one of stationary, slowFollow, wobble, circular or camerapath",
             "stationary")]
         public static void SpectatorMode(string mode)
         {
@@ -448,9 +1047,19 @@ namespace TiltBrush
             "Changes the brush direction to look at the specified point",
             "1,2,3"
         )]
-        public static void BrushLookAt(Vector3 direction)
+        public static void BrushLookAt(Vector3 position)
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(direction, Vector3.up);
+            Vector3 direction = position - ApiManager.Instance.BrushPosition;
+            if ((direction * App.Scene.ActiveCanvas.Pose.scale).sqrMagnitude <
+                kMinLookDistance_RS * kMinLookDistance_RS)
+            {
+                return;
+            }
+            direction.Normalize();
+            Vector3 up = Vector3.Cross(direction, Vector3.up).sqrMagnitude < 1e-6f
+                ? Vector3.forward
+                : Vector3.up;
+            ApiManager.Instance.BrushRotation.SetLookRotation(direction, up);
         }
 
         [ApiEndpoint(
@@ -463,13 +1072,13 @@ namespace TiltBrush
         [ApiEndpoint("brush.look.up", "Changes the brush direction to look upwards")]
         public static void BrushLookUp()
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.up, Vector3.up);
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.up, Vector3.forward);
         }
 
         [ApiEndpoint("brush.look.down", "Changes the brush direction to look downwards")]
         public static void BrushLookDown()
         {
-            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.down, Vector3.up);
+            ApiManager.Instance.BrushRotation.SetLookRotation(Vector3.down, Vector3.forward);
         }
 
         [ApiEndpoint("brush.look.left", "Changes the brush direction to look to the left")]
@@ -655,11 +1264,7 @@ namespace TiltBrush
                 location = _DownloadMediaFileFromUrl(
                     location, "Images", allowRedirects, requiredContentTypePrefix);
             }
-
-            ReferenceImage image = _LoadReferenceImage(location);
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, _CurrentBrushTransform(), forceTransform: true);
-            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
-            var imageWidget = cmd.Widget as ImageWidget;
+            var imageWidget = _ImportImage(location, _CurrentBrushTransform());
             if (imageWidget != null)
             {
                 // Set consistent size regardless of scene scale
@@ -668,15 +1273,45 @@ namespace TiltBrush
                 // Now enable preservation to prevent async overrides
                 imageWidget.SetPreserveCustomSize(true);
 
-                imageWidget.ReferenceImage = image;
-                imageWidget.Show(true);
-                cmd.SetWidgetCost(imageWidget.GetTiltMeterCost());
             }
-
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
             return imageWidget;
+        }
+
+        public static ImageWidget _ImportImage(string location, TrTransform xf)
+        {
+            ReferenceImage image = _LoadReferenceImage(location);
+            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.ImageWidgetPrefab, xf, forceTransform: true);
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+            var imageWidget = cmd.Widget as ImageWidget;
+            if (imageWidget != null)
+            {
+                imageWidget.ReferenceImage = image;
+                imageWidget.Show(true);
+                cmd.SetWidgetCost(imageWidget.GetTiltMeterCost());
+            }
+            return imageWidget;
+        }
+
+        public static ImageWidget _ImportImage(string location, TrTransform xf, CanvasScript targetCanvas)
+        {
+            if (targetCanvas == null)
+            {
+                return _ImportImage(location, xf);
+            }
+
+            var previousCanvas = App.Scene.ActiveCanvas;
+            try
+            {
+                App.Scene.ActiveCanvas = targetCanvas;
+                return _ImportImage(location, xf);
+            }
+            finally
+            {
+                App.Scene.ActiveCanvas = previousCanvas;
+            }
         }
 
         internal static bool IsHttpLocation(string location)
@@ -808,6 +1443,77 @@ namespace TiltBrush
         public static void EnableRamLogging(bool active)
         {
             App.Instance.RamLoggingActive = active;
+        }
+
+        [ApiEndpoint("passthrough.blendtype",
+            "Sets how the eye buffer composites over passthrough: alpha or premultiply. " +
+            "Leave empty to report the current value. Not saved; for testing.", "premultiply")]
+        public static string SetPassthroughBlendType(string blendType)
+        {
+            if (string.IsNullOrWhiteSpace(blendType))
+            {
+                return PassthroughManager.SetEyeBufferBlendType(null);
+            }
+            if (!Enum.TryParse(blendType.Trim(), true,
+                    out Unity.XR.CompositionLayers.Layers.BlendType parsed) ||
+                !Enum.IsDefined(typeof(Unity.XR.CompositionLayers.Layers.BlendType), parsed))
+            {
+                return $"Unknown blend type '{blendType}'. Use alpha or premultiply.";
+            }
+            return PassthroughManager.SetEyeBufferBlendType(parsed);
+        }
+
+        [ApiEndpoint("audio.reactive", "Enable or disable audio-reactive mode", "true")]
+        public static string EnableAudioReactiveMode(bool active)
+        {
+            if (App.Instance.RequestingAudioReactiveMode != active)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return $"audio.reactive={App.Instance.RequestingAudioReactiveMode}";
+        }
+
+        [ApiEndpoint("audio.music.play", "Play in-app music and enable audio-reactive mode", "0")]
+        public static string PlayAudioReactiveMusic(int index)
+        {
+            if (AudioManager.m_Instance == null)
+            {
+                const string message = "AudioManager is not initialized";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            if (index < 0 || index >= AudioManager.m_Instance.NumGameMusics())
+            {
+                string message = $"Invalid game music index: {index}";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            AudioManager.m_Instance.PlayGameMusic(index);
+            if (!App.Instance.RequestingAudioReactiveMode)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return $"audio.music.play={index}";
+        }
+
+        [ApiEndpoint("audio.music.stop", "Stop in-app music and disable audio-reactive mode")]
+        public static string StopAudioReactiveMusic()
+        {
+            if (AudioManager.m_Instance == null)
+            {
+                const string message = "AudioManager is not initialized";
+                Debug.LogError(message);
+                return $"error: {message}";
+            }
+
+            AudioManager.m_Instance.StopMusic();
+            if (App.Instance.RequestingAudioReactiveMode)
+            {
+                App.Instance.ToggleAudioReactiveBrushesRequest();
+            }
+            return "audio.music.stop";
         }
 
         [ApiEndpoint(
@@ -1105,7 +1811,7 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "image.base64Decode",
-            "Saves base64-encoded PNG, JPEG, HDR, or SVG data to the user's Reference Images folder. The filename must not contain a path, and an explicit extension must match the decoded image data"
+            "Saves base64-encoded PNG, JPEG, HDR, EXR, or SVG data to the user's Reference Images folder. The filename must not contain a path, and an explicit extension must match the decoded image data"
         )]
         public static string SaveBase64(string base64, string filename)
         {
@@ -1113,7 +1819,7 @@ namespace TiltBrush
             string imageExtension = GetReferenceImageExtension(bytes);
             if (imageExtension == null)
             {
-                throw new ArgumentException("image.base64Decode only supports PNG, JPEG, HDR, and SVG image data.");
+                throw new ArgumentException("image.base64Decode only supports PNG, JPEG, HDR, EXR, and SVG image data.");
             }
 
             string extension = Path.GetExtension(filename);
@@ -1121,7 +1827,7 @@ namespace TiltBrush
             {
                 filename += imageExtension;
             }
-            else if (!kSupportedReferenceImageExtensions.Contains(extension))
+            else if (!ReferenceImageFormat.IsSupportedExtension(extension))
             {
                 throw new ArgumentException($"Unsupported image filename extension: {extension}");
             }
@@ -1151,6 +1857,10 @@ namespace TiltBrush
                 (StartsWithAscii(bytes, "#?RADIANCE") || StartsWithAscii(bytes, "#?RGBE")))
             {
                 return ".hdr";
+            }
+            if (HdrTextureLoader.IsExrData(bytes))
+            {
+                return ".exr";
             }
             string text = System.Text.Encoding.UTF8.GetString(bytes).TrimStart('\uFEFF', ' ', '\t', '\r', '\n');
             if (text.StartsWith("<svg", StringComparison.OrdinalIgnoreCase) ||

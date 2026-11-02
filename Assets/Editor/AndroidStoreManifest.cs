@@ -1,0 +1,227 @@
+// Copyright 2026 The Open Brush Authors
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2.0
+
+using System;
+using System.Linq;
+using System.Xml;
+
+/// <summary>Store requirements applied to the generated manifest, without editing project assets.</summary>
+internal static class AndroidStoreManifest
+{
+    internal const string AndroidNamespace = "http://schemas.android.com/apk/res/android";
+    private const string ToolsNamespace = "http://schemas.android.com/tools";
+
+    internal static void Configure(XmlDocument doc, bool metaStore, bool androidXr,
+        bool scopedStorage = false, bool handheldViewer = false)
+    {
+        if (handheldViewer && (metaStore || androidXr))
+            throw new InvalidOperationException("Handheld Viewer cannot use a headset store configuration.");
+        if (metaStore && scopedStorage)
+            throw new InvalidOperationException("Scoped storage must use a separate build from the Meta store flavor.");
+        var root = doc.DocumentElement ?? throw new InvalidOperationException("Missing Android manifest.");
+        root.SetAttribute("xmlns:tools", ToolsNamespace);
+        var app = root.SelectSingleNode("application") as XmlElement
+            ?? throw new InvalidOperationException("Missing Android application element.");
+
+        if (scopedStorage)
+        {
+            SetAndroid(app, "requestLegacyExternalStorage", "false");
+            SetAndroid(app, "preserveLegacyExternalStorage", "false");
+            string replaces = app.GetAttribute("replace", ToolsNamespace);
+            app.SetAttribute("replace", ToolsNamespace, string.Join(",", replaces.Split(',')
+                .Select(value => value.Trim())
+                .Concat(new[] { "android:requestLegacyExternalStorage", "android:preserveLegacyExternalStorage" })
+                .Where(value => value.Length != 0).Distinct()));
+            // Merge markers also remove permissions introduced by lower-priority libraries.
+            foreach (string permission in new[]
+            {
+                "MANAGE_EXTERNAL_STORAGE", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE",
+                "READ_MEDIA_IMAGES", "READ_MEDIA_VIDEO", "READ_MEDIA_AUDIO", "READ_MEDIA_VISUAL_USER_SELECTED"
+            })
+            {
+                foreach (string tag in new[] { "uses-permission", "uses-permission-sdk-23" })
+                    GetOrCreate(doc, root, tag, $"android.permission.{permission}")
+                        .SetAttribute("node", ToolsNamespace, "remove");
+            }
+        }
+
+        if (handheldViewer)
+        {
+            ConfigureHandheld(doc, root, app);
+            return;
+        }
+
+        // Android XR uses a different permission from Quest's com.oculus.permission.HAND_TRACKING.
+        // Generic OpenXR APKs can also run on Android XR devices, so only the Meta store build
+        // drops it. A removal marker also excludes declarations from lower-priority XR libraries.
+        var handTracking = GetOrCreate(doc, root, "uses-permission", "android.permission.HAND_TRACKING");
+        handTracking.SetAttribute("node", ToolsNamespace, metaStore ? "remove" : "merge");
+
+        if (!androidXr)
+        {
+            // Quest only offers tracked hands to apps declaring them. Controllers remain the
+            // primary input, so hand tracking must not filter out controller-only devices.
+            GetOrCreate(doc, root, "uses-permission", "com.oculus.permission.HAND_TRACKING");
+            var questHands = GetOrCreate(doc, root, "uses-feature", "oculus.software.handtracking");
+            SetAndroid(questHands, "required", "false");
+            questHands.SetAttribute("replace", ToolsNamespace, "android:required");
+            // Pico declarations match PICO-Unity-OpenXR-SDK's "Controllers And Hands" mode
+            // (Editor/PICOModifyAndroidManifest.cs). Without controller=1 Pico treats a
+            // hand-tracking app as hands-only.
+            GetOrCreate(doc, root, "uses-permission", "com.picovr.permission.HAND_TRACKING");
+            SetMetadata(doc, app, "handtracking", "1");
+            SetMetadata(doc, app, "controller", "1");
+        }
+
+        // AndroidXR derives hardware requirements from the foveation feature's extension list,
+        // including eye-tracked foveation. Open Brush also works with fixed foveation and no
+        // eye tracker. Override the lower-priority XR library manifest's required=true value.
+        // Meta's feature processor can also add a separate required software feature.
+        foreach (string feature in new[] { "android.hardware.xr.input.eye_tracking", "oculus.software.eye_tracking" })
+        {
+            var eyes = GetOrCreate(doc, root, "uses-feature", feature);
+            SetAndroid(eyes, "required", "false");
+            eyes.SetAttribute("replace", ToolsNamespace, "android:required");
+        }
+
+        if (androidXr)
+        {
+            // Declare known library/permission-implied features explicitly: declarations in
+            // this manifest override required=true contributed during Gradle's library merge.
+            foreach (string feature in new[]
+            {
+                "com.oculus.feature.PASSTHROUGH", "oculus.software.handtracking",
+                "android.hardware.xr.input.hand_tracking", "android.hardware.vr.headtracking",
+                "android.hardware.touchscreen", "android.hardware.touchscreen.multitouch",
+                "android.hardware.touchscreen.multitouch.distinct", "android.hardware.microphone",
+                "android.hardware.opengles.aep"
+            })
+                GetOrCreate(doc, root, "uses-feature", feature);
+
+            // Unity unconditionally declares spatial as required. Require only the OpenXR
+            // platform API, retaining spatial's version for its optional capability declaration.
+            foreach (string feature in new[] { "android.software.xr.api.openxr", "android.software.xr.api.spatial" })
+                GetOrCreate(doc, root, "uses-feature", feature);
+
+            foreach (XmlElement feature in root.SelectNodes("uses-feature"))
+            {
+                string name = feature.GetAttribute("name", AndroidNamespace);
+                bool required = name == "android.software.xr.api.openxr";
+                SetAndroid(feature, "required", required ? "true" : "false");
+                feature.SetAttribute("replace", ToolsNamespace, "android:required");
+            }
+
+            // Android XR must never regain all-files access, including in local APK builds.
+            foreach (string tag in new[] { "uses-permission", "uses-permission-sdk-23" })
+                GetOrCreate(doc, root, tag, "android.permission.MANAGE_EXTERNAL_STORAGE")
+                    .SetAttribute("node", ToolsNamespace, "remove");
+        }
+
+        if (!androidXr)
+        {
+            // These describe Google's AndroidXR platform, not the ability to load an OpenXR
+            // runtime. Other stores/devices must not be filtered out by Google's requirements.
+            foreach (string feature in new[] { "android.software.xr.api.openxr", "android.software.xr.api.spatial" })
+            {
+                var node = GetOrCreate(doc, root, "uses-feature", feature);
+                node.SetAttribute("node", ToolsNamespace, "remove");
+            }
+        }
+
+        if (!metaStore)
+        {
+            return;
+        }
+
+        var ns = new XmlNamespaceManager(doc.NameTable);
+        ns.AddNamespace("android", AndroidNamespace);
+        var launcher = app.SelectSingleNode(
+            "activity[intent-filter/action[@android:name='android.intent.action.MAIN']]" +
+            "[intent-filter/category[@android:name='android.intent.category.LAUNCHER']]", ns) as XmlElement
+            ?? throw new InvalidOperationException("Meta store build has no launcher activity.");
+        var intent = launcher.SelectSingleNode(
+            "intent-filter[action[@android:name='android.intent.action.MAIN']]", ns) as XmlElement;
+
+        SetAndroid(root, "installLocation", "auto");
+        SetAndroid(launcher, "excludeFromRecents", "true");
+        GetOrCreate(doc, intent, "category", "com.oculus.intent.category.VR");
+        SetMetadata(doc, launcher, "com.oculus.vr.focusaware", "true");
+        // Use current store identifiers instead of the older package's cambria/eureka aliases.
+        SetMetadata(doc, app, "com.oculus.supportedDevices", "quest2|questpro|quest3|quest3s");
+        SetMetadata(doc, app, "com.samsung.android.vr.application.mode", "vr_only");
+        var headTracking = GetOrCreate(doc, root, "uses-feature", "android.hardware.vr.headtracking");
+        SetAndroid(headTracking, "required", "true");
+        SetAndroid(headTracking, "version", "1");
+    }
+
+    private static void ConfigureHandheld(XmlDocument doc, XmlElement root, XmlElement app)
+    {
+        // Removal markers also suppress declarations contributed by library manifests.
+        foreach (string feature in new[]
+        {
+            "android.software.xr.api.openxr", "android.software.xr.api.spatial",
+            "android.hardware.vr.headtracking", "android.hardware.xr.input.hand_tracking",
+            "oculus.software.handtracking", "com.oculus.feature.PASSTHROUGH"
+        })
+            GetOrCreate(doc, root, "uses-feature", feature).SetAttribute("node", ToolsNamespace, "remove");
+
+        foreach (string permission in new[]
+        {
+            "android.permission.HAND_TRACKING", "com.oculus.permission.HAND_TRACKING",
+            "com.oculus.permission.USE_SCENE", "com.picovr.permission.HAND_TRACKING"
+        })
+            GetOrCreate(doc, root, "uses-permission", permission).SetAttribute("node", ToolsNamespace, "remove");
+
+        foreach (string metadata in new[]
+        {
+            "pvr.app.type", "handtracking", "controller", "com.oculus.supportedDevices",
+            "com.samsung.android.vr.application.mode"
+        })
+            GetOrCreate(doc, app, "meta-data", metadata).SetAttribute("node", ToolsNamespace, "remove");
+
+        foreach (XmlElement activity in app.SelectNodes("activity"))
+        {
+            GetOrCreate(doc, activity, "meta-data", "com.oculus.vr.focusaware")
+                .SetAttribute("node", ToolsNamespace, "remove");
+            foreach (XmlElement intent in activity.SelectNodes("intent-filter"))
+            {
+                // Intent filters are not merged across manifests; remove categories locally.
+                foreach (XmlElement category in intent.SelectNodes("category"))
+                {
+                    string name = category.GetAttribute("name", AndroidNamespace);
+                    if (name == "com.oculus.intent.category.VR" ||
+                        name == "org.khronos.openxr.intent.category.IMMERSIVE_HMD")
+                        intent.RemoveChild(category);
+                }
+            }
+        }
+    }
+
+    private static void SetMetadata(XmlDocument doc, XmlElement parent, string name, string value)
+    {
+        var node = GetOrCreate(doc, parent, "meta-data", name);
+        SetAndroid(node, "value", value);
+        node.SetAttribute("replace", ToolsNamespace, "android:value");
+    }
+
+    private static void SetAndroid(XmlElement element, string name, string value) =>
+        element.SetAttribute(name, AndroidNamespace, value);
+
+    private static XmlElement GetOrCreate(XmlDocument doc, XmlElement parent, string tag, string name)
+    {
+        foreach (XmlNode child in parent.ChildNodes)
+        {
+            if (child is XmlElement element && element.Name == tag &&
+                element.GetAttribute("name", AndroidNamespace) == name)
+            {
+                return element;
+            }
+        }
+        var created = doc.CreateElement(tag);
+        SetAndroid(created, "name", name);
+        parent.AppendChild(created);
+        return created;
+    }
+}

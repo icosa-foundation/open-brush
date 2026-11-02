@@ -14,11 +14,14 @@
 
 namespace TiltBrush
 {
+    /// Button-driven tray; ToggleTray lives on BaseTray. Kept as a distinct type because
+    /// the prefabs' UnityEvent bindings name it.
     public class CaptureTray : BaseTray
     {
-        public void ToggleTray(ActionToggleButton btn)
+        /// This tray's visibility is owned by its toggle button, so don't let tool changes
+        /// drive it. m_ShowOnToolType is unused here.
+        protected override void OnToolChanged()
         {
-            EnableTray(btn.ToggleState);
         }
     }
 

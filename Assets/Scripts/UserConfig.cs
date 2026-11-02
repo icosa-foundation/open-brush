@@ -12,20 +12,82 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// UAC1001/UAC1015 are Unity's serialization analyzer reporting fields that *Unity's*
+// serializer skips - System.Guid, Dictionary<>, nullable types. The classes in this
+// file are never serialized by Unity: they are JSON DTOs round-tripped by
+// Newtonsoft.Json, which handles all of those types fine. So the warnings are false
+// positives and the code is correct as written.
+//
+// Do NOT silence them by adding [NonSerialized] to the fields. Newtonsoft honours that
+// attribute and would silently stop reading and writing them.
+//
+// A pragma is used rather than an .editorconfig entry because Unity compiles through
+// Bee rather than the generated .csproj and does not pass the analyzer config through,
+// so dotnet_diagnostic severity settings there have no effect. Verified: adding them
+// changed nothing across two recompiles.
+#pragma warning disable UAC1001, UAC1015
+
 using System;
 using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace TiltBrush
 {
+    public enum PhotonUdpPortSet
+    {
+        Default,
+        Alternative,
+    }
+
 
     // Use "struct" instead of "class" to prohibit the use of default values,
     // which won't work the way you want. Use Nullable<> instead.
     [Serializable]
     public class UserConfig
     {
+        [Serializable]
+        public struct HandtrackingConfig
+        {
+            // Experimental menu ray: finger (default), aim or pinch.
+            public string RayMode;
+            // Pinch detector: openxr (default) or xrhands.
+            public string PinchMode;
+            // Optional five minimum full-curl values: thumb, index, middle, ring, little.
+            // Omitted uses the Aura-tested defaults: 0.05, 0.75, 0.75, 0.75, 0.70.
+            public float[] FistMinimumCurl;
+            // Enable hand bridge, gesture, subsystem, visualizer and permission diagnostics.
+            // Errors and actionable warnings remain enabled regardless of this flag.
+            public bool DebugLogging;
+        }
+
+        public HandtrackingConfig Handtracking;
+
+        [Serializable]
+        public struct PanelsConfig
+        {
+            // Shared translation of the wand-panel layout in view-only mode, in metres
+            // along the wand's local axes. Omitted values use 0 right, 0.015 up, 0.2 forward.
+            public float? ViewOnlyOffsetRight;
+            public float? ViewOnlyOffsetUp;
+            public float? ViewOnlyOffsetForward;
+        }
+
+        public PanelsConfig Panels;
+
+        [Serializable]
+        public struct PostProcessingFxConfig
+        {
+            // Null leaves bloom at its default amount of 1 for every quality level.
+            public float? BloomAmount;
+            // Null uses the renderer's default bloom threshold for the current HDR mode.
+            public float? BloomThreshold;
+        }
+
+        public PostProcessingFxConfig PostProcessingFx;
+
         [Serializable]
         public struct PluginWebRequestRule
         {
@@ -44,8 +106,83 @@ namespace TiltBrush
         public YouTubeConfig YouTube;
 
         [Serializable]
+        public struct SplatsConfig
+        {
+            // Null leaves the imported asset or library/project default unchanged.
+            public int? SHDegree;
+            public float? SplatDownscaleFactor;
+            // User-facing frame interval: 1 sorts every frame, 2 every other frame.
+            public int? SortEveryNFrames;
+            public float? DepthPrepassAlphaCutoff;
+            public float? CameraTranslationRefreshThreshold;
+            public float? CameraRotationRefreshThreshold;
+            public bool? EnableGlobalSort;
+            public float? PruneOpacityBelow;
+            public float? PruneScaleFractionAbove;
+
+            internal Gsplat.GsplatImportFilter CreateImportFilter()
+            {
+                // Requiring both values avoids enabling pruning by default.
+                if (!PruneOpacityBelow.HasValue || !PruneScaleFractionAbove.HasValue) return null;
+                return new Gsplat.GsplatImportFilter(PruneOpacityBelow.Value, PruneScaleFractionAbove.Value);
+            }
+
+            internal void ApplyTo(Gsplat.GsplatRenderer renderer, Gsplat.GsplatSettings settings)
+            {
+                if (SHDegree.HasValue)
+                {
+                    renderer.SHDegree = Mathf.Clamp(SHDegree.Value, 0, renderer.GsplatAsset.SHBands);
+                }
+                if (SplatDownscaleFactor.HasValue)
+                {
+                    renderer.SplatDownscaleFactor = ClampFinite(SplatDownscaleFactor.Value, 0, 1);
+                }
+                if (SortEveryNFrames.HasValue)
+                {
+                    int interval = Math.Max(1, SortEveryNFrames.Value);
+                    renderer.SortMode = interval == 1
+                        ? Gsplat.GsplatRenderer.GsplatSortMode.Always
+                        : Gsplat.GsplatRenderer.GsplatSortMode.SortEveryNFrames;
+                    // UnitySplats converts the full interval to skipped frames internally.
+                    renderer.SortRefreshRate = (uint)interval;
+                }
+                if (DepthPrepassAlphaCutoff.HasValue)
+                {
+                    settings.DepthPrepassAlphaCutoff = ClampFinite(DepthPrepassAlphaCutoff.Value, 0, 1.1f);
+                }
+                if (CameraTranslationRefreshThreshold.HasValue)
+                {
+                    settings.CameraTranslationRefreshTreshold =
+                        ClampFinite(CameraTranslationRefreshThreshold.Value, 0.05f, 1);
+                }
+                if (CameraRotationRefreshThreshold.HasValue)
+                {
+                    settings.CameraRotationRefreshTreshold =
+                        ClampFinite(CameraRotationRefreshThreshold.Value, 0.2f, 30);
+                }
+                if (EnableGlobalSort.HasValue)
+                {
+                    settings.EnableGlobalSort = EnableGlobalSort.Value;
+                }
+            }
+
+            private static float ClampFinite(float value, float min, float max)
+            {
+                if (float.IsNaN(value) || float.IsInfinity(value))
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), "Splat settings must be finite.");
+                }
+                return Mathf.Clamp(value, min, max);
+            }
+        }
+        public SplatsConfig Splats;
+
+        [Serializable]
         public struct FlagsConfig
         {
+            // Positive values override the device's vertex warning threshold at startup.
+            // Zero (the default) uses automatic device selection.
+            public int MemoryWarningVertCount;
             public bool DisableAudio;
             public bool DisableAutosave;
             [FormerlySerializedAs("DisablePoly")] public bool DisableIcosa;
@@ -87,15 +224,56 @@ namespace TiltBrush
             public bool EnableApiCorsHeaders;
             public bool WebScriptsCanControlPlugins;
             public bool EnablePluginWebRequests;
-            public PluginWebRequestRule[] PluginWebRequestRules;
+            private PluginWebRequestRule[] m_PluginWebRequestRules;
+            public PluginWebRequestRule[] PluginWebRequestRules
+            {
+                get
+                {
+                    // Missing or null uses code defaults; an explicit [] stays empty.
+                    if (m_PluginWebRequestRules == null)
+                    {
+                        m_PluginWebRequestRules = new[]
+                        {
+                            new PluginWebRequestRule
+                            {
+                                Host = "api.openverse.org",
+                                Methods = new[] { "GET" },
+                                FileTypes = new[] { "json" }
+                            },
+                            new PluginWebRequestRule
+                            {
+                                Host = "upload.wikimedia.org",
+                                Methods = new[] { "GET" },
+                                FileTypes = new[] { "image" }
+                            },
+                            new PluginWebRequestRule
+                            {
+                                Host = "avatars.openbrush.app",
+                                Methods = new[] { "GET" },
+                                FileTypes = new[] { "image" }
+                            },
+                            new PluginWebRequestRule
+                            {
+                                Host = "icosa.gallery",
+                                Methods = new[] { "GET" },
+                                FileTypes = new[] { "any" }
+                            },
+                            new PluginWebRequestRule
+                            {
+                                Host = "openbrush.app",
+                                Methods = new[] { "GET" },
+                                FileTypes = new[] { "any" }
+                            }
+                        };
+                    }
+                    return m_PluginWebRequestRules;
+                }
+                set { m_PluginWebRequestRules = value; }
+            }
             public bool EnablePluginClipboardAccess;
 
-            private bool? m_UseDefaultPhotonCloudPorts;
-            public bool UseDefaultPhotonCloudPorts
-            {
-                get { return m_UseDefaultPhotonCloudPorts ?? true; }
-                set { m_UseDefaultPhotonCloudPorts = value; }
-            }
+            [JsonConverter(typeof(StringEnumConverter))]
+            public PhotonUdpPortSet PhotonUdpPorts;
 
             bool? m_AdvancedKeyboardShortcuts;
             public bool AdvancedKeyboardShortcuts
@@ -302,6 +480,14 @@ namespace TiltBrush
         [Serializable]
         public struct ExportConfig
         {
+            // Write float32 linear-depth TIFFs alongside Gaussian splat pose captures.
+            bool? m_ExportGaussianSplatDepth;
+            public bool ExportGaussianSplatDepth
+            {
+                get { return m_ExportGaussianSplatDepth ?? false; }
+                set { m_ExportGaussianSplatDepth = value; }
+            }
+
             bool? m_ExportBinaryFbx;
             public bool ExportBinaryFbx
             {
@@ -432,6 +618,20 @@ namespace TiltBrush
             private static readonly List<string> kSupportedVideoEncoders = new List<string>
             {
                 "h.264", "h.265",
+            };
+
+            // x264/x265 constant rate factor: lower is higher quality. 18 is close to visually lossless
+            // for x264; x265 at the same value is higher quality still.
+            private const int kDefaultQuality = 18;
+            private const int kMinQuality = 0;
+            private const int kMaxQuality = 51;
+            // Live capture must encode in real time, offline renders can afford a slower preset.
+            private const string kDefaultLivePreset = "faster";
+            private const string kDefaultOfflinePreset = "slow";
+            private static readonly List<string> kSupportedPresets = new List<string>
+            {
+                "ultrafast", "superfast", "veryfast", "faster", "fast",
+                "medium", "slow", "slower", "veryslow",
             };
 
             private const float kDefaultSmoothing = 0.98f;
@@ -570,6 +770,47 @@ namespace TiltBrush
                             string.Format("Supported: {0}.\nContainer type set to {1}.",
                                 string.Join(", ", kSupportedVideoEncoders.ToArray()),
                                 kDefaultVideoEncoder));
+                    }
+                }
+            }
+
+            int? m_Quality;
+            public int Quality
+            {
+                get { return m_Quality ?? kDefaultQuality; }
+                set
+                {
+                    m_Quality = UnityEngine.Mathf.Clamp(value, kMinQuality, kMaxQuality);
+                    if (m_Quality != value)
+                    {
+                        OutputWindowScript.Error($"Video Quality of '{value}' not supported.",
+                            $"Quality (CRF) must be between {kMinQuality} and {kMaxQuality}.\nQuality set to {m_Quality}.");
+                    }
+                }
+            }
+
+            string m_Preset;
+            public string GetPreset(bool offline)
+            {
+                return m_Preset ?? (offline ? kDefaultOfflinePreset : kDefaultLivePreset);
+            }
+            public string Preset
+            {
+                get { return m_Preset; }
+                set
+                {
+                    string lowered = value.ToLowerInvariant();
+                    if (kSupportedPresets.Contains(lowered))
+                    {
+                        m_Preset = lowered;
+                    }
+                    else
+                    {
+                        m_Preset = null;
+                        OutputWindowScript.Error(
+                            $"Video Preset '{lowered}' not supported in {App.kConfigFileName}",
+                            $"Supported: {string.Join(", ", kSupportedPresets)}.\n" +
+                            $"Preset set to {kDefaultLivePreset} (live) / {kDefaultOfflinePreset} (offline).");
                     }
                 }
             }
@@ -735,8 +976,28 @@ namespace TiltBrush
             }
 
             public float ViewportScaling { get; set; }
+            // Automatic-quality timings are real seconds, independent of display refresh rate.
+            private float? m_QualitySettlingSeconds;
+            public float QualitySettlingSeconds
+            {
+                get { return m_QualitySettlingSeconds ?? 1f; }
+                set { m_QualitySettlingSeconds = value; }
+            }
+            private float? m_QualityRecoverySeconds;
+            public float QualityRecoverySeconds
+            {
+                get { return m_QualityRecoverySeconds ?? 10f; }
+                set { m_QualityRecoverySeconds = value; }
+            }
+            private float? m_QualityRetrySeconds;
+            public float QualityRetrySeconds
+            {
+                get { return m_QualityRetrySeconds ?? 30f; }
+                set { m_QualityRetrySeconds = value; }
+            }
             public float EyeTextureScaling { get; set; }
             public int GlobalMaximumLOD { get; set; }
+            // Startup override. Runtime quality changes keep this sample count fixed.
             public int MsaaLevel { get; set; }
             public bool TakeScreenshot { get; set; }
             private int? m_screenshotResolution;

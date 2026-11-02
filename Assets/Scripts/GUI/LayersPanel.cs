@@ -21,8 +21,9 @@ namespace TiltBrush
 
         private LayerUI_Manager m_LayerUI_Manager;
 
-        void Awake()
+        protected override void Awake()
         {
+            base.Awake();
             m_LayerUI_Manager = GetComponent<LayerUI_Manager>();
         }
 

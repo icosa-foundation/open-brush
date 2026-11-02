@@ -111,8 +111,8 @@ namespace TiltBrush
         // Files that should not be copied
         static readonly HashSet<string> kIgnoredFiles = new HashSet<string>
         {
-            "Assets/Shaders/Include/Hdr.cginc",
-            "Assets/Shaders/Include/Ods.cginc"
+            "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Hdr.cginc",
+            "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Ods.cginc"
         };
 
         // Files that should override their path and instead be copied to a specific folder

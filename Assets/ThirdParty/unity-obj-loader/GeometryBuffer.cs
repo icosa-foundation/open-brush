@@ -11,7 +11,34 @@ public class GeometryBuffer
     public List<Vector3> normals;
     public int unnamedGroupIndex = 1; // naming index for unnamed group. like "Unnamed-1"
 
-    private readonly Material defaultMaterial = new (Shader.Find("Standard"));
+    // Shader.Find("Standard") returns the built-in render pipeline's Standard shader,
+    // which URP does not draw. Fall back to the PbrTemplate material wired into
+    // BrushCatalog instead, and resolve it lazily so the catalog has time to load.
+    private Material m_DefaultMaterial;
+    private Material defaultMaterial
+    {
+        get
+        {
+            if (m_DefaultMaterial != null) { return m_DefaultMaterial; }
+            var blocksMaterials = TiltBrush.BrushCatalog.m_Instance == null
+                ? null
+                : TiltBrush.BrushCatalog.m_Instance.m_BlocksMaterials;
+            if (blocksMaterials != null)
+            {
+                foreach (var entry in blocksMaterials)
+                {
+                    var desc = entry.brushDescriptor;
+                    if (desc != null && desc.m_DurableName == "PbrTemplate")
+                    {
+                        m_DefaultMaterial = new Material(desc.Material);
+                        return m_DefaultMaterial;
+                    }
+                }
+            }
+            Debug.LogError("No PbrTemplate material available for the obj loader fallback.");
+            return null;
+        }
+    }
 
     private ObjectData current;
     private class ObjectData

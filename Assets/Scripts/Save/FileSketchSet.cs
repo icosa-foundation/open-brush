@@ -221,6 +221,12 @@ namespace TiltBrush
         private Queue m_ToDelete;
         private bool m_ReadOnly;
         private string m_SketchesPath;
+        private readonly DiskSceneFileInfo[] m_EmbeddedSketches;
+        /// An int rather than a bool so the consumer can take the request atomically.
+        /// volatile would make the write visible but leaves read-then-clear racy: a
+        /// watcher callback landing between the two would be overwritten and its refresh
+        /// lost for good, since nothing re-raises it.
+        private int m_RefreshRequested;
 
         public SketchSetType Type
         {
@@ -234,7 +240,7 @@ namespace TiltBrush
 
         public bool IsActivelyRefreshingSketches
         {
-            get { return false; }
+            get { return AndroidDirectStorage.ContainsPath(m_SketchesPath) && AndroidDirectStorage.IsRefreshing; }
         }
 
         public bool RequestedIconsAreLoaded
@@ -247,7 +253,9 @@ namespace TiltBrush
             get { return m_Sketches.Count; }
         }
 
-        public FileSketchSet(SketchSetType sketchSetType)
+        public FileSketchSet(SketchSetType sketchSetType) : this(sketchSetType, false) { }
+
+        private FileSketchSet(SketchSetType sketchSetType, bool embedded)
         {
             m_Type = sketchSetType;
             m_ReadyForAccess = false;
@@ -255,6 +263,7 @@ namespace TiltBrush
             m_Sketches = new List<FileSketch>();
             m_ToAdd = Queue.Synchronized(new Queue());
             m_ToDelete = Queue.Synchronized(new Queue());
+            if (embedded) return;
             switch (m_Type)
             {
                 case SketchSetType.Curated:
@@ -272,6 +281,17 @@ namespace TiltBrush
                 default:
                     throw new NotImplementedException();
             }
+        }
+
+        // Fixed packaged entries reuse icon/metadata loading without scanning or watching disk.
+        public FileSketchSet(SketchSetType sketchSetType, IEnumerable<DiskSceneFileInfo> embeddedSketches)
+            : this(sketchSetType, true)
+        {
+            m_EmbeddedSketches = embeddedSketches.ToArray();
+            if (m_EmbeddedSketches.Any(info => !info.Embedded || !info.ReadOnly))
+                throw new ArgumentException("Fixed sketch entries must be embedded and read-only.");
+            m_SketchesPath = null;
+            m_ReadOnly = true;
         }
 
         public bool IsSketchIndexValid(int iIndex)
@@ -337,6 +357,7 @@ namespace TiltBrush
 
         public virtual void DeleteSketch(int toDelete)
         {
+            if (m_EmbeddedSketches != null) return;
             // Not sure why we need the validity check; but if any are invalid, it
             // is a serious error and we shouldn't touch anything
             if (!IsSketchIndexValid(toDelete))
@@ -345,39 +366,57 @@ namespace TiltBrush
                 return;
             }
 
+            SceneFileInfo sceneFileInfo = m_Sketches[toDelete].SceneFileInfo;
             // Notify our file watcher to make sure it got the memo this sketch was deleted.
-            m_FileWatcher.NotifyDelete(m_Sketches[toDelete].SceneFileInfo.FullPath);
+            m_FileWatcher.NotifyDelete(sceneFileInfo.FullPath);
 
             // Notify the drive sketchset as the deleted file may now be visible there.
             var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
             if (driveSet != null)
             {
-                driveSet.NotifySketchChanged(m_Sketches[toDelete].SceneFileInfo.FullPath);
+                driveSet.NotifySketchChanged(sceneFileInfo.FullPath);
             }
 
-            m_Sketches[toDelete].SceneFileInfo.Delete();
+            sceneFileInfo.Delete();
         }
 
         public virtual void RenameSketch(int toRename, string newName)
         {
+            if (m_EmbeddedSketches != null) return;
+            SceneFileInfo sceneFileInfo = m_Sketches[toRename].SceneFileInfo;
+            RenameLocalSketch(sceneFileInfo, newName);
+        }
+
+        private void RenameLocalSketch(SceneFileInfo sceneFileInfo, string newName)
+        {
             // Notify our file watcher to make sure it got the memo this sketch was deleted.
-            m_FileWatcher.NotifyDelete(m_Sketches[toRename].SceneFileInfo.FullPath);
+            m_FileWatcher.NotifyDelete(sceneFileInfo.FullPath);
 
             // Notify the drive sketchset as the deleted file may now be visible there.
             var driveSet = SketchCatalog.m_Instance.GetSet(SketchSetType.Drive);
             if (driveSet != null)
             {
-                driveSet.NotifySketchChanged(m_Sketches[toRename].SceneFileInfo.FullPath);
+                driveSet.NotifySketchChanged(sceneFileInfo.FullPath);
             }
 
-            var newPath = m_Sketches[toRename].SceneFileInfo.Rename(newName);
+            var newPath = sceneFileInfo.Rename(newName);
 
             m_FileWatcher.NotifyCreated(newPath);
-
         }
 
         public virtual void Init()
         {
+            if (m_EmbeddedSketches != null)
+            {
+                PopulateSketches();
+                m_ReadyForAccess = true;
+                return;
+            }
+            if (AndroidDirectStorage.ContainsPath(m_SketchesPath))
+            {
+                AndroidDirectStorage.Refreshed -= OnStorageRefreshed;
+                AndroidDirectStorage.Refreshed += OnStorageRefreshed;
+            }
             if (!m_Sketches.Any())
             {
                 ProcessDirectory(m_SketchesPath);
@@ -396,9 +435,14 @@ namespace TiltBrush
                     m_FileWatcher.FileCreated -= fileCreatedHandler;
                     m_FileWatcher.FileDeleted -= fileDeletedHandler;
                     m_FileWatcher.FileChanged -= fileChangedHandler;
+                    m_FileWatcher.Dispose();
                 }
 
-                m_FileWatcher = new FileWatcher(m_SketchesPath, "*" + SaveLoadScript.TILT_SUFFIX);
+                // Saved strokes use a tree index. Watch ordinary folder moves and edits
+                // inside directory-format sketches as well as .tilt file changes.
+                m_FileWatcher = m_Type == SketchSetType.SavedStrokes
+                    ? new FileWatcher(m_SketchesPath)
+                    : new FileWatcher(m_SketchesPath, "*" + SaveLoadScript.TILT_SUFFIX);
 
                 // TODO: improve robustness.  Using Created works for typical copy and move operations, but
                 // doesn't handle e.g. streaming file.
@@ -408,14 +452,17 @@ namespace TiltBrush
 
                 fileCreatedHandler = (_, e) =>
                 {
+                    if (m_Type == SketchSetType.SavedStrokes) { Interlocked.Exchange(ref m_RefreshRequested, 1); return; }
                     m_ToAdd.Enqueue(e.FullPath);
                 };
                 fileDeletedHandler = (_, e) =>
                 {
+                    if (m_Type == SketchSetType.SavedStrokes) { Interlocked.Exchange(ref m_RefreshRequested, 1); return; }
                     m_ToDelete.Enqueue(e.FullPath);
                 };
                 fileChangedHandler = (_, e) =>
                 {
+                    if (m_Type == SketchSetType.SavedStrokes) { Interlocked.Exchange(ref m_RefreshRequested, 1); return; }
                     m_ToDelete.Enqueue(e.FullPath);
                     m_ToAdd.Enqueue(e.FullPath);
                 };
@@ -458,20 +505,39 @@ namespace TiltBrush
 
         public void NotifySketchCreated(string fullpath)
         {
+            if (m_EmbeddedSketches != null) return;
             m_FileWatcher.NotifyCreated(fullpath);
         }
 
         public void NotifySketchChanged(string fullpath)
         {
+            if (m_EmbeddedSketches != null) return;
             m_FileWatcher.NotifyChanged(fullpath);
         }
 
         public void RequestRefresh()
         {
+            if (m_Type == SketchSetType.SavedStrokes || m_EmbeddedSketches != null)
+                Interlocked.Exchange(ref m_RefreshRequested, 1);
+        }
+
+        private void OnStorageRefreshed()
+        {
+            Interlocked.Exchange(ref m_RefreshRequested, 1);
         }
 
         public void Update()
         {
+            // Coalesce filesystem notifications into one refresh on the main thread.
+            // Other sketch sets keep their existing incremental, root-only behavior.
+            if (!AndroidDirectStorage.IsRefreshing && Interlocked.Exchange(ref m_RefreshRequested, 0) == 1)
+            {
+                foreach (FileSketch sketch in m_Sketches) { sketch.UnloadIcon(); }
+                m_RequestedLoads.Clear();
+                m_Sketches.Clear();
+                PopulateSketches();
+                OnChanged();
+            }
             // process async directory changes from file system watcher
             // note: code here assumes we're the only consumer
             bool changedEvent = false;
@@ -488,7 +554,9 @@ namespace TiltBrush
             {
                 string path = (string)m_ToAdd.Dequeue();
                 var fileInfo = new DiskSceneFileInfo(path, readOnly: m_ReadOnly);
-                if (fileInfo.IsHeaderValid())
+                // Temporary: superseded by the FileSketchSet replace-or-add fix; remove this condition with it.
+                if ((!AndroidDirectStorage.IsActive || !m_Sketches.Any(sketch => sketch.SceneFileInfo.FullPath == path)) &&
+                    fileInfo.IsHeaderValid())
                 {
                     AddSketchToSet(fileInfo);
                     m_Sketches.Sort();
@@ -527,20 +595,51 @@ namespace TiltBrush
 
         private void ProcessDirectory(string path)
         {
-            var di = new DirectoryInfo(path);
-            if (!di.Exists)
+            var directories = new Stack<string>();
+            directories.Push(path);
+            while (directories.Count > 0)
             {
-                return;
-            }
-            foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di, m_ReadOnly))
-            {
-                //don't add bogus files to the catalog
-                if (info.IsHeaderValid())
+                string directory = directories.Pop();
+                try
                 {
-                    AddSketchToSet(info);
+                    var di = new DirectoryInfo(directory);
+                    if (!di.Exists) { continue; }
+                    foreach (DiskSceneFileInfo info in SaveLoadScript.IterScenes(di, m_ReadOnly))
+                    {
+                        //don't add bogus files to the catalog
+                        if (info.IsHeaderValid()) { AddSketchToSet(info); }
+                    }
+                    // A .tilt directory is a sketch container, not a folder to traverse.
+                    // Do not follow directory links that can cycle or leave the library.
+                    if (m_Type == SketchSetType.SavedStrokes)
+                    {
+                        foreach (DirectoryInfo child in AndroidDirectStorage.GetDirectories(directory).Select(childPath => new DirectoryInfo(childPath)))
+                        {
+                            if (!child.Name.EndsWith(SaveLoadScript.TILT_SUFFIX,
+                                    StringComparison.OrdinalIgnoreCase) &&
+                                (child.Attributes & FileAttributes.ReparsePoint) == 0)
+                            {
+                                directories.Push(child.FullName);
+                            }
+                        }
+                    }
+                }
+                catch (Exception e) when (e is IOException || e is UnauthorizedAccessException)
+                {
+                    Debug.LogWarning($"CATALOG_SCAN Could not scan sketch folder {directory}: {e.Message}");
                 }
             }
             m_Sketches.Sort();
+        }
+
+        private void PopulateSketches()
+        {
+            if (m_EmbeddedSketches == null)
+            {
+                ProcessDirectory(m_SketchesPath);
+                return;
+            }
+            foreach (var info in m_EmbeddedSketches) AddSketchToSet(info);
         }
 
         protected void AddSketchToSet(DiskSceneFileInfo rInfo)

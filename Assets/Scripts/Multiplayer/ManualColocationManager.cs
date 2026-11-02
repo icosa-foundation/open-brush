@@ -143,8 +143,6 @@ namespace OpenBrush.Multiplayer
                 GetCaptureFeedback);
             surface.EnableSpecificTool(BaseTool.ToolType.ManualColocationTool);
             SetState(ManualColocationState.CapturingStart);
-            Debug.Log(
-                $"[ManualColocation] Capture started. Owner={m_IsCapturingForOwner}");
         }
 
         public void CancelCapture()
@@ -152,7 +150,6 @@ namespace OpenBrush.Multiplayer
             m_IsCaptureActive = false;
             RestorePreviousTool();
             RefreshState();
-            Debug.Log("[ManualColocation] Capture cancelled.");
         }
 
         public async Task<bool> ClearReference()
@@ -185,8 +182,6 @@ namespace OpenBrush.Multiplayer
         {
             if (reference.Revision <= m_LatestRevision)
             {
-                Debug.Log(
-                    $"[ManualColocation] Ignored duplicate or old reference revision {reference.Revision}; current={m_LatestRevision}.");
                 return;
             }
 
@@ -229,8 +224,6 @@ namespace OpenBrush.Multiplayer
             {
                 m_IsCaptureActive = false;
                 RestorePreviousTool();
-                Debug.Log(
-                    $"[ManualColocation] Capture cancelled because the reference changed from revision {m_CaptureReference.Revision} to {reference.Revision}.");
             }
 
             ReferenceChanged?.Invoke(reference);
@@ -249,9 +242,6 @@ namespace OpenBrush.Multiplayer
             {
                 SetState(ManualColocationState.ReferenceAvailable);
             }
-
-            Debug.Log(
-                $"[ManualColocation] Reference revision {reference.Revision} received. Valid={reference.IsValid}");
         }
 
         public void ResetForRoomLifecycle()
@@ -264,7 +254,6 @@ namespace OpenBrush.Multiplayer
             m_IsCapturingForOwner = false;
             ReferenceChanged?.Invoke(m_CurrentReference);
             SetState(ManualColocationState.Unavailable);
-            Debug.Log("[ManualColocation] Room state reset.");
         }
 
         public void OnLocalPlayerJoinedRoom()
@@ -329,8 +318,6 @@ namespace OpenBrush.Multiplayer
                     SetError("Failed to publish the alignment reference.");
                     return;
                 }
-                Debug.Log(
-                    $"[ManualColocation] Owner published reference revision {reference.Revision}.");
                 return;
             }
 
@@ -396,8 +383,6 @@ namespace OpenBrush.Multiplayer
 
             SetState(ManualColocationState.Aligned);
             AlignmentApplied?.Invoke(result);
-            Debug.Log(
-                $"[ManualColocation] Pose applied. Revision={captureReference.Revision}, yaw={result.YawDegrees:F2}, residual={result.EndpointResidualMeters:F3}, warnings={result.Warnings}");
         }
 
         private ManualColocationCaptureFeedback GetCaptureFeedback(
@@ -485,14 +470,10 @@ namespace OpenBrush.Multiplayer
             if (IsLocalUserOwner() && m_CurrentReference.IsValid)
             {
                 _ = ClearReference();
-                Debug.Log(
-                    "[ManualColocation] Owner scene pose changed; the shared reference was invalidated.");
             }
             else
             {
                 SetState(ManualColocationState.AlignmentStale);
-                Debug.Log(
-                    "[ManualColocation] Local scene pose changed; alignment is stale.");
             }
         }
 
@@ -577,6 +558,5 @@ namespace OpenBrush.Multiplayer
             return LocalizationSettings.StringDatabase.GetLocalizedString(
                 "Strings", key);
         }
-
     }
 }

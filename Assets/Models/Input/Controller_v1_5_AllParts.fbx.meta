@@ -1,43 +1,85 @@
 fileFormatVersion: 2
 guid: 873d0a32020f53346b38b786d6809c98
 ModelImporter:
-  serializedVersion: 23
-  fileIDToRecycleName:
-    100000: Controller_v1_5:ControllerPad_v1_5
-    100002: Controller_v1_5:ControllerRound_v1_5
-    100004: Controller_v1_5:ControllerTrigger_v1_5
-    100006: Controller_v1_5:transform1
-    100008: Controller_v1_5:transform2
-    100010: Controller_v1_5:transform3
-    100012: //RootNode
-    100014: Controller_v1_5_AllParts
-    400000: Controller_v1_5:ControllerPad_v1_5
-    400002: Controller_v1_5:ControllerRound_v1_5
-    400004: Controller_v1_5:ControllerTrigger_v1_5
-    400006: Controller_v1_5:transform1
-    400008: Controller_v1_5:transform2
-    400010: Controller_v1_5:transform3
-    400012: //RootNode
-    400014: Controller_v1_5_AllParts
-    2300000: Controller_v1_5_AllParts
-    2300002: //RootNode
-    3300000: Controller_v1_5_AllParts
-    3300002: //RootNode
-    4300000: Controller_v1_5_AllParts
+  serializedVersion: 24600
+  internalIDToNameTable:
+  - first:
+      1: 100000
+    second: Controller_v1_5:ControllerPad_v1_5
+  - first:
+      1: 100002
+    second: Controller_v1_5:ControllerRound_v1_5
+  - first:
+      1: 100004
+    second: Controller_v1_5:ControllerTrigger_v1_5
+  - first:
+      1: 100006
+    second: Controller_v1_5:transform1
+  - first:
+      1: 100008
+    second: Controller_v1_5:transform2
+  - first:
+      1: 100010
+    second: Controller_v1_5:transform3
+  - first:
+      1: 100012
+    second: //RootNode
+  - first:
+      1: 100014
+    second: Controller_v1_5_AllParts
+  - first:
+      4: 400000
+    second: Controller_v1_5:ControllerPad_v1_5
+  - first:
+      4: 400002
+    second: Controller_v1_5:ControllerRound_v1_5
+  - first:
+      4: 400004
+    second: Controller_v1_5:ControllerTrigger_v1_5
+  - first:
+      4: 400006
+    second: Controller_v1_5:transform1
+  - first:
+      4: 400008
+    second: Controller_v1_5:transform2
+  - first:
+      4: 400010
+    second: Controller_v1_5:transform3
+  - first:
+      4: 400012
+    second: //RootNode
+  - first:
+      4: 400014
+    second: Controller_v1_5_AllParts
+  - first:
+      23: 2300000
+    second: Controller_v1_5_AllParts
+  - first:
+      23: 2300002
+    second: //RootNode
+  - first:
+      33: 3300000
+    second: Controller_v1_5_AllParts
+  - first:
+      33: 3300002
+    second: //RootNode
+  - first:
+      43: 4300000
+    second: Controller_v1_5_AllParts
   externalObjects: {}
   materials:
-    importMaterials: 0
+    materialImportMode: 0
     materialName: 0
     materialSearch: 1
     materialLocation: 0
+    searchTexturesGlobally: 1
   animations:
     legacyGenerateAnimations: 4
     bakeSimulation: 0
     resampleCurves: 1
     optimizeGameObjects: 0
+    removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -59,25 +101,43 @@ ModelImporter:
     meshCompression: 0
     addColliders: 0
     useSRGBMaterialColor: 1
+    sortHierarchyByName: 1
+    preBakeConvexCollisionMesh: 0
+    preBakeTriangleCollisionMesh: 0
+    importPhysicalCameras: 1
     importVisibility: 0
     importBlendShapes: 1
     importCameras: 0
     importLights: 0
+    nodeNameCollisionStrategy: 0
+    fileIdsGeneration: 1
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    optimizeMeshForGPU: 1
     keepQuads: 0
     weldVertices: 1
+    bakeAxisConversion: 0
     preserveHierarchy: 0
+    skinWeightsMode: 0
+    maxBonesPerVertex: 4
+    minBoneWeight: 0.001
+    optimizeBones: 1
+    generateMeshLods: 0
+    meshLodGenerationFlags: 0
+    maximumMeshLod: -1
+    importUVs: -1
+    importVertexColors: 1
+    meshOptimizationFlags: -1
     indexFormat: 1
     secondaryUVAngleDistortion: 8
     secondaryUVAreaDistortion: 15.000001
     secondaryUVHardAngle: 88
+    secondaryUVMarginMethod: 0
+    secondaryUVMinLightmapResolution: 40
+    secondaryUVMinObjectScale: 1
     secondaryUVPackMargin: 4
     useFileScale: 1
-    previousCalculatedGlobalScale: 1
-    hasPreviousCalculatedGlobalScale: 0
+    strictVertexDataChecks: 0
   tangentSpace:
     normalSmoothAngle: 60
     normalImportMode: 0
@@ -86,10 +146,11 @@ ModelImporter:
     legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
     blendShapeNormalImportMode: 1
     normalSmoothingSource: 0
+    calculateBlendshapeNormalsDeltaFromImportedNormals: 1
+  referencedClips: []
   importAnimation: 1
-  copyAvatar: 0
   humanDescription:
-    serializedVersion: 2
+    serializedVersion: 3
     human: []
     skeleton: []
     armTwist: 0.5
@@ -99,13 +160,19 @@ ModelImporter:
     armStretch: 0.05
     legStretch: 0.05
     feetSpacing: 0
+    globalScale: 0.01
     rootMotionBoneName: 
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 0
   lastHumanDescriptionAvatarSource: {instanceID: 0}
+  autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 0
   humanoidOversampling: 1
+  avatarSetup: 0
+  addHumanoidExtraRootOnlyWhenUsingAvatar: 0
+  importBlendShapeDeformPercent: 0
+  remapMaterialsIfMaterialImportModeIsNone: 1
   additionalBone: 0
   userData: 
   assetBundleName: 

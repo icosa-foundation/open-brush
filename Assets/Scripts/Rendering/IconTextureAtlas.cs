@@ -26,8 +26,7 @@ namespace TiltBrush
         [SerializeField] private Material m_BaseMaterial;
         [SerializeField] private Material m_ActiveMaterial;
         [SerializeField] private float m_ActiveMaterialBorderPercent = 0.115f;
-        [SerializeField] private string m_CatalogPath;
-        [SerializeField] private string m_ExperimentalCatalogPath;
+        private const string kCatalogPath = "AtlasCatalog";
         private IconTextureAtlasCatalog m_Catalog;
 
         private Material m_AtlasMaterial_Base;
@@ -55,8 +54,8 @@ namespace TiltBrush
 
         void AtlasIconTextures()
         {
-            // Load the appropriate catalog from Resources.
-            string catalogPath = m_ExperimentalCatalogPath;
+            // The project uses one atlas for both standard and experimental brushes.
+            string catalogPath = kCatalogPath;
             m_Catalog = Resources.Load<IconTextureAtlasCatalog>(catalogPath);
             Debug.Assert(m_Catalog != null);
 

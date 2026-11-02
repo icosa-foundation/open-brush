@@ -39,6 +39,8 @@ namespace TiltBrush
         private int m_EnabledCount = 0;
         private string[] m_CurrentSubdirectories;
         private bool m_FolderNavButtonsNeedUpdate;
+        private bool m_CatalogRefreshPending;
+        private bool m_WasPaused;
 
         public string[] CurrentSubdirectories => m_CurrentSubdirectories;
 
@@ -78,6 +80,8 @@ namespace TiltBrush
         override protected void OnEnablePanel()
         {
             base.OnEnablePanel();
+            // Opening the panel already scans its current catalog.
+            m_CatalogRefreshPending = false;
             m_CurrentPageFlipState = PageFlipState.TransitionIn;
 
             switch (m_EnabledCount)
@@ -109,6 +113,7 @@ namespace TiltBrush
         {
             BaseUpdate();
             PageFlipUpdate();
+            RefreshCatalogIfRequested();
 
             m_CurrentTab.UpdateTab();
             if (m_RefreshingSpinner != null)
@@ -130,9 +135,43 @@ namespace TiltBrush
             m_NoSavedStrokes.SetActive(false);
         }
 
+        private void OnApplicationPause(bool paused)
+        {
+            bool resumed = m_WasPaused && !paused;
+            m_WasPaused = paused;
+            // SAF must finish adopting/indexing the workspace before the catalog is rescanned.
+            if (resumed && !AndroidDirectStorage.IsActive)
+                RequestCatalogRefresh();
+        }
+
+        private void OnStorageRefreshed()
+        {
+            RequestCatalogRefresh();
+        }
+
+        private void RequestCatalogRefresh()
+        {
+            // Closed/unopened panels already scan on opening. Watcher-backed builds retain
+            // their existing notifications; only the visible tab needs this fallback.
+            if (m_EnabledCount > 1 && isActiveAndEnabled && !App.PlatformConfig.UseFileSystemWatcher)
+                m_CatalogRefreshPending = true;
+        }
+
+        private void RefreshCatalogIfRequested()
+        {
+            if (!m_CatalogRefreshPending || AndroidDirectStorage.IsRefreshing ||
+                m_CurrentTab == null || m_CurrentTab.Catalog.IsScanning)
+                return;
+            // A scan can reject a second request while busy, so keep the request until idle.
+            m_CatalogRefreshPending = false;
+            m_CurrentTab.Catalog.ForceCatalogScan();
+            RefreshPage();
+        }
+
         protected override void Awake()
         {
             base.Awake();
+            AndroidDirectStorage.Refreshed += OnStorageRefreshed;
             foreach (var tab in m_Tabs)
             {
                 tab.InitTab();
@@ -146,6 +185,7 @@ namespace TiltBrush
 
         protected void OnDestroy()
         {
+            AndroidDirectStorage.Refreshed -= OnStorageRefreshed;
             foreach (var tab in m_Tabs)
             {
                 tab.Catalog.CatalogChanged -= OnCatalogChanged;
@@ -231,7 +271,10 @@ namespace TiltBrush
                 ReferenceButton.Type.BackgroundImages => BackgroundImageCatalog.m_Instance.CurrentBackgroundImagesDirectory,
                 ReferenceButton.Type.Models => ModelCatalog.m_Instance.CurrentModelsDirectory,
                 ReferenceButton.Type.Videos => VideoCatalog.Instance.CurrentVideoDirectory,
-                ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory
+                ReferenceButton.Type.SavedStrokes => SavedStrokesCatalog.Instance.CurrentSavedStrokesDirectory,
+                ReferenceButton.Type.SoundClips => SoundClipCatalog.Instance.CurrentSoundClipDirectory,
+                _ => throw new System.InvalidOperationException(
+                    $"Unsupported reference tab type: {m_CurrentTab.ReferenceButtonType}")
             };
 
             string displayPath;
@@ -258,13 +301,13 @@ namespace TiltBrush
             }
             else
             {
-                displayPath = currentDir.Substring(App.MediaLibraryPath().Length);
+                displayPath = currentDir?.Substring(App.MediaLibraryPath().Length);
             }
 
             if (m_DirectoryChooserPopupButton != null)
             {
                 m_DirectoryChooserPopupButton.ButtonLabel = $"{displayPath}";
-                m_CurrentSubdirectories = Directory.GetDirectories(currentDir);
+                m_CurrentSubdirectories = AndroidDirectStorage.GetDirectories(currentDir);
 
                 if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)
                 {
@@ -377,7 +420,10 @@ namespace TiltBrush
             {
                 return true;
             }
-            return m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
+            // Gaze raycasts reach us before the panel is first enabled, and m_CurrentTab
+            // is only assigned in OnEnablePanel.
+            return m_CurrentTab != null &&
+                m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
         }
 
         public void ChangeDirectoryForCurrentTab(string path)

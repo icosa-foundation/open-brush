@@ -1,0 +1,803 @@
+// Copyright 2026 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+using System;
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
+using UnityEngine.Experimental.Rendering;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.XR;
+
+namespace TiltBrush
+{
+    /// <summary>
+    /// Establishes the URP post-processing baseline while the legacy Built-in post effects
+    /// are migrated. Later phases should expand this into the single owner for URP quality
+    /// and capture post-processing state.
+    /// </summary>
+    [DefaultExecutionOrder(-10000)]
+    public class UrpPostProcessingController : MonoBehaviour
+    {
+        private const string kLogPrefix = "[OB_URP_POST]";
+        private const string kRuntimeVolumeName = "OpenBrush URP Runtime Global Volume";
+        private const float kDisabledBloomIntensity = 0f;
+        private const float kFastBloomIntensity = 0.1f;
+        private const float kFullBloomIntensity = 0.14f;
+        private const float kMobileBloomIntensity = 0.1f;
+        private const float kFastBloomScatter = 0.45f;
+        private const float kFullBloomScatter = 0.55f;
+        private const float kMobileBloomScatter = 0.35f;
+
+        public static UrpPostProcessingController Instance { get; private set; }
+
+        [SerializeField] private VolumeProfile m_MainProfile;
+        [SerializeField] private VolumeProfile m_CaptureProfile;
+        [SerializeField] private bool m_CreateRuntimeGlobalVolume = true;
+        [SerializeField] private bool m_EnablePostProcessingOnMainCameras = true;
+        [SerializeField] private LayerMask m_VolumeLayerMask = ~0;
+
+        private Volume m_RuntimeVolume;
+        private VolumeProfile m_RuntimeMainProfile;
+        private VolumeProfile m_RuntimeCaptureProfile;
+        private Bloom m_Bloom;
+        private Vignette m_Vignette;
+        private Bloom m_CaptureBloom;
+        private Vignette m_CaptureVignette;
+        private bool m_CurrentHdr = true;
+        private bool m_CurrentFxaa;
+        private int m_CurrentMsaa = 1;
+        private UniversalRenderPipelineAsset m_MsaaPipelineAsset;
+        private RenderPipelineAsset m_PreviousQualityPipeline;
+        private bool m_HasSessionPipelineSettings;
+        private int m_PreviousPipelineMsaa;
+        private int m_PreviousUnityMsaa;
+        private float m_PreviousRenderScale;
+        private AppQualitySettingLevels.BloomMode m_CurrentBloomMode =
+            AppQualitySettingLevels.BloomMode.None;
+        private float m_BloomAmount = 1f;
+        private float? m_RuntimeBloomThreshold;
+        private readonly HashSet<Camera> m_ExplicitCaptureCameras = new HashSet<Camera>();
+
+        public VolumeProfile MainProfile => m_RuntimeMainProfile;
+        public VolumeProfile CaptureProfile => m_RuntimeCaptureProfile;
+        public bool SessionHdr => m_CurrentHdr;
+        public struct CameraPostProcessingState
+        {
+            public Camera camera;
+            public UniversalAdditionalCameraData cameraData;
+            public bool renderPostProcessing;
+            public LayerMask volumeLayerMask;
+            public Transform volumeTrigger;
+            public bool allowHDR;
+        }
+
+        private void Awake()
+        {
+            if (Instance != null && Instance != this)
+            {
+                Debug.LogWarning($"{kLogPrefix} Multiple URP post-processing controllers found; disabling {name}.");
+                enabled = false;
+                return;
+            }
+
+            Instance = this;
+            DisableLegacyPostProcessing();
+            CameraConfig.PostEffectsChanged += OnPostEffectsChanged;
+        }
+
+        private void Start()
+        {
+            EnsureProfiles();
+            EnsureGlobalVolume();
+            float? bloomAmount = App.UserConfig.PostProcessingFx.BloomAmount;
+            if (bloomAmount.HasValue && !float.IsNaN(bloomAmount.Value) &&
+                !float.IsInfinity(bloomAmount.Value))
+            {
+                SetBloomAmount(bloomAmount.Value);
+            }
+            RefreshCameras();
+            DisableCompositionLayerEditorEmulationIfUnused();
+            StartCoroutine(DisableCompositionLayerEditorEmulationAfterStartup());
+
+            if (QualityControls.m_Instance != null)
+            {
+                PrepareSession(QualityControls.m_Instance);
+                QualityControls.m_Instance.OnQualityLevelChange += ApplyQuality;
+                ApplyQuality(QualityControls.m_Instance.QualityLevel);
+            }
+            else
+            {
+                m_CurrentBloomMode = AppQualitySettingLevels.BloomMode.Full;
+                ApplyBloomMode(m_CurrentBloomMode);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            RestorePipelineMsaa();
+            if (Instance == this)
+            {
+                Instance = null;
+            }
+
+            CameraConfig.PostEffectsChanged -= OnPostEffectsChanged;
+
+            if (QualityControls.m_Instance != null)
+            {
+                QualityControls.m_Instance.OnQualityLevelChange -= ApplyQuality;
+            }
+        }
+
+        public void RefreshCameras()
+        {
+            DisableLegacyPostProcessing();
+
+            Camera[] cameras = FindObjectsOfType<Camera>(includeInactive: true);
+
+            foreach (Camera camera in cameras)
+            {
+                if (camera == null)
+                {
+                    continue;
+                }
+
+                bool isCapture = IsCaptureCamera(camera);
+                bool allowXr = !isCapture && camera.stereoTargetEye != StereoTargetEyeMask.None;
+                if (camera.CompareTag("Ignore") && allowXr)
+                {
+                    continue;
+                }
+
+                UniversalAdditionalCameraData cameraData =
+                    camera.GetComponent<UniversalAdditionalCameraData>();
+                if (cameraData == null)
+                {
+                    cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+                }
+
+                // URP uses allowXRRendering when it builds eye passes, rather than
+                // Camera.stereoTargetEye. Mono/capture cameras must not join those passes,
+                // including cameras excluded from our post-processing policy.
+                cameraData.allowXRRendering = allowXr;
+                if (camera.CompareTag("Ignore"))
+                {
+                    continue;
+                }
+                ApplyCameraBaseline(camera, cameraData, isCapture);
+            }
+        }
+
+        public void ConfigureScreenshotCamera(Camera camera, bool enableCaptureEffects)
+        {
+            RegisterCaptureCamera(camera);
+            ConfigureCaptureCamera(camera, enableCaptureEffects);
+        }
+
+        public void ConfigureDropCamCamera(Camera camera, bool enableCaptureEffects)
+        {
+            RegisterCaptureCamera(camera);
+            ConfigureCaptureCamera(camera, enableCaptureEffects);
+        }
+
+        public static void ConfigureOffscreenCaptureCamera(Camera camera)
+        {
+            if (camera == null)
+            {
+                return;
+            }
+
+            UniversalAdditionalCameraData cameraData =
+                camera.GetComponent<UniversalAdditionalCameraData>();
+            if (cameraData == null)
+            {
+                cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            }
+
+            cameraData.allowXRRendering = false;
+            cameraData.renderType = CameraRenderType.Base;
+            cameraData.cameraStack.Clear();
+            camera.allowMSAA = true;
+        }
+
+        public void SetRecordingPostProcessing(Camera camera, bool enabled)
+        {
+            RegisterCaptureCamera(camera);
+            ConfigureCaptureCamera(camera, enabled);
+        }
+
+        public void SetCapturePostEffects(bool enabled)
+        {
+            CameraConfig.PostEffects = enabled;
+        }
+
+        public void SetBloomAmount(float amount)
+        {
+            EnsureProfilesIfNeeded();
+            m_BloomAmount = Mathf.Clamp01(amount);
+            if (m_Bloom == null)
+            {
+                return;
+            }
+
+            ApplyBloomMode(m_CurrentBloomMode);
+        }
+
+        public void SetBloomThreshold(float threshold)
+        {
+            if (float.IsNaN(threshold) || float.IsInfinity(threshold) || threshold < 0f)
+            {
+                throw new ArgumentException("Bloom threshold must be finite and non-negative.", nameof(threshold));
+            }
+            m_RuntimeBloomThreshold = threshold;
+            ApplyBloomMode(m_CurrentBloomMode);
+        }
+
+        public CameraPostProcessingState BeginCapturePostProcessing(
+            Camera camera, bool enablePostProcessing)
+        {
+            CameraPostProcessingState state = new CameraPostProcessingState
+            {
+                camera = camera,
+                allowHDR = camera != null && camera.allowHDR
+            };
+
+            if (camera == null)
+            {
+                return state;
+            }
+
+            RegisterCaptureCamera(camera);
+            UniversalAdditionalCameraData cameraData =
+                camera.GetComponent<UniversalAdditionalCameraData>();
+            if (cameraData == null)
+            {
+                if (!enablePostProcessing) return state;
+                cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            }
+
+            state.cameraData = cameraData;
+            state.renderPostProcessing = cameraData.renderPostProcessing;
+            state.volumeLayerMask = cameraData.volumeLayerMask;
+            state.volumeTrigger = cameraData.volumeTrigger;
+
+            if (!enablePostProcessing)
+            {
+                // Previews may have effects enabled. Suppress only the post-processing flag
+                // for this capture; do not reconfigure XR, the camera stack, or MSAA.
+                cameraData.renderPostProcessing = false;
+                return state;
+            }
+
+            camera.allowHDR = m_CurrentHdr;
+            ConfigureCaptureCamera(camera, enablePostProcessing);
+            return state;
+        }
+
+        public void EndCapturePostProcessing(CameraPostProcessingState state)
+        {
+            if (state.camera == null)
+            {
+                return;
+            }
+
+            state.camera.allowHDR = state.allowHDR;
+            if (state.cameraData == null)
+            {
+                return;
+            }
+
+            state.cameraData.renderPostProcessing = state.renderPostProcessing;
+            state.cameraData.volumeLayerMask = state.volumeLayerMask;
+            state.cameraData.volumeTrigger = state.volumeTrigger;
+        }
+
+        private void ConfigureCaptureCamera(Camera camera, bool enablePostProcessing)
+        {
+            if (camera == null)
+            {
+                return;
+            }
+
+            RegisterCaptureCamera(camera);
+            ConfigureOffscreenCaptureCamera(camera);
+            UniversalAdditionalCameraData cameraData =
+                camera.GetComponent<UniversalAdditionalCameraData>();
+            if (cameraData == null)
+            {
+                cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
+            }
+
+            cameraData.allowXRRendering = false;
+            cameraData.renderPostProcessing = enablePostProcessing;
+            cameraData.volumeLayerMask = m_VolumeLayerMask;
+            cameraData.volumeTrigger = camera.transform;
+        }
+
+        private void ApplyQuality(int qualityLevel)
+        {
+            // Keep the session's buffer settings on an owned runtime copy of the
+            // tier's authored asset, reusing it across tiers that share the asset.
+            if (SessionMsaaLevel.HasValue)
+            {
+                ApplyMsaa(SessionMsaaLevel.Value);
+            }
+
+            if (QualityControls.m_Instance == null)
+            {
+                m_CurrentBloomMode = AppQualitySettingLevels.BloomMode.Full;
+                ApplyBloomMode(m_CurrentBloomMode);
+                return;
+            }
+
+            AppQualitySettingLevels.AppQualitySettings settings =
+                QualityControls.m_Instance.AppQualityLevels[qualityLevel];
+            m_CurrentHdr = QualityControls.m_Instance.SessionHdr;
+            m_CurrentFxaa = settings.Fxaa;
+            m_CurrentBloomMode = settings.Bloom;
+
+            // A suspended/not-yet-started XR display is still an XR session. Do not
+            // turn viewport quality into eye-buffer resizing while it is stopped.
+            if (m_MsaaPipelineAsset != null)
+            {
+                float scale = 1f;
+                if (App.Config.m_SdkMode != SdkMode.UnityXR)
+                {
+                    scale = App.UserConfig.Profiling.ViewportScaling > 0
+                        ? App.UserConfig.Profiling.ViewportScaling : settings.ViewportScale;
+                }
+                m_MsaaPipelineAsset.renderScale = m_PreviousRenderScale * scale;
+            }
+            ApplyBloomMode(settings.Bloom);
+            RefreshCameras();
+        }
+
+        public int? SessionMsaaLevel { get; private set; }
+
+        public void PrepareSession(QualityControls quality)
+        {
+            if (SessionMsaaLevel.HasValue) return;
+            if (!(GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset pipeline))
+            {
+                return;
+            }
+            // Buffer formats and sample count are startup settings on every platform.
+            // In XR this must run before StartSubsystems allocates the eye surfaces.
+            quality.PrepareSessionRendering();
+            m_CurrentHdr = quality.SessionHdr;
+            // Native HDR colours must reach URP bloom without legacy brush encoding.
+            Shader.DisableKeyword("HDR_SIMPLE");
+            Shader.DisableKeyword("HDR_EMULATED");
+            ApplyMsaa(quality.MSAALevel);
+            SessionMsaaLevel = m_CurrentMsaa;
+        }
+
+        private void ApplyMsaa(int requestedSamples)
+        {
+#if UNITY_IOS && ZAPBOX_SUPPORTED
+            // Preserve the existing Zapbox policy of disabling MSAA.
+            requestedSamples = 1;
+#endif
+            m_CurrentMsaa = requestedSamples == 0 ? 1 : requestedSamples;
+            if (m_CurrentMsaa != 1 && m_CurrentMsaa != 2 &&
+                m_CurrentMsaa != 4 && m_CurrentMsaa != 8)
+            {
+                Debug.LogWarning($"{kLogPrefix} Invalid MSAA {requestedSamples}; disabling MSAA.");
+                m_CurrentMsaa = 1;
+            }
+
+            int supportedSamples = GetSupportedMsaa(m_CurrentMsaa, m_CurrentHdr);
+            if (supportedSamples != m_CurrentMsaa)
+            {
+                Debug.LogWarning($"{kLogPrefix} Requested {m_CurrentMsaa}x MSAA is unsupported; using {supportedSamples}x.");
+                m_CurrentMsaa = supportedSamples;
+            }
+
+            var pipelineAsset = GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset;
+            // PrepareQualityLevelChange restores the authored tier reference before Unity
+            // switches levels. Reattach our existing copy when the next tier uses the
+            // same asset; destroying it would tear down the live URP renderer and targets.
+            var authoredPipeline = m_PreviousQualityPipeline != null
+                ? m_PreviousQualityPipeline : GraphicsSettings.defaultRenderPipeline;
+            if (m_MsaaPipelineAsset != null && pipelineAsset == authoredPipeline)
+            {
+                QualitySettings.renderPipeline = m_MsaaPipelineAsset;
+            }
+            else if (pipelineAsset != m_MsaaPipelineAsset)
+            {
+                ReleaseQualityPipeline();
+                if (pipelineAsset != null)
+                {
+                    if (!m_HasSessionPipelineSettings)
+                    {
+                        m_PreviousPipelineMsaa = pipelineAsset.msaaSampleCount;
+                        m_PreviousUnityMsaa = QualitySettings.antiAliasing;
+                        m_HasSessionPipelineSettings = true;
+                    }
+                    m_PreviousQualityPipeline = QualitySettings.renderPipeline;
+                    m_PreviousRenderScale = pipelineAsset.renderScale;
+                    m_MsaaPipelineAsset = Instantiate(pipelineAsset);
+                    m_MsaaPipelineAsset.name = $"{pipelineAsset.name} (Runtime)";
+                    m_MsaaPipelineAsset.hideFlags = HideFlags.DontSave;
+                    QualitySettings.renderPipeline = m_MsaaPipelineAsset;
+                }
+            }
+
+            if (m_MsaaPipelineAsset != null)
+            {
+                m_MsaaPipelineAsset.msaaSampleCount = m_CurrentMsaa;
+                QualitySettings.antiAliasing = m_CurrentMsaa;
+                // Configure the native sample count once, before XR starts rendering.
+                // Later quality changes only replace the pipeline's shadow policy.
+                if (!SessionMsaaLevel.HasValue)
+                    XRSystem.SetDisplayMSAASamples((MSAASamples)m_CurrentMsaa);
+            }
+        }
+
+        public int GetSupportedMsaa(int requestedSamples, bool hdr)
+        {
+            var descriptor = new RenderTextureDescriptor(
+                Mathf.Max(1, Screen.width), Mathf.Max(1, Screen.height),
+                hdr ? RenderTextureFormat.DefaultHDR : RenderTextureFormat.Default, 24);
+            var displays = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetInstances(displays);
+            foreach (var display in displays)
+            {
+                if (display.running && display.GetRenderPassCount() > 0)
+                {
+                    display.GetRenderPass(0, out var pass);
+                    descriptor = pass.renderTargetDesc;
+                    break;
+                }
+            }
+
+            // Probe downward explicitly: an unsupported request can report 1x even
+            // when an intermediate sample count is supported by the target format.
+            for (int samples = requestedSamples; samples > 1; samples /= 2)
+            {
+                descriptor.msaaSamples = samples;
+                if (SystemInfo.GetRenderTextureSupportedMSAASampleCount(descriptor) == samples)
+                {
+                    return samples;
+                }
+            }
+            return 1;
+        }
+
+        // QualitySettings.renderPipeline overrides the current tier, so restore that
+        // slot before switching. Keep the runtime asset alive across matching tiers:
+        // RenderPipelineAsset.OnDisable tears down the active render pipeline.
+        public void PrepareQualityLevelChange(int qualityLevel)
+        {
+            if (m_MsaaPipelineAsset == null) return;
+
+            RenderPipelineAsset nextPipeline = QualitySettings.GetRenderPipelineAssetAt(qualityLevel);
+            if (nextPipeline == m_MsaaPipelineAsset) nextPipeline = m_PreviousQualityPipeline;
+            RenderPipelineAsset currentPipeline = m_PreviousQualityPipeline != null
+                ? m_PreviousQualityPipeline : GraphicsSettings.defaultRenderPipeline;
+            RenderPipelineAsset nextEffectivePipeline = nextPipeline != null
+                ? nextPipeline : GraphicsSettings.defaultRenderPipeline;
+            bool reusePipeline = nextEffectivePipeline == currentPipeline;
+
+            string transition = $"{QualitySettings.GetQualityLevel()} -> {qualityLevel}";
+            var pipelineId = m_MsaaPipelineAsset.GetEntityId();
+            Debug.Log($"[OB_GPU_LIFETIME] Quality {transition}; reuse={reusePipeline}; pipeline={pipelineId}; fps={QualityControls.m_Instance?.FramesInLastSecond}; msaa={m_CurrentMsaa}");
+
+            if (QualitySettings.renderPipeline == m_MsaaPipelineAsset)
+                QualitySettings.renderPipeline = m_PreviousQualityPipeline;
+
+            if (reusePipeline) m_PreviousQualityPipeline = nextPipeline;
+            else ReleaseQualityPipeline();
+        }
+
+        private void ReleaseQualityPipeline()
+        {
+            if (m_MsaaPipelineAsset != null)
+            {
+                if (QualitySettings.renderPipeline == m_MsaaPipelineAsset)
+                {
+                    QualitySettings.renderPipeline = m_PreviousQualityPipeline;
+                }
+                Destroy(m_MsaaPipelineAsset);
+                m_MsaaPipelineAsset = null;
+                m_PreviousQualityPipeline = null;
+            }
+        }
+
+        private void RestorePipelineMsaa()
+        {
+            ReleaseQualityPipeline();
+            if (!m_HasSessionPipelineSettings) return;
+            QualitySettings.antiAliasing = m_PreviousUnityMsaa;
+            var displays = new List<XRDisplaySubsystem>();
+            SubsystemManager.GetInstances(displays);
+            if (!displays.Exists(display => display.running))
+                XRSystem.SetDisplayMSAASamples((MSAASamples)m_PreviousPipelineMsaa);
+            m_HasSessionPipelineSettings = false;
+        }
+
+        private void OnPostEffectsChanged()
+        {
+            RefreshCameras();
+        }
+
+        private void ApplyCameraBaseline(
+            Camera camera,
+            UniversalAdditionalCameraData cameraData,
+            bool isCapture)
+        {
+            cameraData.volumeLayerMask = m_VolumeLayerMask;
+            cameraData.volumeTrigger = camera.transform;
+            cameraData.renderPostProcessing =
+                (isCapture || m_EnablePostProcessingOnMainCameras) && CameraConfig.PostEffects;
+            camera.allowHDR = m_CurrentHdr;
+            // URP's intermediate textures and final XR viewport must use the same scale.
+#if OPEN_BRUSH_ANDROID_XR
+            camera.allowDynamicResolution = !isCapture && cameraData.allowXRRendering;
+#else
+            if (QualityControls.RequiresUnfoveatedReducedViewport)
+                camera.allowDynamicResolution = !isCapture && cameraData.allowXRRendering;
+#endif
+
+            if (!isCapture)
+            {
+                camera.allowMSAA = m_CurrentMsaa > 1;
+                cameraData.antialiasing = m_CurrentFxaa
+                    ? AntialiasingMode.FastApproximateAntialiasing
+                    : AntialiasingMode.None;
+                cameraData.antialiasingQuality = AntialiasingQuality.High;
+            }
+            else
+            {
+                cameraData.antialiasing = AntialiasingMode.None;
+            }
+        }
+
+        private void EnsureProfiles()
+        {
+            m_RuntimeMainProfile = m_MainProfile != null
+                ? Instantiate(m_MainProfile)
+                : ScriptableObject.CreateInstance<VolumeProfile>();
+            m_RuntimeMainProfile.name = "OpenBrush URP Runtime Main Profile";
+
+            m_RuntimeCaptureProfile = m_CaptureProfile != null
+                ? Instantiate(m_CaptureProfile)
+                : ScriptableObject.CreateInstance<VolumeProfile>();
+            m_RuntimeCaptureProfile.name = "OpenBrush URP Runtime Capture Profile";
+
+            EnsureMainProfileComponents();
+            EnsureCaptureProfileComponents();
+        }
+
+        private void EnsureMainProfileComponents()
+        {
+            if (!m_RuntimeMainProfile.TryGet(out m_Bloom))
+            {
+                m_Bloom = m_RuntimeMainProfile.Add<Bloom>(true);
+            }
+            m_Bloom.active = true;
+            m_Bloom.threshold.overrideState = true;
+            m_Bloom.threshold.value = GetBloomThreshold();
+            m_Bloom.intensity.overrideState = true;
+            m_Bloom.intensity.value = kFullBloomIntensity;
+            m_Bloom.scatter.overrideState = true;
+            m_Bloom.scatter.value = 0.55f;
+            m_Bloom.highQualityFiltering.overrideState = true;
+            m_Bloom.highQualityFiltering.value = true;
+            m_Bloom.downscale.overrideState = true;
+            m_Bloom.downscale.value = BloomDownscaleMode.Half;
+            m_Bloom.maxIterations.overrideState = true;
+            m_Bloom.maxIterations.value = 6;
+
+            if (!m_RuntimeMainProfile.TryGet(out m_Vignette))
+            {
+                m_Vignette = m_RuntimeMainProfile.Add<Vignette>(true);
+            }
+            m_Vignette.active = false;
+            m_Vignette.intensity.overrideState = true;
+            m_Vignette.intensity.value = 0f;
+        }
+
+        private void EnsureCaptureProfileComponents()
+        {
+            if (!m_RuntimeCaptureProfile.TryGet(out m_CaptureBloom))
+            {
+                m_CaptureBloom = m_RuntimeCaptureProfile.Add<Bloom>(true);
+            }
+            m_CaptureBloom.active = false;
+
+            if (!m_RuntimeCaptureProfile.TryGet(out m_CaptureVignette))
+            {
+                m_CaptureVignette = m_RuntimeCaptureProfile.Add<Vignette>(true);
+            }
+            m_CaptureVignette.active = false;
+        }
+
+        private void EnsureGlobalVolume()
+        {
+            if (!m_CreateRuntimeGlobalVolume || m_RuntimeVolume != null)
+            {
+                return;
+            }
+
+            GameObject volumeObject = new GameObject(kRuntimeVolumeName);
+            volumeObject.transform.SetParent(transform, worldPositionStays: false);
+            m_RuntimeVolume = volumeObject.AddComponent<Volume>();
+            m_RuntimeVolume.isGlobal = true;
+            m_RuntimeVolume.priority = 0f;
+            m_RuntimeVolume.weight = 1f;
+            m_RuntimeVolume.sharedProfile = m_RuntimeMainProfile;
+        }
+
+        private float GetBloomThreshold()
+        {
+            float? configuredThreshold = m_RuntimeBloomThreshold ??
+                App.UserConfig.PostProcessingFx.BloomThreshold;
+            if (configuredThreshold.HasValue && !float.IsNaN(configuredThreshold.Value) &&
+                !float.IsInfinity(configuredThreshold.Value))
+            {
+                return Mathf.Max(0f, configuredThreshold.Value);
+            }
+
+            return 1.05f;
+        }
+
+        private void ApplyBloomMode(AppQualitySettingLevels.BloomMode bloomMode)
+        {
+            EnsureProfilesIfNeeded();
+
+            m_Bloom.threshold.value = GetBloomThreshold();
+            bool enabled = bloomMode != AppQualitySettingLevels.BloomMode.None &&
+                m_BloomAmount > 0f;
+            m_Bloom.active = enabled;
+
+            if (!enabled)
+            {
+                m_Bloom.intensity.value = kDisabledBloomIntensity;
+                return;
+            }
+
+            switch (bloomMode)
+            {
+                case AppQualitySettingLevels.BloomMode.Fast:
+                    m_Bloom.intensity.value = kFastBloomIntensity;
+                    m_Bloom.scatter.value = kFastBloomScatter;
+                    m_Bloom.highQualityFiltering.value = false;
+                    m_Bloom.downscale.value = BloomDownscaleMode.Quarter;
+                    m_Bloom.maxIterations.value = 3;
+                    break;
+
+                case AppQualitySettingLevels.BloomMode.Mobile:
+                    m_Bloom.intensity.value = kMobileBloomIntensity;
+                    m_Bloom.scatter.value = kMobileBloomScatter;
+                    m_Bloom.highQualityFiltering.value = false;
+                    m_Bloom.downscale.value = BloomDownscaleMode.Quarter;
+                    m_Bloom.maxIterations.value = 2;
+                    break;
+
+                case AppQualitySettingLevels.BloomMode.Full:
+                default:
+                    m_Bloom.intensity.value = kFullBloomIntensity;
+                    m_Bloom.scatter.value = kFullBloomScatter;
+                    m_Bloom.highQualityFiltering.value = true;
+                    m_Bloom.downscale.value = BloomDownscaleMode.Half;
+                    m_Bloom.maxIterations.value = 6;
+                    break;
+            }
+            m_Bloom.intensity.value *= m_BloomAmount;
+        }
+
+        public void DisableLegacyPostProcessing()
+        {
+            DisableAll<SENaturalBloomAndDirtyLens>();
+            DisableAll<FXAA>();
+            DisableAll<MobileBloom>();
+            DisableAll<TiltShift>();
+            DisableAll<Kino.Vignette>();
+            DisableAll<PostEffectsToggle>();
+        }
+
+        private void DisableCompositionLayerEditorEmulationIfUnused()
+        {
+#if UNITY_EDITOR
+            InvokeCompositionLayerEmulationMethod(
+                "Unity.XR.CompositionLayers.Emulation.EmulationColorScaleBiasPass",
+                "UnregisterScriptableRendererPass");
+            InvokeCompositionLayerEmulationMethod(
+                "Unity.XR.CompositionLayers.Emulation.EmulationLayerUniversalScriptableRendererPass",
+                "UnregisterScriptableRendererPass");
+#endif
+        }
+
+        private System.Collections.IEnumerator DisableCompositionLayerEditorEmulationAfterStartup()
+        {
+#if UNITY_EDITOR
+            yield return null;
+            yield return null;
+            DisableCompositionLayerEditorEmulationIfUnused();
+#else
+            yield break;
+#endif
+        }
+
+#if UNITY_EDITOR
+        private static void InvokeCompositionLayerEmulationMethod(string typeName, string methodName)
+        {
+            Type type = Type.GetType($"{typeName}, Unity.XR.CompositionLayers");
+            MethodInfo method = type?.GetMethod(methodName, BindingFlags.Static | BindingFlags.NonPublic);
+            if (method == null)
+            {
+                Debug.LogWarning($"{kLogPrefix} Could not find Composition Layers emulation method {typeName}.{methodName}.");
+                return;
+            }
+
+            method.Invoke(null, null);
+        }
+#endif
+
+        private static void DisableAll<T>() where T : MonoBehaviour
+        {
+            foreach (T component in FindObjectsOfType<T>(includeInactive: true))
+            {
+                if (component.enabled)
+                {
+                    component.enabled = false;
+                }
+            }
+        }
+
+        private void EnsureProfilesIfNeeded()
+        {
+            if (m_RuntimeMainProfile == null)
+            {
+                EnsureProfiles();
+            }
+        }
+
+        private void RegisterCaptureCamera(Camera camera)
+        {
+            if (camera != null)
+            {
+                m_ExplicitCaptureCameras.Add(camera);
+            }
+        }
+
+        private bool IsCaptureCamera(Camera camera)
+        {
+            if (m_ExplicitCaptureCameras.Contains(camera))
+            {
+                return true;
+            }
+
+            string cameraName = camera.name.ToLowerInvariant();
+            if (camera.targetTexture != null)
+            {
+                return true;
+            }
+
+            if (camera.GetComponent<VideoRecorder>() != null)
+            {
+                return true;
+            }
+
+            return cameraName.Contains("screenshot")
+                || cameraName.Contains("drop")
+                || cameraName.Contains("video")
+                || cameraName.Contains("gif")
+                || cameraName.Contains("saveicon")
+                || cameraName.Contains("capture");
+        }
+    }
+}

@@ -143,7 +143,7 @@ namespace TiltBrush
                 FlyPathRecorder.RecordedFrame frame = m_Frames[i];
                 PathT pathT = new PathT(i);
                 CameraPathSpeedKnot speedKnot = m_Widget.Path.CreateSpeedKnot(pathT);
-                speedKnot.SetCameraSpeed(frame.speed * 0.5f);
+                speedKnot.SetCameraSpeed(frame.speed);
                 m_Widget.Path.AddSpeedKnot(speedKnot, pathT);
             }
         }

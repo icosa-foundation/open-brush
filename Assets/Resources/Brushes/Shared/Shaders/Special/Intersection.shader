@@ -36,8 +36,8 @@ Shader "Brush/Special/Intersection" {
 #pragma geometry geom
 
 #include "UnityCG.cginc"
-#include "Assets/Shaders/Include/Brush.cginc"
-#include "Assets/Shaders/Include/PackInt.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+#include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/PackInt.cginc"
 
 // TODO: This is currently disabled because of issues with back facing triangles.
 #define TILT_ENABLE_CONSERVATIVE_RASTER 0
@@ -225,7 +225,7 @@ Shader "Brush/Special/Intersection" {
 #endif
           test.vertex = currPos;
           test.worldPos = input[i].worldPos;
-          test.color = PackUint16x2ToRgba8(uint2(_BatchID, id));
+          test.color = PackUint16x2ToRgba8(uint2((uint)_BatchID, id));
 
           // Note, world space pos has not been inflated.
           OutputStream.Append(test);
@@ -252,6 +252,9 @@ Shader "Brush/Special/Intersection" {
     }
   }
 
-  Fallback "Unlit/Diffuse"
+  // No Fallback by design: if this shader fails to compile or load, we want the
+  // intersection RT to stay empty (all-zero, from the camera clear) rather than be
+  // silently filled by Unlit/Diffuse sampling each brush's MainTex - which would
+  // produce garbage batch/triangle IDs and silently-wrong selection results.
 
 }
