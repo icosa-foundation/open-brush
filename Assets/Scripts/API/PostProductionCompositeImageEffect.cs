@@ -65,11 +65,6 @@ namespace TiltBrush
 
         public static string LastStatus { get; private set; } = "not started";
 
-        // TEMP profiling (POSTPROD_FAST_PREVIEW_DESIGN.md step 1), read via
-        // query.postprod.debug.timing.
-        public static volatile string LastCgLoadTiming = "no CG reload yet";
-        public static volatile string LastPlateLoadTiming = "no plate reload yet";
-
         // Editor Play sessions keep static state (no domain reload). The cached helper
         // textures and material are kept: their getters recreate them if they were destroyed.
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -82,8 +77,6 @@ namespace TiltBrush
             s_PlateColorPath = "";
             s_PlateDepthPath = "";
             LastStatus = "not started";
-            LastCgLoadTiming = "no CG reload yet";
-            LastPlateLoadTiming = "no plate reload yet";
         }
 
         // Called whenever a fresh CG capture has been written (see
@@ -219,7 +212,6 @@ namespace TiltBrush
                 return;
             }
 
-            var cgTimer = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 DestroyIfNotNull(ref m_CgColorTex);
@@ -268,7 +260,6 @@ namespace TiltBrush
                 return;
             }
 
-            var plateTimer = System.Diagnostics.Stopwatch.StartNew();
             try
             {
                 DestroyIfNotNull(ref m_PlateColorTex);

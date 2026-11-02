@@ -248,7 +248,6 @@ namespace TiltBrush
             }
         }
 
-        // Continue drawing stroke for this frame, returning true if more rendering is pending.
         // The sketch time in milliseconds. Quick loads and ClearMemory set the sketch time to
         // float.MaxValue to finish playback, which is outside long's range in milliseconds, so
         // it is clamped to the end rather than cast (the cast overflowed, which stopped a quick
@@ -258,6 +257,7 @@ namespace TiltBrush
             return ConvertSketchTimeToMilliseconds(App.Instance.CurrentSketchTime);
         }
 
+        // Continue drawing stroke for this frame, returning true if more rendering is pending.
         public bool Update()
         {
             long currentTimeMs = m_quickLoadRemaining

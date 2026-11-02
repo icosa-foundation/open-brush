@@ -154,7 +154,6 @@ namespace TiltBrush
             s_DepthDecoders = DefaultDepthDecoders;
             s_DecodeCount = s_DecodeTicks = 0;
             s_LastDecodeDoneTicks = 0;
-            s_MaxMainThreadMs = 0;
             s_WorkerPhase = "idle";
             s_PooledDecodeCheck = "not run";
             LastStatus = "fast plates off";
@@ -271,30 +270,10 @@ namespace TiltBrush
             return Mathf.Min(s_DepthFirst + offset, s_DepthLast);
         }
 
-        // TEMP (stutter diagnosis 2026-10-23): slowest main-thread decode/upload since the
-        // last TakeMaxMainThreadMs, read every 30 frames by the frame stats.
-        private static double s_MaxMainThreadMs;
-
-        public static double TakeMaxMainThreadMs()
-        {
-            double max = s_MaxMainThreadMs;
-            s_MaxMainThreadMs = 0;
-            return max;
-        }
-
-        private static void RecordMainThreadMs(long startTicks)
-        {
-            double ms = (System.Diagnostics.Stopwatch.GetTimestamp() - startTicks) * 1000.0 /
-                System.Diagnostics.Stopwatch.Frequency;
-            if (ms > s_MaxMainThreadMs) { s_MaxMainThreadMs = ms; }
-        }
-
         private static Texture2D GetOrDecodeColor(int frame)
         {
             if (s_ColorTex.TryGetValue(frame, out var tex)) { return tex; }
-            long start = System.Diagnostics.Stopwatch.GetTimestamp();
-            try { return DecodeColor(frame); }
-            finally { RecordMainThreadMs(start); }
+            return DecodeColor(frame);
         }
 
         private static Texture2D DecodeColor(int frame)
@@ -316,9 +295,7 @@ namespace TiltBrush
         private static Texture2D GetOrUploadDepth(int depthFrame)
         {
             if (s_DepthTex.TryGetValue(depthFrame, out var tex)) { return tex; }
-            long start = System.Diagnostics.Stopwatch.GetTimestamp();
-            try { return UploadDepth(depthFrame); }
-            finally { RecordMainThreadMs(start); }
+            return UploadDepth(depthFrame);
         }
 
         private static Texture2D UploadDepth(int depthFrame)
