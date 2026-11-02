@@ -14,7 +14,8 @@
 
 namespace TiltBrush
 {
-    /// A passive UI surface that catches rays with its collider.
+    /// A passive UI surface that catches rays with its collider. Its parent contains the modal
+    /// controls, which receive input before this background; controls outside it are blocked.
     public class UIRaycastSurface : UIComponent
     {
     }
