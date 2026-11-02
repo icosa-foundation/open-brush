@@ -281,6 +281,7 @@ namespace TiltBrush
         )]
         public static void SetSketchScrubbing(bool enable)
         {
+            if (enable) { _ = PostProductionPreviewController.Instance; }
             var sketchMemory = SketchMemoryScript.m_Instance;
             sketchMemory.m_KeepPlaybackAliveForScrubbing = enable;
 

@@ -290,7 +290,15 @@ namespace TiltBrush
             ScreenshotManager.ClearCalibratedCamera();
             PostProductionSettings.ClearSession();
             PostProductionSettings.LoadCount++;
-            Debug.Log("[PostProd] session ended (new sketch)");
+            if (m_Instance != null)
+            {
+                m_Instance.enabled = false;
+                Destroy(m_Instance.gameObject);
+                m_Instance = null;
+            }
+            s_LastSketchTimeMs = 0;
+            LayerVisibility = "";
+            LayerNames = "";
         }
 
         // Every preview setting the control page shows, as key=value pairs.

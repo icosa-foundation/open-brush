@@ -107,14 +107,6 @@ namespace TiltBrush
             BrushTransformStack = new Stack<(Vector3, Quaternion)>();
             ResetBrushTransform();
 
-            // Force-create this now rather than lazily on first postprod.preview.*
-            // call, so its Update() loop (and therefore query.sketch.currenttime,
-            // which only that loop keeps fresh) works immediately - otherwise
-            // s_LastSketchTimeMs sits at its default (0) until some unrelated
-            // camera/preview command happens to touch .Instance first, which reads
-            // as "the scrub position keeps popping back to 0" from a client.
-            _ = PostProductionPreviewController.Instance;
-
             if (!Directory.Exists(m_UserScriptsPath))
             {
                 Directory.CreateDirectory(m_UserScriptsPath);
@@ -737,7 +729,7 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     // Cached on the main thread each frame by
                     // PostProductionPreviewController.Update() (App.Instance.CurrentSketchTime
                     // reads Unity's Time API, unsafe to touch from this HTTP listener thread
-                    // directly) - works regardless of whether postprod.preview is enabled.
+                    // directly). Returns the inactive default until a session starts.
                     return PostProductionPreviewController.LastSketchTimeMs.ToString("F0");
                 case "query.multiplayer":
                     return ApiMainThreadObserver.Instance?.RequestMultiplayerStatus() ??
