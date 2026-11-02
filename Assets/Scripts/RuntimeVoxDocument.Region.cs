@@ -45,25 +45,13 @@ namespace TiltBrush
             translation = Vector3Int.RoundToInt(grid.inverse * (desiredGrid * (Vector3)pivot) - pivot);
         }
 
-        // Work from a captured source set. Remove every source cell before writing
-        // destinations, so overlapping moves never consume their own output.
-        internal bool TryTransformRegion(RuntimeModel model, Vector3Int min, Vector3Int max,
-            Vector3Int pivot, Quaternion rotation, Vector3Int translation, bool clone,
-            out Vector3Int rebase)
+        // Compose a floating layer in its fixed original grid coordinates. Rebasing
+        // affects the rendered/saved view, never the retained background or payload.
+        internal bool TrySetRegionCells(RuntimeModel model, Dictionary<Vector3Int, byte> result,
+            Vector3 anchorOffset, Vector3Int anchorOrigin, out Vector3Int rebase)
         {
             rebase = Vector3Int.zero;
-            if (!ContainsModel(model) || !model.IsVisible) return false;
-            var selected = model.Voxels.Where(cell => InRegion(cell.Key, min, max)).ToArray();
-            if (selected.Length == 0) return false;
-            var result = new Dictionary<Vector3Int, byte>(model.Voxels);
-            if (!clone)
-                foreach (var cell in selected) result.Remove(cell.Key);
-            foreach (var cell in selected)
-                result[TransformRegionCell(cell.Key, pivot, rotation, translation)] = cell.Value;
-            if (result.Count == model.Voxels.Count &&
-                result.All(cell => model.TryGetPaletteIndex(cell.Key, out byte value) && value == cell.Value))
-                return false;
-
+            if (!ContainsModel(model) || result.Count == 0) return false;
             Vector3Int low = result.Keys.Aggregate(Vector3Int.Min);
             Vector3Int high = result.Keys.Aggregate(Vector3Int.Max);
             Vector3Int size = high - low + Vector3Int.one;
@@ -79,8 +67,8 @@ namespace TiltBrush
             // Replace only this instance's definition; linked source instances stay put.
             model.Definition = new VoxelDefinition(size, model.SourceModelId,
                 result.ToDictionary(cell => cell.Key + shift, cell => cell.Value));
-            model.TransformOffset -= model.GlobalRotation.MultiplyVector(rebase);
-            model.SourceCellOffset += rebase;
+            model.TransformOffset = anchorOffset - model.GlobalRotation.MultiplyVector(rebase);
+            model.SourceCellOffset = anchorOrigin + rebase;
             ViewState.VisualsDirty = true;
             return true;
         }
