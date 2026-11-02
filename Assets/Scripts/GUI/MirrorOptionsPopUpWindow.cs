@@ -113,6 +113,29 @@ namespace TiltBrush
         {
             base.Init(rParent, sText);
             RefreshMirrorControls();
+            SketchMemoryScript.m_Instance.CommandUndo += RefreshSliderValuesAfterHistory;
+            SketchMemoryScript.m_Instance.CommandRedo += RefreshSliderValuesAfterHistory;
+            foreach (var slider in GetComponentsInChildren<AdvancedSlider>(true))
+            {
+                slider.InteractionEnded += SymmetryMirrors.EndSettingsEdit;
+            }
+        }
+
+        private void OnDestroy()
+        {
+            foreach (var slider in GetComponentsInChildren<AdvancedSlider>(true))
+            {
+                slider.InteractionEnded -= SymmetryMirrors.EndSettingsEdit;
+            }
+            if (SketchMemoryScript.m_Instance == null) { return; }
+            SketchMemoryScript.m_Instance.CommandUndo -= RefreshSliderValuesAfterHistory;
+            SketchMemoryScript.m_Instance.CommandRedo -= RefreshSliderValuesAfterHistory;
+        }
+
+        private void RefreshSliderValuesAfterHistory(BaseCommand command)
+        {
+            SymmetryMirrors.EndSettingsEdit();
+            RefreshSliderValues();
         }
 
         private SymmetryMirror m_DisplayedMirror;
@@ -202,6 +225,11 @@ namespace TiltBrush
             }
             UpdateWallpaperSettingControls();
 
+            RefreshSliderValues();
+        }
+
+        private void RefreshSliderValues()
+        {
             m_HelicalCopiesSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalCopies);
             m_HelicalAngleSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalAngle);
             m_HelicalAdvanceSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalAdvance);

@@ -59,6 +59,11 @@ namespace TiltBrush
         // Set while a command is putting settings back, so the change isn't recorded again.
         private static bool m_ApplyingSettings;
 
+        // A completed UI gesture must not merge with the next adjustment of this mirror.
+        internal static object SettingsEditToken { get; private set; } = new object();
+
+        internal static void EndSettingsEdit() => SettingsEditToken = new object();
+
         /// The linked mirrors, oldest first.
         public static IReadOnlyList<SymmetryMirror> All => m_Order;
 

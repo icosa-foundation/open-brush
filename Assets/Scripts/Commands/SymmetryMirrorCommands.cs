@@ -223,7 +223,7 @@ namespace TiltBrush
 
     /// A settings change to a linked mirror that keeps its number of copies - wallpaper scale or
     /// skew, say. Each copy moves by how its own pointer moved; the strokes stay put otherwise.
-    /// Consecutive changes to the same mirror (a slider being dragged) merge into one undo step.
+    /// Changes to the same mirror during one slider gesture merge into one undo step.
     public class MoveMirrorSettingsCommand : BaseCommand
     {
         private readonly MirrorWidgetEdits m_Widgets;
@@ -251,6 +251,7 @@ namespace TiltBrush
         // Continuous slider edits need only their first and final endpoints. Retaining every
         // intermediate edit as a child makes Undo rebuild all strokes once per input frame.
         private MoveMirrorSettingsCommand m_LastMerged;
+        private readonly object m_EditToken = SymmetryMirrors.SettingsEditToken;
 
         internal MoveMirrorSettingsCommand(SymmetryMirror mirror,
             SymmetrySettingsSnapshot before, SymmetrySettingsSnapshot after, BaseCommand parent = null)
@@ -290,7 +291,8 @@ namespace TiltBrush
         public override bool Merge(BaseCommand other)
         {
             if (base.Merge(other)) { return true; }
-            if (other is MoveMirrorSettingsCommand next && ReferenceEquals(next.m_Mirror, m_Mirror))
+            if (other is MoveMirrorSettingsCommand next && ReferenceEquals(next.m_Mirror, m_Mirror) &&
+                ReferenceEquals(next.m_EditToken, m_EditToken))
             {
                 if (CanMergeEndpoints(next))
                 {
