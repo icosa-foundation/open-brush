@@ -23,7 +23,7 @@ using Gsplat;
 namespace TiltBrush
 {
 
-    public class ModelWidget : MediaWidget
+    public partial class ModelWidget : MediaWidget
     {
         // Do not change otherwise will break backward compatibility with 7.5 save format.
         private const float kInitialSizeMeters_RS = 0.25f;
@@ -262,6 +262,7 @@ namespace TiltBrush
 
         protected override void OnUserBeginInteracting()
         {
+            BeginVoxRegionGrab();
             base.OnUserBeginInteracting();
             App.Switchboard.TriggerModelWidgetGrabbed(this);
         }
@@ -1232,6 +1233,7 @@ namespace TiltBrush
 
         protected override void OnUpdate()
         {
+            DrawVoxRegionSelection();
             if (HasEmptyEditableVoxGrid && Showing && App.Scene?.ActiveCanvas != null)
             {
                 var tool = SketchSurfacePanel.m_Instance?.ActiveTool as VoxelTool;
@@ -1371,6 +1373,7 @@ namespace TiltBrush
 
         public override Vector2 GetWidgetSizeRange()
         {
+            if (VoxRegionGrabActive) return Vector2.one * Mathf.Abs(GetSignedWidgetSize());
             // m_Model can be null in the event we're pulling the model from Poly.
             if (m_Model == null || !m_Model.m_Valid)
             {

@@ -19,7 +19,7 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class SelectionWidget : GrabWidget
+    public partial class SelectionWidget : GrabWidget
     {
         public event System.Action<TrTransform> SelectionTransformed;
 
@@ -150,6 +150,7 @@ namespace TiltBrush
 
         public override Vector2 GetWidgetSizeRange()
         {
+            if (VoxRegionGrabActive) return Vector2.one * Mathf.Abs(GetSignedWidgetSize());
             return m_SizeRange;
         }
 
@@ -349,6 +350,7 @@ namespace TiltBrush
 
         override protected void OnUserBeginInteracting()
         {
+            BeginVoxRegionGrab();
             base.OnUserBeginInteracting();
 
             // Use pin visuals for preventing movement.

@@ -635,7 +635,7 @@ namespace TiltBrush
         // vLinVel: units/s
         // vAngVel: degrees/s
         // vPivot: world-space position about which the angular velocity is applied
-        public void SetVelocities(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
+        public virtual void SetVelocities(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
         {
             if (IsHideToss(vLinVel, vAngVel, vPivot))
             {
@@ -1153,7 +1153,7 @@ namespace TiltBrush
 
         /// Size for "SupportsNegativeSize == true" widgets can be negative. This can happen through the
         /// flip selection command which inverts the scale.
-        public void RecordAndSetSize(float value)
+        public virtual void RecordAndSetSize(float value)
         {
             if (m_RecordMovements)
             {

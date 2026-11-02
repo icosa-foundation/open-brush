@@ -59,8 +59,10 @@ namespace TiltBrush
             get => m_Mode;
             set
             {
-                if (m_Mode == value) { return; }
+                if (m_Mode == value && !SelectingRegion) { return; }
                 EndGesture();
+                SelectingRegion = false;
+                CancelRegionDrag();
                 m_Mode = value;
                 m_CreateNewGrid = false;
             }
@@ -133,6 +135,13 @@ namespace TiltBrush
         public override void AssignControllerMaterials(InputManager.ControllerName controller)
         {
             if (controller != InputManager.ControllerName.Brush) return;
+            if (SelectingRegion)
+            {
+                InputManager.Brush.Geometry.ShowSelectionToggle();
+                if (CurrentTargetWidget?.HasVoxRegionSelection == true)
+                    InputManager.Brush.Geometry.ShowDuplicateOption();
+                return;
+            }
             if (m_StraightEdgeGesture)
             {
                 InputManager.Brush.Geometry.TogglePadSnapHint(PointerManager.m_Instance.StraightEdgeGuide.SnapEnabled, enabled: true);
@@ -150,7 +159,7 @@ namespace TiltBrush
         public override void EnableTool(bool enable)
         {
             // Tool-change notifications can read status before the first UpdateTool call.
-            if (enable && !MultiplayerManager.m_Instance.IsViewOnly)
+            if (enable && !SelectingRegion && !MultiplayerManager.m_Instance.IsViewOnly)
             {
                 EnsureCurrentTarget();
                 if (!HasCurrentTarget && !CreatingNewModel) ChooseActivationTarget();
@@ -158,6 +167,7 @@ namespace TiltBrush
             if (!enable)
             {
                 EndGesture();
+                CancelRegionDrag();
             }
             base.EnableTool(enable);
             if (enable)
@@ -171,6 +181,7 @@ namespace TiltBrush
             if (hide)
             {
                 EndGesture();
+                CancelRegionDrag();
             }
             base.HideTool(hide);
         }
@@ -181,11 +192,20 @@ namespace TiltBrush
             if (MultiplayerManager.m_Instance.IsViewOnly)
             {
                 EndGesture();
+                CancelRegionDrag();
                 EatInput();
                 return;
             }
             EnsureCurrentTarget();
             if (ToolHidden()) return;
+
+            if (SelectingRegion)
+            {
+                Vector3 selectionPosition = App.Scene.ActiveCanvas.AsCanvas[
+                    InputManager.Brush.Geometry.ToolAttachPoint].translation;
+                UpdateRegionSelection(selectionPosition);
+                return;
+            }
 
             // Process mode changes before interpreting this frame's drawing input.
             if (!IsEatingInput && !m_StraightEdgeGesture &&
@@ -263,6 +283,8 @@ namespace TiltBrush
         public void RequestNewModel()
         {
             EndGesture();
+            SelectingRegion = false;
+            CancelRegionDrag();
             RememberVoxelSize(m_LastInteractedVoxWidget);
             m_TargetWidget = null;
             m_PendingTargetWidget = null;
