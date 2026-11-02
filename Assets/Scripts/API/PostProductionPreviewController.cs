@@ -105,10 +105,6 @@ namespace TiltBrush
             s_ShuttleRate = 0;
             s_LastSetSketchTime = 0;
             s_HaveLastSet = false;
-            System.Array.Clear(s_FrameTimes, 0, s_FrameTimes.Length);
-            s_FrameIndex = 0;
-            FrameStats = "no frames yet";
-            s_LastGcCount = 0;
             LayerVisibility = "";
             LayerNames = "";
             CgCaptureCount = 0;
@@ -431,37 +427,8 @@ namespace TiltBrush
             s_HaveLastSet = true;
         }
 
-        // TEMP profiling: frame-time stats over the last ~2 seconds, read via
-        // query.postprod.debug.timing, so performance can be measured remotely while
-        // features are switched on and off.
-        private const int kFrameSamples = 120;
-        private static readonly float[] s_FrameTimes = new float[kFrameSamples];
-        private static int s_FrameIndex;
-        public static volatile string FrameStats = "no frames yet";
-        private static int s_LastGcCount;
-
-        private static void RecordFrameTime()
-        {
-            s_FrameTimes[s_FrameIndex % kFrameSamples] = Time.unscaledDeltaTime;
-            s_FrameIndex++;
-            if (s_FrameIndex % 30 != 0) { return; }
-            int n = Mathf.Min(s_FrameIndex, kFrameSamples);
-            float sum = 0f, max = 0f;
-            for (int i = 0; i < n; i++) { sum += s_FrameTimes[i]; max = Mathf.Max(max, s_FrameTimes[i]); }
-            float avg = sum / n;
-            // TEMP (stutter diagnosis 2026-10-23): garbage collections and the slowest fast
-            // plate decode/upload in the last 30 frames.
-            int gcCount = System.GC.CollectionCount(0);
-            int gcs = gcCount - s_LastGcCount;
-            s_LastGcCount = gcCount;
-            FrameStats = $"frames: avg {avg * 1000f:F1}ms ({1f / avg:F0} fps), worst {max * 1000f:F1}ms, over last {n} frames" +
-                $" | last 30 frames: {gcs} GC, heap {System.GC.GetTotalMemory(false) / (1024 * 1024)}MB, " +
-                $"plate upload max {PostProductionPlateCache.TakeMaxMainThreadMs():F1}ms";
-        }
-
         private void Update()
         {
-            RecordFrameTime();
             UpdateTransport();
             // After the transport, before stroke playback: an export seeks the sketch here.
             PostProductionExport.Stage();

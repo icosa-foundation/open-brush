@@ -1115,25 +1115,6 @@ namespace TiltBrush
             return bytes;
         }
 
-        // TEMP DEBUG (2026-08-29): direct file-based logging, bypassing Debug.Log/Player.log
-        // entirely - on this particular build/launch setup neither Player.log nor stdout
-        // redirection are reliably readable, and each Il2Cpp rebuild costs real time, so this
-        // trades a few extra lines for actually seeing what happened after the fact without
-        // needing another rebuild to add more visibility. Public so ApiMethods.cs can log
-        // camera pose data (MoveUserTo/UserLookAt/TakeSnapshot) to the same file for direct
-        // comparison against Blender ground truth. Remove once the tilt-to-real-world camera
-        // transform is fully resolved and verified.
-        public static void DebugLogToFile(string message)
-        {
-            try
-            {
-                string logPath = Path.Combine(App.SnapshotPath(), "_snapshot_debug.log");
-                Directory.CreateDirectory(App.SnapshotPath());
-                File.AppendAllText(logPath, $"[{System.DateTime.Now:HH:mm:ss.fff}] {message}\n");
-            }
-            catch { /* never let debug logging itself break the capture */ }
-        }
-
         // ------------------------------------------------------------------
         // Calibrated-camera support, for matching a real physical camera when
         // compositing CG over live-action footage.
@@ -1369,7 +1350,7 @@ namespace TiltBrush
             bool renderNormals = false,
             bool includePostProcessing = false)
         {
-            DebugLogToFile($"TakeSnapshot called: filename={filename} width={width} height={height} renderDepth={renderDepth} renderNormals={renderNormals}");
+
             bool saveAsPng;
             if (filename.ToLower().EndsWith(".jpg") || filename.ToLower().EndsWith(".jpeg"))
             {
@@ -1385,19 +1366,19 @@ namespace TiltBrush
                 filename += ".jpg";
             }
             string path = Path.Join(App.SnapshotPath(), filename);
-            DebugLogToFile($"Resolved output path: {path}");
+
             MultiCamTool cam = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.MultiCamTool) as MultiCamTool;
-            DebugLogToFile($"MultiCamTool lookup result: {(cam == null ? "NULL - will skip everything" : "found")}");
+
 
             if (cam != null)
             {
                 try
                 {
                     var rig = SketchControlsScript.m_Instance.MultiCamCaptureRig;
-                    DebugLogToFile($"MultiCamCaptureRig: {(rig == null ? "NULL" : "found, gameObject=" + rig.gameObject.name)}");
+
                     App.Scene.AsScene[rig.gameObject.transform] = tr;
                     var rMgr = rig.ManagerFromStyle(MultiCamStyle.Snapshot);
-                    DebugLogToFile($"ManagerFromStyle(Snapshot): {(rMgr == null ? "NULL" : "found")}");
+
                     var initialState = rig.gameObject.activeSelf;
                     RenderTexture tmp = null;
                     RenderWrapper wrapper = null;
@@ -1408,11 +1389,11 @@ namespace TiltBrush
                     try
                     {
                         rig.gameObject.SetActive(true);
-                        DebugLogToFile("rig activated, creating temporary target texture");
+
                         tmp = rMgr.CreateTemporaryTargetForSave(width, height);
-                        DebugLogToFile($"CreateTemporaryTargetForSave result: {(tmp == null ? "NULL" : $"{tmp.width}x{tmp.height}")}");
+
                         wrapper = rMgr.gameObject.GetComponent<RenderWrapper>();
-                        DebugLogToFile($"RenderWrapper component: {(wrapper == null ? "NULL" : "found")}");
+
                         ssaaRestore = wrapper.SuperSampling;
                         wrapper.SuperSampling = superSampling;
 
@@ -1433,9 +1414,7 @@ namespace TiltBrush
                             {
                                 calibratedCam.nearClipPlane = s_NearClip;
                                 calibratedCam.farClipPlane = s_FarClip;
-                                DebugLogToFile(
-                                    $"calibrated clip applied: near={s_NearClip} far={s_FarClip} (units); " +
-                                    $"={s_NearClip * App.UNITS_TO_METERS}m to {s_FarClip * App.UNITS_TO_METERS}m");
+
                             }
                         }
 
@@ -1465,7 +1444,7 @@ namespace TiltBrush
                                 fx, fy, cx, cy, width, height,
                                 calibratedCam.nearClipPlane, calibratedCam.farClipPlane,
                                 "lastRender");
-                            DebugLogToFile($"calibrated projection applied: {s_ProjectionReportJson}");
+
                         }
 
                         // Record where the capture camera actually ended up, AFTER everything
@@ -1487,7 +1466,7 @@ namespace TiltBrush
                                 $"\"requestedPosition\":[{tr.translation.x:F6},{tr.translation.y:F6},{tr.translation.z:F6}]," +
                                 $"\"requestedRotation\":[{tr.rotation.x:F6},{tr.rotation.y:F6},{tr.rotation.z:F6},{tr.rotation.w:F6}]" +
                                 "}";
-                            DebugLogToFile($"capture extrinsics: {s_LastCaptureExtrinsicsJson}");
+
                         }
 
                         bool watermarkEnabled = CameraConfig.Watermark;
@@ -1501,25 +1480,25 @@ namespace TiltBrush
 
                             if (renderDepth)
                             {
-                                DebugLogToFile("rendering depth...");
+
                                 rMgr.RenderDepthToTexture(tmp);
-                                DebugLogToFile("depth rendered");
+
                                 var depthFiles = rMgr.EncodeDepthCapture(tmp);
-                                DebugLogToFile("depth encoded");
+
                                 SaveDepthCaptureFiles(path, depthFiles);
-                                DebugLogToFile("depth files saved");
+
                             }
 
                             if (renderNormals)
                             {
-                                DebugLogToFile("rendering normals...");
+
                                 rMgr.RenderDepthNormalToTexture(tmp);
                                 var normalPath = $"{GetCaptureBasePath(path)}_normals.png";
                                 using (var fs = new FileStream(normalPath, FileMode.Create))
                                 {
                                     SaveNormals(fs, tmp);
                                 }
-                                DebugLogToFile("normals file saved");
+
                             }
                         }
                         finally
@@ -1529,15 +1508,14 @@ namespace TiltBrush
                             CameraConfig.PostEffects = postEffectsEnabled;
                         }
 
-                        DebugLogToFile("rendering color...");
                         rMgr.RenderToTexture(tmp, removeBackground: removeBackground,
                             includePostProcessing: includePostProcessing);
-                        DebugLogToFile("color rendered");
+
                         using (var fs = new FileStream(path, FileMode.Create))
                         {
                             Save(fs, tmp, bSaveAsPng: saveAsPng, preserveAlpha: removeBackground);
                         }
-                        DebugLogToFile("color file saved - TakeSnapshot completed successfully");
+
 
                     }
                     finally
@@ -1563,9 +1541,8 @@ namespace TiltBrush
                         }
                     }
                 }
-                catch (System.Exception e)
+                catch (System.Exception)
                 {
-                    DebugLogToFile($"EXCEPTION: {e.GetType().Name}: {e.Message}\n{e.StackTrace}");
                     throw;
                 }
             }

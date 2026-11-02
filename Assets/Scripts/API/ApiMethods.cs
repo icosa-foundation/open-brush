@@ -661,13 +661,9 @@ namespace TiltBrush
             TrTransform pose = App.Scene.Pose;
             pose.translation = -position;
             float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
-            TrTransform preClamp = pose;
             pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
             App.Scene.Pose = pose;
-            ScreenshotManager.DebugLogToFile(
-                $"MoveUserTo: input_position={position} BoundsRadius={BoundsRadius} " +
-                $"preClamp.translation={preClamp.translation} postClamp.translation={pose.translation} " +
-                $"clamped={(preClamp.translation != pose.translation)}");
+
         }
 
         [ApiEndpoint(
@@ -872,12 +868,7 @@ namespace TiltBrush
                 App.Scene.disableTiltProtection = true;
             }
             App.Scene.Pose = lookPose;
-            TrTransform readBack = App.Scene.Pose;
-            ScreenshotManager.DebugLogToFile(
-                $"UserLookAt: AFTER App.Scene.Pose assignment - readBack.translation={readBack.translation} " +
-                $"readBack.rotation.eulerAngles={readBack.rotation.eulerAngles} " +
-                $"readBack.rotation=(x={readBack.rotation.x:F6},y={readBack.rotation.y:F6},z={readBack.rotation.z:F6},w={readBack.rotation.w:F6}) " +
-                $"unexpected_translation_change={(readBack.translation != lookPose.translation)}");
+
         }
 
         [ApiEndpoint(
@@ -888,16 +879,10 @@ namespace TiltBrush
         public static void UserLookAtQuat(Quaternion rotation)
         {
             TrTransform lookPose = App.Scene.Pose;
-            ScreenshotManager.DebugLogToFile(
-                $"UserLookAtQuat: input_quaternion=(x={rotation.x:F6},y={rotation.y:F6},z={rotation.z:F6},w={rotation.w:F6}) " +
-                $"input_quaternion.eulerAngles={rotation.eulerAngles} preAssign.translation={lookPose.translation}");
+
             lookPose.rotation = rotation;
             App.Scene.Pose = lookPose;
-            TrTransform readBack = App.Scene.Pose;
-            ScreenshotManager.DebugLogToFile(
-                $"UserLookAtQuat: AFTER App.Scene.Pose assignment - readBack.translation={readBack.translation} " +
-                $"readBack.rotation.eulerAngles={readBack.rotation.eulerAngles} " +
-                $"readBack.rotation=(x={readBack.rotation.x:F6},y={readBack.rotation.y:F6},z={readBack.rotation.z:F6},w={readBack.rotation.w:F6})");
+
         }
 
         [ApiEndpoint(
@@ -2166,12 +2151,7 @@ namespace TiltBrush
             // GetToolOfType (which works whether or not it is active) and activates the capture
             // rig itself.
             TrTransform tr = TrTransform.TR(position, Quaternion.Euler(direction));
-            ScreenshotManager.DebugLogToFile(
-                $"app.snapshot: input_position={position} input_direction(euler)={direction} " +
-                $"resulting_TrTransform.translation={tr.translation} " +
-                $"resulting_TrTransform.rotation=(x={tr.rotation.x:F6},y={tr.rotation.y:F6},z={tr.rotation.z:F6},w={tr.rotation.w:F6}) " +
-                $"resulting_TrTransform.rotation.eulerAngles={tr.rotation.eulerAngles} " +
-                $"filename={filename}");
+
             float superSampling = 1f;
             bool removeBackground = false;
             bool renderDepth = true;
@@ -2191,13 +2171,7 @@ namespace TiltBrush
             // See the note in TakeSnapshot: activating the MultiCamTool makes it drive the
             // capture camera every frame, which breaks every capture after the first.
             TrTransform tr = TrTransform.TR(position, rotation);
-            ScreenshotManager.DebugLogToFile(
-                $"app.snapshot.quat: input_position={position} " +
-                $"input_quaternion=(x={rotation.x:F6},y={rotation.y:F6},z={rotation.z:F6},w={rotation.w:F6}) " +
-                $"resulting_TrTransform.translation={tr.translation} " +
-                $"resulting_TrTransform.rotation=(x={tr.rotation.x:F6},y={tr.rotation.y:F6},z={tr.rotation.z:F6},w={tr.rotation.w:F6}) " +
-                $"resulting_TrTransform.rotation.eulerAngles={tr.rotation.eulerAngles} " +
-                $"filename={filename}");
+
             float superSampling = 1f;
             bool removeBackground = false;
             bool renderDepth = true;
@@ -2221,8 +2195,7 @@ namespace TiltBrush
             ScreenshotManager.SetCalibratedIntrinsics(fx, fy, cx, cy, refWidth, refHeight);
             // The post-production undistorted working frame is built on these intrinsics.
             PostProductionLens.RecomputeWorkingFrame();
-            ScreenshotManager.DebugLogToFile(
-                $"camera.intrinsics set: fx={fx} fy={fy} cx={cx} cy={cy} ref={refWidth}x{refHeight}");
+
         }
 
         [ApiEndpoint(
@@ -2233,7 +2206,7 @@ namespace TiltBrush
         public static void ClearCameraIntrinsics()
         {
             ScreenshotManager.ClearCalibratedIntrinsics();
-            ScreenshotManager.DebugLogToFile("camera.intrinsics cleared");
+
         }
 
         [ApiEndpoint(
@@ -2250,7 +2223,7 @@ namespace TiltBrush
                     "camera.clip: near must be greater than zero and far must be greater than near.");
             }
             ScreenshotManager.SetCalibratedClip(near, far);
-            ScreenshotManager.DebugLogToFile($"camera.clip set: near={near} far={far} (units)");
+
         }
 
         [ApiEndpoint(
@@ -2261,7 +2234,7 @@ namespace TiltBrush
         public static void ClearCameraClip()
         {
             ScreenshotManager.ClearCalibratedClip();
-            ScreenshotManager.DebugLogToFile("camera.clip cleared");
+
         }
 
         [ApiEndpoint(
@@ -2277,7 +2250,7 @@ namespace TiltBrush
                 $"userWorldPosition={-pose.translation} " +
                 $"rotation.eulerAngles={pose.rotation.eulerAngles} " +
                 $"rotation.quaternion=(x={pose.rotation.x:F6},y={pose.rotation.y:F6},z={pose.rotation.z:F6},w={pose.rotation.w:F6})";
-            ScreenshotManager.DebugLogToFile($"app.getpose queried: {result}");
+
             return result;
         }
 

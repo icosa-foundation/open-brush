@@ -250,30 +250,6 @@ namespace TiltBrush
         }
 
         // Continue drawing stroke for this frame, returning true if more rendering is pending.
-        // TEMP profiling (POSTPROD_FAST_PREVIEW_DESIGN.md step 1): how long the frame that
-        // applies a seek takes, read via query.postprod.debug.timing.
-        public static volatile string LastSeekTiming = "no seek yet";
-        public static volatile string LastFrameTiming = "";
-
-        public bool Update()
-        {
-            var seekTimer = System.Diagnostics.Stopwatch.StartNew();
-            long previousTimeMs = m_lastTimeMs;
-            int renderedBefore = m_renderedStrokes.Count;
-            bool result = UpdateInternal();
-            seekTimer.Stop();
-            long currentMs = m_lastTimeMs;
-            string report =
-                $"{previousTimeMs}ms -> {currentMs}ms: {seekTimer.Elapsed.TotalMilliseconds:F1}ms, " +
-                $"rendered strokes {renderedBefore} -> {m_renderedStrokes.Count}";
-            LastFrameTiming = report;
-            if (!m_quickLoadRemaining && System.Math.Abs(currentMs - previousTimeMs) >= 100)
-            {
-                LastSeekTiming = report;
-            }
-            return result;
-        }
-
         // The sketch time in milliseconds. Quick loads and ClearMemory set the sketch time to
         // float.MaxValue to finish playback, which is outside long's range in milliseconds, so
         // it is clamped to the end rather than cast (the cast overflowed, which stopped a quick
@@ -283,7 +259,7 @@ namespace TiltBrush
             return ConvertSketchTimeToMilliseconds(App.Instance.CurrentSketchTime);
         }
 
-        private bool UpdateInternal()
+        public bool Update()
         {
             long currentTimeMs = m_quickLoadRemaining
                 ? long.MaxValue

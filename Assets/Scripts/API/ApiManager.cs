@@ -868,13 +868,6 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     return PostProductionPlateCache.LastStatus;
                 case "query.postprod.preview.livecg.status":
                     return PostProductionLiveCg.LastStatus + "\nlast dump: " + PostProductionLiveCg.LastDumpStatus;
-                case "query.postprod.debug.timing":
-                    // TEMP profiling (POSTPROD_FAST_PREVIEW_DESIGN.md step 1).
-                    return PostProductionPreviewController.FrameStats +
-                        "\nlastSeek: " + ScenePlaybackByTimeLayered.LastSeekTiming +
-                        "\nlastFrame: " + ScenePlaybackByTimeLayered.LastFrameTiming +
-                        "\n" + PostProductionCompositeImageEffect.LastCgLoadTiming +
-                        "\n" + PostProductionCompositeImageEffect.LastPlateLoadTiming;
                 case "query.postprod.preview.cgcapture.count":
                     return PostProductionPreviewController.CgCaptureCount.ToString();
                 case "query.postprod.preview.autoplate.status":
