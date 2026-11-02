@@ -71,22 +71,25 @@ namespace TiltBrush
             switch (id)
             {
                 case "source":
-                {
-                    int profile = SourceProResProfile(src);
-                    bool sourceIsProRes = profile >= 0;
-                    if (!sourceIsProRes) { profile = (src.pixFmt ?? "").Contains("444") ? 4 : 3; }
-                    string label = sourceIsProRes
-                        ? $"Match source (ProRes {kProResProfiles[profile]})"
-                        : $"Match source (ProRes {kProResProfiles[profile]}; the source is {src.codec})";
-                    return ProRes(id, label, profile, profile >= 4 && (src.pixFmt ?? "").StartsWith("yuva"),
-                        movAudio, pixels);
-                }
+                    {
+                        int profile = SourceProResProfile(src);
+                        bool sourceIsProRes = profile >= 0;
+                        if (!sourceIsProRes) { profile = (src.pixFmt ?? "").Contains("444") ? 4 : 3; }
+                        string label = sourceIsProRes
+                            ? $"Match source (ProRes {kProResProfiles[profile]})"
+                            : $"Match source (ProRes {kProResProfiles[profile]}; the source is {src.codec})";
+                        return ProRes(id, label, profile, profile >= 4 && (src.pixFmt ?? "").StartsWith("yuva"),
+                            movAudio, pixels);
+                    }
                 case "prores422hq":
                     return ProRes(id, "ProRes 422 HQ", 3, false, movAudio, pixels);
                 case "h264":
-                    return new Format { Id = id, Label = "H.264 (review)", Extension = ".mp4",
+                    return new Format
+                    {
+                        Id = id, Label = "H.264 (review)", Extension = ".mp4",
                         Codec = "-c:v libx264 -preset fast -crf 18", PixFmt = "yuv420p",
-                        AudioCodec = hasAudio ? "-c:a aac -b:a 320k" : "", BytesPerFrame = 6e5 * pixels };
+                        AudioCodec = hasAudio ? "-c:a aac -b:a 320k" : "", BytesPerFrame = 6e5 * pixels
+                    };
                 default:
                     return null;
             }
