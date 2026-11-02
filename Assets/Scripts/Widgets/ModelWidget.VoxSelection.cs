@@ -126,6 +126,9 @@ namespace TiltBrush
                 {
                     m_VoxGrabEmbedding = new EmbedVoxModelCommand(this, selection.Document);
                     m_VoxGrabEmbedding.Redo();
+                    // Existing tool/Lua handles share this view state. They must
+                    // follow the live widget pose after the external copy is embedded.
+                    _ = new VoxDocumentApiWrapper(selection.Document, this);
                 }
                 Vector3Int a = RuntimeVoxDocument.TransformRegionCell(m_VoxGrabMin,
                     m_VoxGrabPivot, rotation, translation) + shift;
