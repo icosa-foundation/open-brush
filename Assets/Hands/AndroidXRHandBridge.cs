@@ -2843,8 +2843,9 @@ namespace TiltBrush
                 hand.tracked &&
                 !hand.pinchHeld &&
                 // Runtime grasp strength also rises with only three fingers curled.
-                // Require the five-digit fist shape before switching into Grip.
-                hand.fistDetected &&
+                // Require the five-digit fist shape when switching into Grip, but do not
+                // let a single noisy curl sample defeat the grasp release hysteresis.
+                (previous || hand.fistDetected) &&
                 hand.graspValue >= threshold;
 
             held = next;
