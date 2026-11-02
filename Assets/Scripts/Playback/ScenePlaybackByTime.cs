@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -234,6 +235,12 @@ namespace TiltBrush
         {
             m_timeline = timeline ?? new SketchTimeStrokePlaybackTimeline();
             m_targetCanvas = App.ActiveCanvas;
+            // Layer offsets can change the relative order supplied by ordinary playback.
+            // Keep the existing already-ordered path for timelines without offsets.
+            if (m_timeline is PostProductionLayerTimeline)
+            {
+                strokes = strokes.OrderBy(m_timeline.GetHeadTimeMs);
+            }
             m_unrenderedStrokes = new SortedLinkedList<Stroke>(
                 (a, b) => (m_timeline.GetHeadTimeMs(a) < m_timeline.GetHeadTimeMs(b)),
                 strokes);
