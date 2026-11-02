@@ -1089,6 +1089,7 @@ namespace TiltBrush
             {
                 var voxelTool = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.VoxelTool) as VoxelTool;
                 voxelTool?.FinishEditing();
+                (m_SelectedWidgets.First() as ModelWidget)?.CommitVoxRegionSelection();
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                     new BreakModelApartCommand(m_SelectedWidgets.First() as ModelWidget));
             }

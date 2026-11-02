@@ -98,8 +98,7 @@ namespace TiltBrush
             {
                 m_RegionLastEmptyTap = float.NegativeInfinity;
                 if (m_RegionModel.Voxels.Keys.Any(cell => RuntimeVoxDocument.InRegion(cell, min, max)))
-                    m_RegionWidget.VoxSelection = new VoxRegionSelection(m_RegionWidget,
-                        m_CurrentDocument._Document, m_RegionModel, min, max);
+                    m_RegionWidget.SelectVoxRegion(m_CurrentDocument._Document, m_RegionModel, min, max);
             }
             CancelRegionDrag();
         }

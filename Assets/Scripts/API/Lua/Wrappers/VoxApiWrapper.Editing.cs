@@ -13,6 +13,7 @@ namespace TiltBrush
         {
             RequireValidDocument();
             if (VoxScriptEditGroup.IsPreview) return false;
+            if (!SuppressDirtyTracking) Widget?.CommitVoxRegionSelection();
             if (Widget == null || SuppressDirtyTracking)
             {
                 bool changed = mutation();

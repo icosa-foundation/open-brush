@@ -4056,7 +4056,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 560634138455531520
-    m_Localized: Drag the trigger to select a cuboid. Double press in empty space to clear. Hold the duplicate button when grabbing to move a copy.
+    m_Localized: Drag the trigger to select a cuboid. Press the duplicate button during a grab to stamp a copy. Double press the trigger in empty space to finalise and clear.
     m_Metadata:
       m_Items: []
   references:

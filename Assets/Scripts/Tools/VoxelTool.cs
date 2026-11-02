@@ -362,6 +362,7 @@ namespace TiltBrush
         private void BeginGesture(Vector3 canvasPosition)
         {
             EndGesture();
+            CurrentTargetWidget?.CommitVoxRegionSelection();
             RuntimeVoxDocument.RuntimeModel model = FindTargetModelAt(canvasPosition);
             if (model == null) return;
             m_CurrentModel = new VoxModelApiWrapper(m_CurrentDocument._Document, model, m_CurrentDocument);

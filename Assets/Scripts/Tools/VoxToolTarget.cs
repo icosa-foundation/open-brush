@@ -48,6 +48,7 @@ namespace TiltBrush
         internal static bool Edit(ModelWidget widget, RuntimeVoxDocument preview,
             Func<RuntimeVoxDocument, bool> edit, Action<BaseCommand> addChildren = null)
         {
+            widget.CommitVoxRegionSelection();
             bool external = widget.IsExternalVox;
             var document = external ? preview.CloneDocument() : preview;
             var before = document.CaptureSnapshot();
