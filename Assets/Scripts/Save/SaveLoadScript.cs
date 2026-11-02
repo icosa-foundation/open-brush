@@ -738,6 +738,12 @@ namespace TiltBrush
                 if (!bAdditive)
                 {
                     activatePostProduction = PostProductionSettings.ConsumeLoadRequest(fileInfo.FullPath);
+                    // Finish a retained timeline before its original layer objects are destroyed.
+                    var sketchMemory = SketchMemoryScript.m_Instance;
+                    if (sketchMemory.m_KeepPlaybackAliveForScrubbing && sketchMemory.IsPlayingBack)
+                    {
+                        sketchMemory.ClearMemory();
+                    }
                     PostProductionPreviewController.EndSession();
                     var environment = EnvironmentCatalog.m_Instance
                         .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
