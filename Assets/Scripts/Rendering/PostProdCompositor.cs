@@ -31,11 +31,11 @@ namespace TiltBrush
         {
             if (s_Material == null)
             {
-                var shader = Shader.Find("Hidden/PostProdComposite");
+                var shader = Resources.Load<Shader>("PostProduction/PostProdComposite");
                 if (shader == null)
                 {
                     throw new InvalidOperationException(
-                        "PostProdCompositor: Hidden/PostProdComposite shader not found");
+                        "PostProdCompositor: PostProduction/PostProdComposite shader resource not found");
                 }
                 s_Material = new Material(shader);
             }
