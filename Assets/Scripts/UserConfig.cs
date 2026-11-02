@@ -580,6 +580,9 @@ namespace TiltBrush
         [Serializable]
         public struct MultiplayerConfig
         {
+            // Opt in on networks that block Photon UDP traffic. Takes effect on connection.
+            public bool UseSecureWebSockets;
+
             private int? m_MaxStreamedPointers;
             public int MaxStreamedPointers
             {

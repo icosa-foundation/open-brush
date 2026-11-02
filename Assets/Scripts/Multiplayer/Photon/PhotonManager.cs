@@ -55,10 +55,6 @@ namespace OpenBrush.Multiplayer
             {
                 AppIdFusion = App.Config.PhotonFusionSecrets.ClientId,
                 FixedRegion = "",
-                // TEMP DEV WORKAROUND: force WSS (port 443) instead of raw UDP so we can
-                // connect on networks that block outbound UDP to Photon's nameserver/game
-                // servers. Revert to default (Udp) once off this network.
-                Protocol = ConnectionProtocol.WebSocketSecure,
             };
         }
 
@@ -150,6 +146,10 @@ namespace OpenBrush.Multiplayer
 
         public async Task<bool> Connect()
         {
+            // Keep Photon's default transport unless the user needs a restricted-network fallback.
+            m_PhotonAppSettings.Protocol = App.UserConfig.Multiplayer.UseSecureWebSockets
+                ? ConnectionProtocol.WebSocketSecure
+                : new FusionAppSettings().Protocol;
             State = ConnectionState.CONNECTING;
 
             await Task.Yield();
