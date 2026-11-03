@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public class ShapePresetButton : TextActionButton
+    public class ShapePresetButton : BaseButton
     {
         [SerializeField] private int m_Preset;
         protected override void OnButtonPressed() => GetComponentInParent<ShapesPanel>().CreateShape(m_Preset, transform);

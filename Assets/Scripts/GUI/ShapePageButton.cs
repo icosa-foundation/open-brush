@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public class ShapePageButton : TextActionButton
+    public class ShapePageButton : BaseButton
     {
         [SerializeField] private int m_Direction;
         protected override void OnButtonPressed() => GetComponentInParent<ShapesPanel>().ChangePage(m_Direction);

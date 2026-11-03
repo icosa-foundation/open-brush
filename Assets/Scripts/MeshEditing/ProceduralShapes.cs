@@ -16,8 +16,8 @@ namespace TiltBrush.MeshEditing
     {
         public static readonly string[] PresetNames =
         {
-            "Box", "Rounded box", "Panel", "Frame", "Rectangle",
-            "Cylinder", "Cone", "Capsule", "Sphere", "Conic"
+            "Box", "Rounded box", "Panel", "Frame",
+            "Cylinder", "Capsule", "Sphere"
         };
 
         public sealed class Parameter
@@ -64,12 +64,9 @@ namespace TiltBrush.MeshEditing
                 case 1: type = "panel"; p = new JObject { ["width"] = .3f, ["height"] = .3f, ["depth"] = .3f, ["cornerRadius"] = .04f, ["edgeRadius"] = .02f }; break;
                 case 2: type = "panel"; p = new JObject { ["width"] = .4f, ["height"] = .3f, ["depth"] = .02f, ["cornerRadius"] = .025f, ["widthSegments"] = 12, ["heightSegments"] = 12 }; break;
                 case 3: type = "frame"; p = new JObject { ["width"] = .4f, ["height"] = .3f, ["borderWidth"] = .03f, ["radius"] = .025f }; break;
-                case 4: type = "rectangle"; p = new JObject { ["width"] = .4f, ["height"] = .3f, ["radius"] = .025f }; break;
-                case 5: type = "cylinder"; p = new JObject { ["height"] = .3f, ["bottomRadius"] = .15f, ["topRadius"] = .15f, ["smoothSides"] = true }; break;
-                case 6: type = "cylinder"; p = new JObject { ["height"] = .3f, ["bottomRadius"] = .15f, ["topRadius"] = 0f, ["smoothSides"] = true }; break;
-                case 7: type = "capsule"; p = new JObject { ["cylinderHeight"] = .2f, ["radius"] = .1f, ["smooth"] = true }; break;
-                case 8: type = "conic"; p = new JObject { ["radius"] = .15f, ["centerOffset"] = 0f, ["smooth"] = true }; break;
-                case 9: type = "conic"; p = new JObject { ["curve"] = "ellipse", ["majorAxis"] = .2f, ["minorAxis"] = .12f, ["centerOffset"] = 0f, ["smooth"] = true }; break;
+                case 4: type = "cylinder"; p = new JObject { ["height"] = .3f, ["bottomRadius"] = .15f, ["topRadius"] = .15f, ["smoothSides"] = true }; break;
+                case 5: type = "capsule"; p = new JObject { ["cylinderHeight"] = .2f, ["radius"] = .1f, ["smooth"] = true }; break;
+                case 6: type = "conic"; p = new JObject { ["radius"] = .15f, ["centerOffset"] = 0f, ["smooth"] = true }; break;
                 default: throw new ArgumentOutOfRangeException(nameof(preset));
             }
             return new GeometryRecipeData(new JObject

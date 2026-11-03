@@ -16,6 +16,7 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_PageLabel;
         [SerializeField] private TextMeshPro m_StatusLabel;
         [SerializeField] private ShapeParameterSlider[] m_ParameterSliders;
+        [SerializeField] private ShapeParameterToggle[] m_ParameterToggles;
         [SerializeField] private ShapePageButton m_PreviousPage;
         [SerializeField] private ShapePageButton m_NextPage;
 
@@ -122,7 +123,7 @@ namespace TiltBrush
                 ? ProceduralShapes.GetParameters(m_DisplayedRecipe) : new List<ProceduralShapes.Parameter>();
             int pages = Mathf.Max(1, Mathf.CeilToInt((float)m_Parameters.Count / m_ParameterSliders.Length));
             m_Page = Mathf.Clamp(m_Page, 0, pages - 1);
-            m_TargetLabel.text = m_Target != null ? $"Editing: {(string)m_DisplayedRecipe.ToJson()["Generator"]["Type"]}" : "Choose a shape, or point at one to edit";
+            m_TargetLabel.text = m_Target != null ? $"Editing: {(string)m_DisplayedRecipe.ToJson()["Generator"]["Type"]}" : "Create a shape or point at one";
             m_PageLabel.text = m_Parameters.Count > 0 ? $"{m_Page + 1} / {pages}" : "";
             m_StatusLabel.text = "";
             m_PreviousPage.SetButtonAvailable(m_Parameters.Count > 0 && m_Page > 0);
@@ -131,8 +132,11 @@ namespace TiltBrush
             {
                 int index = m_Page * m_ParameterSliders.Length + i;
                 bool visible = index < m_Parameters.Count;
-                m_ParameterSliders[i].gameObject.SetActive(visible);
-                if (visible) { m_ParameterSliders[i].Configure(this, m_Parameters[index], m_DisplayedRecipe); }
+                bool boolean = visible && m_Parameters[index].Boolean;
+                m_ParameterSliders[i].gameObject.SetActive(visible && !boolean);
+                m_ParameterToggles[i].gameObject.SetActive(boolean);
+                if (boolean) { m_ParameterToggles[i].Configure(this, m_Parameters[index], m_DisplayedRecipe); }
+                else if (visible) { m_ParameterSliders[i].Configure(this, m_Parameters[index], m_DisplayedRecipe); }
             }
         }
 
