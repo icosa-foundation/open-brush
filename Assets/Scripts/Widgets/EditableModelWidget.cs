@@ -16,6 +16,7 @@ namespace TiltBrush
         public GeometryRecipeData m_PolyRecipe;
         public PolyMesh m_PolyMesh;
         public Color m_Color = Color.white;
+        public static EditableModelWidget LastActivated { get; private set; }
         private Mesh m_OwnedGeneratedMesh;
 
         internal void TakeGeneratedMeshOwnership(Mesh mesh)
@@ -25,11 +26,26 @@ namespace TiltBrush
             if (previousMesh != null && previousMesh != mesh) { Destroy(previousMesh); }
         }
 
+        internal void RefreshGeneratedGeometry(Mesh mesh)
+        {
+            if (m_SnapGhost != null)
+            {
+                foreach (var filter in m_SnapGhost.GetComponentsInChildren<MeshFilter>(true)) { filter.sharedMesh = mesh; }
+            }
+            RefreshModelGeometry();
+        }
+
         public override void OnPreDestroy()
         {
             if (m_OwnedGeneratedMesh != null) { Destroy(m_OwnedGeneratedMesh); }
             m_OwnedGeneratedMesh = null;
             base.OnPreDestroy();
+        }
+
+        public override void Activate(bool active)
+        {
+            base.Activate(active);
+            if (active && m_PolyRecipe != null) { LastActivated = this; }
         }
 
         public override GrabWidget Clone() => Clone(transform.position, transform.rotation, m_Size);

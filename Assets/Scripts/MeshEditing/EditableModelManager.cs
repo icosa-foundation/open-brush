@@ -158,6 +158,7 @@ namespace TiltBrush.MeshEditing
             }
             widget.Model = model;
             model.ReleaseFromCatalog();
+            widget.TakeGeneratedMeshOwnership(mesh);
             widget.m_PolyRecipe = recipe;
             widget.m_PolyMesh = poly;
             widget.m_Color = color ?? Color.white;
@@ -169,10 +170,15 @@ namespace TiltBrush.MeshEditing
         public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly, Material material = null)
         {
             var root = widget.GetModelGameObject();
-            UpdateMesh(root, BuildMesh(poly), material ?? root.GetComponent<MeshRenderer>().sharedMaterial);
-            widget.TakeGeneratedMeshOwnership(root.GetComponent<MeshFilter>().sharedMesh);
-            widget.RecalculateColliderBounds();
-            widget.UpdateBatchInfo();
+            Mesh mesh = BuildMesh(poly);
+            UpdateMesh(root, mesh, material ?? root.GetComponent<MeshRenderer>().sharedMaterial);
+            // Keep the model's export/template geometry and snap bounds in sync with its widget.
+            var template = widget.Model.m_ModelParent.gameObject;
+            UpdateMesh(template, mesh, template.GetComponent<MeshRenderer>().sharedMaterial);
+            template.GetComponent<ObjModelScript>().InvalidateMeshVertexCount();
+            widget.Model.m_MeshBounds = mesh.bounds;
+            widget.TakeGeneratedMeshOwnership(mesh);
+            widget.RefreshGeneratedGeometry(mesh);
             widget.m_PolyMesh = poly;
         }
 
