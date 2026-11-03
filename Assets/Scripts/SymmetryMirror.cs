@@ -64,6 +64,16 @@ namespace TiltBrush
 
         internal static void EndSettingsEdit() => SettingsEditToken = new object();
 
+        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetForPlayMode()
+        {
+            // Domain reload can be disabled. Forget old geometry before Clear tries to hide
+            // previews, and discard mirrors whose canvases belonged to the previous run.
+            SymmetryPeerPreview.Forget();
+            Clear();
+            EndSettingsEdit();
+        }
+
         /// The linked mirrors, oldest first.
         public static IReadOnlyList<SymmetryMirror> All => m_Order;
 
@@ -113,7 +123,7 @@ namespace TiltBrush
             {
                 var mirror = Showing;
                 if (mirror == null) { return null; }
-                mirror.Canvas ??= App.Scene.ActiveCanvas;
+                if (mirror.Canvas == null) { mirror.Canvas = App.Scene.ActiveCanvas; }
                 return mirror.Canvas == App.Scene.ActiveCanvas ? mirror : null;
             }
         }
@@ -203,6 +213,7 @@ namespace TiltBrush
             if (m_ApplyingSettings || SymmetryMirrorMove.IsMoving) { return; }
             var mirror = Showing;
             if (mirror == null) { return; }
+            if (mirror.Canvas == null) { mirror.Canvas = App.Scene.ActiveCanvas; }
             var settings = SymmetrySettingsSnapshot.FromCurrentSettings(mirror.Canvas);
             if (settings == null || mirror.Settings.SameParameters(settings)) { return; }
             EndSelectionOwnedBy(mirror);

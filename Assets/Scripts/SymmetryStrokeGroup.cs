@@ -120,7 +120,7 @@ namespace TiltBrush
         /// Only called by Stroke.JoinSymmetryGroup, which guarantees a stroke joins once.
         internal void Add(Stroke stroke)
         {
-            Mirror.Canvas ??= stroke.Canvas;
+            if (Mirror.Canvas == null) { Mirror.Canvas = stroke.Canvas; }
             m_Strokes.Add(stroke);
         }
 

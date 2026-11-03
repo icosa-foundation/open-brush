@@ -2585,7 +2585,10 @@ namespace TiltBrush
                 return GetScriptedTransforms(update: false);
             }
 
-            var xfCanvas = (canvas ?? App.Scene.ActiveCanvas).Pose; // canvas -> global
+            // Unity's destroyed objects compare equal to null but are not CLR null, so ??
+            // would retain a destroyed canvas and throw when accessing its transform.
+            if (canvas == null) { canvas = App.Scene.ActiveCanvas; }
+            var xfCanvas = canvas.Pose; // canvas -> global
             var xfCanvasInverse = xfCanvas.inverse;
             return GetSymmetriesForCurrentMode()
                 .Select(xf_GS => xfCanvasInverse * xf_GS * xfCanvas)

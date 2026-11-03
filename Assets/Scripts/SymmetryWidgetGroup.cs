@@ -16,7 +16,7 @@ namespace TiltBrush
 
         internal void Add(GrabWidget widget)
         {
-            Mirror.Canvas ??= EffectiveCanvas(widget);
+            if (Mirror.Canvas == null) { Mirror.Canvas = EffectiveCanvas(widget); }
             m_Members.Add(widget);
         }
 
