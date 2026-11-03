@@ -169,20 +169,6 @@ namespace TiltBrush
                     throw new IOException("Invalid storage preparation result.");
                 if (scan.failed != 0)
                     Debug.LogWarning($"OBDS_APP skipped {scan.failed} inaccessible documents: {scan.error}");
-                string capability = Path.Combine(RootPath, $".obds-capability-{Guid.NewGuid():N}");
-                bool created = false;
-                try
-                {
-                    using (var stream = new FileStream(capability, FileMode.CreateNew, FileAccess.Write))
-                    {
-                        created = true;
-                        stream.WriteByte(0x5a);
-                        stream.Flush(true);
-                    }
-                    using (var stream = File.OpenRead(capability))
-                        if (stream.ReadByte() != 0x5a) throw new IOException("Root capability read failed.");
-                }
-                finally { if (created) File.Delete(capability); }
                 DocumentCount = scan.documents;
                 s_Files = scan.files;
                 s_Directories = scan.directories;
