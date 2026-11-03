@@ -93,6 +93,24 @@ namespace TiltBrush
         }
 
         [Test]
+        public void PaletteChangesAreSavedWithoutFinalizingTheFloatingRegion()
+        {
+            var start = Lift(out var document);
+            var moved = Move(start, 1);
+            document.FloatingSelection = new VoxFloatingSaveState(moved, moved.Pose);
+            var definition = start.Model.Definition;
+            var color = new Color32(12, 34, 56, 200);
+            document.ReplacePaletteEntry(1, color);
+            var saved = RuntimeVoxDocument.FromBytes(document.ToVoxBytes());
+            byte index = saved.Models[0].Voxels.Single().Value;
+            Assert.AreEqual(color, saved.Palette[index - 1]);
+            Assert.AreSame(moved, document.FloatingSelection.Value.Region);
+            Assert.AreSame(definition, start.Model.Definition);
+            Assert.AreEqual(2, start.Model.Voxels[Vector3Int.right]);
+            Assert.IsFalse(start.Model.Voxels.ContainsKey(Vector3Int.zero));
+        }
+
+        [Test]
         public void RotationKeepsCellsOnTheLatticeAndRejectsOversizedComposition()
         {
             var start = Lift(out _);

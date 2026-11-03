@@ -23,9 +23,11 @@ namespace TiltBrush
             AlignToGrid,
             NewModel,
             SelectRegion,
+            EditPalette,
         }
 
         [SerializeField] private Setting m_Setting;
+        [SerializeField] private GameObject m_PalettePopUpPrefab;
         private bool m_Available = true;
 
         public override void UpdateVisuals()
@@ -38,6 +40,9 @@ namespace TiltBrush
             }
 
             bool available = m_Setting != Setting.AlignToGrid || tool.HasCurrentTarget;
+            if (m_Setting == Setting.EditPalette)
+                available = tool.HasCurrentTarget && !tool.CreatingNewModel &&
+                    !OpenBrush.Multiplayer.MultiplayerManager.m_Instance.IsViewOnly;
             if (available != m_Available)
             {
                 m_Available = available;
@@ -63,6 +68,18 @@ namespace TiltBrush
 
             switch (m_Setting)
             {
+                case Setting.EditPalette:
+                    if (tool.TryGetPaletteTarget(out var widget, out var document))
+                    {
+                        var panel = m_Manager.GetPanelForPopUps();
+                        if (panel != null)
+                        {
+                            var popup = panel.CreatePopUp(m_PalettePopUpPrefab, Vector3.zero, false, true);
+                            popup.GetComponent<VoxPalettePopUpWindow>().Bind(widget, document);
+                            ResetState();
+                        }
+                    }
+                    break;
                 case Setting.SelectRegion:
                     tool.ToggleRegionSelection();
                     if (tool.SelectingRegion)

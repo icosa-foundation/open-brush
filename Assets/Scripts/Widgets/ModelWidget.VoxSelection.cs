@@ -64,10 +64,17 @@ namespace TiltBrush
                     m_VoxDragPreview = new VoxRegionDragPreview(VoxSelection.Document, region,
                         m_VoxChunks.Layout, m_VoxChunks.Materials, m_BatchId);
                 }
-                m_VoxDragPreview.SetPose(region.Pose);
+                m_VoxDragPreview.SetPose(m_VoxGrabActive ? DragPose() : region.Pose);
                 RecalculateColliderBounds();
             }
             else if (!cellsChanged && EditableVoxDocument != null) RecalculateColliderBounds();
+        }
+
+        internal void RefreshVoxPaletteVisuals()
+        {
+            m_VoxDragPreview?.Dispose();
+            m_VoxDragPreview = null;
+            RefreshVoxRegionVisuals(true);
         }
 
         internal static void ClearVoxRegionSelections()
