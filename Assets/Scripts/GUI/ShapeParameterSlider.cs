@@ -13,6 +13,7 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_Label;
         private ShapesPanel m_Panel;
         private ProceduralShapes.Parameter m_Parameter;
+        private bool m_Editing;
 
         protected override void Awake()
         {
@@ -38,19 +39,30 @@ namespace TiltBrush
 
         private void OnValueChanged(Vector3 value)
         {
-            if (m_Panel != null && m_Parameter != null) { m_Panel.ChangeParameter(m_Parameter, value.z); }
+            if (m_Panel != null && m_Parameter != null)
+            {
+                m_Editing = true;
+                m_Panel.ChangeParameter(m_Parameter, value.z);
+            }
         }
 
         public override void ButtonReleased()
         {
             base.ButtonReleased();
+            FinishOwnChange();
+        }
+
+        private void FinishOwnChange()
+        {
+            if (!m_Editing) { return; }
+            m_Editing = false;
             m_Panel?.FinishChange();
         }
 
         public override void ResetState()
         {
             base.ResetState();
-            m_Panel?.FinishChange();
+            FinishOwnChange();
         }
     }
 }

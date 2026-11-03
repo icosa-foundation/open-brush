@@ -156,8 +156,12 @@ namespace TiltBrush.MeshEditing
         public static GeometryRecipeData WithValue(GeometryRecipeData recipe, Parameter parameter, float value)
         {
             JObject data = recipe.ToJson();
-            var operations = data["Operations"] as JArray ?? new JArray();
-            data["Operations"] = operations;
+            var operations = data["Operations"] as JArray;
+            if (operations == null)
+            {
+                operations = new JArray();
+                data["Operations"] = operations;
+            }
             JObject step = FindStep(data, parameter);
             if (step == null)
             {
@@ -172,8 +176,12 @@ namespace TiltBrush.MeshEditing
                     SetBendReference(data, step, insert);
                 }
             }
-            var p = step["Parameters"] as JObject ?? new JObject();
-            step["Parameters"] = p;
+            var p = step["Parameters"] as JObject;
+            if (p == null)
+            {
+                p = new JObject();
+                step["Parameters"] = p;
+            }
             if (parameter.Choices != null)
             {
                 p[parameter.Name] = parameter.Choices[Mathf.Clamp(Mathf.RoundToInt(value), 0, parameter.Choices.Length - 1)];
