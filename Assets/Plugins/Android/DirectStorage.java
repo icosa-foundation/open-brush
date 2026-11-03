@@ -76,7 +76,7 @@ public final class DirectStorage {
             if (!root.isDirectory() && !root.mkdirs()) throw new IOException("Cannot create Documents workspace");
             for (UriPermission grant : activity.getContentResolver().getPersistedUriPermissions()) {
                 if (grant.isReadPermission() && grant.isWritePermission() && matches(grant.getUri(), name)) {
-                    prepare(activity.getApplicationContext(), grant.getUri(), name, receiver);
+                    prepare(activity.getApplicationContext(), grant.getUri(), name, receiver, false);
                     return;
                 }
             }
@@ -142,7 +142,8 @@ public final class DirectStorage {
                 if (flags != (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION))
                     throw new IOException("The workspace requires read and write access");
                 getActivity().getContentResolver().takePersistableUriPermission(tree, flags);
-                prepare(getActivity().getApplicationContext(), tree, name, receiver);
+                StorageLoadingActivity.show(getActivity());
+                prepare(getActivity().getApplicationContext(), tree, name, receiver, true);
             } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
             finally { remove(); }
         }
@@ -153,7 +154,8 @@ public final class DirectStorage {
         }
     }
 
-    private static void prepare(Context context, Uri tree, String name, String receiver) {
+    private static void prepare(Context context, Uri tree, String name, String receiver,
+                                boolean showLoading) {
         new Thread(() -> {
             try {
                 String root = documentsRoot(name);
@@ -235,6 +237,7 @@ public final class DirectStorage {
                 result.put("error", firstFailure);
                 send(receiver, "OnStoragePrepared", result.toString());
             } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
+            finally { if (showLoading) StorageLoadingActivity.hide(); }
         }, "OBDS_Prepare").start();
     }
 
