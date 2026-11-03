@@ -187,6 +187,8 @@ namespace TiltBrush
             if (mirror == null) { return; }
             EndSettingsEdit();
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new UnlinkMirrorCommand(mirror));
+            var position = InputManager.m_Instance.GetControllerPosition(InputManager.ControllerName.Brush);
+            AudioManager.m_Instance.PlayGroupedSound(position);
         }
 
         // ---- Settings ----------------------------------------------------------------------- //
