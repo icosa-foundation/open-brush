@@ -53,6 +53,9 @@ namespace TiltBrush
             bool held = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
             if (down && HasCurrentTarget)
             {
+                // Starting a new box needs current cell coordinates. Gripping an
+                // existing floating region never goes through this path.
+                CurrentTargetWidget.SynchronizeVoxRegionDocument(m_CurrentDocument._Document);
                 m_RegionModel = FindTargetModelAt(canvasPosition) ?? m_CurrentModel._Model;
                 m_RegionWidget = CurrentTargetWidget;
                 TrTransform grid = m_CurrentDocument.GetModelTransform(m_RegionModel);

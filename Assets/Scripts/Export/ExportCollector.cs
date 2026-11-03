@@ -534,6 +534,7 @@ namespace TiltBrush
 
         private static void BuildEditableVoxModelMeshes(SceneStatePayload payload, ModelWidget widget, int widgetIndex)
         {
+            widget.PrepareVoxRegionMeshExport();
             // Edited widgets can share their catalog Model while owning different geometry.
             // Convert each instance's current meshes and canonical materials independently.
             int materialSeed = payload.idGenerator.GetIdFromInstanceId(widget.gameObject);

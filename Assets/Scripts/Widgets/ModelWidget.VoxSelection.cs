@@ -42,27 +42,48 @@ namespace TiltBrush
             get => m_VoxSelection;
             set
             {
-                // Explicit selection changes finalize their previous layer first.
-                // Undo/redo assigns the immutable layer states directly.
-                if (value != null && WidgetManager.m_Instance != null)
+                if (ReferenceEquals(m_VoxSelection, value)) return;
+                var previous = m_VoxSelection;
+                bool sameGeometry = previous != null && value != null &&
+                    ReferenceEquals(previous.Floating.SourceGeometry, value.Floating.SourceGeometry);
+                if (previous != null && !sameGeometry)
+                {
+                    if (previous.IsValid(this)) SynchronizeVoxRegionDocument(previous.Document);
+                    m_VoxDragPreview?.Dispose();
+                    m_VoxDragPreview = null;
+                    m_VoxSelection = null;
+                    if (m_VoxSourceMeshDirty && EditableVoxDocument == previous.Document)
+                        RefreshEditableVoxMeshes();
+                    m_VoxSourceMeshDirty = false;
+                }
+                if (value != null && previous == null && WidgetManager.m_Instance != null)
                     foreach (var widget in WidgetManager.m_Instance.ModelWidgets)
-                        if (widget != null && widget != this) widget.m_VoxSelection = null;
+                        if (widget != null && widget != this && widget.VoxSelection != null) widget.VoxSelection = null;
                 m_VoxSelection = value;
+                if (value == null)
+                {
+                    m_VoxDocumentDirty = false;
+                    return;
+                }
+                m_VoxDocumentDirty = m_VoxSourceMeshDirty = true;
+                if (!value.IsValid(this)) return;
+                EnsureVoxRegionPreview();
+                m_VoxDragPreview.SetState(value.Floating);
+                UpdateVoxRegionCollider();
             }
         }
+
         internal bool HasVoxRegionSelection => VoxSelection != null && VoxSelection.IsValid(this);
-        internal bool VoxRegionGrabActive => m_VoxGrabBefore != null;
-        private RuntimeVoxDocument.Snapshot m_VoxGrabBefore;
+        internal bool VoxRegionGrabActive => m_VoxGrabActive;
+        private bool m_VoxGrabActive, m_VoxDocumentDirty, m_VoxSourceMeshDirty;
         private VoxRegionSelection m_VoxGrabSelection, m_VoxGrabUndoSelection;
         private EmbedVoxModelCommand m_VoxGrabEmbedding;
         private TrTransform m_VoxGrabWidget, m_VoxGrabGrid, m_VoxVirtualGrab;
-        private Vector3Int m_VoxGrabPivot, m_VoxGrabAnchorPivot, m_VoxGrabTranslation;
-        private Quaternion m_VoxGrabRotation;
-        private Quaternion m_VoxUndoRotation;
-        private Vector3Int m_VoxUndoTranslation;
+        private Vector3Int m_VoxGrabPivot, m_VoxGrabAnchorPivot, m_VoxGrabTranslation, m_VoxUndoTranslation;
+        private Quaternion m_VoxGrabRotation, m_VoxUndoRotation;
         private VoxRegionDragPreview m_VoxDragPreview;
-        private bool m_VoxDocumentDirty;
-        private bool m_VoxGrabChanged, m_VoxGrabRecordMovements, m_VoxGrabStampArmed, m_VoxDocumentWasSynchronized;
+        private Bounds? m_VoxOtherModelBounds;
+        private bool m_VoxGrabChanged, m_VoxGrabRecordMovements, m_VoxGrabStampArmed;
 
         internal static void ClearVoxRegionSelections()
         {
@@ -73,46 +94,85 @@ namespace TiltBrush
         internal void SelectVoxRegion(RuntimeVoxDocument document, RuntimeVoxDocument.RuntimeModel model,
             Vector3Int min, Vector3Int max)
         {
+            Vector3Int previousOrigin = model.SourceCellOffset;
             ClearVoxRegionSelections();
+            Vector3Int rebase = model.SourceCellOffset - previousOrigin;
+            min += rebase;
+            max += rebase;
             var selection = new VoxRegionSelection(this, document, model, min, max);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new SetVoxRegionSelectionCommand(this, selection));
+            // Merely selecting did not change the document or its native mesh.
+            m_VoxDocumentDirty = m_VoxSourceMeshDirty = false;
         }
 
         internal void CommitVoxRegionSelection()
         {
             if (VoxSelection == null) return;
-            // The document already contains the visible composition. Finalization
-            // discards the retained underlay; it does not move or reapply any cells.
             if (VoxRegionGrabActive) OnUserEndInteracting();
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new SetVoxRegionSelectionCommand(this, null));
+        }
+
+        private void EnsureVoxRegionPreview()
+        {
+            if (m_VoxDragPreview != null && m_VoxDragPreview.Matches(VoxSelection.Floating)) return;
+            m_VoxDragPreview?.Dispose();
+            int modelIndex = 0;
+            while (!ReferenceEquals(VoxSelection.Document.Models[modelIndex], VoxSelection.Model)) ++modelIndex;
+            MeshFilter selected = GetOrCreateVoxModelFilter(m_ModelInstance, modelIndex, VoxSelection.Model, ghost: false);
+            m_VoxOtherModelBounds = null;
+            foreach (Transform child in m_ModelInstance)
+            {
+                if (child == selected.transform || !child.gameObject.activeSelf) continue;
+                var filter = child.GetComponent<MeshFilter>();
+                if (filter == null || filter.sharedMesh == null) continue;
+                Bounds bounds = filter.sharedMesh.bounds;
+                var pose = TrTransform.FromLocalTransform(child);
+                var transformed = new Bounds(pose * bounds.center, Vector3.zero);
+                for (int x = 0; x < 2; ++x)
+                    for (int y = 0; y < 2; ++y)
+                        for (int z = 0; z < 2; ++z)
+                            transformed.Encapsulate(pose * new Vector3(x == 0 ? bounds.min.x : bounds.max.x,
+                                y == 0 ? bounds.min.y : bounds.max.y, z == 0 ? bounds.min.z : bounds.max.z));
+                if (m_VoxOtherModelBounds.HasValue)
+                {
+                    var combined = m_VoxOtherModelBounds.Value;
+                    combined.Encapsulate(transformed);
+                    m_VoxOtherModelBounds = combined;
+                }
+                else m_VoxOtherModelBounds = transformed;
+            }
+            m_VoxDragPreview = new VoxRegionDragPreview(VoxSelection.Document, VoxSelection.Floating,
+                selected.GetComponent<MeshRenderer>(), ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial,
+                m_BatchId, m_Keywords);
+        }
+
+        private void UpdateVoxRegionCollider()
+        {
+            m_MeshBounds = m_VoxDragPreview.GetBounds(VoxSelection.Floating);
+            if (m_VoxOtherModelBounds.HasValue) m_MeshBounds.Encapsulate(m_VoxOtherModelBounds.Value);
+            m_BoxCollider.transform.localPosition = m_MeshBounds.center;
+            m_BoxCollider.size = m_MeshBounds.size + m_ContainerBloat;
+            if (SelectionManager.m_Instance != null && SelectionManager.m_Instance.IsWidgetSelected(this))
+                SelectionManager.m_Instance.UpdateSelectionWidget();
         }
 
         private void BeginVoxRegionGrab()
         {
             if (!HasVoxRegionSelection || MultiplayerManager.m_Instance.IsViewOnly) return;
+            EnsureVoxRegionPreview();
             m_VoxGrabSelection = m_VoxGrabUndoSelection = VoxSelection;
             var floating = VoxSelection.Floating;
-            // A cell-center pivot keeps mixed odd/even cuboids on the integer lattice.
             m_VoxGrabAnchorPivot = Vector3Int.RoundToInt(((Vector3)floating.Min + floating.Max) * 0.5f);
             m_VoxGrabPivot = m_VoxGrabAnchorPivot + floating.Model.SourceCellOffset - floating.IndexOrigin;
-            m_VoxGrabBefore = VoxSelection.Document.CaptureSnapshot();
             m_VoxGrabWidget = m_VoxVirtualGrab = TrTransform.FromTransform(transform);
             m_VoxGrabGrid = m_VoxGrabWidget * VoxMeshBuilder.GetModelTransform(VoxSelection.Model);
-            m_VoxGrabRotation = Quaternion.identity;
-            m_VoxUndoRotation = Quaternion.identity;
-            m_VoxGrabTranslation = Vector3Int.zero;
-            m_VoxUndoTranslation = Vector3Int.zero;
-            m_VoxDocumentDirty = false;
-            m_VoxGrabChanged = m_VoxGrabStampArmed = m_VoxDocumentWasSynchronized = false;
+            m_VoxGrabRotation = m_VoxUndoRotation = Quaternion.identity;
+            m_VoxGrabTranslation = m_VoxUndoTranslation = Vector3Int.zero;
+            m_VoxGrabChanged = m_VoxGrabStampArmed = false;
             m_VoxGrabRecordMovements = m_RecordMovements;
             m_RecordMovements = false;
+            m_VoxGrabActive = true;
             ClearVelocities();
-            int modelIndex = 0;
-            while (!ReferenceEquals(VoxSelection.Document.Models[modelIndex], floating.Model)) ++modelIndex;
-            MeshFilter filter = GetOrCreateVoxModelFilter(m_ModelInstance, modelIndex, floating.Model, ghost: false);
-            m_VoxDragPreview = new VoxRegionDragPreview(VoxSelection.Document, floating,
-                filter.GetComponent<MeshRenderer>(), ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial,
-                m_BatchId, m_Keywords);
         }
 
         public override TrTransform GetGrabbedTrTransform()
@@ -147,33 +207,46 @@ namespace TiltBrush
                 {
                     m_VoxGrabTranslation = translation;
                     m_VoxGrabRotation = rotation;
-                    m_VoxDocumentDirty = true;
+                    m_VoxDocumentDirty = m_VoxSourceMeshDirty = true;
                     EnsureVoxRegionEmbedded();
-                    m_VoxGrabChanged = translation != m_VoxUndoTranslation ||
-                        Quaternion.Angle(rotation, m_VoxUndoRotation) >= 0.01f;
-                    m_VoxDragPreview.SetPose(m_VoxGrabAnchorPivot, rotation, translation);
+                    m_VoxGrabChanged = translation != m_VoxUndoTranslation || Quaternion.Angle(rotation, m_VoxUndoRotation) >= 0.01f;
+                    m_VoxDragPreview.SetPose(m_VoxGrabAnchorPivot, rotation, translation, m_VoxGrabSelection.Floating.Pose);
                 }
             }
-            // A press during the grab stamps. Holding the button before the grab
-            // has no clone behavior, and stamping also works while holding still.
             if (m_VoxGrabStampArmed && InputManager.Controllers[(int)m_InteractingController]
                     .GetCommandDown(InputManager.SketchCommands.DuplicateSelection))
                 StampVoxRegion();
             m_VoxGrabStampArmed = true;
         }
 
-        // Save/clone, stamp and release boundaries synchronize the composed data.
-        // Ordinary drag frames never transform cells or touch document definitions.
-        internal void SynchronizeVoxRegionDocument(RuntimeVoxDocument document)
+        private void PublishVoxRegionPose()
         {
-            if (!VoxRegionGrabActive || !m_VoxDocumentDirty || VoxSelection.Document != document) return;
+            if (!VoxRegionGrabActive) return;
             var moved = VoxSelection.Floating.TransformFrom(m_VoxGrabSelection.Floating,
                 m_VoxGrabAnchorPivot, m_VoxGrabRotation, m_VoxGrabTranslation);
-            if (!moved.TryCompose(document))
-                throw new System.InvalidOperationException("The floating voxel preview exceeds VOX model limits.");
-            VoxSelection = VoxSelection.WithFloating(moved);
+            if (!moved.SamePose(VoxSelection.Floating)) VoxSelection = VoxSelection.WithFloating(moved);
+        }
+
+        // Save/clone and finalization bake the visible image. A grab, stamp,
+        // release or undo only changes the immutable floating state and preview.
+        internal void SynchronizeVoxRegionDocument(RuntimeVoxDocument document)
+        {
+            if (!m_VoxDocumentDirty || !HasVoxRegionSelection || VoxSelection.Document != document) return;
+            PublishVoxRegionPose();
+            if (!VoxSelection.Floating.TryCompose(document))
+                throw new System.InvalidOperationException("The floating voxel selection exceeds VOX model limits.");
             m_VoxDocumentDirty = false;
-            m_VoxDocumentWasSynchronized = true;
+        }
+
+        internal void PrepareVoxRegionMeshExport()
+        {
+            if (!HasVoxRegionSelection) return;
+            SynchronizeVoxRegionDocument(VoxSelection.Document);
+            if (m_VoxSourceMeshDirty && EditableVoxDocument == VoxSelection.Document)
+            {
+                RefreshEditableVoxMeshes();
+                m_VoxSourceMeshDirty = false;
+            }
         }
 
         private void EnsureVoxRegionEmbedded()
@@ -187,10 +260,8 @@ namespace TiltBrush
         private bool RecordPendingVoxRegionMove()
         {
             if (!m_VoxGrabChanged) return false;
-            var document = VoxSelection.Document;
-            SynchronizeVoxRegionDocument(document);
-            var command = new MoveVoxRegionCommand(this, m_VoxGrabBefore, document.CaptureSnapshot(),
-                m_VoxGrabUndoSelection, VoxSelection, m_VoxGrabEmbedding);
+            PublishVoxRegionPose();
+            var command = new MoveVoxRegionCommand(this, m_VoxGrabUndoSelection, VoxSelection, m_VoxGrabEmbedding);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(m_VoxGrabEmbedding ?? (BaseCommand)command);
             ResetVoxRegionUndoBoundary();
             return true;
@@ -198,30 +269,23 @@ namespace TiltBrush
 
         private void ResetVoxRegionUndoBoundary()
         {
-            m_VoxGrabBefore = VoxSelection.Document.CaptureSnapshot();
             m_VoxGrabUndoSelection = VoxSelection;
             m_VoxUndoRotation = m_VoxGrabRotation;
             m_VoxUndoTranslation = m_VoxGrabTranslation;
             m_VoxGrabEmbedding = null;
-            m_VoxGrabChanged = m_VoxDocumentWasSynchronized = false;
+            m_VoxGrabChanged = false;
         }
 
         private void StampVoxRegion()
         {
-            SynchronizeVoxRegionDocument(VoxSelection.Document);
+            RecordPendingVoxRegionMove();
+            PublishVoxRegionPose();
             var stamped = VoxSelection.Floating.Stamp();
             if (ReferenceEquals(stamped, VoxSelection.Floating)) return;
-            // Finish the preceding motion first: Undo should remove the stamp
-            // separately from moving the floating region to this location.
-            RecordPendingVoxRegionMove();
             EnsureVoxRegionEmbedded();
-            var before = VoxSelection;
-            var after = before.WithFloating(stamped);
-            var snapshot = before.Document.CaptureSnapshot();
-            var command = new MoveVoxRegionCommand(this, snapshot, snapshot, before, after, m_VoxGrabEmbedding);
+            var command = new MoveVoxRegionCommand(this, VoxSelection, VoxSelection.WithFloating(stamped), m_VoxGrabEmbedding);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(m_VoxGrabEmbedding ?? (BaseCommand)command);
             ResetVoxRegionUndoBoundary();
-            m_VoxDragPreview.RebuildBackground(stamped);
         }
 
         protected override void OnUserEndInteracting()
@@ -235,22 +299,17 @@ namespace TiltBrush
             {
                 if (!RecordPendingVoxRegionMove())
                 {
-                    var document = m_VoxGrabUndoSelection.Document;
-                    document.RestoreSnapshot(m_VoxGrabBefore);
                     VoxSelection = m_VoxGrabUndoSelection;
+                    m_VoxDragPreview?.SetState(VoxSelection.Floating);
                     m_VoxGrabEmbedding?.Undo();
-                    if (m_VoxDocumentWasSynchronized && EditableVoxDocument == document) RefreshEditableVoxMeshes();
                 }
                 ClearVelocities();
                 base.OnUserEndInteracting();
             }
             finally
             {
-                m_VoxDragPreview?.Dispose();
-                m_VoxDragPreview = null;
-                m_VoxDocumentDirty = false;
                 m_RecordMovements = m_VoxGrabRecordMovements;
-                m_VoxGrabBefore = null;
+                m_VoxGrabActive = false;
                 m_VoxGrabSelection = m_VoxGrabUndoSelection = null;
                 m_VoxGrabEmbedding = null;
             }
@@ -259,23 +318,19 @@ namespace TiltBrush
         private void DrawVoxRegionSelection()
         {
             if (!HasVoxRegionSelection || !Showing) return;
-            if (VoxRegionGrabActive && m_VoxDragPreview != null)
+            EnsureVoxRegionPreview();
+            m_VoxDragPreview.Draw(TrTransform.FromTransform(transform));
+            var basis = VoxRegionGrabActive ? m_VoxGrabSelection.Floating : VoxSelection.Floating;
+            Vector3Int a = basis.Min;
+            Vector3Int b = basis.Max;
+            if (VoxRegionGrabActive)
             {
-                m_VoxDragPreview.Draw(TrTransform.FromTransform(transform));
-                var basis = m_VoxGrabSelection.Floating;
-                Vector3Int a = RuntimeVoxDocument.TransformRegionCell(basis.Min,
-                    m_VoxGrabAnchorPivot, m_VoxGrabRotation, m_VoxGrabTranslation);
-                Vector3Int b = RuntimeVoxDocument.TransformRegionCell(basis.Max,
-                    m_VoxGrabAnchorPivot, m_VoxGrabRotation, m_VoxGrabTranslation);
-                TrTransform anchorGrid = App.Scene.ActiveCanvas.AsCanvas[transform] *
-                    VoxMeshBuilder.GetModelTransform(basis.AnchorOffset, basis.Model.GlobalRotation);
-                VoxEditPreviewRenderer.DrawRegionBounds(anchorGrid, Vector3Int.Min(a, b),
-                    Vector3Int.Max(a, b), new Color(0.2f, 0.9f, 1f, 0.9f));
-                return;
+                a = RuntimeVoxDocument.TransformRegionCell(a, m_VoxGrabAnchorPivot, m_VoxGrabRotation, m_VoxGrabTranslation);
+                b = RuntimeVoxDocument.TransformRegionCell(b, m_VoxGrabAnchorPivot, m_VoxGrabRotation, m_VoxGrabTranslation);
             }
-            TrTransform grid = App.Scene.ActiveCanvas.AsCanvas[transform] * VoxMeshBuilder.GetModelTransform(VoxSelection.Model);
-            VoxEditPreviewRenderer.DrawRegionBounds(grid, VoxSelection.CurrentMin,
-                VoxSelection.CurrentMax, new Color(0.2f, 0.9f, 1f, 0.9f));
+            TrTransform anchorGrid = App.Scene.ActiveCanvas.AsCanvas[transform] *
+                VoxMeshBuilder.GetModelTransform(basis.AnchorOffset, basis.Model.GlobalRotation);
+            VoxEditPreviewRenderer.DrawRegionBounds(anchorGrid, Vector3Int.Min(a, b), Vector3Int.Max(a, b), new Color(.2f, .9f, 1f, .9f));
         }
     }
 }

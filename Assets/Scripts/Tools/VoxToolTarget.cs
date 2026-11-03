@@ -32,7 +32,11 @@ namespace TiltBrush
 
         internal RuntimeVoxDocument GetDocument(ModelWidget widget)
         {
-            if (widget.EditableVoxDocument != null) return widget.EditableVoxDocument;
+            if (widget.EditableVoxDocument != null)
+            {
+                if (!widget.VoxRegionGrabActive) widget.SynchronizeVoxRegionDocument(widget.EditableVoxDocument);
+                return widget.EditableVoxDocument;
+            }
             if (!widget.IsExternalVox || !string.IsNullOrEmpty(widget.Subtree)) return null;
             if (m_DocumentLookup != null) return m_DocumentLookup(widget);
             if (!m_Previews.TryGetValue(widget.Model, out var document))

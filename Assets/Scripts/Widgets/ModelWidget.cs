@@ -424,6 +424,8 @@ namespace TiltBrush
 
         void LoadModel()
         {
+            m_VoxDragPreview?.Dispose();
+            m_VoxDragPreview = null;
             // Clean up existing model
             ReleaseOwnedVoxMeshes();
             ReleaseOwnedVoxMaterials();
@@ -1065,6 +1067,11 @@ namespace TiltBrush
 
         public void RecalculateColliderBounds()
         {
+            if (HasVoxRegionSelection && m_VoxDragPreview != null)
+            {
+                UpdateVoxRegionCollider();
+                return;
+            }
             if (m_HasEditableVoxVisuals)
             {
                 m_MeshBounds = GetEditableVoxModelBounds();
