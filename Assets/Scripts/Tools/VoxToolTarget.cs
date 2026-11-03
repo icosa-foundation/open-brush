@@ -32,11 +32,7 @@ namespace TiltBrush
 
         internal RuntimeVoxDocument GetDocument(ModelWidget widget)
         {
-            if (widget.EditableVoxDocument != null)
-            {
-                if (!widget.VoxRegionGrabActive) widget.SynchronizeVoxRegionDocument(widget.EditableVoxDocument);
-                return widget.EditableVoxDocument;
-            }
+            if (widget.EditableVoxDocument != null) return widget.EditableVoxDocument;
             if (!widget.IsExternalVox || !string.IsNullOrEmpty(widget.Subtree)) return null;
             if (m_DocumentLookup != null) return m_DocumentLookup(widget);
             if (!m_Previews.TryGetValue(widget.Model, out var document))
@@ -91,10 +87,23 @@ namespace TiltBrush
                     var model = document.Models[i];
                     if (!model.IsVisible) continue;
                     TrTransform grid_GS = TrTransform.FromTransform(widget.transform) * VoxMeshBuilder.GetModelTransform(model);
-                    if (!TryFindCell(model, grid_GS, center_GS, radius_GS, out var cell, out float distance) ||
-                        distance >= bestDistance) continue;
+                    bool found = TryFindCell(model, grid_GS, center_GS, radius_GS, out var cell, out float distance);
+                    if (widget.HasVoxRegionSelection && widget.VoxSelection.Model == model && widget.VoxSelection.Floating.Lifted)
+                    {
+                        var layer = document.FloatingSelection.Value;
+                        TrTransform floatingGrid = TrTransform.FromTransform(widget.transform) *
+                            VoxMeshBuilder.GetModelTransform(layer.Region.AnchorOffset, model.GlobalRotation) * layer.Pose;
+                        if (TryFindCell(layer.Region.Payload, floatingGrid, center_GS, radius_GS,
+                            out var floatingCell, out float floatingDistance) && floatingDistance < distance)
+                        {
+                            cell = Vector3Int.RoundToInt(grid_GS.inverse * (floatingGrid * (Vector3)floatingCell));
+                            distance = floatingDistance;
+                            found = true;
+                        }
+                    }
+                    if (!found || distance >= bestDistance) continue;
                     bestDistance = distance;
-                    model.TryGetPaletteIndex(cell, out byte paletteIndex);
+                    widget.TryGetVoxRegionCell(model, cell, out byte paletteIndex);
                     hit = new Hit
                     {
                         Widget = widget, Document = document, ModelIndex = i,
@@ -107,32 +116,36 @@ namespace TiltBrush
 
         internal static bool TryFindCell(RuntimeVoxDocument.RuntimeModel model, TrTransform grid_GS,
             Vector3 center_GS, float radius_GS, out Vector3Int cell, out float distanceSquared)
+            => TryFindCell(model.Voxels, grid_GS, center_GS, radius_GS, out cell, out distanceSquared);
+
+        private static bool TryFindCell(IReadOnlyDictionary<Vector3Int, byte> cells, TrTransform grid_GS,
+            Vector3 center_GS, float radius_GS, out Vector3Int cell, out float distanceSquared)
         {
             cell = default;
             distanceSquared = float.PositiveInfinity;
             if (Mathf.Abs(grid_GS.scale) < 0.000001f || radius_GS < 0) return false;
             Vector3 center = grid_GS.inverse * center_GS;
             float radius = radius_GS / Mathf.Abs(grid_GS.scale);
-            var min = Vector3Int.Max(Vector3Int.zero, Vector3Int.CeilToInt(center - Vector3.one * (radius + 0.5f)));
-            var max = Vector3Int.Min(model.Size - Vector3Int.one, Vector3Int.FloorToInt(center + Vector3.one * (radius + 0.5f)));
+            var min = Vector3Int.CeilToInt(center - Vector3.one * (radius + 0.5f));
+            var max = Vector3Int.FloorToInt(center + Vector3.one * (radius + 0.5f));
             long volume = (long)Mathf.Max(0, max.x - min.x + 1) * Mathf.Max(0, max.y - min.y + 1) * Mathf.Max(0, max.z - min.z + 1);
             bool found = false;
             // Small tools query nearby dictionary keys. Large tools scan occupied cells,
             // avoiding work proportional to the entire declared grid volume.
-            if (volume < model.Voxels.Count)
+            if (volume < cells.Count)
             {
                 for (int x = min.x; x <= max.x; ++x)
                     for (int y = min.y; y <= max.y; ++y)
                         for (int z = min.z; z <= max.z; ++z)
                         {
                             var candidate = new Vector3Int(x, y, z);
-                            if (model.TryGetPaletteIndex(candidate, out _) &&
+                            if (cells.ContainsKey(candidate) &&
                                 ConsiderCell(candidate, center, radius, ref cell, ref distanceSquared)) found = true;
                         }
             }
             else
             {
-                foreach (var candidate in model.Voxels.Keys)
+                foreach (var candidate in cells.Keys)
                     if (ConsiderCell(candidate, center, radius, ref cell, ref distanceSquared)) found = true;
             }
             distanceSquared *= grid_GS.scale * grid_GS.scale;

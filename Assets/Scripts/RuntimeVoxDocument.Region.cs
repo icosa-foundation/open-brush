@@ -54,32 +54,5 @@ namespace TiltBrush
             translation = Vector3Int.RoundToInt(grid.inverse * (desiredGrid * (Vector3)pivot) - pivot);
         }
 
-        // Compose a floating layer in its fixed original grid coordinates. Rebasing
-        // affects the rendered/saved view, never the retained background or payload.
-        internal bool TrySetRegionCells(RuntimeModel model, Dictionary<Vector3Int, byte> result,
-            Vector3 anchorOffset, Vector3Int anchorOrigin, out Vector3Int rebase)
-        {
-            rebase = Vector3Int.zero;
-            if (!ContainsModel(model) || result.Count == 0) return false;
-            Vector3Int low = result.Keys.Aggregate(Vector3Int.Min);
-            Vector3Int high = result.Keys.Aggregate(Vector3Int.Max);
-            Vector3Int size = high - low + Vector3Int.one;
-            for (int axis = 0; axis < 3; ++axis)
-            {
-                if (size[axis] > MaxModelDimension) return false;
-                int padding = Mathf.Min(2, MaxModelDimension - size[axis]);
-                low[axis] -= (padding + 1) / 2;
-                size[axis] = Mathf.Max(3, size[axis] + padding);
-            }
-            rebase = -low;
-            Vector3Int shift = rebase;
-            // Replace only this instance's definition; linked source instances stay put.
-            model.Definition = new VoxelDefinition(size, model.SourceModelId,
-                result.ToDictionary(cell => cell.Key + shift, cell => cell.Value));
-            model.TransformOffset = anchorOffset - model.GlobalRotation.MultiplyVector(rebase);
-            model.SourceCellOffset = anchorOrigin + rebase;
-            ViewState.VisualsDirty = true;
-            return true;
-        }
     }
 }

@@ -53,14 +53,11 @@ namespace TiltBrush
             bool held = InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate);
             if (down && HasCurrentTarget)
             {
-                // Starting a new box needs current cell coordinates. Gripping an
-                // existing floating region never goes through this path.
-                CurrentTargetWidget.SynchronizeVoxRegionDocument(m_CurrentDocument._Document);
                 m_RegionModel = FindTargetModelAt(canvasPosition) ?? m_CurrentModel._Model;
                 m_RegionWidget = CurrentTargetWidget;
                 TrTransform grid = m_CurrentDocument.GetModelTransform(m_RegionModel);
                 Vector3Int cell = Vector3Int.RoundToInt(grid.inverse * canvasPosition);
-                bool empty = !m_RegionModel.TryGetPaletteIndex(cell, out _);
+                bool empty = !m_RegionWidget.TryGetVoxRegionCell(m_RegionModel, cell, out _);
                 m_RegionClearTap = empty;
                 if (empty && Time.realtimeSinceStartup - m_RegionLastEmptyTap <= m_RegionDoubleTapDuration)
                 {
@@ -100,7 +97,12 @@ namespace TiltBrush
             else
             {
                 m_RegionLastEmptyTap = float.NegativeInfinity;
-                if (m_RegionModel.Voxels.Keys.Any(cell => RuntimeVoxDocument.InRegion(cell, min, max)))
+                Vector3Int oldOffset = m_RegionModel.SourceCellOffset;
+                ModelWidget.ClearVoxRegionSelections();
+                Vector3Int shift = m_RegionModel.SourceCellOffset - oldOffset;
+                min += shift;
+                max += shift;
+                if (m_RegionModel.Definition.Grid.Region(min, max).Any())
                     m_RegionWidget.SelectVoxRegion(m_CurrentDocument._Document, m_RegionModel, min, max);
             }
             CancelRegionDrag();

@@ -200,6 +200,8 @@ namespace TiltBrush
 
         private bool TryJoinVoxelWidget(ModelWidget source, RuntimeVoxDocument sourceDocument)
         {
+            source.CommitVoxRegionSelection();
+            m_VoxJoinTarget.CommitVoxRegionSelection();
             var targetDocument = m_VoxTarget.GetDocument(m_VoxJoinTarget);
             if (targetDocument == null) return false;
             var targetPose = TrTransform.FromTransform(m_VoxJoinTarget.transform);

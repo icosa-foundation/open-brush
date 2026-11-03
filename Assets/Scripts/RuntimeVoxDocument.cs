@@ -47,6 +47,28 @@ namespace TiltBrush
             public Vector3Int Size { get; }
             public int SourceModelId { get; }
             internal Dictionary<Vector3Int, byte> Cells { get; }
+            internal VoxChunkGrid Grid { get; private set; }
+
+            internal bool SetCell(Vector3Int position, byte value)
+            {
+                Cells.TryGetValue(position, out byte before);
+                if (before == value) return false;
+                if (value == 0) Cells.Remove(position);
+                else Cells[position] = value;
+                Grid.Set(position, value);
+                return true;
+            }
+
+            internal void RestoreCells(IReadOnlyDictionary<Vector3Int, byte> cells)
+            {
+                Cells.Clear();
+                Grid = new VoxChunkGrid();
+                foreach (var cell in cells)
+                {
+                    Cells.Add(cell.Key, cell.Value);
+                    Grid.Set(cell.Key, cell.Value);
+                }
+            }
 
             internal VoxelDefinition(Vector3Int size, int sourceModelId,
                 Dictionary<Vector3Int, byte> cells = null)
@@ -54,6 +76,8 @@ namespace TiltBrush
                 Size = size;
                 SourceModelId = sourceModelId;
                 Cells = cells ?? new Dictionary<Vector3Int, byte>();
+                Grid = new VoxChunkGrid();
+                foreach (var cell in Cells) Grid.Set(cell.Key, cell.Value);
             }
         }
 
@@ -137,13 +161,12 @@ namespace TiltBrush
                     return false;
                 }
 
-                m_voxels[position] = paletteIndex;
-                return true;
+                return Definition.SetCell(position, paletteIndex);
             }
 
             public bool RemoveVoxel(Vector3Int position)
             {
-                return m_voxels.Remove(position);
+                return Definition.SetCell(position, 0);
             }
 
             public bool MoveVoxel(Vector3Int from, Vector3Int to, bool overwrite = true)
@@ -158,8 +181,8 @@ namespace TiltBrush
                     return false;
                 }
 
-                m_voxels.Remove(from);
-                m_voxels[to] = paletteIndex;
+                Definition.SetCell(from, 0);
+                Definition.SetCell(to, paletteIndex);
                 return true;
             }
 
@@ -170,8 +193,7 @@ namespace TiltBrush
                     return false;
                 }
 
-                m_voxels[position] = paletteIndex;
-                return true;
+                return Definition.SetCell(position, paletteIndex);
             }
 
             public bool TryGetPaletteIndex(Vector3Int position, out byte paletteIndex)
@@ -304,6 +326,7 @@ namespace TiltBrush
         public bool HasPreservedSourceData => m_sourceVoxBytes != null;
         // Transient scene/API state. This is deliberately not included in VOX serialization.
         internal WidgetViewState ViewState { get; } = new WidgetViewState();
+        internal VoxFloatingSaveState? FloatingSelection { get; set; }
 
         // Undo snapshots retain the actual identities, including removed objects. Serialized
         // VOX indices cannot provide this guarantee when definitions are added or detached.
@@ -347,8 +370,7 @@ namespace TiltBrush
             }
             foreach (var entry in snapshot.Cells)
             {
-                entry.Key.Cells.Clear();
-                foreach (var cell in entry.Value) entry.Key.Cells.Add(cell.Key, cell.Value);
+                entry.Key.RestoreCells(entry.Value);
             }
             m_models.Clear();
             for (int i = 0; i < snapshot.Models.Length; ++i)
@@ -650,8 +672,25 @@ namespace TiltBrush
 
         public byte[] ToVoxBytes()
         {
-            ViewState.Widget?.SynchronizeVoxRegionDocument(this);
-            return VoxWriter.Write(this);
+            return VoxWriter.Write(FloatingSelection.HasValue || HasUnboundedCells() ? CreateFinalizedCopy() : this);
+        }
+
+        private bool HasUnboundedCells() => m_models.Any(model => !model.Definition.Grid.Empty &&
+            (model.Definition.Grid.Min.x < 0 || model.Definition.Grid.Min.y < 0 || model.Definition.Grid.Min.z < 0 ||
+                model.Definition.Grid.Max.x >= model.Size.x || model.Definition.Grid.Max.y >= model.Size.y ||
+                model.Definition.Grid.Max.z >= model.Size.z));
+
+        internal bool NormalizeDrawingBounds()
+        {
+            bool changed = false;
+            foreach (var model in m_models)
+            {
+                var grid = model.Definition.Grid;
+                if (!grid.Empty && (grid.Min.x < 0 || grid.Min.y < 0 || grid.Min.z < 0 ||
+                        grid.Max.x >= model.Size.x || grid.Max.y >= model.Size.y || grid.Max.z >= model.Size.z))
+                    changed |= FitDrawingBounds(model);
+            }
+            return changed;
         }
 
         internal byte[] GetPreservedSourceData()

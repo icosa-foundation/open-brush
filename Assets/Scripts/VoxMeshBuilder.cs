@@ -83,9 +83,23 @@ namespace TiltBrush
             IReadOnlyList<int> paletteSubmeshIndices,
             int submeshCount, IReadOnlyList<bool> paletteOccludesFaces = null)
         {
-            RuntimeVoxelGrid grid = new RuntimeVoxelGrid(model, palette, paletteSubmeshIndices, paletteOccludesFaces);
+            RuntimeVoxelGrid grid = new RuntimeVoxelGrid(model.Voxels, model.Definition.Grid.Min, model.Definition.Grid.Max, palette, paletteSubmeshIndices, paletteOccludesFaces);
             MeshData meshData = GreedyMesh(grid, submeshCount);
             return CreateMesh($"{model.Name}_Optimized", meshData);
+        }
+
+        internal Mesh GenerateRegionMesh(VoxFloatingRegion region, Color32[] palette,
+            IReadOnlyList<int> slots, int submeshCount, IReadOnlyList<bool> occludes)
+        {
+            var grid = new RuntimeVoxelGrid(region.Payload, region.CellMin, region.CellMax, palette, slots, occludes);
+            return CreateMesh("Floating_voxels", GreedyMesh(grid, submeshCount));
+        }
+        internal Mesh GenerateChunkMesh(RuntimeVoxDocument.RuntimeModel model, Vector3Int chunk,
+            Color32[] palette, IReadOnlyList<int> paletteSubmeshIndices, int submeshCount,
+            IReadOnlyList<bool> paletteOccludesFaces)
+        {
+            var grid = new RuntimeVoxelGrid(model, chunk, palette, paletteSubmeshIndices, paletteOccludesFaces);
+            return CreateMesh($"{model.Name}_Chunk_{chunk}", GreedyMesh(grid, submeshCount));
         }
 
         public Mesh GenerateSeparateCubesMesh(RuntimeVoxDocument.RuntimeModel model, Color32[] palette)
@@ -393,14 +407,14 @@ namespace TiltBrush
                         Vector3Int neighborPos = pos;
                         neighborPos[axis] = pos[axis] - 1;
 
-                        bool current = pos[axis] < dims[axis] && grid.HasVoxel(checkPos);
-                        bool neighbor = pos[axis] > 0 && grid.HasVoxel(neighborPos);
+                        bool current = grid.HasVoxel(checkPos);
+                        bool neighbor = grid.HasVoxel(neighborPos);
 
                         // Transparent neighbors do not hide opaque surfaces. Internal
                         // faces between two transparent cells remain culled.
-                        bool showCurrent = current && (!neighbor ||
+                        bool showCurrent = current && grid.Owns(checkPos) && (!neighbor ||
                             (grid.OccludesFaces(checkPos) && !grid.OccludesFaces(neighborPos)));
-                        bool showNeighbor = neighbor && (!current ||
+                        bool showNeighbor = neighbor && grid.Owns(neighborPos) && (!current ||
                             (grid.OccludesFaces(neighborPos) && !grid.OccludesFaces(checkPos)));
                         if (showCurrent || showNeighbor)
                         {
@@ -622,104 +636,60 @@ namespace TiltBrush
             }
         }
 
-        private class RuntimeVoxelGrid
+        private sealed class RuntimeVoxelGrid
         {
-            private readonly Dictionary<Vector3Int, RuntimeVoxelCell> m_voxels =
-                new Dictionary<Vector3Int, RuntimeVoxelCell>();
-            private readonly Vector3Int m_size;
-
-            public Vector3Int Size => m_size;
+            private readonly VoxChunkGrid m_Chunks;
+            private readonly IReadOnlyDictionary<Vector3Int, byte> m_Cells;
+            private readonly Color32[] m_Palette;
+            private readonly IReadOnlyList<int> m_PaletteSlots;
+            private readonly IReadOnlyList<bool> m_PaletteOccludes;
+            public Vector3Int Size { get; }
             public Vector3Int Offset { get; }
 
-            public RuntimeVoxelGrid(
-                RuntimeVoxDocument.RuntimeModel model,
-                Color32[] palette,
-                IReadOnlyList<int> paletteSubmeshIndices, IReadOnlyList<bool> paletteOccludesFaces)
+            internal RuntimeVoxelGrid(RuntimeVoxDocument.RuntimeModel model, Vector3Int chunk,
+                Color32[] palette, IReadOnlyList<int> slots, IReadOnlyList<bool> occludes)
             {
-                int minX = int.MaxValue;
-                int minY = int.MaxValue;
-                int minZ = int.MaxValue;
-                int maxX = int.MinValue;
-                int maxY = int.MinValue;
-                int maxZ = int.MinValue;
-
-                foreach (RuntimeVoxDocument.RuntimeVoxel voxel in model.EnumerateVoxels(palette))
-                {
-                    Vector3Int pos = voxel.Position;
-
-                    minX = Math.Min(minX, pos.x);
-                    minY = Math.Min(minY, pos.y);
-                    minZ = Math.Min(minZ, pos.z);
-                    maxX = Math.Max(maxX, pos.x);
-                    maxY = Math.Max(maxY, pos.y);
-                    maxZ = Math.Max(maxZ, pos.z);
-                }
-
-                if (minX == int.MaxValue)
-                {
-                    m_size = Vector3Int.zero;
-                    return;
-                }
-
-                Offset = new Vector3Int(minX, minY, minZ);
-                m_size = new Vector3Int(
-                    maxX - minX + 1,
-                    maxY - minY + 1,
-                    maxZ - minZ + 1
-                );
-
-                foreach (RuntimeVoxDocument.RuntimeVoxel voxel in model.EnumerateVoxels(palette))
-                {
-                    Vector3Int normalized = voxel.Position - Offset;
-                    m_voxels[normalized] = new RuntimeVoxelCell(
-                        voxel.Color,
-                        VoxMeshBuilder.GetSubmeshIndex(
-                            voxel.PaletteIndex,
-                            paletteSubmeshIndices),
-                        paletteOccludesFaces == null || paletteOccludesFaces[voxel.PaletteIndex - 1]);
-                }
+                m_Chunks = model.Definition.Grid;
+                m_Palette = palette;
+                m_PaletteSlots = slots;
+                m_PaletteOccludes = occludes;
+                Offset = chunk * VoxChunkGrid.Side;
+                Size = Vector3Int.one * VoxChunkGrid.Side;
             }
 
+            internal RuntimeVoxelGrid(IReadOnlyDictionary<Vector3Int, byte> cells, Vector3Int min, Vector3Int max,
+                Color32[] palette, IReadOnlyList<int> slots, IReadOnlyList<bool> occludes)
+            {
+                m_Cells = cells;
+                m_Palette = palette;
+                m_PaletteSlots = slots;
+                m_PaletteOccludes = occludes;
+                Offset = cells.Count == 0 ? Vector3Int.zero : min;
+                Size = cells.Count == 0 ? Vector3Int.zero : max - min + Vector3Int.one;
+            }
+
+            public bool Owns(Vector3Int pos) => pos.x >= 0 && pos.y >= 0 && pos.z >= 0 &&
+                pos.x < Size.x && pos.y < Size.y && pos.z < Size.z;
+
+            private byte PaletteIndex(Vector3Int pos)
+            {
+                if (m_Chunks != null) return m_Chunks.Get(pos + Offset);
+                return m_Cells.TryGetValue(pos + Offset, out byte index) ? index : (byte)0;
+            }
+
+            public bool HasVoxel(Vector3Int pos) => PaletteIndex(pos) != 0;
             public bool OccludesFaces(Vector3Int pos)
-                => m_voxels.TryGetValue(pos, out RuntimeVoxelCell voxel) && voxel.OccludesFaces;
-
-            public bool HasVoxel(Vector3Int pos)
             {
-                return m_voxels.ContainsKey(pos);
+                byte index = PaletteIndex(pos);
+                return index != 0 && (m_PaletteOccludes == null || m_PaletteOccludes[index - 1]);
             }
-
             public Color32 GetColor(Vector3Int pos)
             {
-                if (m_voxels.TryGetValue(pos, out RuntimeVoxelCell voxel))
-                {
-                    return voxel.Color;
-                }
-
-                return new Color32(255, 255, 255, 255);
+                byte index = PaletteIndex(pos);
+                return index == 0 ? new Color32(255, 255, 255, 255) : m_Palette[index - 1];
             }
-
-            public int GetSubmeshIndex(Vector3Int pos)
-            {
-                return m_voxels.TryGetValue(pos, out RuntimeVoxelCell voxel)
-                    ? voxel.SubmeshIndex
-                    : 0;
-            }
+            public int GetSubmeshIndex(Vector3Int pos) => VoxMeshBuilder.GetSubmeshIndex(PaletteIndex(pos), m_PaletteSlots);
         }
-
-        private readonly struct RuntimeVoxelCell
-        {
-            public Color32 Color { get; }
-            public int SubmeshIndex { get; }
-            public bool OccludesFaces { get; }
-
-            public RuntimeVoxelCell(Color32 color, int submeshIndex, bool occludesFaces)
-            {
-                Color = color;
-                SubmeshIndex = submeshIndex;
-                OccludesFaces = occludesFaces;
-            }
-        }
-
         private static int GetSubmeshIndex(
             byte paletteIndex,
             IReadOnlyList<int> paletteSubmeshIndices)

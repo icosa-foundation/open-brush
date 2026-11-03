@@ -45,13 +45,8 @@ namespace TiltBrush
         // together, so both generated and imported artwork stays visually fixed.
         internal bool FitDrawingBounds(RuntimeModel model)
         {
-            Vector3Int min = model.Size;
-            Vector3Int max = Vector3Int.one * -1;
-            foreach (var cell in model.Voxels.Keys)
-            {
-                min = Vector3Int.Min(min, cell);
-                max = Vector3Int.Max(max, cell);
-            }
+            Vector3Int min = model.Definition.Grid.Min;
+            Vector3Int max = model.Definition.Grid.Max;
             var lower = Vector3Int.zero;
             var upper = Vector3Int.zero;
             for (int axis = 0; axis < 3; ++axis)

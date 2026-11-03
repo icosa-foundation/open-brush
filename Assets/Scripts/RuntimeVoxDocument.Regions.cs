@@ -85,7 +85,26 @@ namespace TiltBrush
 
         public RuntimeVoxDocument CloneDocument()
         {
-            ViewState.Widget?.SynchronizeVoxRegionDocument(this);
+            return CreateFinalizedCopy();
+        }
+
+        internal RuntimeVoxDocument CreateFinalizedCopy()
+        {
+            var copy = CloneDocumentCore();
+            if (FloatingSelection.HasValue && FloatingSelection.Value.Region.Lifted)
+            {
+                var layer = FloatingSelection.Value;
+                int index = m_models.IndexOf(layer.Region.Model);
+                if (index >= 0)
+                    foreach (var cell in layer.Region.CellsAt(layer.Pose))
+                        copy.Models[index].Definition.SetCell(cell.Key + copy.Models[index].SourceCellOffset, cell.Value);
+            }
+            copy.NormalizeDrawingBounds();
+            return copy;
+        }
+
+        private RuntimeVoxDocument CloneDocumentCore()
+        {
             var copy = new RuntimeVoxDocument { m_sourceVoxBytes = m_sourceVoxBytes };
             Array.Copy(Palette, copy.Palette, Palette.Length);
             foreach (var material in m_materials) copy.m_materials.Add(material.Key, material.Value);

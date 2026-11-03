@@ -46,8 +46,7 @@ namespace TiltBrush
             var paletteSubmeshIndices = new int[256];
             var paletteOccludesFaces = Enumerable.Repeat(true, 256).ToArray();
             var slotByProperties = new Dictionary<string, int>(StringComparer.Ordinal);
-            var usedPaletteIndices = new HashSet<int>(
-                document.Models.SelectMany(model => model.Voxels.Values).Select(value => (int)value));
+            var usedPaletteIndices = new HashSet<int>(document.Materials.Keys);
             if (additionalPaletteIndices != null)
                 foreach (byte index in additionalPaletteIndices) usedPaletteIndices.Add(index);
 

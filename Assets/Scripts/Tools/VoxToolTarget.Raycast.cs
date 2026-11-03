@@ -44,11 +44,11 @@ namespace TiltBrush
                     var model = document.Models[i];
                     if (!model.IsVisible) continue;
                     TrTransform grid_GS = TrTransform.FromTransform(widget.transform) * VoxMeshBuilder.GetModelTransform(model);
-                    if (!TryRaycast(model, grid_GS, ray_GS, bestDistance, out var cellHit) ||
+                    if (!TryRaycast(model, grid_GS, ray_GS, bestDistance, out var cellHit, widget) ||
                         (found && cellHit.Distance >= bestDistance)) continue;
                     found = true;
                     bestDistance = cellHit.Distance;
-                    model.TryGetPaletteIndex(cellHit.Cell, out byte paletteIndex);
+                    widget.TryGetVoxRegionCell(model, cellHit.Cell, out byte paletteIndex);
                     hit = new RayHit
                     {
                         Voxel = new Hit
@@ -67,12 +67,29 @@ namespace TiltBrush
         }
 
         internal static bool TryRaycast(RuntimeVoxDocument.RuntimeModel model, TrTransform grid_GS,
-            Ray ray_GS, float maxDistance_GS, out CellRayHit hit)
+            Ray ray_GS, float maxDistance_GS, out CellRayHit hit, ModelWidget widget = null)
         {
             hit = default;
-            if (model.Voxels.Count == 0 || Mathf.Abs(grid_GS.scale) < 0.000001f ||
+            var floating = widget?.EditableVoxDocument?.FloatingSelection;
+            bool hasFloating = floating.HasValue && ReferenceEquals(floating.Value.Region.Model, model);
+            var grid = model.Definition.Grid;
+            if ((grid.Empty && !hasFloating) || Mathf.Abs(grid_GS.scale) < 0.000001f ||
                 !IsFinite(maxDistance_GS) || maxDistance_GS < 0 || !IsFinite(ray_GS.origin) ||
                 !IsFinite(ray_GS.direction) || ray_GS.direction.sqrMagnitude == 0) return false;
+
+            Vector3Int min = grid.Min, max = grid.Max;
+            TrTransform floatingInverse = TrTransform.identity;
+            if (hasFloating)
+            {
+                var layer = floating.Value;
+                floatingInverse = layer.Pose.inverse;
+                Vector3Int a = Vector3Int.RoundToInt(layer.Pose * (Vector3)layer.Region.CellMin) + model.SourceCellOffset;
+                Vector3Int b = Vector3Int.RoundToInt(layer.Pose * (Vector3)layer.Region.CellMax) + model.SourceCellOffset;
+                min = grid.Empty ? Vector3Int.Min(a, b) : Vector3Int.Min(min, Vector3Int.Min(a, b));
+                max = grid.Empty ? Vector3Int.Max(a, b) : Vector3Int.Max(max, Vector3Int.Max(a, b));
+            }
+            bool Occupied(Vector3Int cell) => model.Voxels.ContainsKey(cell) || (hasFloating &&
+                floating.Value.Region.Payload.ContainsKey(Vector3Int.RoundToInt(floatingInverse * (Vector3)(cell - model.SourceCellOffset))));
 
             var inverse = grid_GS.inverse;
             Vector3 origin = inverse * ray_GS.origin;
@@ -82,7 +99,7 @@ namespace TiltBrush
             double entry = double.NegativeInfinity;
             double exit = double.PositiveInfinity;
             for (int axis = 0; axis < 3; ++axis)
-                if (!ClipAxis(origin[axis], direction[axis], -0.5, model.Size[axis] - 0.5,
+                if (!ClipAxis(origin[axis], direction[axis], min[axis] - 0.5, max[axis] + 0.5,
                         ref entry, ref exit)) return false;
             double start = Math.Max(0, entry);
             double end = Math.Min(maxDistance_GS, exit);
@@ -90,10 +107,10 @@ namespace TiltBrush
 
             var step = new Vector3Int(Math.Sign(direction.x), Math.Sign(direction.y), Math.Sign(direction.z));
             var cell = new Vector3Int(
-                InitialCell(origin.x + direction.x * start, step.x, model.Size.x),
-                InitialCell(origin.y + direction.y * start, step.y, model.Size.y),
-                InitialCell(origin.z + direction.z * start, step.z, model.Size.z));
-            bool occupied = model.TryGetPaletteIndex(cell, out _);
+                InitialCell(origin.x + direction.x * start, step.x, min.x, max.x),
+                InitialCell(origin.y + direction.y * start, step.y, min.y, max.y),
+                InitialCell(origin.z + direction.z * start, step.z, min.z, max.z));
+            bool occupied = Occupied(cell);
             double nextX = NextBoundary(origin.x, direction.x, cell.x, step.x, start);
             double nextY = NextBoundary(origin.y, direction.y, cell.y, step.y, start);
             double nextZ = NextBoundary(origin.z, direction.z, cell.z, step.z, start);
@@ -107,7 +124,7 @@ namespace TiltBrush
                 if (distance > end) return false;
                 Vector3Int previous = cell;
                 cell[axis] += step[axis];
-                bool nextOccupied = model.TryGetPaletteIndex(cell, out _);
+                bool nextOccupied = Occupied(cell);
                 if (occupied != nextOccupied)
                 {
                     var face = Vector3Int.zero;
@@ -141,7 +158,7 @@ namespace TiltBrush
             return entry <= exit;
         }
 
-        private static int InitialCell(double position, int step, int size)
+        private static int InitialCell(double position, int step, int min, int max)
         {
             double coordinate = position + 0.5;
             double boundary = Math.Round(coordinate);
@@ -150,7 +167,7 @@ namespace TiltBrush
                 // Start immediately before a boundary, so a ray on a surface can
                 // return that face at distance zero in either direction.
                 if (step != 0) return (int)boundary - (step > 0 ? 1 : 0);
-                return Math.Max(0, Math.Min(size - 1, (int)boundary));
+                return Math.Max(min, Math.Min(max, (int)boundary));
             }
             return (int)Math.Floor(coordinate);
         }

@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -534,43 +534,48 @@ namespace TiltBrush
 
         private static void BuildEditableVoxModelMeshes(SceneStatePayload payload, ModelWidget widget, int widgetIndex)
         {
-            widget.PrepareVoxRegionMeshExport();
-            // Edited widgets can share their catalog Model while owning different geometry.
-            // Convert each instance's current meshes and canonical materials independently.
+            // Export a finalized value. Neither the live grid nor its floating layer changes.
+            var document = widget.EditableVoxDocument.CreateFinalizedCopy();
             int materialSeed = payload.idGenerator.GetIdFromInstanceId(widget.gameObject);
             var collector = new ImportMaterialCollector(string.Empty, $"editable-vox-{materialSeed}");
-            Matrix4x4 widgetXform = ExportUtils.ChangeBasis(widget.transform, payload);
-            var asWidget = new TransformExtensions.RelativeAccessor(widget.transform);
-            foreach ((MeshFilter filter, int index) in widget.GetMeshes().WithIndex())
+            var materialSet = new VoxMaterialSet(document, ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial);
+            Material[] materials = materialSet.Materials.ToArray();
+            try
             {
-                if (filter == null || !filter.gameObject.activeInHierarchy || filter.sharedMesh == null ||
-                    filter.sharedMesh.vertexCount == 0) continue;
-                var renderer = filter.GetComponent<MeshRenderer>();
-                if (renderer == null) continue;
-                Material[] materials = widget.GetEditableVoxExportMaterials(renderer);
-                foreach (Material material in materials.Distinct())
-                    if (material != null && collector.GetExportableMaterial(material) == null) collector.Add(material);
-                int objId = payload.idGenerator.GetIdFromInstanceId(filter.gameObject);
-                foreach (PrefabGeometry geometry in GetPrefabGameObjMeshes(filter.sharedMesh, materials,
-                    payload, widget.Model, index, collector))
+                foreach (Material material in materials.Distinct()) collector.Add(material);
+                Matrix4x4 widgetXform = ExportUtils.ChangeBasis(widget.transform, payload);
+                foreach (var (model, index) in document.Models.WithIndex())
                 {
-                    payload.modelMeshes.Add(new ExportUtils.ModelMeshPayload(payload.groupIdMapping.GetId(widget.Group))
+                    if (!model.IsVisible || model.Voxels.Count == 0) continue;
+                    Mesh mesh = new VoxMeshBuilder().GenerateOptimizedMesh(model, document.Palette,
+                        materialSet.PaletteSubmeshIndices, materials.Length, materialSet.PaletteOccludesFaces);
+                    try
                     {
-                        model = widget.Model,
-                        geometry = geometry.pool,
-                        exportableMaterial = geometry.exportableMaterial,
-                        geometryName = geometry.name,
-                        legacyUniqueName = $"{geometry.name}_i{objId}",
-                        nodeName = $"{geometry.name}_{widgetIndex}",
-                        parentXform = widgetXform,
-                        localXform = ExportUtils.ChangeBasis(asWidget[filter.transform], payload),
-                        modelId = widgetIndex,
-                        xform = ExportUtils.ChangeBasis(filter.transform, payload),
-                    });
+                        TrTransform pose = VoxMeshBuilder.GetModelTransform(model);
+                        foreach (PrefabGeometry geometry in GetPrefabGameObjMeshes(mesh, materials,
+                            payload, widget.Model, index, collector))
+                            payload.modelMeshes.Add(new ExportUtils.ModelMeshPayload(payload.groupIdMapping.GetId(widget.Group))
+                            {
+                                model = widget.Model,
+                                geometry = geometry.pool,
+                                exportableMaterial = geometry.exportableMaterial,
+                                geometryName = geometry.name,
+                                legacyUniqueName = $"{geometry.name}_i{materialSeed}",
+                                nodeName = $"{geometry.name}_{widgetIndex}",
+                                parentXform = widgetXform,
+                                localXform = ExportUtils.ChangeBasis(pose, payload),
+                                modelId = widgetIndex,
+                                xform = ExportUtils.ChangeBasis(App.Scene.AsScene[widget.transform] * pose, payload),
+                            });
+                    }
+                    finally { UnityEngine.Object.Destroy(mesh); }
                 }
             }
+            finally
+            {
+                foreach (Material material in materialSet.OwnedMaterials) UnityEngine.Object.Destroy(material);
+            }
         }
-
         // Helper for GetModelMeshPayloads() -- this is the level 3 iteration.
         // Enumerates all the GameObjects in a "prefab" and creates geometry for them.
         // Because Unity, the result is an array; but it'll almost certainly be length 1.

@@ -146,7 +146,33 @@ namespace TiltBrush
                     modelObject.transform.localRotation = modelTransform.rotation;
                     modelObject.SetActive(model.IsVisible);
 
-                    // Generate mesh based on mode
+                    if (options.MeshMode == MeshMode.Optimized && model.Voxels.Count != 0)
+                    {
+                        Material[] materials = options.MaterialOverride != null
+                            ? new[] { options.MaterialOverride } : materialSet.Materials.ToArray();
+                        foreach (var pair in model.Definition.Grid.Chunks)
+                        {
+                            var chunk = new GameObject($"Chunk_{pair.Key.x}_{pair.Key.y}_{pair.Key.z}");
+                            chunk.transform.SetParent(modelObject.transform, false);
+                            Mesh chunkMesh = m_meshBuilder.GenerateChunkMesh(model, pair.Key, document.Palette,
+                                materialSet?.PaletteSubmeshIndices, materials.Length, materialSet?.PaletteOccludesFaces);
+                            chunk.AddComponent<MeshFilter>().sharedMesh = chunkMesh;
+                            chunk.AddComponent<MeshRenderer>().sharedMaterials = materials;
+                            var tag = chunk.AddComponent<VoxChunkTag>();
+                            tag.Coordinate = pair.Key;
+                            tag.Signature = unchecked((long)model.Definition.Grid.MeshHash(pair.Key, document.Palette,
+                                materialSet?.PaletteSubmeshIndices, materialSet?.PaletteOccludesFaces));
+                        }
+                        if (options.GenerateCollider)
+                        {
+                            var collider = modelObject.AddComponent<BoxCollider>();
+                            collider.center = ((Vector3)model.Definition.Grid.Min + model.Definition.Grid.Max) * .5f;
+                            collider.size = (Vector3)(model.Definition.Grid.Max - model.Definition.Grid.Min + Vector3Int.one);
+                        }
+                        continue;
+                    }
+
+                    // Separate-cube mode and empty editable templates retain their single mesh.
                     Mesh mesh = options.MeshMode == MeshMode.Optimized
                         ? GenerateOptimizedMesh(model, document.Palette, materialSet)
                         : GenerateSeparateCubesMesh(model, document.Palette, materialSet);

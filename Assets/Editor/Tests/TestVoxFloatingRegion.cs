@@ -1,6 +1,6 @@
 // Copyright 2026 The Open Brush Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
-
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -8,154 +8,142 @@ namespace TiltBrush
 {
     internal class TestVoxFloatingRegion
     {
-        private static VoxFloatingRegion Create(out RuntimeVoxDocument document)
+        private static VoxFloatingRegion Lift(out RuntimeVoxDocument document)
         {
             document = new RuntimeVoxDocument();
-            var model = document.CreateModel("floating", Vector3Int.one * 8);
+            var model = document.CreateModel("floating", Vector3Int.one * 32);
             model.AddOrUpdateVoxel(Vector3Int.zero, 1);
             model.AddOrUpdateVoxel(Vector3Int.right, 2);
-            return new VoxFloatingRegion(model, Vector3Int.zero, Vector3Int.zero);
+            var region = new VoxFloatingRegion(model, Vector3Int.zero, Vector3Int.zero).Lift();
+            VoxCellChange.Apply(model, VoxCellChange.Remove(region), true);
+            return region;
         }
 
-        private static VoxFloatingRegion Move(VoxFloatingRegion current, VoxFloatingRegion grabStart,
-            int translation, RuntimeVoxDocument document)
-        {
-            var result = current.TransformFrom(grabStart, Vector3Int.zero, Quaternion.identity,
-                Vector3Int.right * translation);
-            Assert.IsTrue(result.TryCompose(document));
-            return result;
-        }
+        private static VoxFloatingRegion Move(VoxFloatingRegion region, int distance) =>
+            region.TransformFrom(region, Vector3Int.zero, Quaternion.identity, Vector3Int.right * distance);
 
-        private static void AssertCell(VoxFloatingRegion floating, Vector3Int anchor, byte color)
+        [Test]
+        public void MovingOverBackgroundKeepsOnePayloadAndDoesNotEditTheGrid()
         {
-            Vector3Int index = anchor + floating.Model.SourceCellOffset - floating.IndexOrigin;
-            Assert.IsTrue(floating.Model.TryGetPaletteIndex(index, out byte actual), $"Missing cell {anchor}");
-            Assert.AreEqual(color, actual);
+            var start = Lift(out var document);
+            var definition = start.Model.Definition;
+            var moved = Move(start, 1);
+            var next = Move(moved, 1);
+            Assert.AreSame(start.Payload, next.Payload);
+            Assert.AreSame(definition, next.Model.Definition);
+            Assert.AreEqual(1, next.Model.Voxels.Count);
+            Assert.AreEqual(2, next.Model.Voxels[Vector3Int.right]);
+            Assert.IsFalse(next.Model.Voxels.ContainsKey(Vector3Int.zero));
+            Assert.AreEqual(Vector3Int.right * 2, next.CellsAt(next.Pose).Single().Key);
         }
 
         [Test]
-        public void RegrabbingOverlappingRegionRestoresCoveredBackgroundAndKeepsSourceEmpty()
+        public void OverlappingStampsOverwriteOnlyDestinationCellsAndUndoRestoresTheirValues()
         {
-            var start = Create(out var document);
-            var first = Move(start, start, 1, document);
-            AssertCell(first, Vector3Int.right, 1);
-            var second = Move(first, first, 1, document);
-            AssertCell(second, Vector3Int.right, 2);
-            AssertCell(second, Vector3Int.right * 2, 1);
-            Vector3Int original = second.Model.SourceCellOffset - second.IndexOrigin;
-            Assert.IsFalse(second.Model.TryGetPaletteIndex(original, out _));
-            Assert.AreEqual(1, second.Cells.Count);
+            var start = Lift(out _);
+            var moved = Move(start, 1);
+            var stamp = VoxCellChange.Write(moved);
+            VoxCellChange.Apply(start.Model, stamp, true);
+            Assert.AreEqual(1, stamp.Count);
+            Assert.AreEqual(1, start.Model.Voxels[Vector3Int.right]);
+            Assert.IsEmpty(VoxCellChange.Write(moved));
+            var next = Move(moved, 1);
+            VoxCellChange.Apply(start.Model, VoxCellChange.Write(next), true);
+            Assert.AreEqual(1, start.Model.Voxels[Vector3Int.right * 2]);
+            VoxCellChange.Apply(start.Model, stamp, false);
+            Assert.AreEqual(2, start.Model.Voxels[Vector3Int.right]);
+            Assert.AreEqual(1, start.Model.Voxels[Vector3Int.right * 2]);
+            Assert.AreSame(start.Payload, next.Payload);
         }
 
         [Test]
-        public void StampPermanentlyOverwritesBackgroundWhileRegionKeepsFloating()
+        public void SaveIncludesPendingDragPoseWithoutChangingLiveCellsOrFloatingState()
         {
-            var start = Create(out var document);
-            var moved = Move(start, start, 1, document);
-            var stamped = moved.Stamp();
-            Assert.IsTrue(stamped.SamePose(moved));
-            Assert.AreSame(stamped, stamped.Stamp(), "Identical repeated stamps are no-ops");
-            var next = Move(stamped, stamped, 1, document);
-            AssertCell(next, Vector3Int.right, 1);
-            AssertCell(next, Vector3Int.right * 2, 1);
-            // The immutable pre-stamp state is what Undo restores. Its covered
-            // destination must still contain the original background color.
-            var undone = Move(moved, moved, 1, document);
-            AssertCell(undone, Vector3Int.right, 2);
-            AssertCell(undone, Vector3Int.right * 2, 1);
-        }
-
-        [Test]
-        public void MultipleStampsDuringOneGrabKeepInitialPayloadAndEarlierStamps()
-        {
-            var start = Create(out var document);
-            var first = Move(start, start, 1, document).Stamp();
-            var second = Move(first, start, 2, document).Stamp();
-            var third = Move(second, start, 3, document);
-            AssertCell(third, Vector3Int.right, 1);
-            AssertCell(third, Vector3Int.right * 2, 1);
-            AssertCell(third, Vector3Int.right * 3, 1);
-            Assert.AreEqual(1, third.Cells.Count);
-        }
-
-        [Test]
-        public void BackgroundInsideFloatingCuboidHolesIsNeverPickedUp()
-        {
-            var document = new RuntimeVoxDocument();
-            var model = document.CreateModel("holes", Vector3Int.one * 12);
-            model.AddOrUpdateVoxel(Vector3Int.zero, 1);
-            model.AddOrUpdateVoxel(Vector3Int.right * 2, 1);
-            model.AddOrUpdateVoxel(Vector3Int.right * 4, 2);
-            var start = new VoxFloatingRegion(model, Vector3Int.zero, Vector3Int.right * 2);
-            var first = Move(start, start, 3, document);
-            AssertCell(first, Vector3Int.right * 4, 2);
-            var second = Move(first, first, 1, document);
-            AssertCell(second, Vector3Int.right * 4, 1);
-            var third = Move(second, second, 1, document);
-            AssertCell(third, Vector3Int.right * 4, 2);
-            Assert.AreEqual(2, third.Cells.Count);
-        }
-
-        [Test]
-        public void SavingFinalizesOnlySavedDocumentAndLeavesRuntimeUnderlayIntact()
-        {
-            _ = Create(out var source);
-            var document = RuntimeVoxDocument.FromBytes(source.ToVoxBytes());
-            var model = document.Models[0];
-            var start = new VoxFloatingRegion(model, Vector3Int.zero, Vector3Int.zero);
-            var moved = Move(start, start, 1, document);
+            var start = Lift(out var document);
+            var pending = Move(start, -4);
+            document.FloatingSelection = new VoxFloatingSaveState(start, pending.Pose);
+            var definition = start.Model.Definition;
             var saved = RuntimeVoxDocument.FromBytes(document.ToVoxBytes());
-            Assert.AreEqual(1, saved.Models[0].Voxels.Count);
-            Vector3 expected = VoxMeshBuilder.GetModelTransform(model) *
-                (Vector3)(Vector3Int.right + model.SourceCellOffset - moved.IndexOrigin);
-            foreach (var cell in saved.Models[0].Voxels)
-            {
-                Assert.AreEqual(1, cell.Value);
-                Assert.Less((VoxMeshBuilder.GetModelTransform(saved.Models[0]) * (Vector3)cell.Key - expected)
-                    .sqrMagnitude, 0.000001f);
-            }
-            var afterSave = Move(moved, moved, 1, document);
-            AssertCell(afterSave, Vector3Int.right, 2);
-            AssertCell(afterSave, Vector3Int.right * 2, 1);
+            Assert.AreSame(definition, start.Model.Definition);
+            Assert.AreEqual(Vector3Int.zero, start.Model.SourceCellOffset);
+            Assert.AreEqual(1, start.Model.Voxels.Count);
+            Assert.AreEqual(2, start.Model.Voxels[Vector3Int.right]);
+            Assert.AreSame(start, document.FloatingSelection.Value.Region);
+            Assert.AreEqual(2, saved.Models[0].Voxels.Count);
+            Vector3 expected = VoxMeshBuilder.GetModelTransform(start.AnchorOffset, start.Model.GlobalRotation) *
+                (pending.Pose * Vector3.zero);
+            var copy = saved.Models[0];
+            var savedCell = copy.Voxels.Single(cell => cell.Value == 1).Key;
+            Assert.Less((VoxMeshBuilder.GetModelTransform(copy) * (Vector3)savedCell - expected).sqrMagnitude, .000001f);
         }
 
         [Test]
-        public void QuarterTurnsAndNegativeMovesKeepFloatingPayloadOnItsOriginalLattice()
+        public void StampUndoUsesStableCoordinatesAfterBoundsAreNormalized()
+        {
+            var start = Lift(out var document);
+            var moved = Move(start, -4);
+            var changes = VoxCellChange.Write(moved);
+            VoxCellChange.Apply(start.Model, changes, true);
+            document.NormalizeDrawingBounds();
+            VoxCellChange.Apply(start.Model, changes, false);
+            Assert.AreEqual(1, start.Model.Voxels.Count);
+            Assert.AreEqual(2, start.Model.Voxels[Vector3Int.right + start.Model.SourceCellOffset]);
+            VoxCellChange.Apply(start.Model, changes, true);
+            Assert.AreEqual(1, start.Model.Voxels[Vector3Int.left * 4 + start.Model.SourceCellOffset]);
+        }
+
+        [Test]
+        public void RotationKeepsCellsOnTheLatticeAndRejectsOversizedComposition()
+        {
+            var start = Lift(out _);
+            Assert.IsFalse(start.CanTransformFrom(start, Vector3Int.zero, Quaternion.identity, Vector3Int.right * 300));
+            var rotated = start.TransformFrom(start, Vector3Int.zero, Quaternion.Euler(0, 0, 90), Vector3Int.left);
+            Assert.AreEqual(Vector3Int.left, rotated.CellsAt(rotated.Pose).Single().Key);
+            Assert.AreEqual(2, start.Model.Voxels[Vector3Int.right]);
+        }
+
+        [Test]
+        public void BoundaryEditsInvalidateBothChunksButLeaveDistantChunksAlone()
+        {
+            var grid = new VoxChunkGrid();
+            grid.Set(new Vector3Int(-1, 0, 0), 1);
+            grid.Set(Vector3Int.zero, 1);
+            grid.Set(new Vector3Int(64, 0, 0), 1);
+            long neighbor = grid.Chunks[new Vector3Int(-1, 0, 0)].Version;
+            long distant = grid.Chunks[new Vector3Int(4, 0, 0)].Version;
+            grid.Set(Vector3Int.zero, 2);
+            Assert.Greater(grid.Chunks[new Vector3Int(-1, 0, 0)].Version, neighbor);
+            Assert.AreEqual(distant, grid.Chunks[new Vector3Int(4, 0, 0)].Version);
+            Assert.AreEqual(1, grid.Region(new Vector3Int(-1, 0, 0), Vector3Int.zero).Count(cell => cell.Value == 2));
+            grid.Set(new Vector3Int(-1, 0, 0), 0);
+            Assert.AreEqual(Vector3Int.zero, grid.Min);
+        }
+
+        [Test]
+        public void ChunkMeshesCullSharedFacesAndExposeThemAfterErasingANeighbor()
         {
             var document = new RuntimeVoxDocument();
-            var model = document.CreateModel("rotation", Vector3Int.one * 8);
-            model.AddOrUpdateVoxel(Vector3Int.zero, 1);
-            model.AddOrUpdateVoxel(Vector3Int.right, 2);
-            model.AddOrUpdateVoxel(Vector3Int.right * 4, 3);
-            var before = document.CaptureSnapshot();
-            var start = new VoxFloatingRegion(model, Vector3Int.zero, Vector3Int.right);
-            var rotated = start.TransformFrom(start, Vector3Int.zero, Quaternion.Euler(0, 0, 90),
-                new Vector3Int(-3, -2, 0));
-            Assert.IsTrue(rotated.TryCompose(document));
-            var after = document.CaptureSnapshot();
-            AssertCell(rotated, new Vector3Int(-3, -2, 0), 1);
-            AssertCell(rotated, new Vector3Int(-3, -1, 0), 2);
-            document.RestoreSnapshot(before);
-            AssertCell(start, Vector3Int.zero, 1);
-            AssertCell(start, Vector3Int.right, 2);
-            document.RestoreSnapshot(after);
-            var next = Move(rotated, rotated, 1, document);
-            AssertCell(next, new Vector3Int(-2, -2, 0), 1);
-            AssertCell(next, new Vector3Int(-2, -1, 0), 2);
-            AssertCell(next, Vector3Int.right * 4, 3);
-        }
-
-        [Test]
-        public void RejectedOversizedMoveLeavesVisibleCompositionUntouched()
-        {
-            var start = Create(out var document);
-            var model = start.Model;
-            var definition = model.Definition;
-            var invalid = start.TransformFrom(start, Vector3Int.zero, Quaternion.identity, Vector3Int.right * 300);
-            Assert.IsFalse(invalid.TryCompose(document));
-            Assert.AreSame(definition, model.Definition);
-            AssertCell(start, Vector3Int.zero, 1);
-            AssertCell(start, Vector3Int.right, 2);
+            var model = document.CreateModel("seam", Vector3Int.one * 32);
+            model.AddOrUpdateVoxel(new Vector3Int(15, 0, 0), 1);
+            model.AddOrUpdateVoxel(new Vector3Int(16, 0, 0), 1);
+            var builder = new VoxMeshBuilder();
+            Mesh left = builder.GenerateChunkMesh(model, Vector3Int.zero, document.Palette, null, 1, null);
+            Mesh right = builder.GenerateChunkMesh(model, Vector3Int.right, document.Palette, null, 1, null);
+            Mesh exposed = null;
+            try
+            {
+                Assert.AreEqual(20, left.vertexCount);
+                Assert.AreEqual(20, right.vertexCount);
+                model.RemoveVoxel(new Vector3Int(16, 0, 0));
+                exposed = builder.GenerateChunkMesh(model, Vector3Int.zero, document.Palette, null, 1, null);
+                Assert.AreEqual(24, exposed.vertexCount);
+            }
+            finally
+            {
+                Object.DestroyImmediate(left);
+                Object.DestroyImmediate(right);
+                Object.DestroyImmediate(exposed);
+            }
         }
     }
 }

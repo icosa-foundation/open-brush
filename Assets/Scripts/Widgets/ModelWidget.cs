@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,12 +33,10 @@ namespace TiltBrush
 
         private Model m_Model;
         private RuntimeVoxDocument m_EditableVoxDocument;
-        private readonly HashSet<Mesh> m_OwnedVoxMeshes = new HashSet<Mesh>();
-        private readonly HashSet<Material> m_OwnedVoxMaterials = new HashSet<Material>();
-        private bool m_HasEditableVoxVisuals;
-        private bool m_EditableVoxOptimized = true;
-        private bool m_PreserveCustomSize;
 
+        private bool m_HasEditableVoxVisuals;
+
+        private bool m_PreserveCustomSize;
 
         // What is Subtree?
         // e.g. if we have 3d model with 3 chairs with the hierarchy below,
@@ -128,9 +126,6 @@ namespace TiltBrush
         internal void RestoreExternalVoxContent()
         {
             int previousCost = GetTiltMeterCost();
-            var replacedRenderers = m_ModelInstance != null
-                ? m_ModelInstance.GetComponentsInChildren<Renderer>(includeInactive: true)
-                : Array.Empty<Renderer>();
             m_EditableVoxDocument = null;
             LoadModel();
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(previousCost, up: false);
@@ -140,7 +135,7 @@ namespace TiltBrush
             {
                 HierarchyUtils.RecursivelySetLayer(transform, transform.parent.gameObject.layer);
             }
-            RefreshVoxMaterialCaches(replacedRenderers);
+            RefreshVoxMaterialCaches();
             if (SelectionManager.m_Instance != null && SelectionManager.m_Instance.IsWidgetSelected(this))
                 SelectionManager.m_Instance.UpdateSelectionWidget();
         }
@@ -242,6 +237,14 @@ namespace TiltBrush
 
         override public int GetTiltMeterCost()
         {
+            if (IsVoxModel() && string.IsNullOrEmpty(Subtree) && m_ModelInstance != null)
+            {
+                // Chunks are render partitions of a VOX model, not extra widgets.
+                int count = 0;
+                foreach (Transform child in m_ModelInstance)
+                    if (child.gameObject.activeSelf && child.name.StartsWith("Model_", StringComparison.Ordinal)) ++count;
+                return count;
+            }
             return (m_ObjModelScript != null) ? m_ObjModelScript.NumMeshes : 0;
         }
 
@@ -269,6 +272,7 @@ namespace TiltBrush
 
         override public void OnPreDestroy()
         {
+            ReleaseVoxChunks();
             m_VoxDragPreview?.Dispose();
             m_VoxDragPreview = null;
             base.OnPreDestroy();
@@ -319,27 +323,14 @@ namespace TiltBrush
                 clone.Show(true, false);
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
                 metered = true;
-                if (m_HasEditableVoxVisuals || document != null)
+                if (clone.EditableVoxDocument != null)
                 {
-                    clone.RefreshEditableVoxMeshes(m_EditableVoxOptimized);
+                    clone.RefreshEditableVoxMeshes();
                 }
                 clone.AddSceneLightGizmos();
                 clone.transform.parent = transform.parent;
                 clone.SetSignedWidgetSize(size);
                 HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
-
-                CanvasScript canvas = transform.parent.GetComponent<CanvasScript>();
-                if (canvas != null)
-                {
-                    var materials = clone.GetComponentsInChildren<Renderer>().SelectMany(x => x.materials);
-                    foreach (var material in materials)
-                    {
-                        foreach (string keyword in canvas.BatchManager.MaterialKeywords)
-                        {
-                            material.EnableKeyword(keyword);
-                        }
-                    }
-                }
 
                 if (!clone.Model.m_Valid)
                 {
@@ -424,11 +415,12 @@ namespace TiltBrush
 
         void LoadModel()
         {
+            ReleaseVoxChunks();
             m_VoxDragPreview?.Dispose();
             m_VoxDragPreview = null;
             // Clean up existing model
-            ReleaseOwnedVoxMeshes();
-            ReleaseOwnedVoxMaterials();
+            m_HasEditableVoxVisuals = false;
+
             if (m_ModelInstance != null)
             {
                 // Stop old geometry participating in hierarchy queries until deferred destruction.
@@ -553,212 +545,30 @@ namespace TiltBrush
                     "Editable VOX mesh refresh for a split model subtree is not supported yet.");
             }
 
-            var builder = new VoxMeshBuilder();
-            var materialSet = new VoxMaterialSet(
-                m_EditableVoxDocument,
-                ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial);
-            var replacementMeshes = new List<Mesh>(m_EditableVoxDocument.Models.Count);
-            var previousAssignments = new List<(MeshFilter filter, Mesh mesh)>();
-            var previousMaterials = new List<(MeshRenderer renderer, Material[] materials)>();
-            try
-            {
-                foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
-                {
-                    replacementMeshes.Add(optimized
-                        ? builder.GenerateOptimizedMesh(
-                            model,
-                            m_EditableVoxDocument.Palette,
-                            materialSet.PaletteSubmeshIndices,
-                            materialSet.Materials.Count,
-                            materialSet.PaletteOccludesFaces)
-                        : builder.GenerateSeparateCubesMesh(
-                            model,
-                            m_EditableVoxDocument.Palette,
-                            materialSet.PaletteSubmeshIndices,
-                            materialSet.Materials.Count));
-                }
-
-                for (int i = 0; i < m_EditableVoxDocument.Models.Count; i++)
-                {
-                    RuntimeVoxDocument.RuntimeModel model = m_EditableVoxDocument.Models[i];
-                    MeshFilter visibleFilter = GetOrCreateVoxModelFilter(
-                        m_ModelInstance,
-                        i,
-                        model,
-                        ghost: false);
-                    previousAssignments.Add((visibleFilter, visibleFilter.sharedMesh));
-                    visibleFilter.sharedMesh = replacementMeshes[i];
-                    MeshRenderer visibleRenderer = visibleFilter.GetComponent<MeshRenderer>();
-                    previousMaterials.Add((visibleRenderer, visibleRenderer.sharedMaterials));
-                    visibleRenderer.sharedMaterials = materialSet.Materials.ToArray();
-
-                    if (m_SnapGhost != null)
-                    {
-                        MeshFilter ghostFilter = GetOrCreateVoxModelFilter(
-                            m_SnapGhost,
-                            i,
-                            model,
-                            ghost: true);
-                        previousAssignments.Add((ghostFilter, ghostFilter.sharedMesh));
-                        ghostFilter.sharedMesh = replacementMeshes[i];
-                        MeshRenderer ghostRenderer = ghostFilter.GetComponent<MeshRenderer>();
-                        previousMaterials.Add((ghostRenderer, ghostRenderer.sharedMaterials));
-                        ghostRenderer.sharedMaterials = Enumerable
-                            .Repeat(m_SnapGhostMaterial, materialSet.Materials.Count)
-                            .ToArray();
-                    }
-                }
-            }
-            catch
-            {
-                foreach ((MeshFilter filter, Mesh mesh) in previousAssignments)
-                {
-                    if (filter != null)
-                    {
-                        filter.sharedMesh = mesh;
-                    }
-                }
-                foreach ((MeshRenderer renderer, Material[] materials) in previousMaterials)
-                {
-                    if (renderer != null)
-                    {
-                        renderer.sharedMaterials = materials;
-                    }
-                }
-                foreach (Mesh mesh in replacementMeshes)
-                {
-                    DestroyOwnedVoxMesh(mesh);
-                }
-                foreach (Material material in materialSet.OwnedMaterials)
-                {
-                    DestroyOwnedVoxMaterial(material);
-                }
-                throw;
-            }
-
-            RefreshVoxMaterialCaches(previousMaterials.Select(entry => (Renderer)entry.renderer));
-            ReleaseOwnedVoxMeshes();
-            ReleaseOwnedVoxMaterials();
-            foreach (Mesh mesh in replacementMeshes)
-            {
-                m_OwnedVoxMeshes.Add(mesh);
-            }
-            foreach (Material material in materialSet.OwnedMaterials)
-            {
-                m_OwnedVoxMaterials.Add(material);
-            }
-            m_HasEditableVoxVisuals = true;
-            m_EditableVoxOptimized = optimized;
-
-            HideRemovedVoxModelNodes(m_ModelInstance);
-            if (m_SnapGhost != null) HideRemovedVoxModelNodes(m_SnapGhost);
-
-            int previousTiltMeterCost = GetTiltMeterCost();
+            int previousCost = GetTiltMeterCost();
+            m_VoxChunks ??= new VoxChunkRenderer(m_ModelInstance, ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial, m_BatchId);
+            m_VoxChunks.Update(m_EditableVoxDocument, m_Keywords);
+            m_VoxSnapGhostDirty = true;
+            RegisterVoxChunkMaterials();
             m_ObjModelScript.UpdateAllMeshChildren();
-            int currentTiltMeterCost = GetTiltMeterCost();
-            if (currentTiltMeterCost != previousTiltMeterCost)
+            int currentCost = GetTiltMeterCost();
+            if (currentCost != previousCost)
             {
-                TiltMeterScript.m_Instance.AdjustMeterWithWidget(previousTiltMeterCost, up: false);
-                TiltMeterScript.m_Instance.AdjustMeterWithWidget(currentTiltMeterCost, up: true);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(previousCost, up: false);
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(currentCost, up: true);
             }
             WidgetManager.m_Instance.AdjustModelVertCount(-m_NumVertsTrackedByWidgetManager);
             m_ObjModelScript.InvalidateMeshVertexCount();
             m_NumVertsTrackedByWidgetManager = m_ObjModelScript.GetNumVertsInMeshes();
             WidgetManager.m_Instance.AdjustModelVertCount(m_NumVertsTrackedByWidgetManager);
+            m_HasEditableVoxVisuals = true;
 
             RecalculateColliderBounds();
             if (SelectionManager.m_Instance != null && SelectionManager.m_Instance.IsWidgetSelected(this))
-            {
-                // Empty-grid expansion and painting can change the selected grab volume
-                // without changing selection membership or the contextual edit target.
                 SelectionManager.m_Instance.UpdateSelectionWidget();
-            }
         }
-
-        private void HideRemovedVoxModelNodes(Transform root)
+        private void RefreshVoxMaterialCaches()
         {
-            foreach (Transform child in root)
-            {
-                string[] parts = child.name.Split('_');
-                if (parts.Length > 2 && parts[0] == "Model" &&
-                    int.TryParse(parts[1], out int index) && index >= m_EditableVoxDocument.Models.Count)
-                    child.gameObject.SetActive(false);
-            }
-        }
-
-        private MeshFilter GetOrCreateVoxModelFilter(
-            Transform hierarchyRoot,
-            int modelIndex,
-            RuntimeVoxDocument.RuntimeModel model,
-            bool ghost)
-        {
-            string prefix = $"Model_{modelIndex}_";
-            Transform modelTransform = null;
-            foreach (Transform child in hierarchyRoot)
-            {
-                if (child.name.StartsWith(prefix, StringComparison.Ordinal))
-                {
-                    modelTransform = child;
-                    break;
-                }
-            }
-
-            if (modelTransform == null)
-            {
-                var modelObject = new GameObject($"{prefix}{model.Name}");
-                modelTransform = modelObject.transform;
-                modelTransform.SetParent(hierarchyRoot, false);
-            }
-
-            TrTransform modelPose = VoxMeshBuilder.GetModelTransform(model);
-            modelTransform.localPosition = modelPose.translation;
-            modelTransform.localRotation = modelPose.rotation;
-            modelTransform.gameObject.SetActive(model.IsVisible);
-            MeshFilter filter = modelTransform.GetComponent<MeshFilter>();
-            if (filter == null)
-            {
-                filter = modelTransform.gameObject.AddComponent<MeshFilter>();
-            }
-
-            MeshRenderer renderer = modelTransform.GetComponent<MeshRenderer>();
-            if (renderer == null)
-            {
-                renderer = modelTransform.gameObject.AddComponent<MeshRenderer>();
-                renderer.sharedMaterial = ghost
-                    ? m_SnapGhostMaterial
-                    : ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial;
-            }
-            if (ghost)
-            {
-                modelTransform.gameObject.layer = LayerMask.NameToLayer("Panels");
-                renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            }
-            else
-            {
-                modelTransform.gameObject.layer = m_ModelInstance.gameObject.layer;
-                HierarchyUtils.RecursivelySetMaterialBatchID(modelTransform, m_BatchId);
-            }
-            return filter;
-        }
-
-        private void RefreshVoxMaterialCaches(IEnumerable<Renderer> replacedRenderers)
-        {
-            var replaced = new HashSet<Renderer>(replacedRenderers);
-            if (m_InitialMaterials != null && m_NewMaterials != null)
-            {
-                // Non-VOX renderers (e.g. the selection indicator) may still be using
-                // keyword instances. Restore their originals before rebuilding the cache.
-                foreach (var entry in m_InitialMaterials)
-                {
-                    if (entry.Key != null && !replaced.Contains(entry.Key))
-                        entry.Key.sharedMaterials = entry.Value;
-                }
-                // Native drawing can refresh every frame. Do not leak the old cached
-                // instances, and never destroy original/catalog materials here.
-                foreach (var material in m_NewMaterials.Values.SelectMany(materials => materials)
-                    .Except(m_InitialMaterials.Values.SelectMany(materials => materials)))
-                    DestroyOwnedVoxMaterial(material);
-            }
             CloneInitialMaterials(null);
             foreach (var materials in m_NewMaterials.Values)
                 foreach (var material in materials)
@@ -771,93 +581,34 @@ namespace TiltBrush
         {
             var bounds = new Bounds();
             bool first = true;
-            foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
+            void Include(TrTransform pose, Vector3Int min, Vector3Int max)
             {
-                if (!model.IsVisible)
+                for (int corner = 0; corner < 8; ++corner)
                 {
-                    continue;
+                    Vector3 point = pose * new Vector3(
+                        (corner & 1) == 0 ? min.x - .5f : max.x + .5f,
+                        (corner & 2) == 0 ? min.y - .5f : max.y + .5f,
+                        (corner & 4) == 0 ? min.z - .5f : max.z + .5f);
+                    if (first) { bounds = new Bounds(point, Vector3.zero); first = false; }
+                    else bounds.Encapsulate(point);
                 }
-                TrTransform modelTransform = VoxMeshBuilder.GetModelTransform(model);
-                foreach (Vector3Int voxel in model.Voxels.Keys)
-                {
-                    for (int x = 0; x < 2; x++)
-                        for (int y = 0; y < 2; y++)
-                            for (int z = 0; z < 2; z++)
-                            {
-                                var corner = new Vector3(
-                                    voxel.x + (x == 0 ? -0.5f : 0.5f),
-                                    voxel.y + (y == 0 ? -0.5f : 0.5f),
-                                    voxel.z + (z == 0 ? -0.5f : 0.5f));
-                                Vector3 position = modelTransform * corner;
-                                if (first)
-                                {
-                                    bounds = new Bounds(position, Vector3.zero);
-                                    first = false;
-                                }
-                                else
-                                {
-                                    bounds.Encapsulate(position);
-                                }
-                            }
-                }
+            }
+            foreach (var model in m_EditableVoxDocument.Models)
+            {
+                if (!model.IsVisible || model.Definition.Grid.Empty) continue;
+                Include(VoxMeshBuilder.GetModelTransform(model), model.Definition.Grid.Min, model.Definition.Grid.Max);
+            }
+            if (m_EditableVoxDocument.FloatingSelection.HasValue)
+            {
+                var layer = m_EditableVoxDocument.FloatingSelection.Value;
+                Include(VoxMeshBuilder.GetModelTransform(layer.Region.AnchorOffset, layer.Region.Model.GlobalRotation) * layer.Pose,
+                    layer.Region.CellMin, layer.Region.CellMax);
             }
             if (first)
-            {
-                // Newly created empty grids use their declared volume until they contain
-                // voxels. Once painted, the usual occupied-cell grab bounds take over.
-                foreach (RuntimeVoxDocument.RuntimeModel model in m_EditableVoxDocument.Models)
-                {
-                    if (!model.IsVisible) continue;
-                    TrTransform modelTransform = VoxMeshBuilder.GetModelTransform(model);
-                    for (int corner = 0; corner < 8; ++corner)
-                    {
-                        Vector3 position = modelTransform * new Vector3(
-                            (corner & 1) == 0 ? -0.5f : model.Size.x - 0.5f,
-                            (corner & 2) == 0 ? -0.5f : model.Size.y - 0.5f,
-                            (corner & 4) == 0 ? -0.5f : model.Size.z - 0.5f);
-                        if (first) { bounds = new Bounds(position, Vector3.zero); first = false; }
-                        else bounds.Encapsulate(position);
-                    }
-                }
-            }
+                foreach (var model in m_EditableVoxDocument.Models)
+                    if (model.IsVisible) Include(VoxMeshBuilder.GetModelTransform(model), Vector3Int.zero, model.Size - Vector3Int.one);
             return bounds;
         }
-
-        private void ReleaseOwnedVoxMeshes()
-        {
-            foreach (Mesh mesh in m_OwnedVoxMeshes)
-            {
-                DestroyOwnedVoxMesh(mesh);
-            }
-            m_OwnedVoxMeshes.Clear();
-            m_HasEditableVoxVisuals = false;
-        }
-
-        private static void DestroyOwnedVoxMesh(Mesh mesh)
-        {
-            if (mesh == null)
-            {
-                return;
-            }
-            if (Application.isPlaying)
-            {
-                UnityEngine.Object.Destroy(mesh);
-            }
-            else
-            {
-                UnityEngine.Object.DestroyImmediate(mesh);
-            }
-        }
-
-        private void ReleaseOwnedVoxMaterials()
-        {
-            foreach (Material material in m_OwnedVoxMaterials)
-            {
-                DestroyOwnedVoxMaterial(material);
-            }
-            m_OwnedVoxMaterials.Clear();
-        }
-
         private static void DestroyOwnedVoxMaterial(Material material)
         {
             if (material == null)
@@ -1067,12 +818,7 @@ namespace TiltBrush
 
         public void RecalculateColliderBounds()
         {
-            if (HasVoxRegionSelection && m_VoxDragPreview != null)
-            {
-                UpdateVoxRegionCollider();
-                return;
-            }
-            if (m_HasEditableVoxVisuals)
+            if (m_EditableVoxDocument != null)
             {
                 m_MeshBounds = GetEditableVoxModelBounds();
                 m_BoxCollider.transform.localPosition = m_MeshBounds.center;
@@ -1416,7 +1162,6 @@ namespace TiltBrush
             float sizeRatio = kInitialSizeMeters_RS / 2 / maxExtent;
             SetSignedWidgetSize(fScale * sizeRatio * 10);
         }
-
 
         /// Updates the scale of the object, but with the center-of-scale
         /// being the center of mass's origin, as opposed to the widget's origin.

@@ -57,7 +57,7 @@ namespace TiltBrush
                 foreach (var cell in definition.Cells.Keys.ToArray())
                 {
                     if (definition.Cells[cell] == index) continue;
-                    definition.Cells[cell] = index;
+                    definition.SetCell(cell, index);
                     changed = true;
                 }
             return changed;

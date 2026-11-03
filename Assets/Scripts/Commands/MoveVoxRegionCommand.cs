@@ -1,34 +1,36 @@
 // Copyright 2026 The Open Brush Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
+using System;
+using System.Collections.Generic;
 
 namespace TiltBrush
 {
-    // Floating geometry and stamp history are shared immutable references. Recording
-    // or replaying a movement must not copy/rebuild the composed voxel document.
     internal sealed class MoveVoxRegionCommand : BaseCommand
     {
         private readonly ModelWidget m_Widget;
         private readonly VoxRegionSelection m_Before, m_After;
-
-        internal MoveVoxRegionCommand(ModelWidget widget, VoxRegionSelection before,
-            VoxRegionSelection after, BaseCommand parent = null) : base(parent)
+        private readonly IReadOnlyList<VoxCellChange> m_Cells;
+        private readonly RuntimeVoxDocument.RuntimeModel m_Model;
+        internal MoveVoxRegionCommand(ModelWidget widget, VoxRegionSelection before, VoxRegionSelection after,
+            IReadOnlyList<VoxCellChange> cells = null, BaseCommand parent = null) : base(parent)
         {
             m_Widget = widget;
             m_Before = before;
             m_After = after;
+            m_Model = (before ?? after).Model;
+            m_Cells = cells ?? Array.Empty<VoxCellChange>();
         }
-
-        public override bool NeedsSave => true;
+        public override bool NeedsSave => m_Cells.Count != 0 ||
+            (m_Before != null && m_After != null && m_Before.Floating.Pose != m_After.Floating.Pose);
         public override bool IsAvailable => m_Widget != null;
-        protected override void OnUndo()
+        private void Apply(bool after)
         {
-            m_Widget.VoxSelection = m_Before;
+            VoxCellChange.Apply(m_Model, m_Cells, after);
+            m_Widget.ApplyVoxRegionState(after ? m_After : m_Before);
+            m_Widget.RefreshVoxRegionVisuals(m_Cells.Count != 0);
             SaveLoadScript.m_Instance?.SketchChanged();
         }
-        protected override void OnRedo()
-        {
-            m_Widget.VoxSelection = m_After;
-            SaveLoadScript.m_Instance?.SketchChanged();
-        }
+        protected override void OnUndo() => Apply(false);
+        protected override void OnRedo() => Apply(true);
     }
 }

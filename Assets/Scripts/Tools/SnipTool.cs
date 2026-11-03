@@ -144,10 +144,12 @@ namespace TiltBrush
                     InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
                 {
                     m_VoxSnippedThisGesture = true;
+                    Vector3Int anchor = voxel.Cell - voxel.Document.Models[voxel.ModelIndex].SourceCellOffset;
                     RuntimeVoxDocument region = null;
                     if (VoxToolTarget.Edit(voxel.Widget, voxel.Document, document =>
                         {
-                            region = document.DetachConnectedRegion(document.Models[voxel.ModelIndex], voxel.Cell);
+                            var model = document.Models[voxel.ModelIndex];
+                            region = document.DetachConnectedRegion(model, anchor + model.SourceCellOffset);
                             return region != null;
                         }, parent => { new CreateVoxRegionWidgetCommand(voxel.Widget, region, parent); }))
                         AudioManager.m_Instance.PlayDropperPickSound(m_DropperRenderer.transform.position);
