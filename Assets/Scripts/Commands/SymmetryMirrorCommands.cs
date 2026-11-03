@@ -81,16 +81,12 @@ namespace TiltBrush
 
         private sealed class UnlinkContentCommand : BaseCommand
         {
-            private readonly SymmetryMirror m_Mirror;
-            private readonly int m_MirrorIndex;
             private readonly List<SymmetryPeerEditing.BrokenLink> m_Strokes;
             private readonly List<(GrabWidget widget, SymmetryWidgetGroup group, int index)> m_Widgets =
                 new List<(GrabWidget, SymmetryWidgetGroup, int)>();
 
             internal UnlinkContentCommand(SymmetryMirror mirror, BaseCommand parent) : base(parent)
             {
-                m_Mirror = mirror;
-                m_MirrorIndex = SymmetryMirrors.All.ToList().IndexOf(mirror);
                 m_Strokes = SymmetryMirrors.GroupsOf(mirror)
                     .Select(group => new SymmetryPeerEditing.BrokenLink(group)).ToList();
                 foreach (var group in WidgetManager.m_Instance.LinkedWidgetGroups
@@ -112,18 +108,15 @@ namespace TiltBrush
                 {
                     if (widget != null) { widget.SetSymmetryGroup(null, -1); }
                 }
-                SymmetryMirrors.Unregister(m_Mirror);
             }
 
             protected override void OnUndo()
             {
-                SymmetryMirrors.Register(m_Mirror, m_MirrorIndex);
                 foreach (var link in m_Strokes) { link.Restore(); }
                 foreach (var (widget, group, index) in m_Widgets)
                 {
                     if (widget != null) { widget.SetSymmetryGroup(group, index); }
                 }
-                SymmetryMirrors.Active = m_Mirror;
             }
         }
     }

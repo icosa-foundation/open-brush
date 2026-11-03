@@ -179,7 +179,8 @@ namespace TiltBrush
                 new ActivateMirrorCommand(null, created: false));
         }
 
-        /// Makes all content owned by the displayed mirror independent in one undo step.
+        /// Makes existing content independent in one undo step, keeping the displayed mirror
+        /// linked so new strokes and widgets can form new linked groups.
         public static void UnlinkAll()
         {
             var mirror = Showing;
@@ -266,12 +267,11 @@ namespace TiltBrush
 
         // ---- Registry ----------------------------------------------------------------------- //
 
-        internal static void Register(SymmetryMirror mirror, int index = -1)
+        internal static void Register(SymmetryMirror mirror)
         {
             if (mirror == null || m_Mirrors.ContainsKey(mirror.Id)) { return; }
             m_Mirrors[mirror.Id] = mirror;
-            if (index >= 0 && index <= m_Order.Count) { m_Order.Insert(index, mirror); }
-            else { m_Order.Add(mirror); }
+            m_Order.Add(mirror);
         }
 
         /// Undoing the creation of a mirror takes it out of the list again.
