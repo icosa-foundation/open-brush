@@ -179,6 +179,15 @@ namespace TiltBrush
                 new ActivateMirrorCommand(null, created: false));
         }
 
+        /// Makes all content owned by the displayed mirror independent in one undo step.
+        public static void UnlinkAll()
+        {
+            var mirror = Showing;
+            if (mirror == null) { return; }
+            EndSettingsEdit();
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new UnlinkMirrorCommand(mirror));
+        }
+
         // ---- Settings ----------------------------------------------------------------------- //
 
         /// Called whenever a symmetry setting changes (PointerManager.CalculateMirrors). The
@@ -257,11 +266,12 @@ namespace TiltBrush
 
         // ---- Registry ----------------------------------------------------------------------- //
 
-        internal static void Register(SymmetryMirror mirror)
+        internal static void Register(SymmetryMirror mirror, int index = -1)
         {
             if (mirror == null || m_Mirrors.ContainsKey(mirror.Id)) { return; }
             m_Mirrors[mirror.Id] = mirror;
-            m_Order.Add(mirror);
+            if (index >= 0 && index <= m_Order.Count) { m_Order.Insert(index, mirror); }
+            else { m_Order.Add(mirror); }
         }
 
         /// Undoing the creation of a mirror takes it out of the list again.

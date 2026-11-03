@@ -530,6 +530,13 @@ namespace TiltBrush
             }
         }
 
+        // Include hidden widgets retained by undo, so unlinking cannot leave dormant groups.
+        internal IEnumerable<SymmetryWidgetGroup> LinkedWidgetGroups => MediaWidgets
+            .Concat(m_PortalWidgets).Concat(m_GaussianCaptureWidgets)
+            .Where(data => data != null && data.m_WidgetScript != null)
+            .Select(data => data.m_WidgetScript.SymmetryPeerGroup)
+            .Where(group => group != null).Distinct();
+
         public IEnumerable<TypedWidgetData<CameraPathWidget>> CameraPathWidgets =>
             m_CameraPathWidgets.Where(IsWidgetObjectActive);
 

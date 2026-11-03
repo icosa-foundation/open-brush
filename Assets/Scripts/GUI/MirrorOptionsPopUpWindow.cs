@@ -29,6 +29,7 @@ namespace TiltBrush
         public TextActionButton m_ButtonShowLineGroupControls;
         public TextActionButton m_ButtonShowSpaceGroupControls;
         public TextActionButton m_ButtonShowHelicalControls;
+        [SerializeField] private ActionButton m_UnlinkAllButton;
 
         public GameObject m_SimpleControls;
 
@@ -156,6 +157,12 @@ namespace TiltBrush
             RefreshMirrorControls();
         }
 
+        public void HandleUnlinkAll()
+        {
+            SymmetryMirrors.UnlinkAll();
+            RefreshMirrorControls();
+        }
+
         public void HandleNextMirror()
         {
             SymmetryMirrors.Cycle(1);
@@ -171,6 +178,7 @@ namespace TiltBrush
         private void RefreshMirrorControls()
         {
             m_DisplayedMirror = SymmetryMirrors.Showing;
+            if (m_UnlinkAllButton != null) { m_UnlinkAllButton.SetButtonAvailable(m_DisplayedMirror != null); }
 
             var pm = PointerManager.m_Instance;
             var mode = pm.MirrorModeEnabled ? pm.CurrentSymmetryMode : pm.LastMirrorMode;

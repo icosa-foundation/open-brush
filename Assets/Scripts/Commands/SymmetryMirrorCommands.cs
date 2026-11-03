@@ -62,6 +62,72 @@ namespace TiltBrush
         }
     }
 
+    /// Bakes any selected peer movement before detaching the mirror's content. Reversing these
+    /// children restores the links before restoring the selection and its movement baselines.
+    public class UnlinkMirrorCommand : BaseCommand
+    {
+        public UnlinkMirrorCommand(SymmetryMirror mirror) : base(null)
+        {
+            var selection = SelectionManager.m_Instance;
+            if (selection.HasSelection &&
+                (selection.SelectedStrokes.Any(s => ReferenceEquals(s.SymmetryPeerGroup?.Mirror, mirror)) ||
+                 selection.SelectedWidgets.Any(w => ReferenceEquals(w.SymmetryPeerGroup?.Mirror, mirror))))
+            {
+                new SelectCommand(selection.SelectedStrokes.ToArray(), selection.SelectedWidgets.ToArray(),
+                    selection.SelectionTransform, deselect: true, parent: this);
+            }
+            new UnlinkContentCommand(mirror, this);
+        }
+
+        private sealed class UnlinkContentCommand : BaseCommand
+        {
+            private readonly SymmetryMirror m_Mirror;
+            private readonly int m_MirrorIndex;
+            private readonly List<SymmetryPeerEditing.BrokenLink> m_Strokes;
+            private readonly List<(GrabWidget widget, SymmetryWidgetGroup group, int index)> m_Widgets =
+                new List<(GrabWidget, SymmetryWidgetGroup, int)>();
+
+            internal UnlinkContentCommand(SymmetryMirror mirror, BaseCommand parent) : base(parent)
+            {
+                m_Mirror = mirror;
+                m_MirrorIndex = SymmetryMirrors.All.ToList().IndexOf(mirror);
+                m_Strokes = SymmetryMirrors.GroupsOf(mirror)
+                    .Select(group => new SymmetryPeerEditing.BrokenLink(group)).ToList();
+                foreach (var group in WidgetManager.m_Instance.LinkedWidgetGroups
+                    .Where(group => ReferenceEquals(group.Mirror, mirror)))
+                {
+                    foreach (var widget in group.Members)
+                    {
+                        if (widget != null) { m_Widgets.Add((widget, group, widget.SymmetryPointerIndex)); }
+                    }
+                }
+            }
+
+            public override bool NeedsSave => true;
+
+            protected override void OnRedo()
+            {
+                foreach (var link in m_Strokes) { link.Break(); }
+                foreach (var (widget, _, _) in m_Widgets)
+                {
+                    if (widget != null) { widget.SetSymmetryGroup(null, -1); }
+                }
+                SymmetryMirrors.Unregister(m_Mirror);
+            }
+
+            protected override void OnUndo()
+            {
+                SymmetryMirrors.Register(m_Mirror, m_MirrorIndex);
+                foreach (var link in m_Strokes) { link.Restore(); }
+                foreach (var (widget, group, index) in m_Widgets)
+                {
+                    if (widget != null) { widget.SetSymmetryGroup(group, index); }
+                }
+                SymmetryMirrors.Active = m_Mirror;
+            }
+        }
+    }
+
     /// Offsets the widget without moving the previous mirror's strokes. Linking, when enabled,
     /// belongs to a fresh mirror; undo restores the previous mirror, settings and widget pose.
     public class NewMirrorCommand : BaseCommand
