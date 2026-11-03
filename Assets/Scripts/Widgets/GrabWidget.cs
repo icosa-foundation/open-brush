@@ -486,6 +486,8 @@ namespace TiltBrush
             {
                 if (interacting)
                 {
+                    // Recall once at grab start, before recording any movement.
+                    SymmetryMirrors.Recall(SymmetryPeerGroup?.Mirror);
                     OnUserBeginInteracting();
                 }
                 else

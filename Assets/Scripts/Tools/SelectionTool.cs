@@ -218,6 +218,10 @@ namespace TiltBrush
                 return true;
             }
 
+            if (!removeFromSelection)
+            {
+                SymmetryMirrors.Recall(widget.SymmetryPeerGroup?.Mirror);
+            }
             PlayModifyStrokeSound();
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -276,6 +280,10 @@ namespace TiltBrush
                 return true;
             }
 
+            if (!removeFromSelection)
+            {
+                SymmetryMirrors.RecallFromStroke(stroke);
+            }
             PlayModifyStrokeSound();
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
