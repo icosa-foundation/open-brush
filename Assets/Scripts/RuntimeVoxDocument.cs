@@ -650,6 +650,7 @@ namespace TiltBrush
 
         public byte[] ToVoxBytes()
         {
+            ViewState.Widget?.SynchronizeVoxRegionDocument(this);
             return VoxWriter.Write(this);
         }
 

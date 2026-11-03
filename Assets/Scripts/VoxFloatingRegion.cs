@@ -14,6 +14,8 @@ namespace TiltBrush
         internal readonly RuntimeVoxDocument.RuntimeModel Model;
         internal readonly Vector3Int Min, Max, IndexOrigin;
         internal readonly Vector3 AnchorOffset;
+        internal readonly Vector3Int CellMin, CellMax, BackgroundMin, BackgroundMax;
+        internal IReadOnlyDictionary<Vector3Int, byte> Background => m_Background;
         internal IReadOnlyDictionary<Vector3Int, byte> Cells => m_Cells;
         private readonly IReadOnlyDictionary<Vector3Int, byte> m_Background;
         private readonly IReadOnlyDictionary<Vector3Int, byte> m_Cells;
@@ -29,6 +31,8 @@ namespace TiltBrush
                 .ToDictionary(cell => cell.Key, cell => cell.Value);
             m_Background = model.Voxels.Where(cell => !m_Cells.ContainsKey(cell.Key))
                 .ToDictionary(cell => cell.Key, cell => cell.Value);
+            GetBounds(m_Cells, out CellMin, out CellMax);
+            GetBounds(m_Background, out BackgroundMin, out BackgroundMax);
         }
 
         private VoxFloatingRegion(VoxFloatingRegion basis, IReadOnlyDictionary<Vector3Int, byte> background,
@@ -41,6 +45,38 @@ namespace TiltBrush
             AnchorOffset = basis.AnchorOffset;
             m_Background = background;
             m_Cells = cells;
+            GetBounds(cells, out CellMin, out CellMax);
+            GetBounds(background, out BackgroundMin, out BackgroundMax);
+        }
+
+        private static void GetBounds(IReadOnlyDictionary<Vector3Int, byte> cells,
+            out Vector3Int min, out Vector3Int max)
+        {
+            min = Vector3Int.one * int.MaxValue;
+            max = Vector3Int.one * int.MinValue;
+            foreach (var cell in cells.Keys)
+            {
+                min = Vector3Int.Min(min, cell);
+                max = Vector3Int.Max(max, cell);
+            }
+        }
+
+        // Only cached bounds are inspected during a drag, never the voxel sets.
+        internal bool CanTransformFrom(VoxFloatingRegion basis, Vector3Int pivot,
+            Quaternion rotation, Vector3Int translation)
+        {
+            Vector3Int a = RuntimeVoxDocument.TransformRegionCell(basis.CellMin, pivot, rotation, translation);
+            Vector3Int b = RuntimeVoxDocument.TransformRegionCell(basis.CellMax, pivot, rotation, translation);
+            Vector3Int min = Vector3Int.Min(a, b);
+            Vector3Int max = Vector3Int.Max(a, b);
+            if (m_Background.Count != 0)
+            {
+                min = Vector3Int.Min(min, BackgroundMin);
+                max = Vector3Int.Max(max, BackgroundMax);
+            }
+            Vector3Int size = max - min + Vector3Int.one;
+            return size.x <= RuntimeVoxDocument.MaxModelDimension &&
+                size.y <= RuntimeVoxDocument.MaxModelDimension && size.z <= RuntimeVoxDocument.MaxModelDimension;
         }
 
         // Use the grab's initial payload, but retain stamps made since that grab

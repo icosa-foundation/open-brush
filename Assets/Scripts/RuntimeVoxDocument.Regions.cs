@@ -85,6 +85,7 @@ namespace TiltBrush
 
         public RuntimeVoxDocument CloneDocument()
         {
+            ViewState.Widget?.SynchronizeVoxRegionDocument(this);
             var copy = new RuntimeVoxDocument { m_sourceVoxBytes = m_sourceVoxBytes };
             Array.Copy(Palette, copy.Palette, Palette.Length);
             foreach (var material in m_materials) copy.m_materials.Add(material.Key, material.Value);

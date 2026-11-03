@@ -29,7 +29,8 @@ namespace TiltBrush
         public IReadOnlyList<bool> PaletteOccludesFaces { get; }
         public IReadOnlyList<Material> OwnedMaterials { get; }
 
-        public VoxMaterialSet(RuntimeVoxDocument document, Material defaultMaterial)
+        public VoxMaterialSet(RuntimeVoxDocument document, Material defaultMaterial,
+            IEnumerable<byte> additionalPaletteIndices = null)
         {
             if (document == null)
             {
@@ -47,6 +48,8 @@ namespace TiltBrush
             var slotByProperties = new Dictionary<string, int>(StringComparer.Ordinal);
             var usedPaletteIndices = new HashSet<int>(
                 document.Models.SelectMany(model => model.Voxels.Values).Select(value => (int)value));
+            if (additionalPaletteIndices != null)
+                foreach (byte index in additionalPaletteIndices) usedPaletteIndices.Add(index);
 
             foreach (int paletteIndex in usedPaletteIndices.OrderBy(value => value))
             {

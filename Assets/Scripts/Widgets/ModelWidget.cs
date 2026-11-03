@@ -269,6 +269,8 @@ namespace TiltBrush
 
         override public void OnPreDestroy()
         {
+            m_VoxDragPreview?.Dispose();
+            m_VoxDragPreview = null;
             base.OnPreDestroy();
 
             if (m_PolyCallbackActive)

@@ -13,22 +13,31 @@ namespace TiltBrush
             => cell.x >= min.x && cell.y >= min.y && cell.z >= min.z &&
                 cell.x <= max.x && cell.y <= max.y && cell.z <= max.z;
 
+        private static readonly Quaternion[] s_RegionRotations = CreateRegionRotations();
+
+        private static Quaternion[] CreateRegionRotations()
+        {
+            var axes = new[] { Vector3.right, Vector3.left, Vector3.up, Vector3.down, Vector3.forward, Vector3.back };
+            var rotations = new List<Quaternion>(24);
+            foreach (var forward in axes)
+                foreach (var up in axes)
+                    if (Vector3.Dot(forward, up) == 0) rotations.Add(Quaternion.LookRotation(forward, up));
+            return rotations.ToArray();
+        }
+
         // Return an exact cube orientation, rather than independently rounding Euler
         // angles (which can pick the wrong orientation near a gimbal singularity).
         internal static Quaternion SnapRegionRotation(Quaternion rotation)
         {
             Quaternion best = Quaternion.identity;
-            float distance = float.MaxValue;
-            foreach (Vector3 forward in s_FaceNeighbors)
-                foreach (Vector3 up in s_FaceNeighbors)
-                {
-                    if (Vector3.Dot(forward, up) != 0) continue;
-                    Quaternion candidate = Quaternion.LookRotation(forward, up);
-                    float angle = Quaternion.Angle(rotation, candidate);
-                    if (angle >= distance) continue;
-                    distance = angle;
-                    best = candidate;
-                }
+            float score = -1f;
+            foreach (Quaternion candidate in s_RegionRotations)
+            {
+                float dot = Mathf.Abs(Quaternion.Dot(rotation, candidate));
+                if (dot <= score) continue;
+                score = dot;
+                best = candidate;
+            }
             return best;
         }
 

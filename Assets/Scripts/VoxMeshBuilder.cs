@@ -39,7 +39,7 @@ namespace TiltBrush
                 RuntimeVoxDocument.ToUnityMatrix(model.GlobalRotation));
         }
 
-        private static TrTransform GetModelTransform(Vector3 offset, Matrix4x4 globalRotation)
+        internal static TrTransform GetModelTransform(Vector3 offset, Matrix4x4 globalRotation)
         {
             Quaternion sceneRotation = Quaternion.LookRotation(
                 globalRotation.MultiplyVector(Vector3.forward),
