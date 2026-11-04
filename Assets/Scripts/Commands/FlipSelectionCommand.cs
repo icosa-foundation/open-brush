@@ -60,6 +60,12 @@ namespace TiltBrush
                 m_WidgetsFlipped.AddRange(widgetsFlipped);
             }
             m_FlipPlane_CS = flipPlane;
+            if (m_StrokesFlipped != null)
+            {
+                TransformSymmetryCopiesCommand.ForSelectionEdit(
+                    m_StrokesFlipped.Select(stroke => (stroke, flipPlane.ToTrTransform())),
+                    this, reflect: true);
+            }
             if (m_WidgetsFlipped != null)
             {
                 TransformWidgetPeersCommand.ForEdits(m_WidgetsFlipped.Select(w =>

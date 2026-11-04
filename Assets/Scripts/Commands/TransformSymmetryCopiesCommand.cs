@@ -31,6 +31,7 @@ namespace TiltBrush
     {
         private readonly List<Stroke> m_Copies = new List<Stroke>();
         private readonly List<TrTransform> m_Steps = new List<TrTransform>();
+        private readonly bool m_Reflect;
         // Copies whose first move was done by the preview.
         private readonly HashSet<Stroke> m_Adopted = new HashSet<Stroke>(new ReferenceComparer<Stroke>());
 
@@ -38,8 +39,9 @@ namespace TiltBrush
         /// already been moved by xf itself (they were part of the same edit), so they get only
         /// the correction to their mirrored move.
         public TransformSymmetryCopiesCommand(Stroke driver, TrTransform xf,
-            ICollection<Stroke> movedRaw = null, BaseCommand parent = null) : base(parent)
+            ICollection<Stroke> movedRaw = null, BaseCommand parent = null, bool reflect = false) : base(parent)
         {
+            m_Reflect = reflect;
             if (!SymmetryPeerEditing.IsLinked(driver)) { return; }
             foreach (var copy in driver.SymmetryPeerGroup.Strokes)
             {
@@ -68,7 +70,7 @@ namespace TiltBrush
         /// applied where they are: the preview's own displacement of them stays valid.
         /// Adds one child command per linked group to 'parent'.
         public static void ForSelectionEdit(IEnumerable<(Stroke stroke, TrTransform local)> edits,
-            BaseCommand parent)
+            BaseCommand parent, bool reflect = false)
         {
             TrTransform selection = SelectionManager.m_Instance.SelectionTransform;
             var seen = new HashSet<SymmetryStrokeGroup>();
@@ -80,7 +82,7 @@ namespace TiltBrush
                     continue;
                 }
                 new TransformSymmetryCopiesCommand(
-                    stroke, selection * local * selection.inverse, null, parent);
+                    stroke, selection * local * selection.inverse, null, parent, reflect);
             }
         }
 
@@ -102,7 +104,7 @@ namespace TiltBrush
             for (int i = 0; i < m_Copies.Count; ++i)
             {
                 if (m_Adopted.Remove(m_Copies[i])) { continue; }
-                MirrorStrokeEdits.ApplyLeftTransform(m_Copies[i], m_Steps[i]);
+                ApplyStep(m_Copies[i], m_Steps[i]);
             }
         }
 
@@ -110,8 +112,29 @@ namespace TiltBrush
         {
             for (int i = m_Copies.Count - 1; i >= 0; --i)
             {
-                MirrorStrokeEdits.ApplyLeftTransform(m_Copies[i], m_Steps[i].inverse);
+                ApplyStep(m_Copies[i], m_Steps[i].inverse);
             }
+        }
+
+        private void ApplyStep(Stroke stroke, TrTransform step)
+        {
+            if (!m_Reflect)
+            {
+                MirrorStrokeEdits.ApplyLeftTransform(stroke, step);
+                return;
+            }
+
+            // Match FlipSelection's ReflectPoseKeepHandedness: a world-space reflection
+            // followed by a brush-local X reflection. Rebuild rather than mirror mesh winding.
+            var reflectX = new UnityEngine.Plane(UnityEngine.Vector3.right, 0).ToTrTransform();
+            var points = (PointerManager.ControlPoint[])stroke.m_ControlPoints.Clone();
+            for (int i = 0; i < points.Length; ++i)
+            {
+                var pose = step * TrTransform.TR(points[i].m_Pos, points[i].m_Orient) * reflectX;
+                points[i].m_Pos = pose.translation;
+                points[i].m_Orient = pose.rotation;
+            }
+            stroke.RestoreMirrorControlPoints(points, stroke.m_BrushScale);
         }
     }
 } // namespace TiltBrush
