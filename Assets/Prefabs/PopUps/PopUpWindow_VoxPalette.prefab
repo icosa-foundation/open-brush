@@ -327,10 +327,12 @@ MonoBehaviour:
   m_CharacterWidth: 0.175
   m_SubtitleCharacterWidth: 0.05625
   m_ButtonWidth: 0.5
-  m_BaseButtonOffset: {x: 0, y: 0, z: 0}
+  m_BaseButtonOffset: {x: 0.625, y: -0.72, z: -0.06}
   m_ReticleBounds: {x: 3.4, y: 2.1, z: -0.35}
   m_PopUpForwardOffset: -0.3
-  m_AutoPlaceButtons: []
+  m_AutoPlaceButtons:
+  - m_ButtonTexture: {fileID: 2800000, guid: 4ca620df5430af448aaf4f3ff20ad5c4, type: 3}
+    m_ButtonPrefab: {fileID: 5768730878626201577, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
   m_TransitionDuration: 0.1
   m_OpenDelay: 0
   m_Persistent: 0

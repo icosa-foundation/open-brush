@@ -17,7 +17,7 @@ namespace TiltBrush
         protected override void Awake()
         {
             base.Awake();
-            m_Material = m_ButtonRenderer.material;
+            if (!m_AtlasTexture) m_Material = m_ButtonRenderer.material;
         }
 
         internal void Configure(VoxPalettePopUpWindow popup, Action action, Texture2D texture, string description)
@@ -25,22 +25,20 @@ namespace TiltBrush
             m_Popup = popup;
             m_Action = action;
             m_ToggleButton = action == Action.Swatch;
-            m_Material.SetColor("_Tint", Color.white);
+            if (m_Material != null && action != Action.Apply) m_Material.SetColor("_Tint", Color.white);
             SetButtonActivated(false);
             SetButtonTexture(texture);
-            SetDescriptionText(description);
+            if (description != null) SetDescriptionText(description);
         }
 
         internal void SetSwatch(int index, Color32 color, bool selected)
         {
             m_Index = index;
-            SetTint(color);
+            m_Material.SetColor("_Tint", color);
             m_ToggleActive = selected;
             SetButtonActivated(selected);
             SetDescriptionText($"Palette color {index} — #{color.r:X2}{color.g:X2}{color.b:X2}");
         }
-
-        internal void SetTint(Color color) => m_Material.SetColor("_Tint", color);
 
         protected override void OnDestroy()
         {
