@@ -247,11 +247,12 @@ namespace TiltBrush
         private static readonly Queue<KeyValuePair<double, int>> s_FpsSamples = new Queue<KeyValuePair<double, int>>();
 
         private static FfmpegPipe s_Decoder, s_Encoder;
-        private static Color32Bytable s_PendingPlate;
+        private static Bytable s_PendingPlate;
+        private static bool s_HighPrecision;
         private static Thread s_Writer;
-        private static readonly ConcurrentDictionary<int, Color32[]> s_Ready = new ConcurrentDictionary<int, Color32[]>();
+        private static readonly ConcurrentDictionary<int, byte[]> s_Ready = new ConcurrentDictionary<int, byte[]>();
         private static readonly AutoResetEvent s_ReadySignal = new AutoResetEvent(false);
-        private static readonly ConcurrentBag<Color32[]> s_FramePool = new ConcurrentBag<Color32[]>();
+        private static readonly ConcurrentBag<byte[]> s_FramePool = new ConcurrentBag<byte[]>();
 
         private static string s_DepthDir;
         // Which depth set the export uses, for the status and log.
@@ -371,6 +372,17 @@ namespace TiltBrush
                 return $"could not prepare {outDir}: {e.Message}";
             }
 
+            // Quality exports retain more than eight bits through decode, compositing and readback.
+            s_HighPrecision = format.Id != "h264";
+            if (s_HighPrecision && (!SystemInfo.SupportsTextureFormat(TextureFormat.RGBA64) ||
+                !SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBFloat)))
+            {
+                return "quality export requires RGBA64 textures and floating-point render targets on this GPU";
+            }
+            string pipePixelFormat = s_HighPrecision ? "rgba64le" : "rgba";
+            TextureFormat plateFormat = s_HighPrecision ? TextureFormat.RGBA64 : TextureFormat.RGBA32;
+            RenderTextureFormat colorFormat = s_HighPrecision ? RenderTextureFormat.ARGBFloat : RenderTextureFormat.ARGB32;
+
             string fpsArg = fps.ToString(CultureInfo.InvariantCulture);
             var inv = CultureInfo.InvariantCulture;
             // Colour follows the source both ways: its YUV matrix and range for decoding and
@@ -400,7 +412,7 @@ namespace TiltBrush
             bool audio = !string.IsNullOrEmpty(format.AudioCodec);
             // Unity's readback rows are bottom-up, hence vflip.
             string encodeArgs =
-                $"-v error -nostats -y -f rawvideo -pix_fmt rgba -s {width}x{height} -r {fpsArg} -i pipe:0 " +
+                $"-v error -nostats -y -f rawvideo -pix_fmt {pipePixelFormat} -s {width}x{height} -r {fpsArg} -i pipe:0 " +
                 (audio ? $"-ss {(start.Value / fps).ToString("F6", inv)} -t {(total / fps).ToString("F6", inv)} " +
                     $"-i \"{video}\" -map 0:v -map 1:a " : "-map 0:v ") +
                 $"-vf \"vflip,scale=out_color_matrix={matrix}:out_range={range},format={format.PixFmt}," +
@@ -414,8 +426,8 @@ namespace TiltBrush
             string decodeArgs =
                 $"-v error -nostats -ss {seek.ToString("F6", inv)} -i \"{video}\" " +
                 $"-frames:v {total} -an -sn -dn " +
-                $"-vf \"scale=in_color_matrix={matrix}:in_range={range}:out_range=pc,format=rgba,vflip\" " +
-                "-f rawvideo -pix_fmt rgba pipe:1";
+                $"-vf \"scale=in_color_matrix={matrix}:in_range={range}:out_range=pc,format={pipePixelFormat},vflip\" " +
+                $"-f rawvideo -pix_fmt {pipePixelFormat} pipe:1";
 
             s_Generation++;
             s_Format = format;
@@ -433,26 +445,26 @@ namespace TiltBrush
             s_Ready.Clear();
             s_PendingPlate = null;
 
-            s_Encoder = new FfmpegPipe { ReleaseFrame = b => s_FramePool.Add((Color32[])b.GetArray()) };
+            s_Encoder = new FfmpegPipe { ReleaseFrame = b => s_FramePool.Add((byte[])b.GetArray()) };
             if (!s_Encoder.Start("pipe:0", output, width, height, (float)fps, true, encodeArgs))
             {
                 return "could not start the ffmpeg encoder (see the Unity log)";
             }
             s_Decoder = new FfmpegPipe();
-            if (!s_Decoder.Start(video, "pipe:1", width, height, (float)fps, false, decodeArgs))
+            if (!s_Decoder.Start(video, "pipe:1", width, height, (float)fps, false, decodeArgs, rawVideoBytesPerPixel: s_HighPrecision ? 8 : 4))
             {
                 StopProcesses();
                 return "could not start the ffmpeg decoder (see the Unity log)";
             }
 
-            // Same formats as the live CG's own targets; the camera renders need a depth buffer.
+            // Keep encoded depth byte-based; quality colour targets retain source precision.
             int workW = PostProductionLens.WorkWidth, workH = PostProductionLens.WorkHeight;
-            s_CgColor = MakeTarget(workW, workH, 24, 4, RenderTextureReadWrite.Default, "PostProdExportCgColor");
+            s_CgColor = MakeTarget(workW, workH, 24, 4, RenderTextureReadWrite.Default, "PostProdExportCgColor", colorFormat);
             s_CgDepth = MakeTarget(workW, workH, 24, 1, RenderTextureReadWrite.Linear, "PostProdExportCgDepth");
-            s_CgResolved = MakeTarget(workW, workH, 0, 1, RenderTextureReadWrite.Default, "PostProdExportCgResolved");
+            s_CgResolved = MakeTarget(workW, workH, 0, 1, RenderTextureReadWrite.Default, "PostProdExportCgResolved", colorFormat);
             s_CgResolved.filterMode = FilterMode.Bilinear;
-            s_Out = MakeTarget(width, height, 0, 1, RenderTextureReadWrite.Default, "PostProdExportOut");
-            s_PlateTex = new Texture2D(width, height, TextureFormat.RGBA32, false)
+            s_Out = MakeTarget(width, height, 0, 1, RenderTextureReadWrite.Default, "PostProdExportOut", colorFormat);
+            s_PlateTex = new Texture2D(width, height, plateFormat, false)
             {
                 filterMode = FilterMode.Bilinear,
                 wrapMode = TextureWrapMode.Clamp,
@@ -540,7 +552,7 @@ namespace TiltBrush
             UpdateFps();
             if (s_StagedFrame < 0) { return; }
 
-            var plate = (Color32[])s_PendingPlate.GetArray();
+            var plate = (byte[])s_PendingPlate.GetArray();
             s_PlateTex.SetPixelData(plate, 0);
             s_PlateTex.Apply(false);
             s_PendingPlate = null;
@@ -578,7 +590,7 @@ namespace TiltBrush
             int index = s_StagedFrame - s_First;
             int generation = s_Generation;
             s_ReadbacksInFlight++;
-            AsyncGPUReadback.Request(s_Out, 0, TextureFormat.RGBA32, request => OnReadback(request, index, generation));
+            AsyncGPUReadback.Request(s_Out, 0, s_HighPrecision ? TextureFormat.RGBA64 : TextureFormat.RGBA32, request => OnReadback(request, index, generation));
             s_StagedFrame = -1;
             s_NextFrame++;
             s_Rendered++;
@@ -594,10 +606,10 @@ namespace TiltBrush
                 Fail($"GPU readback failed at frame {s_First + index}");
                 return;
             }
-            var data = request.GetData<Color32>();
+            var data = request.GetData<byte>();
             if (!s_FramePool.TryTake(out var frame) || frame.Length != data.Length)
             {
-                frame = new Color32[data.Length];
+                frame = new byte[data.Length];
             }
             data.CopyTo(frame);
             s_Ready[index] = frame;
@@ -624,7 +636,7 @@ namespace TiltBrush
                     }
                     if (s_Ready.TryRemove(next, out var frame))
                     {
-                        encoder.QueueFrame(new Color32Bytable(frame)); // waits while the previous frame is written
+                        encoder.QueueFrame(new BytesBytable(frame)); // waits while the previous frame is written
                         next++;
                         s_Written = encoder.FrameCount;
                     }
@@ -757,9 +769,9 @@ namespace TiltBrush
         }
 
         private static RenderTexture MakeTarget(int width, int height, int depthBits, int antiAliasing,
-            RenderTextureReadWrite readWrite, string name)
+            RenderTextureReadWrite readWrite, string name, RenderTextureFormat format = RenderTextureFormat.ARGB32)
         {
-            var rt = new RenderTexture(width, height, depthBits, RenderTextureFormat.ARGB32, readWrite)
+            var rt = new RenderTexture(width, height, depthBits, format, readWrite)
             {
                 filterMode = FilterMode.Point,
                 wrapMode = TextureWrapMode.Clamp,

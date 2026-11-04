@@ -86,9 +86,10 @@ Shader "Hidden/PostProdComposite"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
 
-            sampler2D _CGColorTex;
+            // Quality exports supply 16-bit plate data: keep samples and arithmetic at float precision.
+            sampler2D_float _CGColorTex;
             sampler2D _CGDepthTex;
-            sampler2D _PlateColorTex;
+            sampler2D_float _PlateColorTex;
             sampler2D _PlateDepthTex;
             float _NaiveMode;
             float _DepthNearest;
@@ -192,7 +193,7 @@ Shader "Hidden/PostProdComposite"
                 return o;
             }
 
-            fixed4 frag (v2f i) : SV_Target
+            float4 frag (v2f i) : SV_Target
             {
                 float2 cgUv = i.uv;
                 float cgInside = 1.0;
@@ -202,17 +203,17 @@ Shader "Hidden/PostProdComposite"
                 }
                 // CG colour is sampled bilinearly (the export passes a resolved, bilinear
                 // copy); encoded depth is point-filtered, so it is never blended.
-                fixed4 cg = tex2D(_CGColorTex, cgUv) * cgInside;
+                float4 cg = tex2D(_CGColorTex, cgUv) * cgInside;
                 float cgDepth = cgInside > 0.5 ? SampleCgDepthMetres(cgUv) : 0.0;
 
                 if (_DebugMode > 0.5)
                 {
                     float hasDepth = cgDepth > 0.0 ? 1.0 : 0.0;
                     float hasColor = max(max(cg.r, cg.g), cg.b) > 0.1 ? 1.0 : 0.0;
-                    return fixed4(hasDepth, hasColor, 0.0, 1.0);
+                    return float4(hasDepth, hasColor, 0.0, 1.0);
                 }
 
-                fixed4 plate;
+                float4 plate;
                 float plateDepth;
                 if (_UndistortPlate > 0.5)
                 {
@@ -239,7 +240,7 @@ Shader "Hidden/PostProdComposite"
                 }
 
                 float alpha = max(max(cg.r, cg.g), cg.b) * visible;
-                fixed4 outColor = cg * alpha + plate * (1.0 - alpha);
+                float4 outColor = cg * alpha + plate * (1.0 - alpha);
                 outColor.a = 1.0;
                 return outColor;
             }
