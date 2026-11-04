@@ -596,8 +596,21 @@ namespace OpenBrush.Multiplayer
                 return false;
             }
 
+            var parentCommand = FindParentCommand(parentGuid);
+            var command = new BrushStrokeCommand(stroke, commandGuid, timestamp, parent: parentCommand);
             Action preAction = () =>
             {
+                // Check when the command executes, since scene sync can finish while
+                // this command is waiting for its children. Reuse its geometry and clock.
+                Stroke existingStroke = MultiplayerSceneSync.FindReceivedStroke(
+                    stroke, requireNetworkCommand: false);
+                if (existingStroke != null)
+                {
+                    command.m_Stroke = existingStroke;
+                    existingStroke.Command = command;
+                    DestroyLiveStrokeBrush(ref completedPreviewBrush);
+                    return;
+                }
                 stroke.m_Type = Stroke.Type.NotCreated;
                 MultiplayerManager.m_Instance.PlaceStrokeOnContributorLayer(stroke);
                 var canvas = stroke.m_IntendedCanvas ?? App.Scene.MainCanvas;
@@ -620,10 +633,6 @@ namespace OpenBrush.Multiplayer
                 }
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
             };
-
-            var parentCommand = FindParentCommand(parentGuid);
-
-            var command = new BrushStrokeCommand(stroke, commandGuid, timestamp, parent: parentCommand);
 
             AddPendingCommand(preAction, commandGuid, parentGuid, command, childCount);
             return true;
