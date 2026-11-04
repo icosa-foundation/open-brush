@@ -16,6 +16,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Localization;
+using UnityEngine.XR.Management;
 
 #if UNITY_ANDROID
 using UnityEngine.Android;
@@ -77,6 +78,7 @@ namespace TiltBrush
                 yield return AndroidDirectStorage.Initialize(App.kAppFolderName, ShowFolderExplanation);
                 if (AndroidDirectStorage.StartupCanceled) yield break;
                 m_Overlay.MessageStatus = m_LoadingText.GetLocalizedStringAsync().Result;
+                RestoreStartupXr();
             }
 #endif
 
@@ -129,6 +131,22 @@ namespace TiltBrush
                 retry, result => accepted = result);
             if (accepted) AndroidDirectStorage.OpenFolderPicker();
             else AndroidDirectStorage.CancelStartup();
+        }
+
+        private static void RestoreStartupXr()
+        {
+            var manager = XRGeneralSettings.Instance?.Manager;
+            if (manager == null) return;
+            try
+            {
+                Debug.Log("OBDS_STARTUP restoring XR loading surface");
+                if (manager.activeLoader == null) manager.InitializeLoaderSync();
+                if (manager.activeLoader != null) manager.StartSubsystems();
+            }
+            catch (System.Exception error)
+            {
+                Debug.LogError($"OBDS_STARTUP XR resume failed: {error}");
+            }
         }
 #endif
 
