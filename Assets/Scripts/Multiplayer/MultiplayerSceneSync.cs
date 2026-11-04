@@ -124,11 +124,33 @@ namespace OpenBrush.Multiplayer
             // Handle the strokes (e.g., add them to the scene or memory)
             foreach (var stroke in strokes)
             {
+                // A command-tree repair can arrive before this asynchronous scene chunk.
+                if (FindReceivedStroke(stroke, requireNetworkCommand: true) != null) continue;
                 MultiplayerManager.m_Instance.PlaceStrokeOnContributorLayer(stroke);
                 BrushStrokeCommand c = new BrushStrokeCommand(stroke);
                 SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
                 SketchMemoryScript.m_Instance.PerformAndRecordNetworkCommand(c, true);
             }
+        }
+
+        public static Stroke FindReceivedStroke(Stroke received, bool requireNetworkCommand)
+        {
+            // Sketch serialization does not preserve stroke GUIDs. Seeds are also used
+            // by network delete commands. Match geometry too: copied strokes retain seeds.
+            // Only reconcile across the scene/command paths, never within a scene snapshot.
+            return SketchMemoryScript.m_Instance.GetMemoryList.FirstOrDefault(stroke =>
+                stroke.m_Seed == received.m_Seed && stroke.m_BrushGuid == received.m_BrushGuid &&
+                stroke.m_Color == received.m_Color && stroke.m_BrushSize == received.m_BrushSize &&
+                (stroke.m_MultiplayerContributorId == Guid.Empty ||
+                    received.m_MultiplayerContributorId == Guid.Empty ||
+                    stroke.m_MultiplayerContributorId == received.m_MultiplayerContributorId) &&
+                (stroke.Command != null &&
+                    SketchMemoryScript.m_Instance.FindNetworkCommand(stroke.Command.Guid) != null) ==
+                    requireNetworkCommand &&
+                stroke.m_ControlPoints.Length == received.m_ControlPoints.Length &&
+                stroke.m_ControlPoints.Zip(received.m_ControlPoints, (left, right) =>
+                    left.m_Pos == right.m_Pos && left.m_Orient == right.m_Orient &&
+                    left.m_Pressure == right.m_Pressure).All(matches => matches));
         }
 
         void OnLargeDataReceived(byte[] largeData, int percentage)

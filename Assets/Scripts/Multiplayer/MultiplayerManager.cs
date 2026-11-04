@@ -101,7 +101,8 @@ namespace OpenBrush.Multiplayer
             new Dictionary<Guid, OutgoingLiveStroke>();
         private readonly Dictionary<Guid, RetainedLiveStrokeCommand> m_RetainedLiveStrokeCommands =
             new Dictionary<Guid, RetainedLiveStrokeCommand>();
-        private HashSet<Guid> m_SentBrushCommandGuids = new HashSet<Guid>();
+        private Dictionary<int, HashSet<Guid>> m_SentBrushCommandGuidsByPlayer =
+            new Dictionary<int, HashSet<Guid>>();
         private Queue<BaseCommand> m_OutgoingCommands = new Queue<BaseCommand>();
 
         private const int k_MaxLiveStrokeControlPoints = 32768;
@@ -1099,8 +1100,7 @@ namespace OpenBrush.Multiplayer
 
         private async Task<bool> TryCompleteOutgoingLiveStrokeTree(BaseCommand rootCommand)
         {
-            // Keep delivery evidence scoped to this room even if a send yields across disconnect.
-            HashSet<Guid> sentBrushCommandGuids = m_SentBrushCommandGuids;
+            var sentCommandsByPlayer = m_SentBrushCommandGuidsByPlayer;
             List<BrushStrokeCommand> allBrushCommands =
                 EnumerateBrushStrokeCommands(rootCommand).ToList();
             List<BrushStrokeCommand> brushCommands = allBrushCommands.Where(
@@ -1115,13 +1115,14 @@ namespace OpenBrush.Multiplayer
             var deltaCommandGuids = brushCommands
                 .Select(command => command.Guid)
                 .ToHashSet();
+            var treeCommandGuids = allBrushCommands.Select(command => command.Guid).ToHashSet();
             // A missing stream can be canceled, not just an already-sent ancestor.
             // Children cannot execute remotely until their parent command is present.
             bool deltaTreeIsClosed = brushCommands.All(command =>
                 command.Children.All(child => deltaCommandGuids.Contains(child.Guid)) &&
                 (command.ParentGuid == Guid.Empty ||
                     deltaCommandGuids.Contains(command.ParentGuid) ||
-                    sentBrushCommandGuids.Contains(command.ParentGuid)));
+                    treeCommandGuids.Contains(command.ParentGuid)));
             if (!deltaTreeIsClosed)
             {
                 foreach (BrushStrokeCommand command in brushCommands)
@@ -1175,6 +1176,13 @@ namespace OpenBrush.Multiplayer
             {
                 fullyStreamedRecipients.IntersectWith(item.Stream.Recipients);
             }
+            // Scene sync supplies geometry, not the original command GUIDs. A late joiner
+            // needs the full tree even when it received every point of this continuation.
+            bool HasRequiredAncestors(int playerId) =>
+                deltaRoots.All(command => command.ParentGuid == Guid.Empty ||
+                    (sentCommandsByPlayer.TryGetValue(playerId, out var sentCommands) &&
+                        sentCommands.Contains(command.ParentGuid)));
+            fullyStreamedRecipients.RemoveWhere(playerId => !HasRequiredAncestors(playerId));
             if (streams.Any(item =>
                     item.Command.m_Stroke.m_ControlPointsToDrop != null &&
                     item.Command.m_Stroke.m_ControlPointsToDrop.Any(drop => drop)))
@@ -1188,6 +1196,10 @@ namespace OpenBrush.Multiplayer
                 CompleteOutgoingLiveStroke(
                     item.Command, item.Stream, fullyStreamedRecipients);
             }
+            foreach (int playerId in fullyStreamedRecipients.Where(IsRemotePlayerStillConnected))
+            {
+                GetSentBrushCommandGuids(playerId).UnionWith(deltaCommandGuids);
+            }
 
             // Sending yields; room membership can change before the next recipient.
             int[] fallbackRecipientIds = m_RemotePlayers.List
@@ -1195,23 +1207,21 @@ namespace OpenBrush.Multiplayer
                 .Select(player => player.PlayerId)
                 .ToArray();
             var manager = m_Manager;
-            bool allFallbacksSent = true;
             foreach (int playerId in fallbackRecipientIds)
             {
-                foreach (BrushStrokeCommand deltaRoot in deltaRoots)
+                IEnumerable<BaseCommand> fallbackRoots = HasRequiredAncestors(playerId)
+                    ? deltaRoots
+                    : new[] { rootCommand };
+                foreach (BaseCommand fallbackRoot in fallbackRoots)
                 {
-                    if (manager == null || State != ConnectionState.IN_ROOM || m_Manager != manager)
+                    if (manager == null || State != ConnectionState.IN_ROOM || m_Manager != manager ||
+                        !ReferenceEquals(sentCommandsByPlayer, m_SentBrushCommandGuidsByPlayer))
                     {
                         return true;
                     }
                     if (!IsRemotePlayerStillConnected(playerId)) break;
-                    allFallbacksSent &= await manager.SendCommandToPlayer(
-                        deltaRoot, playerId, rebaseTimestamps: true);
+                    await SendCommandToPlayerAndTrack(fallbackRoot, playerId, rebaseTimestamps: true);
                 }
-            }
-            if (allFallbacksSent)
-            {
-                sentBrushCommandGuids.UnionWith(deltaCommandGuids);
             }
             return true;
         }
@@ -1369,6 +1379,7 @@ namespace OpenBrush.Multiplayer
 
         void OnPlayerLeft(int id)
         {
+            m_SentBrushCommandGuidsByPlayer.Remove(id);
             m_LiveStrokeCapablePlayers.Remove(id);
             m_PendingSceneSyncPlayerIds.Remove(id);
             m_InitialSceneStrokeSnapshots.Remove(id);
@@ -1420,7 +1431,6 @@ namespace OpenBrush.Multiplayer
             outgoingCommands.Enqueue(command);
             // Keep the in-flight command at the head so later callbacks cannot start another drain.
             if (outgoingCommands.Count != 1) return;
-            HashSet<Guid> sentBrushCommandGuids = m_SentBrushCommandGuids;
             while (outgoingCommands.Count > 0 &&
                 ReferenceEquals(outgoingCommands, m_OutgoingCommands) &&
                 State == ConnectionState.IN_ROOM)
@@ -1449,10 +1459,20 @@ namespace OpenBrush.Multiplayer
                     {
                         continue;
                     }
-                    if (await m_Manager.PerformCommand(command))
+                    if (EnumerateBrushStrokeCommands(command).Any())
                     {
-                        sentBrushCommandGuids.UnionWith(
-                            EnumerateBrushStrokeCommands(command).Select(brushCommand => brushCommand.Guid));
+                        int[] recipientIds = m_RemotePlayers.List.Select(player => player.PlayerId).ToArray();
+                        foreach (int playerId in recipientIds)
+                        {
+                            if (State != ConnectionState.IN_ROOM ||
+                                !ReferenceEquals(outgoingCommands, m_OutgoingCommands)) return;
+                            if (!IsRemotePlayerStillConnected(playerId)) continue;
+                            await SendCommandToPlayerAndTrack(command, playerId, rebaseTimestamps: true);
+                        }
+                    }
+                    else
+                    {
+                        await m_Manager.PerformCommand(command);
                     }
                 }
                 catch (Exception exception)
@@ -1509,7 +1529,30 @@ namespace OpenBrush.Multiplayer
         {
             if (State == ConnectionState.IN_ROOM)
             {
-                await m_Manager.SendCommandToPlayer(command, playerID, rebaseTimestamps);
+                await SendCommandToPlayerAndTrack(command, playerID, rebaseTimestamps);
+            }
+        }
+
+        private HashSet<Guid> GetSentBrushCommandGuids(int playerId)
+        {
+            if (!m_SentBrushCommandGuidsByPlayer.TryGetValue(playerId, out var sentCommands))
+            {
+                sentCommands = new HashSet<Guid>();
+                m_SentBrushCommandGuidsByPlayer.Add(playerId, sentCommands);
+            }
+            return sentCommands;
+        }
+
+        private async Task SendCommandToPlayerAndTrack(
+            BaseCommand command, int playerId, bool rebaseTimestamps)
+        {
+            // Capture before yielding: a departure or room change discards this recipient's
+            // evidence, and an old send must not populate its replacement.
+            HashSet<Guid> sentCommands = GetSentBrushCommandGuids(playerId);
+            if (await m_Manager.SendCommandToPlayer(command, playerId, rebaseTimestamps))
+            {
+                sentCommands.UnionWith(
+                    EnumerateBrushStrokeCommands(command).Select(brushCommand => brushCommand.Guid));
             }
         }
 
@@ -1593,7 +1636,7 @@ namespace OpenBrush.Multiplayer
             m_OutgoingLiveStrokesBySeed.Clear();
             m_OutgoingLiveStrokesById.Clear();
             m_RetainedLiveStrokeCommands.Clear();
-            m_SentBrushCommandGuids = new HashSet<Guid>();
+            m_SentBrushCommandGuidsByPlayer = new Dictionary<int, HashSet<Guid>>();
             // An old drain may still be awaiting a send; it must not consume a new room's commands.
             m_OutgoingCommands = new Queue<BaseCommand>();
             m_LocalPlayer = null;// Clean up local player reference
