@@ -318,8 +318,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 49c8af7304d34c62b2f05ed67a43a9c7, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Background: {fileID: 1671741279271684}
   m_TopBorder: {fileID: 1057934756821992}
   m_BottomBorder: {fileID: 1057934756821992}
@@ -340,12 +340,12 @@ MonoBehaviour:
   m_OrderedPageButtons: []
   m_PrevButton: {fileID: 0}
   m_NextButton: {fileID: 0}
-  m_ColorPicker: {fileID: 114928026628815740}
   m_ButtonPrefab: {fileID: 114275218848035040, guid: 24287790fea845b897f5e07b2dc38205, type: 3}
+  m_ColorPicker: {fileID: 114928026628815740}
   m_SwatchTexture: {fileID: 2800000, guid: d21c4cae08e56704b98251732eca90cb, type: 3}
   m_PreviousTexture: {fileID: 2800000, guid: f74f6eac3e3e3c640b1a343ec46ba2dd, type: 3}
   m_NextTexture: {fileID: 2800000, guid: ab8b9a0b96b6cb74ca1e518f3c56b425, type: 3}
-  m_ApplyTexture: {fileID: 2800000, guid: ccb038abf33e5644583b3a4eda87027e, type: 3}
+  m_ApplyTexture: {fileID: 2800000, guid: d21c4cae08e56704b98251732eca90cb, type: 3}
   m_GridOrigin: {x: -1.38, y: 0.6, z: -0.06}
   m_SwatchSpacing: 0.15
   m_SwatchSize: 0.13
@@ -380,8 +380,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 739d5b1996234d64992a2ae60c3723e9, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &114141317887893298
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -392,8 +392,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4c90a03c529305541aca26bc1ebb4ed5, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DefaultColor: {r: 0, g: 0, b: 0, a: 0}
   m_Hdr: 0
 --- !u!1 &1359846505900696
@@ -441,8 +441,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36b8c11c8e8eb6544ae241ab76bcdf5a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_HighlightMesh: {fileID: 23024120677926814}
   m_CurrentValueTransform: {fileID: 4075967851075082}
   m_FixedSelectorPlane: 1
@@ -627,8 +627,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5572d2c4391be8a42a05470357077f95, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_CurrentValueTransform: {fileID: 4892222824112230}
 --- !u!65 &65488670811643684
 BoxCollider:
@@ -730,27 +730,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a400bc9356976b346b2ecf27d63fbd00, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: -1
   m_DescriptionYOffset: 0
-  m_DescriptionText:
+  m_DescriptionText: 
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra:
+  m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -1094,8 +1094,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9541d86e2fd84c1d9990edf0852d74ab, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -1154,7 +1154,7 @@ MonoBehaviour:
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1
-  m_ActiveFontFeatures: 00000000u
+  m_ActiveFontFeatures: 6e72656bu
   m_enableExtraPadding: 0
   checkPaddingRequired: 0
   m_isRichText: 1

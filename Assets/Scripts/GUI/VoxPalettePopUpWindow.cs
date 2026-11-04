@@ -1,6 +1,7 @@
 // Copyright 2026 The Open Brush Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 using OpenBrush.Multiplayer;
+using TMPro;
 using UnityEngine;
 
 namespace TiltBrush
@@ -47,8 +48,21 @@ namespace TiltBrush
             m_Previous = CreateButton(new Vector3(-1.15f, -.72f, -.06f), VoxPaletteButton.Action.Previous, m_PreviousTexture, "Previous palette page");
             m_Next = CreateButton(new Vector3(-.55f, -.72f, -.06f), VoxPaletteButton.Action.Next, m_NextTexture, "Next palette page");
             m_Apply = CreateButton(new Vector3(.75f, -.72f, -.06f), VoxPaletteButton.Action.Apply, m_ApplyTexture, "Apply palette color");
-            m_Apply.transform.localScale = Vector3.one * .25f;
+            m_Apply.transform.localScale = new Vector3(.64f, .28f, .25f);
             m_Apply.RegisterComponent();
+            m_Apply.SetTint(new Color32(35, 90, 160, 255));
+            var applyLabel = Instantiate(m_WindowText, transform);
+            applyLabel.name = "ApplyLabel";
+            applyLabel.text = "Apply";
+            applyLabel.alignment = TextAlignmentOptions.Center;
+            applyLabel.color = Color.white;
+            applyLabel.enableAutoSizing = true;
+            applyLabel.fontSizeMin = m_WindowText.fontSize * .7f;
+            applyLabel.fontSizeMax = m_WindowText.fontSize;
+            applyLabel.rectTransform.pivot = new Vector2(.5f, .5f);
+            applyLabel.rectTransform.sizeDelta = new Vector2(.6f, .24f);
+            applyLabel.transform.localScale = Vector3.one;
+            applyLabel.transform.localPosition = new Vector3(.75f, -.72f, -.12f);
             ColorPicker.ColorPicked += OnColorPicked;
             m_Memory = SketchMemoryScript.m_Instance;
             m_Memory.OperationStackChanged += OnHistoryChanged;

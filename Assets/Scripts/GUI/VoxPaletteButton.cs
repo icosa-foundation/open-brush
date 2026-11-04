@@ -34,11 +34,13 @@ namespace TiltBrush
         internal void SetSwatch(int index, Color32 color, bool selected)
         {
             m_Index = index;
-            m_Material.SetColor("_Tint", color);
+            SetTint(color);
             m_ToggleActive = selected;
             SetButtonActivated(selected);
             SetDescriptionText($"Palette color {index} — #{color.r:X2}{color.g:X2}{color.b:X2}");
         }
+
+        internal void SetTint(Color color) => m_Material.SetColor("_Tint", color);
 
         protected override void OnDestroy()
         {
