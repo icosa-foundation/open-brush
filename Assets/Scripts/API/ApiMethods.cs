@@ -2205,6 +2205,7 @@ namespace TiltBrush
         )]
         public static void ClearCameraIntrinsics()
         {
+            PostProductionExport.ThrowIfExporting("camera.intrinsics.clear");
             ScreenshotManager.ClearCalibratedIntrinsics();
 
         }
@@ -2233,6 +2234,7 @@ namespace TiltBrush
         )]
         public static void ClearCameraClip()
         {
+            PostProductionExport.ThrowIfExporting("camera.clip.clear");
             ScreenshotManager.ClearCalibratedClip();
 
         }
