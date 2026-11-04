@@ -42,7 +42,7 @@ namespace TiltBrush
         // m_MaximumLoadingTime
         private float m_FakeLoadingRate;
         private float m_CurrentLoadingPosition;
-#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
         private bool m_OpenedFolderPicker;
         private XRManagerSettings m_StartupXr;
         private string m_StartupXrMode = "handoff";
@@ -86,7 +86,7 @@ namespace TiltBrush
 
         private IEnumerator Start()
         {
-#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
             // Select comparison paths per launch with am start --es obdsStartupXr MODE.
             if (Application.platform == RuntimePlatform.Android)
             {
@@ -159,7 +159,7 @@ namespace TiltBrush
 #endif
 
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("Main");
-#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
             m_MainLoad = asyncLoad;
             LogStartup("Main load requested");
             if (m_StartupXr != null && m_StartupXrMode != "retained")
@@ -189,7 +189,7 @@ namespace TiltBrush
             }
 
             // Skip a frame to allow app to get out of Standard and in to LoadingBrushesAndLighting state.
-#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
             m_LoggedRenderFrames = 0;
             LogStartup("Main activation completed");
 #endif
@@ -207,7 +207,7 @@ namespace TiltBrush
             Destroy(gameObject);
         }
 
-#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
         private IEnumerator ShowFolderExplanation(bool retry)
         {
             bool accepted = false;
