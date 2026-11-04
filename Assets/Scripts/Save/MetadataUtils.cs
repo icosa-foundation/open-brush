@@ -190,7 +190,8 @@ namespace TiltBrush
                     PinStates = widgets.Select(widget => widget.Pinned).ToArray(),
                     GroupIds = widgets.Select(widget => groupIdMapping.GetId(widget.Group)).ToArray(),
                     LayerIds = widgets.Select(widget => App.Scene.GetIndexOfCanvas(GetSavedCanvas(widget))).ToArray(),
-                    Colors = widgets.Select(widget => widget.m_Color).ToArray()
+                    Colors = widgets.Select(widget => widget.m_Color).ToArray(),
+                    AxisScales = widgets.Select(widget => widget.CustomDimension).ToArray()
                 });
             }
             models.AddRange(MeshEditing.EditableModelManager.RetainedInstances);

@@ -32,15 +32,27 @@ namespace TiltBrush.MeshEditing
             internal string Operation;
             internal string Axis;
             internal bool Boolean;
+            internal bool Taper;
+            internal string RelativeTo;
+            internal float ReferenceDefault;
 
             public float Read(GeometryRecipeData recipe)
             {
                 JObject data = recipe.ToJson();
                 JObject step = FindStep(data, this);
-                JToken value = step?["Parameters"]?[Name];
-                if (value == null) { return Default; }
-                if (Choices != null) { return Array.IndexOf(Choices, (string)value); }
-                return Boolean ? ((bool)value ? 1 : 0) : (float)value;
+                var parameters = step?["Parameters"];
+                if (Taper)
+                {
+                    float bottom = (float?)parameters?["bottomRadius"] ?? .5f;
+                    float top = (float?)parameters?["topRadius"] ?? .5f;
+                    float radius = Mathf.Max(bottom, top);
+                    return radius > 0 ? (top - bottom) / radius : 0;
+                }
+                JToken value = parameters?[Name];
+                if (Choices != null) { return value != null ? Array.IndexOf(Choices, (string)value) : Default; }
+                if (Boolean) { return value != null ? ((bool)value ? 1 : 0) : Default; }
+                float number = value != null ? (float)value : Default;
+                return RelativeTo != null ? number / ((float?)parameters?[RelativeTo] ?? ReferenceDefault) : number;
             }
 
             public string Format(float value)
@@ -66,7 +78,7 @@ namespace TiltBrush.MeshEditing
                 case 3: type = "frame"; p = new JObject { ["width"] = .4f, ["height"] = .3f, ["borderWidth"] = .03f, ["radius"] = .025f }; break;
                 case 4: type = "cylinder"; p = new JObject { ["height"] = .3f, ["bottomRadius"] = .15f, ["topRadius"] = .15f, ["smoothSides"] = true }; break;
                 case 5: type = "capsule"; p = new JObject { ["cylinderHeight"] = .2f, ["radius"] = .1f, ["smooth"] = true }; break;
-                case 6: type = "conic"; p = new JObject { ["radius"] = .15f, ["centerOffset"] = 0f, ["smooth"] = true }; break;
+                case 6: type = "conic"; p = new JObject { ["radius"] = .15f, ["majorAxis"] = .15f, ["minorAxis"] = .15f, ["centerOffset"] = 0f, ["smooth"] = true }; break;
                 default: throw new ArgumentOutOfRangeException(nameof(preset));
             }
             return new GeometryRecipeData(new JObject
@@ -86,50 +98,40 @@ namespace TiltBrush.MeshEditing
                 case "rectangle":
                 case "frame":
                 case "panel":
-                    result.Add(Number("width", "Width (m)", .01f, 2, 1));
-                    result.Add(Number("height", "Height (m)", .01f, 2, 1));
                     if (generator.Type == "panel")
                     {
-                        result.Add(Number("depth", "Depth (m)", .001f, 1, .1f));
-                        result.Add(Number("cornerRadius", "Corner radius (m)", 0, .5f));
-                        result.Add(Number("edgeRadius", "Edge radius (m)", 0, .25f));
+                        result.Add(Number("cornerRadius", "Corner radius", 0, .5f));
+                        result.Add(Number("edgeRadius", "Edge radius", 0, .25f));
                         result.Add(Number("widthSegments", "Width segments", 1, 32, 1, true));
                         result.Add(Number("heightSegments", "Height segments", 1, 32, 1, true));
                         result.Add(Number("edgeSegments", "Edge segments", 1, 16, 8, true));
                     }
                     else
                     {
-                        result.Add(Number("radius", "Corner radius (m)", 0, .5f));
+                        result.Add(Number("radius", "Corner radius", 0, .5f));
                         if (generator.Type == "frame")
                         {
-                            result.Add(Number("borderWidth", "Border width (m)", .001f, .3f, .1f));
+                            result.Add(Number("borderWidth", "Border width", .001f, .3f, .1f));
                         }
-                        result.Add(Operation("shell", "thickness", "Thickness (m)", 0, .3f));
+                        result.Add(Operation("shell", "thickness", "Thickness", 0, .3f));
                     }
                     result.Add(Number("cornerSegments", "Corner segments", 1, 16, generator.Type == "panel" ? 8 : 4, true));
                     break;
                 case "cylinder":
-                    result.Add(Number("height", "Height (m)", .01f, 2, 1));
-                    result.Add(Number("bottomRadius", "Bottom radius (m)", 0, 1, .5f));
-                    result.Add(Number("topRadius", "Top radius (m)", 0, 1, .5f));
-                    result.Add(Number("bottomAspect", "Bottom aspect", .05f, 4, 1));
-                    result.Add(Number("topAspect", "Top aspect", .05f, 4, 1));
+                    result.Add(new Parameter { Name = "taper", Label = "Taper", Min = -1, Max = 1, Taper = true });
+                    result.Add(Ratio("topAspect", "bottomAspect", "Top ovalness", .05f, 4, 1, 1));
                     AddRevolution(result);
                     result.Add(Toggle("smoothSides", "Smooth sides"));
                     break;
                 case "capsule":
-                    result.Add(Number("cylinderHeight", "Straight height (m)", 0, 2, 2));
-                    result.Add(Number("radius", "Radius (m)", .005f, 1, 1));
+                    result.Add(Ratio("cylinderHeight", "radius", "Body length", 0, 8, 2, 1));
                     AddRevolution(result);
                     result.Add(Number("capSegments", "Cap segments", 2, 32, 8, true));
                     result.Add(Toggle("smooth", "Smooth surface"));
                     break;
                 case "conic":
                     result.Add(Choice("curve", "Profile", "circle", "ellipse", "hyperbola", "parabola"));
-                    result.Add(Number("radius", "Circle radius (m)", .005f, 1, 1));
-                    result.Add(Number("majorAxis", "Major axis (m)", .005f, 2, 1));
-                    result.Add(Number("minorAxis", "Minor axis (m)", .005f, 2, 1));
-                    result.Add(Number("centerOffset", "Profile offset (m)", 0, 1, .2f));
+                    result.Add(Number("centerOffset", "Profile offset", 0, 1, .2f));
                     result.Add(Number("bottomClip", "Bottom clip", 0, .99f));
                     result.Add(Number("topClip", "Top clip", .01f, 1, 1));
                     AddRevolution(result);
@@ -179,7 +181,18 @@ namespace TiltBrush.MeshEditing
                 p = new JObject();
                 step["Parameters"] = p;
             }
-            if (parameter.Choices != null)
+            if (parameter.Taper)
+            {
+                float radius = Mathf.Max((float?)p["bottomRadius"] ?? .5f, (float?)p["topRadius"] ?? .5f);
+                value = Mathf.Clamp(value, -1, 1);
+                p["bottomRadius"] = radius * (value > 0 ? 1 - value : 1);
+                p["topRadius"] = radius * (value < 0 ? 1 + value : 1);
+            }
+            else if (parameter.RelativeTo != null)
+            {
+                p[parameter.Name] = value * ((float?)p[parameter.RelativeTo] ?? parameter.ReferenceDefault);
+            }
+            else if (parameter.Choices != null)
             {
                 p[parameter.Name] = parameter.Choices[Mathf.Clamp(Mathf.RoundToInt(value), 0, parameter.Choices.Length - 1)];
             }
@@ -221,6 +234,14 @@ namespace TiltBrush.MeshEditing
 
         private static Parameter Number(string name, string label, float min, float max, float fallback = 0, bool integer = false)
             => new Parameter { Name = name, Label = label, Min = min, Max = max, Default = fallback, Integer = integer };
+
+        private static Parameter Ratio(string name, string reference, string label, float min, float max, float fallback, float referenceFallback)
+        {
+            var parameter = Number(name, label, min, max, fallback);
+            parameter.RelativeTo = reference;
+            parameter.ReferenceDefault = referenceFallback;
+            return parameter;
+        }
 
         private static Parameter Operation(string type, string name, string label, float min, float max)
         {

@@ -18,6 +18,93 @@ namespace TiltBrush
         public Color m_Color = Color.white;
         public static EditableModelWidget LastActivated { get; private set; }
         private Mesh m_OwnedGeneratedMesh;
+        private Vector3 m_AxisScale = Vector3.one;
+        private Axis? m_LockedManipulationAxis;
+
+        public override Vector3 CustomDimension
+        {
+            get => m_AxisScale;
+            set
+            {
+                for (int i = 0; i < 3; ++i)
+                {
+                    if (!(value[i] > 0) || float.IsInfinity(value[i]))
+                    {
+                        throw new System.ArgumentOutOfRangeException(nameof(value), "Shape axis scales must be finite and positive");
+                    }
+                }
+                m_AxisScale = value;
+                UpdateScale();
+            }
+        }
+
+        protected override void UpdateScale()
+        {
+            if (this == null) { return; }
+            base.UpdateScale();
+            transform.localScale = m_Size * m_AxisScale;
+        }
+
+        public override Vector2 GetAxisSizeRange()
+        {
+            float parentScale = Mathf.Abs(TrTransform.FromTransform(transform.parent).scale);
+            return new Vector2(m_MinSize_CS, m_MaxSize_CS) * parentScale;
+        }
+
+        protected override Vector3 HomeSnapOffset => Vector3.Scale(base.HomeSnapOffset, m_AxisScale);
+
+        protected override Vector3 GetHomeSnapLocation(Quaternion snapOrient)
+        {
+            Vector3 center = Model.m_MeshBounds.center;
+            return base.GetHomeSnapLocation(snapOrient) + snapOrient *
+                (App.Scene.Pose.scale * m_Size * (center - Vector3.Scale(center, m_AxisScale)));
+        }
+
+        protected override void OnUserBeginTwoHandGrab(Vector3 primaryHand, Vector3 secondaryHand, bool secondaryHandInObject)
+        {
+            base.OnUserBeginTwoHandGrab(primaryHand, secondaryHand, secondaryHandInObject);
+            // Match box guides: two hands inside scale uniformly; an outside hand chooses an axis.
+            Vector3 hands = transform.InverseTransformDirection(primaryHand - secondaryHand).Abs();
+            m_LockedManipulationAxis = secondaryHandInObject ? Axis.Invalid
+                : hands.x > hands.y && hands.x > hands.z ? Axis.X
+                : hands.y > hands.z ? Axis.Y : Axis.Z;
+        }
+
+        protected override void OnUserEndTwoHandGrab()
+        {
+            base.OnUserEndTwoHandGrab();
+            m_LockedManipulationAxis = null;
+        }
+
+        public override Axis GetScaleAxis(Vector3 handA, Vector3 handB, out Vector3 axisDirection, out float axisExtent)
+        {
+            Axis axis = m_LockedManipulationAxis ?? Axis.Invalid;
+            axisDirection = Vector3.zero;
+            axisExtent = 0;
+            if (axis == Axis.Invalid || Model == null || !Model.m_Valid) { return Axis.Invalid; }
+            int index = (int)axis;
+            Vector3 size = m_OwnedGeneratedMesh != null ? m_OwnedGeneratedMesh.bounds.size : Model.m_MeshBounds.size;
+            axisExtent = Mathf.Abs(TrTransform.FromTransform(transform.parent).scale * m_Size) *
+                m_AxisScale[index] * size[index];
+            // A flat face cannot gain thickness through scaling.
+            if (axisExtent <= Mathf.Epsilon) { return Axis.Invalid; }
+            Vector3 direction = Vector3.zero;
+            direction[index] = 1;
+            axisDirection = transform.TransformDirection(direction);
+            return axis;
+        }
+
+        public override void RecordAndApplyScaleToAxis(float deltaScale, Axis axis)
+        {
+            if (axis == Axis.Invalid || !(deltaScale > 0) || float.IsInfinity(deltaScale)) { return; }
+            Vector3 dimensions = CustomDimension;
+            dimensions[(int)axis] *= deltaScale;
+            if (m_RecordMovements)
+            {
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new MoveWidgetCommand(this, LocalTransform, dimensions));
+            }
+            else { CustomDimension = dimensions; }
+        }
 
         internal void TakeGeneratedMeshOwnership(Mesh mesh)
         {
@@ -59,6 +146,7 @@ namespace TiltBrush
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.SetParent(transform.parent, true);
             clone.SetSignedWidgetSize(size);
+            clone.CustomDimension = CustomDimension;
             clone.CloneInitialMaterials(this);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             clone.TrySetCanvasKeywordsFromObject(transform);
