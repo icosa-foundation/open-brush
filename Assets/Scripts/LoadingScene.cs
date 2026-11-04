@@ -17,6 +17,7 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Localization;
 using UnityEngine.XR.Management;
+using UnityEngine.Rendering;
 
 #if UNITY_ANDROID
 using UnityEngine.Android;
@@ -44,6 +45,39 @@ namespace TiltBrush
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
         private bool m_OpenedFolderPicker;
         private XRManagerSettings m_StartupXr;
+        private string m_StartupXrMode = "handoff";
+        private int m_LoggedRenderFrames;
+        private float m_NextStartupReport;
+        private AsyncOperation m_MainLoad;
+
+        public static void LogStartup(string message)
+        {
+            var manager = XRGeneralSettings.Instance?.Manager;
+            var display = manager?.activeLoader?.GetLoadedSubsystem<UnityEngine.XR.XRDisplaySubsystem>();
+            Debug.Log($"OBDS_TRACE t={Time.realtimeSinceStartup:F3} frame={Time.frameCount} " +
+                $"focused={Application.isFocused} loader={manager?.activeLoader?.name ?? "none"} " +
+                $"initialized={manager?.isInitializationComplete} displayRunning={display?.running} " +
+                $"pipeline={GraphicsSettings.currentRenderPipeline?.name ?? "none"} {message}");
+        }
+
+        private void TraceRenderedFrame(ScriptableRenderContext context, Camera[] cameras)
+        {
+            if (m_LoggedRenderFrames++ >= 3) return;
+            LogStartup($"render completed cameras={cameras.Length} scene={SceneManager.GetActiveScene().name}");
+        }
+
+        private void Update()
+        {
+            if (Time.realtimeSinceStartup < m_NextStartupReport) return;
+            m_NextStartupReport = Time.realtimeSinceStartup + 5;
+            LogStartup($"heartbeat mode={m_StartupXrMode} storage={AndroidDirectStorage.StartupReady} " +
+                $"load={m_MainLoad?.progress} done={m_MainLoad?.isDone} rendered={m_LoggedRenderFrames}");
+        }
+
+        private void OnDestroy()
+        {
+            RenderPipelineManager.endFrameRendering -= TraceRenderedFrame;
+        }
 #endif
 #if UNITY_ANDROID
         private bool m_FolderPermissionOverride = false;
@@ -52,6 +86,23 @@ namespace TiltBrush
 
         private IEnumerator Start()
         {
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+            // Select comparison paths per launch with am start --es obdsStartupXr MODE.
+            if (Application.platform == RuntimePlatform.Android)
+            {
+                try
+                {
+                    using var player = new AndroidJavaClass("com.unity3d.player.UnityPlayer");
+                    using var activity = player.GetStatic<AndroidJavaObject>("currentActivity");
+                    using var intent = activity.Call<AndroidJavaObject>("getIntent");
+                    string mode = intent.Call<string>("getStringExtra", "obdsStartupXr");
+                    if (mode == "disabled" || mode == "retained") m_StartupXrMode = mode;
+                }
+                catch (System.Exception error) { Debug.LogWarning($"OBDS_TRACE intent: {error.Message}"); }
+            }
+            RenderPipelineManager.endFrameRendering += TraceRenderedFrame;
+            LogStartup($"loading started mode={m_StartupXrMode}");
+#endif
             m_FakeLoadingRate = 1f / m_MaximumLoadingTime;
             m_CurrentLoadingPosition = 0;
 
@@ -81,8 +132,10 @@ namespace TiltBrush
                 m_Overlay.MessageStatus = m_RequestAndroidFolderPermissions.GetLocalizedStringAsync().Result;
                 yield return AndroidDirectStorage.Initialize(App.kAppFolderName, ShowFolderExplanation);
                 if (AndroidDirectStorage.StartupCanceled) yield break;
+                LogStartup($"storage ready picker={m_OpenedFolderPicker}");
                 m_Overlay.MessageStatus = m_LoadingText.GetLocalizedStringAsync().Result;
-                if (m_OpenedFolderPicker) RestoreStartupXr();
+                if (m_StartupXrMode == "retained" ||
+                    (m_OpenedFolderPicker && m_StartupXrMode != "disabled")) RestoreStartupXr();
             }
 #endif
 
@@ -107,7 +160,9 @@ namespace TiltBrush
 
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("Main");
 #if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
-            if (m_StartupXr != null)
+            m_MainLoad = asyncLoad;
+            LogStartup("Main load requested");
+            if (m_StartupXr != null && m_StartupXrMode != "retained")
             {
                 // Keep rendering the loading scene until Main is ready, but do not carry
                 // its temporary XR session into VrSdk.Awake's render-buffer setup.
@@ -117,10 +172,13 @@ namespace TiltBrush
                     UpdateProgress(0, m_SceneLoadRatio, asyncLoad.progress);
                     yield return null;
                 }
+                LogStartup("Main ready for activation; waiting for end of frame");
                 yield return new WaitForEndOfFrame();
                 Debug.Log("OBDS_STARTUP releasing loading XR before Main activation");
                 if (m_StartupXr.isInitializationComplete) m_StartupXr.DeinitializeLoader();
                 m_StartupXr = null;
+                m_LoggedRenderFrames = 0;
+                LogStartup("loading XR released; allowing Main activation");
                 asyncLoad.allowSceneActivation = true;
             }
 #endif
@@ -131,6 +189,10 @@ namespace TiltBrush
             }
 
             // Skip a frame to allow app to get out of Standard and in to LoadingBrushesAndLighting state.
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+            m_LoggedRenderFrames = 0;
+            LogStartup("Main activation completed");
+#endif
             yield return null;
 
             // We can't check against app state until main scene loading is done.
@@ -169,6 +231,7 @@ namespace TiltBrush
                 Debug.Log("OBDS_STARTUP restoring XR loading surface");
                 if (manager.activeLoader == null) manager.InitializeLoaderSync();
                 if (manager.activeLoader != null) manager.StartSubsystems();
+                LogStartup("loading XR start returned");
             }
             catch (System.Exception error)
             {
