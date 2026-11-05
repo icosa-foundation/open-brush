@@ -474,6 +474,19 @@ namespace TiltBrush
             return true;
         }
 
+        internal bool[] GetUsedPaletteIndices()
+        {
+            var used = new bool[byte.MaxValue + 1];
+            var definitions = new HashSet<VoxelDefinition>();
+            foreach (RuntimeModel model in m_models)
+                if (definitions.Add(model.Definition))
+                    foreach (var chunk in model.Definition.Grid.Chunks.Values)
+                        foreach (byte index in chunk.UsedPalette) used[index] = true;
+            if (FloatingSelection.HasValue && FloatingSelection.Value.Region.Lifted)
+                foreach (byte index in FloatingSelection.Value.Region.Payload.Values) used[index] = true;
+            return used;
+        }
+
         // Palette index zero means no compatible slot is available. Never approximate a
         // requested material or alter an existing slot's material definition.
         public byte GetOrAddPaletteColor(

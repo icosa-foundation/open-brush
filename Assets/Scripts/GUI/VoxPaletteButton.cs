@@ -6,7 +6,7 @@ namespace TiltBrush
 {
     public sealed class VoxPaletteButton : BaseButton
     {
-        internal enum Action { Swatch, Previous, Next, Apply }
+        internal enum Action { Swatch, Previous, Next, Apply, ClearUnused }
         private VoxPalettePopUpWindow m_Popup;
         private Action m_Action;
         private int m_Index;
@@ -54,6 +54,7 @@ namespace TiltBrush
                 case Action.Previous: m_Popup.ChangePage(-1); break;
                 case Action.Next: m_Popup.ChangePage(1); break;
                 case Action.Apply: m_Popup.ApplyColor(); break;
+                case Action.ClearUnused: m_Popup.ClearUnusedColors(); break;
             }
         }
     }

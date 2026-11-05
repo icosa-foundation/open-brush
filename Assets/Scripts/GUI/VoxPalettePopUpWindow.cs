@@ -11,6 +11,7 @@ namespace TiltBrush
         [SerializeField] private VoxPaletteButton m_ButtonPrefab;
         [SerializeField] private ColorPicker m_ColorPicker;
         [SerializeField] private VoxPaletteButton m_Apply;
+        [SerializeField] private VoxPaletteButton m_ClearUnused;
         [SerializeField] private Texture2D m_SwatchTexture, m_PreviousTexture, m_NextTexture;
         [SerializeField] private Vector3 m_GridOrigin = new Vector3(-1.38f, .6f, -.06f);
         [SerializeField] private float m_SwatchSpacing = .15f;
@@ -36,6 +37,7 @@ namespace TiltBrush
             VoxPaletteButton.Action.Previous => ValidTarget && m_Page > 0,
             VoxPaletteButton.Action.Next => ValidTarget && m_Page < PageCount - 1,
             VoxPaletteButton.Action.Apply => CanEdit && !m_Draft.Equals(m_Document.Palette[m_Selected - 1]),
+            VoxPaletteButton.Action.ClearUnused => CanEdit,
             _ => ValidTarget,
         };
 
@@ -48,6 +50,7 @@ namespace TiltBrush
             m_Previous = CreateButton(new Vector3(-1.15f, -.72f, -.06f), VoxPaletteButton.Action.Previous, m_PreviousTexture, "Previous palette page");
             m_Next = CreateButton(new Vector3(-.55f, -.72f, -.06f), VoxPaletteButton.Action.Next, m_NextTexture, "Next palette page");
             m_Apply.Configure(this, VoxPaletteButton.Action.Apply, null, null);
+            m_ClearUnused.Configure(this, VoxPaletteButton.Action.ClearUnused, null, "Clear unused palette colors");
             ColorPicker.ColorPicked += OnColorPicked;
             m_Memory = SketchMemoryScript.m_Instance;
             m_Memory.OperationStackChanged += OnHistoryChanged;
@@ -111,6 +114,16 @@ namespace TiltBrush
             SelectColor(m_Selected);
         }
 
+        internal void ClearUnusedColors()
+        {
+            if (!CanEdit) return;
+            BaseCommand embedding = m_Widget.IsExternalVox ? new EmbedVoxModelCommand(m_Widget, m_Document) : null;
+            var command = new ClearUnusedVoxPaletteCommand(m_Widget, m_Document, embedding);
+            if (!command.HasChanges) return;
+            m_Memory.PerformAndRecordCommand(embedding ?? command);
+            SelectColor(m_Selected);
+        }
+
         private void OnHistoryChanged()
         {
             if (ValidTarget) SelectColor(m_Selected);
@@ -132,6 +145,7 @@ namespace TiltBrush
             m_Previous.SetButtonAvailable(valid && m_Page > 0);
             m_Next.SetButtonAvailable(valid && m_Page < PageCount - 1);
             m_Apply.SetButtonAvailable(CanEdit && !m_Draft.Equals(m_Document.Palette[m_Selected - 1]));
+            m_ClearUnused.SetButtonAvailable(CanEdit);
             m_WindowText.text = valid ? $"VOX palette — Color {m_Selected} — Page {m_Page + 1}/{PageCount}" : "VOX model unavailable";
         }
 
