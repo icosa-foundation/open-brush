@@ -109,9 +109,9 @@ namespace TiltBrush.Tests
             var source = JObject.Parse(@"{
                 'Version':1, 'Generator':{'Type':'rectangle'},
                 'Modifiers':[{'Type':'operator','Parameters':{
-                    'operation':'Bevel','amount':0.1,'amount2':0.02,'active':false,'iterations':3,
+                    'operation':'Bevel','amount':0.1,'amount2':0.02,'stringParameter':'#33CC77','active':false,'iterations':3,
                     'randomizeAmount':true,'randomizeAmount2':false,
-                    'filter':'NSided','filterParameter':4,'invertFilter':true}}],
+                    'filter':'NSided','filterParameter':4.5,'filterParameterInt':3,'invertFilter':true}}],
                 'PostProcessing':{'FastConicalize':false,'CanonicalizeIterations':2,
                     'PlanarizeIterations':3,'FaceInset':0.01,'AutoSmoothAngle':45}}");
             var recipe = new GeometryRecipeData(source);
@@ -129,7 +129,9 @@ namespace TiltBrush.Tests
             Assert.AreEqual(true, settings["randomizeAmount"]);
             Assert.AreEqual(false, settings["randomizeAmount2"]);
             Assert.AreEqual("NSided", settings["filter"]);
-            Assert.AreEqual(4f, settings["filterParameter"]);
+            Assert.AreEqual("#33CC77", settings["stringParameter"]);
+            Assert.AreEqual(4.5f, settings["filterParameter"]);
+            Assert.AreEqual(3, settings["filterParameterInt"]);
             Assert.AreEqual(true, settings["invertFilter"]);
             Assert.AreEqual(false, postProcessing["FastConicalize"]);
             Assert.AreEqual(2, postProcessing["CanonicalizeIterations"]);

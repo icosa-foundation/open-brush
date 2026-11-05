@@ -83,8 +83,8 @@ namespace TiltBrush.DocumentImport
 
         private static readonly Dictionary<string, Dictionary<string, ValueKind>> s_Modifiers = new Dictionary<string, Dictionary<string, ValueKind>>
         {
-            ["operator"] = Spec("amount amount2 filterParameter", "iterations",
-                "active randomizeAmount randomizeAmount2 invertFilter", "operation filter"),
+            ["operator"] = Spec("amount amount2 filterParameter", "iterations filterParameterInt",
+                "active randomizeAmount randomizeAmount2 invertFilter", "operation filter stringParameter"),
             ["transform"] = Spec(vector3: "translation scale", quaternion: "rotation"),
             ["faceRemove"] = Spec("angle", boolean: "invert", vector3: "direction"),
             ["bend"] = Spec("angle", text: "axis", vector3: "referenceCenter referenceSize"),
