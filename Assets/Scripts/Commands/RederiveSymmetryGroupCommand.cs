@@ -158,10 +158,14 @@ namespace TiltBrush
                 TrTransform xf = transforms[to] * transforms[from].inverse;
                 if (!xf.IsFinite()) { return false; }
 
+                // Match the drawing path's brush-local X correction for reflected poses.
+                var handednessFix = xf.scale < 0
+                    ? new Plane(Vector3.right, 0).ToTrTransform()
+                    : TrTransform.identity;
                 points = (PointerManager.ControlPoint[])source.m_ControlPoints.Clone();
                 for (int i = 0; i < points.Length; ++i)
                 {
-                    var pose = xf * TrTransform.TR(points[i].m_Pos, points[i].m_Orient);
+                    var pose = xf * TrTransform.TR(points[i].m_Pos, points[i].m_Orient) * handednessFix;
                     points[i].m_Pos = pose.translation;
                     points[i].m_Orient = pose.rotation;
                 }
