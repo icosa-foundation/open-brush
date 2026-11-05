@@ -49,7 +49,10 @@ namespace TiltBrush
 
             public AudioSource m_SoundClipAudioSource;
 
-            public bool Initialized => m_SoundClipInitialized;
+            public bool Initialized => m_SoundClipInitialized && m_SoundClipAudioSource != null &&
+                m_SoundClipAudioSource.clip != null;
+            public string Error { get; private set; }
+            public bool IsLoading => m_SoundClip != null && !Initialized && Error == null;
 
             /// Clips do not start playing immediately; this event is triggered when the clip is ready.
             /// However, as several controllers may point at the same clip, if a controller is made to
@@ -194,6 +197,7 @@ namespace TiltBrush
                 m_SoundClip = other.m_SoundClip;
                 m_SoundClipAudioSource = other.m_SoundClipAudioSource;
                 m_SoundClipInitialized = other.m_SoundClipInitialized;
+                Error = other.Error;
                 m_Playing = other.Playing;
                 m_Volume = other.Volume;
                 m_Loop = other.Loop;
@@ -215,9 +219,17 @@ namespace TiltBrush
                 }
             }
 
+            internal void ReportError(string error)
+            {
+                if (m_SoundClip == null || Error != null) return;
+                Error = error;
+                Debug.LogWarning($"[OB_SOUND_PLAYBACK_20261105] {error}");
+                OutputWindowScript.Error("Sound playback failed", error);
+            }
+
             public void OnInitialization()
             {
-                if (m_SoundClip == null) return;
+                if (m_SoundClip == null || Error != null) return;
                 if (!Initialized)
                 {
                     m_SoundClipInitialized = true;
@@ -339,102 +351,87 @@ namespace TiltBrush
             {
                 _ = uwr.SendWebRequest();
 
-                try
-                {
-                    while (!uwr.isDone) await Task.Delay(5);
-
-                    if (uwr.isNetworkError || uwr.isHttpError) Debug.Log($"{uwr.error}");
-                    else
-                    {
-                        clip = DownloadHandlerAudioClip.GetContent(uwr);
-                    }
-                }
-                catch (Exception err)
-                {
-                    Debug.Log($"{err.Message}, {err.StackTrace}");
-                }
+                while (!uwr.isDone) await Task.Delay(5);
+                if (uwr.result != UnityWebRequest.Result.Success)
+                    throw new InvalidOperationException(uwr.error ?? "Audio decoding failed.");
+                clip = DownloadHandlerAudioClip.GetContent(uwr);
             }
             return clip;
         }
 
 
+        private string GetLoadError(Task<AudioClip> task)
+        {
+            string reason = task.IsCanceled ? "the load operation was canceled" :
+                task.IsFaulted ? task.Exception.GetBaseException().Message :
+                task.Result == null ? "the decoder returned no audio" : null;
+            return reason == null ? null : $"Failed to load audio clip '{AbsolutePath}': {reason}";
+        }
+
         private IEnumerator<Null> PrepareAudioPlayer(SoundClipController controller)
         {
-            Error = null;
-            if (!m_Controllers.Contains(controller) || controller.m_SoundClipAudioSource == null)
+            if (!m_Controllers.Contains(controller)) yield break;
+            if (controller.m_SoundClipAudioSource == null)
             {
+                controller.ReportError("Sound widget has no audio source.");
                 yield break;
             }
             if (string.IsNullOrEmpty(AbsolutePath))
             {
+                controller.ReportError("Sound clip has no file path.");
                 yield break;
             }
             controller.m_SoundClipAudioSource.playOnAwake = false;
             var audioClipTask = LoadClip(AbsolutePath);
-            while (!audioClipTask.IsCompleted)
-            {
-                yield return null;
-            }
+            while (!audioClipTask.IsCompleted) yield return null;
+            // Observe task failures even if the widget was deleted during loading.
+            string error = GetLoadError(audioClipTask);
             if (!m_Controllers.Contains(controller) || controller.m_SoundClipAudioSource == null)
             {
-                if (audioClipTask.Status == TaskStatus.RanToCompletion)
-                {
-                    AudioClip abandonedClip = audioClipTask.Result;
-                    if (abandonedClip != null)
-                    {
-                        UnityEngine.Object.Destroy(abandonedClip);
-                    }
-                }
+                if (error == null) UnityEngine.Object.Destroy(audioClipTask.Result);
                 yield break;
             }
-            if (audioClipTask.IsCanceled || audioClipTask.IsFaulted)
+            if (error != null)
             {
-                string reason = audioClipTask.Exception?.GetBaseException().Message ??
-                    "the load operation was canceled";
-                Error = $"Failed to load audio clip '{AbsolutePath}': {reason}";
+                // Playback failures belong to this instance, never the catalog source.
+                controller.ReportError(error);
                 yield break;
             }
 
-            AudioClip audioClip = audioClipTask.Result;
-            if (audioClip == null)
-            {
-                Error = $"Failed to load audio clip '{AbsolutePath}'.";
-                yield break;
-            }
-
-            controller.m_SoundClipAudioSource.clip = audioClip;
-
+            controller.m_SoundClipAudioSource.clip = audioClipTask.Result;
             Width = 128;
             Height = 128;
             Aspect = 1;
-
             InitializeController(controller);
-        }
-
-        private void OnError(GvrAudioSource player, string error)
-        {
-            Error = error;
         }
 
         public IEnumerator<Null> Initialize()
         {
+            Error = null;
+            IsInitialized = false;
             Width = 128;
             Height = 128;
             Aspect = 1;
 
             var audioClipTask = LoadClip(AbsolutePath);
-            while (!audioClipTask.IsCompleted)
-            {
-                yield return null;
-            }
+            while (!audioClipTask.IsCompleted) yield return null;
+            Error = GetLoadError(audioClipTask);
+            if (Error != null) yield break;
 
             var clip = audioClipTask.Result;
-            if (clip != null)
+            try
             {
                 Thumbnail = GetWaveform(0.8f, Color.white, clip);
+                IsInitialized = true;
+            }
+            catch (Exception error)
+            {
+                Error = $"Failed to create sound thumbnail for '{AbsolutePath}': {error.Message}";
+            }
+            finally
+            {
                 UnityEngine.Object.Destroy(clip);
             }
-            IsInitialized = true;
         }
 
         public void Dispose()
