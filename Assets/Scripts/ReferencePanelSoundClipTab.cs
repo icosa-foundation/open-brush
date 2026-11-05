@@ -69,6 +69,8 @@ namespace TiltBrush
         private Material m_PreviewMaterial;
         private bool m_TabActive;
 
+        // Track authored edits at the UI boundary. Controller setters also serve loading,
+        // duplication and undo, which must not create additional unsaved changes.
         [System.Reflection.Obfuscation(Exclude = true)]
         public bool SelectedSoundClipIsPlaying
         {
@@ -79,7 +81,10 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
-                    SelectedSoundClip.Playing = !SelectedSoundClip.Playing;
+                    bool previous = SelectedSoundClip.Playing;
+                    SelectedSoundClip.Playing = value;
+                    if (SelectedSoundClip.Playing != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
@@ -92,7 +97,10 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
+                    float previous = SelectedSoundClip.Volume;
                     SelectedSoundClip.Volume = value;
+                    if (SelectedSoundClip.Volume != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
@@ -102,7 +110,10 @@ namespace TiltBrush
             SoundClip.SoundClipController soundClip = SelectedSoundClip;
             if (soundClip != null)
             {
+                var previous = soundClip.Loop;
                 soundClip.Loop = btn.ToggleState;
+                if (soundClip.Loop != previous)
+                    SketchMemoryScript.m_Instance.MarkUnrecordedChange();
             }
         }
 
@@ -111,7 +122,10 @@ namespace TiltBrush
             SoundClip.SoundClipController soundClip = SelectedSoundClip;
             if (soundClip != null)
             {
+                var previous = soundClip.SpatialBlend;
                 soundClip.SpatialBlend = btn.ToggleState ? 1f : 0f;
+                if (soundClip.SpatialBlend != previous)
+                    SketchMemoryScript.m_Instance.MarkUnrecordedChange();
             }
         }
 
@@ -122,7 +136,10 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
+                    float previous = SelectedSoundClip.MinDistance;
                     SelectedSoundClip.MinDistance = value;
+                    if (SelectedSoundClip.MinDistance != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
@@ -134,7 +151,10 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
+                    float previous = SelectedSoundClip.MaxDistance;
                     SelectedSoundClip.MaxDistance = value;
+                    if (SelectedSoundClip.MaxDistance != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
@@ -300,7 +320,10 @@ namespace TiltBrush
             {
                 return;
             }
-            SelectedSoundClip.Time = Mathf.Clamp(SelectedSoundClip.Time - m_SoundClipSkipTime, 0, SelectedSoundClip.Length);
+            float time = Mathf.Clamp(SelectedSoundClip.Time - m_SoundClipSkipTime, 0, SelectedSoundClip.Length);
+            if (time == SelectedSoundClip.Time) return;
+            SelectedSoundClip.Time = time;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
 
         [System.Reflection.Obfuscation(Exclude = true)]
@@ -310,7 +333,10 @@ namespace TiltBrush
             {
                 return;
             }
-            SelectedSoundClip.Time = Mathf.Clamp(SelectedSoundClip.Time + m_SoundClipSkipTime, 0, SelectedSoundClip.Length);
+            float time = Mathf.Clamp(SelectedSoundClip.Time + m_SoundClipSkipTime, 0, SelectedSoundClip.Length);
+            if (time == SelectedSoundClip.Time) return;
+            SelectedSoundClip.Time = time;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
     }
 } // namespace TiltBrush

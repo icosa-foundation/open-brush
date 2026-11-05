@@ -67,6 +67,8 @@ namespace TiltBrush
         private Material m_PreviewMaterial;
         private bool m_TabActive;
 
+        // Track authored edits at the UI boundary. Controller setters also serve loading,
+        // duplication and undo, which must not create additional unsaved changes.
         [System.Reflection.Obfuscation(Exclude = true)]
         public bool SelectedVideoIsPlaying
         {
@@ -80,7 +82,10 @@ namespace TiltBrush
             {
                 if (SelectedVideo != null)
                 {
-                    SelectedVideo.Playing = !SelectedVideo.Playing;
+                    bool previous = SelectedVideo.Playing;
+                    SelectedVideo.Playing = value;
+                    if (SelectedVideo.Playing != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
@@ -98,14 +103,21 @@ namespace TiltBrush
             {
                 if (SelectedVideo != null)
                 {
+                    float previous = SelectedVideo.Volume;
                     SelectedVideo.Volume = value;
+                    if (SelectedVideo.Volume != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
 
         public void HandleLoopToggle(ActionToggleButton button)
         {
-            if (SelectedVideo != null) SelectedVideo.Loop = button.ToggleState;
+            if (SelectedVideo != null && SelectedVideo.Loop != button.ToggleState)
+            {
+                SelectedVideo.Loop = button.ToggleState;
+                SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+            }
         }
 
         public override IReferenceItemCatalog Catalog
@@ -285,7 +297,10 @@ namespace TiltBrush
             {
                 return;
             }
-            SelectedVideo.Time = Mathf.Clamp(SelectedVideo.Time - m_VideoSkipTime, 0, SelectedVideo.Length);
+            float time = Mathf.Clamp(SelectedVideo.Time - m_VideoSkipTime, 0, SelectedVideo.Length);
+            if (time == SelectedVideo.Time) return;
+            SelectedVideo.Time = time;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
 
         [System.Reflection.Obfuscation(Exclude = true)]
@@ -295,7 +310,10 @@ namespace TiltBrush
             {
                 return;
             }
-            SelectedVideo.Time = Mathf.Clamp(SelectedVideo.Time + m_VideoSkipTime, 0, SelectedVideo.Length);
+            float time = Mathf.Clamp(SelectedVideo.Time + m_VideoSkipTime, 0, SelectedVideo.Length);
+            if (time == SelectedVideo.Time) return;
+            SelectedVideo.Time = time;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
     }
 } // namespace TiltBrush

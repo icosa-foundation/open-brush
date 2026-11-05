@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
+
 namespace TiltBrush
 {
     public class VideoPositionSlider : BaseSlider
@@ -31,7 +33,11 @@ namespace TiltBrush
             {
                 return;
             }
-            m_VideoWidget.VideoController.Position = value;
+            // UpdateValue handles interaction; Update below only follows playback visually.
+            float position = Mathf.Clamp01(value);
+            if (position == m_VideoWidget.VideoController.Position) return;
+            m_VideoWidget.VideoController.Position = position;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
 
         protected virtual void Update()
