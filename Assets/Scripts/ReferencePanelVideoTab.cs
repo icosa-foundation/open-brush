@@ -191,11 +191,40 @@ namespace TiltBrush
         public void OnVideoWidgetActivated(VideoWidget widget)
         {
             m_SelectedVideoWidget = widget;
-            m_PreviewMaterial.mainTexture = widget.VideoController?.VideoTexture ?? Texture2D.blackTexture;
-            m_Preview.transform.localScale = new Vector3(widget.Video.Aspect, 1f, 1f);
+            RefreshPlaybackPreview();
             m_Scrubber.VideoWidget = widget;
             m_LoopToggle.ToggleState = widget.VideoController is { Loop: true };
             RefreshVideoControlsVisibility();
+        }
+
+        private void OnDestroy()
+        {
+            if (App.Switchboard != null)
+                App.Switchboard.VideoWidgetActivated -= OnVideoWidgetActivated;
+        }
+
+        private void RefreshPlaybackPreview()
+        {
+            var controller = SelectedVideo;
+            float aspect = 1f;
+            if (controller?.Error != null)
+            {
+                m_PreviewMaterial.mainTexture = m_ErrorTexture;
+                controller.ReportErrorToUser();
+            }
+            else if (controller is { IsLoading: true })
+            {
+                m_PreviewMaterial.mainTexture = m_LoadingTexture;
+            }
+            else
+            {
+                m_PreviewMaterial.mainTexture = controller?.VideoTexture ?? Texture2D.blackTexture;
+                if (controller?.VideoTexture != null && m_SelectedVideoWidget.Video.Aspect > 0f)
+                    aspect = m_SelectedVideoWidget.Video.Aspect;
+            }
+            // Source dimensions may be unknown on failure or during preparation. Keep status
+            // icons square and visible, then restore the video's aspect when a frame is ready.
+            m_Preview.transform.localScale = new Vector3(aspect, 1f, 1f);
         }
 
         public override void UpdateTab()
@@ -203,10 +232,8 @@ namespace TiltBrush
             base.UpdateTab();
             m_LoopToggle.SetButtonAvailable(SelectedVideo != null);
             m_LoopToggle.ToggleState = SelectedVideo is { Loop: true };
-            // Preparation and hide/undo can replace the selected instance's texture asynchronously.
-            m_PreviewMaterial.mainTexture = SelectedVideo?.VideoTexture ?? Texture2D.blackTexture;
-            if (m_SelectedVideoWidget != null)
-                m_Preview.transform.localScale = new Vector3(m_SelectedVideoWidget.Video.Aspect, 1f, 1f);
+            // Preparation and hide/undo can replace the selected controller asynchronously.
+            RefreshPlaybackPreview();
             if (!m_AllIconTexturesAssigned)
             {
                 m_AllIconTexturesAssigned = true;

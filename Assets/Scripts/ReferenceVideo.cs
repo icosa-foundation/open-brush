@@ -33,6 +33,7 @@ namespace TiltBrush
             private IEnumerator<Null> m_Preparation;
             private bool m_VideoInitialized;
             private bool m_Disposed;
+            private bool m_ErrorReported;
             private bool m_Playing;
             private bool m_Loop;
             private float m_Volume;
@@ -41,6 +42,7 @@ namespace TiltBrush
 
             public bool Initialized => m_VideoInitialized;
             public string Error { get; private set; }
+            public bool IsLoading => !m_Disposed && !Initialized && Error == null;
             internal bool IsDisposed => m_Disposed;
             internal long Frame => m_VideoPlayer != null ? m_VideoPlayer.frame : -1;
 
@@ -171,6 +173,15 @@ namespace TiltBrush
                 var callback = m_OnVideoInitialized;
                 m_OnVideoInitialized = null;
                 callback?.Invoke();
+            }
+
+            internal void ReportErrorToUser()
+            {
+                if (m_Disposed || Error == null || m_ErrorReported) return;
+                m_ErrorReported = true;
+                // Only selected scene playback reports here. Catalog thumbnail controllers
+                // retain their errors for catalog feedback without opening the output window.
+                OutputWindowScript.Error("Video playback failed", $"{m_ReferenceVideo.HumanName}: {Error}");
             }
 
             private void OnError(VideoPlayer player, string error)
