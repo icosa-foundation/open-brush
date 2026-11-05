@@ -745,6 +745,8 @@ namespace TiltBrush
         public bool Paused { get; set; }
         public float Time { get; set; }
         public float Volume { get; set; }
+        // Sketches saved before this field existed retain the original looping behavior.
+        public bool Loop { get; set; } = true;
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
         public int LayerId { get; set; }

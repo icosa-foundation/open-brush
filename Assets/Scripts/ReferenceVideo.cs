@@ -34,6 +34,7 @@ namespace TiltBrush
             private bool m_VideoInitialized;
             private bool m_Disposed;
             private bool m_Playing;
+            private bool m_Loop;
             private float m_Volume;
             private float m_Time;
             private float? m_Position;
@@ -58,7 +59,7 @@ namespace TiltBrush
             public Texture VideoTexture => Initialized ? m_VideoPlayer.texture : null;
 
             // These setters also retain requests made during preparation. A future shared-player
-            // optimization would detach here before changing transport/volume, copying the shared
+            // optimization would detach here before changing transport/volume/loop, copying the shared
             // position into a newly prepared player. No automatic sharing/rejoining is needed now.
             public bool Playing
             {
@@ -69,6 +70,17 @@ namespace TiltBrush
                     if (!Initialized || value == m_VideoPlayer.isPlaying) return;
                     if (value) m_VideoPlayer.Play();
                     else m_VideoPlayer.Pause();
+                }
+            }
+
+            public bool Loop
+            {
+                get => m_Loop;
+                set
+                {
+                    m_Loop = value;
+                    // Apply during preparation too, before the first frame can reach the end.
+                    if (m_VideoPlayer != null) m_VideoPlayer.isLooping = value;
                 }
             }
 
@@ -110,16 +122,18 @@ namespace TiltBrush
 
             public float Length => Initialized ? (float)m_VideoPlayer.length : 0f;
 
-            public Controller(ReferenceVideo referenceVideo) : this(referenceVideo, true, 0, 0) { }
+            public Controller(ReferenceVideo referenceVideo) : this(referenceVideo, true, 0, 0, true) { }
 
             public Controller(Controller other) : this(other.m_ReferenceVideo,
-                other.Playing, other.Volume, other.Time)
+                other.Playing, other.Volume, other.Time, other.Loop)
             { }
 
-            private Controller(ReferenceVideo referenceVideo, bool playing, float volume, float time)
+            private Controller(ReferenceVideo referenceVideo, bool playing, float volume, float time,
+                bool loop)
             {
                 m_ReferenceVideo = referenceVideo;
                 m_Playing = playing;
+                m_Loop = loop;
                 m_Volume = volume;
                 m_Time = time;
                 // Cloned videos are uncommon. Independent ownership keeps video consistent with
@@ -178,7 +192,7 @@ namespace TiltBrush
                     m_VideoPlayer.url = m_ReferenceVideo.NetworkVideo
                         ? System.IO.File.ReadAllText(m_ReferenceVideo.AbsolutePath)
                         : m_ReferenceVideo.AbsolutePath;
-                    m_VideoPlayer.isLooping = true;
+                    m_VideoPlayer.isLooping = m_Loop;
                     m_VideoPlayer.renderMode = VideoRenderMode.APIOnly;
                     m_VideoPlayer.skipOnDrop = true;
                     m_VideoPlayer.audioOutputMode = VideoAudioOutputMode.Direct;

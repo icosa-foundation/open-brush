@@ -323,6 +323,7 @@ namespace TiltBrush
                     video.Paused = !widget.VideoController.Playing;
                     video.Time = widget.VideoController.Time;
                     video.Volume = widget.VideoController.Volume;
+                    video.Loop = widget.VideoController.Loop;
                 }
                 return video;
             }

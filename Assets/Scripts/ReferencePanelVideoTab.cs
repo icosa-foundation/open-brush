@@ -57,6 +57,7 @@ namespace TiltBrush
         [SerializeField] private BoxCollider m_VideoControlsCollider;
         [SerializeField] private GameObject m_Preview;
         [SerializeField] private VideoPositionSlider m_Scrubber;
+        [SerializeField] private ActionToggleButton m_LoopToggle;
         [SerializeField] private float m_VideoSkipTime = 10f;
         [SerializeField] private Texture2D m_ErrorTexture;
         [SerializeField] private Texture2D m_LoadingTexture;
@@ -100,6 +101,11 @@ namespace TiltBrush
                     SelectedVideo.Volume = value;
                 }
             }
+        }
+
+        public void HandleLoopToggle(ActionToggleButton button)
+        {
+            if (SelectedVideo != null) SelectedVideo.Loop = button.ToggleState;
         }
 
         public override IReferenceItemCatalog Catalog
@@ -176,12 +182,15 @@ namespace TiltBrush
             m_PreviewMaterial.mainTexture = widget.VideoController?.VideoTexture ?? Texture2D.blackTexture;
             m_Preview.transform.localScale = new Vector3(widget.Video.Aspect, 1f, 1f);
             m_Scrubber.VideoWidget = widget;
+            m_LoopToggle.ToggleState = widget.VideoController is { Loop: true };
             RefreshVideoControlsVisibility();
         }
 
         public override void UpdateTab()
         {
             base.UpdateTab();
+            m_LoopToggle.SetButtonAvailable(SelectedVideo != null);
+            m_LoopToggle.ToggleState = SelectedVideo is { Loop: true };
             // Preparation and hide/undo can replace the selected instance's texture asynchronously.
             m_PreviewMaterial.mainTexture = SelectedVideo?.VideoTexture ?? Texture2D.blackTexture;
             if (m_SelectedVideoWidget != null)

@@ -24,6 +24,7 @@ namespace TiltBrush
         private class VideoState
         {
             public bool Paused;
+            public bool Loop = true;
             public float Volume;
             public float? Time;
         }
@@ -138,6 +139,7 @@ namespace TiltBrush
             if (m_InitialState != null)
             {
                 VideoController.Volume = m_InitialState.Volume;
+                VideoController.Loop = m_InitialState.Loop;
                 if (m_InitialState.Time.HasValue) VideoController.Time = m_InitialState.Time.Value;
                 VideoController.Playing = !m_InitialState.Paused;
                 m_InitialState = null;
@@ -152,6 +154,7 @@ namespace TiltBrush
                 return new VideoState
                 {
                     Paused = !VideoController.Playing,
+                    Loop = VideoController.Loop,
                     Time = VideoController.Time,
                     Volume = VideoController.Volume,
                 };
@@ -159,6 +162,7 @@ namespace TiltBrush
             return m_InitialState == null ? null : new VideoState
             {
                 Paused = m_InitialState.Paused,
+                Loop = m_InitialState.Loop,
                 Time = m_InitialState.Time,
                 Volume = m_InitialState.Volume,
             };
@@ -188,6 +192,7 @@ namespace TiltBrush
             {
                 Volume = tiltVideo.Volume,
                 Paused = tiltVideo.Paused,
+                Loop = tiltVideo.Loop,
             };
             if (tiltVideo.Paused)
             {
