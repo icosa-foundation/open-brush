@@ -38,10 +38,10 @@ namespace TiltBrush
             var roundTrippedDefinition = new EditableModelDefinition(recipe);
             PolyRecipe roundTrippedRecipe = PolyRecipe.FromDef(roundTrippedDefinition);
 
-            Assert.That(recipe.AutoSmoothAngle, Is.EqualTo(91f));
+            Assert.That(recipe.PostProcessing.AutoSmoothAngle, Is.EqualTo(91f));
             Assert.That(poly.Halfedges.Any(edge => edge.IsEdgeSmooth), Is.True);
-            Assert.That(roundTrippedDefinition.AutoSmoothAngle, Is.EqualTo(91f));
-            Assert.That(roundTrippedRecipe.AutoSmoothAngle, Is.EqualTo(91f));
+            Assert.That(roundTrippedDefinition.PostProcessing.AutoSmoothAngle, Is.EqualTo(91f));
+            Assert.That(roundTrippedRecipe.PostProcessing.AutoSmoothAngle, Is.EqualTo(91f));
         }
 
         [Test]
@@ -56,15 +56,15 @@ namespace TiltBrush
             PolyRecipe recipe = PolyRecipe.FromJson(json, null);
             var (poly, _) = PolyBuilder.BuildFromPolyDef(recipe);
 
-            Assert.That(recipe.AutoSmoothAngle, Is.Null);
+            Assert.That(recipe.PostProcessing.AutoSmoothAngle, Is.Zero);
             Assert.That(poly.Halfedges.Any(edge => edge.IsEdgeSmooth), Is.False);
         }
 
         [Test]
         public void ZeroAutoSmoothAngleKeepsEdgesHard()
         {
-            PolyRecipe recipe = PolyRecipe.CreateDefault(null);
-            recipe.AutoSmoothAngle = 0f;
+            PolyRecipe recipe = PolyRecipe.FromJson(@"{ 'GeneratorType': 8, 'GeneratorParameters': { 'type': 10 }, 'Operations': [] }", null);
+            recipe.PostProcessing.AutoSmoothAngle = 0f;
 
             var (poly, _) = PolyBuilder.BuildFromPolyDef(recipe);
 

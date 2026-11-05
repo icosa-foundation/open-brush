@@ -1,3 +1,4 @@
+using System.Linq;
 // Copyright 2026 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -79,6 +80,29 @@ namespace TiltBrush
                 return new PolyRecipePreset(
                     recipe, exposedParameterJson: null,
                     exposedParameters: Array.Empty<ExposedParameterDefinition>());
+            }
+
+            if ((presetJson.Value<int?>("RecipeVersion") ?? 0) == 0)
+            {
+                // Keep source assets untouched. Only the in-memory editing document and
+                // exposed paths move to the writer's current layout.
+                var currentJson = RecipeToJsonObject(recipe);
+                definitions = (JArray)definitions.DeepClone();
+                foreach (var definition in definitions.OfType<JObject>())
+                {
+                    string oldPath = definition.Value<string>("path");
+                    if (string.IsNullOrWhiteSpace(oldPath)) continue;
+                    try
+                    {
+                        var token = SelectNumericToken(presetJson, oldPath);
+                        definition["path"] = PolyRecipeSerialization.UpgradeLegacyPath($"$.{token.Path}");
+                    }
+                    catch (Exception error) when (error is JsonException || error is NotSupportedException)
+                    {
+                        warningLogger?.Invoke($"Cannot upgrade exposed parameter '{oldPath}': {error.Message}");
+                    }
+                }
+                presetJson = currentJson;
             }
 
             var exposedParameters = new List<ExposedParameterDefinition>();

@@ -90,6 +90,39 @@ public class PreviewPolyhedron : MonoBehaviour
         public float filterParamFloat;
         public int filterParamInt;
         public Color paramColor;
+        internal string stringParameter;
+        internal bool hasStringParameter;
+        internal int? iterations;
+
+        public ModifierSettings ToModifierSettings()
+            => new ModifierSettings
+            {
+                Active = !disabled, OpType = opType,
+                Parameter1 = amount, Parameter2 = amount2,
+                Parameter1Randomize = amountRandomize, Parameter2Randomize = amount2Randomize,
+                StringParameter = hasStringParameter ? stringParameter : $"#{ColorUtility.ToHtmlStringRGB(paramColor)}",
+                Iterations = iterations ?? 1,
+                FilterType = filterType, FilterParam = filterParamFloat,
+                UseFilterParamInt = true, FilterParamInt = filterParamInt, FilterFlip = filterNot
+            };
+
+        public static OpDefinition FromModifierSettings(ModifierSettings settings)
+        {
+            Color color = Color.white;
+            if (!string.IsNullOrEmpty(settings.StringParameter) &&
+                ColorUtility.TryParseHtmlString(settings.StringParameter, out var parsed)) color = parsed;
+            return new OpDefinition
+            {
+                opType = settings.OpType, disabled = !settings.Active,
+                amount = settings.Parameter1, amount2 = settings.Parameter2,
+                amountRandomize = settings.Parameter1Randomize, amount2Randomize = settings.Parameter2Randomize,
+                paramColor = color, stringParameter = settings.StringParameter, hasStringParameter = true,
+                iterations = settings.Iterations, filterType = settings.FilterType,
+                filterParamFloat = settings.FilterParam,
+                filterParamInt = settings.UseFilterParamInt ? settings.FilterParamInt : Mathf.FloorToInt(settings.FilterParam),
+                filterNot = settings.FilterFlip
+            };
+        }
         public bool filterNot;
 
         public OpDefinition ClampAmount(OpConfig config, bool safe = false)

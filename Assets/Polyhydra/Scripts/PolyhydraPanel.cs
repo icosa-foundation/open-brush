@@ -1033,11 +1033,12 @@ namespace TiltBrush
 
         public void LoadFromDefinition(EditableModelDefinition emd)
         {
+            var sourceRecipe = PolyRecipe.FromDef(emd, DefaultColorPalette);
             // GeometryData has no generator controls that can reconstruct its source mesh.
             // Preserve the complete recipe before UI synchronization requests a preview rebuild.
             if (emd.GeneratorType == GeneratorTypes.GeometryData)
             {
-                PreviewPolyhedron.m_Instance.m_PolyRecipe = PolyRecipe.FromDef(emd);
+                PreviewPolyhedron.m_Instance.m_PolyRecipe = sourceRecipe.Clone();
             }
 
             void setSlidersFromGeneratorParams(List<string> names)
@@ -1076,7 +1077,7 @@ namespace TiltBrush
             SetColorsToPalette(colorStrings);
             HandleSetColorMethod(emd.ColorMethod);
             SetMaterial(emd.MaterialIndex);
-            PreviewPolyhedron.m_Instance.m_PolyRecipe.AutoSmoothAngle = emd.AutoSmoothAngle;
+            PreviewPolyhedron.m_Instance.m_PolyRecipe.PostProcessing = sourceRecipe.PostProcessing.Copy();
 
             PreviewPolyhedron.m_Instance.m_PolyRecipe.GeneratorType = emd.GeneratorType;
 
@@ -1229,52 +1230,9 @@ namespace TiltBrush
 
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators = new List<PreviewPolyhedron.OpDefinition>();
 
-            foreach (var opDict in emd.Operations)
+            foreach (var op in sourceRecipe.Operators)
             {
-                var newOp = new PreviewPolyhedron.OpDefinition
-                {
-                    opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]),
-                    disabled = Convert.ToBoolean(opDict["disabled"]),
-                    amount = Convert.ToSingle(opDict["param1"]),
-                    amountRandomize = Convert.ToBoolean(opDict.GetValueOrDefault("param1Randomize")),
-                    amount2 = Convert.ToSingle(opDict["param2"]),
-                    amount2Randomize = Convert.ToBoolean(opDict.GetValueOrDefault("param2Randomize")),
-                };
-
-                if (opDict.ContainsKey("paramColor"))
-                {
-                    object colorData = opDict["paramColor"];
-                    if (colorData is Color color)
-                    {
-                        newOp.paramColor = color;
-                    }
-                    else if (colorData is JArray colorArray && colorArray.Count >= 3)
-                    {
-                        newOp.paramColor = new Color(
-                            colorArray[0].Value<float>(),
-                            colorArray[1].Value<float>(),
-                            colorArray[2].Value<float>()
-                        );
-                    }
-                }
-
-                object filterType;
-                object filterParamFloat;
-                object filterParamInt;
-                object filterNot;
-
-                if (opDict.TryGetValue("filterType", out filterType))
-                {
-                    opDict.TryGetValue("filterParamFloat", out filterParamFloat);
-                    opDict.TryGetValue("filterParamInt", out filterParamInt);
-                    opDict.TryGetValue("filterNot", out filterNot);
-                    newOp.filterType = (FilterTypes)Convert.ToInt32(filterType);
-                    newOp.filterParamFloat = Convert.ToSingle(filterParamFloat);
-                    newOp.filterParamInt = Convert.ToInt32(filterParamInt);
-                    newOp.filterNot = Convert.ToBoolean(filterNot);
-                }
-
-                PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Add(newOp);
+                PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators.Add(op);
                 AddOpButton();
             }
 
@@ -1682,6 +1640,8 @@ namespace TiltBrush
             ButtonOpColorPicker.SetColorSwatch(color);
             var op = PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators[CurrentActiveOpIndex];
             op.paramColor = color;
+            op.hasStringParameter = false;
+            op.stringParameter = null;
             PreviewPolyhedron.m_Instance.m_PolyRecipe.Operators[CurrentActiveOpIndex] = op;
             RebuildPreviewAndLinked();
         }

@@ -44,7 +44,7 @@ namespace TiltBrush
 
             Assert.That(preset.Recipe.Operators[0].amount2, Is.EqualTo(0.25f));
             Assert.That(preset.ExposedParameters, Has.Count.EqualTo(1));
-            Assert.That(preset.ExposedParameters[0].Path, Is.EqualTo("$.Operations[0].param2"));
+            Assert.That(preset.ExposedParameters[0].Path, Is.EqualTo("$.Modifiers[0].Parameters.amount2"));
             Assert.That(preset.ExposedParameters[0].Label, Is.EqualTo("Roundness"));
             Assert.That(preset.ExposedParameters[0].Min, Is.EqualTo(0f));
             Assert.That(preset.ExposedParameters[0].Max, Is.EqualTo(1f));
@@ -72,8 +72,10 @@ namespace TiltBrush
                 preset.Recipe, 0, 0.5f, null);
 
             JObject json = preset.ToJsonObject(updated);
+            Assert.That(json.Value<int>("RecipeVersion"), Is.EqualTo(1));
+            Assert.That(json["Operations"], Is.Null);
 
-            Assert.That(json.SelectToken("$.Operations[0].param2").Value<float>(),
+            Assert.That(json.SelectToken("$.Modifiers[0].Parameters.amount2").Value<float>(),
                 Is.EqualTo(0.5f));
             Assert.That(json.SelectToken("$.ExposedParameters[0].label").Value<string>(),
                 Is.EqualTo("Roundness"));

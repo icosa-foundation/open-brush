@@ -819,8 +819,10 @@ namespace TiltBrush
                                        List<Roles> vertexRoles, List<HashSet<string>> faceTags,
                                        Color[] colors, ColorMethods colorMethod, int materialIndex,
                                        GeneratorTypes generatorType, Dictionary<string, object> generatorParameters,
-                                       List<Dictionary<string, object>> operations,
-                                       float? autoSmoothAngle = null, string geometryFile = null)
+                                       List<Dictionary<string, object>> operations = null,
+                                       float? autoSmoothAngle = null, string geometryFile = null,
+                                       int? recipeVersion = null, List<Dictionary<string, object>> modifiers = null,
+                                       GeometryPostProcessingSettings postProcessing = null)
         {
             Vertices = vertices;
             Faces = faces;
@@ -831,9 +833,25 @@ namespace TiltBrush
             ColorMethod = colorMethod;
             MaterialIndex = materialIndex;
             GeneratorType = generatorType;
-            GeneratorParameters = generatorParameters;
-            Operations = operations;
-            AutoSmoothAngle = autoSmoothAngle;
+            RecipeVersion = PolyRecipeSerialization.CurrentVersion;
+            int inputVersion = recipeVersion ?? 0;
+            if (inputVersion == 0)
+            {
+                if (modifiers != null || postProcessing != null)
+                    throw new JsonSerializationException("Current recipe fields require RecipeVersion.");
+                GeneratorParameters = PolyRecipeSerialization.ReadLegacyGenerator(generatorType, generatorParameters);
+                Modifiers = PolyRecipeSerialization.ReadLegacyModifiers(operations);
+                PostProcessing = new GeometryPostProcessingSettings { AutoSmoothAngle = autoSmoothAngle ?? 0f };
+            }
+            else if (inputVersion == PolyRecipeSerialization.CurrentVersion)
+            {
+                if (operations != null || autoSmoothAngle.HasValue)
+                    throw new JsonSerializationException("A current recipe cannot contain legacy modifier fields.");
+                GeneratorParameters = generatorParameters;
+                Modifiers = modifiers ?? new List<Dictionary<string, object>>();
+                PostProcessing = postProcessing?.Copy() ?? new GeometryPostProcessingSettings();
+            }
+            else throw new NotSupportedException($"Unsupported 3D recipe version: {inputVersion}");
             GeometryFile = geometryFile;
         }
 
@@ -850,37 +868,12 @@ namespace TiltBrush
             }
             GeneratorType = recipe.GeneratorType;
             GeneratorParameters = ParametersFromRecipe(recipe);
-            Operations = OpsFromRecipe(recipe);
+            RecipeVersion = PolyRecipeSerialization.CurrentVersion;
+            Modifiers = PolyRecipeSerialization.WriteModifiers(recipe.Operators);
             MaterialIndex = recipe.MaterialIndex;
             ColorMethod = recipe.ColorMethod;
             Colors = (Color[])recipe.Colors?.Clone();
-            AutoSmoothAngle = recipe.AutoSmoothAngle;
-        }
-
-        public static List<Dictionary<string, object>> OpsFromRecipe(PolyRecipe recipe)
-        {
-            var opsDict = new List<Dictionary<string, object>>();
-            if (recipe.Operators != null)
-            {
-                foreach (var op in recipe.Operators.ToList())
-                {
-                    opsDict.Add(new Dictionary<string, object>
-                    {
-                        { "operation", op.opType },
-                        { "param1", op.amount },
-                        { "param1Randomize", op.amountRandomize },
-                        { "param2", op.amount2 },
-                        { "param2Randomize", op.amount2Randomize },
-                        { "paramColor", op.paramColor },
-                        { "disabled", op.disabled },
-                        { "filterType", op.filterType },
-                        { "filterParamFloat", op.filterParamFloat },
-                        { "filterParamInt", op.filterParamInt },
-                        { "filterNot", op.filterNot },
-                    });
-                }
-            }
-            return opsDict;
+            PostProcessing = recipe.PostProcessing?.Copy() ?? new GeometryPostProcessingSettings();
         }
 
         public static Dictionary<string, object> ParametersFromRecipe(PolyRecipe recipe)
@@ -1109,8 +1102,9 @@ namespace TiltBrush
         public List<Roles> VertexRoles { get; internal set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public List<HashSet<string>> FaceTags { get; internal set; }
-        public List<Dictionary<string, object>> Operations { get; }
-        public float? AutoSmoothAngle { get; }
+        public int RecipeVersion { get; }
+        public List<Dictionary<string, object>> Modifiers { get; }
+        public GeometryPostProcessingSettings PostProcessing { get; }
 
     }
 

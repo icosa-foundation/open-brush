@@ -42,7 +42,7 @@ namespace TiltBrush
         public int MaterialIndex;
         public ColorMethods ColorMethod;
         public Color[] Colors;
-        public float? AutoSmoothAngle;
+        public GeometryPostProcessingSettings PostProcessing;
 
         public Material CurrentMaterial => EditableModelManager.m_Instance.m_Materials[MaterialIndex];
 
@@ -54,6 +54,7 @@ namespace TiltBrush
             return new PolyRecipe
             {
                 GeneratorType = GeneratorTypes.Uniform,
+                PostProcessing = new GeometryPostProcessingSettings(),
                 UniformPolyType = UniformTypes.Cube,
                 MaterialIndex = 0,
                 ColorMethod = ColorMethods.ByRole,
@@ -82,6 +83,7 @@ namespace TiltBrush
         {
             var clone = this;
             clone.Colors = (Color[])Colors?.Clone();
+            clone.PostProcessing = PostProcessing?.Copy();
             clone.Operators = (Operators == null) ? null : new List<PreviewPolyhedron.OpDefinition>(Operators);
             clone.Vertices = Vertices == null ? null : new List<Vector3>(Vertices);
             clone.Faces = Faces?.Select(face => new List<int>(face)).ToList();
@@ -260,50 +262,11 @@ namespace TiltBrush
             }
 
             recipe.Operators = new List<PreviewPolyhedron.OpDefinition>();
-            if (emd.Operations != null)
+            if (emd.Modifiers != null)
             {
-                foreach (var opDict in emd.Operations)
-                {
-                    bool disabled = Convert.ToBoolean(opDict.GetValueOrDefault("disabled"));
-                    PolyMesh.Operation opType = (PolyMesh.Operation)Convert.ToInt32(opDict["operation"]);
-                    float amount = Convert.ToSingle(opDict.GetValueOrDefault("param1"));
-                    float amount2 = Convert.ToSingle(opDict.GetValueOrDefault("param2"));
-                    Color paramColor = Color.white;
-                    if (opDict.ContainsKey("paramColor"))
-                    {
-                        var colorData = (opDict["paramColor"] as JArray);
-                        paramColor = new Color(
-                            colorData[0].Value<float>(),
-                            colorData[1].Value<float>(),
-                            colorData[2].Value<float>()
-                        );
-                    }
-
-                    // Filter filterType = PreviewPolyhedron.OpDefinition.MakeFilterFromDict(opDict);
-                    // OpParams parameters = new OpParams(param1, param2, $"#{ColorUtility.ToHtmlStringRGB(paramColor)}", filter);
-                    FilterTypes filterType = (FilterTypes)Convert.ToInt32(opDict["filterType"]);
-                    bool amountRandomize = Convert.ToBoolean(opDict.GetValueOrDefault("param1Randomize"));
-                    bool amount2Randomize = Convert.ToBoolean(opDict.GetValueOrDefault("param2Randomize"));
-                    float filterParamFloat = Convert.ToSingle(opDict.GetValueOrDefault("filterParamFloat"));
-                    int filterParamInt = Convert.ToInt32(opDict.GetValueOrDefault("filterParamInt"));
-                    bool filterNot = Convert.ToBoolean(opDict.GetValueOrDefault("filterNot"));
-
-                    var opDef = new PreviewPolyhedron.OpDefinition
-                    {
-                        opType = opType,
-                        amount = amount,
-                        amountRandomize = amountRandomize,
-                        amount2 = amount2,
-                        amount2Randomize = amount2Randomize,
-                        disabled = disabled,
-                        filterType = filterType,
-                        filterParamFloat = filterParamFloat,
-                        filterParamInt = filterParamInt,
-                        paramColor = paramColor,
-                        filterNot = filterNot,
-                    };
-                    recipe.Operators.Add(opDef);
-                }
+                foreach (var modifier in emd.Modifiers)
+                    recipe.Operators.Add(PreviewPolyhedron.OpDefinition.FromModifierSettings(
+                        PolyRecipeSerialization.ReadModifier(modifier)));
             }
             Color[] colors;
             if (emd.Colors == null || emd.Colors.Length == 0)
@@ -319,7 +282,7 @@ namespace TiltBrush
             recipe.Colors = colors;
             recipe.MaterialIndex = emd.MaterialIndex;
             recipe.ColorMethod = emd.ColorMethod;
-            recipe.AutoSmoothAngle = emd.AutoSmoothAngle;
+            recipe.PostProcessing = emd.PostProcessing.Copy();
             return recipe;
         }
     }
@@ -502,18 +465,12 @@ namespace TiltBrush
 
             if (poly == null) Debug.LogError($"No initial poly generated for: GeneratorType: {p.GeneratorType}");
 
-            if (p.Operators != null)
-            {
-                foreach (var op in p.Operators.ToList())
-                {
-                    if (op.disabled || op.opType == PolyMesh.Operation.Identity) continue;
-                    poly = ApplyOp(poly, op);
-                }
-            }
-            if (p.AutoSmoothAngle > 0f)
-            {
-                poly.AutoSmooth(p.AutoSmoothAngle.Value);
-            }
+            var modifiers = p.Operators?.Where(op => op.opType != PolyMesh.Operation.Identity)
+                .Select(op => op.ToModifierSettings()).ToArray();
+            poly = ModifierPipeline.Apply(poly, modifiers, preserveScalingFactor: true);
+            float scalingFactor = poly.ScalingFactor;
+            poly = ModifierPipeline.ApplyPostProcessing(poly, p.PostProcessing);
+            poly.ScalingFactor = scalingFactor;
             PolyMesh.MeshData meshData = poly.BuildMeshData(
                 generateSubmeshes: false,
                 colors: p.Colors,
@@ -522,51 +479,7 @@ namespace TiltBrush
         }
 
         public static PolyMesh ApplyOp(PolyMesh poly, PreviewPolyhedron.OpDefinition op)
-        {
-            // Store the previous scaling factor to reapply afterwards
-            float previousScalingFactor = poly.ScalingFactor;
-
-            var _random = new System.Random();
-            var filter = Filter.GetFilter(op.filterType, op.filterParamFloat, op.filterParamInt, op.filterNot);
-
-            var opFunc1 = new OpFunc(_ => Mathf.Lerp(0, op.amount, (float)_random.NextDouble()));
-            var opFunc2 = new OpFunc(_ => Mathf.Lerp(0, op.amount2, (float)_random.NextDouble()));
-
-            OpParams opParams = (op.amountRandomize, op.amount2Randomize) switch
-            {
-                (false, false) => new OpParams(
-                    op.amount,
-                    op.amount2,
-                    $"#{ColorUtility.ToHtmlStringRGB(op.paramColor)}",
-                    filter
-                ),
-                (true, false) => new OpParams(
-                    opFunc1,
-                    op.amount2,
-                    $"#{ColorUtility.ToHtmlStringRGB(op.paramColor)}",
-                    filter
-                ),
-                (false, true) => new OpParams(
-                    op.amount,
-                    opFunc2,
-                    $"#{ColorUtility.ToHtmlStringRGB(op.paramColor)}",
-                    filter
-                ),
-                (true, true) => new OpParams(
-                    opFunc1,
-                    opFunc2,
-                    $"#{ColorUtility.ToHtmlStringRGB(op.paramColor)}",
-                    filter
-                ),
-            };
-
-            poly = poly.AppyOperation(op.opType, opParams);
-
-            // Reapply the original scaling factor
-            poly.ScalingFactor = previousScalingFactor;
-
-            return poly;
-        }
+            => ModifierPipeline.Apply(poly, new[] { op.ToModifierSettings() }, preserveScalingFactor: true);
 
     }
 }
