@@ -1,7 +1,6 @@
 // Copyright 2026 The Open Brush Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
 
-using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -102,8 +101,17 @@ namespace TiltBrush
                 Vector3Int shift = m_RegionModel.SourceCellOffset - oldOffset;
                 min += shift;
                 max += shift;
-                if (m_RegionModel.Definition.Grid.Region(min, max).Any())
-                    m_RegionWidget.SelectVoxRegion(m_CurrentDocument._Document, m_RegionModel, min, max);
+                // Tighten once on release, using occupied cells in the selected chunks.
+                bool found = false;
+                Vector3Int filledMin = max, filledMax = min;
+                foreach (var cell in m_RegionModel.Definition.Grid.Region(min, max))
+                {
+                    filledMin = Vector3Int.Min(filledMin, cell.Key);
+                    filledMax = Vector3Int.Max(filledMax, cell.Key);
+                    found = true;
+                }
+                if (found)
+                    m_RegionWidget.SelectVoxRegion(m_CurrentDocument._Document, m_RegionModel, filledMin, filledMax);
             }
             CancelRegionDrag();
         }
