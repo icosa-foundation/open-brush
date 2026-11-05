@@ -1340,7 +1340,11 @@ namespace OpenBrush.Multiplayer
 
         private void RemoveOutgoingLiveStroke(OutgoingLiveStroke stream)
         {
-            m_OutgoingLiveStrokes.Remove(stream.Pointer);
+            if (m_OutgoingLiveStrokes.TryGetValue(stream.Pointer, out OutgoingLiveStroke currentStream) &&
+                ReferenceEquals(currentStream, stream))
+            {
+                m_OutgoingLiveStrokes.Remove(stream.Pointer);
+            }
             m_OutgoingLiveStrokesBySeed.Remove(stream.Seed);
             m_OutgoingLiveStrokesById.Remove(stream.StreamId);
         }
