@@ -221,15 +221,26 @@ namespace TiltBrush
                 m_PreviewMaterial.mainTexture = previewTex != null ? previewTex : widget.SoundClip.Thumbnail;
             }
             m_Scrubber.SoundClipWidget = widget;
-            m_LoopToggle.ToggleState = widget.SoundClipController is { Loop: true };
-            m_SpatialBlendToggle.ToggleState = widget.SoundClipController is { SpatialBlend: > 0f };
+            RefreshPlaybackToggles();
 
             RefreshSoundClipControlsVisibility();
+        }
+
+        private void RefreshPlaybackToggles()
+        {
+            var controller = SelectedSoundClip;
+            m_LoopToggle.SetButtonAvailable(controller != null);
+            m_SpatialBlendToggle.SetButtonAvailable(controller != null);
+            bool loop = controller is { Loop: true };
+            bool spatial = controller is { SpatialBlend: > 0f };
+            if (m_LoopToggle.ToggleState != loop) m_LoopToggle.ToggleState = loop;
+            if (m_SpatialBlendToggle.ToggleState != spatial) m_SpatialBlendToggle.ToggleState = spatial;
         }
 
         public override void UpdateTab()
         {
             base.UpdateTab();
+            RefreshPlaybackToggles();
             if (!m_AllIconTexturesAssigned)
             {
                 m_AllIconTexturesAssigned = true;

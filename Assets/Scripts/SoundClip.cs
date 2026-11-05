@@ -37,6 +37,12 @@ namespace TiltBrush
             private Action m_OnSoundClipInitialized;
             private SoundClip m_SoundClip;
             private bool m_SoundClipInitialized;
+            private bool m_Playing = true;
+            private float m_Volume = 1f;
+            private bool m_Loop = true;
+            private float m_SpatialBlend;
+            private float m_Time;
+            private float? m_Position;
             private float m_MinDistance = 1f;
             private float m_MaxDistance = 500f;
             private float m_DistanceScale = 1f;
@@ -63,88 +69,76 @@ namespace TiltBrush
                 remove { m_OnSoundClipInitialized -= value; }
             }
 
+            // Retain edits during loading. These setters also restore saved/hidden widgets;
+            // authored change tracking belongs to the panel, not to initialization here.
             public bool Playing
             {
-                get => m_SoundClipInitialized ? m_SoundClipAudioSource.isPlaying : false;
+                get => Initialized ? m_SoundClipAudioSource.isPlaying : m_Playing;
                 set
                 {
-                    if (m_SoundClipInitialized)
-                    {
-                        if (value == m_SoundClipAudioSource.isPlaying)
-                        {
-                            return;
-                        }
-                        if (value)
-                        {
-                            m_SoundClipAudioSource.Play();
-                        }
-                        else
-                        {
-                            m_SoundClipAudioSource.Pause();
-                        }
-                    }
+                    m_Playing = value;
+                    if (!Initialized || value == m_SoundClipAudioSource.isPlaying) return;
+                    if (value) m_SoundClipAudioSource.Play();
+                    else m_SoundClipAudioSource.Pause();
                 }
             }
 
             public float Volume
             {
-                get => (!m_SoundClipInitialized || m_SoundClipAudioSource.mute)
-                    ? 0f : m_SoundClipAudioSource.volume;
+                get => Initialized
+                    ? (m_SoundClipAudioSource.mute ? 0f : m_SoundClipAudioSource.volume)
+                    : m_Volume;
                 set
                 {
-                    if (m_SoundClipInitialized)
-                    {
-                        if (value <= 0.005f)
-                        {
-                            m_SoundClipAudioSource.volume = 0;
-                            m_SoundClipAudioSource.mute = true;
-                        }
-                        else
-                        {
-                            m_SoundClipAudioSource.mute = false;
-                            m_SoundClipAudioSource.volume = value;
-                        }
-                    }
+                    m_Volume = value <= 0.005f ? 0f : Mathf.Clamp01(value);
+                    if (!Initialized) return;
+                    m_SoundClipAudioSource.volume = m_Volume;
+                    m_SoundClipAudioSource.mute = m_Volume == 0f;
                 }
             }
 
             public float Position
             {
-                get => (m_SoundClipInitialized && m_SoundClipAudioSource.clip != null) ? (float)(m_SoundClipAudioSource.time / m_SoundClipAudioSource.clip.length) : 0f;
+                get => Initialized && Length > 0f ? Time / Length : m_Position ?? 0f;
                 set
                 {
-                    if (m_SoundClipInitialized)
-                    {
-                        m_SoundClipAudioSource.time = m_SoundClipAudioSource.clip.length * Mathf.Clamp01(value);
-                    }
+                    m_Position = Mathf.Clamp01(value);
+                    if (Initialized) Time = Length * m_Position.Value;
                 }
             }
 
             public float Time
             {
-                get => m_SoundClipInitialized ? (float)m_SoundClipAudioSource.time : 0f;
+                get => Initialized ? m_SoundClipAudioSource.time : m_Time;
                 set
                 {
-                    if (m_SoundClipInitialized)
-                    {
-                        m_SoundClipAudioSource.time = Mathf.Clamp(value, 0, (float)m_SoundClipAudioSource.clip.length);
-                    }
+                    m_Time = Mathf.Max(0f, value);
+                    m_Position = null;
+                    if (Initialized) m_SoundClipAudioSource.time = Mathf.Clamp(m_Time, 0f, Length);
                 }
             }
 
-            public float Length => m_SoundClipInitialized ? (float)m_SoundClipAudioSource.clip.length : 0f;
+            public float Length => Initialized ? m_SoundClipAudioSource.clip.length : 0f;
 
             public bool Loop
             {
-                get => m_SoundClipInitialized && m_SoundClipAudioSource.loop;
-                set { if (m_SoundClipInitialized) m_SoundClipAudioSource.loop = value; }
+                get => Initialized ? m_SoundClipAudioSource.loop : m_Loop;
+                set
+                {
+                    m_Loop = value;
+                    if (Initialized) m_SoundClipAudioSource.loop = value;
+                }
             }
 
             /// 0 = 2D (flat), 1 = fully 3D spatial
             public float SpatialBlend
             {
-                get => m_SoundClipInitialized ? m_SoundClipAudioSource.spatialBlend : 0f;
-                set { if (m_SoundClipInitialized) m_SoundClipAudioSource.spatialBlend = value; }
+                get => Initialized ? m_SoundClipAudioSource.spatialBlend : m_SpatialBlend;
+                set
+                {
+                    m_SpatialBlend = Mathf.Clamp01(value);
+                    if (Initialized) m_SoundClipAudioSource.spatialBlend = m_SpatialBlend;
+                }
             }
 
             /// Authored min distance in scene/canvas space.
@@ -188,6 +182,10 @@ namespace TiltBrush
                 if (m_SoundClipAudioSource != null)
                 {
                     m_SoundClipInitialized = m_SoundClipAudioSource.clip != null;
+                    m_Playing = !Initialized || m_SoundClipAudioSource.isPlaying;
+                    m_Volume = m_SoundClipAudioSource.mute ? 0f : m_SoundClipAudioSource.volume;
+                    m_Loop = m_SoundClipAudioSource.loop;
+                    m_SpatialBlend = m_SoundClipAudioSource.spatialBlend;
                 }
             }
 
@@ -196,6 +194,15 @@ namespace TiltBrush
                 m_SoundClip = other.m_SoundClip;
                 m_SoundClipAudioSource = other.m_SoundClipAudioSource;
                 m_SoundClipInitialized = other.m_SoundClipInitialized;
+                m_Playing = other.Playing;
+                m_Volume = other.Volume;
+                m_Loop = other.Loop;
+                m_SpatialBlend = other.SpatialBlend;
+                m_Time = other.Time;
+                m_Position = other.m_Position;
+                m_MinDistance = other.MinDistance;
+                m_MaxDistance = other.MaxDistance;
+                m_DistanceScale = other.m_DistanceScale;
                 m_SoundClip.m_Controllers.Add(this);
             }
 
@@ -210,7 +217,18 @@ namespace TiltBrush
 
             public void OnInitialization()
             {
-                m_SoundClipInitialized = true;
+                if (m_SoundClip == null) return;
+                if (!Initialized)
+                {
+                    m_SoundClipInitialized = true;
+                    // Configure before Play: paused/muted restores must never briefly emit audio.
+                    Volume = m_Volume;
+                    Loop = m_Loop;
+                    SpatialBlend = m_SpatialBlend;
+                    ApplyDistanceScale(m_DistanceScale);
+                    Time = m_Position.HasValue ? Length * m_Position.Value : m_Time;
+                    Playing = m_Playing;
+                }
                 m_OnSoundClipInitialized?.Invoke();
                 m_OnSoundClipInitialized = null;
             }
@@ -264,10 +282,13 @@ namespace TiltBrush
         /// to Dispose a controller after it is finished with. If disposal does not happen, then the
         /// clip decoder will keep decoding, using up memory and bandwidth. If the audio is turned on
         /// then the audio will continue. DISPOSE OF YOUR CONTROLLERS.
-        public SoundClipController CreateController(SoundClipWidget widget)
+        public SoundClipController CreateController(SoundClipWidget widget,
+            Action<SoundClipController> configure = null)
         {
             SoundClipController soundClipController = new SoundClipController(this, widget);
             m_Controllers.Add(soundClipController);
+            // A cached/fast load may finish before StartCoroutine returns.
+            configure?.Invoke(soundClipController);
             SoundClipCatalog.Instance.StartCoroutine(PrepareAudioPlayer(soundClipController));
             return soundClipController;
         }
@@ -382,14 +403,10 @@ namespace TiltBrush
             }
 
             controller.m_SoundClipAudioSource.clip = audioClip;
-            controller.m_SoundClipAudioSource.loop = true;
 
             Width = 128;
             Height = 128;
             Aspect = 1;
-
-            controller.m_SoundClipAudioSource.mute = false;
-            controller.m_SoundClipAudioSource.Play();
 
             InitializeController(controller);
         }
