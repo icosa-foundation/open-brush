@@ -27,7 +27,7 @@ namespace TiltBrush
             m_ToggleButton = action == Action.Swatch;
             if (m_Material != null && action != Action.Apply) m_Material.SetColor("_Tint", Color.white);
             SetButtonActivated(false);
-            SetButtonTexture(texture);
+            if (texture != null) SetButtonTexture(texture);
             if (description != null) SetDescriptionText(description);
         }
 

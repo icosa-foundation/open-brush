@@ -10,12 +10,13 @@ namespace TiltBrush
         private const int PageSize = 64, Columns = 8, PageCount = 4;
         [SerializeField] private VoxPaletteButton m_ButtonPrefab;
         [SerializeField] private ColorPicker m_ColorPicker;
+        [SerializeField] private VoxPaletteButton m_Apply;
         [SerializeField] private Texture2D m_SwatchTexture, m_PreviousTexture, m_NextTexture;
         [SerializeField] private Vector3 m_GridOrigin = new Vector3(-1.38f, .6f, -.06f);
         [SerializeField] private float m_SwatchSpacing = .15f;
         [SerializeField] private float m_SwatchSize = .13f;
         private readonly VoxPaletteButton[] m_Swatches = new VoxPaletteButton[PageSize];
-        private VoxPaletteButton m_Previous, m_Next, m_Apply;
+        private VoxPaletteButton m_Previous, m_Next;
         private ModelWidget m_Widget;
         private Model m_Source;
         private RuntimeVoxDocument m_Document;
@@ -46,8 +47,7 @@ namespace TiltBrush
                     -(i / Columns) * m_SwatchSpacing, 0), VoxPaletteButton.Action.Swatch, m_SwatchTexture, "Palette color");
             m_Previous = CreateButton(new Vector3(-1.15f, -.72f, -.06f), VoxPaletteButton.Action.Previous, m_PreviousTexture, "Previous palette page");
             m_Next = CreateButton(new Vector3(-.55f, -.72f, -.06f), VoxPaletteButton.Action.Next, m_NextTexture, "Next palette page");
-            m_Apply = (VoxPaletteButton)m_AutoPlaceButtons[0].m_ButtonScript;
-            m_Apply.Configure(this, VoxPaletteButton.Action.Apply, m_AutoPlaceButtons[0].m_ButtonTexture, null);
+            m_Apply.Configure(this, VoxPaletteButton.Action.Apply, null, null);
             ColorPicker.ColorPicked += OnColorPicked;
             m_Memory = SketchMemoryScript.m_Instance;
             m_Memory.OperationStackChanged += OnHistoryChanged;
