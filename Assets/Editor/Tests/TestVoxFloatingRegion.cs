@@ -15,12 +15,121 @@ namespace TiltBrush
             model.AddOrUpdateVoxel(Vector3Int.zero, 1);
             model.AddOrUpdateVoxel(Vector3Int.right, 2);
             var region = new VoxFloatingRegion(model, Vector3Int.zero, Vector3Int.zero).Lift();
-            VoxCellChange.Apply(model, VoxCellChange.Remove(region), true);
+            new VoxRegionLift(document, region).Redo();
             return region;
         }
 
         private static VoxFloatingRegion Move(VoxFloatingRegion region, int distance) =>
             region.TransformFrom(region, Vector3Int.zero, Quaternion.identity, Vector3Int.right * distance);
+
+        private static VoxFloatingRegion SharedRegion(out RuntimeVoxDocument document,
+            out RuntimeVoxDocument.RuntimeModel other)
+        {
+            document = new RuntimeVoxDocument();
+            var model = document.CreateModel("shared", Vector3Int.one * 32);
+            model.SourceCellOffset = new Vector3Int(3, 2, 1);
+            model.TransformOffset = new Vector3(10, 20, 30);
+            model.AddOrUpdateVoxel(model.SourceCellOffset, 1);
+            model.AddOrUpdateVoxel(model.SourceCellOffset + Vector3Int.right, 2);
+            other = document.CreateModel("other placement", model.Size);
+            other.Definition = model.Definition;
+            return new VoxFloatingRegion(model, model.SourceCellOffset, model.SourceCellOffset).Lift();
+        }
+
+        [Test]
+        public void SharedLiftUndoRestoresLinkAndRedoReusesDetachedDefinition()
+        {
+            var region = SharedRegion(out var document, out var other);
+            var model = region.Model;
+            var original = model.Definition;
+            var cell = model.SourceCellOffset;
+            var lift = new VoxRegionLift(document, region);
+            Assert.AreSame(original, model.Definition, "Constructing a lift must not detach the placement");
+            lift.Redo();
+            var detached = model.Definition;
+            Assert.AreNotSame(original, detached);
+            Assert.IsFalse(model.Voxels.ContainsKey(cell));
+            Assert.AreEqual(1, other.Voxels[cell]);
+            lift.Undo();
+            Assert.AreSame(other.Definition, model.Definition);
+            other.SetVoxelColor(cell, 7);
+            Assert.AreEqual(7, model.Voxels[cell], "Edits must propagate again after undo");
+            other.SetVoxelColor(cell, 1);
+            lift.Redo();
+            Assert.AreSame(detached, model.Definition, "Redo must reuse the existing detached grid");
+            Assert.IsFalse(model.Voxels.ContainsKey(cell));
+            Assert.AreSame(original, other.Definition);
+            lift.Undo();
+            Assert.AreSame(original, model.Definition);
+        }
+
+        [Test]
+        public void RejectedSharedGrabRestoresDefinitionAndPlacementWithoutAnUndoEntry()
+        {
+            var region = SharedRegion(out var document, out var other);
+            var model = region.Model;
+            var offset = model.TransformOffset;
+            var cellOffset = model.SourceCellOffset;
+            var lift = new VoxRegionLift(document, region);
+            lift.Redo();
+            Assert.IsFalse(region.CanTransformFrom(region, Vector3Int.zero, Quaternion.identity, Vector3Int.right * 300));
+            lift.Undo(); // The same rollback used when the unrecorded grab is cancelled.
+            Assert.AreSame(other.Definition, model.Definition);
+            Assert.AreEqual(offset, model.TransformOffset);
+            Assert.AreEqual(cellOffset, model.SourceCellOffset);
+            Assert.AreEqual(1, model.Voxels[cellOffset]);
+        }
+
+        [Test]
+        public void SharedLiftRestoresBothCoordinateFramesAcrossRebasingAndRedo()
+        {
+            var region = SharedRegion(out var document, out var other);
+            var model = region.Model;
+            var original = model.Definition;
+            var offset = model.TransformOffset;
+            var cellOffset = model.SourceCellOffset;
+            var lift = new VoxRegionLift(document, region);
+            lift.Redo();
+            var moved = Move(region, -8);
+            var stamp = VoxCellChange.Write(moved);
+            VoxCellChange.Apply(model, stamp, true);
+            Assert.IsTrue(document.NormalizeDrawingBounds());
+            var rebased = model.Definition;
+            var rebasedOffset = model.TransformOffset;
+            var rebasedCellOffset = model.SourceCellOffset;
+            VoxCellChange.Apply(model, stamp, false);
+            lift.Undo();
+            Assert.AreSame(original, model.Definition);
+            Assert.AreEqual(offset, model.TransformOffset);
+            Assert.AreEqual(cellOffset, model.SourceCellOffset);
+            lift.Redo();
+            Assert.AreSame(rebased, model.Definition);
+            Assert.AreEqual(rebasedOffset, model.TransformOffset);
+            Assert.AreEqual(rebasedCellOffset, model.SourceCellOffset);
+            VoxCellChange.Apply(model, stamp, true);
+            Assert.AreEqual(1, model.Voxels[Vector3Int.left * 8 + model.SourceCellOffset]);
+            Assert.IsFalse(document.NormalizeDrawingBounds(), "Redo must retain the already fitted bounds");
+            Assert.AreSame(original, other.Definition);
+            Assert.AreEqual(2, other.Voxels.Count);
+        }
+
+        [Test]
+        public void UnsharedLiftKeepsItsDefinitionAcrossUndoAndRedo()
+        {
+            var region = SharedRegion(out var document, out var other);
+            document.RemoveModel(other);
+            var model = region.Model;
+            var original = model.Definition;
+            var lift = new VoxRegionLift(document, region);
+            lift.Redo();
+            Assert.AreSame(original, model.Definition);
+            lift.Undo();
+            Assert.AreSame(original, model.Definition);
+            Assert.AreEqual(1, model.Voxels[model.SourceCellOffset]);
+            lift.Redo();
+            Assert.AreSame(original, model.Definition);
+            Assert.IsFalse(model.Voxels.ContainsKey(model.SourceCellOffset));
+        }
 
         [Test]
         public void MovingOverBackgroundKeepsOnePayloadAndDoesNotEditTheGrid()

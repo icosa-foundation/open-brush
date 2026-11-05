@@ -105,8 +105,6 @@ namespace TiltBrush
             Before = before;
             After = after;
         }
-        internal static List<VoxCellChange> Remove(VoxFloatingRegion region)
-            => region.Payload.Select(cell => new VoxCellChange(cell.Key, cell.Value, 0)).ToList();
         internal static List<VoxCellChange> Write(VoxFloatingRegion region)
         {
             var changes = new List<VoxCellChange>();

@@ -128,7 +128,6 @@ namespace TiltBrush
             if (VoxSelection.Floating.Lifted) return true;
             var lifted = VoxSelection.Floating.Lift();
             if (lifted == null) return false;
-            VoxSelection.Document.MakeModelUnique(VoxSelection.Model);
             if (IsExternalVox)
             {
                 var embedding = new EmbedVoxModelCommand(this, VoxSelection.Document);
@@ -138,7 +137,7 @@ namespace TiltBrush
             }
             else m_VoxGrabCommand = new BaseCommand();
             var command = new MoveVoxRegionCommand(this, VoxSelection, VoxSelection.WithFloating(lifted),
-                VoxCellChange.Remove(lifted), m_VoxGrabCommand);
+                parent: m_VoxGrabCommand, lift: new VoxRegionLift(VoxSelection.Document, lifted));
             command.Redo();
             // The drag basis now has a payload but retains the original grab pose.
             m_VoxGrabStart = m_VoxGrabStart.WithFloating(lifted);
