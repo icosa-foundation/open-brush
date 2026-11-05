@@ -1,5 +1,6 @@
 // Copyright 2026 The Open Brush Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
+using System;
 using OpenBrush.Multiplayer;
 using UnityEngine;
 
@@ -12,11 +13,13 @@ namespace TiltBrush
         [SerializeField] private ColorPicker m_ColorPicker;
         [SerializeField] private VoxPaletteButton m_Apply;
         [SerializeField] private VoxPaletteButton m_ClearUnused;
+        [SerializeField] private VoxPaletteButton m_Sort;
         [SerializeField] private Texture2D m_SwatchTexture, m_PreviousTexture, m_NextTexture;
         [SerializeField] private Vector3 m_GridOrigin = new Vector3(-1.38f, .6f, -.06f);
         [SerializeField] private float m_SwatchSpacing = .15f;
         [SerializeField] private float m_SwatchSize = .13f;
         private readonly VoxPaletteButton[] m_Swatches = new VoxPaletteButton[PageSize];
+        private readonly int[] m_DisplayOrder = new int[byte.MaxValue];
         private VoxPaletteButton m_Previous, m_Next;
         private ModelWidget m_Widget;
         private Model m_Source;
@@ -43,6 +46,7 @@ namespace TiltBrush
 
         public override void Init(GameObject parent, string text)
         {
+            for (int i = 0; i < m_DisplayOrder.Length; ++i) m_DisplayOrder[i] = i + 1;
             base.Init(parent, text);
             for (int i = 0; i < PageSize; ++i)
                 m_Swatches[i] = CreateButton(m_GridOrigin + new Vector3(i % Columns * m_SwatchSpacing,
@@ -51,6 +55,7 @@ namespace TiltBrush
             m_Next = CreateButton(new Vector3(-.55f, -.72f, -.06f), VoxPaletteButton.Action.Next, m_NextTexture, "Next palette page");
             m_Apply.Configure(this, VoxPaletteButton.Action.Apply, null, null);
             m_ClearUnused.Configure(this, VoxPaletteButton.Action.ClearUnused, null, "Clear unused palette colors");
+            m_Sort.Configure(this, VoxPaletteButton.Action.Sort, null, "Sort palette colors by hue");
             ColorPicker.ColorPicked += OnColorPicked;
             m_Memory = SketchMemoryScript.m_Instance;
             m_Memory.OperationStackChanged += OnHistoryChanged;
@@ -79,6 +84,7 @@ namespace TiltBrush
         {
             if (!ValidTarget || index < 1 || index > byte.MaxValue) return;
             m_Selected = index;
+            m_Page = Array.IndexOf(m_DisplayOrder, index) / PageSize;
             m_Draft = m_Document.Palette[index - 1];
             ColorPicker.Controller.CurrentColor = m_Draft;
             RefreshControls();
@@ -88,7 +94,7 @@ namespace TiltBrush
         {
             if (!ValidTarget) return;
             m_Page = Mathf.Clamp(m_Page + delta, 0, PageCount - 1);
-            SelectColor(m_Page * PageSize + 1);
+            SelectColor(m_DisplayOrder[m_Page * PageSize]);
         }
 
         private void OnColorPicked(Color color)
@@ -100,7 +106,7 @@ namespace TiltBrush
             if (m_Draft.Equals(draft)) return;
             m_Draft = draft;
             ColorPicker.Controller.CurrentColor = m_Draft;
-            m_Swatches[(m_Selected - 1) % PageSize].SetSwatch(m_Selected, m_Draft, true);
+            m_Swatches[Array.IndexOf(m_DisplayOrder, m_Selected) % PageSize].SetSwatch(m_Selected, m_Draft, true);
             m_Apply.SetButtonAvailable(!m_Draft.Equals(m_Document.Palette[m_Selected - 1]));
         }
 
@@ -124,6 +130,36 @@ namespace TiltBrush
             SelectColor(m_Selected);
         }
 
+        internal void SortColors()
+        {
+            if (!ValidTarget) return;
+            Array.Sort(m_DisplayOrder, (a, b) =>
+            {
+                int order = ComparePaletteColors(m_Document.Palette[a - 1], m_Document.Palette[b - 1]);
+                return order != 0 ? order : a.CompareTo(b);
+            });
+            // Keep editing the same palette entry, including an unapplied draft.
+            m_Page = Array.IndexOf(m_DisplayOrder, m_Selected) / PageSize;
+            RefreshControls();
+        }
+
+        internal static int ComparePaletteColors(Color a, Color b)
+        {
+            Color.RGBToHSV(a, out float hueA, out float saturationA, out float brightnessA);
+            Color.RGBToHSV(b, out float hueB, out float saturationB, out float brightnessB);
+            bool greyA = saturationA <= .05f, greyB = saturationB <= .05f;
+            int order = greyA.CompareTo(greyB);
+            if (order != 0) return order;
+            if (!greyA)
+            {
+                order = hueA.CompareTo(hueB);
+                if (order != 0) return order;
+                order = saturationA.CompareTo(saturationB);
+                if (order != 0) return order;
+            }
+            return brightnessA.CompareTo(brightnessB);
+        }
+
         private void OnHistoryChanged()
         {
             if (ValidTarget) SelectColor(m_Selected);
@@ -135,10 +171,11 @@ namespace TiltBrush
             bool valid = ValidTarget;
             for (int i = 0; i < PageSize; ++i)
             {
-                int index = m_Page * PageSize + i + 1;
+                int slot = m_Page * PageSize + i;
                 var swatch = m_Swatches[i];
-                swatch.gameObject.SetActive(index <= byte.MaxValue);
-                if (index > byte.MaxValue) continue;
+                swatch.gameObject.SetActive(slot < m_DisplayOrder.Length);
+                if (slot >= m_DisplayOrder.Length) continue;
+                int index = m_DisplayOrder[slot];
                 swatch.SetButtonAvailable(valid);
                 if (valid) swatch.SetSwatch(index, index == m_Selected ? m_Draft : m_Document.Palette[index - 1], index == m_Selected);
             }
@@ -146,6 +183,7 @@ namespace TiltBrush
             m_Next.SetButtonAvailable(valid && m_Page < PageCount - 1);
             m_Apply.SetButtonAvailable(CanEdit && !m_Draft.Equals(m_Document.Palette[m_Selected - 1]));
             m_ClearUnused.SetButtonAvailable(CanEdit);
+            m_Sort.SetButtonAvailable(valid);
             m_WindowText.text = valid ? $"VOX palette — Color {m_Selected} — Page {m_Page + 1}/{PageCount}" : "VOX model unavailable";
         }
 

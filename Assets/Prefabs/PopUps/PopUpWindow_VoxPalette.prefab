@@ -308,6 +308,7 @@ Transform:
   - {fileID: 4561239206180636}
   - {fileID: 123411569811148304}
   - {fileID: 9030029004419089805}
+  - {fileID: 111704670608444686}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114840930256296856
@@ -346,6 +347,7 @@ MonoBehaviour:
   m_ColorPicker: {fileID: 114928026628815740}
   m_Apply: {fileID: 6968316051164910282}
   m_ClearUnused: {fileID: 2040982911964797271}
+  m_Sort: {fileID: 6957716598556479956}
   m_SwatchTexture: {fileID: 2800000, guid: d21c4cae08e56704b98251732eca90cb, type: 3}
   m_PreviousTexture: {fileID: 2800000, guid: f74f6eac3e3e3c640b1a343ec46ba2dd, type: 3}
   m_NextTexture: {fileID: 2800000, guid: ab8b9a0b96b6cb74ca1e518f3c56b425, type: 3}
@@ -1271,6 +1273,95 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
   m_PrefabInstance: {fileID: 3269540361307793632}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5873394190557913187
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 4139363530637086}
+    m_Modifications:
+    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_ButtonTexture
+      value: 
+      objectReference: {fileID: 2800000, guid: add4e3977c6a07c43a92c7a5ee8ebe6a, type: 3}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.28
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.28
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.28
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.28
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.06
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5768730878626201577, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_Name
+      value: SortColors
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+--- !u!4 &111704670608444686 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+  m_PrefabInstance: {fileID: 5873394190557913187}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6957716598556479956 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+  m_PrefabInstance: {fileID: 5873394190557913187}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2851f7008754576a4153e0f4f11da4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxPaletteButton
 --- !u!1001 &5888689612248195965
 PrefabInstance:
   m_ObjectHideFlags: 0
