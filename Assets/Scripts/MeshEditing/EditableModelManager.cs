@@ -143,8 +143,17 @@ namespace TiltBrush.MeshEditing
             var meshData = poly.BuildMeshData(colors: widget.m_PolyRecipe.Colors, colorMethod: widget.m_PolyRecipe.ColorMethod);
             var mesh = poly.BuildUnityMesh(meshData);
             UpdateMesh(go, mesh, mat);
+            // Generated models have a private template. File-backed widgets can share
+            // a catalog Model, whose source geometry and bounds must remain unchanged.
+            if (widget.Model.GetLocation().IsGenerated())
+            {
+                var template = widget.Model.m_ModelParent.gameObject;
+                UpdateMesh(template, mesh, template.GetComponent<MeshRenderer>().sharedMaterial);
+                template.GetComponent<ObjModelScript>().InvalidateMeshVertexCount();
+                widget.Model.m_MeshBounds = mesh.bounds;
+            }
             widget.TakeGeneratedMeshOwnership(mesh);
-            widget.RecalculateColliderBounds();
+            widget.RefreshGeneratedGeometry(mesh);
             widget.m_PolyMesh = poly;
         }
 

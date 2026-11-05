@@ -42,6 +42,15 @@ namespace TiltBrush
             }
         }
 
+        internal void RefreshGeneratedGeometry(Mesh mesh)
+        {
+            if (m_SnapGhost != null)
+            {
+                foreach (var filter in m_SnapGhost.GetComponentsInChildren<MeshFilter>(true)) { filter.sharedMesh = mesh; }
+            }
+            RefreshModelGeometry();
+        }
+
         public override void OnPreDestroy()
         {
             Mesh ownedMesh = m_OwnedGeneratedMesh;

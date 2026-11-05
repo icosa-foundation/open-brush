@@ -568,6 +568,17 @@ namespace TiltBrush
             }
         }
 
+        protected void RefreshModelGeometry()
+        {
+            m_ObjModelScript.InvalidateMeshVertexCount();
+            int vertexCount = m_ObjModelScript.GetNumVertsInMeshes();
+            WidgetManager.m_Instance.AdjustModelVertCount(vertexCount - m_NumVertsTrackedByWidgetManager);
+            m_NumVertsTrackedByWidgetManager = vertexCount;
+            RecalculateColliderBounds();
+            // Reapply the existing ID after material changes without registering a new batch on every edit.
+            HierarchyUtils.RecursivelySetMaterialBatchID(m_ModelInstance, m_BatchId);
+        }
+
         public void RecalculateColliderBounds()
         {
             var widgetTransform = m_ObjModelScript.transform.parent;
