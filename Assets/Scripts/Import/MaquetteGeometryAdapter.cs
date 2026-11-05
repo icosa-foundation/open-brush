@@ -24,13 +24,15 @@ namespace TiltBrush.DocumentImport
             }
             var p = new Parameters(entity["parameters"]);
             string prefab = (string)entity["prefabPath"];
-            var operations = new JArray();
+            var modifiers = new JArray();
             JObject generator;
+            float autoSmoothAngle = 0;
             switch (prefab)
             {
                 case "Procedural/MqProceduralMesh_RoundedCornerQuad":
                 case "Procedural/MqProceduralMesh_RoundedCornerRim":
-                    generator = Rectangle(p, globalScale, prefab.EndsWith("Rim"), formatVersion, operations);
+                    generator = Rectangle(p, globalScale, prefab.EndsWith("Rim"), formatVersion, modifiers);
+                    autoSmoothAngle = 60f;
                     break;
                 case "Procedural/MqProceduralMesh_CylinderCone":
                     generator = Cylinder(p);
@@ -39,16 +41,20 @@ namespace TiltBrush.DocumentImport
                     generator = Conic(p);
                     break;
                 case "Procedural/MqProceduralMesh_Capsule":
-                    generator = Capsule(p, globalScale, operations);
+                    generator = Capsule(p, globalScale, modifiers);
                     break;
                 default: throw new NotSupportedException($"Unsupported Maquette procedural prefab: {prefab}");
             }
-            if (p.Boolean("invert", false)) { operations.Add(Step("flip", new JObject())); }
+            if (p.Boolean("invert", false)) { modifiers.Add(Step("flip", new JObject())); }
             p.RequireAllRead();
-            return new GeometryRecipeData(new JObject { ["Version"] = 1, ["Generator"] = generator, ["Operations"] = operations });
+            return new GeometryRecipeData(new JObject
+            {
+                ["Version"] = 1, ["Generator"] = generator, ["Modifiers"] = modifiers,
+                ["PostProcessing"] = new JObject { ["AutoSmoothAngle"] = autoSmoothAngle }
+            });
         }
 
-        private static JObject Rectangle(Parameters p, float[] scale, bool frame, int version, JArray operations)
+        private static JObject Rectangle(Parameters p, float[] scale, bool frame, int version, JArray modifiers)
         {
             float width = p.Number("width", .5f), height = p.Number("height", .3f), thickness = p.Number("thickness", .1f);
             float w = width * scale[0], h = height * scale[1];
@@ -79,16 +85,18 @@ namespace TiltBrush.DocumentImport
                 dimensions["borderWidth"] = border;
                 dimensions["radius"] = square ? 0 : radius + border;
             }
-            operations.Add(Step("shell", new JObject { ["thickness"] = thickness * scale[2], ["symmetric"] = true }));
+            modifiers.Add(Step("operator", new JObject
+            {
+                ["operation"] = "Shell", ["amount"] = thickness * scale[2]
+            }));
             float halfRoot = (float)Math.Sqrt(.5);
-            operations.Add(Transform(rotation: new JArray(-halfRoot, 0, 0, halfRoot)));
-            operations.Add(Transform(scale: new JArray(1 / scale[0], 1 / scale[1], 1 / scale[2])));
+            modifiers.Add(Transform(rotation: new JArray(-halfRoot, 0, 0, halfRoot)));
+            modifiers.Add(Transform(scale: new JArray(1 / scale[0], 1 / scale[1], 1 / scale[2])));
             float[] pivot = p.Vector("pivot", new[] { .5f, .5f, .5f });
             if (pivot[0] != .5f || pivot[1] != .5f || pivot[2] != .5f)
             {
-                operations.Add(Transform(translation: new JArray((.5f - pivot[0]) * w / scale[0], (.5f - pivot[1]) * h / scale[1], (.5f - pivot[2]) * thickness)));
+                modifiers.Add(Transform(translation: new JArray((.5f - pivot[0]) * w / scale[0], (.5f - pivot[1]) * h / scale[1], (.5f - pivot[2]) * thickness)));
             }
-            operations.Add(Step("autoSmooth", new JObject { ["angle"] = 60f }));
             return Step(frame ? "frame" : "rectangle", dimensions);
         }
 
@@ -131,7 +139,7 @@ namespace TiltBrush.DocumentImport
             });
         }
 
-        private static JObject Capsule(Parameters p, float[] scale, JArray operations)
+        private static JObject Capsule(Parameters p, float[] scale, JArray modifiers)
         {
             float radius = p.Number("radius", .5f) * Math.Max(scale[0], scale[2]) * .5f;
             float height = Math.Max(p.Number("length", 1) * scale[1] - 2 * radius, .001f);
@@ -148,7 +156,7 @@ namespace TiltBrush.DocumentImport
                     ["verticalSegments"] = segments, ["sides"] = sides, ["sweepAngle"] = 0f,
                     ["zeroSweep"] = "doubleSidedProfile", ["smooth"] = true
                 });
-                operations.Add(Transform(translation: new JArray(0, height * .5f, 0)));
+                modifiers.Add(Transform(translation: new JArray(0, height * .5f, 0)));
             }
             else
             {
@@ -159,7 +167,7 @@ namespace TiltBrush.DocumentImport
                     ["zeroSweep"] = "doubleSidedProfile"
                 });
             }
-            operations.Add(Transform(scale: new JArray(1 / (round ? scale[0] : divisor), 1 / scale[1], 1 / (round ? scale[2] : divisor))));
+            modifiers.Add(Transform(scale: new JArray(1 / (round ? scale[0] : divisor), 1 / scale[1], 1 / (round ? scale[2] : divisor))));
             return generator;
         }
 

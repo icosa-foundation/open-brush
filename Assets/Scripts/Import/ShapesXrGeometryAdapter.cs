@@ -33,7 +33,7 @@ namespace TiltBrush.DocumentImport
                 ["edgeSegments"] = Boolean(properties["obj-pmugchs"], "sharp edges") ? 1 : 8,
                 ["widthSegments"] = Samples(bendY), ["heightSegments"] = Samples(bendX)
             };
-            var operations = new JArray();
+            var modifiers = new JArray();
             bool generateBack = Boolean(properties["obj-pmuggb"], "generate back");
             if (depth <= .0001f)
             {
@@ -43,7 +43,7 @@ namespace TiltBrush.DocumentImport
                 {
                     foreach (var direction in new[] { new JArray(1, 0, 0), new JArray(-1, 0, 0), new JArray(0, 1, 0), new JArray(0, -1, 0) })
                     {
-                        operations.Add(Step("faceRemove", new JObject
+                        modifiers.Add(Step("faceRemove", new JObject
                         {
                             ["direction"] = direction, ["angle"] = 89.9f, ["invert"] = false
                         }));
@@ -51,7 +51,7 @@ namespace TiltBrush.DocumentImport
                 }
                 else
                 {
-                    operations.Add(Step("faceRemove", new JObject
+                    modifiers.Add(Step("faceRemove", new JObject
                     {
                         ["direction"] = new JArray(0, 0, -1), ["angle"] = .1f, ["invert"] = true
                     }));
@@ -59,7 +59,7 @@ namespace TiltBrush.DocumentImport
             }
             else if (!generateBack)
             {
-                operations.Add(Step("faceRemove", new JObject
+                modifiers.Add(Step("faceRemove", new JObject
                 {
                     ["direction"] = new JArray(0, 0, 1), ["angle"] = 89.9f, ["invert"] = false
                 }));
@@ -67,7 +67,7 @@ namespace TiltBrush.DocumentImport
             foreach (var bend in new[] { (Angle: bendX, Axis: "x"), (Angle: bendY, Axis: "y") })
             {
                 if (bend.Angle == 0) { continue; }
-                operations.Add(Step("bend", new JObject
+                modifiers.Add(Step("bend", new JObject
                 {
                     ["angle"] = bend.Angle, ["axis"] = bend.Axis,
                     ["referenceCenter"] = new JArray(0, 0, 0), ["referenceSize"] = new JArray(width, height, depth)
@@ -75,7 +75,8 @@ namespace TiltBrush.DocumentImport
             }
             return new GeometryRecipeData(new JObject
             {
-                ["Version"] = 1, ["Generator"] = Step("panel", parameters), ["Operations"] = operations
+                ["Version"] = 1, ["Generator"] = Step("panel", parameters), ["Modifiers"] = modifiers,
+                ["PostProcessing"] = new JObject()
             });
         }
 

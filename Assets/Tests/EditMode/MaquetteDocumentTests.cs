@@ -337,7 +337,7 @@ namespace TiltBrush.Tests
                 Assert.AreEqual(22 - Math.Sqrt(2), y.Y, 1e-5);
                 Assert.AreEqual(-1.5, System.Numerics.Vector3.Dot(x - Transform(System.Numerics.Vector3.Zero), y - Transform(System.Numerics.Vector3.Zero)), 1e-5);
                 Assert.AreEqual(30, x.Z, 1e-5);
-                Assert.IsNull(sourceRecipe.ToJson()["Operations"]);
+                Assert.IsNull(sourceRecipe.ToJson()["Modifiers"]);
             }
         }
 

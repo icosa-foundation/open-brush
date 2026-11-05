@@ -131,7 +131,7 @@ namespace TiltBrush.Tests
                 var resource = new MaquetteAssetResolver(source).Resolve("models/model.gltf");
                 var cached = GltfAssetDocument.CopySource(resource, input, Path.Combine(m_Root, "cache/sources"));
                 GeometryRecipeData.Parse(@"{'Version':1,'Generator':{'Type':'rectangle','Parameters':{}},
-                    'Operations':[{'Type':'transform','Parameters':{'scale':[2,3,4],'rotation':[0.5,0.5,0.5,0.5]}}]}")
+                    'Modifiers':[{'Type':'transform','Parameters':{'scale':[2,3,4],'rotation':[0.5,0.5,0.5,0.5]}}]}")
                     .GetSteps(out _, out var transforms);
                 string a = Path.Combine(m_Root, "cache/variants/a.gltf"), b = Path.Combine(m_Root, "cache/variants/b.gltf");
                 cached.WriteVariant(a, transforms, new float[] { -1, -2, -3 });

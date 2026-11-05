@@ -11,7 +11,7 @@ using UnityEngine;
 namespace TiltBrush.MeshEditing
 {
     // The authoring controls use the same recipes as native document import. Editing a field
-    // preserves the other generator parameters and the existing order of operations.
+    // preserves the other generator parameters and the existing order of modifiers.
     public static class ProceduralShapes
     {
         public static readonly string[] PresetNames =
@@ -30,6 +30,8 @@ namespace TiltBrush.MeshEditing
             public bool Integer;
             public string[] Choices;
             internal string Operation;
+            internal string Operator;
+            internal bool FinalSmoothing;
             internal string Axis;
             internal bool Boolean;
             internal bool Taper;
@@ -39,8 +41,17 @@ namespace TiltBrush.MeshEditing
             public float Read(GeometryRecipeData recipe)
             {
                 JObject data = recipe.ToJson();
+                if (FinalSmoothing)
+                {
+                    // Native imports can retain generator-specific seam smoothing. An authoring
+                    // edit replaces those flags with the shared final smoothing setting.
+                    return ((float?)data["PostProcessing"]?["AutoSmoothAngle"] > 0 ||
+                        (bool?)data["Generator"]?["Parameters"]?["smooth"] == true ||
+                        (bool?)data["Generator"]?["Parameters"]?["smoothSides"] == true) ? 1 : 0;
+                }
                 JObject step = FindStep(data, this);
                 var parameters = step?["Parameters"];
+                if (Operator != null && (bool?)parameters?["active"] == false) { return Default; }
                 if (Taper)
                 {
                     float bottom = (float?)parameters?["bottomRadius"] ?? .5f;
@@ -75,16 +86,17 @@ namespace TiltBrush.MeshEditing
                 case 0: type = "panel"; p = new JObject { ["width"] = .3f, ["height"] = .3f, ["depth"] = .3f }; break;
                 case 1: type = "panel"; p = new JObject { ["width"] = .4f, ["height"] = .3f, ["depth"] = .02f, ["cornerRadius"] = .025f, ["widthSegments"] = 12, ["heightSegments"] = 12 }; break;
                 case 2: type = "frame"; p = new JObject { ["width"] = .4f, ["height"] = .3f, ["borderWidth"] = .03f, ["radius"] = .025f }; break;
-                case 3: type = "cylinder"; p = new JObject { ["height"] = .3f, ["bottomRadius"] = .15f, ["topRadius"] = .15f, ["smoothSides"] = true }; break;
-                case 4: type = "capsule"; p = new JObject { ["cylinderHeight"] = .2f, ["radius"] = .1f, ["smooth"] = true }; break;
-                case 5: type = "conic"; p = new JObject { ["radius"] = .15f, ["majorAxis"] = .15f, ["minorAxis"] = .15f, ["centerOffset"] = 0f, ["smooth"] = true }; break;
+                case 3: type = "cylinder"; p = new JObject { ["height"] = .3f, ["bottomRadius"] = .15f, ["topRadius"] = .15f }; break;
+                case 4: type = "capsule"; p = new JObject { ["cylinderHeight"] = .2f, ["radius"] = .1f }; break;
+                case 5: type = "conic"; p = new JObject { ["radius"] = .15f, ["majorAxis"] = .15f, ["minorAxis"] = .15f, ["centerOffset"] = 0f }; break;
                 default: throw new ArgumentOutOfRangeException(nameof(preset));
             }
             return new GeometryRecipeData(new JObject
             {
                 ["Version"] = 1,
                 ["Generator"] = Step(type, p),
-                ["Operations"] = new JArray()
+                ["Modifiers"] = new JArray(),
+                ["PostProcessing"] = new JObject { ["AutoSmoothAngle"] = preset >= 3 ? 60f : 0f }
             });
         }
 
@@ -112,7 +124,7 @@ namespace TiltBrush.MeshEditing
                         {
                             result.Add(Number("borderWidth", "Border width", .001f, .3f, .1f));
                         }
-                        result.Add(Operation("shell", "thickness", "Thickness", 0, .3f));
+                        result.Add(Operation("operator", "amount", "Thickness", 0, .3f, "Shell"));
                     }
                     result.Add(Number("cornerSegments", "Corner segments", 1, 16, generator.Type == "panel" ? 8 : 4, true));
                     break;
@@ -120,13 +132,11 @@ namespace TiltBrush.MeshEditing
                     result.Add(new Parameter { Name = "taper", Label = "Taper", Min = -1, Max = 1, Taper = true });
                     result.Add(Ratio("topAspect", "bottomAspect", "Top ovalness", .05f, 4, 1, 1));
                     AddRevolution(result);
-                    result.Add(Toggle("smoothSides", "Smooth sides"));
                     break;
                 case "capsule":
                     result.Add(Ratio("cylinderHeight", "radius", "Body length", 0, 8, 2, 1));
                     AddRevolution(result);
                     result.Add(Number("capSegments", "Cap segments", 2, 32, 8, true));
-                    result.Add(Toggle("smooth", "Smooth surface"));
                     break;
                 case "conic":
                     result.Add(Choice("curve", "Profile", "circle", "ellipse", "hyperbola", "parabola"));
@@ -135,9 +145,11 @@ namespace TiltBrush.MeshEditing
                     result.Add(Number("topClip", "Top clip", .01f, 1, 1));
                     AddRevolution(result);
                     result.Add(Number("verticalSegments", "Vertical segments", 2, 48, 16, true));
-                    result.Add(Toggle("smooth", "Smooth surface"));
                     break;
             }
+
+            result.Add(new Parameter { Name = "AutoSmoothAngle", Label = "Smooth surface",
+                Min = 0, Max = 1, Integer = true, Boolean = true, FinalSmoothing = true });
 
             // Panels have controllable sampling for curved bends. Existing imported bends on
             // other generators remain editable without adding a new operation stack UI.
@@ -154,20 +166,35 @@ namespace TiltBrush.MeshEditing
         public static GeometryRecipeData WithValue(GeometryRecipeData recipe, Parameter parameter, float value)
         {
             JObject data = recipe.ToJson();
-            var operations = data["Operations"] as JArray;
-            if (operations == null)
+            if (parameter.FinalSmoothing)
             {
-                operations = new JArray();
-                data["Operations"] = operations;
+                if (!(data["PostProcessing"] is JObject postProcessing))
+                {
+                    postProcessing = new JObject();
+                    data["PostProcessing"] = postProcessing;
+                }
+                postProcessing["AutoSmoothAngle"] = value >= .5f ? 60f : 0f;
+                var generatorParameters = data["Generator"]?["Parameters"] as JObject;
+                generatorParameters?.Remove("smooth");
+                generatorParameters?.Remove("smoothSides");
+                return new GeometryRecipeData(data);
+            }
+            var modifiers = data["Modifiers"] as JArray;
+            if (modifiers == null)
+            {
+                modifiers = new JArray();
+                data["Modifiers"] = modifiers;
             }
             JObject step = FindStep(data, parameter);
             if (step == null)
             {
                 if (parameter.Operation == null) { throw new InvalidOperationException("Missing shape generator"); }
-                step = Step(parameter.Operation, new JObject());
+                var createdParameters = new JObject();
+                if (parameter.Operator != null) { createdParameters["operation"] = parameter.Operator; }
+                step = Step(parameter.Operation, createdParameters);
                 // Work in generator coordinates, before any imported placement transform.
-                int insert = operations.TakeWhile(op => (string)op["Type"] != "transform").Count();
-                operations.Insert(insert, step);
+                int insert = modifiers.TakeWhile(op => (string)op["Type"] != "transform").Count();
+                modifiers.Insert(insert, step);
                 if (parameter.Operation == "bend")
                 {
                     step["Parameters"]["axis"] = parameter.Axis;
@@ -180,6 +207,7 @@ namespace TiltBrush.MeshEditing
                 p = new JObject();
                 step["Parameters"] = p;
             }
+            if (parameter.Operator != null) { p["active"] = true; }
             if (parameter.Taper)
             {
                 float radius = Mathf.Max((float?)p["bottomRadius"] ?? .5f, (float?)p["topRadius"] ?? .5f);
@@ -199,12 +227,12 @@ namespace TiltBrush.MeshEditing
             else if (parameter.Integer) { p[parameter.Name] = Mathf.RoundToInt(value); }
             else { p[parameter.Name] = value; }
 
-            if (parameter.Operation == "shell" && value == 0) { step.Remove(); }
+            if (parameter.Operator == "Shell" && value == 0) { step.Remove(); }
             if (parameter.Operation == null)
             {
-                for (int i = 0; i < operations.Count; ++i)
+                for (int i = 0; i < modifiers.Count; ++i)
                 {
-                    if ((string)operations[i]["Type"] == "bend") { SetBendReference(data, (JObject)operations[i], i); }
+                    if ((string)modifiers[i]["Type"] == "bend") { SetBendReference(data, (JObject)modifiers[i], i); }
                 }
             }
             return new GeometryRecipeData(data);
@@ -213,7 +241,9 @@ namespace TiltBrush.MeshEditing
         private static void SetBendReference(JObject data, JObject bend, int index)
         {
             var prefix = (JObject)data.DeepClone();
-            prefix["Operations"] = new JArray(((JArray)data["Operations"]).Take(index)
+            // Reference bounds belong to the geometry before final processing.
+            prefix["PostProcessing"] = new JObject();
+            prefix["Modifiers"] = new JArray(((JArray)data["Modifiers"]).Take(index)
                 .Where(op => (string)op["Type"] != "bend").Select(op => op.DeepClone()));
             var poly = EditableModelManager.Evaluate(new GeometryRecipeData(prefix));
             var bounds = new Bounds(poly.Vertices[0].Position, Vector3.zero);
@@ -225,8 +255,9 @@ namespace TiltBrush.MeshEditing
         private static JObject FindStep(JObject data, Parameter p)
         {
             if (p.Operation == null) { return data["Generator"] as JObject; }
-            return (data["Operations"] as JArray)?.OfType<JObject>().LastOrDefault(op =>
-                (string)op["Type"] == p.Operation && (p.Axis == null || ((string)op["Parameters"]?["axis"] ?? "x") == p.Axis));
+            return (data["Modifiers"] as JArray)?.OfType<JObject>().LastOrDefault(op =>
+                (string)op["Type"] == p.Operation &&
+                (p.Operator == null || (string)op["Parameters"]?["operation"] == p.Operator) && (p.Axis == null || ((string)op["Parameters"]?["axis"] ?? "x") == p.Axis));
         }
 
         private static JObject Step(string type, JObject parameters) => new JObject { ["Type"] = type, ["Parameters"] = parameters };
@@ -242,17 +273,11 @@ namespace TiltBrush.MeshEditing
             return parameter;
         }
 
-        private static Parameter Operation(string type, string name, string label, float min, float max)
+        private static Parameter Operation(string type, string name, string label, float min, float max, string operatorName = null)
         {
             var p = Number(name, label, min, max);
             p.Operation = type;
-            return p;
-        }
-
-        private static Parameter Toggle(string name, string label)
-        {
-            var p = Number(name, label, 0, 1, 0, true);
-            p.Boolean = true;
+            p.Operator = operatorName;
             return p;
         }
 

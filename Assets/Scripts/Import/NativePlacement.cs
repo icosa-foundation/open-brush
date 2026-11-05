@@ -91,11 +91,11 @@ namespace TiltBrush.DocumentImport
         {
             recipe.GetSteps(out _, out _);
             var data = recipe.ToJson();
-            var operations = data["Operations"] as JArray;
-            if (operations == null) { operations = new JArray(); data["Operations"] = operations; }
+            var modifiers = data["Modifiers"] as JArray;
+            if (modifiers == null) { modifiers = new JArray(); data["Modifiers"] = modifiers; }
             foreach (var step in LinearTransforms)
             {
-                operations.Add(new JObject { ["Type"] = step.Type, ["Parameters"] = JObject.FromObject(step.Parameters) });
+                modifiers.Add(new JObject { ["Type"] = step.Type, ["Parameters"] = JObject.FromObject(step.Parameters) });
             }
             return new GeometryRecipeData(data);
         }

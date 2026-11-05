@@ -26,8 +26,16 @@ namespace TiltBrush.MeshEditing
 
         public static PolyMesh Evaluate(GeometryRecipeData recipe)
         {
-            recipe.GetSteps(out var generator, out var operations);
-            return GeometryRecipeEvaluator.Build(new GeometryRecipe(ToStep(generator), operations.Select(ToStep)));
+            recipe.GetSteps(out var generator, out var modifiers, out var postProcessing);
+            var settings = new GeometryPostProcessingSettings
+            {
+                FastConicalize = Setting(postProcessing, nameof(GeometryPostProcessingSettings.FastConicalize), true),
+                CanonicalizeIterations = Setting(postProcessing, nameof(GeometryPostProcessingSettings.CanonicalizeIterations), 0),
+                PlanarizeIterations = Setting(postProcessing, nameof(GeometryPostProcessingSettings.PlanarizeIterations), 0),
+                FaceInset = Setting(postProcessing, nameof(GeometryPostProcessingSettings.FaceInset), 0f),
+                AutoSmoothAngle = Setting(postProcessing, nameof(GeometryPostProcessingSettings.AutoSmoothAngle), 0f)
+            };
+            return GeometryRecipeEvaluator.Build(new GeometryRecipe(ToStep(generator), modifiers.Select(ToStep), settings));
         }
 
         public static readonly Dictionary<string, GeometryRecipeData> RetainedDefinitions = new Dictionary<string, GeometryRecipeData>();
@@ -102,6 +110,9 @@ namespace TiltBrush.MeshEditing
         }
 
         private static T At<T>(T[] values, int index, T fallback) => values != null && index < values.Length ? values[index] : fallback;
+
+        private static T Setting<T>(IReadOnlyDictionary<string, object> settings, string name, T fallback)
+            => settings.TryGetValue(name, out var value) ? (T)value : fallback;
 
         private static GeometryStep ToStep(GeometryStepData step)
         {

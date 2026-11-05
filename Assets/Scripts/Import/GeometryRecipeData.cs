@@ -44,18 +44,25 @@ namespace TiltBrush.DocumentImport
             }
         }
 
-        public void GetSteps(out GeometryStepData generator, out IReadOnlyList<GeometryStepData> operations)
+        public void GetSteps(out GeometryStepData generator, out IReadOnlyList<GeometryStepData> modifiers)
+            => GetSteps(out generator, out modifiers, out _);
+
+        public void GetSteps(out GeometryStepData generator, out IReadOnlyList<GeometryStepData> modifiers,
+            out IReadOnlyDictionary<string, object> postProcessing)
         {
             if (Version != 1) { throw new NotSupportedException($"Unsupported geometry recipe version: {Version}"); }
-            CheckMembers(m_Data, "Version", "Generator", "Operations");
+            CheckMembers(m_Data, "Version", "Generator", "Modifiers", "PostProcessing");
             generator = ReadStep(m_Data["Generator"], true);
             var steps = new List<GeometryStepData>();
-            if (m_Data.TryGetValue("Operations", out var value))
+            if (m_Data.TryGetValue("Modifiers", out var value))
             {
-                if (!(value is JArray array)) { throw new InvalidDataException("Geometry Operations must be an array"); }
+                if (!(value is JArray array)) { throw new InvalidDataException("Geometry Modifiers must be an array"); }
                 foreach (var step in array) { steps.Add(ReadStep(step, false)); }
             }
-            operations = steps.AsReadOnly();
+            modifiers = steps.AsReadOnly();
+            postProcessing = m_Data.TryGetValue("PostProcessing", out var settings)
+                ? ReadParameters(settings, s_PostProcessing, "PostProcessing")
+                : new Dictionary<string, object>();
         }
 
         internal static JObject LoadObject(JsonReader reader) => JObject.Load(reader,
@@ -74,15 +81,18 @@ namespace TiltBrush.DocumentImport
             ["conic"] = Spec("radius majorAxis minorAxis centerOffset bottomClip topClip sweepAngle", "sides verticalSegments", "smooth", "curve zeroSweep")
         };
 
-        private static readonly Dictionary<string, Dictionary<string, ValueKind>> s_Operations = new Dictionary<string, Dictionary<string, ValueKind>>
+        private static readonly Dictionary<string, Dictionary<string, ValueKind>> s_Modifiers = new Dictionary<string, Dictionary<string, ValueKind>>
         {
-            ["shell"] = Spec("thickness", boolean: "symmetric"),
+            ["operator"] = Spec("amount amount2 filterParameter", "iterations",
+                "active randomizeAmount randomizeAmount2 invertFilter", "operation filter"),
             ["transform"] = Spec(vector3: "translation scale", quaternion: "rotation"),
             ["faceRemove"] = Spec("angle", boolean: "invert", vector3: "direction"),
             ["bend"] = Spec("angle", text: "axis", vector3: "referenceCenter referenceSize"),
-            ["autoSmooth"] = Spec("angle"),
             ["flip"] = Spec()
         };
+
+        private static readonly Dictionary<string, ValueKind> s_PostProcessing = Spec(
+            "FaceInset AutoSmoothAngle", "CanonicalizeIterations PlanarizeIterations", "FastConicalize");
 
         private static Dictionary<string, ValueKind> Spec(string number = "", string integer = "", string boolean = "",
             string text = "", string vector2 = "", string vector3 = "", string quaternion = "", string strings = "")
@@ -105,22 +115,27 @@ namespace TiltBrush.DocumentImport
             CheckMembers(step, "Type", "Parameters");
             if (step["Type"]?.Type != JTokenType.String) { throw new InvalidDataException("Geometry step requires a string Type"); }
             string type = (string)step["Type"];
-            var catalog = generator ? s_Generators : s_Operations;
+            var catalog = generator ? s_Generators : s_Modifiers;
             if (!catalog.TryGetValue(type, out var spec)) { throw new NotSupportedException($"Unsupported geometry step: {type}"); }
-            var parameters = new Dictionary<string, object>(StringComparer.Ordinal);
-            if (step.TryGetValue("Parameters", out var data))
-            {
-                if (!(data is JObject bag)) { throw new InvalidDataException($"Geometry {type} Parameters must be an object"); }
-                foreach (var property in bag.Properties())
-                {
-                    if (!spec.TryGetValue(property.Name, out var kind))
-                    {
-                        throw new NotSupportedException($"Unknown geometry parameter {type}.{property.Name}");
-                    }
-                    parameters.Add(property.Name, ReadValue(property.Value, kind, $"{type}.{property.Name}"));
-                }
-            }
+            var parameters = step.TryGetValue("Parameters", out var data)
+                ? ReadParameters(data, spec, type) : new Dictionary<string, object>();
             return new GeometryStepData(type, parameters);
+        }
+
+        private static Dictionary<string, object> ReadParameters(JToken data,
+            Dictionary<string, ValueKind> spec, string label)
+        {
+            if (!(data is JObject bag)) { throw new InvalidDataException($"Geometry {label} settings must be an object"); }
+            var parameters = new Dictionary<string, object>(StringComparer.Ordinal);
+            foreach (var property in bag.Properties())
+            {
+                if (!spec.TryGetValue(property.Name, out var kind))
+                {
+                    throw new NotSupportedException($"Unknown geometry parameter {label}.{property.Name}");
+                }
+                parameters.Add(property.Name, ReadValue(property.Value, kind, $"{label}.{property.Name}"));
+            }
+            return parameters;
         }
 
         private static object ReadValue(JToken value, ValueKind kind, string label)

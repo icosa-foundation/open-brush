@@ -41,11 +41,14 @@ namespace TiltBrush.Tests
         public void RectangleKeepsRadiusInWorkingDimensionsAndCompensatesScaleOnce()
         {
             var entity = Entity("RoundedCornerQuad", "width", "2", "height", "3", "thickness", "0.2", "radius", "0.1");
-            MaquetteGeometryAdapter.Convert(entity, new float[] { 2, 3, 4 }).GetSteps(out var generator, out var operations);
+            MaquetteGeometryAdapter.Convert(entity, new float[] { 2, 3, 4 }).GetSteps(out var generator, out var operations, out var postProcessing);
             Assert.AreEqual(4f, generator.Parameters["width"]);
             Assert.AreEqual(9f, generator.Parameters["height"]);
             Assert.AreEqual(.1f, generator.Parameters["radius"]);
-            Assert.AreEqual(.8f, operations[0].Parameters["thickness"]);
+            Assert.AreEqual("operator", operations[0].Type);
+            Assert.AreEqual("Shell", operations[0].Parameters["operation"]);
+            Assert.AreEqual(.8f, operations[0].Parameters["amount"]);
+            Assert.AreEqual(60f, postProcessing["AutoSmoothAngle"]);
             CollectionAssert.AreEqual(new float[] { .5f, 1f / 3, .25f }, (float[])operations[2].Parameters["scale"]);
         }
 
@@ -80,7 +83,7 @@ namespace TiltBrush.Tests
         public void CapsuleRoundProfileControlsScaleCompensationAndZeroSweepUsesUpperCap()
         {
             var entity = Entity("Capsule", "round_profile", "true", "sweep_angle", "0");
-            MaquetteGeometryAdapter.Convert(entity, new float[] { 2, 3, 4 }).GetSteps(out var generator, out var operations);
+            MaquetteGeometryAdapter.Convert(entity, new float[] { 2, 3, 4 }).GetSteps(out var generator, out var operations, out var postProcessing);
             Assert.AreEqual("conic", generator.Type);
             Assert.AreEqual(.5f, generator.Parameters["bottomClip"]);
             Assert.AreEqual("doubleSidedProfile", generator.Parameters["zeroSweep"]);

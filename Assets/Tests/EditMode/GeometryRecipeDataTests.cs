@@ -58,10 +58,10 @@ namespace TiltBrush.Tests
         }
 
         [Test]
-        public void RejectsDuplicateMembersAndNullOperations()
+        public void RejectsDuplicateMembersAndNullModifiers()
         {
             Assert.Throws<JsonReaderException>(() => GeometryRecipeData.Parse("{\"Version\":1,\"Version\":2}"));
-            var recipe = GeometryRecipeData.Parse("{\"Version\":1,\"Generator\":{\"Type\":\"rectangle\"},\"Operations\":null}");
+            var recipe = GeometryRecipeData.Parse("{\"Version\":1,\"Generator\":{\"Type\":\"rectangle\"},\"Modifiers\":null}");
             Assert.Throws<InvalidDataException>(() => recipe.GetSteps(out _, out _));
         }
 
@@ -101,6 +101,57 @@ namespace TiltBrush.Tests
             Assert.AreEqual(1, operations.Count);
             Assert.AreEqual(true, operations[0].Parameters["invert"]);
             CollectionAssert.AreEqual(new float[] { 0, 0, -1 }, (float[])operations[0].Parameters["direction"]);
+        }
+
+        [Test]
+        public void SharedModifierFieldsAndFinalProcessingRoundTripWithoutMutatingTheRecipe()
+        {
+            var source = JObject.Parse(@"{
+                'Version':1, 'Generator':{'Type':'rectangle'},
+                'Modifiers':[{'Type':'operator','Parameters':{
+                    'operation':'Bevel','amount':0.1,'amount2':0.02,'active':false,'iterations':3,
+                    'randomizeAmount':true,'randomizeAmount2':false,
+                    'filter':'NSided','filterParameter':4,'invertFilter':true}}],
+                'PostProcessing':{'FastConicalize':false,'CanonicalizeIterations':2,
+                    'PlanarizeIterations':3,'FaceInset':0.01,'AutoSmoothAngle':45}}");
+            var recipe = new GeometryRecipeData(source);
+            source["Modifiers"][0]["Parameters"]["amount"] = 9;
+            var saved = JsonConvert.SerializeObject(recipe);
+            var restored = JsonConvert.DeserializeObject<GeometryRecipeData>(saved);
+            restored.GetSteps(out _, out var modifiers, out var postProcessing);
+            var settings = modifiers[0].Parameters;
+            Assert.AreEqual("operator", modifiers[0].Type);
+            Assert.AreEqual("Bevel", settings["operation"]);
+            Assert.AreEqual(.1f, settings["amount"]);
+            Assert.AreEqual(.02f, settings["amount2"]);
+            Assert.AreEqual(false, settings["active"]);
+            Assert.AreEqual(3, settings["iterations"]);
+            Assert.AreEqual(true, settings["randomizeAmount"]);
+            Assert.AreEqual(false, settings["randomizeAmount2"]);
+            Assert.AreEqual("NSided", settings["filter"]);
+            Assert.AreEqual(4f, settings["filterParameter"]);
+            Assert.AreEqual(true, settings["invertFilter"]);
+            Assert.AreEqual(false, postProcessing["FastConicalize"]);
+            Assert.AreEqual(2, postProcessing["CanonicalizeIterations"]);
+            Assert.AreEqual(3, postProcessing["PlanarizeIterations"]);
+            Assert.AreEqual(.01f, postProcessing["FaceInset"]);
+            Assert.AreEqual(45f, postProcessing["AutoSmoothAngle"]);
+            Assert.IsTrue(JToken.DeepEquals(recipe.ToJson(), restored.ToJson()));
+        }
+
+        [TestCase("{'Modifiers':[{'Type':'operator','Parameters':{'operation':'Bevel','amount':'0.1'}}]}")]
+        [TestCase("{'Modifiers':[{'Type':'operator','Parameters':{'operation':'Bevel','active':1}}]}")]
+        [TestCase("{'Modifiers':[{'Type':'operator','Parameters':{'operation':'Bevel','iterations':1.5}}]}")]
+        [TestCase("{'PostProcessing':{'AutoSmoothAngle':'60'}}")]
+        [TestCase("{'PostProcessing':{'FastConicalize':0}}")]
+        [TestCase("{'PostProcessing':null}")]
+        public void RejectsMalformedSharedModifierAndFinalProcessingValues(string fields)
+        {
+            var data = JObject.Parse(fields);
+            data["Version"] = 1;
+            data["Generator"] = new JObject { ["Type"] = "rectangle" };
+            var recipe = new GeometryRecipeData(data);
+            Assert.Throws<InvalidDataException>(() => recipe.GetSteps(out _, out _));
         }
     }
 }
