@@ -1361,8 +1361,9 @@ namespace TiltBrush
 
             // Physical contact with a panel is a different interaction state:
             // touching prepares the hand for panel/object manipulation and
-            // suppresses laser/pinch input. The actual move still starts only
-            // when the user performs the grasp gesture.
+            // suppresses new laser/pinch input. An ongoing pinch keeps priority
+            // until release, just like a held controller trigger.
+            // The actual move still starts only on a grasp gesture.
             UpdateRightPanelContactState();
 
             UpdatePrimaryTriggerState();
@@ -2915,6 +2916,21 @@ namespace TiltBrush
 
         private void UpdateRightPanelContactState()
         {
+            // Do not turn a held trigger into a release when the drawing hand
+            // enters a widget's bounds. This also keeps DriveBrush from hiding
+            // the pointer or arming a panel grab midway through the pinch.
+            // Use the current raw trigger so release/tracking loss restores
+            // contact detection immediately, without waiting another frame.
+            if (UseHand(true) && m_Right.tracked &&
+                m_PrimaryTriggerHeld && m_Right.trigger)
+            {
+                m_RightPanelContact = false;
+                m_RightPanelGrabArmed = false;
+                m_RightPanelContactCollider = null;
+                m_RightPanelLastContactTime = -1.0f;
+                return;
+            }
+
             bool physicalContact = false;
             Collider closestCollider = null;
             float closestDistanceSquared = float.PositiveInfinity;

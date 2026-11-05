@@ -165,9 +165,6 @@ namespace TiltBrush
             }
             else if (!disableXr)
             {
-#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
-                LoadingScene.LogStartup("VrSdk Awake before XR initialization");
-#endif
                 // We no longer initialize XR SDKs automatically
                 // so we need to do it manually
 
@@ -184,18 +181,9 @@ namespace TiltBrush
                     var rendering = FindFirstObjectByType<UrpPostProcessingController>();
                     if (quality != null && rendering != null)
                     {
-#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
-                        LoadingScene.LogStartup("VrSdk before PrepareSession");
-#endif
                         rendering.PrepareSession(quality);
-#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
-                        LoadingScene.LogStartup($"VrSdk PrepareSession completed msaa={rendering.SessionMsaaLevel}");
-#endif
                     }
                     XRGeneralSettings.Instance?.Manager?.StartSubsystems();
-#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
-                    LoadingScene.LogStartup("VrSdk StartSubsystems returned");
-#endif
                 }
             }
 
