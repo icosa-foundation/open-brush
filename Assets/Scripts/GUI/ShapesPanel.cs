@@ -25,6 +25,7 @@ namespace TiltBrush
         private List<ProceduralShapes.Parameter> m_Parameters = new List<ProceduralShapes.Parameter>();
         private int m_Page;
         private object m_Gesture;
+        public bool EllipseEnabled => m_Target != null && m_Target.EllipseEnabled;
 
         public override void InitPanel()
         {
@@ -92,7 +93,17 @@ namespace TiltBrush
         public void ChangeParameter(ProceduralShapes.Parameter parameter, float value)
         {
             if (m_Target == null || !m_Target.gameObject.activeInHierarchy) { return; }
-            if (Mathf.Approximately(parameter.Read(m_Target.m_PolyRecipe), value)) { return; }
+            float current = parameter.Ellipse ? (EllipseEnabled ? 1f : 0f) : parameter.Read(m_Target.m_PolyRecipe);
+            if (Mathf.Approximately(current, value)) { return; }
+            if (parameter.Ellipse)
+            {
+                m_Target.EllipseEnabled = value >= .5f;
+                if (value >= .5f || !ProceduralShapes.IsElliptical(m_Target.m_PolyRecipe))
+                {
+                    Refresh();
+                    return;
+                }
+            }
             if (m_Gesture == null) { m_Gesture = new object(); }
             try
             {
@@ -121,7 +132,7 @@ namespace TiltBrush
         {
             m_DisplayedRecipe = m_Target != null ? m_Target.m_PolyRecipe : null;
             m_Parameters = m_DisplayedRecipe != null
-                ? ProceduralShapes.GetParameters(m_DisplayedRecipe) : new List<ProceduralShapes.Parameter>();
+                ? ProceduralShapes.GetParameters(m_DisplayedRecipe, EllipseEnabled) : new List<ProceduralShapes.Parameter>();
             int pages = Mathf.Max(1, Mathf.CeilToInt((float)m_Parameters.Count / m_ParameterSliders.Length));
             m_Page = Mathf.Clamp(m_Page, 0, pages - 1);
             m_TargetLabel.text = m_Target != null ? $"Editing: {(string)m_DisplayedRecipe.ToJson()["Generator"]["Type"]}" : "Create a shape or point at one";

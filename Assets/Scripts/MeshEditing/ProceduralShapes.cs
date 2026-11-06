@@ -97,7 +97,8 @@ namespace TiltBrush.MeshEditing
             return current > 0f ? MinimumDimension(generator, dimension) / current : 0f;
         }
 
-        public static GeometryRecipeData ResizeAxis(GeometryRecipeData recipe, GrabWidget.Axis axis, float ratio)
+        public static GeometryRecipeData ResizeAxis(GeometryRecipeData recipe, GrabWidget.Axis axis, float ratio,
+            bool ellipse = false)
         {
             if (!(ratio > 0f) || float.IsInfinity(ratio)) { throw new ArgumentOutOfRangeException(nameof(ratio)); }
             string dimension = AxisDimension(recipe, axis);
@@ -113,13 +114,13 @@ namespace TiltBrush.MeshEditing
             if (dimension == "radial")
             {
                 ratio = Mathf.Max(ratio, MinimumAxisResizeRatio(recipe, axis));
-                bool ellipse = EllipseEnabled(data);
+                bool useEllipse = ellipse || EllipseEnabled(data);
                 foreach (string end in new[] { "bottom", "top" })
                 {
                     float radius = (float?)parameters[$"{end}Radius"] ?? .5f;
                     float aspect = (float?)parameters[$"{end}Aspect"] ?? 1f;
-                    if (!ellipse || axis == GrabWidget.Axis.X) { parameters[$"{end}Radius"] = radius * ratio; }
-                    parameters[$"{end}Aspect"] = !ellipse ? 1f : aspect * (axis == GrabWidget.Axis.X ? 1f / ratio : ratio);
+                    if (!useEllipse || axis == GrabWidget.Axis.X) { parameters[$"{end}Radius"] = radius * ratio; }
+                    parameters[$"{end}Aspect"] = !useEllipse ? 1f : aspect * (axis == GrabWidget.Axis.X ? 1f / ratio : ratio);
                 }
                 return new GeometryRecipeData(data);
             }
@@ -139,12 +140,15 @@ namespace TiltBrush.MeshEditing
             return new GeometryRecipeData(data);
         }
 
+        public static bool IsElliptical(GeometryRecipeData recipe)
+            => recipe != null && EllipseEnabled(recipe.ToJson());
+
         private static bool EllipseEnabled(JObject data)
         {
             var parameters = data["Generator"]?["Parameters"];
             // Imported elliptical cylinders remain editable as ellipses, without
             // requiring authoring metadata in source documents.
-            return (bool?)data["Authoring"]?["Ellipse"] ??
+            return (string)data["Generator"]?["Type"] == "cylinder" &&
                 (((float?)parameters?["bottomAspect"] ?? 1f) != 1f ||
                  ((float?)parameters?["topAspect"] ?? 1f) != 1f);
         }
@@ -231,7 +235,7 @@ namespace TiltBrush.MeshEditing
             });
         }
 
-        public static List<Parameter> GetParameters(GeometryRecipeData recipe)
+        public static List<Parameter> GetParameters(GeometryRecipeData recipe, bool ellipse = false)
         {
             recipe.GetSteps(out var generator, out _);
             var result = new List<Parameter>();
@@ -263,7 +267,7 @@ namespace TiltBrush.MeshEditing
                     result.Add(new Parameter { Name = "taper", Label = "Taper", Min = -1, Max = 1, Taper = true });
                     result.Add(new Parameter { Name = "Ellipse", Label = "Ellipse", Min = 0, Max = 1,
                         Integer = true, Boolean = true, Ellipse = true });
-                    if (EllipseEnabled(recipe.ToJson()))
+                    if (ellipse || EllipseEnabled(recipe.ToJson()))
                     {
                         result.Add(Ratio("topAspect", "bottomAspect", "Top ovalness", .05f, 4, 1, 1));
                     }
@@ -299,10 +303,7 @@ namespace TiltBrush.MeshEditing
             JObject data = recipe.ToJson();
             if (parameter.Ellipse)
             {
-                var authoring = data["Authoring"] as JObject ?? new JObject();
-                data["Authoring"] = authoring;
                 bool enabled = value >= .5f;
-                authoring["Ellipse"] = enabled;
                 if (!enabled)
                 {
                     var generator = (JObject)data["Generator"];

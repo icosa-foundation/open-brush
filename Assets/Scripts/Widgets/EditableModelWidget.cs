@@ -23,6 +23,15 @@ namespace TiltBrush
         private Vector3 m_AxisScale = Vector3.one;
         private Axis? m_LockedManipulationAxis;
         private object m_AxisResizeGesture;
+        private bool m_Ellipse;
+
+        // Session-only editing mode. A loaded ellipse is inferred from its geometry;
+        // checking the toggle on a circle doesn't introduce a recipe field.
+        public bool EllipseEnabled
+        {
+            get => m_Ellipse || ProceduralShapes.IsElliptical(m_PolyRecipe);
+            set => m_Ellipse = value;
+        }
 
         public override Vector3 CustomDimension
         {
@@ -109,7 +118,7 @@ namespace TiltBrush
         {
             if (!ProceduralShapes.CanResizeAxis(m_PolyRecipe, axis) || !(deltaScale > 0) ||
                 float.IsInfinity(deltaScale) || deltaScale == 1f) { return; }
-            var recipe = ProceduralShapes.ResizeAxis(m_PolyRecipe, axis, deltaScale);
+            var recipe = ProceduralShapes.ResizeAxis(m_PolyRecipe, axis, deltaScale, EllipseEnabled);
             if (m_RecordMovements)
             {
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(

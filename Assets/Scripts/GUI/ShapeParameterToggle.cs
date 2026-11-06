@@ -20,7 +20,7 @@ namespace TiltBrush
             m_Parameter = parameter;
             m_Label.text = parameter.Label;
             SetDescriptionText(parameter.Label);
-            ToggleState = parameter.Read(recipe) != 0;
+            ToggleState = parameter.Ellipse ? panel.EllipseEnabled : parameter.Read(recipe) != 0;
         }
 
         protected override void OnButtonPressed()
