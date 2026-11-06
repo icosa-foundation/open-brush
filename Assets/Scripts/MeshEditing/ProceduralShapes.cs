@@ -22,13 +22,21 @@ namespace TiltBrush.MeshEditing
 
         public static bool IsPresetVisible(int preset) => preset >= 0 && preset < PresetNames.Length;
 
-        // Axis gestures edit dimensions, not the final mesh scale. Add other shape
-        // mappings only when their parameter semantics have been agreed.
+        // Axis gestures edit dimensions, not the final mesh scale.
         private static string AxisDimension(GeometryRecipeData recipe, GrabWidget.Axis axis)
         {
             if (recipe == null) { return null; }
             recipe.GetSteps(out var generator, out var modifiers);
             if (modifiers.Any(step => step.Type == "transform" || step.Type == "bend")) { return null; }
+            if (generator.Type == "cylinder" || generator.Type == "capsule")
+            {
+                if (axis == GrabWidget.Axis.Y) { return generator.Type == "cylinder" ? "height" : "cylinderHeight"; }
+                if (axis == GrabWidget.Axis.X || axis == GrabWidget.Axis.Z)
+                {
+                    return generator.Type == "cylinder" ? "radial" : "radius";
+                }
+                return null;
+            }
             if (generator.Type != "panel" && generator.Type != "rectangle" && generator.Type != "frame") { return null; }
             switch (axis)
             {
@@ -46,6 +54,7 @@ namespace TiltBrush.MeshEditing
         {
             var parameters = generator["Parameters"];
             string type = (string)generator["Type"];
+            if (type == "cylinder" || type == "capsule") { return .0001f; }
             float edgeRadius = type == "panel" ? (float?)parameters?["edgeRadius"] ?? 0f : 0f;
             float minimum = Mathf.Max(.0001f, 2f * edgeRadius);
             if (dimension != "depth")
@@ -65,6 +74,25 @@ namespace TiltBrush.MeshEditing
             string dimension = AxisDimension(recipe, axis);
             if (dimension == null) { return 0f; }
             var generator = (JObject)recipe.ToJson()["Generator"];
+            var parameters = generator["Parameters"];
+            if (dimension == "cylinderHeight")
+            {
+                float caps = 2f * ((float?)parameters?["radius"] ?? 1f);
+                return caps / (((float?)parameters?["cylinderHeight"] ?? 2f) + caps);
+            }
+            if (dimension == "radial")
+            {
+                bool ellipse = EllipseEnabled(recipe.ToJson());
+                float bottom = (float?)parameters?["bottomRadius"] ?? .5f;
+                float top = (float?)parameters?["topRadius"] ?? .5f;
+                if (ellipse && axis == GrabWidget.Axis.Z)
+                {
+                    bottom *= (float?)parameters?["bottomAspect"] ?? 1f;
+                    top *= (float?)parameters?["topAspect"] ?? 1f;
+                }
+                float radius = Mathf.Max(bottom, top);
+                return radius > 0f ? .0001f / radius : 0f;
+            }
             float current = (float?)generator["Parameters"]?[dimension] ?? (dimension == "depth" ? .1f : 1f);
             return current > 0f ? MinimumDimension(generator, dimension) / current : 0f;
         }
@@ -82,11 +110,43 @@ namespace TiltBrush.MeshEditing
                 parameters = new JObject();
                 generator["Parameters"] = parameters;
             }
+            if (dimension == "radial")
+            {
+                ratio = Mathf.Max(ratio, MinimumAxisResizeRatio(recipe, axis));
+                bool ellipse = EllipseEnabled(data);
+                foreach (string end in new[] { "bottom", "top" })
+                {
+                    float radius = (float?)parameters[$"{end}Radius"] ?? .5f;
+                    float aspect = (float?)parameters[$"{end}Aspect"] ?? 1f;
+                    if (!ellipse || axis == GrabWidget.Axis.X) { parameters[$"{end}Radius"] = radius * ratio; }
+                    parameters[$"{end}Aspect"] = !ellipse ? 1f : aspect * (axis == GrabWidget.Axis.X ? 1f / ratio : ratio);
+                }
+                return new GeometryRecipeData(data);
+            }
+            if (dimension == "cylinderHeight")
+            {
+                float caps = 2f * ((float?)parameters["radius"] ?? 1f);
+                float total = ((float?)parameters["cylinderHeight"] ?? 2f) + caps;
+                float resizedHeight = total * ratio;
+                if (float.IsInfinity(resizedHeight)) { throw new ArgumentOutOfRangeException(nameof(ratio)); }
+                parameters[dimension] = Mathf.Max(0f, resizedHeight - caps);
+                return new GeometryRecipeData(data);
+            }
             float current = (float?)parameters[dimension] ?? (dimension == "depth" ? .1f : 1f);
             float resized = current * ratio;
             if (float.IsInfinity(resized)) { throw new ArgumentOutOfRangeException(nameof(ratio)); }
             parameters[dimension] = Mathf.Max(MinimumDimension(generator, dimension), resized);
             return new GeometryRecipeData(data);
+        }
+
+        private static bool EllipseEnabled(JObject data)
+        {
+            var parameters = data["Generator"]?["Parameters"];
+            // Imported elliptical cylinders remain editable as ellipses, without
+            // requiring authoring metadata in source documents.
+            return (bool?)data["Authoring"]?["Ellipse"] ??
+                (((float?)parameters?["bottomAspect"] ?? 1f) != 1f ||
+                 ((float?)parameters?["topAspect"] ?? 1f) != 1f);
         }
 
         public sealed class Parameter
@@ -103,6 +163,7 @@ namespace TiltBrush.MeshEditing
             internal bool FinalSmoothing;
             internal string Axis;
             internal bool Boolean;
+            internal bool Ellipse;
             internal bool Taper;
             internal string RelativeTo;
             internal float ReferenceDefault;
@@ -110,6 +171,7 @@ namespace TiltBrush.MeshEditing
             public float Read(GeometryRecipeData recipe)
             {
                 JObject data = recipe.ToJson();
+                if (Ellipse) { return EllipseEnabled(data) ? 1f : 0f; }
                 if (FinalSmoothing)
                 {
                     // Native imports can retain generator-specific seam smoothing. An authoring
@@ -199,7 +261,12 @@ namespace TiltBrush.MeshEditing
                     break;
                 case "cylinder":
                     result.Add(new Parameter { Name = "taper", Label = "Taper", Min = -1, Max = 1, Taper = true });
-                    result.Add(Ratio("topAspect", "bottomAspect", "Top ovalness", .05f, 4, 1, 1));
+                    result.Add(new Parameter { Name = "Ellipse", Label = "Ellipse", Min = 0, Max = 1,
+                        Integer = true, Boolean = true, Ellipse = true });
+                    if (EllipseEnabled(recipe.ToJson()))
+                    {
+                        result.Add(Ratio("topAspect", "bottomAspect", "Top ovalness", .05f, 4, 1, 1));
+                    }
                     AddRevolution(result);
                     break;
                 case "capsule":
@@ -230,6 +297,22 @@ namespace TiltBrush.MeshEditing
         public static GeometryRecipeData WithValue(GeometryRecipeData recipe, Parameter parameter, float value)
         {
             JObject data = recipe.ToJson();
+            if (parameter.Ellipse)
+            {
+                var authoring = data["Authoring"] as JObject ?? new JObject();
+                data["Authoring"] = authoring;
+                bool enabled = value >= .5f;
+                authoring["Ellipse"] = enabled;
+                if (!enabled)
+                {
+                    var generator = (JObject)data["Generator"];
+                    var parameters = generator["Parameters"] as JObject ?? new JObject();
+                    generator["Parameters"] = parameters;
+                    parameters["bottomAspect"] = 1f;
+                    parameters["topAspect"] = 1f;
+                }
+                return new GeometryRecipeData(data);
+            }
             if (parameter.FinalSmoothing)
             {
                 if (!(data["PostProcessing"] is JObject postProcessing))

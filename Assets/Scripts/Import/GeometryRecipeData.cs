@@ -51,7 +51,12 @@ namespace TiltBrush.DocumentImport
             out IReadOnlyDictionary<string, object> postProcessing)
         {
             if (Version != 1) { throw new NotSupportedException($"Unsupported geometry recipe version: {Version}"); }
-            CheckMembers(m_Data, "Version", "Generator", "Modifiers", "PostProcessing");
+            CheckMembers(m_Data, "Version", "Generator", "Modifiers", "PostProcessing", "Authoring");
+            if (m_Data.TryGetValue("Authoring", out var authoring))
+            {
+                // Editing hints belong to the application, not to the Core geometry steps.
+                ReadParameters(authoring, Spec(boolean: "Ellipse"), "Authoring");
+            }
             generator = ReadStep(m_Data["Generator"], true);
             var steps = new List<GeometryStepData>();
             if (m_Data.TryGetValue("Modifiers", out var value))
