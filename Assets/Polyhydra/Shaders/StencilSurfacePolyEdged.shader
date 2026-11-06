@@ -29,8 +29,8 @@ Shader "Custom/StencilSurfacePolyEdged"
 
     CGINCLUDE
     #include "UnityCG.cginc"
-    #include "Assets/Shaders/Include/Brush.cginc"
-    #include "Assets/Shaders/Include/MobileSelection.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
 
     #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
 

@@ -39,8 +39,8 @@ Shader "Custom/VertexColorTransparant"
         #pragma multi_compile __ ODS_RENDER ODS_RENDER_CM
         #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
 
-        #include "Assets/Shaders/Include/Brush.cginc"
-        #include "Assets/Shaders/Include/MobileSelection.cginc"
+        #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+        #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
 
         uniform float _Frequency;
         uniform float _Jitter;
