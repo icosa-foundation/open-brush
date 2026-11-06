@@ -16,6 +16,7 @@ import android.provider.MediaStore;
 import com.unity3d.player.UnityPlayer;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
@@ -23,6 +24,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONArray;
@@ -74,7 +76,7 @@ public final class DirectStorage {
             if (!root.isDirectory() && !root.mkdirs()) throw new IOException("Cannot create Documents workspace");
             for (UriPermission grant : activity.getContentResolver().getPersistedUriPermissions()) {
                 if (grant.isReadPermission() && grant.isWritePermission() && matches(grant.getUri(), name)) {
-                    prepare(activity.getApplicationContext(), grant.getUri(), name, receiver);
+                    prepare(activity.getApplicationContext(), grant.getUri(), name, receiver, false);
                     return;
                 }
             }
@@ -140,7 +142,8 @@ public final class DirectStorage {
                 if (flags != (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION))
                     throw new IOException("The workspace requires read and write access");
                 getActivity().getContentResolver().takePersistableUriPermission(tree, flags);
-                prepare(getActivity().getApplicationContext(), tree, name, receiver);
+                StorageLoadingActivity.show(getActivity());
+                prepare(getActivity().getApplicationContext(), tree, name, receiver, true);
             } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
             finally { remove(); }
         }
@@ -151,7 +154,8 @@ public final class DirectStorage {
         }
     }
 
-    private static void prepare(Context context, Uri tree, String name, String receiver) {
+    private static void prepare(Context context, Uri tree, String name, String receiver,
+                                boolean showLoading) {
         new Thread(() -> {
             try {
                 String root = documentsRoot(name);
@@ -223,6 +227,7 @@ public final class DirectStorage {
                         catch (Exception error) { if (failed++ == 0) firstFailure = error.toString(); }
                     }
                 }
+                verifyRootCapability(root);
                 JSONObject result = new JSONObject();
                 result.put("root", root);
                 result.put("documents", entries);
@@ -232,7 +237,32 @@ public final class DirectStorage {
                 result.put("error", firstFailure);
                 send(receiver, "OnStoragePrepared", result.toString());
             } catch (Exception error) { send(receiver, "OnStorageError", error.toString()); }
+            finally { if (showLoading) StorageLoadingActivity.hide(); }
         }, "OBDS_Prepare").start();
+    }
+
+    // This includes a durable flush and can take seconds on newly mounted shared storage.
+    // Keep it on the preparation worker so Unity's main thread can render the loading screen
+    // while Android dismisses DocumentsUI and startup continues.
+    private static void verifyRootCapability(String root) throws IOException {
+        File capability = new File(root,
+            ".obds-capability-" + UUID.randomUUID().toString().replace("-", ""));
+        boolean created = false;
+        try {
+            if (!capability.createNewFile()) throw new IOException("Cannot create root capability file");
+            created = true;
+            try (FileOutputStream output = new FileOutputStream(capability)) {
+                output.write(0x5a);
+                output.flush();
+                output.getFD().sync();
+            }
+            try (FileInputStream input = new FileInputStream(capability)) {
+                if (input.read() != 0x5a) throw new IOException("Root capability read failed");
+            }
+        } finally {
+            if (created && !capability.delete())
+                throw new IOException("Cannot delete root capability file");
+        }
     }
 
     private static void verifyPath(Context context, Uri document, String path) throws Exception {
