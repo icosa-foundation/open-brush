@@ -168,6 +168,9 @@ namespace TiltBrush
             {
                 EndGesture();
                 CancelRegionDrag();
+                // Other tools operate on committed voxel geometry. Temporary hiding
+                // (including popups) keeps the selection floating through HideTool.
+                ModelWidget.ClearVoxRegionSelections();
             }
             base.EnableTool(enable);
             if (enable)
