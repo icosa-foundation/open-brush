@@ -3883,6 +3883,18 @@ MonoBehaviour:
     m_Key: LABS_PANEL_VOXEL_TRAY_SELECT_REGION_EXTRA
     m_Metadata:
       m_Items: []
+  - m_Id: 561984249517400064
+    m_Key: VOX_PALETTE_APPLY_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Key: VOX_PALETTE_CLEAR_UNUSED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Key: VOX_PALETTE_SORT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

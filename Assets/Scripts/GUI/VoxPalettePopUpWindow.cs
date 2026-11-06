@@ -54,8 +54,8 @@ namespace TiltBrush
             m_Previous = CreateButton(new Vector3(-1.15f, -.72f, -.06f), VoxPaletteButton.Action.Previous, m_PreviousTexture, "Previous palette page");
             m_Next = CreateButton(new Vector3(-.55f, -.72f, -.06f), VoxPaletteButton.Action.Next, m_NextTexture, "Next palette page");
             m_Apply.Configure(this, VoxPaletteButton.Action.Apply, null, null);
-            m_ClearUnused.Configure(this, VoxPaletteButton.Action.ClearUnused, null, "Clear unused palette colors");
-            m_Sort.Configure(this, VoxPaletteButton.Action.Sort, null, "Sort palette colors by hue");
+            m_ClearUnused.Configure(this, VoxPaletteButton.Action.ClearUnused, null, null);
+            m_Sort.Configure(this, VoxPaletteButton.Action.Sort, null, null);
             ColorPicker.ColorPicked += OnColorPicked;
             m_Memory = SketchMemoryScript.m_Instance;
             m_Memory.OperationStackChanged += OnHistoryChanged;

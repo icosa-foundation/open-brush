@@ -4059,6 +4059,18 @@ MonoBehaviour:
     m_Localized: Drag the trigger to select a cuboid. Press the duplicate button during a grab to stamp a copy. Double press the trigger in empty space to finalise and clear.
     m_Metadata:
       m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: Apply palette color
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: Clear unused palette colors
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: Sort palette colors by hue
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
