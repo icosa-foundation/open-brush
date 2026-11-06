@@ -14,6 +14,14 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
+        <activity
+            android:name="foundation.icosa.openbrush.StorageLoadingActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:hardwareAccelerated="true"
+            android:resizeableActivity="true"
+            android:screenOrientation="landscape"
+            android:theme="@android:style/Theme.Material.NoActionBar" />
         <!-- Alias that launches into flat/monoscopic mode without VR -->
         <!-- TODO Re-enable launch aliases. They will be useful but need a bit more thought and testing -->
         <!--
