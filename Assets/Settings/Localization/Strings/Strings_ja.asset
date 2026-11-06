@@ -3451,7 +3451,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: "Open Brush スケッチビューアー"
+    m_Localized: "Open Brush \u30B9\u30B1\u30C3\u30C1\u30D3\u30E5\u30FC\u30A2\u30FC"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3515,7 +3515,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: "パススルーに対応していないヘッドセットを使用しているユーザーがいる可能性があります"
+    m_Localized: "\u30D1\u30B9\u30B9\u30EB\u30FC\u306B\u5BFE\u5FDC\u3057\u3066\u3044\u306A\u3044\u30D8\u30C3\u30C9\u30BB\u30C3\u30C8\u3092\u4F7F\u7528\u3057\u3066\u3044\u308B\u30E6\u30FC\u30B6\u30FC\u304C\u3044\u308B\u53EF\u80FD\u6027\u304C\u3042\u308A\u307E\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928
@@ -3587,775 +3587,787 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 89041955544915968
-    m_Localized: "メディアライブラリ"
+    m_Localized: "\u30E1\u30C7\u30A3\u30A2\u30E9\u30A4\u30D6\u30E9\u30EA"
     m_Metadata:
       m_Items: []
   - m_Id: 89060975102943232
-    m_Localized: "開く"
+    m_Localized: "\u958B\u304F"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634182
-    m_Localized: "位置"
+    m_Localized: "\u4F4D\u7F6E"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584188022786
-    m_Localized: "ミラーを呼び出します"
+    m_Localized: "\u30DF\u30E9\u30FC\u3092\u547C\u3073\u51FA\u3057\u307E\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 157582826200739840
-    m_Localized: "閉じる"
+    m_Localized: "\u9589\u3058\u308B"
     m_Metadata:
       m_Items: []
   - m_Id: 312781662766833664
-    m_Localized: "ステータス："
+    m_Localized: "\u30B9\u30C6\u30FC\u30BF\u30B9\uFF1A"
     m_Metadata:
       m_Items: []
   - m_Id: 540641902376607744
-    m_Localized: "メディアライブラリ"
+    m_Localized: "\u30E1\u30C7\u30A3\u30A2\u30E9\u30A4\u30D6\u30E9\u30EA"
     m_Metadata:
       m_Items: []
   - m_Id: 7930412489482241
-    m_Localized: "すべてのモデル"
+    m_Localized: "\u3059\u3079\u3066\u306E\u30E2\u30C7\u30EB"
     m_Metadata:
       m_Items: []
   - m_Id: 7932160536977409
-    m_Localized: "すべてのモデル"
+    m_Localized: "\u3059\u3079\u3066\u306E\u30E2\u30C7\u30EB"
     m_Metadata:
       m_Items: []
   - m_Id: 89043032713486336
-    m_Localized: "クリックして読み込む"
+    m_Localized: "\u30AF\u30EA\u30C3\u30AF\u3057\u3066\u8AAD\u307F\u8FBC\u3080"
     m_Metadata:
       m_Items: []
   - m_Id: 89044237590224896
-    m_Localized: "ローカルモデル"
+    m_Localized: "\u30ED\u30FC\u30AB\u30EB\u30E2\u30C7\u30EB"
     m_Metadata:
       m_Items: []
   - m_Id: 89044379697438720
-    m_Localized: "ローカル動画"
+    m_Localized: "\u30ED\u30FC\u30AB\u30EB\u52D5\u753B"
     m_Metadata:
       m_Items: []
   - m_Id: 89044625424932864
-    m_Localized: "ローカル画像"
+    m_Localized: "\u30ED\u30FC\u30AB\u30EB\u753B\u50CF"
     m_Metadata:
       m_Items: []
   - m_Id: 89061114353836032
-    m_Localized: "メディアを追加"
+    m_Localized: "\u30E1\u30C7\u30A3\u30A2\u3092\u8FFD\u52A0"
     m_Metadata:
       m_Items: []
   - m_Id: 89064741239808000
-    m_Localized: "手順を見る"
+    m_Localized: "\u624B\u9806\u3092\u898B\u308B"
     m_Metadata:
       m_Items: []
   - m_Id: 89072407659962368
-    m_Localized: "メディアを追加"
+    m_Localized: "\u30E1\u30C7\u30A3\u30A2\u3092\u8FFD\u52A0"
     m_Metadata:
       m_Items: []
   - m_Id: 89074692188299264
-    m_Localized: "後方にスキップ"
+    m_Localized: "\u5F8C\u65B9\u306B\u30B9\u30AD\u30C3\u30D7"
     m_Metadata:
       m_Items: []
   - m_Id: 89074820936654848
-    m_Localized: "再生 / 一時停止"
+    m_Localized: "\u518D\u751F / \u4E00\u6642\u505C\u6B62"
     m_Metadata:
       m_Items: []
   - m_Id: 89074884501331968
-    m_Localized: "前方にスキップ"
+    m_Localized: "\u524D\u65B9\u306B\u30B9\u30AD\u30C3\u30D7"
     m_Metadata:
       m_Items: []
   - m_Id: 89093320602312704
-    m_Localized: "左右の手を入れ替える"
+    m_Localized: "\u5DE6\u53F3\u306E\u624B\u3092\u5165\u308C\u66FF\u3048\u308B"
     m_Metadata:
       m_Items: []
   - m_Id: 81207223535591424
-    m_Localized: "煙"
+    m_Localized: "\u7159"
     m_Metadata:
       m_Items: []
   - m_Id: 106429517453328384
-    m_Localized: "背景画像"
+    m_Localized: "\u80CC\u666F\u753B\u50CF"
     m_Metadata:
       m_Items: []
   - m_Id: 103924956079587328
-    m_Localized: "スケッチの名前を変更"
+    m_Localized: "\u30B9\u30B1\u30C3\u30C1\u306E\u540D\u524D\u3092\u5909\u66F4"
     m_Metadata:
       m_Items: []
   - m_Id: 103943359016206336
-    m_Localized: "変形ツール"
+    m_Localized: "\u5909\u5F62\u30C4\u30FC\u30EB"
     m_Metadata:
       m_Items: []
   - m_Id: 109424659466551296
-    m_Localized: "選択範囲を塗り直す"
+    m_Localized: "\u9078\u629E\u7BC4\u56F2\u3092\u5857\u308A\u76F4\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584125108224
-    m_Localized: "X"
+    m_Localized: X
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634183
-    m_Localized: "回転"
+    m_Localized: "\u56DE\u8EE2"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634184
-    m_Localized: "整列"
+    m_Localized: "\u6574\u5217"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828482
-    m_Localized: "X 軸で整列"
+    m_Localized: "X \u8EF8\u3067\u6574\u5217"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828483
-    m_Localized: "Y 軸で整列"
+    m_Localized: "Y \u8EF8\u3067\u6574\u5217"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828484
-    m_Localized: "Z 軸で整列"
+    m_Localized: "Z \u8EF8\u3067\u6574\u5217"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828485
-    m_Localized: "整列基準:"
+    m_Localized: "\u6574\u5217\u57FA\u6E96:"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828486
-    m_Localized: "左端 / 下端 / 前端"
+    m_Localized: "\u5DE6\u7AEF / \u4E0B\u7AEF / \u524D\u7AEF"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828487
-    m_Localized: "中心"
+    m_Localized: "\u4E2D\u5FC3"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828488
-    m_Localized: "右端 / 上端 / 後端"
+    m_Localized: "\u53F3\u7AEF / \u4E0A\u7AEF / \u5F8C\u7AEF"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828489
-    m_Localized: "回転を揃える"
+    m_Localized: "\u56DE\u8EE2\u3092\u63C3\u3048\u308B"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828490
-    m_Localized: "分布:"
+    m_Localized: "\u5206\u5E03:"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828491
-    m_Localized: "X 軸に分布"
+    m_Localized: "X \u8EF8\u306B\u5206\u5E03"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828492
-    m_Localized: "Y 軸に分布"
+    m_Localized: "Y \u8EF8\u306B\u5206\u5E03"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828493
-    m_Localized: "Z 軸に分布"
+    m_Localized: "Z \u8EF8\u306B\u5206\u5E03"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828494
-    m_Localized: "分布基準:"
+    m_Localized: "\u5206\u5E03\u57FA\u6E96:"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828495
-    m_Localized: "間隔"
+    m_Localized: "\u9593\u9694"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828499
-    m_Localized: "オプション"
+    m_Localized: "\u30AA\u30D7\u30B7\u30E7\u30F3"
     m_Metadata:
       m_Items: []
   - m_Id: 129251051561549824
-    m_Localized: "ウェブカメラ"
+    m_Localized: "\u30A6\u30A7\u30D6\u30AB\u30E1\u30E9"
     m_Metadata:
       m_Items: []
   - m_Id: 129251441224974336
-    m_Localized: "前のデバイス"
+    m_Localized: "\u524D\u306E\u30C7\u30D0\u30A4\u30B9"
     m_Metadata:
       m_Items: []
   - m_Id: 129251554584428544
-    m_Localized: "次のデバイス"
+    m_Localized: "\u6B21\u306E\u30C7\u30D0\u30A4\u30B9"
     m_Metadata:
       m_Items: []
   - m_Id: 141243230077059072
-    m_Localized: "深度"
+    m_Localized: "\u6DF1\u5EA6"
     m_Metadata:
       m_Items: []
   - m_Id: 144201565051027456
-    m_Localized: "オーディオクリップ"
+    m_Localized: "\u30AA\u30FC\u30C7\u30A3\u30AA\u30AF\u30EA\u30C3\u30D7"
     m_Metadata:
       m_Items: []
   - m_Id: 144204798700027904
-    m_Localized: "オーディオクリップ"
+    m_Localized: "\u30AA\u30FC\u30C7\u30A3\u30AA\u30AF\u30EA\u30C3\u30D7"
     m_Metadata:
       m_Items: []
   - m_Id: 137988464450723840
-    m_Localized: "選択範囲を現在のレイヤーに移動"
+    m_Localized: "\u9078\u629E\u7BC4\u56F2\u3092\u73FE\u5728\u306E\u30EC\u30A4\u30E4\u30FC\u306B\u79FB\u52D5"
     m_Metadata:
       m_Items: []
   - m_Id: 147094550989828096
-    m_Localized: "エラー"
+    m_Localized: "\u30A8\u30E9\u30FC"
     m_Metadata:
       m_Items: []
   - m_Id: 147809767845167104
-    m_Localized: "言語を変更"
+    m_Localized: "\u8A00\u8A9E\u3092\u5909\u66F4"
     m_Metadata:
       m_Items: []
   - m_Id: 147811113256255488
-    m_Localized: "言語"
+    m_Localized: "\u8A00\u8A9E"
     m_Metadata:
       m_Items: []
   - m_Id: 188791089062830080
-    m_Localized: "キャンバスの位置をリセット"
+    m_Localized: "\u30AD\u30E3\u30F3\u30D0\u30B9\u306E\u4F4D\u7F6E\u3092\u30EA\u30BB\u30C3\u30C8"
     m_Metadata:
       m_Items: []
   - m_Id: 188791266398003200
-    m_Localized: "キャンバスの位置を固定"
+    m_Localized: "\u30AD\u30E3\u30F3\u30D0\u30B9\u306E\u4F4D\u7F6E\u3092\u56FA\u5B9A"
     m_Metadata:
       m_Items: []
   - m_Id: 188792931159203840
-    m_Localized: "キャンバスの位置の固定を解除"
+    m_Localized: "\u30AD\u30E3\u30F3\u30D0\u30B9\u306E\u4F4D\u7F6E\u306E\u56FA\u5B9A\u3092\u89E3\u9664"
     m_Metadata:
       m_Items: []
   - m_Id: 224363142209691648
-    m_Localized: "サブフォルダーを選択"
+    m_Localized: "\u30B5\u30D6\u30D5\u30A9\u30EB\u30C0\u30FC\u3092\u9078\u629E"
     m_Metadata:
       m_Items: []
   - m_Id: 234808679492837376
-    m_Localized: "保存したストローク"
+    m_Localized: "\u4FDD\u5B58\u3057\u305F\u30B9\u30C8\u30ED\u30FC\u30AF"
     m_Metadata:
       m_Items: []
   - m_Id: 235163428054458368
-    m_Localized: "保存したストローク"
+    m_Localized: "\u4FDD\u5B58\u3057\u305F\u30B9\u30C8\u30ED\u30FC\u30AF"
     m_Metadata:
       m_Items: []
   - m_Id: 238556149774557184
-    m_Localized: "画像が大きすぎて読み込めません"
+    m_Localized: "\u753B\u50CF\u304C\u5927\u304D\u3059\u304E\u3066\u8AAD\u307F\u8FBC\u3081\u307E\u305B\u3093"
     m_Metadata:
       m_Items: []
   - m_Id: 238935604850335744
-    m_Localized: "画像が大きすぎて読み込めません"
+    m_Localized: "\u753B\u50CF\u304C\u5927\u304D\u3059\u304E\u3066\u8AAD\u307F\u8FBC\u3081\u307E\u305B\u3093"
     m_Metadata:
       m_Items: []
   - m_Id: 242372529028341760
-    m_Localized: "画像を読み込めませんでした"
+    m_Localized: "\u753B\u50CF\u3092\u8AAD\u307F\u8FBC\u3081\u307E\u305B\u3093\u3067\u3057\u305F"
     m_Metadata:
       m_Items: []
   - m_Id: 276171365497266176
-    m_Localized: "ブラシサイズ"
+    m_Localized: "\u30D6\u30E9\u30B7\u30B5\u30A4\u30BA"
     m_Metadata:
       m_Items: []
   - m_Id: 294636550056648704
-    m_Localized: "接続"
+    m_Localized: "\u63A5\u7D9A"
     m_Metadata:
       m_Items: []
   - m_Id: 294637000357126144
-    m_Localized: "切断"
+    m_Localized: "\u5207\u65AD"
     m_Metadata:
       m_Items: []
   - m_Id: 332314407106863104
-    m_Localized: "オプション"
+    m_Localized: "\u30AA\u30D7\u30B7\u30E7\u30F3"
     m_Metadata:
       m_Items: []
   - m_Id: 332573810292776960
-    m_Localized: "タイトルで検索"
+    m_Localized: "\u30BF\u30A4\u30C8\u30EB\u3067\u691C\u7D22"
     m_Metadata:
       m_Items: []
   - m_Id: 332574165927813120
-    m_Localized: "絞り込みと並べ替え"
+    m_Localized: "\u7D5E\u308A\u8FBC\u307F\u3068\u4E26\u3079\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 340941283698237440
-    m_Localized: "全員に対してミュート"
+    m_Localized: "\u5168\u54E1\u306B\u5BFE\u3057\u3066\u30DF\u30E5\u30FC\u30C8"
     m_Metadata:
       m_Items: []
   - m_Id: 340941524061216768
-    m_Localized: "全員に対してミュート"
+    m_Localized: "\u5168\u54E1\u306B\u5BFE\u3057\u3066\u30DF\u30E5\u30FC\u30C8"
     m_Metadata:
       m_Items: []
   - m_Id: 341358942189346816
-    m_Localized: "このルーム名は使用できます"
+    m_Localized: "\u3053\u306E\u30EB\u30FC\u30E0\u540D\u306F\u4F7F\u7528\u3067\u304D\u307E\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 341359317994790912
-    m_Localized: "ルームはすでに存在します"
+    m_Localized: "\u30EB\u30FC\u30E0\u306F\u3059\u3067\u306B\u5B58\u5728\u3057\u307E\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 369886448819200000
-    m_Localized: "すべて"
+    m_Localized: "\u3059\u3079\u3066"
     m_Metadata:
       m_Items: []
   - m_Id: 397532058527293440
-    m_Localized: "ログインしていません"
+    m_Localized: "\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u3044\u307E\u305B\u3093"
     m_Metadata:
       m_Items: []
   - m_Id: 422456507319803904
-    m_Localized: "Y"
+    m_Localized: Y
     m_Metadata:
       m_Items: []
   - m_Id: 422456718544953344
-    m_Localized: "Z"
+    m_Localized: Z
     m_Metadata:
       m_Items: []
   - m_Id: 436433407381692416
-    m_Localized: "次へ"
+    m_Localized: "\u6B21\u3078"
     m_Metadata:
       m_Items: []
   - m_Id: 436433674365919232
-    m_Localized: "前へ"
+    m_Localized: "\u524D\u3078"
     m_Metadata:
       m_Items: []
   - m_Id: 522174996334338048
-    m_Localized: "360"
+    m_Localized: 360
     m_Metadata:
       m_Items: []
   - m_Id: 533423339270135808
-    m_Localized: "コードを手動で入力"
+    m_Localized: "\u30B3\u30FC\u30C9\u3092\u624B\u52D5\u3067\u5165\u529B"
     m_Metadata:
       m_Items: []
   - m_Id: 554342843705548800
-    m_Localized: "パネルを左に回転"
+    m_Localized: "\u30D1\u30CD\u30EB\u3092\u5DE6\u306B\u56DE\u8EE2"
     m_Metadata:
       m_Items: []
   - m_Id: 554342843789434880
-    m_Localized: "パネルを右に回転"
+    m_Localized: "\u30D1\u30CD\u30EB\u3092\u53F3\u306B\u56DE\u8EE2"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634176
-    m_Localized: "現在の選択範囲をスナップ:"
+    m_Localized: "\u73FE\u5728\u306E\u9078\u629E\u7BC4\u56F2\u3092\u30B9\u30CA\u30C3\u30D7:"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634177
-    m_Localized: "X 方向の位置スナップを切り替え"
+    m_Localized: "X \u65B9\u5411\u306E\u4F4D\u7F6E\u30B9\u30CA\u30C3\u30D7\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634178
-    m_Localized: "Y 方向の位置スナップを切り替え"
+    m_Localized: "Y \u65B9\u5411\u306E\u4F4D\u7F6E\u30B9\u30CA\u30C3\u30D7\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634179
-    m_Localized: "Z 方向の位置スナップを切り替え"
+    m_Localized: "Z \u65B9\u5411\u306E\u4F4D\u7F6E\u30B9\u30CA\u30C3\u30D7\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634180
-    m_Localized: "選択範囲をグリッドにスナップ"
+    m_Localized: "\u9078\u629E\u7BC4\u56F2\u3092\u30B0\u30EA\u30C3\u30C9\u306B\u30B9\u30CA\u30C3\u30D7"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634181
-    m_Localized: "選択範囲の回転角度をスナップ"
+    m_Localized: "\u9078\u629E\u7BC4\u56F2\u306E\u56DE\u8EE2\u89D2\u5EA6\u3092\u30B9\u30CA\u30C3\u30D7"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634185
-    m_Localized: "X 方向の位置固定を切り替え"
+    m_Localized: "X \u65B9\u5411\u306E\u4F4D\u7F6E\u56FA\u5B9A\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634186
-    m_Localized: "Y 方向の位置固定を切り替え"
+    m_Localized: "Y \u65B9\u5411\u306E\u4F4D\u7F6E\u56FA\u5B9A\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634187
-    m_Localized: "Z 方向の位置固定を切り替え"
+    m_Localized: "Z \u65B9\u5411\u306E\u4F4D\u7F6E\u56FA\u5B9A\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634188
-    m_Localized: "X 軸の回転固定を切り替え"
+    m_Localized: "X \u8EF8\u306E\u56DE\u8EE2\u56FA\u5B9A\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828480
-    m_Localized: "Y 軸の回転固定を切り替え"
+    m_Localized: "Y \u8EF8\u306E\u56DE\u8EE2\u56FA\u5B9A\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828481
-    m_Localized: "Z 軸の回転固定を切り替え"
+    m_Localized: "Z \u8EF8\u306E\u56DE\u8EE2\u56FA\u5B9A\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828496
-    m_Localized: "マルチミラー"
+    m_Localized: "\u30DE\u30EB\u30C1\u30DF\u30E9\u30FC"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828497
-    m_Localized: "点対称"
+    m_Localized: "\u70B9\u5BFE\u79F0"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828498
-    m_Localized: "壁紙対称"
+    m_Localized: "\u58C1\u7D19\u5BFE\u79F0"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828500
-    m_Localized: "色相に影響"
+    m_Localized: "\u8272\u76F8\u306B\u5F71\u97FF"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828501
-    m_Localized: "彩度に影響"
+    m_Localized: "\u5F69\u5EA6\u306B\u5F71\u97FF"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828502
-    m_Localized: "明度に影響"
+    m_Localized: "\u660E\u5EA6\u306B\u5F71\u97FF"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828505
-    m_Localized: "正弦波"
+    m_Localized: "\u6B63\u5F26\u6CE2"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828506
-    m_Localized: "三角波"
+    m_Localized: "\u4E09\u89D2\u6CE2"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828507
-    m_Localized: "のこぎり波"
+    m_Localized: "\u306E\u3053\u304E\u308A\u6CE2"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584188022784
-    m_Localized: "矩形波"
+    m_Localized: "\u77E9\u5F62\u6CE2"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584188022785
-    m_Localized: "ノイズ"
+    m_Localized: "\u30CE\u30A4\u30BA"
     m_Metadata:
       m_Items: []
   - m_Id: 128978688454426624
-    m_Localized: "つかんだオブジェクトをガイドにスナップしますか？"
+    m_Localized: "\u3064\u304B\u3093\u3060\u30AA\u30D6\u30B8\u30A7\u30AF\u30C8\u3092\u30AC\u30A4\u30C9\u306B\u30B9\u30CA\u30C3\u30D7\u3057\u307E\u3059\u304B\uFF1F"
     m_Metadata:
       m_Items: []
   - m_Id: 128979151367176192
-    m_Localized: "ガイドへのスナップを切り替え"
+    m_Localized: "\u30AC\u30A4\u30C9\u3078\u306E\u30B9\u30CA\u30C3\u30D7\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 129010807801118720
-    m_Localized: "対称次数"
+    m_Localized: "\u5BFE\u79F0\u6B21\u6570"
     m_Metadata:
       m_Items: []
   - m_Id: 129011310442315776
-    m_Localized: "X 方向の繰り返し"
+    m_Localized: "X \u65B9\u5411\u306E\u7E70\u308A\u8FD4\u3057"
     m_Metadata:
       m_Items: []
   - m_Id: 129011387676229632
-    m_Localized: "Y 方向の繰り返し"
+    m_Localized: "Y \u65B9\u5411\u306E\u7E70\u308A\u8FD4\u3057"
     m_Metadata:
       m_Items: []
   - m_Id: 129011445721202688
-    m_Localized: "拡大縮小"
+    m_Localized: "\u62E1\u5927\u7E2E\u5C0F"
     m_Metadata:
       m_Items: []
   - m_Id: 129011519415123968
-    m_Localized: "X 方向の拡大縮小"
+    m_Localized: "X \u65B9\u5411\u306E\u62E1\u5927\u7E2E\u5C0F"
     m_Metadata:
       m_Items: []
   - m_Id: 129011554005549056
-    m_Localized: "Y 方向の拡大縮小"
+    m_Localized: "Y \u65B9\u5411\u306E\u62E1\u5927\u7E2E\u5C0F"
     m_Metadata:
       m_Items: []
   - m_Id: 129011580064759808
-    m_Localized: "X 方向のせん断"
+    m_Localized: "X \u65B9\u5411\u306E\u305B\u3093\u65AD"
     m_Metadata:
       m_Items: []
   - m_Id: 129011621378654208
-    m_Localized: "Y 方向のせん断"
+    m_Localized: "Y \u65B9\u5411\u306E\u305B\u3093\u65AD"
     m_Metadata:
       m_Items: []
   - m_Id: 439543626534051840
-    m_Localized: "X 軸の回転スナップを切り替え"
+    m_Localized: "X \u8EF8\u306E\u56DE\u8EE2\u30B9\u30CA\u30C3\u30D7\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 439543779617759232
-    m_Localized: "Y 軸の回転スナップを切り替え"
+    m_Localized: "Y \u8EF8\u306E\u56DE\u8EE2\u30B9\u30CA\u30C3\u30D7\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 439543840074457088
-    m_Localized: "Z 軸の回転スナップを切り替え"
+    m_Localized: "Z \u8EF8\u306E\u56DE\u8EE2\u30B9\u30CA\u30C3\u30D7\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 89060241993129984
-    m_Localized: "画像やモデルを\n追加すると\nここに表示されます"
+    m_Localized: "\u753B\u50CF\u3084\u30E2\u30C7\u30EB\u3092\n\u8FFD\u52A0\u3059\u308B\u3068\n\u3053\u3053\u306B\u8868\u793A\u3055\u308C\u307E\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 89064000617996288
-    m_Localized: "デバイスに画像を\n追加すると\nここに表示されます"
+    m_Localized: "\u30C7\u30D0\u30A4\u30B9\u306B\u753B\u50CF\u3092\n\u8FFD\u52A0\u3059\u308B\u3068\n\u3053\u3053\u306B\u8868\u793A\u3055\u308C\u307E\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 89093153698373632
-    m_Localized: "エクスポート時の互換性が低下します。ドキュメントをご覧ください。"
+    m_Localized: "\u30A8\u30AF\u30B9\u30DD\u30FC\u30C8\u6642\u306E\u4E92\u63DB\u6027\u304C\u4F4E\u4E0B\u3057\u307E\u3059\u3002\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u3092\u3054\u89A7\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 89093701847769088
-    m_Localized: "次回起動時にチュートリアルを表示"
+    m_Localized: "\u6B21\u56DE\u8D77\u52D5\u6642\u306B\u30C1\u30E5\u30FC\u30C8\u30EA\u30A2\u30EB\u3092\u8868\u793A"
     m_Metadata:
       m_Items: []
   - m_Id: 89093763399180288
-    m_Localized: "詳細モードと実験モードをオフにします"
+    m_Localized: "\u8A73\u7D30\u30E2\u30FC\u30C9\u3068\u5B9F\u9A13\u30E2\u30FC\u30C9\u3092\u30AA\u30D5\u306B\u3057\u307E\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 147094689821290496
-    m_Localized: "このプラットフォームでは現在、アカウントへのログインを利用できません。"
+    m_Localized: "\u3053\u306E\u30D7\u30E9\u30C3\u30C8\u30D5\u30A9\u30FC\u30E0\u3067\u306F\u73FE\u5728\u3001\u30A2\u30AB\u30A6\u30F3\u30C8\u3078\u306E\u30ED\u30B0\u30A4\u30F3\u3092\u5229\u7528\u3067\u304D\u307E\u305B\u3093\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 151489918612377600
-    m_Localized: "このデバイスでは動画の録画に対応していません。"
+    m_Localized: "\u3053\u306E\u30C7\u30D0\u30A4\u30B9\u3067\u306F\u52D5\u753B\u306E\u9332\u753B\u306B\u5BFE\u5FDC\u3057\u3066\u3044\u307E\u305B\u3093\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 151490030713540608
-    m_Localized: "Mac または PC でスケッチを開くと、動画を作成できます。手順については、ドキュメントサイト https://docs.openbrush.app で「Exporting video」を検索してください。"
+    m_Localized: "Mac \u307E\u305F\u306F PC \u3067\u30B9\u30B1\u30C3\u30C1\u3092\u958B\u304F\u3068\u3001\u52D5\u753B\u3092\u4F5C\u6210\u3067\u304D\u307E\u3059\u3002\u624B\u9806\u306B\u3064\u3044\u3066\u306F\u3001\u30C9\u30AD\u30E5\u30E1\u30F3\u30C8\u30B5\u30A4\u30C8 https://docs.openbrush.app \u3067\u300CExporting video\u300D\u3092\u691C\u7D22\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 164911761917042688
-    m_Localized: "Icosa にアップロードするには、\nIcosa アカウントにログインしてください。"
+    m_Localized: "Icosa \u306B\u30A2\u30C3\u30D7\u30ED\u30FC\u30C9\u3059\u308B\u306B\u306F\u3001\nIcosa \u30A2\u30AB\u30A6\u30F3\u30C8\u306B\u30ED\u30B0\u30A4\u30F3\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 164911966586494976
-    m_Localized: "Icosa で共有"
+    m_Localized: "Icosa \u3067\u5171\u6709"
     m_Metadata:
       m_Items: []
   - m_Id: 170004956477833216
-    m_Localized: "作品を保存するため、Open Brush にファイルへのアクセスを許可してください！"
+    m_Localized: "\u4F5C\u54C1\u3092\u4FDD\u5B58\u3059\u308B\u305F\u3081\u3001Open Brush \u306B\u30D5\u30A1\u30A4\u30EB\u3078\u306E\u30A2\u30AF\u30BB\u30B9\u3092\u8A31\u53EF\u3057\u3066\u304F\u3060\u3055\u3044\uFF01"
     m_Metadata:
       m_Items: []
   - m_Id: 172767995928834048
-    m_Localized: "スワイプして\nブラシサイズを調整"
+    m_Localized: "\u30B9\u30EF\u30A4\u30D7\u3057\u3066\n\u30D6\u30E9\u30B7\u30B5\u30A4\u30BA\u3092\u8ABF\u6574"
     m_Metadata:
       m_Items: []
   - m_Id: 189087250755706880
-    m_Localized: "Sketchfab への公開時にエラー 403 が発生する場合は、公開範囲をパブリックに変更してください（無料の Sketchfab アカウントでは非公開モデルを公開できません）。"
+    m_Localized: "Sketchfab \u3078\u306E\u516C\u958B\u6642\u306B\u30A8\u30E9\u30FC 403 \u304C\u767A\u751F\u3059\u308B\u5834\u5408\u306F\u3001\u516C\u958B\u7BC4\u56F2\u3092\u30D1\u30D6\u30EA\u30C3\u30AF\u306B\u5909\u66F4\u3057\u3066\u304F\u3060\u3055\u3044\uFF08\u7121\u6599\u306E Sketchfab \u30A2\u30AB\u30A6\u30F3\u30C8\u3067\u306F\u975E\u516C\u958B\u30E2\u30C7\u30EB\u3092\u516C\u958B\u3067\u304D\u307E\u305B\u3093\uFF09\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 176097607781543936
-    m_Localized: "アルファ"
+    m_Localized: "\u30A2\u30EB\u30D5\u30A1"
     m_Metadata:
       m_Items: []
   - m_Id: 235160207315525632
-    m_Localized: "選択したストロークをメディアライブラリに保存"
+    m_Localized: "\u9078\u629E\u3057\u305F\u30B9\u30C8\u30ED\u30FC\u30AF\u3092\u30E1\u30C7\u30A3\u30A2\u30E9\u30A4\u30D6\u30E9\u30EA\u306B\u4FDD\u5B58"
     m_Metadata:
       m_Items: []
   - m_Id: 317029250049335296
-    m_Localized: "マウス: 見回す、W,A,S,D: 前後左右に移動、Q,E: 上下に移動（Shift を押しながら移動すると加速）"
+    m_Localized: "\u30DE\u30A6\u30B9: \u898B\u56DE\u3059\u3001W,A,S,D: \u524D\u5F8C\u5DE6\u53F3\u306B\u79FB\u52D5\u3001Q,E: \u4E0A\u4E0B\u306B\u79FB\u52D5\uFF08Shift \u3092\u62BC\u3057\u306A\u304C\u3089\u79FB\u52D5\u3059\u308B\u3068\u52A0\u901F\uFF09"
     m_Metadata:
       m_Items: []
   - m_Id: 380760416547594240
-    m_Localized: "ヘッドセットを外すか、ウェブブラウザーに切り替えてログインを続けてください。"
+    m_Localized: "\u30D8\u30C3\u30C9\u30BB\u30C3\u30C8\u3092\u5916\u3059\u304B\u3001\u30A6\u30A7\u30D6\u30D6\u30E9\u30A6\u30B6\u30FC\u306B\u5207\u308A\u66FF\u3048\u3066\u30ED\u30B0\u30A4\u30F3\u3092\u7D9A\u3051\u3066\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 381885131211235328
-    m_Localized: "スケッチを読み込んでいます。お待ちください..."
+    m_Localized: "\u30B9\u30B1\u30C3\u30C1\u3092\u8AAD\u307F\u8FBC\u3093\u3067\u3044\u307E\u3059\u3002\u304A\u5F85\u3061\u304F\u3060\u3055\u3044..."
     m_Metadata:
       m_Items: []
   - m_Id: 393175499957428224
-    m_Localized: "メッシュを分割しますか？"
+    m_Localized: "\u30E1\u30C3\u30B7\u30E5\u3092\u5206\u5272\u3057\u307E\u3059\u304B\uFF1F"
     m_Metadata:
       m_Items: []
   - m_Id: 393175792879230976
-    m_Localized: "複雑なメッシュの分割には時間がかかる場合があります。スケッチをこまめに保存してください。"
+    m_Localized: "\u8907\u96D1\u306A\u30E1\u30C3\u30B7\u30E5\u306E\u5206\u5272\u306B\u306F\u6642\u9593\u304C\u304B\u304B\u308B\u5834\u5408\u304C\u3042\u308A\u307E\u3059\u3002\u30B9\u30B1\u30C3\u30C1\u3092\u3053\u307E\u3081\u306B\u4FDD\u5B58\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 401824908597354496
-    m_Localized: "Labs パネルの「選択したストロークを保存」で\nストロークを保存すると、ここに表示されます。"
+    m_Localized: "Labs \u30D1\u30CD\u30EB\u306E\u300C\u9078\u629E\u3057\u305F\u30B9\u30C8\u30ED\u30FC\u30AF\u3092\u4FDD\u5B58\u300D\u3067\n\u30B9\u30C8\u30ED\u30FC\u30AF\u3092\u4FDD\u5B58\u3059\u308B\u3068\u3001\u3053\u3053\u306B\u8868\u793A\u3055\u308C\u307E\u3059\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 436974612083466240
-    m_Localized: "Open Blocks を試す"
+    m_Localized: "Open Blocks \u3092\u8A66\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 423748078849216512
-    m_Localized: "Viverse で共有"
+    m_Localized: "Viverse \u3067\u5171\u6709"
     m_Metadata:
       m_Items: []
   - m_Id: 455073616801390592
-    m_Localized: "Quill キューブ"
+    m_Localized: "Quill \u30AD\u30E5\u30FC\u30D6"
     m_Metadata:
       m_Items: []
   - m_Id: 455073689002139648
-    m_Localized: "Quill 円柱"
+    m_Localized: "Quill \u5186\u67F1"
     m_Metadata:
       m_Items: []
   - m_Id: 455073748024385536
-    m_Localized: "Quill 楕円"
+    m_Localized: "Quill \u6955\u5186"
     m_Metadata:
       m_Items: []
   - m_Id: 455073795705233408
-    m_Localized: "Quill リボン"
+    m_Localized: "Quill \u30EA\u30DC\u30F3"
     m_Metadata:
       m_Items: []
   - m_Id: 467449183412510720
-    m_Localized: "Quill スケッチライブラリ"
+    m_Localized: "Quill \u30B9\u30B1\u30C3\u30C1\u30E9\u30A4\u30D6\u30E9\u30EA"
     m_Metadata:
       m_Items: []
   - m_Id: 467452096813817856
-    m_Localized: "Quill ライブラリ"
+    m_Localized: "Quill \u30E9\u30A4\u30D6\u30E9\u30EA"
     m_Metadata:
       m_Items: []
   - m_Id: 467464424217206784
-    m_Localized: "Quill フォルダーに Quill スケッチが見つかりません"
+    m_Localized: "Quill \u30D5\u30A9\u30EB\u30C0\u30FC\u306B Quill \u30B9\u30B1\u30C3\u30C1\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093"
     m_Metadata:
       m_Items: []
   - m_Id: 467464562255945728
-    m_Localized: "メディアライブラリに .imm ファイルが見つかりません"
+    m_Localized: "\u30E1\u30C7\u30A3\u30A2\u30E9\u30A4\u30D6\u30E9\u30EA\u306B .imm \u30D5\u30A1\u30A4\u30EB\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093"
     m_Metadata:
       m_Items: []
   - m_Id: 520669196650635264
-    m_Localized: "<b>https://icosa.gallery/device</b> にアクセスして\nログインコードを取得してください"
+    m_Localized: "<b>https://icosa.gallery/device</b> \u306B\u30A2\u30AF\u30BB\u30B9\u3057\u3066\n\u30ED\u30B0\u30A4\u30F3\u30B3\u30FC\u30C9\u3092\u53D6\u5F97\u3057\u3066\u304F\u3060\u3055\u3044"
     m_Metadata:
       m_Items: []
   - m_Id: 526462189999579136
-    m_Localized: "ポータルとして使用できるのは、Icosa Gallery で公開されたスケッチのみです"
+    m_Localized: "\u30DD\u30FC\u30BF\u30EB\u3068\u3057\u3066\u4F7F\u7528\u3067\u304D\u308B\u306E\u306F\u3001Icosa Gallery \u3067\u516C\u958B\u3055\u308C\u305F\u30B9\u30B1\u30C3\u30C1\u306E\u307F\u3067\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 540641996467429376
-    m_Localized: "Quill ライブラリ"
+    m_Localized: "Quill \u30E9\u30A4\u30D6\u30E9\u30EA"
     m_Metadata:
       m_Items: []
   - m_Id: 540642256367476736
-    m_Localized: "メディアライブラリ内の Quill ファイル"
+    m_Localized: "\u30E1\u30C7\u30A3\u30A2\u30E9\u30A4\u30D6\u30E9\u30EA\u5185\u306E Quill \u30D5\u30A1\u30A4\u30EB"
     m_Metadata:
       m_Items: []
   - m_Id: 540642327830028288
-    m_Localized: "Quill で保存した Quill ファイル"
+    m_Localized: "Quill \u3067\u4FDD\u5B58\u3057\u305F Quill \u30D5\u30A1\u30A4\u30EB"
     m_Metadata:
       m_Items: []
   - m_Id: 542228906948255744
-    m_Localized: "直線ツールのストローク同士をスナップしますか？"
+    m_Localized: "\u76F4\u7DDA\u30C4\u30FC\u30EB\u306E\u30B9\u30C8\u30ED\u30FC\u30AF\u540C\u58EB\u3092\u30B9\u30CA\u30C3\u30D7\u3057\u307E\u3059\u304B\uFF1F"
     m_Metadata:
       m_Items: []
   - m_Id: 542389062831005696
-    m_Localized: "直線ツールのスナップを切り替え"
+    m_Localized: "\u76F4\u7DDA\u30C4\u30FC\u30EB\u306E\u30B9\u30CA\u30C3\u30D7\u3092\u5207\u308A\u66FF\u3048"
     m_Metadata:
       m_Items: []
   - m_Id: 482980427487338496
-    m_Localized: "ガウシアンポーズをエクスポート"
+    m_Localized: "\u30AC\u30A6\u30B7\u30A2\u30F3\u30DD\u30FC\u30BA\u3092\u30A8\u30AF\u30B9\u30DD\u30FC\u30C8"
     m_Metadata:
       m_Items: []
   - m_Id: 520000000000000004
-    m_Localized: "ボックス型のキャプチャ領域を追加"
+    m_Localized: "\u30DC\u30C3\u30AF\u30B9\u578B\u306E\u30AD\u30E3\u30D7\u30C1\u30E3\u9818\u57DF\u3092\u8FFD\u52A0"
     m_Metadata:
       m_Items: []
   - m_Id: 520000000000000001
-    m_Localized: "球形のキャプチャ領域を追加"
+    m_Localized: "\u7403\u5F62\u306E\u30AD\u30E3\u30D7\u30C1\u30E3\u9818\u57DF\u3092\u8FFD\u52A0"
     m_Metadata:
       m_Items: []
   - m_Id: 520000000000000003
-    m_Localized: "半球形のキャプチャ領域を追加"
+    m_Localized: "\u534A\u7403\u5F62\u306E\u30AD\u30E3\u30D7\u30C1\u30E3\u9818\u57DF\u3092\u8FFD\u52A0"
     m_Metadata:
       m_Items: []
   - m_Id: 520000000000000002
-    m_Localized: "楕円体のキャプチャ領域を追加"
+    m_Localized: "\u6955\u5186\u4F53\u306E\u30AD\u30E3\u30D7\u30C1\u30E3\u9818\u57DF\u3092\u8FFD\u52A0"
     m_Metadata:
       m_Items: []
   - m_Id: 522559370036862976
-    m_Localized: "ガウシアンスプラッティング用ポーズキャプチャ"
+    m_Localized: "\u30AC\u30A6\u30B7\u30A2\u30F3\u30B9\u30D7\u30E9\u30C3\u30C6\u30A3\u30F3\u30B0\u7528\u30DD\u30FC\u30BA\u30AD\u30E3\u30D7\u30C1\u30E3"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000000
-    m_Localized: "プレイスペースを位置合わせ"
+    m_Localized: "\u30D7\u30EC\u30A4\u30B9\u30DA\u30FC\u30B9\u3092\u4F4D\u7F6E\u5408\u308F\u305B"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000001
-    m_Localized: "共有の位置合わせを設定"
+    m_Localized: "\u5171\u6709\u306E\u4F4D\u7F6E\u5408\u308F\u305B\u3092\u8A2D\u5B9A"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000002
-    m_Localized: "共有の位置合わせをリセット"
+    m_Localized: "\u5171\u6709\u306E\u4F4D\u7F6E\u5408\u308F\u305B\u3092\u30EA\u30BB\u30C3\u30C8"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000003
-    m_Localized: "プレイスペースを再度位置合わせ"
+    m_Localized: "\u30D7\u30EC\u30A4\u30B9\u30DA\u30FC\u30B9\u3092\u518D\u5EA6\u4F4D\u7F6E\u5408\u308F\u305B"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000004
-    m_Localized: "位置合わせが更新されました - 再度位置合わせ"
+    m_Localized: "\u4F4D\u7F6E\u5408\u308F\u305B\u304C\u66F4\u65B0\u3055\u308C\u307E\u3057\u305F - \u518D\u5EA6\u4F4D\u7F6E\u5408\u308F\u305B"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000005
-    m_Localized: "共有の位置合わせが未設定です"
+    m_Localized: "\u5171\u6709\u306E\u4F4D\u7F6E\u5408\u308F\u305B\u304C\u672A\u8A2D\u5B9A\u3067\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000006
-    m_Localized: "共有の位置合わせを記録中"
+    m_Localized: "\u5171\u6709\u306E\u4F4D\u7F6E\u5408\u308F\u305B\u3092\u8A18\u9332\u4E2D"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000007
-    m_Localized: "共有の位置合わせの準備ができました"
+    m_Localized: "\u5171\u6709\u306E\u4F4D\u7F6E\u5408\u308F\u305B\u306E\u6E96\u5099\u304C\u3067\u304D\u307E\u3057\u305F"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000008
-    m_Localized: "プレイスペースの位置合わせが完了しました"
+    m_Localized: "\u30D7\u30EC\u30A4\u30B9\u30DA\u30FC\u30B9\u306E\u4F4D\u7F6E\u5408\u308F\u305B\u304C\u5B8C\u4E86\u3057\u307E\u3057\u305F"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000009
-    m_Localized: "位置合わせが変更されました - 再度位置合わせ"
+    m_Localized: "\u4F4D\u7F6E\u5408\u308F\u305B\u304C\u5909\u66F4\u3055\u308C\u307E\u3057\u305F - \u518D\u5EA6\u4F4D\u7F6E\u5408\u308F\u305B"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000010
-    m_Localized: "位置合わせエラー - 再試行してください"
+    m_Localized: "\u4F4D\u7F6E\u5408\u308F\u305B\u30A8\u30E9\u30FC - \u518D\u8A66\u884C\u3057\u3066\u304F\u3060\u3055\u3044"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000011
-    m_Localized: "コントローラーの先端を端点 A に置き、トリガーを押してください。"
+    m_Localized: "\u30B3\u30F3\u30C8\u30ED\u30FC\u30E9\u30FC\u306E\u5148\u7AEF\u3092\u7AEF\u70B9 A \u306B\u7F6E\u304D\u3001\u30C8\u30EA\u30AC\u30FC\u3092\u62BC\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000012
-    m_Localized: "端点 A を記録しました。コントローラーの先端を端点 B に置き、トリガーを押してください。"
+    m_Localized: "\u7AEF\u70B9 A \u3092\u8A18\u9332\u3057\u307E\u3057\u305F\u3002\u30B3\u30F3\u30C8\u30ED\u30FC\u30E9\u30FC\u306E\u5148\u7AEF\u3092\u7AEF\u70B9 B \u306B\u7F6E\u304D\u3001\u30C8\u30EA\u30AC\u30FC\u3092\u62BC\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000014
-    m_Localized: "基準が短すぎます。0.1 メートル以上離れた端点を選んでください。"
+    m_Localized: "\u57FA\u6E96\u304C\u77ED\u3059\u304E\u307E\u3059\u30020.1 \u30E1\u30FC\u30C8\u30EB\u4EE5\u4E0A\u96E2\u308C\u305F\u7AEF\u70B9\u3092\u9078\u3093\u3067\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000015
-    m_Localized: "基準にはさらに水平方向の距離が必要です。より長い水平な辺を選んでください。"
+    m_Localized: "\u57FA\u6E96\u306B\u306F\u3055\u3089\u306B\u6C34\u5E73\u65B9\u5411\u306E\u8DDD\u96E2\u304C\u5FC5\u8981\u3067\u3059\u3002\u3088\u308A\u9577\u3044\u6C34\u5E73\u306A\u8FBA\u3092\u9078\u3093\u3067\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000016
-    m_Localized: "コントローラーのポーズが無効です。トラッキングを確認し、端点 B を再試行してください。"
+    m_Localized: "\u30B3\u30F3\u30C8\u30ED\u30FC\u30E9\u30FC\u306E\u30DD\u30FC\u30BA\u304C\u7121\u52B9\u3067\u3059\u3002\u30C8\u30E9\u30C3\u30AD\u30F3\u30B0\u3092\u78BA\u8A8D\u3057\u3001\u7AEF\u70B9 B \u3092\u518D\u8A66\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000017
-    m_Localized: "基準を記録できませんでした。端点 B を再試行してください。"
+    m_Localized: "\u57FA\u6E96\u3092\u8A18\u9332\u3067\u304D\u307E\u305B\u3093\u3067\u3057\u305F\u3002\u7AEF\u70B9 B \u3092\u518D\u8A66\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000018
-    m_Localized: "基準が無効です: {0}。端点 B を再試行してください。"
+    m_Localized: "\u57FA\u6E96\u304C\u7121\u52B9\u3067\u3059: {0}\u3002\u7AEF\u70B9 B \u3092\u518D\u8A66\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000019
-    m_Localized: "基準の長さ: {0:F2} m。"
+    m_Localized: "\u57FA\u6E96\u306E\u9577\u3055: {0:F2} m\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000020
-    m_Localized: "位置合わせが無効です: {0}。端点 B を再試行してください。"
+    m_Localized: "\u4F4D\u7F6E\u5408\u308F\u305B\u304C\u7121\u52B9\u3067\u3059: {0}\u3002\u7AEF\u70B9 B \u3092\u518D\u8A66\u884C\u3057\u3066\u304F\u3060\u3055\u3044\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000021
-    m_Localized: "測定した長さ: {0:F2} m。"
+    m_Localized: "\u6E2C\u5B9A\u3057\u305F\u9577\u3055: {0:F2} m\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000022
-    m_Localized: "警告: {0}。"
+    m_Localized: "\u8B66\u544A: {0}\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 543158158396841984
-    m_Localized: "すべてのウィジェットと、表示されている場合は現在のカメラパスもキャプチャします"
+    m_Localized: "\u3059\u3079\u3066\u306E\u30A6\u30A3\u30B8\u30A7\u30C3\u30C8\u3068\u3001\u8868\u793A\u3055\u308C\u3066\u3044\u308B\u5834\u5408\u306F\u73FE\u5728\u306E\u30AB\u30E1\u30E9\u30D1\u30B9\u3082\u30AD\u30E3\u30D7\u30C1\u30E3\u3057\u307E\u3059"
     m_Metadata:
       m_Items: []
   - m_Id: 5146220882010112
-    m_Localized: "色の変更オン"
+    m_Localized: "\u8272\u306E\u5909\u66F4\u30AA\u30F3"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828504
-    m_Localized: "周波数"
+    m_Localized: "\u5468\u6CE2\u6570"
     m_Metadata:
       m_Items: []
   - m_Id: 475814063085543424
-    m_Localized: "ポータルを配置"
+    m_Localized: "\u30DD\u30FC\u30BF\u30EB\u3092\u914D\u7F6E"
     m_Metadata:
       m_Items: []
   - m_Id: 554342843789434881
-    m_Localized: "複雑さ"
+    m_Localized: "\u8907\u96D1\u3055"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828503
-    m_Localized: "強さ"
+    m_Localized: "\u5F37\u3055"
     m_Metadata:
       m_Items: []
   - m_Id: 176764812224364544
-    m_Localized: "ハル（パススルー）"
+    m_Localized: "\u30CF\u30EB\uFF08\u30D1\u30B9\u30B9\u30EB\u30FC\uFF09"
     m_Metadata:
       m_Items: []
   - m_Id: 415628836388560896
-    m_Localized: "暗くする"
+    m_Localized: "\u6697\u304F\u3059\u308B"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000013
-    m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
+    m_Localized: "A\u2192B \u306E\u77E2\u5370\u3092\u78BA\u8A8D\u3002\u30C8\u30EA\u30AC\u30FC\u3067\u78BA\u5B9A\u3001\u53CD\u5BFE\u5074\u306E\u30C8\u30EA\u30AC\u30FC\u3067 A \u3068 B \u3092\u5165\u308C\u66FF\u3048\u3002\u30AD\u30E3\u30F3\u30BB\u30EB\u3067\u7D42\u4E86\u3002"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: "\u5909\u66F4\u3092\u9069\u7528"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: "\u672A\u4F7F\u7528\u306E\u8272\u3092\u30AF\u30EA\u30A2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: "\u8272\u3092\u4E26\u3079\u66FF\u3048"
     m_Metadata:
       m_Items: []
   references:
