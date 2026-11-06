@@ -4358,6 +4358,18 @@ MonoBehaviour:
     m_Localized: "A→B 화살표를 확인하세요. 트리거로 확인, 다른 컨트롤러의 트리거로 A와 B 교환, 취소로 종료합니다."
     m_Metadata:
       m_Items: []
+  - m_Id: 40000000000000001
+    m_Localized: "내 컬렉션"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000002
+    m_Localized: "공개 컬렉션"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000003
+    m_Localized: "컬렉션을 찾을 수 없습니다"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

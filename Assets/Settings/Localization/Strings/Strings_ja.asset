@@ -4358,6 +4358,18 @@ MonoBehaviour:
     m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
     m_Metadata:
       m_Items: []
+  - m_Id: 40000000000000001
+    m_Localized: "自分のコレクション"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000002
+    m_Localized: "公開コレクション"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000003
+    m_Localized: "コレクションが見つかりません"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
