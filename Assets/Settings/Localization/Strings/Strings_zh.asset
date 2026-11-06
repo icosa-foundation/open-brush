@@ -4370,6 +4370,30 @@ MonoBehaviour:
     m_Localized: "\u989C\u8272\u6392\u5E8F"
     m_Metadata:
       m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: "新建体素"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "开始一个新的空体素模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "将体素模型对齐到网格"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "根据网格设置对齐当前模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "选择体素区域"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "按住扳机拖动以选择一个长方体。抓取时按下复制按钮可放置副本。在空白处双击扳机以完成并清除选择。"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

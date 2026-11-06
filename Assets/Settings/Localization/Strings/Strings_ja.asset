@@ -4370,6 +4370,30 @@ MonoBehaviour:
     m_Localized: "\u8272\u3092\u4E26\u3079\u66FF\u3048"
     m_Metadata:
       m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: "新規ボクセル"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "新しい空のボクセルモデルを開始"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "ボクセルモデルをグリッドに整列"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "現在のモデルをグリッド設定に合わせて整列"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "ボクセル領域を選択"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "トリガーを押しながらドラッグして直方体を選択します。つかんでいる間に複製ボタンを押すとコピーを配置できます。何もない空間でトリガーを2回押すと確定し、選択を解除します。"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

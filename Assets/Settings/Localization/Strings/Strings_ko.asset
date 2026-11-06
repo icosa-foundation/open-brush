@@ -4370,6 +4370,30 @@ MonoBehaviour:
     m_Localized: "\uC0C9\uC0C1 \uC815\uB82C"
     m_Metadata:
       m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: "새 복셀"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "새 빈 복셀 모델 시작"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "복셀 모델을 그리드에 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "현재 모델을 그리드 설정에 맞게 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "복셀 영역 선택"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "트리거를 누른 채 드래그하여 직육면체를 선택하세요. 잡고 있는 동안 복제 버튼을 눌러 복사본을 배치하세요. 빈 공간에서 트리거를 두 번 눌러 완료하고 선택을 해제하세요."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
