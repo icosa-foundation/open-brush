@@ -4358,6 +4358,22 @@ MonoBehaviour:
     m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
     m_Metadata:
       m_Items: []
+  - m_Id: 177558531188809728
+    m_Localized: "パススルー："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989628385124352
+    m_Localized: "スカイボックス"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989815199424512
+    m_Localized: "グラデーション"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989991964172288
+    m_Localized: "パススルー"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

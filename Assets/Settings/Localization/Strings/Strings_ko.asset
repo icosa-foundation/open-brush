@@ -4358,6 +4358,22 @@ MonoBehaviour:
     m_Localized: "A→B 화살표를 확인하세요. 트리거로 확인, 다른 컨트롤러의 트리거로 A와 B 교환, 취소로 종료합니다."
     m_Metadata:
       m_Items: []
+  - m_Id: 177558531188809728
+    m_Localized: "패스스루:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989628385124352
+    m_Localized: "스카이박스"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989815199424512
+    m_Localized: "그라데이션"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989991964172288
+    m_Localized: "패스스루"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
