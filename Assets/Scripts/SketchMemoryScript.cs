@@ -295,7 +295,7 @@ namespace TiltBrush
             if (!m_MemoryExceeded && !m_MemoryWarningAccepted)
             {
                 int vertCount = numVerts +
-                    App.Scene.AllCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
+                    App.Scene.ResidentCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
                     WidgetManager.m_Instance.WidgetsVertCount;
                 return vertCount > m_MemoryWarningVertCount;
             }
@@ -311,7 +311,7 @@ namespace TiltBrush
                 if (App.CurrentState == App.AppState.Standard)
                 {
                     m_LastCheckedVertCount =
-                        App.Scene.AllCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
+                        App.Scene.ResidentCanvases.Sum(canvas => canvas.BatchManager.CountAllBatchVertices()) +
                         WidgetManager.m_Instance.WidgetsVertCount;
                     if (m_LastCheckedVertCount > m_MemoryWarningVertCount)
                     {
@@ -586,6 +586,7 @@ namespace TiltBrush
             {
                 m_ScenePlayback.AddStroke(stroke);
             }
+            App.Scene?.animationUI_manager?.NotifyStrokeAdded(stroke);
         }
 
         public void MemorizeBatchedBrushStroke(
@@ -610,7 +611,7 @@ namespace TiltBrush
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
             rNewStroke.m_Seed = seed;
-            rNewStroke.m_OverrideColors = controlPointColors;
+            rNewStroke.m_OverrideColors = controlPointColors?.ToList();
             rNewStroke.m_ColorOverrideMode = colorMode;
             subset.m_Stroke = rNewStroke;
 
@@ -655,7 +656,7 @@ namespace TiltBrush
             rNewStroke.m_BrushSize = fBrushSize;
             rNewStroke.m_BrushScale = brushScale;
             rNewStroke.m_Flags = strokeFlags;
-            rNewStroke.m_OverrideColors = controlPointColors;
+            rNewStroke.m_OverrideColors = controlPointColors?.ToList();
             rNewStroke.m_ColorOverrideMode = colorMode;
             brushScript.Stroke = rNewStroke;
 
@@ -821,6 +822,7 @@ namespace TiltBrush
         /// It's the caller's responsibility to destroy if (if desired).
         public void RemoveMemoryObject(Stroke stroke)
         {
+            App.Scene?.animationUI_manager?.NotifyStrokeRemoved(stroke);
             var nodeByTime = stroke.m_NodeByTime;
             if (nodeByTime.List != null)
             { // implies stroke object

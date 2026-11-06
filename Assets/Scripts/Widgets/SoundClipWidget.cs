@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -279,6 +279,8 @@ namespace TiltBrush
             {
                 soundClipWidget.m_InitialState.Time = tiltSoundClip.Time;
             }
+            // Saved pose and size are local to this authored frame.
+            soundClipWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltSoundClip.LayerId, tiltSoundClip.FrameId));
             soundClipWidget.SetSignedWidgetSize(tiltSoundClip.Transform.scale);
             soundClipWidget.Show(bShow: true, bPlayAudio: false);
             soundClipWidget.transform.localPosition = tiltSoundClip.Transform.translation;
@@ -288,7 +290,7 @@ namespace TiltBrush
                 soundClipWidget.PinFromSave();
             }
             soundClipWidget.Group = App.GroupManager.GetGroupFromId(tiltSoundClip.GroupId);
-            soundClipWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltSoundClip.LayerId));
+
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(soundClipWidget.GetTiltMeterCost(), up: true);
             soundClipWidget.UpdateScale();
         }
@@ -305,12 +307,15 @@ namespace TiltBrush
             clone.m_LoadingFromSketch = true; // prevents intro animation
             clone.transform.parent = transform.parent;
             var audioSettings = GetAudioExportSettings();
+            var saveState = GetAudioSaveState();
             clone.SetAudioProperties(
                 audioSettings.volume,
                 audioSettings.loop,
                 audioSettings.spatialBlend,
                 audioSettings.minDistance,
                 audioSettings.maxDistance);
+            clone.m_InitialState.Paused = saveState.paused;
+            clone.m_InitialState.Time = saveState.time;
             clone.SetSoundClip(m_SoundClip);
             clone.SetSignedWidgetSize(size);
             clone.Show(bShow: true, bPlayAudio: false);

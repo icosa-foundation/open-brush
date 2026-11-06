@@ -4382,6 +4382,58 @@ MonoBehaviour:
     m_Localized: "Vérifiez la flèche de A vers B. La gâchette confirme ; celle de l’autre contrôleur inverse A et B ; Annuler pour quitter."
     m_Metadata:
       m_Items: []
+  - m_Id: 467500000000000000
+    m_Localized: "Déplacer l’image vers la gauche"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000016
+    m_Localized: "Prolonger l’image"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000032
+    m_Localized: "Copier la sélection dans le calque actuel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000048
+    m_Localized: "Dupliquer l’image"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000064
+    m_Localized: "Déplacer l’image vers la droite"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000080
+    m_Localized: "Ajouter une image"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000096
+    m_Localized: "Effacer le contenu de l’image"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000112
+    m_Localized: "Scinder l’image"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000128
+    m_Localized: "Raccourcir l’image"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000144
+    m_Localized: "Activer/désactiver la lecture"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000160
+    m_Localized: "Supprimer"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000176
+    m_Localized: "Fusionner"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000192
+    m_Localized: "Effacer le contenu"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
