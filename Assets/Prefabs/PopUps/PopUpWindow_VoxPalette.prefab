@@ -306,9 +306,9 @@ Transform:
   - {fileID: 3125938690441484993}
   - {fileID: 4390658478528098}
   - {fileID: 4561239206180636}
-  - {fileID: 123411569811148304}
   - {fileID: 9030029004419089805}
   - {fileID: 111704670608444686}
+  - {fileID: 123411569811148304}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &114840930256296856
@@ -1195,7 +1195,15 @@ PrefabInstance:
     - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_ButtonTexture
       value: 
-      objectReference: {fileID: 2800000, guid: e9a34c5f95833b248b106d4f7d83d9ad, type: 3}
+      objectReference: {fileID: 2800000, guid: ceb2cddabb736164abcdad015d0c2f4a, type: 3}
+    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_DescriptionText
+      value: VOX_PALETTE_CLEAR_UNUSED_DESCRIPTION
+      objectReference: {fileID: 0}
+    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 561984250834411520
+      objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.28
@@ -1210,11 +1218,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.05
+      value: 0.712
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.72
+      value: -0.879
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1252,14 +1260,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: ClearUnused
       objectReference: {fileID: 0}
-    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
-      propertyPath: m_DescriptionText
-      value: VOX_PALETTE_CLEAR_UNUSED_DESCRIPTION
-      objectReference: {fileID: 0}
-    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
-      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
-      value: 561984250834411520
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1293,6 +1293,18 @@ PrefabInstance:
       propertyPath: m_ButtonTexture
       value: 
       objectReference: {fileID: 2800000, guid: add4e3977c6a07c43a92c7a5ee8ebe6a, type: 3}
+    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_DescriptionText
+      value: VOX_PALETTE_SORT_DESCRIPTION
+      objectReference: {fileID: 0}
+    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 561984250838605824
+      objectReference: {fileID: 0}
+    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
+      objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.28
@@ -1307,11 +1319,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.28
+      value: 1.042
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.72
+      value: -0.87899995
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1349,14 +1361,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: SortColors
       objectReference: {fileID: 0}
-    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
-      propertyPath: m_DescriptionText
-      value: VOX_PALETTE_SORT_DESCRIPTION
-      objectReference: {fileID: 0}
-    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
-      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
-      value: 561984250838605824
-      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -1390,25 +1394,33 @@ PrefabInstance:
       propertyPath: m_ButtonTexture
       value: 
       objectReference: {fileID: 2800000, guid: 4ca620df5430af448aaf4f3ff20ad5c4, type: 3}
+    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_DescriptionText
+      value: VOX_PALETTE_APPLY_DESCRIPTION
+      objectReference: {fileID: 0}
+    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 561984249517400064
+      objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0.5
+      value: 0.28
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0.5
+      value: 0.28
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0.5
+      value: 0.28
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 0.75
+      value: 1.5120001
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.72
+      value: -0.87899995
       objectReference: {fileID: 0}
     - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1442,17 +1454,13 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5768730878625869165, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5768730878626201577, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
       propertyPath: m_Name
       value: Apply
-      objectReference: {fileID: 0}
-    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
-      propertyPath: m_DescriptionText
-      value: VOX_PALETTE_APPLY_DESCRIPTION
-      objectReference: {fileID: 0}
-    - target: {fileID: 3534404900098175415, guid: 6d3c7ea6af144a84d91f35db5f8eaf84, type: 3}
-      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
-      value: 561984249517400064
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

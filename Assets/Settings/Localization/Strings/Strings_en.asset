@@ -4060,15 +4060,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 561984249517400064
-    m_Localized: Apply palette color
+    m_Localized: Apply changes
     m_Metadata:
       m_Items: []
   - m_Id: 561984250834411520
-    m_Localized: Clear unused palette colors
+    m_Localized: Clear unused colors
     m_Metadata:
       m_Items: []
   - m_Id: 561984250838605824
-    m_Localized: Sort palette colors by hue
+    m_Localized: Sort colors
     m_Metadata:
       m_Items: []
   references:
