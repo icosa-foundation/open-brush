@@ -26,7 +26,7 @@ Transform:
   m_GameObject: {fileID: 395945948429622660}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.521, z: 0}
+  m_LocalPosition: {x: 0, y: 0.644, z: 0}
   m_LocalScale: {x: 0.4, y: 1.4, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -51,8 +51,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 1, z: 0.2}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 1, y: 1.1886946, z: 0.2}
+  m_Center: {x: 0, y: 0.011321988, z: 0}
 --- !u!1 &509993941241907516
 GameObject:
   m_ObjectHideFlags: 0
@@ -235,7 +235,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 2950926868f0c9b4db5a871ce378909c, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: bc3c505962723cf44a605851212f406e, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -489,7 +489,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 8e8ff83a9fcd53a47aa617cca57a09f3, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: cb045f6f64d141b78f1caf726f043795, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -908,7 +908,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 57946bf9914fff5498efa2ba3c2ec488, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 2baf5f6baa7af40228e55a86bde66f48, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -952,8 +952,8 @@ Transform:
   m_LocalScale: {x: 0.75, y: 0.75, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1487396867751886683}
   - {fileID: 6565947400463263550}
+  - {fileID: 1487396867751886683}
   - {fileID: 9104716204381521593}
   - {fileID: 1593009115912209661}
   - {fileID: 3339968896018298846}
@@ -1059,6 +1059,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6934299428673606124}
     m_Modifications:
+    - target: {fileID: 2454767444388280470, guid: 3a98611722d498f4c93e269bfc1ba325, type: 3}
+      propertyPath: m_ZAdjustClick
+      value: -0.04
+      objectReference: {fileID: 0}
+    - target: {fileID: 2454767444388280470, guid: 3a98611722d498f4c93e269bfc1ba325, type: 3}
+      propertyPath: m_ZAdjustHover
+      value: -0.04
+      objectReference: {fileID: 0}
     - target: {fileID: 2454767444388280470, guid: 3a98611722d498f4c93e269bfc1ba325, type: 3}
       propertyPath: m_DescriptionText
       value: Grid and Snap Settings
