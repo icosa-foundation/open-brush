@@ -244,12 +244,12 @@ namespace TiltBrush.Tests
             });
             var rectangle = NativeImageRectangle.FromPlacement(source, 1, 1, 10);
             foreach (float x in new[] { -.5f, .5f })
-            foreach (float y in new[] { -.5f, .5f })
-            {
-                var expected = source.TransformPoint(new System.Numerics.Vector3(x, y, 0), 10);
-                var actual = rectangle.Placement.TransformPoint(new System.Numerics.Vector3(x * rectangle.Width / 10, y * rectangle.Height / 10, 0), 10);
-                Assert.Less(System.Numerics.Vector3.Distance(expected, actual), .0001f);
-            }
+                foreach (float y in new[] { -.5f, .5f })
+                {
+                    var expected = source.TransformPoint(new System.Numerics.Vector3(x, y, 0), 10);
+                    var actual = rectangle.Placement.TransformPoint(new System.Numerics.Vector3(x * rectangle.Width / 10, y * rectangle.Height / 10, 0), 10);
+                    Assert.Less(System.Numerics.Vector3.Distance(expected, actual), .0001f);
+                }
         }
 
         [Test]

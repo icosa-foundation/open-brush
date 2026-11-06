@@ -38,13 +38,22 @@ namespace TiltBrush.DocumentImport
             string format = ((string)data["format"] ?? "").TrimStart('.').ToLowerInvariant();
             switch (format)
             {
-                case "png": case "jpg": case "jpeg": case "bmp": case "tga":
+                case "png":
+                case "jpg":
+                case "jpeg":
+                case "bmp":
+                case "tga":
                     Kind = ShapesXrResourceKind.Image;
                     break;
-                case "glb": case "gltf": case "obj": case "fbx": case "zip":
+                case "glb":
+                case "gltf":
+                case "obj":
+                case "fbx":
+                case "zip":
                     Kind = ShapesXrResourceKind.Model;
                     break;
-                case "wav": case "mp3":
+                case "wav":
+                case "mp3":
                     Kind = ShapesXrResourceKind.Audio;
                     break;
                 default: throw new NotSupportedException($"Unsupported ShapesXR resource format: {format}");

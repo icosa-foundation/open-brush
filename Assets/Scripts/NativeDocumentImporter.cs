@@ -341,7 +341,7 @@ namespace TiltBrush
                                     report.UnsupportedObjects.TryGetValue(feature, out int count);
                                     report.UnsupportedObjects[feature] = count + 1;
                                 }
-                                }
+                            }
                         }
                         if (widget.Canvas != canvas) { widget.SetCanvas(canvas); }
                         widget.name = (string)state.Entity.Data["name"] ?? state.EntityId;

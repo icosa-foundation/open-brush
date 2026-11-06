@@ -28,8 +28,11 @@ namespace TiltBrush
             for (int i = 0; i < points.Length; ++i)
             {
                 var p = hull.Points[i];
-                points[i] = new PointerManager.ControlPoint { m_Pos = new Vector3(p[0], p[1], p[2]),
-                    m_Orient = Quaternion.identity, m_Pressure = 1, m_TimestampMs = time };
+                points[i] = new PointerManager.ControlPoint
+                {
+                    m_Pos = new Vector3(p[0], p[1], p[2]),
+                    m_Orient = Quaternion.identity, m_Pressure = 1, m_TimestampMs = time
+                };
             }
             return CreateNativeStroke(points, brush, 1, canvas, color, group);
         }

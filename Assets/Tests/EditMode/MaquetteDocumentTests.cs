@@ -24,8 +24,11 @@ namespace TiltBrush.Tests
             m_Project = Path.Combine(m_Root, "project");
             Directory.CreateDirectory(m_Project);
             Write("manifest.json.mq", new JObject { ["guid"] = "project", ["version"] = "V020_ImageSupportsMaterial" });
-            Write("primitives.json", new JObject { ["version"] = "20", ["primitives"] = new JArray(
-                new JObject { ["guid"] = "box", ["primitiveType"] = "ModelFile", ["future"] = 42 }) });
+            Write("primitives.json", new JObject
+            {
+                ["version"] = "20", ["primitives"] = new JArray(
+                new JObject { ["guid"] = "box", ["primitiveType"] = "ModelFile", ["future"] = 42 })
+            });
             Write("scenes.json", new JObject
             {
                 ["version"] = "20", ["lastSelectedSceneGuid"] = "second",
@@ -46,8 +49,11 @@ namespace TiltBrush.Tests
             slideFog["FogDensity"] = .03; slideFog["FogEnabled"] = true;
             masterFog["FogDensity"] = .12; masterFog["FogEnabled"] = true;
             masterFog["FogColor"] = new JObject { ["r"] = 64f / 255, ["g"] = 128f / 255, ["b"] = 1, ["a"] = 1 };
-            Write("scenes.json", new JObject { ["version"] = 20, ["applyMasterStageEnvironment"] = true,
-                ["slides"] = new JArray(slide), ["stages"] = new JArray(master) });
+            Write("scenes.json", new JObject
+            {
+                ["version"] = 20, ["applyMasterStageEnvironment"] = true,
+                ["slides"] = new JArray(slide), ["stages"] = new JArray(master)
+            });
             using (var document = new MaquetteDocument(m_Project))
             {
                 var selected = document.Scenes.Single(value => value.Collection == "slides");
@@ -152,12 +158,18 @@ namespace TiltBrush.Tests
         private static JObject EnvironmentScene(string id, float intensity) => new JObject
         {
             ["sceneGuid"] = id, ["sceneName"] = id, ["treeRoots"] = new JArray(),
-            ["sceneSettings"] = new JObject { ["Environment"] = new JObject { ["Lighting"] = new JObject
+            ["sceneSettings"] = new JObject
             {
-                ["SunColor"] = new JObject { ["r"] = 1, ["g"] = .5, ["b"] = .25, ["a"] = 1 },
-                ["SunDirection"] = new JObject { ["x"] = 0, ["y"] = 0, ["z"] = 0, ["w"] = 2 },
-                ["SunIntensity"] = intensity, ["ShadowEnabled"] = false
-            } } }
+                ["Environment"] = new JObject
+                {
+                    ["Lighting"] = new JObject
+                    {
+                        ["SunColor"] = new JObject { ["r"] = 1, ["g"] = .5, ["b"] = .25, ["a"] = 1 },
+                        ["SunDirection"] = new JObject { ["x"] = 0, ["y"] = 0, ["z"] = 0, ["w"] = 2 },
+                        ["SunIntensity"] = intensity, ["ShadowEnabled"] = false
+                    }
+                }
+            }
         };
 
         private static JObject Scene(string id, int order) => new JObject
@@ -269,10 +281,13 @@ namespace TiltBrush.Tests
         public void NativeTextUsesTheSelectedStateAndTheShippedBoxOriginAndAutosizingScale()
         {
             const string id = "229a97df-4436-410e-8a32-b6386938d06a";
-            Write("textindex.json", new JObject { ["textEntities"] = new JArray(new JObject
+            Write("textindex.json", new JObject
             {
-                ["guid"] = id, ["FontSize"] = 4f, ["FontStyle"] = 0, ["TextAlignmentOption"] = 257
-            }) });
+                ["textEntities"] = new JArray(new JObject
+                {
+                    ["guid"] = id, ["FontSize"] = 4f, ["FontStyle"] = 0, ["TextAlignmentOption"] = 257
+                })
+            });
             var sceneData = JObject.Parse(File.ReadAllText(Path.Combine(m_Project, "scenes.json")));
             sceneData["slides"][1]["treeRoots"][0]["children"][0]["targetEntityGuid"] = id;
             Write("scenes.json", sceneData);

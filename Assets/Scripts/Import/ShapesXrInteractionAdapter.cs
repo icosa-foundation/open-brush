@@ -20,8 +20,14 @@ namespace TiltBrush.DocumentImport
         public JToken ActionData { get; internal set; }
         public string ActionName => ActionKind switch
         {
-            0 => "scene navigation", 1 => "space navigation", 2 => "back navigation", 3 => "viewpoint navigation",
-            4 => "sound playback", 5 => "look-at", 6 => "haptic feedback", 7 => "state transition",
+            0 => "scene navigation",
+            1 => "space navigation",
+            2 => "back navigation",
+            3 => "viewpoint navigation",
+            4 => "sound playback",
+            5 => "look-at",
+            6 => "haptic feedback",
+            7 => "state transition",
             _ => $"action {ActionKind}"
         };
     }

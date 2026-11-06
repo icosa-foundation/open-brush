@@ -83,8 +83,11 @@ namespace TiltBrush.Tests
         [Test]
         public void RibbonEdgesRetainShearFromNestedNonuniformTransformsAndUnitConversion()
         {
-            var transform = new JObject { ["position"] = Point(1, 0, 0), ["scale"] = Point(2, 1, 1),
-                ["rotation"] = new JObject { ["x"] = 0, ["y"] = 0, ["z"] = Math.Sqrt(.5), ["w"] = Math.Sqrt(.5) } };
+            var transform = new JObject
+            {
+                ["position"] = Point(1, 0, 0), ["scale"] = Point(2, 1, 1),
+                ["rotation"] = new JObject { ["x"] = 0, ["y"] = 0, ["z"] = Math.Sqrt(.5), ["w"] = Math.Sqrt(.5) }
+            };
             var parent = new JObject { ["position"] = Point(5, 0, 0), ["scale"] = Point(3, 1, 1) };
             using (var document = Document("Curved", new JArray(Pair(Point(-1, 0, 0), Point(1, 0, 0)), Pair(Point(-1, 2, 0), Point(1, 2, 0))), transform, parent))
             {
@@ -98,12 +101,18 @@ namespace TiltBrush.Tests
         private MaquetteDocument Document(string mode, JArray pairs, JObject transform, JObject parent = null, int version = 20)
         {
             Write("manifest.json.mq", new JObject { ["guid"] = "own-stroke-fixture" });
-            Write("brushes.json", new JObject { ["version"] = version, ["strokes"] = new JArray(new JObject
-                { ["guid"] = "ribbon", ["drawingMode"] = mode, ["controlPoints"] = pairs }) });
+            Write("brushes.json", new JObject
+            {
+                ["version"] = version, ["strokes"] = new JArray(new JObject
+                { ["guid"] = "ribbon", ["drawingMode"] = mode, ["controlPoints"] = pairs })
+            });
             JObject state = new JObject { ["entityStateGuid"] = "stroke-state", ["targetEntityGuid"] = "ribbon", ["cachedTransform"] = transform };
             if (parent != null) { state = new JObject { ["entityStateGuid"] = "group-state", ["targetEntityGuid"] = "group", ["cachedTransform"] = parent, ["children"] = new JArray(state) }; }
-            Write("scenes.json", new JObject { ["version"] = version, ["slides"] = new JArray(new JObject
-                { ["sceneGuid"] = "scene", ["treeRoots"] = new JArray(state) }) });
+            Write("scenes.json", new JObject
+            {
+                ["version"] = version, ["slides"] = new JArray(new JObject
+                { ["sceneGuid"] = "scene", ["treeRoots"] = new JArray(state) })
+            });
             return new MaquetteDocument(m_Root);
         }
 

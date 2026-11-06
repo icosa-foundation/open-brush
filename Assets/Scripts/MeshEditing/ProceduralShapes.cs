@@ -265,8 +265,11 @@ namespace TiltBrush.MeshEditing
                     break;
                 case "cylinder":
                     result.Add(new Parameter { Name = "taper", Label = "Taper", Min = -1, Max = 1, Taper = true });
-                    result.Add(new Parameter { Name = "Ellipse", Label = "Ellipse", Min = 0, Max = 1,
-                        Integer = true, Boolean = true, Ellipse = true });
+                    result.Add(new Parameter
+                    {
+                        Name = "Ellipse", Label = "Ellipse", Min = 0, Max = 1,
+                        Integer = true, Boolean = true, Ellipse = true
+                    });
                     if (ellipse || EllipseEnabled(recipe.ToJson()))
                     {
                         result.Add(Ratio("topAspect", "bottomAspect", "Top ovalness", .05f, 4, 1, 1));
@@ -283,8 +286,11 @@ namespace TiltBrush.MeshEditing
                     return result;
             }
 
-            result.Add(new Parameter { Name = "AutoSmoothAngle", Label = "Smooth surface",
-                Min = 0, Max = 1, Integer = true, Boolean = true, FinalSmoothing = true });
+            result.Add(new Parameter
+            {
+                Name = "AutoSmoothAngle", Label = "Smooth surface",
+                Min = 0, Max = 1, Integer = true, Boolean = true, FinalSmoothing = true
+            });
 
             // Panels have controllable sampling for curved bends. Existing imported bends on
             // other generators remain editable without adding a new operation stack UI.
