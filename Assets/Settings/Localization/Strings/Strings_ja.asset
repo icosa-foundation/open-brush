@@ -4358,6 +4358,14 @@ MonoBehaviour:
     m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
     m_Metadata:
       m_Items: []
+  - m_Id: 140585981667180544
+    m_Localized: "テキスト"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 151470525216034816
+    m_Localized: "テキストを入力"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
