@@ -4382,6 +4382,22 @@ MonoBehaviour:
     m_Localized: "Vérifiez la flèche de A vers B. La gâchette confirme ; celle de l’autre contrôleur inverse A et B ; Annuler pour quitter."
     m_Metadata:
       m_Items: []
+  - m_Id: 177558531188809728
+    m_Localized: "Vue réelle :"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989628385124352
+    m_Localized: "Ciel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989815199424512
+    m_Localized: "Dégradé"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989991964172288
+    m_Localized: "Vue réelle"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
