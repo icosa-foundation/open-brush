@@ -38,6 +38,11 @@ namespace TiltBrush.MeshEditing
                 return null;
             }
             if (generator.Type != "panel" && generator.Type != "rectangle" && generator.Type != "frame") { return null; }
+            // Rectangle/frame profiles lie in XZ; panels use XY with depth on Z.
+            if (generator.Type != "panel")
+            {
+                return axis == GrabWidget.Axis.X ? "width" : axis == GrabWidget.Axis.Z ? "height" : null;
+            }
             switch (axis)
             {
                 case GrabWidget.Axis.X: return "width";
