@@ -4358,6 +4358,58 @@ MonoBehaviour:
     m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
     m_Metadata:
       m_Items: []
+  - m_Id: 467500000000000000
+    m_Localized: "フレームを左に移動"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000016
+    m_Localized: "フレームを延長"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000032
+    m_Localized: "選択範囲を現在のレイヤーにコピーします"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000048
+    m_Localized: "フレームを複製"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000064
+    m_Localized: "フレームを右に移動"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000080
+    m_Localized: "フレームを追加"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000096
+    m_Localized: "フレームの内容を消去"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000112
+    m_Localized: "フレームを分割"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000128
+    m_Localized: "フレームを短縮"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000144
+    m_Localized: "再生を切り替え"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000160
+    m_Localized: "削除"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000176
+    m_Localized: "統合"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000192
+    m_Localized: "コンテンツを消去"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
