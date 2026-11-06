@@ -65,7 +65,7 @@ namespace TiltBrush.DocumentImport
                 : new Dictionary<string, object>();
         }
 
-        internal static JObject LoadObject(JsonReader reader)
+        public static JObject LoadObject(JsonReader reader)
         {
             var previous = reader.DateParseHandling;
             reader.DateParseHandling = DateParseHandling.None;
