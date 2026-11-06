@@ -59,7 +59,7 @@ public class GenerateModelUV : MonoBehaviour
             // Apply the generated UVs to the mesh
             mesh.uv = uvs;
 
-            }
+        }
         finally
         {
             positionBuffer?.Release();
