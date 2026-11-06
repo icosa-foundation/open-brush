@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,6 +38,9 @@ namespace TiltBrush
         private JsonSerializer m_JsonSerializer;
         private SaveIconCaptureScript m_SaveIconCapture;
         private GroupIdMapping m_GroupIdMapping;
+        // The linked mirrors and their settings, captured with the strokes on the main thread.
+        private SketchWriter.SymmetrySaveState m_SymmetryState;
+        private WidgetLinkSaveContext m_WidgetLinks;
 
         private bool m_SelectedOnly;
 
@@ -99,35 +102,47 @@ namespace TiltBrush
             long maxTicks =
                 (System.Diagnostics.Stopwatch.Frequency * kNanoSecondsPerSnapshotSlice) / 1000000;
 
-            IEnumerable<Stroke> strokes;
-            if (m_SelectedOnly)
+            var selection = SelectionManager.m_Instance;
+            var selectedStrokes = selection.SelectedStrokes.ToList();
+            var selectedWidgets = selection.SelectedWidgets.ToList();
+            var deselectCommand = selection.HasSelection ? selection.CreateEndSelectionCommand() : null;
+            try
             {
-                strokes = SelectionManager.m_Instance.SelectedStrokes.ToList();
-                SelectionManager.m_Instance.DeselectStrokes(strokes, App.ActiveCanvas);
-            }
-            else
-            {
-                strokes = SketchMemoryScript.AllStrokes();
-            }
-            m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
-            foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
-            {
-                if (stopwatch.ElapsedTicks > maxTicks)
+                if (deselectCommand != null)
                 {
-                    stopwatch.Reset();
-                    yield return null;
-                    stopwatch.Start();
+                    deselectCommand.Redo();
+                    App.Scene.MainCanvas.gameObject.SetActive(true);
                 }
-                m_Strokes.Add(strokeSnapshot);
+                IEnumerable<Stroke> strokes = m_SelectedOnly
+                    ? selectedStrokes.Concat(SymmetryPeerEditing.PeersOutside(selectedStrokes)).ToList()
+                    : SketchMemoryScript.AllStrokes();
+                m_WidgetLinks = new WidgetLinkSaveContext(m_SelectedOnly
+                    ? selectedWidgets : SymmetryWidgetGroup.ActiveWidgets, m_SelectedOnly);
+                m_SymmetryState = SketchWriter.SymmetrySaveState.Capture(includeUnreferenced: !m_SelectedOnly);
+                m_Metadata = GetSketchMetadata();
+                foreach (var mirror in m_WidgetLinks.Mirrors)
+                {
+                    m_SymmetryState.WidgetMirrors.Add(mirror);
+                    m_SymmetryState.Settings[mirror] = mirror.Settings;
+                }
+                m_Strokes = new List<AdjustedMemoryBrushStroke>(strokes.Count());
+                foreach (var strokeSnapshot in EnumerateAdjustedSnapshots(strokes))
+                {
+                    if (stopwatch.ElapsedTicks > maxTicks)
+                    {
+                        stopwatch.Reset();
+                        yield return null;
+                        stopwatch.Start();
+                    }
+                    m_Strokes.Add(strokeSnapshot);
+                }
             }
-            stopwatch.Stop();
-
-            m_Metadata = GetSketchMetadata();
-            if (m_SelectedOnly)
+            finally
             {
-                // Reselect strokes
-                SelectionManager.m_Instance.SelectionTransform = TrTransform.identity;
-                SelectionManager.m_Instance.SelectStrokes(strokes, true);
+                stopwatch.Stop();
+                // Reverse the temporary bake, including peer movement and selection join baselines,
+                // without adding a command to undo history, even if capture fails or is disposed.
+                deselectCommand?.Undo();
             }
         }
 
@@ -162,17 +177,19 @@ namespace TiltBrush
             // Saved strokes contain no widgets, even when the selection includes widgets.
             if (!m_SelectedOnly)
             {
-                metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping);
-                metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping);
-                metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping);
-                metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping);
-                metadata.TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping);
-                metadata.SoundClips = MetadataUtils.GetTiltSoundClip(m_GroupIdMapping);
-                metadata.Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping);
-                metadata.GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping);
+                m_WidgetLinks ??= new WidgetLinkSaveContext(SymmetryWidgetGroup.ActiveWidgets, false);
+                metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping, m_WidgetLinks);
+                metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping, m_WidgetLinks);
+                metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping, m_WidgetLinks);
+                metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping, m_WidgetLinks);
+                metadata.TextWidgets = MetadataUtils.GetTiltText(m_GroupIdMapping, m_WidgetLinks);
+                metadata.SoundClips = MetadataUtils.GetTiltSoundClip(m_GroupIdMapping, m_WidgetLinks);
+                metadata.Portals = MetadataUtils.GetTiltPortals(m_GroupIdMapping, m_WidgetLinks);
+                metadata.GaussianCaptures = MetadataUtils.GetTiltGaussianCaptures(m_GroupIdMapping, m_WidgetLinks);
                 metadata.Mirror = PointerManager.m_Instance.SymmetryWidgetToMirror();
-                metadata.GuideIndex = MetadataUtils.GetGuideIndex(m_GroupIdMapping);
-                metadata.CameraPaths = MetadataUtils.GetCameraPaths();
+                metadata.GuideIndex = MetadataUtils.GetGuideIndex(m_GroupIdMapping, m_WidgetLinks);
+                metadata.CameraPaths = MetadataUtils.GetCameraPaths(m_WidgetLinks);
+                metadata.WidgetLinks = m_WidgetLinks.Table;
             }
 
             return metadata;
@@ -316,7 +333,8 @@ namespace TiltBrush
                     List<Guid> brushGuids;
                     using (var stream = tiltWriter.GetWriteStream(TiltFile.FN_SKETCH))
                     {
-                        SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
+                        SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids,
+                            m_SymmetryState);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
 

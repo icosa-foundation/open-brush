@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -17,6 +17,20 @@ namespace TiltBrush
 
         private SymmetryPointType _PointType;
         private int _PointOrder;
+        private int _PenroseSubdivisions = 4;
+        private float _PenroseRadius = 2f;
+        private SymmetryPenroseTiles _PenroseTiles = SymmetryPenroseTiles.Both;
+        private SymmetryLineFamily _LineFamily = SymmetryLineFamily.ScrewHalfTurns;
+        private int _LineOrder = 5;
+        private int _LineRepeats = 8;
+        private float _LineAdvance = 0.5f;
+        private float _LineAngle = 27f;
+        private int _SpaceGroupNumber = 19;
+        private Vector3Int _SpaceGroupRepeats = new Vector3Int(2, 2, 2);
+        private float _SpaceGroupCellSize = 1f;
+        private int _HelicalCopies = 8;
+        private float _HelicalAngle = 30f;
+        private float _HelicalAdvance = 0.5f;
 
         private SymmetryWallpaperType _WallpaperType;
         private int _WallpaperRepeatX;
@@ -45,6 +59,36 @@ namespace TiltBrush
                             _Mode = SymmetryMode.Point;
                             _PointType = (SymmetryPointType)PointerManager.m_Instance.m_PointSymmetryFamily;
                             _PointOrder = PointerManager.m_Instance.m_PointSymmetryOrder;
+                        }
+                        else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Penrose)
+                        {
+                            _Mode = SymmetryMode.Penrose;
+                            _PenroseSubdivisions = PointerManager.m_Instance.m_PenroseSubdivisions;
+                            _PenroseRadius = PointerManager.m_Instance.m_PenroseRadius;
+                            _PenroseTiles = (SymmetryPenroseTiles)PointerManager.m_Instance.m_PenroseTiles;
+                        }
+                        else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.LineGroup)
+                        {
+                            _Mode = SymmetryMode.LineGroup;
+                            _LineFamily = (SymmetryLineFamily)PointerManager.m_Instance.m_LineFamily;
+                            _LineOrder = PointerManager.m_Instance.m_LineOrder;
+                            _LineRepeats = PointerManager.m_Instance.m_LineRepeats;
+                            _LineAdvance = PointerManager.m_Instance.m_LineAdvance;
+                            _LineAngle = PointerManager.m_Instance.m_LineAngle;
+                        }
+                        else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.SpaceGroup)
+                        {
+                            _Mode = SymmetryMode.SpaceGroup;
+                            _SpaceGroupNumber = PointerManager.m_Instance.m_SpaceGroupNumber;
+                            _SpaceGroupRepeats = PointerManager.m_Instance.m_SpaceGroupRepeats;
+                            _SpaceGroupCellSize = PointerManager.m_Instance.m_SpaceGroupCellSize;
+                        }
+                        else if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Helical)
+                        {
+                            _Mode = SymmetryMode.Helical;
+                            _HelicalCopies = PointerManager.m_Instance.m_HelicalCopies;
+                            _HelicalAngle = PointerManager.m_Instance.m_HelicalAngle;
+                            _HelicalAdvance = PointerManager.m_Instance.m_HelicalAdvance;
                         }
                         else
                         {
@@ -141,9 +185,13 @@ namespace TiltBrush
                         );
                         matrices = wallpaperSym.matrices;
                     }
+                    else if (mode == SymmetryMode.Helical)
+                    {
+                        matrices = PointerManager.CreateHelicalMatrices(helicalCopies, helicalAngle, helicalAdvance);
+                    }
                     else if (mode == SymmetryMode.Point)
                     {
-                        var pointSym = new PointSymmetry((PointSymmetry.Family)pointType, pointOrder, 1f);
+                        var pointSym = new PointSymmetry((PointSymmetry.Family)pointType, pointOrder);
                         matrices = pointSym.matrices;
                     }
                     else
@@ -169,6 +217,20 @@ namespace TiltBrush
 
                 _PointType = _PointType,
                 _PointOrder = _PointOrder,
+                _PenroseSubdivisions = _PenroseSubdivisions,
+                _PenroseRadius = _PenroseRadius,
+                _PenroseTiles = _PenroseTiles,
+                _LineFamily = _LineFamily,
+                _LineOrder = _LineOrder,
+                _LineRepeats = _LineRepeats,
+                _LineAdvance = _LineAdvance,
+                _LineAngle = _LineAngle,
+                _SpaceGroupNumber = _SpaceGroupNumber,
+                _SpaceGroupRepeats = _SpaceGroupRepeats,
+                _SpaceGroupCellSize = _SpaceGroupCellSize,
+                _HelicalCopies = _HelicalCopies,
+                _HelicalAngle = _HelicalAngle,
+                _HelicalAdvance = _HelicalAdvance,
 
                 _WallpaperType = _WallpaperType,
                 _WallpaperRepeatX = _WallpaperRepeatX,
@@ -203,6 +265,26 @@ namespace TiltBrush
                             break;
                         case SymmetryMode.TwoHanded:
                             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.TwoHanded);
+                            break;
+                        case SymmetryMode.Penrose:
+                            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Penrose;
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                            PointerManager.m_Instance.CalculateMirrors();
+                            break;
+                        case SymmetryMode.LineGroup:
+                            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.LineGroup;
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                            PointerManager.m_Instance.CalculateMirrors();
+                            break;
+                        case SymmetryMode.SpaceGroup:
+                            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.SpaceGroup;
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                            PointerManager.m_Instance.CalculateMirrors();
+                            break;
+                        case SymmetryMode.Helical:
+                            PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Helical;
+                            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                            PointerManager.m_Instance.CalculateMirrors();
                             break;
                         case SymmetryMode.Point:
                             PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
@@ -418,6 +500,246 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription("Penrose subdivision depth (1–7)")]
+        public int penroseSubdivisions
+        {
+            get => _PenroseSubdivisions;
+            set
+            {
+                _PenroseSubdivisions = Mathf.Clamp(value, 1, 7);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_PenroseSubdivisions = _PenroseSubdivisions;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Penrose seed radius in canvas units")]
+        public float penroseRadius
+        {
+            get => _PenroseRadius;
+            set
+            {
+                _PenroseRadius = Mathf.Max(0.01f, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_PenroseRadius = _PenroseRadius;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Penrose tile types receiving copies")]
+        public SymmetryPenroseTiles penroseTiles
+        {
+            get => _PenroseTiles;
+            set
+            {
+                _PenroseTiles = (SymmetryPenroseTiles)Mathf.Clamp((int)value, 0, 2);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_PenroseTiles = (PenroseTiling.TileSelection)_PenroseTiles;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Line-group family (1–13)")]
+        public SymmetryLineFamily lineFamily
+        {
+            get => _LineFamily;
+            set
+            {
+                _LineFamily = (SymmetryLineFamily)Mathf.Clamp((int)value, 1, 13);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_LineFamily = (LineGroupSymmetry.Family)_LineFamily;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Axial rotation order, including noncrystallographic orders")]
+        public int lineOrder
+        {
+            get => _LineOrder;
+            set
+            {
+                _LineOrder = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_LineOrder = _LineOrder;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Number of generalized steps along Z")]
+        public int lineRepeats
+        {
+            get => _LineRepeats;
+            set
+            {
+                _LineRepeats = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_LineRepeats = _LineRepeats;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Advance per generalized step in canvas units")]
+        public float lineAdvance
+        {
+            get => _LineAdvance;
+            set
+            {
+                _LineAdvance = Mathf.Max(0f, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_LineAdvance = _LineAdvance;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Twist per step in degrees for families 1 and 5")]
+        public float lineAngle
+        {
+            get => _LineAngle;
+            set
+            {
+                _LineAngle = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_LineAngle = _LineAngle;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Space group number (1–230)")]
+        public int spaceGroup
+        {
+            get => _SpaceGroupNumber;
+            set
+            {
+                _SpaceGroupNumber = Mathf.Clamp(value, 1, 230);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_SpaceGroupNumber = _SpaceGroupNumber;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Cell repeats along X")]
+        public int spaceRepeatX
+        {
+            get => _SpaceGroupRepeats.x;
+            set
+            {
+                _SpaceGroupRepeats.x = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_SpaceGroupRepeats = _SpaceGroupRepeats;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Cell repeats along Y")]
+        public int spaceRepeatY
+        {
+            get => _SpaceGroupRepeats.y;
+            set
+            {
+                _SpaceGroupRepeats.y = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_SpaceGroupRepeats = _SpaceGroupRepeats;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Cell repeats along Z")]
+        public int spaceRepeatZ
+        {
+            get => _SpaceGroupRepeats.z;
+            set
+            {
+                _SpaceGroupRepeats.z = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_SpaceGroupRepeats = _SpaceGroupRepeats;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Space group cell size in canvas units")]
+        public float spaceCellSize
+        {
+            get => _SpaceGroupCellSize;
+            set
+            {
+                _SpaceGroupCellSize = Mathf.Max(0.01f, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_SpaceGroupCellSize = _SpaceGroupCellSize;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Number of helical copies, including the original placement")]
+        public int helicalCopies
+        {
+            get => _HelicalCopies;
+            set
+            {
+                _HelicalCopies = Mathf.Max(1, value);
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_HelicalCopies = _HelicalCopies;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Rotation per helical copy in degrees")]
+        public float helicalAngle
+        {
+            get => _HelicalAngle;
+            set
+            {
+                _HelicalAngle = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_HelicalAngle = _HelicalAngle;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
+        [LuaDocsDescription("Advance per helical copy along the mirror Y axis in canvas units")]
+        public float helicalAdvance
+        {
+            get => _HelicalAdvance;
+            set
+            {
+                _HelicalAdvance = value;
+                if (_IsCurrent)
+                {
+                    PointerManager.m_Instance.m_HelicalAdvance = _HelicalAdvance;
+                    PointerManager.m_Instance.CalculateMirrors();
+                }
+            }
+        }
+
         [MoonSharpHidden]
         public static void _WriteToScene(SymmetrySettingsApiWrapper settings)
         {
@@ -435,6 +757,36 @@ namespace TiltBrush
                     break;
                 case SymmetryMode.TwoHanded:
                     newMode = PointerManager.SymmetryMode.TwoHanded;
+                    break;
+                case SymmetryMode.Penrose:
+                    newMode = PointerManager.SymmetryMode.MultiMirror;
+                    PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Penrose;
+                    PointerManager.m_Instance.m_PenroseSubdivisions = settings._PenroseSubdivisions;
+                    PointerManager.m_Instance.m_PenroseRadius = settings._PenroseRadius;
+                    PointerManager.m_Instance.m_PenroseTiles = (PenroseTiling.TileSelection)settings._PenroseTiles;
+                    break;
+                case SymmetryMode.LineGroup:
+                    newMode = PointerManager.SymmetryMode.MultiMirror;
+                    PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.LineGroup;
+                    PointerManager.m_Instance.m_LineFamily = (LineGroupSymmetry.Family)settings._LineFamily;
+                    PointerManager.m_Instance.m_LineOrder = settings._LineOrder;
+                    PointerManager.m_Instance.m_LineRepeats = settings._LineRepeats;
+                    PointerManager.m_Instance.m_LineAdvance = settings._LineAdvance;
+                    PointerManager.m_Instance.m_LineAngle = settings._LineAngle;
+                    break;
+                case SymmetryMode.SpaceGroup:
+                    newMode = PointerManager.SymmetryMode.MultiMirror;
+                    PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.SpaceGroup;
+                    PointerManager.m_Instance.m_SpaceGroupNumber = settings._SpaceGroupNumber;
+                    PointerManager.m_Instance.m_SpaceGroupRepeats = settings._SpaceGroupRepeats;
+                    PointerManager.m_Instance.m_SpaceGroupCellSize = settings._SpaceGroupCellSize;
+                    break;
+                case SymmetryMode.Helical:
+                    newMode = PointerManager.SymmetryMode.MultiMirror;
+                    PointerManager.m_Instance.m_CustomSymmetryType = PointerManager.CustomSymmetryType.Helical;
+                    PointerManager.m_Instance.m_HelicalCopies = settings._HelicalCopies;
+                    PointerManager.m_Instance.m_HelicalAngle = settings._HelicalAngle;
+                    PointerManager.m_Instance.m_HelicalAdvance = settings._HelicalAdvance;
                     break;
                 case SymmetryMode.Point:
                     PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
@@ -464,6 +816,8 @@ namespace TiltBrush
 
             // Set mode last so we recalculate mirrors etc with correct settings
             PointerManager.m_Instance.SetSymmetryMode(newMode);
+            if (newMode == PointerManager.SymmetryMode.MultiMirror)
+            { PointerManager.m_Instance.CalculateMirrors(); }
         }
     }
 }

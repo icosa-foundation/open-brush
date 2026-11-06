@@ -4358,6 +4358,102 @@ MonoBehaviour:
     m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
     m_Metadata:
       m_Items: []
+  - m_Id: 551461337584721920
+    m_Localized: "らせん対称"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522560
+    m_Localized: "元のストロークを含むらせん状のコピー数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522561
+    m_Localized: "コピーごとの回転角度（度）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522562
+    m_Localized: "コピーごとの移動量（キャンバス単位）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522563
+    m_Localized: "空間群"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522564
+    m_Localized: "次の結晶系"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522565
+    m_Localized: "次の空間群プリセット"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522566
+    m_Localized: "空間群番号（1～230）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522567
+    m_Localized: "X方向の単位胞の繰り返し数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522568
+    m_Localized: "Y方向の単位胞の繰り返し数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522569
+    m_Localized: "Z方向の単位胞の繰り返し数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522570
+    m_Localized: "単位胞のサイズ（キャンバス単位）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522571
+    m_Localized: "直線群"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522572
+    m_Localized: "次の直線群ファミリー"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522573
+    m_Localized: "軸回転の次数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522574
+    m_Localized: "一般化されたステップ数"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522575
+    m_Localized: "Z方向のステップごとの移動量（キャンバス単位）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522576
+    m_Localized: "ステップごとのねじれ角度（度）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522577
+    m_Localized: "ペンローズ・タイリング"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522578
+    m_Localized: "次のタイル選択：両方、細い、太い"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522579
+    m_Localized: "分割の深さ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522580
+    m_Localized: "領域の半径（キャンバス単位）"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553016172624830464
+    m_Localized: "シンプルな対称"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553297782469386240
+    m_Localized: "ボタンを長押ししてその他のオプションを表示"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
