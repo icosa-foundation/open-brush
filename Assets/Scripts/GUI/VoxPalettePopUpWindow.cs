@@ -77,7 +77,8 @@ namespace TiltBrush
             m_Widget = widget;
             m_Source = widget.Model;
             m_Document = document;
-            SelectColor(1);
+            GroupUsedColorsFirst(m_DisplayOrder, document.GetUsedPaletteIndices());
+            SelectColor(m_DisplayOrder[0]);
         }
 
         internal void SelectColor(int index)
@@ -125,17 +126,31 @@ namespace TiltBrush
             if (!CanEdit) return;
             BaseCommand embedding = m_Widget.IsExternalVox ? new EmbedVoxModelCommand(m_Widget, m_Document) : null;
             var command = new ClearUnusedVoxPaletteCommand(m_Widget, m_Document, embedding);
-            if (!command.HasChanges) return;
-            m_Memory.PerformAndRecordCommand(embedding ?? command);
-            SelectColor(m_Selected);
+            if (command.HasChanges) m_Memory.PerformAndRecordCommand(embedding ?? command);
+            GroupUsedColorsFirst(m_DisplayOrder, m_Document.GetUsedPaletteIndices());
+            SelectColor(m_DisplayOrder[0]);
+        }
+
+        private static void GroupUsedColorsFirst(int[] displayOrder, bool[] used)
+        {
+            // Stable partition: retain the current order within each group.
+            var grouped = new int[displayOrder.Length];
+            int slot = 0;
+            foreach (int index in displayOrder)
+                if (used[index]) grouped[slot++] = index;
+            foreach (int index in displayOrder)
+                if (!used[index]) grouped[slot++] = index;
+            Array.Copy(grouped, displayOrder, grouped.Length);
         }
 
         internal void SortColors()
         {
             if (!ValidTarget) return;
+            bool[] used = m_Document.GetUsedPaletteIndices();
             Array.Sort(m_DisplayOrder, (a, b) =>
             {
-                int order = ComparePaletteColors(m_Document.Palette[a - 1], m_Document.Palette[b - 1]);
+                int order = used[b].CompareTo(used[a]);
+                if (order == 0) order = ComparePaletteColors(m_Document.Palette[a - 1], m_Document.Palette[b - 1]);
                 return order != 0 ? order : a.CompareTo(b);
             });
             // Keep editing the same palette entry, including an unapplied draft.
