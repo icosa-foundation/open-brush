@@ -1092,7 +1092,6 @@ namespace TiltBrush
             switch (emd.GeneratorType)
             {
                 case GeneratorTypes.Procedural:
-                case GeneratorTypes.Procedural:
                 case GeneratorTypes.GeometryData:
                     m_CurrentMainCategory = PolyhydraMainCategories.CustomGeometry;
                     break;
