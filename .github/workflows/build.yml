@@ -131,11 +131,15 @@ jobs:
         id: play_tracks
         env:
           REF_TYPE: ${{ github.ref_type }}
+          # Temporary: set false to restore open testing for main builds.
+          DIRECT_TO_PRODUCTION: "true"
         run: |
-          # Main publishes open testing; release tags publish production.
+          # Release tags always publish production; main can temporarily bypass open testing.
           # Keep the form factor explicit so XR bundles never use mobile tracks.
           TRACK=beta
-          if [[ "$REF_TYPE" == "tag" ]]; then TRACK=production; fi
+          if [[ "$REF_TYPE" == "tag" || "$DIRECT_TO_PRODUCTION" == "true" ]]; then
+            TRACK=production
+          fi
           echo "mobile=$TRACK" >> "$GITHUB_OUTPUT"
           echo "xr=android_xr:$TRACK" >> "$GITHUB_OUTPUT"
 
