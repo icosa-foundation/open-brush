@@ -4358,6 +4358,22 @@ MonoBehaviour:
     m_Localized: "检查从 A 到 B 的箭头。按扳机确认；另一只控制器的扳机交换 A 和 B；取消以退出。"
     m_Metadata:
       m_Items: []
+  - m_Id: 241026419819896832
+    m_Localized: "纹理绘制"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241060493515120640
+    m_Localized: "设为可绘制"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241074401919459328
+    m_Localized: "UV 映射"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241075235319275520
+    m_Localized: "笔刷设置"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

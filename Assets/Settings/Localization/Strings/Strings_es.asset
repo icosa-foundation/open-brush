@@ -4420,6 +4420,22 @@ MonoBehaviour:
     m_Localized: "Comprueba la flecha de A a B. El gatillo confirma; el del otro mando intercambia A y B; Cancelar para salir."
     m_Metadata:
       m_Items: []
+  - m_Id: 241026419819896832
+    m_Localized: "Pintura de texturas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241060493515120640
+    m_Localized: "Hacer pintable"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241074401919459328
+    m_Localized: "Mapeo UV"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241075235319275520
+    m_Localized: "Ajustes del pincel"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
