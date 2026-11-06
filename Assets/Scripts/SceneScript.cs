@@ -454,7 +454,9 @@ namespace TiltBrush
                 {
                     Visible = layer.gameObject.activeSelf,
                     Name = layer.name,
-                    Transform = layer.LocalPose
+                    Transform = layer.LocalPose,
+                    PostProdOffset = PostProductionSettings.GetLayerSpatialOffsetForSaving(layer, i),
+                    TimeOffsetMs = PostProductionSettings.GetLayerTimeOffsetForSaving(layer, i)
                 };
             }
             return meta;

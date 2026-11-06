@@ -1,4 +1,4 @@
-// Copyright 2021 The Open Brush Authors
+﻿// Copyright 2021 The Open Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -663,6 +663,7 @@ namespace TiltBrush
             float BoundsRadius = SceneSettings.m_Instance.HardBoundsRadiusMeters_SS;
             pose = SketchControlsScript.MakeValidScenePose(pose, BoundsRadius);
             App.Scene.Pose = pose;
+
         }
 
         [ApiEndpoint(
@@ -867,6 +868,21 @@ namespace TiltBrush
                 App.Scene.disableTiltProtection = true;
             }
             App.Scene.Pose = lookPose;
+
+        }
+
+        [ApiEndpoint(
+            "user.look.at.quat",
+            "Sets the user camera's rotation directly from a quaternion (x,y,z,w), bypassing Euler-angle conversion at the API boundary",
+            "0,0,0,1"
+        )]
+        public static void UserLookAtQuat(Quaternion rotation)
+        {
+            TrTransform lookPose = App.Scene.Pose;
+
+            lookPose.rotation = rotation;
+            App.Scene.Pose = lookPose;
+
         }
 
         [ApiEndpoint(
@@ -1525,6 +1541,7 @@ namespace TiltBrush
         )]
         public static void ShowLayer(int layer)
         {
+            PostProductionExport.ThrowIfExporting("layer.show");
             App.Scene.ShowLayer(layer);
         }
 
@@ -1535,6 +1552,7 @@ namespace TiltBrush
         )]
         public static void HideLayer(int layer)
         {
+            PostProductionExport.ThrowIfExporting("layer.hide");
             App.Scene.HideLayer(layer);
         }
 
@@ -1545,6 +1563,7 @@ namespace TiltBrush
         )]
         public static void ToggleLayer(int layer)
         {
+            PostProductionExport.ThrowIfExporting("layer.toggle");
             App.Scene.ToggleLayerVisibility(layer);
         }
 
@@ -2122,12 +2141,119 @@ namespace TiltBrush
         {
             ValidateSafeFilename(filename, "snapshot filename");
             ValidateSnapshotDimensions(width, height, includesSidecars: true);
+            // Deliberately do NOT activate the MultiCamTool here. While it is the active tool,
+            // MultiCamTool.UpdateCameraManagerTransforms() runs every frame and drives the
+            // capture camera to its own attach point (which follows the user's pointer, and
+            // in the non-preview path is pinned to the VR camera's position) - overwriting the
+            // pose set below, so only the very first capture after activation used the pose we
+            // asked for and every later one silently pointed at the user's viewpoint instead.
+            // Activation isn't needed anyway: ScreenshotManager.TakeSnapshot finds the tool via
+            // GetToolOfType (which works whether or not it is active) and activates the capture
+            // rig itself.
             TrTransform tr = TrTransform.TR(position, Quaternion.Euler(direction));
+
             float superSampling = 1f;
             bool removeBackground = false;
             bool renderDepth = true;
             bool renderNormals = true;
             ScreenshotManager.TakeSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
+        }
+
+        [ApiEndpoint(
+            "app.snapshot.quat",
+            "Takes a calibrated color snapshot and depth and normals sidecars, using camera.intrinsics/camera.clip when configured and a quaternion (x,y,z,w) for rotation",
+            "0,10,0,0,0,0,1,hello,1024,768"
+        )]
+        public static void TakeSnapshotQuat(Vector3 position, Quaternion rotation, string filename, int width, int height)
+        {
+            ValidateSafeFilename(filename, "snapshot filename");
+            ValidateSnapshotDimensions(width, height, includesSidecars: true);
+            // See the note in TakeSnapshot: activating the MultiCamTool makes it drive the
+            // capture camera every frame, which breaks every capture after the first.
+            TrTransform tr = TrTransform.TR(position, rotation);
+
+            float superSampling = 1f;
+            bool removeBackground = false;
+            bool renderDepth = true;
+            bool renderNormals = true;
+            ScreenshotManager.TakeCalibratedSnapshot(tr, filename, width, height, superSampling, removeBackground, renderDepth, renderNormals);
+        }
+
+        [ApiEndpoint(
+            "camera.intrinsics",
+            "Renders snapshots through a real camera's calibrated intrinsics (OpenCV convention: fx,fy in pixels, cx,cy principal point, and the width,height they were calibrated at). Unlike a plain field of view this also carries a non-centred principal point and non-square pixels. Intrinsics are rescaled automatically if you snapshot at a different resolution with the same aspect ratio",
+            "3163.5317,3163.5317,2289.4466,1102.9255,4096,2160"
+        )]
+        public static void SetCameraIntrinsics(float fx, float fy, float cx, float cy, float refWidth, float refHeight)
+        {
+            PostProductionExport.ThrowIfExporting("camera.intrinsics");
+            if (fx <= 0 || fy <= 0 || refWidth <= 0 || refHeight <= 0)
+            {
+                throw new System.ArgumentException(
+                    "camera.intrinsics: fx, fy, refWidth and refHeight must all be greater than zero.");
+            }
+            ScreenshotManager.SetCalibratedIntrinsics(fx, fy, cx, cy, refWidth, refHeight);
+            // The post-production undistorted working frame is built on these intrinsics.
+            PostProductionLens.RecomputeWorkingFrame();
+
+        }
+
+        [ApiEndpoint(
+            "camera.intrinsics.clear",
+            "Stops using calibrated intrinsics for snapshots and goes back to the app's normal field-of-view based camera",
+            ""
+        )]
+        public static void ClearCameraIntrinsics()
+        {
+            PostProductionExport.ThrowIfExporting("camera.intrinsics.clear");
+            ScreenshotManager.ClearCalibratedIntrinsics();
+
+        }
+
+        [ApiEndpoint(
+            "camera.clip",
+            "Sets the snapshot camera's near and far clip planes, in Open Brush units (1 metre = 10 units). Affects the depth sidecar's range as well as what gets rendered",
+            "1,1000"
+        )]
+        public static void SetCameraClip(float near, float far)
+        {
+            PostProductionExport.ThrowIfExporting("camera.clip");
+            if (near <= 0 || far <= near)
+            {
+                throw new System.ArgumentException(
+                    "camera.clip: near must be greater than zero and far must be greater than near.");
+            }
+            ScreenshotManager.SetCalibratedClip(near, far);
+
+        }
+
+        [ApiEndpoint(
+            "camera.clip.clear",
+            "Stops overriding the snapshot camera's clip planes",
+            ""
+        )]
+        public static void ClearCameraClip()
+        {
+            PostProductionExport.ThrowIfExporting("camera.clip.clear");
+            ScreenshotManager.ClearCalibratedClip();
+
+        }
+
+        [ApiEndpoint(
+            "app.getpose",
+            "TEMP DEBUG: returns the current App.Scene.Pose (user position/rotation) as position, euler, and quaternion, for comparing against Blender ground truth",
+            ""
+        )]
+        public static string GetScenePose()
+        {
+            TrTransform pose = App.Scene.Pose;
+            string result =
+                $"translation(scene.Pose, negate for user world pos)={pose.translation} " +
+                $"userWorldPosition={-pose.translation} " +
+                $"rotation.eulerAngles={pose.rotation.eulerAngles} " +
+                $"rotation.quaternion=(x={pose.rotation.x:F6},y={pose.rotation.y:F6},z={pose.rotation.z:F6},w={pose.rotation.w:F6})";
+
+            return result;
         }
 
         internal static void ValidateSnapshotDimensions(

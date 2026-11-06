@@ -725,8 +725,185 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     return ApiMainThreadObserver.Instance.SpectatorCamRotation.eulerAngles.ToString();
                 case "query.spectator.target":
                     return ApiMainThreadObserver.Instance.SpectatorCamTargetPosition.ToString();
+                case "query.sketch.currenttime":
+                    // Cached on the main thread each frame by
+                    // PostProductionPreviewController.Update() (App.Instance.CurrentSketchTime
+                    // reads Unity's Time API, unsafe to touch from this HTTP listener thread
+                    // directly). Returns the inactive default until a session starts.
+                    return PostProductionPreviewController.LastSketchTimeMs.ToString("F0");
+                case "query.multiplayer":
+                    return ApiMainThreadObserver.Instance?.RequestMultiplayerStatus() ??
+                        "{\"state\":\"UNAVAILABLE\",\"inRoom\":false,\"players\":[]}";
+                case "query.camera.projection":
+                    // Both halves of the camera: what it projects with, and where it actually
+                    // was for the last capture. Extrinsics are reported even when no calibrated
+                    // intrinsics are set, since "is the camera pointing where I asked" is a
+                    // question worth answering in either case.
+                    // Plain strings built on the main thread (see ScreenshotManager), so this
+                    // doesn't touch Unity objects from the HTTP listener thread.
+                    return "{\"projection\":" + ScreenshotManager.s_ProjectionReportJson +
+                        ",\"lastCaptureExtrinsics\":" + ScreenshotManager.s_LastCaptureExtrinsicsJson + "}";
+                // The four queries below round-trip directly with camera.intrinsics/
+                // camera.clip/postprod.preview.camera/postprod.preview.pose's own
+                // comma-separated argument format (same raw values, no conversion) -
+                // for a UI to repopulate its input fields after loading a sketch,
+                // rather than parsing query.camera.projection's JSON.
+                case "query.camera.intrinsics":
+                    return ScreenshotManager.UseCalibratedProjection
+                        ? $"{ScreenshotManager.CalibratedFx},{ScreenshotManager.CalibratedFy}," +
+                          $"{ScreenshotManager.CalibratedCx},{ScreenshotManager.CalibratedCy}," +
+                          $"{ScreenshotManager.CalibratedRefWidth},{ScreenshotManager.CalibratedRefHeight}"
+                        : "";
+                case "query.camera.clip":
+                    return ScreenshotManager.UseCalibratedClip
+                        ? $"{ScreenshotManager.CalibratedNearClip},{ScreenshotManager.CalibratedFarClip}"
+                        : "";
+                case "query.postprod.preview.camera":
+                    return PostProductionPreviewController.TargetCameraName;
+                case "query.postprod.preview.pose":
+                    if (!PostProductionPreviewController.HasTargetPose) { return ""; }
+                    var pos = PostProductionPreviewController.TargetPosition;
+                    var rot = PostProductionPreviewController.TargetRotation;
+                    return $"{pos.x},{pos.y},{pos.z},{rot.x},{rot.y},{rot.z},{rot.w}";
+                case "query.postprod.offset.time.global":
+                    // Plain C# state, not Unity API - safe to read directly from the HTTP
+                    // listener thread, unlike the Unity-object-backed queries above.
+                    return PostProductionSettings.GlobalTimeOffsetMs.ToString();
+                case "query.postprod.offset.time.layer":
+                    if (commandPair.Length > 1 && int.TryParse(commandPair[1], out int postProdQueryLayer))
+                    {
+                        return PostProductionSettings.GetEffectiveTimeOffsetMs(postProdQueryLayer).ToString();
+                    }
+                    return "error: expected query.postprod.offset.time.layer=<layerIndex>";
+                case "query.postprod.offset.spatial.global":
+                    return FormatTrTransform(PostProductionSettings.GlobalSpatialOffset);
+                case "query.postprod.offset.spatial.layer":
+                    if (commandPair.Length > 1 &&
+                        int.TryParse(commandPair[1], out int postProdSpatialQueryLayer))
+                    {
+                        return FormatTrTransform(
+                            PostProductionSettings.GetEffectiveSpatialOffset(postProdSpatialQueryLayer));
+                    }
+                    return "error: expected query.postprod.offset.spatial.layer=<layerIndex>";
+                // The two "raw" queries below return this layer's OWN offset only (not
+                // composed with the global value, unlike the "effective" queries above) -
+                // what a UI needs to correctly repopulate a per-layer input field after
+                // loading a sketch, without double-applying the global part on next Set.
+                case "query.postprod.offset.time.layer.raw":
+                    if (commandPair.Length > 1 &&
+                        int.TryParse(commandPair[1], out int postProdRawTimeLayer))
+                    {
+                        return PostProductionSettings.GetLayerTimeOffsetMs(postProdRawTimeLayer).ToString();
+                    }
+                    return "error: expected query.postprod.offset.time.layer.raw=<layerIndex>";
+                case "query.postprod.offset.spatial.layer.raw":
+                    if (commandPair.Length > 1 &&
+                        int.TryParse(commandPair[1], out int postProdRawSpatialLayer))
+                    {
+                        return FormatTrTransform(
+                            PostProductionSettings.GetLayerSpatialOffset(postProdRawSpatialLayer));
+                    }
+                    return "error: expected query.postprod.offset.spatial.layer.raw=<layerIndex>";
+                case "query.postprod.debug.readexr":
+                    // TEMP DEBUG: exercises ExrDepthReader against an arbitrary absolute path,
+                    // for verifying the stage-4 EXR reader against known-good reference values.
+                    // Not part of the real feature surface.
+                    if (commandPair.Length > 1)
+                    {
+                        try
+                        {
+                            float[] exrPixels = ExrDepthReader.ReadSingleChannelFloat(
+                                commandPair[1], out int exrWidth, out int exrHeight);
+                            return $"w={exrWidth} h={exrHeight} " +
+                                $"first={exrPixels[0]:R} " +
+                                $"firstBits={BitConverter.ToInt32(BitConverter.GetBytes(exrPixels[0]), 0):x8} " +
+                                $"mid={exrPixels[exrPixels.Length / 2]:R} " +
+                                $"last={exrPixels[exrPixels.Length - 1]:R}";
+                        }
+                        catch (Exception e)
+                        {
+                            return "error: " + e.Message;
+                        }
+                    }
+                    return "error: expected query.postprod.debug.readexr=<absolutePath>";
+                case "query.postprod.plate.status":
+                    // Plain-string status cache, safe to read from this thread - see
+                    // PostProductionMediaLoader.LastStatus.
+                    return PostProductionMediaLoader.LastStatus;
+                case "query.postprod.preview.status":
+                    return PostProductionPreviewController.LastStatus;
+                case "query.postprod.preview.cgcapture.status":
+                    return PostProductionPreviewController.LastCgCaptureStatus;
+                case "query.postprod.preview.composite.status":
+                    return PostProductionCompositeImageEffect.LastStatus;
+                case "query.postprod.offset.spatial.readout":
+                    // Optional target: -1 or omitted = global, 0..N-1 = that layer.
+                    int readoutTarget = PostProductionAlignment.Global;
+                    if (commandPair.Length > 1 && int.TryParse(commandPair[1], out int parsedReadoutTarget))
+                    {
+                        readoutTarget = parsedReadoutTarget;
+                    }
+                    return PostProductionAlignment.GetReadout(readoutTarget);
+                // Same comma-separated format postprod.lens takes, so a UI can copy it back
+                // into its field; empty if no calibration is set.
+                case "query.postprod.lens":
+                    var lensCal = PostProductionLens.CalibrationArray;
+                    return lensCal == null ? "" : string.Join(",", lensCal.Select(
+                        v => v.ToString("R", System.Globalization.CultureInfo.InvariantCulture)));
+                case "query.postprod.preview.autoplate.dir":
+                    return PostProductionPreviewController.AutoPlateClipDir;
+                case "query.postprod.loadcount":
+                    return PostProductionSettings.LoadCount.ToString();
+                case "query.postprod.lens.status":
+                    return PostProductionLens.LastStatus;
+                case "query.postprod.preview.fastplates.status":
+                    return PostProductionPlateCache.LastStatus;
+                case "query.postprod.preview.livecg.status":
+                    return PostProductionLiveCg.LastStatus + "\nlast dump: " + PostProductionLiveCg.LastDumpStatus;
+                case "query.postprod.preview.cgcapture.count":
+                    return PostProductionPreviewController.CgCaptureCount.ToString();
+                case "query.postprod.preview.autoplate.status":
+                    return PostProductionPreviewController.LastAutoPlateStatus;
+                case "query.postprod.metadata.save.status":
+                    return PostProductionMetadataSaver.LastStatus;
+                case "query.postprod.crop.start":
+                    return PostProductionSettings.CropStartFrame?.ToString() ?? "";
+                case "query.postprod.crop.end":
+                    return PostProductionSettings.CropEndFrame?.ToString() ?? "";
+                case "query.postprod.debug.allcameras":
+                    return PostProductionPreviewController.AllCamerasReport;
+                case "query.postprod.clip.status":
+                    return PostProductionClip.LastStatus;
+                case "query.postprod.clip.dir":
+                    return PostProductionClip.ClipDir;
+                case "query.postprod.clip.fps":
+                    return PostProductionSettings.SourceFps.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                case "query.postprod.preview.settings":
+                    return PostProductionPreviewController.SettingsReadout();
+                case "query.postprod.export.status":
+                    return PostProductionExport.Status();
+                case "query.postprod.sketch.name":
+                    return PostProductionSettings.LoadedSketchName;
+                case "query.postprod.list.sketches":
+                    return PostProductionClip.ListSketches();
+                case "query.postprod.list.clips":
+                    return PostProductionClip.ListClips();
+                case "query.postprod.layers.visible":
+                    return PostProductionPreviewController.LayerVisibility;
+                case "query.postprod.layers.names":
+                    return PostProductionPreviewController.LayerNames;
             }
             return "unknown query";
+        }
+
+        // Plain-text readback for a TrTransform, used by the postprod offset queries above.
+        // Not JSON - matches the existing query.spectator.* convention of returning a
+        // simple readable string rather than a structured payload.
+        private static string FormatTrTransform(TrTransform t)
+        {
+            Vector3 euler = t.rotation.eulerAngles;
+            return $"pos=({t.translation.x:F3},{t.translation.y:F3},{t.translation.z:F3}) " +
+                $"rotEuler=({euler.x:F3},{euler.y:F3},{euler.z:F3}) scale={t.scale:F3}";
         }
 
         public bool HasOutgoingListeners => m_OutgoingApiListeners != null && m_OutgoingApiListeners.Count > 0;

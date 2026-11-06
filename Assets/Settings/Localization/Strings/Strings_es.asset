@@ -4420,6 +4420,26 @@ MonoBehaviour:
     m_Localized: "Comprueba la flecha de A a B. El gatillo confirma; el del otro mando intercambia A y B; Cancelar para salir."
     m_Metadata:
       m_Items: []
+  - m_Id: 600000000000000001
+    m_Localized: "Ocultar todos los avatares"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000002
+    m_Localized: "Mostrar todos los avatares"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000003
+    m_Localized: "Ocultar avatar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000004
+    m_Localized: "Mostrar avatar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 535607692813230080
+    m_Localized: "Alternar trazos en tiempo real de otros jugadores"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
