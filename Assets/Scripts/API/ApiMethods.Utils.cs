@@ -183,7 +183,7 @@ namespace TiltBrush
 
         private static TextWidget _GetActiveTextWidget(int index)
         {
-            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveImageWidgets);
+            index = _NegativeIndexing(index, WidgetManager.m_Instance.ActiveTextWidgets);
             return WidgetManager.m_Instance.ActiveTextWidgets[index].WidgetScript;
         }
 

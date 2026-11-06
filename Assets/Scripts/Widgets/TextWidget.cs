@@ -134,6 +134,11 @@ namespace TiltBrush
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
             clone.CloneInitialMaterials(this);
+            clone.m_TextMeshPro.font = m_TextMeshPro.font;
+            clone.Text = Text;
+            clone.TextColor = TextColor;
+            clone.StrokeColor = StrokeColor;
+            clone.Mode = Mode;
             clone.TrySetCanvasKeywordsFromObject(transform);
             return clone;
         }
@@ -144,6 +149,8 @@ namespace TiltBrush
             textWidget.m_LoadingFromSketch = true;
             textWidget.transform.parent = App.Instance.m_CanvasTransform;
             textWidget.transform.localScale = Vector3.one;
+            // Saved coordinates and size are local to the destination layer.
+            textWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltText.LayerId));
 
             textWidget.Text = tiltText.Text;
             textWidget.SetSignedWidgetSize(tiltText.Transform.scale);
@@ -159,7 +166,6 @@ namespace TiltBrush
             textWidget.Text = tiltText.Text;
             textWidget.Mode = tiltText.Mode;
             textWidget.Group = App.GroupManager.GetGroupFromId(tiltText.GroupId);
-            textWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltText.LayerId));
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(textWidget.GetTiltMeterCost(), up: true);
             textWidget.UpdateScale();
