@@ -464,6 +464,15 @@ public class GltfMaterialConverter {
   // It may also refer to a dynamically-generated material, in which case the base material
   // can be found by using ParseGuidFromShader.
   private static Guid ParseGuidFromMaterial(GltfMaterialBase gltfMaterial) {
+    // Open Brush exports TB_BrushGuid in material extras (new format, ob-{Name} names).
+    // This path is used as a fallback; the primary import path uses OpenBrushMaterialImportPlugin.
+    string extrasGuidStr;
+    if (gltfMaterial.TechniqueExtras != null &&
+        gltfMaterial.TechniqueExtras.TryGetValue("TB_BrushGuid", out extrasGuidStr) &&
+        Guid.TryParse(extrasGuidStr, out Guid extrasGuid)) {
+      return extrasGuid;
+    }
+
     if (Guid.TryParse((gltfMaterial as Gltf2Material)?.extensions?.GOOGLE_tilt_brush_material?.guid,
                       out Guid guid)) {
       return guid;
