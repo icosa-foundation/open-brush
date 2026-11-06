@@ -14,6 +14,7 @@ namespace TiltBrush
     public class EditableModelWidget : ModelWidget
     {
         public GeometryRecipeData m_PolyRecipe;
+        public EditableModelDefinitionData m_Definition;
         public PolyMesh m_PolyMesh;
         public Color m_Color = Color.white;
         public static EditableModelWidget LastActivated { get; private set; }
@@ -169,6 +170,7 @@ namespace TiltBrush
             var clone = EditableModelManager.GetOrCreate().GeneratePolyMesh(poly,
                 new GeometryRecipeData(m_PolyRecipe.ToJson()), TrTransform.TRS(position, rotation, size), recordCommand: false, color: m_Color);
             clone.m_PreviousCanvas = m_PreviousCanvas;
+            clone.m_Definition = m_Definition?.WithRecipe(clone.m_PolyRecipe);
             clone.transform.SetParent(transform.parent, true);
             clone.SetSignedWidgetSize(size);
             clone.CustomDimension = CustomDimension;

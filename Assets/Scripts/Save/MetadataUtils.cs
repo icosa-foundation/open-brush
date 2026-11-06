@@ -165,13 +165,14 @@ namespace TiltBrush
                 .OrderBy(ByModelLocation).ToArray();
         }
 
-        public static Dictionary<string, DocumentImport.GeometryRecipeData> GetEditableModelDefinitions()
+        public static Dictionary<string, EditableModelDefinitionData> GetEditableModelDefinitions()
         {
-            var definitions = new Dictionary<string, DocumentImport.GeometryRecipeData>(
+            var definitions = new Dictionary<string, EditableModelDefinitionData>(
                 MeshEditing.EditableModelManager.RetainedDefinitions);
             foreach (var widget in WidgetManager.m_Instance.EditableModelWidgets.Where(widget => widget.gameObject.activeSelf))
             {
-                definitions[widget.Model.AssetId] = widget.m_PolyRecipe;
+                definitions[widget.Model.AssetId] = widget.m_Definition?.WithRecipe(widget.m_PolyRecipe)
+                    ?? new EditableModelDefinitionData(widget.m_PolyRecipe);
             }
             return definitions.Count == 0 ? null : definitions;
         }

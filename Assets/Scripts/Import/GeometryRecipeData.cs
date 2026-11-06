@@ -65,8 +65,17 @@ namespace TiltBrush.DocumentImport
                 : new Dictionary<string, object>();
         }
 
-        internal static JObject LoadObject(JsonReader reader) => JObject.Load(reader,
-            new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });
+        internal static JObject LoadObject(JsonReader reader)
+        {
+            var previous = reader.DateParseHandling;
+            reader.DateParseHandling = DateParseHandling.None;
+            try
+            {
+                return JObject.Load(reader,
+                    new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });
+            }
+            finally { reader.DateParseHandling = previous; }
+        }
 
         private enum ValueKind { Number, Integer, Boolean, String, Vector2, Vector3, Quaternion, Strings }
 
@@ -78,7 +87,34 @@ namespace TiltBrush.DocumentImport
             ["panel"] = Spec("width height depth cornerRadius edgeRadius", "cornerSegments edgeSegments widthSegments heightSegments", strings: "roundedCorners"),
             ["cylinder"] = Spec("height bottomRadius bottomAspect topRadius topAspect sweepAngle", "sides", "smoothSides", vector2: "topOffset", quaternion: "topRotation"),
             ["capsule"] = Spec("cylinderHeight radius sweepAngle", "sides capSegments", "smooth", "zeroSweep"),
-            ["conic"] = Spec("radius majorAxis minorAxis centerOffset bottomClip topClip sweepAngle", "sides verticalSegments", "smooth", "curve zeroSweep")
+            ["conic"] = Spec("radius majorAxis minorAxis centerOffset bottomClip topClip sweepAngle", "sides verticalSegments", "smooth", "curve zeroSweep"),
+            // Shared wire descriptions for the additional 3D-shapes generators.
+            // A host without the corresponding generator retains the definition.
+            ["uniform"] = Spec(text: "solid"),
+            ["radial"] = Spec("height capheight", "sides", text: "solid"),
+            ["grid"] = Spec(integer: "x y", text: "family type shape"),
+            ["waterman"] = Spec(integer: "root c"),
+            ["mesh"] = Spec(),
+            ["polygon"] = Spec("height", "sides"),
+            ["star"] = Spec("sharpness height", "sides"),
+            ["c_Shape"] = Spec("a b c height"),
+            ["l_Shape"] = Spec("a b c height"),
+            ["h_Shape"] = Spec("a b c height"),
+            ["arc"] = Spec("b c height", "a"),
+            ["arch"] = Spec("b c height", "a"),
+            ["gothicArch"] = Spec("a b c height"),
+            ["ring"] = Spec("b c height", "a"),
+            ["triangle"] = Spec("b c height", "a"),
+            ["box"] = Spec(integer: "x y z"),
+            ["uvSphere"] = Spec("z", "x y"),
+            ["uvHemisphere"] = Spec(integer: "x y"),
+            ["stairs"] = Spec("y z", "x"),
+            ["torus"] = Spec("z", "x y"),
+            ["chamferedBox"] = Spec("y z", "x"),
+            ["hollowHemisphere"] = Spec("z", "x y"),
+            ["chamferedCylinder"] = Spec("z", "x y"),
+            ["partialTorus"] = Spec("z", "x y"),
+            ["wireframeBox"] = Spec("z")
         };
 
         private static readonly Dictionary<string, Dictionary<string, ValueKind>> s_Modifiers = new Dictionary<string, Dictionary<string, ValueKind>>
@@ -92,7 +128,7 @@ namespace TiltBrush.DocumentImport
         };
 
         private static readonly Dictionary<string, ValueKind> s_PostProcessing = Spec(
-            "FaceInset AutoSmoothAngle", "CanonicalizeIterations PlanarizeIterations", "FastConicalize");
+            "FaceInset AutoSmoothAngle OutputScale", "CanonicalizeIterations PlanarizeIterations", "FastConicalize");
 
         private static Dictionary<string, ValueKind> Spec(string number = "", string integer = "", string boolean = "",
             string text = "", string vector2 = "", string vector3 = "", string quaternion = "", string strings = "")

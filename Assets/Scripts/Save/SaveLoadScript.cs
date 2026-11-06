@@ -820,6 +820,13 @@ namespace TiltBrush
                 if (!bAdditive)
                 {
                     ModelCatalog.m_Instance.ClearMissingModels();
+                    if (jsonData.EditableModelDefinitions != null)
+                    {
+                        foreach (var definition in jsonData.EditableModelDefinitions.Values)
+                        {
+                            definition.LoadGeometryFile(fileInfo.GetReadStream);
+                        }
+                    }
                     MeshEditing.EditableModelManager.LoadFromTilt(jsonData.EditableModelDefinitions, jsonData.EditableModelIndex);
                     SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
 

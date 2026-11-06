@@ -24,21 +24,9 @@ namespace TiltBrush.MeshEditing
             return m_Instance;
         }
 
-        public static PolyMesh Evaluate(GeometryRecipeData recipe)
-        {
-            recipe.GetSteps(out var generator, out var modifiers, out var postProcessing);
-            var settings = new GeometryPostProcessingSettings
-            {
-                FastConicalize = Setting(postProcessing, nameof(GeometryPostProcessingSettings.FastConicalize), true),
-                CanonicalizeIterations = Setting(postProcessing, nameof(GeometryPostProcessingSettings.CanonicalizeIterations), 0),
-                PlanarizeIterations = Setting(postProcessing, nameof(GeometryPostProcessingSettings.PlanarizeIterations), 0),
-                FaceInset = Setting(postProcessing, nameof(GeometryPostProcessingSettings.FaceInset), 0f),
-                AutoSmoothAngle = Setting(postProcessing, nameof(GeometryPostProcessingSettings.AutoSmoothAngle), 0f)
-            };
-            return GeometryRecipeEvaluator.Build(new GeometryRecipe(ToStep(generator), modifiers.Select(ToStep), settings));
-        }
+        public static PolyMesh Evaluate(GeometryRecipeData recipe) => GeometryRecipeRuntime.Evaluate(recipe);
 
-        public static readonly Dictionary<string, GeometryRecipeData> RetainedDefinitions = new Dictionary<string, GeometryRecipeData>();
+        public static readonly Dictionary<string, EditableModelDefinitionData> RetainedDefinitions = new Dictionary<string, EditableModelDefinitionData>();
         public static readonly List<TiltEditableModels> RetainedInstances = new List<TiltEditableModels>();
 
         public static void ClearRetainedData()
@@ -47,14 +35,14 @@ namespace TiltBrush.MeshEditing
             RetainedInstances.Clear();
         }
 
-        public static void LoadFromTilt(Dictionary<string, GeometryRecipeData> definitions, TiltEditableModels[] instances)
+        public static void LoadFromTilt(Dictionary<string, EditableModelDefinitionData> definitions, TiltEditableModels[] instances)
         {
             ClearRetainedData();
             if (definitions != null)
             {
                 foreach (var definition in definitions)
                 {
-                    try { definition.Value.GetSteps(out _, out _); }
+                    try { definition.Value.Recipe.GetSteps(out _, out _); }
                     catch (Exception) { RetainedDefinitions.Add(definition.Key, definition.Value); }
                 }
             }
@@ -64,13 +52,15 @@ namespace TiltBrush.MeshEditing
                 // Validate an entire parallel-array record before creating any of its widgets.
                 // On failure retain that record intact, avoiding partial creation and duplicate saves.
                 GeometryRecipeData recipe;
+                EditableModelDefinitionData savedDefinition;
                 PolyMesh poly;
                 try
                 {
-                    if (instance.AssetId == null || definitions == null || !definitions.TryGetValue(instance.AssetId, out recipe))
+                    if (instance.AssetId == null || definitions == null || !definitions.TryGetValue(instance.AssetId, out savedDefinition))
                     {
                         throw new NotSupportedException($"Missing editable model definition: {instance.AssetId ?? instance.FilePath}");
                     }
+                    recipe = savedDefinition.Recipe;
                     if (instance.ExtraData?.Count > 0) { throw new NotSupportedException("Unfamiliar editable model instance fields"); }
                     if (instance.RawTransforms == null || instance.RawTransforms.Any(transform => !transform.IsFinite()))
                     {
@@ -98,6 +88,7 @@ namespace TiltBrush.MeshEditing
                     var widget = GetOrCreate().GeneratePolyMesh(poly, recipe, canvas.Pose * transform,
                         recordCommand: false, color: At(instance.Colors, i, Color.white), definitionId: instance.AssetId,
                         skipIntroAnimation: true);
+                    widget.m_Definition = savedDefinition;
                     widget.SetCanvas(canvas);
                     widget.transform.localPosition = transform.translation;
                     widget.transform.localRotation = transform.rotation;
@@ -110,30 +101,6 @@ namespace TiltBrush.MeshEditing
         }
 
         private static T At<T>(T[] values, int index, T fallback) => values != null && index < values.Length ? values[index] : fallback;
-
-        private static T Setting<T>(IReadOnlyDictionary<string, object> settings, string name, T fallback)
-            => settings.TryGetValue(name, out var value) ? (T)value : fallback;
-
-        private static GeometryStep ToStep(GeometryStepData step)
-        {
-            var parameters = new Dictionary<string, object>(StringComparer.Ordinal);
-            foreach (var parameter in step.Parameters)
-            {
-                object value = parameter.Value;
-                if (value is float[] components)
-                {
-                    switch (components.Length)
-                    {
-                        case 2: value = new Vector2(components[0], components[1]); break;
-                        case 3: value = new Vector3(components[0], components[1], components[2]); break;
-                        case 4: value = new Quaternion(components[0], components[1], components[2], components[3]); break;
-                        default: throw new ArgumentException($"Invalid geometry vector: {parameter.Key}");
-                    }
-                }
-                parameters.Add(parameter.Key, value);
-            }
-            return new GeometryStep(step.Type, parameters);
-        }
 
         public EditableModelWidget GeneratePolyMesh(PolyMesh poly, GeometryRecipeData recipe, TrTransform tr,
             Quaternion? desiredEndForward = null, bool forceTransform = true,
@@ -213,7 +180,8 @@ namespace TiltBrush.MeshEditing
             var data = poly.BuildMeshData(colors: new[] { Color.white }, colorMethod: ColorMethods.ByIndex);
             var mesh = new Mesh { indexFormat = IndexFormat.UInt32 };
             // Recipes use metres. Convert once, without preview normalization or random jitter.
-            mesh.SetVertices(data.meshVertices.Select(vertex => vertex * App.METERS_TO_UNITS).ToList());
+            float outputScale = App.METERS_TO_UNITS * poly.ScalingFactor;
+            mesh.SetVertices(data.meshVertices.Select(vertex => vertex * outputScale).ToList());
             mesh.SetNormals(data.meshNormals);
             mesh.SetUVs(0, data.meshUVs);
             mesh.SetColors(data.meshColors);
