@@ -5738,7 +5738,7 @@ namespace TiltBrush
                     return SelectionManager.m_Instance.HasSelection;
                 case GlobalCommands.SummonMirror:
                     return PointerManager.m_Instance.CurrentSymmetryMode !=
-                        PointerManager.SymmetryMode.None;
+                        PointerManager.SymmetryMode.None && SymmetryMirrors.Showing == null;
                 case GlobalCommands.InvertSelection:
                 case GlobalCommands.FlipSelection:
                     return SelectionManager.m_Instance.HasSelection;

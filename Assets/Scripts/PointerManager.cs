@@ -1709,9 +1709,9 @@ namespace TiltBrush
 
         public void BringSymmetryToUser()
         {
-            SymmetryMirrorMove.Begin();
+            // Summoning is only for plain symmetry; linked mirrors belong to the drawing.
+            if (SymmetryMirrors.Showing != null) { return; }
             m_SymmetryWidgetScript.BringToUser();
-            SymmetryMirrorMove.End();
         }
 
         /// Given the position of a main pointer, find a corresponding symmetry position.
