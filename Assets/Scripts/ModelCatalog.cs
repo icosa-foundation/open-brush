@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -100,17 +100,49 @@ namespace TiltBrush
             ChangeDirectory(HomeDirectory);
         }
 
-        private IEnumerable<string> GetModelDirectories()
+        /// The directories the catalog creates and always watches.
+        private IEnumerable<string> GetBuiltInModelDirectories()
         {
             return new List<string> { App.ModelLibraryPath(), App.BlocksModelLibraryPath() }
                 .Where(p => !string.IsNullOrEmpty(p))
                 .Distinct();
         }
 
+        /// Every directory models are read from: the built-in ones plus the roots configured under
+        /// MediaRoots. A configured root is only included while it exists - it can name a drive
+        /// that is not mounted, and unlike the built-in directories it is never created.
+        private IEnumerable<string> GetModelDirectories()
+        {
+            var directories = new List<string>();
+            var seen = new List<string>();
+            foreach (var directory in GetBuiltInModelDirectories()
+                .Concat(App.GetAllModelRoots().Where(Directory.Exists)))
+            {
+                // The same directory can arrive in different spellings - GetAllModelRoots returns
+                // normalized paths while the built-in ones are combined by hand - so compare the
+                // normalized forms rather than the strings as given.
+                string normalized;
+                try
+                {
+                    normalized = Path.GetFullPath(directory);
+                }
+                catch (Exception)
+                {
+                    continue;
+                }
+                if (seen.Any(x => string.Equals(x, normalized, App.MediaPathComparison))) { continue; }
+                seen.Add(normalized);
+                directories.Add(directory);
+            }
+            return directories;
+        }
+
         private string GetModelRoot(string path)
         {
             return GetModelDirectories()
-                .FirstOrDefault(directory => path.StartsWith(directory, StringComparison.OrdinalIgnoreCase));
+                .FirstOrDefault(directory => Path.GetFullPath(path).StartsWith(
+                    $"{Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)}{Path.DirectorySeparatorChar}",
+                    App.MediaPathComparison));
         }
 
         public void ChangeDirectory(string newPath)
@@ -128,10 +160,14 @@ namespace TiltBrush
                 }
             }
 
+            foreach (var directory in GetBuiltInModelDirectories())
+            {
+                Directory.CreateDirectory(directory);
+            }
+
             m_FileWatchers = new List<FileWatcher>();
             foreach (var directory in GetModelDirectories())
             {
-                Directory.CreateDirectory(directory);
                 var watcher = new FileWatcher(directory)
                 {
                     NotifyFilter = NotifyFilters.LastWrite
@@ -381,9 +417,11 @@ namespace TiltBrush
                             {
                                 oldModels.Remove(relativePath);
                             }
-                            // Should we skip this loop earlier if m_ModelsByRelativePath already contains the key?
-                            m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel);
-                            m_ModelRootsByRelativePath[rNewModel.RelativePath] = rootDirectory;
+                            // Keep root ownership consistent with the first accepted model.
+                            if (m_ModelsByRelativePath.TryAdd(rNewModel.RelativePath, rNewModel))
+                            {
+                                m_ModelRootsByRelativePath[rNewModel.RelativePath] = rootDirectory;
+                            }
                         }
                     }
                 }

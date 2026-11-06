@@ -141,9 +141,25 @@ namespace TiltBrush
         /// This property is only for those who need to load the image data from disk.
         public string FilePath { get { return m_Path; } }
 
-        // Path relative to Catalog's HomeDirectory with forward slashes.
-        public string RelativePath =>
-            $".{FileFullPath.Substring(ReferenceImageCatalog.m_Instance.HomeDirectory.Length)}".Replace("\\", "/");
+        // Store a portable path relative to the configured root containing this image.
+        public string RelativePath
+        {
+            get
+            {
+                string fullPath = Path.GetFullPath(FileFullPath);
+                foreach (string root in App.GetAllImageRoots())
+                {
+                    string rootPrefix = Path.GetFullPath(root).TrimEnd(
+                        Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar) +
+                        Path.DirectorySeparatorChar;
+                    if (fullPath.StartsWith(rootPrefix, App.MediaPathComparison))
+                    {
+                        return $"./{fullPath.Substring(rootPrefix.Length)}".Replace("\\", "/");
+                    }
+                }
+                return Path.GetFileName(fullPath);
+            }
+        }
 
         public ReferenceImage(string path)
         {
