@@ -8,6 +8,12 @@ namespace TiltBrush
     public class ShapePresetButton : BaseButton
     {
         [SerializeField] private int m_Preset;
+        protected override void Awake()
+        {
+            base.Awake();
+            gameObject.SetActive(MeshEditing.ProceduralShapes.IsPresetVisible(m_Preset));
+        }
+
         protected override void OnButtonPressed() => GetComponentInParent<ShapesPanel>().CreateShape(m_Preset, transform);
     }
 }

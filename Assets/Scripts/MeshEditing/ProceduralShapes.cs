@@ -17,8 +17,10 @@ namespace TiltBrush.MeshEditing
         public static readonly string[] PresetNames =
         {
             "Box", "Panel", "Frame",
-            "Cylinder", "Capsule", "Sphere"
+            "Cylinder", "Capsule"
         };
+
+        public static bool IsPresetVisible(int preset) => preset >= 0 && preset < PresetNames.Length;
 
         // Axis gestures edit dimensions, not the final mesh scale. Add other shape
         // mappings only when their parameter semantics have been agreed.
@@ -206,13 +208,8 @@ namespace TiltBrush.MeshEditing
                     result.Add(Number("capSegments", "Cap segments", 2, 32, 8, true));
                     break;
                 case "conic":
-                    result.Add(Choice("curve", "Profile", "circle", "ellipse", "hyperbola", "parabola"));
-                    result.Add(Number("centerOffset", "Profile offset", 0, 1, .2f));
-                    result.Add(Number("bottomClip", "Bottom clip", 0, .99f));
-                    result.Add(Number("topClip", "Top clip", .01f, 1, 1));
-                    AddRevolution(result);
-                    result.Add(Number("verticalSegments", "Vertical segments", 2, 48, 16, true));
-                    break;
+                    // Retained for imports and saved recipes, without authoring controls.
+                    return result;
             }
 
             result.Add(new Parameter { Name = "AutoSmoothAngle", Label = "Smooth surface",

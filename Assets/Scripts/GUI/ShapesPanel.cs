@@ -57,6 +57,7 @@ namespace TiltBrush
 
         public void CreateShape(int preset, Transform button)
         {
+            if (!ProceduralShapes.IsPresetVisible(preset)) { return; }
             FinishChange();
             try
             {
