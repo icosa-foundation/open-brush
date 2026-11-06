@@ -4358,6 +4358,10 @@ MonoBehaviour:
     m_Localized: "检查从 A 到 B 的箭头。按扳机确认；另一只控制器的扳机交换 A 和 B；取消以退出。"
     m_Metadata:
       m_Items: []
+  - m_Id: 150014201369985024
+    m_Localized: "雕刻"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
