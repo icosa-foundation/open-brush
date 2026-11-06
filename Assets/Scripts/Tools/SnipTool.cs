@@ -31,6 +31,8 @@ namespace TiltBrush
         private Color m_SelectionColor;
         private BrushDescriptor m_SelectionBrush;
         private Stroke m_SelectionStroke;
+        private readonly VoxToolTarget m_VoxTarget = new();
+        private bool m_VoxSnippedThisGesture;
 
         private enum State
         {
@@ -73,6 +75,8 @@ namespace TiltBrush
         override public void EnableTool(bool bEnable)
         {
             base.EnableTool(bEnable);
+            m_VoxTarget.Clear();
+            m_VoxSnippedThisGesture = false;
             ResetDetection();
             if (bEnable)
             {
@@ -129,6 +133,29 @@ namespace TiltBrush
 
             //keep description locked to controller
             SnapIntersectionObjectToController();
+
+            if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+                m_VoxSnippedThisGesture = false;
+            if (m_VoxTarget.TryFindCell(App.ActiveCanvas, m_DropperTransform.position, GetSize(), out var voxel))
+            {
+                ResetDetection();
+                if (!m_EatInput && !m_ToolHidden && !OpenBrush.Multiplayer.MultiplayerManager.m_Instance.IsViewOnly &&
+                    !voxel.Widget.Pinned && !m_VoxSnippedThisGesture &&
+                    InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+                {
+                    m_VoxSnippedThisGesture = true;
+                    Vector3Int anchor = voxel.Cell - voxel.Document.Models[voxel.ModelIndex].SourceCellOffset;
+                    RuntimeVoxDocument region = null;
+                    if (VoxToolTarget.Edit(voxel.Widget, voxel.Document, document =>
+                        {
+                            var model = document.Models[voxel.ModelIndex];
+                            region = document.DetachConnectedRegion(model, anchor + model.SourceCellOffset);
+                            return region != null;
+                        }, parent => { new CreateVoxRegionWidgetCommand(voxel.Widget, region, parent); }))
+                        AudioManager.m_Instance.PlayDropperPickSound(m_DropperRenderer.transform.position);
+                }
+                return;
+            }
 
             //always default to resetting detection
             m_ResetDetection = true;

@@ -19,9 +19,25 @@ using UnityEngine;
 namespace TiltBrush
 {
 
-    public class SelectionWidget : GrabWidget
+    public partial class SelectionWidget : GrabWidget
     {
         public event System.Action<TrTransform> SelectionTransformed;
+
+        protected override Vector3 GetGridSnapOffset_GS(Quaternion rotation_GS)
+        {
+            var selection = SelectionManager.m_Instance;
+            if (selection.SelectedStrokeCount != 0) return Vector3.zero;
+            ModelWidget model = null;
+            foreach (var widget in selection.SelectedWidgets)
+            {
+                if (model != null || !(widget is ModelWidget candidate)) return Vector3.zero;
+                model = candidate;
+            }
+            if (model == null || !model.TryGetVoxelGridCorner_GS(out Vector3 corner_GS)) return Vector3.zero;
+            // A single-model selection should snap the same grid corner as a direct grab,
+            // independent of the selection bounds center and collision padding.
+            return rotation_GS * Quaternion.Inverse(transform.rotation) * (corner_GS - transform.position);
+        }
 
         [SerializeField] private CanvasScript m_SelectionCanvas;
 
@@ -134,6 +150,7 @@ namespace TiltBrush
 
         public override Vector2 GetWidgetSizeRange()
         {
+            if (VoxRegionGrabActive) return Vector2.one * Mathf.Abs(GetSignedWidgetSize());
             return m_SizeRange;
         }
 
@@ -333,6 +350,7 @@ namespace TiltBrush
 
         override protected void OnUserBeginInteracting()
         {
+            BeginVoxRegionGrab();
             base.OnUserBeginInteracting();
 
             // Use pin visuals for preventing movement.

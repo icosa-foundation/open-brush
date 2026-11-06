@@ -299,7 +299,7 @@ namespace TiltBrush
             {
                 SetApiProperty($"Tool.{LuaNames.ToolScriptIsPreview}", isPreviewExecution);
                 executionResult = LuaManager.Instance.DoToolScript(
-                    LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS, quickSnapPressed);
+                    LuaNames.Main, m_FirstPositionClicked_CS, rAttachPoint_CS, quickSnapPressed, isPreviewExecution);
                 if (isPreviewExecution && previewInterval > 0f)
                 {
                     m_NextStrokePreviewTime = Time.realtimeSinceStartup + previewInterval;

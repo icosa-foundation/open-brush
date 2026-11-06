@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,12 +34,14 @@ namespace TiltBrush
         private TrTransform m_LastThumbnail_SS;
         private List<SketchWriter.AdjustedMemoryBrushStroke> m_Strokes;
         private SketchMetadata m_Metadata;
+        private MetadataUtils.EditableVoxSavePayload[] m_EditableVoxPayloads;
 
         private JsonSerializer m_JsonSerializer;
         private SaveIconCaptureScript m_SaveIconCapture;
         private GroupIdMapping m_GroupIdMapping;
 
         private bool m_SelectedOnly;
+        public long UnrecordedChangesRevision { get; private set; }
 
         public byte[] Thumbnail
         {
@@ -88,6 +90,7 @@ namespace TiltBrush
             m_JsonSerializer.ContractResolver = new CustomJsonContractResolver();
             m_SaveIconCapture = null;
             m_GroupIdMapping = new GroupIdMapping();
+            UnrecordedChangesRevision = SketchMemoryScript.m_Instance.UnrecordedChangesRevision;
             m_Metadata = GetSketchMetadata();
             m_LastThumbnail_SS = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
         }
@@ -122,6 +125,7 @@ namespace TiltBrush
             }
             stopwatch.Stop();
 
+            UnrecordedChangesRevision = SketchMemoryScript.m_Instance.UnrecordedChangesRevision;
             m_Metadata = GetSketchMetadata();
             if (m_SelectedOnly)
             {
@@ -162,7 +166,8 @@ namespace TiltBrush
             // Saved strokes contain no widgets, even when the selection includes widgets.
             if (!m_SelectedOnly)
             {
-                metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping);
+                metadata.ModelIndex = MetadataUtils.GetTiltModels(
+                    m_GroupIdMapping, out m_EditableVoxPayloads);
                 metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping);
                 metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping);
                 metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping);
@@ -277,6 +282,16 @@ namespace TiltBrush
                         zip.CloseEntry();
                     }
 
+                    if (m_EditableVoxPayloads != null)
+                    {
+                        foreach (MetadataUtils.EditableVoxSavePayload payload in m_EditableVoxPayloads)
+                        {
+                            zip.PutNextEntry(new ZipEntry(payload.FilePath));
+                            zip.Write(payload.VoxBytes, 0, payload.VoxBytes.Length);
+                            zip.CloseEntry();
+                        }
+                    }
+
                     // Add other necessary files as needed
                 }
 
@@ -319,6 +334,17 @@ namespace TiltBrush
                         SketchWriter.WriteMemory(stream, m_Strokes, m_GroupIdMapping, out brushGuids);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
+
+                    if (m_EditableVoxPayloads != null)
+                    {
+                        foreach (MetadataUtils.EditableVoxSavePayload payload in m_EditableVoxPayloads)
+                        {
+                            using (var stream = tiltWriter.GetWriteStream(payload.FilePath))
+                            {
+                                stream.Write(payload.VoxBytes, 0, payload.VoxBytes.Length);
+                            }
+                        }
+                    }
 
                     using (var jsonWriter = new CustomJsonWriter(new StreamWriter(
                         tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))
