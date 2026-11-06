@@ -14,6 +14,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.ComponentModel;
 using System.Linq;
 using System.Reflection;
@@ -103,7 +104,7 @@ namespace TiltBrush
                 }
                 else if (paramType.ParameterType == typeof(float))
                 {
-                    paramValue = float.Parse(tokens[tokenIndex++]);
+                    paramValue = float.Parse(tokens[tokenIndex++], CultureInfo.InvariantCulture);
                 }
                 else if (paramType.ParameterType == typeof(int))
                 {
@@ -112,9 +113,9 @@ namespace TiltBrush
                 else if (paramType.ParameterType == typeof(Vector3))
                 {
                     paramValue = new Vector3(
-                        float.Parse(tokens[tokenIndex++]),
-                        float.Parse(tokens[tokenIndex++]),
-                        float.Parse(tokens[tokenIndex++])
+                        float.Parse(tokens[tokenIndex++], CultureInfo.InvariantCulture),
+                        float.Parse(tokens[tokenIndex++], CultureInfo.InvariantCulture),
+                        float.Parse(tokens[tokenIndex++], CultureInfo.InvariantCulture)
                     );
                 }
                 else if (paramType.ParameterType == typeof(bool))
