@@ -4358,6 +4358,22 @@ MonoBehaviour:
     m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
     m_Metadata:
       m_Items: []
+  - m_Id: 206971550222082048
+    m_Localized: "情報"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 206971762546139136
+    m_Localized: "トランスフォーム"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 206971911959830528
+    m_Localized: "外観"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 207037701752971264
+    m_Localized: "インスペクター"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
