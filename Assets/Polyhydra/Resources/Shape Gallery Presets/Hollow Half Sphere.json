@@ -1,0 +1,18 @@
+{
+  "Colors": [ [ 0.500653565, 0.7490196, 0.3764706, 0.0 ], [ 1.0, 0.875, 0.25, 0.0 ], [ 1.0, 0.250980377, 0.250980377, 0.0 ], [ 0.7490196, 0.3764706, 0.686928153, 0.0 ], [ 0.5006535, 0.3764706, 0.7490196, 0.0 ], [ 0.3764706, 0.5627451, 0.7490196, 0.0 ] ],
+  "ColorMethod": 1,
+  "GeneratorType": 9,
+  "GeneratorParameters": { "type": 8, "x": 24, "y": 12, "z": 15.0 },
+  "Vertices": null,
+  "Faces": null,
+  "FaceRoles": null,
+  "VertexRoles": null,
+  "FaceTags": null,
+  "Operations": [],
+  "ExposedParameters": [
+    { "label": "Thickness", "path": "$.GeneratorParameters.z", "min": 1.0, "max": 90.0 },
+    { "label": "Segments", "path": "$.GeneratorParameters.x", "min": 3, "max": 32 },
+    { "label": "Rings", "path": "$.GeneratorParameters.y", "min": 1, "max": 24 }
+  ],
+  "AutoSmoothAngle": 60.0
+}

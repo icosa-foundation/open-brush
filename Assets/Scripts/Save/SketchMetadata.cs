@@ -32,6 +32,8 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -452,6 +454,76 @@ namespace TiltBrush
         public List<string> NotSplittableMeshPaths { get; set; }
     }
 
+    public class TiltEditableModels
+    {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string FilePath { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string AssetId { get; private set; }
+
+        /// Prior to M13, never null or empty; but an empty array is allowed on read.
+        /// Post M13, always null.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TrTransform[] Transforms { get; set; }
+
+        // True if model should be pinned on load.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool[] PinStates { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TrTransform[] RawTransforms
+        {
+            get { return m_rawTransforms; }
+            set { m_rawTransforms = MetadataUtils.Sanitize(value); }
+        }
+
+        // Only for use by MetadataUtils.cs
+        [JsonIgnore]
+        public TrTransform[] m_rawTransforms;
+
+        /// used to bridge the gap between strict Tilt Brush and not-so-strict json
+        [JsonIgnore]
+        public Model.Location Location
+        {
+            get
+            {
+                if (AssetId != null)
+                {
+                    return Model.Location.Generated(AssetId);
+                }
+                else if (FilePath != null)
+                {
+                    return Model.Location.File(FilePath);
+                }
+                else
+                {
+                    return new Model.Location(); // invalid location
+                }
+            }
+            set
+            {
+                if (value.GetLocationType() == Model.Location.Type.LocalFile)
+                {
+                    FilePath = value.RelativePath;
+                    AssetId = null;
+                }
+                else if (value.GetLocationType() == Model.Location.Type.Generated)
+                {
+                    FilePath = null;
+                    AssetId = $"{value.AssetId}";
+                }
+            }
+        }
+
+        // Group IDs for widgets. 0 for ungrouped items.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public uint[] GroupIds { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int[] LayerIds { get; set; }
+    }
+
     [Serializable]
     public class Guides
     {
@@ -740,6 +812,303 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class EditableModelDefinition
+    {
+        [JsonConstructor]
+        public EditableModelDefinition(Vector3[] vertices, List<int>[] faces, List<Roles> faceRoles,
+                                       List<Roles> vertexRoles, List<HashSet<string>> faceTags,
+                                       Color[] colors, ColorMethods colorMethod, int materialIndex,
+                                       GeneratorTypes generatorType, Dictionary<string, object> generatorParameters,
+                                       List<Dictionary<string, object>> operations = null,
+                                       float? autoSmoothAngle = null, string geometryFile = null,
+                                       int? recipeVersion = null, List<Dictionary<string, object>> modifiers = null,
+                                       GeometryPostProcessingSettings postProcessing = null)
+        {
+            Vertices = vertices;
+            Faces = faces;
+            FaceRoles = faceRoles;
+            VertexRoles = vertexRoles;
+            FaceTags = faceTags;
+            Colors = colors;
+            ColorMethod = colorMethod;
+            MaterialIndex = materialIndex;
+            GeneratorType = generatorType;
+            RecipeVersion = PolyRecipeSerialization.CurrentVersion;
+            int inputVersion = recipeVersion ?? 0;
+            if (inputVersion == 0)
+            {
+                if (modifiers != null || postProcessing != null)
+                    throw new JsonSerializationException("Current recipe fields require RecipeVersion.");
+                GeneratorParameters = PolyRecipeSerialization.ReadLegacyGenerator(generatorType, generatorParameters);
+                Modifiers = PolyRecipeSerialization.ReadLegacyModifiers(operations);
+                PostProcessing = new GeometryPostProcessingSettings { AutoSmoothAngle = autoSmoothAngle ?? 0f };
+            }
+            else if (inputVersion == PolyRecipeSerialization.CurrentVersion)
+            {
+                if (operations != null || autoSmoothAngle.HasValue)
+                    throw new JsonSerializationException("A current recipe cannot contain legacy modifier fields.");
+                GeneratorParameters = generatorParameters;
+                Modifiers = modifiers ?? new List<Dictionary<string, object>>();
+                PostProcessing = postProcessing?.Copy() ?? new GeometryPostProcessingSettings();
+            }
+            else throw new NotSupportedException($"Unsupported 3D recipe version: {inputVersion}");
+            GeometryFile = geometryFile;
+        }
+
+        public EditableModelDefinition(PolyRecipe recipe)
+        {
+            if (recipe.GeneratorType == GeneratorTypes.FileSystem ||
+                recipe.GeneratorType == GeneratorTypes.GeometryData)
+            {
+                Vertices = recipe.Vertices?.ToArray();
+                Faces = recipe.Faces?.ToArray();
+                FaceRoles = recipe.FaceRoles?.Select(i => (Roles)i).ToList();
+                VertexRoles = recipe.VertexRoles?.Select(i => (Roles)i).ToList();
+                FaceTags = recipe.FaceTags;
+            }
+            GeneratorType = recipe.GeneratorType;
+            GeneratorParameters = ParametersFromRecipe(recipe);
+            RecipeVersion = PolyRecipeSerialization.CurrentVersion;
+            Modifiers = PolyRecipeSerialization.WriteModifiers(recipe.Operators);
+            MaterialIndex = recipe.MaterialIndex;
+            ColorMethod = recipe.ColorMethod;
+            Colors = (Color[])recipe.Colors?.Clone();
+            PostProcessing = recipe.PostProcessing?.Copy() ?? new GeometryPostProcessingSettings();
+        }
+
+        public static Dictionary<string, object> ParametersFromRecipe(PolyRecipe recipe)
+        {
+            var generatorParameters = new Dictionary<string, object>();
+
+            switch (recipe.GeneratorType)
+            {
+                case GeneratorTypes.Uniform:
+                    generatorParameters = new Dictionary<string, object>
+                    {
+                        { "type", recipe.UniformPolyType },
+                    };
+                    break;
+                case GeneratorTypes.Waterman:
+                    generatorParameters = new Dictionary<string, object>
+                    {
+                        { "root", recipe.Param1Int },
+                        { "c", recipe.Param2Int },
+                    };
+                    break;
+                case GeneratorTypes.RegularGrids:
+                case GeneratorTypes.CatalanGrids:
+                case GeneratorTypes.OneUniformGrids:
+                case GeneratorTypes.TwoUniformGrids:
+                case GeneratorTypes.DurerGrids:
+                    generatorParameters = new Dictionary<string, object>
+                    {
+                        { "type", recipe.GridType },
+                        { "shape", recipe.GridShape },
+                        { "x", recipe.Param1Int },
+                        { "y", recipe.Param2Int },
+                    };
+                    break;
+                case GeneratorTypes.Radial:
+                    recipe.Param1Int = Mathf.Max(recipe.Param1Int, 3);
+                    float height, capHeight;
+                    switch (recipe.RadialPolyType)
+                    {
+                        case RadialSolids.RadialPolyType.Prism:
+                        case RadialSolids.RadialPolyType.Antiprism:
+                        case RadialSolids.RadialPolyType.Pyramid:
+                        case RadialSolids.RadialPolyType.Dipyramid:
+                        case RadialSolids.RadialPolyType.OrthoBicupola:
+                        case RadialSolids.RadialPolyType.GyroBicupola:
+                        case RadialSolids.RadialPolyType.Cupola:
+                            height = recipe.Param2Float;
+                            capHeight = recipe.Param2Float;
+                            break;
+                        default:
+                            height = recipe.Param2Float;
+                            capHeight = recipe.Param3Float;
+                            break;
+                    }
+
+                    generatorParameters = new Dictionary<string, object>
+                    {
+                        { "type", recipe.RadialPolyType },
+                        { "sides", recipe.Param1Int },
+                        { "height", height },
+                        { "capheight", capHeight },
+                    };
+                    break;
+                case GeneratorTypes.Shapes:
+                    switch (recipe.ShapeType)
+                    {
+                        case ShapeTypes.Polygon:
+                            recipe.Param1Int = Mathf.Max(recipe.Param1Int, 3);
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", ShapeTypes.Polygon },
+                                { "sides", recipe.Param1Int },
+                            };
+                            // Intentionally different to radial scaling.
+                            // Set so side lengths will match for any polygon
+                            break;
+                        case ShapeTypes.Star:
+                            recipe.Param1Int = Mathf.Max(recipe.Param1Int, 3);
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", ShapeTypes.Star },
+                                { "sides", recipe.Param1Int },
+                                { "sharpness", recipe.Param2Float },
+                            };
+                            break;
+                        case ShapeTypes.L_Shape:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", ShapeTypes.L_Shape },
+                                { "a", recipe.Param1Float },
+                                { "b", recipe.Param2Float },
+                                { "c", recipe.Param3Float },
+                            };
+                            break;
+                        case ShapeTypes.C_Shape:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", ShapeTypes.C_Shape },
+                                { "a", recipe.Param1Float },
+                                { "b", recipe.Param2Float },
+                                { "c", recipe.Param3Float },
+                            };
+                            break;
+                        case ShapeTypes.H_Shape:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", ShapeTypes.H_Shape },
+                                { "a", recipe.Param1Float },
+                                { "b", recipe.Param2Float },
+                                { "c", recipe.Param3Float },
+                            };
+                            break;
+                        case ShapeTypes.Arc:
+                        case ShapeTypes.Arch:
+                        case ShapeTypes.Ring:
+                        case ShapeTypes.Triangle:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", recipe.ShapeType },
+                                { "a", recipe.Param1Int },
+                                { "b", recipe.Param2Float },
+                                { "c", recipe.Param3Float },
+                            };
+                            break;
+                    }
+                    if (recipe.ShapeExtrusion > 0f)
+                    {
+                        generatorParameters["height"] = recipe.ShapeExtrusion;
+                    }
+                    break;
+                case GeneratorTypes.Various:
+                    switch (recipe.VariousSolidsType)
+                    {
+                        case VariousSolidTypes.Box:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", VariousSolidTypes.Box },
+                                { "x", recipe.Param1Int },
+                                { "y", recipe.Param2Int },
+                                { "z", recipe.Param3Int },
+                            };
+                            break;
+                        case VariousSolidTypes.UvSphere:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", VariousSolidTypes.UvSphere },
+                                { "x", recipe.Param1Int },
+                                { "y", recipe.Param2Int },
+                                { "z", recipe.Param3Float <= 0f ? 1f : recipe.Param3Float },
+                            };
+                            break;
+                        case VariousSolidTypes.UvHemisphere:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", VariousSolidTypes.UvHemisphere },
+                                { "x", recipe.Param1Int },
+                                { "y", recipe.Param2Int },
+                            };
+                            break;
+                        case VariousSolidTypes.Torus:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", VariousSolidTypes.Torus },
+                                { "x", recipe.Param1Int },
+                                { "y", recipe.Param2Int },
+                                { "z", recipe.Param3Float },
+                            };
+                            break;
+                        case VariousSolidTypes.Stairs:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", VariousSolidTypes.Stairs },
+                                { "x", recipe.Param1Int },
+                                { "y", recipe.Param2Float },
+                                { "z", recipe.Param3Float },
+                            };
+                            break;
+                        case VariousSolidTypes.Capsule:
+                        case VariousSolidTypes.ChamferedCylinder:
+                        case VariousSolidTypes.HollowHemisphere:
+                        case VariousSolidTypes.PartialTorus:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", recipe.VariousSolidsType },
+                                { "x", recipe.Param1Int },
+                                { "y", recipe.Param2Int },
+                                { "z", recipe.Param3Float },
+                            };
+                            break;
+                        case VariousSolidTypes.ChamferedBox:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", VariousSolidTypes.ChamferedBox },
+                                { "x", recipe.Param1Int },
+                                { "y", recipe.Param2Float },
+                                { "z", recipe.Param3Float },
+                            };
+                            break;
+                        case VariousSolidTypes.WireframeBox:
+                            generatorParameters = new Dictionary<string, object>
+                            {
+                                { "type", VariousSolidTypes.WireframeBox },
+                                { "z", recipe.Param3Float },
+                            };
+                            break;
+                    }
+                    break;
+            }
+            return generatorParameters;
+        }
+
+        public Color[] Colors { get; }
+        public ColorMethods ColorMethod { get; }
+        public int MaterialIndex { get; }
+        public GeneratorTypes GeneratorType { get; }
+        public Dictionary<string, object> GeneratorParameters { get; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string GeometryFile { get; internal set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Vector3[] Vertices { get; internal set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<int>[] Faces { get; internal set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<Roles> FaceRoles { get; internal set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<Roles> VertexRoles { get; internal set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public List<HashSet<string>> FaceTags { get; internal set; }
+        public int RecipeVersion { get; }
+        public List<Dictionary<string, object>> Modifiers { get; }
+        public GeometryPostProcessingSettings PostProcessing { get; }
+
+    }
+
+    [Serializable]
     public class TiltSoundClip
     {
         public string FilePath { get; set; } // relative to Media Library folder
@@ -833,6 +1202,9 @@ namespace TiltBrush
         }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, EditableModelDefinition> EditableModelDefinitions;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int SchemaVersion { get; set; }
 
         /// Deprecated
@@ -867,6 +1239,9 @@ namespace TiltBrush
                 ImageIndex = value.Select(i75b => i75b.Upgrade()).ToArray();
             }
         }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltEditableModels[] EditableModelIndex { get; set; }
 
         // Added in 7.5
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]

@@ -42,6 +42,9 @@ namespace TiltBrush
 
         [SerializeField] private Mesh m_CustomSymmetryMesh;
         [SerializeField] private Material m_CustomSymmetryMaterial;
+        private MeshRenderer m_SymmetryGuideMeshRenderer;
+        private MeshFilter m_SymmetryGuideMeshFilter;
+        private PreviewPolyhedron _previewPolyhedron;
 
         public enum BeamDirection
         {
@@ -101,6 +104,9 @@ namespace TiltBrush
         {
             base.Awake();
 
+            m_SymmetryGuideMeshFilter = gameObject.AddComponent<MeshFilter>();
+            m_SymmetryGuideMeshRenderer = gameObject.AddComponent<MeshRenderer>();
+            m_SymmetryGuideMeshRenderer.enabled = false;
             m_AngVelDampThreshold = 50f;
 
             //initialize beams
@@ -123,6 +129,7 @@ namespace TiltBrush
 
         public void SetMode(PointerManager.SymmetryMode rMode)
         {
+            m_SymmetryGuideMeshRenderer.enabled = false;
             switch (rMode)
             {
                 case PointerManager.SymmetryMode.SinglePlane:
@@ -142,8 +149,28 @@ namespace TiltBrush
                     {
                         m_GuideBeams[i].m_BeamRenderer.enabled = false;
                     }
-                    if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point)
+                    break;
+                case PointerManager.SymmetryMode.CustomSymmetryMode:
+                    if (_previewPolyhedron == null)
                     {
+                        _previewPolyhedron = PreviewPolyhedron.m_Instance;
+                    }
+                    if (_previewPolyhedron == null)
+                    {
+                        break;
+                    }
+                    m_LeftRightMesh.enabled = false;
+                    m_SymmetryGuideMeshRenderer.enabled = true;
+                    m_SymmetryGuideMeshFilter.mesh =
+                        _previewPolyhedron.GetComponent<MeshFilter>().mesh;
+                    m_SymmetryGuideMeshFilter.transform.localScale = Vector3.one * 2.0f;
+                    m_SymmetryGuideMeshRenderer.material =
+                        _previewPolyhedron.SymmetryWidgetMaterial;
+                    for (int i = 0; i < m_GuideBeams.Length; ++i)
+                    {
+                        m_GuideBeams[i].m_BeamRenderer.enabled =
+                            m_GuideBeams[i].m_Direction != BeamDirection.Up &&
+                            m_GuideBeams[i].m_Direction != BeamDirection.Down;
                     }
                     break;
             }
@@ -166,7 +193,9 @@ namespace TiltBrush
             // It's a bit obnoxious to do this when the user's grabbing it. Maybe we should
             // also not do this when the canvas is being manipulated?
             if (!m_UserInteracting && !m_IsSpinningFreely && !m_SnapDriftCancel
-                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.MultiMirror)
+                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.MultiMirror
+                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.ScriptedSymmetryMode
+                && PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.CustomSymmetryMode)
             {
                 // Doing the rotation in object space makes it easier to prove that the
                 // plane normal will never be affected.
@@ -283,6 +312,7 @@ namespace TiltBrush
             }
         }
 
+
         override public void Activate(bool bActive)
         {
             base.Activate(bActive);
@@ -368,7 +398,12 @@ namespace TiltBrush
                 Vector3.up * m_JumpToUserControllerYOffset;
             TrTransform xf_GS = TrTransform.TR(controllerPos + offset, transform.rotation);
 
-            // The transform we built was global space, but we need it in widget local for the command.
+            PlaceAt(xf_GS);
+        }
+
+        public void PlaceAt(TrTransform xf_GS)
+        {
+            // MoveWidgetCommand expects the transform in widget-parent space.
             TrTransform newXf = TrTransform.FromTransform(m_NonScaleChild.parent).inverse * xf_GS;
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
                 new MoveWidgetCommand(this, newXf, CustomDimension, final: true),

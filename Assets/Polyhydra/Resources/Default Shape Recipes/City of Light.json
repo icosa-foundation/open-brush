@@ -1,0 +1,85 @@
+{
+  "Colors": [ [ 1.0, 0.745098054, 0.0431372561, 1.0 ], [ 0.9843137, 0.3372549, 0.02745098, 1.0 ], [ 1.0, 0.0, 0.431372553, 1.0 ], [ 0.5137255, 0.219607845, 0.9254902, 1.0 ], [ 0.227450982, 0.5254902, 1.0, 1.0 ]
+  ],
+  "ColorMethod": 4,
+  "MaterialIndex": 3,
+  "GeneratorType": 2,
+  "GeneratorParameters": {
+    "type": 9,
+    "shape": 0,
+    "x": 2,
+    "y": 3
+  },
+  "Vertices": null,
+  "Faces": null,
+  "FaceRoles": null,
+  "VertexRoles": null,
+  "FaceTags": null,
+  "Operations": [
+    {
+      "operation": 17,
+      "param1": 0.5,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 1.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    },
+    {
+      "operation": 56,
+      "param1": 0.0,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 1.0 ],
+      "disabled": false,
+      "filterType": 7,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    },
+    {
+      "operation": 27,
+      "param1": 0.25,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 1.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    },
+    {
+      "operation": 56,
+      "param1": 0.0,
+      "param1Randomize": false,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 1.0 ],
+      "disabled": false,
+      "filterType": 13,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": true
+    },
+    {
+      "operation": 36,
+      "param1": 0.4,
+      "param1Randomize": true,
+      "param2": 0.0,
+      "param2Randomize": false,
+      "paramColor": [ 0.0, 0.0, 0.0, 1.0 ],
+      "disabled": false,
+      "filterType": 0,
+      "filterParamFloat": 0.0,
+      "filterParamInt": 0,
+      "filterNot": false
+    }
+  ]
+}

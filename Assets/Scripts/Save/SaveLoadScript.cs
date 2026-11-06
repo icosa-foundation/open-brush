@@ -20,6 +20,10 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using Polyhydra.Core;
+using Polyhydra.Wythoff;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -825,6 +829,80 @@ namespace TiltBrush
                     if (jsonData.ModelIndex != null)
                     {
                         WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex);
+                    }
+
+                    if (jsonData.EditableModelIndex != null)
+                    {
+                        var generatedModels = new List<TiltEditableModels>();
+                        var filesystemModels = new List<TiltEditableModels>();
+
+                        foreach (var model in jsonData.EditableModelIndex)
+                        {
+                            if (model.AssetId != null && jsonData.EditableModelDefinitions != null &&
+                                jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
+                            {
+                                generatedModels.Add(model);
+                            }
+                            else
+                            {
+                                filesystemModels.Add(model);
+                            }
+                        }
+
+                        // Queue filesystem models for loading
+                        WidgetManager.m_Instance.SetDataFromTilt(filesystemModels);
+
+                        // Rebuild generated models
+                        foreach (TiltEditableModels model in generatedModels)
+                        {
+                            var definition = jsonData.EditableModelDefinitions[model.AssetId];
+                            if (definition.GeometryFile != null)
+                            {
+                                // Do not allow an archive reference to escape an unpacked .tilt directory.
+                                if (!definition.GeometryFile.StartsWith("editable-model-", StringComparison.Ordinal) ||
+                                    !definition.GeometryFile.EndsWith(".bin", StringComparison.Ordinal) ||
+                                    Path.GetFileName(definition.GeometryFile) != definition.GeometryFile)
+                                {
+                                    throw new InvalidDataException("Invalid editable geometry filename.");
+                                }
+                                using var geometry = fileInfo.GetReadStream(definition.GeometryFile);
+                                if (geometry == null)
+                                {
+                                    throw new InvalidDataException($"Missing editable geometry: {definition.GeometryFile}");
+                                }
+                                EditableModelGeometry.Read(geometry, definition);
+                            }
+                            PolyRecipe recipe = PolyRecipe.FromDef(definition);
+
+                            // Handle saves with missing colors (legacy)
+                            if (recipe.Colors == null || recipe.Colors.Length == 0)
+                            {
+                                PolyhydraPanel polyPanel = (PolyhydraPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra);
+                                recipe.Colors = (Color[])polyPanel.DefaultColorPalette.Clone();
+                            }
+                            for (var i = 0; i < model.RawTransforms.Length; i++)
+                            {
+                                var tr = model.RawTransforms[i];
+                                var (poly, meshData) = PolyBuilder.BuildFromPolyDef(recipe);
+                                var widget = EditableModelManager.m_Instance.GeneratePolyMesh(
+                                    poly, recipe, tr, meshData, recordCommand: false);
+                                bool pin = model.PinStates == null || i >= model.PinStates.Length ||
+                                    model.PinStates[i];
+                                if (pin)
+                                {
+                                    widget.PinFromSave();
+                                }
+                                uint groupId = model.GroupIds != null && i < model.GroupIds.Length
+                                    ? model.GroupIds[i]
+                                    : 0;
+                                widget.Group = App.GroupManager.GetGroupFromId(groupId);
+                                if (model.LayerIds != null && i < model.LayerIds.Length)
+                                {
+                                    var canvas = App.Scene.GetOrCreateLayer(model.LayerIds[i]);
+                                    widget.SetCanvas(canvas);
+                                }
+                            }
+                        }
                     }
 
                     if (jsonData.LightIndex != null)
