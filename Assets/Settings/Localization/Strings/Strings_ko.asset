@@ -4358,6 +4358,22 @@ MonoBehaviour:
     m_Localized: "A→B 화살표를 확인하세요. 트리거로 확인, 다른 컨트롤러의 트리거로 A와 B 교환, 취소로 종료합니다."
     m_Metadata:
       m_Items: []
+  - m_Id: 206971550222082048
+    m_Localized: "정보"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 206971762546139136
+    m_Localized: "변환"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 206971911959830528
+    m_Localized: "모양"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 207037701752971264
+    m_Localized: "인스펙터"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

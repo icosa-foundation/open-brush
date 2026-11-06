@@ -719,24 +719,7 @@ namespace TiltBrush
                 m_SelectionWidget.SelectionTransform = SelectionTransformToScene(SelectionTransform);
                 if (HasSelection)
                 {
-                    Bounds selectionBounds;
-                    // If we don't have strokes selected, use the bounds of our widgets, only.
-                    if (m_SelectedStrokes.Count == 0)
-                    {
-                        selectionBounds = GetBoundsOfSelectedWidgets_SelectionCanvasSpace();
-                    }
-                    else if (m_SelectedWidgets.Count == 0)
-                    {
-                        // If we don't have widgets, use the bounds of our strokes, only.
-                        selectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox(onlyActive: true);
-                    }
-                    else
-                    {
-                        selectionBounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox(onlyActive: true);
-                        selectionBounds.Encapsulate(GetBoundsOfSelectedWidgets_SelectionCanvasSpace());
-                    }
-
-                    m_SelectionWidget.SetSelectionBounds(selectionBounds);
+                    m_SelectionWidget.SetSelectionBounds(GetSelectionBounds_SelectionCanvasSpace());
 
                     bool selectionPinned = false;
                     m_SelectionWidget.ResetSizeRange();
@@ -1207,6 +1190,22 @@ namespace TiltBrush
         {
             TrTransform canvasPose_SS = App.Scene.AsScene[App.ActiveCanvas.transform];
             return canvasPose_SS.inverse * xf_SS * canvasPose_SS;
+        }
+
+        // Shared by selection controls so displayed centers and edit pivots include widgets.
+        public Bounds GetSelectionBounds_SelectionCanvasSpace()
+        {
+            if (m_SelectedStrokes.Count == 0)
+            {
+                return GetBoundsOfSelectedWidgets_SelectionCanvasSpace();
+            }
+
+            Bounds bounds = App.Scene.SelectionCanvas.GetCanvasBoundingBox(onlyActive: true);
+            if (m_SelectedWidgets.Count > 0)
+            {
+                bounds.Encapsulate(GetBoundsOfSelectedWidgets_SelectionCanvasSpace());
+            }
+            return bounds;
         }
 
         Bounds GetBoundsOfSelectedWidgets_SelectionCanvasSpace()
