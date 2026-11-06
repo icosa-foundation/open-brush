@@ -16,6 +16,7 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.Localization;
+using UnityEngine.XR.Management;
 
 #if UNITY_ANDROID
 using UnityEngine.Android;
@@ -40,6 +41,10 @@ namespace TiltBrush
         // m_MaximumLoadingTime
         private float m_FakeLoadingRate;
         private float m_CurrentLoadingPosition;
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
+        private bool m_OpenedFolderPicker;
+        private XRManagerSettings m_StartupXr;
+#endif
 #if UNITY_ANDROID
         private bool m_FolderPermissionOverride = false;
         private bool m_WaitingForPermission = false;
@@ -77,6 +82,7 @@ namespace TiltBrush
                 yield return AndroidDirectStorage.Initialize(App.kAppFolderName, ShowFolderExplanation);
                 if (AndroidDirectStorage.StartupCanceled) yield break;
                 m_Overlay.MessageStatus = m_LoadingText.GetLocalizedStringAsync().Result;
+                if (m_OpenedFolderPicker) RestoreStartupXr();
             }
 #endif
 
@@ -100,6 +106,23 @@ namespace TiltBrush
 #endif
 
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync("Main");
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
+            if (m_StartupXr != null)
+            {
+                // Keep rendering the loading scene until Main is ready, but do not carry
+                // its temporary XR session into VrSdk.Awake's render-buffer setup.
+                asyncLoad.allowSceneActivation = false;
+                while (asyncLoad.progress < 0.9f)
+                {
+                    UpdateProgress(0, m_SceneLoadRatio, asyncLoad.progress);
+                    yield return null;
+                }
+                yield return new WaitForEndOfFrame();
+                if (m_StartupXr.isInitializationComplete) m_StartupXr.DeinitializeLoader();
+                m_StartupXr = null;
+                asyncLoad.allowSceneActivation = true;
+            }
+#endif
             while (!asyncLoad.isDone)
             {
                 UpdateProgress(0, m_SceneLoadRatio, asyncLoad.progress);
@@ -121,14 +144,34 @@ namespace TiltBrush
             Destroy(gameObject);
         }
 
-#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE
+#if UNITY_ANDROID && OPEN_BRUSH_SCOPED_STORAGE && !OPEN_BRUSH_VIEWER
         private IEnumerator ShowFolderExplanation(bool retry)
         {
             bool accepted = false;
             yield return StartupFolderDialog.Show(m_VrCamera, m_Overlay, App.kAppFolderName,
                 retry, result => accepted = result);
-            if (accepted) AndroidDirectStorage.OpenFolderPicker();
+            if (accepted)
+            {
+                m_OpenedFolderPicker = true;
+                AndroidDirectStorage.OpenFolderPicker();
+            }
             else AndroidDirectStorage.CancelStartup();
+        }
+
+        private void RestoreStartupXr()
+        {
+            var manager = XRGeneralSettings.Instance?.Manager;
+            if (manager == null || manager.activeLoader != null) return;
+            try
+            {
+                m_StartupXr = manager;
+                if (manager.activeLoader == null) manager.InitializeLoaderSync();
+                if (manager.activeLoader != null) manager.StartSubsystems();
+            }
+            catch (System.Exception error)
+            {
+                Debug.LogError($"OBDS_STARTUP XR resume failed: {error}");
+            }
         }
 #endif
 
