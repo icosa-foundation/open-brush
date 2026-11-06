@@ -69,6 +69,40 @@ namespace TiltBrush
 #endif
         }
 
+        internal static IEnumerable<string> GetContentsAt(BundledSketchEntry entry, string path)
+        {
+            using (var input = new MemoryStream(Read(entry.FileName), false))
+                return GetContentsAt(input, path);
+        }
+
+        internal static IEnumerable<string> GetContentsAt(Stream input, string path)
+        {
+            string prefix = path.Replace('\\', '/').Trim('/');
+            if (prefix.Length > 0) prefix += "/";
+            var directories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+#if USE_DOTNETZIP
+            using (var archive = Ionic.Zip.ZipFile.Read(input))
+#else
+            using (var archive = new Unity.SharpZipLib.Zip.ZipFile(input))
+#endif
+            {
+                foreach (var entry in archive)
+                {
+#if USE_DOTNETZIP
+                    string name = entry.FileName.Replace('\\', '/');
+#else
+                    string name = ((Unity.SharpZipLib.Zip.ZipEntry)entry).Name.Replace('\\', '/');
+#endif
+                    if (!name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)) continue;
+                    string remainder = name.Substring(prefix.Length);
+                    int separator = remainder.IndexOf('/');
+                    if (separator > 0) directories.Add(remainder.Substring(0, separator));
+                }
+            }
+            // Materialize before disposing the archive and its input.
+            return directories;
+        }
+
         internal static Stream OpenSubfile(BundledSketchEntry entry, string name)
         {
             if (name == TiltFile.FN_METADATA)

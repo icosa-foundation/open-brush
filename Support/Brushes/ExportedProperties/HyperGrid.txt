@@ -1,0 +1,80 @@
+{
+  "VariantOf": "",
+  "GUID": "6a1cf9f9-032c-45ec-9b6e-a6680bee32e9",
+  "Author": "Open Brush",
+  "Name": "HyperGrid",
+  "Description": "Hyper Grid",
+  "ExtraDescription": "",
+  "CopyRestrictions": "EmbedAndShare",
+  "ButtonIcon": "blank.png",
+  "Audio": {
+    "MaxPitchShift": 0.0,
+    "MaxVolume": 1.0,
+    "VolumeUpSpeed": 0.9,
+    "VolumeDownSpeed": 1.7,
+    "VolumeVelocityRangeMultiplier": 1.7,
+    "IsAudioReactive": true
+  },
+  "Material": {
+    "Shader": "Brush/Special/HyperGrid",
+    "FloatProperties": {},
+    "ColorProperties": {
+      "_TintColor": [ 0.99999994, 0.99999994, 0.99999994, 1.0 ]
+    },
+    "VectorProperties": {},
+    "TextureProperties": {
+      "_MainTex": ""
+    },
+    "TextureAtlasV": 1,
+    "TileRate": 1.0,
+    "UseBloomSwatchOnColorPicker": false
+  },
+  "Size": {
+    "BrushSizeRange": [ 0.1, 0.2 ],
+    "PressureSizeRange": [ 1.0, 1.0 ],
+    "SizeVariance": 0.0,
+    "PreviewPressureSizeMin": 1.0
+  },
+  "Color": {
+    "Opacity": 1.0,
+    "PressureOpacityRange": [ 1.0, 1.0 ],
+    "LuminanceMin": 0.04,
+    "SaturationMax": 1.0
+  },
+  "Particle": {
+    "Speed": 0.0,
+    "Rate": 0.0,
+    "InitialRotationRange": 0.0,
+    "RandomizeAlpha": false
+  },
+  "QuadBatch": {
+    "SprayRateMultiplier": 1.0,
+    "RotationVariance": 0.0,
+    "PositionVariance": 0.0,
+    "SizeRatio": [ 1.0, 1.0 ]
+  },
+  "Tube": {
+    "MinLength": 0.002,
+    "StoreRadiusInTexCoord": false
+  },
+  "Misc": {
+    "RenderBackFaces": false,
+    "BackIsInvisible": false,
+    "BackfaceHueShift": 0.0,
+    "BoundsPadding": 0.0,
+    "PlaybackAtStrokeGranularity": false
+  },
+  "Export": {
+    "EmissiveFactor": 0.0,
+    "AllowExport": true
+  },
+  "Simplification": {
+    "SupportsSimplification": false,
+    "HeadMinPoints": 1,
+    "HeadPointStep": 1,
+    "TailMinPoints": 1,
+    "TailPointStep": 1,
+    "MiddlePointStep": 1
+  },
+  "BrushDescriptionVersion": 1
+}

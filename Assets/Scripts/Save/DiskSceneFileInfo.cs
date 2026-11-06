@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,7 +14,9 @@
 
 using System;
 using System.IO;
+using System.Collections.Generic;
 using UnityEngine;
+
 using Newtonsoft.Json;
 #if USE_DOTNETZIP
 using ZipSubfileReader = ZipSubfileReader_DotNetZip;
@@ -37,7 +39,7 @@ namespace TiltBrush
         private bool m_embedded;
         private string m_humanName;
         private string m_AssetId;
-        private string m_SourceId; // If this is a derivative work of a poly asset, that asset id
+        private string m_SourceId;  // If this is a derivative work of a poly asset, that asset id
         private bool m_readOnly;
         private DateTime? m_creationTime;
 
@@ -406,6 +408,13 @@ namespace TiltBrush
                 return null;
             }
         }
+
+        public IEnumerable<string> GetContentsAt(string path)
+        {
+            if (m_BundledSketch != null)
+                return BundledSketchAssets.GetContentsAt(m_BundledSketch, path);
+            return m_TiltFile == null ? new List<string>() : m_TiltFile.GetContentsAt(path);
+        }
     }
 
-} // namespace TiltBrush
+}  // namespace TiltBrush
