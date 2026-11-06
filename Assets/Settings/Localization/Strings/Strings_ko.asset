@@ -4358,6 +4358,102 @@ MonoBehaviour:
     m_Localized: "A→B 화살표를 확인하세요. 트리거로 확인, 다른 컨트롤러의 트리거로 A와 B 교환, 취소로 종료합니다."
     m_Metadata:
       m_Items: []
+  - m_Id: 551461337584721920
+    m_Localized: "나선 대칭"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522560
+    m_Localized: "원본을 포함한 나선 복사본 수"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522561
+    m_Localized: "복사본당 회전 각도(도)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522562
+    m_Localized: "복사본당 이동 거리(캔버스 단위)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522563
+    m_Localized: "공간군"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522564
+    m_Localized: "다음 결정계"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522565
+    m_Localized: "다음 공간군 프리셋"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522566
+    m_Localized: "공간군 번호(1–230)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522567
+    m_Localized: "X축 방향 단위 격자 반복 수"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522568
+    m_Localized: "Y축 방향 단위 격자 반복 수"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522569
+    m_Localized: "Z축 방향 단위 격자 반복 수"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522570
+    m_Localized: "단위 격자 크기(캔버스 단위)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522571
+    m_Localized: "선군"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522572
+    m_Localized: "다음 선군 계열"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522573
+    m_Localized: "축 회전 차수"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522574
+    m_Localized: "일반화된 단계 수"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522575
+    m_Localized: "단계당 Z축 이동 거리(캔버스 단위)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522576
+    m_Localized: "단계당 비틀림 각도(도)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522577
+    m_Localized: "펜로즈 타일링"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522578
+    m_Localized: "다음 타일 선택: 둘 다, 얇은 타일 또는 두꺼운 타일"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522579
+    m_Localized: "세분화 깊이"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522580
+    m_Localized: "영역 반지름(캔버스 단위)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553016172624830464
+    m_Localized: "단순 대칭"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553297782469386240
+    m_Localized: "버튼을 길게 눌러 추가 옵션 표시"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

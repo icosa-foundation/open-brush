@@ -4440,6 +4440,102 @@ MonoBehaviour:
     m_Localized: "Prüfe den Pfeil von A nach B. Trigger bestätigt; der Trigger des anderen Controllers tauscht A und B; Abbrechen zum Beenden."
     m_Metadata:
       m_Items: []
+  - m_Id: 551461337584721920
+    m_Localized: "Schraubensymmetrie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522560
+    m_Localized: "Schraubenkopien einschließlich Original"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522561
+    m_Localized: "Drehung pro Kopie in Grad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522562
+    m_Localized: "Versatz pro Kopie in Leinwandeinheiten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522563
+    m_Localized: "Raumgruppen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522564
+    m_Localized: "Nächstes Kristallsystem"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522565
+    m_Localized: "Nächste Raumgruppen-Voreinstellung"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522566
+    m_Localized: "Raumgruppennummer (1–230)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522567
+    m_Localized: "Zellwiederholungen entlang X"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522568
+    m_Localized: "Zellwiederholungen entlang Y"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522569
+    m_Localized: "Zellwiederholungen entlang Z"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522570
+    m_Localized: "Zellgröße in Leinwandeinheiten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522571
+    m_Localized: "Liniengruppen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522572
+    m_Localized: "Nächste Liniengruppenfamilie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522573
+    m_Localized: "Ordnung der axialen Drehung"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522574
+    m_Localized: "Anzahl verallgemeinerter Schritte"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522575
+    m_Localized: "Versatz pro Schritt entlang Z in Leinwandeinheiten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522576
+    m_Localized: "Verdrehung pro Schritt in Grad"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522577
+    m_Localized: "Penrose-Parkettierung"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522578
+    m_Localized: "Nächste Kachelauswahl: beide, schmal oder breit"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522579
+    m_Localized: "Unterteilungstiefe"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522580
+    m_Localized: "Bereichsradius in Leinwandeinheiten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553016172624830464
+    m_Localized: "Einfache Symmetrie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553297782469386240
+    m_Localized: "Taste für weitere Optionen gedrückt halten"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
