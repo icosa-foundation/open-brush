@@ -51,6 +51,21 @@ namespace TiltBrush
             UpdateVoxSaveState();
         }
 
+        internal void RestoreVoxRegionState(VoxRegionSelection state)
+        {
+            ApplyVoxRegionState(state);
+            // History can restore a floating region after another tool was activated.
+            // Bind its existing widget before activation so no new model is created.
+            var panel = SketchSurfacePanel.m_Instance;
+            if (HasVoxRegionSelection && panel != null &&
+                panel.ActiveToolType != BaseTool.ToolType.VoxelTool &&
+                panel.GetToolOfType(BaseTool.ToolType.VoxelTool) is VoxelTool tool)
+            {
+                tool.SetTargetWidget(this);
+                panel.EnableSpecificTool(BaseTool.ToolType.VoxelTool);
+            }
+        }
+
         internal void RefreshVoxRegionVisuals(bool cellsChanged)
         {
             if (cellsChanged) RefreshEditableVoxMeshes();

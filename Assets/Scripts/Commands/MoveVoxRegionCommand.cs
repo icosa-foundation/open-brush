@@ -33,7 +33,7 @@ namespace TiltBrush
                 else m_Lift.Undo();
             }
             else VoxCellChange.Apply(m_Model, m_Cells, after);
-            m_Widget.ApplyVoxRegionState(after ? m_After : m_Before);
+            m_Widget.RestoreVoxRegionState(after ? m_After : m_Before);
             m_Widget.RefreshVoxRegionVisuals(m_Lift != null || m_Cells.Count != 0);
             SaveLoadScript.m_Instance?.SketchChanged();
         }

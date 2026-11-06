@@ -18,7 +18,7 @@ namespace TiltBrush
         }
 
         public override bool IsAvailable => m_Widget != null;
-        protected override void OnUndo() { m_Widget.ApplyVoxRegionState(m_Before); m_Widget.RefreshVoxRegionVisuals(false); }
-        protected override void OnRedo() { m_Widget.ApplyVoxRegionState(m_After); m_Widget.RefreshVoxRegionVisuals(false); }
+        protected override void OnUndo() { m_Widget.RestoreVoxRegionState(m_Before); m_Widget.RefreshVoxRegionVisuals(false); }
+        protected override void OnRedo() { m_Widget.RestoreVoxRegionState(m_After); m_Widget.RefreshVoxRegionVisuals(false); }
     }
 }
