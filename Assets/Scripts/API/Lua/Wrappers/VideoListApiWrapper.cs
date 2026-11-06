@@ -12,7 +12,14 @@ namespace TiltBrush
         public List<VideoWidget> _Videos;
 
         [LuaDocsDescription("Returns the last Video that was selected")]
-        public VideoApiWrapper lastSelected => new(SelectionManager.m_Instance.LastSelectedVideo);
+        public VideoApiWrapper lastSelected
+        {
+            get
+            {
+                VideoWidget video = SelectionManager.m_Instance.LastSelectedVideo;
+                return video == null ? null : new VideoApiWrapper(video);
+            }
+        }
 
         [LuaDocsDescription("Returns the last Video")]
         public VideoApiWrapper last => (_Videos == null || _Videos.Count == 0) ? null : new VideoApiWrapper(_Videos[^1]);

@@ -17,6 +17,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 
@@ -1988,7 +1990,7 @@ namespace TiltBrush
         public static void ActivatePointerScript(string scriptName)
         {
             LuaManager.Instance.SetActiveScriptByName(LuaApiCategory.PointerScript, scriptName);
-            LuaManager.Instance.PointerScriptsEnabled = true;
+            LuaManager.Instance.EnablePointerScript(true);
         }
 
         [ApiEndpoint(
@@ -1998,7 +2000,7 @@ namespace TiltBrush
         )]
         public static void DeactivatePointerScript()
         {
-            LuaManager.Instance.PointerScriptsEnabled = false;
+            LuaManager.Instance.EnablePointerScript(false);
         }
 
         [ApiEndpoint(
@@ -2036,37 +2038,163 @@ namespace TiltBrush
 
         [ApiEndpoint(
             "guide.add",
-            "Adds a guide to the scene (cube, sphere, capsule, cone, ellipsoid)",
+            "Adds a guide to the scene (cube, sphere, capsule, cone, cylinder, pyramid, torus, boxframe, ellipsoid, sdf)",
             "cube"
         )]
         public static void AddGuide(string type)
         {
-            StencilType stencilType;
+            StencilWidget stencilPrefab;
 
             switch (type)
             {
                 case "cube":
-                    stencilType = StencilType.Cube;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Cube);
                     break;
                 case "sphere":
-                    stencilType = StencilType.Sphere;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Sphere);
                     break;
                 case "capsule":
-                    stencilType = StencilType.Capsule;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Capsule);
                     break;
                 case "cone":
-                    stencilType = StencilType.Cone;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Cone);
+                    break;
+                case "cylinder":
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Cylinder);
+                    break;
+                case "pyramid":
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Pyramid);
+                    break;
+                case "torus":
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Torus);
+                    break;
+                case "boxframe":
+                case "box-frame":
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.BoxFrame);
                     break;
                 case "ellipsoid":
-                    stencilType = StencilType.Ellipsoid;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Ellipsoid);
+                    break;
+                case "sdf":
+                    stencilPrefab = WidgetManager.m_Instance.SdfStencilPrefab;
                     break;
                 default:
-                    stencilType = StencilType.Sphere;
+                    stencilPrefab = WidgetManager.m_Instance.GetStencilPrefab(StencilType.Sphere);
                     break;
             }
 
-            var cmd = new CreateWidgetCommand(WidgetManager.m_Instance.GetStencilPrefab(stencilType), _CurrentBrushTransform(), forceTransform: true);
+            var cmd = new CreateWidgetCommand(
+                stencilPrefab, _CurrentBrushTransform(), forceTransform: true);
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+        }
+
+        [ApiEndpoint(
+            "guide.closestpoint",
+            "Returns the closest surface position and outward normal for a guide as JSON",
+            "0,0,1,0"
+        )]
+        public static string GetGuideClosestPoint(int index, Vector3 point)
+        {
+            FindClosestPointOnGuide(
+                _GetActiveStencil(index), App.ActiveCanvas.Pose * point,
+                out Vector3 surfacePosition, out Vector3 surfaceNormal);
+            surfacePosition = App.ActiveCanvas.Pose.inverse * surfacePosition;
+            surfaceNormal = Quaternion.Inverse(App.ActiveCanvas.Pose.rotation) * surfaceNormal;
+            return new JObject
+            {
+                ["position"] = Vector3ToJson(surfacePosition),
+                ["normal"] = Vector3ToJson(surfaceNormal)
+            }.ToString(Formatting.None);
+        }
+
+        [ApiEndpoint(
+            "guide.dimensions",
+            "Returns the dimensions of a guide as JSON",
+            "0"
+        )]
+        public static string GetGuideDimensions(int index)
+        {
+            return Vector3ToJson(_GetActiveStencil(index).Extents).ToString(Formatting.None);
+        }
+
+        [ApiEndpoint(
+            "guide.signeddistance",
+            "Returns the signed distance from a point to one guide; negative values are inside",
+            "0,0,1,0"
+        )]
+        public static string GetGuideSignedDistance(int index, Vector3 point)
+        {
+            return FloatToJson(GetSignedDistanceToGuide(
+                _GetActiveStencil(index), App.ActiveCanvas.Pose * point) /
+                Mathf.Abs(App.ActiveCanvas.Pose.scale));
+        }
+
+        [ApiEndpoint(
+            "guides.signeddistance",
+            "Returns the signed distance from a point to the combined volume of all active guides",
+            "0,1,0"
+        )]
+        public static string GetActiveGuidesSignedDistance(Vector3 point)
+        {
+            return FloatToJson(GlobalStencilSdfCache.SignedDistance(
+                App.ActiveCanvas.Pose * point) / Mathf.Abs(App.ActiveCanvas.Pose.scale));
+        }
+
+        [ApiEndpoint(
+            "guides.nextsurfacepoint",
+            "Steps in a direction and projects the result onto the combined surface of all active guides",
+            "0,1,0,0.1,1,0,0"
+        )]
+        public static string GetActiveGuidesNextSurfacePoint(
+            Vector3 point, float stepDistance, Vector3 direction)
+        {
+            TrTransform canvasPose = App.ActiveCanvas.Pose;
+            Vector3 surfacePoint = GlobalStencilSdfCache.NextPointOnSurface(
+                canvasPose * point, stepDistance * Mathf.Abs(canvasPose.scale),
+                canvasPose.rotation * direction);
+            return Vector3ToJson(canvasPose.inverse * surfacePoint).ToString(Formatting.None);
+        }
+
+        internal static void FindClosestPointOnGuide(
+            StencilWidget guide, Vector3 point, out Vector3 surfacePosition,
+            out Vector3 surfaceNormal)
+        {
+            guide.FindClosestPointOnSurface(point, out surfacePosition, out surfaceNormal);
+            if (surfaceNormal.sqrMagnitude > 0.000001f)
+            {
+                surfaceNormal.Normalize();
+            }
+        }
+
+        internal static float GetSignedDistanceToGuide(StencilWidget guide, Vector3 point)
+        {
+            return GlobalStencilSdfCache.SignedDistance(guide, point);
+        }
+
+        internal static float GetSignedDistanceToGuides(
+            IEnumerable<StencilWidget> guides, Vector3 point)
+        {
+            return GlobalStencilSdfCache.SignedDistance(guides, point);
+        }
+
+        internal static Vector3 GetNextPointOnGuideSurfaces(
+            IEnumerable<StencilWidget> guides, Vector3 point,
+            float stepDistance, Vector3 direction)
+        {
+            return GlobalStencilSdfCache.NextPointOnSurface(
+                guides, point, stepDistance, direction);
+        }
+
+        private static JArray Vector3ToJson(Vector3 value)
+        {
+            return new JArray(value.x, value.y, value.z);
+        }
+
+        private static string FloatToJson(float value)
+        {
+            return float.IsNaN(value) || float.IsInfinity(value)
+                ? "null"
+                : new JValue(value).ToString(Formatting.None);
         }
 
         [ApiEndpoint(

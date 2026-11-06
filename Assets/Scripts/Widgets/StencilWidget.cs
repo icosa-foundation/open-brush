@@ -57,22 +57,48 @@ namespace TiltBrush
 
         /// Data that is saved to the .tilt file.
         /// Be very careful when changing this, because it affects the save file format.
-        /// This does not really need to be virtual, except to implement the temporary
-        /// backwards-compatibility code.
         public Guides.State GetSaveState(GroupIdMapping groupIdMapping)
         {
-            return new Guides.State
+            CanvasScript currentCanvas = Canvas;
+            // Metadata and brush strokes serialize only live layers, compacting holes left
+            // by deleted layers. A selected guide's previous canvas can also be deleted.
+            var savedCanvases = App.Scene.LayerCanvases.ToList();
+            CanvasScript savedCanvas = currentCanvas == App.Scene.SelectionCanvas
+                ? m_PreviousCanvas : currentCanvas;
+            if (savedCanvas == null || !savedCanvases.Contains(savedCanvas))
             {
-                Transform = TrTransform.TRS(transform.localPosition, transform.localRotation, 0),
-                Extents = Extents,
+                savedCanvas = savedCanvases.Contains(App.Scene.ActiveCanvas)
+                    ? App.Scene.ActiveCanvas : App.Scene.MainCanvas;
+            }
+            TrTransform savedPose = TrTransform.TRS(transform.localPosition, transform.localRotation, 1);
+            Vector3 savedExtents = Extents;
+            if (savedCanvas != currentCanvas)
+            {
+                // Layer identity, pose and extents must use the same authored canvas.
+                TrTransform savedFromCurrent = savedCanvas.Pose.inverse * currentCanvas.Pose;
+                savedPose = savedFromCurrent * savedPose;
+                savedExtents *= savedFromCurrent.scale;
+            }
+            var state = new Guides.State
+            {
+                Transform = TrTransform.TRS(savedPose.translation, savedPose.rotation, 0),
+                Extents = savedExtents,
+                LayerId = savedCanvases.IndexOf(savedCanvas),
                 Pinned = m_Pinned,
                 GroupId = groupIdMapping.GetId(Group)
             };
+            PopulateSaveState(state);
+            return state;
         }
+
+        protected virtual void PopulateSaveState(Guides.State state) { }
+
         public Guides.State SaveState
         {
             set
             {
+                // Saved pose and extents are local to this persistent layer.
+                SetCanvas(App.Scene.GetOrCreateLayer(value.LayerId));
                 transform.localPosition = value.Transform.translation;
                 transform.localRotation = value.Transform.rotation;
                 Extents = value.Extents;
@@ -81,9 +107,11 @@ namespace TiltBrush
                     PinFromSave();
                 }
                 Group = App.GroupManager.GetGroupFromId(value.GroupId);
-                SetCanvas(App.Scene.GetOrCreateLayer(value.LayerId));
+                ApplySaveState(value);
             }
         }
+
+        protected virtual void ApplySaveState(Guides.State state) { }
 
         /// Returns the axis the user probably means to modify.
         /// Subclasses are free to return any Axis value, including Invalid (no preferred axis)
@@ -156,6 +184,8 @@ namespace TiltBrush
             return clone;
         }
 
+        internal virtual bool HasSurface => true;
+
         // Given a pos, find the closest position and surface normal of the stencil widget's collider.
         //   - surfacePos is the closest position on the surface, but in the case of ambiguity, will
         //     return a position most appropriate for the user experience.
@@ -166,6 +196,18 @@ namespace TiltBrush
         {
             surfacePos = transform.position;
             surfaceNorm = transform.forward;
+        }
+
+        public virtual void RaycastToNearest(Vector3 pos, Quaternion rot, out Vector3 surfacePos, out Vector3 surfaceNorm)
+        {
+            // Not supported except on SDFs
+            surfacePos = transform.position;
+            surfaceNorm = transform.forward;
+        }
+
+        override public Vector2 GetWidgetSizeRange()
+        {
+            return new Vector2(m_MinSize_CS, m_MaxSize_CS);
         }
 
         override protected void OnUserBeginTwoHandGrab(
@@ -185,9 +227,16 @@ namespace TiltBrush
         override protected void OnShow()
         {
             base.OnShow();
+            GlobalStencilSdfCache.InvalidateCache();
 
             // Refresh visibility with current state of stencil interaction.
             RefreshVisibility(WidgetManager.m_Instance.StencilsDisabled);
+        }
+
+        protected override void OnHide()
+        {
+            GlobalStencilSdfCache.InvalidateCache();
+            base.OnHide();
         }
 
         virtual public void SetInUse(bool bInUse)
@@ -246,15 +295,18 @@ namespace TiltBrush
 
         public static void FromGuideIndex(Guides guide)
         {
-            StencilType stencilType = guide.Type;
-
             foreach (var state in guide.States)
             {
                 StencilWidget stencil;
                 try
                 {
-                    stencil = Instantiate(
-                        WidgetManager.m_Instance.GetStencilPrefab(stencilType));
+                    bool isEditableSdf = guide.Type == StencilType.Custom && state.Sdf != null;
+                    StencilWidget stencilPrefab = state.ModelGuide != null
+                        ? WidgetManager.m_Instance.ModelStencilPrefab
+                        : isEditableSdf
+                            ? WidgetManager.m_Instance.SdfStencilPrefab
+                            : WidgetManager.m_Instance.GetStencilPrefab(guide.Type);
+                    stencil = Instantiate(stencilPrefab);
                 }
                 catch (ArgumentException e)
                 {
@@ -271,6 +323,13 @@ namespace TiltBrush
                 catch (ArgumentException e)
                 {
                     Debug.LogException(e, stencil);
+                    if (stencil is SdfStencil || stencil is ModelStencil)
+                    {
+                        WidgetManager.m_Instance.UnregisterGrabWidget(stencil.gameObject);
+                        stencil.gameObject.SetActive(false);
+                        Destroy(stencil.gameObject);
+                        continue;
+                    }
                 }
                 stencil.Show(true, false);
             }
