@@ -37,6 +37,7 @@ namespace TiltBrush
         public event Action SelectionChanged;
         public event Action<VideoWidget> VideoWidgetActivated;
         public event Action<SoundClipWidget> SoundClipWidgetActivated;
+        public event Action<ModelWidget> ModelWidgetActivated;
         public event Action VideoRecordingStopped;
 
         public void TriggerAdvancedPanelsChanged()
@@ -135,6 +136,11 @@ namespace TiltBrush
         public void TriggerVideoWidgetActivated(VideoWidget widget)
         {
             VideoWidgetActivated?.Invoke(widget);
+        }
+
+        public void TriggerModelWidgetActivated(ModelWidget widget)
+        {
+            ModelWidgetActivated?.Invoke(widget);
         }
 
         public void TriggerSoundClipWidgetActivated(SoundClipWidget widget)

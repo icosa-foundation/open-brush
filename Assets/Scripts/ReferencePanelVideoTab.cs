@@ -57,6 +57,7 @@ namespace TiltBrush
         [SerializeField] private BoxCollider m_VideoControlsCollider;
         [SerializeField] private GameObject m_Preview;
         [SerializeField] private VideoPositionSlider m_Scrubber;
+        [SerializeField] private ActionToggleButton m_LoopToggle;
         [SerializeField] private float m_VideoSkipTime = 10f;
         [SerializeField] private Texture2D m_ErrorTexture;
         [SerializeField] private Texture2D m_LoadingTexture;
@@ -66,6 +67,8 @@ namespace TiltBrush
         private Material m_PreviewMaterial;
         private bool m_TabActive;
 
+        // Track authored edits at the UI boundary. Controller setters also serve loading,
+        // duplication and undo, which must not create additional unsaved changes.
         [System.Reflection.Obfuscation(Exclude = true)]
         public bool SelectedVideoIsPlaying
         {
@@ -79,7 +82,10 @@ namespace TiltBrush
             {
                 if (SelectedVideo != null)
                 {
-                    SelectedVideo.Playing = !SelectedVideo.Playing;
+                    bool previous = SelectedVideo.Playing;
+                    SelectedVideo.Playing = value;
+                    if (SelectedVideo.Playing != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
@@ -97,8 +103,20 @@ namespace TiltBrush
             {
                 if (SelectedVideo != null)
                 {
+                    float previous = SelectedVideo.Volume;
                     SelectedVideo.Volume = value;
+                    if (SelectedVideo.Volume != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
+            }
+        }
+
+        public void HandleLoopToggle(ActionToggleButton button)
+        {
+            if (SelectedVideo != null && SelectedVideo.Loop != button.ToggleState)
+            {
+                SelectedVideo.Loop = button.ToggleState;
+                SketchMemoryScript.m_Instance.MarkUnrecordedChange();
             }
         }
 
@@ -173,18 +191,49 @@ namespace TiltBrush
         public void OnVideoWidgetActivated(VideoWidget widget)
         {
             m_SelectedVideoWidget = widget;
-            if (widget.VideoController != null)
-            {
-                m_PreviewMaterial.mainTexture = widget.VideoController.VideoTexture;
-            }
-            m_Preview.transform.localScale = new Vector3(widget.Video.Aspect, 1f, 1f);
+            RefreshPlaybackPreview();
             m_Scrubber.VideoWidget = widget;
+            m_LoopToggle.ToggleState = widget.VideoController is { Loop: true };
             RefreshVideoControlsVisibility();
+        }
+
+        private void OnDestroy()
+        {
+            if (App.Switchboard != null)
+                App.Switchboard.VideoWidgetActivated -= OnVideoWidgetActivated;
+        }
+
+        private void RefreshPlaybackPreview()
+        {
+            var controller = SelectedVideo;
+            float aspect = 1f;
+            if (controller?.Error != null)
+            {
+                m_PreviewMaterial.mainTexture = m_ErrorTexture;
+                controller.ReportErrorToUser();
+            }
+            else if (controller is { IsLoading: true })
+            {
+                m_PreviewMaterial.mainTexture = m_LoadingTexture;
+            }
+            else
+            {
+                m_PreviewMaterial.mainTexture = controller?.VideoTexture ?? Texture2D.blackTexture;
+                if (controller?.VideoTexture != null && m_SelectedVideoWidget.Video.Aspect > 0f)
+                    aspect = m_SelectedVideoWidget.Video.Aspect;
+            }
+            // Source dimensions may be unknown on failure or during preparation. Keep status
+            // icons square and visible, then restore the video's aspect when a frame is ready.
+            m_Preview.transform.localScale = new Vector3(aspect, 1f, 1f);
         }
 
         public override void UpdateTab()
         {
             base.UpdateTab();
+            m_LoopToggle.SetButtonAvailable(SelectedVideo != null);
+            m_LoopToggle.ToggleState = SelectedVideo is { Loop: true };
+            // Preparation and hide/undo can replace the selected controller asynchronously.
+            RefreshPlaybackPreview();
             if (!m_AllIconTexturesAssigned)
             {
                 m_AllIconTexturesAssigned = true;
@@ -275,7 +324,10 @@ namespace TiltBrush
             {
                 return;
             }
-            SelectedVideo.Time = Mathf.Clamp(SelectedVideo.Time - m_VideoSkipTime, 0, SelectedVideo.Length);
+            float time = Mathf.Clamp(SelectedVideo.Time - m_VideoSkipTime, 0, SelectedVideo.Length);
+            if (time == SelectedVideo.Time) return;
+            SelectedVideo.Time = time;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
 
         [System.Reflection.Obfuscation(Exclude = true)]
@@ -285,7 +337,10 @@ namespace TiltBrush
             {
                 return;
             }
-            SelectedVideo.Time = Mathf.Clamp(SelectedVideo.Time + m_VideoSkipTime, 0, SelectedVideo.Length);
+            float time = Mathf.Clamp(SelectedVideo.Time + m_VideoSkipTime, 0, SelectedVideo.Length);
+            if (time == SelectedVideo.Time) return;
+            SelectedVideo.Time = time;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
     }
 } // namespace TiltBrush

@@ -12,6 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using UnityEngine;
+
 namespace TiltBrush
 {
     public class SoundClipPositionSlider : BaseSlider
@@ -27,11 +29,16 @@ namespace TiltBrush
 
         public override void UpdateValue(float value)
         {
-            if (m_SoundClipWidget == null || m_SoundClipWidget.SoundClipController == null)
+            if (m_SoundClipWidget == null || m_SoundClipWidget.SoundClipController == null ||
+                !m_SoundClipWidget.SoundClipController.Initialized)
             {
                 return;
             }
-            m_SoundClipWidget.SoundClipController.Position = value;
+            // UpdateValue handles interaction; Update below only follows playback visually.
+            float position = Mathf.Clamp01(value);
+            if (position == m_SoundClipWidget.SoundClipController.Position) return;
+            m_SoundClipWidget.SoundClipController.Position = position;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
 
         protected virtual void Update()

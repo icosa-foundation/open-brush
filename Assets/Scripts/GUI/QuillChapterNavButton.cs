@@ -15,17 +15,43 @@
 namespace TiltBrush
 {
     /// <summary>
-    /// Prev/next chapter navigation button for the Quill file browser.
-    /// Now finds the QuillLibraryPanel instead of individual file buttons
-    /// since chapter controls are centralized in the action area.
+    /// Prev/next navigation for a selected file's chapters or the loaded native IMM's viewpoints.
     /// </summary>
     public class QuillChapterNavButton : BaseButton
     {
         [UnityEngine.SerializeField] private bool m_IsNext;
+        [UnityEngine.SerializeField] private bool m_IsViewpoint;
+        [UnityEngine.SerializeField] private bool m_IsContinue;
+
+        private UnityEngine.Texture2D m_PauseTexture;
+        private bool? m_ShowingPause;
+
+        public void RefreshPlaybackState()
+        {
+            bool pause = NativeImmImport.CanPause;
+            SetButtonAvailable(pause || NativeImmImport.CanContinue);
+            if (m_ShowingPause == pause) return;
+            if (pause && m_PauseTexture == null)
+                m_PauseTexture = UnityEngine.Resources.Load<UnityEngine.Texture2D>("Icons/pause");
+            SetButtonTexture(pause ? m_PauseTexture : m_ButtonTexture);
+            SetDescriptionText(pause ? "Pause IMM" : "Play / Continue IMM");
+            m_ShowingPause = pause;
+        }
 
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
+            if (m_IsContinue)
+            {
+                if (NativeImmImport.CanPause) NativeImmImport.PausePlayback();
+                else NativeImmImport.ContinuePlayback();
+                return;
+            }
+            if (m_IsViewpoint)
+            {
+                NativeImmImport.CycleViewpoint(m_IsNext ? 1 : -1);
+                return;
+            }
             var panel = GetComponentInParent<QuillLibraryPanel>();
             if (m_IsNext) panel?.OnNextChapterPressed();
             else panel?.OnPrevChapterPressed();

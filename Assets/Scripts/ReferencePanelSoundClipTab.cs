@@ -67,8 +67,15 @@ namespace TiltBrush
         private bool m_AllIconTexturesAssigned;
         private SoundClipWidget m_SelectedSoundClipWidget;
         private Material m_PreviewMaterial;
+        private SoundClip.SoundClipController m_PreviewController;
+        private bool m_PreviewReady;
+        private bool m_PreviewLoading;
+        private string m_PreviewError;
+        private Texture2D m_PreviewWaveform;
         private bool m_TabActive;
 
+        // Track authored edits at the UI boundary. Controller setters also serve loading,
+        // duplication and undo, which must not create additional unsaved changes.
         [System.Reflection.Obfuscation(Exclude = true)]
         public bool SelectedSoundClipIsPlaying
         {
@@ -79,7 +86,10 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
-                    SelectedSoundClip.Playing = !SelectedSoundClip.Playing;
+                    bool previous = SelectedSoundClip.Playing;
+                    SelectedSoundClip.Playing = value;
+                    if (SelectedSoundClip.Playing != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
@@ -92,7 +102,10 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
+                    float previous = SelectedSoundClip.Volume;
                     SelectedSoundClip.Volume = value;
+                    if (SelectedSoundClip.Volume != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
@@ -102,7 +115,10 @@ namespace TiltBrush
             SoundClip.SoundClipController soundClip = SelectedSoundClip;
             if (soundClip != null)
             {
+                var previous = soundClip.Loop;
                 soundClip.Loop = btn.ToggleState;
+                if (soundClip.Loop != previous)
+                    SketchMemoryScript.m_Instance.MarkUnrecordedChange();
             }
         }
 
@@ -111,7 +127,10 @@ namespace TiltBrush
             SoundClip.SoundClipController soundClip = SelectedSoundClip;
             if (soundClip != null)
             {
+                var previous = soundClip.SpatialBlend;
                 soundClip.SpatialBlend = btn.ToggleState ? 1f : 0f;
+                if (soundClip.SpatialBlend != previous)
+                    SketchMemoryScript.m_Instance.MarkUnrecordedChange();
             }
         }
 
@@ -122,7 +141,10 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
+                    float previous = SelectedSoundClip.MinDistance;
                     SelectedSoundClip.MinDistance = value;
+                    if (SelectedSoundClip.MinDistance != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
@@ -134,7 +156,10 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
+                    float previous = SelectedSoundClip.MaxDistance;
                     SelectedSoundClip.MaxDistance = value;
+                    if (SelectedSoundClip.MaxDistance != previous)
+                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
                 }
             }
         }
@@ -194,22 +219,76 @@ namespace TiltBrush
         public void OnSoundClipWidgetActivated(SoundClipWidget widget)
         {
             m_SelectedSoundClipWidget = widget;
-            if (widget.SoundClipController != null)
-            {
-                float previewAspect = m_Preview.transform.localScale.x / m_Preview.transform.localScale.y;
-                var previewTex = widget.SoundClip.GetWaveform(0.8f, Color.white, aspect: previewAspect);
-                m_PreviewMaterial.mainTexture = previewTex != null ? previewTex : widget.SoundClip.Thumbnail;
-            }
+            RefreshPlaybackPreview(force: true);
             m_Scrubber.SoundClipWidget = widget;
-            m_LoopToggle.ToggleState = widget.SoundClipController is { Loop: true };
-            m_SpatialBlendToggle.ToggleState = widget.SoundClipController is { SpatialBlend: > 0f };
+            RefreshPlaybackToggles();
 
             RefreshSoundClipControlsVisibility();
+        }
+
+        private void OnDestroy()
+        {
+            if (App.Switchboard != null)
+                App.Switchboard.SoundClipWidgetActivated -= OnSoundClipWidgetActivated;
+            if (m_PreviewWaveform != null) Destroy(m_PreviewWaveform);
+        }
+
+        private void RefreshPlaybackPreview(bool force = false)
+        {
+            var controller = SelectedSoundClip;
+            bool ready = controller is { Initialized: true };
+            bool loading = controller is { IsLoading: true };
+            string error = controller?.Error;
+            // Generate a waveform only on selection/readiness changes, not on every panel frame.
+            if (!force && controller == m_PreviewController && ready == m_PreviewReady &&
+                loading == m_PreviewLoading && error == m_PreviewError) return;
+            m_PreviewController = controller;
+            m_PreviewReady = ready;
+            m_PreviewLoading = loading;
+            m_PreviewError = error;
+            if (m_PreviewWaveform != null)
+            {
+                Destroy(m_PreviewWaveform);
+                m_PreviewWaveform = null;
+            }
+            if (error != null)
+            {
+                m_PreviewMaterial.mainTexture = m_ErrorTexture;
+            }
+            else if (loading)
+            {
+                m_PreviewMaterial.mainTexture = m_LoadingTexture;
+            }
+            else if (ready)
+            {
+                float aspect = m_Preview.transform.localScale.x / m_Preview.transform.localScale.y;
+                m_PreviewWaveform = m_SelectedSoundClipWidget.SoundClip.GetWaveform(
+                    0.8f, Color.white, controller.m_SoundClipAudioSource.clip, aspect);
+                m_PreviewMaterial.mainTexture = m_PreviewWaveform != null
+                    ? m_PreviewWaveform : m_SelectedSoundClipWidget.SoundClip.Thumbnail;
+            }
+            else
+            {
+                m_PreviewMaterial.mainTexture = Texture2D.blackTexture;
+            }
+        }
+
+        private void RefreshPlaybackToggles()
+        {
+            var controller = SelectedSoundClip;
+            m_LoopToggle.SetButtonAvailable(controller != null);
+            m_SpatialBlendToggle.SetButtonAvailable(controller != null);
+            bool loop = controller is { Loop: true };
+            bool spatial = controller is { SpatialBlend: > 0f };
+            if (m_LoopToggle.ToggleState != loop) m_LoopToggle.ToggleState = loop;
+            if (m_SpatialBlendToggle.ToggleState != spatial) m_SpatialBlendToggle.ToggleState = spatial;
         }
 
         public override void UpdateTab()
         {
             base.UpdateTab();
+            RefreshPlaybackPreview();
+            RefreshPlaybackToggles();
             if (!m_AllIconTexturesAssigned)
             {
                 m_AllIconTexturesAssigned = true;
@@ -300,7 +379,10 @@ namespace TiltBrush
             {
                 return;
             }
-            SelectedSoundClip.Time = Mathf.Clamp(SelectedSoundClip.Time - m_SoundClipSkipTime, 0, SelectedSoundClip.Length);
+            float time = Mathf.Clamp(SelectedSoundClip.Time - m_SoundClipSkipTime, 0, SelectedSoundClip.Length);
+            if (time == SelectedSoundClip.Time) return;
+            SelectedSoundClip.Time = time;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
 
         [System.Reflection.Obfuscation(Exclude = true)]
@@ -310,7 +392,10 @@ namespace TiltBrush
             {
                 return;
             }
-            SelectedSoundClip.Time = Mathf.Clamp(SelectedSoundClip.Time + m_SoundClipSkipTime, 0, SelectedSoundClip.Length);
+            float time = Mathf.Clamp(SelectedSoundClip.Time + m_SoundClipSkipTime, 0, SelectedSoundClip.Length);
+            if (time == SelectedSoundClip.Time) return;
+            SelectedSoundClip.Time = time;
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
         }
     }
 } // namespace TiltBrush

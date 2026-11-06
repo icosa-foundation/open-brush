@@ -54,7 +54,8 @@ namespace TiltBrush
         OBJ_NGON,
         BLOCKS,
         PLY,
-        VOX
+        VOX,
+        IMM
     }
 
     [Serializable]

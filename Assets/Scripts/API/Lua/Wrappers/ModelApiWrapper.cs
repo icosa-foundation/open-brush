@@ -69,6 +69,50 @@ namespace TiltBrush
             set => transform = TrTransform.TRS(transform.translation, transform.rotation, value);
         }
 
+        private ModelPlaybackController Playback => _ModelWidget != null ? _ModelWidget.Playback :
+            throw new ScriptRuntimeException("Model instance no longer exists");
+
+        [LuaDocsDescription("Whether this instance's playback is initialized")]
+        public bool initialized => Playback.Initialized;
+        [LuaDocsDescription("Whether an IMM seek, chapter change or saved-state restore is pending")]
+        public bool busy => Playback.Busy || Playback.IsRestoring;
+        [LuaDocsDescription("The last asynchronous playback error, or nil")]
+        public string playbackError => Playback.LastError;
+        [LuaDocsDescription("Whether this instance is playing. Setting true also continues an IMM stop point.")]
+        public bool playing { get => Playback.Playing; set { if (value) Play(); else Pause(); } }
+        [LuaDocsDescription("Playback time in seconds; setting it seeks this instance")]
+        public double time { get => Playback.Time; set => Playback.Seek(value); }
+        [LuaDocsDescription("Playback duration in seconds")]
+        public double length => Playback.Length;
+        [LuaDocsDescription("Audio volume from 0 to 1; zero is muted")]
+        public float volume { get => Playback.Volume; set => Playback.SetVolume(value); }
+        [LuaDocsDescription("Whether this model contains audio")]
+        public bool hasAudio => Playback.HasAudio;
+        [LuaDocsDescription("Current IMM chapter, zero-based; -1 for other models")]
+        public int chapter { get => Playback.Chapter; set => Playback.SetChapter(value); }
+        [LuaDocsDescription("Number of IMM chapters")]
+        public int chapterCount => Playback.ChapterCount;
+        [LuaDocsDescription("Available glTF animation clip names")]
+        public string[] clips => Playback.Clips;
+        [LuaDocsDescription("Current glTF animation clip name")]
+        public string clip { get => Playback.GetSaveState()?.Clip; set => Playback.SelectClip(value); }
+        [LuaDocsDescription("Whether this glTF animation loops")]
+        public bool loop { get => Playback.GetSaveState()?.Loop ?? false; set => Playback.SetLoop(value); }
+        [LuaDocsDescription("Play or continue this instance")]
+        public void Play() => Playback.Play();
+        [LuaDocsDescription("Pause this instance")]
+        public void Pause() => Playback.Pause();
+        [LuaDocsDescription("Continue an IMM stop point or resume a paused model")]
+        public void Continue() => Playback.Continue();
+        [LuaDocsDescription("Seek to time in seconds; IMM operations finish asynchronously")]
+        public void Seek(double seconds) => Playback.Seek(seconds);
+        [LuaDocsDescription("List IMM viewpoint IDs, names, availability and active selection")]
+        public ModelViewpointInfo[] viewpoints => Playback.GetViewpoints();
+        [LuaDocsDescription("Select an eligible IMM viewpoint ID without moving or rescaling anything")]
+        public void SelectViewpoint(int id) => Playback.SelectViewpoint(id);
+        [LuaDocsDescription("Move once to an eligible IMM viewpoint ID, rescaling only this model around the viewpoint. Preserves scene scale and does not follow viewpoint animation.")]
+        public void NavigateToViewpoint(int id) => Playback.NavigateToViewpoint(id);
+
         [LuaDocsDescription(@"Imports a new model from the MediaLibrary/Models folder")]
         [LuaDocsExample(@"Model:Import(""Andy.obj"")")]
         [LuaDocsParameter(@"filename", "The filename of the model to be imported")]
