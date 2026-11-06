@@ -194,8 +194,8 @@ namespace TiltBrush
         IEnumerable LoadHdrImage(string path)
         {
             m_FullSizeReferences++;
-            int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
-            int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
+            int maxDimension = UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension;
+            int resizeDimension = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
             var reader = new Future<HdrTextureLoader.DecodedImage>(
                 () => HdrTextureLoader.Decode(
                     File.ReadAllBytes(path), path, maxDimension, resizeDimension),
@@ -256,7 +256,7 @@ namespace TiltBrush
             // ReturnImageFullSize is called during load.
             m_FullSizeReferences++;
             var reader = new ThreadedImageReader(path, -1,
-                App.PlatformConfig.ReferenceImagesMaxDimension);
+                UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension);
             while (!reader.Finished)
             {
                 if (!runForeground) { yield return null; }
@@ -268,7 +268,7 @@ namespace TiltBrush
                 result = reader.Result;
                 if (result != null && dest != null)
                 {
-                    int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                    int resizeLimit = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                     if (result.ColorWidth > resizeLimit || result.ColorHeight > resizeLimit)
                     {
                         // Resize the image to the resize limit before saving it to the dest texture.
@@ -399,7 +399,7 @@ namespace TiltBrush
                 var importer = new RuntimeSVGImporter();
                 var tex = importer.ImportAsTexture(FilePath);
 
-                if (!ValidateDimensions(tex.width, tex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                if (!ValidateDimensions(tex.width, tex.height, UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension))
                 {
                     m_State = ImageState.ErrorImageTooLarge;
                     Object.Destroy(tex);
@@ -408,7 +408,7 @@ namespace TiltBrush
 
                 ImageCache.SaveImageCache(tex, FilePath);
                 m_ImageAspect = (float)tex.width / tex.height;
-                int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                int resizeLimit = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                 if (tex.width > resizeLimit || tex.height > resizeLimit)
                 {
                     Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
@@ -463,8 +463,8 @@ namespace TiltBrush
             Texture2D resizedTexture = null;
             try
             {
-                int maxDimension = App.PlatformConfig.ReferenceImagesMaxDimension;
-                int resizeDimension = App.PlatformConfig.ReferenceImagesResizeDimension;
+                int maxDimension = UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension;
+                int resizeDimension = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                 var reader = new Future<HdrTextureLoader.DecodedImage>(
                     () => HdrTextureLoader.Decode(
                         File.ReadAllBytes(FilePath), FilePath,
@@ -513,14 +513,14 @@ namespace TiltBrush
                     ReferenceImageCatalog.m_Instance.TexturesCreatedThisFrame++;
                     if (!ValidateDimensions(
                         texture.width, texture.height,
-                        App.PlatformConfig.ReferenceImagesMaxDimension))
+                        UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension))
                     {
                         m_State = ImageState.ErrorImageTooLarge;
                     }
                     else
                     {
                         m_ImageAspect = (float)texture.width / texture.height;
-                        int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                        int resizeLimit = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                         Texture2D imageCacheTexture = texture;
                         if (texture.width > resizeLimit || texture.height > resizeLimit)
                         {
@@ -681,7 +681,7 @@ namespace TiltBrush
                     Texture2D inTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
                     loader.LoadImageIntoTexture(inTex);
 
-                    if (!ValidateDimensions(inTex.width, inTex.height, App.PlatformConfig.ReferenceImagesMaxDimension))
+                    if (!ValidateDimensions(inTex.width, inTex.height, UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension))
                     {
                         m_State = ImageState.ErrorImageTooLarge;
                         Object.Destroy(inTex);
@@ -695,7 +695,7 @@ namespace TiltBrush
                     yield return null;
 
                     // Create the full size image cache as well.
-                    int resizeLimit = App.PlatformConfig.ReferenceImagesResizeDimension;
+                    int resizeLimit = UserConfig.PerformanceOverrides.ReferenceImagesResizeDimension;
                     if (inTex.width > resizeLimit || inTex.height > resizeLimit)
                     {
                         Texture2D resizedTex = new Texture2D(2, 2, TextureFormat.RGBA32, true);
@@ -724,7 +724,7 @@ namespace TiltBrush
         {
             var reader = new ThreadedImageReader(m_Path,
                 ReferenceImageCatalog.MAX_ICON_TEX_DIMENSION,
-                App.PlatformConfig.ReferenceImagesMaxDimension);
+                UserConfig.PerformanceOverrides.ReferenceImagesMaxDimension);
             while (!reader.Finished)
             {
                 yield return null;
@@ -797,7 +797,7 @@ namespace TiltBrush
             try
             {
                 FileInfo info = new FileInfo(m_Path);
-                return info.Length <= App.PlatformConfig.ReferenceImagesMaxFileSize;
+                return info.Length <= UserConfig.PerformanceOverrides.ReferenceImagesMaxFileSize;
             }
             catch (Exception e)
             {
