@@ -303,7 +303,8 @@ namespace TiltBrush
         {
             var canvas = transform.GetComponent<CanvasScript>();
             if (canvas == null || m_LayerExportStates.ContainsKey(canvas)) return;
-            var state = new LayerExportState {
+            var state = new LayerExportState
+            {
                 Canvas = canvas, KeepStrokes = App.UserConfig.Export.KeepStrokes
             };
             // Register recovery state before changing batching or destroying any geometry.
