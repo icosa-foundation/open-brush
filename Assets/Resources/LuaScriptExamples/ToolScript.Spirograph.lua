@@ -49,8 +49,8 @@ function Main()
             -- weave in a third dimension in an mathemarically interesting way
             local z = Math:Sin(t) * Math:Cos(t) * Math:Cos((R - r) / r * t) * Parameters.depth
 
-            
-            
+
+
             local position = Vector3:New(x, y, z)
             path:Insert(Transform:New(position))
         end
