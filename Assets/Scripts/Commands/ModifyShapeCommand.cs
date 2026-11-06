@@ -15,13 +15,17 @@ namespace TiltBrush
         private GeometryRecipeData m_After;
         private readonly object m_Gesture;
         private PolyMesh m_PreparedMesh;
+        private readonly bool m_MergeWidgetMovement;
+        private MoveWidgetCommand m_Movement;
 
-        public ModifyShapeCommand(EditableModelWidget widget, GeometryRecipeData recipe, object gesture)
+        public ModifyShapeCommand(EditableModelWidget widget, GeometryRecipeData recipe, object gesture,
+            bool mergeWidgetMovement = false)
         {
             m_Widget = widget;
             m_Before = widget.m_PolyRecipe;
             m_After = recipe;
             m_Gesture = gesture;
+            m_MergeWidgetMovement = mergeWidgetMovement;
             // Reject invalid settings before the undo stack clears redo or merges this command.
             m_PreparedMesh = EditableModelManager.Evaluate(recipe);
             if (m_PreparedMesh.Vertices.Count == 0 || m_PreparedMesh.Faces.Count == 0)
@@ -47,6 +51,13 @@ namespace TiltBrush
         public override bool Merge(BaseCommand other)
         {
             if (base.Merge(other)) { return true; }
+            if (m_MergeWidgetMovement && other is MoveWidgetCommand move && move.Widget == m_Widget)
+            {
+                if (m_Movement != null) { return m_Movement.Merge(move); }
+                m_Movement = move;
+                m_Children.Add(move);
+                return true;
+            }
             if (!(other is ModifyShapeCommand shape) || shape.m_Widget != m_Widget ||
                 m_Gesture == null || !ReferenceEquals(shape.m_Gesture, m_Gesture)) { return false; }
             m_After = shape.m_After;

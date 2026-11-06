@@ -18,8 +18,11 @@ namespace TiltBrush
         public Color m_Color = Color.white;
         public static EditableModelWidget LastActivated { get; private set; }
         private Mesh m_OwnedGeneratedMesh;
+        // Retain stretches already stored in sketches. New axis gestures edit the
+        // recipe instead, so newly created shapes keep this at Vector3.one.
         private Vector3 m_AxisScale = Vector3.one;
         private Axis? m_LockedManipulationAxis;
+        private object m_AxisResizeGesture;
 
         public override Vector3 CustomDimension
         {
@@ -48,7 +51,12 @@ namespace TiltBrush
         public override Vector2 GetAxisSizeRange()
         {
             float parentScale = Mathf.Abs(TrTransform.FromTransform(transform.parent).scale);
-            return new Vector2(m_MinSize_CS, m_MaxSize_CS) * parentScale;
+            Vector2 range = new Vector2(m_MinSize_CS, m_MaxSize_CS) * parentScale;
+            if (GetScaleAxis(Vector3.zero, Vector3.zero, out _, out float extent) != Axis.Invalid)
+            {
+                range.x = Mathf.Max(range.x, extent * ProceduralShapes.MinimumAxisResizeRatio(m_PolyRecipe, m_LockedManipulationAxis.Value));
+            }
+            return range;
         }
 
         protected override Vector3 HomeSnapOffset => Vector3.Scale(base.HomeSnapOffset, m_AxisScale);
@@ -63,6 +71,7 @@ namespace TiltBrush
         protected override void OnUserBeginTwoHandGrab(Vector3 primaryHand, Vector3 secondaryHand, bool secondaryHandInObject)
         {
             base.OnUserBeginTwoHandGrab(primaryHand, secondaryHand, secondaryHandInObject);
+            m_AxisResizeGesture = new object();
             // Match box guides: two hands inside scale uniformly; an outside hand chooses an axis.
             Vector3 hands = transform.InverseTransformDirection(primaryHand - secondaryHand).Abs();
             m_LockedManipulationAxis = secondaryHandInObject ? Axis.Invalid
@@ -74,6 +83,7 @@ namespace TiltBrush
         {
             base.OnUserEndTwoHandGrab();
             m_LockedManipulationAxis = null;
+            m_AxisResizeGesture = null;
         }
 
         public override Axis GetScaleAxis(Vector3 handA, Vector3 handB, out Vector3 axisDirection, out float axisExtent)
@@ -82,6 +92,7 @@ namespace TiltBrush
             axisDirection = Vector3.zero;
             axisExtent = 0;
             if (axis == Axis.Invalid || Model == null || !Model.m_Valid) { return Axis.Invalid; }
+            if (!ProceduralShapes.CanResizeAxis(m_PolyRecipe, axis)) { return Axis.Invalid; }
             int index = (int)axis;
             Vector3 size = m_OwnedGeneratedMesh != null ? m_OwnedGeneratedMesh.bounds.size : Model.m_MeshBounds.size;
             axisExtent = Mathf.Abs(TrTransform.FromTransform(transform.parent).scale * m_Size) *
@@ -96,14 +107,19 @@ namespace TiltBrush
 
         public override void RecordAndApplyScaleToAxis(float deltaScale, Axis axis)
         {
-            if (axis == Axis.Invalid || !(deltaScale > 0) || float.IsInfinity(deltaScale)) { return; }
-            Vector3 dimensions = CustomDimension;
-            dimensions[(int)axis] *= deltaScale;
+            if (!ProceduralShapes.CanResizeAxis(m_PolyRecipe, axis) || !(deltaScale > 0) ||
+                float.IsInfinity(deltaScale) || deltaScale == 1f) { return; }
+            var recipe = ProceduralShapes.ResizeAxis(m_PolyRecipe, axis, deltaScale);
             if (m_RecordMovements)
             {
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new MoveWidgetCommand(this, LocalTransform, dimensions));
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                    new ModifyShapeCommand(this, recipe, m_AxisResizeGesture, mergeWidgetMovement: true));
             }
-            else { CustomDimension = dimensions; }
+            else
+            {
+                EditableModelManager.GetOrCreate().RegenerateMesh(this, EditableModelManager.Evaluate(recipe));
+                m_PolyRecipe = recipe;
+            }
         }
 
         internal void TakeGeneratedMeshOwnership(Mesh mesh)

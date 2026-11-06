@@ -20,6 +20,73 @@ namespace TiltBrush.MeshEditing
             "Cylinder", "Capsule", "Sphere"
         };
 
+        // Axis gestures edit dimensions, not the final mesh scale. Add other shape
+        // mappings only when their parameter semantics have been agreed.
+        private static string AxisDimension(GeometryRecipeData recipe, GrabWidget.Axis axis)
+        {
+            if (recipe == null) { return null; }
+            recipe.GetSteps(out var generator, out var modifiers);
+            if (modifiers.Any(step => step.Type == "transform" || step.Type == "bend")) { return null; }
+            if (generator.Type != "panel" && generator.Type != "rectangle" && generator.Type != "frame") { return null; }
+            switch (axis)
+            {
+                case GrabWidget.Axis.X: return "width";
+                case GrabWidget.Axis.Y: return "height";
+                case GrabWidget.Axis.Z: return generator.Type == "panel" ? "depth" : null;
+                default: return null;
+            }
+        }
+
+        public static bool CanResizeAxis(GeometryRecipeData recipe, GrabWidget.Axis axis)
+            => AxisDimension(recipe, axis) != null;
+
+        private static float MinimumDimension(JObject generator, string dimension)
+        {
+            var parameters = generator["Parameters"];
+            string type = (string)generator["Type"];
+            float edgeRadius = type == "panel" ? (float?)parameters?["edgeRadius"] ?? 0f : 0f;
+            float minimum = Mathf.Max(.0001f, 2f * edgeRadius);
+            if (dimension != "depth")
+            {
+                string radius = type == "panel" ? "cornerRadius" : "radius";
+                minimum = Mathf.Max(minimum, 2f * ((float?)parameters?[radius] ?? 0f));
+                if (type == "frame")
+                {
+                    minimum = Mathf.Max(minimum, 2f * ((float?)parameters?["borderWidth"] ?? .1f) + .0001f);
+                }
+            }
+            return minimum;
+        }
+
+        public static float MinimumAxisResizeRatio(GeometryRecipeData recipe, GrabWidget.Axis axis)
+        {
+            string dimension = AxisDimension(recipe, axis);
+            if (dimension == null) { return 0f; }
+            var generator = (JObject)recipe.ToJson()["Generator"];
+            float current = (float?)generator["Parameters"]?[dimension] ?? (dimension == "depth" ? .1f : 1f);
+            return current > 0f ? MinimumDimension(generator, dimension) / current : 0f;
+        }
+
+        public static GeometryRecipeData ResizeAxis(GeometryRecipeData recipe, GrabWidget.Axis axis, float ratio)
+        {
+            if (!(ratio > 0f) || float.IsInfinity(ratio)) { throw new ArgumentOutOfRangeException(nameof(ratio)); }
+            string dimension = AxisDimension(recipe, axis);
+            if (dimension == null) { throw new NotSupportedException("This shape has no dimension mapped to that axis"); }
+            JObject data = recipe.ToJson();
+            var generator = (JObject)data["Generator"];
+            var parameters = generator["Parameters"] as JObject;
+            if (parameters == null)
+            {
+                parameters = new JObject();
+                generator["Parameters"] = parameters;
+            }
+            float current = (float?)parameters[dimension] ?? (dimension == "depth" ? .1f : 1f);
+            float resized = current * ratio;
+            if (float.IsInfinity(resized)) { throw new ArgumentOutOfRangeException(nameof(ratio)); }
+            parameters[dimension] = Mathf.Max(MinimumDimension(generator, dimension), resized);
+            return new GeometryRecipeData(data);
+        }
+
         public sealed class Parameter
         {
             public string Name;
