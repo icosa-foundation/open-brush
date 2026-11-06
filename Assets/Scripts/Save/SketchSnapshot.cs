@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -163,6 +163,8 @@ namespace TiltBrush
             if (!m_SelectedOnly)
             {
                 metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping);
+                metadata.EditableModelDefinitions = MetadataUtils.GetEditableModelDefinitions();
+                metadata.EditableModelIndex = MetadataUtils.GetTiltEditableModels(m_GroupIdMapping);
                 metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping);
                 metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping);
                 metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping);

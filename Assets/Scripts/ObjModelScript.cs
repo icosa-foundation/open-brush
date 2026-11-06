@@ -44,6 +44,8 @@ namespace TiltBrush
         private SkinnedMeshRenderer[] SkinnedMeshChildren =>
             m_SkinnedMeshChildren ?? new SkinnedMeshRenderer[0];
 
+        public void InvalidateMeshVertexCount() { m_NumVertsInMeshes = 0; }
+
         public int GetNumVertsInMeshes()
         {
             if (m_NumVertsInMeshes <= 0)

@@ -2263,6 +2263,7 @@ namespace TiltBrush
             if (axis != GrabWidget.Axis.Invalid)
             {
                 // Scale along a single axis
+                Vector2 axisSizeRange = m_CurrentGrabWidget.GetAxisSizeRange();
                 float deltaScale;
                 if (App.Config.m_AxisManipulationIsResize)
                 {
@@ -2272,8 +2273,8 @@ namespace TiltBrush
                         xfWand, xfBrush,
                         GetWorkingTransform(m_CurrentGrabWidget),
                         out deltaScale,
-                        deltaScaleMin: vSizeRange.x / axisExtent,
-                        deltaScaleMax: vSizeRange.y / axisExtent);
+                        deltaScaleMin: axisSizeRange.x / axisExtent,
+                        deltaScaleMax: axisSizeRange.y / axisExtent);
                 }
                 else
                 {
@@ -2284,8 +2285,8 @@ namespace TiltBrush
                         GetWorkingTransform(m_CurrentGrabWidget),
                         out deltaScale,
                         finalScaleMin: vSizeRange.x,
-                        deltaScaleMin: vSizeRange.x / axisExtent,
-                        deltaScaleMax: vSizeRange.y / axisExtent);
+                        deltaScaleMin: axisSizeRange.x / axisExtent,
+                        deltaScaleMax: axisSizeRange.y / axisExtent);
                 }
 
                 // The above functions return undefined values in newWidgetXf.scale; but that's
