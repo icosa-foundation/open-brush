@@ -5,6 +5,7 @@ using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Polyhydra.Core;
+using TiltBrush.DocumentImport;
 using Polyhydra.Wythoff;
 using TiltBrush.MeshEditing;
 using UnityEngine;
@@ -43,6 +44,9 @@ namespace TiltBrush
         public ColorMethods ColorMethod;
         public Color[] Colors;
         public GeometryPostProcessingSettings PostProcessing;
+        public EditableModelDefinitionData SourceDefinition;
+
+        public EditableModelDefinitionData ToDefinition() => PolyRecipeSerialization.ToDefinition(this);
 
         public Material CurrentMaterial => EditableModelManager.m_Instance.m_Materials[MaterialIndex];
 
@@ -71,7 +75,7 @@ namespace TiltBrush
             };
             using var textReader = new StringReader(json);
             using var jsonReader = new JsonTextReader(textReader);
-            var definition = serializer.Deserialize<EditableModelDefinition>(jsonReader);
+            var definition = serializer.Deserialize<EditableModelDefinitionData>(jsonReader);
             if (definition == null)
             {
                 throw new JsonSerializationException("Shape preset did not contain a definition.");
@@ -121,7 +125,15 @@ namespace TiltBrush
             return clone;
         }
 
-        public static PolyRecipe FromDef(EditableModelDefinition emd, Color[] defaultColors = null)
+        public static PolyRecipe FromDef(EditableModelDefinitionData definition, Color[] defaultColors = null)
+        {
+            definition.Recipe.GetSteps(out _, out _);
+            var result = FromLegacyDef(PolyRecipeSerialization.LegacyView(definition), defaultColors);
+            result.SourceDefinition = definition;
+            return result;
+        }
+
+        private static PolyRecipe FromLegacyDef(LegacyEditableModelDefinition emd, Color[] defaultColors)
         {
             var recipe = new PolyRecipe
             {
@@ -290,6 +302,22 @@ namespace TiltBrush
     public static class PolyBuilder
     {
         public static (PolyMesh, PolyMesh.MeshData) BuildFromPolyDef(PolyRecipe p)
+        {
+            var data = PolyRecipeSerialization.ToRecipe(p);
+            var poly = GeometryRecipeRuntime.Evaluate(data, step =>
+            {
+                if (PolyRecipeSerialization.IsCoreGenerator(step.Type)) return null;
+                var generated = GenerateLegacy(p);
+                generated.ScalingFactor = 1f;
+                return generated;
+            });
+            poly.ScalingFactor *= App.METERS_TO_UNITS;
+            var meshData = poly.BuildMeshData(generateSubmeshes: false,
+                colors: p.Colors, colorMethod: p.ColorMethod);
+            return (poly, meshData);
+        }
+
+        private static PolyMesh GenerateLegacy(PolyRecipe p)
         {
             PolyMesh poly = null;
 
@@ -463,19 +491,8 @@ namespace TiltBrush
                     break;
             }
 
-            if (poly == null) Debug.LogError($"No initial poly generated for: GeneratorType: {p.GeneratorType}");
-
-            var modifiers = p.Operators?.Where(op => op.opType != PolyMesh.Operation.Identity)
-                .Select(op => op.ToModifierSettings()).ToArray();
-            poly = ModifierPipeline.Apply(poly, modifiers, preserveScalingFactor: true);
-            float scalingFactor = poly.ScalingFactor;
-            poly = ModifierPipeline.ApplyPostProcessing(poly, p.PostProcessing);
-            poly.ScalingFactor = scalingFactor;
-            PolyMesh.MeshData meshData = poly.BuildMeshData(
-                generateSubmeshes: false,
-                colors: p.Colors,
-                colorMethod: p.ColorMethod);
-            return (poly, meshData);
+            if (poly == null) throw new NotSupportedException($"No generator for {p.GeneratorType}");
+            return poly;
         }
 
         public static PolyMesh ApplyOp(PolyMesh poly, PreviewPolyhedron.OpDefinition op)

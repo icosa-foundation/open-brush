@@ -88,7 +88,7 @@ namespace TiltBrush
             var widget = selectedItems.First() as EditableModelWidget;
             if (widget == null) return;
 
-            EditableModelDefinition emDef = new EditableModelDefinition(widget.m_PolyRecipe);
+            EditableModelDefinitionData emDef = widget.m_PolyRecipe.ToDefinition();
             var jsonSerializer = new JsonSerializer { ContractResolver = new CustomJsonContractResolver() };
             using var stringWriter = new StringWriter();
             using var jsonWriter = new CustomJsonWriter(stringWriter);

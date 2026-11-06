@@ -136,14 +136,21 @@ namespace TiltBrush
         private void CaptureEditableGeometry()
         {
             if (m_Metadata.EditableModelDefinitions == null) { return; }
+            EditableModelDefinitionData.CollectGeometryFiles(m_Metadata.EditableModelDefinitions.Values, m_EditableGeometry);
             foreach (var entry in m_Metadata.EditableModelDefinitions)
             {
-                var definition = entry.Value;
+                if (entry.Value.ExtraData == null || !entry.Value.ExtraData.TryGetValue("Geometry", out var source) ||
+                    source["Vertices"] == null || source["Faces"] == null) { continue; }
+                LegacyEditableModelDefinition definition;
+                try { definition = PolyRecipeSerialization.LegacyView(entry.Value); }
+                catch (NotSupportedException) { continue; }
                 if (definition.Vertices == null || definition.Faces == null) { continue; }
                 // IDs generated here are archive-local, not paths supplied by imported models.
-                string filename = $"editable-model-{m_EditableGeometry.Count}.bin";
+                int index = m_EditableGeometry.Count;
+                string filename;
+                do { filename = $"editable-model-{index++}.bin"; } while (m_EditableGeometry.ContainsKey(filename));
                 using var stream = new MemoryStream();
-                EditableModelGeometry.Write(stream, definition);
+                EditableModelGeometry.Write(stream, entry.Value);
                 m_EditableGeometry.Add(filename, stream.ToArray());
                 definition.GeometryFile = filename;
                 definition.Vertices = null;
@@ -151,6 +158,7 @@ namespace TiltBrush
                 definition.FaceRoles = null;
                 definition.VertexRoles = null;
                 definition.FaceTags = null;
+                PolyRecipeSerialization.StoreGeometry(entry.Value, definition);
             }
         }
 

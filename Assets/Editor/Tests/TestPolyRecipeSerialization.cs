@@ -26,7 +26,7 @@ namespace TiltBrush
             Assert.That(op.filterParamInt, Is.EqualTo(1));
             Assert.That(recipe.PostProcessing.AutoSmoothAngle, Is.EqualTo(35));
             JObject saved = preset.ToJsonObject(recipe);
-            Assert.That(saved.Value<int>("RecipeVersion"), Is.EqualTo(1));
+            Assert.That(saved["Recipe"].Value<int>("Version"), Is.EqualTo(1));
             Assert.That(saved["Operations"], Is.Null);
             Assert.That(saved["AutoSmoothAngle"], Is.Null);
             var again = PolyRecipe.FromJson(saved.ToString(), null);
@@ -53,14 +53,14 @@ namespace TiltBrush
             => Assert.Catch(() => PolyRecipe.FromJson(json, null));
 
         [Test]
-        public void LegacySectorAndCurrentRectangleRemainDistinct()
+        public void UnversionedSectorAndVersionedLegacyRectangleRemainDistinct()
         {
             var legacy = PolyRecipe.FromJson(@"{ 'GeneratorType': 3,
                 'GeneratorParameters': { 'type': 10, 'b': .5 }, 'Operations': [] }", null);
             var current = PolyRecipe.FromJson(@"{ 'RecipeVersion': 1, 'GeneratorType': 3,
-                'GeneratorParameters': { 'type': 10, 'b': .5 }, 'Modifiers': [] }", null);
+                'GeneratorParameters': { 'type': 10, 'width': 2, 'height': 1 }, 'Modifiers': [] }", null);
             Assert.That((int)legacy.ShapeType, Is.EqualTo(5));
-            Assert.That((int)current.ShapeType, Is.EqualTo(10));
+            Assert.That((string)current.SourceDefinition.Recipe.ToJson()["Generator"]["Type"], Is.EqualTo("rectangle"));
         }
     }
 }

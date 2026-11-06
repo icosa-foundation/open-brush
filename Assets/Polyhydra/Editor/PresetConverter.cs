@@ -587,7 +587,7 @@ namespace TiltBrush
                 {
                     Operators = operations,
                 };
-                var emd = new EditableModelDefinition(recipe);
+                var emd = recipe.ToDefinition();
 
                 var jsonSerializer = new JsonSerializer
                 {

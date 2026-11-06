@@ -13,8 +13,9 @@ namespace TiltBrush
     // Deflate keeps these entries compact even when the containing .tilt uses stored entries.
     internal static class EditableModelGeometry
     {
-        public static void Write(Stream stream, EditableModelDefinition definition)
+        public static void Write(Stream stream, EditableModelDefinitionData savedDefinition)
         {
+            var definition = PolyRecipeSerialization.LegacyView(savedDefinition);
             using var compressed = new DeflateStream(stream, System.IO.Compression.CompressionLevel.Optimal, leaveOpen: true);
             using var writer = new BinaryWriter(compressed, Encoding.UTF8, leaveOpen: true);
             WriteList(writer, definition.Vertices, vertex =>
@@ -30,8 +31,9 @@ namespace TiltBrush
                 WriteList(writer, tags?.OrderBy(tag => tag, StringComparer.Ordinal).ToArray(), writer.Write));
         }
 
-        public static void Read(Stream stream, EditableModelDefinition definition)
+        public static void Read(Stream stream, EditableModelDefinitionData savedDefinition)
         {
+            var definition = PolyRecipeSerialization.LegacyView(savedDefinition);
             using var compressed = new DeflateStream(stream, CompressionMode.Decompress, leaveOpen: true);
             using var reader = new BinaryReader(compressed, Encoding.UTF8, leaveOpen: true);
             definition.Vertices = ReadList(reader,
@@ -50,6 +52,7 @@ namespace TiltBrush
             {
                 throw new InvalidDataException("Invalid editable model polygon geometry.");
             }
+            PolyRecipeSerialization.StoreGeometry(savedDefinition, definition);
         }
 
         private static void WriteList<T>(BinaryWriter writer, ICollection<T> values, Action<T> write)

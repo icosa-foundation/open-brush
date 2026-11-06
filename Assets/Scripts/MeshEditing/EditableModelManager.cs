@@ -32,6 +32,8 @@ namespace TiltBrush.MeshEditing
         TwoUniformGrids = 12,
         DurerGrids = 13,
 
+        Procedural = 14,
+
         Shapes = 3,
 
         Radial = 4,
@@ -47,6 +49,15 @@ namespace TiltBrush.MeshEditing
         public static EditableModelManager m_Instance;
         public Material[] m_Materials;
         [NonSerialized] public Dictionary<Material, DynamicExportableMaterial> m_ExportableMaterials;
+
+        public static readonly Dictionary<string, EditableModelDefinitionData> RetainedDefinitions = new Dictionary<string, EditableModelDefinitionData>();
+        public static readonly List<TiltEditableModels> RetainedInstances = new List<TiltEditableModels>();
+
+        public static void ClearRetainedData()
+        {
+            RetainedDefinitions.Clear();
+            RetainedInstances.Clear();
+        }
 
         void Awake()
         {

@@ -82,7 +82,7 @@ namespace TiltBrush
                     exposedParameters: Array.Empty<ExposedParameterDefinition>());
             }
 
-            if ((presetJson.Value<int?>("RecipeVersion") ?? 0) == 0)
+            if (presetJson["Recipe"] == null)
             {
                 // Keep source assets untouched. Only the in-memory editing document and
                 // exposed paths move to the writer's current layout.
@@ -95,7 +95,7 @@ namespace TiltBrush
                     try
                     {
                         var token = SelectNumericToken(presetJson, oldPath);
-                        definition["path"] = PolyRecipeSerialization.UpgradeLegacyPath($"$.{token.Path}");
+                        definition["path"] = PolyRecipeSerialization.UpgradePresetPath($"$.{token.Path}", recipe);
                     }
                     catch (Exception error) when (error is JsonException || error is NotSupportedException)
                     {
@@ -193,14 +193,14 @@ namespace TiltBrush
             JsonSerializer serializer = CreateRecipeJsonSerializer();
             using var textWriter = new StringWriter(System.Globalization.CultureInfo.InvariantCulture);
             using var jsonWriter = new CustomJsonWriter(textWriter);
-            serializer.Serialize(jsonWriter, new EditableModelDefinition(recipe));
+            serializer.Serialize(jsonWriter, recipe.ToDefinition());
             jsonWriter.Flush();
             return JObject.Parse(textWriter.ToString());
         }
 
         private static PolyRecipe RecipeFromJsonObject(JObject json, Color[] defaultColors)
         {
-            EditableModelDefinition definition = json.ToObject<EditableModelDefinition>(
+            EditableModelDefinitionData definition = json.ToObject<EditableModelDefinitionData>(
                 CreateRecipeJsonSerializer());
             if (definition == null)
             {

@@ -351,6 +351,10 @@ namespace TiltBrush
             {
                 contract.Converter = new JsonVectorConverter();
             }
+            else if (objectType == typeof(EditableModelDefinitionData))
+            {
+                contract.Converter = new LegacyEditableModelDefinitionDataConverter();
+            }
             else if (objectType == typeof(Guid))
             {
                 contract.Converter = new JsonGuidConverter();

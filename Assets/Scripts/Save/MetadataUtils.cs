@@ -191,15 +191,15 @@ namespace TiltBrush
             }
         }
 
-        public static Dictionary<string, EditableModelDefinition> GetEditableModelDefinitions()
+        public static Dictionary<string, EditableModelDefinitionData> GetEditableModelDefinitions()
         {
-            var dict = new Dictionary<string, EditableModelDefinition>();
+            var dict = new Dictionary<string, EditableModelDefinitionData>(MeshEditing.EditableModelManager.RetainedDefinitions);
             foreach (var em in WidgetManager.m_Instance.ActiveEditableModelWidgets)
             {
                 var widget = em.WidgetScript;
                 if (widget.Model.GetLocation().IsGenerated())
                 {
-                    dict[widget.Model.AssetId] = new EditableModelDefinition(widget.m_PolyRecipe);
+                    dict[widget.Model.AssetId] = widget.m_PolyRecipe.ToDefinition();
                 }
             }
             return dict;
@@ -209,7 +209,8 @@ namespace TiltBrush
         {
             var widgets =
                 WidgetManager.m_Instance.EditableModelWidgets.Where(w => w.gameObject.activeSelf).ToArray();
-            if (widgets.Length == 0 && !ModelCatalog.m_Instance.MissingModels.Any())
+            if (widgets.Length == 0 && !ModelCatalog.m_Instance.MissingModels.Any() &&
+                MeshEditing.EditableModelManager.RetainedInstances.Count == 0)
             {
                 return null;
             }
@@ -257,6 +258,7 @@ namespace TiltBrush
 
             return models
                 .Concat(ModelCatalog.m_Instance.MissingEditableModels)
+                .Concat(MeshEditing.EditableModelManager.RetainedInstances)
                 .OrderBy(ByEditableModelLocation).ToArray();
         }
 

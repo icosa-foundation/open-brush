@@ -11,7 +11,7 @@ using UnityEngine;
 namespace TiltBrush
 {
     // Application-level compatibility lives here, not in the geometry library.
-    internal static class PolyRecipeSerialization
+    internal static partial class PolyRecipeSerialization
     {
         public const int CurrentVersion = 1;
 
@@ -39,7 +39,7 @@ namespace TiltBrush
             // Derive the supported primitive fields from Core rather than maintaining
             // another independently named modifier schema in this editor.
             var template = GeometryStep.FromModifier(new ModifierSettings
-            { StringParameter = "", UseFilterParamInt = true }).Parameters;
+                { StringParameter = "", UseFilterParamInt = true }).Parameters;
             var parameters = new Dictionary<string, object>();
             foreach (var property in json.Properties())
             {

@@ -40,14 +40,14 @@
       "hash": "ec25a5d7d6832730dcbcbd7bcd4f1e9529506a01"
     },
     "com.ixxy.polyhydra.core": {
-      "version": "https://github.com/IxxyXR/polyhydra-core.git#419ad3334e2d65c544b5d5e992e076fac89e7077",
+      "version": "https://github.com/IxxyXR/polyhydra-core.git#c3305c7b12977160b916d07b914f477c3c1daff6",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.syomus.proceduraltoolkit": "0.2.3",
         "com.nition.unity-octree": "0.0.1-preview"
       },
-      "hash": "419ad3334e2d65c544b5d5e992e076fac89e7077"
+      "hash": "c3305c7b12977160b916d07b914f477c3c1daff6"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",

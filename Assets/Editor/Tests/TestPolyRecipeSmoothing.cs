@@ -35,12 +35,12 @@ namespace TiltBrush
 
             PolyRecipe recipe = PolyRecipe.FromJson(json, null);
             var (poly, _) = PolyBuilder.BuildFromPolyDef(recipe);
-            var roundTrippedDefinition = new EditableModelDefinition(recipe);
+            var roundTrippedDefinition = recipe.ToDefinition();
             PolyRecipe roundTrippedRecipe = PolyRecipe.FromDef(roundTrippedDefinition);
 
             Assert.That(recipe.PostProcessing.AutoSmoothAngle, Is.EqualTo(91f));
             Assert.That(poly.Halfedges.Any(edge => edge.IsEdgeSmooth), Is.True);
-            Assert.That(roundTrippedDefinition.PostProcessing.AutoSmoothAngle, Is.EqualTo(91f));
+            Assert.That(roundTrippedDefinition.Recipe.ToJson()["PostProcessing"]["AutoSmoothAngle"].Value<float>(), Is.EqualTo(91f));
             Assert.That(roundTrippedRecipe.PostProcessing.AutoSmoothAngle, Is.EqualTo(91f));
         }
 

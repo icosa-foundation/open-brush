@@ -83,7 +83,7 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
     "foundation.icosa.openblocks.file-format": "https://github.com/icosa-foundation/open-blocks.git?path=/Packages/foundation.icosa.openblocks.file-format#packages/foundation.icosa.openblocks.file-format",
-    "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git#419ad3334e2d65c544b5d5e992e076fac89e7077"
+    "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git#c3305c7b12977160b916d07b914f477c3c1daff6"
   },
   "scopedRegistries": [
     {

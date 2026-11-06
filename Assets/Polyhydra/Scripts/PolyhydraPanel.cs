@@ -822,7 +822,7 @@ namespace TiltBrush
 
         void SavePresetJson(string presetPath)
         {
-            EditableModelDefinition emDef = new EditableModelDefinition(PreviewPolyhedron.m_Instance.m_PolyRecipe);
+            EditableModelDefinitionData emDef = PreviewPolyhedron.m_Instance.m_PolyRecipe.ToDefinition();
             var jsonSerializer = new JsonSerializer
             {
                 ContractResolver = new CustomJsonContractResolver()
@@ -877,12 +877,12 @@ namespace TiltBrush
         {
             var jsonDeserializer = new JsonSerializer { ContractResolver = new CustomJsonContractResolver() };
             using var jsonReader = new JsonTextReader(textReader);
-            var emd = jsonDeserializer.Deserialize<EditableModelDefinition>(jsonReader);
+            var emd = jsonDeserializer.Deserialize<EditableModelDefinitionData>(jsonReader);
             if (emd == null) throw new JsonSerializationException("The shape preset is empty.");
 
             var preview = PreviewPolyhedron.m_Instance;
             var previousRecipe = preview.m_PolyRecipe.Clone();
-            var previousDefinition = new EditableModelDefinition(previousRecipe);
+            var previousDefinition = previousRecipe.ToDefinition();
             try
             {
                 // UI callbacks only schedule a rebuild. Validate the resulting recipe before
@@ -1025,18 +1025,19 @@ namespace TiltBrush
         public void LoadFromWidget(EditableModelWidget ewidget)
         {
             var recipe = ewidget.m_PolyRecipe.CloneWithUnitGeometryBounds();
-            var edef = new EditableModelDefinition(recipe);
+            var edef = recipe.ToDefinition();
             LoadFromDefinition(edef);
             CurrentPresetPath = "";
             EnablePresetSaveButtons(popupButtonEnabled: false);
         }
 
-        public void LoadFromDefinition(EditableModelDefinition emd)
+        public void LoadFromDefinition(EditableModelDefinitionData definition)
         {
-            var sourceRecipe = PolyRecipe.FromDef(emd, DefaultColorPalette);
+            var emd = PolyRecipeSerialization.LegacyView(definition);
+            var sourceRecipe = PolyRecipe.FromDef(definition, DefaultColorPalette);
             // GeometryData has no generator controls that can reconstruct its source mesh.
             // Preserve the complete recipe before UI synchronization requests a preview rebuild.
-            if (emd.GeneratorType == GeneratorTypes.GeometryData)
+            if (emd.GeneratorType == GeneratorTypes.GeometryData || emd.GeneratorType == GeneratorTypes.Procedural)
             {
                 PreviewPolyhedron.m_Instance.m_PolyRecipe = sourceRecipe.Clone();
             }
@@ -1090,6 +1091,8 @@ namespace TiltBrush
 
             switch (emd.GeneratorType)
             {
+                case GeneratorTypes.Procedural:
+                case GeneratorTypes.Procedural:
                 case GeneratorTypes.GeometryData:
                     m_CurrentMainCategory = PolyhydraMainCategories.CustomGeometry;
                     break;
@@ -1220,6 +1223,7 @@ namespace TiltBrush
             }
 
             SetMainButtonVisibility();
+            PreviewPolyhedron.m_Instance.m_PolyRecipe = sourceRecipe.Clone();
             SetSliderConfiguration();
             setSlidersFromGeneratorParams(sliderParamNames);
 

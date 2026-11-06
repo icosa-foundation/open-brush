@@ -856,34 +856,37 @@ namespace TiltBrush
                         foreach (TiltEditableModels model in generatedModels)
                         {
                             var definition = jsonData.EditableModelDefinitions[model.AssetId];
-                            if (definition.GeometryFile != null)
+                            PolyRecipe recipe;
+                            (Polyhydra.Core.PolyMesh poly, Polyhydra.Core.PolyMesh.MeshData meshData) prepared;
+                            try
                             {
-                                // Do not allow an archive reference to escape an unpacked .tilt directory.
-                                if (!definition.GeometryFile.StartsWith("editable-model-", StringComparison.Ordinal) ||
-                                    !definition.GeometryFile.EndsWith(".bin", StringComparison.Ordinal) ||
-                                    Path.GetFileName(definition.GeometryFile) != definition.GeometryFile)
+                                definition.LoadGeometryFile(fileInfo.GetReadStream);
+                                if (definition.GeometryFile != null)
                                 {
-                                    throw new InvalidDataException("Invalid editable geometry filename.");
+                                    using var geometry = new MemoryStream(definition.SourceFiles[definition.GeometryFile], writable: false);
+                                    EditableModelGeometry.Read(geometry, definition);
                                 }
-                                using var geometry = fileInfo.GetReadStream(definition.GeometryFile);
-                                if (geometry == null)
+                                if (model.ExtraData?.Count > 0) throw new NotSupportedException("Unfamiliar editable model instance fields");
+                                if (model.RawTransforms == null) throw new InvalidDataException("Missing editable model transforms");
+                                recipe = PolyRecipe.FromDef(definition);
+                                if (recipe.Colors == null || recipe.Colors.Length == 0)
                                 {
-                                    throw new InvalidDataException($"Missing editable geometry: {definition.GeometryFile}");
+                                    var panel = (PolyhydraPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra);
+                                    recipe.Colors = (Color[])panel.DefaultColorPalette.Clone();
                                 }
-                                EditableModelGeometry.Read(geometry, definition);
+                                prepared = PolyBuilder.BuildFromPolyDef(recipe);
                             }
-                            PolyRecipe recipe = PolyRecipe.FromDef(definition);
-
-                            // Handle saves with missing colors (legacy)
-                            if (recipe.Colors == null || recipe.Colors.Length == 0)
+                            catch (Exception error)
                             {
-                                PolyhydraPanel polyPanel = (PolyhydraPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra);
-                                recipe.Colors = (Color[])polyPanel.DefaultColorPalette.Clone();
+                                MeshEditing.EditableModelManager.RetainedDefinitions[model.AssetId] = definition;
+                                MeshEditing.EditableModelManager.RetainedInstances.Add(model);
+                                Debug.LogWarning($"[OB_RECIPE_LOAD] Editable model retained without rendering: {error.Message}");
+                                continue;
                             }
                             for (var i = 0; i < model.RawTransforms.Length; i++)
                             {
                                 var tr = model.RawTransforms[i];
-                                var (poly, meshData) = PolyBuilder.BuildFromPolyDef(recipe);
+                                var (poly, meshData) = i == 0 ? prepared : PolyBuilder.BuildFromPolyDef(recipe);
                                 var widget = EditableModelManager.m_Instance.GeneratePolyMesh(
                                     poly, recipe, tr, meshData, recordCommand: false);
                                 bool pin = model.PinStates == null || i >= model.PinStates.Length ||
