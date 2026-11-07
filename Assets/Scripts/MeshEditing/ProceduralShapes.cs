@@ -55,6 +55,20 @@ namespace TiltBrush.MeshEditing
         public static bool CanResizeAxis(GeometryRecipeData recipe, GrabWidget.Axis axis)
             => AxisDimension(recipe, axis) != null;
 
+        // Bit 0/1/2 represents X/Y/Z. The gesture axis can resize a coupled pair
+        // of dimensions, so the preview must show more than its selected axis.
+        public static int ResizeAxisMask(GeometryRecipeData recipe, GrabWidget.Axis axis, bool ellipse)
+        {
+            string dimension = AxisDimension(recipe, axis);
+            if (dimension == null) { return 0; }
+            if (dimension == "radius" ||
+                (dimension == "radial" && !ellipse && !IsElliptical(recipe)))
+            {
+                return (1 << (int)GrabWidget.Axis.X) | (1 << (int)GrabWidget.Axis.Z);
+            }
+            return 1 << (int)axis;
+        }
+
         private static float MinimumDimension(JObject generator, string dimension)
         {
             var parameters = generator["Parameters"];

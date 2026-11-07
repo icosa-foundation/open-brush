@@ -26,7 +26,7 @@ namespace TiltBrush
         private object m_AxisResizeGesture;
         private bool m_Ellipse;
         private MeshFilter m_ScalePreview;
-        private Axis m_ScalePreviewAxis = Axis.Invalid;
+        private int m_ScalePreviewAxes;
         private Bounds m_ScalePreviewBounds;
         private Matrix4x4 m_ScalePreviewColliderTransform;
 
@@ -219,29 +219,49 @@ namespace TiltBrush
 
             Bounds bounds = new Bounds(m_BoxCollider.center, m_BoxCollider.size);
             Matrix4x4 colliderToWidget = transform.worldToLocalMatrix * m_BoxCollider.transform.localToWorldMatrix;
-            if (axis == m_ScalePreviewAxis && bounds == m_ScalePreviewBounds &&
+            int axes = ProceduralShapes.ResizeAxisMask(m_PolyRecipe, axis, EllipseEnabled);
+            if (axes == m_ScalePreviewAxes && bounds == m_ScalePreviewBounds &&
                 colliderToWidget == m_ScalePreviewColliderTransform) { return; }
-            m_ScalePreviewAxis = axis;
+            m_ScalePreviewAxes = axes;
             m_ScalePreviewBounds = bounds;
             m_ScalePreviewColliderTransform = colliderToWidget;
-            var vertices = new Vector3[8];
-            int along = (int)axis;
-            int across = (along + 1) % 3;
-            int up = (along + 2) % 3;
-            for (int face = 0; face < 2; ++face)
+            int faceCount = 0;
+            for (int along = 0; along < 3; ++along)
             {
-                for (int corner = 0; corner < 4; ++corner)
+                if ((axes & (1 << along)) != 0) { faceCount += 2; }
+            }
+            var vertices = new Vector3[faceCount * 4];
+            var triangles = new int[faceCount * 6];
+            int quad = 0;
+            for (int along = 0; along < 3; ++along)
+            {
+                if ((axes & (1 << along)) == 0) { continue; }
+                int across = (along + 1) % 3;
+                int up = (along + 2) % 3;
+                for (int face = 0; face < 2; ++face, ++quad)
                 {
-                    Vector3 vertex = bounds.center;
-                    vertex[along] += bounds.extents[along] * (face == 0 ? -1 : 1);
-                    vertex[across] += bounds.extents[across] * (corner == 0 || corner == 3 ? -1 : 1);
-                    vertex[up] += bounds.extents[up] * (corner < 2 ? -1 : 1);
-                    vertices[face * 4 + corner] = colliderToWidget.MultiplyPoint3x4(vertex);
+                    int start = quad * 4;
+                    for (int corner = 0; corner < 4; ++corner)
+                    {
+                        Vector3 vertex = bounds.center;
+                        vertex[along] += bounds.extents[along] * (face == 0 ? -1 : 1);
+                        vertex[across] += bounds.extents[across] * (corner == 0 || corner == 3 ? -1 : 1);
+                        vertex[up] += bounds.extents[up] * (corner < 2 ? -1 : 1);
+                        vertices[start + corner] = colliderToWidget.MultiplyPoint3x4(vertex);
+                    }
+                    int index = quad * 6;
+                    triangles[index] = start;
+                    triangles[index + 1] = start + (face == 0 ? 2 : 1);
+                    triangles[index + 2] = start + (face == 0 ? 1 : 2);
+                    triangles[index + 3] = start;
+                    triangles[index + 4] = start + (face == 0 ? 3 : 2);
+                    triangles[index + 5] = start + (face == 0 ? 2 : 3);
                 }
             }
             Mesh mesh = m_ScalePreview.sharedMesh;
+            mesh.Clear();
             mesh.vertices = vertices;
-            mesh.triangles = new[] { 0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7 };
+            mesh.triangles = triangles;
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
         }
