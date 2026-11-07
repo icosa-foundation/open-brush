@@ -34,7 +34,7 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            if (m_Layer.gameObject.activeSelf)
+            if (!App.Scene.IsLayerDeleted(m_Layer))
             {
                 m_Layer.gameObject.SetActive(false);
                 App.Scene.MarkLayerAsDeleted(m_Layer);
@@ -48,7 +48,7 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
-            if (!m_Layer.gameObject.activeSelf)
+            if (App.Scene.IsLayerDeleted(m_Layer))
             {
                 m_Layer.gameObject.SetActive(true);
                 App.Scene.MarkLayerAsNotDeleted(m_Layer);
