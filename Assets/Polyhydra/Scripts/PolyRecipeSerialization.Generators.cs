@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -97,6 +97,14 @@ namespace TiltBrush
             string type = (string)generator["Type"];
             var p = generator["Parameters"] as JObject ?? new JObject();
             p = (JObject)p.DeepClone();
+            // Explicit dimension fields use the shared generator bridge. Do not
+            // reinterpret these recipes as the legacy x/y/z authoring controls.
+            if ((type == "torus" && p["ringRadius"] != null) ||
+                ((type == "uniform" || type == "uvSphere") && p["radius"] != null) ||
+                (type == "stairs" && p["width"] != null))
+            {
+                return (GeneratorTypes.Procedural, new Dictionary<string, object>());
+            }
             GeneratorTypes category;
             switch (type)
             {
