@@ -172,6 +172,13 @@ namespace TiltBrush
             var secondaryName = brushIsPrimary ? InputManager.ControllerName.Wand : InputManager.ControllerName.Brush;
             Vector3 primary = brushIsPrimary ? brush : wand;
             Vector3 secondary = brushIsPrimary ? wand : brush;
+            float previewDistance = Mathf.Max(0f, App.UserConfig.Widgets.ShapeScalePreviewDistance ?? .15f)
+                * App.METERS_TO_UNITS;
+            Vector3 closestPoint = m_BoxCollider.ClosestPoint(secondary);
+            if ((secondary - closestPoint).sqrMagnitude > previewDistance * previewDistance)
+            {
+                return Axis.Invalid;
+            }
             return InferManipulationAxis(primary, secondary, GetActivationScore(secondary, secondaryName) >= 0);
         }
 

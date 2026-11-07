@@ -71,6 +71,16 @@ namespace TiltBrush
         public PanelsConfig Panels;
 
         [Serializable]
+        public struct WidgetsConfig
+        {
+            // Maximum physical distance in metres from the grab box for shape
+            // axis hints before a two-handed grab. Omitted uses 0.15 metres.
+            public float? ShapeScalePreviewDistance;
+        }
+
+        public WidgetsConfig Widgets;
+
+        [Serializable]
         public struct PostProcessingFxConfig
         {
             // Null leaves bloom at its default amount of 1 for every quality level.
