@@ -37,8 +37,10 @@ namespace TiltBrush
             switch (mode)
             {
                 case SdkMode.UnityXR when App.Config.IsMobileHardware:
+                case SdkMode.VirtualInput when App.Config.IsMobileHardware:
                     return m_ModeQuest;
                 case SdkMode.UnityXR when !App.Config.IsMobileHardware:
+                case SdkMode.VirtualInput when !App.Config.IsMobileHardware:
                     return m_ModeVr;
                 case SdkMode.Monoscopic:
                     return m_ModeMono;

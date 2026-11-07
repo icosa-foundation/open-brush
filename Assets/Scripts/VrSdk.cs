@@ -90,6 +90,7 @@ namespace TiltBrush
         private VrControllers m_VrControls;
         public VrControllers VrControls { get { return m_VrControls; } }
         private bool m_HasVrFocus = true;
+        public VirtualInputSimulation VirtualSimulation { get; private set; }
 
         public PassthroughMode PassthroughMode { get; private set; } = PassthroughMode.None;
 
@@ -151,12 +152,13 @@ namespace TiltBrush
             RenderPipelineManager.beginCameraRendering += BeginQuillCameraRendering;
             RenderPipelineManager.endCameraRendering += EndQuillCameraRendering;
             bool forceMonoscopic =
-                App.UserConfig.Flags.EnableMonoscopicMode ||
-                Keyboard.current[Key.M].isPressed;
+                App.Config.m_SdkMode != SdkMode.VirtualInput &&
+                (App.UserConfig.Flags.EnableMonoscopicMode ||
+                Keyboard.current?[Key.M].isPressed == true);
 
             bool disableXr = App.Config.m_SdkMode != SdkMode.UnityXR ||
                 App.UserConfig.Flags.DisableXrMode ||
-                Keyboard.current[Key.D].isPressed;
+                Keyboard.current?[Key.D].isPressed == true;
 
             // Allow forcing of monoscopic mode even if launching in XR
             if (forceMonoscopic && !(App.Config.m_SdkMode == SdkMode.Ods))
@@ -187,7 +189,12 @@ namespace TiltBrush
                 }
             }
 
-            if (App.Config.m_SdkMode == SdkMode.UnityXR)
+            if (App.Config.m_SdkMode == SdkMode.VirtualInput)
+            {
+                SetControllerStyle(ControllerStyle.OculusTouch);
+                VirtualSimulation = new VirtualInputSimulation(m_VrCamera, m_VrControls);
+            }
+            else if (App.Config.m_SdkMode == SdkMode.UnityXR)
             {
                 InputDevices.deviceConnected += OnUnityXRDeviceConnected;
                 InputDevices.deviceDisconnected += OnUnityXRDeviceDisconnected;
@@ -283,6 +290,7 @@ namespace TiltBrush
 
         void OnDestroy()
         {
+            VirtualSimulation?.Dispose();
             RenderPipelineManager.beginCameraRendering -= BeginQuillCameraRendering;
             RenderPipelineManager.endCameraRendering -= EndQuillCameraRendering;
             UseHardwareQuillA2C = false;
@@ -703,6 +711,10 @@ namespace TiltBrush
         // - Info, which encapsulates VR APIs (OVR, SteamVR, GVR, ...)
         public ControllerInfo CreateControllerInfo(BaseControllerBehavior behavior, bool isLeftHand)
         {
+            if (App.Config.m_SdkMode == SdkMode.VirtualInput)
+            {
+                return new ProceduralControllerInfo(behavior);
+            }
             // if (App.Config.m_SdkMode == SdkMode.SteamVR)
             // {
             //     // TODO:Mikesky - set to return the default instead.
@@ -758,6 +770,7 @@ namespace TiltBrush
             switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
+                case SdkMode.VirtualInput:
                     // @bill - Won't this depend of the device?
                     return DoF.Six;
 
@@ -993,6 +1006,7 @@ namespace TiltBrush
             switch (App.Config.m_SdkMode)
             {
                 case SdkMode.UnityXR:
+                case SdkMode.VirtualInput:
                     return DoF.Six;
                 default:
                     return DoF.None;

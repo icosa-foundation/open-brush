@@ -52,6 +52,7 @@ namespace TiltBrush
         UnityXR,
         Monoscopic,
         Ods,    // Video rendering
+        VirtualInput, // Virtual head and six-DoF controllers; no XR loader or devices.
     }
 
     [Serializable]
@@ -116,6 +117,7 @@ namespace TiltBrush
 
         [Header("Startup")]
         public string m_FakeCommandLineArgsInEditor;
+        public const string VirtualInputSessionKey = "OpenBrush.ProceduralAutomation.VirtualInputMode";
 
 #if UNITY_EDITOR
         [Header("Editor testing")]
@@ -487,6 +489,10 @@ namespace TiltBrush
                 {
                     ParseUserSetting("--Flags.EnableMonoscopicMode", "true");
                 }
+                else if (args[i] == "--virtualInput")
+                {
+                    m_SdkMode = SdkMode.VirtualInput;
+                }
                 else if (args[i] == "--DisableXrMode")
                 {
                     ParseUserSetting("--Flags.DisableXrMode", "true");
@@ -568,6 +574,10 @@ namespace TiltBrush
                     UnityEngine.Debug.LogException(e);
                     Application.Quit();
                 }
+            }
+            if (UnityEditor.SessionState.GetBool(VirtualInputSessionKey, false))
+            {
+                m_SdkMode = SdkMode.VirtualInput;
             }
 #elif UNITY_ANDROID
             try

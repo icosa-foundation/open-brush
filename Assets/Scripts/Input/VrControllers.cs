@@ -14,6 +14,7 @@
 
 using UnityEngine;
 using UnityEngine.Serialization;
+using System.Collections.Generic;
 
 namespace TiltBrush
 {
@@ -122,6 +123,65 @@ namespace TiltBrush
             foreach (var comp in m_TrackingComponents)
             {
                 comp.enabled = enabled;
+            }
+        }
+
+        // A procedural demonstration owns only controller tracking; head tracking is untouched.
+        // Restore each component's original state rather than enabling previously disabled drivers.
+        public System.IDisposable SuspendPoseTracking()
+        {
+            // UnityXR prefabs still list the controller behaviours in m_TrackingComponents.
+            // Disabling those does not stop the separate TrackedPoseDrivers from writing
+            // hardware poses during Update and before rendering. Keep behaviours active
+            // and suspend the actual pose writers on both controller hierarchies.
+            var components = new List<MonoBehaviour>();
+            foreach (var component in m_TrackingComponents)
+            {
+                if (component != null && !(component is BaseControllerBehavior) && !components.Contains(component))
+                {
+                    components.Add(component);
+                }
+            }
+            foreach (var behavior in GetBehaviors())
+            {
+                foreach (var driver in behavior.GetComponentsInChildren<UnityEngine.SpatialTracking.TrackedPoseDriver>(true))
+                {
+                    if (!components.Contains(driver)) { components.Add(driver); }
+                }
+                foreach (var driver in behavior.GetComponentsInChildren<UnityEngine.InputSystem.XR.TrackedPoseDriver>(true))
+                {
+                    if (!components.Contains(driver)) { components.Add(driver); }
+                }
+            }
+            return new TrackingSuspension(components.ToArray());
+        }
+
+        private sealed class TrackingSuspension : System.IDisposable
+        {
+            private readonly MonoBehaviour[] m_Components;
+            private readonly bool[] m_Enabled;
+            private bool m_Disposed;
+
+            public TrackingSuspension(MonoBehaviour[] components)
+            {
+                m_Components = components;
+                m_Enabled = new bool[components.Length];
+                for (int i = 0; i < components.Length; ++i)
+                {
+                    if (components[i] == null) { continue; }
+                    m_Enabled[i] = components[i].enabled;
+                    components[i].enabled = false;
+                }
+            }
+
+            public void Dispose()
+            {
+                if (m_Disposed) { return; }
+                m_Disposed = true;
+                for (int i = 0; i < m_Components.Length; ++i)
+                {
+                    if (m_Components[i] != null) { m_Components[i].enabled = m_Enabled[i]; }
+                }
             }
         }
     }

@@ -642,7 +642,8 @@ namespace TiltBrush
             switch (rCommand)
             {
                 case SketchCommands.Activate:
-                    return Brush.GetCommand(rCommand) || (!isDemoMode && GetMouseButton(0));
+                    return Brush.GetCommand(rCommand) ||
+                        (!isDemoMode && App.Config.m_SdkMode != SdkMode.VirtualInput && GetMouseButton(0));
                 case SketchCommands.AltActivate:
                     return GetMouseButton(1) || Wand.GetCommand(rCommand);
                 case SketchCommands.LockToHead:
@@ -719,7 +720,7 @@ namespace TiltBrush
             switch (rCommand)
             {
                 case SketchCommands.Activate:
-                    return GetMouseButtonDown(0) || Brush.GetCommandDown(rCommand);
+                    return (App.Config.m_SdkMode != SdkMode.VirtualInput && GetMouseButtonDown(0)) || Brush.GetCommandDown(rCommand);
                 case SketchCommands.RewindTimeline:
                 case SketchCommands.AdvanceTimeline:
                 case SketchCommands.TimelineHome:
