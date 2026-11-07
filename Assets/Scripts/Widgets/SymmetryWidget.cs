@@ -439,10 +439,17 @@ namespace TiltBrush
 
         internal void SetTransformInSceneSpace(TrTransform pose)
         {
-            App.Scene.AsScene[transform] = pose;
+            // Snapshots contain scene-relative scale, which depends on the scene zoom
+            // when captured. The mirror follows scene position/rotation but keeps its
+            // physical size, so restoring that scale would resize it after a zoom.
             if (m_NonScaleChild != null)
             {
-                m_NonScaleChild.OnPosRotChanged();
+                m_NonScaleChild.PositionRotationInParentSpace = pose;
+            }
+            else
+            {
+                var globalPose = App.Scene.Pose * pose;
+                transform.SetPositionAndRotation(globalPose.translation, globalPose.rotation);
             }
         }
 
