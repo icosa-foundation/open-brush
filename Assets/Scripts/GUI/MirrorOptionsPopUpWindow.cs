@@ -114,8 +114,8 @@ namespace TiltBrush
         {
             base.Init(rParent, sText);
             RefreshMirrorControls();
-            SketchMemoryScript.m_Instance.CommandUndo += RefreshSliderValuesAfterHistory;
-            SketchMemoryScript.m_Instance.CommandRedo += RefreshSliderValuesAfterHistory;
+            SketchMemoryScript.m_Instance.CommandUndo += RefreshMirrorControlsAfterHistory;
+            SketchMemoryScript.m_Instance.CommandRedo += RefreshMirrorControlsAfterHistory;
             foreach (var slider in GetComponentsInChildren<AdvancedSlider>(true))
             {
                 slider.InteractionEnded += SymmetryMirrors.EndSettingsEdit;
@@ -129,14 +129,14 @@ namespace TiltBrush
                 slider.InteractionEnded -= SymmetryMirrors.EndSettingsEdit;
             }
             if (SketchMemoryScript.m_Instance == null) { return; }
-            SketchMemoryScript.m_Instance.CommandUndo -= RefreshSliderValuesAfterHistory;
-            SketchMemoryScript.m_Instance.CommandRedo -= RefreshSliderValuesAfterHistory;
+            SketchMemoryScript.m_Instance.CommandUndo -= RefreshMirrorControlsAfterHistory;
+            SketchMemoryScript.m_Instance.CommandRedo -= RefreshMirrorControlsAfterHistory;
         }
 
-        private void RefreshSliderValuesAfterHistory(BaseCommand command)
+        private void RefreshMirrorControlsAfterHistory(BaseCommand command)
         {
             SymmetryMirrors.EndSettingsEdit();
-            RefreshSliderValues();
+            RefreshMirrorControls();
         }
 
         private SymmetryMirror m_DisplayedMirror;
@@ -199,29 +199,51 @@ namespace TiltBrush
                     default: m_LastActiveTab = MirrorTab.Point; break;
                 }
             }
+            // Reflect restored settings without running tab-click handlers, which change
+            // symmetry settings and can record commands while undo/redo is in progress.
+            bool showingColorOptions = m_OptionsControls.activeSelf;
+            HideAllControls();
             switch (m_LastActiveTab)
             {
                 case MirrorTab.Simple:
-                    HandleShowSimpleSymmetry();
+                    m_SimpleControls?.SetActive(true);
+                    m_ButtonShowSimpleControls?.SetButtonSelected(true);
                     break;
                 case MirrorTab.Point:
-                    HandleShowPointSymmetry();
+                    m_PointSymmetryControls.SetActive(true);
+                    m_ButtonShowPointControls?.SetButtonSelected(true);
+                    UpdatePointSettingControls();
                     break;
                 case MirrorTab.Wallpaper:
-                    HandleShowWallpaperSymmetry();
+                    m_WallpaperSymmetryControls.SetActive(true);
+                    m_ButtonShowWallpaperControls?.SetButtonSelected(true);
                     break;
                 case MirrorTab.Helical:
-                    HandleShowHelicalSymmetry();
+                    m_HelicalControls.SetActive(true);
+                    m_ButtonShowHelicalControls?.SetButtonSelected(true);
                     break;
                 case MirrorTab.SpaceGroup:
-                    HandleShowSpaceGroupSymmetry();
+                    m_SpaceGroupControls.SetActive(true);
+                    m_ButtonShowSpaceGroupControls?.SetButtonSelected(true);
+                    RefreshSpaceGroupControls();
                     break;
                 case MirrorTab.LineGroup:
-                    HandleShowLineGroupSymmetry();
+                    m_LineGroupControls.SetActive(true);
+                    m_ButtonShowLineGroupControls?.SetButtonSelected(true);
+                    RefreshLineGroupControls();
                     break;
                 case MirrorTab.Penrose:
-                    HandleShowPenroseSymmetry();
+                    m_PenroseControls.SetActive(true);
+                    m_ButtonShowPenroseControls?.SetButtonSelected(true);
+                    RefreshPenroseControls();
                     break;
+            }
+            m_OptionsControls.SetActive(showingColorOptions);
+            m_ButtonShowColorControls?.SetButtonSelected(showingColorOptions);
+            if (showingColorOptions)
+            {
+                UpdateColorPreview();
+                UpdateOptionsControlsToMatchValues();
             }
             foreach (var button in GetComponentsInChildren<MirrorTypeButton>(true))
             {
@@ -825,8 +847,8 @@ namespace TiltBrush
                 PointerManager.ColorShiftComponent.Brightness => PointerManager.m_Instance.m_SymmetryColorShiftSettingBrightness,
                 _ => throw new ArgumentOutOfRangeException()
             };
-            m_OptionsSliderAmp.UpdateValueAbsolute(currentSettings.amp);
-            m_OptionsSliderFreq.UpdateValueAbsolute(currentSettings.freq);
+            m_OptionsSliderAmp.SetInitialValueAndUpdate(currentSettings.amp);
+            m_OptionsSliderFreq.SetInitialValueAndUpdate(currentSettings.freq);
             m_OptionsButtonSine.SetButtonSelected(currentSettings.mode == WaveGenerator.Mode.SineWave);
             m_OptionsButtonSquare.SetButtonSelected(currentSettings.mode == WaveGenerator.Mode.SquareWave);
             m_OptionsButtonTriangle.SetButtonSelected(currentSettings.mode == WaveGenerator.Mode.TriangleWave);
