@@ -129,17 +129,7 @@ namespace TiltBrush
 
         public override void RegisterHighlight()
         {
-            Axis axis = Axis.Invalid;
-            if (!Pinned && m_UserInteracting && m_PolyRecipe != null)
-            {
-                var secondaryName = m_InteractingController == InputManager.ControllerName.Brush
-                    ? InputManager.ControllerName.Wand : InputManager.ControllerName.Brush;
-                Vector3 primary = InputManager.Controllers[(int)m_InteractingController].Transform.position;
-                Vector3 secondary = InputManager.Controllers[(int)secondaryName].Transform.position;
-                axis = m_LockedManipulationAxis ?? InferManipulationAxis(primary, secondary,
-                    GetActivationScore(secondary, secondaryName) >= 0);
-                axis = GetScaleAxis(axis, out _, out _);
-            }
+            Axis axis = GetScalePreviewAxis();
             if (axis == Axis.Invalid)
             {
                 UnregisterScalePreview();
@@ -150,6 +140,38 @@ namespace TiltBrush
             base.UnregisterHighlight();
             UpdateScalePreview(axis);
             App.Instance.SelectionEffect.RegisterMesh(m_ScalePreview);
+        }
+
+        private Axis GetScalePreviewAxis()
+        {
+            if (Pinned || m_PolyRecipe == null) { return Axis.Invalid; }
+            if (m_LockedManipulationAxis.HasValue)
+            {
+                return GetScaleAxis(m_LockedManipulationAxis.Value, out _, out _);
+            }
+
+            Vector3 brush = InputManager.Brush.Transform.position;
+            Vector3 wand = InputManager.Wand.Transform.position;
+            var primaryName = m_InteractingController;
+            if (!m_UserInteracting)
+            {
+                // Hover must preview the gesture before either grip is pressed.
+                // The controller inside the grab box would become the first hand.
+                if (GetActivationScore(brush, InputManager.ControllerName.Brush) >= 0)
+                {
+                    primaryName = InputManager.ControllerName.Brush;
+                }
+                else if (GetActivationScore(wand, InputManager.ControllerName.Wand) >= 0)
+                {
+                    primaryName = InputManager.ControllerName.Wand;
+                }
+                else { return Axis.Invalid; }
+            }
+            bool brushIsPrimary = primaryName == InputManager.ControllerName.Brush;
+            var secondaryName = brushIsPrimary ? InputManager.ControllerName.Wand : InputManager.ControllerName.Brush;
+            Vector3 primary = brushIsPrimary ? brush : wand;
+            Vector3 secondary = brushIsPrimary ? wand : brush;
+            return InferManipulationAxis(primary, secondary, GetActivationScore(secondary, secondaryName) >= 0);
         }
 
         protected override void UnregisterHighlight()
