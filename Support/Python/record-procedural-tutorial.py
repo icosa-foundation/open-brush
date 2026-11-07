@@ -24,7 +24,7 @@ def main():
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--brush", default="", help="Optional visible brush durable name")
     parser.add_argument("--head", type=float, nargs=6, metavar=("X", "Y", "Z", "RX", "RY", "RZ"),
-                        help="Virtual head position in world metres, then rotation in degrees")
+                        help="Virtual body/head reference in world metres, then rotation in degrees")
     parser.add_argument("--timeout", type=float, default=600)
     args = parser.parse_args()
 

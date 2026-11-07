@@ -18,6 +18,7 @@ namespace TiltBrush
         private readonly IDisposable m_ControllerTracking;
         private readonly List<Behaviour> m_HeadDrivers = new List<Behaviour>();
         private readonly List<bool> m_HeadDriverStates = new List<bool>();
+        public UnityEngine.Pose BodyPose { get; private set; }
 
         public VirtualInputSimulation(Camera camera, VrControllers controllers)
         {
@@ -47,6 +48,7 @@ namespace TiltBrush
 
         public void SetHeadPose(Vector3 position, Quaternion rotation)
         {
+            BodyPose = new UnityEngine.Pose(position, rotation);
             m_Camera.transform.SetPositionAndRotation(position, rotation);
             Quaternion yaw = Quaternion.Euler(0, rotation.eulerAngles.y, 0);
             m_Controllers.Brush.transform.SetPositionAndRotation(
@@ -56,6 +58,10 @@ namespace TiltBrush
                 position + yaw * (new Vector3(-0.24f, -0.48f, 0.23f) * App.METERS_TO_UNITS),
                 Quaternion.LookRotation(Vector3.up, -(yaw * Vector3.forward)));
         }
+
+        // A filming adjustment must not move the shoulders, controllers, or authored actions.
+        public void SetFramingPose(UnityEngine.Pose pose) =>
+            m_Camera.transform.SetPositionAndRotation(pose.position, pose.rotation);
 
         public void Dispose()
         {

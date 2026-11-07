@@ -132,8 +132,12 @@ namespace TiltBrush
                 throw new ArgumentException("Panel position must be at least 0.15 metres in front of the initial view.");
             }
 
-            m_Origin = ViewpointScript.Head.position;
-            Vector3 facing = Vector3.ProjectOnPlane(ViewpointScript.Head.forward, Vector3.up);
+            var simulation = App.VrSdk.VirtualSimulation;
+            UnityEngine.Pose body = simulation == null
+                ? new UnityEngine.Pose(ViewpointScript.Head.position, ViewpointScript.Head.rotation)
+                : simulation.BodyPose;
+            m_Origin = body.position;
+            Vector3 facing = Vector3.ProjectOnPlane(body.rotation * Vector3.forward, Vector3.up);
             m_BodyRotation = Quaternion.LookRotation(facing.sqrMagnitude < 0.001f ? Vector3.forward : facing, Vector3.up);
             m_BrushArm = MakeArm(1);
             m_WandArm = MakeArm(-1);
@@ -141,7 +145,7 @@ namespace TiltBrush
             m_WandRest = new UnityEngine.Pose(Point(new Vector3(-0.24f, -0.48f, 0.23f)), InputManager.Wand.Transform.rotation);
             // Target the panel, not an arbitrary wand position. Its attachment offset can put
             // it well below the head's focus cone even when both hands can reach it.
-            Vector3 panelPosition = m_Origin + ViewpointScript.Head.rotation * (m_Settings.PanelPosition * App.METERS_TO_UNITS);
+            Vector3 panelPosition = m_Origin + body.rotation * (m_Settings.PanelPosition * App.METERS_TO_UNITS);
             Quaternion panelRotation = Quaternion.LookRotation(panelPosition - m_Origin, Vector3.up);
             Transform wand = InputManager.Wand.Transform;
             Quaternion wandRotation = panelRotation * Quaternion.Inverse(m_Panel.transform.rotation) * wand.rotation;

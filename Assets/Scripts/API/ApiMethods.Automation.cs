@@ -49,7 +49,7 @@ namespace TiltBrush
             App.Instance.GetComponent<ProceduralCapture>()?.Stop();
         }
 
-        [ApiEndpoint("automation.head", "Sets the virtual head position in world metres and rotation in degrees. Rehearsal must be stopped.", "0,1.65,0,0,0,0")]
+        [ApiEndpoint("automation.head", "Sets the virtual body/head reference in world metres and rotation in degrees. Shot framing adjusts the camera independently. Rehearsal must be stopped.", "0,1.65,0,0,0,0")]
         public static void AutomationHead(Vector3 position, Vector3 rotation)
         {
             if (App.VrSdk.VirtualSimulation == null)
