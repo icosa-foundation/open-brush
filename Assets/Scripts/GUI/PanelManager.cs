@@ -417,7 +417,10 @@ namespace TiltBrush
                     return data.m_MapKey.m_Advanced &&
                         IsPanelInEditingLevel(data, advancedPanels: true);
                 case PanelAvailabilityMode.ViewOnly:
-                    return data.m_MapKey.m_ViewOnly;
+                    return data.m_MapKey.m_ViewOnly &&
+                        (data.m_Panel.Type != BasePanel.PanelType.NativeImmPlayback ||
+                         IsPanelInEditingLevel(data,
+                             PlayerPrefs.GetInt(kPlayerPrefAdvancedMode, 0) == 1));
                 case PanelAvailabilityMode.Multiplayer:
                     return data.m_MapKey.m_Multiplayer && IsPanelInEditingLevel(data,
                         PlayerPrefs.GetInt(kPlayerPrefAdvancedMode, 0) == 1);
@@ -508,8 +511,7 @@ namespace TiltBrush
                 type == BasePanel.PanelType.AppSettings || type == BasePanel.PanelType.AppSettingsMobile ||
                 type == BasePanel.PanelType.Sketchbook || type == BasePanel.PanelType.SketchbookMobile ||
                 type == BasePanel.PanelType.Camera || type == BasePanel.PanelType.MemoryWarning ||
-                type == BasePanel.PanelType.Multiplayer || type == BasePanel.PanelType.QuillLibrary ||
-                type == BasePanel.PanelType.NativeImmPlayback;
+                type == BasePanel.PanelType.Multiplayer || type == BasePanel.PanelType.QuillLibrary;
         }
 
         // Core panels are those that exist in the basic mode experience.  Practically, those that

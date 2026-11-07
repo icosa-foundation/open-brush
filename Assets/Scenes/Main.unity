@@ -26451,6 +26451,14 @@ MonoBehaviour:
     m_Advanced: 1
     m_ViewOnly: 0
     m_Multiplayer: 0
+  - m_PanelPrefab: {fileID: 2637778658461418031, guid: 3e2e4a879f20ace48a9526f7a7c7bae1, type: 3}
+    m_ModeVr: 1
+    m_ModeMono: 1
+    m_ModeQuest: 1
+    m_Basic: 1
+    m_Advanced: 1
+    m_ViewOnly: 1
+    m_Multiplayer: 1
   - m_PanelPrefab: {fileID: 199434, guid: 6dafd36d9488aba4a998d2ef69ea2553, type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
@@ -26499,14 +26507,6 @@ MonoBehaviour:
     m_Advanced: 0
     m_ViewOnly: 1
     m_Multiplayer: 0
-  - m_PanelPrefab: {fileID: 2637778658461418031, guid: 3e2e4a879f20ace48a9526f7a7c7bae1, type: 3}
-    m_ModeVr: 1
-    m_ModeMono: 1
-    m_ModeQuest: 1
-    m_Basic: 1
-    m_Advanced: 1
-    m_ViewOnly: 1
-    m_Multiplayer: 1
   m_WandPanelsRotationFeedbackInterval: 20
   m_WandPanelsRotationScalar: 200
   m_WandPanelsRotationVelocityScalar: 7500

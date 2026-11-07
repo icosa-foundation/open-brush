@@ -38,7 +38,7 @@ namespace TiltBrush
             var pose = TrTransform.FromTransform(camera.transform);
             pose.translation += (camera.transform.forward * 0.6f - camera.transform.up * 0.15f)
                 * App.METERS_TO_UNITS;
-            SketchControlsScript.m_Instance.OpenPanelOfType(PanelType.NativeImmPlayback, pose, forced: true);
+            SketchControlsScript.m_Instance.OpenPanelOfType(PanelType.NativeImmPlayback, pose);
             return true;
         }
 

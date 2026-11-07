@@ -658,7 +658,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89e7f2b0bcf8630498a31f0f705748e4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.NativeImmPlaybackPanel
-  m_PanelType: 45
+  m_PanelType: 11601
   m_Collider: {fileID: 6531256}
   m_Mesh: {fileID: 160772}
   m_Border: {fileID: 23000010265477920}
