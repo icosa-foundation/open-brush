@@ -26453,7 +26453,7 @@ MonoBehaviour:
     m_Multiplayer: 0
   - m_PanelPrefab: {fileID: 2637778658461418031, guid: 3e2e4a879f20ace48a9526f7a7c7bae1, type: 3}
     m_ModeVr: 1
-    m_ModeMono: 1
+    m_ModeMono: 0
     m_ModeQuest: 1
     m_Basic: 1
     m_Advanced: 1

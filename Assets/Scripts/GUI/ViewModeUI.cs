@@ -7,7 +7,6 @@ public class ViewModeUI : MonoBehaviour
     public GameObject m_UiRoot;
     public GameObject m_CloseButton;
     public GameObject m_MenuButton;
-    public GameObject m_ImmPlaybackButton;
 
     // Authored in the prefab so its appearance/placement can be tweaked in the editor. Wire its
     // Button OnClick to HandleSkipPlaybackButton. Shown only while a sketch is playing back.
@@ -45,8 +44,6 @@ public class ViewModeUI : MonoBehaviour
     void Update()
     {
         UpdateArNavigationButton();
-        if (m_ImmPlaybackButton != null)
-            m_ImmPlaybackButton.SetActive(NativeImmImport.IsActive);
 
         if (m_SkipPlaybackButton == null)
         {
@@ -66,11 +63,6 @@ public class ViewModeUI : MonoBehaviour
     public void HandleSkipPlaybackButton()
     {
         App.Instance.RequestQuickLoad();
-    }
-
-    public void HandleImmPlaybackButton()
-    {
-        NativeImmPlaybackPanel.Show();
     }
 
     public void HandleArNavigationButton()

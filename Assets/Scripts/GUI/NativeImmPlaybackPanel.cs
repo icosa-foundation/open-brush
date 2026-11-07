@@ -21,24 +21,12 @@ namespace TiltBrush
         public static bool Show()
         {
             if (!NativeImmImport.IsActive || NativeImmImport.IsLoading ||
-                PanelManager.m_Instance == null || App.VrSdk == null) return false;
-            if (App.VrSdk.IsHmdInitialized() && App.Config.m_SdkMode != SdkMode.Monoscopic)
-            {
-                var admin = PanelManager.m_Instance.GetAdminPanel() as AdminPanel;
-                if (admin == null || admin.ImmPlaybackButton == null) return false;
-                SketchControlsScript.m_Instance.OpenPanelOfType(PanelType.NativeImmPlayback,
-                    TrTransform.FromTransform(admin.ImmPlaybackButton));
-                return true;
-            }
-
-            // The screen-space launcher has no world-space transform to spawn from.
-            var camera = App.VrSdk.GetVrCamera();
-            if (camera == null) return false;
-
-            var pose = TrTransform.FromTransform(camera.transform);
-            pose.translation += (camera.transform.forward * 0.6f - camera.transform.up * 0.15f)
-                * App.METERS_TO_UNITS;
-            SketchControlsScript.m_Instance.OpenPanelOfType(PanelType.NativeImmPlayback, pose);
+                PanelManager.m_Instance == null || App.VrSdk == null ||
+                !App.VrSdk.IsHmdInitialized() || App.Config.m_SdkMode == SdkMode.Monoscopic) return false;
+            var admin = PanelManager.m_Instance.GetAdminPanel() as AdminPanel;
+            if (admin == null || admin.ImmPlaybackButton == null) return false;
+            SketchControlsScript.m_Instance.OpenPanelOfType(PanelType.NativeImmPlayback,
+                TrTransform.FromTransform(admin.ImmPlaybackButton));
             return true;
         }
 
