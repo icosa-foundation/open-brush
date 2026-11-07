@@ -185,7 +185,7 @@ namespace TiltBrush
         }
 
         internal static void DrawRegionBounds(TrTransform modelToCanvas, Vector3Int min, Vector3Int max,
-            Color color)
+            Color color, float lineWidth = 0.035f)
         {
             if (!TryGetMaterial()) return;
             TrTransform pose = App.Scene.ActiveCanvas.Pose * modelToCanvas;
@@ -193,7 +193,7 @@ namespace TiltBrush
             float diameter = ((Vector3)(max - min + Vector3Int.one)).magnitude * Mathf.Abs(pose.scale);
             var worldBounds = new Bounds(pose * center, Vector3.one * Mathf.Max(diameter, 0.1f));
             DrawBox(pose, (Vector3)min - Vector3.one * 0.5f, (Vector3)max + Vector3.one * 0.5f,
-                color, 0.035f, worldBounds, ref s_BoundsProperties);
+                color, lineWidth, worldBounds, ref s_BoundsProperties);
         }
 
         public static void DrawEmptyGridBounds(TrTransform modelToCanvas, Vector3Int size)

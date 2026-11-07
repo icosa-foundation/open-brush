@@ -1057,6 +1057,11 @@ namespace TiltBrush
 
         public override void RegisterHighlight()
         {
+            if (HasVoxRegionSelection)
+            {
+                m_VoxRegionHighlightFrame = Time.frameCount;
+                return;
+            }
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.RegisterHighlight();
@@ -1071,6 +1076,7 @@ namespace TiltBrush
 
         protected override void UnregisterHighlight()
         {
+            m_VoxRegionHighlightFrame = -1;
             RestoreGsplatBrightness();
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {

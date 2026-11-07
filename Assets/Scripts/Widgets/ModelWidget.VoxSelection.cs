@@ -37,6 +37,7 @@ namespace TiltBrush
         private Vector3Int m_VoxPivot, m_VoxAnchorPivot, m_VoxTranslation, m_VoxUndoTranslation;
         private Quaternion m_VoxRotation, m_VoxUndoRotation;
         private VoxRegionDragPreview m_VoxDragPreview;
+        private int m_VoxRegionHighlightFrame = -1;
 
         internal void ApplyVoxRegionState(VoxRegionSelection state)
         {
@@ -46,6 +47,7 @@ namespace TiltBrush
             {
                 m_VoxDragPreview?.Dispose();
                 m_VoxDragPreview = null;
+                m_VoxRegionHighlightFrame = -1;
             }
             VoxSelection = state;
             UpdateVoxSaveState();
@@ -291,7 +293,11 @@ namespace TiltBrush
             Vector3Int b = Vector3Int.RoundToInt(pose * (Vector3)region.OriginalMax);
             TrTransform anchor = App.Scene.ActiveCanvas.AsCanvas[transform] *
                 VoxMeshBuilder.GetModelTransform(region.AnchorOffset, region.Model.GlobalRotation);
-            VoxEditPreviewRenderer.DrawRegionBounds(anchor, Vector3Int.Min(a, b), Vector3Int.Max(a, b), new Color(.2f, .9f, 1f, .9f));
+            // Hover requests may arrive after this widget's update, so retain one frame.
+            bool highlighted = m_VoxRegionHighlightFrame >= 0 &&
+                Time.frameCount - m_VoxRegionHighlightFrame <= 1 && !SelectionEffect.DisableSelectionEffects;
+            VoxEditPreviewRenderer.DrawRegionBounds(anchor, Vector3Int.Min(a, b), Vector3Int.Max(a, b),
+                highlighted ? Color.white : new Color(.2f, .9f, 1f, .9f), highlighted ? .07f : .035f);
         }
     }
 }
