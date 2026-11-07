@@ -232,7 +232,7 @@ namespace TiltBrush
         public void OnPacCatalogChanged()
         {
             Model model = App.IcosaAssetCatalog.GetModel(AssetId);
-            if (model != null && model.m_Valid)
+            if (model != null && model.m_Valid && (!m_Model.IsNativeImmModel || model.IsNativeImmModel))
             {
                 Model = model;
                 SetSignedWidgetSize(m_Size);
@@ -960,7 +960,7 @@ namespace TiltBrush
                 ok = false;
             }
 
-            if (!ok)
+            if (!ok && modelDatas.FilePath != null)
             {
                 ModelCatalog.m_Instance.AddMissingModel(
                     modelDatas.FilePath, modelDatas.Transforms, modelDatas.RawTransforms);
@@ -1073,28 +1073,14 @@ namespace TiltBrush
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
             if (immModel && (model == null || !model.m_Valid || !model.IsNativeImmModel))
             {
-                Model loadedImm = null;
-                float started = Time.realtimeSinceStartup;
-                while (!App.IcosaAssetCatalog.RequestImmModel(assetId, loaded => loadedImm = loaded))
-                {
-                    if (Time.realtimeSinceStartup - started > 120f) return false;
-                    await Task.Yield();
-                }
-                while (loadedImm == null && App.IcosaAssetCatalog.IsLoadingImm(assetId))
-                {
-                    if (Time.realtimeSinceStartup - started > 120f) return false;
-                    await Task.Yield();
-                }
-                if (loadedImm == null || !loadedImm.m_Valid || !loadedImm.IsNativeImmModel)
-                    return false;
-                model = loadedImm;
+                model = await LoadImmAssetTemplate(assetId);
             }
 
             if (model == null)
             {
                 // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
                 // as soon as the Icosa Asset Catalog loads it.
-                model = new Model(assetId, null);
+                model = new Model(assetId, null, nativeImmRequested: immModel);
                 model.ReleaseFromCatalog();
             }
             // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits.
@@ -1106,7 +1092,7 @@ namespace TiltBrush
                 Task t = model.LoadModelAsync();
                 await t;
             }
-            else if (!model.m_Valid)
+            else if (!model.m_Valid && !immModel)
             {
                 App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
@@ -1133,6 +1119,23 @@ namespace TiltBrush
                     playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null);
             }
             return true;
+        }
+
+        private static async Task<Model> LoadImmAssetTemplate(string assetId)
+        {
+            Model loaded = null;
+            float started = Time.realtimeSinceStartup;
+            while (!App.IcosaAssetCatalog.RequestImmModel(assetId, model => loaded = model))
+            {
+                if (Time.realtimeSinceStartup - started > 120f) return null;
+                await Task.Yield();
+            }
+            while (loaded == null && App.IcosaAssetCatalog.IsLoadingImm(assetId))
+            {
+                if (Time.realtimeSinceStartup - started > 120f) return null;
+                await Task.Yield();
+            }
+            return loaded != null && loaded.m_Valid && loaded.IsNativeImmModel ? loaded : null;
         }
 
         override public bool HasGPUIntersectionObject()

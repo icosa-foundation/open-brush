@@ -227,6 +227,7 @@ namespace TiltBrush
         private HashSet<string> m_AppliedMeshSplits;
 
         private Location m_Location;
+        private readonly bool m_NativeImmRequested;
 
         // Can the geometry in this model be exported.
         private bool m_AllowExport;
@@ -236,7 +237,7 @@ namespace TiltBrush
         // Store SVG scene info for SVG models (persists across instantiation)
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
 
-        public bool IsNativeImmModel => m_Location.Extension == ".imm";
+        public bool IsNativeImmModel => m_NativeImmRequested || m_Location.Extension == ".imm";
         public bool IsGsplatModel { get; private set; }
         private GsplatAsset m_OwnedGsplatAsset;
 
@@ -306,9 +307,11 @@ namespace TiltBrush
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
-        public Model(string assetId, string path)
+        public Model(string assetId, string path, bool nativeImmRequested = false)
         {
             m_Location = Location.IcosaAsset(assetId, path);
+            // A pending gallery model has no path yet, but must retain its requested representation.
+            m_NativeImmRequested = nativeImmRequested;
             Init();
         }
 

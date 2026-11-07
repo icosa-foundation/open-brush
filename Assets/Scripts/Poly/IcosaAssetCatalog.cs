@@ -874,6 +874,7 @@ namespace TiltBrush
                     m_ModelsByAssetId[assetId] = model;
                     if (displaced != null && !ReferenceEquals(displaced, model))
                         displaced.ReleaseFromCatalog();
+                    m_NotifyListeners = true;
                     onReady?.Invoke(model);
                 });
             }
