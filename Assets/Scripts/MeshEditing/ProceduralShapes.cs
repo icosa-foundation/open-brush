@@ -17,10 +17,21 @@ namespace TiltBrush.MeshEditing
         public static readonly string[] PresetNames =
         {
             "Box", "Panel", "Frame",
-            "Cylinder", "Capsule"
+            "Cylinder", "Capsule", "Sphere", "Torus", "Platonic", "Stairs"
         };
 
         public static bool IsPresetVisible(int preset) => preset >= 0 && preset < PresetNames.Length;
+
+        public static string DisplayName(GeometryRecipeData recipe)
+        {
+            string type = (string)recipe.ToJson()["Generator"]?["Type"];
+            return type switch
+            {
+                "uniform" => "Platonic solid",
+                "uvSphere" => "Sphere",
+                _ => string.IsNullOrEmpty(type) ? "Shape" : $"{char.ToUpperInvariant(type[0])}{type.Substring(1)}"
+            };
+        }
 
         // Axis gestures edit dimensions, not the final mesh scale.
         private static string AxisDimension(GeometryRecipeData recipe, GrabWidget.Axis axis)
@@ -28,6 +39,16 @@ namespace TiltBrush.MeshEditing
             if (recipe == null) { return null; }
             recipe.GetSteps(out var generator, out var modifiers);
             if (modifiers.Any(step => step.Type == "transform" || step.Type == "bend")) { return null; }
+            if (generator.Type == "torus" && generator.Parameters.ContainsKey("ringRadius"))
+            {
+                return axis == GrabWidget.Axis.Y ? "tubeRadius"
+                    : axis == GrabWidget.Axis.X || axis == GrabWidget.Axis.Z ? "ringRadius" : null;
+            }
+            if (generator.Type == "stairs" && generator.Parameters.ContainsKey("width"))
+            {
+                return axis == GrabWidget.Axis.X ? "width" : axis == GrabWidget.Axis.Y ? "height"
+                    : axis == GrabWidget.Axis.Z ? "depth" : null;
+            }
             if (generator.Type == "cylinder" || generator.Type == "capsule")
             {
                 if (axis == GrabWidget.Axis.Y) { return generator.Type == "cylinder" ? "height" : "cylinderHeight"; }
@@ -62,7 +83,7 @@ namespace TiltBrush.MeshEditing
         {
             string dimension = AxisDimension(recipe, axis);
             if (dimension == null) { return 0; }
-            if (dimension == "radius" ||
+            if (dimension == "radius" || dimension == "ringRadius" ||
                 (dimension == "radial" && !ellipse && !IsElliptical(recipe)))
             {
                 return (1 << (int)GrabWidget.Axis.X) | (1 << (int)GrabWidget.Axis.Z);
@@ -100,6 +121,12 @@ namespace TiltBrush.MeshEditing
             }
             var generator = (JObject)recipe.ToJson()["Generator"];
             var parameters = generator["Parameters"];
+            if (dimension == "ringRadius" || dimension == "tubeRadius")
+            {
+                float tube = (float?)parameters?["tubeRadius"] ?? .04f;
+                float ring = (float?)parameters?["ringRadius"] ?? .11f;
+                return dimension == "ringRadius" ? (2f * tube + .0001f) / (ring + tube) : .0001f / tube;
+            }
             if (dimension == "cylinderHeight")
             {
                 float caps = 2f * ((float?)parameters?["radius"] ?? 1f);
@@ -124,7 +151,15 @@ namespace TiltBrush.MeshEditing
 
         public static float MaximumAxisResizeRatio(GeometryRecipeData recipe, GrabWidget.Axis axis)
         {
-            if (AxisDimension(recipe, axis) != "radius") { return float.PositiveInfinity; }
+            string dimension = AxisDimension(recipe, axis);
+            if (dimension == "tubeRadius")
+            {
+                var torus = recipe.ToJson()["Generator"]?["Parameters"];
+                float tube = (float?)torus?["tubeRadius"] ?? .04f;
+                float ring = (float?)torus?["ringRadius"] ?? .11f;
+                return (ring + tube - .0001f) / (2f * tube);
+            }
+            if (dimension != "radius") { return float.PositiveInfinity; }
             var parameters = recipe.ToJson()["Generator"]?["Parameters"];
             float radius = (float?)parameters?["radius"] ?? 1f;
             float body = (float?)parameters?["cylinderHeight"] ?? 2f;
@@ -151,6 +186,25 @@ namespace TiltBrush.MeshEditing
             {
                 parameters = new JObject();
                 generator["Parameters"] = parameters;
+            }
+            if (dimension == "ringRadius" || dimension == "tubeRadius")
+            {
+                float ring = (float?)parameters["ringRadius"] ?? .11f;
+                float tube = (float?)parameters["tubeRadius"] ?? .04f;
+                float outer = ring + tube;
+                if (dimension == "ringRadius")
+                {
+                    ring = Mathf.Max(tube + .0001f, outer * ratio - tube);
+                    if (float.IsInfinity(ring)) { throw new ArgumentOutOfRangeException(nameof(ratio)); }
+                }
+                else
+                {
+                    tube = Mathf.Clamp(tube * ratio, .0001f, (outer - .0001f) * .5f);
+                    ring = outer - tube;
+                }
+                parameters["ringRadius"] = ring;
+                parameters["tubeRadius"] = tube;
+                return new GeometryRecipeData(data);
             }
             if (dimension == "radial")
             {
@@ -273,7 +327,10 @@ namespace TiltBrush.MeshEditing
                 case 2: type = "frame"; p = new JObject { ["width"] = .4f, ["height"] = .3f, ["borderWidth"] = .03f, ["radius"] = .025f }; break;
                 case 3: type = "cylinder"; p = new JObject { ["height"] = .3f, ["bottomRadius"] = .15f, ["topRadius"] = .15f }; break;
                 case 4: type = "capsule"; p = new JObject { ["cylinderHeight"] = .2f, ["radius"] = .1f }; break;
-                case 5: type = "conic"; p = new JObject { ["radius"] = .15f, ["majorAxis"] = .15f, ["minorAxis"] = .15f, ["centerOffset"] = 0f }; break;
+                case 5: type = "uvSphere"; p = new JObject { ["radius"] = .15f, ["longitudeSegments"] = 24, ["latitudeSegments"] = 12, ["hemisphere"] = false }; break;
+                case 6: type = "torus"; p = new JObject { ["ringRadius"] = .11f, ["tubeRadius"] = .04f, ["sweepAngle"] = 360f, ["pathSegments"] = 32, ["tubeSegments"] = 12 }; break;
+                case 7: type = "uniform"; p = new JObject { ["solid"] = "Dodecahedron", ["radius"] = .15f }; break;
+                case 8: type = "stairs"; p = new JObject { ["width"] = .3f, ["height"] = .3f, ["depth"] = .4f, ["steps"] = 6 }; break;
                 default: throw new ArgumentOutOfRangeException(nameof(preset));
             }
             return new GeometryRecipeData(new JObject
@@ -283,7 +340,7 @@ namespace TiltBrush.MeshEditing
                 ["Modifiers"] = preset == 2
                     ? new JArray(Step("operator", new JObject { ["operation"] = "Shell", ["amount"] = .02f, ["active"] = true }))
                     : new JArray(),
-                ["PostProcessing"] = new JObject { ["AutoSmoothAngle"] = preset >= 3 ? 60f : 0f }
+                ["PostProcessing"] = new JObject { ["AutoSmoothAngle"] = preset >= 3 && preset <= 6 ? 60f : 0f }
             });
         }
 
@@ -333,6 +390,26 @@ namespace TiltBrush.MeshEditing
                     AddRevolution(result);
                     result.Add(Number("capSegments", "Cap segments", 2, 32, 8, true));
                     break;
+                case "torus":
+                    result.Add(Number("sweepAngle", "Sweep (degrees)", 1, 360, 360));
+                    result.Add(Number("pathSegments", "Ring segments", 3, 96, 32, true));
+                    result.Add(Number("tubeSegments", "Tube segments", 3, 32, 12, true));
+                    break;
+                case "uniform":
+                    result.Add(new Parameter
+                    {
+                        Name = "solid", Label = "Solid", Min = 0, Max = 4, Integer = true,
+                        Choices = new[] { "Tetrahedron", "Cube", "Octahedron", "Dodecahedron", "Icosahedron" }
+                    });
+                    break;
+                case "uvSphere":
+                    result.Add(Number("longitudeSegments", "Longitude segments", 3, 24, 24, true));
+                    result.Add(Number("latitudeSegments", "Latitude segments", 4, 24, 12, true));
+                    result.Add(new Parameter { Name = "hemisphere", Label = "Hemisphere", Min = 0, Max = 1, Integer = true, Boolean = true });
+                    break;
+                case "stairs":
+                    result.Add(Number("steps", "Steps", 1, 32, 6, true));
+                    break;
                 case "conic":
                     // Retained for imports and saved recipes, without authoring controls.
                     return result;
@@ -380,6 +457,23 @@ namespace TiltBrush.MeshEditing
                     data["PostProcessing"] = postProcessing;
                 }
                 postProcessing["AutoSmoothAngle"] = value >= .5f ? 60f : 0f;
+                if ((string)data["Generator"]?["Type"] == "uniform")
+                {
+                    var bevelControl = Operation("operator", "amount", "Bevel", 0, .5f, "Bevel");
+                    var bevel = FindStep(data, bevelControl);
+                    if (value >= .5f)
+                    {
+                        if (bevel == null)
+                        {
+                            var bevelModifiers = data["Modifiers"] as JArray ?? new JArray();
+                            data["Modifiers"] = bevelModifiers;
+                            int bevelInsert = bevelModifiers.TakeWhile(op => (string)op["Type"] != "transform").Count();
+                            bevelModifiers.Insert(bevelInsert, Step("operator", new JObject { ["operation"] = "Bevel", ["amount"] = .08f, ["active"] = true }));
+                        }
+                        else { bevel["Parameters"]["active"] = true; }
+                    }
+                    else { bevel?.Remove(); }
+                }
                 var generatorParameters = data["Generator"]?["Parameters"] as JObject;
                 generatorParameters?.Remove("smooth");
                 generatorParameters?.Remove("smoothSides");

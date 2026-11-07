@@ -135,7 +135,7 @@ namespace TiltBrush
                 ? ProceduralShapes.GetParameters(m_DisplayedRecipe, EllipseEnabled) : new List<ProceduralShapes.Parameter>();
             int pages = Mathf.Max(1, Mathf.CeilToInt((float)m_Parameters.Count / m_ParameterSliders.Length));
             m_Page = Mathf.Clamp(m_Page, 0, pages - 1);
-            m_TargetLabel.text = m_Target != null ? $"Editing: {(string)m_DisplayedRecipe.ToJson()["Generator"]["Type"]}" : "Create a shape or point at one";
+            m_TargetLabel.text = m_Target != null ? $"Editing: {ProceduralShapes.DisplayName(m_DisplayedRecipe)}" : "Create a shape or point at one";
             m_PageLabel.text = m_Parameters.Count > 0 ? $"{m_Page + 1} / {pages}" : "";
             m_StatusLabel.text = "";
             m_PreviousPage.SetButtonAvailable(m_Parameters.Count > 0 && m_Page > 0);
