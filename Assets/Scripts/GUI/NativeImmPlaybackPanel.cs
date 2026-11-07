@@ -17,16 +17,17 @@ namespace TiltBrush
         [SerializeField] private QuillChapterNavButton m_NextViewpointButton;
         [SerializeField] private QuillChapterNavButton m_ContinueButton;
 
-        /// <summary>Use the same launcher and placement as the VR admin panel button.</summary>
+        /// <summary>Open from the wand using the normal floating-panel placement.</summary>
         public static bool Show()
         {
             if (!NativeImmImport.IsActive || NativeImmImport.IsLoading ||
                 PanelManager.m_Instance == null || App.VrSdk == null ||
-                !App.VrSdk.IsHmdInitialized() || App.Config.m_SdkMode == SdkMode.Monoscopic) return false;
-            var admin = PanelManager.m_Instance.GetAdminPanel() as AdminPanel;
-            if (admin == null || admin.ImmPlaybackButton == null) return false;
+                !App.VrSdk.IsHmdInitialized() || App.Config.m_SdkMode == SdkMode.Monoscopic ||
+                InputManager.m_Instance == null) return false;
+            var wand = InputManager.m_Instance.GetController(InputManager.ControllerName.Wand);
+            if (wand == null) return false;
             SketchControlsScript.m_Instance.OpenPanelOfType(PanelType.NativeImmPlayback,
-                TrTransform.FromTransform(admin.ImmPlaybackButton));
+                TrTransform.FromTransform(wand));
             return true;
         }
 

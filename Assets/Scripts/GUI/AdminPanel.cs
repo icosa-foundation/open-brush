@@ -46,7 +46,6 @@ namespace TiltBrush
         [SerializeField] GameObject m_MemoryWarningButton;
         [SerializeField] Color m_MemoryWarningColor;
         [SerializeField] GameObject m_MultiplayerButton;
-        [SerializeField] GameObject m_ImmPlaybackButton;
         [SerializeField] float m_ButtonRotationAngle = 45f;
 
         [SerializeField] LocalizedString m_ShareButtonLoggedOutExtraText;
@@ -57,7 +56,6 @@ namespace TiltBrush
         private Vector3 m_MemoryWarningBaseScale;
 
         public Transform ShareButton { get { return m_ShareButton.transform; } }
-        public Transform ImmPlaybackButton => m_ImmPlaybackButton != null ? m_ImmPlaybackButton.transform : null;
         public Transform AdvancedButton { get { return m_AdvancedModeButton.transform; } }
         public HintObjectScript AdvancedModeHintObject { get { return m_AdvancedModeHintObject; } }
         public bool SupportsAdvancedModePromo
@@ -124,14 +122,6 @@ namespace TiltBrush
         void Update()
         {
             BaseUpdate();
-
-            if (m_ImmPlaybackButton != null)
-            {
-                bool immSketch = NativeImmImport.IsActive;
-                m_ImmPlaybackButton.SetActive(immSketch);
-                if (m_WhatsNewButton != null)
-                    m_WhatsNewButton.gameObject.SetActive(!immSketch);
-            }
 
             // Update save buttons availability.
             bool alreadySaved = SaveLoadScript.m_Instance.SceneFile.Valid &&
