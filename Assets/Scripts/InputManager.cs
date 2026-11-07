@@ -309,14 +309,15 @@ namespace TiltBrush
         public string ProceduralAutomationStatus => m_ProceduralAutomation?.Status ?? "Stopped";
         public string ProceduralAutomationError { get; private set; }
 
-        public void StartProceduralAutomation(BaseButton button, ProceduralAutomation.Settings settings)
+        public void StartProceduralAutomation(BaseButton button, ProceduralAutomation.Settings settings,
+            Func<ProceduralAutomation.Settings, UnityEngine.Pose, ProceduralAction> actionFactory = null)
         {
             if (m_ProceduralAutomation != null)
             {
                 throw new InvalidOperationException("A procedural demonstration already owns the controllers.");
             }
             ProceduralAutomationError = null;
-            try { m_ProceduralAutomation = new ProceduralAutomation(button, settings); }
+            try { m_ProceduralAutomation = new ProceduralAutomation(button, settings, actionFactory); }
             catch (Exception exception)
             {
                 ProceduralAutomationError = exception.Message;

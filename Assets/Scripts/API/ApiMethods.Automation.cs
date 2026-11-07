@@ -69,7 +69,8 @@ namespace TiltBrush
             return RecordProceduralAutomation(ProceduralAutomation.FindBrushButton(brush), ProceduralAutomation.Settings.FromUserConfig(), filename, fps);
         }
 
-        public static string RecordProceduralAutomation(BaseButton button, ProceduralAutomation.Settings settings, string filename, int fps)
+        public static string RecordProceduralAutomation(BaseButton button, ProceduralAutomation.Settings settings, string filename, int fps,
+            Func<ProceduralAutomation.Settings, UnityEngine.Pose, ProceduralAction> actionFactory = null)
         {
             if (InputManager.m_Instance.ProceduralAutomationStatus != "Stopped")
             {
@@ -80,7 +81,7 @@ namespace TiltBrush
             try
             {
                 string path = capture.Begin(filename, fps);
-                InputManager.m_Instance.StartProceduralAutomation(button, settings);
+                InputManager.m_Instance.StartProceduralAutomation(button, settings, actionFactory);
                 return path;
             }
             catch (Exception exception)

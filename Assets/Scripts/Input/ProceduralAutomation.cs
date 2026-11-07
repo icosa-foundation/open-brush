@@ -53,10 +53,11 @@ namespace TiltBrush
             }
         }
 
-        private enum Phase { RaiseWand, Aim, Hover, Press, Release, ApproachStroke, Draw, Inspect, Rest, Finish }
+        private enum Phase { RaiseWand, Aim, Hover, Press, Release, Withdraw, WaitForButton, ApproachAction, Contact, Act, Inspect, Rest, Finish }
         private const string kLogPrefix = "[ProceduralAutomation]";
         private readonly Settings m_Settings;
-        private readonly BaseButton m_Button;
+        private BaseButton m_Button;
+        private readonly ProceduralAction m_Action;
         private readonly BasePanel m_Panel;
         private readonly ControllerInfo[] m_Original;
         private readonly ProceduralControllerInfo[] m_Simulated;
@@ -68,6 +69,8 @@ namespace TiltBrush
         private readonly Quaternion m_BodyRotation;
         private readonly Vector3 m_TipOffset;
         private readonly Quaternion m_TipRotation;
+        private readonly Vector3 m_ActionOffset;
+        private readonly Quaternion m_ActionRotation;
         private readonly ProceduralArm m_BrushArm;
         private readonly ProceduralArm m_WandArm;
         private readonly UnityEngine.Pose m_BrushRest;
@@ -83,8 +86,9 @@ namespace TiltBrush
         private int m_ReleaseFrames;
         private int m_PhaseFrames;
         private bool m_Disposed;
+        private bool m_FollowUpSelected;
 
-        public string Status => m_Phase.ToString();
+        public string Status => m_Phase == Phase.Act ? m_Action.Name : m_Phase.ToString();
         public string Error { get; private set; }
         public AutomationShot Shot { get; private set; }
 
@@ -99,7 +103,8 @@ namespace TiltBrush
                 .FirstOrDefault();
         }
 
-        public ProceduralAutomation(BaseButton button, Settings settings)
+        public ProceduralAutomation(BaseButton button, Settings settings,
+            Func<Settings, UnityEngine.Pose, ProceduralAction> actionFactory = null)
         {
             if (!Application.isPlaying || App.CurrentState != App.AppState.Standard ||
                 SketchControlsScript.m_Instance.ActiveControlsType != SketchControlsScript.ControlsType.SixDofControllers)
@@ -144,6 +149,8 @@ namespace TiltBrush
             UnityEngine.Pose body = simulation == null
                 ? new UnityEngine.Pose(ViewpointScript.Head.position, ViewpointScript.Head.rotation)
                 : simulation.BodyPose;
+            m_Action = actionFactory == null ? new DrawStrokeAction(m_Settings, body) : actionFactory(m_Settings, body);
+            ValidatePositive(m_Action.DurationSeconds, "Action duration", 0.3f, 60);
             m_Origin = body.position;
             Vector3 facing = Vector3.ProjectOnPlane(body.rotation * Vector3.forward, Vector3.up);
             m_BodyRotation = Quaternion.LookRotation(facing.sqrMagnitude < 0.001f ? Vector3.forward : facing, Vector3.up);
@@ -163,11 +170,15 @@ namespace TiltBrush
             Transform tip = InputManager.Brush.Behavior.PointerAttachPoint;
             m_TipOffset = Quaternion.Inverse(root.rotation) * (tip.position - root.position);
             m_TipRotation = Quaternion.Inverse(root.rotation) * tip.rotation;
+            Transform contact = m_Action.UsesToolAttachment ? InputManager.Brush.Geometry.ToolAttachPoint : tip;
+            m_ActionOffset = Quaternion.Inverse(root.rotation) *
+                (contact.position + contact.forward * m_Action.ToolForwardOffset - root.position);
+            m_ActionRotation = Quaternion.Inverse(root.rotation) * contact.rotation;
             // Fail before taking input ownership if any of the authored drawing positions is unreachable.
             m_BrushArm.Solve(m_BrushRest.position, m_BrushRest.rotation);
             m_WandArm.Solve(m_WandRest.position, m_WandRest.rotation);
             m_WandArm.Solve(m_WandRaised.position, m_WandRaised.rotation);
-            for (int i = 0; i <= 64; ++i) { StrokePose(i / 64f); }
+            for (int i = 0; i <= 64; ++i) { ActionPose(i / 64f); }
 
             m_Original = (ControllerInfo[])InputManager.Controllers.Clone();
             m_Simulated = new ProceduralControllerInfo[m_Original.Length];
@@ -234,41 +245,60 @@ namespace TiltBrush
         // buttons, controllers or drawing. Future actions can supply their own subjects.
         private AutomationShot DeclareShot(Vector3 panelPosition, Quaternion panelRotation)
         {
-            var shot = new AutomationShot("Panel interaction and drawing");
+            var shot = new AutomationShot($"Panel interaction and {m_Action.Name}");
             var panelSubject = shot.AddSubject("Presented wand panel");
             var panelPose = new UnityEngine.Pose(panelPosition, panelRotation);
             panelSubject.AddPose(panelPose, AutomationShot.CaptureLocalBounds(m_Panel.transform,
                 m_Panel.GetComponentsInChildren<Renderer>()));
 
-            Vector3 buttonOffset = Quaternion.Inverse(m_Panel.transform.rotation) *
-                (m_Button.GetCollider().bounds.center - m_Panel.transform.position);
-            Vector3 target = panelPosition + panelRotation * buttonOffset;
-            panelSubject.AddPoint(target);
-            Vector3 forward = panelRotation * Vector3.forward;
-            var aimed = RootForTip(target - forward * (0.18f * App.METERS_TO_UNITS),
-                Quaternion.LookRotation(forward, m_BodyRotation * Vector3.up));
+            var aimed = PresentedButtonPose(m_Button, panelPose);
             var aimJoints = m_BrushArm.Solve(aimed.position, aimed.rotation);
+            var finalAimJoints = aimJoints;
             var startJoints = m_BrushArm.Solve(m_BrushPose.position, m_BrushPose.rotation);
-            var strokeStart = StrokePose(0);
+            var restJoints = m_BrushArm.Solve(m_BrushRest.position, m_BrushRest.rotation);
+            if (m_Action.FollowUpButton != null)
+            {
+                if (m_Action.FollowUpButton.GetComponentInParent<BasePanel>() != m_Panel)
+                {
+                    throw new InvalidOperationException("This action's follow-up selection must be on the presented panel.");
+                }
+                var followUp = PresentedButtonPose(m_Action.FollowUpButton, panelPose);
+                finalAimJoints = m_BrushArm.Solve(followUp.position, followUp.rotation);
+            }
+            var strokeStart = ActionPose(0);
             var strokeJoints = m_BrushArm.Solve(strokeStart.position, strokeStart.rotation);
-            var brushSubject = shot.AddSubject("Pointing and drawing controller");
+            var brushSubject = shot.AddSubject("Interacting controller");
             List<Vector3> brushBounds = ControllerBounds(InputManager.Brush);
             for (int i = 0; i <= 32; ++i)
             {
                 float t = i / 32f;
                 brushSubject.AddPose(m_BrushArm.Reach(startJoints, aimJoints, t), brushBounds);
-                brushSubject.AddPose(m_BrushArm.Reach(aimJoints, strokeJoints, t), brushBounds);
-                brushSubject.AddPose(StrokePose(t), brushBounds);
+                if (m_Action.FollowUpButton != null)
+                {
+                    brushSubject.AddPose(m_BrushArm.Reach(aimJoints, restJoints, t), brushBounds);
+                    brushSubject.AddPose(m_BrushArm.Reach(restJoints, finalAimJoints, t), brushBounds);
+                }
+                brushSubject.AddPose(m_BrushArm.Reach(finalAimJoints, strokeJoints, t), brushBounds);
+                brushSubject.AddPose(ActionPose(t), brushBounds);
             }
             // The support hand is needed while presenting the panel, rather than while
             // returning it to rest below the viewer's attention.
             panelSubject.AddPose(m_WandRaised, ControllerBounds(InputManager.Wand));
-            var strokeSubject = shot.AddSubject("Complete stroke");
-            float footprint = Mathf.Max(PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
-                0.02f * App.METERS_TO_UNITS);
-            strokeSubject.AddBounds(AutomationShot.CubicBounds(Point(m_Settings.StrokeStart),
-                Point(m_Settings.StrokeControl1), Point(m_Settings.StrokeControl2), Point(m_Settings.StrokeEnd), footprint));
+            m_Action.DeclareSubjects(shot, panelPose);
             return shot;
+        }
+
+        private UnityEngine.Pose PresentedButtonPose(BaseButton button, UnityEngine.Pose panelPose)
+        {
+            Collider collider = button.GetCollider();
+            BaseTray tray = button.GetComponentInParent<BaseTray>();
+            Vector3 centre = tray != null && collider is BoxCollider box
+                ? tray.ExpandedWorldPoint(box.transform, box.center) : collider.bounds.center;
+            Vector3 offset = Quaternion.Inverse(m_Panel.transform.rotation) * (centre - m_Panel.transform.position);
+            Vector3 target = panelPose.position + panelPose.rotation * offset;
+            Vector3 forward = panelPose.rotation * Vector3.forward;
+            return RootForTip(target - forward * (0.18f * App.METERS_TO_UNITS),
+                Quaternion.LookRotation(forward, m_BodyRotation * Vector3.up));
         }
 
         private static List<Vector3> ControllerBounds(ControllerInfo controller)
@@ -302,13 +332,11 @@ namespace TiltBrush
             return pose;
         }
 
-        private UnityEngine.Pose StrokePose(float t)
+        private UnityEngine.Pose ActionPose(float t)
         {
-            Vector3 tip = Point(ProceduralArm.Bezier(m_Settings.StrokeStart, m_Settings.StrokeControl1,
-                m_Settings.StrokeControl2, m_Settings.StrokeEnd, t));
-            // Deliberate gradual wrist roll; no uncorrelated controller noise.
-            Quaternion rotation = m_BodyRotation * Quaternion.Euler(12, -8 + 16 * t, -12 + 24 * t);
-            var pose = RootForTip(tip, rotation);
+            UnityEngine.Pose contact = m_Action.ContactPose(t);
+            Quaternion rotation = contact.rotation * Quaternion.Inverse(m_ActionRotation);
+            var pose = new UnityEngine.Pose(contact.position - rotation * m_ActionOffset, rotation);
             return m_BrushArm.Evaluate(m_BrushArm.Solve(pose.position, pose.rotation));
         }
 
@@ -354,7 +382,7 @@ namespace TiltBrush
                 m_Elapsed += deltaTime;
                 ++m_PhaseFrames;
                 float progress = Mathf.Clamp01(m_Elapsed / m_Settings.ReachSeconds);
-                if (m_Phase != Phase.Finish && (m_Button == null || !m_Button.isActiveAndEnabled ||
+                if (m_Phase != Phase.Finish && m_Phase != Phase.WaitForButton && (m_Button == null || !m_Button.isActiveAndEnabled ||
                     !m_Panel.m_Fixed || !m_Button.IsAvailable()))
                 {
                     throw new InvalidOperationException("The target panel/button became unavailable.");
@@ -405,30 +433,68 @@ namespace TiltBrush
                         if (m_Elapsed >= m_Settings.PauseSeconds)
                         {
                             if (!m_ClickAccepted) { throw new InvalidOperationException("The panel did not accept the simulated click."); }
-                            if (SketchSurfacePanel.m_Instance.GetCurrentToolType() != BaseTool.ToolType.FreePaintTool)
+                            if (SketchSurfacePanel.m_Instance.GetCurrentToolType() != m_Action.RequiredTool)
                             {
-                                throw new InvalidOperationException("The button changed tools. Choose a brush button for this drawing rehearsal.");
+                                throw new InvalidOperationException($"The selection did not activate {m_Action.RequiredTool}.");
                             }
-                            Next(Phase.ApproachStroke);
+                            if (!m_FollowUpSelected && m_Action.FollowUpButton != null) { Next(Phase.Withdraw); }
+                            else
+                            {
+                                m_Action.ValidateSelection();
+                                Next(Phase.ApproachAction);
+                            }
                         }
                         break;
-                    case Phase.ApproachStroke:
-                        var start = StrokePose(0);
+                    case Phase.Withdraw:
+                        m_BrushPose = m_BrushArm.Reach(m_ReachStart,
+                            m_BrushArm.Solve(m_BrushRest.position, m_BrushRest.rotation), progress);
+                        if (progress >= 1)
+                        {
+                            m_Button.Pressed -= OnButtonPressed;
+                            m_Button = m_Action.FollowUpButton;
+                            if (m_Button.GetComponentInParent<BasePanel>() != m_Panel)
+                            {
+                                throw new InvalidOperationException("This action's follow-up selection must be on the presented panel.");
+                            }
+                            m_Button.Pressed += OnButtonPressed;
+                            m_ClickAccepted = false;
+                            m_FollowUpSelected = true;
+                            Next(Phase.WaitForButton);
+                        }
+                        break;
+                    case Phase.WaitForButton:
+                        Collider collider = m_Button.GetCollider();
+                        if (m_Button.isActiveAndEnabled && collider.enabled && collider.bounds.size.sqrMagnitude > 0.000001f)
+                        {
+                            Next(Phase.Aim);
+                        }
+                        else if (m_Elapsed > 5) { throw new InvalidOperationException("The follow-up tool controls did not become visible."); }
+                        break;
+                    case Phase.ApproachAction:
+                        var start = ActionPose(0);
                         m_BrushPose = m_BrushArm.Reach(m_ReachStart, m_BrushArm.Solve(start.position, start.rotation), progress);
                         m_WandPose = m_WandArm.Reach(m_WandArm.Solve(m_WandRaised.position, m_WandRaised.rotation),
                             m_WandArm.Solve(m_WandRest.position, m_WandRest.rotation), progress);
-                        if (progress >= 1) { Next(Phase.Draw); }
+                        if (progress >= 1) { Next(m_Action.ContactPauseSeconds > 0 ? Phase.Contact : Phase.Act); }
                         break;
-                    case Phase.Draw:
+                    case Phase.Contact:
+                        m_BrushPose = ActionPose(0);
+                        if (m_Elapsed >= m_Action.ContactPauseSeconds) { Next(Phase.Act); }
+                        break;
+                    case Phase.Act:
                         // Start with the exact first point for one full input frame.
                         if (m_PhaseFrames == 1) { m_Elapsed = 0; }
-                        float t = Mathf.Clamp01(m_Elapsed / m_Settings.DrawSeconds);
-                        m_BrushPose = StrokePose(ProceduralArm.MinimumJerk(t));
+                        float t = Mathf.Clamp01(m_Elapsed / m_Action.DurationSeconds);
+                        m_BrushPose = ActionPose(ProceduralArm.MinimumJerk(t));
                         trigger = true;
                         if (t >= 1) { Next(Phase.Inspect); }
                         break;
                     case Phase.Inspect:
-                        if (m_Elapsed >= m_Settings.PauseSeconds) { Next(Phase.Rest); }
+                        if (m_Elapsed >= m_Settings.PauseSeconds)
+                        {
+                            m_Action.ValidateResult();
+                            Next(Phase.Rest);
+                        }
                         break;
                     case Phase.Rest:
                         m_BrushPose = m_BrushArm.Reach(m_ReachStart,

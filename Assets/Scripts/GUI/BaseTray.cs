@@ -40,28 +40,38 @@ namespace TiltBrush
         // geometry without showing it, changing animation state, or inverting a zero scale.
         public IEnumerable<Vector3> ExpandedRendererPoints()
         {
+            foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer is LineRenderer) { continue; }
+                Matrix4x4 expanded = ExpandedMatrix(renderer.transform);
+                Bounds bounds = renderer.localBounds;
+                for (int i = 0; i < 8; ++i)
+                {
+                    Vector3 corner = new Vector3((i & 1) == 0 ? bounds.min.x : bounds.max.x,
+                        (i & 2) == 0 ? bounds.min.y : bounds.max.y, (i & 4) == 0 ? bounds.min.z : bounds.max.z);
+                    yield return expanded.MultiplyPoint3x4(corner);
+                }
+            }
+        }
+
+        public Vector3 ExpandedWorldPoint(Transform child, Vector3 localPoint) =>
+            ExpandedMatrix(child).MultiplyPoint3x4(localPoint);
+
+        private Matrix4x4 ExpandedMatrix(Transform child)
+        {
             Vector3 position = transform.localPosition;
             position.x = m_BaseLocalX;
             Vector3 scale = transform.localScale;
             scale.x = m_AnimateRange.y;
             Matrix4x4 expanded = (transform.parent == null ? Matrix4x4.identity : transform.parent.localToWorldMatrix) *
                 Matrix4x4.TRS(position, transform.localRotation, scale);
-            foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
+            Matrix4x4 relative = Matrix4x4.identity;
+            for (Transform node = child; node != transform; node = node.parent)
             {
-                if (renderer is LineRenderer) { continue; }
-                Matrix4x4 relative = Matrix4x4.identity;
-                for (Transform node = renderer.transform; node != transform; node = node.parent)
-                {
-                    relative = Matrix4x4.TRS(node.localPosition, node.localRotation, node.localScale) * relative;
-                }
-                Bounds bounds = renderer.localBounds;
-                for (int i = 0; i < 8; ++i)
-                {
-                    Vector3 corner = new Vector3((i & 1) == 0 ? bounds.min.x : bounds.max.x,
-                        (i & 2) == 0 ? bounds.min.y : bounds.max.y, (i & 4) == 0 ? bounds.min.z : bounds.max.z);
-                    yield return (expanded * relative).MultiplyPoint3x4(corner);
-                }
+                if (node == null) { throw new System.ArgumentException("The point must belong to this tray."); }
+                relative = Matrix4x4.TRS(node.localPosition, node.localRotation, node.localScale) * relative;
             }
+            return expanded * relative;
         }
 
         override protected void Awake()
