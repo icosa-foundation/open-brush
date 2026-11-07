@@ -4,6 +4,7 @@
 // You may obtain a copy at http://www.apache.org/licenses/LICENSE-2.0
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -22,12 +23,13 @@ namespace TiltBrush
             public float ReachSeconds = 1.2f;
             public float DrawSeconds = 2.4f;
             public float PauseSeconds = 0.45f;
-            [Tooltip("Panel centre in metres relative to the initial view. The wand pose is solved from the panel's actual attachment.")]
+            [Tooltip("Panel centre in metres relative to the virtual body's reference pose. Framing does not move the action.")]
             public Vector3 PanelPosition = new Vector3(-0.12f, -0.10f, 0.34f);
             public Vector3 StrokeStart = new Vector3(-0.08f, -0.24f, 0.40f);
             public Vector3 StrokeControl1 = new Vector3(0.02f, -0.04f, 0.44f);
             public Vector3 StrokeControl2 = new Vector3(0.24f, -0.43f, 0.46f);
             public Vector3 StrokeEnd = new Vector3(0.33f, -0.20f, 0.42f);
+            public AutomationShot.FramingSettings Framing = new AutomationShot.FramingSettings();
 
             public static Settings FromUserConfig()
             {
@@ -43,6 +45,10 @@ namespace TiltBrush
                 settings.StrokeControl1 = config.StrokeControl1 ?? settings.StrokeControl1;
                 settings.StrokeControl2 = config.StrokeControl2 ?? settings.StrokeControl2;
                 settings.StrokeEnd = config.StrokeEnd ?? settings.StrokeEnd;
+                settings.Framing.Enabled = config.AutomaticFraming ?? settings.Framing.Enabled;
+                settings.Framing.Margin = config.FramingMargin ?? settings.Framing.Margin;
+                settings.Framing.MaximumPullbackMeters = config.FramingMaximumPullbackMeters ?? settings.Framing.MaximumPullbackMeters;
+                settings.Framing.MaximumAngleDegrees = config.FramingMaximumAngleDegrees ?? settings.Framing.MaximumAngleDegrees;
                 return settings;
             }
         }
@@ -80,6 +86,7 @@ namespace TiltBrush
 
         public string Status => m_Phase.ToString();
         public string Error { get; private set; }
+        public AutomationShot Shot { get; private set; }
 
         public static BaseButton FindBrushButton(string durableName = "")
         {
@@ -122,6 +129,7 @@ namespace TiltBrush
             }
             // Freeze settings for the run; Inspector edits apply to the next rehearsal.
             m_Settings = JsonUtility.FromJson<Settings>(JsonUtility.ToJson(settings));
+            if (m_Settings.Framing == null) { m_Settings.Framing = new AutomationShot.FramingSettings(); }
             ValidatePositive(m_Settings.UpperArmLength, "Upper arm length", 0.15f, 0.5f);
             ValidatePositive(m_Settings.ForearmLength, "Forearm length", 0.15f, 0.5f);
             ValidatePositive(m_Settings.ReachSeconds, "Reach duration", 0.2f, 20);
@@ -177,6 +185,12 @@ namespace TiltBrush
             m_WandPose = m_WandArm.CanReach(m_OriginalPoses[0].position) ? m_OriginalPoses[0] : m_WandRest;
             m_BrushArm.Solve(m_BrushPose.position, m_BrushPose.rotation);
             m_ReachStart = m_WandArm.Solve(m_WandPose.position, m_WandPose.rotation);
+            AutomationShot.FramingResult? framing = null;
+            if (simulation != null && m_Settings.Framing.Enabled)
+            {
+                Shot = DeclareShot(panelPosition, panelRotation);
+                framing = Shot.Frame(App.VrSdk.GetVrCamera(), body, m_Settings.Framing);
+            }
             m_ShowControllers = App.Instance.ShowControllers;
             m_Tracking = App.VrSdk.VrControls.SuspendPoseTracking();
             try
@@ -192,6 +206,11 @@ namespace TiltBrush
                 ApplyPoses();
                 m_Simulated[0].m_Position = m_WandPose.position;
                 m_Simulated[1].m_Position = m_BrushPose.position;
+                if (framing.HasValue)
+                {
+                    simulation.SetFramingPose(framing.Value.CameraPose);
+                    Debug.Log($"{kLogPrefix} Fixed shot framing: pullback={framing.Value.PullbackMeters:F3}m, viewport={framing.Value.ViewportBounds}, camera={framing.Value.CameraPose.position:F3}, rotation={framing.Value.CameraPose.rotation.eulerAngles:F1}");
+                }
             }
             catch
             {
@@ -210,6 +229,56 @@ namespace TiltBrush
         }
 
         private Vector3 Point(Vector3 metres) => m_Origin + m_BodyRotation * (metres * App.METERS_TO_UNITS);
+
+        // This sequence declares its subjects; the shared solver knows nothing about
+        // buttons, controllers or drawing. Future actions can supply their own subjects.
+        private AutomationShot DeclareShot(Vector3 panelPosition, Quaternion panelRotation)
+        {
+            var shot = new AutomationShot("Panel interaction and drawing");
+            var panelSubject = shot.AddSubject("Presented wand panel");
+            var panelPose = new UnityEngine.Pose(panelPosition, panelRotation);
+            panelSubject.AddPose(panelPose, AutomationShot.CaptureLocalBounds(m_Panel.transform,
+                m_Panel.GetComponentsInChildren<Renderer>()));
+
+            Vector3 buttonOffset = Quaternion.Inverse(m_Panel.transform.rotation) *
+                (m_Button.GetCollider().bounds.center - m_Panel.transform.position);
+            Vector3 target = panelPosition + panelRotation * buttonOffset;
+            panelSubject.AddPoint(target);
+            Vector3 forward = panelRotation * Vector3.forward;
+            var aimed = RootForTip(target - forward * (0.18f * App.METERS_TO_UNITS),
+                Quaternion.LookRotation(forward, m_BodyRotation * Vector3.up));
+            var aimJoints = m_BrushArm.Solve(aimed.position, aimed.rotation);
+            var startJoints = m_BrushArm.Solve(m_BrushPose.position, m_BrushPose.rotation);
+            var strokeStart = StrokePose(0);
+            var strokeJoints = m_BrushArm.Solve(strokeStart.position, strokeStart.rotation);
+            var brushSubject = shot.AddSubject("Pointing and drawing controller");
+            List<Vector3> brushBounds = ControllerBounds(InputManager.Brush);
+            for (int i = 0; i <= 32; ++i)
+            {
+                float t = i / 32f;
+                brushSubject.AddPose(m_BrushArm.Reach(startJoints, aimJoints, t), brushBounds);
+                brushSubject.AddPose(m_BrushArm.Reach(aimJoints, strokeJoints, t), brushBounds);
+                brushSubject.AddPose(StrokePose(t), brushBounds);
+            }
+            // The support hand is needed while presenting the panel, rather than while
+            // returning it to rest below the viewer's attention.
+            panelSubject.AddPose(m_WandRaised, ControllerBounds(InputManager.Wand));
+            var strokeSubject = shot.AddSubject("Complete stroke");
+            float footprint = Mathf.Max(PointerManager.m_Instance.MainPointer.BrushSizeAbsolute,
+                0.02f * App.METERS_TO_UNITS);
+            strokeSubject.AddBounds(AutomationShot.CubicBounds(Point(m_Settings.StrokeStart),
+                Point(m_Settings.StrokeControl1), Point(m_Settings.StrokeControl2), Point(m_Settings.StrokeEnd), footprint));
+            return shot;
+        }
+
+        private static List<Vector3> ControllerBounds(ControllerInfo controller)
+        {
+            ControllerGeometry geometry = controller.Geometry;
+            var renderers = new List<Renderer> { geometry.MainMesh, geometry.TriggerMesh,
+                geometry.LeftGripMesh, geometry.RightGripMesh };
+            if (geometry.OtherMeshes != null) { renderers.AddRange(geometry.OtherMeshes); }
+            return AutomationShot.CaptureLocalBounds(controller.Transform, renderers.Distinct(), includeDisabled: true);
+        }
 
         private ProceduralArm MakeArm(float side) => new ProceduralArm(
             Point(new Vector3(side * 0.18f, -0.20f, -0.04f)),

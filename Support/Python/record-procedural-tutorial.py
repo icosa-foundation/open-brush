@@ -4,6 +4,7 @@
 Enter Play mode with Open Brush > Procedural Automation > Virtual Input enabled,
 or launch a player with --virtualInput. Keep the Game/player view rendering.
 Requires only Python's standard library; output is a PNG sequence and recording.json.
+Each rehearsal frames its declared subjects once and holds the camera still.
 """
 
 import argparse

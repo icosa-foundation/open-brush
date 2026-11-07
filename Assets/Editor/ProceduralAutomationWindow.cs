@@ -36,7 +36,7 @@ namespace TiltBrush
                     EditorGUILayout.Toggle("Virtual Input next Play", virtualInput));
             }
             EditorGUILayout.HelpBox("Virtual Input mode needs no headset or controllers. Launch a player with --virtualInput. Recording writes PNG frames plus frame-rate metadata; keep the Game view visible during capture.", MessageType.Info);
-            EditorGUILayout.HelpBox("In Play mode, select the paint tool and show the wand's brush panel. This rehearsal points at a button, clicks it, then draws a curved stroke. Only the controllers are animated; the arm model is invisible. Panel Position is relative to the initial view; stroke positions use the initial head position and horizontal facing. Distances are metres.", MessageType.Info);
+            EditorGUILayout.HelpBox("This rehearsal clicks a wand-panel button and draws a curved stroke. Action positions use the virtual body's reference pose in metres. Automatic framing fits the declared subjects once and holds the camera still for the shot. Framing controls are under Settings > Framing.", MessageType.Info);
             bool ready = Application.isPlaying && InputManager.m_Instance != null;
             string status = ready ? InputManager.m_Instance.ProceduralAutomationStatus : "Enter Play mode";
             EditorGUILayout.LabelField("Status", status);

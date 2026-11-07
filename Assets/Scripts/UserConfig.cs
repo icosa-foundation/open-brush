@@ -61,8 +61,8 @@ namespace TiltBrush
         [Serializable]
         public struct ProceduralAutomationConfig
         {
-            // Distances are metres. PanelPosition follows the initial view orientation;
-            // stroke positions use a body frame fixed at the head's initial yaw/position.
+            // Distances are metres. Actions use the virtual body's reference pose;
+            // shot framing changes the camera independently.
             public float? UpperArmLength;
             public float? ForearmLength;
             public float? ReachSeconds;
@@ -73,6 +73,10 @@ namespace TiltBrush
             public Vector3? StrokeControl1;
             public Vector3? StrokeControl2;
             public Vector3? StrokeEnd;
+            public bool? AutomaticFraming;
+            public float? FramingMargin;
+            public float? FramingMaximumPullbackMeters;
+            public float? FramingMaximumAngleDegrees;
         }
 
         public ProceduralAutomationConfig ProceduralAutomation;
