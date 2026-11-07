@@ -20,6 +20,8 @@ namespace TiltBrush
 
     public class BaseButton : UIComponent
     {
+        // Observers can confirm actual activation without relying on transient hover visuals.
+        public event System.Action<BaseButton> Pressed;
         protected enum ButtonState
         {
             Unavailable,
@@ -361,6 +363,7 @@ namespace TiltBrush
                     // this if OnButtonPressed is called first.
                     AdjustButtonPositionAndScale(m_ZAdjustClick, m_HoverScale, m_HoverBoxColliderGrow);
                     OnButtonPressed();
+                    Pressed?.Invoke(this);
                     m_CurrentButtonState = ButtonState.Pressed;
                     if (m_ButtonHasPressedAudio)
                     {
@@ -382,6 +385,7 @@ namespace TiltBrush
             if (m_LongPressReleaseButton && IsAvailable())
             {
                 OnButtonPressed();
+                Pressed?.Invoke(this);
             }
             if (m_CurrentButtonState != ButtonState.Untouched && IsAvailable())
             {
