@@ -99,7 +99,7 @@ namespace TiltBrush
 
         private const uint SYMMETRY_TABLE_SENTINEL = 0x53594d54; // 'SYMT'
         private const int SYMMETRY_TABLE_VERSION = 3;
-        private const uint kMaxSymmetrySettingsBytes = 64 * 1024;
+        private const uint kMaxSymmetrySettingsBytes = 1024 * 1024;
         private const int kMaxSymmetryMirrors = 64 * 1024;
 
         /// The linked mirrors to save and the settings each has, captured on the main thread
