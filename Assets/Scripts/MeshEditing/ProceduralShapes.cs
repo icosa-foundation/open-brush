@@ -116,6 +116,15 @@ namespace TiltBrush.MeshEditing
             return current > 0f ? MinimumDimension(generator, dimension) / current : 0f;
         }
 
+        public static float MaximumAxisResizeRatio(GeometryRecipeData recipe, GrabWidget.Axis axis)
+        {
+            if (AxisDimension(recipe, axis) != "radius") { return float.PositiveInfinity; }
+            var parameters = recipe.ToJson()["Generator"]?["Parameters"];
+            float radius = (float?)parameters?["radius"] ?? 1f;
+            float body = (float?)parameters?["cylinderHeight"] ?? 2f;
+            return (body + 2f * radius) / (2f * radius);
+        }
+
         public static GeometryRecipeData ResizeAxis(GeometryRecipeData recipe, GrabWidget.Axis axis, float ratio,
             bool ellipse = false)
         {
@@ -141,6 +150,15 @@ namespace TiltBrush.MeshEditing
                     if (!useEllipse || axis == GrabWidget.Axis.X) { parameters[$"{end}Radius"] = radius * ratio; }
                     parameters[$"{end}Aspect"] = !useEllipse ? 1f : aspect * (axis == GrabWidget.Axis.X ? 1f / ratio : ratio);
                 }
+                return new GeometryRecipeData(data);
+            }
+            if (dimension == "radius")
+            {
+                float radius = (float?)parameters["radius"] ?? 1f;
+                float totalHeight = ((float?)parameters["cylinderHeight"] ?? 2f) + 2f * radius;
+                float resizedRadius = Mathf.Clamp(radius * ratio, .0001f, totalHeight * .5f);
+                parameters["radius"] = resizedRadius;
+                parameters["cylinderHeight"] = Mathf.Max(0f, totalHeight - 2f * resizedRadius);
                 return new GeometryRecipeData(data);
             }
             if (dimension == "cylinderHeight")

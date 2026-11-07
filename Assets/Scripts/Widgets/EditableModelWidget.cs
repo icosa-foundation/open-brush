@@ -69,6 +69,7 @@ namespace TiltBrush
             if (GetScaleAxis(Vector3.zero, Vector3.zero, out _, out float extent) != Axis.Invalid)
             {
                 range.x = Mathf.Max(range.x, extent * ProceduralShapes.MinimumAxisResizeRatio(m_PolyRecipe, m_LockedManipulationAxis.Value));
+                range.y = Mathf.Min(range.y, extent * ProceduralShapes.MaximumAxisResizeRatio(m_PolyRecipe, m_LockedManipulationAxis.Value));
             }
             return range;
         }
