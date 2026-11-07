@@ -576,9 +576,8 @@ namespace TiltBrush
 
                 if (!App.Instance.StartupError && m_PanelMap[i].IsValidForSdkMode(App.Config.m_SdkMode))
                 {
-                    // Explicit panel enum values need not match their index in the map.
-                    // Check the prefab's identity before creating basic/advanced copies.
-                    if (IsPanelUnique(m_PanelMap[i].m_PanelPrefab.GetComponent<BasePanel>().Type))
+                    // Only create one of our unique panels
+                    if (IsPanelUnique(type))
                     {
                         CreatePanel(m_PanelMap[i], false);
                     }

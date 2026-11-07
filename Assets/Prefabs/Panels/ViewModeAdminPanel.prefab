@@ -2487,7 +2487,7 @@ MonoBehaviour:
   m_HoverScale: 1.1
   m_HoverBoxColliderGrow: 0.2
   m_AddOverlay: 0
-  m_Type: 11601
+  m_Type: 45
   m_AlwaysSpawn: 0
   references:
     version: 2

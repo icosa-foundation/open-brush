@@ -111,7 +111,7 @@ namespace TiltBrush
             Scripts = 6000,
             SnapSettings = 8000,
             QuillLibrary = 11600,
-            NativeImmPlayback = 11601,
+            NativeImmPlayback = 45,
             TransformPanel = 12000,
             LayersPanel = 15000,
             StencilSettings = 20200,
