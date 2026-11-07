@@ -231,10 +231,14 @@ namespace TiltBrush
         private static Stroke DeriveCropPiece(Stroke source, Stroke piece, Stroke member,
             TrTransform toPeer)
         {
+            // Match the drawing and reshaping paths' brush-local X correction.
+            var handednessFix = toPeer.scale < 0
+                ? new Plane(Vector3.right, 0).ToTrTransform()
+                : TrTransform.identity;
             var points = (PointerManager.ControlPoint[])piece.m_ControlPoints.Clone();
             for (int i = 0; i < points.Length; ++i)
             {
-                var pose = toPeer * TrTransform.TR(points[i].m_Pos, points[i].m_Orient);
+                var pose = toPeer * TrTransform.TR(points[i].m_Pos, points[i].m_Orient) * handednessFix;
                 points[i].m_Pos = pose.translation;
                 points[i].m_Orient = pose.rotation;
             }
