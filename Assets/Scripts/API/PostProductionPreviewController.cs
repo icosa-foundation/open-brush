@@ -272,7 +272,7 @@ namespace TiltBrush
         public static void EndSession()
         {
             App.Instance.StateChanged -= OnAppStateChangedAfterLoad;
-            PostProductionExport.Cancel();
+            PostProductionExport.EndSession();
             if (m_Instance != null && m_Instance.Enabled) { m_Instance.SetEnabled(false); }
             PostProductionPlateCache.SetEnabled(false, null);
             s_Transport = Transport.Off;

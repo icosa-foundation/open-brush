@@ -510,6 +510,13 @@ namespace TiltBrush
             EndWith(State.Cancelled, "");
         }
 
+        // Main thread: the session's render driver is about to be destroyed.
+        public static void EndSession()
+        {
+            Cancel();
+            if (s_NeedsCleanup) { Cleanup(restorePlayhead: false); }
+        }
+
         // Main thread, early in Update: picks the next frame to render once its plate and
         // depth are ready and the encoder has room, and seeks the sketch to it.
         public static void Stage()
@@ -712,7 +719,7 @@ namespace TiltBrush
         }
 
         // Main thread.
-        private static void Cleanup()
+        private static void Cleanup(bool restorePlayhead = true)
         {
             s_NeedsCleanup = false;
             Release(ref s_CgColor);
@@ -736,7 +743,7 @@ namespace TiltBrush
                 catch (Exception e) { Debug.LogWarning($"[PostProdExport] could not delete {s_Output}: {e.Message}"); }
             }
             // Back to where the user was, held still.
-            if (SketchMemoryScript.m_Instance.IsPlayingBack)
+            if (restorePlayhead && SketchMemoryScript.m_Instance.IsPlayingBack)
             {
                 App.Instance.CurrentSketchTime = s_RestoreSketchTime;
                 PostProductionPreviewController.SetShuttleRate(0f);
