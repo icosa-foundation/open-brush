@@ -30,6 +30,9 @@ public class ApiMainThreadObserver : MonoBehaviour
     private static volatile string m_QualityStatus = "Quality status is not available yet.";
     private float m_NextQualityStatusUpdate;
     public static string QualityStatus => m_QualityStatus;
+    private static volatile string m_AutomationStatus = "{}";
+    private float m_NextAutomationStatusUpdate;
+    public static string AutomationStatus => m_AutomationStatus;
     [NonSerialized] public StatusTypes m_Status;
     [NonSerialized] public Vector3 SpectatorCamPosition;
     [NonSerialized] public Vector3 SpectatorCamTargetPosition;
@@ -46,6 +49,12 @@ public class ApiMainThreadObserver : MonoBehaviour
 
     void Update()
     {
+        // Publish a main-thread snapshot for background HTTP query handlers.
+        if (Time.unscaledTime >= m_NextAutomationStatusUpdate)
+        {
+            m_AutomationStatus = ApiMethods.GetAutomationStatusJson();
+            m_NextAutomationStatusUpdate = Time.unscaledTime + 0.1f;
+        }
         // HTTP handlers run off the main thread. Publish a recent snapshot so they
         // can return quality information without calling Unity rendering APIs.
         if (Time.unscaledTime >= m_NextQualityStatusUpdate)

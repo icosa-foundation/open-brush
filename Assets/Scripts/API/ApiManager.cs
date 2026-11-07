@@ -708,6 +708,8 @@ Success. If you are not automatically redirected, please visit <a href='{success
                     return ApiMainThreadObserver.QualityStatus;
                 case "query.queue":
                     return m_OutgoingCommandQueue.Count.ToString();
+                case "query.automation":
+                    return ApiMainThreadObserver.AutomationStatus;
                 case "query.quill.stats":
                     return JsonConvert.SerializeObject(Quill.QuillDiagnostics.LastLoad, Formatting.Indented);
                 case "query.command":
