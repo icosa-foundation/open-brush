@@ -59,6 +59,25 @@ namespace TiltBrush
         public HandtrackingConfig Handtracking;
 
         [Serializable]
+        public struct ProceduralAutomationConfig
+        {
+            // Distances are metres. PanelPosition follows the initial view orientation;
+            // stroke positions use a body frame fixed at the head's initial yaw/position.
+            public float? UpperArmLength;
+            public float? ForearmLength;
+            public float? ReachSeconds;
+            public float? DrawSeconds;
+            public float? PauseSeconds;
+            public Vector3? PanelPosition;
+            public Vector3? StrokeStart;
+            public Vector3? StrokeControl1;
+            public Vector3? StrokeControl2;
+            public Vector3? StrokeEnd;
+        }
+
+        public ProceduralAutomationConfig ProceduralAutomation;
+
+        [Serializable]
         public struct PanelsConfig
         {
             // Shared translation of the wand-panel layout in view-only mode, in metres
