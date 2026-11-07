@@ -1,5 +1,6 @@
 // Copyright 2026 The Open Brush Authors
 // Licensed under the Apache License, Version 2.0 (the "License");
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -11,6 +12,95 @@ namespace TiltBrush
         private VoxChunkRenderer m_VoxChunks;
         private bool m_VoxSnapGhostDirty;
         private readonly Dictionary<Material, Material> m_VoxKeywordMaterials = new();
+
+        // UnityGLTF traverses the hierarchy and cannot see the immediate-mode floating preview.
+        internal IDisposable CreateVoxExportGeometry()
+        {
+            if (m_ModelInstance == null || m_EditableVoxDocument?.FloatingSelection.HasValue != true)
+                return null;
+            return new VoxExportGeometry(m_ModelInstance, m_EditableVoxDocument,
+                ModelCatalog.m_Instance.m_VoxLoaderStandardMaterial);
+        }
+
+        internal sealed class VoxExportGeometry : IDisposable
+        {
+            private readonly Transform m_LiveRoot;
+            private readonly bool m_WasActive;
+            private readonly string m_OriginalTag;
+            private GameObject m_Root;
+            private VoxMaterialSet m_Materials;
+            private readonly List<Mesh> m_Meshes = new();
+
+            internal VoxExportGeometry(Transform liveRoot, RuntimeVoxDocument source, Material defaultMaterial)
+            {
+                m_LiveRoot = liveRoot;
+                m_WasActive = liveRoot.gameObject.activeSelf;
+                m_OriginalTag = liveRoot.tag;
+                try
+                {
+                    var document = source.CreateFinalizedCopy();
+                    m_Materials = new VoxMaterialSet(document, defaultMaterial);
+                    m_Root = new GameObject(liveRoot.name);
+                    m_Root.transform.SetParent(liveRoot.parent, false);
+                    m_Root.transform.localPosition = liveRoot.localPosition;
+                    m_Root.transform.localRotation = liveRoot.localRotation;
+                    m_Root.transform.localScale = liveRoot.localScale;
+                    m_Root.layer = liveRoot.gameObject.layer;
+                    m_Root.SetActive(m_WasActive);
+                    var materials = m_Materials.Materials.ToArray();
+                    foreach (var model in document.Models)
+                    {
+                        if (!model.IsVisible || model.Voxels.Count == 0) continue;
+                        var mesh = new VoxMeshBuilder().GenerateOptimizedMesh(model, document.Palette,
+                            m_Materials.PaletteSubmeshIndices, materials.Length, m_Materials.PaletteOccludesFaces);
+                        m_Meshes.Add(mesh);
+                        var child = new GameObject(model.Name);
+                        child.transform.SetParent(m_Root.transform, false);
+                        child.layer = m_Root.layer;
+                        var pose = VoxMeshBuilder.GetModelTransform(model);
+                        child.transform.localPosition = pose.translation;
+                        child.transform.localRotation = pose.rotation;
+                        child.AddComponent<MeshFilter>().sharedMesh = mesh;
+                        child.AddComponent<MeshRenderer>().sharedMaterials = materials;
+                    }
+                    // Also exclude the live hierarchy when ExportDisabledGameObjects is enabled.
+                    liveRoot.tag = "EditorOnly";
+                    liveRoot.gameObject.SetActive(false);
+                }
+                catch
+                {
+                    Dispose();
+                    throw;
+                }
+            }
+
+            public void Dispose()
+            {
+                if (m_LiveRoot != null)
+                {
+                    m_LiveRoot.tag = m_OriginalTag;
+                    m_LiveRoot.gameObject.SetActive(m_WasActive);
+                }
+                if (m_Root != null)
+                {
+                    m_Root.SetActive(false);
+                    m_Root.transform.SetParent(null, false);
+                    DestroyExportObject(m_Root);
+                    m_Root = null;
+                }
+                foreach (var mesh in m_Meshes) DestroyExportObject(mesh);
+                m_Meshes.Clear();
+                if (m_Materials != null)
+                    foreach (var material in m_Materials.OwnedMaterials) DestroyExportObject(material);
+                m_Materials = null;
+            }
+
+            private static void DestroyExportObject(UnityEngine.Object value)
+            {
+                if (Application.isPlaying) UnityEngine.Object.Destroy(value);
+                else UnityEngine.Object.DestroyImmediate(value);
+            }
+        }
 
         protected override void InitiateSnapping()
         {

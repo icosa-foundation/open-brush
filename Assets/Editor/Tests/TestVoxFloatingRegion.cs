@@ -22,6 +22,69 @@ namespace TiltBrush
         private static VoxFloatingRegion Move(VoxFloatingRegion region, int distance) =>
             region.TransformFrom(region, Vector3Int.zero, Quaternion.identity, Vector3Int.right * distance);
 
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ExportGeometryIncludesMovedCellsAndRestoresLiveHierarchy(bool failExport)
+        {
+            var start = Lift(out var document);
+            var moved = Move(start, 4);
+            document.FloatingSelection = new VoxFloatingSaveState(moved, moved.Pose);
+            var definition = start.Model.Definition;
+            var parent = new GameObject("export widget");
+            var live = new GameObject("live model");
+            var material = new Material(Shader.Find("Standard"));
+            Mesh temporaryMesh = null;
+            GameObject temporaryRoot = null;
+            try
+            {
+                parent.transform.SetPositionAndRotation(new Vector3(3, 7, 2), Quaternion.Euler(12, 34, 56));
+                parent.transform.localScale = Vector3.one * 2;
+                live.transform.SetParent(parent.transform, false);
+                live.transform.localPosition = Vector3.one;
+                live.transform.localRotation = Quaternion.Euler(0, 20, 0);
+                live.transform.localScale = Vector3.one * 3;
+                live.layer = 5;
+                Matrix4x4 liveMatrix = live.transform.localToWorldMatrix;
+                try
+                {
+                    using (new ModelWidget.VoxExportGeometry(live.transform, document, material))
+                    {
+                        Assert.IsFalse(live.activeSelf);
+                        Assert.AreEqual("EditorOnly", live.tag);
+                        temporaryRoot = parent.transform.GetChild(1).gameObject;
+                        Assert.AreEqual(liveMatrix, temporaryRoot.transform.localToWorldMatrix);
+                        var filter = temporaryRoot.GetComponentInChildren<MeshFilter>();
+                        temporaryMesh = filter.sharedMesh;
+                        Assert.AreEqual(5, filter.gameObject.layer);
+                        Assert.AreEqual(72, temporaryMesh.triangles.Length, "Both separated voxels must be exported");
+                        var rotation = VoxMeshBuilder.ModelRotation;
+                        var worldBounds = new Bounds(filter.transform.TransformPoint(temporaryMesh.vertices[0]), Vector3.zero);
+                        foreach (var vertex in temporaryMesh.vertices)
+                            worldBounds.Encapsulate(filter.transform.TransformPoint(vertex));
+                        Assert.IsTrue(worldBounds.Contains(liveMatrix.MultiplyPoint3x4(rotation * Vector3.right)));
+                        Assert.IsTrue(worldBounds.Contains(liveMatrix.MultiplyPoint3x4(rotation * (Vector3.right * 4))));
+                        if (failExport) throw new System.InvalidOperationException("Simulated export failure");
+                    }
+                }
+                catch (System.InvalidOperationException) when (failExport) { }
+                Assert.IsTrue(live.activeSelf);
+                Assert.AreEqual("Untagged", live.tag);
+                Assert.AreEqual(liveMatrix, live.transform.localToWorldMatrix);
+                Assert.AreEqual(1, parent.transform.childCount);
+                Assert.IsTrue(temporaryRoot == null);
+                Assert.IsTrue(temporaryMesh == null);
+                Assert.AreSame(moved, document.FloatingSelection.Value.Region);
+                Assert.AreSame(definition, start.Model.Definition);
+                Assert.IsFalse(start.Model.Voxels.ContainsKey(Vector3Int.right * 4));
+                Assert.AreEqual(2, start.Model.Voxels[Vector3Int.right]);
+            }
+            finally
+            {
+                Object.DestroyImmediate(parent);
+                Object.DestroyImmediate(material);
+            }
+        }
+
         private static VoxFloatingRegion SharedRegion(out RuntimeVoxDocument document,
             out RuntimeVoxDocument.RuntimeModel other)
         {

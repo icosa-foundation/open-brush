@@ -388,13 +388,24 @@ URL=" + kExportDocumentationUrl;
             }
             context.ExportLayers = layerMask;
 
-            // Count triangles before export
-            int triangleCount = CountTrianglesInLayers(layerCanvases, layerMask);
-
-            var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
-            unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
-
-            return triangleCount;
+            var voxelGeometry = new List<IDisposable>();
+            try
+            {
+                foreach (var widget in layerCanvases.SelectMany(root => root.GetComponentsInChildren<ModelWidget>()).ToArray())
+                {
+                    var geometry = widget.CreateVoxExportGeometry();
+                    if (geometry != null) voxelGeometry.Add(geometry);
+                }
+                // Count the same finalized geometry that UnityGLTF will export.
+                int triangleCount = CountTrianglesInLayers(layerCanvases, layerMask);
+                var unityGltfexporter = new GLTFSceneExporter(layerCanvases.ToArray(), context);
+                unityGltfexporter.SaveGLB(destinationPath, $"{fileBaseName}.glb");
+                return triangleCount;
+            }
+            finally
+            {
+                foreach (var geometry in voxelGeometry) geometry.Dispose();
+            }
         }
 
         private static int CountTrianglesInLayers(List<Transform> layerRoots, LayerMask layerMask)
