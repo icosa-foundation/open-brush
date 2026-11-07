@@ -284,7 +284,7 @@ namespace TiltBrush
                 {
                     foreach (var member in m_Members)
                     {
-                        if (member.Index != 0) { RestoreMember(member, after: false); }
+                        RestoreMember(member, after: false);
                     }
                 }
                 m_Rejected = true;
@@ -310,7 +310,7 @@ namespace TiltBrush
                 if (m_Rejected || !m_Changed) { return; }
                 foreach (var member in m_Members)
                 {
-                    if (member.Index != 0) { RestoreMember(member, after); }
+                    RestoreMember(member, after);
                 }
             }
 
