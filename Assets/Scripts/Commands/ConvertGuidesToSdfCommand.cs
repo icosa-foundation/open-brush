@@ -52,7 +52,8 @@ namespace TiltBrush
                 parent: this,
                 canvas: targetCanvas);
             new ConfigureCreatedSdfCommand(
-                m_CreateCommand, definitions, group, pinned, this);
+                m_CreateCommand, definitions, group, pinned,
+                (targetCanvas.Pose.inverse * conversion.Pose_GS).scale, this);
             new DeleteSelectionCommand(null, sourceWidgets, this);
             new SelectCreatedSdfCommand(m_CreateCommand, targetCanvas, this);
         }
@@ -69,6 +70,7 @@ namespace TiltBrush
             private readonly IReadOnlyList<SdfStencil.ComponentDefinition> m_Definitions;
             private readonly SketchGroupTag m_Group;
             private readonly bool m_Pinned;
+            private readonly float m_Size;
             private readonly List<IsoMesh.SDFMeshAsset> m_RetainedMeshAssets;
 
             internal ConfigureCreatedSdfCommand(
@@ -76,6 +78,7 @@ namespace TiltBrush
                 IReadOnlyList<SdfStencil.ComponentDefinition> definitions,
                 SketchGroupTag group,
                 bool pinned,
+                float size,
                 BaseCommand parent) : base(parent)
             {
                 m_CreateCommand = createCommand;
@@ -83,6 +86,7 @@ namespace TiltBrush
                 m_RetainedMeshAssets = SdfStencil.RetainMeshAssets(definitions);
                 m_Group = group;
                 m_Pinned = pinned;
+                m_Size = size;
             }
 
             protected override void OnDispose()
@@ -99,6 +103,8 @@ namespace TiltBrush
                     throw new InvalidOperationException(
                         "The configured SDF guide prefab did not create an SDF guide.");
                 }
+                // Intro animation preserves widget size rather than applying the spawn scale.
+                stencil.SetSignedWidgetSize(m_Size);
                 stencil.ReplaceComponents(m_Definitions);
                 stencil.Group = m_Group;
                 if (stencil.Pinned != m_Pinned)
