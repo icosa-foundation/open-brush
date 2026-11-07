@@ -17,11 +17,21 @@ namespace TiltBrush
         [SerializeField] private QuillChapterNavButton m_NextViewpointButton;
         [SerializeField] private QuillChapterNavButton m_ContinueButton;
 
-        /// <summary>Open in front of the viewer, including when no controller is present.</summary>
+        /// <summary>Use the same launcher and placement as the VR admin panel button.</summary>
         public static bool Show()
         {
             if (!NativeImmImport.IsActive || NativeImmImport.IsLoading ||
                 PanelManager.m_Instance == null || App.VrSdk == null) return false;
+            if (App.VrSdk.IsHmdInitialized() && App.Config.m_SdkMode != SdkMode.Monoscopic)
+            {
+                var admin = PanelManager.m_Instance.GetAdminPanel() as AdminPanel;
+                if (admin == null || admin.ImmPlaybackButton == null) return false;
+                SketchControlsScript.m_Instance.OpenPanelOfType(PanelType.NativeImmPlayback,
+                    TrTransform.FromTransform(admin.ImmPlaybackButton));
+                return true;
+            }
+
+            // The screen-space launcher has no world-space transform to spawn from.
             var camera = App.VrSdk.GetVrCamera();
             if (camera == null) return false;
 
