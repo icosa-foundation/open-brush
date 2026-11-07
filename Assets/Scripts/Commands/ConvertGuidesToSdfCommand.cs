@@ -55,7 +55,7 @@ namespace TiltBrush
                 m_CreateCommand, definitions, group, pinned,
                 (targetCanvas.Pose.inverse * conversion.Pose_GS).scale, this);
             new DeleteSelectionCommand(null, sourceWidgets, this);
-            new SelectCreatedSdfCommand(m_CreateCommand, targetCanvas, this);
+            new SelectCreatedSdfCommand(m_CreateCommand, targetCanvas, conversion.Pose_GS, this);
         }
 
         protected override void OnUndo()
@@ -118,14 +118,17 @@ namespace TiltBrush
         {
             private readonly CreateWidgetCommand m_CreateCommand;
             private readonly CanvasScript m_TargetCanvas;
+            private readonly TrTransform m_Pose_GS;
 
             internal SelectCreatedSdfCommand(
                 CreateWidgetCommand createCommand,
                 CanvasScript targetCanvas,
+                TrTransform pose_GS,
                 BaseCommand parent) : base(parent)
             {
                 m_CreateCommand = createCommand;
                 m_TargetCanvas = targetCanvas;
+                m_Pose_GS = pose_GS;
             }
 
             protected override void OnRedo()
@@ -139,6 +142,8 @@ namespace TiltBrush
                 {
                     SelectionManager.m_Instance.SelectWidget(stencil);
                 }
+                // Selection reparents the guide, so store the intro pose in its new canvas frame.
+                stencil.InitIntroAnim(m_Pose_GS, m_Pose_GS, false, forceTransform: true);
                 SelectionManager.m_Instance.UpdateSelectionWidget();
                 App.Switchboard.TriggerSelectionChanged();
             }
