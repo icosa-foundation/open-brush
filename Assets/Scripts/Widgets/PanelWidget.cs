@@ -148,8 +148,11 @@ namespace TiltBrush
         override public float GetActivationScore(
             Vector3 vControllerPos, InputManager.ControllerName name)
         {
-            // Not allowed to grab panels unless we're in advanced mode.
-            if (!PanelManager.m_Instance.AdvancedModeActive())
+            // Panels retain the advanced-mode rule unless they explicitly allow view-only grabbing.
+            bool viewOnlyGrabAllowed =
+                PanelManager.m_Instance.CurrentPanelAvailabilityMode == PanelManager.PanelAvailabilityMode.ViewOnly &&
+                m_PanelSibling.AllowGrabInViewOnly;
+            if (!PanelManager.m_Instance.AdvancedModeActive() && !viewOnlyGrabAllowed)
             {
                 return -1.0f;
             }

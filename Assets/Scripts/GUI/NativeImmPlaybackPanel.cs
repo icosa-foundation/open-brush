@@ -9,6 +9,8 @@ namespace TiltBrush
     /// <summary>Scene-level playback controls for an IMM opened as the current sketch.</summary>
     public class NativeImmPlaybackPanel : BasePanel
     {
+        public override bool AllowGrabInViewOnly => true;
+
         [SerializeField] private TMP_Text m_ChapterLabel;
         [SerializeField] private TMP_Text m_ViewpointLabel;
         [SerializeField] private QuillChapterNavButton m_PrevChapterButton;

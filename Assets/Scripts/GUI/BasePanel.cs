@@ -346,6 +346,7 @@ namespace TiltBrush
         }
 
         public virtual bool ShouldRegister { get { return true; } }
+        public virtual bool AllowGrabInViewOnly => false;
 
         public void InitAdvancedFlag(bool advanced)
         {
