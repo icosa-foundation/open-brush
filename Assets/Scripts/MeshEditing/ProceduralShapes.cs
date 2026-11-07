@@ -41,7 +41,8 @@ namespace TiltBrush.MeshEditing
             // Rectangle/frame profiles lie in XZ; panels use XY with depth on Z.
             if (generator.Type != "panel")
             {
-                return axis == GrabWidget.Axis.X ? "width" : axis == GrabWidget.Axis.Z ? "height" : null;
+                return axis == GrabWidget.Axis.X ? "width" : axis == GrabWidget.Axis.Z ? "height"
+                    : generator.Type == "frame" && axis == GrabWidget.Axis.Y ? "shellThickness" : null;
             }
             switch (axis)
             {
@@ -92,6 +93,11 @@ namespace TiltBrush.MeshEditing
         {
             string dimension = AxisDimension(recipe, axis);
             if (dimension == null) { return 0f; }
+            if (dimension == "shellThickness")
+            {
+                float thickness = Operation("operator", "amount", "Thickness", 0, .3f, "Shell").Read(recipe);
+                return thickness > 0f ? .0001f / thickness : 0f;
+            }
             var generator = (JObject)recipe.ToJson()["Generator"];
             var parameters = generator["Parameters"];
             if (dimension == "cylinderHeight")
@@ -131,6 +137,13 @@ namespace TiltBrush.MeshEditing
             if (!(ratio > 0f) || float.IsInfinity(ratio)) { throw new ArgumentOutOfRangeException(nameof(ratio)); }
             string dimension = AxisDimension(recipe, axis);
             if (dimension == null) { throw new NotSupportedException("This shape has no dimension mapped to that axis"); }
+            if (dimension == "shellThickness")
+            {
+                var thickness = Operation("operator", "amount", "Thickness", 0, .3f, "Shell");
+                float resizedThickness = thickness.Read(recipe) * ratio;
+                if (float.IsInfinity(resizedThickness)) { throw new ArgumentOutOfRangeException(nameof(ratio)); }
+                return WithValue(recipe, thickness, Mathf.Max(.0001f, resizedThickness));
+            }
             JObject data = recipe.ToJson();
             var generator = (JObject)data["Generator"];
             var parameters = generator["Parameters"] as JObject;
@@ -267,7 +280,9 @@ namespace TiltBrush.MeshEditing
             {
                 ["Version"] = 1,
                 ["Generator"] = Step(type, p),
-                ["Modifiers"] = new JArray(),
+                ["Modifiers"] = preset == 2
+                    ? new JArray(Step("operator", new JObject { ["operation"] = "Shell", ["amount"] = .02f, ["active"] = true }))
+                    : new JArray(),
                 ["PostProcessing"] = new JObject { ["AutoSmoothAngle"] = preset >= 3 ? 60f : 0f }
             });
         }
