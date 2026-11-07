@@ -90,7 +90,7 @@ namespace TiltBrush.DocumentImport
             ["conic"] = Spec("radius majorAxis minorAxis centerOffset bottomClip topClip sweepAngle", "sides verticalSegments", "smooth", "curve zeroSweep"),
             // Shared wire descriptions for the additional 3D-shapes generators.
             // A host without the corresponding generator retains the definition.
-            ["uniform"] = Spec(text: "solid"),
+            ["uniform"] = Spec("radius", text: "solid"),
             ["radial"] = Spec("height capheight", "sides", text: "solid"),
             ["grid"] = Spec(integer: "x y", text: "family type shape"),
             ["waterman"] = Spec(integer: "root c"),
@@ -106,10 +106,10 @@ namespace TiltBrush.DocumentImport
             ["ring"] = Spec("b c height", "a"),
             ["triangle"] = Spec("b c height", "a"),
             ["box"] = Spec(integer: "x y z"),
-            ["uvSphere"] = Spec("z", "x y"),
+            ["uvSphere"] = Spec("z radius", "x y longitudeSegments latitudeSegments", "hemisphere"),
             ["uvHemisphere"] = Spec(integer: "x y"),
-            ["stairs"] = Spec("y z", "x"),
-            ["torus"] = Spec("z", "x y"),
+            ["stairs"] = Spec("y z width height depth", "x steps"),
+            ["torus"] = Spec("z ringRadius tubeRadius sweepAngle", "x y pathSegments tubeSegments"),
             ["chamferedBox"] = Spec("y z", "x"),
             ["hollowHemisphere"] = Spec("z", "x y"),
             ["chamferedCylinder"] = Spec("z", "x y"),
