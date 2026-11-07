@@ -163,6 +163,17 @@ namespace TiltBrush
         }
 
         public override TrTransform GetGrabbedTrTransform() => m_VoxGrabActive ? m_VoxVirtualGrab : base.GetGrabbedTrTransform();
+        public override void AssignControllerMaterials(InputManager.ControllerName controller)
+        {
+            if (VoxRegionGrabActive)
+            {
+                if (controller == m_InteractingController)
+                    InputManager.GetControllerGeometry(controller).ShowDuplicateOption();
+                return;
+            }
+            base.AssignControllerMaterials(controller);
+        }
+
         public override void RecordAndSetSize(float value) { if (!HasVoxRegionSelection) base.RecordAndSetSize(value); }
         public override void SetVelocities(Vector3 linear, Vector3 angular, Vector3 pivot)
         {
