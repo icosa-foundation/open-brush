@@ -53,6 +53,7 @@ namespace TiltBrush
         [SerializeField] private Texture2D m_AddIcon;
         [SerializeField] private Texture2D m_EraseIcon;
         [SerializeField] private Texture2D m_PaintIcon;
+        [SerializeField, Min(0.1f)] private float m_ToolheadSizeMm = 2f;
 
         public EditMode Mode
         {
@@ -192,6 +193,9 @@ namespace TiltBrush
         public override void UpdateTool()
         {
             base.UpdateTool();
+            if (!ToolHidden())
+                VoxEditPreviewRenderer.DrawToolhead(InputManager.Brush.Geometry.ToolAttachPoint,
+                    Mathf.Max(m_ToolheadSizeMm, 0.1f) * 0.001f * App.METERS_TO_UNITS);
             if (MultiplayerManager.m_Instance.IsViewOnly)
             {
                 EndGesture();

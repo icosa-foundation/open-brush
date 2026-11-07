@@ -35,6 +35,7 @@ namespace TiltBrush
         private static MaterialPropertyBlock s_GridProperties;
         private static MaterialPropertyBlock s_BoundsProperties;
         private static MaterialPropertyBlock s_TargetProperties;
+        private static MaterialPropertyBlock s_ToolheadProperties;
 
         public static void Draw(
             RuntimeVoxDocument.RuntimeModel model,
@@ -171,6 +172,16 @@ namespace TiltBrush
             TrTransform pose = App.Scene.ActiveCanvas.Pose * modelToCanvas;
             foreach (var box in boxes)
                 DrawBox(pose, box.Min, box.Max, box.Color, 0.075f, worldBounds, ref s_TargetProperties);
+        }
+
+        internal static void DrawToolhead(Transform attachPoint, float size)
+        {
+            if (!TryGetMaterial()) return;
+            // Controller space keeps this marker precise and independent of drawing scale.
+            var pose = TrTransform.TRS(attachPoint.position, attachPoint.rotation, size);
+            var bounds = new Bounds(attachPoint.position, Vector3.one * size * 2f);
+            DrawBox(pose, Vector3.one * -0.5f, Vector3.one * 0.5f,
+                new Color(0.2f, 0.9f, 1f, 0.9f), 0.1f, bounds, ref s_ToolheadProperties);
         }
 
         internal static void DrawRegionBounds(TrTransform modelToCanvas, Vector3Int min, Vector3Int max,
