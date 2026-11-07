@@ -46,6 +46,7 @@ namespace TiltBrush
         [SerializeField] GameObject m_MemoryWarningButton;
         [SerializeField] Color m_MemoryWarningColor;
         [SerializeField] GameObject m_MultiplayerButton;
+        [SerializeField] GameObject m_ImmPlaybackButton;
         [SerializeField] float m_ButtonRotationAngle = 45f;
 
         [SerializeField] LocalizedString m_ShareButtonLoggedOutExtraText;
@@ -122,6 +123,9 @@ namespace TiltBrush
         void Update()
         {
             BaseUpdate();
+
+            if (m_ImmPlaybackButton != null)
+                m_ImmPlaybackButton.SetActive(NativeImmImport.IsActive);
 
             // Update save buttons availability.
             bool alreadySaved = SaveLoadScript.m_Instance.SceneFile.Valid &&

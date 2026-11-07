@@ -36,6 +36,7 @@ namespace TiltBrush
         private NativeImmRenderer m_Renderer;
         private Camera m_Camera;
         private bool m_Ready;
+        private bool m_OpenSceneControls = true;
         private float? m_LoadStartedAt;
         private bool m_AlignInitialView;
         private int m_ChapterIndex;
@@ -212,6 +213,8 @@ namespace TiltBrush
         {
             if (s_Active == null) return;
             var active = s_Active;
+            if (PanelManager.m_Instance != null)
+                PanelManager.m_Instance.HidePanel(BasePanel.PanelType.NativeImmPlayback);
             s_Active = null;
             s_UnloadingDocumentIds = s_UnloadingDocumentIds.Concat(
                 active.GetDocumentIds()).Distinct().ToArray();
@@ -299,6 +302,8 @@ namespace TiltBrush
             }
             if (m_Ready)
             {
+                if (m_OpenSceneControls && m_Widget != null && NativeImmPlaybackPanel.Show())
+                    m_OpenSceneControls = false;
                 if (!RefreshViewpoints()) return;
                 if (m_ChapterNavigationRequest != 0)
                 {

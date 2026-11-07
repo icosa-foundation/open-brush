@@ -53,6 +53,11 @@ namespace TiltBrush
                 return;
             }
             var panel = GetComponentInParent<QuillLibraryPanel>();
+            if (panel == null && GetComponentInParent<NativeImmPlaybackPanel>() != null)
+            {
+                NativeImmImport.CycleChapter(m_IsNext ? 1 : -1);
+                return;
+            }
             if (m_IsNext) panel?.OnNextChapterPressed();
             else panel?.OnPrevChapterPressed();
         }
