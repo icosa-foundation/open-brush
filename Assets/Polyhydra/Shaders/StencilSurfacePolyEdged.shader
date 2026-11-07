@@ -27,9 +27,10 @@ Shader "Custom/StencilSurfacePolyEdged"
         _EdgeThickness("_EdgeThickness", Range(0, .5)) = .001
     }
 
-    CGINCLUDE
-    #include "UnityCG.cginc"
-    #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/Brush.cginc"
+    HLSLINCLUDE
+    #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+    #include "Assets/Polyhydra/Shaders/PolyhydraEdges.hlsl"
+    float4x4 xf_CS;
     #include "Packages/com.icosa.open-brush-unity-tools/Runtime/Shaders/Include/MobileSelection.cginc"
 
     #pragma multi_compile __ SELECTION_ON HIGHLIGHT_ON
@@ -76,19 +77,22 @@ Shader "Custom/StencilSurfacePolyEdged"
 
     v2f vert(appdata_t v)
     {
-        v2f o;
+        v2f o = (v2f)0;
 
         UNITY_SETUP_INSTANCE_ID(v);
-        UNITY_INITIALIZE_OUTPUT(v2f, o);
         UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
         o.pos = v.vertex;
-        o.vertex = UnityObjectToClipPos(v.vertex);
+        o.vertex = TransformObjectToHClip(v.vertex.xyz);
 
         // Push the stencil back in depth to prevent z fighting when the user is drawing on top of it.
         if (!_UserIsInteractingWithStencilWidget)
         {
-            o.vertex.z += .0025 * o.vertex.w;
+            #if UNITY_REVERSED_Z
+                o.vertex.z -= .0025 * o.vertex.w;
+            #else
+                o.vertex.z += .0025 * o.vertex.w;
+            #endif
         }
 
         o.normal = v.normal;
@@ -106,27 +110,14 @@ Shader "Custom/StencilSurfacePolyEdged"
         float facingZ;
     };
 
-    Facings facings;
-
-    float calcTriEdge(float input)
-    {
-        return 1 - smoothstep(_EdgeDistance, _EdgeDistance + _EdgeThickness, input);
-    }
 
     float calcPolyEdge(v2f i)
     {
-        float triEdge = max(
-            max(calcTriEdge(i.barycentric.x), calcTriEdge(i.barycentric.y)),
-            calcTriEdge(i.barycentric.z));
-        float polyEdge = 1 - smoothstep(
-            1 - _EdgeDistance,
-            1 - (_EdgeDistance + _EdgeThickness),
-            i.edgeUv.x);
-        return min(polyEdge, triEdge);
+        return PolyhydraEdgeMask(i.edgeUv.x, i.barycentric, _EdgeDistance, _EdgeThickness);
     }
 
     float getInteriorGrid(v2f i, in float gridSizeMultiplier, in float gridWidthMultiplier,
-                          in float UVGridWidthMultiplier)
+                          in float UVGridWidthMultiplier, out Facings facings)
     {
         float3 localPos = i.pos * _LocalScale;
 
@@ -140,9 +131,8 @@ Shader "Custom/StencilSurfacePolyEdged"
         else if (sceneScale > .25) gridMultiplier = 8;
         else gridMultiplier = 16;
 
-        _GridSize *= gridMultiplier * gridSizeMultiplier * _GlobalGridSizeMultiplier;
-        _GridLineWidth *= gridMultiplier * gridWidthMultiplier * _GlobalGridLineWidthMultiplier;
-        _FrameWidth *= gridMultiplier * UVGridWidthMultiplier * _GlobalFrameWidthMultiplier;
+        float gridSize = _GridSize * gridMultiplier * gridSizeMultiplier * _GlobalGridSizeMultiplier;
+        float gridLineWidth = _GridLineWidth * gridMultiplier * gridWidthMultiplier * _GlobalGridLineWidthMultiplier;
 
         facings.facingY = pow(dot(i.normal, float3(0, 1, 0)), 4);
         facings.facingX = pow(dot(i.normal, float3(1, 0, 0)), 4);
@@ -151,10 +141,10 @@ Shader "Custom/StencilSurfacePolyEdged"
         // Edges along the interior of the cube
         float interiorGrid = 0;
 
-        const float halfLineWidth = _GridLineWidth / 2.0;
-        interiorGrid += fmod((abs(localPos.y) + halfLineWidth), _GridSize) < _GridLineWidth ? 1 - facings.facingY : 0;
-        interiorGrid = max(fmod((abs(localPos.x) + halfLineWidth), _GridSize) < _GridLineWidth ? 1 - facings.facingX : 0, interiorGrid);
-        interiorGrid = max(fmod((abs(localPos.z) + halfLineWidth), _GridSize) < _GridLineWidth ? 1 - facings.facingZ : 0, interiorGrid);
+        const float halfLineWidth = gridLineWidth / 2.0;
+        interiorGrid += fmod((abs(localPos.y) + halfLineWidth), gridSize) < gridLineWidth ? 1 - facings.facingY : 0;
+        interiorGrid = max(fmod((abs(localPos.x) + halfLineWidth), gridSize) < gridLineWidth ? 1 - facings.facingX : 0, interiorGrid);
+        interiorGrid = max(fmod((abs(localPos.z) + halfLineWidth), gridSize) < gridLineWidth ? 1 - facings.facingZ : 0, interiorGrid);
 
         return interiorGrid;
     }
@@ -163,14 +153,18 @@ Shader "Custom/StencilSurfacePolyEdged"
     {
         float4 c = float4(0, 0, 0, 0);
 
-        float interiorGrid = getInteriorGrid(i, gridSizeMultiplier, gridWidthMultiplier, UVGridWidthMultiplier);
+        Facings facings;
+        float interiorGrid = getInteriorGrid(i, gridSizeMultiplier, gridWidthMultiplier, UVGridWidthMultiplier, facings);
 
         // Edges along the border of the cube, capsule or sphere
         float outerEdges = 0;
 
-        const float gridWidthX = _FrameWidth / _LocalScale.x;
-        const float gridWidthY = _FrameWidth / _LocalScale.y;
-        const float gridWidthZ = _FrameWidth / _LocalScale.z;
+        float sceneScale = length(mul(xf_CS, float4(1, 0, 0, 0)));
+        float gridMultiplier = sceneScale > 5 ? 1 : sceneScale > 1 ? 2 : sceneScale > .5 ? 4 : sceneScale > .25 ? 8 : 16;
+        float frameWidth = _FrameWidth * gridMultiplier * UVGridWidthMultiplier * _GlobalFrameWidthMultiplier;
+        const float gridWidthX = frameWidth / _LocalScale.x;
+        const float gridWidthY = frameWidth / _LocalScale.y;
+        const float gridWidthZ = frameWidth / _LocalScale.z;
 
         // top / bottom
         outerEdges += facings.facingY * (abs(.5 - i.texcoord.x) > (.5 - gridWidthX));
@@ -203,78 +197,47 @@ Shader "Custom/StencilSurfacePolyEdged"
 
         return c;
     }
-    ENDCG
+    ENDHLSL
 
     SubShader
     {
-        Tags
-        {
-            "Queue"="Transparent" "IgnoreProjector"="True" "RenderType"="TransparentCutout"
-        }
-
-        LOD 100
-        ColorMask RGB
-        Lighting Off Fog
-        {
-            Color (0,0,0,0)
-        }
-        ZWrite Off
-
-        // back faces
-        Cull Front
-        Blend SrcAlpha OneMinusSrcAlpha // overlay
-
+        Tags { "RenderPipeline"="UniversalPipeline" "Queue"="Transparent" "RenderType"="Transparent" }
         Pass
         {
-            CGPROGRAM
+            Name "StencilGrid"
+            Tags { "LightMode"="SRPDefaultUnlit" }
+            ColorMask RGB
+            ZWrite Off
+            Cull Off
+            Blend SrcAlpha OneMinusSrcAlpha
+            HLSLPROGRAM
             #pragma vertex vert
             #pragma fragment frag
-            fixed4 frag(v2f i) : SV_Target
+            #pragma multi_compile_instancing
+            half4 frag(v2f i, FRONT_FACE_TYPE facing : FRONT_FACE_SEMANTIC) : SV_Target
             {
-                float4 c = createStencilGrid(i, 2, .5, .25);
+                UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
+                bool front = IS_FRONT_VFACE(facing, true, false);
+                // URP draws one forward pass: combine the original front/back appearances.
+                float4 c = createStencilGrid(i, front ? 1 : 2, front ? 1 : .5, front ? .5 : .25);
                 c.rgb = max(c.rgb, calcPolyEdge(i));
-
                 #if SELECTION_ON
-                    return float4(GetSelectionColor().rgb, c.r) * 0.65;
+                    return float4(GetSelectionColor().rgb, c.r) * (front ? 1 : .65);
                 #elif HIGHLIGHT_ON
-                    return float4(_BrushColor.rgb, c.r) * 0.65;
+                    return float4(_BrushColor.rgb, c.r) * (front ? 1 : .65);
                 #endif
-
                 c.a = c.r * .65;
-                c.rgb += float3(.2, .2, .2);
+                if (front)
+                {
+                    c.rgb *= 1.5;
+                    return c * c.a * _Color;
+                }
+                c.rgb += .2;
                 c.a = _WidgetsDormant ? max(.5, c.a) : c.a;
                 return c * c.a * _Color * _BackColor;
             }
-            ENDCG
+            ENDHLSL
         }
-
-        // front faces
-        Cull Back
-        Blend SrcAlpha OneMinusSrcAlpha // overlay
-        Pass
-        {
-            CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-
-            fixed4 frag(v2f i) : SV_Target
-            {
-                float4 c = createStencilGrid(i, 1, 1, .5);
-                c.rgb = max(c.rgb, calcPolyEdge(i));
-
-                #if SELECTION_ON
-                    return float4(GetSelectionColor().rgb, c.r);
-                #elif HIGHLIGHT_ON
-                    return float4(_BrushColor.rgb, c.r);
-                #endif
-
-                c.a = c.r * .65;
-                c.rgb *= 1.5;
-                return c * c.a * _Color;
-            }
-            ENDCG
-        }
-
-    } // end subshader
-    Fallback "Unlit/Diffuse"
+    }
+    Fallback Off
 }
