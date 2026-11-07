@@ -405,9 +405,6 @@ namespace TiltBrush
 
         public bool IsPanelAvailable(PanelData data)
         {
-            if (data.m_Panel.Type == BasePanel.PanelType.NativeImmPlayback && !NativeImmImport.IsActive)
-                return false;
-
             switch (m_PanelAvailabilityMode)
             {
                 case PanelAvailabilityMode.Beginner:
@@ -417,10 +414,7 @@ namespace TiltBrush
                     return data.m_MapKey.m_Advanced &&
                         IsPanelInEditingLevel(data, advancedPanels: true);
                 case PanelAvailabilityMode.ViewOnly:
-                    return data.m_MapKey.m_ViewOnly &&
-                        (data.m_Panel.Type != BasePanel.PanelType.NativeImmPlayback ||
-                         IsPanelInEditingLevel(data,
-                             PlayerPrefs.GetInt(kPlayerPrefAdvancedMode, 0) == 1));
+                    return data.m_MapKey.m_ViewOnly;
                 case PanelAvailabilityMode.Multiplayer:
                     return data.m_MapKey.m_Multiplayer && IsPanelInEditingLevel(data,
                         PlayerPrefs.GetInt(kPlayerPrefAdvancedMode, 0) == 1);

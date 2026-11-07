@@ -111,7 +111,6 @@ namespace TiltBrush
             Scripts = 6000,
             SnapSettings = 8000,
             QuillLibrary = 11600,
-            NativeImmPlayback = 11601,
             TransformPanel = 12000,
             LayersPanel = 15000,
             StencilSettings = 20200,
@@ -346,7 +345,6 @@ namespace TiltBrush
         }
 
         public virtual bool ShouldRegister { get { return true; } }
-        public virtual bool AllowGrabInViewOnly => false;
 
         public void InitAdvancedFlag(bool advanced)
         {
