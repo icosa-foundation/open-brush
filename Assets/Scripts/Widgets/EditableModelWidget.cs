@@ -25,6 +25,10 @@ namespace TiltBrush
         private Axis? m_LockedManipulationAxis;
         private object m_AxisResizeGesture;
         private bool m_Ellipse;
+        private MeshFilter m_ScalePreview;
+        private Axis m_ScalePreviewAxis = Axis.Invalid;
+        private Bounds m_ScalePreviewBounds;
+        private Matrix4x4 m_ScalePreviewColliderTransform;
 
         // Session-only editing mode. A loaded ellipse is inferred from its geometry;
         // checking the toggle on a circle doesn't introduce a recipe field.
@@ -82,11 +86,7 @@ namespace TiltBrush
         {
             base.OnUserBeginTwoHandGrab(primaryHand, secondaryHand, secondaryHandInObject);
             m_AxisResizeGesture = new object();
-            // Match box guides: two hands inside scale uniformly; an outside hand chooses an axis.
-            Vector3 hands = transform.InverseTransformDirection(primaryHand - secondaryHand).Abs();
-            m_LockedManipulationAxis = secondaryHandInObject ? Axis.Invalid
-                : hands.x > hands.y && hands.x > hands.z ? Axis.X
-                : hands.y > hands.z ? Axis.Y : Axis.Z;
+            m_LockedManipulationAxis = InferManipulationAxis(primaryHand, secondaryHand, secondaryHandInObject);
         }
 
         protected override void OnUserEndTwoHandGrab()
@@ -97,8 +97,20 @@ namespace TiltBrush
         }
 
         public override Axis GetScaleAxis(Vector3 handA, Vector3 handB, out Vector3 axisDirection, out float axisExtent)
+            => GetScaleAxis(m_LockedManipulationAxis ?? Axis.Invalid, out axisDirection, out axisExtent);
+
+        private Axis InferManipulationAxis(Vector3 primaryHand, Vector3 secondaryHand, bool secondaryHandInside)
         {
-            Axis axis = m_LockedManipulationAxis ?? Axis.Invalid;
+            // Use the same decision for the live preview and the eventual grab.
+            if (secondaryHandInside) { return Axis.Invalid; }
+            Vector3 hands = transform.InverseTransformDirection(primaryHand - secondaryHand).Abs();
+            Axis axis = hands.x > hands.y && hands.x > hands.z ? Axis.X
+                : hands.y > hands.z ? Axis.Y : Axis.Z;
+            return GetScaleAxis(axis, out _, out _);
+        }
+
+        private Axis GetScaleAxis(Axis axis, out Vector3 axisDirection, out float axisExtent)
+        {
             axisDirection = Vector3.zero;
             axisExtent = 0;
             if (axis == Axis.Invalid || Model == null || !Model.m_Valid) { return Axis.Invalid; }
@@ -113,6 +125,103 @@ namespace TiltBrush
             direction[index] = 1;
             axisDirection = transform.TransformDirection(direction);
             return axis;
+        }
+
+        public override void RegisterHighlight()
+        {
+            Axis axis = Axis.Invalid;
+            if (!Pinned && m_UserInteracting && m_PolyRecipe != null)
+            {
+                var secondaryName = m_InteractingController == InputManager.ControllerName.Brush
+                    ? InputManager.ControllerName.Wand : InputManager.ControllerName.Brush;
+                Vector3 primary = InputManager.Controllers[(int)m_InteractingController].Transform.position;
+                Vector3 secondary = InputManager.Controllers[(int)secondaryName].Transform.position;
+                axis = m_LockedManipulationAxis ?? InferManipulationAxis(primary, secondary,
+                    GetActivationScore(secondary, secondaryName) >= 0);
+                axis = GetScaleAxis(axis, out _, out _);
+            }
+            if (axis == Axis.Invalid)
+            {
+                UnregisterScalePreview();
+                base.RegisterHighlight();
+                return;
+            }
+
+            base.UnregisterHighlight();
+            UpdateScalePreview(axis);
+            App.Instance.SelectionEffect.RegisterMesh(m_ScalePreview);
+        }
+
+        protected override void UnregisterHighlight()
+        {
+            UnregisterScalePreview();
+            base.UnregisterHighlight();
+        }
+
+        protected override void OnUserEndInteracting()
+        {
+            UnregisterScalePreview();
+            base.OnUserEndInteracting();
+        }
+
+        private void UnregisterScalePreview()
+        {
+            if (m_ScalePreview != null && App.Instance != null && App.Instance.SelectionEffect != null)
+            {
+                App.Instance.SelectionEffect.UnregisterMesh(m_ScalePreview);
+            }
+        }
+
+        private void UpdateScalePreview(Axis axis)
+        {
+            if (m_ScalePreview == null)
+            {
+                var preview = new GameObject("Shape Scale Preview") { hideFlags = HideFlags.HideAndDontSave };
+                m_ScalePreview = preview.AddComponent<MeshFilter>();
+                m_ScalePreview.sharedMesh = new Mesh
+                {
+                    name = "Shape Scale Preview",
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+                // SelectionEffect draws it on desktop and temporarily enables it on mobile.
+                preview.AddComponent<MeshRenderer>().enabled = false;
+            }
+            // Keep the helper outside the widget so model bounds, mesh accounting, and
+            // duplication cannot mistake the preview for generated shape geometry.
+            Transform previewTransform = m_ScalePreview.transform;
+            previewTransform.SetParent(transform.parent, false);
+            previewTransform.localPosition = transform.localPosition;
+            previewTransform.localRotation = transform.localRotation;
+            previewTransform.localScale = transform.localScale;
+            m_ScalePreview.gameObject.layer = gameObject.layer;
+
+            Bounds bounds = new Bounds(m_BoxCollider.center, m_BoxCollider.size);
+            Matrix4x4 colliderToWidget = transform.worldToLocalMatrix * m_BoxCollider.transform.localToWorldMatrix;
+            if (axis == m_ScalePreviewAxis && bounds == m_ScalePreviewBounds &&
+                colliderToWidget == m_ScalePreviewColliderTransform) { return; }
+            m_ScalePreviewAxis = axis;
+            m_ScalePreviewBounds = bounds;
+            m_ScalePreviewColliderTransform = colliderToWidget;
+            var vertices = new Vector3[8];
+            int along = (int)axis;
+            int across = (along + 1) % 3;
+            int up = (along + 2) % 3;
+            for (int face = 0; face < 2; ++face)
+            {
+                for (int corner = 0; corner < 4; ++corner)
+                {
+                    Vector3 vertex = bounds.center;
+                    vertex[along] += bounds.extents[along] * (face == 0 ? -1 : 1);
+                    vertex[across] += bounds.extents[across] * (corner == 0 || corner == 3 ? -1 : 1);
+                    vertex[up] += bounds.extents[up] * (corner < 2 ? -1 : 1);
+                    vertices[face * 4 + corner] = colliderToWidget.MultiplyPoint3x4(vertex);
+                }
+            }
+            Mesh mesh = m_ScalePreview.sharedMesh;
+            mesh.vertices = vertices;
+            mesh.triangles = new[] { 0, 2, 1, 0, 3, 2, 4, 5, 6, 4, 6, 7 };
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
         }
 
         public override void RecordAndApplyScaleToAxis(float deltaScale, Axis axis)
@@ -150,6 +259,13 @@ namespace TiltBrush
 
         public override void OnPreDestroy()
         {
+            UnregisterScalePreview();
+            if (m_ScalePreview != null)
+            {
+                Destroy(m_ScalePreview.sharedMesh);
+                Destroy(m_ScalePreview.gameObject);
+                m_ScalePreview = null;
+            }
             if (m_OwnedGeneratedMesh != null) { Destroy(m_OwnedGeneratedMesh); }
             m_OwnedGeneratedMesh = null;
             base.OnPreDestroy();
