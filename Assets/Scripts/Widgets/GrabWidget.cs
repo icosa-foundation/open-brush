@@ -512,6 +512,7 @@ namespace TiltBrush
         {
             if (value != m_UserTwoHandGrabbing)
             {
+                m_UserTwoHandGrabbing = value;
                 if (value)
                 {
                     Vector3 vPrimary = InputManager.Controllers[(int)primary].Transform.position;
