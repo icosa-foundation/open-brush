@@ -25,12 +25,12 @@ namespace TiltBrush
 
             if (m_SavedStrokeFile != null)
             {
-                (int currentLayerIndex, _) = App.Scene.GetIndexOfCanvas(App.Scene.ActiveCanvas);
+                (int currentLayerIndex, int currentFrameIndex) = App.Scene.GetIndexOfCanvas(App.Scene.ActiveCanvas);
                 Vector3 buttonPosition = Coords.AsGlobal[transform].translation;
                 Vector3 cameraPosition = ViewpointScript.Head.position;
                 Vector3 midpoint = (buttonPosition + cameraPosition) * 0.5f;
 
-                var command = new LoadSavedStrokesCommand(m_SavedStrokeFile, currentLayerIndex, midpoint);
+                var command = new LoadSavedStrokesCommand(m_SavedStrokeFile, currentLayerIndex, currentFrameIndex, midpoint);
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
             }
         }

@@ -26,6 +26,7 @@ namespace TiltBrush
     {
         private readonly SavedStrokeFile m_SavedStrokeFile;
         private readonly int m_TargetLayerIndex;
+        private readonly int m_TargetFrameIndex;
         private readonly Vector3 m_CommandMidpoint;
 
         private SelectCommand m_DeselectPreviousCommand;
@@ -54,12 +55,14 @@ namespace TiltBrush
         public LoadSavedStrokesCommand(
             SavedStrokeFile savedStrokeFile,
             int targetLayerIndex,
+            int targetFrameIndex,
             Vector3 commandMidpoint,
             BaseCommand parent = null)
             : base(parent)
         {
             m_SavedStrokeFile = savedStrokeFile;
             m_TargetLayerIndex = targetLayerIndex;
+            m_TargetFrameIndex = targetFrameIndex;
             m_CommandMidpoint = commandMidpoint;
 
             // Create a sub-command to deselect the current selection (if any)
@@ -92,7 +95,8 @@ namespace TiltBrush
                     m_SavedStrokeFile.FileInfo,
                     bAdditive: true,
                     m_TargetLayerIndex,
-                    out m_LoadedStrokes);
+                    out m_LoadedStrokes,
+                    targetFrame: m_TargetFrameIndex);
 
                 if (!m_LoadSucceeded)
                 {

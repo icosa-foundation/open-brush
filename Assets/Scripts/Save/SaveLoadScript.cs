@@ -676,7 +676,8 @@ namespace TiltBrush
         /// All imported strokes are collapsed onto a fresh layer so existing
         /// layers remain untouched. Loading the same sketch multiple times
         /// will duplicate geometry on separate layers.
-        public bool Load(SceneFileInfo fileInfo, bool bAdditive, int targetLayer, out List<Stroke> strokes)
+        public bool Load(SceneFileInfo fileInfo, bool bAdditive, int targetLayer, out List<Stroke> strokes,
+            int targetFrame = 0)
         {
             m_LastThumbnailBytes = null;
             if (!fileInfo.IsHeaderValid())
@@ -824,7 +825,7 @@ namespace TiltBrush
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, targetLayer, out legacySketch, out oldGroupToNewGroup, out strokes);
+                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, targetLayer, out legacySketch, out oldGroupToNewGroup, out strokes, targetFrame);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {

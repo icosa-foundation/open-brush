@@ -463,7 +463,8 @@ namespace TiltBrush
 
         /// Leaves stream in indeterminate state; caller should Close() upon return.
         public static bool ReadMemory(Stream stream, Guid[] brushList, bool bAdditive, int targetLayer,
-            out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup, out List<Stroke> strokes)
+            out bool isLegacy, out Dictionary<int, int> oldGroupToNewGroup, out List<Stroke> strokes,
+            int targetFrame = 0)
         {
             bool allowFastPath = BitConverter.IsLittleEndian;
             // Buffering speeds up fast path ~1.4x, slow path ~2.3x
@@ -500,7 +501,7 @@ namespace TiltBrush
 
             oldGroupToNewGroup = new Dictionary<int, int>();
             // When loading additively we want all strokes on a single new layer;
-            strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset);
+            strokes = GetStrokes(bufferedStream, brushList, allowFastPath, targetLayer: targetLayer, timestampOffset, targetFrame);
             if (strokes == null) { return false; }
 
             // Check that the strokes are in timestamp order.
@@ -535,7 +536,8 @@ namespace TiltBrush
         /// Parses a binary file into List of MemoryBrushStroke.
         /// Returns null on parse error.
         public static List<Stroke> GetStrokes(
-            Stream stream, Guid[] brushList, bool allowFastPath, int targetLayer, uint timestampOffset)
+            Stream stream, Guid[] brushList, bool allowFastPath, int targetLayer, uint timestampOffset,
+            int targetFrame = 0)
         {
             var reader = new TiltBrush.SketchBinaryReader(stream);
 
@@ -628,18 +630,10 @@ namespace TiltBrush
                             }
                         case StrokeExtension.Track:
                             UInt32 layerIndex = reader.UInt32();
-                            if (targetLayer != -1)
-                            {
-                                layerIndex = (uint)targetLayer;
-                            }
                             thisTrack = layerIndex;
                             break;
                         case StrokeExtension.Frame:
                             thisFrame = reader.UInt32();
-                            if (targetLayer != -1)
-                            {
-                                thisFrame = 0;
-                            }
                             break;
                         case StrokeExtension.ControlPointColors:
                             {
@@ -695,6 +689,12 @@ namespace TiltBrush
                                 break;
                             }
                     }
+                }
+                // Apply the insertion destination even when older strokes omit track/frame extensions.
+                if (targetLayer != -1)
+                {
+                    thisTrack = (uint)targetLayer;
+                    thisFrame = (uint)targetFrame;
                 }
                 stroke.m_IntendedCanvas = App.Scene.animationUI_manager.GetOrCreateContentCanvas(
                     (int)thisTrack, (int)thisFrame);
