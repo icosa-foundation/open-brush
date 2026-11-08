@@ -6,7 +6,8 @@ camera framing.
 
 Virtual Input supplies a virtual head and controllers without VR hardware.
 It is separate from monoscopic mode. Invisible procedural arms constrain
-controller reaches, and interactions use normal application UI and tool input.
+controller reaches and grip orientation. Interactions use normal application UI
+and tool input.
 
 ## Run the examples
 
@@ -132,8 +133,8 @@ loop to assemble steps or share helpers. JSON plans are purely declarative.
 
 1. `reshape-push` starts with a straight stroke. Moving the repelling sphere upward
    from below creates a local arch while leaving the distant endpoints fixed.
-2. `reshape-flatten` starts with three broad ripples along the tool plane's normal.
-   A sweep along the baseline projects those ripples onto the plane.
+2. `reshape-flatten` places three ripples on an oblique stroke, aligned with a
+   comfortable forward grip. A sweep projects the ripples onto that plane.
 3. `reshape-smooth` adds fine wobble to a broad arch. A sweep follows the clean
    arch so smoothing removes the small fluctuations without erasing the main curve.
 
@@ -158,7 +159,7 @@ calls, so they also work with `--write-plan`.
 | `select_script(preset, category=...)` | Present the Scripts panel, click Next and assert the named preset. Open Scripts first. |
 | `select_control(selector, ...)` | Present a control's panel and click it; optional expected `tool`/`subtool`, or `present=False` when already shown. |
 | `select_tool(tool, subtool=None)` | Select a tool and optionally withdraw and select its subtool. |
-| `open_panel(panel)` | From a closed state, present the admin panel, point directly at More and press it, choose the panel in More Options, wait and check that it opened. |
+| `open_panel(panel, via_more=True)` | Open a closed panel through More Options. Use `via_more=False` for a panel opened from its own wand-pane button, such as Scripts or SnapSettings; the helper presents that pane first. |
 | `apply_path(points, ...)` | Approach, lower the wand, pause, hold trigger along a path, release and pause. Supports contact attachment, anchor, curve, rotations, timing and padding. |
 | `reveal_result(seconds=1.0)` | Withdraw the applying hand and hold a clear view of the result. |
 
@@ -188,20 +189,29 @@ reference while idle. The filming camera is never the origin for later actions.
 
 ### Keep the target visible
 
-The brush controller should point diagonally toward a UI target from beside and
-below it, so its opaque body stays out of the camera-to-target line.
+The brush controller should point diagonally toward a UI target from the side,
+so its opaque body stays out of the camera-to-target line.
 `pointingOffsetMeters` places the tip relative to the target in panel axes:
-right, up and forward. Its default `[0.10, -0.06, -0.10]` points from the right
-and below, 10 cm in front of the surface. Z must be at most `-0.03`.
+right, up and forward. Its default `[0.12, 0.02, -0.12]` points from the right,
+2 cm above the target and 12 cm in front of the surface. Z must be at most `-0.03`.
 The ray still targets the real button; the model stays visible and opaque.
 
-For tool application, the default contact rotation is `[-25, -35, 0]`, which
-keeps the body to the right and below the contact. `apply_path` uses that
+For tool application, the default contact rotation is `[25, -35, 0]`, which
+keeps a forward grip to the side of the contact. `apply_path` uses that
 convention, and Draw supplies a similar orientation with a gradual roll.
 Authors can override rotations for brushes that need a particular orientation.
 Review the contact and selected icon in the recording; fitting subjects in the
 frame does not itself establish that they are unobstructed. Keep the camera
 fixed while correcting hand positions and orientations.
+
+The arm model uses the controller model's grip attachment to check wrist flexion,
+sideways bend and forearm rotation. It can swivel the elbow around its preferred
+outward/downward position. Preflight checks sampled reaches and paths, and runtime
+checks each evaluated pose. A rejected pose reports the step and hand; adjust the
+contact orientation or teaching shape to suit a comfortable grip. Rotations in a
+plan describe the selected attachment, whose orientation can differ from the grip.
+`panelPosition` is a preferred placement: presenting a wand pane can raise it by
+up to 12 cm to keep the grip comfortable. Pane rotation uses the thumbstick.
 
 An optional `capture` object has `name` and `fps`. The runner normally supplies
 this from its CLI options; `--rehearse` removes it. The body, controller ownership
@@ -255,7 +265,8 @@ Button selectors contain exactly one of:
 
 Selectors must match exactly one button in the predicted UI state. Hidden
 tray buttons and popup controls are predicted before recording and resolved
-against the live UI when reached. Present the
+against the live UI when reached. While a popup is open, click selectors resolve
+within that popup. Present the
 appropriate panel before clicking it; later clicks can stay on that same panel.
 Different panels can be presented and clicked later in the same script.
 Open a floating panel before presenting or clicking its controls. The executor

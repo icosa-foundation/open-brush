@@ -82,7 +82,7 @@ namespace TiltBrush
             m_ControllerBounds = m_Original.Select(ControllerBounds).ToArray();
             for (int i = 0; i < 2; ++i)
             {
-                if (!m_Arms[i].CanReach(m_Poses[i].position))
+                if (!m_Arms[i].CanReach(m_Poses[i].position, m_Poses[i].rotation))
                     m_Poses[i] = new UnityEngine.Pose(Point(new Vector3(i == 0 ? -0.24f : 0.24f, -0.48f, 0.23f)), m_OriginalPoses[i].rotation);
             }
             // Validate syntax and selectors before creating any fixture strokes.
@@ -132,9 +132,17 @@ namespace TiltBrush
         }
 
         private Vector3 Point(Vector3 metres) => m_Body.position + m_Yaw * (metres * App.METERS_TO_UNITS);
-        private ProceduralArm MakeArm(float side) => new ProceduralArm(Point(new Vector3(side * 0.18f, -0.20f, -0.04f)),
-            m_Yaw * new Vector3(side * 0.6f, -1, -0.15f), m_Script.UpperArmMeters * App.METERS_TO_UNITS,
-            m_Script.ForearmMeters * App.METERS_TO_UNITS);
+        private ProceduralArm MakeArm(float side)
+        {
+            var controller = m_Original[side < 0 ? 0 : 1];
+            Transform grip = controller.Geometry.GripAttachPoint;
+            if (grip == null) { throw new InvalidOperationException("The controller model needs a calibrated grip attachment."); }
+            Quaternion inverse = Quaternion.Inverse(controller.Transform.rotation);
+            var local = new UnityEngine.Pose(inverse * (grip.position - controller.Transform.position), inverse * grip.rotation);
+            return new ProceduralArm(Point(new Vector3(side * 0.18f, -0.20f, -0.04f)),
+                m_Yaw * new Vector3(side * 0.6f, -1, -0.15f), m_Script.UpperArmMeters * App.METERS_TO_UNITS,
+                m_Script.ForearmMeters * App.METERS_TO_UNITS, local, m_Yaw * Vector3.up);
+        }
 
         private Vector3 Anchor(string id, float t)
         {
@@ -157,20 +165,45 @@ namespace TiltBrush
             return new UnityEngine.Pose(wand.position + wand.rotation * local, delta * spin * panel.transform.rotation);
         }
 
-        private UnityEngine.Pose PlanPresentation(BasePanel panel, float ring, out int turns)
+        private UnityEngine.Pose PlanPresentation(BasePanel panel, float ring, UnityEngine.Pose start, out int turns)
         {
-            Transform axis = m_Original[0].Geometry.MainAxisAttachPoint;
-            Vector3 position = Point(AutomationScript.Vector(m_Script.PanelPosition, "panelPosition"));
-            Quaternion facing = Quaternion.LookRotation(position - m_Body.position, Vector3.up);
-            Quaternion axisInHand = Quaternion.Inverse(m_OriginalPoses[0].rotation) * axis.rotation;
-            Quaternion neutral = facing * Quaternion.Inverse(Quaternion.Euler(90, 0, 0)) * Quaternion.Inverse(axisInHand);
-            var predicted = PanelPose(panel, new UnityEngine.Pose(Vector3.zero, neutral), ring);
-            Vector3 turnAxis = neutral * Quaternion.Inverse(m_OriginalPoses[0].rotation) * axis.forward;
-            float turn = Vector3.SignedAngle(predicted.rotation * Vector3.forward, facing * Vector3.forward, turnAxis);
-            turns = Mathf.RoundToInt(turn / PanelManager.WandPanelSnapAngle);
-            Quaternion rotation = Quaternion.AngleAxis(turn - turns * PanelManager.WandPanelSnapAngle, turnAxis) * neutral;
-            predicted = PanelPose(panel, new UnityEngine.Pose(Vector3.zero, rotation), ring + turns * PanelManager.WandPanelSnapAngle);
-            return new UnityEngine.Pose(position - predicted.position, rotation);
+            Vector3 preferred = AutomationScript.Vector(m_Script.PanelPosition, "panelPosition");
+            Quaternion inverse = Quaternion.Inverse(m_Original[0].Transform.rotation);
+            Quaternion gripLocal = inverse * m_Original[0].Geometry.GripAttachPoint.rotation;
+            var from = m_Arms[0].Solve(start.position, start.rotation);
+            UnityEngine.Pose best = default;
+            int bestTurns = 0;
+            float bestScore = float.PositiveInfinity;
+            // Choose the grip first. Native thumbstick snaps bring the pane around it;
+            // a panel can remain oblique rather than bending the wrist to face the camera.
+            for (int lift = 0; lift <= 6; ++lift)
+            for (int pitch = -60; pitch >= -80; pitch -= 10)
+            for (int yaw = -30; yaw <= 30; yaw += 15)
+            for (int snap = -1; snap <= 1; ++snap)
+            {
+                Vector3 position = Point(preferred + Vector3.up * (lift * 0.02f));
+                Quaternion rotation = m_Yaw * Quaternion.Euler(pitch, yaw, 0) * Quaternion.Inverse(gripLocal);
+                var presented = PanelPose(panel, new UnityEngine.Pose(Vector3.zero, rotation),
+                    ring + snap * PanelManager.WandPanelSnapAngle);
+                float angle = Vector3.Angle(presented.rotation * Vector3.forward, position - m_Body.position);
+                if (angle > 45) { continue; }
+                float score = angle + lift + Mathf.Abs(yaw) * 0.1f + Mathf.Abs(pitch + 70) * 0.05f;
+                if (score >= bestScore) { continue; }
+                var pose = new UnityEngine.Pose(position - presented.position, rotation);
+                try
+                {
+                    var to = m_Arms[0].Solve(pose.position, pose.rotation);
+                    for (int i = 0; i <= 32; ++i) { m_Arms[0].Reach(from, to, i / 32f); }
+                }
+                catch (InvalidOperationException) { continue; }
+                best = pose;
+                bestTurns = snap;
+                bestScore = score;
+            }
+            if (float.IsPositiveInfinity(bestScore))
+                throw new ArgumentException($"Cannot present {panel.Type} with a comfortable grip near panelPosition. Move panelPosition closer or higher.");
+            turns = bestTurns;
+            return best;
         }
 
         private UnityEngine.Pose RootForContact(int hand, UnityEngine.Pose contact, AutomationScript.Step step)
@@ -255,21 +288,27 @@ namespace TiltBrush
                 var subject = shot.AddSubject(step.Label ?? step.Op);
                 if (step.Op == "present" || step.Op == "focus" || step.Op == "click")
                 {
-                    item.Button = step.Target.Resolve(false);
-                    if (item.Button == null && popupPrefab != null && step.Op == "click")
+                    item.Button = step.Op == "click" && popupPrefab != null
+                        ? popupPrefab.GetComponentsInChildren<BaseButton>(true).SingleOrDefault(step.Target.Matches) : null;
+                    if (step.Op == "click" && popupPrefab != null && item.Button == null)
+                        throw new ArgumentException($"Step {m_Instructions.Count + 1}: the target is not in the open popup.");
+                    if (item.Button != null)
                     {
-                        item.Button = popupPrefab.GetComponentsInChildren<BaseButton>(true).SingleOrDefault(step.Target.Matches);
                         item.Panel = popupOwner;
-                        item.Deferred = item.Button != null;
+                        item.Deferred = true;
                     }
-                    else { item.Panel = item.Button?.GetComponentInParent<BasePanel>(true); }
+                    else
+                    {
+                        item.Button = step.Target.Resolve(false);
+                        item.Panel = item.Button?.GetComponentInParent<BasePanel>(true);
+                    }
                     if (item.Button == null || item.Panel == null)
                         throw new ArgumentException($"Step {m_Instructions.Count + 1} ({step.Op}): target '{step.Target.Tool ?? step.Target.Brush ?? step.Target.Subtool ?? step.Target.Command ?? step.Target.OpensPanel ?? step.Target.Path}' does not exist in the predicted UI state.");
                     if (step.Op == "present" && item.Panel.m_Fixed)
                     {
                         item.Hand = 0;
                         item.Start = predicted[0];
-                        var end = PlanPresentation(item.Panel, ring, out item.Turns);
+                        var end = PlanPresentation(item.Panel, ring, predicted[0], out item.Turns);
                         item.Path = new[] {end};
                         var localBounds = item.Panel.FullScaleRendererPoints().ToArray();
                         for (int i = 0; i <= 32; ++i)
@@ -353,6 +392,8 @@ namespace TiltBrush
                             foreach (var point in panel.FullScaleRendererPoints()) { bounds.Encapsulate(opened.position + opened.rotation * point); }
                             bounds.Expand(0.04f * App.METERS_TO_UNITS);
                             subject.AddBounds(bounds);
+                            popupPrefab = null;
+                            popupOwner = null;
                         }
                         predicted[1] = item.Path[0];
                         if (item.Deferred) { item.Button = null; }
@@ -398,7 +439,16 @@ namespace TiltBrush
                 }
                 if (item.Path != null)
                 {
-                    foreach (var pose in item.Path) { m_Arms[item.Hand].Solve(pose.position, pose.rotation); }
+                    try
+                    {
+                        foreach (var pose in item.Path) { m_Arms[item.Hand].Solve(pose.position, pose.rotation); }
+                        // Endpoint checks alone miss wrist/forearm violations during a joint-space reach.
+                        for (int i = 0; i <= 32; ++i) { Evaluate(item, i / 32f); }
+                    }
+                    catch (InvalidOperationException error)
+                    {
+                        throw new ArgumentException($"Step {m_Instructions.Count + 1} ({step.Label ?? step.Op}, {(item.Hand == 0 ? "wand" : "brush")} hand): {error.Message}", error);
+                    }
                     if (step.Op == "present" || step.Op == "focus" || step.Op == "click" || (step.Op != "rest" && item.Path.Length == 1))
                         subject.AddPose(item.Path.Last(), m_ControllerBounds[item.Hand]);
                     else if (step.Op != "rest")
@@ -573,7 +623,8 @@ namespace TiltBrush
             }
             if (item.Button == null && item.Deferred)
             {
-                item.Button = item.Source.Target.Resolve(false);
+                item.Button = item.Panel.PanelPopUp?.GetComponentsInChildren<BaseButton>(true)
+                    .SingleOrDefault(item.Source.Target.Matches);
                 if (item.Button == null) { m_Elapsed = 0; return; }
                 item.Button.Pressed += ButtonPressed;
             }
