@@ -507,8 +507,12 @@ namespace TiltBrush.MeshEditing
                     {
                         if (bevel == null)
                         {
-                            var bevelModifiers = data["Modifiers"] as JArray ?? new JArray();
-                            data["Modifiers"] = bevelModifiers;
+                            var bevelModifiers = data["Modifiers"] as JArray;
+                            if (bevelModifiers == null)
+                            {
+                                bevelModifiers = new JArray();
+                                data["Modifiers"] = bevelModifiers;
+                            }
                             int bevelInsert = bevelModifiers.TakeWhile(op => (string)op["Type"] != "transform").Count();
                             bevelModifiers.Insert(bevelInsert, Step("operator", new JObject { ["operation"] = "Bevel", ["amount"] = .08f, ["active"] = true }));
                         }
