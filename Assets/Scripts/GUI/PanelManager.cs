@@ -321,6 +321,10 @@ namespace TiltBrush
 
         public float GetSnapStepDistance() { return m_WandPanelSnapStepDistance; }
 
+        public const float WandPanelSnapAngle = 360f / 3f;
+        public bool WandPanelRotationIsSettled => !m_AdvancedModeRevealActive &&
+            m_RotateSnapState == RotateSnapState.Done && Mathf.Abs(m_WandPanelsRotationVelocity) < 0.0001f;
+
         public bool PanelsAreStable()
         {
             return StandardActive() || SketchbookActive() || SettingsActive() || MemoryWarningActive() ||
@@ -1132,7 +1136,7 @@ namespace TiltBrush
                     // How fast it snaps to next position.
                     const float kSnapSpeed = 10f;
                     // How far to turn to get to the next pannel.
-                    const float kSnapRotationAngle = 360f / 3f;
+                    const float kSnapRotationAngle = WandPanelSnapAngle;
 
                     // Play audio on enter.
                     if (m_RotateSnapAnimTime == 1.0f)
