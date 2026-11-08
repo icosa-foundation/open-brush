@@ -29,23 +29,22 @@ def load_plan(path, args):
 
 
 def main():
+    examples = {path.stem: path for path in (Path(__file__).parent / "automation-scripts").glob("*.py")}
+    examples["reshape"] = examples["reshape-grab"]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:40074")
     parser.add_argument("--script", type=Path, help="External JSON plan or Python build_plan(args) file")
-    parser.add_argument("--scenario", choices=("draw", "reshape"), default="draw", help="External example to run when --script is omitted")
+    parser.add_argument("--scenario", choices=sorted(examples), default="draw", help="External example to run when --script is omitted")
     parser.add_argument("--name", default=f"tutorial-{datetime.datetime.now():%Y%m%d-%H%M%S}")
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--brush", default="")
-    parser.add_argument("--existing-stroke", action="store_true", help="Use the latest stroke in the Reshape example")
+    parser.add_argument("--existing-stroke", action="store_true", help="Use the latest stroke in examples that support it")
     parser.add_argument("--head", type=float, nargs=6, metavar=("X", "Y", "Z", "RX", "RY", "RZ"))
     parser.add_argument("--timeout", type=float, default=600)
     parser.add_argument("--rehearse", action="store_true", help="Run without saving frames")
     parser.add_argument("--write-plan", type=Path, help="Write generated JSON and exit without contacting Open Brush")
     args = parser.parse_args()
-    if args.existing_stroke and not args.script and args.scenario != "reshape":
-        parser.error("--existing-stroke requires --scenario reshape")
-    filename = "reshape-grab.py" if args.scenario == "reshape" else "draw.py"
-    path = args.script or Path(__file__).parent / "automation-scripts" / filename
+    path = args.script or examples[args.scenario]
     plan = load_plan(path, args)
     if args.rehearse:
         plan.pop("capture", None)
