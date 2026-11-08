@@ -473,8 +473,23 @@ namespace TiltBrush
                     TrTransform xf = after.PointerTransforms[i] * fromSource;
                     var copy = SketchMemoryScript.m_Instance.DuplicateStroke(
                         source, source.Canvas,
-                        xf == TrTransform.identity ? (TrTransform?)null : xf,
+                        xf == TrTransform.identity || xf.scale < 0 ? (TrTransform?)null : xf,
                         absoluteScale: true);
+                    if (xf.scale < 0)
+                    {
+                        // Match drawing and reshaping: a reflected pose also needs a
+                        // brush-local X reflection before retaining its rotation.
+                        var handednessFix = new Plane(Vector3.right, 0).ToTrTransform();
+                        var points = (PointerManager.ControlPoint[])source.m_ControlPoints.Clone();
+                        for (int pointIndex = 0; pointIndex < points.Length; ++pointIndex)
+                        {
+                            var pose = xf * TrTransform.TR(
+                                points[pointIndex].m_Pos, points[pointIndex].m_Orient) * handednessFix;
+                            points[pointIndex].m_Pos = pose.translation;
+                            points[pointIndex].m_Orient = pose.rotation;
+                        }
+                        copy.RestoreMirrorControlPoints(points, source.m_BrushScale * Mathf.Abs(xf.scale));
+                    }
                     if (!instances.TryGetValue(i, out var instance))
                     {
                         instance = NewCopyInstance(group.Canonical ?? source, i, count);
