@@ -62,6 +62,8 @@ namespace TiltBrush
                 throw new InvalidOperationException("The configured SDF guide prefab did not create an SDF guide.");
             }
 
+            // Intro animation preserves widget size rather than applying the spawn scale.
+            stencil.SetSignedWidgetSize((stencil.Canvas.Pose.inverse * transform).scale);
             stencil.ReplacePrimitives(definitions);
 
             return new JObject
