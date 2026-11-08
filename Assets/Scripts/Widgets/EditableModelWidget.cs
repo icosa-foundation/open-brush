@@ -17,6 +17,8 @@ namespace TiltBrush
         public EditableModelDefinitionData m_Definition;
         public PolyMesh m_PolyMesh;
         public Color m_Color = Color.white;
+        private EditableModelMaterialData m_MaterialSettings;
+        public EditableModelMaterialData MaterialSettings => m_MaterialSettings;
         public static EditableModelWidget LastActivated { get; private set; }
         private Mesh m_OwnedGeneratedMesh;
         // Retain stretches already stored in sketches. New axis gestures edit the
@@ -329,9 +331,40 @@ namespace TiltBrush
 
         public void SetColor(Color color)
         {
+            if (m_MaterialSettings != null) color.a = m_MaterialSettings.Opacity;
             m_Color = color;
-            TintModel(GetModelGameObject(), color);
-            if (Model != null && Model.m_ModelParent != null) { TintModel(Model.m_ModelParent.gameObject, color); }
+            Color visible = color;
+            if (m_MaterialSettings != null && !m_MaterialSettings.Transparent) visible.a = 1f;
+            TintModel(GetModelGameObject(), visible);
+            if (Model != null && Model.m_ModelParent != null) { TintModel(Model.m_ModelParent.gameObject, visible); }
+        }
+
+        public EditableModelMaterialData GetMaterialSettings() => m_MaterialSettings?.Clone() ??
+            EditableModelMaterialRenderer.Capture(GetModelGameObject().GetComponent<Renderer>().sharedMaterial, m_Color);
+
+        public void SetMaterialSettings(EditableModelMaterialData settings, Color? color = null)
+        {
+            settings?.Validate();
+            m_MaterialSettings = settings?.Clone();
+            if (color.HasValue) m_Color = color.Value;
+            if (settings != null) m_Color.a = settings.Opacity;
+            var materials = new System.Collections.Generic.HashSet<Material>();
+            foreach (var root in new[] { GetModelGameObject(), Model?.m_ModelParent?.gameObject })
+            {
+                if (root == null) continue;
+                foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+                {
+                    foreach (var material in renderer.sharedMaterials) materials.Add(material);
+                    if (m_InitialMaterials != null && m_InitialMaterials.TryGetValue(renderer, out var initial))
+                        foreach (var material in initial) materials.Add(material);
+                    if (m_NewMaterials != null && m_NewMaterials.TryGetValue(renderer, out var highlighted))
+                        foreach (var material in highlighted) materials.Add(material);
+                }
+            }
+            var fallback = settings != null ? null : m_Color.a < 1 ? ModelCatalog.m_Instance.m_ObjLoaderTransparentMaterial
+                : ModelCatalog.m_Instance.m_ObjLoaderStandardMaterial;
+            foreach (var material in materials)
+                if (material != null) EditableModelMaterialRenderer.Apply(material, settings, m_Color, fallback);
         }
 
         private void TintModel(GameObject root, Color color)
@@ -377,6 +410,7 @@ namespace TiltBrush
             clone.SetSignedWidgetSize(size);
             clone.CustomDimension = CustomDimension;
             clone.CloneInitialMaterials(this);
+            if (m_MaterialSettings != null) clone.SetMaterialSettings(m_MaterialSettings);
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             clone.TrySetCanvasKeywordsFromObject(transform);
             return clone;

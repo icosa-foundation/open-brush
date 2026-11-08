@@ -217,7 +217,21 @@ namespace TiltBrush
                             if (MaquetteMaterialAdapter.IsOpaqueModelMaterial(material)) { effectiveColor.a = 1; }
                             widget = EditableModelManager.GetOrCreate().GeneratePolyMesh(mesh, recipe,
                                 canvas.Pose * Pose(placement), color: effectiveColor, skipIntroAnimation: true);
-                            if (!string.IsNullOrEmpty(material))
+                            var mappedMaterial = MaquetteMaterialAdapter.ModelMaterial(material,
+                                new[] { color.r, color.g, color.b, color.a });
+                            if (mappedMaterial != null)
+                            {
+                                ((EditableModelWidget)widget).SetMaterialSettings(EditableModelMaterialData.FromGltf(mappedMaterial));
+                                if (material == "TranslucentLit" || material == "TranslucentUnlit")
+                                {
+                                    string feature = material == "TranslucentLit" ?
+                                        "Maquette translucent model depth writing and vertex lighting" :
+                                        "Maquette translucent model depth writing and alpha discard";
+                                    report.UnsupportedObjects.TryGetValue(feature, out int count);
+                                    report.UnsupportedObjects[feature] = count + 1;
+                                }
+                            }
+                            else if (!string.IsNullOrEmpty(material))
                             {
                                 report.UnmappedMaterials.TryGetValue(material, out int count);
                                 report.UnmappedMaterials[material] = count + 1;

@@ -27,6 +27,8 @@ namespace TiltBrush
         public Color[] Colors { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Vector3[] AxisScales { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public EditableModelMaterialData[] Materials { get; set; }
         [JsonExtensionData]
         public IDictionary<string, JToken> ExtraData { get; set; }
 

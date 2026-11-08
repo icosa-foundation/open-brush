@@ -67,6 +67,10 @@ namespace TiltBrush.MeshEditing
                         throw new ArgumentException("Invalid editable model transforms");
                     }
                     if (instance.LayerIds?.Any(layer => layer < 0) == true) { throw new ArgumentException("Invalid editable model layer"); }
+                    if (instance.Materials != null && instance.Materials.Length != instance.RawTransforms.Length)
+                        throw new ArgumentException("Invalid editable material array length");
+                    if (instance.Materials != null)
+                        foreach (var material in instance.Materials) material?.Validate();
                     poly = Evaluate(recipe);
                     if (poly.Vertices.Count == 0 || poly.Faces.Count == 0) { throw new InvalidOperationException("Empty editable geometry"); }
                 }
@@ -89,6 +93,8 @@ namespace TiltBrush.MeshEditing
                         recordCommand: false, color: At(instance.Colors, i, Color.white), definitionId: instance.AssetId,
                         skipIntroAnimation: true);
                     widget.m_Definition = savedDefinition;
+                    var material = At(instance.Materials, i, null);
+                    if (material != null) widget.SetMaterialSettings(material);
                     widget.SetCanvas(canvas);
                     widget.transform.localPosition = transform.translation;
                     widget.transform.localRotation = transform.rotation;

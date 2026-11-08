@@ -192,7 +192,9 @@ namespace TiltBrush
                     GroupIds = widgets.Select(widget => groupIdMapping.GetId(widget.Group)).ToArray(),
                     LayerIds = widgets.Select(widget => App.Scene.GetIndexOfCanvas(GetSavedCanvas(widget))).ToArray(),
                     Colors = widgets.Select(widget => widget.m_Color).ToArray(),
-                    AxisScales = widgets.Select(widget => widget.CustomDimension).ToArray()
+                    AxisScales = widgets.Select(widget => widget.CustomDimension).ToArray(),
+                    Materials = widgets.Any(widget => widget.MaterialSettings != null)
+                        ? widgets.Select(widget => widget.MaterialSettings?.Clone()).ToArray() : null
                 });
             }
             models.AddRange(MeshEditing.EditableModelManager.RetainedInstances);
