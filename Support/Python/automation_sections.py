@@ -52,6 +52,19 @@ def select_tool(tool, *, subtool=None):
     return steps
 
 
+def open_panel(panel):
+    """Open an initially hidden panel through the native More panels popup."""
+    return [
+        {"op": "assert", "panel": panel, "panelOpen": False},
+        {"op": "present", "target": {"command": "MorePanels"}},
+        {"op": "focus", "target": {"command": "MorePanels"}},
+        *select_control({"command": "MorePanels"}, present=False),
+        *select_control({"opensPanel": panel}, present=False),
+        {"op": "wait", "seconds": 0.6},
+        {"op": "assert", "panel": panel, "panelOpen": True},
+    ]
+
+
 def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
                attachment="tool", anchor=None, anchor_t=0.5,
                rotation=(12, 0, 0), end_rotation=None, curve="polyline",

@@ -1,6 +1,6 @@
 """Select Tint and paint a contrasting colour onto the middle of an existing stroke."""
 
-from automation_sections import apply_path, prepare_stroke, reveal_result, select_tool
+from automation_sections import apply_path, open_panel, prepare_stroke, reveal_result, select_tool
 
 
 def build_plan(args):
@@ -16,6 +16,7 @@ def build_plan(args):
             {"op": "color", "colorRgb": coral},
         ],
         "steps": [
+            *open_panel("Labs"),
             *select_tool("TintColorTool"),
             *apply_path([[-0.035, 0.018, 0], [0.035, -0.018, 0]], label="Tint",
                         tool="TintColorTool", anchor="subject", padding=radius),

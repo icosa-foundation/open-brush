@@ -1,6 +1,6 @@
 """Start with a stroke already drawn, select Reshape and Grab, then bend its middle."""
 
-from automation_sections import apply_path, prepare_stroke, reveal_result, select_tool
+from automation_sections import apply_path, open_panel, prepare_stroke, reveal_result, select_tool
 
 
 def build_plan(args):
@@ -16,6 +16,7 @@ def build_plan(args):
              "min": [-0.09, -0.09, -0.09], "max": [0.09, 0.21, 0.09]},
         ],
         "steps": [
+            *open_panel("Labs"),
             *select_tool("ReshapeTool", subtool="Grab"),
             *apply_path([[0, 0, 0], [0, 0.12, 0]], label="Grab", tool="ReshapeTool",
                         anchor="subject", padding=0.07),
