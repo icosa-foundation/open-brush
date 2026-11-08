@@ -66,6 +66,7 @@ namespace TiltBrush
             public string Tool;
             public float RadiusMeters;
             public string Subtool;
+            public float[] ColorRgb;
         }
 
         public sealed class Step
@@ -91,6 +92,12 @@ namespace TiltBrush
             public float MinimumMovementMeters;
             public bool FixedEndpoints;
             public int? StrokeCountDelta;
+            public int MinimumChangedColorPoints;
+            public int? MaximumChangedColorPoints;
+            public bool UnchangedGeometry;
+            public float[] ExpectedColorRgb;
+            public float ColorPointT = 0.5f;
+            public float ColorTolerance = 0.05f;
         }
 
         public sealed class Subject
@@ -130,6 +137,13 @@ namespace TiltBrush
                 throw new ArgumentException($"{field} must be between {minimum} and {maximum}.");
         }
 
+        internal static Color Rgb(float[] values)
+        {
+            Vector3 rgb = Vector(values, "colorRgb");
+            if (values.Any(v => v < 0 || v > 1)) { throw new ArgumentException("RGB channels must be between 0 and 1."); }
+            return new Color(rgb.x, rgb.y, rgb.z, 1);
+        }
+
         internal Dictionary<string, Stroke> PrepareScene(UnityEngine.Pose body)
         {
             var strokes = new Dictionary<string, Stroke>(StringComparer.Ordinal);
@@ -165,9 +179,14 @@ namespace TiltBrush
                             scale = 1
                         }).ToList();
                         stroke = DrawStrokes.DrawNestedTrList(new[] {path}, TrTransform.identity, brush: brush,
-                            brushSize: prep.BrushSizeMeters * App.METERS_TO_UNITS, canvas: canvas).Single();
+                            brushSize: prep.BrushSizeMeters * App.METERS_TO_UNITS, canvas: canvas,
+                            colors: prep.ColorRgb == null ? null : new List<Color> {Rgb(prep.ColorRgb)}).Single();
                     }
                     strokes.Add(prep.Id, stroke);
+                }
+                else if (prep.Op == "color")
+                {
+                    App.BrushColor.CurrentColor = Rgb(prep.ColorRgb);
                 }
                 else if (prep.Op == "tool")
                 {

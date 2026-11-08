@@ -25,6 +25,7 @@ namespace TiltBrush
         private readonly List<Instruction> m_Instructions = new List<Instruction>();
         private readonly Dictionary<string, Stroke> m_Strokes;
         private readonly Dictionary<string, Vector3[]> m_OriginalPoints;
+        private readonly Dictionary<string, Color32[]> m_OriginalColors;
         private readonly ControllerInfo[] m_Original;
         private readonly ProceduralControllerInfo[] m_Controllers;
         private readonly UnityEngine.Pose[] m_OriginalPoses;
@@ -92,6 +93,8 @@ namespace TiltBrush
             }
             m_Strokes = script.PrepareScene(m_Body);
             m_OriginalPoints = m_Strokes.ToDictionary(p => p.Key, p => p.Value.m_ControlPoints.Select(c => c.m_Pos).ToArray());
+            m_OriginalColors = m_Strokes.ToDictionary(p => p.Key,
+                p => Enumerable.Range(0, p.Value.m_ControlPoints.Length).Select(p.Value.GetColor).ToArray());
             m_InitialStrokeCount = SketchMemoryScript.m_Instance.StrokeCount;
             var shot = Compile();
             var framing = script.Framing.Enabled ? (AutomationShot.FramingResult?)shot.Frame(App.VrSdk.GetVrCamera(), m_Body, script.Framing) : null;
@@ -481,11 +484,30 @@ namespace TiltBrush
             var result = stroke.m_ControlPoints;
             if (original.Length != result.Length) { throw new InvalidOperationException("Stroke control-point count changed."); }
             float movement = Enumerable.Range(0, result.Length).Max(i => Vector3.Distance(original[i], result[i].m_Pos)) * stroke.Canvas.Pose.scale * App.UNITS_TO_METERS;
+            if (step.UnchangedGeometry && movement > 0.00001f)
+                throw new InvalidOperationException("The tool unexpectedly moved the stroke's geometry.");
             if (movement < step.MinimumMovementMeters) { throw new InvalidOperationException("The stroke did not move far enough."); }
             if (step.FixedEndpoints && (Vector3.Distance(original[0], result[0].m_Pos) > 0.0001f || Vector3.Distance(original.Last(), result.Last().m_Pos) > 0.0001f))
                 throw new InvalidOperationException("The stroke endpoints moved.");
+            AutomationScript.Positive(step.ColorTolerance, "colorTolerance", 0, 1);
+            if (step.MinimumChangedColorPoints < 0 || step.MaximumChangedColorPoints < 0)
+                throw new ArgumentException("Changed colour point limits must be nonnegative.");
+            int changed = Enumerable.Range(0, result.Length).Count(i => ColorDistance(m_OriginalColors[step.Stroke][i], stroke.GetColor(i)) > step.ColorTolerance);
+            if (changed < step.MinimumChangedColorPoints || (step.MaximumChangedColorPoints.HasValue && changed > step.MaximumChangedColorPoints.Value))
+                throw new InvalidOperationException($"Unexpected colour coverage: {changed} stroke points changed.");
+            if (step.ExpectedColorRgb != null)
+            {
+                AutomationScript.Positive(step.ColorPointT, "colorPointT", 0, 1);
+                int point = Mathf.RoundToInt(step.ColorPointT * (result.Length - 1));
+                if (ColorDistance(stroke.GetColor(point), AutomationScript.Rgb(step.ExpectedColorRgb)) > step.ColorTolerance)
+                    throw new InvalidOperationException("The inspected stroke point did not reach the expected colour.");
+            }
             Debug.Log($"[AutomationScript] Stroke {step.Stroke} moved {movement:F3}m.");
+            if (step.MinimumChangedColorPoints > 0 || step.ExpectedColorRgb != null)
+                Debug.Log($"[AutomationScript] Stroke {step.Stroke}: {changed}/{result.Length} points changed colour; geometry movement {movement:F6}m.");
         }
+
+        private static float ColorDistance(Color a, Color b) => Mathf.Max(Mathf.Abs(a.r - b.r), Mathf.Abs(a.g - b.g), Mathf.Abs(a.b - b.b));
 
         public void ApplyPoses()
         {
