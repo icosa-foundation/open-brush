@@ -48,10 +48,10 @@ python Support/Python/record-procedural-tutorial.py --scenario symmetry --param 
 python Support/Python/record-procedural-tutorial.py --scenario symmetry --param preset=CandyCane --name symmetry-candycane
 ```
 
-These load [draw.py](Support/Python/automation-scripts/draw.py),
-[reshape-grab.py](Support/Python/automation-scripts/reshape-grab.py) and
-[tint.py](Support/Python/automation-scripts/tint.py) and
-[open-labs.py](Support/Python/automation-scripts/open-labs.py). Their
+These load [draw.py](../Python/automation-scripts/draw.py),
+[reshape-grab.py](../Python/automation-scripts/reshape-grab.py) and
+[tint.py](../Python/automation-scripts/tint.py) and
+[open-labs.py](../Python/automation-scripts/open-labs.py). Their
 selections, paths, inputs, timing and assertions live in those external files.
 The Reshape example prepares a starter stroke **before capture** or uses the
 latest existing stroke. The video begins with the stroke already drawn, then
@@ -170,7 +170,7 @@ loop to assemble steps or share helpers. JSON plans are purely declarative.
 
 ### Reuse sections from the demo library
 
-[automation_sections.py](Support/Python/automation_sections.py) contains shared
+[automation_sections.py](../Python/automation_sections.py) contains shared
 sections used by all three examples. They return plain data and make no API
 calls, so they also work with `--write-plan`.
 
@@ -367,12 +367,25 @@ and finish when `Phase` is `Stopped` and `Recording` is false. `automation.stop`
 or Escape cancels and releases inputs before returning controller ownership.
 Only one automation and one capture can own the controllers/clock at a time.
 
+The automation API consists of `automation.script`, `automation.stop`,
+`automation.head` and `query.automation`. The original hard-coded `automation.start`,
+`automation.record` and `automation.reshape.*` entry points have been removed;
+use external plans for those sequences.
+
 ## Implementation and verification
 
-The shared engine is [AutomationScript.cs](Assets/Scripts/Input/AutomationScript.cs)
-and [ScriptedAutomation.cs](Assets/Scripts/Input/ScriptedAutomation.cs), exposed by
-[ApiMethods.Automation.cs](Assets/Scripts/API/ApiMethods.Automation.cs). The Python
-transport is [automation_client.py](Support/Python/automation_client.py).
+After consolidating onto one executor, the Windows Editor compiled successfully.
+HTTP Draw and Editor-loaded Grab rehearsals passed their native action assertions.
+The Editor's load/rehearse/record handlers were exercised through Unity CLI;
+rehearsal ignored file capture settings, and Record/Stop saved 90 frames using
+the window's 12 fps override. A malformed HTTP payload returned a matching run ID
+and error, and a subsequent valid run cleared that error. No macOS validation
+was performed for this cleanup.
+
+The shared engine is [AutomationScript.cs](../../Assets/Scripts/Input/AutomationScript.cs)
+and [ScriptedAutomation.cs](../../Assets/Scripts/Input/ScriptedAutomation.cs), exposed by
+[ApiMethods.Automation.cs](../../Assets/Scripts/API/ApiMethods.Automation.cs). The Python
+transport is [automation_client.py](../Python/automation_client.py).
 The older Editor Draw/Reshape convenience controls and dedicated endpoints
 assume wand-attached targets. Use the external library for these default-layout
 popup/floating-panel sequences; the window still provides the Virtual Input toggle.
