@@ -113,3 +113,29 @@ def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
 def reveal_result(seconds=1.0):
     """Withdraw the applying hand so the artwork can be seen, then hold the shot."""
     return [{"op": "rest"}, {"op": "wait", "seconds": seconds}]
+
+
+def reshape_demo(mode, points, path, *, name, radius=0.08, seconds=3.0,
+                 rotation=(-25, -35, 0), minimum_movement=0.02, fixed_endpoints=False,
+                 brush="Icing", size=0.009):
+    """Prepare a teaching shape, visibly select a reshape mode, then apply one gesture."""
+    return {
+        "version": 1,
+        "name": name,
+        "prepare": [
+            {"op": "drawing"},
+            prepare_stroke(points=points, brush=brush, size=size, color=(0.12, 0.7, 0.95)),
+            {"op": "tool", "tool": "ReshapeTool", "radiusMeters": radius,
+             "subtool": "Grab" if mode == "Push" else "Push"},
+        ],
+        "steps": [
+            *open_panel("Labs"),
+            *select_tool("ReshapeTool", subtool=mode),
+            *reveal_result(seconds=1.3),
+            *apply_path(path, label=mode, tool="ReshapeTool", rotation=rotation,
+                        seconds=seconds, padding=radius),
+            {"op": "assert", "stroke": "subject", "minimumMovementMeters": minimum_movement,
+             "fixedEndpoints": fixed_endpoints, "strokeCountDelta": 0},
+            *reveal_result(seconds=3.0),
+        ],
+    }
