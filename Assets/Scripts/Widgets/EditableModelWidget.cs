@@ -403,7 +403,8 @@ namespace TiltBrush
             var poly = m_PolyMesh.Duplicate();
             poly.ScalingFactor = m_PolyMesh.ScalingFactor;
             var clone = EditableModelManager.GetOrCreate().GeneratePolyMesh(poly,
-                new GeometryRecipeData(m_PolyRecipe.ToJson()), TrTransform.TRS(position, rotation, size), recordCommand: false, color: m_Color);
+                new GeometryRecipeData(m_PolyRecipe.ToJson()), TrTransform.TRS(position, rotation, size),
+                recordCommand: false, color: m_Color, skipIntroAnimation: true);
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.m_Definition = m_Definition?.WithRecipe(clone.m_PolyRecipe);
             clone.transform.SetParent(transform.parent, true);
