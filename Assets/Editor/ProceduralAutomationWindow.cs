@@ -11,6 +11,8 @@ namespace TiltBrush
 {
     public sealed class ProceduralAutomationWindow : EditorWindow
     {
+        private enum Sequence { DrawStroke, ReshapeGrab }
+        [SerializeField] private Sequence m_Sequence;
         [SerializeField] private BaseButton m_Target;
         [SerializeField] private ProceduralAutomation.Settings m_Settings = new ProceduralAutomation.Settings();
         private Vector2 m_Scroll;
@@ -36,17 +38,36 @@ namespace TiltBrush
                     EditorGUILayout.Toggle("Virtual Input next Play", virtualInput));
             }
             EditorGUILayout.HelpBox("Virtual Input mode needs no headset or controllers. Launch a player with --virtualInput. Recording writes PNG frames plus frame-rate metadata; keep the Game view visible during capture.", MessageType.Info);
-            EditorGUILayout.HelpBox("This rehearsal clicks a wand-panel button and draws a curved stroke. Action positions use the virtual body's reference pose in metres. Automatic framing fits the declared subjects once and holds the camera still for the shot. Framing controls are under Settings > Framing.", MessageType.Info);
+            EditorGUILayout.HelpBox("Sequences use controller input to select tools and interact with strokes. Action positions use the virtual body's reference pose in metres. Automatic framing fits the declared subjects once and holds the camera still for the shot. Framing controls are under Settings > Framing.", MessageType.Info);
             bool ready = Application.isPlaying && InputManager.m_Instance != null;
             string status = ready ? InputManager.m_Instance.ProceduralAutomationStatus : "Enter Play mode";
             EditorGUILayout.LabelField("Status", status);
             bool running = ready && status != "Stopped";
             using (new EditorGUI.DisabledScope(running))
             {
+                Sequence sequence = (Sequence)EditorGUILayout.EnumPopup("Sequence", m_Sequence);
+                if (sequence != m_Sequence) { m_Sequence = sequence; m_Target = null; }
+                if (m_Sequence == Sequence.ReshapeGrab)
+                {
+                    EditorGUILayout.HelpBox("Start the video with a stroke already drawn. Preparation happens before recording; the video shows selecting Reshape, selecting Grab, and bending the stroke. Use Undo to restore the stroke before another take.", MessageType.Info);
+                    using (new EditorGUI.DisabledScope(!ready))
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        if (GUILayout.Button("Prepare starter stroke")) { PrepareReshape(false); }
+                        if (GUILayout.Button("Use latest stroke")) { PrepareReshape(true); }
+                    }
+                }
                 m_Target = (BaseButton)EditorGUILayout.ObjectField("Panel button", m_Target, typeof(BaseButton), true);
                 using (new EditorGUILayout.HorizontalScope())
                 {
-                    if (GUILayout.Button("Find brush button")) { m_Target = ProceduralAutomation.FindBrushButton(); }
+                    using (new EditorGUI.DisabledScope(!ready))
+                    {
+                        if (GUILayout.Button("Find action button"))
+                        {
+                            if (m_Sequence == Sequence.ReshapeGrab) { PrepareReshape(false); }
+                            else { m_Target = ProceduralAutomation.FindBrushButton(); }
+                        }
+                    }
                     if (GUILayout.Button("Use selected button"))
                     {
                         m_Target = Selection.activeGameObject == null ? null : Selection.activeGameObject.GetComponentInParent<BaseButton>();
@@ -62,8 +83,7 @@ namespace TiltBrush
                         try
                         {
                             m_Error = null;
-                            if (m_Target == null) { m_Target = ProceduralAutomation.FindBrushButton(); }
-                            InputManager.m_Instance.StartProceduralAutomation(m_Target, m_Settings);
+                            StartSequence(record: false);
                         }
                         catch (Exception exception) { m_Error = exception.Message; }
                     }
@@ -75,8 +95,7 @@ namespace TiltBrush
                         try
                         {
                             m_Error = null;
-                            if (m_Target == null) { m_Target = ProceduralAutomation.FindBrushButton(); }
-                            ApiMethods.RecordProceduralAutomation(m_Target, m_Settings, m_RecordingName, m_FrameRate);
+                            StartSequence(record: true);
                             EditorApplication.ExecuteMenuItem("Window/General/Game");
                         }
                         catch (Exception exception) { m_Error = exception.Message; }
@@ -103,7 +122,31 @@ namespace TiltBrush
                 serialized.ApplyModifiedProperties();
                 EditorGUILayout.EndScrollView();
             }
-            EditorGUILayout.HelpBox("The click and stroke use normal application input. Each run adds a stroke; use Undo to remove it. Settings changes apply to the next run. The virtual head starts at 1.65 metres and can be positioned with automation.head.", MessageType.None);
+            EditorGUILayout.HelpBox("Selections and tool actions use normal application input. Drawing adds a stroke; Reshape changes the prepared stroke. Use Undo before another take to restore the starting canvas. Settings changes apply to the next run. The virtual head starts at 1.65 metres and can be positioned with automation.head.", MessageType.None);
+        }
+
+        private void PrepareReshape(bool useLatestStroke)
+        {
+            try
+            {
+                m_Error = null;
+                m_Target = ApiMethods.PrepareReshape(m_Settings, useLatestStroke: useLatestStroke).ToolButton;
+            }
+            catch (Exception exception) { m_Error = exception.Message; }
+        }
+
+        private void StartSequence(bool record)
+        {
+            Func<ProceduralAutomation.Settings, UnityEngine.Pose, ProceduralAction> factory = null;
+            if (m_Sequence == Sequence.ReshapeGrab)
+            {
+                ReshapeStrokeSetup setup = ApiMethods.PrepareReshape(m_Settings);
+                m_Target = setup.ToolButton;
+                factory = setup.CreateAction;
+            }
+            else if (m_Target == null) { m_Target = ProceduralAutomation.FindBrushButton(); }
+            if (record) { ApiMethods.RecordProceduralAutomation(m_Target, m_Settings, m_RecordingName, m_FrameRate, factory); }
+            else { InputManager.m_Instance.StartProceduralAutomation(m_Target, m_Settings, factory); }
         }
     }
 }
