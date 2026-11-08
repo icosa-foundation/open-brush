@@ -52,7 +52,12 @@ namespace TiltBrush.MeshEditing
                 var poly = Setting(p, "hemisphere", false)
                     ? VariousSolids.UvHemisphere(longitude, latitude)
                     : VariousSolids.UvSphere(longitude, latitude).FillHoles();
-                return poly.Duplicate(Matrix4x4.Scale(Vector3.one * Mathf.Max(.0001f, Setting(p, "radius", .15f))));
+                float radius = Mathf.Max(.0001f, Setting(p, "radius", .15f));
+                var radii = new Vector3(
+                    Mathf.Max(.0001f, Setting(p, "radiusX", radius)),
+                    Mathf.Max(.0001f, Setting(p, "radiusY", radius)),
+                    Mathf.Max(.0001f, Setting(p, "radiusZ", radius)));
+                return poly.Duplicate(Matrix4x4.Scale(radii));
             }
             if (step.Type == "uniform" && p.ContainsKey("radius"))
             {

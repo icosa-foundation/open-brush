@@ -39,6 +39,11 @@ namespace TiltBrush.MeshEditing
             if (recipe == null) { return null; }
             recipe.GetSteps(out var generator, out var modifiers);
             if (modifiers.Any(step => step.Type == "transform" || step.Type == "bend")) { return null; }
+            if (generator.Type == "uvSphere" && generator.Parameters.ContainsKey("radius"))
+            {
+                return axis == GrabWidget.Axis.X ? "radiusX" : axis == GrabWidget.Axis.Y ? "radiusY"
+                    : axis == GrabWidget.Axis.Z ? "radiusZ" : null;
+            }
             if (generator.Type == "torus" && generator.Parameters.ContainsKey("ringRadius"))
             {
                 return axis == GrabWidget.Axis.Y ? "tubeRadius"
@@ -121,6 +126,11 @@ namespace TiltBrush.MeshEditing
             }
             var generator = (JObject)recipe.ToJson()["Generator"];
             var parameters = generator["Parameters"];
+            if ((string)generator["Type"] == "uvSphere")
+            {
+                float radius = (float?)parameters?[dimension] ?? (float?)parameters?["radius"] ?? .15f;
+                return radius > 0f ? .0001f / radius : 0f;
+            }
             if (dimension == "ringRadius" || dimension == "tubeRadius")
             {
                 float tube = (float?)parameters?["tubeRadius"] ?? .04f;
@@ -186,6 +196,14 @@ namespace TiltBrush.MeshEditing
             {
                 parameters = new JObject();
                 generator["Parameters"] = parameters;
+            }
+            if ((string)generator["Type"] == "uvSphere")
+            {
+                float radius = (float?)parameters[dimension] ?? (float?)parameters["radius"] ?? .15f;
+                float resizedRadius = radius * ratio;
+                if (float.IsInfinity(resizedRadius)) { throw new ArgumentOutOfRangeException(nameof(ratio)); }
+                parameters[dimension] = Mathf.Max(.0001f, resizedRadius);
+                return new GeometryRecipeData(data);
             }
             if (dimension == "ringRadius" || dimension == "tubeRadius")
             {
