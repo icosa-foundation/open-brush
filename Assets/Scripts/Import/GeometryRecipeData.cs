@@ -106,7 +106,7 @@ namespace TiltBrush.DocumentImport
             ["ring"] = Spec("b c height", "a"),
             ["triangle"] = Spec("b c height", "a"),
             ["box"] = Spec(integer: "x y z"),
-            ["uvSphere"] = Spec("z radius", "x y longitudeSegments latitudeSegments", "hemisphere"),
+            ["uvSphere"] = Spec("z radius radiusX radiusY radiusZ", "x y longitudeSegments latitudeSegments", "hemisphere"),
             ["uvHemisphere"] = Spec(integer: "x y"),
             ["stairs"] = Spec("y z width height depth", "x steps"),
             ["torus"] = Spec("z ringRadius tubeRadius sweepAngle", "x y pathSegments tubeSegments"),
