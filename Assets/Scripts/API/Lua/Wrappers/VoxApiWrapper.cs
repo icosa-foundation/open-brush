@@ -473,7 +473,9 @@ namespace TiltBrush
         {
             if (VoxScriptEditGroup.IsPreview) return;
             m_ViewState.OptimizedMesh = optimized;
-            var transform = GetSceneTransform();
+            var transform = m_ViewState.Widget != null && m_ViewState.Widget.Showing
+                ? GetSceneTransform()
+                : m_ViewState.WidgetTransform;
             transform.translation = new Vector3(x, y, z);
             SetTransform(transform);
             Show(optimized);
