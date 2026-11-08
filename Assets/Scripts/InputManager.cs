@@ -304,26 +304,10 @@ namespace TiltBrush
         private bool m_AllowVrControllers = true;
         // This is indexed by enum ControllerName
         private ControllerInfo[] m_ControllerInfos;
-        private IProceduralAutomation m_ProceduralAutomation;
+        private ScriptedAutomation m_ProceduralAutomation;
 
         public string ProceduralAutomationStatus => m_ProceduralAutomation?.Status ?? "Stopped";
         public string ProceduralAutomationError { get; private set; }
-
-        public void StartProceduralAutomation(BaseButton button, ProceduralAutomation.Settings settings,
-            Func<ProceduralAutomation.Settings, UnityEngine.Pose, ProceduralAction> actionFactory = null)
-        {
-            if (m_ProceduralAutomation != null)
-            {
-                throw new InvalidOperationException("A procedural demonstration already owns the controllers.");
-            }
-            ProceduralAutomationError = null;
-            try { m_ProceduralAutomation = new ProceduralAutomation(button, settings, actionFactory); }
-            catch (Exception exception)
-            {
-                ProceduralAutomationError = exception.Message;
-                throw;
-            }
-        }
 
         public void StopProceduralAutomation() => m_ProceduralAutomation?.Stop();
 

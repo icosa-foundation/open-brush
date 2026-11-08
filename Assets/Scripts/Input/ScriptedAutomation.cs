@@ -9,7 +9,7 @@ using UnityEngine;
 namespace TiltBrush
 {
     /// Executes externally authored primitives on the input clock, before native consumers.
-    public sealed class ScriptedAutomation : IProceduralAutomation
+    public sealed class ScriptedAutomation : IDisposable
     {
         private sealed class Instruction
         {
@@ -101,7 +101,7 @@ namespace TiltBrush
                 p => Enumerable.Range(0, p.Value.m_ControlPoints.Length).Select(p.Value.GetColor).ToArray());
             m_InitialStrokeCount = SketchMemoryScript.m_Instance.StrokeCount;
             var shot = Compile();
-            var framing = script.Framing.Enabled ? (AutomationShot.FramingResult?)shot.Frame(App.VrSdk.GetVrCamera(), m_Body, script.Framing) : null;
+            var framing = script.Framing.Enabled ? (UnityEngine.Pose?)shot.Frame(App.VrSdk.GetVrCamera(), m_Body, script.Framing) : null;
             m_Controllers = m_Original.Select(c => new ProceduralControllerInfo(c.Behavior)).ToArray();
             m_ShowControllers = App.Instance.ShowControllers;
             m_Tracking = App.VrSdk.VrControls.SuspendPoseTracking();
@@ -116,7 +116,7 @@ namespace TiltBrush
                 }
                 App.Instance.ShowControllers = true;
                 ApplyPoses();
-                if (framing.HasValue) { App.VrSdk.VirtualSimulation.SetFramingPose(framing.Value.CameraPose); }
+                if (framing.HasValue) { App.VrSdk.VirtualSimulation.SetFramingPose(framing.Value); }
                 if (script.Capture != null)
                 {
                     var capture = App.Instance.GetComponent<ProceduralCapture>() ?? App.Instance.gameObject.AddComponent<ProceduralCapture>();

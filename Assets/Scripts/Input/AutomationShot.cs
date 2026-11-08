@@ -26,7 +26,6 @@ namespace TiltBrush
         {
             public string Name { get; }
             internal readonly List<Vector3> Points = new List<Vector3>();
-            public IReadOnlyList<Vector3> WorldPoints => Points;
             internal Subject(string name) { Name = name; }
             public void AddPoint(Vector3 point)
             {
@@ -50,16 +49,8 @@ namespace TiltBrush
             }
         }
 
-        public struct FramingResult
-        {
-            public UnityEngine.Pose CameraPose;
-            public Rect ViewportBounds;
-            public float PullbackMeters;
-        }
-
         private readonly string m_Name;
         private readonly List<Subject> m_Subjects = new List<Subject>();
-        public IReadOnlyList<Subject> Subjects => m_Subjects;
         public AutomationShot(string name) { m_Name = name; }
 
         public Subject AddSubject(string name)
@@ -91,40 +82,7 @@ namespace TiltBrush
             return points;
         }
 
-        // Exact extrema of the cubic centreline, padded for the brush footprint. This
-        // includes the complete stroke without framing unused Bezier control points.
-        public static Bounds CubicBounds(Vector3 a, Vector3 b, Vector3 c, Vector3 d, float padding)
-        {
-            var bounds = new Bounds(a, Vector3.zero);
-            bounds.Encapsulate(d);
-            for (int axis = 0; axis < 3; ++axis)
-            {
-                float qa = -a[axis] + 3 * b[axis] - 3 * c[axis] + d[axis];
-                float qb = 2 * (a[axis] - 2 * b[axis] + c[axis]);
-                float qc = b[axis] - a[axis];
-                if (Mathf.Abs(qa) < 0.00001f)
-                {
-                    if (Mathf.Abs(qb) > 0.00001f) { AddExtremum(ref bounds, a, b, c, d, -qc / qb); }
-                }
-                else
-                {
-                    float discriminant = qb * qb - 4 * qa * qc;
-                    if (discriminant < 0) { continue; }
-                    float root = Mathf.Sqrt(discriminant);
-                    AddExtremum(ref bounds, a, b, c, d, (-qb - root) / (2 * qa));
-                    AddExtremum(ref bounds, a, b, c, d, (-qb + root) / (2 * qa));
-                }
-            }
-            bounds.Expand(2 * padding);
-            return bounds;
-        }
-
-        private static void AddExtremum(ref Bounds bounds, Vector3 a, Vector3 b, Vector3 c, Vector3 d, float t)
-        {
-            if (t > 0 && t < 1) { bounds.Encapsulate(ProceduralArm.Bezier(a, b, c, d, t)); }
-        }
-
-        public FramingResult Frame(Camera camera, UnityEngine.Pose preferred, FramingSettings settings)
+        public UnityEngine.Pose Frame(Camera camera, UnityEngine.Pose preferred, FramingSettings settings)
         {
             if (settings.Margin < 0 || settings.Margin > 0.25f || float.IsNaN(settings.Margin) ||
                 settings.MaximumPullbackMeters < 0 || settings.MaximumPullbackMeters > 0.5f || float.IsNaN(settings.MaximumPullbackMeters) ||
@@ -166,10 +124,7 @@ namespace TiltBrush
                     viewport.xMin >= settings.Margin - 0.0001f && viewport.xMax <= 1 - settings.Margin + 0.0001f &&
                     viewport.yMin >= settings.Margin - 0.0001f && viewport.yMax <= 1 - settings.Margin + 0.0001f)
                 {
-                    return new FramingResult
-                    {
-                        CameraPose = new UnityEngine.Pose(eye, rotation), ViewportBounds = viewport, PullbackMeters = pullback
-                    };
+                    return new UnityEngine.Pose(eye, rotation);
                 }
             }
             throw new InvalidOperationException($"Shot '{m_Name}' cannot fit its subjects inside the framing margin and comfort limits. Split it into separate shots or adjust the declared action positions.");

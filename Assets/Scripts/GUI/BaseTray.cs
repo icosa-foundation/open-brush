@@ -13,7 +13,6 @@
 // limitations under the License.
 
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -36,27 +35,7 @@ namespace TiltBrush
         private bool m_AnimateWhenEnabled;
         public BaseTool.ToolType m_ShowOnToolType;
 
-        // A shot can include a tray before its tool is selected. Evaluate its expanded
-        // geometry without showing it, changing animation state, or inverting a zero scale.
-        public IEnumerable<Vector3> ExpandedRendererPoints()
-        {
-            foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
-            {
-                if (renderer is LineRenderer) { continue; }
-                Matrix4x4 expanded = ExpandedMatrix(renderer.transform);
-                Bounds bounds = renderer.localBounds;
-                for (int i = 0; i < 8; ++i)
-                {
-                    Vector3 corner = new Vector3((i & 1) == 0 ? bounds.min.x : bounds.max.x,
-                        (i & 2) == 0 ? bounds.min.y : bounds.max.y, (i & 4) == 0 ? bounds.min.z : bounds.max.z);
-                    yield return expanded.MultiplyPoint3x4(corner);
-                }
-            }
-        }
-
-        public Vector3 ExpandedWorldPoint(Transform child, Vector3 localPoint) =>
-            ExpandedMatrix(child).MultiplyPoint3x4(localPoint);
-
+        // Predict the expanded tray without showing it or inverting its collapsed scale.
         public Matrix4x4 ExpandedLocalMatrix()
         {
             Vector3 position = transform.localPosition;
@@ -64,19 +43,6 @@ namespace TiltBrush
             Vector3 scale = transform.localScale;
             scale.x = m_AnimateRange.y;
             return Matrix4x4.TRS(position, transform.localRotation, scale);
-        }
-
-        private Matrix4x4 ExpandedMatrix(Transform child)
-        {
-            Matrix4x4 expanded = (transform.parent == null ? Matrix4x4.identity : transform.parent.localToWorldMatrix) *
-                ExpandedLocalMatrix();
-            Matrix4x4 relative = Matrix4x4.identity;
-            for (Transform node = child; node != transform; node = node.parent)
-            {
-                if (node == null) { throw new System.ArgumentException("The point must belong to this tray."); }
-                relative = Matrix4x4.TRS(node.localPosition, node.localRotation, node.localScale) * relative;
-            }
-            return expanded * relative;
         }
 
         override protected void Awake()

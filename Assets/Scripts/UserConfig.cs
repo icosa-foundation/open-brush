@@ -59,32 +59,6 @@ namespace TiltBrush
         public HandtrackingConfig Handtracking;
 
         [Serializable]
-        public struct ProceduralAutomationConfig
-        {
-            // Distances are metres. Actions use the virtual body's reference pose;
-            // shot framing changes the camera independently.
-            public float? UpperArmLength;
-            public float? ForearmLength;
-            public float? ReachSeconds;
-            public float? DrawSeconds;
-            public float? ReshapeSeconds;
-            public Vector3? GrabOffsetMeters;
-            public float? GrabRadiusMeters;
-            public float? PauseSeconds;
-            public Vector3? PanelPosition;
-            public Vector3? StrokeStart;
-            public Vector3? StrokeControl1;
-            public Vector3? StrokeControl2;
-            public Vector3? StrokeEnd;
-            public bool? AutomaticFraming;
-            public float? FramingMargin;
-            public float? FramingMaximumPullbackMeters;
-            public float? FramingMaximumAngleDegrees;
-        }
-
-        public ProceduralAutomationConfig ProceduralAutomation;
-
-        [Serializable]
         public struct PanelsConfig
         {
             // Shared translation of the wand-panel layout in view-only mode, in metres
