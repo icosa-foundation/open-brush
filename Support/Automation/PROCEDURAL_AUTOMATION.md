@@ -48,6 +48,17 @@ Use `--rehearse` to run without recording, `--fps` to set capture rate and
 must be running or in Play mode. When several instances are open, use the URL
 for the intended instance.
 
+Use `--speed` to change playback timing for any script:
+
+```sh
+python Support/Python/record-procedural-tutorial.py --scenario reshape-smooth --speed 1.5 --name smooth-faster
+```
+
+Speed ranges from `0.25` to `2`: `1` is normal, `1.5` is 50% faster and `2`
+is twice as fast. It scales motion, pauses, UI animation and tool application
+together. Capture FPS stays independent. The CLI uses the plan's `speed` when
+`--speed` is omitted, defaulting to `1`.
+
 Draw and reshape examples accept `--brush` with a brush durable name. Grab and
 Tint accept `--existing-stroke` to use the latest visible stroke; otherwise
 they prepare a starter before capture. For Tint, use a contrasting stroke of
@@ -81,8 +92,9 @@ ffmpeg -n -framerate 30 -i "/path/to/grab-example_frames/frame_%06d.png" -c:v li
    and enter Play mode. Keep the Game view at the intended capture size/aspect.
 3. Choose **Load JSON plan** and select the exported file. Use **Reload** after
    editing or regenerating it.
-4. **Rehearse** runs without capture. **Record** uses the window's recording name
-   and FPS instead of any capture settings in the file. **Stop** stops execution
+4. Set **Playback speed** for the take; it overrides the plan's speed and stays
+   selected when loading another plan. **Rehearse** runs without capture.
+   **Record** uses the window's recording name and FPS. **Stop** stops execution
    and capture; Escape stops active execution. The status and output path appear
    in the window.
 
@@ -163,7 +175,8 @@ module search path in your own authoring program.
 
 ## Plan format, version 1
 
-The top-level fields are `version` (must be `1`), `name`, `prepare`, `subjects`,
+The top-level fields are `version` (must be `1`), `name`, optional `speed` (default
+`1`, range `0.25` to `2`), `prepare`, `subjects`,
 `steps`, optional `capture`, optional `framing`, `panelPosition`, `pointingOffsetMeters`,
 `upperArmMeters` and `forearmMeters`. Unknown field names are rejected.
 

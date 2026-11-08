@@ -91,6 +91,7 @@ namespace TiltBrush
                     {
                         Error = exception.Message;
                         Debug.LogError($"[ProceduralCapture] {Error}");
+                        InputManager.m_Instance.StopProceduralAutomation();
                         break;
                     }
                     finally { if (frame != null) { Destroy(frame); } }

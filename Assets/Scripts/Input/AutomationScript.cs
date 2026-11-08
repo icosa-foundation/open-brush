@@ -15,6 +15,7 @@ namespace TiltBrush
     {
         public int Version;
         public string Name = "script";
+        public float Speed = 1;
         public CaptureOptions Capture;
         public float UpperArmMeters = 0.30f;
         public float ForearmMeters = 0.30f;
@@ -156,6 +157,7 @@ namespace TiltBrush
                 throw new ArgumentException("An automation script needs version 1 and a nonempty steps array.");
             if (script.Prepare == null || script.Subjects == null || script.Framing == null || script.Steps.Any(s => s == null))
                 throw new ArgumentException("Script arrays and framing must not be null.");
+            Positive(script.Speed, "speed", 0.25f, 2);
             return script;
         }
 

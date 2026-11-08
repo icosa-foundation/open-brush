@@ -16,6 +16,7 @@ namespace TiltBrush
         [SerializeField] private string m_PlanJson;
         [SerializeField] private string m_RecordingName = "tutorial";
         [SerializeField] private int m_FrameRate = 30;
+        [SerializeField] private float m_PlaybackSpeed = 1;
         private string m_Error;
 
         [MenuItem("Open Brush/Procedural Automation")]
@@ -62,6 +63,7 @@ namespace TiltBrush
                 EditorGUILayout.LabelField("Plan", string.IsNullOrEmpty(m_PlanPath) ? "No plan loaded" : Path.GetFileName(m_PlanPath));
                 m_RecordingName = EditorGUILayout.TextField("Recording name", m_RecordingName);
                 m_FrameRate = EditorGUILayout.IntSlider("Recording FPS", m_FrameRate, 1, 120);
+                m_PlaybackSpeed = EditorGUILayout.Slider("Playback speed", m_PlaybackSpeed, 0.25f, 2);
             }
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -93,6 +95,7 @@ namespace TiltBrush
         private void StartPlan(bool record)
         {
             var plan = AutomationScript.Parse(m_PlanJson);
+            plan.Speed = m_PlaybackSpeed;
             plan.Capture = record ? new AutomationScript.CaptureOptions {Name = m_RecordingName, Fps = m_FrameRate} : null;
             if (record) { EditorApplication.ExecuteMenuItem("Window/General/Game"); }
             ApiMethods.StartAutomationScript(plan);

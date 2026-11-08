@@ -10,6 +10,7 @@ import argparse
 import datetime
 import importlib.util
 import json
+import math
 from pathlib import Path
 import shlex
 import sys
@@ -37,6 +38,7 @@ def main():
     parser.add_argument("--scenario", choices=sorted(examples), default="draw", help="External example to run when --script is omitted")
     parser.add_argument("--name", default=f"tutorial-{datetime.datetime.now():%Y%m%d-%H%M%S}")
     parser.add_argument("--fps", type=int, default=30)
+    parser.add_argument("--speed", type=float, help="Playback multiplier, 0.25 to 2 (default: plan speed or 1)")
     parser.add_argument("--brush", default="")
     parser.add_argument("--param", action="append", default=[], metavar="KEY=VALUE",
                         help="Named parameter passed to an external script (repeatable)")
@@ -46,6 +48,8 @@ def main():
     parser.add_argument("--rehearse", action="store_true", help="Run without saving frames")
     parser.add_argument("--write-plan", type=Path, help="Write generated JSON and exit without contacting Open Brush")
     args = parser.parse_args()
+    if args.speed is not None and (not math.isfinite(args.speed) or not 0.25 <= args.speed <= 2):
+        parser.error("--speed must be a finite number between 0.25 and 2")
     args.parameters = {}
     for parameter in args.param:
         key, separator, value = parameter.partition("=")
@@ -54,6 +58,8 @@ def main():
         args.parameters[key] = value
     path = args.script or examples[args.scenario]
     plan = load_plan(path, args)
+    if args.speed is not None:
+        plan["speed"] = args.speed
     if args.rehearse:
         plan.pop("capture", None)
     else:

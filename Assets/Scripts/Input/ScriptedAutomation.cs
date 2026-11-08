@@ -41,6 +41,7 @@ namespace TiltBrush
         private readonly VrInput[][] m_Buttons = {Array.Empty<VrInput>(), Array.Empty<VrInput>()};
         private readonly IDisposable m_Tracking;
         private readonly bool m_ShowControllers;
+        private readonly float m_PreviousTimeScale;
         private readonly Quaternion m_Yaw;
         private readonly UnityEngine.Pose m_Body;
         private readonly int m_InitialStrokeCount;
@@ -68,6 +69,7 @@ namespace TiltBrush
                 App.Instance.GetComponent<ProceduralCapture>()?.IsRecording == true)
                 throw new InvalidOperationException("Scripts require an idle Virtual Input session with no active capture.");
             m_Script = script;
+            AutomationScript.Positive(script.Speed, "speed", 0.25f, 2);
             AutomationScript.Positive(script.UpperArmMeters, "upperArmMeters", 0.15f, 0.5f);
             AutomationScript.Positive(script.ForearmMeters, "forearmMeters", 0.15f, 0.5f);
             m_Body = App.VrSdk.VirtualSimulation.BodyPose;
@@ -105,8 +107,10 @@ namespace TiltBrush
             m_Controllers = m_Original.Select(c => new ProceduralControllerInfo(c.Behavior)).ToArray();
             m_ShowControllers = App.Instance.ShowControllers;
             m_Tracking = App.VrSdk.VrControls.SuspendPoseTracking();
+            m_PreviousTimeScale = Time.timeScale;
             try
             {
+                Time.timeScale = script.Speed;
                 for (int i = 0; i < 2; ++i)
                 {
                     InputManager.Controllers[i] = m_Controllers[i];
@@ -697,7 +701,11 @@ namespace TiltBrush
                     m_Original[i].ShowController(m_Visible[i] && m_ShowControllers);
                 }
             }
-            finally { m_Tracking.Dispose(); }
+            finally
+            {
+                Time.timeScale = m_PreviousTimeScale;
+                m_Tracking.Dispose();
+            }
         }
     }
 }
