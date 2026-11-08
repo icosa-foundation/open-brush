@@ -10,7 +10,7 @@ def build_plan(args):
     near_a = [a[0] + 0.003, a[1] - 0.003, a[2]]
     toggle = "SketchControls/SnapSettingsPanel(Clone)_Advanced/Mesh/Stroke Snapping/Snap to Strokes"
     steps = [
-        *open_panel("SnapSettings"),
+        *open_panel("SnapSettings", via_more=False),
         *select_control({"path": toggle}),
         {"op": "assert", "endpointSnap": True},
         {"op": "rest"},

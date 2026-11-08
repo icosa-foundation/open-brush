@@ -1,4 +1,4 @@
-"""Flatten three broad ripples onto the tool's plane with one steady sweep."""
+"""Flatten an oblique rippled stroke while keeping a forward-facing grip."""
 
 import math
 
@@ -6,14 +6,19 @@ from automation_sections import reshape_demo
 
 
 def build_plan(args):
-    angle = math.radians(55)
+    pitch, yaw = math.radians(25), math.radians(-25)
+    normal = [math.sin(yaw) * math.cos(pitch), -math.sin(pitch),
+              math.cos(yaw) * math.cos(pitch)]
+    along = [math.cos(yaw), 0, -math.sin(yaw)]
+    center = [0.10, -0.23, 0.44]
     points = []
     for i in range(97):
         t = i / 96
-        offset = 0.045 * math.sin(6 * math.pi * t)
-        points.append([-0.12 + 0.44 * t, -0.22 + math.sin(angle) * offset,
-                       0.45 + math.cos(angle) * offset])
-    return reshape_demo("Flatten", points, [[-0.12, -0.22, 0.45], [0.32, -0.22, 0.45]],
-                        name="Flatten a rippled stroke onto a plane", radius=0.095,
-                        seconds=4.5, rotation=(-55, 0, 0), minimum_movement=0.025,
+        offset = 0.055 * math.sin(6 * math.pi * t)
+        points.append([center[a] + along[a] * 0.38 * (t - 0.5) + normal[a] * offset
+                       for a in range(3)])
+    path = [[center[a] + along[a] * x for a in range(3)] for x in (-0.19, 0.19)]
+    return reshape_demo("Flatten", points, path,
+                        name="Flatten a rippled stroke onto an oblique plane", radius=0.095,
+                        seconds=5.2, rotation=(25, -25, 0), minimum_movement=0.025,
                         brush=args.brush or "Icing")

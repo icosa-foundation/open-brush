@@ -60,13 +60,16 @@ def select_tool(tool, *, subtool=None):
     return steps
 
 
-def open_panel(panel):
-    """Open an initially hidden panel through the native More panels popup."""
-    return [
-        {"op": "assert", "panel": panel, "panelOpen": False},
+def open_panel(panel, *, via_more=True):
+    """Open a closed panel through More Options, or its button on a wand pane."""
+    selection = [
         {"op": "present", "target": {"command": "MorePanels"}},
         *select_control({"command": "MorePanels"}, present=False),
         *select_control({"opensPanel": panel}, present=False),
+    ] if via_more else select_control({"opensPanel": panel})
+    return [
+        {"op": "assert", "panel": panel, "panelOpen": False},
+        *selection,
         {"op": "wait", "seconds": 0.6},
         {"op": "assert", "panel": panel, "panelOpen": True},
     ]
@@ -87,7 +90,7 @@ def prepare_script(preset, *, category="SymmetryScript"):
 
 def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
                attachment="tool", anchor=None, anchor_t=0.5,
-               rotation=(-25, -35, 0), end_rotation=None, curve="polyline",
+               rotation=(25, -35, 0), end_rotation=None, curve="polyline",
                padding=0.02, lower_wand=True, contact_pause=0.45, inspect_pause=0.6):
     """Approach a contact, apply the native tool along a path, release and pause."""
     if not points:
@@ -115,7 +118,7 @@ def reveal_result(seconds=1.0):
 
 
 def reshape_demo(mode, points, path, *, name, radius=0.08, seconds=3.0,
-                 rotation=(-25, -35, 0), minimum_movement=0.02, fixed_endpoints=False,
+                 rotation=(25, -35, 0), minimum_movement=0.02, fixed_endpoints=False,
                  brush="Icing", size=0.009):
     """Prepare a teaching shape, visibly select a reshape mode, then apply one gesture."""
     return {

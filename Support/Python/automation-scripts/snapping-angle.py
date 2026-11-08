@@ -6,7 +6,7 @@ from automation_sections import prepare_brush, reveal_result, select_control
 def build_plan(args):
     path = [[-0.08, -0.22, 0.43], [0.27, -0.11, 0.43]]
     snapped = [path[0], [path[1][0], path[0][1], path[1][2]]]
-    contact = {"attachment": "tip", "rotation": [-25, -35, 0]}
+    contact = {"attachment": "tip", "rotation": [25, -35, 0]}
     return {
         "version": 1,
         "name": "Snap an unfinished straight edge to horizontal",

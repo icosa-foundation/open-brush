@@ -53,10 +53,10 @@ namespace TiltBrush
             Quaternion yaw = Quaternion.Euler(0, rotation.eulerAngles.y, 0);
             m_Controllers.Brush.transform.SetPositionAndRotation(
                 position + yaw * (new Vector3(0.24f, -0.48f, 0.23f) * App.METERS_TO_UNITS), yaw);
-            // Wand points upward with its attached panels facing the view.
+            // Both grips rest forward; panel presentation raises the wand when needed.
             m_Controllers.Wand.transform.SetPositionAndRotation(
                 position + yaw * (new Vector3(-0.24f, -0.48f, 0.23f) * App.METERS_TO_UNITS),
-                Quaternion.LookRotation(Vector3.up, -(yaw * Vector3.forward)));
+                yaw);
         }
 
         // A filming adjustment must not move the shoulders, controllers, or authored actions.

@@ -13,7 +13,7 @@ def build_plan(args):
         "steps": [
             *select_control({"brush": brush}),
             *apply_path(DEFAULT_CURVE, label="Draw", attachment="tip", curve="bezier",
-                        rotation=(-25, -40, -12), end_rotation=(-25, -25, 12)),
+                        rotation=(25, -40, -8), end_rotation=(25, -25, 8)),
             {"op": "assert", "strokeCountDelta": 1},
             *reveal_result(),
         ],
