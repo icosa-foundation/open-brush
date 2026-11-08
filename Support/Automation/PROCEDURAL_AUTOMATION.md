@@ -34,6 +34,9 @@ reaches; the recorded interaction uses normal UI and tool input.
 ```sh
 python Support/Python/record-procedural-tutorial.py --scenario draw --name draw-example
 python Support/Python/record-procedural-tutorial.py --scenario reshape --name grab-example
+python Support/Python/record-procedural-tutorial.py --scenario reshape-push --name push-example
+python Support/Python/record-procedural-tutorial.py --scenario reshape-flatten --name flatten-example
+python Support/Python/record-procedural-tutorial.py --scenario reshape-smooth --name smooth-example
 python Support/Python/record-procedural-tutorial.py --scenario reshape --existing-stroke --name grab-existing
 python Support/Python/record-procedural-tutorial.py --scenario tint --name tint-example
 python Support/Python/record-procedural-tutorial.py --scenario open-labs --name open-labs-example
@@ -92,6 +95,35 @@ ffmpeg -n -framerate 30 -i "/path/to/grab-example_frames/frame_%06d.png" -c:v li
 
 ## Create a new script
 
+### Reshape teaching shapes
+
+1. `reshape-push` starts with a straight stroke. Moving the repelling sphere upward
+   from below creates a local arch while leaving the distant endpoints fixed.
+2. `reshape-flatten` starts with three broad ripples along the tool plane's normal.
+   A sweep along the baseline projects those ripples onto the plane.
+3. `reshape-smooth` adds fine wobble to a broad arch. A sweep follows the clean
+   arch so smoothing removes the small fluctuations without erasing the main curve.
+
+Each shape and gesture is ordinary external Python data. The shared
+`reshape_demo` builder handles preparation, native panel/tool/mode selection,
+before/after pauses and result assertions. These examples prepare their own
+strokes rather than using `--existing-stroke`; Grab remains the example for
+working on the latest existing stroke.
+
+The Windows Virtual Input recordings passed native selection, movement and
+unchanged-stroke-count checks. Push displaced the middle by 0.146 m with fixed
+endpoints. Flatten reduced the maximum plane deviation from 0.045 m to about
+0.0001 m. Smooth reduced the fixture's wobble RMS around its broad arch from
+0.0098 m to 0.0009 m, with fixed endpoints. These measurements describe the
+specific prepared fixtures. Before, during and after frames were reviewed.
+
+Pinch exists in code, but its button (`BundleSpread`) is explicitly inactive in
+the current Reshape tray prefab. It cannot be demonstrated through normal UI
+selection without a product UI change. Its proposed teaching shape is a tall
+oval pinched inward at the middle.
+
+### Author a sequence
+
 1. Copy either example Python file to your own location. Export a
    `build_plan(args)` function returning a dictionary. `args` contains the CLI
    options, including `brush`, `existing_stroke` and the `parameters` dictionary
@@ -125,6 +157,7 @@ calls, so they also work with `--write-plan`.
 | --- | --- |
 | `sample_cubic(control_points, samples=97)` | Sampled points for a cubic starter stroke. |
 | `prepare_stroke(...)` | One preparation item; accepts `stroke_id`, `points`, `brush`, `size`, `color` and `use_latest`. |
+| `reshape_demo(mode, points, path, ...)` | A complete shot with a prepared teaching shape, default drawing state, Labs/tool/mode selection, a pause on the original shape, one native reshape gesture, movement/count checks and a final reveal. Radius, orientation and minimum movement are script parameters. |
 | `prepare_brush(...)` | Starting brush and size, plus optional `palette_brush` to establish a palette page before capture. Recorded brush selection still uses a native button click. |
 | `prepare_script(preset, category=...)` | Select the predecessor of a named preset before capture, ready for a visible Next click. |
 | `select_script(preset, category=...)` | Present the Scripts panel, click Next and assert the named preset. Open Scripts first. |
