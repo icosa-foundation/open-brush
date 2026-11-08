@@ -45,6 +45,14 @@ def select_control(selector, *, tool=None, subtool=None, present=True):
     return [*steps, click]
 
 
+def prepare_brush(brush="DuctTape", *, size=0.012, palette_brush=None):
+    """Set the starting brush/size and optional palette page before the shot."""
+    result = {"op": "brush", "brush": brush, "brushSizeMeters": size}
+    if palette_brush is not None:
+        result["paletteBrush"] = palette_brush
+    return result
+
+
 def select_tool(tool, *, subtool=None):
     steps = select_control({"tool": tool}, tool=tool)
     if subtool is not None:

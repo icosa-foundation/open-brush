@@ -81,6 +81,7 @@ namespace TiltBrush
             public string Id;
             public bool UseLatest;
             public string Brush = "DuctTape";
+            public string PaletteBrush;
             public float BrushSizeMeters = 0.02f;
             public float[][] Points;
             public string Tool;
@@ -205,6 +206,22 @@ namespace TiltBrush
                             colors: prep.ColorRgb == null ? null : new List<Color> {Rgb(prep.ColorRgb)}).Single();
                     }
                     strokes.Add(prep.Id, stroke);
+                }
+                else if (prep.Op == "brush")
+                {
+                    Positive(prep.BrushSizeMeters, "brushSizeMeters", 0.001f, 1);
+                    BrushDescriptor brush = BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(b => b.DurableName == prep.Brush);
+                    if (brush == null) { throw new ArgumentException($"Unknown brush: {prep.Brush}"); }
+                    BrushController.m_Instance.SetActiveBrush(brush);
+                    PointerManager.m_Instance.MainPointer.BrushSizeAbsolute = prep.BrushSizeMeters * App.METERS_TO_UNITS;
+                    if (!string.IsNullOrEmpty(prep.PaletteBrush))
+                    {
+                        BrushDescriptor paletteBrush = BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(b => b.DurableName == prep.PaletteBrush);
+                        var panel = PanelManager.m_Instance.GetPanelByType(PanelType("Brush"));
+                        var grid = panel.GetComponentInChildren<BrushGrid>(true);
+                        if (paletteBrush == null || grid == null || !grid.ShowBrushPage(paletteBrush))
+                            throw new ArgumentException($"Brush is not in the current palette: {prep.PaletteBrush}");
+                    }
                 }
                 else if (prep.Op == "color")
                 {
