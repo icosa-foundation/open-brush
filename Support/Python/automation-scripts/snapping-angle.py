@@ -1,28 +1,34 @@
-"""Compare an unconstrained straight edge with the context-button angle constraint."""
+"""Snap an unfinished sloping straight edge to horizontal before releasing the trigger."""
 
-from automation_sections import apply_path, prepare_brush, reveal_result, select_control
+from automation_sections import prepare_brush, reveal_result, select_control
 
 
 def build_plan(args):
-    free = [[-0.08, -0.32, 0.43], [0.27, -0.27, 0.43]]
-    constrained = [[-0.08, -0.13, 0.43], [0.27, -0.08, 0.43]]
-    snapped = [constrained[0], [0.27, -0.13, 0.43]]
+    path = [[-0.08, -0.22, 0.43], [0.27, -0.11, 0.43]]
+    snapped = [path[0], [path[1][0], path[0][1], path[1][2]]]
+    contact = {"attachment": "tip", "rotation": [-25, -35, 0]}
     return {
         "version": 1,
-        "name": "Hold the context button for straight-edge angle snapping",
+        "name": "Snap an unfinished straight edge to horizontal",
         "prepare": [{"op": "drawing"}, prepare_brush("Icing", size=0.012),
                     {"op": "color", "colorRgb": [0.12, 0.7, 0.95]}],
         "steps": [
             *select_control({"command": "StraightEdge"}),
             {"op": "assert", "straightEdge": True},
-            *apply_path(free, label="Draw without the angle constraint", attachment="tip"),
-            {"op": "assert", "lastStrokeEndpoints": free, "endpointToleranceMeters": 0.001},
-            *reveal_result(),
+            {"op": "move", "points": [path[0]], **contact},
+            {"op": "rest", "hand": "wand"},
+            {"op": "wait", "seconds": 0.45},
+            {"op": "input", "trigger": True},
+            {"op": "move", "label": "Draw a sloping unfinished line", "points": path,
+             "seconds": 2.4, **contact},
+            {"op": "wait", "label": "Hold the sloping preview", "seconds": 1.5},
             {"op": "input", "buttons": ["Button04"]},
-            *apply_path(constrained, label="Hold context to constrain the angle", attachment="tip"),
+            {"op": "wait", "label": "Snap the preview to horizontal", "seconds": 1.8},
+            {"op": "input", "trigger": False},
+            {"op": "wait", "seconds": 0.6},
             {"op": "input", "buttons": []},
             {"op": "assert", "lastStrokeEndpoints": snapped, "endpointToleranceMeters": 0.001},
-            {"op": "assert", "strokeCountDelta": 2},
+            {"op": "assert", "strokeCountDelta": 1},
             *reveal_result(seconds=2.5),
         ],
     }
