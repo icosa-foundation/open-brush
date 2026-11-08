@@ -10,7 +10,7 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    /// Opt-in rehearsal: a real wand-panel click followed by a real free-paint stroke.
+    /// Shared controller sequence for real wand-panel selections and tool interactions.
     /// InputManager advances this before controller input consumers and reapplies the poses
     /// before dispatching tracking callbacks. No visible skeleton or direct button invocation.
     public sealed class ProceduralAutomation : IDisposable
@@ -22,6 +22,9 @@ namespace TiltBrush
             public float ForearmLength = 0.30f;
             public float ReachSeconds = 1.2f;
             public float DrawSeconds = 2.4f;
+            public float ReshapeSeconds = 2.4f;
+            public Vector3 GrabOffsetMeters = new Vector3(0, 0.12f, 0);
+            public float GrabRadiusMeters = 0.07f;
             public float PauseSeconds = 0.45f;
             [Tooltip("Panel centre in metres relative to the virtual body's reference pose. Framing does not move the action.")]
             public Vector3 PanelPosition = new Vector3(-0.12f, -0.10f, 0.34f);
@@ -39,6 +42,9 @@ namespace TiltBrush
                 settings.ForearmLength = config.ForearmLength ?? settings.ForearmLength;
                 settings.ReachSeconds = config.ReachSeconds ?? settings.ReachSeconds;
                 settings.DrawSeconds = config.DrawSeconds ?? settings.DrawSeconds;
+                settings.ReshapeSeconds = config.ReshapeSeconds ?? settings.ReshapeSeconds;
+                settings.GrabOffsetMeters = config.GrabOffsetMeters ?? settings.GrabOffsetMeters;
+                settings.GrabRadiusMeters = config.GrabRadiusMeters ?? settings.GrabRadiusMeters;
                 settings.PauseSeconds = config.PauseSeconds ?? settings.PauseSeconds;
                 settings.PanelPosition = config.PanelPosition ?? settings.PanelPosition;
                 settings.StrokeStart = config.StrokeStart ?? settings.StrokeStart;
@@ -347,7 +353,7 @@ namespace TiltBrush
             m_PhaseFrames = 0;
             if (phase == Phase.Hover) { m_HoverStableSeconds = 0; }
             m_ReachStart = m_BrushArm.Solve(m_BrushPose.position, m_BrushPose.rotation);
-            Debug.Log($"{kLogPrefix} {phase}");
+            Debug.Log($"{kLogPrefix} {Status}");
         }
 
         private void OnButtonPressed(BaseButton button)

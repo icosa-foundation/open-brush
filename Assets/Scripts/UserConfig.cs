@@ -67,6 +67,9 @@ namespace TiltBrush
             public float? ForearmLength;
             public float? ReachSeconds;
             public float? DrawSeconds;
+            public float? ReshapeSeconds;
+            public Vector3? GrabOffsetMeters;
+            public float? GrabRadiusMeters;
             public float? PauseSeconds;
             public Vector3? PanelPosition;
             public Vector3? StrokeStart;

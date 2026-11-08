@@ -69,6 +69,50 @@ namespace TiltBrush
             return RecordProceduralAutomation(ProceduralAutomation.FindBrushButton(brush), ProceduralAutomation.Settings.FromUserConfig(), filename, fps);
         }
 
+        [ApiEndpoint("automation.reshape.prepare", "Creates a starter stroke before recording and prepares the Reshape controls. Optional brush durable name.", "DuctTape")]
+        public static void AutomationReshapePrepare(string brush = "DuctTape") =>
+            PrepareReshape(ProceduralAutomation.Settings.FromUserConfig(), brush);
+
+        [ApiEndpoint("automation.reshape.use", "Uses the most recent existing stroke for the Grab demonstration.")]
+        public static void AutomationReshapeUse() =>
+            PrepareReshape(ProceduralAutomation.Settings.FromUserConfig(), "DuctTape", useLatestStroke: true);
+
+        [ApiEndpoint("automation.reshape.start", "Selects Reshape and Grab through the UI, then bends the middle of an existing stroke.")]
+        public static void AutomationReshapeStart()
+        {
+            var settings = ProceduralAutomation.Settings.FromUserConfig();
+            ReshapeStrokeSetup setup = PrepareReshape(settings);
+            InputManager.m_Instance.StartProceduralAutomation(setup.ToolButton, settings, setup.CreateAction);
+        }
+
+        [ApiEndpoint("automation.reshape.record", "Records selecting Reshape and Grab and bending an existing stroke. Creates a starter stroke before recording if needed.", "reshape,30,DuctTape")]
+        public static string AutomationReshapeRecord(string filename = "", int fps = 30, string brush = "DuctTape")
+        {
+            var settings = ProceduralAutomation.Settings.FromUserConfig();
+            ReshapeStrokeSetup setup = PrepareReshape(settings, brush);
+            return RecordProceduralAutomation(setup.ToolButton, settings, filename, fps, setup.CreateAction);
+        }
+
+        public static ReshapeStrokeSetup PrepareReshape(ProceduralAutomation.Settings settings,
+            string brush = "DuctTape", bool useLatestStroke = false)
+        {
+            var capture = App.Instance.GetComponent<ProceduralCapture>();
+            if (capture == null) { capture = App.Instance.gameObject.AddComponent<ProceduralCapture>(); }
+            try
+            {
+                var setup = App.Instance.GetComponent<ReshapeStrokeSetup>();
+                if (setup == null) { setup = App.Instance.gameObject.AddComponent<ReshapeStrokeSetup>(); }
+                setup.Prepare(settings, string.IsNullOrEmpty(brush) ? "DuctTape" : brush, useLatestStroke);
+                capture.Error = null;
+                return setup;
+            }
+            catch (Exception exception)
+            {
+                capture.Error = exception.Message;
+                throw;
+            }
+        }
+
         public static string RecordProceduralAutomation(BaseButton button, ProceduralAutomation.Settings settings, string filename, int fps,
             Func<ProceduralAutomation.Settings, UnityEngine.Pose, ProceduralAction> actionFactory = null)
         {
