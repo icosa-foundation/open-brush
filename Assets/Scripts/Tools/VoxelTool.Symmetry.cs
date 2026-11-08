@@ -50,8 +50,12 @@ namespace TiltBrush
                     VoxBrushRasterizer.TryGetBounds(BrushFootprint, copy.Linear, out copy.Min, out copy.Max);
                 if (!copy.Valid) copy.HasLast = false;
                 var colors = pointers.SymmetryPointerColors;
-                copy.Color = pointers.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror && colors != null && colors.Count > 0
-                    ? colors[i % colors.Count] : App.BrushColor.CurrentColor;
+                var settings = CurrentTargetWidget != null ? VoxPaintSettings.For(CurrentTargetWidget) : null;
+                copy.PaletteIndex = settings?.PaletteIndex ?? 0;
+                copy.Material = settings?.DrawingMaterial;
+                copy.Color = copy.PaletteIndex > 0 ? m_CurrentDocument._Document.Palette[copy.PaletteIndex - 1] :
+                    pointers.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror && colors != null && colors.Count > 0
+                        ? colors[i % colors.Count] : App.BrushColor.CurrentColor;
             }
         }
 
@@ -86,7 +90,7 @@ namespace TiltBrush
             m_SymmetryPreview.Clear();
             Color guide = Mode == EditMode.Erase ? new Color(0.9f, 0.12f, 0.08f) :
                 Mode == EditMode.Paint ? new Color(0.18f, 0.48f, 0.95f) : new Color(0.12f, 0.8f, 0.28f);
-            VoxEditPreviewRenderer.Draw(model, gridToCanvas, canvasPosition, App.BrushColor.CurrentColor,
+            VoxEditPreviewRenderer.Draw(model, gridToCanvas, canvasPosition, m_VoxelCopies.Count > 0 ? (Color)m_VoxelCopies[0].Color : App.BrushColor.CurrentColor,
                 guide, m_BrushSizeStep, Mode == EditMode.Add, drawFootprint: false);
             m_SymmetryEdits.CollectPreview(model, m_VoxelCopies, BrushFootprint, Mode, m_StraightEdgeGesture, m_PreviewVoxels);
             foreach (var copy in m_VoxelCopies)

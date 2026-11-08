@@ -13,6 +13,8 @@ namespace TiltBrush
             internal Matrix4x4 Linear, Inverse;
             internal Vector3Int Center, Min, Max, Last;
             internal Color32 Color;
+            internal int PaletteIndex;
+            internal IReadOnlyDictionary<string, string> Material;
             internal bool Valid, HasLast;
             internal bool PreviewInvalid;
             internal Vector3Int PreviewMin, PreviewMax;
@@ -86,7 +88,7 @@ namespace TiltBrush
                         copy.HasLast = false;
                         continue;
                     }
-                    paletteIndex = document.GetOrAddPaletteColor(copy.Color);
+                    paletteIndex = ResolvePalette(document, copy);
                     result.PaletteFull |= paletteIndex == 0;
                     if (paletteIndex != 0 && document.ResizeModelBounds(model, lower, upper))
                     {
@@ -106,6 +108,9 @@ namespace TiltBrush
             return result;
         }
 
+        private static int ResolvePalette(RuntimeVoxDocument document, Copy copy) => copy.PaletteIndex > 0
+            ? copy.PaletteIndex : document.GetOrAddPaletteColor(copy.Color, copy.Material);
+
         private void ApplyCopy(RuntimeVoxDocument document, RuntimeVoxDocument.RuntimeModel model, Copy copy,
             VoxBrushFootprint footprint, VoxelTool.EditMode mode, Vector3Int frameShift,
             ref int paletteIndex, ref Result result)
@@ -124,7 +129,7 @@ namespace TiltBrush
                     // copy grows the grid and rebases all earlier voxel indices.
                     if (!m_Claimed.Add(cell - frameShift) || !model.IsInBounds(cell)) continue;
                     if (mode == VoxelTool.EditMode.Erase) { result.Changed |= model.RemoveVoxel(cell); continue; }
-                    if (paletteIndex < 0) paletteIndex = document.GetOrAddPaletteColor(copy.Color);
+                    if (paletteIndex < 0) paletteIndex = ResolvePalette(document, copy);
                     if (paletteIndex == 0) { result.PaletteFull = true; continue; }
                     result.Changed |= model.AddOrUpdateVoxel(cell, (byte)paletteIndex);
                 }

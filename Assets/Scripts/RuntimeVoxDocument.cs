@@ -474,6 +474,13 @@ namespace TiltBrush
             return true;
         }
 
+        internal void SetPaletteMaterial(int index, IReadOnlyDictionary<string, string> properties)
+        {
+            if (index < 1 || index > byte.MaxValue) throw new ArgumentOutOfRangeException(nameof(index));
+            if (properties == null || properties.Count == 0) m_materials.Remove(index);
+            else m_materials[index] = new RuntimeMaterial(index, properties.ToDictionary(pair => pair.Key, pair => pair.Value));
+        }
+
         internal bool[] GetUsedPaletteIndices()
         {
             var used = new bool[byte.MaxValue + 1];
@@ -499,16 +506,14 @@ namespace TiltBrush
             }
 
             // Scan usage only when allocating, normally after a brush colour change.
-            var used = new bool[byte.MaxValue + 1];
-            foreach (RuntimeModel model in m_models)
-                foreach (byte index in model.Voxels.Values)
-                    used[index] = true;
+            var used = GetUsedPaletteIndices();
 
             for (int index = 1; index <= byte.MaxValue; index++)
             {
-                if (!used[index] && PaletteMaterialMatches(index, materialProperties))
+                if (!used[index] && (PaletteMaterialMatches(index, materialProperties) || !m_materials.ContainsKey(index)))
                 {
                     Palette[index - 1] = color;
+                    SetPaletteMaterial(index, materialProperties);
                     return (byte)index;
                 }
             }
