@@ -149,7 +149,7 @@ namespace TiltBrush.Tests
         }
 
         [Test]
-        public void ExtendAgainstFilledFrameInsertsAlignedCellsOnEveryTrack()
+        public void ExtendAgainstFilledFrameContinuesPrecedingDrawingOnEveryTrack()
         {
             AnimationTimelineModel model = CreateModel(
                 new[] { Drawing(1), Drawing(2) },
@@ -163,8 +163,50 @@ namespace TiltBrush.Tests
             Assert.AreEqual(3, model.Tracks[0].Length);
             Assert.AreEqual(3, model.Tracks[1].Length);
             Assert.AreEqual(new AnimationDrawingId(1), ResolveDrawing(model, 0, 1));
-            Assert.IsTrue(ResolveDrawing(model, 1, 1).IsEmpty);
+            Assert.AreEqual(new AnimationDrawingId(3), ResolveDrawing(model, 1, 1));
             Assert.AreEqual(new AnimationDrawingId(4), ResolveDrawing(model, 1, 2));
+        }
+
+        [TestCase(3, 3)]
+        [TestCase(3, 4)]
+        [TestCase(0, 4)]
+        [TestCase(3, 0)]
+        public void ExtendPreservesOtherTrackHoldsAndBlankIntervals(int firstDrawing, int nextDrawing)
+        {
+            AnimationTimelineModel.FrameValue first = firstDrawing == 0 ? Empty(10) : Drawing(firstDrawing);
+            AnimationTimelineModel.FrameValue next = nextDrawing == 0 ? Empty(11) : Drawing(nextDrawing);
+            AnimationTimelineModel model = CreateModel(
+                new[] { Drawing(1), Drawing(2) },
+                new[] { first, next });
+            long nextEmpty = 30;
+
+            model.ApplyEdit(tracks => AnimationTimelineOperations.ExtendSpan(
+                tracks, 0, 0, 1, () => Empty(nextEmpty++), IsFilled));
+
+            Assert.AreEqual(3, model.Length);
+            Assert.AreEqual(first.DrawingId, ResolveDrawing(model, 1, 0));
+            Assert.AreEqual(first.DrawingId, ResolveDrawing(model, 1, 1));
+            Assert.AreEqual(next.DrawingId, ResolveDrawing(model, 1, 2));
+            Assert.AreEqual(firstDrawing == nextDrawing ? 1 : 2, model.Tracks[1].Spans.Count);
+            var locations = model.EnumerateSerializableDrawingLocations().ToList();
+            Assert.AreEqual(locations.Count, locations.Select(location => location.DrawingId).Distinct().Count());
+        }
+
+        [Test]
+        public void ExtendPadsShorterTracksWithoutResumingTheirEarlierDrawing()
+        {
+            AnimationTimelineModel model = CreateModel(
+                new[] { Drawing(1), Drawing(1), Drawing(2) },
+                new[] { Drawing(3) });
+            long nextEmpty = 30;
+
+            model.ApplyEdit(tracks => AnimationTimelineOperations.ExtendSpan(
+                tracks, 0, 0, 2, () => Empty(nextEmpty++), IsFilled));
+
+            Assert.AreEqual(4, model.Length);
+            Assert.AreEqual(new AnimationDrawingId(1), ResolveDrawing(model, 0, 2));
+            Assert.AreEqual(new AnimationDrawingId(2), ResolveDrawing(model, 0, 3));
+            Assert.IsTrue(ResolveDrawing(model, 1, 2).IsEmpty);
         }
 
         [Test]

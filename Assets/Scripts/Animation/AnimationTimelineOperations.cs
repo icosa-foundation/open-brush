@@ -197,15 +197,17 @@ namespace TiltBrush.FrameAnimation
             for (int currentTrack = 0; currentTrack < tracks.Count; currentTrack++)
             {
                 AnimationTimelineModel.SparseFrameList frames = tracks[currentTrack].Frames;
-                AnimationTimelineModel.FrameValue addingValue = currentTrack == trackIndex
-                    ? frames[startFrame]
-                    : createEmpty();
                 AnimationTimelineModel.FrameValue paddingValue = createEmpty();
                 if (frames.Count < insertIndex)
                 {
                     frames.InsertRepeat(
                         frames.Count, insertIndex - frames.Count, paddingValue);
                 }
+                // Inserting time continues the preceding exposure on every track,
+                // including blank intervals, rather than splitting held drawings.
+                AnimationTimelineModel.FrameValue addingValue = currentTrack == trackIndex
+                    ? frames[startFrame]
+                    : frames[insertIndex - 1];
                 frames.Insert(insertIndex, addingValue);
             }
         }
