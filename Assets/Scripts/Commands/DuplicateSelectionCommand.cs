@@ -36,6 +36,14 @@ namespace TiltBrush
         // be the stamp's selection move.
         private readonly List<TransformSymmetryCopiesCommand> m_OriginalCopyMoves =
             new List<TransformSymmetryCopiesCommand>();
+        private readonly Dictionary<Stroke, TrTransform> m_OriginalStrokeJoins =
+            new Dictionary<Stroke, TrTransform>(new ReferenceComparer<Stroke>());
+        private readonly Dictionary<Stroke, CanvasScript> m_OriginalStrokeCanvases =
+            new Dictionary<Stroke, CanvasScript>(new ReferenceComparer<Stroke>());
+        private readonly Dictionary<GrabWidget, TrTransform> m_OriginalWidgetJoins =
+            new Dictionary<GrabWidget, TrTransform>();
+        private readonly Dictionary<GrabWidget, CanvasScript> m_OriginalWidgetCanvases =
+            new Dictionary<GrabWidget, CanvasScript>();
 
         private TrTransform m_OriginTransform;
         private TrTransform m_DuplicateTransform;
@@ -72,6 +80,19 @@ namespace TiltBrush
                 // parameter. Is this necessary...? Probably better safe than
                 // sorry.
                 m_NoSymmetrySpecialCase = true;
+
+                foreach (var stroke in m_SelectedStrokes)
+                {
+                    m_OriginalStrokeJoins[stroke] =
+                        SelectionManager.m_Instance.SelectionTransformWhenSelected(stroke);
+                    m_OriginalStrokeCanvases[stroke] = stroke.m_PreviousCanvas;
+                }
+                foreach (var widget in m_SelectedWidgets)
+                {
+                    m_OriginalWidgetJoins[widget] =
+                        SelectionManager.m_Instance.SelectionTransformWhenSelected(widget);
+                    m_OriginalWidgetCanvases[widget] = widget.m_PreviousCanvas;
+                }
 
                 // The copies the preview displaces go back to rest, so their duplicates can be
                 // placed from where they really are.
@@ -389,6 +410,10 @@ namespace TiltBrush
                     SelectionManager.m_Instance.SelectWidgets(m_SelectedWidgets);
                 }
 
+                SelectionManager.m_Instance.RestoreSelectionSourceCanvases(m_OriginalStrokeCanvases);
+                SelectionManager.m_Instance.RestoreSelectionJoinTransforms(m_OriginalStrokeJoins);
+                SelectionManager.m_Instance.RestoreWidgetSelectionJoins(
+                    m_OriginalWidgetJoins, m_OriginalWidgetCanvases);
                 SelectionManager.m_Instance.UpdateSelectionWidget();
             }
         }
