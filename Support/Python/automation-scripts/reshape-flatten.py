@@ -6,7 +6,7 @@ from automation_sections import reshape_demo
 
 
 def build_plan(args):
-    pitch, yaw = math.radians(25), math.radians(-25)
+    pitch, yaw = math.radians(25), math.radians(-12)
     normal = [math.sin(yaw) * math.cos(pitch), -math.sin(pitch),
               math.cos(yaw) * math.cos(pitch)]
     # A tangent in the screen's XY plane keeps the ripples broad and legible.
@@ -22,5 +22,5 @@ def build_plan(args):
     path = [[center[a] + along[a] * x for a in range(3)] for x in (-0.19, 0.19)]
     return reshape_demo("Flatten", points, path,
                         name="Flatten a rippled stroke onto an oblique plane", radius=0.095,
-                        seconds=5.2, rotation=(25, -25, 0), minimum_movement=0.025,
+                        seconds=5.2, rotation=(25, -12, 0), minimum_movement=0.025,
                         brush=args.brush or "Icing")
