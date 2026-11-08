@@ -117,10 +117,8 @@ endpoints. Flatten reduced the maximum plane deviation from 0.045 m to about
 0.0098 m to 0.0009 m, with fixed endpoints. These measurements describe the
 specific prepared fixtures. Before, during and after frames were reviewed.
 
-Pinch exists in code, but its button (`BundleSpread`) is explicitly inactive in
-the current Reshape tray prefab. It cannot be demonstrated through normal UI
-selection without a product UI change. Its proposed teaching shape is a tall
-oval pinched inward at the middle.
+Pinch is unused and excluded from the demo library. The demonstrated Reshape
+modes are Grab, Push, Flatten and Smooth.
 
 ### Author a sequence
 
