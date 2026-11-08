@@ -738,6 +738,8 @@ namespace TiltBrush
                 if (!bAdditive)
                 {
                     activatePostProduction = PostProductionSettings.ConsumeLoadRequest(fileInfo.FullPath);
+                    // Explicitly enabling scrubbing before a load also opts into this session.
+                    activatePostProduction |= SketchMemoryScript.m_Instance.m_KeepPlaybackAliveForScrubbing;
                     // Finish a retained timeline before its original layer objects are destroyed.
                     var sketchMemory = SketchMemoryScript.m_Instance;
                     if (sketchMemory.m_KeepPlaybackAliveForScrubbing && sketchMemory.IsPlayingBack)

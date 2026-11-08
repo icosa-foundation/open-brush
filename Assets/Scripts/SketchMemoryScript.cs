@@ -1439,7 +1439,8 @@ namespace TiltBrush
 
         public void SetPlaybackMode(PlaybackMode mode, float distancePerSecond)
         {
-            m_PlaybackMode = mode;
+            m_PlaybackMode = m_KeepPlaybackAliveForScrubbing && mode == PlaybackMode.Distance
+                ? PlaybackMode.Timestamps : mode;
             m_DistancePerSecond = distancePerSecond;
         }
 
@@ -1595,6 +1596,15 @@ namespace TiltBrush
         // one left finished by a quick load (which pins it to the end for good).
         public void RestartScrubPlayback()
         {
+            // Distance playback cannot seek. Release an in-flight stroke before replacing it.
+            if (m_ScenePlayback is ScenePlaybackByStrokeDistance distancePlayback)
+            {
+                distancePlayback.ClearPlayback();
+            }
+            if (m_PlaybackMode == PlaybackMode.Distance)
+            {
+                m_PlaybackMode = PlaybackMode.Timestamps;
+            }
             foreach (var stroke in m_MemoryList)
             {
                 UnrenderStrokeMemoryObject(stroke);

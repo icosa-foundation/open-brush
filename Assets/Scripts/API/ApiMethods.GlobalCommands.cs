@@ -287,7 +287,9 @@ namespace TiltBrush
 
             // If a sketch is already loaded its timeline has been torn down, so rebuild it -
             // otherwise enabling this after loading would appear to work but still not seek.
-            if (enable && !sketchMemory.IsPlayingBack && sketchMemory.GetMemoryList.Count > 0)
+            if (enable && sketchMemory.GetMemoryList.Count > 0 &&
+                (!sketchMemory.IsPlayingBack ||
+                 sketchMemory.CurrentPlaybackMode == SketchMemoryScript.PlaybackMode.Distance))
             {
                 sketchMemory.RestartScrubPlayback();
             }
