@@ -1877,8 +1877,8 @@ namespace TiltBrush
 
         virtual protected void OnTossComplete() { }
 
-        public void InitIntroAnim(TrTransform xfSpawn, TrTransform xfTarget, bool bFaceUser, Quaternion? endForward = null,
-                                  bool forceTransform = false, float snapGridSize = 0, float snapAngle = 0)
+        public TrTransform CalculateIntroAnimTarget(TrTransform xfSpawn, TrTransform xfTarget, bool bFaceUser,
+            Quaternion? endForward = null, bool forceTransform = false)
         {
             var xf = xfTarget;
             Vector3 vSpawnForwardNoY = xfSpawn.forward;
@@ -1887,7 +1887,10 @@ namespace TiltBrush
             Vector3 placementOffset = m_SpawnPlacementOffset;
 
             // Default is to spawn off to the right.  See if we should flip that.
-            Ray headRay = ViewpointScript.Gaze;
+            var simulation = App.VrSdk.VirtualSimulation;
+            Ray headRay = this is PanelWidget && simulation != null
+                ? new Ray(simulation.BodyPose.position, simulation.BodyPose.rotation * Vector3.forward)
+                : ViewpointScript.Gaze;
             Vector3 gazeNoY = headRay.direction;
             gazeNoY.y = 0.0f;
             gazeNoY.Normalize();
@@ -1925,6 +1928,13 @@ namespace TiltBrush
                 xf = xfTarget;
             }
 
+            return xf;
+        }
+
+        public void InitIntroAnim(TrTransform xfSpawn, TrTransform xfTarget, bool bFaceUser, Quaternion? endForward = null,
+                                  bool forceTransform = false, float snapGridSize = 0, float snapAngle = 0)
+        {
+            var xf = CalculateIntroAnimTarget(xfSpawn, xfTarget, bFaceUser, endForward, forceTransform);
             m_xfIntroAnimSpawn_LS = ParentTransform.inverse * xfSpawn;
             m_xfIntroAnimTarget_LS = ParentTransform.inverse * xf;
 

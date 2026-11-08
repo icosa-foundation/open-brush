@@ -52,6 +52,25 @@ namespace TiltBrush
             }
         }
 
+        public GameObject AutomationPopupPrefab => m_RequiresPopup ? GetComponentInParent<BasePanel>()?.PopupPrefab(m_Command) : null;
+
+        public UnityEngine.Pose PredictPopupPose(UnityEngine.Pose panelPose)
+        {
+            BasePanel panel = GetComponentInParent<BasePanel>();
+            GameObject prefab = AutomationPopupPrefab;
+            if (prefab == null) { throw new System.InvalidOperationException("This option has no popup prefab."); }
+            Transform mesh = panel.m_Mesh.transform;
+            Quaternion localRotation = Quaternion.Inverse(panel.transform.rotation) * mesh.rotation;
+            Quaternion rotation = panelPose.rotation * localRotation;
+            Vector3 local = panel.FullScalePoint(mesh, m_PopupOffset);
+            Vector3 position = panelPose.position + panelPose.rotation * local + rotation * Vector3.forward * prefab.GetComponent<PopUpWindow>().GetPopUpForwardOffset();
+            if (m_CenterPopupOnButton)
+                position = panelPose.position + panelPose.rotation * panel.FullScalePoint(transform, Vector3.zero) +
+                    panelPose.rotation * (Quaternion.Inverse(panel.transform.rotation) * transform.forward) * prefab.GetComponent<PopUpWindow>().GetPopUpForwardOffset() +
+                    panelPose.rotation * Vector3.Scale(panel.transform.localScale, m_PopupOffset);
+            return new UnityEngine.Pose(position, rotation);
+        }
+
         public string PopupText
         {
             get

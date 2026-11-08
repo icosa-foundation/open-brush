@@ -57,14 +57,19 @@ namespace TiltBrush
         public Vector3 ExpandedWorldPoint(Transform child, Vector3 localPoint) =>
             ExpandedMatrix(child).MultiplyPoint3x4(localPoint);
 
-        private Matrix4x4 ExpandedMatrix(Transform child)
+        public Matrix4x4 ExpandedLocalMatrix()
         {
             Vector3 position = transform.localPosition;
             position.x = m_BaseLocalX;
             Vector3 scale = transform.localScale;
             scale.x = m_AnimateRange.y;
+            return Matrix4x4.TRS(position, transform.localRotation, scale);
+        }
+
+        private Matrix4x4 ExpandedMatrix(Transform child)
+        {
             Matrix4x4 expanded = (transform.parent == null ? Matrix4x4.identity : transform.parent.localToWorldMatrix) *
-                Matrix4x4.TRS(position, transform.localRotation, scale);
+                ExpandedLocalMatrix();
             Matrix4x4 relative = Matrix4x4.identity;
             for (Transform node = child; node != transform; node = node.parent)
             {
