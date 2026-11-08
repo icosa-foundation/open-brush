@@ -67,7 +67,7 @@ def open_panel(panel):
 
 def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
                attachment="tool", anchor=None, anchor_t=0.5,
-               rotation=(12, 0, 0), end_rotation=None, curve="polyline",
+               rotation=(-25, -35, 0), end_rotation=None, curve="polyline",
                padding=0.02, lower_wand=True, contact_pause=0.45, inspect_pause=0.6):
     """Approach a contact, apply the native tool along a path, release and pause."""
     if not points:
