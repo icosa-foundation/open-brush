@@ -1355,6 +1355,9 @@ namespace TiltBrush
                 panel.ResetPanel();
                 panel.ResetPanelToInitialPosition();
                 panel.m_Fixed = panel.BeginFixed;
+                // Floating widgets own visibility; keep the panel's gaze-scale
+                // multiplier at its normal value when the widget hides its transform.
+                panel.SetScale(1);
                 if (!panel.BeginFixed)
                 {
                     panel.VerifyStateForFloating();
@@ -1363,7 +1366,7 @@ namespace TiltBrush
                 }
                 data.m_RestoreFlag = false;
                 panel.gameObject.SetActive(panel.BeginFixed && data.AvailableInCurrentMode);
-                panel.SetScale(panel.BeginFixed && data.AvailableInCurrentMode ? 1 : 0);
+                if (panel.BeginFixed) { panel.SetScale(data.AvailableInCurrentMode ? 1 : 0); }
             }
             m_WandPanelsOriginAngle = m_WandPanelsDefaultOriginAngle;
             m_WandPanelsOriginAngleOffset = m_WandPanelsRotationVelocity = 0;
