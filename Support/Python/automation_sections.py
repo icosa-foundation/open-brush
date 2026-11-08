@@ -133,7 +133,6 @@ def reshape_demo(mode, points, path, *, name, radius=0.08, seconds=3.0,
         "steps": [
             *open_panel("Labs"),
             *select_tool("ReshapeTool", subtool=mode),
-            *reveal_result(seconds=1.3),
             *apply_path(path, label=mode, tool="ReshapeTool", rotation=rotation,
                         seconds=seconds, padding=radius),
             {"op": "assert", "stroke": "subject", "minimumMovementMeters": minimum_movement,
