@@ -3,87 +3,13 @@
 
 using TiltBrush.DocumentImport;
 using TiltBrush.MeshEditing;
-using TMPro;
-using UnityEngine;
 
 namespace TiltBrush
 {
-    public class ShapeParameterSlider : AdvancedSlider
+    public class ShapeParameterSlider : ValueSlider
     {
-        [SerializeField] private TextMeshPro m_Label;
-        private ShapesPanel m_Panel;
-        private ProceduralShapes.Parameter m_Parameter;
-        private ShapeMaterialParameter m_MaterialParameter;
-        private bool m_Editing;
-
-        protected override void Awake()
-        {
-            base.Awake();
-            onUpdateValue.AddListener(OnValueChanged);
-        }
-
-        public void Configure(ShapesPanel panel, ProceduralShapes.Parameter parameter, GeometryRecipeData recipe)
-        {
-            m_Panel = panel;
-            m_Parameter = parameter;
-            m_MaterialParameter = null;
-            float value = parameter.Read(recipe);
-            SliderType = parameter.Integer ? SliderTypes.Int : SliderTypes.Float;
-            m_DisplayDecimalPlaces = 3;
-            SetMin(Mathf.Min(parameter.Min, value));
-            SetMax(Mathf.Max(parameter.Max, value));
-            SetInitialValueAndUpdate(value);
-            m_Label.text = parameter.Label;
-            SetDescriptionText(parameter.Label);
-        }
-
-        protected override string FormatValue(float value) => m_Parameter != null ? m_Parameter.Format(value) : base.FormatValue(value);
-
-        public void Configure(ShapesPanel panel, ShapeMaterialParameter parameter, EditableModelMaterialData material)
-        {
-            m_Panel = panel;
-            m_Parameter = null;
-            m_MaterialParameter = parameter;
-            SliderType = SliderTypes.Float;
-            m_DisplayDecimalPlaces = 2;
-            SetMin(0f);
-            SetMax(1f);
-            SetInitialValueAndUpdate(parameter.Read(material));
-            m_Label.text = parameter.Label;
-            SetDescriptionText(parameter.Label);
-        }
-
-        private void OnValueChanged(Vector3 value)
-        {
-            if (m_Panel != null && m_Parameter != null)
-            {
-                m_Editing = true;
-                m_Panel.ChangeParameter(m_Parameter, value.z);
-            }
-            else if (m_Panel != null && m_MaterialParameter != null)
-            {
-                m_Editing = true;
-                m_Panel.ChangeMaterialParameter(m_MaterialParameter, value.z);
-            }
-        }
-
-        public override void ButtonReleased()
-        {
-            base.ButtonReleased();
-            FinishOwnChange();
-        }
-
-        private void FinishOwnChange()
-        {
-            if (!m_Editing) { return; }
-            m_Editing = false;
-            m_Panel?.FinishChange();
-        }
-
-        public override void ResetState()
-        {
-            base.ResetState();
-            FinishOwnChange();
-        }
+        public void Configure(ShapesPanel panel, ProceduralShapes.Parameter parameter, GeometryRecipeData recipe) =>
+            Configure(parameter.Label, parameter.Read(recipe), value => panel.ChangeParameter(parameter, value),
+                panel.FinishChange, parameter.Min, parameter.Max, parameter.Integer, parameter.Format, 3);
     }
 }

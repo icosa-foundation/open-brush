@@ -39,7 +39,7 @@ namespace TiltBrush
         {
             if (m_Action == Action.ApplyColor)
             {
-                GetComponentInParent<ShapeColorPickerPopUpWindow>().ApplyColor();
+                GetComponentInParent<DraftColorPickerPopUpWindow>().ApplyColor();
                 return;
             }
             var panel = GetComponentInParent<ShapesPanel>();

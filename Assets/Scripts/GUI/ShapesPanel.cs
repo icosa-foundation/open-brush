@@ -30,7 +30,7 @@ namespace TiltBrush
         private bool m_MaterialTab;
         private EditableModelMaterialData m_DisplayedMaterial;
         private Color m_DisplayedColor;
-        private List<ShapeMaterialParameter> m_MaterialParameters = new List<ShapeMaterialParameter>();
+        private List<PbrMaterialParameter> m_MaterialParameters = new List<PbrMaterialParameter>();
         public bool EllipseEnabled => m_Target != null && m_Target.EllipseEnabled;
 
         public override void InitPanel()
@@ -110,10 +110,13 @@ namespace TiltBrush
             if (m_Target == null || !m_Target.gameObject.activeInHierarchy) return;
             FinishChange();
             var popup = CreatePopUp(m_ColorPickerPrefab, Vector3.zero, false, true);
-            popup.GetComponent<ShapeColorPickerPopUpWindow>().SetTarget(m_Target);
+            var target = m_Target;
+            popup.GetComponent<DraftColorPickerPopUpWindow>().BindColor(
+                () => target != null && target.gameObject.activeInHierarchy ? target.m_Color : (Color?)null,
+                color => SketchMemoryScript.m_Instance.PerformAndRecordCommand(new RepaintShapeCommand(target, color)));
         }
 
-        public void ChangeMaterialParameter(ShapeMaterialParameter parameter, float value)
+        public void ChangeMaterialParameter(PbrMaterialParameter parameter, float value)
         {
             if (m_Target == null || !m_Target.gameObject.activeInHierarchy) return;
             var material = m_Target.GetMaterialSettings();
@@ -175,7 +178,7 @@ namespace TiltBrush
             m_DisplayedMaterial = m_Target != null ? m_Target.MaterialSettings : null;
             m_DisplayedColor = m_Target != null ? m_Target.m_Color : Color.white;
             var material = m_Target != null ? m_Target.GetMaterialSettings() : null;
-            m_MaterialParameters = material != null ? ShapeMaterialParameter.For(material) : new List<ShapeMaterialParameter>();
+            m_MaterialParameters = material != null ? PbrMaterialParameter.For(material) : new List<PbrMaterialParameter>();
             m_Parameters = m_DisplayedRecipe != null
                 ? ProceduralShapes.GetParameters(m_DisplayedRecipe, EllipseEnabled) : new List<ProceduralShapes.Parameter>();
             int count = m_MaterialTab ? m_MaterialParameters.Count : m_Parameters.Count;
@@ -197,8 +200,9 @@ namespace TiltBrush
                 m_ParameterToggles[i].gameObject.SetActive(boolean);
                 if (m_MaterialTab && visible)
                 {
-                    if (boolean) m_ParameterToggles[i].Configure(this, m_MaterialParameters[index], material);
-                    else m_ParameterSliders[i].Configure(this, m_MaterialParameters[index], material);
+                    var parameter = m_MaterialParameters[index];
+                    parameter.Bind(m_ParameterSliders[i], m_ParameterToggles[i], material,
+                        value => ChangeMaterialParameter(parameter, value), FinishChange);
                 }
                 else if (boolean) { m_ParameterToggles[i].Configure(this, m_Parameters[index], m_DisplayedRecipe); }
                 else if (visible) { m_ParameterSliders[i].Configure(this, m_Parameters[index], m_DisplayedRecipe); }

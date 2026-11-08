@@ -9,13 +9,8 @@ using Newtonsoft.Json.Linq;
 
 namespace TiltBrush
 {
-    public sealed class EditableModelMaterialData
+    public sealed class EditableModelMaterialData : PbrMaterialValues
     {
-        public bool Unlit { get; set; }
-        public bool Transparent { get; set; }
-        public float Metallic { get; set; }
-        public float Smoothness { get; set; } = .5f;
-        public float Opacity { get; set; } = 1f;
         [JsonExtensionData] public IDictionary<string, JToken> ExtraData { get; set; }
 
         public EditableModelMaterialData Clone() => new EditableModelMaterialData
@@ -25,13 +20,9 @@ namespace TiltBrush
             ExtraData = ExtraData?.ToDictionary(p => p.Key, p => p.Value.DeepClone())
         };
 
-        public void Validate()
+        public override void Validate()
         {
-            foreach (float value in new[] { Metallic, Smoothness, Opacity })
-            {
-                if (float.IsNaN(value) || float.IsInfinity(value) || value < 0 || value > 1)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Material values must be between zero and one.");
-            }
+            base.Validate();
             if (ExtraData?.Count > 0) throw new NotSupportedException("Unfamiliar editable material settings");
         }
 

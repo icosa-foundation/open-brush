@@ -29,15 +29,8 @@ namespace TiltBrush.MeshEditing
             material.shader = template.shader;
             material.CopyPropertiesFromMaterial(template);
             material.shaderKeywords = material.shaderKeywords.Union(keywords).ToArray();
-            if (settings != null)
-            {
-                color.a = settings.Transparent ? settings.Opacity : 1f;
-                if (material.HasProperty("_Metallic")) material.SetFloat("_Metallic", settings.Metallic);
-                if (material.HasProperty("_Glossiness")) material.SetFloat("_Glossiness", settings.Smoothness);
-                if (material.HasProperty("_Smoothness")) material.SetFloat("_Smoothness", settings.Smoothness);
-            }
-            if (material.HasProperty("_Color")) material.SetColor("_Color", color);
-            if (material.HasProperty("_BaseColor")) material.SetColor("_BaseColor", color);
+            if (settings != null) PbrMaterialProperties.Apply(material, settings, color);
+            else PbrMaterialProperties.ApplyColor(material, color);
         }
     }
 }
