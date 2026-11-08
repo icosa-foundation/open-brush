@@ -155,7 +155,8 @@ namespace TiltBrush
                         Positive(prep.BrushSizeMeters, "brushSizeMeters", 0.001f, 1);
                         if (prep.Points == null || prep.Points.Length < 2)
                             throw new ArgumentException("A prepared stroke needs at least two points.");
-                        BrushDescriptor brush = BrushCatalog.m_Instance.AllBrushes.Single(b => b.DurableName == prep.Brush);
+                        BrushDescriptor brush = BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(b => b.DurableName == prep.Brush);
+                        if (brush == null) { throw new ArgumentException($"Unknown brush: {prep.Brush}"); }
                         CanvasScript canvas = App.ActiveCanvas;
                         var path = prep.Points.Select(p => new TrTransform
                         {
