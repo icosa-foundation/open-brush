@@ -235,7 +235,9 @@ namespace TiltBrush
             }
 
             var newControlPoints = stroke.m_ControlPoints.ToArray();
-            float now = Time.realtimeSinceStartup;
+            // Virtual Input must follow the simulation clock during playback and fixed-step capture.
+            bool simulationClock = App.Config.m_SdkMode == SdkMode.VirtualInput;
+            float now = simulationClock ? Time.time : Time.realtimeSinceStartup;
             m_SculptContacts.TryGetValue(stroke, out SculptContactState contactState);
             float continuousStrengthScale = 1f;
             float nextApplicationTime = now;
@@ -243,7 +245,7 @@ namespace TiltBrush
             {
                 float previousApplicationTime = contactState != null
                     ? contactState.LastApplicationTime
-                    : now - Time.unscaledDeltaTime;
+                    : now - (simulationClock ? Time.deltaTime : Time.unscaledDeltaTime);
                 float elapsed = Mathf.Clamp(
                     now - previousApplicationTime, 0f, k_MaxContinuousStepSeconds);
                 // Advance only by the time applied so any excess remains for later updates.
