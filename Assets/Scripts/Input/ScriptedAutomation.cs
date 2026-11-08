@@ -200,9 +200,12 @@ namespace TiltBrush
 
         private UnityEngine.Pose AimAt(Vector3 target, Quaternion rotation)
         {
-            Vector3 forward = rotation * Vector3.forward;
-            return RootForContact(1, new UnityEngine.Pose(target - forward * (0.18f * App.METERS_TO_UNITS),
-                Quaternion.LookRotation(forward, m_Yaw * Vector3.up)), new AutomationScript.Step());
+            Vector3 offset = AutomationScript.Vector(m_Script.PointingOffsetMeters, "pointingOffsetMeters");
+            if (offset.z > -0.03f)
+                throw new ArgumentException("pointingOffsetMeters must place the tip at least 3 cm in front of the panel.");
+            Vector3 tip = target + rotation * (offset * App.METERS_TO_UNITS);
+            return RootForContact(1, new UnityEngine.Pose(tip,
+                Quaternion.LookRotation(target - tip, m_Yaw * Vector3.up)), new AutomationScript.Step());
         }
 
         private AutomationShot Compile()
