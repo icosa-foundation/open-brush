@@ -42,6 +42,18 @@ namespace TiltBrush
         [ApiEndpoint("automation.script", "Runs an externally authored version 1 automation plan. Arguments: run id, URL-safe base64 UTF-8 JSON.")]
         public static void AutomationRunScript(string runId, string encoded)
         {
+            StartAutomationScript(runId, () =>
+            {
+                string json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encoded.Replace('-', '+').Replace('_', '/')));
+                return AutomationScript.Parse(json);
+            });
+        }
+
+        public static void StartAutomationScript(AutomationScript script) =>
+            StartAutomationScript(Guid.NewGuid().ToString("N"), () => script);
+
+        private static void StartAutomationScript(string runId, Func<AutomationScript> loadPlan)
+        {
             if (InputManager.m_Instance.ProceduralAutomationStatus != "Stopped" ||
                 App.Instance.GetComponent<ProceduralCapture>()?.IsRecording == true)
                 throw new InvalidOperationException("Stop the current automation and recording before submitting a script.");
@@ -50,9 +62,7 @@ namespace TiltBrush
             capture.Error = null;
             try
             {
-                string json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encoded.Replace('-', '+').Replace('_', '/')));
-                var script = AutomationScript.Parse(json);
-                InputManager.m_Instance.StartAutomationScript(script);
+                InputManager.m_Instance.StartAutomationScript(loadPlan());
             }
             catch (Exception error)
             {

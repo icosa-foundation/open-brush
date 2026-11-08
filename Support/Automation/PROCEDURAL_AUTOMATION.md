@@ -93,6 +93,29 @@ longer than the resulting video's duration.
 ffmpeg -n -framerate 30 -i "/path/to/grab-example_frames/frame_%06d.png" -c:v libx264 -pix_fmt yuv420p -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" "grab-example.mp4"
 ```
 
+## Run a plan from the Editor window
+
+1. Export a JSON plan from any Python example, for example:
+
+   ```sh
+   python Support/Python/record-procedural-tutorial.py --scenario reshape --write-plan reshape.json
+   ```
+
+2. Open **Open Brush > Procedural Automation**, enable **Virtual Input next Play**
+   and enter Play mode. Keep the Game view at the intended capture size/aspect.
+3. Choose **Load JSON plan** and select the exported file. Use **Reload** after
+   editing or regenerating it.
+4. **Rehearse** runs without capture. **Record** uses the window's recording name
+   and FPS instead of any capture settings in the file. **Stop** stops execution
+   and capture; Escape stops active execution. The status and output path appear
+   in the window.
+
+The window and HTTP `automation.script` endpoint use the same executor and
+plan settings. Controller dimensions, timing, paths and framing belong in the
+external plan; the window has no separate Draw/Grab scenarios or UserConfig
+settings. Drawing and reshaping affect the sketch, so Undo or restore the
+starting scene before repeating a take.
+
 ## Create a new script
 
 ### Reshape teaching shapes
