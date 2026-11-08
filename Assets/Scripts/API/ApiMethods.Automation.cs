@@ -10,6 +10,7 @@ namespace TiltBrush
 {
     public static partial class ApiMethods
     {
+        private static string m_AutomationRunId;
         [Serializable]
         private class AutomationSnapshot
         {
@@ -19,6 +20,7 @@ namespace TiltBrush
             public int Frames;
             public string Output;
             public string Error;
+            public string RunId;
         }
 
         internal static string GetAutomationStatusJson()
@@ -32,8 +34,31 @@ namespace TiltBrush
                 Recording = capture != null && capture.IsRecording,
                 Frames = capture == null ? 0 : capture.FrameCount,
                 Output = capture == null ? "" : capture.OutputDirectory,
-                Error = capture?.Error ?? input.ProceduralAutomationError ?? ""
+                Error = capture?.Error ?? input.ProceduralAutomationError ?? "",
+                RunId = m_AutomationRunId
             });
+        }
+
+        [ApiEndpoint("automation.script", "Runs an externally authored version 1 automation plan. Arguments: run id, URL-safe base64 UTF-8 JSON.")]
+        public static void AutomationRunScript(string runId, string encoded)
+        {
+            if (InputManager.m_Instance.ProceduralAutomationStatus != "Stopped" ||
+                App.Instance.GetComponent<ProceduralCapture>()?.IsRecording == true)
+                throw new InvalidOperationException("Stop the current automation and recording before submitting a script.");
+            m_AutomationRunId = runId;
+            var capture = App.Instance.GetComponent<ProceduralCapture>() ?? App.Instance.gameObject.AddComponent<ProceduralCapture>();
+            capture.Error = null;
+            try
+            {
+                string json = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(encoded.Replace('-', '+').Replace('_', '/')));
+                var script = AutomationScript.Parse(json);
+                InputManager.m_Instance.StartAutomationScript(script);
+            }
+            catch (Exception error)
+            {
+                capture.Error = error.Message;
+                throw;
+            }
         }
 
         [ApiEndpoint("automation.start", "Presses a visible wand-panel brush button and draws a procedural stroke. Optional argument: brush durable name.")]

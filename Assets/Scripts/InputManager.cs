@@ -304,7 +304,7 @@ namespace TiltBrush
         private bool m_AllowVrControllers = true;
         // This is indexed by enum ControllerName
         private ControllerInfo[] m_ControllerInfos;
-        private ProceduralAutomation m_ProceduralAutomation;
+        private IProceduralAutomation m_ProceduralAutomation;
 
         public string ProceduralAutomationStatus => m_ProceduralAutomation?.Status ?? "Stopped";
         public string ProceduralAutomationError { get; private set; }
@@ -326,6 +326,21 @@ namespace TiltBrush
         }
 
         public void StopProceduralAutomation() => m_ProceduralAutomation?.Stop();
+
+        public void StartAutomationScript(AutomationScript script)
+        {
+            if (m_ProceduralAutomation != null)
+            {
+                throw new InvalidOperationException("Another automation owns the controllers.");
+            }
+            ProceduralAutomationError = null;
+            try { m_ProceduralAutomation = new ScriptedAutomation(script); }
+            catch (Exception exception)
+            {
+                ProceduralAutomationError = exception.Message;
+                throw;
+            }
+        }
 
         private void DisposeProceduralAutomation()
         {

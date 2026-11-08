@@ -1,0 +1,200 @@
+// Copyright 2026 The Open Brush Authors
+// Licensed under the Apache License, Version 2.0.
+
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Serialization;
+using UnityEngine;
+
+namespace TiltBrush
+{
+    // A versioned wire format. Scenario names and tool-specific motion do not live here.
+    public sealed class AutomationScript
+    {
+        public int Version;
+        public string Name = "script";
+        public CaptureOptions Capture;
+        public float UpperArmMeters = 0.30f;
+        public float ForearmMeters = 0.30f;
+        public float[] PanelPosition = {-0.12f, -0.10f, 0.34f};
+        public AutomationShot.FramingSettings Framing = new AutomationShot.FramingSettings();
+        public Preparation[] Prepare = Array.Empty<Preparation>();
+        public Step[] Steps;
+        public Subject[] Subjects = Array.Empty<Subject>();
+
+        public sealed class CaptureOptions
+        {
+            public string Name;
+            public int Fps = 30;
+        }
+
+        public sealed class Selector
+        {
+            public string Tool;
+            public string Brush;
+            public string Subtool;
+            public string Path;
+
+            public BaseButton Resolve()
+            {
+                if (new[] {Tool, Brush, Subtool, Path}.Count(s => !string.IsNullOrEmpty(s)) != 1)
+                    throw new ArgumentException("A button selector needs exactly one of tool, brush, subtool or path.");
+                var matches = UnityEngine.Object.FindObjectsByType<BaseButton>(FindObjectsInactive.Include)
+                    .Where(b => b.GetComponentInParent<BasePanel>() is BasePanel p && p.m_Fixed && p.IsAvailable())
+                    .Where(b => !string.IsNullOrEmpty(Tool) ? b is ToolButton t && t.Tool.ToString() == Tool :
+                        !string.IsNullOrEmpty(Brush) ? b is BrushTypeButton brush && brush.m_Brush?.DurableName == Brush :
+                        !string.IsNullOrEmpty(Subtool) ? b is SculptSubToolButton sub && sub.m_SubTool.ToString() == Subtool :
+                        HierarchyPath(b.transform) == Path).ToArray();
+                if (matches.Length != 1)
+                    throw new ArgumentException($"Button selector matched {matches.Length} controls; use an exact hierarchy path to disambiguate.");
+                return matches[0];
+            }
+
+            private static string HierarchyPath(Transform t) => t.parent == null ? t.name : $"{HierarchyPath(t.parent)}/{t.name}";
+        }
+
+        public sealed class Preparation
+        {
+            public string Op;
+            public string Id;
+            public bool UseLatest;
+            public string Brush = "DuctTape";
+            public float BrushSizeMeters = 0.02f;
+            public float[][] Points;
+            public string Tool;
+            public float RadiusMeters;
+            public string Subtool;
+        }
+
+        public sealed class Step
+        {
+            public string Op;
+            public string Label;
+            public float Seconds = 1.2f;
+            public string Hand = "brush";
+            public string Attachment = "tip";
+            public string Anchor;
+            public float AnchorT = 0.5f;
+            public float[][] Points;
+            public string Curve = "polyline";
+            public float[] Rotation = {12, 0, 0};
+            public float[] EndRotation;
+            public float PaddingMeters = 0.02f;
+            public Selector Target;
+            public bool? Trigger;
+            public float[] Thumbstick;
+            public string Tool;
+            public string Subtool;
+            public string Stroke;
+            public float MinimumMovementMeters;
+            public bool FixedEndpoints;
+            public int? StrokeCountDelta;
+        }
+
+        public sealed class Subject
+        {
+            public string Name;
+            public string Anchor;
+            public float AnchorT = 0.5f;
+            public float[] Min;
+            public float[] Max;
+        }
+
+        public static AutomationScript Parse(string json)
+        {
+            var script = JsonConvert.DeserializeObject<AutomationScript>(json, new JsonSerializerSettings
+            {
+                ContractResolver = new CamelCasePropertyNamesContractResolver(),
+                MissingMemberHandling = MissingMemberHandling.Error,
+                TypeNameHandling = TypeNameHandling.None
+            });
+            if (script == null || script.Version != 1 || script.Steps == null || script.Steps.Length == 0)
+                throw new ArgumentException("An automation script needs version 1 and a nonempty steps array.");
+            if (script.Prepare == null || script.Subjects == null || script.Framing == null || script.Steps.Any(s => s == null))
+                throw new ArgumentException("Script arrays and framing must not be null.");
+            return script;
+        }
+
+        internal static Vector3 Vector(float[] values, string field)
+        {
+            if (values == null || values.Length != 3 || values.Any(v => float.IsNaN(v) || float.IsInfinity(v)))
+                throw new ArgumentException($"{field} must contain three finite numbers.");
+            return new Vector3(values[0], values[1], values[2]);
+        }
+
+        internal static void Positive(float value, string field, float minimum = 0.001f, float maximum = 60)
+        {
+            if (float.IsNaN(value) || float.IsInfinity(value) || value < minimum || value > maximum)
+                throw new ArgumentException($"{field} must be between {minimum} and {maximum}.");
+        }
+
+        internal Dictionary<string, Stroke> PrepareScene(UnityEngine.Pose body)
+        {
+            var strokes = new Dictionary<string, Stroke>(StringComparer.Ordinal);
+            Quaternion yaw = Quaternion.Euler(0, body.rotation.eulerAngles.y, 0);
+            PanelManager.m_Instance.SetPanelAvailabilityMode(PanelManager.PanelAvailabilityMode.Advanced);
+            SketchControlsScript.m_Instance.RequestPanelsVisibility(true);
+            foreach (Preparation prep in Prepare)
+            {
+                if (prep == null) { throw new ArgumentException("Preparation must not be null."); }
+                if (prep.Op == "stroke")
+                {
+                    if (string.IsNullOrWhiteSpace(prep.Id) || strokes.ContainsKey(prep.Id))
+                        throw new ArgumentException("Each prepared stroke needs a unique nonempty id.");
+                    Stroke stroke;
+                    if (prep.UseLatest)
+                    {
+                        stroke = SketchMemoryScript.m_Instance.MostRecentStroke;
+                        if (stroke == null || !stroke.IsGeometryEnabled)
+                            throw new InvalidOperationException("No visible latest stroke is available.");
+                    }
+                    else
+                    {
+                        Positive(prep.BrushSizeMeters, "brushSizeMeters", 0.001f, 1);
+                        if (prep.Points == null || prep.Points.Length < 2)
+                            throw new ArgumentException("A prepared stroke needs at least two points.");
+                        BrushDescriptor brush = BrushCatalog.m_Instance.AllBrushes.Single(b => b.DurableName == prep.Brush);
+                        CanvasScript canvas = App.ActiveCanvas;
+                        var path = prep.Points.Select(p => new TrTransform
+                        {
+                            translation = canvas.Pose.inverse * (body.position + yaw * (Vector(p, "stroke point") * App.METERS_TO_UNITS)),
+                            rotation = Quaternion.Inverse(canvas.Pose.rotation) * yaw,
+                            scale = 1
+                        }).ToList();
+                        stroke = DrawStrokes.DrawNestedTrList(new[] {path}, TrTransform.identity, brush: brush,
+                            brushSize: prep.BrushSizeMeters * App.METERS_TO_UNITS, canvas: canvas).Single();
+                    }
+                    strokes.Add(prep.Id, stroke);
+                }
+                else if (prep.Op == "tool")
+                {
+                    if (float.IsNaN(prep.RadiusMeters) || float.IsInfinity(prep.RadiusMeters) || prep.RadiusMeters < 0)
+                        throw new ArgumentException("radiusMeters must be finite and nonnegative.");
+                    if (!Enum.TryParse(prep.Tool, out BaseTool.ToolType type) || !Enum.IsDefined(typeof(BaseTool.ToolType), type))
+                        throw new ArgumentException($"Unknown preparation tool: {prep.Tool}");
+                    BaseTool tool = SketchSurfacePanel.m_Instance.GetComponentsInChildren<BaseTool>(true).FirstOrDefault(t => t.m_Type == type);
+                    if (tool == null) { throw new ArgumentException($"Tool not available: {prep.Tool}"); }
+                    if (prep.RadiusMeters > 0)
+                    {
+                        if (!(tool is StrokeModificationTool intersection))
+                            throw new ArgumentException("radiusMeters requires a stroke modification tool.");
+                        float size = prep.RadiusMeters * App.METERS_TO_UNITS;
+                        Positive(size, "tool radius", intersection.m_SizeRange.x, intersection.m_SizeRange.y);
+                        intersection.UpdateSize(Mathf.InverseLerp(intersection.m_SizeRange.x, intersection.m_SizeRange.y, size) - intersection.GetSize01());
+                    }
+                    if (!string.IsNullOrEmpty(prep.Subtool))
+                    {
+                        if (!(tool is ReshapeTool reshape)) { throw new ArgumentException("This tool has no sculpt subtools."); }
+                        reshape.SetSubTool(tool.GetComponentsInChildren<BaseSculptSubTool>(true)
+                            .Single(s => s.SubToolIdentifier.ToString() == prep.Subtool));
+                    }
+                }
+                else { throw new ArgumentException($"Unknown preparation operation: {prep.Op}"); }
+            }
+            SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.FreePaintTool);
+            return strokes;
+        }
+    }
+}

@@ -10,10 +10,19 @@ using UnityEngine;
 
 namespace TiltBrush
 {
+    public interface IProceduralAutomation : IDisposable
+    {
+        string Status { get; }
+        string Error { get; }
+        void Stop();
+        bool Tick(float deltaTime);
+        void ApplyPoses();
+    }
+
     /// Shared controller sequence for real wand-panel selections and tool interactions.
     /// InputManager advances this before controller input consumers and reapplies the poses
     /// before dispatching tracking callbacks. No visible skeleton or direct button invocation.
-    public sealed class ProceduralAutomation : IDisposable
+    public sealed class ProceduralAutomation : IProceduralAutomation
     {
         [Serializable]
         public class Settings
