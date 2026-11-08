@@ -46,6 +46,11 @@ namespace TiltBrush
         {
             m_ShowTimer = 0.0f;
             m_CurrentState = State.Invisible;
+            m_PreviousShowRatio = 0.0f;
+            m_IntroAnimState = IntroAnimState.Off;
+            m_IntroAnimValue = 0.0f;
+            m_Restoring = false;
+            ClearVelocities();
             UpdatePanelScale(0.0f);
         }
 
