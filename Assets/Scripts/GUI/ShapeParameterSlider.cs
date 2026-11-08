@@ -13,6 +13,7 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_Label;
         private ShapesPanel m_Panel;
         private ProceduralShapes.Parameter m_Parameter;
+        private ShapeMaterialParameter m_MaterialParameter;
         private bool m_Editing;
 
         protected override void Awake()
@@ -25,6 +26,7 @@ namespace TiltBrush
         {
             m_Panel = panel;
             m_Parameter = parameter;
+            m_MaterialParameter = null;
             float value = parameter.Read(recipe);
             SliderType = parameter.Integer ? SliderTypes.Int : SliderTypes.Float;
             m_DisplayDecimalPlaces = 3;
@@ -37,12 +39,31 @@ namespace TiltBrush
 
         protected override string FormatValue(float value) => m_Parameter != null ? m_Parameter.Format(value) : base.FormatValue(value);
 
+        public void Configure(ShapesPanel panel, ShapeMaterialParameter parameter, EditableModelMaterialData material)
+        {
+            m_Panel = panel;
+            m_Parameter = null;
+            m_MaterialParameter = parameter;
+            SliderType = SliderTypes.Float;
+            m_DisplayDecimalPlaces = 2;
+            SetMin(0f);
+            SetMax(1f);
+            SetInitialValueAndUpdate(parameter.Read(material));
+            m_Label.text = parameter.Label;
+            SetDescriptionText(parameter.Label);
+        }
+
         private void OnValueChanged(Vector3 value)
         {
             if (m_Panel != null && m_Parameter != null)
             {
                 m_Editing = true;
                 m_Panel.ChangeParameter(m_Parameter, value.z);
+            }
+            else if (m_Panel != null && m_MaterialParameter != null)
+            {
+                m_Editing = true;
+                m_Panel.ChangeMaterialParameter(m_MaterialParameter, value.z);
             }
         }
 

@@ -819,7 +819,9 @@ namespace TiltBrush
 
         public bool MemorizeShapeRepaint(EditableModelWidget widget, Color color)
         {
-            if (widget == null || widget.m_PolyRecipe == null || widget.m_Color == color) { return false; }
+            if (widget == null || widget.m_PolyRecipe == null) { return false; }
+            color.a = widget.m_Color.a;
+            if (widget.m_Color == color) { return false; }
             if (m_RepaintStrokeParent == null) { m_RepaintStrokeParent = new BaseCommand(); }
             new RepaintShapeCommand(widget, color, m_RepaintStrokeParent);
             return true;
