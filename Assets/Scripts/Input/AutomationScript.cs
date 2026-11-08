@@ -54,8 +54,8 @@ namespace TiltBrush
             public BaseButton Resolve(bool required = true)
             {
                 var matches = UnityEngine.Object.FindObjectsByType<BaseButton>(FindObjectsInactive.Include)
-                    .Where(b => b.GetComponentInParent<BasePanel>() is BasePanel p && PanelManager.m_Instance.IsPanelAvailable(p))
-                    .Where(b => b.GetComponentInParent<PopUpWindow>() is PopUpWindow popup ? popup.GetParentPanel()?.PanelPopUp == popup : true)
+                    .Where(b => b.GetComponentInParent<BasePanel>(true) is BasePanel p && PanelManager.m_Instance.IsPanelAvailable(p))
+                    .Where(b => b.GetComponentInParent<PopUpWindow>(true) is PopUpWindow popup ? popup.GetParentPanel()?.PanelPopUp == popup : true)
                     .Where(Matches).ToArray();
                 if (matches.Length == 0 && !required) { return null; }
                 if (matches.Length != 1)

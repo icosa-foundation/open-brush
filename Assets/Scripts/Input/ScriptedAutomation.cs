@@ -189,7 +189,7 @@ namespace TiltBrush
 
         private UnityEngine.Pose Aim(BaseButton button, UnityEngine.Pose panelPose, bool predict)
         {
-            BasePanel panel = button.GetComponentInParent<BasePanel>();
+            BasePanel panel = button.GetComponentInParent<BasePanel>(true);
             Collider collider = button.GetCollider() ?? button.GetComponent<Collider>();
             if (collider == null) { throw new ArgumentException("The selected button has no collider."); }
             Vector3 target = predict && collider is BoxCollider box ? panelPose.position +
@@ -244,8 +244,9 @@ namespace TiltBrush
                         item.Panel = popupOwner;
                         item.Deferred = item.Button != null;
                     }
-                    else { item.Panel = item.Button?.GetComponentInParent<BasePanel>(); }
-                    if (item.Button == null || item.Panel == null) { throw new ArgumentException("The target control does not exist in the predicted UI state."); }
+                    else { item.Panel = item.Button?.GetComponentInParent<BasePanel>(true); }
+                    if (item.Button == null || item.Panel == null)
+                        throw new ArgumentException($"Step {m_Instructions.Count + 1} ({step.Op}): target '{step.Target.Tool ?? step.Target.Brush ?? step.Target.Subtool ?? step.Target.Command ?? step.Target.OpensPanel ?? step.Target.Path}' does not exist in the predicted UI state.");
                     if (step.Op == "present" && item.Panel.m_Fixed)
                     {
                         item.Hand = 0;
@@ -303,7 +304,7 @@ namespace TiltBrush
                             buttonPose = new UnityEngine.Pose(pose.position + pose.rotation * item.Panel.FullScalePoint(item.Button.transform, Vector3.zero),
                                 pose.rotation * Quaternion.Inverse(item.Panel.transform.rotation) * item.Button.transform.rotation);
                         }
-                        var tray = item.Button.GetComponentInParent<BaseTray>();
+                        var tray = item.Button.GetComponentInParent<BaseTray>(true);
                         if (tray != null)
                         {
                             foreach (var renderer in tray.GetComponentsInChildren<Renderer>(true))
@@ -533,6 +534,12 @@ namespace TiltBrush
         {
             if (item.Hand != 1) { throw new InvalidOperationException("UI clicks use the brush hand."); }
             if (m_TotalElapsed > item.Source.Seconds + 8) { throw new InvalidOperationException("Button did not receive hover/click."); }
+            if (m_Stage == 2 && m_Clicked)
+            {
+                m_Triggers[1] = true;
+                if (m_Elapsed >= 0.16f) { m_Triggers[1] = false; m_Stage = 3; m_Elapsed = 0; }
+                return;
+            }
             if (m_Stage == 3)
             {
                 m_Triggers[1] = false;

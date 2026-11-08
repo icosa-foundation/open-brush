@@ -52,11 +52,11 @@ namespace TiltBrush
             }
         }
 
-        public GameObject AutomationPopupPrefab => m_RequiresPopup ? GetComponentInParent<BasePanel>()?.PopupPrefab(m_Command) : null;
+        public GameObject AutomationPopupPrefab => m_RequiresPopup ? GetComponentInParent<BasePanel>(true)?.PopupPrefab(m_Command) : null;
 
         public UnityEngine.Pose PredictPopupPose(UnityEngine.Pose panelPose)
         {
-            BasePanel panel = GetComponentInParent<BasePanel>();
+            BasePanel panel = GetComponentInParent<BasePanel>(true);
             GameObject prefab = AutomationPopupPrefab;
             if (prefab == null) { throw new System.InvalidOperationException("This option has no popup prefab."); }
             Transform mesh = panel.m_Mesh.transform;
