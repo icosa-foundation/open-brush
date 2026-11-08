@@ -1,93 +1,69 @@
 # Authoring external automation scripts
 
-The 8 November library additions are `membrane`, `snapping`, `snapping-angle`
-and `symmetry`. These were recorded in the Windows Unity Editor using Virtual
-Input with no physical controllers, at 1920x888 and 30 fps. Native UI activations,
-stroke counts and 1 mm endpoint checks passed; representative UI, drawing-contact
-and final-result frames were reviewed. Snowflake, Plait and CandyCane created
-12, 5 and 15 strokes respectively. The context-button press/hold/release edges
-were also checked. These additions have not been run on macOS.
+Author sequences in Python or JSON and run them through the shared automation
+executor. Plans define preparation, controller input, movement, timing and
+camera framing.
 
-`snapping-angle` draws one sloping straight edge while holding the trigger,
-pauses on the unfinished line, presses `Button04` without moving the controller,
-then pauses on the horizontal snapped preview before releasing the trigger.
-It checks one final stroke and the horizontal endpoints to a 1 mm tolerance.
-
-New sequences can be authored entirely in Python or JSON. They use the
-`automation.script` HTTP endpoint and a shared C# executor. Changing paths,
-timings, button selections, input events or the order of operations needs no
-C# changes or Unity recompilation. New engine capabilities still need engine code.
-
-Virtual Input simulates head and controller input without VR hardware. It is
-separate from monoscopic mode. Invisible procedural arms constrain controller
-reaches; the recorded interaction uses normal UI and tool input.
+Virtual Input supplies a virtual head and controllers without VR hardware.
+It is separate from monoscopic mode. Invisible procedural arms constrain
+controller reaches, and interactions use normal application UI and tool input.
 
 ## Run the examples
 
 1. Open the Main scene and **Open Brush > Procedural Automation**. Enable
    **Virtual Input next Play**, then enter Play mode. Alternatively launch a
    player with `--virtualInput`.
-2. Keep the Game/player view rendering at the intended recording resolution and
-   aspect ratio. Let startup messages disappear before recording.
-3. Run from the project root, using Python 3 (`python3` on macOS if appropriate):
+2. Set the Game/player view to the intended recording resolution and aspect ratio.
+   Let startup messages disappear.
+3. Run from the project root with Python 3 (`python3` on macOS):
+
+   ```sh
+   python Support/Python/record-procedural-tutorial.py --scenario draw --name draw-example
+   ```
+
+Choose a scenario from the library:
+
+| # | Scenario | Demonstration |
+| --- | --- | --- |
+| 1 | [draw](../Python/automation-scripts/draw.py) | Select a brush and draw a curve. |
+| 2 | [reshape](../Python/automation-scripts/reshape-grab.py) | Grab and bend the middle of a prepared stroke. |
+| 3 | [reshape-push](../Python/automation-scripts/reshape-push.py) | Push a straight stroke into an arch. |
+| 4 | [reshape-flatten](../Python/automation-scripts/reshape-flatten.py) | Flatten a rippled stroke. |
+| 5 | [reshape-smooth](../Python/automation-scripts/reshape-smooth.py) | Smooth a jittery arch. |
+| 6 | [tint](../Python/automation-scripts/tint.py) | Apply a contrasting tint to the middle of a stroke. |
+| 7 | [open-labs](../Python/automation-scripts/open-labs.py) | Open More panels and choose Labs. |
+| 8 | [membrane](../Python/automation-scripts/membrane.py) | Draw matte and outlined membrane surfaces. |
+| 9 | [snapping](../Python/automation-scripts/snapping.py) | Join straight edges with endpoint snapping. |
+| 10 | [snapping-angle](../Python/automation-scripts/snapping-angle.py) | Snap an unfinished sloping line to horizontal before releasing the trigger. |
+| 11 | [symmetry](../Python/automation-scripts/symmetry.py) | Draw with Snowflake, Plait or CandyCane. |
+
+Pass a symmetry preset with `--param`, for example:
 
 ```sh
-python Support/Python/record-procedural-tutorial.py --scenario draw --name draw-example
-python Support/Python/record-procedural-tutorial.py --scenario reshape --name grab-example
-python Support/Python/record-procedural-tutorial.py --scenario reshape-push --name push-example
-python Support/Python/record-procedural-tutorial.py --scenario reshape-flatten --name flatten-example
-python Support/Python/record-procedural-tutorial.py --scenario reshape-smooth --name smooth-example
-python Support/Python/record-procedural-tutorial.py --scenario reshape --existing-stroke --name grab-existing
-python Support/Python/record-procedural-tutorial.py --scenario tint --name tint-example
-python Support/Python/record-procedural-tutorial.py --scenario open-labs --name open-labs-example
-python Support/Python/record-procedural-tutorial.py --scenario membrane --name membrane-example
-python Support/Python/record-procedural-tutorial.py --scenario snapping --name snapping-endpoints
-python Support/Python/record-procedural-tutorial.py --scenario snapping-angle --name snapping-angle
-python Support/Python/record-procedural-tutorial.py --scenario symmetry --param preset=Snowflake --name symmetry-snowflake
 python Support/Python/record-procedural-tutorial.py --scenario symmetry --param preset=Plait --name symmetry-plait
-python Support/Python/record-procedural-tutorial.py --scenario symmetry --param preset=CandyCane --name symmetry-candycane
 ```
 
-These load [draw.py](../Python/automation-scripts/draw.py),
-[reshape-grab.py](../Python/automation-scripts/reshape-grab.py) and
-[tint.py](../Python/automation-scripts/tint.py) and
-[open-labs.py](../Python/automation-scripts/open-labs.py). Their
-selections, paths, inputs, timing and assertions live in those external files.
-The Reshape example prepares a starter stroke **before capture** or uses the
-latest existing stroke. The video begins with the stroke already drawn, then
-shows selecting Reshape, selecting Grab and bending its middle.
+Use `--rehearse` to run without recording, `--fps` to set capture rate and
+`--url` to select the API address (default `http://127.0.0.1:40074`). The application
+must be running or in Play mode. When several instances are open, use the URL
+for the intended instance.
 
-The Tint example starts with a blue stroke, selects Tint and applies coral to
-the middle. It checks the colour at the centre, requires a local colour change,
-and verifies that geometry and stroke count stay unchanged. It demonstrates
-applying tint; the tool should be in apply mode. With `--existing-stroke`, choose
-a contrasting stroke of comparable size so the coverage checks remain useful.
+Draw and reshape examples accept `--brush` with a brush durable name. Grab and
+Tint accept `--existing-stroke` to use the latest visible stroke; otherwise
+they prepare a starter before capture. For Tint, use a contrasting stroke of
+comparable size so its colour-coverage assertions remain useful.
 
-Every external plan starts from the default **advanced editing** panel layout,
-with optional panels closed and the default wand-panel rotation. Saved panel
-positions, attachments and floating panels are ignored in Virtual Input. Layout
-changes made in this mode are not written back to the user's saved layout or
-editing-mode preference. Preparation does not attach Labs to the wand.
+Each plan starts from the default advanced panel layout with optional panels
+closed. Your saved editing layout is preserved. Shared sections open panels
+through the normal UI, including popup and panel animations.
 
-The Open Labs demo points at the admin panel, presses the three-dot **More**
-button, clicks **Labs** (the beaker icon) in **More Options**, and reveals the
-floating panel. The API calls this button's command `MorePanels`.
-Tint and Grab reuse that same recorded
-opening section before selecting their tools. Opening a panel and interacting
-with it use the normal UI, including popup and panel animations.
+Use a new recording name for each take. Preparation can add a starter stroke
+on every submission; Undo or restore the starting sketch before repeating a take.
 
-Use `--rehearse` to run without recording, `--fps` to set capture rate, `--brush`
-for a brush durable name, and `--url` for a different API address. The default
-address is `http://127.0.0.1:40074`. The application must be running or in Play
-mode; ensure the URL belongs to the intended instance when several are open.
-Use a new recording name for each take. Undo completed drawing or bending before
-another take if the same starting canvas is needed. Preparation does not clear
-the canvas; it can add a new starter on every submission.
-
-Capture writes `<name>_frames` under Open Brush's Videos directory, with
+Capture writes `<name>_frames` under Open Brush's Videos directory, containing
 `frame_000000.png` onwards and `recording.json`. The client reports the full path
-and an FFmpeg command. PNG capture uses a fixed simulation step and can take
-longer than the resulting video's duration.
+and an FFmpeg command. Capture uses a fixed simulation step and can take longer
+than the resulting video's duration.
 
 ```sh
 ffmpeg -n -framerate 30 -i "/path/to/grab-example_frames/frame_%06d.png" -c:v libx264 -pix_fmt yuv420p -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" "grab-example.mp4"
@@ -111,44 +87,19 @@ ffmpeg -n -framerate 30 -i "/path/to/grab-example_frames/frame_%06d.png" -c:v li
    in the window.
 
 The window and HTTP `automation.script` endpoint use the same executor and
-plan settings. Controller dimensions, timing, paths and framing belong in the
-external plan; the window has no separate Draw/Grab scenarios or UserConfig
-settings. Drawing and reshaping affect the sketch, so Undo or restore the
-starting scene before repeating a take.
+plan settings. Set controller dimensions, timing, paths and framing in the
+external plan.
 
 ## Create a new script
 
-### Reshape teaching shapes
-
-1. `reshape-push` starts with a straight stroke. Moving the repelling sphere upward
-   from below creates a local arch while leaving the distant endpoints fixed.
-2. `reshape-flatten` starts with three broad ripples along the tool plane's normal.
-   A sweep along the baseline projects those ripples onto the plane.
-3. `reshape-smooth` adds fine wobble to a broad arch. A sweep follows the clean
-   arch so smoothing removes the small fluctuations without erasing the main curve.
-
-Each shape and gesture is ordinary external Python data. The shared
-`reshape_demo` builder handles preparation, native panel/tool/mode selection,
-before/after pauses and result assertions. These examples prepare their own
-strokes rather than using `--existing-stroke`; Grab remains the example for
-working on the latest existing stroke.
-
-The Windows Virtual Input recordings passed native selection, movement and
-unchanged-stroke-count checks. Push displaced the middle by 0.146 m with fixed
-endpoints. Flatten reduced the maximum plane deviation from 0.045 m to about
-0.0001 m. Smooth reduced the fixture's wobble RMS around its broad arch from
-0.0098 m to 0.0009 m, with fixed endpoints. These measurements describe the
-specific prepared fixtures. Before, during and after frames were reviewed.
-
 ### Author a sequence
 
-1. Copy either example Python file to your own location. Export a
+1. Copy an example Python file to your own location. Export a
    `build_plan(args)` function returning a dictionary. `args` contains the CLI
    options, including `brush`, `existing_stroke` and the `parameters` dictionary
    populated by repeatable `--param key=value` arguments. A JSON file containing the
    same dictionary is also supported.
-2. Edit the preparation, subjects and ordered steps. Paths and dimensions are
-   data; they do not require a new C# action class or a new scenario registration.
+2. Edit the preparation, subjects and ordered steps to describe the shot.
 3. Run the file directly through the generic runner:
 
 ```sh
@@ -165,10 +116,24 @@ python Support/Python/record-procedural-tutorial.py --scenario reshape --write-p
 Python files run as ordinary local Python code, so they can calculate curves,
 loop to assemble steps or share helpers. JSON plans are purely declarative.
 
+### Choose a teaching shape
+
+1. `reshape-push` starts with a straight stroke. Moving the repelling sphere upward
+   from below creates a local arch while leaving the distant endpoints fixed.
+2. `reshape-flatten` starts with three broad ripples along the tool plane's normal.
+   A sweep along the baseline projects those ripples onto the plane.
+3. `reshape-smooth` adds fine wobble to a broad arch. A sweep follows the clean
+   arch so smoothing removes the small fluctuations without erasing the main curve.
+
+Each shape and gesture is ordinary external Python data. The shared
+`reshape_demo` builder handles preparation, native panel/tool/mode selection,
+before/after pauses and result assertions. These examples prepare their own
+strokes; Grab supports working on the latest stroke with `--existing-stroke`.
+
 ### Reuse sections from the demo library
 
 [automation_sections.py](../Python/automation_sections.py) contains shared
-sections used by all three examples. They return plain data and make no API
+sections for building plans. They return plain data and make no API
 calls, so they also work with `--write-plan`.
 
 | Helper | Returns |
@@ -364,52 +329,15 @@ and finish when `Phase` is `Stopped` and `Recording` is false. `automation.stop`
 or Escape cancels and releases inputs before returning controller ownership.
 Only one automation and one capture can own the controllers/clock at a time.
 
-The automation API consists of `automation.script`, `automation.stop`,
-`automation.head` and `query.automation`. The original hard-coded `automation.start`,
-`automation.record` and `automation.reshape.*` entry points have been removed;
-use external plans for those sequences.
+## Troubleshooting
 
-## Implementation and verification
-
-After consolidating onto one executor, the Windows Editor compiled successfully.
-HTTP Draw and Editor-loaded Grab rehearsals passed their native action assertions.
-The Editor's load/rehearse/record handlers were exercised through Unity CLI;
-rehearsal ignored file capture settings, and Record/Stop saved 90 frames using
-the window's 12 fps override. A malformed HTTP payload returned a matching run ID
-and error, and a subsequent valid run cleared that error. No macOS validation
-was performed for this cleanup.
-
-The shared engine is [AutomationScript.cs](../../Assets/Scripts/Input/AutomationScript.cs)
-and [ScriptedAutomation.cs](../../Assets/Scripts/Input/ScriptedAutomation.cs), exposed by
-[ApiMethods.Automation.cs](../../Assets/Scripts/API/ApiMethods.Automation.cs). The Python
-transport is [automation_client.py](../Python/automation_client.py).
-The older Editor Draw/Reshape convenience controls and dedicated endpoints
-assume wand-attached targets. Use the external library for these default-layout
-popup/floating-panel sequences; the window still provides the Virtual Input toggle.
-
-1. Rehearse without capture, then inspect a short MP4. Check panel rotation,
-   ray/reticle feedback, contact alignment and the readable before/after result.
-2. Put expected tool/stroke results in `assert` steps. Check Undo/Redo for native
-   tool operations when authoring a new interaction.
-3. Read `Error` in `query.automation`; the runtime also logs each step and errors
-   with `[AutomationScript]`. Capture logs use `[ProceduralCapture]`.
-4. Validate each target platform separately. Windows Editor validation does not
-   establish macOS or standalone player support; macOS validation is pending.
-
-The external Draw, Grab and Tint examples have completed in the Windows Editor
-via HTTP, including native result assertions. Tint changed 31 of 99 points on
-its standard starter, left geometry unchanged, and passed native Undo/Redo.
-Draw and Grab were also rerun after conversion to the shared Python sections.
-Open Labs was recorded from the default layout; Tint, Grab and Draw were then
-run sequentially with a fresh default-layout reset before each. All 33 panel
-attachments/offsets were audited against their authored defaults, optional panels
-started closed, and the saved layout and editing-mode preferences remained unchanged.
-After the visibility pose changes, sampled camera-to-target rays found no
-controller-body bounds overlapping icon centres/inner corners in Open Labs,
-Tint or Grab, or the contact points during Tint/Grab application. Selected
-recorded frames were also inspected. These checks cover the current controller
-model and examples, not every possible authored path or brush orientation.
-A custom JSON plan switched between
-multiple panels, and lifecycle checks covered an unreachable pose and cancelling
-while a trigger was held. These HTTP checks used a temporary alternate listener
-for this instance's existing API handlers because another Editor owned port 40074.
+1. Rehearse first, then inspect a short recording. Check ray/reticle feedback,
+   contact alignment and the before/after result. Use `assert` steps for the
+   expected tool and stroke changes.
+2. Read `Error` in `query.automation`. Step and execution errors are logged with
+   `[AutomationScript]`; capture logs use `[ProceduralCapture]`.
+3. For an unreachable pose, move the target closer or adjust the plan's arm
+   lengths. If framing fails, reduce the shot's extent or split it into separate
+   shots. Keep resolution and aspect ratio stable throughout a take.
+4. If a run stops during preparation or after modifying geometry, Undo those
+   changes or restore the starting sketch before retrying.
