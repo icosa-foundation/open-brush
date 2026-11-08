@@ -88,6 +88,9 @@ namespace TiltBrush
             public float RadiusMeters;
             public string Subtool;
             public float[] ColorRgb;
+            public string Category;
+            public string ScriptName;
+            public bool SelectPrevious;
         }
 
         public sealed class Step
@@ -107,6 +110,15 @@ namespace TiltBrush
             public Selector Target;
             public bool? Trigger;
             public float[] Thumbstick;
+            public string[] Buttons;
+            public string Brush;
+            public string Category;
+            public string ScriptName;
+            public string Symmetry;
+            public bool? StraightEdge;
+            public bool? EndpointSnap;
+            public float[][] LastStrokeEndpoints;
+            public float EndpointToleranceMeters = 0.003f;
             public string Tool;
             public string Subtool;
             public string Stroke;
@@ -207,6 +219,33 @@ namespace TiltBrush
                     }
                     strokes.Add(prep.Id, stroke);
                 }
+                else if (prep.Op == "drawing")
+                {
+                    PointerManager.m_Instance.StraightEdgeModeEnabled = false;
+                    PointerManager.m_Instance.StraightEdgeGuide.EndpointSnappingEnabled = false;
+                    PointerManager.m_Instance.StraightEdgeGuide.ClearEndpointHistory();
+                    PointerManager.m_Instance.CurrentSymmetryMode = PointerManager.SymmetryMode.None;
+                    SelectionManager.m_Instance.SetSnappingGridSize(0);
+                    SelectionManager.m_Instance.SetSnappingAngle(0);
+                    foreach (var button in UnityEngine.Object.FindObjectsByType<SnapSettingsPanelToggleButton>(FindObjectsInactive.Include))
+                    {
+                        if (button.m_ButtonType == SnapSettingsPanelToggleType.StraightEdgeEndpointSnap)
+                            button.ToggleState = false;
+                    }
+                }
+                else if (prep.Op == "script")
+                {
+                    LuaManager.Instance.Init(immediate: true);
+                    if (!Enum.TryParse(prep.Category, out LuaApiCategory category) || !Enum.IsDefined(typeof(LuaApiCategory), category))
+                        throw new ArgumentException($"Unknown script category: {prep.Category}");
+                    var names = LuaManager.Instance.GetScriptNames(category);
+                    int index = names.IndexOf(prep.ScriptName);
+                    if (index < 0) { throw new ArgumentException($"Unknown {prep.Category}: {prep.ScriptName}"); }
+                    if (prep.SelectPrevious) { index = (index + names.Count - 1) % names.Count; }
+                    LuaManager.Instance.SetActiveScriptByName(category, names[index]);
+                    var panel = (ScriptsPanel)PanelManager.m_Instance.GetPanelByType(PanelType("Scripts"));
+                    panel.InitScriptUiNav();
+                }
                 else if (prep.Op == "brush")
                 {
                     Positive(prep.BrushSizeMeters, "brushSizeMeters", 0.001f, 1);
@@ -217,7 +256,8 @@ namespace TiltBrush
                     if (!string.IsNullOrEmpty(prep.PaletteBrush))
                     {
                         BrushDescriptor paletteBrush = BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(b => b.DurableName == prep.PaletteBrush);
-                        var panel = PanelManager.m_Instance.GetPanelByType(PanelType("Brush"));
+                        var panel = PanelManager.m_Instance.GetAllPanels()
+                            .First(p => p.AvailableInCurrentMode && p.m_Panel.Type == PanelType("Brush")).m_Panel;
                         var grid = panel.GetComponentInChildren<BrushGrid>(true);
                         if (paletteBrush == null || grid == null || !grid.ShowBrushPage(paletteBrush))
                             throw new ArgumentException($"Brush is not in the current palette: {prep.PaletteBrush}");

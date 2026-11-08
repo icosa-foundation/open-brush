@@ -38,12 +38,20 @@ def main():
     parser.add_argument("--name", default=f"tutorial-{datetime.datetime.now():%Y%m%d-%H%M%S}")
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--brush", default="")
+    parser.add_argument("--param", action="append", default=[], metavar="KEY=VALUE",
+                        help="Named parameter passed to an external script (repeatable)")
     parser.add_argument("--existing-stroke", action="store_true", help="Use the latest stroke in examples that support it")
     parser.add_argument("--head", type=float, nargs=6, metavar=("X", "Y", "Z", "RX", "RY", "RZ"))
     parser.add_argument("--timeout", type=float, default=600)
     parser.add_argument("--rehearse", action="store_true", help="Run without saving frames")
     parser.add_argument("--write-plan", type=Path, help="Write generated JSON and exit without contacting Open Brush")
     args = parser.parse_args()
+    args.parameters = {}
+    for parameter in args.param:
+        key, separator, value = parameter.partition("=")
+        if not separator or not key or key in args.parameters:
+            parser.error("--param needs a unique, nonempty KEY followed by =VALUE")
+        args.parameters[key] = value
     path = args.script or examples[args.scenario]
     plan = load_plan(path, args)
     if args.rehearse:

@@ -73,6 +73,19 @@ def open_panel(panel):
     ]
 
 
+def select_script(preset, *, category="SymmetryScript", present=True):
+    """Select the next preset after prepare_script establishes its predecessor."""
+    nav = category.replace("Script", "ScriptsNav")
+    path = f"SketchControls/ScriptsPanel(Clone)_Advanced/Mesh/{nav}/NextScriptButton"
+    return [*select_control({"path": path}, present=present),
+            {"op": "assert", "category": category, "scriptName": preset}]
+
+
+def prepare_script(preset, *, category="SymmetryScript"):
+    """Start just before a preset so its selection is visible through the native Next button."""
+    return {"op": "script", "category": category, "scriptName": preset, "selectPrevious": True}
+
+
 def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
                attachment="tool", anchor=None, anchor_t=0.5,
                rotation=(-25, -35, 0), end_rotation=None, curve="polyline",

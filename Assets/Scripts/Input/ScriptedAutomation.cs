@@ -22,6 +22,7 @@ namespace TiltBrush
             public int Turns;
             public bool Deferred;
             public bool Floating;
+            public VrInput[] Buttons;
         }
 
         private readonly List<Instruction> m_Instructions = new List<Instruction>();
@@ -37,6 +38,7 @@ namespace TiltBrush
         private readonly List<Vector3>[] m_ControllerBounds;
         private readonly bool[] m_Triggers = new bool[2];
         private readonly Vector2[] m_Sticks = new Vector2[2];
+        private readonly VrInput[][] m_Buttons = {Array.Empty<VrInput>(), Array.Empty<VrInput>()};
         private readonly IDisposable m_Tracking;
         private readonly bool m_ShowControllers;
         private readonly Quaternion m_Yaw;
@@ -236,6 +238,15 @@ namespace TiltBrush
             foreach (var step in m_Script.Steps)
             {
                 var item = new Instruction {Source = step, Hand = step.Hand == "wand" ? 0 : 1};
+                if (step.Buttons != null)
+                {
+                    item.Buttons = step.Buttons.Select(name =>
+                    {
+                        if (!Enum.TryParse(name, out VrInput input) || !Enum.IsDefined(typeof(VrInput), input) || input == VrInput.Trigger || input == VrInput.Any)
+                            throw new ArgumentException($"Unknown button '{name}'; use trigger for the trigger input.");
+                        return input;
+                    }).ToArray();
+                }
                 item.Start = predicted[item.Hand];
                 var subject = shot.AddSubject(step.Label ?? step.Op);
                 if (step.Op == "present" || step.Op == "focus" || step.Op == "click")
@@ -505,6 +516,7 @@ namespace TiltBrush
                         case "input":
                             if (step.Trigger.HasValue) { m_Triggers[item.Hand] = step.Trigger.Value; }
                             if (step.Thumbstick != null) { m_Sticks[item.Hand] = new Vector2(step.Thumbstick[0], step.Thumbstick[1]); }
+                            if (item.Buttons != null) { m_Buttons[item.Hand] = item.Buttons; }
                             Advance();
                             break;
                         case "assert":
@@ -521,13 +533,14 @@ namespace TiltBrush
             }
             if (m_Stopping)
             {
-                for (int i = 0; i < 2; ++i) { m_Triggers[i] = false; m_Sticks[i] = Vector2.zero; }
+                for (int i = 0; i < 2; ++i) { m_Triggers[i] = false; m_Sticks[i] = Vector2.zero; m_Buttons[i] = Array.Empty<VrInput>(); }
                 if (++m_ReleaseFrames > 2) { return false; }
             }
             for (int i = 0; i < 2; ++i)
             {
                 m_Controllers[i].SetTrigger(m_Triggers[i]);
                 m_Controllers[i].SetThumbstick(m_Sticks[i]);
+                m_Controllers[i].SetButtons(m_Buttons[i]);
             }
             ApplyPoses();
             return true;
@@ -592,6 +605,31 @@ namespace TiltBrush
 
         private void CheckResult(AutomationScript.Step step)
         {
+            if (!string.IsNullOrEmpty(step.Brush) && BrushController.m_Instance.ActiveBrush.DurableName != step.Brush)
+                throw new InvalidOperationException($"Expected active brush {step.Brush}.");
+            if (!string.IsNullOrEmpty(step.ScriptName) &&
+                (!Enum.TryParse(step.Category, out LuaApiCategory category) || LuaManager.Instance.GetActiveScriptName(category) != step.ScriptName))
+                throw new InvalidOperationException($"Expected active {step.Category}: {step.ScriptName}.");
+            if (!string.IsNullOrEmpty(step.Symmetry) && PointerManager.m_Instance.CurrentSymmetryMode.ToString() != step.Symmetry)
+                throw new InvalidOperationException($"Expected symmetry mode {step.Symmetry}.");
+            if (step.StraightEdge.HasValue && PointerManager.m_Instance.StraightEdgeModeEnabled != step.StraightEdge.Value)
+                throw new InvalidOperationException("Unexpected straight-edge state.");
+            if (step.EndpointSnap.HasValue && PointerManager.m_Instance.StraightEdgeGuide.EndpointSnappingEnabled != step.EndpointSnap.Value)
+                throw new InvalidOperationException("Unexpected endpoint snapping state.");
+            if (step.LastStrokeEndpoints != null)
+            {
+                if (step.LastStrokeEndpoints.Length != 2) { throw new ArgumentException("lastStrokeEndpoints requires two points."); }
+                AutomationScript.Positive(step.EndpointToleranceMeters, "endpointToleranceMeters", 0.00001f, 1);
+                Stroke latest = SketchMemoryScript.m_Instance.MostRecentStroke;
+                if (latest == null) { throw new InvalidOperationException("No latest stroke for endpoint assertion."); }
+                for (int i = 0; i < 2; ++i)
+                {
+                    Vector3 expected = Point(AutomationScript.Vector(step.LastStrokeEndpoints[i], "lastStrokeEndpoints"));
+                    Vector3 actual = latest.Canvas.Pose * latest.m_ControlPoints[i == 0 ? 0 : latest.m_ControlPoints.Length - 1].m_Pos;
+                    if (Vector3.Distance(expected, actual) * App.UNITS_TO_METERS > step.EndpointToleranceMeters)
+                        throw new InvalidOperationException($"Latest stroke endpoint {i} is outside the expected tolerance.");
+                }
+            }
             if (!string.IsNullOrEmpty(step.Panel) && step.PanelOpen.HasValue &&
                 PanelManager.m_Instance.IsPanelOpen(AutomationScript.PanelType(step.Panel)) != step.PanelOpen.Value)
                 throw new InvalidOperationException($"Unexpected visibility for panel {step.Panel}.");
