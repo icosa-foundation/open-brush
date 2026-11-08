@@ -164,6 +164,18 @@ namespace TiltBrush
                     if (entry.Mesh != null && m_Owned.Remove(entry.Mesh)) Destroy(entry.Mesh);
                 m_Cache.Remove(definition);
             }
+            if (!m_Initialized)
+            {
+                // A split document can adopt only part of the catalog prefab.
+                // Remove model roots that were not claimed during reconciliation.
+                foreach (var child in m_Root.Cast<Transform>().Where(child =>
+                    child.name.StartsWith("Model_", StringComparison.Ordinal) &&
+                    !m_ModelRoots.ContainsValue(child)).ToArray())
+                {
+                    child.gameObject.SetActive(false);
+                    Destroy(child.gameObject);
+                }
+            }
             Array.Copy(document.Palette, m_Palette, 256);
             m_Initialized = true;
         }
