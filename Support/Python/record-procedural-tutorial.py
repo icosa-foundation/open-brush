@@ -38,7 +38,7 @@ def main():
     parser.add_argument("--scenario", choices=sorted(examples), default="draw", help="External example to run when --script is omitted")
     parser.add_argument("--name", default=f"tutorial-{datetime.datetime.now():%Y%m%d-%H%M%S}")
     parser.add_argument("--fps", type=int, default=30)
-    parser.add_argument("--speed", type=float, help="Playback multiplier, 0.25 to 2 (default: plan speed or 1)")
+    parser.add_argument("--speed", type=float, help="Script timing multiplier, 0.25 to 2 (default: plan speed or 1)")
     parser.add_argument("--brush", default="")
     parser.add_argument("--param", action="append", default=[], metavar="KEY=VALUE",
                         help="Named parameter passed to an external script (repeatable)")

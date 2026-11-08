@@ -23,6 +23,7 @@ namespace TiltBrush
             public bool Deferred;
             public bool Floating;
             public VrInput[] Buttons;
+            public float DurationSeconds;
         }
 
         private readonly List<Instruction> m_Instructions = new List<Instruction>();
@@ -41,7 +42,6 @@ namespace TiltBrush
         private readonly VrInput[][] m_Buttons = {Array.Empty<VrInput>(), Array.Empty<VrInput>()};
         private readonly IDisposable m_Tracking;
         private readonly bool m_ShowControllers;
-        private readonly float m_PreviousTimeScale;
         private readonly Quaternion m_Yaw;
         private readonly UnityEngine.Pose m_Body;
         private readonly int m_InitialStrokeCount;
@@ -107,10 +107,8 @@ namespace TiltBrush
             m_Controllers = m_Original.Select(c => new ProceduralControllerInfo(c.Behavior)).ToArray();
             m_ShowControllers = App.Instance.ShowControllers;
             m_Tracking = App.VrSdk.VrControls.SuspendPoseTracking();
-            m_PreviousTimeScale = Time.timeScale;
             try
             {
-                Time.timeScale = script.Speed;
                 for (int i = 0; i < 2; ++i)
                 {
                     InputManager.Controllers[i] = m_Controllers[i];
@@ -274,7 +272,8 @@ namespace TiltBrush
             }
             foreach (var step in m_Script.Steps)
             {
-                var item = new Instruction {Source = step, Hand = step.Hand == "wand" ? 0 : 1};
+                var item = new Instruction {Source = step, Hand = step.Hand == "wand" ? 0 : 1,
+                    DurationSeconds = step.Seconds / m_Script.Speed};
                 if (step.Buttons != null)
                 {
                     item.Buttons = step.Buttons.Select(name =>
@@ -514,7 +513,7 @@ namespace TiltBrush
                     m_Elapsed += deltaTime; m_TotalElapsed += deltaTime; ++m_Frames;
                     var item = m_Instructions[m_Index];
                     var step = item.Source;
-                    float t = Mathf.Clamp01((m_Frames == 1 ? 0 : m_Elapsed) / step.Seconds);
+                    float t = Mathf.Clamp01((m_Frames == 1 ? 0 : m_Elapsed) / item.DurationSeconds);
                     switch (step.Op)
                     {
                         case "present":
@@ -533,7 +532,7 @@ namespace TiltBrush
                             else
                             {
                                 m_Sticks[0] = Vector2.zero;
-                                if (m_TotalElapsed > step.Seconds + 8) { throw new InvalidOperationException("Panel rotation did not settle."); }
+                                if (m_TotalElapsed > item.DurationSeconds + 8) { throw new InvalidOperationException("Panel rotation did not settle."); }
                                 if (!PanelManager.m_Instance.WandPanelRotationIsSettled) { break; }
                                 if (m_Stage == 2)
                                 {
@@ -550,14 +549,14 @@ namespace TiltBrush
                             }
                             break;
                         case "click":
-                            Click(item, deltaTime);
+                            Click(item);
                             break;
                         case "focus":
                             var focusCollider = item.Panel.GetCollider();
                             var focus = AimAt(focusCollider.bounds.center, item.Panel.transform.rotation);
                             m_Poses[1] = m_Arms[1].Reach(m_ReachStart, m_Arms[1].Solve(focus.position, focus.rotation), t);
-                            if (m_Elapsed >= step.Seconds + 0.45f && SketchControlsScript.m_Instance.IsUserLookingAtPanel(item.Panel)) { Advance(); }
-                            else if (m_Elapsed > step.Seconds + 8) { throw new InvalidOperationException("The panel did not acquire focus."); }
+                            if (m_Elapsed >= item.DurationSeconds + 0.45f && SketchControlsScript.m_Instance.IsUserLookingAtPanel(item.Panel)) { Advance(); }
+                            else if (m_Elapsed > item.DurationSeconds + 8) { throw new InvalidOperationException("The panel did not acquire focus."); }
                             break;
                         case "move":
                         case "rest":
@@ -565,7 +564,7 @@ namespace TiltBrush
                             if (t >= 1) { Advance(); }
                             break;
                         case "wait":
-                            if (m_Elapsed >= step.Seconds) { Advance(); }
+                            if (m_Elapsed >= item.DurationSeconds) { Advance(); }
                             break;
                         case "input":
                             if (step.Trigger.HasValue) { m_Triggers[item.Hand] = step.Trigger.Value; }
@@ -600,10 +599,10 @@ namespace TiltBrush
             return true;
         }
 
-        private void Click(Instruction item, float deltaTime)
+        private void Click(Instruction item)
         {
             if (item.Hand != 1) { throw new InvalidOperationException("UI clicks use the brush hand."); }
-            if (m_TotalElapsed > item.Source.Seconds + 8) { throw new InvalidOperationException("Button did not receive hover/click."); }
+            if (m_TotalElapsed > item.DurationSeconds + 8) { throw new InvalidOperationException("Button did not receive hover/click."); }
             if (m_Stage == 2 && m_Clicked)
             {
                 m_Triggers[1] = true;
@@ -638,8 +637,8 @@ namespace TiltBrush
             if (m_Stage == 0)
             {
                 if (m_Triggers[1]) { throw new InvalidOperationException("Release the brush trigger before clicking."); }
-                m_Poses[1] = m_Arms[1].Reach(m_ReachStart, m_Arms[1].Solve(aim.position, aim.rotation), m_Elapsed / item.Source.Seconds);
-                if (m_Elapsed >= item.Source.Seconds) { m_Stage = 1; m_Elapsed = 0; }
+                m_Poses[1] = m_Arms[1].Reach(m_ReachStart, m_Arms[1].Solve(aim.position, aim.rotation), m_Elapsed / item.DurationSeconds);
+                if (m_Elapsed >= item.DurationSeconds) { m_Stage = 1; m_Elapsed = 0; }
                 return;
             }
             m_Poses[1] = aim;
@@ -756,11 +755,7 @@ namespace TiltBrush
                     m_Original[i].ShowController(m_Visible[i] && m_ShowControllers);
                 }
             }
-            finally
-            {
-                Time.timeScale = m_PreviousTimeScale;
-                m_Tracking.Dispose();
-            }
+            finally { m_Tracking.Dispose(); }
         }
     }
 }

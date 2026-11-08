@@ -63,7 +63,7 @@ namespace TiltBrush
                 EditorGUILayout.LabelField("Plan", string.IsNullOrEmpty(m_PlanPath) ? "No plan loaded" : Path.GetFileName(m_PlanPath));
                 m_RecordingName = EditorGUILayout.TextField("Recording name", m_RecordingName);
                 m_FrameRate = EditorGUILayout.IntSlider("Recording FPS", m_FrameRate, 1, 120);
-                m_PlaybackSpeed = EditorGUILayout.Slider("Playback speed", m_PlaybackSpeed, 0.25f, 2);
+                m_PlaybackSpeed = EditorGUILayout.Slider("Script speed", m_PlaybackSpeed, 0.25f, 2);
             }
             using (new EditorGUILayout.HorizontalScope())
             {

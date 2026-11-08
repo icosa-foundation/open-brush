@@ -49,15 +49,17 @@ Use `--rehearse` to run without recording, `--fps` to set capture rate and
 must be running or in Play mode. When several instances are open, use the URL
 for the intended instance.
 
-Use `--speed` to change playback timing for any script:
+Use `--speed` to change step timings for any script:
 
 ```sh
 python Support/Python/record-procedural-tutorial.py --scenario reshape-smooth --speed 1.5 --name smooth-faster
 ```
 
 Speed ranges from `0.25` to `2`: `1` is normal, `1.5` is 50% faster and `2`
-is twice as fast. It scales motion, pauses, UI animation and tool application
-together. Capture FPS stays independent. The CLI uses the plan's `speed` when
+is twice as fast. A step's `seconds` value is divided by this multiplier: a
+1-second move takes about 0.67 seconds at `1.5`. Open Brush's built-in animations,
+hover/click delays and tool behavior retain their normal timing. Capture FPS
+stays independent. The CLI uses the plan's `speed` when
 `--speed` is omitted, defaulting to `1`.
 
 Draw and reshape examples accept `--brush` with a brush durable name. Grab and
@@ -93,7 +95,7 @@ ffmpeg -n -framerate 30 -i "/path/to/grab-example_frames/frame_%06d.png" -c:v li
    and enter Play mode. Keep the Game view at the intended capture size/aspect.
 3. Choose **Load JSON plan** and select the exported file. Use **Reload** after
    editing or regenerating it.
-4. Set **Playback speed** for the take; it overrides the plan's speed and stays
+4. Set **Script speed** for the take; it overrides the plan's speed and stays
    selected when loading another plan. **Rehearse** runs without capture.
    **Record** uses the window's recording name and FPS. **Stop** stops execution
    and capture; Escape stops active execution. The status and output path appear
