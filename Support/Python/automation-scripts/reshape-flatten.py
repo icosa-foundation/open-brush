@@ -9,7 +9,9 @@ def build_plan(args):
     pitch, yaw = math.radians(25), math.radians(-25)
     normal = [math.sin(yaw) * math.cos(pitch), -math.sin(pitch),
               math.cos(yaw) * math.cos(pitch)]
-    along = [math.cos(yaw), 0, -math.sin(yaw)]
+    # A tangent in the screen's XY plane keeps the ripples broad and legible.
+    length = math.hypot(normal[0], normal[1])
+    along = [-normal[1] / length, normal[0] / length, 0]
     center = [0.10, -0.23, 0.44]
     points = []
     for i in range(97):
