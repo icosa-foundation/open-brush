@@ -578,9 +578,12 @@ namespace TiltBrush
                 item.Button.Pressed += ButtonPressed;
             }
             if (item.Button == null) { throw new InvalidOperationException("The target control was destroyed before it was clicked."); }
-            var collider = item.Button.GetCollider();
-            if (!item.Button.isActiveAndEnabled || !collider.enabled || collider.bounds.size.sqrMagnitude < 0.000001f) { m_Elapsed = 0; return; }
-            var aim = Aim(item.Button, new UnityEngine.Pose(item.Panel.transform.position, item.Panel.transform.rotation), false);
+            var collider = item.Button.GetCollider() ?? item.Button.GetComponent<Collider>();
+            bool ready = item.Button.isActiveAndEnabled && collider != null && collider.enabled &&
+                collider.bounds.size.sqrMagnitude >= 0.000001f;
+            // Approach the expanded target even while hover-driven controls are collapsed.
+            // Waiting for their collider before moving would require a separate panel-focus detour.
+            var aim = Aim(item.Button, new UnityEngine.Pose(item.Panel.transform.position, item.Panel.transform.rotation), m_Stage == 0 || !ready);
             if (m_Stage == 0)
             {
                 if (m_Triggers[1]) { throw new InvalidOperationException("Release the brush trigger before clicking."); }
@@ -589,6 +592,7 @@ namespace TiltBrush
                 return;
             }
             m_Poses[1] = aim;
+            if (!ready) { m_Elapsed = 0; return; }
             if (m_Stage == 1)
             {
                 if (!item.Button.IsHover() || !SketchControlsScript.m_Instance.IsUserLookingAtPanel(item.Panel)) { m_Elapsed = 0; }

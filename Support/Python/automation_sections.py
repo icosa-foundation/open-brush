@@ -65,7 +65,6 @@ def open_panel(panel):
     return [
         {"op": "assert", "panel": panel, "panelOpen": False},
         {"op": "present", "target": {"command": "MorePanels"}},
-        {"op": "focus", "target": {"command": "MorePanels"}},
         *select_control({"command": "MorePanels"}, present=False),
         *select_control({"opensPanel": panel}, present=False),
         {"op": "wait", "seconds": 0.6},

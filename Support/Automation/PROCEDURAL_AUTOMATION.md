@@ -158,7 +158,7 @@ calls, so they also work with `--write-plan`.
 | `select_script(preset, category=...)` | Present the Scripts panel, click Next and assert the named preset. Open Scripts first. |
 | `select_control(selector, ...)` | Present a control's panel and click it; optional expected `tool`/`subtool`, or `present=False` when already shown. |
 | `select_tool(tool, subtool=None)` | Select a tool and optionally withdraw and select its subtool. |
-| `open_panel(panel)` | From a closed state, present and focus the admin panel, press More, choose the panel in More Options, wait and check that it opened. |
+| `open_panel(panel)` | From a closed state, present the admin panel, point directly at More and press it, choose the panel in More Options, wait and check that it opened. |
 | `apply_path(points, ...)` | Approach, lower the wand, pause, hold trigger along a path, release and pause. Supports contact attachment, anchor, curve, rotations, timing and padding. |
 | `reveal_result(seconds=1.0)` | Withdraw the applying hand and hold a clear view of the result. |
 
@@ -234,7 +234,7 @@ Each step has `op`, optional `label`, and optional `seconds` (default `1.2`).
 | `op` | Fields and behaviour |
 | --- | --- |
 | `present` | `target` button selector. For wand panels, raises the wand and uses native thumbstick snaps to bring the panel forward. For an already opened floating panel, waits for its opening animation without twisting the wand. |
-| `focus` | `target` button selector. Points at its parent panel and waits for native focus. Use this before clicking controls that expand on panel hover, such as the admin buttons. |
+| `focus` | `target` button selector. Points at its parent panel and waits for native focus. |
 | `click` | `target`. Reaches with the brush hand, waits for real hover, presses and releases the trigger, and requires a native button activation event. `seconds` controls the approach; hover/press/release use shared timing. Optional `tool` and `subtool` verify the resulting selection. |
 | `move` | `points`, optional `curve` (`polyline` or `bezier`), `rotation`, `endRotation`, `attachment`, `anchor`, `anchorT`, `tool`, `paddingMeters`. One point is a joint-interpolated reach. Multiple points follow the supplied contact path over `seconds`, with minimum-jerk timing. Bezier needs exactly four control points. |
 | `input` | Optional `trigger` boolean, `thumbstick: [x,y]` (axes in `[-1,1]`) and `buttons` array of native `VrInput` enum names. `buttons` replaces the held non-trigger buttons for this hand; `[]` releases them. For example `Button04` is the context/full-pad press used by straight-edge angle snapping. State persists until changed. Each input step consumes a frame so native consumers receive the edges. |
