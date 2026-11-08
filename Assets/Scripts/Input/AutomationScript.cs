@@ -36,23 +36,42 @@ namespace TiltBrush
             public string Brush;
             public string Subtool;
             public string Path;
+            public string Command;
+            public string OpensPanel;
 
-            public BaseButton Resolve()
+            public bool Matches(BaseButton button)
             {
-                if (new[] {Tool, Brush, Subtool, Path}.Count(s => !string.IsNullOrEmpty(s)) != 1)
-                    throw new ArgumentException("A button selector needs exactly one of tool, brush, subtool or path.");
+                if (new[] {Tool, Brush, Subtool, Path, Command, OpensPanel}.Count(s => !string.IsNullOrEmpty(s)) != 1)
+                    throw new ArgumentException("A button selector needs exactly one of tool, brush, subtool, path, command or opensPanel.");
+                if (!string.IsNullOrEmpty(Tool)) { return button is ToolButton tool && tool.Tool.ToString() == Tool; }
+                if (!string.IsNullOrEmpty(Brush)) { return button is BrushTypeButton brush && brush.m_Brush?.DurableName == Brush; }
+                if (!string.IsNullOrEmpty(Subtool)) { return button is SculptSubToolButton sub && sub.m_SubTool.ToString() == Subtool; }
+                if (!string.IsNullOrEmpty(Command)) { return button is OptionButton option && option.m_Command.ToString() == Command; }
+                if (!string.IsNullOrEmpty(OpensPanel)) { return button is PanelButton panel && panel.m_Type == PanelType(OpensPanel); }
+                return HierarchyPath(button.transform) == Path;
+            }
+
+            public BaseButton Resolve(bool required = true)
+            {
                 var matches = UnityEngine.Object.FindObjectsByType<BaseButton>(FindObjectsInactive.Include)
-                    .Where(b => b.GetComponentInParent<BasePanel>() is BasePanel p && p.m_Fixed && p.IsAvailable())
-                    .Where(b => !string.IsNullOrEmpty(Tool) ? b is ToolButton t && t.Tool.ToString() == Tool :
-                        !string.IsNullOrEmpty(Brush) ? b is BrushTypeButton brush && brush.m_Brush?.DurableName == Brush :
-                        !string.IsNullOrEmpty(Subtool) ? b is SculptSubToolButton sub && sub.m_SubTool.ToString() == Subtool :
-                        HierarchyPath(b.transform) == Path).ToArray();
+                    .Where(b => b.GetComponentInParent<BasePanel>() is BasePanel p && PanelManager.m_Instance.IsPanelAvailable(p))
+                    .Where(b => b.GetComponentInParent<PopUpWindow>() is PopUpWindow popup ? popup.GetParentPanel()?.PanelPopUp == popup : true)
+                    .Where(Matches).ToArray();
+                if (matches.Length == 0 && !required) { return null; }
                 if (matches.Length != 1)
                     throw new ArgumentException($"Button selector matched {matches.Length} controls; use an exact hierarchy path to disambiguate.");
                 return matches[0];
             }
 
             private static string HierarchyPath(Transform t) => t.parent == null ? t.name : $"{HierarchyPath(t.parent)}/{t.name}";
+        }
+
+        internal static BasePanel.PanelType PanelType(string name)
+        {
+            if (!Enum.TryParse(name, out BasePanel.PanelType type) || !Enum.IsDefined(typeof(BasePanel.PanelType), type))
+                throw new ArgumentException($"Unknown panel type: {name}");
+            if (App.Config.IsMobileHardware && Enum.TryParse($"{name}Mobile", out BasePanel.PanelType mobile)) { return mobile; }
+            return type;
         }
 
         public sealed class Preparation
@@ -98,6 +117,8 @@ namespace TiltBrush
             public float[] ExpectedColorRgb;
             public float ColorPointT = 0.5f;
             public float ColorTolerance = 0.05f;
+            public string Panel;
+            public bool? PanelOpen;
         }
 
         public sealed class Subject
@@ -148,7 +169,7 @@ namespace TiltBrush
         {
             var strokes = new Dictionary<string, Stroke>(StringComparer.Ordinal);
             Quaternion yaw = Quaternion.Euler(0, body.rotation.eulerAngles.y, 0);
-            PanelManager.m_Instance.SetPanelAvailabilityMode(PanelManager.PanelAvailabilityMode.Advanced);
+            PanelManager.m_Instance.ResetPanelsForAutomation();
             SketchControlsScript.m_Instance.RequestPanelsVisibility(true);
             foreach (Preparation prep in Prepare)
             {

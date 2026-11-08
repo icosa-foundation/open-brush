@@ -1377,6 +1377,8 @@ namespace TiltBrush
             OrderPanes();
             SetVisible(true);
             LockPanelsToController();
+            foreach (PanelData data in m_AllPanels)
+                if (data.AvailableInCurrentMode) { data.m_Panel.ForceUpdatePanelVisuals(); }
             App.Switchboard.TriggerAdvancedPanelsChanged();
             App.Switchboard.TriggerPanelDismissed();
         }

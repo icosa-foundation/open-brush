@@ -334,17 +334,24 @@ namespace TiltBrush
             for (Transform node = child; node != transform; node = node.parent)
             {
                 if (node == null) { throw new ArgumentException("The point must belong to this panel."); }
-                BaseTray tray = expandTrays ? node.GetComponent<BaseTray>() : null;
-                relative = (tray != null ? tray.ExpandedLocalMatrix() : Matrix4x4.TRS(node.localPosition, node.localRotation, node.localScale)) * relative;
+                relative = AutomationLocalMatrix(node, expandTrays) * relative;
             }
             return Vector3.Scale(m_BaseScale, relative.MultiplyPoint3x4(point));
         }
+
+        protected virtual Matrix4x4 AutomationLocalMatrix(Transform node, bool expandTrays)
+        {
+            BaseTray tray = expandTrays ? node.GetComponent<BaseTray>() : null;
+            return tray != null ? tray.ExpandedLocalMatrix() : Matrix4x4.TRS(node.localPosition, node.localRotation, node.localScale);
+        }
+
+        protected virtual bool AutomationRendererVisible(Renderer renderer) => renderer.enabled;
 
         public IEnumerable<Vector3> FullScaleRendererPoints(bool expandTrays = false)
         {
             foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
             {
-                if (!renderer.enabled || renderer is LineRenderer) { continue; }
+                if (!AutomationRendererVisible(renderer) || renderer is LineRenderer) { continue; }
                 bool visible = true;
                 for (Transform node = renderer.transform; node != transform; node = node.parent)
                     if (!node.gameObject.activeSelf && !(expandTrays && node.GetComponent<BaseTray>() != null)) { visible = false; break; }

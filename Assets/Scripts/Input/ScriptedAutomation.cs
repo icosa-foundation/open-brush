@@ -20,6 +20,8 @@ namespace TiltBrush
             public UnityEngine.Pose[] Path;
             public UnityEngine.Pose Start;
             public int Turns;
+            public bool Deferred;
+            public bool Floating;
         }
 
         private readonly List<Instruction> m_Instructions = new List<Instruction>();
@@ -82,10 +84,10 @@ namespace TiltBrush
             // Validate syntax and selectors before creating any fixture strokes.
             foreach (var step in script.Steps)
             {
-                if (!new[] {"present", "click", "move", "input", "wait", "rest", "assert"}.Contains(step.Op))
+                if (!new[] {"present", "focus", "click", "move", "input", "wait", "rest", "assert"}.Contains(step.Op))
                     throw new ArgumentException($"Unknown script operation: {step.Op}");
                 AutomationScript.Positive(step.Seconds, "step seconds", 0.01f, 120);
-                if (step.Op == "present" || step.Op == "click")
+                if (step.Op == "present" || step.Op == "focus" || step.Op == "click")
                 {
                     if (step.Target == null) { throw new ArgumentException("present and click require a target."); }
                 }
@@ -143,7 +145,7 @@ namespace TiltBrush
         {
             Transform axis = m_Original[0].Geometry.MainAxisAttachPoint;
             Quaternion delta = wand.rotation * Quaternion.Inverse(m_OriginalPoses[0].rotation);
-            Quaternion spin = Quaternion.AngleAxis(ringAngle, axis.forward);
+            Quaternion spin = Quaternion.AngleAxis(PanelManager.m_Instance.IsAdminPanel(panel.Type) ? 0 : ringAngle, axis.forward);
             Vector3 local = Quaternion.Inverse(m_OriginalPoses[0].rotation) *
                 (axis.position + spin * (panel.transform.position - axis.position) - m_OriginalPoses[0].position);
             return new UnityEngine.Pose(wand.position + wand.rotation * local, delta * spin * panel.transform.rotation);
@@ -188,14 +190,17 @@ namespace TiltBrush
         private UnityEngine.Pose Aim(BaseButton button, UnityEngine.Pose panelPose, bool predict)
         {
             BasePanel panel = button.GetComponentInParent<BasePanel>();
-            BaseTray tray = button.GetComponentInParent<BaseTray>();
-            Collider collider = button.GetCollider();
+            Collider collider = button.GetCollider() ?? button.GetComponent<Collider>();
             if (collider == null) { throw new ArgumentException("The selected button has no collider."); }
-            Vector3 centre = predict && tray != null && collider is BoxCollider box ?
-                tray.ExpandedWorldPoint(box.transform, box.center) : collider.bounds.center;
-            Vector3 local = Quaternion.Inverse(panel.transform.rotation) * (centre - panel.transform.position);
-            Vector3 target = predict ? panelPose.position + panelPose.rotation * local : centre;
-            Vector3 forward = panelPose.rotation * Vector3.forward;
+            Vector3 target = predict && collider is BoxCollider box ? panelPose.position +
+                panelPose.rotation * panel.FullScalePoint(box.transform, box.center, true) : collider.bounds.center;
+            Quaternion rotation = !predict && button.GetComponentInParent<PopUpWindow>() is PopUpWindow popup ? popup.transform.rotation : panelPose.rotation;
+            return AimAt(target, rotation);
+        }
+
+        private UnityEngine.Pose AimAt(Vector3 target, Quaternion rotation)
+        {
+            Vector3 forward = rotation * Vector3.forward;
             return RootForContact(1, new UnityEngine.Pose(target - forward * (0.18f * App.METERS_TO_UNITS),
                 Quaternion.LookRotation(forward, m_Yaw * Vector3.up)), new AutomationScript.Step());
         }
@@ -205,6 +210,10 @@ namespace TiltBrush
             var shot = new AutomationShot(m_Script.Name);
             var predicted = (UnityEngine.Pose[])m_Poses.Clone();
             float ring = 0;
+            var floating = new Dictionary<BasePanel, UnityEngine.Pose>();
+            GameObject popupPrefab = null;
+            BasePanel popupOwner = null;
+            UnityEngine.Pose popupPose = default;
             foreach (var subject in m_Script.Subjects)
             {
                 Vector3 origin = Anchor(subject.Anchor, subject.AnchorT);
@@ -226,17 +235,24 @@ namespace TiltBrush
                 var item = new Instruction {Source = step, Hand = step.Hand == "wand" ? 0 : 1};
                 item.Start = predicted[item.Hand];
                 var subject = shot.AddSubject(step.Label ?? step.Op);
-                if (step.Op == "present" || step.Op == "click")
+                if (step.Op == "present" || step.Op == "focus" || step.Op == "click")
                 {
-                    item.Button = step.Target.Resolve();
-                    item.Panel = item.Button.GetComponentInParent<BasePanel>();
-                    if (step.Op == "present")
+                    item.Button = step.Target.Resolve(false);
+                    if (item.Button == null && popupPrefab != null && step.Op == "click")
+                    {
+                        item.Button = popupPrefab.GetComponentsInChildren<BaseButton>(true).SingleOrDefault(step.Target.Matches);
+                        item.Panel = popupOwner;
+                        item.Deferred = item.Button != null;
+                    }
+                    else { item.Panel = item.Button?.GetComponentInParent<BasePanel>(); }
+                    if (item.Button == null || item.Panel == null) { throw new ArgumentException("The target control does not exist in the predicted UI state."); }
+                    if (step.Op == "present" && item.Panel.m_Fixed)
                     {
                         item.Hand = 0;
                         item.Start = predicted[0];
                         var end = PlanPresentation(item.Panel, ring, out item.Turns);
                         item.Path = new[] {end};
-                        var localBounds = AutomationShot.CaptureLocalBounds(item.Panel.transform, item.Panel.GetComponentsInChildren<Renderer>());
+                        var localBounds = item.Panel.FullScaleRendererPoints().ToArray();
                         for (int i = 0; i <= 32; ++i)
                         {
                             float t = i / 32f;
@@ -246,19 +262,81 @@ namespace TiltBrush
                         ring += item.Turns * PanelManager.WandPanelSnapAngle;
                         predicted[0] = end;
                     }
+                    else if (step.Op == "present")
+                    {
+                        if (!floating.TryGetValue(item.Panel, out var pose))
+                            throw new ArgumentException("Open the floating panel through its controls before presenting it.");
+                        item.Hand = 0;
+                        item.Floating = true;
+                        subject.AddPose(pose, item.Panel.FullScaleRendererPoints());
+                    }
                     else
                     {
                         item.Hand = 1;
                         item.Start = predicted[1];
-                        var pose = PanelPose(item.Panel, predicted[0], ring);
-                        item.Path = new[] {Aim(item.Button, pose, true)};
+                        UnityEngine.Pose pose;
+                        UnityEngine.Pose buttonPose;
+                        if (item.Deferred)
+                        {
+                            pose = popupPose;
+                            Transform root = popupPrefab.transform;
+                            BoxCollider collider = item.Button.GetComponent<BoxCollider>();
+                            if (collider == null) { throw new ArgumentException("Popup preflight requires a box collider on the button."); }
+                            Vector3 centre = Quaternion.Inverse(root.rotation) * (collider.transform.TransformPoint(collider.center) - root.position);
+                            item.Path = new[] {AimAt(pose.position + pose.rotation * centre, pose.rotation)};
+                            buttonPose = new UnityEngine.Pose(pose.position + pose.rotation *
+                                (Quaternion.Inverse(root.rotation) * (item.Button.transform.position - root.position)),
+                                pose.rotation * Quaternion.Inverse(root.rotation) * item.Button.transform.rotation);
+                        }
+                        else
+                        {
+                            if (item.Panel.m_Fixed) { pose = PanelPose(item.Panel, predicted[0], ring); }
+                            else if (!floating.TryGetValue(item.Panel, out pose))
+                                throw new ArgumentException("Open the floating panel before clicking its controls.");
+                            if (step.Op == "focus")
+                            {
+                                var collider = item.Panel.GetCollider() as BoxCollider;
+                                Vector3 local = collider != null ? item.Panel.FullScalePoint(collider.transform, collider.center) : Vector3.zero;
+                                item.Path = new[] {AimAt(pose.position + pose.rotation * local, pose.rotation)};
+                            }
+                            else { item.Path = new[] {Aim(item.Button, pose, true)}; }
+                            buttonPose = new UnityEngine.Pose(pose.position + pose.rotation * item.Panel.FullScalePoint(item.Button.transform, Vector3.zero),
+                                pose.rotation * Quaternion.Inverse(item.Panel.transform.rotation) * item.Button.transform.rotation);
+                        }
                         var tray = item.Button.GetComponentInParent<BaseTray>();
                         if (tray != null)
                         {
-                            foreach (var point in tray.ExpandedRendererPoints())
-                                subject.AddPoint(pose.position + pose.rotation * (Quaternion.Inverse(item.Panel.transform.rotation) * (point - item.Panel.transform.position)));
+                            foreach (var renderer in tray.GetComponentsInChildren<Renderer>(true))
+                                if (!(renderer is LineRenderer))
+                                    for (int i = 0; i < 8; ++i)
+                                        subject.AddPoint(pose.position + pose.rotation * item.Panel.FullScalePoint(renderer.transform, AutomationShot.Corner(renderer.localBounds, i), true));
+                        }
+                        if (step.Op == "click" && item.Button is OptionButton option && option.AutomationPopupPrefab != null)
+                        {
+                            popupPrefab = option.AutomationPopupPrefab;
+                            popupOwner = item.Panel;
+                            popupPose = option.PredictPopupPose(pose);
+                            BoxCollider box = popupPrefab.GetComponent<BoxCollider>();
+                            if (box != null)
+                                for (int i = 0; i < 8; ++i)
+                                    subject.AddPoint(popupPose.position + popupPose.rotation * Quaternion.Inverse(popupPrefab.transform.rotation) *
+                                        (box.transform.TransformPoint(AutomationShot.Corner(new Bounds(box.center, box.size), i)) - popupPrefab.transform.position));
+                        }
+                        if (step.Op == "click" && item.Button is PanelButton open)
+                        {
+                            var panel = PanelManager.m_Instance.GetAllPanels().First(p => p.m_Panel.Type == open.m_Type && p.AvailableInCurrentMode).m_Panel;
+                            var spawn = new TrTransform {translation = buttonPose.position, rotation = buttonPose.rotation, scale = 0};
+                            var target = spawn; target.scale = 1;
+                            var result = panel.WidgetSibling.CalculateIntroAnimTarget(spawn, target, false);
+                            var opened = new UnityEngine.Pose(result.translation, result.rotation);
+                            floating[panel] = opened;
+                            var bounds = new Bounds(opened.position, Vector3.zero);
+                            foreach (var point in panel.FullScaleRendererPoints()) { bounds.Encapsulate(opened.position + opened.rotation * point); }
+                            bounds.Expand(0.04f * App.METERS_TO_UNITS);
+                            subject.AddBounds(bounds);
                         }
                         predicted[1] = item.Path[0];
+                        if (item.Deferred) { item.Button = null; }
                     }
                 }
                 else if (step.Op == "move")
@@ -302,7 +380,8 @@ namespace TiltBrush
                 if (item.Path != null)
                 {
                     foreach (var pose in item.Path) { m_Arms[item.Hand].Solve(pose.position, pose.rotation); }
-                    if (step.Op == "present") { subject.AddPose(item.Path.Last(), m_ControllerBounds[item.Hand]); }
+                    if (step.Op == "present" || step.Op == "focus" || step.Op == "click" || (step.Op != "rest" && item.Path.Length == 1))
+                        subject.AddPose(item.Path.Last(), m_ControllerBounds[item.Hand]);
                     else if (step.Op != "rest")
                     {
                         for (int i = 0; i <= 64; ++i)
@@ -340,7 +419,7 @@ namespace TiltBrush
             var item = m_Instructions[m_Index];
             item.Start = m_Poses[item.Hand];
             m_ReachStart = m_Arms[item.Hand].Solve(item.Start.position, item.Start.rotation);
-            if (item.Source.Op == "click") { item.Button.Pressed += ButtonPressed; }
+            if (item.Source.Op == "click" && item.Button != null) { item.Button.Pressed += ButtonPressed; }
             Debug.Log($"[AutomationScript] {Status}");
         }
 
@@ -348,7 +427,7 @@ namespace TiltBrush
         private void Advance()
         {
             var previous = m_Instructions[m_Index];
-            if (previous.Source.Op == "click") { previous.Button.Pressed -= ButtonPressed; }
+            if (previous.Source.Op == "click" && previous.Button != null) { previous.Button.Pressed -= ButtonPressed; }
             if (++m_Index == m_Instructions.Count) { Stop(); return; }
             BeginStep();
         }
@@ -370,6 +449,12 @@ namespace TiltBrush
                     switch (step.Op)
                     {
                         case "present":
+                            if (item.Floating)
+                            {
+                                if (PanelManager.m_Instance.IsPanelOpen(item.Panel.Type) && !item.Panel.WidgetSibling.IsAnimating()) { Advance(); }
+                                else if (m_TotalElapsed > 8) { throw new InvalidOperationException("The floating panel did not finish opening."); }
+                                break;
+                            }
                             if (m_Triggers.Any(v => v)) { throw new InvalidOperationException("Release triggers before presenting a panel."); }
                             if (m_Stage == 0)
                             {
@@ -397,6 +482,13 @@ namespace TiltBrush
                             break;
                         case "click":
                             Click(item, deltaTime);
+                            break;
+                        case "focus":
+                            var focusCollider = item.Panel.GetCollider();
+                            var focus = AimAt(focusCollider.bounds.center, item.Panel.transform.rotation);
+                            m_Poses[1] = m_Arms[1].Reach(m_ReachStart, m_Arms[1].Solve(focus.position, focus.rotation), t);
+                            if (m_Elapsed >= step.Seconds + 0.45f && SketchControlsScript.m_Instance.IsUserLookingAtPanel(item.Panel)) { Advance(); }
+                            else if (m_Elapsed > step.Seconds + 8) { throw new InvalidOperationException("The panel did not acquire focus."); }
                             break;
                         case "move":
                         case "rest":
@@ -441,6 +533,24 @@ namespace TiltBrush
         {
             if (item.Hand != 1) { throw new InvalidOperationException("UI clicks use the brush hand."); }
             if (m_TotalElapsed > item.Source.Seconds + 8) { throw new InvalidOperationException("Button did not receive hover/click."); }
+            if (m_Stage == 3)
+            {
+                m_Triggers[1] = false;
+                if (m_Elapsed >= 0.45f)
+                {
+                    if (!m_Clicked) { throw new InvalidOperationException("The native UI did not accept the click."); }
+                    CheckResult(item.Source);
+                    Advance();
+                }
+                return;
+            }
+            if (item.Button == null && item.Deferred)
+            {
+                item.Button = item.Source.Target.Resolve(false);
+                if (item.Button == null) { m_Elapsed = 0; return; }
+                item.Button.Pressed += ButtonPressed;
+            }
+            if (item.Button == null) { throw new InvalidOperationException("The target control was destroyed before it was clicked."); }
             var collider = item.Button.GetCollider();
             if (!item.Button.isActiveAndEnabled || !collider.enabled || collider.bounds.size.sqrMagnitude < 0.000001f) { m_Elapsed = 0; return; }
             var aim = Aim(item.Button, new UnityEngine.Pose(item.Panel.transform.position, item.Panel.transform.rotation), false);
@@ -472,6 +582,9 @@ namespace TiltBrush
 
         private void CheckResult(AutomationScript.Step step)
         {
+            if (!string.IsNullOrEmpty(step.Panel) && step.PanelOpen.HasValue &&
+                PanelManager.m_Instance.IsPanelOpen(AutomationScript.PanelType(step.Panel)) != step.PanelOpen.Value)
+                throw new InvalidOperationException($"Unexpected visibility for panel {step.Panel}.");
             if (!string.IsNullOrEmpty(step.Tool) && SketchSurfacePanel.m_Instance.GetCurrentToolType().ToString() != step.Tool)
                 throw new InvalidOperationException($"Expected active tool {step.Tool}.");
             if (!string.IsNullOrEmpty(step.Subtool) && SculptSubToolManager.m_Instance?.ActiveSubTool.ToString() != step.Subtool)
