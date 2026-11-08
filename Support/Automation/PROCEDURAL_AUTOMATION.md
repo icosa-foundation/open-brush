@@ -140,9 +140,6 @@ endpoints. Flatten reduced the maximum plane deviation from 0.045 m to about
 0.0098 m to 0.0009 m, with fixed endpoints. These measurements describe the
 specific prepared fixtures. Before, during and after frames were reviewed.
 
-Pinch is unused and excluded from the demo library. The demonstrated Reshape
-modes are Grab, Push, Flatten and Smooth.
-
 ### Author a sequence
 
 1. Copy either example Python file to your own location. Export a
