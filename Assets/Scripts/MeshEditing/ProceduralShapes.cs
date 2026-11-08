@@ -431,6 +431,7 @@ namespace TiltBrush.MeshEditing
                         Name = "solid", Label = "Solid", Min = 0, Max = 4, Integer = true,
                         Choices = new[] { "Tetrahedron", "Cube", "Octahedron", "Dodecahedron", "Icosahedron" }
                     });
+                    result.Add(Operation("operator", "amount", "Bevel amount", 0, .5f, "Bevel"));
                     break;
                 case "uvSphere":
                     result.Add(Number("longitudeSegments", "Longitude segments", 3, 24, 24, true));
@@ -499,27 +500,6 @@ namespace TiltBrush.MeshEditing
                     data["PostProcessing"] = postProcessing;
                 }
                 postProcessing["AutoSmoothAngle"] = value >= .5f ? 60f : 0f;
-                if ((string)data["Generator"]?["Type"] == "uniform")
-                {
-                    var bevelControl = Operation("operator", "amount", "Bevel", 0, .5f, "Bevel");
-                    var bevel = FindStep(data, bevelControl);
-                    if (value >= .5f)
-                    {
-                        if (bevel == null)
-                        {
-                            var bevelModifiers = data["Modifiers"] as JArray;
-                            if (bevelModifiers == null)
-                            {
-                                bevelModifiers = new JArray();
-                                data["Modifiers"] = bevelModifiers;
-                            }
-                            int bevelInsert = bevelModifiers.TakeWhile(op => (string)op["Type"] != "transform").Count();
-                            bevelModifiers.Insert(bevelInsert, Step("operator", new JObject { ["operation"] = "Bevel", ["amount"] = .08f, ["active"] = true }));
-                        }
-                        else { bevel["Parameters"]["active"] = true; }
-                    }
-                    else { bevel?.Remove(); }
-                }
                 var generatorParameters = data["Generator"]?["Parameters"] as JObject;
                 generatorParameters?.Remove("smooth");
                 generatorParameters?.Remove("smoothSides");
@@ -573,7 +553,7 @@ namespace TiltBrush.MeshEditing
             else if (parameter.Integer) { p[parameter.Name] = Mathf.RoundToInt(value); }
             else { p[parameter.Name] = value; }
 
-            if (parameter.Operator == "Shell" && value == 0) { step.Remove(); }
+            if ((parameter.Operator == "Shell" || parameter.Operator == "Bevel") && value == 0) { step.Remove(); }
             if (parameter.Operation == null)
             {
                 for (int i = 0; i < modifiers.Count; ++i)
