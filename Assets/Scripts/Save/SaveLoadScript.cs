@@ -469,6 +469,11 @@ namespace TiltBrush
         private IEnumerator<Timeslice> SaveLow(
             SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false)
         {
+            if (!selectedOnly && snapshot == null && PostProductionExport.IsRunning)
+            {
+                Debug.LogError("[PostProductionSave] Skipping full-sketch save while an export is running.");
+                return Enumerable.Empty<Timeslice>().GetEnumerator();
+            }
             Debug.Assert(selectedOnly || !SelectionManager.m_Instance.HasSelection);
             if (snapshot != null && info.AssetId != snapshot.AssetId)
             {
