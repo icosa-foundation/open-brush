@@ -89,7 +89,8 @@ namespace TiltBrush.MeshEditing
             string dimension = AxisDimension(recipe, axis);
             if (dimension == null) { return 0; }
             if (dimension == "radius" || dimension == "ringRadius" ||
-                (dimension == "radial" && !ellipse && !IsElliptical(recipe)))
+                ((dimension == "radial" || dimension == "radiusX" || dimension == "radiusZ") &&
+                 !ellipse && !IsElliptical(recipe)))
             {
                 return (1 << (int)GrabWidget.Axis.X) | (1 << (int)GrabWidget.Axis.Z);
             }
@@ -202,7 +203,13 @@ namespace TiltBrush.MeshEditing
                 float radius = (float?)parameters[dimension] ?? (float?)parameters["radius"] ?? .15f;
                 float resizedRadius = radius * ratio;
                 if (float.IsInfinity(resizedRadius)) { throw new ArgumentOutOfRangeException(nameof(ratio)); }
-                parameters[dimension] = Mathf.Max(.0001f, resizedRadius);
+                resizedRadius = Mathf.Max(.0001f, resizedRadius);
+                if (dimension != "radiusY" && !ellipse && !EllipseEnabled(data))
+                {
+                    parameters["radiusX"] = resizedRadius;
+                    parameters["radiusZ"] = resizedRadius;
+                }
+                else { parameters[dimension] = resizedRadius; }
                 return new GeometryRecipeData(data);
             }
             if (dimension == "ringRadius" || dimension == "tubeRadius")
@@ -268,6 +275,11 @@ namespace TiltBrush.MeshEditing
         private static bool EllipseEnabled(JObject data)
         {
             var parameters = data["Generator"]?["Parameters"];
+            if ((string)data["Generator"]?["Type"] == "uvSphere")
+            {
+                float radius = (float?)parameters?["radius"] ?? .15f;
+                return ((float?)parameters?["radiusX"] ?? radius) != ((float?)parameters?["radiusZ"] ?? radius);
+            }
             // Imported elliptical cylinders remain editable as ellipses, without
             // requiring authoring metadata in source documents.
             return (string)data["Generator"]?["Type"] == "cylinder" &&
@@ -424,6 +436,7 @@ namespace TiltBrush.MeshEditing
                     result.Add(Number("longitudeSegments", "Longitude segments", 3, 24, 24, true));
                     result.Add(Number("latitudeSegments", "Latitude segments", 4, 24, 12, true));
                     result.Add(new Parameter { Name = "hemisphere", Label = "Hemisphere", Min = 0, Max = 1, Integer = true, Boolean = true });
+                    result.Add(new Parameter { Name = "Ellipse", Label = "Ellipse", Min = 0, Max = 1, Integer = true, Boolean = true, Ellipse = true });
                     break;
                 case "stairs":
                     result.Add(Number("steps", "Steps", 1, 32, 6, true));
@@ -460,10 +473,21 @@ namespace TiltBrush.MeshEditing
                 if (!enabled)
                 {
                     var generator = (JObject)data["Generator"];
-                    var parameters = generator["Parameters"] as JObject ?? new JObject();
-                    generator["Parameters"] = parameters;
-                    parameters["bottomAspect"] = 1f;
-                    parameters["topAspect"] = 1f;
+                    var parameters = generator["Parameters"] as JObject;
+                    if (parameters == null)
+                    {
+                        parameters = new JObject();
+                        generator["Parameters"] = parameters;
+                    }
+                    if ((string)generator["Type"] == "uvSphere")
+                    {
+                        parameters["radiusZ"] = parameters["radiusX"]?.DeepClone() ?? parameters["radius"]?.DeepClone() ?? new JValue(.15f);
+                    }
+                    else
+                    {
+                        parameters["bottomAspect"] = 1f;
+                        parameters["topAspect"] = 1f;
+                    }
                 }
                 return new GeometryRecipeData(data);
             }
