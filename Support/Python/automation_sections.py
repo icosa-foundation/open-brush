@@ -56,7 +56,7 @@ def prepare_brush(brush="DuctTape", *, size=0.012, palette_brush=None):
 def select_tool(tool, *, subtool=None):
     steps = select_control({"tool": tool}, tool=tool)
     if subtool is not None:
-        steps += [{"op": "rest"}, *select_control({"subtool": subtool}, subtool=subtool, present=False)]
+        steps += select_control({"subtool": subtool}, subtool=subtool, present=False)
     return steps
 
 

@@ -13,7 +13,6 @@ def build_plan(args):
         *open_panel("SnapSettings", via_more=False),
         *select_control({"path": toggle}),
         {"op": "assert", "endpointSnap": True},
-        {"op": "rest"},
         *select_control({"command": "StraightEdge"}),
         {"op": "assert", "straightEdge": True},
     ]

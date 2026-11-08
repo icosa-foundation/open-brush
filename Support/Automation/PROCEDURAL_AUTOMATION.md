@@ -160,13 +160,16 @@ calls, so they also work with `--write-plan`.
 | `prepare_script(preset, category=...)` | Select the predecessor of a named preset before capture, ready for a visible Next click. |
 | `select_script(preset, category=...)` | Present the Scripts panel, click Next and assert the named preset. Open Scripts first. |
 | `select_control(selector, ...)` | Present a control's panel and click it; optional expected `tool`/`subtool`, or `present=False` when already shown. |
-| `select_tool(tool, subtool=None)` | Select a tool and optionally withdraw and select its subtool. |
+| `select_tool(tool, subtool=None)` | Select a tool and optionally move directly to its subtool. |
 | `open_panel(panel, via_more=True)` | Open a closed panel through More Options. Use `via_more=False` for a panel opened from its own wand-pane button, such as Scripts or SnapSettings; the helper presents that pane first. |
 | `apply_path(points, ...)` | Approach, lower the wand, pause, hold trigger along a path, release and pause. Supports contact attachment, anchor, curve, rotations, timing and padding. |
 | `reveal_result(seconds=1.0)` | Withdraw the applying hand and hold a clear view of the result. |
 
 Compose recorded sections with Python list unpacking, for example
 `steps = [*select_tool("TintColorTool"), *apply_path(...), *reveal_result()]`.
+
+Move directly between consecutive interaction targets. Use `rest` when withdrawing
+the hand to reveal the result or ending a sequence.
 Preparation items belong in `prepare`, not `steps`. Keep action-specific paths,
 colours and result assertions in the example file.
 
