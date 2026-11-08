@@ -123,27 +123,27 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d2851f7008754576a4153e0f4f11da4a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_DescriptionType: 0
   m_DescriptionYOffset: 0
-  m_DescriptionText:
+  m_DescriptionText: 
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  m_DescriptionTextExtra:
+  m_DescriptionTextExtra: 
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: 
     m_TableEntryReference:
       m_KeyId: 0
-      m_Key:
+      m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
@@ -159,6 +159,7 @@ MonoBehaviour:
   m_HoverScale: 1.06
   m_HoverBoxColliderGrow: 0.01
   m_AddOverlay: 0
+  m_SelectedTexture: {fileID: 2800000, guid: ced4f608569811f49a9ad00156a7030f, type: 3}
   references:
     version: 2
     RefIds: []
