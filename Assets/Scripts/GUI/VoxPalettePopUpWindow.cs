@@ -6,11 +6,10 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    public sealed class VoxPalettePopUpWindow : PopUpWindow
+    public sealed class VoxPalettePopUpWindow : DraftColorPickerPopUpWindow
     {
         private const int PageSize = 64, Columns = 8, PageCount = 4;
         [SerializeField] private VoxPaletteButton m_ButtonPrefab;
-        [SerializeField] private ColorPicker m_ColorPicker;
         [SerializeField] private VoxPaletteButton m_Apply;
         [SerializeField] private VoxPaletteButton m_ClearUnused;
         [SerializeField] private VoxPaletteButton m_Sort;
@@ -26,9 +25,8 @@ namespace TiltBrush
         private RuntimeVoxDocument m_Document;
         private SketchMemoryScript m_Memory;
         private int m_Page, m_Selected = 1;
-        private Color32 m_Draft;
+        private Color32 m_Draft => DraftColor;
 
-        private ColorPicker ColorPicker => m_ColorPicker;
         private bool ValidTarget => m_Widget != null && m_Widget.Showing &&
             m_Widget.gameObject.activeInHierarchy && m_Document != null &&
             (ReferenceEquals(m_Widget.EditableVoxDocument, m_Document) ||
@@ -56,7 +54,6 @@ namespace TiltBrush
             m_Apply.Configure(this, VoxPaletteButton.Action.Apply, null, null);
             m_ClearUnused.Configure(this, VoxPaletteButton.Action.ClearUnused, null, null);
             m_Sort.Configure(this, VoxPaletteButton.Action.Sort, null, null);
-            ColorPicker.ColorPicked += OnColorPicked;
             m_Memory = SketchMemoryScript.m_Instance;
             m_Memory.OperationStackChanged += OnHistoryChanged;
         }
@@ -86,8 +83,10 @@ namespace TiltBrush
             if (!ValidTarget || index < 1 || index > byte.MaxValue) return;
             m_Selected = index;
             m_Page = Array.IndexOf(m_DisplayOrder, index) / PageSize;
-            m_Draft = m_Document.Palette[index - 1];
-            ColorPicker.Controller.CurrentColor = m_Draft;
+            BindColor(
+                () => ValidTarget ? m_Document.Palette[index - 1] : (Color?)null,
+                color => ApplyPaletteColor(index, color), m_Apply, closeOnApply: false,
+                normalize: color => (Color32)color, canApply: () => CanEdit);
             RefreshControls();
         }
 
@@ -98,27 +97,18 @@ namespace TiltBrush
             SelectColor(m_DisplayOrder[m_Page * PageSize]);
         }
 
-        private void OnColorPicked(Color color)
+        protected override void OnDraftColorChanged()
         {
-            if (!CanEdit) return;
-            byte alpha = m_Document.Palette[m_Selected - 1].a;
-            Color32 draft = color;
-            draft.a = alpha;
-            if (m_Draft.Equals(draft)) return;
-            m_Draft = draft;
-            ColorPicker.Controller.CurrentColor = m_Draft;
             m_Swatches[Array.IndexOf(m_DisplayOrder, m_Selected) % PageSize].SetSwatch(m_Selected, m_Draft, true);
-            m_Apply.SetButtonAvailable(!m_Draft.Equals(m_Document.Palette[m_Selected - 1]));
         }
 
-        internal void ApplyColor()
+        private void ApplyPaletteColor(int index, Color color)
         {
-            if (!IsActionAvailable(VoxPaletteButton.Action.Apply)) return;
-            // Palette edits retain floating cells. Store one entry, not a voxel snapshot.
+            // Keep the voxel document's embedding and undo semantics.
             BaseCommand embedding = m_Widget.IsExternalVox ? new EmbedVoxModelCommand(m_Widget, m_Document) : null;
-            var command = new SetVoxPaletteColorCommand(m_Widget, m_Document, m_Selected, m_Draft, embedding);
+            var command = new SetVoxPaletteColorCommand(m_Widget, m_Document, index, color, embedding);
             m_Memory.PerformAndRecordCommand(embedding ?? command);
-            SelectColor(m_Selected);
+            SelectColor(index);
         }
 
         internal void ClearUnusedColors()
@@ -202,9 +192,9 @@ namespace TiltBrush
             m_WindowText.text = valid ? $"VOX palette — Color {m_Selected} — Page {m_Page + 1}/{PageCount}" : "VOX model unavailable";
         }
 
-        private void OnDestroy()
+        protected override void OnDestroy()
         {
-            if (ColorPicker != null) ColorPicker.ColorPicked -= OnColorPicked;
+            base.OnDestroy();
             if (m_Memory != null) m_Memory.OperationStackChanged -= OnHistoryChanged;
         }
     }

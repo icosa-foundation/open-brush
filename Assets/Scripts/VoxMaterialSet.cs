@@ -114,31 +114,7 @@ namespace TiltBrush
             };
 
             float weight = Mathf.Clamp01(voxMaterial.Weight ?? 1f);
-            float roughness = Mathf.Clamp01(voxMaterial.Roughness ?? 0.1f);
-            if (material.HasProperty("_MetallicFactor"))
-            {
-                material.SetFloat(
-                    "_MetallicFactor",
-                    voxMaterial.Type == RuntimeVoxDocument.MaterialType.Metal ? weight : 0f);
-            }
-            if (material.HasProperty("_RoughnessFactor"))
-            {
-                material.SetFloat("_RoughnessFactor", roughness);
-            }
-            if (material.HasProperty("_BaseColorFactor"))
-            {
-                // The available transparent PBR material has no refraction or distance-based
-                // absorption inputs. Approximate glass attenuation with opacity; the exact MATL
-                // values remain available on RuntimeMaterial and preserved in the source chunk.
-                float alpha = voxMaterial.Type == RuntimeVoxDocument.MaterialType.Glass
-                    ? Mathf.Clamp(
-                        1f - weight *
-                            (1f - Mathf.Clamp01(voxMaterial.Attenuation ?? 0.15f)),
-                        0.05f,
-                        1f)
-                    : 1f;
-                material.SetColor("_BaseColorFactor", new Color(1f, 1f, 1f, alpha));
-            }
+            PbrMaterialProperties.Apply(material, VoxMaterialAdapter.Read(voxMaterial), Color.white);
             if (material.HasProperty("_EmissionGain"))
             {
                 material.SetFloat(
