@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Record a panel click and stroke using Open Brush's hardware-free Virtual Input mode.
+"""Record drawing or reshaping a stroke using Open Brush's hardware-free Virtual Input mode.
 
 Enter Play mode with Open Brush > Procedural Automation > Virtual Input enabled,
 or launch a player with --virtualInput. Keep the Game/player view rendering.
@@ -24,6 +24,9 @@ def main():
     parser.add_argument("--name", default=f"tutorial-{datetime.datetime.now():%Y%m%d-%H%M%S}")
     parser.add_argument("--fps", type=int, default=30)
     parser.add_argument("--brush", default="", help="Optional visible brush durable name")
+    parser.add_argument("--scenario", choices=("draw", "reshape"), default="draw")
+    parser.add_argument("--existing-stroke", action="store_true",
+                        help="For reshape, use the most recent stroke instead of preparing a starter")
     parser.add_argument("--head", type=float, nargs=6, metavar=("X", "Y", "Z", "RX", "RY", "RZ"),
                         help="Virtual body/head reference in world metres, then rotation in degrees")
     parser.add_argument("--timeout", type=float, default=600)
@@ -35,7 +38,12 @@ def main():
             return response.read().decode("utf-8")
 
     def status():
-        return json.loads(command("query.automation"))
+        response = command("query.automation")
+        try:
+            return json.loads(response)
+        except json.JSONDecodeError as error:
+            raise RuntimeError(f"The server at {args.url} does not support the automation status query. "
+                               "Check that this URL belongs to the Open Brush instance running Virtual Input.") from error
 
     initial = status()
     if initial.get("Mode") != "VirtualInput":
@@ -46,7 +54,12 @@ def main():
         raise RuntimeError("FPS must be between 1 and 120.")
     if args.head:
         command("automation.head", ",".join(f"{value:g}" for value in args.head))
-    command("automation.record", f"{args.name},{args.fps},{args.brush}")
+    if args.existing_stroke:
+        if args.scenario != "reshape":
+            raise RuntimeError("--existing-stroke requires --scenario reshape.")
+        command("automation.reshape.use")
+    endpoint = "automation.reshape.record" if args.scenario == "reshape" else "automation.record"
+    command(endpoint, f"{args.name},{args.fps},{args.brush}")
 
     saw_capture = False
     last_phase = None
