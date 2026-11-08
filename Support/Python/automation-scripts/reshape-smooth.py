@@ -1,4 +1,4 @@
-"""Remove fine wobble from a broad arch while retaining its overall shape."""
+"""Remove fine 3D wobble from a broad arch while retaining its overall shape."""
 
 import math
 
@@ -10,7 +10,8 @@ def build_plan(args):
     for i in range(65):
         t = i / 64
         x, y = -0.12 + 0.44 * t, -0.28 + 0.09 * math.sin(math.pi * t)
-        points.append([x, y + 0.014 * math.sin(32 * math.pi * t), 0.45])
+        points.append([x, y + 0.014 * math.sin(32 * math.pi * t),
+                       0.45 + 0.012 * math.sin(26 * math.pi * t)])
         path.append([x, y, 0.45])
     return reshape_demo("Smooth", points, path, name="Smooth a jittery arch",
                         radius=0.085, seconds=4.8, minimum_movement=0.006,
