@@ -59,7 +59,7 @@ namespace TiltBrush
             }
         }
 
-        private enum Phase { RaiseWand, Aim, Hover, Press, Release, Withdraw, WaitForButton, ApproachAction, Contact, Act, Inspect, Rest, Finish }
+        private enum Phase { RaiseWand, RotatePanels, Aim, Hover, Press, Release, Withdraw, WaitForButton, ApproachAction, Contact, Act, Inspect, Rest, Finish }
         private const string kLogPrefix = "[ProceduralAutomation]";
         private readonly Settings m_Settings;
         private BaseButton m_Button;
@@ -82,6 +82,11 @@ namespace TiltBrush
         private readonly UnityEngine.Pose m_BrushRest;
         private readonly UnityEngine.Pose m_WandRest;
         private readonly UnityEngine.Pose m_WandRaised;
+        private readonly Quaternion m_PresentedPanelRotation;
+        private readonly float m_PanelTurnAngle;
+        private int m_PanelTurnsRemaining;
+        private bool m_PanelStickSent;
+        private float m_PanelRotationWait;
         private UnityEngine.Pose m_BrushPose;
         private UnityEngine.Pose m_WandPose;
         private ProceduralArm.Pose m_ReachStart;
@@ -163,14 +168,29 @@ namespace TiltBrush
             m_BrushArm = MakeArm(1);
             m_WandArm = MakeArm(-1);
             m_BrushRest = new UnityEngine.Pose(Point(new Vector3(0.24f, -0.48f, 0.23f)), m_BodyRotation);
-            m_WandRest = new UnityEngine.Pose(Point(new Vector3(-0.24f, -0.48f, 0.23f)), InputManager.Wand.Transform.rotation);
             // Target the panel, not an arbitrary wand position. Its attachment offset can put
             // it well below the head's focus cone even when both hands can reach it.
             Vector3 panelPosition = m_Origin + body.rotation * (m_Settings.PanelPosition * App.METERS_TO_UNITS);
             Quaternion panelRotation = Quaternion.LookRotation(panelPosition - m_Origin, Vector3.up);
+            m_PresentedPanelRotation = panelRotation;
             Transform wand = InputManager.Wand.Transform;
-            Quaternion wandRotation = panelRotation * Quaternion.Inverse(m_Panel.transform.rotation) * wand.rotation;
-            Vector3 panelOffset = Quaternion.Inverse(wand.rotation) * (m_Panel.transform.position - wand.position);
+            Transform axis = InputManager.Wand.Geometry.MainAxisAttachPoint;
+            Quaternion axisInHand = Quaternion.Inverse(wand.rotation) * axis.rotation;
+            // Orient the hand for a front-facing panel independently of which pane is
+            // selected. The thumbstick, rather than a wrist roll, brings back panes around.
+            Quaternion neutralRotation = panelRotation * Quaternion.Inverse(Quaternion.Euler(90, 0, 0)) *
+                Quaternion.Inverse(axisInHand);
+            Quaternion panelInHand = Quaternion.Inverse(wand.rotation) * m_Panel.transform.rotation;
+            Vector3 turnAxis = neutralRotation * (Quaternion.Inverse(wand.rotation) * axis.forward);
+            float turn = Vector3.SignedAngle(neutralRotation * panelInHand * Vector3.forward,
+                panelRotation * Vector3.forward, turnAxis);
+            m_PanelTurnsRemaining = Mathf.RoundToInt(turn / PanelManager.WandPanelSnapAngle);
+            m_PanelTurnAngle = m_PanelTurnsRemaining * PanelManager.WandPanelSnapAngle;
+            Quaternion wandRotation = Quaternion.AngleAxis(turn - m_PanelTurnAngle, turnAxis) * neutralRotation;
+            Quaternion panelTurn = Quaternion.AngleAxis(m_PanelTurnAngle, axis.forward);
+            Vector3 panelOffset = Quaternion.Inverse(wand.rotation) *
+                (axis.position + panelTurn * (m_Panel.transform.position - axis.position) - wand.position);
+            m_WandRest = new UnityEngine.Pose(Point(new Vector3(-0.24f, -0.48f, 0.23f)), neutralRotation);
             m_WandRaised = new UnityEngine.Pose(panelPosition - wandRotation * panelOffset, wandRotation);
             Transform root = InputManager.Brush.Transform;
             Transform tip = InputManager.Brush.Behavior.PointerAttachPoint;
@@ -256,6 +276,19 @@ namespace TiltBrush
             var panelPose = new UnityEngine.Pose(panelPosition, panelRotation);
             panelSubject.AddPose(panelPose, AutomationShot.CaptureLocalBounds(m_Panel.transform,
                 m_Panel.GetComponentsInChildren<Renderer>()));
+            // Include the target panel's journey around the stationary wand.
+            var axis = InputManager.Wand.Geometry.MainAxisAttachPoint;
+            Quaternion handDelta = m_WandRaised.rotation * Quaternion.Inverse(InputManager.Wand.Transform.rotation);
+            Vector3 pivot = m_WandRaised.position + handDelta * (axis.position - InputManager.Wand.Transform.position);
+            Vector3 spinAxis = handDelta * axis.forward;
+            var rotatingPanel = shot.AddSubject("Panel thumbstick rotation");
+            var panelBounds = AutomationShot.CaptureLocalBounds(m_Panel.transform, m_Panel.GetComponentsInChildren<Renderer>());
+            for (int i = 0; i <= 32; ++i)
+            {
+                Quaternion rotation = Quaternion.AngleAxis(-m_PanelTurnAngle * (1 - i / 32f), spinAxis);
+                rotatingPanel.AddPose(new UnityEngine.Pose(pivot + rotation * (panelPosition - pivot),
+                    rotation * panelRotation), panelBounds);
+            }
 
             var aimed = PresentedButtonPose(m_Button, panelPose);
             var aimJoints = m_BrushArm.Solve(aimed.position, aimed.rotation);
@@ -377,6 +410,7 @@ namespace TiltBrush
         {
             if (m_Disposed) { return false; }
             bool trigger = false;
+            Vector2 thumbstick = Vector2.zero;
             try
             {
                 if (UnityEngine.InputSystem.Keyboard.current?.escapeKey.wasPressedThisFrame == true ||
@@ -398,7 +432,37 @@ namespace TiltBrush
                     case Phase.RaiseWand:
                         m_WandPose = m_WandArm.Reach(m_ReachStart,
                             m_WandArm.Solve(m_WandRaised.position, m_WandRaised.rotation), progress);
-                        if (progress >= 1) { Next(Phase.Aim); }
+                        if (progress >= 1) { Next(Phase.RotatePanels); }
+                        break;
+                    case Phase.RotatePanels:
+                        m_PanelRotationWait += deltaTime;
+                        if (m_PanelRotationWait > 8)
+                        {
+                            throw new InvalidOperationException("Wand thumbstick rotation did not present the target panel.");
+                        }
+                        if (!PanelManager.m_Instance.WandPanelRotationIsSettled) { break; }
+                        if (m_PanelStickSent)
+                        {
+                            // Allow a whole consumer frame to start the native snap.
+                            if (m_Elapsed < 0.1f) { break; }
+                            m_PanelTurnsRemaining -= Math.Sign(m_PanelTurnsRemaining);
+                            m_PanelStickSent = false;
+                        }
+                        if (m_PanelTurnsRemaining == 0)
+                        {
+                            if (Vector3.Angle(m_Panel.transform.forward,
+                                m_PresentedPanelRotation * Vector3.forward) > 3)
+                            {
+                                throw new InvalidOperationException("Thumbstick rotation stopped before the target panel faced the user.");
+                            }
+                            Next(Phase.Aim);
+                        }
+                        else
+                        {
+                            thumbstick = new Vector2(-Math.Sign(m_PanelTurnsRemaining), 0);
+                            m_PanelStickSent = true;
+                            m_Elapsed = 0;
+                        }
                         break;
                     case Phase.Aim:
                         var aim = ButtonPose();
@@ -520,6 +584,7 @@ namespace TiltBrush
                 trigger = false;
             }
             m_Simulated[0].SetTrigger(false);
+            m_Simulated[0].SetThumbstick(thumbstick);
             m_Simulated[1].SetTrigger(trigger);
             ApplyPoses();
             return true;
