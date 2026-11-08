@@ -817,6 +817,14 @@ namespace TiltBrush
             return false;
         }
 
+        public bool MemorizeShapeRepaint(EditableModelWidget widget, Color color)
+        {
+            if (widget == null || widget.m_PolyRecipe == null || widget.m_Color == color) { return false; }
+            if (m_RepaintStrokeParent == null) { m_RepaintStrokeParent = new BaseCommand(); }
+            new RepaintShapeCommand(widget, color, m_RepaintStrokeParent);
+            return true;
+        }
+
         /// Removes stroke from our list only.
         /// It's the caller's responsibility to destroy if (if desired).
         public void RemoveMemoryObject(Stroke stroke)

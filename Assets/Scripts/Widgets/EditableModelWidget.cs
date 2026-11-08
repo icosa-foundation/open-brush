@@ -327,6 +327,42 @@ namespace TiltBrush
             if (active && m_PolyRecipe != null) { LastActivated = this; }
         }
 
+        public void SetColor(Color color)
+        {
+            m_Color = color;
+            TintModel(GetModelGameObject(), color);
+            if (Model != null && Model.m_ModelParent != null) { TintModel(Model.m_ModelParent.gameObject, color); }
+        }
+
+        private void TintModel(GameObject root, Color color)
+        {
+            if (root == null) { return; }
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                TintMaterials(renderer.sharedMaterials, color);
+                // Highlight keywords swap between cached material instances. Keep
+                // both sets current so deselection cannot restore the old colour.
+                if (m_InitialMaterials != null && m_InitialMaterials.TryGetValue(renderer, out var initial))
+                {
+                    TintMaterials(initial, color);
+                }
+                if (m_NewMaterials != null && m_NewMaterials.TryGetValue(renderer, out var highlighted))
+                {
+                    TintMaterials(highlighted, color);
+                }
+            }
+        }
+
+        private static void TintMaterials(Material[] materials, Color color)
+        {
+            foreach (var material in materials)
+            {
+                if (material == null) { continue; }
+                if (material.HasProperty("_BaseColor")) { material.SetColor("_BaseColor", color); }
+                if (material.HasProperty("_Color")) { material.SetColor("_Color", color); }
+            }
+        }
+
         public override GrabWidget Clone() => Clone(transform.position, transform.rotation, m_Size);
 
         public override GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
