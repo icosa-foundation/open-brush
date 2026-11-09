@@ -118,6 +118,8 @@ namespace TiltBrush
             public float Seconds = 1.2f;
             public string Hand = "brush";
             public string Attachment = "tip";
+            public bool NaturalGrip;
+            public Step Parallel;
             public string Anchor;
             public float AnchorT = 0.5f;
             public float[][] Points;

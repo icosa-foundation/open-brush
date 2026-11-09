@@ -27,6 +27,7 @@ namespace TiltBrush
             public Vector3 PanelDestination;
             public Quaternion PanelDestinationRotation;
             public float RingAngle;
+            public Instruction Parallel;
         }
 
         private readonly List<Instruction> m_Instructions = new List<Instruction>();
@@ -97,7 +98,7 @@ namespace TiltBrush
                     m_Poses[i] = new UnityEngine.Pose(Point(new Vector3(i == 0 ? -0.24f : 0.24f, -0.48f, 0.23f)), m_OriginalPoses[i].rotation);
             }
             // Validate syntax and selectors before creating any fixture strokes.
-            foreach (var step in script.Steps)
+            foreach (var step in script.Steps.SelectMany(ExpandMoves))
             {
                 if (!new[] {"present", "focus", "click", "placePanel", "move", "input", "wait", "rest", "assert"}.Contains(step.Op))
                     throw new ArgumentException($"Unknown script operation: {step.Op}");
@@ -141,14 +142,24 @@ namespace TiltBrush
         }
 
         private Vector3 Point(Vector3 metres) => m_Body.position + m_Yaw * (metres * App.METERS_TO_UNITS);
-        private ProceduralArm MakeArm(float side)
+        private static IEnumerable<AutomationScript.Step> ExpandMoves(AutomationScript.Step step)
+        {
+            yield return step;
+            if (step.Parallel == null) { yield break; }
+            if (step.Op != "move" || step.Parallel.Op != "move" || step.Parallel.Parallel != null ||
+                step.Hand == step.Parallel.Hand || Mathf.Abs(step.Seconds - step.Parallel.Seconds) > 0.0001f)
+                throw new ArgumentException("parallel requires two move steps for different hands with equal seconds.");
+            yield return step.Parallel;
+        }
+        private ProceduralArm MakeArm(float side, Vector3? headPosition = null)
         {
             var controller = m_Original[side < 0 ? 0 : 1];
             Transform grip = controller.Geometry.GripAttachPoint;
             if (grip == null) { throw new InvalidOperationException("The controller model needs a calibrated grip attachment."); }
             Quaternion inverse = Quaternion.Inverse(controller.Transform.rotation);
             var local = new UnityEngine.Pose(inverse * (grip.position - controller.Transform.position), inverse * grip.rotation);
-            return new ProceduralArm(Point(new Vector3(side * 0.18f, -0.20f, -0.04f)),
+            Vector3 headOffset = headPosition.HasValue ? headPosition.Value - m_Body.position : Vector3.zero;
+            return new ProceduralArm(Point(new Vector3(side * 0.18f, -0.20f, -0.04f)) + headOffset,
                 m_Yaw * new Vector3(side * 0.6f, -1, -0.15f), m_Script.UpperArmMeters * App.METERS_TO_UNITS,
                 m_Script.ForearmMeters * App.METERS_TO_UNITS, local, m_Yaw * Vector3.up);
         }
@@ -217,6 +228,16 @@ namespace TiltBrush
 
         private UnityEngine.Pose RootForContact(int hand, UnityEngine.Pose contact, AutomationScript.Step step)
         {
+            if (step.NaturalGrip)
+            {
+                if (step.Attachment != "grip" || step.EndRotation != null)
+                    throw new ArgumentException("naturalGrip requires attachment grip and no endRotation.");
+                // Match the anchor used by SketchControlsScript's native world grab.
+                Vector3 anchor = m_Original[1].Geometry.GripAttachPoint.localPosition;
+                anchor.x = 0;
+                var arm = m_RestView.HasValue ? MakeArm(hand == 0 ? -1 : 1, m_RestView.Value.position) : m_Arms[hand];
+                return arm.RelaxedGripPose(contact.position, anchor);
+            }
             if (step.Attachment == "root") { return contact; }
             Transform root = m_Original[hand].Transform;
             Transform attachment = step.Attachment == "tip" ? m_Original[hand].Behavior.PointerAttachPoint :
@@ -357,7 +378,7 @@ namespace TiltBrush
                 bounds.Expand(2 * stroke.m_BrushSize);
                 shot.AddSubject("Prepared stroke", AutomationShot.SubjectRole.Artwork).AddBounds(bounds);
             }
-            foreach (var step in m_Script.Steps)
+            foreach (var step in m_Script.Steps.SelectMany(ExpandMoves))
             {
                 var item = new Instruction {Source = step, Hand = step.Hand == "wand" ? 0 : 1,
                     DurationSeconds = step.Seconds / m_Script.Speed};
@@ -607,6 +628,11 @@ namespace TiltBrush
                 }
                 m_Instructions.Add(item);
             }
+            foreach (var item in m_Instructions.Where(i => i.Source.Parallel != null).ToArray())
+            {
+                item.Parallel = m_Instructions.Single(i => ReferenceEquals(i.Source, item.Source.Parallel));
+                m_Instructions.Remove(item.Parallel);
+            }
             return shot;
         }
 
@@ -635,6 +661,7 @@ namespace TiltBrush
             m_Elapsed = 0; m_TotalElapsed = 0; m_Frames = 0; m_Stage = 0; m_Clicked = false;
             var item = m_Instructions[m_Index];
             item.Start = m_Poses[item.Hand];
+            if (item.Parallel != null) { item.Parallel.Start = m_Poses[item.Parallel.Hand]; }
             Vector3 gazeTarget = item.Panel != null ? item.Panel.transform.position :
                 item.Path != null ? item.Path.Last().position : m_Body.position + m_Body.rotation * Vector3.forward;
             Vector3 gazeDirection = gazeTarget - m_Body.position;
@@ -718,6 +745,7 @@ namespace TiltBrush
                         case "move":
                         case "rest":
                             m_Poses[item.Hand] = Evaluate(item, t);
+                            if (item.Parallel != null) { m_Poses[item.Parallel.Hand] = Evaluate(item.Parallel, t); }
                             if (t >= 1) { Advance(); }
                             break;
                         case "wait":

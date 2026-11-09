@@ -53,6 +53,33 @@ namespace TiltBrush
                    distance < m_UpperLength + m_ForearmLength - 0.01f;
         }
 
+        public UnityEngine.Pose RelaxedGripPose(Vector3 contactPosition, Vector3 contactLocal)
+        {
+            Vector3 wrist = contactPosition;
+            Quaternion controller = Quaternion.identity;
+            // The native grab anchor and anatomical wrist are slightly offset. Resolve that
+            // offset while keeping the wrist aligned with the forearm and the elbow at its pole.
+            for (int iteration = 0; iteration < 4; ++iteration)
+            {
+                if (!CanReachWrist(wrist))
+                    throw new InvalidOperationException("Natural grip exceeds the procedural arm's reach.");
+                Vector3 delta = wrist - m_Shoulder;
+                float distance = delta.magnitude;
+                Vector3 direction = delta / distance;
+                Vector3 bend = Vector3.ProjectOnPlane(m_ElbowPole, direction).normalized;
+                if (bend.sqrMagnitude < 0.001f)
+                    throw new InvalidOperationException("Natural grip aligns with the elbow pole.");
+                float along = (distance * distance + m_UpperLength * m_UpperLength -
+                    m_ForearmLength * m_ForearmLength) / (2 * distance);
+                float height = Mathf.Sqrt(Mathf.Max(0, m_UpperLength * m_UpperLength - along * along));
+                Vector3 elbow = m_Shoulder + direction * along + bend * height;
+                Quaternion forearm = Quaternion.LookRotation(wrist - elbow, m_BodyUp);
+                controller = forearm * Quaternion.Inverse(m_GripLocal.rotation);
+                wrist = contactPosition + controller * (m_GripLocal.position - contactLocal);
+            }
+            return new UnityEngine.Pose(contactPosition - controller * contactLocal, controller);
+        }
+
         public Pose Solve(Vector3 controllerPosition, Quaternion controllerRotation)
         {
             Vector3 wrist = controllerPosition + controllerRotation * m_GripLocal.position;
