@@ -158,7 +158,7 @@ calls, so they also work with `--write-plan`.
 | --- | --- |
 | `sample_cubic(control_points, samples=97)` | Sampled points for a cubic starter stroke. |
 | `prepare_stroke(...)` | One preparation item; accepts `stroke_id`, `points`, `brush`, `size`, `color` and `use_latest`. |
-| `reshape_demo(mode, points, path, ...)` | A complete shot with a prepared teaching shape, default drawing state, Labs/tool/mode selection, a pause on the original shape, one native reshape gesture, movement/count checks and a final reveal. Radius, orientation and minimum movement are script parameters. |
+| `reshape_demo(mode, points, path, ...)` | A complete shot with a prepared teaching shape, default drawing state, Labs/tool/mode selection, a pause on the original shape, one native reshape gesture, movement/count checks and a final reveal. Use `reveal=False` when continuing directly into another action. Radius, orientation and minimum movement are script parameters. |
 | `prepare_brush(...)` | Starting brush and size, plus optional `palette_brush` to establish a palette page before capture. Recorded brush selection still uses a native button click. |
 | `prepare_script(preset, category=...)` | Select the predecessor of a named preset before capture, ready for a visible Next click. |
 | `select_script(preset, category=...)` | Present the Scripts panel, click Next and assert the named preset. Open Scripts first. |

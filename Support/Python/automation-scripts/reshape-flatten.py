@@ -27,7 +27,7 @@ def build_plan(args):
     plan = reshape_demo("Flatten", points, path,
                         name="Flatten a rippled stroke onto an oblique plane", radius=0.095,
                         seconds=5.2, rotation=(25, -12, 0), minimum_movement=0.025,
-                        brush=args.brush or "Icing",
+                        brush=args.brush or "Icing", reveal=False,
                         panel_placement={"position": (0, 0.12, 0.38),
                                          "rotation": (25, 0, 0), "end_rotation": (25, 0, 0)})
     # Frame the scene's turn as well as the tool use; the filming camera stays fixed.

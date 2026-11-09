@@ -152,7 +152,7 @@ def rotate_scene(*, pivot=(0.10, -0.23, 0.44), span=0.28, yaw_degrees=90, second
 
 def reshape_demo(mode, points, path, *, name, radius=0.08, seconds=3.0,
                  rotation=(25, -35, 0), minimum_movement=0.02, fixed_endpoints=False,
-                 brush="Icing", size=0.009, panel_placement=False):
+                 brush="Icing", size=0.009, panel_placement=False, reveal=True):
     """Prepare a teaching shape, visibly select a reshape mode, then apply one gesture."""
     return {
         "version": 1,
@@ -170,6 +170,6 @@ def reshape_demo(mode, points, path, *, name, radius=0.08, seconds=3.0,
                         seconds=seconds, padding=radius, lower_wand=False),
             {"op": "assert", "stroke": "subject", "minimumMovementMeters": minimum_movement,
              "fixedEndpoints": fixed_endpoints, "strokeCountDelta": 0},
-            *reveal_result(seconds=3.0),
+            *(reveal_result(seconds=3.0) if reveal else []),
         ],
     }
