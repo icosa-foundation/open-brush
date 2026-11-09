@@ -70,6 +70,8 @@ namespace TiltBrush
         public void SetViewAspect(float? aspect)
         {
             ViewAspect = aspect;
+            // Scene teardown can destroy the camera before VrSdk disposes this simulation.
+            if (m_Camera == null) { return; }
             if (!aspect.HasValue)
             {
                 m_Camera.rect = m_OriginalViewport;
@@ -84,7 +86,7 @@ namespace TiltBrush
 
         public void UpdateView()
         {
-            if (!ViewAspect.HasValue || Screen.width <= 0 || Screen.height <= 0) { return; }
+            if (m_Camera == null || !ViewAspect.HasValue || Screen.width <= 0 || Screen.height <= 0) { return; }
             float windowAspect = (float)Screen.width / Screen.height;
             float width = Mathf.Min(1, ViewAspect.Value / windowAspect);
             float height = Mathf.Min(1, windowAspect / ViewAspect.Value);
