@@ -13,9 +13,9 @@ class AutomationClient:
     def __init__(self, url="http://127.0.0.1:40074"):
         self.url = f"{url.rstrip('/')}/api/v1"
 
-    def command(self, name, value=""):
+    def command(self, name, value="", timeout=10):
         data = urllib.parse.urlencode({name: value}).encode("utf-8")
-        with urllib.request.urlopen(self.url, data=data, timeout=10) as response:
+        with urllib.request.urlopen(self.url, data=data, timeout=timeout) as response:
             return response.read().decode("utf-8")
 
     def status(self):
@@ -36,10 +36,10 @@ class AutomationClient:
             raise RuntimeError("Another automation or recording is active.")
         run_id = uuid.uuid4().hex
         payload = base64.urlsafe_b64encode(json.dumps(plan, allow_nan=False).encode("utf-8")).decode("ascii")
-        self.command("automation.script", f"{run_id},{payload}")
         deadline = time.monotonic() + timeout
         last_phase = None
         try:
+            self.command("automation.script", f"{run_id},{payload}", timeout=timeout)
             while time.monotonic() < deadline:
                 current = self.status()
                 if current.get("RunId") != run_id:
