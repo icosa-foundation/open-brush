@@ -4,14 +4,13 @@ from automation_sections import apply_path, open_panel, prepare_brush, reveal_re
 
 
 def build_plan(args):
-    a, b, c = [-0.08, -0.32, 0.43], [0.27, -0.32, 0.43], [0.095, -0.07, 0.43]
+    a, b, c = [-0.055, -0.32, 0.43], [0.245, -0.32, 0.43], [0.095, -0.13, 0.43]
     near_b = [b[0] + 0.003, b[1] + 0.003, b[2]]
     near_c = [c[0] - 0.003, c[1] - 0.003, c[2]]
     near_a = [a[0] + 0.003, a[1] - 0.003, a[2]]
     toggle = "SketchControls/SnapSettingsPanel(Clone)_Advanced/Mesh/Stroke Snapping/Snap to Strokes"
     steps = [
-        *open_panel("SnapSettings", via_more=False,
-                    park={"position": (0, 0.12, 0.38), "rotation": (25, 0, 0)}),
+        *open_panel("SnapSettings", via_more=False),
         *select_control({"path": toggle}),
         {"op": "assert", "endpointSnap": True},
         *select_control({"command": "StraightEdge"}),
