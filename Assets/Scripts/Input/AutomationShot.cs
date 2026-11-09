@@ -108,9 +108,10 @@ namespace TiltBrush
             Vector3 back = -(Quaternion.Euler(0, preferred.rotation.eulerAngles.y, 0) * Vector3.forward);
             // A small bounded pullback preserves the first-person perspective. No zooming
             // or chasing the action: all candidates use the same fixed field of view.
-            for (int step = 0; step <= 6; ++step)
+            int pullbackSteps = settings.MaximumPullbackMeters == 0 ? 0 : 6;
+            for (int step = 0; step <= pullbackSteps; ++step)
             {
-                float pullback = settings.MaximumPullbackMeters * step / 6;
+                float pullback = pullbackSteps == 0 ? 0 : settings.MaximumPullbackMeters * step / pullbackSteps;
                 Vector3 eye = preferred.position + back * (pullback * App.METERS_TO_UNITS);
                 Quaternion rotation = Quaternion.LookRotation(bounds.center - eye, Vector3.up);
                 bool valid = true;

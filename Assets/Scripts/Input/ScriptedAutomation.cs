@@ -28,6 +28,8 @@ namespace TiltBrush
             public Quaternion PanelDestinationRotation;
             public float RingAngle;
             public Instruction Parallel;
+            public bool AimPlanned;
+            public Vector3 PointingOffset;
         }
 
         private readonly List<Instruction> m_Instructions = new List<Instruction>();
@@ -47,13 +49,14 @@ namespace TiltBrush
         private readonly IDisposable m_Tracking;
         private readonly bool m_ShowControllers;
         private readonly Quaternion m_Yaw;
-        private readonly UnityEngine.Pose m_Body;
+        private readonly UnityEngine.Pose m_Workspace;
         private readonly Ray? m_OriginalGaze;
         private readonly float? m_OriginalViewAspect;
         private readonly int m_InitialStrokeCount;
         private readonly AutomationScript m_Script;
         private Vector3 m_PanelLayoutOffset;
         private UnityEngine.Pose? m_RestView;
+        private Vector3 m_ArmHead;
         private int m_Index;
         private int m_Stage;
         private int m_Frames;
@@ -82,34 +85,38 @@ namespace TiltBrush
             AutomationScript.Positive(script.Speed, "speed", 0.25f, 2);
             AutomationScript.Positive(script.UpperArmMeters, "upperArmMeters", 0.15f, 0.5f);
             AutomationScript.Positive(script.ForearmMeters, "forearmMeters", 0.15f, 0.5f);
-            m_Body = App.VrSdk.VirtualSimulation.BodyPose;
+            m_Workspace = App.VrSdk.VirtualSimulation.BodyPose;
             m_OriginalGaze = App.VrSdk.VirtualSimulation.InteractionGaze;
             m_OriginalViewAspect = App.VrSdk.VirtualSimulation.ViewAspect;
-            m_Yaw = Quaternion.Euler(0, m_Body.rotation.eulerAngles.y, 0);
+            m_Yaw = Quaternion.Euler(0, m_Workspace.rotation.eulerAngles.y, 0);
             m_Original = (ControllerInfo[])InputManager.Controllers.Clone();
             m_OriginalPoses = m_Original.Select(c => new UnityEngine.Pose(c.Transform.position, c.Transform.rotation)).ToArray();
             m_Visible = m_Original.Select(c => c.Transform.gameObject.activeSelf).ToArray();
             m_Poses = (UnityEngine.Pose[])m_OriginalPoses.Clone();
-            m_Arms = new[] {MakeArm(-1), MakeArm(1)};
+            m_Arms = new ProceduralArm[2];
+            SetArmHead(m_Workspace.position);
             m_ControllerBounds = m_Original.Select(ControllerBounds).ToArray();
-            for (int i = 0; i < 2; ++i)
-            {
-                if (!m_Arms[i].CanReach(m_Poses[i].position, m_Poses[i].rotation))
-                    m_Poses[i] = new UnityEngine.Pose(Point(new Vector3(i == 0 ? -0.24f : 0.24f, -0.48f, 0.23f)), m_OriginalPoses[i].rotation);
-            }
             // Validate syntax and selectors before creating any fixture strokes.
             foreach (var step in script.Steps.SelectMany(ExpandMoves))
             {
                 if (!new[] {"present", "focus", "click", "placePanel", "move", "input", "wait", "rest", "assert"}.Contains(step.Op))
                     throw new ArgumentException($"Unknown script operation: {step.Op}");
                 AutomationScript.Positive(step.Seconds, "step seconds", 0.01f, 120);
+                if (step.EndRotation != null && step.Rotation == null)
+                    throw new ArgumentException("endRotation requires an explicit rotation.");
+                if (step.Op == "placePanel" && step.EndRotation != null)
+                    throw new ArgumentException("placePanel uses rotation for the panel destination, not endRotation.");
+                if (step.RotationConstraint != "full" && step.RotationConstraint != "forward")
+                    throw new ArgumentException("rotationConstraint must be full or forward.");
+                if (step.RotationConstraint == "forward" && step.Rotation == null)
+                    throw new ArgumentException("A forward rotation constraint needs rotation.");
                 if (step.Op == "present" || step.Op == "focus" || step.Op == "click")
                 {
                     if (step.Target == null) { throw new ArgumentException("present and click require a target."); }
                 }
                 if (step.Hand != "wand" && step.Hand != "brush") { throw new ArgumentException("hand must be wand or brush."); }
             }
-            m_Strokes = script.PrepareScene(m_Body);
+            m_Strokes = script.PrepareScene(m_Workspace);
             m_OriginalPoints = m_Strokes.ToDictionary(p => p.Key, p => p.Value.m_ControlPoints.Select(c => c.m_Pos).ToArray());
             m_OriginalColors = m_Strokes.ToDictionary(p => p.Key,
                 p => Enumerable.Range(0, p.Value.m_ControlPoints.Length).Select(p.Value.GetColor).ToArray());
@@ -141,7 +148,7 @@ namespace TiltBrush
             catch { Dispose(); throw; }
         }
 
-        private Vector3 Point(Vector3 metres) => m_Body.position + m_Yaw * (metres * App.METERS_TO_UNITS);
+        private Vector3 Point(Vector3 metres) => m_Workspace.position + m_Yaw * (metres * App.METERS_TO_UNITS);
         private static IEnumerable<AutomationScript.Step> ExpandMoves(AutomationScript.Step step)
         {
             yield return step;
@@ -151,22 +158,34 @@ namespace TiltBrush
                 throw new ArgumentException("parallel requires two move steps for different hands with equal seconds.");
             yield return step.Parallel;
         }
-        private ProceduralArm MakeArm(float side, Vector3? headPosition = null)
+        private void SetArmHead(Vector3 position)
+        {
+            m_ArmHead = position;
+            for (int hand = 0; hand < 2; ++hand)
+            {
+                m_Arms[hand] = MakeArm(hand == 0 ? -1 : 1);
+                Vector3 resting = m_ArmHead + m_Yaw *
+                    (new Vector3(hand == 0 ? -0.24f : 0.24f, -0.48f, 0.23f) * App.METERS_TO_UNITS);
+                m_Poses[hand] = m_Arms[hand].RelaxedGripPose(resting, Vector3.zero);
+            }
+        }
+
+        private ProceduralArm MakeArm(float side)
         {
             var controller = m_Original[side < 0 ? 0 : 1];
             Transform grip = controller.Geometry.GripAttachPoint;
             if (grip == null) { throw new InvalidOperationException("The controller model needs a calibrated grip attachment."); }
             Quaternion inverse = Quaternion.Inverse(controller.Transform.rotation);
             var local = new UnityEngine.Pose(inverse * (grip.position - controller.Transform.position), inverse * grip.rotation);
-            Vector3 headOffset = headPosition.HasValue ? headPosition.Value - m_Body.position : Vector3.zero;
-            return new ProceduralArm(Point(new Vector3(side * 0.18f, -0.20f, -0.04f)) + headOffset,
+            return new ProceduralArm(m_ArmHead + m_Yaw *
+                (new Vector3(side * 0.18f, -0.20f, -0.04f) * App.METERS_TO_UNITS),
                 m_Yaw * new Vector3(side * 0.6f, -1, -0.15f), m_Script.UpperArmMeters * App.METERS_TO_UNITS,
                 m_Script.ForearmMeters * App.METERS_TO_UNITS, local, m_Yaw * Vector3.up);
         }
 
         private Vector3 Anchor(string id, float t)
         {
-            if (string.IsNullOrEmpty(id)) { return m_Body.position; }
+            if (string.IsNullOrEmpty(id)) { return m_Workspace.position; }
             if (!m_Strokes.TryGetValue(id, out Stroke stroke)) { throw new ArgumentException($"Unknown stroke anchor: {id}"); }
             if (float.IsNaN(t) || t < 0 || t > 1) { throw new ArgumentException("anchorT must be between 0 and 1."); }
             var points = m_OriginalPoints[id];
@@ -197,22 +216,25 @@ namespace TiltBrush
             // Choose the grip first. Native thumbstick snaps bring the pane around it;
             // a panel can remain oblique rather than bending the wrist to face the camera.
             for (int lift = 0; lift <= 6; ++lift)
-            for (int pitch = -60; pitch >= -80; pitch -= 10)
+            for (int pitch = -30; pitch >= -80; pitch -= 10)
             for (int yaw = -30; yaw <= 30; yaw += 15)
             for (int snap = -1; snap <= 1; ++snap)
             {
-                Vector3 position = Point(preferred + Vector3.up * (lift * 0.02f));
+                Vector3 position = m_ArmHead + m_Yaw *
+                    ((preferred + Vector3.up * (lift * 0.02f)) * App.METERS_TO_UNITS);
                 Quaternion rotation = m_Yaw * Quaternion.Euler(pitch, yaw, 0) * Quaternion.Inverse(gripLocal);
                 var presented = PanelPose(panel, new UnityEngine.Pose(Vector3.zero, rotation),
                     ring + snap * PanelManager.WandPanelSnapAngle);
-                float angle = Vector3.Angle(presented.rotation * Vector3.forward, position - m_Body.position);
+                float angle = Vector3.Angle(presented.rotation * Vector3.forward, position - m_ArmHead);
                 if (angle > 45) { continue; }
-                float score = angle + lift + Mathf.Abs(yaw) * 0.1f + Mathf.Abs(pitch + 70) * 0.05f;
+                float score = angle * 0.1f + lift * 0.2f + Mathf.Abs(yaw) * 0.02f;
                 if (score >= bestScore) { continue; }
                 var pose = new UnityEngine.Pose(position - presented.position, rotation);
                 try
                 {
                     var to = m_Arms[0].Solve(pose.position, pose.rotation);
+                    score += 20 * m_Arms[0].Comfort(to);
+                    if (score >= bestScore) { continue; }
                     for (int i = 0; i <= 32; ++i) { m_Arms[0].Reach(from, to, i / 32f); }
                 }
                 catch (InvalidOperationException) { continue; }
@@ -226,23 +248,21 @@ namespace TiltBrush
             return best;
         }
 
-        private UnityEngine.Pose RootForContact(int hand, UnityEngine.Pose contact, AutomationScript.Step step)
+        private UnityEngine.Pose ContactLocal(int hand, AutomationScript.Step step)
         {
-            if (step.NaturalGrip)
+            if (step.Attachment == "grip")
             {
-                if (step.Attachment != "grip" || step.EndRotation != null)
-                    throw new ArgumentException("naturalGrip requires attachment grip and no endRotation.");
                 // Match the anchor used by SketchControlsScript's native world grab.
                 Vector3 anchor = m_Original[1].Geometry.GripAttachPoint.localPosition;
                 anchor.x = 0;
-                var arm = m_RestView.HasValue ? MakeArm(hand == 0 ? -1 : 1, m_RestView.Value.position) : m_Arms[hand];
-                return arm.RelaxedGripPose(contact.position, anchor);
+                return new UnityEngine.Pose(anchor, Quaternion.Inverse(m_Original[hand].Transform.rotation) *
+                    m_Original[hand].Geometry.GripAttachPoint.rotation);
             }
-            if (step.Attachment == "root") { return contact; }
+            if (step.Attachment == "root") { return new UnityEngine.Pose(Vector3.zero, Quaternion.identity); }
             Transform root = m_Original[hand].Transform;
             Transform attachment = step.Attachment == "tip" ? m_Original[hand].Behavior.PointerAttachPoint :
                 step.Attachment == "tool" ? m_Original[hand].Geometry.ToolAttachPoint : null;
-            if (attachment == null) { throw new ArgumentException("attachment must be root, tip or tool, available on the selected hand."); }
+            if (attachment == null) { throw new ArgumentException("attachment must be root, grip, tip or tool, available on the selected hand."); }
             float forward = 0;
             if (step.Attachment == "tool" && !string.IsNullOrEmpty(step.Tool))
             {
@@ -252,11 +272,17 @@ namespace TiltBrush
             }
             Quaternion localRotation = Quaternion.Inverse(root.rotation) * attachment.rotation;
             Vector3 localPosition = Quaternion.Inverse(root.rotation) * (attachment.position + attachment.forward * forward - root.position);
-            Quaternion rotation = contact.rotation * Quaternion.Inverse(localRotation);
-            return new UnityEngine.Pose(contact.position - rotation * localPosition, rotation);
+            return new UnityEngine.Pose(localPosition, localRotation);
         }
 
-        private UnityEngine.Pose Aim(BaseButton button, UnityEngine.Pose panelPose, bool predict)
+        private UnityEngine.Pose RootForContact(int hand, UnityEngine.Pose contact, AutomationScript.Step step,
+            bool freeRoll = false) => m_Arms[hand].ContactPose(contact, ContactLocal(hand, step), freeRoll);
+
+        private UnityEngine.Pose RootForMotion(int hand, UnityEngine.Pose contact, AutomationScript.Step step) =>
+            step.Rotation == null ? m_Arms[hand].RelaxedGripPose(contact.position, ContactLocal(hand, step).position) :
+                RootForContact(hand, contact, step, step.RotationConstraint == "forward");
+
+        private UnityEngine.Pose Aim(BaseButton button, UnityEngine.Pose panelPose, bool predict, Instruction instruction)
         {
             BasePanel panel = button.GetComponentInParent<BasePanel>(true);
             Collider collider = button.GetCollider() ?? button.GetComponent<Collider>();
@@ -264,17 +290,58 @@ namespace TiltBrush
             Vector3 target = predict && collider is BoxCollider box ? panelPose.position +
                 panelPose.rotation * panel.FullScalePoint(box.transform, box.center, true) : collider.bounds.center;
             Quaternion rotation = !predict && button.GetComponentInParent<PopUpWindow>() is PopUpWindow popup ? popup.transform.rotation : panelPose.rotation;
-            return AimAt(target, rotation);
+            return AimAt(target, rotation, instruction);
         }
 
-        private UnityEngine.Pose AimAt(Vector3 target, Quaternion rotation)
+        private UnityEngine.Pose AimAt(Vector3 target, Quaternion rotation, Instruction instruction)
         {
             Vector3 offset = AutomationScript.Vector(m_Script.PointingOffsetMeters, "pointingOffsetMeters");
             if (offset.z > -0.03f)
                 throw new ArgumentException("pointingOffsetMeters must place the tip at least 3 cm in front of the panel.");
-            Vector3 tip = target + rotation * (offset * App.METERS_TO_UNITS);
-            return RootForContact(1, new UnityEngine.Pose(tip,
-                Quaternion.LookRotation(target - tip, m_Yaw * Vector3.up)), new AutomationScript.Step());
+            UnityEngine.Pose PointFrom(Vector3 candidateOffset)
+            {
+                Vector3 tip = target + rotation * (candidateOffset * App.METERS_TO_UNITS);
+                return RootForContact(1, new UnityEngine.Pose(tip,
+                    Quaternion.LookRotation(target - tip, m_Yaw * Vector3.up)), new AutomationScript.Step(), true);
+            }
+            if (instruction.AimPlanned) { return PointFrom(instruction.PointingOffset); }
+            float bestCost = float.PositiveInfinity;
+            UnityEngine.Pose best = default;
+            Exception failure = null;
+            foreach (float lateral in new[] {1f, 0.75f, 0.5f})
+            {
+                var candidateOffset = new Vector3(offset.x * lateral, offset.y, offset.z);
+                try
+                {
+                    var pose = PointFrom(candidateOffset);
+                    float cost = m_Arms[1].Comfort(m_Arms[1].Solve(pose.position, pose.rotation)) +
+                        (CoversTarget(pose, target) ? 100 : 0) + 0.02f * (1 - lateral);
+                    if (cost >= bestCost) { continue; }
+                    best = pose; bestCost = cost; instruction.PointingOffset = candidateOffset;
+                }
+                catch (InvalidOperationException error) { failure = error; }
+            }
+            if (float.IsPositiveInfinity(bestCost))
+                throw new InvalidOperationException("Cannot reach a comfortable pointing pose for the control.", failure);
+            instruction.AimPlanned = true;
+            return best;
+        }
+
+        private bool CoversTarget(UnityEngine.Pose pose, Vector3 target)
+        {
+            Vector3 ray = target - m_ArmHead;
+            Quaternion inverse = Quaternion.Inverse(Quaternion.LookRotation(ray, m_Yaw * Vector3.up));
+            Vector2 min = Vector2.one * float.PositiveInfinity, max = Vector2.one * float.NegativeInfinity;
+            bool inFront = false;
+            foreach (var corner in m_ControllerBounds[1])
+            {
+                Vector3 point = inverse * (pose.position + pose.rotation * corner - m_ArmHead);
+                if (point.z <= 0) { return true; }
+                inFront |= point.z < ray.magnitude;
+                var projected = new Vector2(point.x, point.y) / point.z;
+                min = Vector2.Min(min, projected); max = Vector2.Max(max, projected);
+            }
+            return inFront && min.x <= 0 && max.x >= 0 && min.y <= 0 && max.y >= 0;
         }
 
         private UnityEngine.Pose? PlanFraming()
@@ -284,30 +351,72 @@ namespace TiltBrush
             if (!m_Script.Framing.Enabled)
             {
                 m_RestView = new UnityEngine.Pose(camera.transform.position, camera.transform.rotation);
+                SetArmHead(m_RestView.Value.position);
                 Compile(); return null;
             }
             Exception failure = null;
+            int failureStage = -1;
+            var planningTime = System.Diagnostics.Stopwatch.StartNew();
+            int candidates = 0;
+            AutomationScript.Positive(m_Script.Framing.MaximumPullbackMeters, "maximumPullbackMeters", 0, 0.5f);
+            var fixedEyeSettings = new AutomationShot.FramingSettings
+            {
+                Margin = m_Script.Framing.Margin,
+                MaximumPullbackMeters = 0,
+                MaximumAngleDegrees = m_Script.Framing.MaximumAngleDegrees,
+                PanelGap = m_Script.Framing.PanelGap
+            };
             // Prefer the non-drawing side, then try the other side if the artwork occupies it.
             // Every candidate uses the native panel spawn and the same grip/reach checks.
             foreach (float depth in new[] {0f, -0.06f, 0.06f})
             foreach (float side in new[] {0f, -0.06f, -0.12f, -0.18f, -0.24f, -0.30f, 0.06f, 0.12f, 0.18f, 0.24f, 0.30f, 0.36f, 0.42f})
             foreach (float lift in new[] {0f, 0.06f, 0.12f})
+            foreach (int cameraStep in Enumerable.Range(0, m_Script.Framing.MaximumPullbackMeters == 0 ? 1 : 7))
             {
                 m_PanelLayoutOffset = new Vector3(side, lift, depth);
+                ++candidates;
+                float pullback = m_Script.Framing.MaximumPullbackMeters * cameraStep / 6;
+                var eye = new UnityEngine.Pose(m_Workspace.position -
+                    m_Yaw * Vector3.forward * (pullback * App.METERS_TO_UNITS), m_Workspace.rotation);
+                int stage = 0;
                 try
                 {
                     m_RestView = null;
-                    m_RestView = Compile().Frame(camera, m_Body, m_Script.Framing, aspect);
-                    var view = Compile().Frame(camera, m_Body, m_Script.Framing, aspect);
+                    SetArmHead(eye.position);
+                    stage = 1;
+                    var shot = Compile();
+                    stage = 2;
+                    var view = shot.Frame(camera, eye, fixedEyeSettings, aspect);
+                    bool stable = false;
+                    for (int iteration = 0; iteration < 4; ++iteration)
+                    {
+                        m_RestView = view;
+                        stage = 3;
+                        shot = Compile();
+                        stage = 4;
+                        var next = shot.Frame(camera, eye, fixedEyeSettings, aspect);
+                        if (Quaternion.Angle(next.rotation, view.rotation) < 0.05f)
+                        {
+                            view = next;
+                            stable = true;
+                            break;
+                        }
+                        view = next;
+                    }
+                    if (!stable) { throw new InvalidOperationException("Cannot find a stable camera-relative arm layout."); }
+                    stage = 5;
                     foreach (var item in m_Instructions.Where(i => i.Source.Op == "rest" && i.Hand == 0))
                         if (!WandBelowFrame(item.Path[0], item.RingAngle, view))
                             throw new InvalidOperationException("The resting wand would remain visible in the final frame.");
+                    Debug.Log($"[AutomationPosePlan] {m_Script.Name}: {candidates} candidates, {planningTime.Elapsed.TotalSeconds:F2}s");
                     return view;
                 }
-                catch (InvalidOperationException exception) { failure = exception; }
-                catch (ArgumentException exception) { failure = exception; }
+                catch (Exception exception) when (exception is InvalidOperationException || exception is ArgumentException)
+                {
+                    if (stage >= failureStage) { failure = exception; failureStage = stage; }
+                }
             }
-            throw new InvalidOperationException($"Cannot place panels clear of the artwork for '{m_Script.Name}' within the framing and arm limits. Adjust panelPosition or the artwork positions. {failure?.Message}", failure);
+            throw new InvalidOperationException($"Cannot plan '{m_Script.Name}' with comfortable poses and clear framing. {failure?.Message}", failure);
         }
 
         private bool WandBelowFrame(UnityEngine.Pose wand, float ring, UnityEngine.Pose view)
@@ -337,9 +446,9 @@ namespace TiltBrush
             var from = m_Arms[0].Solve(start.position, start.rotation);
             foreach (float lower in new[] {-0.60f, -0.65f, -0.70f})
             foreach (float depth in new[] {0.15f, 0.08f, 0.02f})
-            foreach (float pitch in new[] {0f, 20f, 40f, 60f})
             {
-                var pose = new UnityEngine.Pose(Point(new Vector3(-0.24f, lower, depth)), m_Yaw * Quaternion.Euler(pitch, 0, 0));
+                var pose = m_Arms[0].RelaxedGripPose(m_ArmHead +
+                    m_Yaw * (new Vector3(-0.24f, lower, depth) * App.METERS_TO_UNITS), Vector3.zero);
                 if (!WandBelowFrame(pose, ring, view)) { continue; }
                 try
                 {
@@ -450,7 +559,7 @@ namespace TiltBrush
                             BoxCollider collider = item.Button.GetComponent<BoxCollider>();
                             if (collider == null) { throw new ArgumentException("Popup preflight requires a box collider on the button."); }
                             Vector3 centre = Quaternion.Inverse(root.rotation) * (collider.transform.TransformPoint(collider.center) - root.position);
-                            item.Path = new[] {AimAt(pose.position + pose.rotation * centre, pose.rotation)};
+                            item.Path = new[] {AimAt(pose.position + pose.rotation * centre, pose.rotation, item)};
                             buttonPose = new UnityEngine.Pose(pose.position + pose.rotation *
                                 (Quaternion.Inverse(root.rotation) * (item.Button.transform.position - root.position)),
                                 pose.rotation * Quaternion.Inverse(root.rotation) * item.Button.transform.rotation);
@@ -464,9 +573,9 @@ namespace TiltBrush
                             {
                                 var collider = item.Panel.GetCollider() as BoxCollider;
                                 Vector3 local = collider != null ? item.Panel.FullScalePoint(collider.transform, collider.center) : Vector3.zero;
-                                item.Path = new[] {AimAt(pose.position + pose.rotation * local, pose.rotation)};
+                                item.Path = new[] {AimAt(pose.position + pose.rotation * local, pose.rotation, item)};
                             }
-                            else { item.Path = new[] {Aim(item.Button, pose, true)}; }
+                            else { item.Path = new[] {Aim(item.Button, pose, true, item)}; }
                             buttonPose = new UnityEngine.Pose(pose.position + pose.rotation * item.Panel.FullScalePoint(item.Button.transform, Vector3.zero),
                                 pose.rotation * Quaternion.Inverse(item.Panel.transform.rotation) * item.Button.transform.rotation);
                         }
@@ -530,22 +639,22 @@ namespace TiltBrush
                     item.Hand = 1;
                     item.Start = predicted[1];
                     var source = floating[item.Panel];
-                    Vector3 target = Point(AutomationScript.Vector(step.Points[0], "panel destination") + m_PanelLayoutOffset);
-                    Quaternion startRotation = m_Yaw * Quaternion.Euler(AutomationScript.Vector(step.Rotation, "panel grip rotation"));
-                    Quaternion endRotation = step.EndRotation == null ?
-                        Quaternion.LookRotation(target - m_Body.position, m_Yaw * Vector3.up) * Quaternion.Inverse(source.rotation) * startRotation :
-                        m_Yaw * Quaternion.Euler(AutomationScript.Vector(step.EndRotation, "panel end grip rotation"));
-                    var destination = new UnityEngine.Pose(target, endRotation * Quaternion.Inverse(startRotation) * source.rotation);
+                    Vector3 target = m_ArmHead + m_Yaw *
+                        ((AutomationScript.Vector(step.Points[0], "panel destination") + m_PanelLayoutOffset) * App.METERS_TO_UNITS);
+                    Quaternion panelRotation = step.Rotation == null ?
+                        Quaternion.LookRotation(target - m_ArmHead, m_Yaw * Vector3.up) :
+                        m_Yaw * Quaternion.Euler(AutomationScript.Vector(step.Rotation, "panel destination rotation"));
+                    var destination = new UnityEngine.Pose(target, panelRotation);
                     item.PanelDestination = destination.position;
                     item.PanelDestinationRotation = destination.rotation;
                     var box = item.Panel.GetCollider() as BoxCollider;
                     Vector3 center = box == null ? Vector3.zero : item.Panel.FullScalePoint(box.transform, box.center);
-                    var contact = RootForContact(1, new UnityEngine.Pose(source.position + source.rotation * center,
-                        startRotation), new AutomationScript.Step {Attachment = "tip"});
-                    var released = RootForContact(1, new UnityEngine.Pose(destination.position + destination.rotation * center,
-                        endRotation), new AutomationScript.Step {Attachment = "tip"});
-                    item.Path = new[] {contact, released};
+                    var contact = AimAt(source.position + source.rotation * center, source.rotation, item);
                     Vector3 tipLocal = Quaternion.Inverse(contact.rotation) * (source.position + source.rotation * center - contact.position);
+                    Quaternion releasedRotation = destination.rotation * Quaternion.Inverse(source.rotation) * contact.rotation;
+                    var released = new UnityEngine.Pose(destination.position + destination.rotation * center -
+                        releasedRotation * tipLocal, releasedRotation);
+                    item.Path = new[] {contact, released};
                     var from = m_Arms[1].Solve(item.Start.position, item.Start.rotation);
                     var grab = m_Arms[1].Solve(contact.position, contact.rotation);
                     var end = m_Arms[1].Solve(item.Path[1].position, item.Path[1].rotation);
@@ -570,7 +679,8 @@ namespace TiltBrush
                         (step.Curve == "bezier" && step.Points.Length != 4))
                         throw new ArgumentException("move needs points and curve polyline, or exactly four points for bezier.");
                     Vector3 anchor = Anchor(step.Anchor, step.AnchorT);
-                    Quaternion startRotation = m_Yaw * Quaternion.Euler(AutomationScript.Vector(step.Rotation, "rotation"));
+                    Quaternion startRotation = step.Rotation == null ? Quaternion.identity :
+                        m_Yaw * Quaternion.Euler(AutomationScript.Vector(step.Rotation, "rotation"));
                     Quaternion endRotation = step.EndRotation == null ? startRotation : m_Yaw * Quaternion.Euler(AutomationScript.Vector(step.EndRotation, "endRotation"));
                     var points = step.Points.Select(p => anchor + m_Yaw * (AutomationScript.Vector(p, "move point") * App.METERS_TO_UNITS)).ToArray();
                     item.Path = new UnityEngine.Pose[step.Points.Length == 1 ? 1 : 129];
@@ -581,7 +691,7 @@ namespace TiltBrush
                         int low = Mathf.Min(Mathf.FloorToInt(segment), points.Length - 1);
                         Vector3 point = step.Curve == "bezier" ? ProceduralArm.Bezier(points[0], points[1], points[2], points[3], t) :
                             Vector3.Lerp(points[low], points[Mathf.Min(low + 1, points.Length - 1)], segment - low);
-                        item.Path[i] = RootForContact(item.Hand, new UnityEngine.Pose(point, Quaternion.Slerp(startRotation, endRotation, t)), step);
+                        item.Path[i] = RootForMotion(item.Hand, new UnityEngine.Pose(point, Quaternion.Slerp(startRotation, endRotation, t)), step);
                         if (step.PaddingMeters < 0 || float.IsNaN(step.PaddingMeters) || float.IsInfinity(step.PaddingMeters))
                             throw new ArgumentException("paddingMeters must be finite and nonnegative.");
                         var bounds = new Bounds(point, Vector3.one * (2 * step.PaddingMeters * App.METERS_TO_UNITS));
@@ -598,7 +708,7 @@ namespace TiltBrush
                     Vector3 restingPoint = item.Hand == 0 ? new Vector3(-0.24f, -0.60f, 0.15f) : new Vector3(0.24f, -0.48f, 0.23f);
                     item.RingAngle = ring;
                     item.Path = new[] {item.Hand == 0 && m_RestView.HasValue ? PlanWandRest(predicted[0], ring, m_RestView.Value) :
-                        new UnityEngine.Pose(Point(restingPoint), item.Hand == 0 ? m_OriginalPoses[0].rotation : m_Yaw)};
+                        m_Arms[item.Hand].RelaxedGripPose(m_ArmHead + m_Yaw * (restingPoint * App.METERS_TO_UNITS), Vector3.zero)};
                     predicted[item.Hand] = item.Path[0];
                 }
                 else if (step.Op == "input" && step.Thumbstick != null)
@@ -663,10 +773,10 @@ namespace TiltBrush
             item.Start = m_Poses[item.Hand];
             if (item.Parallel != null) { item.Parallel.Start = m_Poses[item.Parallel.Hand]; }
             Vector3 gazeTarget = item.Panel != null ? item.Panel.transform.position :
-                item.Path != null ? item.Path.Last().position : m_Body.position + m_Body.rotation * Vector3.forward;
-            Vector3 gazeDirection = gazeTarget - m_Body.position;
+                item.Path != null ? item.Path.Last().position : m_Workspace.position + m_Workspace.rotation * Vector3.forward;
+            Vector3 gazeDirection = gazeTarget - m_ArmHead;
             App.VrSdk.VirtualSimulation.InteractionGaze = gazeDirection.sqrMagnitude > 0.0001f ?
-                (Ray?)new Ray(m_Body.position, gazeDirection.normalized) : m_OriginalGaze;
+                (Ray?)new Ray(m_ArmHead, gazeDirection.normalized) : m_OriginalGaze;
             m_ReachStart = m_Arms[item.Hand].Solve(item.Start.position, item.Start.rotation);
             if (item.Source.Op == "click" && item.Button != null) { item.Button.Pressed += ButtonPressed; }
             Debug.Log($"[AutomationScript] {Status}");
@@ -737,7 +847,7 @@ namespace TiltBrush
                             break;
                         case "focus":
                             var focusCollider = item.Panel.GetCollider();
-                            var focus = AimAt(focusCollider.bounds.center, item.Panel.transform.rotation);
+                            var focus = AimAt(focusCollider.bounds.center, item.Panel.transform.rotation, item);
                             m_Poses[1] = m_Arms[1].Reach(m_ReachStart, m_Arms[1].Solve(focus.position, focus.rotation), t);
                             if (m_Elapsed >= item.DurationSeconds + 0.45f && SketchControlsScript.m_Instance.IsUserLookingAtPanel(item.Panel)) { Advance(); }
                             else if (m_Elapsed > item.DurationSeconds + 8) { throw new InvalidOperationException("The panel did not acquire focus."); }
@@ -857,7 +967,7 @@ namespace TiltBrush
                 collider.bounds.size.sqrMagnitude >= 0.000001f;
             // Approach the expanded target even while hover-driven controls are collapsed.
             // Waiting for their collider before moving would require a separate panel-focus detour.
-            var aim = Aim(item.Button, new UnityEngine.Pose(item.Panel.transform.position, item.Panel.transform.rotation), m_Stage == 0 || !ready);
+            var aim = Aim(item.Button, new UnityEngine.Pose(item.Panel.transform.position, item.Panel.transform.rotation), m_Stage == 0 || !ready, item);
             if (m_Stage == 0)
             {
                 if (m_Triggers[1]) { throw new InvalidOperationException("Release the brush trigger before clicking."); }

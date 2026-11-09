@@ -20,7 +20,7 @@ namespace TiltBrush
         public OutputOptions Output = new OutputOptions();
         public float UpperArmMeters = 0.30f;
         public float ForearmMeters = 0.30f;
-        public float[] PanelPosition = {-0.12f, -0.10f, 0.34f};
+        public float[] PanelPosition = {-0.12f, -0.10f, 0.40f};
         public float[] PointingOffsetMeters = {0.12f, 0.02f, -0.12f};
         public AutomationShot.FramingSettings Framing = new AutomationShot.FramingSettings();
         public Preparation[] Prepare = Array.Empty<Preparation>();
@@ -118,13 +118,13 @@ namespace TiltBrush
             public float Seconds = 1.2f;
             public string Hand = "brush";
             public string Attachment = "tip";
-            public bool NaturalGrip;
             public Step Parallel;
             public string Anchor;
             public float AnchorT = 0.5f;
             public float[][] Points;
             public string Curve = "polyline";
-            public float[] Rotation = {25, -35, 0};
+            public float[] Rotation;
+            public string RotationConstraint = "full";
             public float[] EndRotation;
             public float PaddingMeters = 0.02f;
             public Selector Target;
