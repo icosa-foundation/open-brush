@@ -21,58 +21,111 @@ namespace TiltBrush
 {
     partial class MarkovPen
     {
-        /// @class Mapping
-        /// @brief Represents a mapping between arc length positions and offsets from style curve to base path.
-        ///
-        /// Samples the style curve, projects samples onto the base path, and computes mapping and offsets.
+        /// <summary> 
+        /// Represents the mapping between a style curve and a base path
+        /// </summary>
         public abstract class Mapping
         {
-            // Curves
+            /// <summary>
+            /// The base path
+            /// </summary>
             protected BasePath m_BasePath;
+            /// <summary> 
+            /// The style curve
+            /// <summary>
             protected Curve m_StyleCurve;
 
-            //Mapping
+            /// <summary>
+            /// The actual mapping containing associations between style curve and base path
+            /// </summary>
             protected List<Vector2> m_Mapping = new();
 
+            /// <summary>
+            /// Request the size of a mapping
+            /// </summary>
+            /// 
+            /// <returns>
+            /// The number of associations in the mapping
+            /// </returns>
             public int Size()
             {
                 return m_Mapping.Count;
             }
 
+            /// <summary>
+            /// Retrieve the last association in the mapping
+            /// </summary>
+            /// 
+            /// <returns>
+            /// The last association in the Mapping
+            /// </returns>
             public Vector2 Last()
             {
                 return m_Mapping.Last();
             }
 
-            /// @brief Check if the mapping is empty.
-            /// @return True if the mapping is empty; otherwise false.
+            /// <summary>
+            /// Check if the mapping is empty
+            /// </summary>
+            /// 
+            /// <returns>
+            /// True if the mapping is empty; false otherwise
+            /// </returns>
             public bool IsEmpty()
             {
                 return m_Mapping.Count == 0;
             }
 
-            /// @brief Gets the association at the specified index.
-            /// @param index The index of the association to retrieve.
-            /// @return A Vector2 representing the association (x = arc length position, y = offset).
+            /// <summary>
+            /// Get the association at the specified index
+            /// </summary>
+            /// 
+            /// <param name="index">
+            /// The index of the association to retrieve</param>
+            /// <returns>
+            /// A Vector2 representing the association (x = arc length position, y = offset)
+            /// </returns>
             public Vector2 GetAssociation(int index)
             {
                 return m_Mapping[index];
             }
         }
 
+        /// <summary>
+        /// Represents an example mapping to train a Markov model with
+        /// </summary>
+        /// 
+        /// <remarks>
+        /// Handles the projection of samples on the style curve
+        /// onto the base path and computes the offsets
+        /// needed to train the probabilistic model.
+        /// </remarks>
         public class ExampleMapping : Mapping
         {
-            // Sampling interval
+            /// @brief Default sampling interval
             private const float k_SamplingInterval = 0.025f;
+            /// @brief Actual sampling interval
             private float m_SamplingInterval = k_SamplingInterval;
 
-            // Offsets along base path
+            /// @brief Offsets between each projection point on the base path
+            /// and its predecessor
             private List<float> m_OffsetsAlongBasePath;
 
-            /// @brief Constructor for the Mapping class.
-            /// @param styleCurve The style curve for the mapping.
-            /// @param basePath The base path for the mapping.
-            /// @exception NullReferenceException Thrown if styleCurve or basePath is null.
+            /// <summary>
+            /// Construct an example mapping between a style curve and a base path
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Associates sample points on the style curve with their projections on the base path.
+            /// </remarks>
+            /// 
+            /// <param name="basePath">
+            /// The base path for the mapping
+            /// </param>
+            /// <param name="styleCurve">
+            /// The style curve for the mapping
+            /// </param>
+
             public ExampleMapping(BasePath basePath, Curve styleCurve)
             {
                 Debug.Log("MarkovPen: compute Mapping");
@@ -104,16 +157,37 @@ namespace TiltBrush
                 Debug.Log("MarkovPen: Mapping size: " + m_Mapping.Count);
             }
 
-            /// @brief Check if the mapping is configured as repetitive.
-            /// @return True if the mapping is considered repetitive.
+            /// <summary>
+            /// Report if the mapping is repetitive
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// If the beginning of the mapping fits its end, the mapping can be repeated cyclically.
+            /// </remarks>
+            /// 
+            /// <returns>
+            /// true if the mapping is repetitive, false otherwise
+            /// </returns>
             public bool IsRepetitive()
             {
                 return true;
             }
 
-            /// @brief Get the offsets for a given index in the mapping.
-            /// @param index The index for which offsets are requested.
-            /// @return A Vector2 containing the offset values.
+            /// <summary>
+            /// Get the offsets along base path and normal at a specific index
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Returns the offsets for joining a new association to the last one.
+            /// </remarks>
+            /// 
+            /// <param name="index">
+            /// Index in the mapping
+            /// </param>
+            /// 
+            /// <returns>
+            /// Point with x = arc length distance to predecessor, y = offset along smooth normal
+            /// </returns>
             public Vector2 GetOffsets(int index)
             {
                 return new Vector2(
@@ -121,13 +195,30 @@ namespace TiltBrush
                     m_Mapping[index].y);
             }
 
+            /// <summary>
+            /// Get the maximum offset along smooth normal vectors in the mapping
+            /// </summary>
+            /// 
+            /// <returns>
+            /// Maximum offset
+            /// </returns>
             public float GetMaxOffsetAlongNormals()
             {
                 return m_BasePath.Tap;
             }
 
-            /// @brief Compute the sampling interval to evenly sample the arc length of the style curve.
-            /// @return The computed sampling interval.
+            /// <summary>
+            /// Compute optimal sampling interval
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Adjusts the sampling interval to evenly distribute samples
+            /// along the curve.
+            /// </remarks>
+            /// 
+            /// <returns>
+            /// The adjusted sampling interval
+            /// </returns>
             public float ComputeSamplingInterval()
             {
                 int numSamples =
@@ -138,9 +229,17 @@ namespace TiltBrush
                 return m_StyleCurve.ArcLength() / numSamples;
             }
 
-            /// @brief Sample the style curve uniformly based on the given sampling interval.
-            /// @param samplingInterval The interval representing arc length for sampling.
-            /// @return A list of sampled points on the style curve.
+            /// <summary>
+            /// Sample the style curve based on the given sampling interval
+            /// </summary>
+            /// 
+            /// <param name="samplingInterval">
+            /// The arc length interval separating the samples
+            /// </param>
+            /// 
+            /// <returns>
+            /// A list of sample points on the style curve
+            /// </returns>
             public List<Vector3> SampleStyleCurve(float samplingInterval)
             {
                 List<Vector3> samples = new();
@@ -156,9 +255,17 @@ namespace TiltBrush
                 return samples;
             }
 
-            /// @brief Projects a list of 3D samples onto the base path and returns their projections.
-            /// @param samples A list of 3D vectors representing the samples to be projected.
-            /// @return A list of float values representing the projections onto the base path.
+            /// <summary>
+            /// Project a number of points onto the base path
+            /// </summary>
+            /// 
+            /// <param name="samples">
+            /// A list of 3D points to be projected
+            /// </param>
+            /// 
+            /// <returns>
+            /// Arc length positions of the projected locations
+            /// </returns>
             public List<float> Project(List<Vector3> samples)
             {
                 List<float> projections = new();
@@ -172,9 +279,20 @@ namespace TiltBrush
                 return projections;
             }
 
-            /// @brief Associate arc length positions of projected points to the corresponding offsets.
-            /// @param samples Samples aligned along the style curve.
-            /// @param projections Projected arc length positions aligned along the base path.
+            /// <summary>
+            /// Record the offsets between samples and their projections
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Compute the actual mapping between style curve and base path.
+            /// </remarks>
+            /// 
+            /// <param name="samples">
+            /// The samples to be projected
+            /// </param>
+            /// <param name="projections">
+            /// The arc length positions of the projected locations
+            /// </param>
             private void ComputeMapping(List<Vector3> samples, List<float> projections)
             {
                 m_Mapping = new();
@@ -201,7 +319,13 @@ namespace TiltBrush
                 }
             }
 
-            /// @brief Compute the maximal offset from the associations in the mapping.
+            /// <summary>
+            /// Compute the maximum offset in normal direction of all associations in the mapping
+            /// </summary>
+            /// 
+            /// <returns>
+            /// The maximum offset
+            /// </returns>
             private float ComputeMaxOffsetInNormalDirection()
             {
                 float maxOffset = 0;
@@ -215,8 +339,14 @@ namespace TiltBrush
                 return maxOffset;
             }
 
-            /// @brief Compute the offsets by iterating through the mapping and provide repetition handling.
-            /// Synchronizes start and end points in the mapping.
+            /// <summary>
+            /// Compute offsets between each projection point on the base path and its predecessor
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Records the arc length differences between consecutive associations
+            /// (arc length position and normal offset pairs)
+            /// </remarks>
             private void ComputeOffsetsAlongBasePath()
             {
                 m_OffsetsAlongBasePath = new List<float>(m_Mapping.Count);
@@ -245,10 +375,24 @@ namespace TiltBrush
             }
         }
 
+        /// <summary>
+        /// Represents a target mapping used to synthesize new style curves
+        /// </summary>
         public class TargetMapping : Mapping
         {
             public int LastIndex { get; private set; }
 
+            /// <summary>
+            /// Construct an empty target mapping
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Creates a new mapping with initially no associations.
+            /// </remarks>
+            /// 
+            /// <param name="maxOffsetAlongNormals">
+            /// The maximum offset between samples and projections in the example mapping
+            /// </param> 
             public TargetMapping(float maxOffsetAlongNormals)
             {
                 LastIndex = -1;
@@ -256,39 +400,40 @@ namespace TiltBrush
                 m_StyleCurve = new Curve();
             }
 
+            /// <summary>
+            /// Add a knot point to the internal base path
+            /// </summary>
+            /// 
+            /// <param name="point">
+            /// The 3D point to be added
+            /// </param>
+            /// <param name="upVector">
+            /// The up vector corresponding to the knot
+            /// </param>
             public void AddBasePoint(Vector3 point, Vector3 upVector)
             {
                 m_BasePath.AddControlPoint(point, upVector);
             }
 
-            /// @brief Inflate an association of the mapping to obtain a tuple of 3D points (base point and inflated point).
-            /// @param association The 2D association containing arc length position and offset.
-            /// @return A tuple of two Vector3 points representing the inflated segment.
-            public Tuple<Vector3, Vector3> Inflate(Vector2 association)
-            {
-                Vector3 basePoint =
-                    m_BasePath.PositionAt(association.x);
-
-                Vector3 normal =
-                    m_BasePath.SmoothNormalAt(association.x);
-
-                Vector3 toPoint =
-                    Vector3.Scale(
-                        normal.normalized,
-                        new Vector3(
-                            association.y,
-                            association.y,
-                            association.y));
-
-                return new Tuple<Vector3, Vector3>(
-                    basePoint,
-                    basePoint + toPoint);
-            }
-
-            /// @brief Apply offsets to the mapping at a specific index and update the style curve.
-            /// @param offsets A Vector2 containing the offsets to be applied.
-            /// @param index The index at which the offsets are applied.
-            /// @return True if the offsets are successfully applied; otherwise false.
+            /// <summary>
+            /// Apply offsets to create a new mapping entry
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Adds a new association (arc length position and normal offset pair) 
+            /// to the mapping by applying the provided offsets to the previous association.
+            /// </remarks>
+            /// 
+            /// <param name="offsets">
+            /// Point with x = arc length position, y = offset along smooth normal
+            /// </param>
+            /// <param name="index">
+            /// The index of the association in the example mapping
+            /// </param>
+            /// 
+            /// <returns>
+            /// true if successful, false if the generated association is beyond the end of the base path
+            /// </returns>
             public bool Apply(Vector2 offsets, int index)
             {
                 // Compute new arcLength position
@@ -312,6 +457,46 @@ namespace TiltBrush
                 LastIndex = index;
 
                 return true;
+            }
+
+            /// <summary>
+            /// Inflate an association to create a point on the style curve 
+            /// and a projected point on the base path
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// /// Converts an association (arc length position and normal offset pair)
+            /// into a pair of points: The projected point on the base path 
+            /// and knot point on the style curve. The latter is obtained
+            /// by walking from the base path along the smoothed normal vector.
+            /// </remarks>
+            /// 
+            /// <param name="association">
+            /// Point with x = arc length position, y = offset along smooth normal
+            /// </param>
+            /// 
+            /// <returns>
+            /// Pair of points: first = base point, second = style curve point
+            /// </returns>
+            public Tuple<Vector3, Vector3> Inflate(Vector2 association)
+            {
+                Vector3 basePoint =
+                    m_BasePath.PositionAt(association.x);
+
+                Vector3 normal =
+                    m_BasePath.SmoothNormalAt(association.x);
+
+                Vector3 toPoint =
+                    Vector3.Scale(
+                        normal.normalized,
+                        new Vector3(
+                            association.y,
+                            association.y,
+                            association.y));
+
+                return new Tuple<Vector3, Vector3>(
+                    basePoint,
+                    basePoint + toPoint);
             }
         }
     }

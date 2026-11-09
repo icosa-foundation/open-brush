@@ -20,19 +20,31 @@ namespace TiltBrush
 {
     partial class MarkovPen
     {
-        /// @class SynthesisEngine
-        /// @brief Synthesis engine of a Markov Pen that generates associations a the target mapping
+        /// <summary>
+        /// Represents the synthesis engine of a Markov Pen 
+        /// that generates associations of the target mapping
+        /// </summary>
         private class SynthesisEngine
         {
-            /// @brief Reconstruct an example mapping one-to-one
-            ///
+            /// <summary>
+            /// Reconstruct an example mapping one-to-one
+            /// </summary>
+            /// 
+            /// <remarks>
             /// Exactly reproduces the example mapping along a target base path
             /// by iteratively applying offsets to the target mapping
-            ///
-            /// @param example_mapping The original mapping to reproduce
-            /// @param target_mapping The target mapping to populate
-            /// @return A list of control points on the target style curve
-            /// and the associated rotation of the controller
+            /// </remarks>
+            /// 
+            /// <param name="exampleMapping">
+            /// The original mapping to reproduce
+            /// </param>
+            /// 
+            /// <param name="targetMapping">
+            /// The target mapping to populate
+            /// </param>
+            /// <returns>
+            /// A list of control points on the target style curve
+            /// and the associated rotations of the controller
             public List<Tuple<Vector3, Quaternion>> Reconstruct(ExampleMapping exampleMapping, TargetMapping targetMapping)
             {
 

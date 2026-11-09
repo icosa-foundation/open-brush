@@ -21,29 +21,64 @@ using Vector3 = UnityEngine.Vector3;
 namespace TiltBrush
 {
     public partial class MarkovPen
-    {
-        /// @class BasePath
-        /// @brief Represents the base path of the MarkovPen.
-        ///
-        /// The BasePath class extends the functionality of the Curve class and provides
-        /// additional features such as projection, spline functionalities, and smoothing functionalities.
+
+    { 
+        /// <summary>
+        /// Represents the base path of a Markov Pen
+        /// </summary>
+        /// 
+        /// <remarks>
+        /// Extends the functionality of the Curve class and provides
+        /// additional features such as projection and smoothing functionalities.
+        /// </remarks>
         public class BasePath : Curve
         {
+            /// <summary>
+            /// The tap (half-window size) used for normal smoothing
+            /// </summary>
             public float Tap { get; private set; }
 
+            /// <summary> 
+            /// The list of up vectors for each knot
+            /// </summary>
             private readonly List<Vector3> m_UpVectors = new();
 
+            /// <summary> 
+            /// The list of smooth normals for each knot
+            /// <summary>
             private readonly List<Vector3> m_SmoothNormals = new();
 
-            /// @brief Construct a target base path
-            public BasePath(float maxOffsetAlongNormals, float responsiveness = 0.75f) : base(responsiveness)
+            /// <summary> 
+            /// Construct an empty BasePath instance
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Creates a new target base path with initially no knots and zero arc length.
+            /// </remarks>
+            /// 
+            /// <param name="smoothingTap">  
+            /// The tap (half window size) for normal smoothing
+            /// </param>
+            /// <param name="responsiveness">
+            /// Responsiveness parameter controlling Elasticurve smoothing 
+            /// (default: 0.75).
+            /// </param>
+            public BasePath(float smoothingTap, float responsiveness = 0.75f) : base(responsiveness)
             {
-                Tap = maxOffsetAlongNormals;
+                Tap = smoothingTap;
             }
 
-            /// @brief Construct an exmple base path
+            /// <summary> 
+            /// Construct a BasePath instance from a list of control points
+            /// </summary>
             ///
-            /// @params List<Vector3> controlPoints - control points forming base path in OpenBrush
+            /// <remarks>
+            /// Creates a fully initialized example base path.
+            /// </remarks>
+            ///
+            /// <param name="controlPoints">
+            /// 3D Points forming the base path in OpenBrush
+            /// </param>
             public BasePath(List<Vector3> controlPoints)
             {
                 Vector3 upVector = Orthogonal(controlPoints.Last() - controlPoints.First()).normalized;
@@ -53,10 +88,21 @@ namespace TiltBrush
                 Finish();
             }
 
-            /// @brief Add a control point to the base path and update related information.
-            /// Extends the base class method to incorporate smoothing functionalities based on the tap value.
-            /// @param controlPoint The control point to be added to the base path.
-            /// @param upVector The up vector associated with the control point.
+            /// <summary>
+            /// Add a control point to a target base path 
+            /// and perform all necessary updates
+            /// </summary>
+            ///
+            /// <remarks>
+            /// Extends the base class method to incorporate smoothing of up vector and normals.
+            /// </remarks>
+            ///
+            /// <param name="controlPoint">
+            /// The new control point to be added
+            /// </param>
+            /// <param name="upVector">
+            /// The up vector associated with the control point
+            /// </param>
             public void AddControlPoint(Vector3 controlPoint, Vector3 upVector)
             {
                 base.AddControlPoint(controlPoint);
@@ -85,9 +131,18 @@ namespace TiltBrush
                 }
             }
 
-            /// @brief Compute the total arc length of the curve.
-            /// Returns the last precomputed arc length position if enough data exists.
-            /// @return The total arc length of the curve.
+            /// <summary> 
+            /// Request the total arc length of the base path
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Returns the last arc length position
+            /// for which smooth normals have already been computed.
+            /// </remarks>
+            /// 
+            /// <returns>
+            /// The total arc length of the base path
+            /// </returns>
             public override float ArcLength()
             {
                 if (Tap == 0)
@@ -95,23 +150,32 @@ namespace TiltBrush
                     return base.ArcLength();
                 }
 
-                if (m_UpVectors.Count < 4)
-                {
-                    return 0;
-                }
-
                 return m_ArcLengthPositions[Math.Max(m_SmoothNormals.Count - 1, 0)];
             }
 
+            /// <summary>
+            /// Set the tap (half-window size) used for normal smoothing
+            /// </summary>
+            /// 
+            /// <param name="tap">
+            /// The smoothing tap
+            /// </param>
             public void Smooth(float tap)
             {
                 Tap = tap;
             }
 
-            /// @brief Retrieve the smoothed normal vector at a specified arc length along the curve.
-            /// Uses cubic Hermite interpolation between precomputed smooth normals.
-            /// @param l The arc length at which to retrieve the smoothed normal vector.
-            /// @return The computed smoothed normal vector at the specified arc length.
+            /// <summary>
+            /// Evaluate smoothed normal vector at given arc length position
+            /// </summary>
+            /// 
+            /// <param name="l"> 
+            /// Arc length position (may be negative or beyond the arc length of the base path)
+            /// </param>
+            /// 
+            /// <returns>
+            /// Smoothed normal vector
+            /// </returns>
             public Vector3 SmoothNormalAt(float l)
             {
                 if (l <= 0)
@@ -142,10 +206,17 @@ namespace TiltBrush
                 return Interpolate(smoothNormals, SegmentTime(t));
             }
 
-            /// @brief Computes a smoothed tangent vector based on the specified center position.
-            /// Averages the normalized first derivatives at positions within a window around the given center.
-            /// @param center The center position around which the smoothed tangent is calculated.
-            /// @return The computed smoothed tangent vector.
+            /// <summary>
+            /// Compute smoothed tangent vector at given index
+            /// </summary>
+            /// 
+            /// <param name="l">
+            /// The knot index starting from 0
+            /// </param>
+            /// 
+            /// <returns> 
+            /// Smoothed tangent vector
+            /// </returns>
             private Vector3 ComputeSmoothTangent(int index)
             {
                 float center = m_ArcLengthPositions[index];
@@ -161,11 +232,17 @@ namespace TiltBrush
                 return smoothTangentVector / windowSize;
             }
 
-            /// @brief Computes a smoothed normal vector based on the provided up vector and smooth tangent.
-            /// Projects the up vector onto the smooth tangent and subtracts it, then normalizes the result.
-            /// @param upVector The original up vector to be smoothed.
-            /// @param smoothTangent The smooth tangent vector to influence the smoothing.
-            /// @return A normalized vector representing the computed smoothed normal.
+            /// <summary>
+            /// Compute smoothed normal vector at given index
+            /// </summary>
+            /// 
+            /// <param name="index"> 
+            /// The knot index starting from 0
+            /// </param>
+            /// 
+            /// <returns>
+            /// Smoothed normal vector
+            /// </returns>
             private Vector3 ComputeSmoothNormal(int index)
             {
                 Vector3 upVector = m_UpVectors[index].normalized * 100;
@@ -178,9 +255,24 @@ namespace TiltBrush
                 return (upVector - smoothTangentDirection * projection).normalized;
             }
 
-            /// @brief Project a point onto the curve and return the arc length positions of the projections.
-            /// @param toProject The point to be projected onto the curve.
-            /// @return A list of arc length positions corresponding to the projections.
+            /// <summary>
+            /// Project a point onto the base path
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Determines the arc length positions 
+            /// where the prolonged smooth normal 
+            /// (approximately) runs through the given 2D point.<br>
+            /// Note that there may be multiple approximate projection points.
+            /// </remarks>
+            ///
+            /// <param name="toProject">  
+            /// Point to project
+            /// </param>
+            /// 
+            /// <returns> 
+            /// List of arc length positions the point projects to
+            /// </returns>
             public List<float> Project(Vector3 toProject)
             {
                 List<float> projections = new();
@@ -240,13 +332,29 @@ namespace TiltBrush
                 return projections;
             }
 
-            /// @brief Recursively project a point onto a curve segment and update the arc length positions.
-            /// Uses a recursive shooting method between arc length positions l1 and l2.
-            /// @param point The point to be projected onto the curve segment.
-            /// @param l1 The starting arc length position of the curve segment.
-            /// @param l2 The ending arc length position of the curve segment.
-            /// @param projections The list to store the resulting arc length positions.
-            /// @param normal The normal vector used for the shooting method.
+            /// <summary>
+            /// Project a point onto a portion of the base path
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Determines the arc length positions within a specified interval 
+            /// where the prolonged smooth normal 
+            /// (approximately) runs through the given 2D point.<br>
+            /// Note that there may be multiple approximate projection points.
+            /// </remarks>
+            /// 
+            /// <param name="point">
+            /// Point to project
+            /// </param>
+            /// <param name="l1">
+            /// Beginning of arc length interval
+            /// </param>
+            /// <param name="l2">
+            /// End of arc length interval
+            /// </param>
+            /// <param name="projections">  
+            /// List of arc length positions the point projects to
+            /// </param>
             private void Project(
                 Vector3 point,
                 float l1,
@@ -278,11 +386,28 @@ namespace TiltBrush
                 Project(point, middle, l2, projections);
             }
 
-            /// @brief Perform a shooting method to calculate the signed distance from a point to the curve.
-            /// @param point The point from which to calculate the distance to the curve.
-            /// @param normal The normal vector used for the shooting method.
-            /// @param l The arc length position on the curve.
-            /// @return The signed distance from the point to the curve.
+            /// <summary>
+            /// Compute the distance of a 2D point 
+            /// to the prolonged smooth normal 
+            /// at the given arc length position
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Projects a point onto the smoothed normal vector 
+            /// at the specified arc length position
+            /// and computes the signed distance of the point to the projected point.
+            /// </remarks>
+            /// 
+            /// <param name="point"> 
+            /// The point to project
+            /// </param>
+            /// <param name="l">
+            /// Arc length position at which the smooth normal is to be evaluated
+            /// </param>
+            /// 
+            /// <returns> 
+            /// Signed distance to the normal line at l
+            /// </returns>
             private float Shoot(Vector3 point, float l)
             {
                 Vector3 basePoint = PositionAt(l);
@@ -306,8 +431,13 @@ namespace TiltBrush
                 return distance;
             }
 
-            /// @brief Finalize the curve by computing smoothed tangents and normals for the remaining control points.
-            /// Ensures that the smoothing process is completed for all control points.
+            /// <summary>
+            /// Finalize the base path
+            /// </summary>
+            /// 
+            /// <remarks>
+            /// Computes remaining smooth normals.
+            /// </remarks>
             public override void Finish()
             {
                 base.Finish();

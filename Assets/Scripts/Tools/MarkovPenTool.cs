@@ -19,38 +19,51 @@ using UnityEngine;
 
 namespace TiltBrush
 {
-    /// @brief Drawing tool that synthesizes free-hand curve styles along arbitrary base paths
-    ///        Until the Markov synthesis is implemented every method delegates to FreePaintTool,
-    ///        so the tool behaves identically to plain free-hand drawing.
-    /// @note in future versions it will be using a Markov Chain or an autoregressive hidden Markov Model
-    /// 
+    /// <summary>
+    /// Drawing tool that synthesizes free-hand curve styles along arbitrary base paths
+    /// </summary>
     public class MarkovPenTool : FreePaintTool
     {
+        /// <summary>
+        /// The internal MarkovPen instance that handles training and synthesis
+        /// </summary>
         private static MarkovPen m_MarkovPen;
 
+        /// <summary>
+        /// The last pointer position and rotation to be returned when there is no more input
+        /// </summary>
         private Tuple<Vector3, Quaternion> m_LastPointer = new(Vector3.zero, Quaternion.identity);
 
-        /// @brief Activate or deactivate the Markov Pen tool
-        /// @param isEnabled true to activate the tool; false to deactivate it.
+        /// <summary>
+        /// Activate or deactivate the Markov Pen tool
+        /// </summary>
+        /// 
+        /// <param name="isEnabled">
+        /// true to activate the tool; false to deactivate it
+        /// </param>
         public override void EnableTool(bool isEnabled)
         {
             base.EnableTool(isEnabled);
         }
 
-        /// @brief Show or hide the tool's visual indicators
-        /// @param isHidden true to hide the tool visuals; false to show them.
-        /// @note  Later: indicates Up Vector? adds visual indicator for controller position
+        /// <summary>
+        /// Show or hide the tool's visual indicators
+        /// </summary>
+        /// <param name="isHidden">
+        /// true to hide the tool visuals; false to show them
+        /// </param>
         public override void HideTool(bool isHidden)
         {
             base.HideTool(isHidden);
         }
 
-        /// @brief Read controller input and drive synthesis
+        /// <summary>
+        /// Read controller input and drive synthesis
+        /// </summary>
         ///
+        /// <remarks>
         /// Called every tool update tick.
-        /// @note  Later: sample the target base path B from the controller position each frame,
-        ///        run one step of DCMM synthesis to produce the next
-        ///        point on B', and feed the result into the pointer manager.
+        /// </remarks>
         public override void UpdateTool()
         {
             if (m_MarkovPen == null)
@@ -99,8 +112,13 @@ namespace TiltBrush
             }
         }
 
-        /// @brief Return the world-space position and rotation for the brush pointer
-        /// @returns A tuple of (position, rotation) in global space.
+        /// <summary>
+        /// Retrieve the world-space position and rotation for the brush pointer
+        /// </summary>
+        /// 
+        /// <returns>
+        /// A tuple of (position, rotation) in global coordinates
+        /// </returns>
         protected override (Vector3, Quaternion) GetPointerPosition()
         {
 
@@ -109,10 +127,15 @@ namespace TiltBrush
             return (m_LastPointer.Item1, m_LastPointer.Item2);
         }
 
-        /// @brief Create a new Markov pen
-        /// 
-        /// @param basePath - Control Points of the given example Base Path
-        /// @param styleCurve - Control points of the given example Style Curve
+        /// <summary>
+        /// Create a new Markov pen
+        /// </summary>
+        /// <param name="basePath">
+        /// Control Points of the example base path
+        /// </param>
+        /// <param name="styleCurve">
+        /// Control points of the example style curve
+        /// </param>
         public static void CreateMarkovPen(List<Vector3> basePath, List<Vector3> styleCurve)
         {
             m_MarkovPen = new MarkovPen(basePath, styleCurve);
