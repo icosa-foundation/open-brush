@@ -19,6 +19,11 @@ namespace TiltBrush
 {
     public class StrokeCropping
     {
+        internal sealed class ActiveSelectionException : System.InvalidOperationException
+        {
+            public ActiveSelectionException() : base("Deselect before cropping.") { }
+        }
+
         public static List<Stroke> CropStrokesToSphere(Vector3 center_ws, float radius_ws,
             IEnumerable<Stroke> strokes = null, bool keepInside = true)
         {
@@ -71,6 +76,11 @@ namespace TiltBrush
 
         private static List<Stroke> CropStrokes(StrokeCropVolume volume, IEnumerable<Stroke> strokes, bool keepInside)
         {
+            if (SelectionManager.m_Instance != null && SelectionManager.m_Instance.HasSelection)
+            {
+                throw new ActiveSelectionException();
+            }
+
             var requested = (strokes ?? SketchMemoryScript.AllStrokes())
                 .Where(stroke => stroke != null && stroke.IsGeometryEnabled).Distinct().ToArray();
             var targets = new List<(Stroke stroke, TrTransform toVolume)>();

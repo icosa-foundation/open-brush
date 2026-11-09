@@ -845,14 +845,16 @@ Success. If you are not automatically redirected, please visit <a href='{success
             {
                 return invokeEndpoint();
             }
-            catch (UnauthorizedAccessException e)
+            catch (Exception e) when (e is UnauthorizedAccessException ||
+                e is StrokeCropping.ActiveSelectionException)
             {
                 return $"error: {e.Message}";
             }
             catch (TargetInvocationException e)
-                when (e.InnerException is UnauthorizedAccessException authorizationError)
+                when (e.InnerException is UnauthorizedAccessException ||
+                    e.InnerException is StrokeCropping.ActiveSelectionException)
             {
-                return $"error: {authorizationError.Message}";
+                return $"error: {e.InnerException.Message}";
             }
         }
 
