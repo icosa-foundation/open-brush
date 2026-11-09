@@ -36,12 +36,12 @@ namespace TiltBrush
         {
             get
             {
-                var simulation = App.VrSdk?.VirtualSimulation;
+                var simulation = App.Instance != null ? App.VrSdk?.VirtualSimulation : null;
                 if (simulation != null)
                 {
                     // Filming offsets must not move the performer's eyes for interaction tests.
                     var body = simulation.BodyPose;
-                    return new Ray(body.position, body.rotation * Vector3.forward);
+                    return simulation.InteractionGaze ?? new Ray(body.position, body.rotation * Vector3.forward);
                 }
                 Transform head = Head;
                 return new Ray(head.position, head.forward);

@@ -1351,7 +1351,8 @@ namespace TiltBrush
             var head = ViewpointScript.Head;
             m_CurrentGazeRay = ViewpointScript.Gaze;
             var simulation = App.VrSdk.VirtualSimulation;
-            m_CurrentHeadOrientation = simulation != null ? simulation.BodyPose.rotation : head.rotation;
+            m_CurrentHeadOrientation = simulation != null ?
+                Quaternion.LookRotation(m_CurrentGazeRay.direction, simulation.BodyPose.rotation * Vector3.up) : head.rotation;
 
             // We use the gaze ray for certain shader effects - like edge falloff.
             Shader.SetGlobalVector("_WorldSpaceRootCameraPosition", m_CurrentGazeRay.origin);

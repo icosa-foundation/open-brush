@@ -44,6 +44,7 @@ namespace TiltBrush
         private readonly bool m_ShowControllers;
         private readonly Quaternion m_Yaw;
         private readonly UnityEngine.Pose m_Body;
+        private readonly Ray? m_OriginalGaze;
         private readonly int m_InitialStrokeCount;
         private readonly AutomationScript m_Script;
         private int m_Index;
@@ -73,6 +74,7 @@ namespace TiltBrush
             AutomationScript.Positive(script.UpperArmMeters, "upperArmMeters", 0.15f, 0.5f);
             AutomationScript.Positive(script.ForearmMeters, "forearmMeters", 0.15f, 0.5f);
             m_Body = App.VrSdk.VirtualSimulation.BodyPose;
+            m_OriginalGaze = App.VrSdk.VirtualSimulation.InteractionGaze;
             m_Yaw = Quaternion.Euler(0, m_Body.rotation.eulerAngles.y, 0);
             m_Original = (ControllerInfo[])InputManager.Controllers.Clone();
             m_OriginalPoses = m_Original.Select(c => new UnityEngine.Pose(c.Transform.position, c.Transform.rotation)).ToArray();
@@ -486,6 +488,11 @@ namespace TiltBrush
             m_Elapsed = 0; m_TotalElapsed = 0; m_Frames = 0; m_Stage = 0; m_Clicked = false;
             var item = m_Instructions[m_Index];
             item.Start = m_Poses[item.Hand];
+            Vector3 gazeTarget = item.Panel != null ? item.Panel.transform.position :
+                item.Path != null ? item.Path.Last().position : m_Body.position + m_Body.rotation * Vector3.forward;
+            Vector3 gazeDirection = gazeTarget - m_Body.position;
+            App.VrSdk.VirtualSimulation.InteractionGaze = gazeDirection.sqrMagnitude > 0.0001f ?
+                (Ray?)new Ray(m_Body.position, gazeDirection.normalized) : m_OriginalGaze;
             m_ReachStart = m_Arms[item.Hand].Solve(item.Start.position, item.Start.rotation);
             if (item.Source.Op == "click" && item.Button != null) { item.Button.Pressed += ButtonPressed; }
             Debug.Log($"[AutomationScript] {Status}");
@@ -755,7 +762,12 @@ namespace TiltBrush
                     m_Original[i].ShowController(m_Visible[i] && m_ShowControllers);
                 }
             }
-            finally { m_Tracking.Dispose(); }
+            finally
+            {
+                var simulation = App.Instance != null ? App.VrSdk?.VirtualSimulation : null;
+                if (simulation != null) { simulation.InteractionGaze = m_OriginalGaze; }
+                m_Tracking.Dispose();
+            }
         }
     }
 }

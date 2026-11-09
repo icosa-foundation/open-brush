@@ -19,6 +19,7 @@ namespace TiltBrush
         private readonly List<Behaviour> m_HeadDrivers = new List<Behaviour>();
         private readonly List<bool> m_HeadDriverStates = new List<bool>();
         public UnityEngine.Pose BodyPose { get; private set; }
+        public Ray? InteractionGaze { get; set; }
 
         public VirtualInputSimulation(Camera camera, VrControllers controllers)
         {
