@@ -358,11 +358,12 @@ namespace TiltBrush
         protected override void UpdateMesh()
         {
             base.UpdateMesh();
-            if (m_ActiveSubTool is FlattenSubTool flatten &&
-                flatten.Mode == FlattenSubTool.InfluenceMode.PlaneProjected)
+            // Selecting a mode can refresh the mesh while panel interaction has hidden the tool.
+            // Keep the sphere hidden until the tool is shown at its current controller pose.
+            // Plane-projected Flatten uses its disc preview instead of the sphere boundary.
+            if (m_ToolHidden || (m_ActiveSubTool is FlattenSubTool flatten &&
+                flatten.Mode == FlattenSubTool.InfluenceMode.PlaneProjected))
             {
-                // Plane-projected influence extends through the target plane, so the sphere is
-                // not its boundary. Leave the subtool's disc visible as the mode preview instead.
                 m_OnMesh.gameObject.SetActive(false);
                 m_OffMesh.gameObject.SetActive(false);
             }
