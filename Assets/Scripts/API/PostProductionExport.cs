@@ -522,6 +522,11 @@ namespace TiltBrush
         public static void Stage()
         {
             if (!IsRunning) { return; }
+            if (App.VrSdk.IsAppFocusBlocked() && App.Config.m_SdkMode != SdkMode.Ods)
+            {
+                Fail("VR focus was lost. Restore focus and restart the export.");
+                return;
+            }
             PrefetchDepth();
             if (s_StagedFrame >= 0 || s_NextFrame > s_Last) { return; }
             if (s_ReadbacksInFlight + s_Ready.Count >= kMaxBufferedFrames) { s_Waiting = "encoder"; return; }
@@ -556,6 +561,11 @@ namespace TiltBrush
         {
             if (s_NeedsCleanup && !IsRunning) { Cleanup(); return; }
             if (!IsRunning) { return; }
+            if (App.VrSdk.IsAppFocusBlocked() && App.Config.m_SdkMode != SdkMode.Ods)
+            {
+                Fail("VR focus was lost. Restore focus and restart the export.");
+                return;
+            }
             UpdateFps();
             if (s_StagedFrame < 0) { return; }
 
