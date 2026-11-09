@@ -193,32 +193,38 @@ The top-level fields are `version` (must be `1`), `name`, optional `speed` (defa
 `steps`, optional `capture`, optional `framing`, `panelPosition`, `pointingOffsetMeters`,
 `upperArmMeters` and `forearmMeters`. Unknown field names are rejected.
 
-Coordinates use `[x, y, z]` arrays in metres. Without an anchor they are relative
-to the virtual body/head reference and its yaw, independent of the filming
-camera. Rotations use `[x, y, z]` Euler angles in degrees, relative to body yaw.
-`automation.head` or the runner's `--head X Y Z RX RY RZ` changes the body
-reference while idle. The filming camera is never the origin for later actions.
+Coordinates use `[x, y, z]` arrays in metres. Prepared artwork and motion paths
+use the initial virtual body/head reference and its yaw, or the specified anchor.
+`automation.head` or the runner's `--head X Y Z RX RY RZ` changes that reference
+while idle. Shoulders, resting hands, `panelPosition` and `placePanel` destinations
+are relative to the fixed recording camera's position, with the same body yaw.
+The planner chooses the camera and verifies the corresponding arm poses together.
+Rotations use `[x, y, z]` Euler angles in degrees, relative to body yaw.
 
 ### Keep the target visible
 
 The brush controller should point diagonally toward a UI target from the side,
 so its opaque body stays out of the camera-to-target line.
-`pointingOffsetMeters` places the tip relative to the target in panel axes:
+`pointingOffsetMeters` sets the preferred tip position relative to the target in panel axes:
 right, up and forward. Its default `[0.12, 0.02, -0.12]` points from the right,
 2 cm above the target and 12 cm in front of the surface. Z must be at most `-0.03`.
-The ray still targets the real button; the model stays visible and opaque.
+The solver can reduce the sideways offset to find a comfortable wrist pose,
+preferring poses that keep the controller clear of the target. The ray still
+targets the real button; the model stays visible and opaque.
 
-For tool application, the default contact rotation is `[25, -35, 0]`, which
-keeps a forward grip to the side of the contact. `apply_path` uses that
-convention, and Draw supplies a similar orientation with a gradual roll.
-Authors can override rotations for brushes that need a particular orientation.
+`apply_path` leaves grip orientation to the arm model by default. Draw and
+Membrane request a brush orientation explicitly. Flatten constrains the tool's
+forward direction to its plane normal while leaving roll to the solver.
 Review the contact and selected icon in the recording; fitting subjects in the
 frame does not itself establish that they are unobstructed. Keep the camera
 fixed while correcting hand positions and orientations.
 
-The arm model uses the controller model's grip attachment to check wrist flexion,
-sideways bend and forearm rotation. It can swivel the elbow around its preferred
-outward/downward position. Preflight checks sampled reaches and paths, and runtime
+The arm model places the shoulders relative to the fixed recording camera and
+uses the controller model's grip attachment to generate poses. Free movements
+and rests use relaxed wrists. Tool orientations constrain the pose; pointing
+constrains the ray while allowing comfortable roll. The solver chooses a
+comfortable elbow position around its preferred outward/downward direction.
+Preflight checks sampled reaches and paths, and runtime
 checks each evaluated pose. A rejected pose reports the step and hand; adjust the
 contact orientation or teaching shape to suit a comfortable grip. Rotations in a
 plan describe the selected attachment, whose orientation can differ from the grip.
@@ -264,8 +270,8 @@ Each step has `op`, optional `label`, and optional `seconds` (default `1.2`).
 | `present` | `target` button selector. For wand panels, raises the wand and uses native thumbstick snaps to bring the panel forward. For an already opened floating panel, waits for its opening animation without twisting the wand. |
 | `focus` | `target` button selector. Points at its parent panel and waits for native focus. |
 | `click` | `target`. Reaches with the brush hand, waits for real hover, presses and releases the trigger, and requires a native button activation event. `seconds` controls the approach; hover/press/release use shared timing. Optional `tool` and `subtool` verify the resulting selection. |
-| `placePanel` | `panel`, one destination in `points`, `rotation`, optional `endRotation`. Approaches, grips, moves and releases an opened floating panel. `seconds` controls each reach and drag. |
-| `move` | `points`, optional `curve` (`polyline` or `bezier`), `rotation`, `endRotation`, `attachment`, `anchor`, `anchorT`, `tool`, `paddingMeters`. One point is a joint-interpolated reach. Multiple points follow the supplied contact path over `seconds`, with minimum-jerk timing. Bezier needs exactly four control points. |
+| `placePanel` | `panel`, one destination in `points`, optional destination `rotation`. Approaches, grips, moves and releases an opened floating panel. `seconds` controls each reach and drag. |
+| `move` | `points`, optional `curve` (`polyline` or `bezier`), `rotation`, `endRotation`, `rotationConstraint`, `attachment`, `anchor`, `anchorT`, `tool`, `paddingMeters`. One point is a joint-interpolated reach. Multiple points follow the supplied contact path over `seconds`, with minimum-jerk timing. Bezier needs exactly four control points. |
 | `input` | Optional `trigger` boolean, `thumbstick: [x,y]` (axes in `[-1,1]`) and `buttons` array of native `VrInput` enum names. `buttons` replaces the held non-trigger buttons for this hand; `[]` releases them. For example `Button04` is the context/full-pad press used by straight-edge angle snapping. State persists until changed. Each input step consumes a frame so native consumers receive the edges. |
 | `wait` | Holds current poses and inputs for `seconds`. |
 | `rest` | Returns the chosen hand to its comfortable rest over `seconds`. |
@@ -297,10 +303,15 @@ camera adjustment cannot move the action.
 the controller itself. A tool contact can specify `tool: "ReshapeTool"` to
 include that tool's native forward offset. Wand motion usually uses `root`.
 
-For a scene grab, use `attachment: "grip"` with `naturalGrip: true`. Points
-describe the native world-grab anchor. The arm model chooses controller
-orientation with neutral wrists, using shoulders relative to the recording
-camera. Omit `endRotation`; authored `rotation` is ignored in this mode.
+Omit `rotation` for free movement: the arm model chooses a relaxed grip at the
+requested attachment position. Supply `rotation` when the task requires an
+orientation, such as a brush ribbon or Flatten plane. `endRotation` requires
+an explicit starting `rotation`.
+`rotationConstraint` is `full` by default. Use `forward` to constrain only the
+attachment's forward direction while letting the arm choose roll.
+
+For a scene grab, use `attachment: "grip"`. Points describe the native
+world-grab anchor; omitting `rotation` gives relaxed wrists automatically.
 
 A `move` can contain a `parallel` move for the other hand with the same
 `seconds`. Both paths run together. Use this for coordinated reaches and
@@ -339,9 +350,9 @@ Example step sequence, assuming the desired brush has already been selected:
 `placePanel` takes `panel`, one destination in `points`, and `seconds` for each
 approach and drag. It uses the brush hand's native grip input and verifies the
 panel's final position. The layout planner can offset the destination to keep
-it clear of the working area. `rotation` describes the pointer pose when grabbing.
-The panel turns toward the performer at its destination; `endRotation` sets an
-explicit final pointer orientation instead.
+it clear of the working area. The panel faces the performer at its destination
+by default; `rotation` specifies an explicit destination orientation. The arm
+solver chooses the grip while preserving the native panel-to-controller offset.
 
 ### Fixed camera framing
 
