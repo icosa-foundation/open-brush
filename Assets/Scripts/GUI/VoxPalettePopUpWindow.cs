@@ -14,22 +14,25 @@ namespace TiltBrush
     {
         private const int PageSize = 64, Columns = 8, PageCount = 4;
         [SerializeField] private VoxPaletteButton m_ButtonPrefab;
-        [SerializeField] private VoxPaletteButton m_ActionButtonPrefab;
-        [SerializeField] private ValueSlider m_MaterialSliderPrefab;
+        [SerializeField] private VoxPaletteButton m_Previous;
+        [SerializeField] private VoxPaletteButton m_Next;
+        [SerializeField] private VoxPaletteButton m_PreviousMaterial;
+        [SerializeField] private VoxPaletteButton m_NextMaterial;
+        [SerializeField] private TextActionButton m_ColourTab;
+        [SerializeField] private TextActionButton m_MaterialTabButton;
+        [SerializeField] private GameObject m_MaterialArea;
+        [SerializeField] private TextMeshPro m_TypeLabel;
+        [SerializeField] private ValueSlider[] m_MaterialSliders;
         [FormerlySerializedAs("m_Apply")]
         [SerializeField] private VoxPaletteButton m_BrushColor;
         [SerializeField] private VoxPaletteButton m_ClearUnused;
         [SerializeField] private VoxPaletteButton m_Sort;
-        [SerializeField] private Texture2D m_SwatchTexture, m_PreviousTexture, m_NextTexture;
-        [SerializeField] private Vector3 m_GridOrigin = new Vector3(-1.38f, .6f, -.06f);
+        [SerializeField] private Texture2D m_SwatchTexture;
+        [SerializeField] private Transform m_SwatchGrid;
         [SerializeField] private float m_SwatchSpacing = .15f;
         [SerializeField] private float m_SwatchSize = .13f;
         private readonly VoxPaletteButton[] m_Swatches = new VoxPaletteButton[PageSize];
         private readonly int[] m_DisplayOrder = new int[byte.MaxValue];
-        private readonly ValueSlider[] m_MaterialSliders = new ValueSlider[2];
-        private VoxPaletteButton m_Previous, m_Next, m_ColourTab, m_MaterialTabButton;
-        private GameObject m_MaterialArea;
-        private TextMeshPro m_TypeLabel;
         private ModelWidget m_Widget;
         private Model m_Source;
         private RuntimeVoxDocument m_Document;
@@ -61,25 +64,15 @@ namespace TiltBrush
             for (int i = 0; i < m_DisplayOrder.Length; ++i) m_DisplayOrder[i] = i + 1;
             base.Init(parent, text);
             for (int i = 0; i < PageSize; ++i)
-                m_Swatches[i] = CreateButton(m_GridOrigin + new Vector3(i % Columns * m_SwatchSpacing,
-                    -(i / Columns) * m_SwatchSpacing, 0), VoxPaletteButton.Action.Swatch, m_SwatchTexture, "Palette slot", false);
-            m_Previous = CreateButton(new Vector3(-1.15f, -.72f, -.06f), VoxPaletteButton.Action.Previous, m_PreviousTexture, "Previous palette page");
-            m_Next = CreateButton(new Vector3(-.55f, -.72f, -.06f), VoxPaletteButton.Action.Next, m_NextTexture, "Next palette page");
+                m_Swatches[i] = CreateSwatch(new Vector3(i % Columns * m_SwatchSpacing,
+                    -(i / Columns) * m_SwatchSpacing, 0));
+            m_Previous.Configure(this, VoxPaletteButton.Action.Previous, null, null);
+            m_Next.Configure(this, VoxPaletteButton.Action.Next, null, null);
+            m_PreviousMaterial.Configure(this, VoxPaletteButton.Action.PreviousMaterial, null, null);
+            m_NextMaterial.Configure(this, VoxPaletteButton.Action.NextMaterial, null, null);
             m_BrushColor.Configure(this, VoxPaletteButton.Action.BrushColour, null, "Use current brush colour");
             m_ClearUnused.Configure(this, VoxPaletteButton.Action.ClearUnused, null, null);
             m_Sort.Configure(this, VoxPaletteButton.Action.Sort, null, null);
-            m_ColourTab = CreateTab("Colour", .25f, VoxPaletteButton.Action.ColourTab);
-            m_MaterialTabButton = CreateTab("Material", .98f, VoxPaletteButton.Action.MaterialTab);
-            m_MaterialArea = new GameObject("Material controls"); m_MaterialArea.transform.SetParent(transform, false);
-            CreateButton(new Vector3(.0f, .35f, -.06f), VoxPaletteButton.Action.PreviousMaterial, m_PreviousTexture, "Previous material type").transform.SetParent(m_MaterialArea.transform, false);
-            CreateButton(new Vector3(1.32f, .35f, -.06f), VoxPaletteButton.Action.NextMaterial, m_NextTexture, "Next material type").transform.SetParent(m_MaterialArea.transform, false);
-            m_TypeLabel = CreateLabel(m_MaterialArea.transform, "Material type", new Vector3(.66f, .35f, -.07f), .65f);
-            for (int i = 0; i < m_MaterialSliders.Length; ++i)
-            {
-                var slider = Instantiate(m_MaterialSliderPrefab, m_MaterialArea.transform);
-                slider.transform.localPosition = new Vector3(.66f, -.02f - .35f * i, -.06f);
-                slider.RegisterComponent(); m_MaterialSliders[i] = slider;
-            }
             ColorPicker.ColorPicked += OnColorPicked;
             ColorPicker.ColorFinalized += FinishChange;
             m_BrushController = App.BrushColor;
@@ -87,31 +80,14 @@ namespace TiltBrush
             m_Memory = SketchMemoryScript.m_Instance;
             m_Memory.OperationStackChanged += OnHistoryChanged;
         }
-        private VoxPaletteButton CreateButton(Vector3 position, VoxPaletteButton.Action action, Texture2D texture,
-            string description, bool standard = true)
+        private VoxPaletteButton CreateSwatch(Vector3 position)
         {
-            var button = Instantiate(standard ? m_ActionButtonPrefab : m_ButtonPrefab, transform);
+            var button = Instantiate(m_ButtonPrefab, m_SwatchGrid);
             button.transform.localPosition = position; button.transform.localRotation = Quaternion.identity;
             button.transform.localScale = Vector3.one * m_SwatchSize;
-            button.RegisterComponent(); button.Configure(this, action, texture, description); return button;
-        }
-        private VoxPaletteButton CreateTab(string text, float x, VoxPaletteButton.Action action)
-        {
-            var button = CreateButton(new Vector3(x, .7f, -.06f), action, m_SwatchTexture, text);
-            button.transform.localScale = new Vector3(.65f, .19f, .13f);
-            // Keep the label's aspect independent of the stretched button.
-            CreateLabel(transform, text, new Vector3(x, .7f, -.14f), .52f);
+            button.RegisterComponent();
+            button.Configure(this, VoxPaletteButton.Action.Swatch, m_SwatchTexture, "Palette slot");
             return button;
-        }
-        private TextMeshPro CreateLabel(Transform parent, string text, Vector3 position, float scale)
-        {
-            var label = Instantiate(m_WindowText, parent);
-            label.name = text; label.text = text; label.alignment = TextAlignmentOptions.Center;
-            label.rectTransform.pivot = new Vector2(.5f, .5f);
-            label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(.5f, .5f);
-            label.rectTransform.sizeDelta = new Vector2(2f, .5f);
-            label.transform.localPosition = position; label.transform.localScale = Vector3.one * scale;
-            return label;
         }
         internal void Bind(ModelWidget widget, RuntimeVoxDocument document)
         {
@@ -131,7 +107,7 @@ namespace TiltBrush
             if (!ValidTarget) return;
             FinishChange(); m_Settings.PaletteIndex = 0; RefreshControls();
         }
-        internal void ShowMaterial(bool material)
+        public void ShowMaterial(bool material)
         { FinishChange(); m_MaterialTab = material; RefreshControls(); }
         internal void ChangePage(int delta)
         { if (!ValidTarget) return; FinishChange(); m_Page = Mathf.Clamp(m_Page + delta, 0, PageCount - 1); RefreshControls(); }
@@ -239,7 +215,9 @@ namespace TiltBrush
                 if (valid) swatch.SetSwatch(index, m_Document.Palette[index - 1], !BrushMode && index == m_Selected);
             }
             m_Previous.SetButtonAvailable(valid && m_Page > 0); m_Next.SetButtonAvailable(valid && m_Page < PageCount - 1);
-            m_BrushColor.SetActionSelected(BrushMode); m_ColourTab.SetActionSelected(!m_MaterialTab); m_MaterialTabButton.SetActionSelected(m_MaterialTab);
+            m_BrushColor.SetActionSelected(BrushMode);
+            m_ColourTab.SetButtonAvailable(valid); m_MaterialTabButton.SetButtonAvailable(valid);
+            m_ColourTab.SetButtonSelected(!m_MaterialTab); m_MaterialTabButton.SetButtonSelected(m_MaterialTab);
             m_ClearUnused.SetButtonAvailable(CanEdit); m_Sort.SetButtonAvailable(valid);
             ColorPicker.gameObject.SetActive(!m_MaterialTab); m_MaterialArea.SetActive(m_MaterialTab && valid);
             m_WindowText.text = valid ? $"VOX palette — {(BrushMode ? "Drawing material" : $"Palette slot {m_Selected}")} — {m_Page + 1}/{PageCount}" : "VOX model unavailable";
