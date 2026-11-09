@@ -19,7 +19,7 @@ def build_plan(args):
             *open_panel("Labs"),
             *select_tool("TintColorTool"),
             *apply_path([[-0.035, 0.018, 0], [0.035, -0.018, 0]], label="Tint",
-                        tool="TintColorTool", anchor="subject", padding=radius),
+                        tool="TintColorTool", anchor="subject", padding=radius, lower_wand=False),
             {"op": "assert", "stroke": "subject", "strokeCountDelta": 0,
              "unchangedGeometry": True, "minimumChangedColorPoints": 5,
              "maximumChangedColorPoints": 48, "expectedColorRgb": coral},

@@ -60,7 +60,16 @@ def select_tool(tool, *, subtool=None):
     return steps
 
 
-def open_panel(panel, *, via_more=True):
+def park_panel(panel, position=(0.50, -0.02, 0.30), rotation=(25, -35, 0), end_rotation=None):
+    """Use a native grip to move an opened floating panel beside the working area."""
+    step = {"op": "placePanel", "panel": panel, "points": [list(position)],
+            "rotation": list(rotation), "seconds": 1.2}
+    if end_rotation is not None:
+        step["endRotation"] = list(end_rotation)
+    return [step]
+
+
+def open_panel(panel, *, via_more=True, park=False):
     """Open a closed panel through More Options, or its button on a wand pane."""
     selection = [
         {"op": "present", "target": {"command": "MorePanels"}},
@@ -70,8 +79,10 @@ def open_panel(panel, *, via_more=True):
     return [
         {"op": "assert", "panel": panel, "panelOpen": False},
         *selection,
+        {"op": "rest", "hand": "wand"},
         {"op": "wait", "seconds": 0.6},
         {"op": "assert", "panel": panel, "panelOpen": True},
+        *(park_panel(panel, **(park if isinstance(park, dict) else {})) if park else []),
     ]
 
 
@@ -119,7 +130,7 @@ def reveal_result(seconds=1.0):
 
 def reshape_demo(mode, points, path, *, name, radius=0.08, seconds=3.0,
                  rotation=(25, -35, 0), minimum_movement=0.02, fixed_endpoints=False,
-                 brush="Icing", size=0.009):
+                 brush="Icing", size=0.009, panel_placement=False):
     """Prepare a teaching shape, visibly select a reshape mode, then apply one gesture."""
     return {
         "version": 1,
@@ -131,10 +142,10 @@ def reshape_demo(mode, points, path, *, name, radius=0.08, seconds=3.0,
              "subtool": "Grab" if mode == "Push" else "Push"},
         ],
         "steps": [
-            *open_panel("Labs"),
+            *open_panel("Labs", park=panel_placement),
             *select_tool("ReshapeTool", subtool=mode),
             *apply_path(path, label=mode, tool="ReshapeTool", rotation=rotation,
-                        seconds=seconds, padding=radius),
+                        seconds=seconds, padding=radius, lower_wand=False),
             {"op": "assert", "stroke": "subject", "minimumMovementMeters": minimum_movement,
              "fixedEndpoints": fixed_endpoints, "strokeCountDelta": 0},
             *reveal_result(seconds=3.0),

@@ -20,13 +20,17 @@ namespace TiltBrush
             [Range(0, 0.25f)] public float Margin = 0.08f;
             public float MaximumPullbackMeters = 0.15f;
             public float MaximumAngleDegrees = 40;
+            public float PanelGap = 0.025f;
         }
+
+        public enum SubjectRole { Framing, Artwork, Panel }
 
         public sealed class Subject
         {
             public string Name { get; }
+            internal readonly SubjectRole Role;
             internal readonly List<Vector3> Points = new List<Vector3>();
-            internal Subject(string name) { Name = name; }
+            internal Subject(string name, SubjectRole role) { Name = name; Role = role; }
             public void AddPoint(Vector3 point)
             {
                 if (float.IsNaN(point.x) || float.IsInfinity(point.x) ||
@@ -50,12 +54,13 @@ namespace TiltBrush
         }
 
         private readonly string m_Name;
+        private string m_Overlap;
         private readonly List<Subject> m_Subjects = new List<Subject>();
         public AutomationShot(string name) { m_Name = name; }
 
-        public Subject AddSubject(string name)
+        public Subject AddSubject(string name, SubjectRole role = SubjectRole.Framing)
         {
-            var subject = new Subject(name);
+            var subject = new Subject(name, role);
             m_Subjects.Add(subject);
             return subject;
         }
@@ -86,9 +91,10 @@ namespace TiltBrush
         {
             if (settings.Margin < 0 || settings.Margin > 0.25f || float.IsNaN(settings.Margin) ||
                 settings.MaximumPullbackMeters < 0 || settings.MaximumPullbackMeters > 0.5f || float.IsNaN(settings.MaximumPullbackMeters) ||
-                settings.MaximumAngleDegrees <= 0 || settings.MaximumAngleDegrees > 60 || float.IsNaN(settings.MaximumAngleDegrees))
+                settings.MaximumAngleDegrees <= 0 || settings.MaximumAngleDegrees > 60 || float.IsNaN(settings.MaximumAngleDegrees) ||
+                settings.PanelGap < 0 || settings.PanelGap > 0.15f || float.IsNaN(settings.PanelGap))
             {
-                throw new ArgumentException("Invalid framing limits: margin 0–0.25, pullback 0–0.5 metres, angle 0–60 degrees.");
+                throw new ArgumentException("Invalid framing limits: margin 0–0.25, pullback 0–0.5 metres, angle 0–60 degrees, panelGap 0–0.15.");
             }
             var points = new List<Vector3>();
             foreach (Subject subject in m_Subjects) { points.AddRange(subject.Points); }
@@ -122,12 +128,35 @@ namespace TiltBrush
                     Project(points, eye, rotation, camera.nearClipPlane, tangent, camera.aspect, out viewport) &&
                     (viewport.center - Vector2.one * 0.5f).sqrMagnitude < 0.000004f &&
                     viewport.xMin >= settings.Margin - 0.0001f && viewport.xMax <= 1 - settings.Margin + 0.0001f &&
-                    viewport.yMin >= settings.Margin - 0.0001f && viewport.yMax <= 1 - settings.Margin + 0.0001f)
+                    viewport.yMin >= settings.Margin - 0.0001f && viewport.yMax <= 1 - settings.Margin + 0.0001f &&
+                    PanelsClearArtwork(eye, rotation, camera.nearClipPlane, tangent, camera.aspect, settings.PanelGap))
                 {
                     return new UnityEngine.Pose(eye, rotation);
                 }
             }
-            throw new InvalidOperationException($"Shot '{m_Name}' cannot fit its subjects inside the framing margin and comfort limits. Split it into separate shots or adjust the declared action positions.");
+            throw new InvalidOperationException($"Shot '{m_Name}' cannot fit its subjects with clear space between panels and artwork inside the framing margin and comfort limits. {m_Overlap} Split it into separate shots or adjust the declared action positions.");
+        }
+
+        private bool PanelsClearArtwork(Vector3 eye, Quaternion rotation, float near, float tangent, float aspect, float gap)
+        {
+            foreach (var panel in m_Subjects)
+            {
+                if (panel.Role != SubjectRole.Panel || panel.Points.Count == 0) { continue; }
+                if (!Project(panel.Points, eye, rotation, near, tangent, aspect, out var panelRect)) { return false; }
+                panelRect = Rect.MinMaxRect(panelRect.xMin - gap, panelRect.yMin - gap,
+                    panelRect.xMax + gap, panelRect.yMax + gap);
+                foreach (var artwork in m_Subjects)
+                {
+                    if (artwork.Role != SubjectRole.Artwork || artwork.Points.Count == 0) { continue; }
+                    if (!Project(artwork.Points, eye, rotation, near, tangent, aspect, out var artworkRect) ||
+                        panelRect.Overlaps(artworkRect))
+                    {
+                        m_Overlap = $"Panel '{panel.Name}' overlaps '{artwork.Name}'.";
+                        return false;
+                    }
+                }
+            }
+            return true;
         }
 
         private static bool Project(List<Vector3> points, Vector3 eye, Quaternion rotation,

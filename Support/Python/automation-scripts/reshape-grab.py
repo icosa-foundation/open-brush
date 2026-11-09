@@ -19,7 +19,7 @@ def build_plan(args):
             *open_panel("Labs"),
             *select_tool("ReshapeTool", subtool="Grab"),
             *apply_path([[0, 0, 0], [0, 0.12, 0]], label="Grab", tool="ReshapeTool",
-                        anchor="subject", padding=0.07),
+                        anchor="subject", padding=0.07, lower_wand=False),
             {"op": "assert", "stroke": "subject", "minimumMovementMeters": 0.10,
              "fixedEndpoints": True, "strokeCountDelta": 0},
             *reveal_result(),

@@ -161,7 +161,8 @@ calls, so they also work with `--write-plan`.
 | `select_script(preset, category=...)` | Present the Scripts panel, click Next and assert the named preset. Open Scripts first. |
 | `select_control(selector, ...)` | Present a control's panel and click it; optional expected `tool`/`subtool`, or `present=False` when already shown. |
 | `select_tool(tool, subtool=None)` | Select a tool and optionally move directly to its subtool. |
-| `open_panel(panel, via_more=True)` | Open a closed panel through More Options. Use `via_more=False` for a panel opened from its own wand-pane button, such as Scripts or SnapSettings; the helper presents that pane first. |
+| `open_panel(panel, via_more=True, park=False)` | Open a closed panel through More Options. Use `via_more=False` for its own wand-pane button. `park=True` grips and moves the opened panel aside. |
+| `park_panel(panel, position=...)` | Grip and move an opened floating panel to a body-relative position before using its controls. |
 | `apply_path(points, ...)` | Approach, lower the wand, pause, hold trigger along a path, release and pause. Supports contact attachment, anchor, curve, rotations, timing and padding. |
 | `reveal_result(seconds=1.0)` | Withdraw the applying hand and hold a clear view of the result. |
 
@@ -170,6 +171,8 @@ Compose recorded sections with Python list unpacking, for example
 
 Move directly between consecutive interaction targets. Use `rest` when withdrawing
 the hand to reveal the result or ending a sequence.
+`open_panel` lowers the wand immediately after opening a floating panel, before
+interacting with its controls.
 Preparation items belong in `prepare`, not `steps`. Keep action-specific paths,
 colours and result assertions in the example file.
 
@@ -251,6 +254,7 @@ Each step has `op`, optional `label`, and optional `seconds` (default `1.2`).
 | `present` | `target` button selector. For wand panels, raises the wand and uses native thumbstick snaps to bring the panel forward. For an already opened floating panel, waits for its opening animation without twisting the wand. |
 | `focus` | `target` button selector. Points at its parent panel and waits for native focus. |
 | `click` | `target`. Reaches with the brush hand, waits for real hover, presses and releases the trigger, and requires a native button activation event. `seconds` controls the approach; hover/press/release use shared timing. Optional `tool` and `subtool` verify the resulting selection. |
+| `placePanel` | `panel`, one destination in `points`, `rotation`, optional `endRotation`. Approaches, grips, moves and releases an opened floating panel. `seconds` controls each reach and drag. |
 | `move` | `points`, optional `curve` (`polyline` or `bezier`), `rotation`, `endRotation`, `attachment`, `anchor`, `anchorT`, `tool`, `paddingMeters`. One point is a joint-interpolated reach. Multiple points follow the supplied contact path over `seconds`, with minimum-jerk timing. Bezier needs exactly four control points. |
 | `input` | Optional `trigger` boolean, `thumbstick: [x,y]` (axes in `[-1,1]`) and `buttons` array of native `VrInput` enum names. `buttons` replaces the held non-trigger buttons for this hand; `[]` releases them. For example `Button04` is the context/full-pad press used by straight-edge angle snapping. State persists until changed. Each input step consumes a frame so native consumers receive the edges. |
 | `wait` | Holds current poses and inputs for `seconds`. |
@@ -313,6 +317,13 @@ Example step sequence, assuming the desired brush has already been selected:
 ]
 ```
 
+`placePanel` takes `panel`, one destination in `points`, and `seconds` for each
+approach and drag. It uses the brush hand's native grip input and verifies the
+panel's final position. The layout planner can offset the destination to keep
+it clear of the working area. `rotation` describes the pointer pose when grabbing.
+The panel turns toward the performer at its destination; `endRotation` sets an
+explicit final pointer orientation instead.
+
 ### Fixed camera framing
 
 One plan represents one continuous fixed-camera shot. The executor frames it
@@ -333,6 +344,15 @@ subjects explicitly and use `present` for automatic panel navigation.
 `maximumPullbackMeters` (`0.15`) and `maximumAngleDegrees` (`40`). If the shot
 cannot fit, reduce its spatial extent or submit separate shots. Do not change
 resolution/aspect during a take or use repeated camera tracking.
+
+The planner keeps floating panels, their popups and expanded trays clear of the artwork
+and tool paths. It tries nearby wand presentation positions, preferring the
+non-drawing side, before choosing the fixed camera view. `framing.panelGap`
+sets the gap in normalized screen coordinates (default `0.025`). If no comfortable
+layout fits, adjust `panelPosition`, the artwork positions or the declared bounds.
+
+Automation recording hides the floating message output and controller console.
+Messages continue to be logged; their normal rendering is restored when capture ends.
 
 ## Use the client from your own Python program
 
