@@ -61,12 +61,11 @@ def select_tool(tool, *, subtool=None):
     return steps
 
 
-def park_panel(panel, position=(0.50, -0.02, 0.30), rotation=(25, -35, 0), end_rotation=None):
+def park_panel(panel, position=(0, 0.04, 0.44), rotation=None):
     """Use a native grip to move an opened floating panel beside the working area."""
-    step = {"op": "placePanel", "panel": panel, "points": [list(position)],
-            "rotation": list(rotation), "seconds": 1.2}
-    if end_rotation is not None:
-        step["endRotation"] = list(end_rotation)
+    step = {"op": "placePanel", "panel": panel, "points": [list(position)], "seconds": 1.2}
+    if rotation is not None:
+        step["rotation"] = list(rotation)
     return [step]
 
 
@@ -102,12 +101,16 @@ def prepare_script(preset, *, category="SymmetryScript"):
 
 def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
                attachment="tool", anchor=None, anchor_t=0.5,
-               rotation=(25, -35, 0), end_rotation=None, curve="polyline",
+               rotation=None, end_rotation=None, rotation_constraint="full", curve="polyline",
                padding=0.02, lower_wand=True, contact_pause=0.45, inspect_pause=0.6):
     """Approach a contact, apply the native tool along a path, release and pause."""
     if not points:
         raise ValueError("Tool application needs at least one point.")
-    contact = {"attachment": attachment, "rotation": list(rotation)}
+    contact = {"attachment": attachment}
+    if rotation is not None:
+        contact["rotation"] = list(rotation)
+    if rotation_constraint != "full":
+        contact["rotationConstraint"] = rotation_constraint
     if tool is not None:
         contact["tool"] = tool
     if anchor is not None:
@@ -133,7 +136,7 @@ def rotate_scene(*, pivot=(0.10, -0.23, 0.44), span=0.24, yaw_degrees=90, second
     """Turn with relaxed wrists, releasing and regripping before the hands cross the body."""
     turns = max(1, math.ceil(abs(yaw_degrees) / 26))
     angle = math.radians(yaw_degrees / turns)
-    starts = [[-0.08, -0.33, 0.22], [-0.08 + span, -0.33, 0.22]]
+    starts = [[-0.08, -0.28, 0.22], [-0.08 + span, -0.28, 0.22]]
     arcs = []
     for start in starts:
         x, y, z = [start[a] - pivot[a] for a in range(3)]
@@ -141,7 +144,7 @@ def rotate_scene(*, pivot=(0.10, -0.23, 0.44), span=0.24, yaw_degrees=90, second
                       pivot[1] + y,
                       pivot[2] - x * math.sin(angle * i / 64) + z * math.cos(angle * i / 64)]
                      for i in range(65)])
-    contact = {"attachment": "grip", "naturalGrip": True, "paddingMeters": 0}
+    contact = {"attachment": "grip", "paddingMeters": 0}
 
     def move_pair(points, duration, label):
         return {"op": "move", "label": label, "hand": "wand", "points": points[0],
@@ -168,8 +171,8 @@ def rotate_scene(*, pivot=(0.10, -0.23, 0.44), span=0.24, yaw_degrees=90, second
 
 
 def reshape_demo(mode, points, path, *, name, radius=0.08, seconds=3.0,
-                 rotation=(25, -35, 0), minimum_movement=0.02, fixed_endpoints=False,
-                 brush="Icing", size=0.009, panel_placement=False, reveal=True):
+                 rotation=None, rotation_constraint="full", minimum_movement=0.02, fixed_endpoints=False,
+                 brush="Icing", size=0.009, panel_placement=True, reveal=True):
     """Prepare a teaching shape, visibly select a reshape mode, then apply one gesture."""
     return {
         "version": 1,
@@ -184,6 +187,7 @@ def reshape_demo(mode, points, path, *, name, radius=0.08, seconds=3.0,
             *open_panel("Labs", park=panel_placement),
             *select_tool("ReshapeTool", subtool=mode),
             *apply_path(path, label=mode, tool="ReshapeTool", rotation=rotation,
+                        rotation_constraint=rotation_constraint,
                         seconds=seconds, padding=radius, lower_wand=False),
             {"op": "assert", "stroke": "subject", "minimumMovementMeters": minimum_movement,
              "fixedEndpoints": fixed_endpoints, "strokeCountDelta": 0},

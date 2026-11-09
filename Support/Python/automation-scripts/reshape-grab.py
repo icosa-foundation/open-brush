@@ -16,7 +16,7 @@ def build_plan(args):
              "min": [-0.09, -0.09, -0.09], "max": [0.09, 0.21, 0.09]},
         ],
         "steps": [
-            *open_panel("Labs", park={"position": (0, 0.12, 0.38), "rotation": (25, 0, 0)}),
+            *open_panel("Labs", park=True),
             *select_tool("ReshapeTool", subtool="Grab"),
             *apply_path([[0, 0, 0], [0, 0.12, 0]], label="Grab", tool="ReshapeTool",
                         anchor="subject", padding=0.07, lower_wand=False),
