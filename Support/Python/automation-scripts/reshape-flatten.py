@@ -28,5 +28,5 @@ def build_plan(args):
                         name="Flatten a rippled stroke onto an oblique plane", radius=0.095,
                         seconds=5.2, rotation=(25, -12, 0), minimum_movement=0.025,
                         brush=args.brush or "Icing",
-                        panel_placement={"position": (0.40, 0.08, 0.30),
-                                         "rotation": (25, 60, 0), "end_rotation": (25, 60, 0)})
+                        panel_placement={"position": (0, 0.12, 0.38),
+                                         "rotation": (25, 0, 0), "end_rotation": (25, 0, 0)})
