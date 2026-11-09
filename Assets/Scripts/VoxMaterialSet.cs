@@ -21,7 +21,8 @@ namespace TiltBrush
 {
     internal sealed class VoxMaterialSet
     {
-        private const float MaxEmissionIntensity = 10f;
+        // Approximately the Light brush's usual output: 2 * exp(0.45 * 10).
+        private const float MaxEmissionIntensity = 180f;
 
         public IReadOnlyList<Material> Materials { get; }
         public IReadOnlyList<int> PaletteSubmeshIndices { get; }
@@ -105,7 +106,8 @@ namespace TiltBrush
             PbrMaterialProperties.Apply(material, VoxMaterialAdapter.Read(voxMaterial), Color.white);
             if (voxMaterial.Type == RuntimeVoxDocument.MaterialType.Emit)
             {
-                float strength = MaxEmissionIntensity * VoxMaterialAdapter.Emission(voxMaterial);
+                // Preserve control over dim emission while giving the upper end HDR headroom.
+                float strength = Mathf.Pow(1f + MaxEmissionIntensity, VoxMaterialAdapter.Emission(voxMaterial)) - 1f;
                 material.SetFloat("_EmissionStrength", strength);
                 // Match the glowing brushes' colour preparation before increasing
                 // brightness. glTF needs this colour separately from vertex colours.
