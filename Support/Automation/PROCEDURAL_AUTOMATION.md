@@ -221,7 +221,9 @@ fixed while correcting hand positions and orientations.
 
 The arm model places the shoulders relative to the fixed recording camera and
 uses the controller model's grip attachment to generate poses. Free movements
-and rests use relaxed wrists. Tool orientations constrain the pose; pointing
+and rests use its preferred grip. Wand presentation uses the pointer axes to keep
+its aim near level and the wand mostly upright. Tool orientations constrain the
+pose; pointing
 constrains the ray while allowing comfortable roll. The solver chooses a
 comfortable elbow position around its preferred outward/downward direction.
 Preflight checks sampled reaches and paths, and runtime

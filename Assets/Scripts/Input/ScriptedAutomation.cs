@@ -208,7 +208,7 @@ namespace TiltBrush
         {
             Vector3 preferred = AutomationScript.Vector(m_Script.PanelPosition, "panelPosition") + m_PanelLayoutOffset;
             Quaternion inverse = Quaternion.Inverse(m_Original[0].Transform.rotation);
-            Quaternion gripLocal = inverse * m_Original[0].Geometry.GripAttachPoint.rotation;
+            Quaternion pointerLocal = inverse * m_Original[0].Behavior.PointerAttachPoint.rotation;
             var from = m_Arms[0].Solve(start.position, start.rotation);
             UnityEngine.Pose best = default;
             int bestTurns = 0;
@@ -216,18 +216,18 @@ namespace TiltBrush
             // Choose the grip first. Native thumbstick snaps bring the pane around it;
             // a panel can remain oblique rather than bending the wrist to face the camera.
             for (int lift = 0; lift <= 6; ++lift)
-            for (int pitch = -30; pitch >= -80; pitch -= 10)
+            for (int pitch = -10; pitch <= 10; pitch += 5)
             for (int yaw = -30; yaw <= 30; yaw += 15)
             for (int snap = -1; snap <= 1; ++snap)
             {
                 Vector3 position = m_ArmHead + m_Yaw *
                     ((preferred + Vector3.up * (lift * 0.02f)) * App.METERS_TO_UNITS);
-                Quaternion rotation = m_Yaw * Quaternion.Euler(pitch, yaw, 0) * Quaternion.Inverse(gripLocal);
+                Quaternion rotation = m_Yaw * Quaternion.Euler(pitch, yaw, 0) * Quaternion.Inverse(pointerLocal);
                 var presented = PanelPose(panel, new UnityEngine.Pose(Vector3.zero, rotation),
                     ring + snap * PanelManager.WandPanelSnapAngle);
                 float angle = Vector3.Angle(presented.rotation * Vector3.forward, position - m_ArmHead);
                 if (angle > 45) { continue; }
-                float score = angle * 0.1f + lift * 0.2f + Mathf.Abs(yaw) * 0.02f;
+                float score = angle + lift * 0.2f + Mathf.Abs(yaw) * 0.02f;
                 if (score >= bestScore) { continue; }
                 var pose = new UnityEngine.Pose(position - presented.position, rotation);
                 try
