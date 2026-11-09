@@ -55,17 +55,27 @@ namespace TiltBrush
 
         public UnityEngine.Pose RelaxedGripPose(Vector3 contactPosition, Vector3 contactLocal)
         {
+            Quaternion controller = RelaxedRotation(contactPosition, contactLocal);
+            var result = new UnityEngine.Pose(contactPosition - controller * contactLocal, controller);
+            Solve(result.position, result.rotation);
+            return result;
+        }
+
+        private Quaternion RelaxedRotation(Vector3 contactPosition, Vector3 contactLocal)
+        {
             Vector3 wrist = contactPosition;
             Quaternion controller = Quaternion.identity;
             // The native grab anchor and anatomical wrist are slightly offset. Resolve that
             // offset while keeping the wrist aligned with the forearm and the elbow at its pole.
             for (int iteration = 0; iteration < 4; ++iteration)
             {
-                if (!CanReachWrist(wrist))
-                    throw new InvalidOperationException("Natural grip exceeds the procedural arm's reach.");
                 Vector3 delta = wrist - m_Shoulder;
-                float distance = delta.magnitude;
-                Vector3 direction = delta / distance;
+                Vector3 direction = delta.normalized;
+                // Only the iterative wrist estimate is projected into reach. The resulting
+                // controller pose must still pass Solve against the exact contact position.
+                float distance = Mathf.Clamp(delta.magnitude,
+                    Mathf.Abs(m_UpperLength - m_ForearmLength) + 0.02f, m_UpperLength + m_ForearmLength - 0.02f);
+                wrist = m_Shoulder + direction * distance;
                 Vector3 bend = Vector3.ProjectOnPlane(m_ElbowPole, direction).normalized;
                 if (bend.sqrMagnitude < 0.001f)
                     throw new InvalidOperationException("Natural grip aligns with the elbow pole.");
@@ -77,7 +87,7 @@ namespace TiltBrush
                 controller = forearm * Quaternion.Inverse(m_GripLocal.rotation);
                 wrist = contactPosition + controller * (m_GripLocal.position - contactLocal);
             }
-            return new UnityEngine.Pose(contactPosition - controller * contactLocal, controller);
+            return controller;
         }
 
         public Pose Solve(Vector3 controllerPosition, Quaternion controllerRotation)
@@ -102,6 +112,8 @@ namespace TiltBrush
             Quaternion grip = controllerRotation * m_GripLocal.rotation;
             Vector4 closest = default;
             float bestScore = float.PositiveInfinity;
+            float bestComfort = float.PositiveInfinity;
+            Pose best = default;
             // Let the shoulder swivel the elbow around its preferred outward/downward pole,
             // instead of forcing the wrist to compensate for one fixed elbow position.
             for (int sample = 0; sample <= 8; ++sample)
@@ -115,12 +127,53 @@ namespace TiltBrush
                 Quaternion forearm = neutralForearm * Quaternion.AngleAxis(twist, Vector3.forward);
                 Vector4 angles = GripAngles(forearm, controllerRotation);
                 float score = ComfortScore(angles);
-                if (score <= 1.0002f)
-                    return new Pose {UpperArm = upper, Forearm = Quaternion.Inverse(upper) * forearm,
+                float comfort = ComfortCost(angles) + 0.1f * Mathf.Pow(swivel / 60, 2);
+                if (score <= 1.0002f && comfort < bestComfort)
+                {
+                    bestComfort = comfort;
+                    best = new Pose {UpperArm = upper, Forearm = Quaternion.Inverse(upper) * forearm,
                         Controller = Quaternion.Inverse(forearm) * controllerRotation};
+                }
                 if (score < bestScore) { bestScore = score; closest = angles; }
             }
+            if (!float.IsPositiveInfinity(bestComfort)) { return best; }
             throw GripError(closest);
+        }
+
+        public float Comfort(Pose pose) => ComfortCost(GripAngles(pose.UpperArm * pose.Forearm,
+            pose.UpperArm * pose.Forearm * pose.Controller));
+
+        public UnityEngine.Pose ContactPose(UnityEngine.Pose contact, UnityEngine.Pose local, bool freeRoll = false)
+        {
+            if (!freeRoll)
+            {
+                Quaternion rotation = contact.rotation * Quaternion.Inverse(local.rotation);
+                var fixedPose = new UnityEngine.Pose(contact.position - rotation * local.position, rotation);
+                Solve(fixedPose.position, fixedPose.rotation);
+                return fixedPose;
+            }
+            Quaternion relaxed = RelaxedRotation(contact.position, local.position) * local.rotation;
+            Vector3 forward = contact.rotation * Vector3.forward;
+            Vector3 up = Vector3.ProjectOnPlane(relaxed * Vector3.up, forward);
+            Quaternion preferred = up.sqrMagnitude > 0.0001f ? Quaternion.LookRotation(forward, up) : contact.rotation;
+            UnityEngine.Pose best = default;
+            float bestCost = float.PositiveInfinity;
+            Exception failure = null;
+            // Ray direction is fixed; roll is a task freedom the arm can use for comfort.
+            foreach (float roll in new[] {0f, -15f, 15f, -30f, 30f, -60f, 60f})
+            {
+                Quaternion rotation = preferred * Quaternion.AngleAxis(roll, Vector3.forward) * Quaternion.Inverse(local.rotation);
+                var candidate = new UnityEngine.Pose(contact.position - rotation * local.position, rotation);
+                try
+                {
+                    float cost = Comfort(Solve(candidate.position, candidate.rotation)) + 0.02f * Mathf.Pow(roll / 60, 2);
+                    if (cost < bestCost) { best = candidate; bestCost = cost; }
+                }
+                catch (InvalidOperationException error) { failure = error; }
+            }
+            if (float.IsPositiveInfinity(bestCost))
+                throw new InvalidOperationException("Cannot point at the target with a comfortable grip.", failure);
+            return best;
         }
 
         public UnityEngine.Pose Evaluate(Pose pose)
@@ -156,6 +209,10 @@ namespace TiltBrush
         private static float ComfortScore(Vector4 angles) => Mathf.Max(
             Mathf.Max(Mathf.Abs(angles.x) / k_MaxWristFlexion, Mathf.Abs(angles.y) / k_MaxWristDeviation),
             Mathf.Max(Mathf.Abs(angles.z) / k_MaxWristTwist, Mathf.Abs(angles.w) / k_MaxForearmTwist));
+
+        private static float ComfortCost(Vector4 angles) =>
+            Mathf.Pow(angles.x / k_MaxWristFlexion, 2) + Mathf.Pow(angles.y / k_MaxWristDeviation, 2) +
+            Mathf.Pow(angles.z / k_MaxWristTwist, 2) + Mathf.Pow(angles.w / k_MaxForearmTwist, 2);
 
         private static InvalidOperationException GripError(Vector4 angles) => new InvalidOperationException(
             $"Controller grip exceeds arm comfort limits (wrist flexion {angles.x:F0}°, deviation {angles.y:F0}°, wrist twist {angles.z:F0}°, forearm twist {angles.w:F0}°). Reorient the target or contact pose.");
