@@ -73,16 +73,16 @@ namespace TiltBrush
             m_MaterialArea = new GameObject("Material controls"); m_MaterialArea.transform.SetParent(transform, false);
             CreateButton(new Vector3(.0f, .35f, -.06f), VoxPaletteButton.Action.PreviousMaterial, m_PreviousTexture, "Previous material type").transform.SetParent(m_MaterialArea.transform, false);
             CreateButton(new Vector3(1.32f, .35f, -.06f), VoxPaletteButton.Action.NextMaterial, m_NextTexture, "Next material type").transform.SetParent(m_MaterialArea.transform, false);
-            m_TypeLabel = CreateLabel(m_MaterialArea.transform, "Material type", new Vector3(.66f,.35f,-.07f), .65f);
+            m_TypeLabel = CreateLabel(m_MaterialArea.transform, "Material type", new Vector3(.66f, .35f, -.07f), .65f);
             for (int i = 0; i < m_MaterialSliders.Length; ++i)
             {
                 var slider = Instantiate(m_MaterialSliderPrefab, m_MaterialArea.transform);
-                slider.transform.localPosition = new Vector3(.66f, -.02f - .35f*i, -.06f);
+                slider.transform.localPosition = new Vector3(.66f, -.02f - .35f * i, -.06f);
                 slider.RegisterComponent(); m_MaterialSliders[i] = slider;
             }
             ColorPicker.ColorPicked += OnColorPicked;
             ColorPicker.ColorFinalized += FinishChange;
-            m_BrushController=App.BrushColor;
+            m_BrushController = App.BrushColor;
             m_BrushController.CurrentColorSet += OnBrushColorChanged;
             m_Memory = SketchMemoryScript.m_Instance;
             m_Memory.OperationStackChanged += OnHistoryChanged;
@@ -97,19 +97,19 @@ namespace TiltBrush
         }
         private VoxPaletteButton CreateTab(string text, float x, VoxPaletteButton.Action action)
         {
-            var button = CreateButton(new Vector3(x,.7f,-.06f), action, m_SwatchTexture, text);
-            button.transform.localScale = new Vector3(.65f,.19f,.13f);
+            var button = CreateButton(new Vector3(x, .7f, -.06f), action, m_SwatchTexture, text);
+            button.transform.localScale = new Vector3(.65f, .19f, .13f);
             // Keep the label's aspect independent of the stretched button.
-            CreateLabel(transform, text, new Vector3(x,.7f,-.14f), .52f);
+            CreateLabel(transform, text, new Vector3(x, .7f, -.14f), .52f);
             return button;
         }
         private TextMeshPro CreateLabel(Transform parent, string text, Vector3 position, float scale)
         {
             var label = Instantiate(m_WindowText, parent);
             label.name = text; label.text = text; label.alignment = TextAlignmentOptions.Center;
-            label.rectTransform.pivot = new Vector2(.5f,.5f);
-            label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(.5f,.5f);
-            label.rectTransform.sizeDelta = new Vector2(2f,.5f);
+            label.rectTransform.pivot = new Vector2(.5f, .5f);
+            label.rectTransform.anchorMin = label.rectTransform.anchorMax = new Vector2(.5f, .5f);
+            label.rectTransform.sizeDelta = new Vector2(2f, .5f);
             label.transform.localPosition = position; label.transform.localScale = Vector3.one * scale;
             return label;
         }
@@ -134,13 +134,13 @@ namespace TiltBrush
         internal void ShowMaterial(bool material)
         { FinishChange(); m_MaterialTab = material; RefreshControls(); }
         internal void ChangePage(int delta)
-        { if (!ValidTarget) return; FinishChange(); m_Page = Mathf.Clamp(m_Page + delta,0,PageCount-1); RefreshControls(); }
+        { if (!ValidTarget) return; FinishChange(); m_Page = Mathf.Clamp(m_Page + delta, 0, PageCount - 1); RefreshControls(); }
         internal void ChangeMaterialType(int direction)
         {
             if (!CanEdit) return;
             FinishChange(); int current = (int)VoxMaterialAdapter.Describe(Properties).Type;
-            int next = (Mathf.Clamp(current,0,3) + direction + 4) % 4;
-            SetMaterial(VoxMaterialAdapter.WithType(Properties,next)); FinishChange();
+            int next = (Mathf.Clamp(current, 0, 3) + direction + 4) % 4;
+            SetMaterial(VoxMaterialAdapter.WithType(Properties, next)); FinishChange();
         }
         private void OnColorPicked(Color color)
         {
@@ -153,31 +153,31 @@ namespace TiltBrush
             }
             else
             {
-                Color32 entry = color; entry.a = m_Document.Palette[m_Selected-1].a;
-                if (entry.Equals(m_Document.Palette[m_Selected-1])) return;
-                Record(new SetVoxPaletteEntryCommand(m_Widget,m_Document,m_Selected,entry,Properties,Gesture()));
-                int slot = Array.IndexOf(m_DisplayOrder,m_Selected) % PageSize;
-                m_Swatches[slot].SetSwatch(m_Selected,entry,true);
+                Color32 entry = color; entry.a = m_Document.Palette[m_Selected - 1].a;
+                if (entry.Equals(m_Document.Palette[m_Selected - 1])) return;
+                Record(new SetVoxPaletteEntryCommand(m_Widget, m_Document, m_Selected, entry, Properties, Gesture()));
+                int slot = Array.IndexOf(m_DisplayOrder, m_Selected) % PageSize;
+                m_Swatches[slot].SetSwatch(m_Selected, entry, true);
             }
         }
         private object Gesture() => m_Gesture ??= new object();
-        private void SetMaterial(IReadOnlyDictionary<string,string> properties)
+        private void SetMaterial(IReadOnlyDictionary<string, string> properties)
         {
             if (!CanEdit) return;
-            if (BrushMode) Record(new SetVoxDrawingMaterialCommand(m_Settings,properties,Gesture()));
-            else Record(new SetVoxPaletteEntryCommand(m_Widget,m_Document,m_Selected,m_Document.Palette[m_Selected-1],properties,Gesture()));
+            if (BrushMode) Record(new SetVoxDrawingMaterialCommand(m_Settings, properties, Gesture()));
+            else Record(new SetVoxPaletteEntryCommand(m_Widget, m_Document, m_Selected, m_Document.Palette[m_Selected - 1], properties, Gesture()));
         }
         private void Record(BaseCommand command)
-        { m_Applying=true;try{m_Memory.PerformAndRecordCommand(command);}finally{m_Applying=false;} }
+        { m_Applying = true; try { m_Memory.PerformAndRecordCommand(command); } finally { m_Applying = false; } }
         public void FinishChange()
-        { m_Gesture=null; if(m_Settings!=null && !m_Applying) RefreshControls(); }
+        { m_Gesture = null; if (m_Settings != null && !m_Applying) RefreshControls(); }
         internal void ClearUnusedColors()
         {
             if (!CanEdit) return; FinishChange();
-            BaseCommand embedding = m_Widget.IsExternalVox ? new EmbedVoxModelCommand(m_Widget,m_Document) : null;
-            var command = new ClearUnusedVoxPaletteCommand(m_Widget,m_Document,embedding);
-            if(command.HasChanges) Record(embedding ?? command);
-            GroupUsedColorsFirst(m_DisplayOrder,m_Document.GetUsedPaletteIndices()); RefreshControls();
+            BaseCommand embedding = m_Widget.IsExternalVox ? new EmbedVoxModelCommand(m_Widget, m_Document) : null;
+            var command = new ClearUnusedVoxPaletteCommand(m_Widget, m_Document, embedding);
+            if (command.HasChanges) Record(embedding ?? command);
+            GroupUsedColorsFirst(m_DisplayOrder, m_Document.GetUsedPaletteIndices()); RefreshControls();
         }
         private static void GroupUsedColorsFirst(int[] displayOrder, bool[] used)
         {
@@ -225,55 +225,55 @@ namespace TiltBrush
 
 
         private void OnHistoryChanged()
-        { if(m_Applying)return; m_Gesture=null;RefreshControls(); }
+        { if (m_Applying) return; m_Gesture = null; RefreshControls(); }
         private void OnBrushColorChanged(ColorPickerMode mode, Vector3 value)
-        { if(!m_Applying && BrushMode && m_Gesture==null)RefreshControls(); }
+        { if (!m_Applying && BrushMode && m_Gesture == null) RefreshControls(); }
         private void RefreshControls()
         {
-            bool valid=ValidTarget;
-            for(int i=0;i<PageSize;++i)
+            bool valid = ValidTarget;
+            for (int i = 0; i < PageSize; ++i)
             {
-                int slot=m_Page*PageSize+i;var swatch=m_Swatches[i];swatch.gameObject.SetActive(slot<m_DisplayOrder.Length);
-                if(slot>=m_DisplayOrder.Length)continue;
-                int index=m_DisplayOrder[slot];swatch.SetButtonAvailable(valid);
-                if(valid)swatch.SetSwatch(index,m_Document.Palette[index-1],!BrushMode && index==m_Selected);
+                int slot = m_Page * PageSize + i; var swatch = m_Swatches[i]; swatch.gameObject.SetActive(slot < m_DisplayOrder.Length);
+                if (slot >= m_DisplayOrder.Length) continue;
+                int index = m_DisplayOrder[slot]; swatch.SetButtonAvailable(valid);
+                if (valid) swatch.SetSwatch(index, m_Document.Palette[index - 1], !BrushMode && index == m_Selected);
             }
-            m_Previous.SetButtonAvailable(valid && m_Page>0);m_Next.SetButtonAvailable(valid && m_Page<PageCount-1);
-            m_BrushColor.SetActionSelected(BrushMode);m_ColourTab.SetActionSelected(!m_MaterialTab);m_MaterialTabButton.SetActionSelected(m_MaterialTab);
-            m_ClearUnused.SetButtonAvailable(CanEdit);m_Sort.SetButtonAvailable(valid);
-            ColorPicker.gameObject.SetActive(!m_MaterialTab);m_MaterialArea.SetActive(m_MaterialTab && valid);
-            m_WindowText.text=valid ? $"VOX palette — {(BrushMode ? "Drawing material" : $"Palette slot {m_Selected}")} — {m_Page+1}/{PageCount}" : "VOX model unavailable";
-            if(!valid)return;
-            ColorPicker.Controller.CurrentColor=BrushMode ? App.BrushColor.CurrentColor : m_Document.Palette[m_Selected-1];
-            if(m_MaterialTab)RefreshMaterialControls();
+            m_Previous.SetButtonAvailable(valid && m_Page > 0); m_Next.SetButtonAvailable(valid && m_Page < PageCount - 1);
+            m_BrushColor.SetActionSelected(BrushMode); m_ColourTab.SetActionSelected(!m_MaterialTab); m_MaterialTabButton.SetActionSelected(m_MaterialTab);
+            m_ClearUnused.SetButtonAvailable(CanEdit); m_Sort.SetButtonAvailable(valid);
+            ColorPicker.gameObject.SetActive(!m_MaterialTab); m_MaterialArea.SetActive(m_MaterialTab && valid);
+            m_WindowText.text = valid ? $"VOX palette — {(BrushMode ? "Drawing material" : $"Palette slot {m_Selected}")} — {m_Page + 1}/{PageCount}" : "VOX model unavailable";
+            if (!valid) return;
+            ColorPicker.Controller.CurrentColor = BrushMode ? App.BrushColor.CurrentColor : m_Document.Palette[m_Selected - 1];
+            if (m_MaterialTab) RefreshMaterialControls();
         }
         private void RefreshMaterialControls()
         {
-            var native=VoxMaterialAdapter.Describe(Properties);var values=VoxMaterialAdapter.Read(native);
-            int type=(int)native.Type;m_TypeLabel.text=type<4 ? new[]{"Standard","Metal","Glass","Emissive"}[type] : "Imported material";
-            var mask=PbrMaterialParameter.Controls.Glossiness;
-            if(type==1)mask|=PbrMaterialParameter.Controls.Metallic;
-            if(type==2)mask|=PbrMaterialParameter.Controls.Opacity;
-            var parameters=type<3 ? PbrMaterialParameter.For(values,mask) : new List<PbrMaterialParameter>();
-            for(int i=0;i<m_MaterialSliders.Length;++i)
+            var native = VoxMaterialAdapter.Describe(Properties); var values = VoxMaterialAdapter.Read(native);
+            int type = (int)native.Type; m_TypeLabel.text = type < 4 ? new[] { "Standard", "Metal", "Glass", "Emissive" }[type] : "Imported material";
+            var mask = PbrMaterialParameter.Controls.Glossiness;
+            if (type == 1) mask |= PbrMaterialParameter.Controls.Metallic;
+            if (type == 2) mask |= PbrMaterialParameter.Controls.Opacity;
+            var parameters = type < 3 ? PbrMaterialParameter.For(values, mask) : new List<PbrMaterialParameter>();
+            for (int i = 0; i < m_MaterialSliders.Length; ++i)
             {
-                var slider=m_MaterialSliders[i];bool visible=i<parameters.Count || type==3 && i==0;
-                slider.gameObject.SetActive(visible);if(!visible)continue;
+                var slider = m_MaterialSliders[i]; bool visible = i < parameters.Count || type == 3 && i == 0;
+                slider.gameObject.SetActive(visible); if (!visible) continue;
                 foreach (var collider in slider.GetComponentsInChildren<Collider>(true)) collider.enabled = CanEdit;
-                if(type==3)slider.Configure("Emission strength",VoxMaterialAdapter.Emission(native),value=>SetMaterial(VoxMaterialAdapter.WithEmission(Properties,value)),FinishChange);
+                if (type == 3) slider.Configure("Emission strength", VoxMaterialAdapter.Emission(native), value => SetMaterial(VoxMaterialAdapter.WithEmission(Properties, value)), FinishChange);
                 else
                 {
-                    var parameter=parameters[i];
-                    slider.Configure(parameter.Label,parameter.Read(values),value=>SetMaterial(VoxMaterialAdapter.WithValue(Properties,parameter.Key,value)),FinishChange,
-                        min:parameter.Key==PbrMaterialParameter.Property.Opacity ? .05f : 0f);
+                    var parameter = parameters[i];
+                    slider.Configure(parameter.Label, parameter.Read(values), value => SetMaterial(VoxMaterialAdapter.WithValue(Properties, parameter.Key, value)), FinishChange,
+                        min: parameter.Key == PbrMaterialParameter.Property.Opacity ? .05f : 0f);
                 }
             }
         }
         private void OnDestroy()
         {
-            if(ColorPicker!=null){ColorPicker.ColorPicked-=OnColorPicked;ColorPicker.ColorFinalized-=FinishChange;}
-            if(m_BrushController!=null)m_BrushController.CurrentColorSet-=OnBrushColorChanged;
-            if(m_Memory!=null)m_Memory.OperationStackChanged-=OnHistoryChanged;
+            if (ColorPicker != null) { ColorPicker.ColorPicked -= OnColorPicked; ColorPicker.ColorFinalized -= FinishChange; }
+            if (m_BrushController != null) m_BrushController.CurrentColorSet -= OnBrushColorChanged;
+            if (m_Memory != null) m_Memory.OperationStackChanged -= OnHistoryChanged;
         }
     }
 }

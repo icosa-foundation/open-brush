@@ -45,7 +45,7 @@ namespace TiltBrush
                 m_SelectedOverlay = new GameObject("Selected palette slot");
                 m_SelectedOverlay.layer = gameObject.layer;
                 m_SelectedOverlay.transform.SetParent(transform, false);
-                m_SelectedOverlay.transform.localPosition = new Vector3(0,0,-.01f);
+                m_SelectedOverlay.transform.localPosition = new Vector3(0, 0, -.01f);
                 m_SelectedOverlay.AddComponent<MeshFilter>().sharedMesh = GetComponent<MeshFilter>().sharedMesh;
                 m_SelectedMaterial = new Material(m_Material);
                 m_SelectedMaterial.SetColor("_Tint", Color.white);
