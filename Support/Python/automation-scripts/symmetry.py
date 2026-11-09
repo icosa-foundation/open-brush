@@ -12,17 +12,18 @@ def build_plan(args):
     preset = args.parameters.get("preset", "Snowflake")
     if preset not in ("Snowflake", "Plait", "CandyCane"):
         raise ValueError("preset must be Snowflake, Plait or CandyCane")
-    gesture = [[0.08, -0.24, 0.43], [0.19, -0.28, 0.43],
-               [0.26, -0.10, 0.43], [0.13, -0.07, 0.43]]
+    gesture = [[0.084, -0.238, 0.43], [0.172, -0.270, 0.43],
+               [0.228, -0.126, 0.43], [0.124, -0.102, 0.43]]
     return {
         "version": 1,
         "name": f"Draw with the {preset} symmetry preset",
         "prepare": [{"op": "drawing"}, prepare_brush(size=0.035),
                     prepare_script(preset), {"op": "color", "colorRgb": [0.12, 0.7, 0.95]}],
-        "subjects": [{"name": "Symmetry result", "min": [-0.14, -0.46, 0.30],
-                      "max": [0.32, -0.01, 0.56]}],
+        "subjects": [{"name": "Symmetry result", "min": [-0.092, -0.414, 0.326],
+                      "max": [0.276, -0.054, 0.534]}],
         "steps": [
-            *open_panel("Scripts", via_more=False, park=True),
+            *open_panel("Scripts", via_more=False,
+                        park={"position": (0, 0.12, 0.38), "rotation": (25, 0, 0)}),
             *select_script(preset),
             *select_control({"command": "ScriptedSymmetryCommand"}, present=False),
             {"op": "assert", "symmetry": "ScriptedSymmetryMode"},
