@@ -282,6 +282,39 @@ namespace TiltBrush
             step.Rotation == null ? m_Arms[hand].RelaxedGripPose(contact.position, ContactLocal(hand, step).position) :
                 RootForContact(hand, contact, step, step.RotationConstraint == "forward");
 
+        private UnityEngine.Pose[] PlanPanelGrip(UnityEngine.Pose source, UnityEngine.Pose destination, Vector3 center)
+        {
+            Vector3 local = ContactLocal(1, new AutomationScript.Step()).position;
+            Vector3 start = source.position + source.rotation * center;
+            Vector3 finish = destination.position + destination.rotation * center;
+            Quaternion delta = destination.rotation * Quaternion.Inverse(source.rotation);
+            Quaternion first = m_Arms[1].RelaxedGripPose(start, local).rotation;
+            Quaternion last = Quaternion.Inverse(delta) * m_Arms[1].RelaxedGripPose(finish, local).rotation;
+            float bestCost = float.PositiveInfinity;
+            UnityEngine.Pose[] best = null;
+            // The grip must be comfortable at both ends while preserving the panel's
+            // rigid attachment to the hand. Pointer-tip contact is required for native grabs.
+            for (int i = 0; i <= 8; ++i)
+            {
+                Quaternion rotation = Quaternion.Slerp(first, last, i / 8f);
+                var grab = new UnityEngine.Pose(start - rotation * local, rotation);
+                Quaternion releasedRotation = delta * rotation;
+                var released = new UnityEngine.Pose(finish - releasedRotation * local, releasedRotation);
+                try
+                {
+                    var from = m_Arms[1].Solve(grab.position, grab.rotation);
+                    var to = m_Arms[1].Solve(released.position, released.rotation);
+                    float cost = m_Arms[1].Comfort(from) + m_Arms[1].Comfort(to);
+                    if (cost >= bestCost) { continue; }
+                    for (int sample = 0; sample <= 32; ++sample) { m_Arms[1].Reach(from, to, sample / 32f); }
+                    bestCost = cost;
+                    best = new[] {grab, released};
+                }
+                catch (InvalidOperationException) { }
+            }
+            return best ?? throw new InvalidOperationException("Cannot grip and place the panel with comfortable wrists.");
+        }
+
         private UnityEngine.Pose Aim(BaseButton button, UnityEngine.Pose panelPose, bool predict, Instruction instruction)
         {
             BasePanel panel = button.GetComponentInParent<BasePanel>(true);
@@ -369,7 +402,7 @@ namespace TiltBrush
             // Prefer the non-drawing side, then try the other side if the artwork occupies it.
             // Every candidate uses the native panel spawn and the same grip/reach checks.
             foreach (float depth in new[] {0f, -0.06f, 0.06f})
-            foreach (float side in new[] {0f, -0.06f, -0.12f, -0.18f, -0.24f, -0.30f, 0.06f, 0.12f, 0.18f, 0.24f, 0.30f, 0.36f, 0.42f})
+            foreach (float side in new[] {0f, -0.06f, 0.06f, -0.12f, 0.12f, -0.18f, 0.18f, -0.24f, 0.24f, -0.30f, 0.30f, 0.36f, 0.42f})
             foreach (float lift in new[] {0f, 0.06f, 0.12f})
             foreach (int cameraStep in Enumerable.Range(0, m_Script.Framing.MaximumPullbackMeters == 0 ? 1 : 7))
             {
@@ -649,14 +682,11 @@ namespace TiltBrush
                     item.PanelDestinationRotation = destination.rotation;
                     var box = item.Panel.GetCollider() as BoxCollider;
                     Vector3 center = box == null ? Vector3.zero : item.Panel.FullScalePoint(box.transform, box.center);
-                    var contact = AimAt(source.position + source.rotation * center, source.rotation, item);
-                    Vector3 tipLocal = Quaternion.Inverse(contact.rotation) * (source.position + source.rotation * center - contact.position);
-                    Quaternion releasedRotation = destination.rotation * Quaternion.Inverse(source.rotation) * contact.rotation;
-                    var released = new UnityEngine.Pose(destination.position + destination.rotation * center -
-                        releasedRotation * tipLocal, releasedRotation);
-                    item.Path = new[] {contact, released};
+                    item.Path = PlanPanelGrip(source, destination, center);
+                    var contact = item.Path[0];
+                    Vector3 tipLocal = ContactLocal(1, new AutomationScript.Step()).position;
                     var from = m_Arms[1].Solve(item.Start.position, item.Start.rotation);
-                    var grab = m_Arms[1].Solve(contact.position, contact.rotation);
+                    var grab = m_Arms[1].Solve(item.Path[0].position, item.Path[0].rotation);
                     var end = m_Arms[1].Solve(item.Path[1].position, item.Path[1].rotation);
                     for (int i = 0; i <= 32; ++i)
                     {

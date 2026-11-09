@@ -20,7 +20,7 @@ namespace TiltBrush
         public OutputOptions Output = new OutputOptions();
         public float UpperArmMeters = 0.30f;
         public float ForearmMeters = 0.30f;
-        public float[] PanelPosition = {-0.12f, -0.10f, 0.40f};
+        public float[] PanelPosition = {-0.06f, -0.04f, 0.34f};
         public float[] PointingOffsetMeters = {0.12f, 0.02f, -0.12f};
         public AutomationShot.FramingSettings Framing = new AutomationShot.FramingSettings();
         public Preparation[] Prepare = Array.Empty<Preparation>();

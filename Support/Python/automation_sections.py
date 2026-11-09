@@ -61,7 +61,7 @@ def select_tool(tool, *, subtool=None):
     return steps
 
 
-def park_panel(panel, position=(0, 0.04, 0.44), rotation=None):
+def park_panel(panel, position=(0.06, 0.10, 0.50), rotation=None):
     """Use a native grip to move an opened floating panel beside the working area."""
     step = {"op": "placePanel", "panel": panel, "points": [list(position)], "seconds": 1.2}
     if rotation is not None:
