@@ -14,8 +14,8 @@ and tool input.
 1. Open the Main scene and **Open Brush > Procedural Automation**. Enable
    **Virtual Input next Play**, then enter Play mode. Alternatively launch a
    player with `--virtualInput`.
-2. Set the Game/player view to the intended recording resolution and aspect ratio.
-   Let startup messages disappear.
+2. Keep the Game/player view visible. The default output is 4:3 at 1440 × 1080
+   and 30 fps; the preview is letterboxed to the selected aspect ratio.
 3. Run from the project root with Python 3 (`python3` on macOS):
 
    ```sh
@@ -92,11 +92,13 @@ ffmpeg -n -framerate 30 -i "/path/to/grab-example_frames/frame_%06d.png" -c:v li
    ```
 
 2. Open **Open Brush > Procedural Automation**, enable **Virtual Input next Play**
-   and enter Play mode. Keep the Game view at the intended capture size/aspect.
+   and enter Play mode. Keep the Game view visible.
 3. Choose **Load JSON plan** and select the exported file. Use **Reload** after
    editing or regenerating it.
 4. Set **Script speed** for the take; it overrides the plan's speed and stays
    selected when loading another plan. **Rehearse** runs without capture.
+   Select **Video format**: 4:3, 16:9 or custom pixel dimensions. The window's
+   format overrides the plan for both rehearsal and recording.
    **Record** uses the window's recording name and FPS. **Stop** stops execution
    and capture; Escape stops active execution. The status and output path appear
    in the window.
@@ -225,6 +227,12 @@ An optional `capture` object has `name` and `fps`. The runner normally supplies
 this from its CLI options; `--rehearse` removes it. The body, controller ownership
 and capture clock are managed by the executor.
 
+`output` sets the dimensions for framing, rehearsal and recording. Its default
+is `{"width":1440,"height":1080}` (4:3). Use `--width 1920 --height 1080` for
+16:9, or set those values in the plan's `output` object. Dimensions must be even
+integers from 16 to 8192 pixels. The selected output size is independent of the
+Game/player window size.
+
 ### Preparation
 
 Preparation happens before recording and does not simulate visible user actions.
@@ -327,7 +335,7 @@ explicit final pointer orientation instead.
 ### Fixed camera framing
 
 One plan represents one continuous fixed-camera shot. The executor frames it
-once before capture, using the current FOV and aspect ratio. It automatically
+once before capture, using the current FOV and the chosen output aspect ratio. It automatically
 includes prepared strokes, contact paths with `paddingMeters`, controller
 interaction poses, presented panels, panel rotation, popups, floating panels and
 expanded target trays. Reaches from rest and returning hands to rest need not
@@ -343,7 +351,7 @@ subjects explicitly and use `present` for automatic panel navigation.
 `framing` supports `enabled`, `margin` (default `0.08`),
 `maximumPullbackMeters` (`0.15`) and `maximumAngleDegrees` (`40`). If the shot
 cannot fit, reduce its spatial extent or submit separate shots. Do not change
-resolution/aspect during a take or use repeated camera tracking.
+the output format during a take or use repeated camera tracking.
 
 The planner keeps floating panels, their popups and expanded trays clear of the artwork
 and tool paths. It tries nearby wand presentation positions, preferring the
@@ -388,6 +396,6 @@ Only one automation and one capture can own the controllers/clock at a time.
    `[AutomationScript]`; capture logs use `[ProceduralCapture]`.
 3. For an unreachable pose, move the target closer or adjust the plan's arm
    lengths. If framing fails, reduce the shot's extent or split it into separate
-   shots. Keep resolution and aspect ratio stable throughout a take.
+   shots. Keep the selected output format stable throughout a take.
 4. If a run stops during preparation or after modifying geometry, Undo those
    changes or restore the starting sketch before retrying.

@@ -20,10 +20,13 @@ namespace TiltBrush
         private readonly List<bool> m_HeadDriverStates = new List<bool>();
         public UnityEngine.Pose BodyPose { get; private set; }
         public Ray? InteractionGaze { get; set; }
+        public float? ViewAspect { get; private set; }
+        private readonly Rect m_OriginalViewport;
 
         public VirtualInputSimulation(Camera camera, VrControllers controllers)
         {
             m_Camera = camera;
+            m_OriginalViewport = camera.rect;
             m_Controllers = controllers;
             m_ControllerTracking = controllers.SuspendPoseTracking();
             foreach (var driver in camera.GetComponents<UnityEngine.SpatialTracking.TrackedPoseDriver>())
@@ -64,8 +67,34 @@ namespace TiltBrush
         public void SetFramingPose(UnityEngine.Pose pose) =>
             m_Camera.transform.SetPositionAndRotation(pose.position, pose.rotation);
 
+        public void SetViewAspect(float? aspect)
+        {
+            ViewAspect = aspect;
+            if (!aspect.HasValue)
+            {
+                m_Camera.rect = m_OriginalViewport;
+                m_Camera.ResetAspect();
+            }
+            else
+            {
+                m_Camera.aspect = aspect.Value;
+                UpdateView();
+            }
+        }
+
+        public void UpdateView()
+        {
+            if (!ViewAspect.HasValue || Screen.width <= 0 || Screen.height <= 0) { return; }
+            float windowAspect = (float)Screen.width / Screen.height;
+            float width = Mathf.Min(1, ViewAspect.Value / windowAspect);
+            float height = Mathf.Min(1, windowAspect / ViewAspect.Value);
+            var rect = new Rect((1 - width) / 2, (1 - height) / 2, width, height);
+            if (m_Camera.rect != rect) { m_Camera.rect = rect; }
+        }
+
         public void Dispose()
         {
+            SetViewAspect(null);
             m_ControllerTracking.Dispose();
             for (int i = 0; i < m_HeadDrivers.Count; ++i)
             {

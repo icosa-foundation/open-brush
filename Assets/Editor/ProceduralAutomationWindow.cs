@@ -16,6 +16,9 @@ namespace TiltBrush
         [SerializeField] private string m_PlanJson;
         [SerializeField] private string m_RecordingName = "tutorial";
         [SerializeField] private int m_FrameRate = 30;
+        [SerializeField] private int m_OutputPreset;
+        [SerializeField] private int m_OutputWidth = AutomationScript.OutputOptions.DefaultWidth;
+        [SerializeField] private int m_OutputHeight = AutomationScript.OutputOptions.DefaultHeight;
         [SerializeField] private float m_PlaybackSpeed = 1;
         private string m_Error;
 
@@ -63,6 +66,13 @@ namespace TiltBrush
                 EditorGUILayout.LabelField("Plan", string.IsNullOrEmpty(m_PlanPath) ? "No plan loaded" : Path.GetFileName(m_PlanPath));
                 m_RecordingName = EditorGUILayout.TextField("Recording name", m_RecordingName);
                 m_FrameRate = EditorGUILayout.IntSlider("Recording FPS", m_FrameRate, 1, 120);
+                m_OutputPreset = EditorGUILayout.Popup("Video format", m_OutputPreset,
+                    new[] {"4:3 (1440 × 1080)", "16:9 (1920 × 1080)", "Custom"});
+                if (m_OutputPreset == 2)
+                {
+                    m_OutputWidth = EditorGUILayout.IntField("Width (px)", m_OutputWidth);
+                    m_OutputHeight = EditorGUILayout.IntField("Height (px)", m_OutputHeight);
+                }
                 m_PlaybackSpeed = EditorGUILayout.Slider("Script speed", m_PlaybackSpeed, 0.25f, 2);
             }
             using (new EditorGUILayout.HorizontalScope())
@@ -81,7 +91,7 @@ namespace TiltBrush
             if (!string.IsNullOrEmpty(error)) { EditorGUILayout.HelpBox(error, MessageType.Warning); }
             if (!string.IsNullOrEmpty(capture?.OutputDirectory))
                 EditorGUILayout.LabelField("Output", capture.OutputDirectory);
-            EditorGUILayout.HelpBox("Rehearse ignores the plan's capture settings. Record uses the name and FPS above and writes PNG frames into Open Brush's Videos folder. Keep the Game view visible. Geometry changes remain in the sketch; use Undo before repeating a take.", MessageType.None);
+            EditorGUILayout.HelpBox("Rehearse and Record use the video format above. Record uses the name and FPS above and writes PNG frames into Open Brush's Videos folder. Keep the Game view visible. Geometry changes remain in the sketch; use Undo before repeating a take.", MessageType.None);
         }
 
         private void LoadPlan(string path)
@@ -96,6 +106,12 @@ namespace TiltBrush
         {
             var plan = AutomationScript.Parse(m_PlanJson);
             plan.Speed = m_PlaybackSpeed;
+            plan.Output = new AutomationScript.OutputOptions
+            {
+                Width = m_OutputPreset == 0 ? AutomationScript.OutputOptions.DefaultWidth : m_OutputPreset == 1 ? 1920 : m_OutputWidth,
+                Height = m_OutputPreset == 2 ? m_OutputHeight : AutomationScript.OutputOptions.DefaultHeight
+            };
+            plan.Output.Validate();
             plan.Capture = record ? new AutomationScript.CaptureOptions {Name = m_RecordingName, Fps = m_FrameRate} : null;
             if (record) { EditorApplication.ExecuteMenuItem("Window/General/Game"); }
             ApiMethods.StartAutomationScript(plan);

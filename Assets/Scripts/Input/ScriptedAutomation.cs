@@ -48,6 +48,7 @@ namespace TiltBrush
         private readonly Quaternion m_Yaw;
         private readonly UnityEngine.Pose m_Body;
         private readonly Ray? m_OriginalGaze;
+        private readonly float? m_OriginalViewAspect;
         private readonly int m_InitialStrokeCount;
         private readonly AutomationScript m_Script;
         private Vector3 m_PanelLayoutOffset;
@@ -75,11 +76,14 @@ namespace TiltBrush
                 App.Instance.GetComponent<ProceduralCapture>()?.IsRecording == true)
                 throw new InvalidOperationException("Scripts require an idle Virtual Input session with no active capture.");
             m_Script = script;
+            if (script.Output == null) { throw new ArgumentException("Output settings must not be null."); }
+            script.Output.Validate();
             AutomationScript.Positive(script.Speed, "speed", 0.25f, 2);
             AutomationScript.Positive(script.UpperArmMeters, "upperArmMeters", 0.15f, 0.5f);
             AutomationScript.Positive(script.ForearmMeters, "forearmMeters", 0.15f, 0.5f);
             m_Body = App.VrSdk.VirtualSimulation.BodyPose;
             m_OriginalGaze = App.VrSdk.VirtualSimulation.InteractionGaze;
+            m_OriginalViewAspect = App.VrSdk.VirtualSimulation.ViewAspect;
             m_Yaw = Quaternion.Euler(0, m_Body.rotation.eulerAngles.y, 0);
             m_Original = (ControllerInfo[])InputManager.Controllers.Clone();
             m_OriginalPoses = m_Original.Select(c => new UnityEngine.Pose(c.Transform.position, c.Transform.rotation)).ToArray();
@@ -123,12 +127,13 @@ namespace TiltBrush
                     m_Controllers[i].m_Position = m_Poses[i].position;
                 }
                 App.Instance.ShowControllers = true;
+                App.VrSdk.VirtualSimulation.SetViewAspect((float)script.Output.Width / script.Output.Height);
                 ApplyPoses();
                 if (framing.HasValue) { App.VrSdk.VirtualSimulation.SetFramingPose(framing.Value); }
                 if (script.Capture != null)
                 {
                     var capture = App.Instance.GetComponent<ProceduralCapture>() ?? App.Instance.gameObject.AddComponent<ProceduralCapture>();
-                    capture.Begin(script.Capture.Name, script.Capture.Fps);
+                    capture.Begin(script.Capture.Name, script.Capture.Fps, script.Output.Width, script.Output.Height);
                 }
                 BeginStep();
             }
@@ -254,6 +259,7 @@ namespace TiltBrush
         private UnityEngine.Pose? PlanFraming()
         {
             var camera = App.VrSdk.GetVrCamera();
+            float aspect = (float)m_Script.Output.Width / m_Script.Output.Height;
             if (!m_Script.Framing.Enabled)
             {
                 m_RestView = new UnityEngine.Pose(camera.transform.position, camera.transform.rotation);
@@ -270,8 +276,8 @@ namespace TiltBrush
                 try
                 {
                     m_RestView = null;
-                    m_RestView = Compile().Frame(camera, m_Body, m_Script.Framing);
-                    var view = Compile().Frame(camera, m_Body, m_Script.Framing);
+                    m_RestView = Compile().Frame(camera, m_Body, m_Script.Framing, aspect);
+                    var view = Compile().Frame(camera, m_Body, m_Script.Framing, aspect);
                     foreach (var item in m_Instructions.Where(i => i.Source.Op == "rest" && i.Hand == 0))
                         if (!WandBelowFrame(item.Path[0], item.RingAngle, view))
                             throw new InvalidOperationException("The resting wand would remain visible in the final frame.");
@@ -921,6 +927,7 @@ namespace TiltBrush
         public void ApplyPoses()
         {
             if (m_Disposed) { return; }
+            App.VrSdk.VirtualSimulation.UpdateView();
             for (int i = 0; i < 2; ++i) { m_Controllers[i].Transform.SetPositionAndRotation(m_Poses[i].position, m_Poses[i].rotation); }
         }
 
@@ -948,7 +955,11 @@ namespace TiltBrush
             finally
             {
                 var simulation = App.Instance != null ? App.VrSdk?.VirtualSimulation : null;
-                if (simulation != null) { simulation.InteractionGaze = m_OriginalGaze; }
+                if (simulation != null)
+                {
+                    simulation.InteractionGaze = m_OriginalGaze;
+                    simulation.SetViewAspect(m_OriginalViewAspect);
+                }
                 m_Tracking.Dispose();
             }
         }

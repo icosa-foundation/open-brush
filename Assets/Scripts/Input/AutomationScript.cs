@@ -17,6 +17,7 @@ namespace TiltBrush
         public string Name = "script";
         public float Speed = 1;
         public CaptureOptions Capture;
+        public OutputOptions Output = new OutputOptions();
         public float UpperArmMeters = 0.30f;
         public float ForearmMeters = 0.30f;
         public float[] PanelPosition = {-0.12f, -0.10f, 0.34f};
@@ -25,6 +26,22 @@ namespace TiltBrush
         public Preparation[] Prepare = Array.Empty<Preparation>();
         public Step[] Steps;
         public Subject[] Subjects = Array.Empty<Subject>();
+
+        public sealed class OutputOptions
+        {
+            public const int DefaultWidth = 1440;
+            public const int DefaultHeight = 1080;
+            public int Width = DefaultWidth;
+            public int Height = DefaultHeight;
+
+            public void Validate()
+            {
+                Positive(Width, "output width", 16, 8192);
+                Positive(Height, "output height", 16, 8192);
+                if (Width % 2 != 0 || Height % 2 != 0)
+                    throw new ArgumentException("Output width and height must be even pixel dimensions.");
+            }
+        }
 
         public sealed class CaptureOptions
         {
@@ -155,9 +172,10 @@ namespace TiltBrush
             });
             if (script == null || script.Version != 1 || script.Steps == null || script.Steps.Length == 0)
                 throw new ArgumentException("An automation script needs version 1 and a nonempty steps array.");
-            if (script.Prepare == null || script.Subjects == null || script.Framing == null || script.Steps.Any(s => s == null))
-                throw new ArgumentException("Script arrays and framing must not be null.");
+            if (script.Prepare == null || script.Subjects == null || script.Framing == null || script.Output == null || script.Steps.Any(s => s == null))
+                throw new ArgumentException("Script arrays, framing and output settings must not be null.");
             Positive(script.Speed, "speed", 0.25f, 2);
+            script.Output.Validate();
             return script;
         }
 

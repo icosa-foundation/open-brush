@@ -15,7 +15,7 @@ from pathlib import Path
 import shlex
 import sys
 
-from automation_client import AutomationClient, with_capture
+from automation_client import AutomationClient, with_capture, with_output
 
 
 def load_plan(path, args):
@@ -38,6 +38,8 @@ def main():
     parser.add_argument("--scenario", choices=sorted(examples), default="draw", help="External example to run when --script is omitted")
     parser.add_argument("--name", default=f"tutorial-{datetime.datetime.now():%Y%m%d-%H%M%S}")
     parser.add_argument("--fps", type=int, default=30)
+    parser.add_argument("--width", type=int, help="Output width in pixels (default: plan output or 1440)")
+    parser.add_argument("--height", type=int, help="Output height in pixels (default: plan output or 1080)")
     parser.add_argument("--speed", type=float, help="Script timing multiplier, 0.25 to 2 (default: plan speed or 1)")
     parser.add_argument("--brush", default="")
     parser.add_argument("--param", action="append", default=[], metavar="KEY=VALUE",
@@ -57,7 +59,7 @@ def main():
             parser.error("--param needs a unique, nonempty KEY followed by =VALUE")
         args.parameters[key] = value
     path = args.script or examples[args.scenario]
-    plan = load_plan(path, args)
+    plan = with_output(load_plan(path, args), args.width, args.height)
     if args.speed is not None:
         plan["speed"] = args.speed
     if args.rehearse:

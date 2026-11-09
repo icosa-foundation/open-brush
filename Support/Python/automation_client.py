@@ -64,9 +64,23 @@ class AutomationClient:
             raise
 
 
-def with_capture(plan, name, fps=30):
+def with_output(plan, width=None, height=None):
+    result = copy.deepcopy(plan)
+    output = result.setdefault("output", {})
+    if not isinstance(output, dict):
+        raise ValueError("Plan output must be an object with width and height.")
+    output["width"] = width if width is not None else output.get("width", 1440)
+    output["height"] = height if height is not None else output.get("height", 1080)
+    for key in ("width", "height"):
+        value = output[key]
+        if not isinstance(value, int) or not 16 <= value <= 8192 or value % 2:
+            raise ValueError(f"Output {key} must be an even integer between 16 and 8192 pixels.")
+    return result
+
+
+def with_capture(plan, name, fps=30, width=None, height=None):
     if not 1 <= fps <= 120:
         raise ValueError("FPS must be between 1 and 120.")
-    result = copy.deepcopy(plan)
+    result = with_output(plan, width, height)
     result["capture"] = {"name": name, "fps": fps}
     return result

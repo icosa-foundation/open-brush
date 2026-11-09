@@ -87,8 +87,11 @@ namespace TiltBrush
             return points;
         }
 
-        public UnityEngine.Pose Frame(Camera camera, UnityEngine.Pose preferred, FramingSettings settings)
+        public UnityEngine.Pose Frame(Camera camera, UnityEngine.Pose preferred, FramingSettings settings, float? outputAspect = null)
         {
+            float aspect = outputAspect ?? camera.aspect;
+            if (aspect <= 0 || float.IsNaN(aspect) || float.IsInfinity(aspect))
+                throw new ArgumentException("Output aspect ratio must be finite and positive.");
             if (settings.Margin < 0 || settings.Margin > 0.25f || float.IsNaN(settings.Margin) ||
                 settings.MaximumPullbackMeters < 0 || settings.MaximumPullbackMeters > 0.5f || float.IsNaN(settings.MaximumPullbackMeters) ||
                 settings.MaximumAngleDegrees <= 0 || settings.MaximumAngleDegrees > 60 || float.IsNaN(settings.MaximumAngleDegrees) ||
@@ -114,22 +117,22 @@ namespace TiltBrush
                 Rect viewport = default;
                 for (int iteration = 0; iteration < 24; ++iteration)
                 {
-                    valid = Project(points, eye, rotation, camera.nearClipPlane, tangent, camera.aspect, out viewport);
+                    valid = Project(points, eye, rotation, camera.nearClipPlane, tangent, aspect, out viewport);
                     if (!valid) { break; }
                     Vector2 centre = viewport.center - Vector2.one * 0.5f;
                     if (centre.sqrMagnitude < 0.00000001f) { break; }
-                    Vector3 direction = rotation * new Vector3(centre.x * 2 * tangent * camera.aspect, centre.y * 2 * tangent, 1);
+                    Vector3 direction = rotation * new Vector3(centre.x * 2 * tangent * aspect, centre.y * 2 * tangent, 1);
                     // Damping avoids oscillation when opposite edges are at very
                     // different depths (for example a nearby controller and far stroke).
                     rotation = Quaternion.LookRotation(Vector3.Slerp(rotation * Vector3.forward,
                         direction.normalized, 0.5f), Vector3.up);
                 }
                 if (valid && Quaternion.Angle(preferred.rotation, rotation) <= settings.MaximumAngleDegrees &&
-                    Project(points, eye, rotation, camera.nearClipPlane, tangent, camera.aspect, out viewport) &&
+                    Project(points, eye, rotation, camera.nearClipPlane, tangent, aspect, out viewport) &&
                     (viewport.center - Vector2.one * 0.5f).sqrMagnitude < 0.000004f &&
                     viewport.xMin >= settings.Margin - 0.0001f && viewport.xMax <= 1 - settings.Margin + 0.0001f &&
                     viewport.yMin >= settings.Margin - 0.0001f && viewport.yMax <= 1 - settings.Margin + 0.0001f &&
-                    PanelsClearArtwork(eye, rotation, camera.nearClipPlane, tangent, camera.aspect, settings.PanelGap))
+                    PanelsClearArtwork(eye, rotation, camera.nearClipPlane, tangent, aspect, settings.PanelGap))
                 {
                     return new UnityEngine.Pose(eye, rotation);
                 }
