@@ -32,16 +32,17 @@ def build_plan(args):
                                          "rotation": (25, 0, 0), "end_rotation": (25, 0, 0)})
     # Frame the scene's turn as well as the tool use; the filming camera stays fixed.
     turn_degrees = 128
+    grip_pivot = center
     sweep = []
     for i in range(33):
         angle = math.radians(turn_degrees) * i / 32
         for point in points:
-            x, y, z = [point[a] - center[a] for a in range(3)]
-            sweep.append([center[0] + x * math.cos(angle) + z * math.sin(angle),
-                          center[1] + y,
-                          center[2] - x * math.sin(angle) + z * math.cos(angle)])
+            x, y, z = [point[a] - grip_pivot[a] for a in range(3)]
+            sweep.append([grip_pivot[0] + x * math.cos(angle) + z * math.sin(angle),
+                          grip_pivot[1] + y,
+                          grip_pivot[2] - x * math.sin(angle) + z * math.cos(angle)])
     plan["subjects"] = [{"name": "Rotated flattened stroke",
                          "min": [min(p[a] for p in sweep) - 0.04 for a in range(3)],
                          "max": [max(p[a] for p in sweep) + 0.04 for a in range(3)]}]
-    plan["steps"] += rotate_scene(pivot=center, yaw_degrees=turn_degrees, seconds=4.2)
+    plan["steps"] += rotate_scene(pivot=grip_pivot, yaw_degrees=turn_degrees, seconds=4.2)
     return plan

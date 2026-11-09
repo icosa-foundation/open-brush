@@ -168,7 +168,7 @@ calls, so they also work with `--write-plan`.
 | `park_panel(panel, position=...)` | Grip and move an opened floating panel to a body-relative position before using its controls. |
 | `apply_path(points, ...)` | Approach, lower the wand, pause, hold trigger along a path, release and pause. Supports contact attachment, anchor, curve, rotations, timing and padding. |
 | `reveal_result(seconds=1.0)` | Withdraw the applying hand and hold a clear view of the result. |
-| `rotate_scene(pivot=..., span=0.28, yaw_degrees=90, seconds=3.0)` | Hold both grips, keep the wand steady and sweep the brush hand to turn the scene. Release, withdraw both hands and hold the result. Include the rotated artwork in the plan's framing subjects. |
+| `rotate_scene(pivot=..., span=0.24, yaw_degrees=90, seconds=3.0)` | Turn around `pivot` with both hands moving together and relaxed wrists. Release and regrip between short turns, then withdraw and hold the result. Include the rotated artwork in the plan's framing subjects. |
 
 Compose recorded sections with Python list unpacking, for example
 `steps = [*select_tool("TintColorTool"), *apply_path(...), *reveal_result()]`.
@@ -296,6 +296,15 @@ camera adjustment cannot move the action.
 `attachment` is `tip` by default, `tool` for a native tool contact, or `root` for
 the controller itself. A tool contact can specify `tool: "ReshapeTool"` to
 include that tool's native forward offset. Wand motion usually uses `root`.
+
+For a scene grab, use `attachment: "grip"` with `naturalGrip: true`. Points
+describe the native world-grab anchor. The arm model chooses controller
+orientation with neutral wrists, using shoulders relative to the recording
+camera. Omit `endRotation`; authored `rotation` is ignored in this mode.
+
+A `move` can contain a `parallel` move for the other hand with the same
+`seconds`. Both paths run together. Use this for coordinated reaches and
+two-handed scene manipulation; nested parallel moves are not supported.
 
 For an existing-stroke interaction, use `anchor: "subject"` where `subject` is
 the preparation ID. `anchorT` selects a point along the original stroke's
