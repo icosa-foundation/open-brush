@@ -8,12 +8,22 @@ namespace TiltBrush
 {
     public partial class VoxDocumentApiWrapper
     {
+        [LuaDocsDescription("Finalizes this document's voxel selection through undo history. Cell coordinates can change; query coordinates again after finalizing. Does nothing during preview execution.")]
+        public void FinalizeSelection()
+        {
+            RequireValidDocument();
+            if (VoxScriptEditGroup.IsPreview) return;
+            Widget?.CommitVoxRegionSelection();
+        }
+
         [MoonSharpHidden]
         internal bool Mutate(Func<bool> mutation)
         {
             RequireValidDocument();
             if (VoxScriptEditGroup.IsPreview) return false;
-            if (!SuppressDirtyTracking) Widget?.CommitVoxRegionSelection();
+            if (Widget?.HasVoxRegionSelection == true || _Document.FloatingSelection.HasValue)
+                throw new InvalidOperationException(
+                    "Finalize the floating voxel selection with document:FinalizeSelection() before editing this document, then query cell coordinates again.");
             if (Widget == null || SuppressDirtyTracking)
             {
                 bool changed = mutation();

@@ -163,13 +163,10 @@ namespace TiltBrush
         [LuaDocsExample("model:PaintAt(Brush.position, Brush.colorRgb)")]
         public bool PaintAt(Vector3 canvasPosition, Color color)
         {
-            Vector3Int cell = Vector3Int.RoundToInt(CanvasToVoxel(canvasPosition));
-            if (!_Model.IsInBounds(cell))
-            {
-                return false;
-            }
             return m_DocumentWrapper.Mutate(() =>
             {
+                Vector3Int cell = Vector3Int.RoundToInt(CanvasToVoxel(canvasPosition));
+                if (!_Model.IsInBounds(cell)) return false;
                 byte paletteIndex = m_Document.GetOrAddPaletteColor(color);
                 return paletteIndex != 0 && _Model.AddOrUpdateVoxel(cell, paletteIndex);
             });
@@ -179,13 +176,10 @@ namespace TiltBrush
         [LuaDocsExample("model:RecolorAt(Brush.position, Brush.colorRgb)")]
         public bool RecolorAt(Vector3 canvasPosition, Color color)
         {
-            Vector3Int cell = Vector3Int.RoundToInt(CanvasToVoxel(canvasPosition));
-            if (!_Model.TryGetPaletteIndex(cell, out _))
-            {
-                return false;
-            }
             return m_DocumentWrapper.Mutate(() =>
             {
+                Vector3Int cell = Vector3Int.RoundToInt(CanvasToVoxel(canvasPosition));
+                if (!_Model.TryGetPaletteIndex(cell, out _)) return false;
                 byte paletteIndex = m_Document.GetOrAddPaletteColor(color);
                 return paletteIndex != 0 && _Model.AddOrUpdateVoxel(cell, paletteIndex);
             });
@@ -194,8 +188,11 @@ namespace TiltBrush
         [LuaDocsDescription("Erases the voxel at a canvas position. Returns false if the cell is empty or outside the model.")]
         public bool EraseAt(Vector3 canvasPosition)
         {
-            Vector3Int cell = Vector3Int.RoundToInt(CanvasToVoxel(canvasPosition));
-            return RemoveVoxel(cell.x, cell.y, cell.z);
+            return m_DocumentWrapper.Mutate(() =>
+            {
+                Vector3Int cell = Vector3Int.RoundToInt(CanvasToVoxel(canvasPosition));
+                return _Model.RemoveVoxel(cell);
+            });
         }
 
         [LuaDocsDescription("Erases an occupied voxel at a canvas position, or paints an empty one with the given RGB color")]
@@ -314,7 +311,7 @@ namespace TiltBrush
         public int count => _Models?.Count ?? 0;
     }
 
-    [LuaDocsDescription("An experimental editable VOX widget document")]
+    [LuaDocsDescription("An experimental editable VOX widget document. Data edits require its voxel selection to be finalized first with FinalizeSelection; query cell coordinates after finalizing.")]
     [MoonSharpUserData]
     public partial class VoxDocumentApiWrapper
     {

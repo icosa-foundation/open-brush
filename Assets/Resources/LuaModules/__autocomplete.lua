@@ -3160,6 +3160,9 @@ function VoxDocument:SetPalette(paletteIndex, r, g, b, a) end
 ---@return string #
 function VoxDocument:ExportBase64() end
 
+---Finalizes this document's voxel selection through undo history. Cell coordinates can change; query coordinates again after finalizing. Does nothing during preview execution.
+function VoxDocument:FinalizeSelection() end
+
 ---@param optimized? boolean
 function VoxDocument:Show(optimized) end
 
