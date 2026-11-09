@@ -15,14 +15,13 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using TiltBrushToolkit;
 using UnityEngine;
 
 namespace TiltBrush
 {
     internal sealed class VoxMaterialSet
     {
-        private const string EmissiveBrushResource = "Brushes/Basic/Light/Light";
+        private const float MaxEmissionIntensity = 10f;
 
         public IReadOnlyList<Material> Materials { get; }
         public IReadOnlyList<int> PaletteSubmeshIndices { get; }
@@ -64,9 +63,13 @@ namespace TiltBrush
                     voxMaterial.Properties
                         .OrderBy(pair => pair.Key, StringComparer.Ordinal)
                         .Select(pair => $"{pair.Key}={pair.Value}"));
+                // glTF vertex colours do not tint emission. Each emissive palette slot
+                // needs its own material colour for rendering and GLB export to agree.
+                if (voxMaterial.Type == RuntimeVoxDocument.MaterialType.Emit)
+                    propertiesKey = $"{propertiesKey}\nPaletteIndex={paletteIndex}";
                 if (!slotByProperties.TryGetValue(propertiesKey, out int slot))
                 {
-                    Material material = CreateMaterial(voxMaterial);
+                    Material material = CreateMaterial(voxMaterial, document.Palette[paletteIndex - 1]);
                     slot = materials.Count;
                     slotByProperties.Add(propertiesKey, slot);
                     materials.Add(material);
@@ -89,37 +92,29 @@ namespace TiltBrush
             OwnedMaterials = ownedMaterials;
         }
 
-        private static Material CreateMaterial(RuntimeVoxDocument.RuntimeMaterial voxMaterial)
+        private static Material CreateMaterial(RuntimeVoxDocument.RuntimeMaterial voxMaterial, Color32 paletteColor)
         {
-            Material template;
-            switch (voxMaterial.Type)
-            {
-                case RuntimeVoxDocument.MaterialType.Glass:
-                    template = TbtSettings.Instance.m_PbrBlendDoubleSided.material;
-                    break;
-                case RuntimeVoxDocument.MaterialType.Emit:
-                    BrushDescriptor lightBrush = Resources.Load<BrushDescriptor>(EmissiveBrushResource);
-                    template = lightBrush != null
-                        ? lightBrush.Material
-                        : TbtSettings.Instance.m_PbrOpaqueDoubleSided.material;
-                    break;
-                default:
-                    template = TbtSettings.Instance.m_PbrOpaqueDoubleSided.material;
-                    break;
-            }
+            var template = Resources.Load<Material>(voxMaterial.Type == RuntimeVoxDocument.MaterialType.Glass
+                ? "VoxMaterials/Glass" : "VoxMaterials/Opaque");
 
             var material = new Material(template)
             {
                 name = $"VOX {voxMaterial.Type} {voxMaterial.PaletteIndex}",
             };
 
-            float weight = Mathf.Clamp01(voxMaterial.Weight ?? 1f);
             PbrMaterialProperties.Apply(material, VoxMaterialAdapter.Read(voxMaterial), Color.white);
-            if (material.HasProperty("_EmissionGain"))
+            if (voxMaterial.Type == RuntimeVoxDocument.MaterialType.Emit)
             {
-                material.SetFloat(
-                    "_EmissionGain",
-                    Mathf.Clamp01(weight * Mathf.Max(0f, voxMaterial.Flux ?? 1f)));
+                float strength = MaxEmissionIntensity * VoxMaterialAdapter.Emission(voxMaterial);
+                material.SetFloat("_EmissionStrength", strength);
+                // Match the glowing brushes' colour preparation before increasing
+                // brightness. glTF needs this colour separately from vertex colours.
+                Color color = paletteColor;
+                Color emission = new Color(Mathf.Pow(color.r, 2.2f), Mathf.Pow(color.g, 2.2f),
+                    Mathf.Pow(color.b, 2.2f)) * strength;
+                emission.a = 1f;
+                material.SetColor("_EmissionColor", emission);
+                material.EnableKeyword("_EMISSION");
             }
             return material;
         }

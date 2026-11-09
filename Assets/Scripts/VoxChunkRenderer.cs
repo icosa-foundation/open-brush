@@ -53,7 +53,8 @@ namespace TiltBrush
             bool rebuildMaterials = m_Set == null || m_MaterialDefinitions.Count != document.Materials.Count ||
                 document.Materials.Any(pair => !m_MaterialDefinitions.TryGetValue(pair.Key, out var old) || !ReferenceEquals(old, pair.Value));
             rebuildMaterials |= !initial && document.Materials.Any(pair =>
-                pair.Value.Type == RuntimeVoxDocument.MaterialType.Glass && m_Palette[pair.Key - 1].a != document.Palette[pair.Key - 1].a);
+                (pair.Value.Type == RuntimeVoxDocument.MaterialType.Glass && m_Palette[pair.Key - 1].a != document.Palette[pair.Key - 1].a) ||
+                (pair.Value.Type == RuntimeVoxDocument.MaterialType.Emit && !m_Palette[pair.Key - 1].Equals(document.Palette[pair.Key - 1])));
             bool[] changedColors = new bool[256];
             for (int i = 0; i < 256; ++i) changedColors[i] = !initial && !m_Palette[i].Equals(document.Palette[i]);
             if (rebuildMaterials)
