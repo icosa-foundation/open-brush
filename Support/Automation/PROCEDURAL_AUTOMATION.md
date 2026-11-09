@@ -19,7 +19,7 @@ and tool input.
 3. Run from the project root with Python 3 (`python3` on macOS):
 
    ```sh
-   python Support/Python/record-procedural-tutorial.py --scenario draw --name draw-example
+   python Support/Python/record-procedural-tutorial.py --scenario draw
    ```
 
 Choose a scenario from the library:
@@ -27,7 +27,7 @@ Choose a scenario from the library:
 | # | Scenario | Demonstration |
 | --- | --- | --- |
 | 1 | [draw](../Python/automation-scripts/draw.py) | Select a brush and draw a curve. |
-| 2 | [reshape](../Python/automation-scripts/reshape-grab.py) | Grab and bend the middle of a prepared stroke. |
+| 2 | [reshape-grab](../Python/automation-scripts/reshape-grab.py) | Grab and bend the middle of a prepared stroke. |
 | 3 | [reshape-push](../Python/automation-scripts/reshape-push.py) | Push a straight stroke into an arch. |
 | 4 | [reshape-flatten](../Python/automation-scripts/reshape-flatten.py) | Flatten a rippled stroke. |
 | 5 | [reshape-smooth](../Python/automation-scripts/reshape-smooth.py) | Smooth a jittery arch. |
@@ -52,7 +52,7 @@ for the intended instance.
 Use `--speed` to change step timings for any script:
 
 ```sh
-python Support/Python/record-procedural-tutorial.py --scenario reshape-smooth --speed 1.5 --name smooth-faster
+python Support/Python/record-procedural-tutorial.py --scenario reshape-smooth --speed 1.5
 ```
 
 Speed ranges from `0.25` to `2`: `1` is normal, `1.5` is 50% faster and `2`
@@ -71,17 +71,18 @@ Each plan starts from the default advanced panel layout with optional panels
 closed. Your saved editing layout is preserved. Shared sections open panels
 through the normal UI, including popup and panel animations.
 
-Use a new recording name for each take. Preparation can add a starter stroke
-on every submission; Undo or restore the starting sketch before repeating a take.
+The runner saves one canonical MP4 per script in Open Brush's
+`Videos/Tutorials/<script-name>.mp4`. `--name` changes the filename and
+`--output-dir` changes the directory. Keep the same name when repeating a take:
+the previous MP4 is replaced only after the new video is encoded and its frame
+count verified. Name preset variants explicitly, such as `symmetry-plait`.
+FFmpeg and ffprobe must be on PATH. Temporary PNG frames are removed after
+encoding, including when encoding fails. Use `--frames-only` to retain frames
+and `recording.json` for a manual workflow instead.
 
-Capture writes `<name>_frames` under Open Brush's Videos directory, containing
-`frame_000000.png` onwards and `recording.json`. The client reports the full path
-and an FFmpeg command. Capture uses a fixed simulation step and can take longer
-than the resulting video's duration.
-
-```sh
-ffmpeg -n -framerate 30 -i "/path/to/grab-example_frames/frame_%06d.png" -c:v libx264 -pix_fmt yuv420p -vf "pad=ceil(iw/2)*2:ceil(ih/2)*2" "grab-example.mp4"
-```
+Preparation can add a starter stroke on every submission; Undo or restore the
+starting sketch before repeating a take. Capture uses a fixed simulation step
+and can take longer than the resulting video's duration.
 
 ## Run a plan from the Editor window
 
