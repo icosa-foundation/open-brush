@@ -31,6 +31,8 @@ namespace TiltBrush
         private bool m_StopRequested;
         private float m_PreviousCaptureDelta;
         private readonly Dictionary<Renderer, bool> m_MessageVisibility = new Dictionary<Renderer, bool>();
+        private OutputWindowScript m_ErrorOutput;
+        private bool m_PreviousErrorSuppression;
         public bool IsRecording { get; private set; }
         public string OutputDirectory => m_Directory;
         public int FrameCount => m_Metadata?.FrameCount ?? 0;
@@ -63,8 +65,22 @@ namespace TiltBrush
             Time.captureDeltaTime = 1f / frameRate;
             m_StopRequested = false;
             IsRecording = true;
+            m_ErrorOutput = OutputWindowScript.m_Instance;
+            if (m_ErrorOutput != null)
+            {
+                m_PreviousErrorSuppression = m_ErrorOutput.SuppressErrorCards;
+                m_ErrorOutput.SuppressErrorCards = true;
+            }
             HideMessages(OutputWindowScript.m_Instance);
             HideMessages(ControllerConsoleScript.m_Instance);
+            foreach (var overlay in FindObjectsByType<ExceptionRenderScript>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                HideMessages(overlay);
+            }
+            foreach (var card in FindObjectsByType<InfoCardAnimation>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            {
+                if (card.IsError) { HideMessages(card); }
+            }
             StartCoroutine(Capture());
             Debug.Log($"[ProceduralCapture] Recording {frameRate} fps to {directory}");
             return directory;
@@ -131,6 +147,8 @@ namespace TiltBrush
                 if (message.Key != null) { message.Key.forceRenderingOff = message.Value; }
             }
             m_MessageVisibility.Clear();
+            if (m_ErrorOutput != null) { m_ErrorOutput.SuppressErrorCards = m_PreviousErrorSuppression; }
+            m_ErrorOutput = null;
             try { File.WriteAllText(Path.Combine(m_Directory, "recording.json"), JsonUtility.ToJson(m_Metadata, true)); }
             catch (Exception exception)
             {

@@ -351,8 +351,9 @@ non-drawing side, before choosing the fixed camera view. `framing.panelGap`
 sets the gap in normalized screen coordinates (default `0.025`). If no comfortable
 layout fits, adjust `panelPosition`, the artwork positions or the declared bounds.
 
-Automation recording hides the floating message output and controller console.
-Messages continue to be logged; their normal rendering is restored when capture ends.
+Automation recording hides floating message output, the controller console,
+exception overlays and error cards. Errors continue to be logged; normal
+visibility is restored when capture ends.
 
 ## Use the client from your own Python program
 
