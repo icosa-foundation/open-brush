@@ -27,6 +27,7 @@ def build_plan(args):
     return {
         "version": 1,
         "name": "Connect straight edges with endpoint snapping",
+        "panelPosition": [-0.12, -0.10, 0.40],
         "prepare": [{"op": "drawing"}, prepare_brush("Icing", size=0.012),
                     {"op": "color", "colorRgb": [0.12, 0.7, 0.95]}],
         "steps": [*steps, {"op": "assert", "strokeCountDelta": 3}, *reveal_result(seconds=2.0)],

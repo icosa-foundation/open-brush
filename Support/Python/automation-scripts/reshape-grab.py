@@ -1,6 +1,6 @@
 """Start with a stroke already drawn, select Reshape and Grab, then bend its middle."""
 
-from automation_sections import apply_path, open_panel, prepare_stroke, reveal_result, select_tool
+from automation_sections import apply_path, open_panel, prepare_stroke, reveal_result, sample_cubic, select_tool
 
 
 def build_plan(args):
@@ -8,7 +8,8 @@ def build_plan(args):
         "version": 1,
         "name": "Bend a stroke with Grab",
         "prepare": [
-            prepare_stroke(brush=args.brush or "DuctTape", use_latest=args.existing_stroke),
+            prepare_stroke(points=[[p[0], p[1] - 0.06, p[2]] for p in sample_cubic()],
+                           brush=args.brush or "DuctTape", use_latest=args.existing_stroke),
             {"op": "tool", "tool": "ReshapeTool", "radiusMeters": 0.07, "subtool": "Push"},
         ],
         "subjects": [

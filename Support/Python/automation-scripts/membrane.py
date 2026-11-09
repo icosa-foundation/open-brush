@@ -16,6 +16,7 @@ def build_plan(args):
     return {
         "version": 1,
         "name": "Draw membrane surfaces and outlines",
+        "panelPosition": [-0.12, -0.10, 0.40],
         "prepare": [{"op": "drawing"}, prepare_brush(palette_brush="MatteMembrane"),
                     {"op": "color", "colorRgb": [0.1, 0.65, 0.9]}],
         "steps": [
