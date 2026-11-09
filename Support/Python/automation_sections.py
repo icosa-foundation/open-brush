@@ -5,6 +5,7 @@ authors can concatenate, inspect and edit their output before submitting a shot.
 """
 
 import copy
+import math
 
 
 DEFAULT_CURVE = ((-0.08, -0.24, 0.40), (0.02, -0.04, 0.44),
@@ -126,6 +127,27 @@ def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
 def reveal_result(seconds=1.0):
     """Withdraw the applying hand so the artwork can be seen, then hold the shot."""
     return [{"op": "rest"}, {"op": "wait", "seconds": seconds}]
+
+
+def rotate_scene(*, pivot=(0.10, -0.23, 0.44), span=0.28, yaw_degrees=90, seconds=3.0):
+    """Hold the wand steady and sweep the brush hand with both native world grips held."""
+    arc = [[pivot[0] + span * math.cos(math.radians(yaw_degrees) * i / 64),
+            pivot[1], pivot[2] - span * math.sin(math.radians(yaw_degrees) * i / 64)]
+           for i in range(65)]
+    contact = {"attachment": "root", "rotation": [0, -25, 0], "paddingMeters": 0}
+    return [
+        {"op": "move", "hand": "wand", "points": [list(pivot)], **contact},
+        {"op": "move", "points": [arc[0]], **contact},
+        {"op": "input", "hand": "wand", "buttons": ["Grip"]},
+        {"op": "input", "buttons": ["Grip"]},
+        {"op": "wait", "seconds": 0.3},
+        {"op": "move", "label": "Turn the scene to inspect the result", "points": arc,
+         "seconds": seconds, **contact},
+        {"op": "input", "buttons": []},
+        {"op": "input", "hand": "wand", "buttons": []},
+        {"op": "rest", "hand": "wand"},
+        *reveal_result(seconds=3.0),
+    ]
 
 
 def reshape_demo(mode, points, path, *, name, radius=0.08, seconds=3.0,

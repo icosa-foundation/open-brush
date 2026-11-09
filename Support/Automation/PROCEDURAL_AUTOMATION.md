@@ -29,7 +29,7 @@ Choose a scenario from the library:
 | 1 | [draw](../Python/automation-scripts/draw.py) | Select a brush and draw a curve. |
 | 2 | [reshape-grab](../Python/automation-scripts/reshape-grab.py) | Grab and bend the middle of a prepared stroke. |
 | 3 | [reshape-push](../Python/automation-scripts/reshape-push.py) | Push a straight stroke into an arch. |
-| 4 | [reshape-flatten](../Python/automation-scripts/reshape-flatten.py) | Flatten a rippled stroke. |
+| 4 | [reshape-flatten](../Python/automation-scripts/reshape-flatten.py) | Flatten a rippled stroke, then turn the scene to inspect its plane. |
 | 5 | [reshape-smooth](../Python/automation-scripts/reshape-smooth.py) | Smooth a jittery arch. |
 | 6 | [tint](../Python/automation-scripts/tint.py) | Apply a contrasting tint to the middle of a stroke. |
 | 7 | [open-labs](../Python/automation-scripts/open-labs.py) | Open More panels and choose Labs. |
@@ -168,6 +168,7 @@ calls, so they also work with `--write-plan`.
 | `park_panel(panel, position=...)` | Grip and move an opened floating panel to a body-relative position before using its controls. |
 | `apply_path(points, ...)` | Approach, lower the wand, pause, hold trigger along a path, release and pause. Supports contact attachment, anchor, curve, rotations, timing and padding. |
 | `reveal_result(seconds=1.0)` | Withdraw the applying hand and hold a clear view of the result. |
+| `rotate_scene(pivot=..., span=0.28, yaw_degrees=90, seconds=3.0)` | Hold both grips, keep the wand steady and sweep the brush hand to turn the scene. Release, withdraw both hands and hold the result. Include the rotated artwork in the plan's framing subjects. |
 
 Compose recorded sections with Python list unpacking, for example
 `steps = [*select_tool("TintColorTool"), *apply_path(...), *reveal_result()]`.

@@ -2,7 +2,7 @@
 
 import math
 
-from automation_sections import reshape_demo
+from automation_sections import reshape_demo, rotate_scene
 
 
 def build_plan(args):
@@ -24,9 +24,24 @@ def build_plan(args):
                        + normal[a] * offset + across[a] * sideways
                        for a in range(3)])
     path = [[center[a] + along[a] * x for a in range(3)] for x in (-0.19, 0.19)]
-    return reshape_demo("Flatten", points, path,
+    plan = reshape_demo("Flatten", points, path,
                         name="Flatten a rippled stroke onto an oblique plane", radius=0.095,
                         seconds=5.2, rotation=(25, -12, 0), minimum_movement=0.025,
                         brush=args.brush or "Icing",
                         panel_placement={"position": (0, 0.12, 0.38),
                                          "rotation": (25, 0, 0), "end_rotation": (25, 0, 0)})
+    # Frame the scene's turn as well as the tool use; the filming camera stays fixed.
+    turn_degrees = 128
+    sweep = []
+    for i in range(33):
+        angle = math.radians(turn_degrees) * i / 32
+        for point in points:
+            x, y, z = [point[a] - center[a] for a in range(3)]
+            sweep.append([center[0] + x * math.cos(angle) + z * math.sin(angle),
+                          center[1] + y,
+                          center[2] - x * math.sin(angle) + z * math.cos(angle)])
+    plan["subjects"] = [{"name": "Rotated flattened stroke",
+                         "min": [min(p[a] for p in sweep) - 0.04 for a in range(3)],
+                         "max": [max(p[a] for p in sweep) + 0.04 for a in range(3)]}]
+    plan["steps"] += rotate_scene(pivot=center, yaw_degrees=turn_degrees, seconds=4.2)
+    return plan
