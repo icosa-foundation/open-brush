@@ -18,6 +18,7 @@ namespace TiltBrush.FrameAnimation
     {
         private (int, int) m_TimelineLocation;
         private AnimationUI_Manager.KeyFrameOperation m_Operation;
+        private BaseCommand m_DeselectCommand;
         AnimationUI_Manager m_Manager;
         bool m_IsApplied;
         bool m_ExpandTimeline;
@@ -29,6 +30,10 @@ namespace TiltBrush.FrameAnimation
         {
             m_Manager = App.Scene.animationUI_manager;
             m_TimelineLocation = m_Manager.GetCanvasLocation(App.Scene.ActiveCanvas);
+            if (SelectionManager.m_Instance.HasSelection)
+            {
+                m_DeselectCommand = SelectionManager.m_Instance.CreateEndSelectionCommand();
+            }
         }
 
         public override bool NeedsSave => true;
@@ -37,12 +42,15 @@ namespace TiltBrush.FrameAnimation
 
         protected override void OnRedo()
         {
+            // Settle selected content onto its authored canvases before copying the drawing.
+            m_DeselectCommand?.Redo();
             m_Operation = m_Manager.DuplicateKeyFrame(m_TimelineLocation.Item1, m_TimelineLocation.Item2);
             m_IsApplied = m_Operation.Succeeded;
         }
 
         protected override void OnDispose()
         {
+            m_DeselectCommand?.Dispose();
             if (m_IsApplied)
             {
                 m_Manager.DiscardKeyFrameOperationUndoState(m_Operation);
@@ -53,6 +61,8 @@ namespace TiltBrush.FrameAnimation
         {
             m_Manager.UndoKeyFrameOperation(m_Operation, m_TimelineLocation);
             m_IsApplied = false;
+            // Restore the selection only after the original drawing is current again.
+            m_DeselectCommand?.Undo();
         }
     }
 } // namespace TiltBrush.FrameAnimation
