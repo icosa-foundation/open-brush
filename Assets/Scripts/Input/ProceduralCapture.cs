@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
@@ -29,6 +30,7 @@ namespace TiltBrush
         private string m_Directory;
         private bool m_StopRequested;
         private float m_PreviousCaptureDelta;
+        private readonly Dictionary<Renderer, bool> m_MessageVisibility = new Dictionary<Renderer, bool>();
         public bool IsRecording { get; private set; }
         public string OutputDirectory => m_Directory;
         public int FrameCount => m_Metadata?.FrameCount ?? 0;
@@ -61,12 +63,27 @@ namespace TiltBrush
             Time.captureDeltaTime = 1f / frameRate;
             m_StopRequested = false;
             IsRecording = true;
+            HideMessages(OutputWindowScript.m_Instance);
+            HideMessages(ControllerConsoleScript.m_Instance);
             StartCoroutine(Capture());
             Debug.Log($"[ProceduralCapture] Recording {frameRate} fps to {directory}");
             return directory;
         }
 
         public void Stop() => m_StopRequested = true;
+
+        private void HideMessages(Component messages)
+        {
+            if (messages == null) { return; }
+            // Lines are pooled at startup. forceRenderingOff leaves their normal lifecycle,
+            // log output and renderer.enabled updates intact throughout the recording.
+            foreach (var renderer in messages.GetComponentsInChildren<Renderer>(true))
+            {
+                if (m_MessageVisibility.ContainsKey(renderer)) { continue; }
+                m_MessageVisibility.Add(renderer, renderer.forceRenderingOff);
+                renderer.forceRenderingOff = true;
+            }
+        }
 
         private IEnumerator Capture()
         {
@@ -109,6 +126,11 @@ namespace TiltBrush
             IsRecording = false;
             m_StopRequested = true;
             Time.captureDeltaTime = m_PreviousCaptureDelta;
+            foreach (var message in m_MessageVisibility)
+            {
+                if (message.Key != null) { message.Key.forceRenderingOff = message.Value; }
+            }
+            m_MessageVisibility.Clear();
             try { File.WriteAllText(Path.Combine(m_Directory, "recording.json"), JsonUtility.ToJson(m_Metadata, true)); }
             catch (Exception exception)
             {
