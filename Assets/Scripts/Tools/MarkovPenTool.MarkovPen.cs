@@ -1,4 +1,4 @@
-// Copyright 2026 Marvin Link, Katrin Lang, Artur Meshalkin
+// Copyright 2026 Marvin Link, Katrin Lang
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ namespace TiltBrush
         /// @brief Reconstructs the target mapping using the Synthesizer and returns the reconstructed points.
         /// @param targetMapping A Mapping representing the growing target base path and an empty target style curve.
         /// @return A list of reconstructed point pairs on the target curve.
-        public List<Tuple<Vector3, Quaternion>> Reconstruct((Vector3 position, Quaternion rotation) pointer)
+        public List<Tuple<Vector3, Quaternion>> Stylize((Vector3 position, Quaternion rotation) pointer)
         {
             m_TargetMapping.AddBasePoint(pointer.position, pointer.rotation * new Vector3(0.0f,1.0f,0.0f));
         

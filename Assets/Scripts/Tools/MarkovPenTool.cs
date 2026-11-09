@@ -28,7 +28,7 @@ namespace TiltBrush
     {
         private static MarkovPen m_MarkovPen;
 
-        Tuple<Vector3, Quaternion> m_LastPointer = new(Vector3.zero, Quaternion.identity);
+        private Tuple<Vector3, Quaternion> m_LastPointer = new(Vector3.zero, Quaternion.identity);
 
         /// @brief Activate or deactivate the Markov Pen tool
         /// @param isEnabled true to activate the tool; false to deactivate it.
@@ -58,21 +58,21 @@ namespace TiltBrush
                 base.UpdateTool();
                 return;
             }
-            
+
             bool triggerDown = InputManager.Brush.GetCommandDown(InputManager.SketchCommands.Activate);
 
             if (triggerDown)
             {
                 m_MarkovPen.NewLine();
-                var start = base.GetPointerPosition();
+                (Vector3, Quaternion) start = base.GetPointerPosition();
                 m_LastPointer = Tuple.Create(start.Item1, start.Item2);
             }
 
-            List<Tuple<Vector3, Quaternion>> pointers = (m_MarkovPen.Reconstruct(base.GetPointerPosition()));
+            List<Tuple<Vector3, Quaternion>> pointers = m_MarkovPen.Stylize(base.GetPointerPosition());
 
             if (pointers.Count > 0)
             {
-                m_LastPointer = pointers.First();
+                m_LastPointer = pointers[0];
                 pointers.RemoveAt(0);
             }
 

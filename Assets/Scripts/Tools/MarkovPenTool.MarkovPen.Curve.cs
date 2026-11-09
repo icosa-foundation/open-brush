@@ -1,4 +1,4 @@
-// Copyright 2026 Marvin Link, Katrin Lang, Artur Meshalkin
+// Copyright 2026 Marvin Link, Katrin Lang
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -43,11 +43,11 @@ namespace TiltBrush
                 m_Responsiveness = responsiveness;
                 m_ArcLengthPositions = new List<float> { 0f };
             }
-            
+
             /// @brief Construct Curve 
             /// 
             /// @params controlPoints - Constrol points of the curve from OpenBrush
-            public Curve(List<Vector3> controlPoints): this()
+            public Curve(List<Vector3> controlPoints) : this()
             {
                 foreach (var point in controlPoints)
                 {
@@ -95,7 +95,7 @@ namespace TiltBrush
                 };
 
                 // Elasticurve implementation
-                Vector3 interpolatedPoint= Interpolate(segment, m_Responsiveness);
+                Vector3 interpolatedPoint = Interpolate(segment, m_Responsiveness);
 
                 m_LastInput = controlPoint;
 
@@ -137,7 +137,7 @@ namespace TiltBrush
 
                 if (l >= m_ArcLengthPositions.Last())
                 {
-                    Vector3[] lastSegment = GetSegmentPositions(m_ControlPoints.Count-2);
+                    Vector3[] lastSegment = GetSegmentPositions(m_ControlPoints.Count - 2);
                     Vector3 tangent = ComputeTangentsAtEndpoints(lastSegment).Item2;
 
                     return m_ControlPoints[^1] +

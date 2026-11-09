@@ -1,4 +1,4 @@
-// Copyright 2026 Marvin Link, Katrin Lang, Artur Meshalkin
+// Copyright 2026 Marvin Link, Katrin Lang
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -143,7 +143,7 @@ namespace TiltBrush
             /// @return A list of sampled points on the style curve.
             public List<Vector3> SampleStyleCurve(float samplingInterval)
             {
-                List<Vector3> samples = new List<Vector3>();
+                List<Vector3> samples = new();
 
                 int numSamples =
                     Mathf.RoundToInt(m_StyleCurve.ArcLength() / m_SamplingInterval) + 1;
@@ -161,7 +161,7 @@ namespace TiltBrush
             /// @return A list of float values representing the projections onto the base path.
             public List<float> Project(List<Vector3> samples)
             {
-                List<float> projections = new List<float>();
+                List<float> projections = new();
 
                 foreach (var sample in samples)
                 {
@@ -177,7 +177,7 @@ namespace TiltBrush
             /// @param projections Projected arc length positions aligned along the base path.
             private void ComputeMapping(List<Vector3> samples, List<float> projections)
             {
-                m_Mapping = new List<Vector2>();
+                m_Mapping = new();
 
                 for (int i = 0; i < samples.Count; ++i)
                 {
