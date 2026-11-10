@@ -1009,7 +1009,9 @@ namespace TiltBrush
             if (!ready) { m_Elapsed = 0; return; }
             if (m_Stage == 1)
             {
-                if (!item.Button.IsHover() || !SketchControlsScript.m_Instance.IsUserLookingAtPanel(item.Panel)) { m_Elapsed = 0; }
+                // Releasing a button clears its Hover state even when the ray stays on it.
+                if ((!item.Button.IsHover() && !item.Button.HasPointerFocus) ||
+                    !SketchControlsScript.m_Instance.IsUserLookingAtPanel(item.Panel)) { m_Elapsed = 0; }
                 if (m_Elapsed >= 0.45f) { m_Stage = 2; m_Elapsed = 0; }
             }
             else if (m_Stage == 2)
