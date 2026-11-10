@@ -11,6 +11,8 @@ namespace TiltBrush
         private Action m_Action;
         private int m_Index;
         private Material m_Material;
+        private Color m_SwatchColor = Color.white;
+        private Color m_ButtonColor = Color.white;
         [SerializeField] private Texture2D m_SelectedTexture;
         private GameObject m_SelectedOverlay;
         private Material m_SelectedMaterial;
@@ -28,7 +30,6 @@ namespace TiltBrush
             m_Popup = popup;
             m_Action = action;
             m_ToggleButton = action == Action.Swatch || action == Action.BrushColour || action == Action.ColourTab || action == Action.MaterialTab;
-            if (m_Material != null && m_Material.HasProperty("_Tint")) m_Material.SetColor("_Tint", Color.white);
             SetButtonActivated(false);
             if (texture != null) SetButtonTexture(texture);
             if (description != null) SetDescriptionText(description);
@@ -37,9 +38,12 @@ namespace TiltBrush
         internal void SetSwatch(int index, Color32 color, bool selected)
         {
             m_Index = index;
-            m_Material.SetColor("_Tint", color);
+            m_SwatchColor = color;
+            SetMaterialColor(m_ButtonColor);
             m_ToggleActive = selected;
-            SetButtonActivated(selected);
+            // The standard button shader inverts an activated icon. Keep the palette
+            // colour intact and indicate selection with the existing overlay instead.
+            SetButtonActivated(false);
             if (selected && m_SelectedOverlay == null && m_SelectedTexture != null)
             {
                 m_SelectedOverlay = new GameObject("Selected palette slot");
@@ -47,7 +51,9 @@ namespace TiltBrush
                 m_SelectedOverlay.transform.SetParent(transform, false);
                 m_SelectedOverlay.transform.localPosition = new Vector3(0, 0, -.01f);
                 m_SelectedOverlay.AddComponent<MeshFilter>().sharedMesh = GetComponent<MeshFilter>().sharedMesh;
-                m_SelectedMaterial = new Material(m_Material);
+                // The button shader is opaque; its transparent pixels would cover
+                // the selected colour. Use the existing palette cutout shader.
+                m_SelectedMaterial = new Material(Shader.Find("Custom/TextureNoFogCutoutTint"));
                 m_SelectedMaterial.SetColor("_Tint", Color.white);
                 m_SelectedMaterial.SetColor("_Color", Color.white);
                 m_SelectedMaterial.SetTexture("_MainTex", m_SelectedTexture);
@@ -55,6 +61,12 @@ namespace TiltBrush
             }
             if (m_SelectedOverlay != null) m_SelectedOverlay.SetActive(selected);
             SetDescriptionText($"Palette color {index} — #{color.r:X2}{color.g:X2}{color.b:X2}");
+        }
+
+        protected override void SetMaterialColor(Color color)
+        {
+            m_ButtonColor = color;
+            base.SetMaterialColor(color * m_SwatchColor);
         }
 
         internal void SetActionSelected(bool selected)
