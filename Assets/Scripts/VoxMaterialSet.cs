@@ -66,7 +66,7 @@ namespace TiltBrush
                         .Select(pair => $"{pair.Key}={pair.Value}"));
                 // glTF vertex colours do not tint emission. Each emissive palette slot
                 // needs its own material colour for rendering and GLB export to agree.
-                if (voxMaterial.Type == RuntimeVoxDocument.MaterialType.Emit)
+                if (VoxMaterialAdapter.Emission(voxMaterial) > 0f)
                     propertiesKey = $"{propertiesKey}\nPaletteIndex={paletteIndex}";
                 if (!slotByProperties.TryGetValue(propertiesKey, out int slot))
                 {
@@ -105,7 +105,7 @@ namespace TiltBrush
             };
 
             PbrMaterialProperties.Apply(material, values, Color.white);
-            if (voxMaterial.Type == RuntimeVoxDocument.MaterialType.Emit)
+            if (VoxMaterialAdapter.Emission(voxMaterial) > 0f)
             {
                 // Preserve control over dim emission while giving the upper end HDR headroom.
                 float strength = Mathf.Pow(1f + MaxEmissionIntensity, VoxMaterialAdapter.Emission(voxMaterial)) - 1f;

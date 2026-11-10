@@ -54,7 +54,7 @@ namespace TiltBrush
                 document.Materials.Any(pair => !m_MaterialDefinitions.TryGetValue(pair.Key, out var old) || !ReferenceEquals(old, pair.Value));
             rebuildMaterials |= !initial && document.Materials.Any(pair =>
                 (VoxMaterialAdapter.Read(pair.Value).Transparent && m_Palette[pair.Key - 1].a != document.Palette[pair.Key - 1].a) ||
-                (pair.Value.Type == RuntimeVoxDocument.MaterialType.Emit && !m_Palette[pair.Key - 1].Equals(document.Palette[pair.Key - 1])));
+                (VoxMaterialAdapter.Emission(pair.Value) > 0f && !m_Palette[pair.Key - 1].Equals(document.Palette[pair.Key - 1])));
             bool[] changedColors = new bool[256];
             for (int i = 0; i < 256; ++i) changedColors[i] = !initial && !m_Palette[i].Equals(document.Palette[i]);
             if (rebuildMaterials)

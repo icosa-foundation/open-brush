@@ -32,44 +32,77 @@ namespace TiltBrush
                 Opacity = opacity
             };
         }
-        internal static float Emission(RuntimeVoxDocument.RuntimeMaterial material) =>
-            Mathf.Clamp01(Mathf.Clamp01(material.Weight ?? 1f) * Mathf.Max(0, material.Flux ?? 1f));
-        internal static Dictionary<string, string> WithType(IReadOnlyDictionary<string, string> properties, int type)
+        internal static float Emission(RuntimeVoxDocument.RuntimeMaterial material)
         {
-            var next = Copy(properties);
-            next["_type"] = (RuntimeVoxDocument.MaterialType)type switch
-            {
-                RuntimeVoxDocument.MaterialType.Diffuse => "_diffuse",
-                RuntimeVoxDocument.MaterialType.Metal => "_metal",
-                RuntimeVoxDocument.MaterialType.Glass => "_glass",
-                RuntimeVoxDocument.MaterialType.Emit => "_emit",
-                RuntimeVoxDocument.MaterialType.Blend => "_blend",
-                _ => throw new ArgumentOutOfRangeException(nameof(type))
-            };
+            if (material.Type == RuntimeVoxDocument.MaterialType.Emit)
+                return Mathf.Clamp01(Mathf.Clamp01(material.Weight ?? 1f) * Mathf.Max(0, material.Flux ?? 1f));
+            return material.Type == RuntimeVoxDocument.MaterialType.Blend
+                ? Mathf.Clamp01(Mathf.Max(0, material.Emission ?? 0f) * Mathf.Max(0, material.Flux ?? 1f)) : 0f;
+        }
+        private static Dictionary<string, string> AsBlend(RuntimeVoxDocument.RuntimeMaterial material)
+        {
+            var next = Copy(material.Properties);
+            if (material.Type == RuntimeVoxDocument.MaterialType.Blend) return next;
+            var values = Read(material);
+            next["_type"] = "_blend";
+            next["_metal"] = Number(values.Metallic);
+            next["_trans"] = Number(1f - values.Opacity);
+            float flux = Mathf.Max(0, material.Flux ?? 1f);
+            if (flux == 0) { flux = 1; next["_flux"] = "1"; }
+            // Preserve the visible emission, including zero when another source type
+            // retains inactive emission settings from an earlier material edit.
+            next["_emit"] = Number(Emission(material) / flux);
             return next;
         }
         internal static Dictionary<string, string> WithValue(IReadOnlyDictionary<string, string> properties,
             PbrMaterialParameter.Property key, float value)
         {
+            var material = Describe(properties);
+            var values = Read(material);
             var next = Copy(properties);
-            bool blend = Describe(properties).Type == RuntimeVoxDocument.MaterialType.Blend;
+            value = Mathf.Clamp01(value);
             switch (key)
             {
-                case PbrMaterialParameter.Property.Glossiness: next["_rough"] = Number(1f - value); break;
-                case PbrMaterialParameter.Property.Metallic: next[blend ? "_metal" : "_weight"] = Number(value); break;
+                case PbrMaterialParameter.Property.Glossiness:
+                    if (Mathf.Approximately(value, values.Smoothness)) return next;
+                    next["_rough"] = Number(1f - value); break;
+                case PbrMaterialParameter.Property.Metallic:
+                    if (Mathf.Approximately(value, values.Metallic)) return next;
+                    if (material.Type == RuntimeVoxDocument.MaterialType.Metal) next["_weight"] = Number(value);
+                    else { next = AsBlend(material); next["_metal"] = Number(value); }
+                    break;
                 case PbrMaterialParameter.Property.Opacity:
-                    if (blend) { next["_trans"] = Number(1f - Mathf.Clamp01(value)); break; }
-                    next["_weight"] = "1"; next["_att"] = Number(Mathf.Max(.05f, value)); break;
+                    value = Mathf.Max(.05f, value);
+                    if (Mathf.Approximately(value, values.Opacity)) return next;
+                    if (material.Type == RuntimeVoxDocument.MaterialType.Glass)
+                    {
+                        next["_weight"] = "1"; next["_att"] = Number(value);
+                    }
+                    else { next = AsBlend(material); next["_trans"] = Number(1f - value); }
+                    break;
                 default: throw new ArgumentOutOfRangeException(nameof(key));
             }
             return next;
         }
         internal static Dictionary<string, string> WithEmission(IReadOnlyDictionary<string, string> properties, float value)
         {
+            var material = Describe(properties);
             var next = Copy(properties);
-            float weight = Mathf.Clamp01(Describe(properties).Weight ?? 1f);
-            if (weight == 0) { weight = 1; next["_weight"] = "1"; }
-            next["_flux"] = Number(value / weight);
+            value = Mathf.Clamp01(value);
+            if (Mathf.Approximately(value, Emission(material))) return next;
+            if (material.Type == RuntimeVoxDocument.MaterialType.Emit)
+            {
+                float weight = Mathf.Clamp01(material.Weight ?? 1f);
+                if (weight == 0) { weight = 1; next["_weight"] = "1"; }
+                next["_flux"] = Number(value / weight);
+            }
+            else
+            {
+                next = AsBlend(material);
+                float flux = Mathf.Max(0, material.Flux ?? 1f);
+                if (flux == 0) { flux = 1; next["_flux"] = "1"; }
+                next["_emit"] = Number(value / flux);
+            }
             return next;
         }
         private static string Number(float value) => value.ToString("R", CultureInfo.InvariantCulture);

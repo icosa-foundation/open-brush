@@ -246,6 +246,7 @@ namespace TiltBrush
             public float? Metallic { get; }
             public float? Transmission { get; }
             public float? Alpha { get; }
+            public float? Emission { get; }
             public bool Plastic { get; }
             public IReadOnlyDictionary<string, string> Properties { get; }
 
@@ -265,6 +266,7 @@ namespace TiltBrush
                 Metallic = ParseFloat(properties, "_metal");
                 Transmission = ParseFloat(properties, "_trans");
                 Alpha = ParseFloat(properties, "_alpha");
+                Emission = ParseFloat(properties, "_emit");
                 Plastic = properties.TryGetValue("_plastic", out string plastic) &&
                     plastic != "0";
             }

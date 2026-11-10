@@ -12,6 +12,6 @@ namespace TiltBrush
         // Zero follows the brush; VOX palette slots are one-based.
         internal int PaletteIndex;
         internal int LastPaletteIndex = 1;
-        internal IReadOnlyDictionary<string, string> DrawingMaterial = new Dictionary<string, string>();
+        internal IReadOnlyDictionary<string, string> DrawingMaterial = new Dictionary<string, string> { ["_type"] = "_blend" };
     }
 }

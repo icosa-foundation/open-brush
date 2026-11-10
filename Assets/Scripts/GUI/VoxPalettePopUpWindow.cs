@@ -13,21 +13,12 @@ namespace TiltBrush
     public sealed class VoxPalettePopUpWindow : ColorPickerPopUpWindow
     {
         private const int PageSize = 64, Columns = 8, PageCount = 4;
-        private static readonly RuntimeVoxDocument.MaterialType[] MaterialTypes =
-        {
-            RuntimeVoxDocument.MaterialType.Diffuse, RuntimeVoxDocument.MaterialType.Metal,
-            RuntimeVoxDocument.MaterialType.Glass, RuntimeVoxDocument.MaterialType.Emit,
-            RuntimeVoxDocument.MaterialType.Blend
-        };
         [SerializeField] private VoxPaletteButton m_ButtonPrefab;
         [SerializeField] private ActionButton m_Previous;
         [SerializeField] private ActionButton m_Next;
-        [SerializeField] private ActionButton m_PreviousMaterial;
-        [SerializeField] private ActionButton m_NextMaterial;
         [SerializeField] private TextActionButton m_ColourTab;
         [SerializeField] private TextActionButton m_MaterialTabButton;
         [SerializeField] private GameObject m_MaterialArea;
-        [SerializeField] private TextMeshPro m_TypeLabel;
         [SerializeField] private ValueSlider[] m_MaterialSliders;
         [FormerlySerializedAs("m_Apply")]
         [SerializeField] private ActionToggleButton m_BrushColor;
@@ -61,7 +52,6 @@ namespace TiltBrush
             VoxPaletteButton.Action.Previous => ValidTarget && m_Page > 0,
             VoxPaletteButton.Action.Next => ValidTarget && m_Page < PageCount - 1,
             VoxPaletteButton.Action.ClearUnused => CanEdit,
-            VoxPaletteButton.Action.PreviousMaterial or VoxPaletteButton.Action.NextMaterial => CanEdit,
             _ => ValidTarget
         };
 
@@ -110,14 +100,6 @@ namespace TiltBrush
         { FinishChange(); m_MaterialTab = material; RefreshControls(); }
         public void ChangePage(int delta)
         { if (!ValidTarget) return; FinishChange(); m_Page = Mathf.Clamp(m_Page + delta, 0, PageCount - 1); RefreshControls(); }
-        public void ChangeMaterialType(int direction)
-        {
-            if (!CanEdit) return;
-            FinishChange();
-            int current = Mathf.Max(0, Array.IndexOf(MaterialTypes, VoxMaterialAdapter.Describe(Properties).Type));
-            int next = (current + direction + MaterialTypes.Length) % MaterialTypes.Length;
-            SetMaterial(VoxMaterialAdapter.WithType(Properties, (int)MaterialTypes[next])); FinishChange();
-        }
         private void OnColorPicked(Color color)
         {
             if (!CanEdit || m_Applying) return;
@@ -216,7 +198,6 @@ namespace TiltBrush
             }
             m_Previous.SetButtonAvailable(valid && m_Page > 0); m_Next.SetButtonAvailable(valid && m_Page < PageCount - 1);
             m_BrushColor.SetButtonAvailable(valid); m_BrushColor.ToggleState = BrushMode;
-            m_PreviousMaterial.SetButtonAvailable(CanEdit); m_NextMaterial.SetButtonAvailable(CanEdit);
             m_ColourTab.SetButtonAvailable(valid); m_MaterialTabButton.SetButtonAvailable(valid);
             m_ColourTab.SetButtonSelected(!m_MaterialTab); m_MaterialTabButton.SetButtonSelected(m_MaterialTab);
             m_ClearUnused.SetButtonAvailable(CanEdit); m_Sort.SetButtonAvailable(valid);
@@ -228,31 +209,28 @@ namespace TiltBrush
         }
         private void RefreshMaterialControls()
         {
-            var native = VoxMaterialAdapter.Describe(Properties); var values = VoxMaterialAdapter.Read(native);
-            int type = (int)native.Type;
-            bool blend = native.Type == RuntimeVoxDocument.MaterialType.Blend;
-            m_TypeLabel.text = blend ? "Blend" : type < 4 ? new[] { "Standard", "Metal", "Glass", "Emissive" }[type] : "Imported material";
-            var mask = PbrMaterialParameter.Controls.Glossiness;
-            if (type == 1) mask |= PbrMaterialParameter.Controls.Metallic;
-            if (type == 2) mask |= PbrMaterialParameter.Controls.Opacity;
-            var parameters = type < 3 ? PbrMaterialParameter.For(values, mask) : new List<PbrMaterialParameter>();
-            if (blend)
+            var native = VoxMaterialAdapter.Describe(Properties);
+            var values = VoxMaterialAdapter.Read(native);
+            var parameters = new[]
             {
-                // Opacity remains editable at 1, so opaque Blend materials can become transparent.
-                parameters.Add(new PbrMaterialParameter { Key = PbrMaterialParameter.Property.Metallic, Label = "Metallic" });
-                parameters.Add(new PbrMaterialParameter { Key = PbrMaterialParameter.Property.Glossiness, Label = "Glossiness" });
-                parameters.Add(new PbrMaterialParameter { Key = PbrMaterialParameter.Property.Opacity, Label = "Opacity" });
-            }
+                new PbrMaterialParameter { Key = PbrMaterialParameter.Property.Metallic, Label = "Metallic" },
+                new PbrMaterialParameter { Key = PbrMaterialParameter.Property.Glossiness, Label = "Glossiness" },
+                new PbrMaterialParameter { Key = PbrMaterialParameter.Property.Opacity, Label = "Opacity" }
+            };
             for (int i = 0; i < m_MaterialSliders.Length; ++i)
             {
-                var slider = m_MaterialSliders[i]; bool visible = i < parameters.Count || type == 3 && i == 0;
-                slider.gameObject.SetActive(visible); if (!visible) continue;
+                var slider = m_MaterialSliders[i];
+                slider.gameObject.SetActive(i <= parameters.Length);
+                if (i > parameters.Length) continue;
                 foreach (var collider in slider.GetComponentsInChildren<Collider>(true)) collider.enabled = CanEdit;
-                if (type == 3) slider.Configure("Emission strength", VoxMaterialAdapter.Emission(native), value => SetMaterial(VoxMaterialAdapter.WithEmission(Properties, value)), FinishChange);
+                if (i == parameters.Length)
+                    slider.Configure("Emission strength", VoxMaterialAdapter.Emission(native),
+                        value => SetMaterial(VoxMaterialAdapter.WithEmission(Properties, value)), FinishChange);
                 else
                 {
                     var parameter = parameters[i];
-                    slider.Configure(parameter.Label, parameter.Read(values), value => SetMaterial(VoxMaterialAdapter.WithValue(Properties, parameter.Key, value)), FinishChange,
+                    slider.Configure(parameter.Label, parameter.Read(values),
+                        value => SetMaterial(VoxMaterialAdapter.WithValue(Properties, parameter.Key, value)), FinishChange,
                         min: parameter.Key == PbrMaterialParameter.Property.Opacity ? .05f : 0f);
                 }
             }

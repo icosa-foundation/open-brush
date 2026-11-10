@@ -24,6 +24,66 @@ namespace TiltBrush
 {
     internal class TestRuntimeVoxDocument
     {
+        [TestCase("_diffuse", PbrMaterialParameter.Property.Glossiness, 0.4f)]
+        [TestCase("_metal", PbrMaterialParameter.Property.Metallic, 0.4f)]
+        [TestCase("_glass", PbrMaterialParameter.Property.Opacity, 0.4f)]
+        [TestCase("_emit", PbrMaterialParameter.Property.Glossiness, 0.4f)]
+        public void UnifiedMaterial_CompatibleEditsRetainImportedType(
+            string type, PbrMaterialParameter.Property property, float value)
+        {
+            var source = new System.Collections.Generic.Dictionary<string, string>
+            {
+                ["_type"] = type, ["_weight"] = "0.8", ["_rough"] = "0.1", ["custom"] = "retained"
+            };
+            var edited = VoxMaterialAdapter.WithValue(source, property, value);
+            Assert.AreEqual(type, edited["_type"]);
+            Assert.AreEqual("retained", edited["custom"]);
+            Assert.AreEqual(value, new PbrMaterialParameter { Key = property }.Read(
+                VoxMaterialAdapter.Read(VoxMaterialAdapter.Describe(edited))), 0.00001f);
+        }
+
+        [TestCase("_metal")]
+        [TestCase("_emit")]
+        public void UnifiedMaterial_ConversionPreservesSurfaceAndEmissionThroughSave(string type)
+        {
+            var document = new RuntimeVoxDocument();
+            document.CreateModel("combined", new Vector3Int(2, 2, 2)).AddOrUpdateVoxel(Vector3Int.zero, 9);
+            var source = new System.Collections.Generic.Dictionary<string, string>
+            {
+                ["_type"] = type, ["_weight"] = "0.6", ["_flux"] = "0.5",
+                ["_rough"] = "0.25", ["custom"] = "retained"
+            };
+            var before = VoxMaterialAdapter.Describe(source);
+            var edited = VoxMaterialAdapter.WithValue(source, PbrMaterialParameter.Property.Opacity, 0.4f);
+            document.SetPaletteMaterial(9, edited);
+            var reloaded = RuntimeVoxDocument.FromBytes(document.ToVoxBytes()).Materials[9];
+            var values = VoxMaterialAdapter.Read(reloaded);
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Blend, reloaded.Type);
+            Assert.AreEqual(VoxMaterialAdapter.Read(before).Metallic, values.Metallic, 0.00001f);
+            Assert.AreEqual(VoxMaterialAdapter.Emission(before), VoxMaterialAdapter.Emission(reloaded), 0.00001f);
+            Assert.AreEqual(0.75f, values.Smoothness, 0.00001f);
+            Assert.AreEqual(0.4f, values.Opacity, 0.00001f);
+            Assert.AreEqual("retained", reloaded.Properties["custom"]);
+        }
+
+        [Test]
+        public void UnifiedMaterial_EmissionCanCombineWithMetalAndTransparency()
+        {
+            var settings = new VoxPaintSettings();
+            Assert.AreEqual("_blend", settings.DrawingMaterial["_type"]);
+            var edited = VoxMaterialAdapter.WithValue(settings.DrawingMaterial, PbrMaterialParameter.Property.Metallic, 0.7f);
+            edited = VoxMaterialAdapter.WithValue(edited, PbrMaterialParameter.Property.Opacity, 0.4f);
+            edited = VoxMaterialAdapter.WithEmission(edited, 0.5f);
+            var material = VoxMaterialAdapter.Describe(edited);
+            Assert.AreEqual(0.7f, VoxMaterialAdapter.Read(material).Metallic, 0.00001f);
+            Assert.AreEqual(0.4f, VoxMaterialAdapter.Read(material).Opacity, 0.00001f);
+            Assert.AreEqual(0.5f, VoxMaterialAdapter.Emission(material), 0.00001f);
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Blend, material.Type);
+            var imported = new System.Collections.Generic.Dictionary<string, string> { ["_type"] = "_future", ["custom"] = "retained" };
+            CollectionAssert.AreEquivalent(imported, VoxMaterialAdapter.WithValue(imported, PbrMaterialParameter.Property.Opacity, 1f));
+            CollectionAssert.AreEquivalent(imported, VoxMaterialAdapter.WithEmission(imported, 0f));
+        }
+
         [TestCase(0f, 0f, false, 1f)]
         [TestCase(1f, 0f, false, 1f)]
         [TestCase(0.4f, 0.5f, true, 0.5f)]
