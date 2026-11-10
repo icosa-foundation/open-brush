@@ -131,8 +131,11 @@ namespace TiltBrush
                 if (score <= 1.0002f && comfort < bestComfort)
                 {
                     bestComfort = comfort;
-                    best = new Pose {UpperArm = upper, Forearm = Quaternion.Inverse(upper) * forearm,
-                        Controller = Quaternion.Inverse(forearm) * controllerRotation};
+                    best = new Pose
+                    {
+                        UpperArm = upper, Forearm = Quaternion.Inverse(upper) * forearm,
+                        Controller = Quaternion.Inverse(forearm) * controllerRotation
+                    };
                 }
                 if (score < bestScore) { bestScore = score; closest = angles; }
             }
@@ -160,7 +163,7 @@ namespace TiltBrush
             float bestCost = float.PositiveInfinity;
             Exception failure = null;
             // Ray direction is fixed; roll is a task freedom the arm can use for comfort.
-            foreach (float roll in new[] {0f, -15f, 15f, -30f, 30f, -60f, 60f})
+            foreach (float roll in new[] { 0f, -15f, 15f, -30f, 30f, -60f, 60f })
             {
                 Quaternion rotation = preferred * Quaternion.AngleAxis(roll, Vector3.forward) * Quaternion.Inverse(local.rotation);
                 var candidate = new UnityEngine.Pose(contact.position - rotation * local.position, rotation);

@@ -20,8 +20,8 @@ namespace TiltBrush
         public OutputOptions Output = new OutputOptions();
         public float UpperArmMeters = 0.30f;
         public float ForearmMeters = 0.30f;
-        public float[] PanelPosition = {-0.06f, -0.04f, 0.34f};
-        public float[] PointingOffsetMeters = {0.12f, 0.02f, -0.12f};
+        public float[] PanelPosition = { -0.06f, -0.04f, 0.34f };
+        public float[] PointingOffsetMeters = { 0.12f, 0.02f, -0.12f };
         public AutomationShot.FramingSettings Framing = new AutomationShot.FramingSettings();
         public Preparation[] Prepare = Array.Empty<Preparation>();
         public Step[] Steps;
@@ -62,7 +62,7 @@ namespace TiltBrush
 
             private bool Matches(BaseButton button, string predictedPath)
             {
-                if (new[] {Tool, Brush, Subtool, Path, Command, OpensPanel}.Count(s => !string.IsNullOrEmpty(s)) != 1)
+                if (new[] { Tool, Brush, Subtool, Path, Command, OpensPanel }.Count(s => !string.IsNullOrEmpty(s)) != 1)
                     throw new ArgumentException("A button selector needs exactly one of tool, brush, subtool, path, command or opensPanel.");
                 if (!string.IsNullOrEmpty(Tool)) { return button is ToolButton tool && tool.Tool.ToString() == Tool; }
                 if (!string.IsNullOrEmpty(Brush)) { return button is BrushTypeButton brush && brush.m_Brush?.DurableName == Brush; }
@@ -250,10 +250,10 @@ namespace TiltBrush
                             rotation = Quaternion.Inverse(canvas.Pose.rotation) * yaw,
                             scale = 1
                         }).ToList();
-                        stroke = DrawStrokes.DrawNestedTrList(new[] {path}, TrTransform.identity, brush: brush,
+                        stroke = DrawStrokes.DrawNestedTrList(new[] { path }, TrTransform.identity, brush: brush,
                             brushSize: prep.BrushSizeMeters * App.METERS_TO_UNITS,
                             brushScale: 1f / canvas.Pose.scale, canvas: canvas,
-                            colors: prep.ColorRgb == null ? null : new List<Color> {Rgb(prep.ColorRgb)}).Single();
+                            colors: prep.ColorRgb == null ? null : new List<Color> { Rgb(prep.ColorRgb) }).Single();
                     }
                     strokes.Add(prep.Id, stroke);
                 }

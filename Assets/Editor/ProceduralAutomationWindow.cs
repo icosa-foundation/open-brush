@@ -67,7 +67,7 @@ namespace TiltBrush
                 m_RecordingName = EditorGUILayout.TextField("Recording name", m_RecordingName);
                 m_FrameRate = EditorGUILayout.IntSlider("Recording FPS", m_FrameRate, 1, 120);
                 m_OutputPreset = EditorGUILayout.Popup("Video format", m_OutputPreset,
-                    new[] {"4:3 (1440 × 1080)", "16:9 (1920 × 1080)", "Custom"});
+                    new[] { "4:3 (1440 × 1080)", "16:9 (1920 × 1080)", "Custom" });
                 if (m_OutputPreset == 2)
                 {
                     m_OutputWidth = EditorGUILayout.IntField("Width (px)", m_OutputWidth);
@@ -112,7 +112,7 @@ namespace TiltBrush
                 Height = m_OutputPreset == 2 ? m_OutputHeight : AutomationScript.OutputOptions.DefaultHeight
             };
             plan.Output.Validate();
-            plan.Capture = record ? new AutomationScript.CaptureOptions {Name = m_RecordingName, Fps = m_FrameRate} : null;
+            plan.Capture = record ? new AutomationScript.CaptureOptions { Name = m_RecordingName, Fps = m_FrameRate } : null;
             if (record) { EditorApplication.ExecuteMenuItem("Window/General/Game"); }
             ApiMethods.StartAutomationScript(plan);
         }

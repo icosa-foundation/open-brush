@@ -57,7 +57,7 @@ namespace TiltBrush
                 throw new InvalidOperationException("Rehearsal recording requires Virtual Input mode.");
             }
             if (frameRate < 1 || frameRate > 120) { throw new ArgumentOutOfRangeException(nameof(frameRate)); }
-            new AutomationScript.OutputOptions {Width = width, Height = height}.Validate();
+            new AutomationScript.OutputOptions { Width = width, Height = height }.Validate();
             if (width > SystemInfo.maxTextureSize || height > SystemInfo.maxTextureSize)
                 throw new ArgumentException("Output dimensions exceed this device's texture size limit.");
             string name = Path.GetFileNameWithoutExtension(filename);
@@ -103,7 +103,7 @@ namespace TiltBrush
         private void CreateRenderTargets(int width, int height)
         {
             var source = App.VrSdk.GetVrCamera();
-            var owner = new GameObject("Automation Capture Camera") {hideFlags = HideFlags.HideAndDontSave};
+            var owner = new GameObject("Automation Capture Camera") { hideFlags = HideFlags.HideAndDontSave };
             m_RenderCamera = owner.AddComponent<Camera>();
             m_RenderCamera.enabled = false;
             m_SourceCameraData = source.GetComponent<UniversalAdditionalCameraData>();
@@ -113,9 +113,9 @@ namespace TiltBrush
             m_RenderCameraData.allowXRRendering = false;
             m_RenderCameraData.renderType = CameraRenderType.Base;
             m_RenderTarget = new RenderTexture(CaptureColorUtils.CreateDescriptor(width, height, CaptureColorUtils.GetFormat(source)))
-                {name = "Automation capture render", hideFlags = HideFlags.HideAndDontSave};
+            { name = "Automation capture render", hideFlags = HideFlags.HideAndDontSave };
             m_SaveTarget = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32)
-                {name = "Automation capture pixels", hideFlags = HideFlags.HideAndDontSave};
+            { name = "Automation capture pixels", hideFlags = HideFlags.HideAndDontSave };
             if (!m_RenderTarget.Create() || !m_SaveTarget.Create())
                 throw new InvalidOperationException("Could not allocate the automation output textures.");
         }
@@ -153,7 +153,7 @@ namespace TiltBrush
                 Destroy(m_RenderCamera.gameObject);
                 m_RenderCamera = null;
             }
-            foreach (var target in new[] {m_RenderTarget, m_SaveTarget})
+            foreach (var target in new[] { m_RenderTarget, m_SaveTarget })
                 if (target != null) { target.Release(); Destroy(target); }
             m_RenderTarget = null;
             m_SaveTarget = null;
