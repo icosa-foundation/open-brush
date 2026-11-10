@@ -129,7 +129,6 @@ namespace TiltBrush
             m_RenderCamera.targetTexture = m_RenderTarget;
             m_RenderCamera.rect = new Rect(0, 0, 1, 1);
             m_RenderCamera.aspect = (float)m_Metadata.Width / m_Metadata.Height;
-            m_RenderCamera.stereoTargetEye = StereoTargetEyeMask.None;
             if (m_SourceCameraData != null)
             {
                 m_RenderCameraData.renderPostProcessing = m_SourceCameraData.renderPostProcessing;

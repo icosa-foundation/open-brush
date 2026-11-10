@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 
 namespace TiltBrush
 {
@@ -22,6 +23,8 @@ namespace TiltBrush
         public Ray? InteractionGaze { get; set; }
         public float? ViewAspect { get; private set; }
         private readonly Rect m_OriginalViewport;
+        private readonly UniversalAdditionalCameraData m_CameraData;
+        private readonly bool m_OriginalAllowXrRendering;
 
         public VirtualInputSimulation(Camera camera, VrControllers controllers)
         {
@@ -37,7 +40,9 @@ namespace TiltBrush
             {
                 SuspendHeadDriver(driver);
             }
-            camera.stereoTargetEye = StereoTargetEyeMask.None;
+            m_CameraData = camera.GetUniversalAdditionalCameraData();
+            m_OriginalAllowXrRendering = m_CameraData.allowXRRendering;
+            m_CameraData.allowXRRendering = false;
             camera.fieldOfView = 75;
             SetHeadPose(new Vector3(0, 1.65f * App.METERS_TO_UNITS, 0), Quaternion.identity);
             Debug.Log("[ProceduralAutomation] Virtual Input initialized; XR loading and hardware input are disabled.");
@@ -97,6 +102,7 @@ namespace TiltBrush
         public void Dispose()
         {
             SetViewAspect(null);
+            if (m_CameraData != null) { m_CameraData.allowXRRendering = m_OriginalAllowXrRendering; }
             m_ControllerTracking.Dispose();
             for (int i = 0; i < m_HeadDrivers.Count; ++i)
             {
