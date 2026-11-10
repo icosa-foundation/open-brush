@@ -240,7 +240,8 @@ namespace TiltBrush
                             scale = 1
                         }).ToList();
                         stroke = DrawStrokes.DrawNestedTrList(new[] {path}, TrTransform.identity, brush: brush,
-                            brushSize: prep.BrushSizeMeters * App.METERS_TO_UNITS, canvas: canvas,
+                            brushSize: prep.BrushSizeMeters * App.METERS_TO_UNITS,
+                            brushScale: 1f / canvas.Pose.scale, canvas: canvas,
                             colors: prep.ColorRgb == null ? null : new List<Color> {Rgb(prep.ColorRgb)}).Single();
                     }
                     strokes.Add(prep.Id, stroke);
