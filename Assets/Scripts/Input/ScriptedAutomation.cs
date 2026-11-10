@@ -589,7 +589,7 @@ namespace TiltBrush
                 if (step.Op == "present" || step.Op == "focus" || step.Op == "click")
                 {
                     item.Button = step.Op == "click" && popupPrefab != null
-                        ? popupPrefab.GetComponentsInChildren<BaseButton>(true).SingleOrDefault(step.Target.Matches) : null;
+                        ? popupPrefab.GetComponentsInChildren<BaseButton>(true).SingleOrDefault(b => step.Target.MatchesPopup(b, popupPrefab, popupOwner)) : null;
                     if (step.Op == "click" && popupPrefab != null && item.Button == null)
                         throw new ArgumentException($"Step {m_Instructions.Count + 1}: the target is not in the open popup.");
                     if (item.Button != null)

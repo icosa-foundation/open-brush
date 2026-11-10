@@ -58,7 +58,9 @@ namespace TiltBrush
             public string Command;
             public string OpensPanel;
 
-            public bool Matches(BaseButton button)
+            public bool Matches(BaseButton button) => Matches(button, null);
+
+            private bool Matches(BaseButton button, string predictedPath)
             {
                 if (new[] {Tool, Brush, Subtool, Path, Command, OpensPanel}.Count(s => !string.IsNullOrEmpty(s)) != 1)
                     throw new ArgumentException("A button selector needs exactly one of tool, brush, subtool, path, command or opensPanel.");
@@ -67,7 +69,16 @@ namespace TiltBrush
                 if (!string.IsNullOrEmpty(Subtool)) { return button is SculptSubToolButton sub && sub.m_SubTool.ToString() == Subtool; }
                 if (!string.IsNullOrEmpty(Command)) { return button is OptionButton option && option.m_Command.ToString() == Command; }
                 if (!string.IsNullOrEmpty(OpensPanel)) { return button is PanelButton panel && panel.m_Type == PanelType(OpensPanel); }
-                return HierarchyPath(button.transform) == Path;
+                return (predictedPath ?? HierarchyPath(button.transform)) == Path;
+            }
+
+            internal bool MatchesPopup(BaseButton button, GameObject prefab, BasePanel owner)
+            {
+                if (string.IsNullOrEmpty(Path)) { return Matches(button); }
+                string relativePath = HierarchyPath(button.transform)
+                    .Substring(HierarchyPath(prefab.transform).Length);
+                string runtimePath = $"{HierarchyPath(owner.m_Mesh.transform)}/{prefab.name}(Clone){relativePath}";
+                return Matches(button, runtimePath);
             }
 
             public BaseButton Resolve(bool required = true)
