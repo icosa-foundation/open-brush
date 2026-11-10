@@ -99,10 +99,20 @@ def prepare_script(preset, *, category="SymmetryScript"):
     return {"op": "script", "category": category, "scriptName": preset, "selectPrevious": True}
 
 
+def select_grid_spacing(value, *, current=0):
+    """Cycle the native grid button from a known value, using its displayed units."""
+    values = (0, 0.1, 0.25, 0.5, 1, 2, 3, 5)
+    clicks = (values.index(value) - values.index(current)) % len(values)
+    selector = {"path": "SketchControls/SnapSettingsPanel(Clone)_Advanced/Mesh/ChangeSnapGrid"}
+    return [step for i in range(clicks)
+            for step in select_control(selector, present=i == 0)]
+
+
 def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
                attachment="tool", anchor=None, anchor_t=0.5,
                rotation=None, end_rotation=None, rotation_constraint="full", curve="polyline",
-               padding=0.02, lower_wand=True, contact_pause=0.45, inspect_pause=0.6):
+               padding=0.02, lower_wand=True, contact_pause=0.45, inspect_pause=0.6,
+               before_release=()):
     """Approach a contact, apply the native tool along a path, release and pause."""
     if not points:
         raise ValueError("Tool application needs at least one point.")
@@ -123,7 +133,7 @@ def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
     if lower_wand:
         steps.append({"op": "rest", "hand": "wand"})
     return [*steps, {"op": "wait", "seconds": contact_pause},
-            {"op": "input", "trigger": True}, path,
+            {"op": "input", "trigger": True}, path, *copy.deepcopy(before_release),
             {"op": "input", "trigger": False}, {"op": "wait", "seconds": inspect_pause}]
 
 
