@@ -11,11 +11,10 @@ def build_plan(args):
     curve = sample_cubic()
     centre = curve[len(curve) // 2]
     relative = [[point[a] - centre[a] for a in range(3)] for point in curve]
-    half_path = relative[18:31]
+    soft_path = relative[18:31]
     full_path = relative[66:79]
     clear_path = relative[10:87]
-    button_pose = [full_path[-1][0] + 0.02, full_path[-1][1] + 0.015,
-                   full_path[-1][2] - 0.035]
+    clear_rotation = (10, -20, 0)
     slider = "SketchControls/LabsPanel(Clone)_Advanced/Mesh/Slider_TintAmount"
     return {
         "version": 1,
@@ -28,8 +27,8 @@ def build_plan(args):
         "steps": [
             *open_panel("Labs", park=True),
             *select_tool("TintColorTool"),
-            *drag_slider(slider, 0.5),
-            *apply_path(half_path, label="Apply a half-strength tint", seconds=1.2,
+            *drag_slider(slider, 0.3),
+            *apply_path(soft_path, label="Apply a 0.3-strength tint", seconds=1.2,
                         tool="TintColorTool", anchor="subject", padding=radius,
                         lower_wand=False, inspect_pause=0.8),
             {"op": "assert", "stroke": "subject", "strokeCountDelta": 0,
@@ -40,11 +39,11 @@ def build_plan(args):
             {"op": "assert", "stroke": "subject", "strokeCountDelta": 0,
              "unchangedGeometry": True, "minimumChangedColorPoints": 5,
              "maximumChangedColorPoints": 80, "colorPointT": 0.75, "expectedColorRgb": coral},
-            *secondary_button(button_pose, attachment="tool",
+            *secondary_button(clear_path[0], attachment="tool", rotation=clear_rotation,
                               tool="TintColorTool", anchor="subject"),
             *apply_path(clear_path, label="Clear both tinted sections",
                         tool="TintColorTool", anchor="subject", padding=radius, lower_wand=False,
-                        approach_seconds=0.35),
+                        rotation=clear_rotation, approach_seconds=0.35),
             {"op": "assert", "stroke": "subject", "strokeCountDelta": 0,
              "unchangedGeometry": True, "maximumChangedColorPoints": 0, "expectedColorRgb": blue},
             *reveal_result(seconds=2.5),

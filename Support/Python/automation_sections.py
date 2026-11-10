@@ -100,7 +100,7 @@ def drag_slider(path, value, *, seconds=1.2):
 
 
 def secondary_button(point, *, attachment="tip", tool=None, anchor=None,
-                     rotation=(10, -20, 0), release=True, before_seconds=1.2, after_seconds=3.0):
+                     rotation=(10, -20, 0), release=True, before_seconds=2.4, after_seconds=3.0):
     """Tilt toward the viewer, show the secondary-button change, then continue nearby."""
     pose = {"op": "move", "label": "Show the secondary button", "seconds": 0.45,
             "points": [list(point)], "attachment": attachment, "rotation": list(rotation)}
