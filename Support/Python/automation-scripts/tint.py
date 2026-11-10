@@ -1,14 +1,21 @@
 """Apply a soft tint, increase its strength, then clear it to restore the stroke."""
 
 from automation_sections import (apply_path, drag_slider, open_panel, prepare_stroke,
-                                 reveal_result, secondary_button, select_tool)
+                                 reveal_result, sample_cubic, secondary_button, select_tool)
 
 
 def build_plan(args):
     blue = [0.12, 0.32, 0.95]
     coral = [1.0, 0.25, 0.12]
     radius = 0.045
-    path = [[-0.035, 0.018, 0], [0.035, -0.018, 0]]
+    curve = sample_cubic()
+    centre = curve[len(curve) // 2]
+    relative = [[point[a] - centre[a] for a in range(3)] for point in curve]
+    half_path = relative[18:31]
+    full_path = relative[66:79]
+    clear_path = relative[10:87]
+    button_pose = [full_path[-1][0] + 0.02, full_path[-1][1] + 0.015,
+                   full_path[-1][2] - 0.035]
     slider = "SketchControls/LabsPanel(Clone)_Advanced/Mesh/Slider_TintAmount"
     return {
         "version": 1,
@@ -22,20 +29,20 @@ def build_plan(args):
             *open_panel("Labs", park=True),
             *select_tool("TintColorTool"),
             *drag_slider(slider, 0.5),
-            *apply_path(path, label="Apply a half-strength tint", seconds=1.2,
+            *apply_path(half_path, label="Apply a half-strength tint", seconds=1.2,
                         tool="TintColorTool", anchor="subject", padding=radius,
                         lower_wand=False, inspect_pause=0.8),
             {"op": "assert", "stroke": "subject", "strokeCountDelta": 0,
              "unchangedGeometry": True, "minimumChangedColorPoints": 5},
             *drag_slider(slider, 1.0),
-            *apply_path(list(reversed(path)), label="Build up the full-strength tint", seconds=2.0,
+            *apply_path(full_path, label="Tint a separate section at full strength", seconds=2.0,
                         tool="TintColorTool", anchor="subject", padding=radius, lower_wand=False),
             {"op": "assert", "stroke": "subject", "strokeCountDelta": 0,
              "unchangedGeometry": True, "minimumChangedColorPoints": 5,
-             "maximumChangedColorPoints": 48, "expectedColorRgb": coral},
-            *secondary_button([-0.035, 0.033, -0.035], attachment="tool",
+             "maximumChangedColorPoints": 80, "colorPointT": 0.75, "expectedColorRgb": coral},
+            *secondary_button(button_pose, attachment="tool",
                               tool="TintColorTool", anchor="subject"),
-            *apply_path([[-0.055, 0.025, 0], [0.055, -0.025, 0]], label="Clear the tint",
+            *apply_path(clear_path, label="Clear both tinted sections",
                         tool="TintColorTool", anchor="subject", padding=radius, lower_wand=False,
                         approach_seconds=0.35),
             {"op": "assert", "stroke": "subject", "strokeCountDelta": 0,
