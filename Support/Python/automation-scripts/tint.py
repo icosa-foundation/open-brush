@@ -21,8 +21,8 @@ def build_plan(args):
         "steps": [
             *open_panel("Labs", park=True),
             *select_tool("TintColorTool"),
-            *drag_slider(slider, 0.1),
-            *apply_path(path, label="Apply a soft tint", seconds=1.2,
+            *drag_slider(slider, 0.5),
+            *apply_path(path, label="Apply a half-strength tint", seconds=1.2,
                         tool="TintColorTool", anchor="subject", padding=radius,
                         lower_wand=False, inspect_pause=0.8),
             {"op": "assert", "stroke": "subject", "strokeCountDelta": 0,
