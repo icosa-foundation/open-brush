@@ -24,6 +24,55 @@ namespace TiltBrush
 {
     internal class TestRuntimeVoxDocument
     {
+        [TestCase(0f, 0f, false, 1f)]
+        [TestCase(1f, 0f, false, 1f)]
+        [TestCase(0.4f, 0.5f, true, 0.5f)]
+        [TestCase(0f, 1f, true, 0.05f)]
+        public void BlendMaterial_MapsIndependentSurfaceProperties(
+            float metallic, float transmission, bool transparent, float opacity)
+        {
+            var properties = new System.Collections.Generic.Dictionary<string, string>
+            {
+                ["_type"] = "_blend", ["_rough"] = "0.25", ["_alpha"] = "0.2"
+            };
+            properties = VoxMaterialAdapter.WithValue(properties, PbrMaterialParameter.Property.Metallic, metallic);
+            properties["_trans"] = transmission.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            var native = VoxMaterialAdapter.Describe(properties);
+            var values = VoxMaterialAdapter.Read(native);
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Blend, native.Type);
+            Assert.AreEqual(metallic, values.Metallic);
+            Assert.AreEqual(0.75f, values.Smoothness);
+            Assert.AreEqual(transparent, values.Transparent);
+            Assert.AreEqual(opacity, values.Opacity, 0.00001f);
+            Assert.AreEqual(0.2f, native.Alpha);
+        }
+
+        [Test]
+        public void BlendMaterial_EditingAndSavingPreservesSourceProperties()
+        {
+            var document = new RuntimeVoxDocument();
+            document.CreateModel("blend", new Vector3Int(2, 2, 2)).AddOrUpdateVoxel(Vector3Int.zero, 9);
+            var properties = new System.Collections.Generic.Dictionary<string, string>
+            {
+                ["_type"] = "_blend", ["_metal"] = "0.6", ["_trans"] = "0.5",
+                ["_alpha"] = "0.5", ["_media_type"] = "_scatter", ["_d"] = "0.05"
+            };
+            document.SetPaletteMaterial(9, properties);
+            var loaded = RuntimeVoxDocument.FromBytes(document.ToVoxBytes());
+            var edited = VoxMaterialAdapter.WithValue(loaded.Materials[9].Properties,
+                PbrMaterialParameter.Property.Opacity, 0.75f);
+            loaded.SetPaletteMaterial(9, edited);
+            var saved = RuntimeVoxDocument.FromBytes(loaded.ToVoxBytes()).Materials[9];
+            Assert.AreEqual(RuntimeVoxDocument.MaterialType.Blend, saved.Type);
+            Assert.AreEqual(0.25f, saved.Transmission);
+            Assert.AreEqual(0.6f, saved.Metallic);
+            Assert.AreEqual("0.5", saved.Properties["_alpha"]);
+            Assert.AreEqual("_scatter", saved.Properties["_media_type"]);
+            Assert.AreEqual("0.05", saved.Properties["_d"]);
+            Assert.IsFalse(saved.Properties.ContainsKey("_weight"));
+            Assert.IsFalse(saved.Properties.ContainsKey("_att"));
+        }
+
         [Test]
         public void VoxelHitQuery_FindsOccupiedCellsWithCanvasScaleAndRejectsEmptySpace()
         {

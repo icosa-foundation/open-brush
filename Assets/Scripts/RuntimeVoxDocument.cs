@@ -230,6 +230,7 @@ namespace TiltBrush
             Glass,
             Emit,
             Unknown,
+            Blend,
         }
 
         public sealed class RuntimeMaterial
@@ -242,6 +243,9 @@ namespace TiltBrush
             public float? IndexOfRefraction { get; }
             public float? Attenuation { get; }
             public float? Flux { get; }
+            public float? Metallic { get; }
+            public float? Transmission { get; }
+            public float? Alpha { get; }
             public bool Plastic { get; }
             public IReadOnlyDictionary<string, string> Properties { get; }
 
@@ -258,6 +262,9 @@ namespace TiltBrush
                 IndexOfRefraction = ParseFloat(properties, "_ior");
                 Attenuation = ParseFloat(properties, "_att");
                 Flux = ParseFloat(properties, "_flux");
+                Metallic = ParseFloat(properties, "_metal");
+                Transmission = ParseFloat(properties, "_trans");
+                Alpha = ParseFloat(properties, "_alpha");
                 Plastic = properties.TryGetValue("_plastic", out string plastic) &&
                     plastic != "0";
             }
@@ -296,6 +303,8 @@ namespace TiltBrush
                         return MaterialType.Glass;
                     case "_emit":
                         return MaterialType.Emit;
+                    case "_blend":
+                        return MaterialType.Blend;
                     default:
                         return MaterialType.Unknown;
                 }

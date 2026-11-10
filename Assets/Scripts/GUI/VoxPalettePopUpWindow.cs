@@ -13,6 +13,12 @@ namespace TiltBrush
     public sealed class VoxPalettePopUpWindow : ColorPickerPopUpWindow
     {
         private const int PageSize = 64, Columns = 8, PageCount = 4;
+        private static readonly RuntimeVoxDocument.MaterialType[] MaterialTypes =
+        {
+            RuntimeVoxDocument.MaterialType.Diffuse, RuntimeVoxDocument.MaterialType.Metal,
+            RuntimeVoxDocument.MaterialType.Glass, RuntimeVoxDocument.MaterialType.Emit,
+            RuntimeVoxDocument.MaterialType.Blend
+        };
         [SerializeField] private VoxPaletteButton m_ButtonPrefab;
         [SerializeField] private ActionButton m_Previous;
         [SerializeField] private ActionButton m_Next;
@@ -107,9 +113,10 @@ namespace TiltBrush
         public void ChangeMaterialType(int direction)
         {
             if (!CanEdit) return;
-            FinishChange(); int current = (int)VoxMaterialAdapter.Describe(Properties).Type;
-            int next = (Mathf.Clamp(current, 0, 3) + direction + 4) % 4;
-            SetMaterial(VoxMaterialAdapter.WithType(Properties, next)); FinishChange();
+            FinishChange();
+            int current = Mathf.Max(0, Array.IndexOf(MaterialTypes, VoxMaterialAdapter.Describe(Properties).Type));
+            int next = (current + direction + MaterialTypes.Length) % MaterialTypes.Length;
+            SetMaterial(VoxMaterialAdapter.WithType(Properties, (int)MaterialTypes[next])); FinishChange();
         }
         private void OnColorPicked(Color color)
         {
@@ -222,11 +229,20 @@ namespace TiltBrush
         private void RefreshMaterialControls()
         {
             var native = VoxMaterialAdapter.Describe(Properties); var values = VoxMaterialAdapter.Read(native);
-            int type = (int)native.Type; m_TypeLabel.text = type < 4 ? new[] { "Standard", "Metal", "Glass", "Emissive" }[type] : "Imported material";
+            int type = (int)native.Type;
+            bool blend = native.Type == RuntimeVoxDocument.MaterialType.Blend;
+            m_TypeLabel.text = blend ? "Blend" : type < 4 ? new[] { "Standard", "Metal", "Glass", "Emissive" }[type] : "Imported material";
             var mask = PbrMaterialParameter.Controls.Glossiness;
             if (type == 1) mask |= PbrMaterialParameter.Controls.Metallic;
             if (type == 2) mask |= PbrMaterialParameter.Controls.Opacity;
             var parameters = type < 3 ? PbrMaterialParameter.For(values, mask) : new List<PbrMaterialParameter>();
+            if (blend)
+            {
+                // Opacity remains editable at 1, so opaque Blend materials can become transparent.
+                parameters.Add(new PbrMaterialParameter { Key = PbrMaterialParameter.Property.Metallic, Label = "Metallic" });
+                parameters.Add(new PbrMaterialParameter { Key = PbrMaterialParameter.Property.Glossiness, Label = "Glossiness" });
+                parameters.Add(new PbrMaterialParameter { Key = PbrMaterialParameter.Property.Opacity, Label = "Opacity" });
+            }
             for (int i = 0; i < m_MaterialSliders.Length; ++i)
             {
                 var slider = m_MaterialSliders[i]; bool visible = i < parameters.Count || type == 3 && i == 0;

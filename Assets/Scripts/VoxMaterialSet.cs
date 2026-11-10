@@ -77,7 +77,7 @@ namespace TiltBrush
                     ownedMaterials.Add(material);
                 }
                 paletteSubmeshIndices[paletteIndex - 1] = slot;
-                if (voxMaterial.Type == RuntimeVoxDocument.MaterialType.Glass)
+                if (VoxMaterialAdapter.Read(voxMaterial).Transparent)
                 {
                     Material material = materials[slot];
                     float alpha = material.HasProperty("_BaseColorFactor")
@@ -95,7 +95,8 @@ namespace TiltBrush
 
         private static Material CreateMaterial(RuntimeVoxDocument.RuntimeMaterial voxMaterial, Color32 paletteColor)
         {
-            var template = Resources.Load<Material>(voxMaterial.Type == RuntimeVoxDocument.MaterialType.Glass
+            var values = VoxMaterialAdapter.Read(voxMaterial);
+            var template = Resources.Load<Material>(values.Transparent
                 ? "VoxMaterials/Glass" : "VoxMaterials/Opaque");
 
             var material = new Material(template)
@@ -103,7 +104,7 @@ namespace TiltBrush
                 name = $"VOX {voxMaterial.Type} {voxMaterial.PaletteIndex}",
             };
 
-            PbrMaterialProperties.Apply(material, VoxMaterialAdapter.Read(voxMaterial), Color.white);
+            PbrMaterialProperties.Apply(material, values, Color.white);
             if (voxMaterial.Type == RuntimeVoxDocument.MaterialType.Emit)
             {
                 // Preserve control over dim emission while giving the upper end HDR headroom.
