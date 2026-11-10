@@ -82,7 +82,7 @@ namespace TiltBrush
                 return matches[0];
             }
 
-            private static string HierarchyPath(Transform t) => t.parent == null ? t.name : $"{HierarchyPath(t.parent)}/{t.name}";
+            internal static string HierarchyPath(Transform t) => t.parent == null ? t.name : $"{HierarchyPath(t.parent)}/{t.name}";
         }
 
         internal static BasePanel.PanelType PanelType(string name)
@@ -135,6 +135,8 @@ namespace TiltBrush
             public string Category;
             public string ScriptName;
             public string Symmetry;
+            public string Slider;
+            public float Value;
             public bool? StraightEdge;
             public bool? EndpointSnap;
             public float[][] LastStrokeEndpoints;
@@ -145,6 +147,7 @@ namespace TiltBrush
             public float MinimumMovementMeters;
             public bool FixedEndpoints;
             public int? StrokeCountDelta;
+            public int? VisibleStrokeCountDelta;
             public int MinimumChangedColorPoints;
             public int? MaximumChangedColorPoints;
             public bool UnchangedGeometry;

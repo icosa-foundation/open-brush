@@ -87,11 +87,23 @@ def open_panel(panel, *, via_more=True, park=False):
 
 
 def select_script(preset, *, category="SymmetryScript", present=True):
-    """Select the next preset after prepare_script establishes its predecessor."""
+    """Reach the script controls and navigate to a named preset through native clicks."""
     nav = category.replace("Script", "ScriptsNav")
     path = f"SketchControls/ScriptsPanel(Clone)_Advanced/Mesh/{nav}/NextScriptButton"
-    return [*select_control({"path": path}, present=present),
-            {"op": "assert", "category": category, "scriptName": preset}]
+    return [*([{"op": "present", "target": {"path": path}}] if present else []),
+            {"op": "selectScript", "category": category, "scriptName": preset}]
+
+
+def drag_slider(path, value, *, seconds=1.2):
+    """Move a native slider to a normalized value using the controller's trigger."""
+    return [{"op": "slider", "slider": path, "value": value, "seconds": seconds}]
+
+
+def undo_gesture():
+    """Undo one complete drawing gesture with the wand's undo button."""
+    return [{"op": "input", "hand": "wand", "buttons": ["Button01"]},
+            {"op": "input", "hand": "wand", "buttons": []},
+            {"op": "wait", "seconds": 0.35}]
 
 
 def prepare_script(preset, *, category="SymmetryScript"):
@@ -112,7 +124,7 @@ def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
                attachment="tool", anchor=None, anchor_t=0.5,
                rotation=None, end_rotation=None, rotation_constraint="full", curve="polyline",
                padding=0.02, lower_wand=True, contact_pause=0.45, inspect_pause=0.6,
-               before_release=()):
+               before_release=(), approach_seconds=1.2):
     """Approach a contact, apply the native tool along a path, release and pause."""
     if not points:
         raise ValueError("Tool application needs at least one point.")
@@ -129,7 +141,7 @@ def apply_path(points, *, label="Apply", seconds=2.4, tool=None,
             "curve": curve, "points": copy.deepcopy(points), "paddingMeters": padding, **contact}
     if end_rotation is not None:
         path["endRotation"] = list(end_rotation)
-    steps = [{"op": "move", "points": [list(points[0])], **contact}]
+    steps = [{"op": "move", "points": [list(points[0])], "seconds": approach_seconds, **contact}]
     if lower_wand:
         steps.append({"op": "rest", "hand": "wand"})
     return [*steps, {"op": "wait", "seconds": contact_pause},

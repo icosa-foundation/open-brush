@@ -16,6 +16,9 @@ namespace TiltBrush
             public AutomationScript.Step Source;
             public int Hand;
             public BaseButton Button;
+            public BaseSlider Slider;
+            public float SliderStartValue;
+            public float SliderAimOffset;
             public BasePanel Panel;
             public UnityEngine.Pose[] Path;
             public UnityEngine.Pose Start;
@@ -53,6 +56,7 @@ namespace TiltBrush
         private readonly Ray? m_OriginalGaze;
         private readonly float? m_OriginalViewAspect;
         private readonly int m_InitialStrokeCount;
+        private readonly int m_InitialVisibleStrokeCount;
         private readonly AutomationScript m_Script;
         private Vector3 m_PanelLayoutOffset;
         private UnityEngine.Pose? m_RestView;
@@ -99,9 +103,15 @@ namespace TiltBrush
             // Validate syntax and selectors before creating any fixture strokes.
             foreach (var step in script.Steps.SelectMany(ExpandMoves))
             {
-                if (!new[] {"present", "focus", "click", "placePanel", "move", "input", "wait", "rest", "assert"}.Contains(step.Op))
+                if (!new[] {"present", "focus", "click", "selectScript", "slider", "placePanel", "move", "input", "wait", "rest", "assert"}.Contains(step.Op))
                     throw new ArgumentException($"Unknown script operation: {step.Op}");
                 AutomationScript.Positive(step.Seconds, "step seconds", 0.01f, 120);
+                if (step.Op == "slider")
+                {
+                    AutomationScript.Positive(step.Value, "slider value", 0, 1);
+                    if (string.IsNullOrEmpty(step.Slider) || step.Hand != "brush")
+                        throw new ArgumentException("slider needs a slider hierarchy path and the brush hand.");
+                }
                 if (step.EndRotation != null && step.Rotation == null)
                     throw new ArgumentException("endRotation requires an explicit rotation.");
                 if (step.Op == "placePanel" && step.EndRotation != null)
@@ -121,6 +131,7 @@ namespace TiltBrush
             m_OriginalColors = m_Strokes.ToDictionary(p => p.Key,
                 p => Enumerable.Range(0, p.Value.m_ControlPoints.Length).Select(p.Value.GetColor).ToArray());
             m_InitialStrokeCount = SketchMemoryScript.m_Instance.StrokeCount;
+            m_InitialVisibleStrokeCount = SketchMemoryScript.m_Instance.GetMemoryList.Count(s => s.IsGeometryEnabled);
             var framing = PlanFraming();
             m_Controllers = m_Original.Select(c => new ProceduralControllerInfo(c.Behavior)).ToArray();
             m_ShowControllers = App.Instance.ShowControllers;
@@ -281,6 +292,45 @@ namespace TiltBrush
         private UnityEngine.Pose RootForMotion(int hand, UnityEngine.Pose contact, AutomationScript.Step step) =>
             step.Rotation == null ? m_Arms[hand].RelaxedGripPose(contact.position, ContactLocal(hand, step).position) :
                 RootForContact(hand, contact, step, step.RotationConstraint == "forward");
+
+        private IEnumerable<AutomationScript.Step> ExpandScriptSelections()
+        {
+            var selected = new Dictionary<LuaApiCategory, int>();
+            foreach (var step in m_Script.Steps)
+            {
+                if (step.Op != "selectScript") { yield return step; continue; }
+                LuaManager.Instance.Init(immediate: true);
+                if (!Enum.TryParse(step.Category, out LuaApiCategory category) || !Enum.IsDefined(typeof(LuaApiCategory), category))
+                    throw new ArgumentException($"Unknown script category: {step.Category}");
+                var names = LuaManager.Instance.GetScriptNames(category);
+                int target = names.IndexOf(step.ScriptName);
+                if (target < 0) { throw new ArgumentException($"Unknown {step.Category}: {step.ScriptName}"); }
+                int current = selected.TryGetValue(category, out int previous) ? previous :
+                    names.IndexOf(LuaManager.Instance.GetActiveScriptName(category));
+                int forward = (target - current + names.Count) % names.Count;
+                int backward = (current - target + names.Count) % names.Count;
+                bool next = forward <= backward;
+                int clicks = Mathf.Min(forward, backward);
+                var panel = PanelManager.m_Instance.GetPanelByType(AutomationScript.PanelType("Scripts"));
+                string nav = step.Category.Replace("Script", "ScriptsNav");
+                string button = next ? "NextScriptButton" : "PrevScriptButton";
+                string path = $"{AutomationScript.Selector.HierarchyPath(panel.transform)}/Mesh/{nav}/{button}";
+                for (int i = 0; i < clicks; ++i)
+                    yield return new AutomationScript.Step {Op = "click", Label = $"Choose {step.ScriptName}",
+                        Target = new AutomationScript.Selector {Path = path}, Seconds = i == 0 ? step.Seconds : 0.08f};
+                yield return new AutomationScript.Step {Op = "assert", Category = step.Category, ScriptName = step.ScriptName};
+                selected[category] = target;
+            }
+        }
+
+        private UnityEngine.Pose AimSlider(Instruction item, UnityEngine.Pose panel, float value, bool predict)
+        {
+            Vector3 local = item.Slider.GetKnobLocalPosition(value);
+            Transform parent = item.Slider.m_Nob.transform.parent;
+            Vector3 target = predict ? panel.position + panel.rotation * item.Panel.FullScalePoint(parent, local) :
+                parent.TransformPoint(local);
+            return AimAt(target, panel.rotation, item);
+        }
 
         private UnityEngine.Pose[] PlanPanelGrip(UnityEngine.Pose source, UnityEngine.Pose destination, Vector3 center)
         {
@@ -501,6 +551,7 @@ namespace TiltBrush
             var predicted = (UnityEngine.Pose[])m_Poses.Clone();
             float ring = 0;
             var floating = new Dictionary<BasePanel, UnityEngine.Pose>();
+            var sliderValues = new Dictionary<BaseSlider, float>();
             GameObject popupPrefab = null;
             BasePanel popupOwner = null;
             UnityEngine.Pose popupPose = default;
@@ -520,7 +571,7 @@ namespace TiltBrush
                 bounds.Expand(2 * stroke.m_BrushSize);
                 shot.AddSubject("Prepared stroke", AutomationShot.SubjectRole.Artwork).AddBounds(bounds);
             }
-            foreach (var step in m_Script.Steps.SelectMany(ExpandMoves))
+            foreach (var step in ExpandScriptSelections().SelectMany(ExpandMoves))
             {
                 var item = new Instruction {Source = step, Hand = step.Hand == "wand" ? 0 : 1,
                     DurationSeconds = step.Seconds / m_Script.Speed};
@@ -663,6 +714,36 @@ namespace TiltBrush
                         if (item.Deferred) { item.Button = null; }
                     }
                 }
+                else if (step.Op == "slider")
+                {
+                    item.Slider = UnityEngine.Object.FindObjectsByType<BaseSlider>(FindObjectsInactive.Include)
+                        .SingleOrDefault(s => AutomationScript.Selector.HierarchyPath(s.transform) == step.Slider);
+                    item.Panel = item.Slider?.GetComponentInParent<BasePanel>(true);
+                    if (item.Panel == null || item.Slider.m_Nob == null)
+                        throw new ArgumentException($"Slider with knob geometry not found: {step.Slider}");
+                    UnityEngine.Pose panelPose;
+                    if (item.Panel.m_Fixed) { panelPose = PanelPose(item.Panel, predicted[0], ring); }
+                    else if (!floating.TryGetValue(item.Panel, out panelPose))
+                        throw new ArgumentException("Open the floating slider panel before dragging its controls.");
+                    item.Hand = 1;
+                    item.Start = predicted[1];
+                    item.SliderStartValue = sliderValues.TryGetValue(item.Slider, out float previousValue) ?
+                        previousValue : item.Slider.GetCurrentValue();
+                    sliderValues[item.Slider] = step.Value;
+                    item.Path = new UnityEngine.Pose[33];
+                    for (int i = 0; i < item.Path.Length; ++i)
+                    {
+                        item.Path[i] = AimSlider(item, panelPose,
+                            Mathf.Lerp(item.SliderStartValue, step.Value, i / 32f), true);
+                        subject.AddPose(item.Path[i], m_ControllerBounds[1]);
+                    }
+                    var controls = shot.AddSubject("Slider control", AutomationShot.SubjectRole.Panel);
+                    if (item.Slider.GetCollider() is BoxCollider box)
+                        for (int i = 0; i < 8; ++i)
+                            controls.AddPoint(panelPose.position + panelPose.rotation * item.Panel.FullScalePoint(box.transform,
+                                AutomationShot.Corner(new Bounds(box.center, box.size), i)));
+                    predicted[1] = item.Path.Last();
+                }
                 else if (step.Op == "placePanel")
                 {
                     var type = AutomationScript.PanelType(step.Panel);
@@ -801,6 +882,7 @@ namespace TiltBrush
             m_Elapsed = 0; m_TotalElapsed = 0; m_Frames = 0; m_Stage = 0; m_Clicked = false;
             var item = m_Instructions[m_Index];
             item.Start = m_Poses[item.Hand];
+            if (item.Slider != null) { item.SliderStartValue = item.Slider.GetCurrentValue(); }
             if (item.Parallel != null) { item.Parallel.Start = m_Poses[item.Parallel.Hand]; }
             Vector3 gazeTarget = item.Panel != null ? item.Panel.transform.position :
                 item.Path != null ? item.Path.Last().position : m_Workspace.position + m_Workspace.rotation * Vector3.forward;
@@ -875,6 +957,9 @@ namespace TiltBrush
                         case "placePanel":
                             PlacePanel(item);
                             break;
+                        case "slider":
+                            DragSlider(item);
+                            break;
                         case "focus":
                             var focusCollider = item.Panel.GetCollider();
                             var focus = AimAt(focusCollider.bounds.center, item.Panel.transform.rotation, item);
@@ -922,6 +1007,46 @@ namespace TiltBrush
             }
             ApplyPoses();
             return true;
+        }
+
+        private void DragSlider(Instruction item)
+        {
+            if (m_TotalElapsed > item.DurationSeconds * 2 + 8)
+                throw new InvalidOperationException("Slider did not accept the native drag.");
+            var panel = new UnityEngine.Pose(item.Panel.transform.position, item.Panel.transform.rotation);
+            float hoverValue = Mathf.Clamp(item.SliderStartValue, 0.02f, 0.98f);
+            float value = m_Stage == 3 ? Mathf.Lerp(item.SliderStartValue, item.Source.Value,
+                ProceduralArm.MinimumJerk(m_Elapsed / item.DurationSeconds)) :
+                m_Stage > 3 ? item.Source.Value : hoverValue;
+            var aim = AimSlider(item, panel, value + item.SliderAimOffset, false);
+            m_Poses[1] = m_Stage == 0 ? m_Arms[1].Reach(m_ReachStart,
+                m_Arms[1].Solve(aim.position, aim.rotation), m_Elapsed / item.DurationSeconds) : aim;
+            if (m_Stage == 0 && m_Elapsed >= item.DurationSeconds) { m_Stage = 1; m_Elapsed = 0; }
+            else if (m_Stage == 1)
+            {
+                if (!item.Slider.isActiveAndEnabled || !item.Slider.HasPointerFocus ||
+                    !SketchControlsScript.m_Instance.IsUserLookingAtPanel(item.Panel)) { m_Elapsed = 0; }
+                else
+                {
+                    // Panels can project the controller ray onto a different depth from the
+                    // knob. Align to the reticle the native UI actually consumes before pressing.
+                    float error = hoverValue - item.Slider.GetValueAtWorldPosition(
+                        SketchControlsScript.m_Instance.GetUIReticlePos());
+                    item.SliderAimOffset = Mathf.Clamp(item.SliderAimOffset + error * 0.4f, -0.5f, 0.5f);
+                    if (Mathf.Abs(error) > 0.005f) { m_Elapsed = 0; }
+                }
+                if (m_Elapsed >= 0.35f) { m_Triggers[1] = true; m_Stage = 2; m_Elapsed = 0; }
+            }
+            else if (m_Stage == 2 && m_Elapsed >= 0.16f)
+            { item.SliderStartValue = item.Slider.GetCurrentValue(); m_Stage = 3; m_Elapsed = 0; }
+            else if (m_Stage == 3 && m_Elapsed >= item.DurationSeconds)
+            { m_Triggers[1] = false; m_Stage = 4; m_Elapsed = 0; }
+            else if (m_Stage == 4 && m_Elapsed >= 0.35f)
+            {
+                if (Mathf.Abs(item.Slider.GetCurrentValue() - item.Source.Value) > 0.025f)
+                    throw new InvalidOperationException($"Native slider reached {item.Slider.GetCurrentValue():F3}; expected {item.Source.Value:F3}.");
+                Advance();
+            }
         }
 
         private void PlacePanel(Instruction item)
@@ -1062,7 +1187,13 @@ namespace TiltBrush
             if (!string.IsNullOrEmpty(step.Subtool) && SculptSubToolManager.m_Instance?.ActiveSubTool.ToString() != step.Subtool)
                 throw new InvalidOperationException($"Expected active subtool {step.Subtool}.");
             if (step.StrokeCountDelta.HasValue && SketchMemoryScript.m_Instance.StrokeCount - m_InitialStrokeCount != step.StrokeCountDelta.Value)
-                throw new InvalidOperationException("Unexpected stroke count after the script action.");
+                throw new InvalidOperationException($"Stroke count delta is {SketchMemoryScript.m_Instance.StrokeCount - m_InitialStrokeCount}; expected {step.StrokeCountDelta.Value}.");
+            if (step.VisibleStrokeCountDelta.HasValue)
+            {
+                int visible = SketchMemoryScript.m_Instance.GetMemoryList.Count(s => s.IsGeometryEnabled) - m_InitialVisibleStrokeCount;
+                if (visible != step.VisibleStrokeCountDelta.Value)
+                    throw new InvalidOperationException($"Visible stroke count delta is {visible}; expected {step.VisibleStrokeCountDelta.Value}.");
+            }
             if (string.IsNullOrEmpty(step.Stroke)) { return; }
             if (!m_Strokes.TryGetValue(step.Stroke, out Stroke stroke)) { throw new ArgumentException($"Unknown result stroke: {step.Stroke}"); }
             var original = m_OriginalPoints[step.Stroke];
