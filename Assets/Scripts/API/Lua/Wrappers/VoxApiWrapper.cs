@@ -581,6 +581,10 @@ namespace TiltBrush
                 // visibility, so it can preserve the scripting API's hide-when-empty behavior.
                 if (!SuppressDirtyTracking && !_Document.Models.Any(model => model.Voxels.Count > 0))
                 {
+                    // Capture the live pose once; later empty updates may see the
+                    // hide animation's shrinking transform rather than the user's pose.
+                    if (m_ViewState.Widget != null && m_ViewState.Widget.Showing)
+                        m_ViewState.WidgetTransform = GetSceneTransform();
                     m_ViewState.Widget?.Hide();
                 }
             }
