@@ -24,7 +24,7 @@ def build_plan(args):
             *apply_path(membrane_loop(-0.035), label="Draw a membrane", seconds=3.6,
                         attachment="tip", rotation=(25, -40, -8)),
             {"op": "assert", "strokeCountDelta": 1},
-            *reveal_result(seconds=1.4),
+            {"op": "wait", "seconds": 0.5},
             *select_control({"brush": "OutlinedMembrane"}),
             *apply_path(membrane_loop(0.235), label="Draw an outlined membrane", seconds=3.6,
                         attachment="tip", rotation=(25, -40, -8)),

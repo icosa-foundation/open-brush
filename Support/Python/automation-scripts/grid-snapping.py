@@ -18,7 +18,7 @@ def build_plan(args):
             *open_panel("SnapSettings", via_more=False),
             *select_grid_spacing(0.5),
             *apply_path(path, label="Draw along the grid in three dimensions",
-                        attachment="tip", seconds=5.0),
+                        attachment="tip", seconds=5.0, lower_wand=False),
             {"op": "assert", "strokeCountDelta": 1,
              "lastStrokeEndpoints": [[-0.10, -0.30, 0.45], [0.15, -0.30, 0.55]],
              "endpointToleranceMeters": 0.001},

@@ -16,14 +16,15 @@ def build_plan(args):
         *select_control({"command": "StraightEdge"}),
         {"op": "assert", "straightEdge": True},
     ]
-    for label, path, endpoints in (
+    for i, (label, path, endpoints) in enumerate((
         ("Draw the first edge", [a, b], [a, b]),
         ("Snap to the previous endpoint", [near_b, c], [b, c]),
         ("Close the triangle with snapped endpoints", [near_c, near_a], [c, a]),
-    ):
-        steps += [*apply_path(path, label=label, attachment="tip", seconds=2.4),
+    )):
+        steps += [*apply_path(path, label=label, attachment="tip", seconds=2.4,
+                             lower_wand=i == 0, approach_seconds=1.2 if i == 0 else 0.25),
                   {"op": "assert", "lastStrokeEndpoints": endpoints, "endpointToleranceMeters": 0.001},
-                  *reveal_result(seconds=0.8)]
+                  {"op": "wait", "seconds": 0.4}]
     return {
         "version": 1,
         "name": "Connect straight edges with endpoint snapping",
