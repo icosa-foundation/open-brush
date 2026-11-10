@@ -31,17 +31,20 @@ Choose a scenario from the library:
 | 3 | [reshape-push](../Python/automation-scripts/reshape-push.py) | Push a straight stroke into an arch. |
 | 4 | [reshape-flatten](../Python/automation-scripts/reshape-flatten.py) | Flatten a rippled stroke, then turn the scene to inspect its plane. |
 | 5 | [reshape-smooth](../Python/automation-scripts/reshape-smooth.py) | Smooth a jittery arch. |
-| 6 | [tint](../Python/automation-scripts/tint.py) | Apply a contrasting tint to the middle of a stroke. |
+| 6 | [tint](../Python/automation-scripts/tint.py) | Apply a soft tint, increase its strength, then clear it. |
 | 7 | [open-labs](../Python/automation-scripts/open-labs.py) | Open More panels and choose Labs. |
 | 8 | [membrane](../Python/automation-scripts/membrane.py) | Draw matte and outlined membrane surfaces. |
-| 9 | [snapping](../Python/automation-scripts/snapping.py) | Join straight edges with endpoint snapping. |
-| 10 | [snapping-angle](../Python/automation-scripts/snapping-angle.py) | Snap an unfinished sloping line to horizontal before releasing the trigger. |
-| 11 | [symmetry](../Python/automation-scripts/symmetry.py) | Draw with Snowflake, Plait or CandyCane. |
+| 9 | [endpoint-snapping](../Python/automation-scripts/endpoint-snapping.py) | Join straight edges with endpoint snapping. |
+| 10 | [angle-snapping](../Python/automation-scripts/angle-snapping.py) | Snap an unfinished sloping line to horizontal before releasing the trigger. |
+| 11 | [symmetry](../Python/automation-scripts/symmetry.py) | Compare Snowflake, Plait and CandyCane using a 3D figure eight. |
+| 12 | [tool-script-preview](../Python/automation-scripts/tool-script-preview.py) | Resize a live circle preview and release to commit it. |
+| 13 | [darken](../Python/automation-scripts/darken.py) | Build up a darkening brush over bright artwork. |
+| 14 | [grid-snapping](../Python/automation-scripts/grid-snapping.py) | Draw a stepped stroke along three grid axes. |
 
-Pass a symmetry preset with `--param`, for example:
+To reuse a single section of the combined symmetry demonstration, pass `--param`:
 
 ```sh
-python Support/Python/record-procedural-tutorial.py --scenario symmetry --param preset=Plait --name symmetry-plait
+python Support/Python/record-procedural-tutorial.py --scenario symmetry --param preset=Plait --name symmetry-plait-study
 ```
 
 Use `--rehearse` to run without recording, `--fps` to set capture rate and
@@ -75,7 +78,7 @@ The runner saves one canonical MP4 per script in Open Brush's
 `Videos/Tutorials/<script-name>.mp4`. `--name` changes the filename and
 `--output-dir` changes the directory. Keep the same name when repeating a take:
 the previous MP4 is replaced only after the new video is encoded and its frame
-count verified. Name preset variants explicitly, such as `symmetry-plait`.
+count verified. The standard symmetry video contains all three presets.
 FFmpeg and ffprobe must be on PATH. Temporary PNG frames are removed after
 encoding, including when encoding fails. Use `--frames-only` to retain frames
 and `recording.json` for a manual workflow instead.
@@ -128,7 +131,7 @@ python Support/Python/record-procedural-tutorial.py --script path/to/my_sequence
 To inspect or save an example's generated plan without contacting Open Brush:
 
 ```sh
-python Support/Python/record-procedural-tutorial.py --scenario reshape --write-plan reshape.json
+python Support/Python/record-procedural-tutorial.py --scenario reshape-grab --write-plan reshape-grab.json
 ```
 
 Python files run as ordinary local Python code, so they can calculate curves,
@@ -161,17 +164,25 @@ calls, so they also work with `--write-plan`.
 | `reshape_demo(mode, points, path, ...)` | A complete shot with a prepared teaching shape, default drawing state, Labs/tool/mode selection, a pause on the original shape, one native reshape gesture, movement/count checks and a final reveal. Use `reveal=False` when continuing directly into another action. Radius, orientation and minimum movement are script parameters. |
 | `prepare_brush(...)` | Starting brush and size, plus optional `palette_brush` to establish a palette page before capture. Recorded brush selection still uses a native button click. |
 | `prepare_script(preset, category=...)` | Select the predecessor of a named preset before capture, ready for a visible Next click. |
-| `select_script(preset, category=...)` | Present the Scripts panel, click Next and assert the named preset. Open Scripts first. |
+| `select_script(preset, category=...)` | Present the Scripts panel and reach the named preset through the shorter sequence of native Previous/Next clicks. Open Scripts first. |
+| `select_grid_spacing(value, current=0)` | Cycle the native grid-size button from a known displayed value. `drawing` preparation resets it to Off (`0`). |
+| `drag_slider(path, value, seconds=1.2)` | Drag a slider to a normalized value from `0` to `1`, using its exact hierarchy path. |
+| `undo_gesture()` | Press and release the wand's Undo button, then wait for the result. |
 | `select_control(selector, ...)` | Present a control's panel and click it; optional expected `tool`/`subtool`, or `present=False` when already shown. |
 | `select_tool(tool, subtool=None)` | Select a tool and optionally move directly to its subtool. |
 | `open_panel(panel, via_more=True, park=False)` | Open a closed panel through More Options. Use `via_more=False` for its own wand-pane button. `park=True` grips and moves the opened panel aside. |
 | `park_panel(panel, position=...)` | Grip and move an opened floating panel to a body-relative position before using its controls. |
-| `apply_path(points, ...)` | Approach, lower the wand, pause, hold trigger along a path, release and pause. Supports contact attachment, anchor, curve, rotations, timing and padding. |
+| `apply_path(points, ...)` | Approach, optionally lower the wand, hold trigger along a path, release and pause. `approach_seconds` controls the initial reach; `before_release` inserts steps while the trigger remains held, such as a live-preview pause. |
 | `reveal_result(seconds=1.0)` | Withdraw the applying hand and hold a clear view of the result. |
 | `rotate_scene(pivot=..., span=0.24, yaw_degrees=90, seconds=3.0)` | Turn around `pivot` with both hands moving together and relaxed wrists. Release and regrip between short turns, then withdraw and hold the result. Include the rotated artwork in the plan's framing subjects. |
 
 Compose recorded sections with Python list unpacking, for example
 `steps = [*select_tool("TintColorTool"), *apply_path(...), *reveal_result()]`.
+
+Use `reveal_result` for the final unobstructed view. Between related actions,
+continue from the current pose or make a short withdrawal when the controller
+covers the artwork. The membrane and endpoint-snapping examples continue directly
+into their next actions.
 
 Move directly between consecutive interaction targets. Use `rest` when withdrawing
 the hand to reveal the result or ending a sequence.
@@ -272,12 +283,14 @@ Each step has `op`, optional `label`, and optional `seconds` (default `1.2`).
 | `present` | `target` button selector. For wand panels, raises the wand and uses native thumbstick snaps to bring the panel forward. For an already opened floating panel, waits for its opening animation without twisting the wand. |
 | `focus` | `target` button selector. Points at its parent panel and waits for native focus. |
 | `click` | `target`. Reaches with the brush hand, waits for real hover, presses and releases the trigger, and requires a native button activation event. `seconds` controls the approach; hover/press/release use shared timing. Optional `tool` and `subtool` verify the resulting selection. |
+| `selectScript` | `category`, `scriptName`. Navigate the Scripts panel with native Previous/Next button clicks, using the live catalogue, then verify the selected name. `seconds` controls the first approach. |
+| `slider` | `slider` exact hierarchy path, `value` normalized from 0 to 1. Reach the knob, align the native reticle, hold the trigger and drag. `seconds` controls each reach and drag. The executor verifies the resulting native slider value. |
 | `placePanel` | `panel`, one destination in `points`, optional destination `rotation`. Approaches, grips, moves and releases an opened floating panel. `seconds` controls each reach and drag. |
 | `move` | `points`, optional `curve` (`polyline` or `bezier`), `rotation`, `endRotation`, `rotationConstraint`, `attachment`, `anchor`, `anchorT`, `tool`, `paddingMeters`. One point is a joint-interpolated reach. Multiple points follow the supplied contact path over `seconds`, with minimum-jerk timing. Bezier needs exactly four control points. |
 | `input` | Optional `trigger` boolean, `thumbstick: [x,y]` (axes in `[-1,1]`) and `buttons` array of native `VrInput` enum names. `buttons` replaces the held non-trigger buttons for this hand; `[]` releases them. For example `Button04` is the context/full-pad press used by straight-edge angle snapping. State persists until changed. Each input step consumes a frame so native consumers receive the edges. |
 | `wait` | Holds current poses and inputs for `seconds`. |
 | `rest` | Returns the chosen hand to its comfortable rest over `seconds`. |
-| `assert` | Optional `tool`, `subtool`, `brush`, `strokeCountDelta`, `straightEdge`, `endpointSnap`, `symmetry` (native mode name), or `category` with `scriptName`. `panel` with `panelOpen` verifies visibility. `lastStrokeEndpoints: [[x,y,z],[x,y,z]]` checks the latest stroke against body-relative metre positions using `endpointToleranceMeters` (default 0.003). For a named prepared `stroke`, can require `minimumMovementMeters`, `fixedEndpoints`, `unchangedGeometry`, `minimumChangedColorPoints`, `maximumChangedColorPoints` and `expectedColorRgb`. Failure stops the run. |
+| `assert` | Optional `tool`, `subtool`, `brush`, `strokeCountDelta`, `visibleStrokeCountDelta`, `straightEdge`, `endpointSnap`, `symmetry` (native mode name), or `category` with `scriptName`. Use visible counts after Undo: stored stroke counts include geometry retained for Redo. `panel` with `panelOpen` verifies visibility. `lastStrokeEndpoints: [[x,y,z],[x,y,z]]` checks the latest stroke against body-relative metre positions using `endpointToleranceMeters` (default 0.003). For a named prepared `stroke`, can require `minimumMovementMeters`, `fixedEndpoints`, `unchangedGeometry`, `minimumChangedColorPoints`, `maximumChangedColorPoints` and `expectedColorRgb`. Failure stops the run. |
 
 Button selectors contain exactly one of:
 
