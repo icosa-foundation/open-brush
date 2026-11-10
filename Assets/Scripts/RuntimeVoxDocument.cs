@@ -516,19 +516,46 @@ namespace TiltBrush
                     return (byte)index;
             }
 
-            // Scan usage only when allocating, normally after a brush colour change.
-            var used = GetUsedPaletteIndices();
-
-            for (int index = 1; index <= byte.MaxValue; index++)
+            byte available = FindUnusedPaletteIndex(materialProperties);
+            if (available != 0)
             {
-                if (!used[index] && (PaletteMaterialMatches(index, materialProperties) || !m_materials.ContainsKey(index)))
-                {
-                    Palette[index - 1] = color;
-                    SetPaletteMaterial(index, materialProperties);
-                    return (byte)index;
-                }
+                Palette[available - 1] = color;
+                SetPaletteMaterial(available, materialProperties);
             }
+            return available;
+        }
+
+        internal byte FindUnusedPaletteIndex(IReadOnlyDictionary<string, string> materialProperties)
+        {
+            var used = GetUsedPaletteIndices();
+            for (int index = 1; index <= byte.MaxValue; index++)
+                if (!used[index] && (PaletteMaterialMatches(index, materialProperties) || !m_materials.ContainsKey(index)))
+                    return (byte)index;
             return 0;
+        }
+
+        internal byte FindSampledPaletteIndex(Color32 color, IReadOnlyDictionary<string, string> materialProperties)
+        {
+            // A small RGB tolerance permits near-identical colours, without substituting
+            // different surface properties or discarding imported material metadata.
+            const int maxDistanceSquared = 8 * 8;
+            int bestDistance = maxDistanceSquared + 1;
+            byte best = 0;
+            var requested = VoxMaterialAdapter.Describe(materialProperties);
+            for (int index = 1; index <= byte.MaxValue; ++index)
+            {
+                Color32 candidate = Palette[index - 1];
+                if (candidate.a != color.a) continue;
+                int r = candidate.r - color.r, g = candidate.g - color.g, b = candidate.b - color.b;
+                int distance = r * r + g * g + b * b;
+                if (distance >= bestDistance) continue;
+                var material = m_materials.TryGetValue(index, out var existing)
+                    ? existing : VoxMaterialAdapter.Describe(null);
+                if (!VoxMaterialAdapter.MatchesForSampling(material, requested)) continue;
+                bestDistance = distance;
+                best = (byte)index;
+            }
+            return best;
         }
 
         private bool PaletteMaterialMatches(

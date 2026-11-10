@@ -105,6 +105,28 @@ namespace TiltBrush
             }
             return next;
         }
+        internal static bool MatchesForSampling(RuntimeVoxDocument.RuntimeMaterial a,
+            RuntimeVoxDocument.RuntimeMaterial b)
+        {
+            if (a.Type == RuntimeVoxDocument.MaterialType.Unknown || b.Type == RuntimeVoxDocument.MaterialType.Unknown)
+                return a.Properties.Count == b.Properties.Count &&
+                    a.Properties.All(p => b.Properties.TryGetValue(p.Key, out var value) && value == p.Value);
+            var av = Read(a); var bv = Read(b);
+            const float tolerance = .01f;
+            if (Mathf.Abs(av.Metallic - bv.Metallic) > tolerance ||
+                Mathf.Abs(av.Smoothness - bv.Smoothness) > tolerance ||
+                Mathf.Abs(av.Opacity - bv.Opacity) > tolerance ||
+                Mathf.Abs(Emission(a) - Emission(b)) > tolerance) return false;
+            // Retain distinctions our surface shader cannot express, including volume
+            // settings and any unknown imported properties.
+            return a.Properties.Where(p => !IsSurfaceProperty(p.Key))
+                    .All(p => b.Properties.TryGetValue(p.Key, out var value) && value == p.Value) &&
+                b.Properties.Where(p => !IsSurfaceProperty(p.Key))
+                    .All(p => a.Properties.TryGetValue(p.Key, out var value) && value == p.Value);
+        }
+        private static bool IsSurfaceProperty(string key) => key is
+            "_type" or "_weight" or "_rough" or "_metal" or "_trans" or "_emit" or "_flux";
+
         private static string Number(float value) => value.ToString("R", CultureInfo.InvariantCulture);
     }
 }

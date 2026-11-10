@@ -24,6 +24,79 @@ namespace TiltBrush
 {
     internal class TestRuntimeVoxDocument
     {
+        [Test]
+        public void EyedropperPaletteMatch_UsesClosestColourWithCompatibleMaterial()
+        {
+            var document = new RuntimeVoxDocument();
+            for (int i = 0; i < document.Palette.Length; ++i) document.Palette[i] = new Color32(0, 0, 0, 255);
+            var metal = new System.Collections.Generic.Dictionary<string, string>
+            { ["_type"] = "_metal", ["_weight"] = "0.7", ["_rough"] = "0.2" };
+            var blend = new System.Collections.Generic.Dictionary<string, string>
+            { ["_type"] = "_blend", ["_metal"] = "0.7", ["_rough"] = "0.2", ["_trans"] = "0" };
+            document.Palette[8] = new Color32(104, 103, 100, 255);
+            document.SetPaletteMaterial(9, metal);
+            document.Palette[9] = new Color32(100, 100, 100, 255); // Exact colour, wrong material.
+            document.Palette[10] = new Color32(107, 100, 100, 255);
+            document.SetPaletteMaterial(11, metal);
+            Assert.AreEqual(9, document.FindSampledPaletteIndex(new Color32(100, 100, 100, 255), blend));
+            blend["_media_type"] = "_scatter";
+            Assert.AreEqual(0, document.FindSampledPaletteIndex(new Color32(100, 100, 100, 255), blend));
+        }
+
+        [Test]
+        public void EyedropperPaletteAllocation_UsesFreeSlotAndLeavesFullPaletteUnchanged()
+        {
+            var document = new RuntimeVoxDocument();
+            var model = document.CreateModel("palette", new Vector3Int(255, 2, 2));
+            for (int i = 1; i < 255; ++i) model.AddOrUpdateVoxel(new Vector3Int(i - 1, 0, 0), (byte)i);
+            var material = new System.Collections.Generic.Dictionary<string, string>
+            { ["_type"] = "_emit", ["_flux"] = "0.5", ["custom"] = "retained" };
+            var color = new Color32(12, 34, 56, 255);
+            Assert.AreEqual(255, document.FindUnusedPaletteIndex(material));
+            Assert.AreEqual(255, document.GetOrAddPaletteColor(color, material));
+            model.AddOrUpdateVoxel(new Vector3Int(254, 0, 0), 255);
+            byte[] before = document.ToVoxBytes();
+            Assert.AreEqual(0, document.FindUnusedPaletteIndex(material));
+            Assert.AreEqual(0, document.FindSampledPaletteIndex(new Color32(200, 30, 90, 255), material));
+            CollectionAssert.AreEqual(before, document.ToVoxBytes());
+            var saved = RuntimeVoxDocument.FromBytes(before);
+            Assert.AreEqual(color, saved.Palette[254]);
+            CollectionAssert.AreEquivalent(material, saved.Materials[255].Properties);
+        }
+
+        [Test]
+        public void EyedropperCopiedPaletteSelection_UndoesWithPaletteEdit()
+        {
+            var previousApp = App.Instance;
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.NewPreviewScene();
+            try
+            {
+                if (previousApp == null)
+                {
+                    var app = new GameObject("[VoxEyedropperTest] App");
+                    app.SetActive(false);
+                    UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(app, scene);
+                    App.Instance = app.AddComponent<App>();
+                }
+                var settings = new VoxPaintSettings { PaletteIndex = 0, LastPaletteIndex = 7 };
+                var parent = new BaseCommand();
+                _ = new SelectVoxPaletteEntryCommand(settings, 9, parent);
+                parent.Redo();
+                Assert.AreEqual(9, settings.PaletteIndex);
+                Assert.AreEqual(9, settings.LastPaletteIndex);
+                parent.Undo();
+                Assert.AreEqual(0, settings.PaletteIndex);
+                Assert.AreEqual(7, settings.LastPaletteIndex);
+                parent.Redo();
+                Assert.AreEqual(9, settings.PaletteIndex);
+            }
+            finally
+            {
+                App.Instance = previousApp;
+                UnityEditor.SceneManagement.EditorSceneManager.ClosePreviewScene(scene);
+            }
+        }
+
         [TestCase("_diffuse", PbrMaterialParameter.Property.Glossiness, 0.4f)]
         [TestCase("_metal", PbrMaterialParameter.Property.Metallic, 0.4f)]
         [TestCase("_glass", PbrMaterialParameter.Property.Opacity, 0.4f)]
