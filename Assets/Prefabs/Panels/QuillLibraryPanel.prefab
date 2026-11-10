@@ -437,6 +437,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 15156cc6acae14f44863628350e2508d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  m_DefaultQuillFiles: []
 --- !u!114 &-6854766032583095187
 MonoBehaviour:
   m_ObjectHideFlags: 0
