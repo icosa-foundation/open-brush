@@ -76,7 +76,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--url", default="http://127.0.0.1:40074")
     parser.add_argument("--script", type=Path, help="External JSON plan or Python build_plan(args) file")
-    parser.add_argument("--scenario", choices=sorted(examples), default="draw", help="External example to run when --script is omitted")
+    parser.add_argument("--scenario", choices=sorted(examples), default="reshape-grab", help="External example to run when --script is omitted")
     parser.add_argument("--name", help="Stable video filename without extension (default: script filename)")
     parser.add_argument("--output-dir", type=Path, help="Video directory (default: Open Brush Videos/Tutorials)")
     parser.add_argument("--frames-only", action="store_true", help="Keep PNG frames instead of encoding an MP4")

@@ -19,27 +19,34 @@ and tool input.
 3. Run from the project root with Python 3 (`python3` on macOS):
 
    ```sh
-   python Support/Python/record-procedural-tutorial.py --scenario draw
+   python Support/Python/record-procedural-tutorial.py --scenario reshape-grab
    ```
 
 Choose a scenario from the library:
 
 | # | Scenario | Demonstration |
 | --- | --- | --- |
-| 1 | [draw](../Python/automation-scripts/draw.py) | Select a brush and draw a curve. |
-| 2 | [reshape-grab](../Python/automation-scripts/reshape-grab.py) | Grab and bend the middle of a prepared stroke. |
-| 3 | [reshape-push](../Python/automation-scripts/reshape-push.py) | Push a straight stroke into an arch. |
-| 4 | [reshape-flatten](../Python/automation-scripts/reshape-flatten.py) | Flatten a rippled stroke, then turn the scene to inspect its plane. |
-| 5 | [reshape-smooth](../Python/automation-scripts/reshape-smooth.py) | Smooth a jittery arch. |
-| 6 | [tint](../Python/automation-scripts/tint.py) | Apply a soft tint, increase its strength, then clear it. |
-| 7 | [open-labs](../Python/automation-scripts/open-labs.py) | Open More panels and choose Labs. |
-| 8 | [membrane](../Python/automation-scripts/membrane.py) | Draw matte and outlined membrane surfaces. |
-| 9 | [endpoint-snapping](../Python/automation-scripts/endpoint-snapping.py) | Join straight edges with endpoint snapping. |
-| 10 | [angle-snapping](../Python/automation-scripts/angle-snapping.py) | Snap an unfinished sloping line to horizontal before releasing the trigger. |
-| 11 | [new-symmetry-brush-plugins](../Python/automation-scripts/new-symmetry-brush-plugins.py) | Demonstrate Snowflake, Plait, HolidayTree and CandyCane. |
-| 12 | [tool-script-preview](../Python/automation-scripts/tool-script-preview.py) | Resize a live circle preview and release to commit it. |
-| 13 | [darken](../Python/automation-scripts/darken.py) | Layer light-grey Darken strokes over bright artwork at different depths. |
-| 14 | [grid-snapping](../Python/automation-scripts/grid-snapping.py) | Draw a stepped stroke along three grid axes. |
+| 1 | [reshape-grab](../Python/automation-scripts/reshape-grab.py) | Grab and bend the middle of a prepared stroke. |
+| 2 | [reshape-push](../Python/automation-scripts/reshape-push.py) | Push a straight stroke into an arch. |
+| 3 | [reshape-flatten](../Python/automation-scripts/reshape-flatten.py) | Flatten a rippled stroke, then turn the scene to inspect its plane. |
+| 4 | [reshape-smooth](../Python/automation-scripts/reshape-smooth.py) | Smooth a jittery arch. |
+| 5 | [tint](../Python/automation-scripts/tint.py) | Apply a soft tint, increase its strength, then clear it. |
+| 6 | [membrane](../Python/automation-scripts/membrane.py) | Draw matte and outlined membrane surfaces. |
+| 7 | [endpoint-snapping](../Python/automation-scripts/endpoint-snapping.py) | Join straight edges with endpoint snapping. |
+| 8 | [angle-snapping](../Python/automation-scripts/angle-snapping.py) | Snap an unfinished sloping line to horizontal before releasing the trigger. |
+| 9 | [new-symmetry-brush-plugins](../Python/automation-scripts/new-symmetry-brush-plugins.py) | Demonstrate Snowflake, Plait, HolidayTree and CandyCane. |
+| 10 | [tool-script-preview](../Python/automation-scripts/tool-script-preview.py) | Resize a live circle preview and release to commit it. |
+| 11 | [darken](../Python/automation-scripts/darken.py) | Layer light-grey Darken strokes over bright artwork at different depths. |
+| 12 | [grid-snapping](../Python/automation-scripts/grid-snapping.py) | Draw a stepped stroke along three grid axes. |
+
+Draw and Open Labs are reusable components in `Support/Python/automation-components`,
+not standalone tutorials. They are excluded from the tutorial recording set.
+Use the shared `apply_path` and `open_panel("Labs")` sections in new tutorials.
+To rehearse a component directly:
+
+```sh
+python Support/Python/record-procedural-tutorial.py --script Support/Python/automation-components/open-labs.py --rehearse
+```
 
 To reuse a single section of the combined symmetry demonstration, pass `--param`:
 
