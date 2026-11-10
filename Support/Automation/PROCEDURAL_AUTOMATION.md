@@ -36,15 +36,15 @@ Choose a scenario from the library:
 | 8 | [membrane](../Python/automation-scripts/membrane.py) | Draw matte and outlined membrane surfaces. |
 | 9 | [endpoint-snapping](../Python/automation-scripts/endpoint-snapping.py) | Join straight edges with endpoint snapping. |
 | 10 | [angle-snapping](../Python/automation-scripts/angle-snapping.py) | Snap an unfinished sloping line to horizontal before releasing the trigger. |
-| 11 | [symmetry](../Python/automation-scripts/symmetry.py) | Compare Snowflake, Plait and CandyCane using a 3D figure eight. |
+| 11 | [new-symmetry-brush-plugins](../Python/automation-scripts/new-symmetry-brush-plugins.py) | Demonstrate Snowflake, Plait, HolidayTree and CandyCane. |
 | 12 | [tool-script-preview](../Python/automation-scripts/tool-script-preview.py) | Resize a live circle preview and release to commit it. |
-| 13 | [darken](../Python/automation-scripts/darken.py) | Build up a darkening brush over bright artwork. |
+| 13 | [darken](../Python/automation-scripts/darken.py) | Layer light-grey Darken strokes over bright artwork at different depths. |
 | 14 | [grid-snapping](../Python/automation-scripts/grid-snapping.py) | Draw a stepped stroke along three grid axes. |
 
 To reuse a single section of the combined symmetry demonstration, pass `--param`:
 
 ```sh
-python Support/Python/record-procedural-tutorial.py --scenario symmetry --param preset=Plait --name symmetry-plait-study
+python Support/Python/record-procedural-tutorial.py --scenario new-symmetry-brush-plugins --param preset=Plait --name symmetry-plait-study
 ```
 
 Use `--rehearse` to run without recording, `--fps` to set capture rate and
@@ -78,7 +78,7 @@ The runner saves one canonical MP4 per script in Open Brush's
 `Videos/Tutorials/<script-name>.mp4`. `--name` changes the filename and
 `--output-dir` changes the directory. Keep the same name when repeating a take:
 the previous MP4 is replaced only after the new video is encoded and its frame
-count verified. The standard symmetry video contains all three presets.
+count verified. The new symmetry brush plugins video contains all four presets.
 FFmpeg and ffprobe must be on PATH. Temporary PNG frames are removed after
 encoding, including when encoding fails. Use `--frames-only` to retain frames
 and `recording.json` for a manual workflow instead.
@@ -283,7 +283,7 @@ Each step has `op`, optional `label`, and optional `seconds` (default `1.2`).
 | `present` | `target` button selector. For wand panels, raises the wand and uses native thumbstick snaps to bring the panel forward. For an already opened floating panel, waits for its opening animation without twisting the wand. |
 | `focus` | `target` button selector. Points at its parent panel and waits for native focus. |
 | `click` | `target`. Reaches with the brush hand, waits for real hover, presses and releases the trigger, and requires a native button activation event. `seconds` controls the approach; hover/press/release use shared timing. Optional `tool` and `subtool` verify the resulting selection. |
-| `selectScript` | `category`, `scriptName`. Navigate the Scripts panel with native Previous/Next button clicks, using the live catalogue, then verify the selected name. `seconds` controls the first approach. |
+| `selectScript` | `category`, `scriptName`. Navigate the Scripts panel with native Previous/Next button clicks, using the live catalogue, then verify the selected name. `seconds` controls the first approach. Subsequent clicks on the same navigation button use shorter hover, press and release delays. |
 | `slider` | `slider` exact hierarchy path, `value` normalized from 0 to 1. Reach the knob, align the native reticle, hold the trigger and drag. `seconds` controls each reach and drag. The executor verifies the resulting native slider value. |
 | `placePanel` | `panel`, one destination in `points`, optional destination `rotation`. Approaches, grips, moves and releases an opened floating panel. `seconds` controls each reach and drag. |
 | `move` | `points`, optional `curve` (`polyline` or `bezier`), `rotation`, `endRotation`, `rotationConstraint`, `attachment`, `anchor`, `anchorT`, `tool`, `paddingMeters`. One point is a joint-interpolated reach. Multiple points follow the supplied contact path over `seconds`, with minimum-jerk timing. Bezier needs exactly four control points. |
