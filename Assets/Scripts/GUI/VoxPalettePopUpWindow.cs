@@ -14,19 +14,19 @@ namespace TiltBrush
     {
         private const int PageSize = 64, Columns = 8, PageCount = 4;
         [SerializeField] private VoxPaletteButton m_ButtonPrefab;
-        [SerializeField] private VoxPaletteButton m_Previous;
-        [SerializeField] private VoxPaletteButton m_Next;
-        [SerializeField] private VoxPaletteButton m_PreviousMaterial;
-        [SerializeField] private VoxPaletteButton m_NextMaterial;
+        [SerializeField] private ActionButton m_Previous;
+        [SerializeField] private ActionButton m_Next;
+        [SerializeField] private ActionButton m_PreviousMaterial;
+        [SerializeField] private ActionButton m_NextMaterial;
         [SerializeField] private TextActionButton m_ColourTab;
         [SerializeField] private TextActionButton m_MaterialTabButton;
         [SerializeField] private GameObject m_MaterialArea;
         [SerializeField] private TextMeshPro m_TypeLabel;
         [SerializeField] private ValueSlider[] m_MaterialSliders;
         [FormerlySerializedAs("m_Apply")]
-        [SerializeField] private VoxPaletteButton m_BrushColor;
-        [SerializeField] private VoxPaletteButton m_ClearUnused;
-        [SerializeField] private VoxPaletteButton m_Sort;
+        [SerializeField] private ActionToggleButton m_BrushColor;
+        [SerializeField] private ActionButton m_ClearUnused;
+        [SerializeField] private ActionButton m_Sort;
         [SerializeField] private Texture2D m_SwatchTexture;
         [SerializeField] private Transform m_SwatchGrid;
         [SerializeField] private float m_SwatchSpacing = .15f;
@@ -66,13 +66,6 @@ namespace TiltBrush
             for (int i = 0; i < PageSize; ++i)
                 m_Swatches[i] = CreateSwatch(new Vector3(i % Columns * m_SwatchSpacing,
                     -(i / Columns) * m_SwatchSpacing, 0));
-            m_Previous.Configure(this, VoxPaletteButton.Action.Previous, null, null);
-            m_Next.Configure(this, VoxPaletteButton.Action.Next, null, null);
-            m_PreviousMaterial.Configure(this, VoxPaletteButton.Action.PreviousMaterial, null, null);
-            m_NextMaterial.Configure(this, VoxPaletteButton.Action.NextMaterial, null, null);
-            m_BrushColor.Configure(this, VoxPaletteButton.Action.BrushColour, null, "Use current brush colour");
-            m_ClearUnused.Configure(this, VoxPaletteButton.Action.ClearUnused, null, null);
-            m_Sort.Configure(this, VoxPaletteButton.Action.Sort, null, null);
             ColorPicker.ColorPicked += OnColorPicked;
             ColorPicker.ColorFinalized += FinishChange;
             m_BrushController = App.BrushColor;
@@ -102,16 +95,16 @@ namespace TiltBrush
             FinishChange(); m_Selected = index; m_Settings.PaletteIndex = index; m_Settings.LastPaletteIndex = index;
             m_Page = Array.IndexOf(m_DisplayOrder, index) / PageSize; RefreshControls();
         }
-        internal void UseBrushColor()
+        public void UseBrushColor()
         {
             if (!ValidTarget) return;
             FinishChange(); m_Settings.PaletteIndex = 0; RefreshControls();
         }
         public void ShowMaterial(bool material)
         { FinishChange(); m_MaterialTab = material; RefreshControls(); }
-        internal void ChangePage(int delta)
+        public void ChangePage(int delta)
         { if (!ValidTarget) return; FinishChange(); m_Page = Mathf.Clamp(m_Page + delta, 0, PageCount - 1); RefreshControls(); }
-        internal void ChangeMaterialType(int direction)
+        public void ChangeMaterialType(int direction)
         {
             if (!CanEdit) return;
             FinishChange(); int current = (int)VoxMaterialAdapter.Describe(Properties).Type;
@@ -147,7 +140,7 @@ namespace TiltBrush
         { m_Applying = true; try { m_Memory.PerformAndRecordCommand(command); } finally { m_Applying = false; } }
         public void FinishChange()
         { m_Gesture = null; if (m_Settings != null && !m_Applying) RefreshControls(); }
-        internal void ClearUnusedColors()
+        public void ClearUnusedColors()
         {
             if (!CanEdit) return; FinishChange();
             BaseCommand embedding = m_Widget.IsExternalVox ? new EmbedVoxModelCommand(m_Widget, m_Document) : null;
@@ -167,7 +160,7 @@ namespace TiltBrush
             Array.Copy(grouped, displayOrder, grouped.Length);
         }
 
-        internal void SortColors()
+        public void SortColors()
         {
             if (!ValidTarget) return;
             bool[] used = m_Document.GetUsedPaletteIndices();
@@ -215,7 +208,8 @@ namespace TiltBrush
                 if (valid) swatch.SetSwatch(index, m_Document.Palette[index - 1], !BrushMode && index == m_Selected);
             }
             m_Previous.SetButtonAvailable(valid && m_Page > 0); m_Next.SetButtonAvailable(valid && m_Page < PageCount - 1);
-            m_BrushColor.SetActionSelected(BrushMode);
+            m_BrushColor.SetButtonAvailable(valid); m_BrushColor.ToggleState = BrushMode;
+            m_PreviousMaterial.SetButtonAvailable(CanEdit); m_NextMaterial.SetButtonAvailable(CanEdit);
             m_ColourTab.SetButtonAvailable(valid); m_MaterialTabButton.SetButtonAvailable(valid);
             m_ColourTab.SetButtonSelected(!m_MaterialTab); m_MaterialTabButton.SetButtonSelected(m_MaterialTab);
             m_ClearUnused.SetButtonAvailable(CanEdit); m_Sort.SetButtonAvailable(valid);

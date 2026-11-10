@@ -3895,6 +3895,10 @@ MonoBehaviour:
     m_Key: VOX_PALETTE_SORT_DESCRIPTION
     m_Metadata:
       m_Items: []
+  - m_Id: 563423505335017472
+    m_Key: VOX_PALETTE_USE_BRUSH_COLOR
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

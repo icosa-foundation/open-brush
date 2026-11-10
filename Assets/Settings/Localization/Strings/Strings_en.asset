@@ -4040,7 +4040,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118272
-    m_Localized: "Start a new empty voxel model"
+    m_Localized: Start a new empty voxel model
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118273
@@ -4069,6 +4069,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 561984250838605824
     m_Localized: Sort colors
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: Use brush colour
     m_Metadata:
       m_Items: []
   references:
