@@ -114,6 +114,7 @@ namespace TiltBrush
         public sealed class Step
         {
             public string Op;
+            internal bool IsRepeatedScriptClick;
             public string Label;
             public float Seconds = 1.2f;
             public string Hand = "brush";

@@ -317,7 +317,7 @@ namespace TiltBrush
                 string path = $"{AutomationScript.Selector.HierarchyPath(panel.transform)}/Mesh/{nav}/{button}";
                 for (int i = 0; i < clicks; ++i)
                     yield return new AutomationScript.Step {Op = "click", Label = $"Choose {step.ScriptName}",
-                        Target = new AutomationScript.Selector {Path = path}, Seconds = i == 0 ? step.Seconds : 0.08f};
+                        Target = new AutomationScript.Selector {Path = path}, Seconds = i == 0 ? step.Seconds : 0.08f, IsRepeatedScriptClick = i > 0};
                 yield return new AutomationScript.Step {Op = "assert", Category = step.Category, ScriptName = step.ScriptName};
                 selected[category] = target;
             }
@@ -1090,18 +1090,21 @@ namespace TiltBrush
 
         private void Click(Instruction item)
         {
+            float hoverSeconds = item.Source.IsRepeatedScriptClick ? 0.05f : 0.45f;
+            float pressSeconds = item.Source.IsRepeatedScriptClick ? 0.08f : 0.16f;
+            float releaseSeconds = item.Source.IsRepeatedScriptClick ? 0.12f : 0.45f;
             if (item.Hand != 1) { throw new InvalidOperationException("UI clicks use the brush hand."); }
             if (m_TotalElapsed > item.DurationSeconds + 8) { throw new InvalidOperationException("Button did not receive hover/click."); }
             if (m_Stage == 2 && m_Clicked)
             {
                 m_Triggers[1] = true;
-                if (m_Elapsed >= 0.16f) { m_Triggers[1] = false; m_Stage = 3; m_Elapsed = 0; }
+                if (m_Elapsed >= pressSeconds) { m_Triggers[1] = false; m_Stage = 3; m_Elapsed = 0; }
                 return;
             }
             if (m_Stage == 3)
             {
                 m_Triggers[1] = false;
-                if (m_Elapsed >= 0.45f)
+                if (m_Elapsed >= releaseSeconds)
                 {
                     if (!m_Clicked) { throw new InvalidOperationException("The native UI did not accept the click."); }
                     CheckResult(item.Source);
@@ -1137,14 +1140,14 @@ namespace TiltBrush
                 // Releasing a button clears its Hover state even when the ray stays on it.
                 if ((!item.Button.IsHover() && !item.Button.HasPointerFocus) ||
                     !SketchControlsScript.m_Instance.IsUserLookingAtPanel(item.Panel)) { m_Elapsed = 0; }
-                if (m_Elapsed >= 0.45f) { m_Stage = 2; m_Elapsed = 0; }
+                if (m_Elapsed >= hoverSeconds) { m_Stage = 2; m_Elapsed = 0; }
             }
             else if (m_Stage == 2)
             {
                 m_Triggers[1] = true;
-                if (m_Elapsed >= 0.16f) { m_Triggers[1] = false; m_Stage = 3; m_Elapsed = 0; }
+                if (m_Elapsed >= pressSeconds) { m_Triggers[1] = false; m_Stage = 3; m_Elapsed = 0; }
             }
-            else if (m_Elapsed >= 0.45f)
+            else if (m_Elapsed >= releaseSeconds)
             {
                 if (!m_Clicked) { throw new InvalidOperationException("The native UI did not accept the click."); }
                 CheckResult(item.Source);
