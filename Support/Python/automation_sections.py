@@ -99,6 +99,22 @@ def drag_slider(path, value, *, seconds=1.2):
     return [{"op": "slider", "slider": path, "value": value, "seconds": seconds}]
 
 
+def secondary_button(point, *, attachment="tip", tool=None, anchor=None,
+                     rotation=(10, -20, 0), release=True, after_seconds=1.2):
+    """Tilt toward the viewer, show the secondary-button change, then continue nearby."""
+    pose = {"op": "move", "label": "Show the secondary button", "seconds": 0.45,
+            "points": [list(point)], "attachment": attachment, "rotation": list(rotation)}
+    if tool is not None:
+        pose["tool"] = tool
+    if anchor is not None:
+        pose["anchor"] = anchor
+    return [pose, {"op": "wait", "seconds": 0.6},
+            {"op": "input", "buttons": ["Button04"]},
+            {"op": "wait", "seconds": 0.3},
+            *([{"op": "input", "buttons": []}] if release else []),
+            {"op": "wait", "label": "Show the changed secondary button", "seconds": after_seconds}]
+
+
 def undo_gesture():
     """Undo one complete drawing gesture with the wand's undo button."""
     return [{"op": "input", "hand": "wand", "buttons": ["Button01"]},

@@ -1,7 +1,7 @@
 """Apply a soft tint, increase its strength, then clear it to restore the stroke."""
 
 from automation_sections import (apply_path, drag_slider, open_panel, prepare_stroke,
-                                 reveal_result, select_tool)
+                                 reveal_result, secondary_button, select_tool)
 
 
 def build_plan(args):
@@ -33,10 +33,8 @@ def build_plan(args):
             {"op": "assert", "stroke": "subject", "strokeCountDelta": 0,
              "unchangedGeometry": True, "minimumChangedColorPoints": 5,
              "maximumChangedColorPoints": 48, "expectedColorRgb": coral},
-            {"op": "wait", "seconds": 0.5},
-            {"op": "input", "buttons": ["Button04"]},
-            {"op": "input", "buttons": []},
-            {"op": "wait", "seconds": 0.5},
+            *secondary_button([-0.035, 0.033, -0.035], attachment="tool",
+                              tool="TintColorTool", anchor="subject"),
             *apply_path([[-0.055, 0.025, 0], [0.055, -0.025, 0]], label="Clear the tint",
                         tool="TintColorTool", anchor="subject", padding=radius, lower_wand=False,
                         approach_seconds=0.35),

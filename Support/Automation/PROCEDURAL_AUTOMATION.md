@@ -174,6 +174,7 @@ calls, so they also work with `--write-plan`.
 | `select_script(preset, category=...)` | Present the Scripts panel and reach the named preset through the shorter sequence of native Previous/Next clicks. Open Scripts first. |
 | `select_grid_spacing(value, current=0)` | Cycle the native grid-size button from a known displayed value. `drawing` preparation resets it to Off (`0`). |
 | `drag_slider(path, value, seconds=1.2)` | Drag a slider to a normalized value from `0` to `1`, using its exact hierarchy path. |
+| `secondary_button(point, ...)` | Tilt the brush controller slightly toward the camera, pause, press the secondary button and hold the view to show its changed icon. Supply the nearby contact point, attachment and optional tool/anchor. Use `release=False` when the button must stay held until the stroke is finalized. |
 | `undo_gesture()` | Press and release the wand's Undo button, then wait for the result. |
 | `select_control(selector, ...)` | Present a control's panel and click it; optional expected `tool`/`subtool`, or `present=False` when already shown. |
 | `select_tool(tool, subtool=None)` | Select a tool and optionally move directly to its subtool. |
