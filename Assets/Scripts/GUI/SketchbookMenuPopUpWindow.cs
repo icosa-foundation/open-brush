@@ -56,6 +56,7 @@ namespace TiltBrush
             SketchSetType sketchSetType = (SketchSetType)iCommandParam2;
             renameButton.SetButtonAvailable(sketchSetType == SketchSetType.User &&
                 GetSceneFileInfo(iCommandParam, sketchSetType)?.ReadOnly == false);
+            renameButton.SetColor(Color.white);
         }
 
         public void SetInitialKeyboardText(KeyboardPopupButton btn)
