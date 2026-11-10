@@ -1090,6 +1090,9 @@ namespace TiltBrush
 
         private void Click(Instruction item)
         {
+            // This state was published by the preceding Tick, so a press cannot
+            // disappear when one frame is longer than the requested hold time.
+            bool pressWasPublished = m_Triggers[1];
             float hoverSeconds = item.Source.IsRepeatedScriptClick ? 0.05f : 0.45f;
             float pressSeconds = item.Source.IsRepeatedScriptClick ? 0.08f : 0.16f;
             float releaseSeconds = item.Source.IsRepeatedScriptClick ? 0.12f : 0.45f;
@@ -1098,7 +1101,7 @@ namespace TiltBrush
             if (m_Stage == 2 && m_Clicked)
             {
                 m_Triggers[1] = true;
-                if (m_Elapsed >= pressSeconds) { m_Triggers[1] = false; m_Stage = 3; m_Elapsed = 0; }
+                if (pressWasPublished && m_Elapsed >= pressSeconds) { m_Triggers[1] = false; m_Stage = 3; m_Elapsed = 0; }
                 return;
             }
             if (m_Stage == 3)
@@ -1145,7 +1148,7 @@ namespace TiltBrush
             else if (m_Stage == 2)
             {
                 m_Triggers[1] = true;
-                if (m_Elapsed >= pressSeconds) { m_Triggers[1] = false; m_Stage = 3; m_Elapsed = 0; }
+                if (pressWasPublished && m_Elapsed >= pressSeconds) { m_Triggers[1] = false; m_Stage = 3; m_Elapsed = 0; }
             }
             else if (m_Elapsed >= releaseSeconds)
             {
