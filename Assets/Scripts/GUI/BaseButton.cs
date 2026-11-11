@@ -53,6 +53,8 @@ namespace TiltBrush
         private bool m_AtlasFlag_Activated;
         private bool m_AtlasFlag_Focus;
         private List<Vector2> m_MeshUvsForAtlasing;
+        private Color m_ButtonColor = Color.white;
+        private Color? m_SecondaryButtonColor;
 
         protected Texture2D m_CurrentButtonTexture;
         // TODO : See if we can remove the concept of button states.  It feels redundant
@@ -266,6 +268,7 @@ namespace TiltBrush
 
         public void SetButtonAvailable(bool bAvailable)
         {
+            bool wasAvailable = IsAvailable();
             SetButtonSelected(false);
             if (!bAvailable)
             {
@@ -278,6 +281,10 @@ namespace TiltBrush
                 {
                     m_CurrentButtonState = ButtonState.Untouched;
                 }
+            }
+            if (wasAvailable != IsAvailable())
+            {
+                RefreshButtonColor();
             }
         }
 
@@ -296,17 +303,24 @@ namespace TiltBrush
 
         override public void SetColor(Color rColor)
         {
-            if (!IsAvailable())
-            {
-                float alpha = rColor.a;
-                rColor *= kUnavailableTintAmount;
-                rColor.a = alpha;
-            }
-            SetMaterialColor(rColor);
+            m_ButtonColor = rColor;
+            m_SecondaryButtonColor = null;
+            RefreshButtonColor();
         }
 
         public void SetHDRButtonColor(Color color, Color secondaryColor)
         {
+            m_ButtonColor = color;
+            m_SecondaryButtonColor = secondaryColor;
+            RefreshButtonColor();
+        }
+
+        private void RefreshButtonColor()
+        {
+            // Cache colors before the availability tint, after any subclass modulation.
+            // Do not call virtual SetColor here: that would apply the modulation again.
+            Color color = m_ButtonColor;
+            Color secondaryColor = m_SecondaryButtonColor.GetValueOrDefault();
             if (!IsAvailable())
             {
                 float alpha = color.a;
@@ -316,7 +330,11 @@ namespace TiltBrush
                 color.a = alpha;
                 secondaryColor.a = alpha2;
             }
-            if (!m_AtlasTexture && ButtonRenderer != null)
+            if (!m_SecondaryButtonColor.HasValue)
+            {
+                SetMaterialColor(color);
+            }
+            else if (!m_AtlasTexture && ButtonRenderer != null)
             {
                 ButtonRenderer.material.SetColor("_Color", color);
                 ButtonRenderer.material.SetColor("_SecondaryColor", secondaryColor);
