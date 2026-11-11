@@ -19,25 +19,27 @@ namespace TiltBrush
 {
     public class TransformSelectionCommand : BaseCommand
     {
-        private TrTransform m_Transform;
-        private Vector3 m_Pivot;
+        private readonly TrTransform m_StartTransform;
+        private readonly TrTransform m_EndTransform;
 
         public TransformSelectionCommand(TrTransform xf, Vector3 pivot, BaseCommand parent = null) : base(parent)
         {
-            m_Transform = xf;
-            m_Pivot = pivot;
+            m_StartTransform = SelectionManager.m_Instance.SelectionTransform;
+            m_EndTransform = m_StartTransform * TrTransform.T(pivot) * xf * TrTransform.T(-pivot);
         }
 
         public override bool NeedsSave { get { return true; } }
 
         protected override void OnRedo()
         {
-            TransformItems.TransformSelected(m_Pivot, m_Transform);
+            SelectionManager.m_Instance.SelectionTransform = m_EndTransform;
+            SelectionManager.m_Instance.UpdateSelectionWidget();
         }
 
         protected override void OnUndo()
         {
-            TransformItems.TransformSelected(m_Pivot, m_Transform.inverse);
+            SelectionManager.m_Instance.SelectionTransform = m_StartTransform;
+            SelectionManager.m_Instance.UpdateSelectionWidget();
         }
     }
 } // namespace TiltBrush
