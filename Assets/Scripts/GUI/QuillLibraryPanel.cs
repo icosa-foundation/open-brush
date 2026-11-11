@@ -23,7 +23,6 @@ namespace TiltBrush
     {
         [Header("Quill Library")]
         [SerializeField] private TextMeshPro m_PanelText;
-        [SerializeField] private string m_PanelTitle = "Quill Library";
         [SerializeField] private TextMeshPro m_InfoText;
         [SerializeField] private GameObject m_NoQuillData;
         [SerializeField] private GameObject m_NoImmData;
@@ -396,11 +395,10 @@ namespace TiltBrush
         {
             if (m_PanelText != null)
             {
-                string suffix = m_Catalog != null &&
+                m_PanelText.text = m_Catalog != null &&
                     m_Catalog.CurrentSourceDirectory == QuillFileCatalog.SourceDirectory.Imm
                     ? "Media Library"
-                    : "Quill";
-                m_PanelText.text = $"{m_PanelTitle} - {suffix}";
+                    : "Quill Folder";
             }
 
             if (m_FileButtons == null || m_FileButtons.Length == 0 || m_Catalog == null)

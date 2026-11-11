@@ -32,7 +32,7 @@ namespace TiltBrush
 
         [SerializeField] private string[] m_DefaultQuillFiles;
 
-        private SourceDirectory m_SourceDirectory = SourceDirectory.QuillProjects;
+        private SourceDirectory m_SourceDirectory = SourceDirectory.Imm;
 
         private FileWatcher m_FileWatcher;
         private List<QuillFileInfo> m_Files = new List<QuillFileInfo>();
