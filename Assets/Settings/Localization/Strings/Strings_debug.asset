@@ -1318,6 +1318,20 @@ MonoBehaviour:
     m_Localized: '[Face-centered cubic mirrors]'
     m_Metadata:
       m_Items: []
+  - m_Id: 563907830014894080
+    m_Localized: '[Explore symmetry]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830023282688
+    m_Localized: '[Simple mirror has no extra settings.
+
+
+      Choose a tab above to try repeating patterns, rotational symmetry and more.
+
+
+      Colors lets you vary the copies.]'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

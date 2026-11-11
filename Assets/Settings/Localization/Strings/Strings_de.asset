@@ -4740,6 +4740,14 @@ MonoBehaviour:
     m_Localized: "Fl\xE4chenzentrierte W\xFCrfelspiegel"
     m_Metadata:
       m_Items: []
+  - m_Id: 563907830014894080
+    m_Localized: Symmetrie entdecken
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830023282688
+    m_Localized: "Der einfache Spiegel hat keine zus\xE4tzlichen Einstellungen.\n\nW\xE4hle oben einen Tab, um Wiederholungsmuster, Rotationssymmetrie und mehr auszuprobieren.\n\nUnter Farben kannst du die Kopien variieren."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

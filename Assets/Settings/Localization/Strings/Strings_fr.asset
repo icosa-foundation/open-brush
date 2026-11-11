@@ -4684,6 +4684,14 @@ MonoBehaviour:
     m_Localized: "Miroirs cubiques \xE0 faces centr\xE9es"
     m_Metadata:
       m_Items: []
+  - m_Id: 563907830014894080
+    m_Localized: "Explorer la sym\xE9trie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830023282688
+    m_Localized: "Le miroir simple n'a pas de r\xE9glages suppl\xE9mentaires.\n\nChoisissez un onglet ci-dessus pour essayer des motifs r\xE9p\xE9t\xE9s, la sym\xE9trie de rotation et plus encore.\n\nCouleurs permet de varier les copies."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

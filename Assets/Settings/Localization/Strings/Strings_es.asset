@@ -4716,6 +4716,14 @@ MonoBehaviour:
     m_Localized: "Espejos c\xFAbicos centrados en caras"
     m_Metadata:
       m_Items: []
+  - m_Id: 563907830014894080
+    m_Localized: "Explora la simetr\xEDa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830023282688
+    m_Localized: "El espejo simple no tiene ajustes adicionales.\n\nElige una pesta\xF1a arriba para probar patrones repetidos, simetr\xEDa rotacional y m\xE1s.\n\nColores te permite variar las copias."
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
