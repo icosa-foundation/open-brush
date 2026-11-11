@@ -270,7 +270,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    imageMeshRenderer.enabled = false;
+                    imageMeshRenderer.enabled = true;
                     extruderMeshFilter.mesh = null;
                 }
             }
