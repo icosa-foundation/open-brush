@@ -49,6 +49,7 @@ namespace TiltBrush
         // Scripts that modify existing strokes (RepaintScript?)
         // Scriptable Brush mesh generation (BrushScript?)
         // Same as above but applies to the current selection with maybe some logic based on index within selection
+        JitterScript
     }
 
     public static class LuaNames
@@ -129,6 +130,8 @@ namespace TiltBrush
         [NonSerialized] public bool PointerScriptsEnabled;
         [NonSerialized] public bool VisualizerScriptingEnabled;
         [NonSerialized] public bool BackgroundScriptsEnabled;
+        [NonSerialized] public bool JitterScriptsEnabled;
+
         private List<string> m_ScriptPathsToUpdate;
         private Dictionary<string, Script> m_ActiveBackgroundScripts;
         private Dictionary<string, Dictionary<string, ScriptWidgetConfig>> m_WidgetConfigs;
@@ -147,6 +150,7 @@ namespace TiltBrush
         public ScriptCoordSpace LatestToolScriptControlPointSpace { get; private set; } = ScriptCoordSpace.Default;
 
         public string LuaModulesPath => Path.Join(UserPluginsPath(), "LuaModules");
+
 
         public struct ScriptTrTransform
         {
@@ -391,7 +395,7 @@ namespace TiltBrush
                     LoadScriptFromPath(path);
                     if (catMatch == LuaApiCategory.BackgroundScript)
                     {
-                        if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
+                        if (BackgroundScriptsEnabled && m_ActiveBackgroundScripts.ContainsKey(scriptName))
                         {
                             InitScript(m_ActiveBackgroundScripts[scriptName]);
                         }
@@ -400,7 +404,7 @@ namespace TiltBrush
                     {
                         var activeScriptName = GetActiveScriptName(category);
                         ActiveScripts[category] = GetScriptNames(category).IndexOf(activeScriptName);
-                        if (activeScriptName == scriptName)
+                        if (IsCategoryActive(category) && activeScriptName == scriptName)
                         {
                             InitScript(GetActiveScript(category));
                         }
@@ -613,6 +617,10 @@ namespace TiltBrush
                 script.Globals[LuaNames.ScriptNameString] = scriptName;
                 script.Globals[LuaNames.IsExampleScriptBool] = isExampleScript;
 
+                if (Scripts[category].TryGetValue(scriptName, out var previousScript))
+                {
+                    EndScript(previousScript);
+                }
                 Scripts[category][scriptName] = script;
                 if (m_ActiveBackgroundScripts.ContainsKey(scriptName))
                 {
@@ -891,6 +899,41 @@ namespace TiltBrush
             return wrapper;
         }
 
+        public Color CallActiveJitterScript(string fnName, Color currentColor)
+        {
+            var scriptNames = GetScriptNames(LuaApiCategory.JitterScript);
+            if (scriptNames.Count == 0)
+            {
+                return currentColor;
+            }
+
+            int activeScriptIndex = ActiveScripts[LuaApiCategory.JitterScript];
+            if (activeScriptIndex < 0 || activeScriptIndex >= scriptNames.Count)
+            {
+                return currentColor;
+            }
+
+            var script = GetActiveScript(LuaApiCategory.JitterScript);
+            InitScript(script);
+            script.Globals.Set("_currentColor", DynValue.FromObject(script, currentColor));
+            DynValue result = _CallScript(script, fnName);
+            if (result.Equals(DynValue.Nil))
+            {
+                return currentColor;
+            }
+
+            try
+            {
+                return result.ToObject<Color>();
+            }
+            catch (Exception e) when (
+                e is InvalidCastException || e is ScriptRuntimeException)
+            {
+                LogGenericLuaError(script, fnName, e);
+                return currentColor;
+            }
+        }
+
         public DynValue GetSettingForActiveScript(LuaApiCategory category, string key)
         {
             var script = GetActiveScript(category);
@@ -966,6 +1009,8 @@ namespace TiltBrush
                     return BackgroundScriptsEnabled;
                 case LuaApiCategory.PointerScript:
                     return PointerScriptsEnabled;
+                case LuaApiCategory.JitterScript:
+                    return JitterScriptsEnabled;
                 case LuaApiCategory.SymmetryScript:
                     return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode;
                 case LuaApiCategory.ToolScript:
@@ -1102,6 +1147,20 @@ namespace TiltBrush
             else
             {
                 EndActiveScript(LuaApiCategory.PointerScript);
+            }
+        }
+
+        public void EnableJitterScript(bool enable)
+        {
+            JitterScriptsEnabled =
+                enable && GetScriptNames(LuaApiCategory.JitterScript).Count > 0;
+            if (JitterScriptsEnabled)
+            {
+                InitScript(GetActiveScript(LuaApiCategory.JitterScript));
+            }
+            else if (GetScriptNames(LuaApiCategory.JitterScript).Count > 0)
+            {
+                EndActiveScript(LuaApiCategory.JitterScript);
             }
         }
 
