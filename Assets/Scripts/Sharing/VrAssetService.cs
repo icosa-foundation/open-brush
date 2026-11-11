@@ -73,6 +73,9 @@ namespace TiltBrush
         private const string kListAssetsUri = "/assets";
         private const string kUserAssetsUri = "/users/me/assets";
         private const string kUserLikesUri = "/users/me/likedassets";
+        private const string kUserCollectionsUri = "/users/me/collections";
+        private const string kPublicCollectionsUri = "/collections";
+        private const string kCollectionUriFormat = "/collections/{0}"; // {0} = collection ID
 
         // Used when requesting a device code from the system browser
         private string m_CurrentDeviceCodeSecret;
@@ -1214,6 +1217,41 @@ namespace TiltBrush
             AppendQueryParam(ref uri, "name", queryParams.SearchText);
             AppendQueryParam(ref uri, "license", queryParams.License);
             AppendQueryParam(ref uri, "curated", queryParams.Curated);
+            AppendQueryParam(ref uri, "category", queryParams.Category);
+
+            return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
+        }
+
+        // List collections for a specific set type
+        public AssetLister ListCollections(IcosaSetType type, IcosaAssetCatalog.IcosaQueryParameters queryParams)
+        {
+            string uri = type switch
+            {
+                IcosaSetType.User => $"{IcosaApiRoot}{kUserCollectionsUri}?",
+                IcosaSetType.Featured => $"{IcosaApiRoot}{kPublicCollectionsUri}?",
+                IcosaSetType.Liked => throw new NotSupportedException("Liked collections not yet supported by API"),
+                _ => throw new ArgumentOutOfRangeException(nameof(type), type, null)
+            };
+            uri += $"pageSize={m_AssetsPerPage}&";
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+
+            return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");
+        }
+
+        // List assets from a specific collection
+        public AssetLister ListCollectionAssets(string collectionId, IcosaAssetCatalog.IcosaQueryParameters queryParams)
+        {
+            string uri = $"{IcosaApiRoot}{string.Format(kCollectionUriFormat, collectionId)}?";
+            foreach (var format in queryParams.Formats)
+            {
+                AppendQueryParam(ref uri, "format", format);
+            }
+            uri += $"pageSize={m_AssetsPerPage}&";
+            uri += $"triangleCountMax={queryParams.TriangleCountMax}&";
+            AppendQueryParam(ref uri, "orderBy", queryParams.OrderBy);
+            AppendQueryParam(ref uri, "name", queryParams.SearchText);
+            AppendQueryParam(ref uri, "license", queryParams.License);
             AppendQueryParam(ref uri, "category", queryParams.Category);
 
             return new AssetLister(uri, errorMessage: "Failed to connect to Icosa.");

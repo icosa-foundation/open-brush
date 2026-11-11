@@ -4440,6 +4440,18 @@ MonoBehaviour:
     m_Localized: "Prüfe den Pfeil von A nach B. Trigger bestätigt; der Trigger des anderen Controllers tauscht A und B; Abbrechen zum Beenden."
     m_Metadata:
       m_Items: []
+  - m_Id: 40000000000000001
+    m_Localized: "Deine Sammlungen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000002
+    m_Localized: "Öffentliche Sammlungen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000003
+    m_Localized: "Keine Sammlungen gefunden"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

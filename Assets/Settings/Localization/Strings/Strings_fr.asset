@@ -4382,6 +4382,18 @@ MonoBehaviour:
     m_Localized: "Vérifiez la flèche de A vers B. La gâchette confirme ; celle de l’autre contrôleur inverse A et B ; Annuler pour quitter."
     m_Metadata:
       m_Items: []
+  - m_Id: 40000000000000001
+    m_Localized: "Vos collections"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000002
+    m_Localized: "Collections publiques"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000003
+    m_Localized: "Aucune collection trouvée"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
