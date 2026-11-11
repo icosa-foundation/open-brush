@@ -43,20 +43,28 @@ namespace TiltBrush
                 // What the strokes actually undergo, pivot included.
                 TrTransform xfAboutPivot =
                     TrTransform.T(m_Pivot) * m_Transform * TrTransform.T(-m_Pivot);
-                TransformWidgetPeersCommand.ForEdits((m_Widgets ?? new List<GrabWidget>()).Select(w => (w, xfAboutPivot)), this);
+                var scenePose = App.Scene.Pose;
+                TransformWidgetPeersCommand.ForEdits(m_Widgets.Where(w => w.SymmetryPeerGroup != null).Select(w =>
+                    (w, SceneDeltaInCanvas(xfAboutPivot, scenePose.inverse * w.Canvas.Pose))), this);
                 var moved = new HashSet<Stroke>(m_Strokes, new ReferenceComparer<Stroke>());
                 var seen = new HashSet<SymmetryStrokeGroup>();
                 foreach (var stroke in m_Strokes)
                 {
                     if (SymmetryPeerEditing.IsLinked(stroke) && seen.Add(stroke.SymmetryPeerGroup))
                     {
-                        new TransformSymmetryCopiesCommand(stroke, xfAboutPivot, moved, this);
+                        var canvas = stroke.SymmetryPeerGroup.Mirror.Canvas;
+                        if (canvas == null) { continue; }
+                        var canvasDelta = SceneDeltaInCanvas(xfAboutPivot, scenePose.inverse * canvas.Pose);
+                        new TransformSymmetryCopiesCommand(stroke, canvasDelta, moved, this);
                     }
                 }
             }
         }
 
         public override bool NeedsSave { get { return true; } }
+
+        internal static TrTransform SceneDeltaInCanvas(TrTransform sceneDelta, TrTransform canvasInScene)
+            => canvasInScene.inverse * sceneDelta * canvasInScene;
 
         protected override void OnRedo()
         {
