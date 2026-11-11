@@ -57,6 +57,7 @@ namespace TiltBrush
         private Color? m_SecondaryButtonColor;
 
         protected Texture2D m_CurrentButtonTexture;
+        public Texture2D ButtonTexture => m_CurrentButtonTexture;
         // TODO : See if we can remove the concept of button states.  It feels redundant
         // with the new UIComponent state machine and is leading to edge case bugs.
         protected ButtonState m_CurrentButtonState;
