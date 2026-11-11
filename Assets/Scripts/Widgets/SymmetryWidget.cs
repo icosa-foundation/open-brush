@@ -37,7 +37,6 @@ namespace TiltBrush
         [SerializeField] private Renderer m_SmallCubeMesh;
         [SerializeField] private TextMeshPro m_TitleText;
         // The title shows whether the widget stands for a linked mirror.
-        private static readonly Color kLinkedTitleColor = new Color(0.45f, 0.9f, 1f);
         private string m_PlainTitle;
         private bool m_ShowingLinked;
         private bool m_TitleActive;
@@ -461,24 +460,14 @@ namespace TiltBrush
             UpdateTitle();
         }
 
-        /// "Mirror", or "Mirror / Linked" in a distinct colour while a linked mirror is active,
-        /// so the mode is visible on the widget itself.
+        /// Show "Mirror / Linked" while a linked mirror is active.
         private void UpdateTitle()
         {
             if (m_TitleText == null) { return; }
             m_PlainTitle ??= m_TitleText.text;
             m_ShowingLinked = SymmetryMirrors.Showing != null;
             m_TitleText.text = m_ShowingLinked ? "Mirror\nLinked" : m_PlainTitle;
-            if (!m_ShowingLinked)
-            {
-                m_TitleText.color = m_TitleActive ? Color.white : Color.grey;
-            }
-            else
-            {
-                Color dim = kLinkedTitleColor * 0.6f;
-                dim.a = 1f;
-                m_TitleText.color = m_TitleActive ? kLinkedTitleColor : dim;
-            }
+            m_TitleText.color = m_TitleActive ? Color.white : Color.grey;
         }
 
         override protected void OnUserBeginInteracting()
