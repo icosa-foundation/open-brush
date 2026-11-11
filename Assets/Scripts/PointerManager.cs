@@ -1878,7 +1878,10 @@ namespace TiltBrush
                         m_SpaceGroupRepeats, m_SpaceGroupCellSize);
                     m_CustomMirrorMatrices = spaceGroup.matrices;
                     SymmetryLatticeBasis = spaceGroup.cellBasis;
-                    SymmetryLatticeIsHexagonal = m_SpaceGroupNumber >= 143 && m_SpaceGroupNumber <= 194;
+                    // Rhombohedral groups now repeat on primitive rhombohedral vectors,
+                    // rather than the three-direction basal plane of their hexagonal setting.
+                    SymmetryLatticeIsHexagonal = m_SpaceGroupNumber >= 143 && m_SpaceGroupNumber <= 194
+                        && spaceGroup.name[0] == 'P';
                     var spaceDomain = spaceGroup.CreateDomainOutline();
                     SpaceGroupDomainPaths = CreateDomainPaths(spaceDomain.vertices, spaceDomain.edges);
                     break;
