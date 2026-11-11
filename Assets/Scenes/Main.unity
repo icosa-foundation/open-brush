@@ -26499,6 +26499,14 @@ MonoBehaviour:
     m_Advanced: 0
     m_ViewOnly: 1
     m_Multiplayer: 0
+  - m_PanelPrefab: {fileID: 3099345940030882571, guid: 0c2432bd2ea6ea94dbb86775a781de8d, type: 3}
+    m_ModeVr: 1
+    m_ModeMono: 1
+    m_ModeQuest: 1
+    m_Basic: 1
+    m_Advanced: 1
+    m_ViewOnly: 0
+    m_Multiplayer: 0
   m_WandPanelsRotationFeedbackInterval: 20
   m_WandPanelsRotationScalar: 200
   m_WandPanelsRotationVelocityScalar: 7500

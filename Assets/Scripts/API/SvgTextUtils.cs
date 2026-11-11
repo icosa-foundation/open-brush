@@ -16,6 +16,7 @@ using System.IO;
 using TMPro;
 using Unity.VectorGraphics.OpenBrush;
 using UnityEngine;
+using UnityEngine.TextCore.LowLevel;
 using WaterTrans.GlyphLoader;
 
 namespace TiltBrush
@@ -61,9 +62,12 @@ namespace TiltBrush
 
         public static TMP_FontAsset ConvertOpenTypeToTMPro(string path)
         {
-            Font osFont = new Font(path);
-            TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(osFont);
-
+            // Load the actual file through TextCore. Font(string) resolves a font by name;
+            // it does not establish that an arbitrary external OpenType file was loaded.
+            TMP_FontAsset fontAsset = TMP_FontAsset.CreateFontAsset(path, 0, 90, 9,
+                GlyphRenderMode.SDFAA, 1024, 1024);
+            if (fontAsset == null) { throw new InvalidDataException($"Unable to load font file: {path}"); }
+            fontAsset.name = Path.GetFileNameWithoutExtension(path);
             return fontAsset;
         }
     }

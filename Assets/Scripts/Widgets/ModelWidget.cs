@@ -565,6 +565,16 @@ namespace TiltBrush
             }
         }
 
+        protected void RefreshModelGeometry()
+        {
+            m_ObjModelScript.InvalidateMeshVertexCount();
+            int vertexCount = m_ObjModelScript.GetNumVertsInMeshes();
+            WidgetManager.m_Instance.AdjustModelVertCount(vertexCount - m_NumVertsTrackedByWidgetManager);
+            m_NumVertsTrackedByWidgetManager = vertexCount;
+            RecalculateColliderBounds();
+            UpdateBatchInfo();
+        }
+
         public void RecalculateColliderBounds()
         {
             var widgetTransform = m_ObjModelScript.transform.parent;
@@ -1006,11 +1016,12 @@ namespace TiltBrush
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
+            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
+            modelWidget.m_LoadingFromSketch = true;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
             modelWidget.m_Subtree = subtree;
             modelWidget.Model = model;
-            modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
             if (isNonRawTransform)
             {
@@ -1034,7 +1045,6 @@ namespace TiltBrush
                 modelWidget.m_PolyCallbackActive = true;
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
-            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).

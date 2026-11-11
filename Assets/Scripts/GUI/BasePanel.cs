@@ -117,6 +117,7 @@ namespace TiltBrush
             WhatsNewPanel = 20300,
             BlocksPromoPanel = 20301,
             AdminPanelViewOnly = 20302,
+            Shapes = 20303,
         }
 
         private enum FixedTransitionState

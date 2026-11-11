@@ -391,6 +391,10 @@ namespace TiltBrush
             set { }
         }
 
+        // Axis-resize limits are world-space extents. Media widgets can store uniform size as
+        // a scale factor instead, so their axis limits need not equal GetWidgetSizeRange().
+        public virtual Vector2 GetAxisSizeRange() => GetWidgetSizeRange();
+
         /// Returns Axis.Invalid unless the widget is currently being manipulated
         /// along a specific axis.
         ///
@@ -508,6 +512,7 @@ namespace TiltBrush
         {
             if (value != m_UserTwoHandGrabbing)
             {
+                m_UserTwoHandGrabbing = value;
                 if (value)
                 {
                     Vector3 vPrimary = InputManager.Controllers[(int)primary].Transform.position;

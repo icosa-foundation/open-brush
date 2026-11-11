@@ -644,7 +644,17 @@ namespace TiltBrush
             // Use shaderName to determine if this is the case
             string shaderName = material.shader.name;
 
-            if (shaderName.StartsWith("Brush/"))
+            if (shaderName == "Custom/ReferenceImage")
+            {
+                materialNode.DoubleSided = material.GetInt("_CullMode") == (int)UnityEngine.Rendering.CullMode.Off;
+                if (material.HasProperty("_ImageBlendMode") && (int)material.GetFloat("_ImageBlendMode") == (int)ImageBlendMode.Additive)
+                {
+                    AddExtension(materialNode, EXT_blend_operations.Add);
+                    materialNode.AlphaMode = AlphaMode.BLEND;
+                    exporter.DeclareExtensionUsage(EXT_blend_operations.EXTENSION_NAME, false);
+                }
+            }
+            else if (shaderName.StartsWith("Brush/"))
             {
                 BrushDescriptor manifest;
                 if (IsIsolatedMeshFixtureExport)

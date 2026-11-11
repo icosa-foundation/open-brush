@@ -926,6 +926,32 @@
         "com.unity.modules.jsonserialize": "1.0.0",
         "com.unity.modules.subsystems": "1.0.0"
       }
+    },
+    "com.ixxy.polyhydra.core": {
+      "version": "https://github.com/IxxyXR/polyhydra-core.git#c3305c7b12977160b916d07b914f477c3c1daff6",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {
+        "com.syomus.proceduraltoolkit": "0.2.3",
+        "com.nition.unity-octree": "0.0.1-preview"
+      },
+      "hash": "c3305c7b12977160b916d07b914f477c3c1daff6"
+    },
+    "com.nition.unity-octree": {
+      "version": "0.0.1-preview",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
+      "url": "https://package.openupm.com"
+    },
+    "com.syomus.proceduraltoolkit": {
+      "version": "0.2.3",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.ugui": "1.0.0"
+      },
+      "url": "https://package.openupm.com"
     }
   }
 }

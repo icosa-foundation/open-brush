@@ -18,6 +18,8 @@ using Unity.VectorGraphics.OpenBrush;
 
 namespace TiltBrush
 {
+    public enum ImageBlendMode { Cutout = 0, Opaque = 1, AlphaBlend = 2, Additive = 3 }
+
     public class ImageWidget : Media2dWidget
     {
         private static T Unused<T>(T value)
@@ -29,10 +31,58 @@ namespace TiltBrush
         [SerializeField] private float m_VertCountScalar = 1;
 
         private bool m_UseLegacyTint;
-        private float m_Opacity = 1.0f;
         private ReferenceImage m_ReferenceImage;
         private bool m_TextureAcquired;
         private bool m_PreserveCustomSize;
+        private Color m_ImageColor = Color.white;
+        private float? m_AspectRatioOverride;
+        private ImageBlendMode m_BlendMode;
+        public ImageBlendMode BlendMode
+        {
+            get => m_BlendMode;
+            set => SetBlendMode(value);
+        }
+
+        /// Texture multiplier, including opacity. Legacy darkening remains independent.
+        public Color ImageColor
+        {
+            get => m_ImageColor;
+            set
+            {
+                foreach (float component in new[] { value.r, value.g, value.b, value.a })
+                {
+                    if (float.IsNaN(component) || float.IsInfinity(component))
+                    { throw new System.ArgumentException("Image color must be finite"); }
+                }
+                m_ImageColor = new Color(value.r, value.g, value.b, Mathf.Clamp01(value.a));
+                if (m_ImageQuad != null) { m_ImageQuad.material.color = m_ImageColor; }
+            }
+        }
+
+        public void SetAspectRatioOverride(float? aspect)
+        {
+            if (aspect.HasValue && (!(aspect.Value > 0) || float.IsInfinity(aspect.Value)))
+            { throw new System.ArgumentException("Image aspect ratio must be finite and positive"); }
+            m_AspectRatioOverride = aspect;
+            UpdateScale();
+        }
+
+        private void SetBlendMode(ImageBlendMode mode)
+        {
+            if (!System.Enum.IsDefined(typeof(ImageBlendMode), mode))
+            { throw new System.ArgumentException("Unsupported image blend mode"); }
+            m_BlendMode = mode;
+            var material = m_ImageQuad.material;
+            bool transparent = mode == ImageBlendMode.AlphaBlend || mode == ImageBlendMode.Additive;
+            material.SetFloat("_ImageBlendMode", (int)mode);
+            material.SetInt("_SrcBlend", (int)(transparent ? UnityEngine.Rendering.BlendMode.SrcAlpha : UnityEngine.Rendering.BlendMode.One));
+            material.SetInt("_DstBlend", (int)(mode == ImageBlendMode.Additive ? UnityEngine.Rendering.BlendMode.One :
+                transparent ? UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha : UnityEngine.Rendering.BlendMode.Zero));
+            material.SetInt("_ZWrite", transparent ? 0 : 1);
+            material.SetOverrideTag("RenderType", transparent ? "Transparent" : mode == ImageBlendMode.Cutout ? "TransparentCutout" : "Opaque");
+            material.renderQueue = transparent ? (int)UnityEngine.Rendering.RenderQueue.Transparent :
+                mode == ImageBlendMode.Cutout ? (int)UnityEngine.Rendering.RenderQueue.AlphaTest + 20 : (int)UnityEngine.Rendering.RenderQueue.Geometry;
+        }
 
         public string FileName =>
             m_ReferenceImage?.FileName ?? m_MissingInfo?.fileName ?? Unused("Error");
@@ -42,7 +92,7 @@ namespace TiltBrush
 
         /// width / height
         public override float? AspectRatio =>
-            m_ReferenceImage?.ImageAspect ?? m_MissingInfo?.aspectRatio;
+            m_AspectRatioOverride ?? m_ReferenceImage?.ImageAspect ?? m_MissingInfo?.aspectRatio;
 
         /// Prior to M15, images were incorrectly tinted.
         public bool UseLegacyTint
@@ -56,19 +106,13 @@ namespace TiltBrush
             }
         }
 
-        /// Alpha multiplier applied to the image. Currently only set by the Quill importer.
+        /// Alpha component of the image's RGBA multiplier.
         public float Opacity
         {
-            get { return m_Opacity; }
+            get { return m_ImageColor.a; }
             set
             {
-                m_Opacity = Mathf.Clamp01(value);
-                if (m_ImageQuad != null && m_ImageQuad.material != null)
-                {
-                    Color color = m_ImageQuad.material.color;
-                    color.a = m_Opacity;
-                    m_ImageQuad.material.color = color;
-                }
+                ImageColor = new Color(m_ImageColor.r, m_ImageColor.g, m_ImageColor.b, value);
             }
         }
 
@@ -132,10 +176,13 @@ namespace TiltBrush
             clone.transform.parent = transform.parent;
             clone.SetSignedWidgetSize(size);
             clone.UseLegacyTint = this.m_UseLegacyTint;
-            clone.Opacity = this.m_Opacity;
+            clone.ImageColor = m_ImageColor;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(clone.GetTiltMeterCost(), up: true);
             clone.CloneInitialMaterials(this);
+            clone.TwoSided = TwoSided;
+            clone.BlendMode = m_BlendMode;
+            clone.SetAspectRatioOverride(m_AspectRatioOverride);
             clone.TrySetCanvasKeywordsFromObject(transform);
             return clone;
         }
@@ -196,6 +243,7 @@ namespace TiltBrush
         {
             set
             {
+                m_AspectRatioOverride = null;
                 //dump old texture
                 ReleaseTexture();
 
@@ -318,13 +366,16 @@ namespace TiltBrush
             var twoSidedFlags = tiltImage.TwoSidedFlags;
             var extrusionDepths = tiltImage.ExtrusionDepths;
             var extrusionColors = tiltImage.ExtrusionColors;
-            var opacities = tiltImage.Opacities;
+            var colors = tiltImage.Colors;
+            var blendModes = tiltImage.BlendModes;
             for (int i = 0; i < tiltImage.Transforms.Length; ++i)
             {
                 ImageWidget image = Instantiate(WidgetManager.m_Instance.ImageWidgetPrefab);
                 image.m_LoadingFromSketch = true;
                 image.transform.parent = App.Instance.m_CanvasTransform;
                 image.transform.localScale = Vector3.one;
+                int layerId = (layerIds == null || i >= layerIds.Length) ? 0 : layerIds[i];
+                image.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
                 if (refImage != null)
                 {
                     refImage.SynchronousLoad();
@@ -334,6 +385,7 @@ namespace TiltBrush
                 {
                     image.SetMissing(tiltImage.AspectRatio, tiltImage.FileName);
                 }
+                image.SetAspectRatioOverride(tiltImage.AspectRatio);
                 image.SetSignedWidgetSize(tiltImage.Transforms[i].scale);
                 if (extrusionDepths != null &&
                     extrusionColors != null &&
@@ -343,10 +395,8 @@ namespace TiltBrush
                     image.SetExtrusion(extrusionDepths[i], extrusionColors[i]);
                 }
                 image.Show(bShow: true, bPlayAudio: false);
-                if (opacities != null && i < opacities.Length)
-                {
-                    image.Opacity = opacities[i];
-                }
+                image.ImageColor = colors != null && i < colors.Length ? colors[i] : Color.white;
+                image.BlendMode = blendModes != null && i < blendModes.Length ? blendModes[i] : ImageBlendMode.Cutout;
                 image.transform.localPosition = tiltImage.Transforms[i].translation;
                 image.transform.localRotation = tiltImage.Transforms[i].rotation;
                 if (tiltImage.PinStates[i])
@@ -359,9 +409,7 @@ namespace TiltBrush
                 }
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 image.Group = App.GroupManager.GetGroupFromId(groupId);
-                int layerId = (layerIds == null || i >= layerIds.Length) ? 0 : layerIds[i];
                 image.TwoSided = twoSidedFlags != null && i < twoSidedFlags.Length && twoSidedFlags[i];
-                image.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(image.GetTiltMeterCost(), up: true);
             }
         }

@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ namespace TiltBrush
         private TrTransform m_LastThumbnail_SS;
         private List<SketchWriter.AdjustedMemoryBrushStroke> m_Strokes;
         private SketchMetadata m_Metadata;
+        private readonly Dictionary<string, byte[]> m_EditableGeometry = new Dictionary<string, byte[]>();
 
         private JsonSerializer m_JsonSerializer;
         private SaveIconCaptureScript m_SaveIconCapture;
@@ -89,6 +90,7 @@ namespace TiltBrush
             m_SaveIconCapture = null;
             m_GroupIdMapping = new GroupIdMapping();
             m_Metadata = GetSketchMetadata();
+            EditableModelDefinitionData.CollectGeometryFiles(m_Metadata.EditableModelDefinitions?.Values, m_EditableGeometry);
             m_LastThumbnail_SS = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
         }
 
@@ -163,6 +165,8 @@ namespace TiltBrush
             if (!m_SelectedOnly)
             {
                 metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping);
+                metadata.EditableModelDefinitions = MetadataUtils.GetEditableModelDefinitions();
+                metadata.EditableModelIndex = MetadataUtils.GetTiltEditableModels(m_GroupIdMapping);
                 metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping);
                 metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping);
                 metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping);
@@ -259,6 +263,13 @@ namespace TiltBrush
                     zip.CloseEntry();
 
                     // Prepare the necessary data for WriteMemory
+                    foreach (var geometry in m_EditableGeometry)
+                    {
+                        zip.PutNextEntry(new ZipEntry(geometry.Key));
+                        zip.Write(geometry.Value, 0, geometry.Value.Length);
+                        zip.CloseEntry();
+                    }
+
                     List<Stroke> strokes = new List<Stroke>(SketchMemoryScript.m_Instance.GetMemoryList);
                     IList<AdjustedMemoryBrushStroke> strokeCopies = EnumerateAdjustedSnapshots(strokes).ToList();
                     GroupIdMapping groupIdMapping = new GroupIdMapping();
@@ -326,6 +337,11 @@ namespace TiltBrush
                         m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
                     }
 
+                    foreach (var geometry in m_EditableGeometry)
+                    {
+                        using var stream = tiltWriter.GetWriteStream(geometry.Key);
+                        stream.Write(geometry.Value, 0, geometry.Value.Length);
+                    }
                     tiltWriter.Commit();
                 }
             }

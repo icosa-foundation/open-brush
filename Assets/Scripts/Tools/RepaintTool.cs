@@ -61,7 +61,10 @@ namespace TiltBrush
 
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
-            return false;
+            if (!PointerManager.m_Instance.RecolorOn || !(widget is EditableModelWidget shape)) { return false; }
+            bool repainted = SketchMemoryScript.m_Instance.MemorizeShapeRepaint(shape, PointerManager.m_Instance.PointerColor);
+            if (repainted) { PlayModifyStrokeSound(); }
+            return repainted;
         }
 
         override protected void UpdateDetection()

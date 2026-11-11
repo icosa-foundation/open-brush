@@ -817,6 +817,16 @@ namespace TiltBrush
             return false;
         }
 
+        public bool MemorizeShapeRepaint(EditableModelWidget widget, Color color)
+        {
+            if (widget == null || widget.m_PolyRecipe == null) { return false; }
+            color.a = widget.m_Color.a;
+            if (widget.m_Color == color) { return false; }
+            if (m_RepaintStrokeParent == null) { m_RepaintStrokeParent = new BaseCommand(); }
+            new RepaintShapeCommand(widget, color, m_RepaintStrokeParent);
+            return true;
+        }
+
         /// Removes stroke from our list only.
         /// It's the caller's responsibility to destroy if (if desired).
         public void RemoveMemoryObject(Stroke stroke)
@@ -906,6 +916,7 @@ namespace TiltBrush
 
         public void ClearMemory()
         {
+            MeshEditing.EditableModelManager.ClearRetainedData();
             if (m_ScenePlayback != null)
             {
                 // Ensure scene playback completes so that geometry is in state expected by rest of system.
