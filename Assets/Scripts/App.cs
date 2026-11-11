@@ -2321,6 +2321,11 @@ namespace TiltBrush
             return Path.Combine(UserPath(), "VRVideos");
         }
 
+        static public string UserBrushesPath()
+        {
+            return Path.Combine(UserPath(), "Brushes");
+        }
+
         void OnApplicationQuit()
         {
             if (AppExit != null)
