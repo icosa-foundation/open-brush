@@ -194,6 +194,28 @@ namespace TiltBrush
                         var pointSym = new PointSymmetry((PointSymmetry.Family)pointType, pointOrder);
                         matrices = pointSym.matrices;
                     }
+                    else if (mode == SymmetryMode.Penrose)
+                    {
+                        var penrose = new PenroseTiling(penroseSubdivisions, penroseRadius,
+                            (PenroseTiling.TileSelection)penroseTiles);
+                        var sourceInverse = penrose.matrices[0].inverse;
+                        matrices = penrose.matrices.Select(m => m * sourceInverse).ToList();
+                        matrices[0] = Matrix4x4.identity;
+                    }
+                    else if (mode == SymmetryMode.LineGroup)
+                    {
+                        var line = new LineGroupSymmetry((LineGroupSymmetry.Family)lineFamily,
+                            lineOrder, lineRepeats, lineAdvance, lineAngle);
+                        var frame = Matrix4x4.Rotate(Quaternion.Euler(-90f, 0f, 0f));
+                        var inverseFrame = frame.inverse;
+                        matrices = line.matrices.Select(m => frame * m * inverseFrame).ToList();
+                    }
+                    else if (mode == SymmetryMode.SpaceGroup)
+                    {
+                        var space = new SpaceGroupSymmetry(spaceGroup,
+                            new Vector3Int(spaceRepeatX, spaceRepeatY, spaceRepeatZ), spaceCellSize);
+                        matrices = space.matrices;
+                    }
                     else
                     {
                         matrices = new List<Matrix4x4>();
