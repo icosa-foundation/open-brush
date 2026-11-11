@@ -110,23 +110,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    var playback = replaceNativeWidget.Playback;
-                    if (playback.Document == null || playback.IsRestoring)
-                        throw new InvalidOperationException("IMM playback is not ready for conversion.");
-                    var frame = playback.Document.GetEditableLayerStates().ToDictionary(state => state.id,
-                        state => new ImmStrokeReader.SharpQuillCompat.FrameLayerState
-                        {
-                            Drawing = state.drawing,
-                            Visible = state.visible != 0,
-                            Opacity = state.opacity,
-                            Transform = new ImmPlayer.StrokeLayerTransform
-                            {
-                                rotX = state.rotX, rotY = state.rotY, rotZ = state.rotZ, rotW = state.rotW,
-                                scale = state.scale, flip = state.flip,
-                                transX = state.transX, transY = state.transY, transZ = state.transZ
-                            }
-                        });
-                    sequence = ImmStrokeReader.SharpQuillCompat.ReadImmFrame(path, frame);
+                    sequence = ReadNativeImmFrame(path, replaceNativeWidget);
                 }
             }
             else
@@ -308,6 +292,43 @@ namespace TiltBrush
                 s_QuillStatsRecorder = null;
             }
 
+        }
+
+        private static SQ.Sequence ReadNativeImmFrame(string path, ModelWidget widget)
+        {
+            var playback = widget.Playback;
+            if (playback.Document == null || playback.IsRestoring)
+                throw new InvalidOperationException("IMM playback is not ready for conversion.");
+            var frame = playback.Document.GetEditableLayerStates().ToDictionary(state => state.id,
+                state => new ImmStrokeReader.SharpQuillCompat.FrameLayerState
+                {
+                    Drawing = state.drawing,
+                    Visible = state.visible != 0,
+                    Opacity = state.opacity,
+                    Transform = new ImmPlayer.StrokeLayerTransform
+                    {
+                        rotX = state.rotX, rotY = state.rotY, rotZ = state.rotZ, rotW = state.rotW,
+                        scale = state.scale, flip = state.flip,
+                        transX = state.transX, transY = state.transY, transZ = state.transZ
+                    }
+                });
+            return ImmStrokeReader.SharpQuillCompat.ReadImmFrame(path, frame);
+        }
+
+        public static bool ImportNativeImmSkydome(ModelWidget widget)
+        {
+            var native = widget.GetComponentInChildren<NativeImmReference>();
+            if (native == null) return false;
+            var sequence = ReadNativeImmFrame(native.SourcePath, widget);
+            var picture = sequence?.RootLayer?.Children.OfType<SQ.LayerPicture>().FirstOrDefault(layer =>
+                layer.PictureType == SQ.PictureType.ThreeSixty_Equirect_Mono ||
+                layer.PictureType == SQ.PictureType.ThreeSixty_Equirect_Stereo);
+            if (picture == null) return false;
+            string skybox = ExtractSkybox360Image(picture, native.SourcePath);
+            if (skybox == null) throw new InvalidOperationException("Could not extract the IMM skydome image.");
+            SceneSettings.m_Instance.LoadCustomSkybox(skybox);
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+            return true;
         }
 
         private static void TraverseAndFlattenLayers(

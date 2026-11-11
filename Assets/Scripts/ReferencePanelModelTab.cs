@@ -46,7 +46,8 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_ChapterLabel;
         [SerializeField] private GameObject m_ViewpointControls;
         [SerializeField] private TextMeshPro m_ViewpointLabel;
-        [SerializeField] private ModelImmConvertButton m_ConvertToEditable;
+        [SerializeField] private ActionButton m_ConvertToEditable;
+        [SerializeField] private ActionButton m_ImportSkydome;
         [SerializeField] private ModelPathLabel m_ModelPath;
         [SerializeField] private GameObject m_PlaybackButtonsRoot;
         [SerializeField] private FloatPropertySlider m_VolumeSlider;
@@ -182,6 +183,11 @@ namespace TiltBrush
                 m_ConvertToEditable.gameObject.SetActive(native);
                 m_ConvertToEditable.SetButtonAvailable(native && available);
             }
+            if (m_ImportSkydome != null)
+            {
+                m_ImportSkydome.gameObject.SetActive(native);
+                m_ImportSkydome.SetButtonAvailable(native && available);
+            }
             if (m_ChapterControls != null) m_ChapterControls.SetActive(native && playback.ChapterCount > 1);
             if (native && m_ChapterLabel != null)
             {
@@ -244,6 +250,22 @@ namespace TiltBrush
                 OutputWindowScript.Error("Could not convert the current IMM frame to editable strokes.");
             }
             RefreshModelControls();
+        }
+
+        public void ImportSelectedImmSkydome()
+        {
+            var playback = SelectedPlayback;
+            if (playback == null || playback.Document == null || playback.IsRestoring) return;
+            try
+            {
+                if (!Quill.ImportNativeImmSkydome(m_SelectedModelWidget))
+                    OutputWindowScript.m_Instance.AddNewLine("No visible skydome at the current IMM frame.");
+            }
+            catch (Exception error)
+            {
+                Debug.LogError($"[OB_IMM_SKYDOME_20261111] Import failed: {error}");
+                OutputWindowScript.Error("Could not import the IMM skydome.");
+            }
         }
 
         private void RefreshPlaybackTime(ModelPlaybackController playback, bool supported)
