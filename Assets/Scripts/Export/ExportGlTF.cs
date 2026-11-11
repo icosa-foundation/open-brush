@@ -97,7 +97,9 @@ namespace TiltBrush
             var payload = ExportCollector.GetExportPayload(
                 axes,
                 includeLocalMediaContent: includeLocalMediaContent,
-                temporaryDirectory: Path.Combine(Application.temporaryCachePath, "exportgltf"));
+                temporaryDirectory: Path.Combine(Application.temporaryCachePath, "exportgltf"),
+                outputDirectory: Path.GetDirectoryName(outputFile)
+            );
             return ExportHelper(payload, outputFile, binary, doExtras: doExtras, gltfVersion: gltfVersion,
                 allowHttpUri: !selfContained);
         }

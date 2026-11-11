@@ -50,10 +50,11 @@ namespace TiltBrush
             FlyTool,
             ReshapeTool = 5100,
             TintColorTool = 5101,
+            TextTool = 5400,
             ManualColocationTool = 1022,
             ScriptedTool = 6001,
             SnipTool = 11000,
-            JoinTool = 11001
+            JoinTool = 11001,
         }
         public ToolType m_Type;
 

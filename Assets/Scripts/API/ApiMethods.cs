@@ -2033,6 +2033,37 @@ namespace TiltBrush
             LuaManager.Instance.EnableBackgroundScripts(false);
         }
 
+        [ApiEndpoint("text.position", "Move a text widget to the given coordinates")]
+        public static void PositionText(int index, Vector3 position)
+        {
+            _SetWidgetPosition(_GetActiveTextWidget(index), position);
+        }
+
+        [ApiEndpoint("text.rotation", "Set a text widget's rotation to the given angles")]
+        public static void RotateText(int index, Vector3 rotation)
+        {
+            _SetWidgetRotation(_GetActiveTextWidget(index), rotation);
+        }
+
+        [ApiEndpoint("text.scale", "Set a text widget's scale")]
+        public static void ScaleText(int index, float scale)
+        {
+            _SetWidgetScale(_GetActiveTextWidget(index), scale);
+        }
+
+        [ApiEndpoint("text.setText", "Changes the text on a text widget")]
+        public static void ChangeTextContent(int index, string text)
+        {
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ModifyTextCommand(_GetActiveTextWidget(index), text));
+        }
+
+        [ApiEndpoint("text.setColor", "Changes the color on a text widget")]
+        public static void ChangeTextColor(int index, Vector3 color)
+        {
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new ModifyTextCommand(_GetActiveTextWidget(index), new Color(color.x, color.y, color.z)));
+        }
 
         [ApiEndpoint(
             "guide.add",
