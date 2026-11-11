@@ -46,8 +46,36 @@ namespace TiltBrush
             public Guid Id { get; } = Guid.NewGuid();
             public Vector3Int Size { get; }
             public int SourceModelId { get; }
-            internal Dictionary<Vector3Int, byte> Cells { get; }
-            internal VoxChunkGrid Grid { get; private set; }
+            private Dictionary<Vector3Int, byte> m_Cells;
+            private VoxChunkGrid m_Grid;
+            private VoxReader.Voxel[] m_SourceVoxels;
+            internal Dictionary<Vector3Int, byte> Cells
+            {
+                get { EnsureCells(); return m_Cells; }
+            }
+            internal VoxChunkGrid Grid
+            {
+                get { EnsureCells(); return m_Grid; }
+            }
+
+            private void EnsureCells()
+            {
+                if (m_SourceVoxels == null) return;
+                var source = m_SourceVoxels;
+                m_SourceVoxels = null;
+                m_Cells = new Dictionary<Vector3Int, byte>();
+                m_Grid = new VoxChunkGrid();
+                foreach (var voxel in source)
+                {
+                    var position = new Vector3Int(voxel.LocalPosition.X, voxel.LocalPosition.Y, voxel.LocalPosition.Z);
+                    if (position.x < 0 || position.y < 0 || position.z < 0 ||
+                        position.x >= Size.x || position.y >= Size.y || position.z >= Size.z) continue;
+                    // VoxReader exposes IMAP-adjusted colour indices as zero-based values.
+                    byte index = (byte)Mathf.Clamp(voxel.ColorIndex + 1, 1, 255);
+                    m_Cells[position] = index;
+                    m_Grid.Set(position, index);
+                }
+            }
 
             internal bool SetCell(Vector3Int position, byte value)
             {
@@ -61,8 +89,9 @@ namespace TiltBrush
 
             internal void RestoreCells(IReadOnlyDictionary<Vector3Int, byte> cells)
             {
-                Cells.Clear();
-                Grid = new VoxChunkGrid();
+                m_SourceVoxels = null;
+                m_Cells = new Dictionary<Vector3Int, byte>();
+                m_Grid = new VoxChunkGrid();
                 foreach (var cell in cells)
                 {
                     Cells.Add(cell.Key, cell.Value);
@@ -71,13 +100,17 @@ namespace TiltBrush
             }
 
             internal VoxelDefinition(Vector3Int size, int sourceModelId,
-                Dictionary<Vector3Int, byte> cells = null)
+                Dictionary<Vector3Int, byte> cells = null, VoxReader.Voxel[] sourceVoxels = null)
             {
                 Size = size;
                 SourceModelId = sourceModelId;
-                Cells = cells ?? new Dictionary<Vector3Int, byte>();
-                Grid = new VoxChunkGrid();
-                foreach (var cell in Cells) Grid.Set(cell.Key, cell.Value);
+                // Imported definitions retain reader data until rendering or editing needs cells.
+                // Instances share the same definition, so it is expanded at most once.
+                m_SourceVoxels = sourceVoxels;
+                if (sourceVoxels != null) return;
+                m_Cells = cells ?? new Dictionary<Vector3Int, byte>();
+                m_Grid = new VoxChunkGrid();
+                foreach (var cell in m_Cells) m_Grid.Set(cell.Key, cell.Value);
             }
         }
 
@@ -647,7 +680,7 @@ namespace TiltBrush
                         sourceModel.Id,
                         out VoxelDefinition definition))
                 {
-                    definition = new VoxelDefinition(modelSize, sourceModel.Id);
+                    definition = new VoxelDefinition(modelSize, sourceModel.Id, sourceVoxels: sourceModel.Voxels);
                     definitionsBySourceId.Add(sourceModel.Id, definition);
                 }
 
@@ -670,21 +703,6 @@ namespace TiltBrush
                 ++modelIndex;
                 document.m_models.Add(runtimeModel);
                 runtimeModel.TransformOffset = GetTransformOffset(sourceModel, globalRotation);
-
-                if (!sourceModel.IsCopy)
-                {
-                    foreach (VoxReader.Voxel voxel in sourceModel.Voxels)
-                    {
-                        var position = new Vector3Int(
-                            voxel.LocalPosition.X,
-                            voxel.LocalPosition.Y,
-                            voxel.LocalPosition.Z);
-
-                        // VoxReader exposes IMAP-adjusted color indices as 0-based values.
-                        byte paletteIndex = (byte)Mathf.Clamp(voxel.ColorIndex + 1, 1, 255);
-                        runtimeModel.AddOrUpdateVoxel(position, paletteIndex);
-                    }
-                }
             }
 
             return document;
@@ -906,7 +924,9 @@ namespace TiltBrush
                     transformsByChild);
                 for (int slot = 0; slot < shape.ModelIds.Count; ++slot)
                 {
-                    result.Add(visible);
+                    // Shape model slots are animation frames. This static importer displays
+                    // the initial frame while retaining every frame for source-preserving saves.
+                    result.Add(visible && slot == shape.InitialModelSlot);
                     sceneNodes.Add(transform.NodeId);
                     sceneSlots.Add(slot);
                 }
@@ -990,12 +1010,21 @@ namespace TiltBrush
                 bool hidden = IsHidden(ReadDictionary(reader));
                 int modelCount = reader.ReadInt32();
                 var modelIds = new int[modelCount];
+                int initialModelSlot = 0, initialFrame = int.MaxValue;
                 for (int i = 0; i < modelCount; i++)
                 {
                     modelIds[i] = reader.ReadInt32();
-                    ReadDictionary(reader);
+                    var attributes = ReadDictionary(reader);
+                    int frame = attributes.TryGetValue("_f", out string value) &&
+                        int.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsed)
+                        ? parsed : 0;
+                    if (frame < initialFrame)
+                    {
+                        initialFrame = frame;
+                        initialModelSlot = i;
+                    }
                 }
-                return new SceneShape(nodeId, modelIds, hidden);
+                return new SceneShape(nodeId, modelIds, hidden, initialModelSlot);
             }
         }
 
@@ -1166,12 +1195,14 @@ namespace TiltBrush
             public int NodeId { get; }
             public IReadOnlyList<int> ModelIds { get; }
             public bool Hidden { get; }
+            public int InitialModelSlot { get; }
 
-            public SceneShape(int nodeId, IReadOnlyList<int> modelIds, bool hidden)
+            public SceneShape(int nodeId, IReadOnlyList<int> modelIds, bool hidden, int initialModelSlot)
             {
                 NodeId = nodeId;
                 ModelIds = modelIds;
                 Hidden = hidden;
+                InitialModelSlot = initialModelSlot;
             }
         }
     }

@@ -125,7 +125,10 @@ namespace TiltBrush
                 }
 
                 VoxMaterialSet materialSet = options.MaterialOverride == null
-                    ? new VoxMaterialSet(document, m_standardMaterial)
+                    ? new VoxMaterialSet(document, m_standardMaterial, paletteIndices: models
+                        .Where(model => model.IsVisible)
+                        .SelectMany(model => model.Definition.Grid.Chunks.Values)
+                        .SelectMany(chunk => chunk.UsedPalette))
                     : null;
                 if (materialSet != null)
                 {
@@ -145,6 +148,9 @@ namespace TiltBrush
                     modelObject.transform.localPosition = modelTransform.translation;
                     modelObject.transform.localRotation = modelTransform.rotation;
                     modelObject.SetActive(model.IsVisible);
+                    // Keep the node and source data for hierarchy references and later edits,
+                    // but hidden parts need no mesh, collider, or runtime voxel grid.
+                    if (!model.IsVisible) continue;
 
                     if (options.MeshMode == MeshMode.Optimized && model.Voxels.Count != 0)
                     {

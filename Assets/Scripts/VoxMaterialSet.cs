@@ -30,7 +30,7 @@ namespace TiltBrush
         public IReadOnlyList<Material> OwnedMaterials { get; }
 
         public VoxMaterialSet(RuntimeVoxDocument document, Material defaultMaterial,
-            IEnumerable<byte> additionalPaletteIndices = null)
+            IEnumerable<byte> additionalPaletteIndices = null, IEnumerable<byte> paletteIndices = null)
         {
             if (document == null)
             {
@@ -46,7 +46,9 @@ namespace TiltBrush
             var paletteSubmeshIndices = new int[256];
             var paletteOccludesFaces = Enumerable.Repeat(true, 256).ToArray();
             var slotByProperties = new Dictionary<string, int>(StringComparer.Ordinal);
-            var usedPaletteIndices = new HashSet<int>(document.Materials.Keys);
+            var usedPaletteIndices = paletteIndices == null
+                ? new HashSet<int>(document.Materials.Keys)
+                : new HashSet<int>(paletteIndices.Select(index => (int)index));
             if (additionalPaletteIndices != null)
                 foreach (byte index in additionalPaletteIndices) usedPaletteIndices.Add(index);
 
