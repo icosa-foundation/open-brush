@@ -55,22 +55,22 @@ namespace TiltBrush
         public Transform m_WallpaperSkewControls;
 
         public GameObject m_LineGroupControls;
-        public TextActionButton m_LineFamilyButton;
+        public TMPro.TextMeshPro m_LineFamilyLabel;
         public AdvancedSlider m_LineOrderSlider;
         public AdvancedSlider m_LineRepeatsSlider;
         public AdvancedSlider m_LineAdvanceSlider;
         public AdvancedSlider m_LineAngleSlider;
 
         public GameObject m_SpaceGroupControls;
-        public TextActionButton m_SpaceGroupSystemButton;
-        public TextActionButton m_SpaceGroupPresetButton;
+        public TMPro.TextMeshPro m_SpaceGroupSystemLabel;
+        public TMPro.TextMeshPro m_SpaceGroupPresetLabel;
         public AdvancedSlider m_SpaceGroupRepeatXSlider;
         public AdvancedSlider m_SpaceGroupRepeatYSlider;
         public AdvancedSlider m_SpaceGroupRepeatZSlider;
         public AdvancedSlider m_SpaceGroupCellSizeSlider;
 
         public GameObject m_PenroseControls;
-        public TextActionButton m_PenroseTilesButton;
+        public TMPro.TextMeshPro m_PenroseTilesLabel;
         public AdvancedSlider m_PenroseSubdivisionsSlider;
         public AdvancedSlider m_PenroseRadiusSlider;
 
@@ -673,15 +673,15 @@ namespace TiltBrush
         private void RefreshPenroseControls()
         {
             var pm = PointerManager.m_Instance;
-            SetSpaceGroupButtonLabel(m_PenroseTilesButton, $"Tiles: {pm.m_PenroseTiles} >");
+            m_PenroseTilesLabel.text = $"Tiles: {pm.m_PenroseTiles}";
             m_PenroseSubdivisionsSlider.SetInitialValueAndUpdate(pm.m_PenroseSubdivisions);
             m_PenroseRadiusSlider.SetInitialValueAndUpdate(pm.m_PenroseRadius);
         }
 
-        public void HandleNextPenroseTiles()
+        public void HandleChangePenroseTiles(int direction)
         {
             var pm = PointerManager.m_Instance;
-            TrySetCountSetting(ref pm.m_PenroseTiles, (PenroseTiling.TileSelection)(((int)pm.m_PenroseTiles + 1) % 3));
+            TrySetCountSetting(ref pm.m_PenroseTiles, (PenroseTiling.TileSelection)(((int)pm.m_PenroseTiles + direction + 3) % 3));
             RefreshPenroseControls();
         }
 
@@ -717,7 +717,7 @@ namespace TiltBrush
                 "Half-step + horizontal mirror", "Screw + half-turns", "Translation + vertical mirrors",
                 "Glide + rotations", "Half-step + vertical mirrors", "Translation + diagonal mirrors",
                 "Glide + roto-reflection", "Translation + full mirrors", "Glide + horizontal mirror", "Half-step + full mirrors" };
-            SetSpaceGroupButtonLabel(m_LineFamilyButton, $"{(int)pm.m_LineFamily}: {names[(int)pm.m_LineFamily - 1]} >");
+            m_LineFamilyLabel.text = $"{(int)pm.m_LineFamily}: {names[(int)pm.m_LineFamily - 1]}";
             m_LineOrderSlider.SetInitialValueAndUpdate(pm.m_LineOrder);
             m_LineRepeatsSlider.SetInitialValueAndUpdate(pm.m_LineRepeats);
             m_LineAdvanceSlider.SetInitialValueAndUpdate(pm.m_LineAdvance);
@@ -726,10 +726,10 @@ namespace TiltBrush
             m_LineAngleSlider.gameObject.SetActive(freeAngle);
         }
 
-        public void HandleNextLineFamily()
+        public void HandleChangeLineFamily(int direction)
         {
             var pm = PointerManager.m_Instance;
-            TrySetCountSetting(ref pm.m_LineFamily, (LineGroupSymmetry.Family)((int)pm.m_LineFamily % 13 + 1));
+            TrySetCountSetting(ref pm.m_LineFamily, (LineGroupSymmetry.Family)(((int)pm.m_LineFamily - 1 + direction + 13) % 13 + 1));
             RefreshLineGroupControls();
         }
 
@@ -772,46 +772,40 @@ namespace TiltBrush
             RefreshSpaceGroupControls();
         }
 
-        private static void SetSpaceGroupButtonLabel(TextActionButton button, string label)
-        {
-            button.m_ButtonLabel = label;
-            button.GetComponentInChildren<TMPro.TextMeshPro>().text = label;
-        }
-
         private void RefreshSpaceGroupControls()
         {
             var pm = PointerManager.m_Instance;
             var system = SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber);
-            SetSpaceGroupButtonLabel(m_SpaceGroupSystemButton, $"{system} >");
+            m_SpaceGroupSystemLabel.text = system.ToString();
             var label = SpaceGroupCatalog.GetName(pm.m_SpaceGroupNumber);
             foreach (var preset in SpaceGroupCatalog.GetPresets(system))
             {
                 if (preset.number == pm.m_SpaceGroupNumber) { label = preset.label; break; }
             }
-            SetSpaceGroupButtonLabel(m_SpaceGroupPresetButton, $"{pm.m_SpaceGroupNumber}: {label} >");
+            m_SpaceGroupPresetLabel.text = $"{pm.m_SpaceGroupNumber}: {label}";
             m_SpaceGroupRepeatXSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.x);
             m_SpaceGroupRepeatYSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.y);
             m_SpaceGroupRepeatZSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.z);
             m_SpaceGroupCellSizeSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupCellSize);
         }
 
-        public void HandleNextSpaceGroupSystem()
+        public void HandleChangeSpaceGroupSystem(int direction)
         {
             var pm = PointerManager.m_Instance;
             var current = SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber);
-            var next = (SpaceGroupCatalog.CrystalSystem)(((int)current + 1) % 7);
+            var next = (SpaceGroupCatalog.CrystalSystem)(((int)current + direction + 7) % 7);
             TrySetCountSetting(ref pm.m_SpaceGroupNumber, SpaceGroupCatalog.GetPresets(next)[0].number);
             RefreshSpaceGroupControls();
         }
 
-        public void HandleNextSpaceGroupPreset()
+        public void HandleChangeSpaceGroupPreset(int direction)
         {
             var pm = PointerManager.m_Instance;
             var presets = SpaceGroupCatalog.GetPresets(SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber));
             var next = 0;
             for (var i = 0; i < presets.Count; i++)
             {
-                if (presets[i].number == pm.m_SpaceGroupNumber) { next = (i + 1) % presets.Count; break; }
+                if (presets[i].number == pm.m_SpaceGroupNumber) { next = (i + direction + presets.Count) % presets.Count; break; }
             }
             TrySetCountSetting(ref pm.m_SpaceGroupNumber, presets[next].number);
             RefreshSpaceGroupControls();
