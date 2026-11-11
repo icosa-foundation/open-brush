@@ -638,7 +638,8 @@ namespace TiltBrush
 
         private sealed class RuntimeVoxelGrid
         {
-            private readonly VoxChunkGrid m_Chunks;
+            private const int kChunkBufferSide = VoxChunkGrid.Side + 2;
+            private readonly byte[] m_ChunkCells;
             private readonly IReadOnlyDictionary<Vector3Int, byte> m_Cells;
             private readonly Color32[] m_Palette;
             private readonly IReadOnlyList<int> m_PaletteSlots;
@@ -649,12 +650,21 @@ namespace TiltBrush
             internal RuntimeVoxelGrid(RuntimeVoxDocument.RuntimeModel model, Vector3Int chunk,
                 Color32[] palette, IReadOnlyList<int> slots, IReadOnlyList<bool> occludes)
             {
-                m_Chunks = model.Definition.Grid;
                 m_Palette = palette;
                 m_PaletteSlots = slots;
                 m_PaletteOccludes = occludes;
                 Offset = chunk * VoxChunkGrid.Side;
                 Size = Vector3Int.one * VoxChunkGrid.Side;
+                // Each greedy pass revisits cells for occupancy, occlusion, colour and material.
+                // Read the chunk and its one-cell border once so those reads avoid dictionary
+                // lookups and coordinate division. The border preserves cross-chunk culling.
+                m_ChunkCells = new byte[kChunkBufferSide * kChunkBufferSide * kChunkBufferSide];
+                var source = model.Definition.Grid;
+                int index = 0;
+                for (int z = -1; z <= VoxChunkGrid.Side; ++z)
+                    for (int y = -1; y <= VoxChunkGrid.Side; ++y)
+                        for (int x = -1; x <= VoxChunkGrid.Side; ++x)
+                            m_ChunkCells[index++] = source.Get(Offset + new Vector3Int(x, y, z));
             }
 
             internal RuntimeVoxelGrid(IReadOnlyDictionary<Vector3Int, byte> cells, Vector3Int min, Vector3Int max,
@@ -673,7 +683,9 @@ namespace TiltBrush
 
             private byte PaletteIndex(Vector3Int pos)
             {
-                if (m_Chunks != null) return m_Chunks.Get(pos + Offset);
+                if (m_ChunkCells != null)
+                    return m_ChunkCells[pos.x + 1 + kChunkBufferSide *
+                        (pos.y + 1 + kChunkBufferSide * (pos.z + 1))];
                 return m_Cells.TryGetValue(pos + Offset, out byte index) ? index : (byte)0;
             }
 
