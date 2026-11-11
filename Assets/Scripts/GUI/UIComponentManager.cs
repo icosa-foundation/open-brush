@@ -354,14 +354,25 @@ namespace TiltBrush
 
         public void CalculateReticleCollision(Ray castRay, ref Vector3 pos, ref Vector3 forward)
         {
+            var surface = GetRaycastSurface(castRay);
             for (int i = 0; i < m_UIComponents.Count; ++i)
             {
-                // There's an order of operations issue here.  In practice, UIComponents don't have
-                // overlapping colliders, so it shouldn't matter.
-                if (m_UIComponents[i].CalculateReticleCollision(castRay, ref pos, ref forward))
+                UIComponent uiComponent = m_UIComponents[i];
+                if (uiComponent == surface) { continue; }
+                if (surface != null && !uiComponent.transform.IsChildOf(surface.transform.parent))
+                {
+                    continue;
+                }
+                if (uiComponent.CalculateReticleCollision(castRay, ref pos, ref forward))
                 {
                     return;
                 }
+            }
+
+            // Match input routing: modal controls take priority, then their background.
+            if (surface != null)
+            {
+                surface.CalculateReticleCollision(castRay, ref pos, ref forward);
             }
         }
     }
