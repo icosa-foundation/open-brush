@@ -26,6 +26,10 @@ namespace TiltBrush
 
         private List<PointerManager.ControlPoint> m_InitialCP;
         private List<PointerManager.ControlPoint> m_NewCP;
+        private readonly List<Color32?> m_InitialColors;
+        private readonly List<Color32?> m_NewColors;
+        private readonly ColorOverrideMode m_InitialColorMode;
+        private readonly ColorOverrideMode m_NewColorMode;
         private readonly SymmetryStrokeGroup m_GroupA;
         private readonly SymmetryStrokeGroup m_GroupB;
         private readonly int m_PointerA;
@@ -140,7 +144,8 @@ namespace TiltBrush
             m_PointerB = strokeB.SymmetryPointerIndex;
             m_JoinType = JoinStrokeType.FirstFirst;
             m_InitialCP = strokeA.m_ControlPoints.ToList();
-            m_NewCP = strokeA.m_ControlPoints.ToList();
+            m_InitialColors = strokeA.m_OverrideColors?.ToList();
+            m_InitialColorMode = strokeA.m_ColorOverrideMode;
 
             float prevDistance = (m_StrokeA.m_ControlPoints[0].m_Pos - strokeB.m_ControlPoints[0].m_Pos).sqrMagnitude;
             float distanceTest;
@@ -168,43 +173,52 @@ namespace TiltBrush
                 m_JoinType = JoinStrokeType.LastLast;
             }
 
-            switch (m_JoinType)
-            {
-                case JoinStrokeType.FirstFirst:
-                    m_NewCP.InsertRange(0, strokeB.m_ControlPoints.Reverse());
-                    break;
-                case JoinStrokeType.FirstLast:
-                    m_NewCP.InsertRange(0, strokeB.m_ControlPoints);
-                    break;
-                case JoinStrokeType.LastFirst:
-                    m_NewCP.AddRange(strokeB.m_ControlPoints);
-                    break;
-                case JoinStrokeType.LastLast:
-                    m_NewCP.AddRange(strokeB.m_ControlPoints.Reverse());
-                    break;
-            }
+            var joined = BuildJoinedStrokeData(strokeA, strokeB,
+                prepend: m_JoinType == JoinStrokeType.FirstFirst || m_JoinType == JoinStrokeType.FirstLast,
+                reverse: m_JoinType == JoinStrokeType.FirstFirst || m_JoinType == JoinStrokeType.LastLast);
+            m_NewCP = joined.Points;
+            m_NewColors = joined.Colors;
+            m_NewColorMode = joined.Mode;
+        }
 
+        internal static (List<PointerManager.ControlPoint> Points, List<Color32?> Colors, ColorOverrideMode Mode)
+            BuildJoinedStrokeData(Stroke strokeA, Stroke strokeB, bool prepend, bool reverse)
+        {
+            var colors = ApiMethods.GetJoinedStrokeColors(new[] { strokeA, strokeB }, strokeA);
+            int firstCount = strokeA.m_ControlPoints.Length;
+            return (JoinData(strokeA.m_ControlPoints, strokeB.m_ControlPoints, prepend, reverse),
+                colors.Colors == null ? null : JoinData(colors.Colors.Take(firstCount),
+                    colors.Colors.Skip(firstCount), prepend, reverse), colors.Mode);
+        }
+
+        private static List<T> JoinData<T>(IEnumerable<T> first, IEnumerable<T> second, bool prepend, bool reverse)
+        {
+            if (reverse) { second = second.Reverse(); }
+            return (prepend ? second.Concat(first) : first.Concat(second)).ToList();
         }
 
         protected override void OnRedo()
         {
             if (!m_KeepGroupA) { m_StrokeA.LeaveSymmetryGroup(); }
             m_StrokeB.LeaveSymmetryGroup();
-            ModifyStroke(m_StrokeA, m_NewCP);
+            ModifyStroke(m_StrokeA, m_NewCP, m_NewColors, m_NewColorMode);
             m_StrokeB.Uncreate();
         }
 
         protected override void OnUndo()
         {
-            ModifyStroke(m_StrokeA, m_InitialCP);
+            ModifyStroke(m_StrokeA, m_InitialCP, m_InitialColors, m_InitialColorMode);
             m_StrokeB.Recreate();
             if (m_GroupA != null) { m_StrokeA.SetSymmetryGroup(m_GroupA, m_PointerA); }
             if (m_GroupB != null) { m_StrokeB.SetSymmetryGroup(m_GroupB, m_PointerB); }
         }
 
-        private void ModifyStroke(Stroke stroke, IEnumerable<PointerManager.ControlPoint> newControlPoints)
+        private void ModifyStroke(Stroke stroke, IEnumerable<PointerManager.ControlPoint> newControlPoints,
+            List<Color32?> colors, ColorOverrideMode colorMode)
         {
             stroke.m_ControlPoints = newControlPoints.ToArray();
+            stroke.m_OverrideColors = colors?.ToList();
+            stroke.m_ColorOverrideMode = colorMode;
             stroke.Uncreate();
             stroke.m_ControlPointsToDrop = Enumerable.Repeat(false, stroke.m_ControlPoints.Length).ToArray();
             stroke.Recreate(null, stroke.Canvas);

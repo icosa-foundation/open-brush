@@ -307,6 +307,14 @@ namespace TiltBrush
         internal static void MergeJoinedStrokeColors(
             IReadOnlyList<Stroke> strokes, Stroke destination)
         {
+            var joined = GetJoinedStrokeColors(strokes, destination);
+            destination.m_OverrideColors = joined.Colors;
+            destination.m_ColorOverrideMode = joined.Mode;
+        }
+
+        internal static (List<Color32?> Colors, ColorOverrideMode Mode) GetJoinedStrokeColors(
+            IReadOnlyList<Stroke> strokes, Stroke destination)
+        {
             ColorOverrideMode mode = destination.m_ColorOverrideMode;
             Color baseColor = destination.m_Color;
             bool compatible = strokes.All(
@@ -316,22 +324,21 @@ namespace TiltBrush
             {
                 if (strokes.All(stroke => stroke.m_OverrideColors == null))
                 {
-                    destination.m_OverrideColors = null;
-                    return;
+                    return (null, mode);
                 }
 
-                destination.m_OverrideColors = strokes.SelectMany(stroke =>
+                var colors = strokes.SelectMany(stroke =>
                     Enumerable.Range(0, stroke.m_ControlPoints.Length).Select(index =>
                         stroke.m_OverrideColors != null && index < stroke.m_OverrideColors.Count
                             ? stroke.m_OverrideColors[index]
                             : null)).ToList();
-                return;
+                return (colors, mode);
             }
 
-            destination.m_OverrideColors = strokes.SelectMany(stroke =>
+            var replacements = strokes.SelectMany(stroke =>
                 Enumerable.Range(0, stroke.m_ControlPoints.Length).Select(
                     index => (Color32?)stroke.GetColor(index))).ToList();
-            destination.m_ColorOverrideMode = ColorOverrideMode.Replace;
+            return (replacements, ColorOverrideMode.Replace);
         }
 
         [ApiEndpoint(
