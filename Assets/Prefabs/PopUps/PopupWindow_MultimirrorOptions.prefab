@@ -1031,7 +1031,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190080
+    rgba: 4294967295
   m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -1049,10 +1049,10 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 8
-  m_fontSizeBase: 8
+  m_fontSize: 13
+  m_fontSizeBase: 13
   m_fontWeight: 400
-  m_enableAutoSizing: 1
+  m_enableAutoSizing: 0
   m_fontSizeMin: 5
   m_fontSizeMax: 8
   m_fontStyle: 0
@@ -1389,8 +1389,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1344474811229094477}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -1.283, z: -0.013}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: -1.283, z: -0.001000002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4478,7 +4478,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190080
+    rgba: 4294967295
   m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -4496,10 +4496,10 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 8
-  m_fontSizeBase: 8
+  m_fontSize: 13
+  m_fontSizeBase: 13
   m_fontWeight: 400
-  m_enableAutoSizing: 1
+  m_enableAutoSizing: 0
   m_fontSizeMin: 5
   m_fontSizeMax: 8
   m_fontStyle: 0
@@ -7588,7 +7588,7 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278190080
+    rgba: 4294967295
   m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
@@ -7606,10 +7606,10 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 8
-  m_fontSizeBase: 8
+  m_fontSize: 13
+  m_fontSizeBase: 13
   m_fontWeight: 400
-  m_enableAutoSizing: 1
+  m_enableAutoSizing: 0
   m_fontSizeMin: 5
   m_fontSizeMax: 8
   m_fontStyle: 0
@@ -9737,7 +9737,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253688460, guid: 3ded3d8264783fc41bfd1aad5ce97a56, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -0.019999733
+      value: -0.254
       objectReference: {fileID: 0}
     - target: {fileID: 4471627121253688460, guid: 3ded3d8264783fc41bfd1aad5ce97a56, type: 3}
       propertyPath: m_LocalRotation.w
@@ -15338,16 +15338,20 @@ PrefabInstance:
       value: Colors
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9, type: 3}
+      propertyPath: m_ColorSelected.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9, type: 3}
       propertyPath: m_ColorSelected.b
-      value: 0.8584906
+      value: 0.07450981
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9, type: 3}
       propertyPath: m_ColorSelected.g
-      value: 0.8584906
+      value: 0.2705882
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9, type: 3}
       propertyPath: m_ColorSelected.r
-      value: 0.8584906
+      value: 0.5450981
       objectReference: {fileID: 0}
     - target: {fileID: 2323353000080118199, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9, type: 3}
       propertyPath: m_DescriptionText
