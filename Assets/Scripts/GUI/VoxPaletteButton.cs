@@ -12,7 +12,7 @@ namespace TiltBrush
         private int m_Index;
         private Material m_Material;
         private Color m_SwatchColor = Color.white;
-        private Color m_ButtonColor = Color.white;
+        private Color m_InteractionColor = Color.white;
         [SerializeField] private Texture2D m_SelectedTexture;
         private GameObject m_SelectedOverlay;
         private Material m_SelectedMaterial;
@@ -39,7 +39,7 @@ namespace TiltBrush
         {
             m_Index = index;
             m_SwatchColor = color;
-            SetMaterialColor(m_ButtonColor);
+            SetMaterialColor(m_InteractionColor);
             m_ToggleActive = selected;
             // The standard button shader inverts an activated icon. Keep the palette
             // colour intact and indicate selection with the existing overlay instead.
@@ -65,7 +65,7 @@ namespace TiltBrush
 
         protected override void SetMaterialColor(Color color)
         {
-            m_ButtonColor = color;
+            m_InteractionColor = color;
             base.SetMaterialColor(color * m_SwatchColor);
         }
 
