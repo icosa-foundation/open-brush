@@ -42,27 +42,23 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            ModifyStroke(m_InitialStroke, m_SnippedCP1);
-            ModifyStroke(m_NewStroke, m_SnippedCP2);
+            ModifyStroke(m_InitialStroke, m_SnippedCP1); // Uncreate/Recreate automatically manages snap hash
+            ModifyStroke(m_NewStroke, m_SnippedCP2); // Uncreate/Recreate automatically manages snap hash
+            m_NewStroke.Hide(false);
         }
 
         protected override void OnUndo()
         {
-            ModifyStroke(m_InitialStroke, m_InitialCP);
+            ModifyStroke(m_InitialStroke, m_InitialCP); // Uncreate/Recreate automatically manages snap hash
+            m_NewStroke.Hide(true); // Hide() automatically manages snap hash removal
+        }
 
-            switch (m_NewStroke.m_Type)
-            {
-                case Stroke.Type.BrushStroke:
-                    BaseBrushScript brushScript = m_NewStroke.m_Object.GetComponent<BaseBrushScript>();
-                    if (brushScript)
-                    {
-                        brushScript.HideBrush(true);
-                    }
-                    break;
-                case Stroke.Type.BatchedBrushStroke:
-                    m_NewStroke.m_BatchSubset.m_ParentBatch.DisableSubset(m_NewStroke.m_BatchSubset);
-                    break;
-            }
+        protected override void OnDispose()
+        {
+            if (m_NewStroke == null) { return; }
+            SketchMemoryScript.m_Instance.RemoveMemoryObject(m_NewStroke);
+            m_NewStroke.DestroyStroke();
+            m_NewStroke = null;
         }
 
         private void ModifyStroke(Stroke stroke, IEnumerable<PointerManager.ControlPoint> newControlPoints)
