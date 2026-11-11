@@ -923,6 +923,9 @@ namespace TiltBrush
 
         private void UpdateOptionsControlsToMatchValues()
         {
+            m_OptionsButtonHue.SetButtonSelected(m_currentSelectedColorComponent == PointerManager.ColorShiftComponent.Hue);
+            m_OptionsButtonSaturation.SetButtonSelected(m_currentSelectedColorComponent == PointerManager.ColorShiftComponent.Saturation);
+            m_OptionsButtonBrightness.SetButtonSelected(m_currentSelectedColorComponent == PointerManager.ColorShiftComponent.Brightness);
             var currentSettings = m_currentSelectedColorComponent switch
             {
                 PointerManager.ColorShiftComponent.Hue => PointerManager.m_Instance.m_SymmetryColorShiftSettingHue,
