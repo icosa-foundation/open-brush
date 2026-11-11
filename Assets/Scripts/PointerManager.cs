@@ -421,6 +421,8 @@ namespace TiltBrush
         public List<Vector3[]> PointGroupArcPaths { get; private set; }
         public Vector3[] LineGroupDomainPath { get; private set; }
         public const float LineGroupDomainRadius = 2f;
+        public Matrix4x4 SymmetryLatticeBasis { get; private set; } = Matrix4x4.identity;
+        public bool SymmetryLatticeIsHexagonal { get; private set; }
 
         public List<Color> SymmetryPointerColors
         {
@@ -1783,6 +1785,7 @@ namespace TiltBrush
             CalculateMirrorMatrices();
             CalculateMirrorColors();
             CalculateMirrorPointers();
+            m_SymmetryWidgetScript.SetAppearance();
             // Every symmetry setting is changed through here, so this is where the active mirror
             // finds out that what it stands for has changed.
             SymmetryMirrors.NoteSettingsChanged();
@@ -1811,6 +1814,8 @@ namespace TiltBrush
         private void CalculateMirrorMatrices()
         {
             m_CustomMirrorDomain = null;
+            SymmetryLatticeBasis = Matrix4x4.identity;
+            SymmetryLatticeIsHexagonal = false;
             switch (m_CustomSymmetryType)
             {
                 case CustomSymmetryType.Penrose:
@@ -1839,6 +1844,8 @@ namespace TiltBrush
                     var spaceGroup = new SpaceGroupSymmetry(m_SpaceGroupNumber,
                         m_SpaceGroupRepeats, m_SpaceGroupCellSize);
                     m_CustomMirrorMatrices = spaceGroup.matrices;
+                    SymmetryLatticeBasis = spaceGroup.cellBasis;
+                    SymmetryLatticeIsHexagonal = m_SpaceGroupNumber >= 143 && m_SpaceGroupNumber <= 194;
                     var spaceDomain = spaceGroup.CreateDomainOutline();
                     SpaceGroupDomainPaths = CreateDomainPaths(spaceDomain.vertices, spaceDomain.edges);
                     break;
@@ -1855,6 +1862,18 @@ namespace TiltBrush
                     );
                     m_CustomMirrorMatrices = wallpaperSym.matrices;
                     m_CustomMirrorDomain = wallpaperSym.groupProperties.fundamentalRegion.points;
+                    // These are the same translation vectors used by WallpaperSymmetry.
+                    var translationX = wallpaperSym.groupProperties.getTranslationX();
+                    var translationY = wallpaperSym.groupProperties.getTranslationY();
+                    var latticeBasis = Matrix4x4.identity;
+                    latticeBasis.SetColumn(0, new Vector4((float)translationX[0], (float)translationY[0], 0, 0));
+                    latticeBasis.SetColumn(1, new Vector4((float)translationX[1], (float)translationY[1], 0, 0));
+                    SymmetryLatticeBasis = latticeBasis;
+                    SymmetryLatticeIsHexagonal = m_WallpaperSymmetryGroup == SymmetryGroup.R.p3
+                        || m_WallpaperSymmetryGroup == SymmetryGroup.R.p3m1
+                        || m_WallpaperSymmetryGroup == SymmetryGroup.R.p31m
+                        || m_WallpaperSymmetryGroup == SymmetryGroup.R.p6
+                        || m_WallpaperSymmetryGroup == SymmetryGroup.R.p6m;
                     break;
                 case CustomSymmetryType.Helical:
                     m_CustomMirrorMatrices = CreateHelicalMatrices(m_HelicalCopies, m_HelicalAngle, m_HelicalAdvance);

@@ -23,13 +23,10 @@ namespace TiltBrush
 {
 
     [System.Serializable]
-    public class GuideBeam
+    public class GuideBeamPair
     {
-        public Transform m_Beam;
-        public SymmetryWidget.BeamDirection m_Direction;
-        [NonSerialized] public Renderer m_BeamRenderer;
-        [NonSerialized] public Vector3 m_Offset;
-        [NonSerialized] public Vector3 m_BaseScale;
+        public Transform m_Positive;
+        public Transform m_Negative;
     }
 
     public class SymmetryWidget : GrabWidget
@@ -50,16 +47,18 @@ namespace TiltBrush
         [SerializeField] private Mesh m_CustomSymmetryMesh;
         [SerializeField] private Material m_CustomSymmetryMaterial;
 
-        public enum BeamDirection
+        private class GuideBeam
         {
-            Up,
-            Down,
-            Left,
-            Right,
-            Front,
-            Back
+            public Transform Transform;
+            public Renderer Renderer;
+            public Vector3 Offset;
+            public Vector3 BaseScale;
+            public Quaternion BaseRotation;
         }
-        [SerializeField] private GuideBeam[] m_GuideBeams;
+        [SerializeField] private GuideBeamPair m_GuideBeamPairTemplate;
+        private readonly Vector3[] m_GuideBeamDirections = new Vector3[4];
+        private GuideBeam[] m_GuideBeams;
+        private bool m_GuideBeamsDirty;
         [SerializeField] private float m_GuideBeamLength;
         private float m_GuideBeamShowRatio;
 
@@ -140,14 +139,28 @@ namespace TiltBrush
 
             m_AngVelDampThreshold = 50f;
 
-            //initialize beams
+            // The authored pair points along local Y. Reuse it, then create the other pairs
+            // from the same template so appearance and placement have one source.
+            m_GuideBeams = new GuideBeam[m_GuideBeamDirections.Length * 2];
+            var tintableMeshes = new List<Renderer>(m_TintableMeshes);
             for (int i = 0; i < m_GuideBeams.Length; ++i)
             {
-                m_GuideBeams[i].m_Offset = m_GuideBeams[i].m_Beam.position - transform.position;
-                m_GuideBeams[i].m_BaseScale = m_GuideBeams[i].m_Beam.localScale;
-                m_GuideBeams[i].m_BeamRenderer = m_GuideBeams[i].m_Beam.GetComponent<Renderer>();
-                m_GuideBeams[i].m_BeamRenderer.enabled = false;
+                var template = i % 2 == 0 ? m_GuideBeamPairTemplate.m_Positive : m_GuideBeamPairTemplate.m_Negative;
+                var beam = i < 2 ? template : Instantiate(template, template.parent);
+                beam.name = $"GuideBeamPair{i / 2}{(i % 2 == 0 ? "Positive" : "Negative")}";
+                var renderer = beam.GetComponent<Renderer>();
+                m_GuideBeams[i] = new GuideBeam
+                {
+                    Transform = beam,
+                    Renderer = renderer,
+                    Offset = Quaternion.Inverse(transform.rotation) * (beam.position - transform.position),
+                    BaseScale = beam.localScale,
+                    BaseRotation = Quaternion.Inverse(transform.rotation) * beam.rotation
+                };
+                renderer.enabled = false;
+                if (i >= 2) { tintableMeshes.Add(renderer); }
             }
+            m_TintableMeshes = tintableMeshes.ToArray();
 
             m_GuideBeamShowRatio = 0.0f;
 
@@ -166,20 +179,16 @@ namespace TiltBrush
             m_LeftRightMesh.enabled = false;
             m_SingleAxisMesh.enabled = false;
             m_SmallCubeMesh.enabled = false;
-            for (int i = 0; i < m_GuideBeams.Length; ++i)
-            {
-                m_GuideBeams[i].m_BeamRenderer.enabled = false;
-            }
+            Array.Clear(m_GuideBeamDirections, 0, m_GuideBeamDirections.Length);
+            var pm = PointerManager.m_Instance;
 
             switch (PointerManager.m_Instance.CurrentSymmetryMode)
             {
                 case PointerManager.SymmetryMode.SinglePlane:
                     m_FrontBackMesh.enabled = true;
-                    for (int i = 0; i < m_GuideBeams.Length; ++i)
-                    {
-                        m_GuideBeams[i].m_BeamRenderer.enabled = ((m_GuideBeams[i].m_Direction != BeamDirection.Left) &&
-                            (m_GuideBeams[i].m_Direction != BeamDirection.Right));
-                    }
+                    // The reflection plane is the widget's local YZ plane.
+                    m_GuideBeamDirections[0] = Vector3.up;
+                    m_GuideBeamDirections[1] = Vector3.forward;
                     break;
                 case PointerManager.SymmetryMode.TwoHanded:
                     m_FrontBackMesh.enabled = true;
@@ -189,16 +198,36 @@ namespace TiltBrush
                     switch (PointerManager.m_Instance.m_CustomSymmetryType)
                     {
                         case PointerManager.CustomSymmetryType.Point:
+                            // Polyhedral families can also be selected through the API.
+                            bool axial = pm.m_PointSymmetryFamily == PointSymmetry.Family.Cn
+                                || pm.m_PointSymmetryFamily == PointSymmetry.Family.Cnv
+                                || pm.m_PointSymmetryFamily == PointSymmetry.Family.Cnh
+                                || pm.m_PointSymmetryFamily == PointSymmetry.Family.Sn
+                                || pm.m_PointSymmetryFamily == PointSymmetry.Family.Dn
+                                || pm.m_PointSymmetryFamily == PointSymmetry.Family.Dnh
+                                || pm.m_PointSymmetryFamily == PointSymmetry.Family.Dnd;
+                            m_SingleAxisMesh.enabled = axial;
+                            m_SmallCubeMesh.enabled = !axial;
+                            if (axial) { m_GuideBeamDirections[0] = Vector3.up; }
+                            break;
+                        case PointerManager.CustomSymmetryType.LineGroup:
+                        case PointerManager.CustomSymmetryType.Helical:
                             m_SingleAxisMesh.enabled = true;
+                            // These groups rotate or advance along local Y.
+                            m_GuideBeamDirections[0] = Vector3.up;
                             break;
                         case PointerManager.CustomSymmetryType.Wallpaper:
                             m_SmallCubeMesh.enabled = true;
+                            SetLatticeBeamDirections(pm, false);
+                            break;
+                        case PointerManager.CustomSymmetryType.Penrose:
+                            m_SmallCubeMesh.enabled = true;
+                            m_GuideBeamDirections[0] = Vector3.right;
+                            m_GuideBeamDirections[1] = Vector3.up;
                             break;
                         case PointerManager.CustomSymmetryType.SpaceGroup:
                             m_SmallCubeMesh.enabled = true;
-                            break;
-                        case PointerManager.CustomSymmetryType.LineGroup:
-                            m_SingleAxisMesh.enabled = true;
+                            SetLatticeBeamDirections(pm, true);
                             break;
                         case PointerManager.CustomSymmetryType.Polyhedra:
                             m_SmallCubeMesh.enabled = true;
@@ -208,6 +237,34 @@ namespace TiltBrush
                 case PointerManager.SymmetryMode.ScriptedSymmetryMode:
                     m_SmallCubeMesh.enabled = true;
                     break;
+            }
+
+            // Normalize independently: lattice spacing affects direction, not beam length.
+            for (int i = 0; i < m_GuideBeamDirections.Length; ++i)
+            {
+                m_GuideBeamDirections[i] = m_GuideBeamDirections[i].normalized;
+                bool visible = m_GuideBeamDirections[i] != Vector3.zero;
+                m_GuideBeams[i * 2].Renderer.enabled = visible;
+                m_GuideBeams[i * 2 + 1].Renderer.enabled = visible;
+            }
+            m_GuideBeamsDirty = true;
+        }
+
+        private void SetLatticeBeamDirections(PointerManager pm, bool includeNormal)
+        {
+            var a = pm.SymmetryLatticeBasis.MultiplyVector(Vector3.right);
+            var b = pm.SymmetryLatticeBasis.MultiplyVector(Vector3.up);
+            m_GuideBeamDirections[0] = a;
+            m_GuideBeamDirections[1] = b;
+            if (includeNormal)
+            {
+                m_GuideBeamDirections[2] = pm.SymmetryLatticeBasis.MultiplyVector(Vector3.forward);
+            }
+            if (pm.SymmetryLatticeIsHexagonal)
+            {
+                // Complete the three equivalent basal directions, whether the basis
+                // vectors supplied by the lattice meet at 60 or 120 degrees.
+                m_GuideBeamDirections[3] = Vector3.Dot(a, b) > 0 ? a - b : a + b;
             }
         }
 
@@ -317,13 +374,17 @@ namespace TiltBrush
             //if our transform changed, update the beams
             float fShowRatio = GetShowRatio();
             bool bInTransition = m_GuideBeamShowRatio != fShowRatio;
-            if (bInTransition || transform.hasChanged)
+            if (bInTransition || transform.hasChanged || m_GuideBeamsDirty)
             {
                 for (int i = 0; i < m_GuideBeams.Length; ++i)
                 {
-                    Vector3 vTransformedOffset = transform.rotation * m_GuideBeams[i].m_Offset;
+                    var beam = m_GuideBeams[i];
+                    var direction = m_GuideBeamDirections[i / 2];
+                    if (direction == Vector3.zero) { continue; }
+                    var orientation = Quaternion.FromToRotation(Vector3.up, direction);
+                    Vector3 vTransformedOffset = transform.rotation * (orientation * beam.Offset);
                     Vector3 vGuideBeamPos = transform.position + vTransformedOffset;
-                    Vector3 vGuideBeamDir = GetBeamDirection(m_GuideBeams[i].m_Direction);
+                    Vector3 vGuideBeamDir = transform.rotation * (i % 2 == 0 ? direction : -direction);
 
                     float fBeamLength = m_GuideBeamLength * App.METERS_TO_UNITS;
                     fBeamLength *= fShowRatio;
@@ -331,17 +392,19 @@ namespace TiltBrush
                     //position guide beam half way to hit point
                     Vector3 vHitPoint = vGuideBeamPos + (vGuideBeamDir * fBeamLength);
                     Vector3 vHalfWay = (vGuideBeamPos + vHitPoint) * 0.5f;
-                    m_GuideBeams[i].m_Beam.position = vHalfWay;
+                    beam.Transform.SetPositionAndRotation(vHalfWay,
+                        transform.rotation * orientation * beam.BaseRotation);
 
                     //set scale to half the distance
-                    Vector3 vScale = m_GuideBeams[i].m_BaseScale;
+                    Vector3 vScale = beam.BaseScale;
                     vScale.y = fBeamLength * 0.5f;
 
-                    m_GuideBeams[i].m_Beam.localScale = vScale;
+                    beam.Transform.localScale = vScale;
                 }
 
                 transform.hasChanged = false;
                 m_GuideBeamShowRatio = fShowRatio;
+                m_GuideBeamsDirty = false;
             }
 
             if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror)
@@ -357,7 +420,7 @@ namespace TiltBrush
             {
                 for (int i = 0; i < m_GuideBeams.Length; ++i)
                 {
-                    m_GuideBeams[i].m_BeamRenderer.material.color = m_SnapColor;
+                    m_GuideBeams[i].Renderer.material.color = m_SnapColor;
                 }
             }
             m_HintText.SetActive(bActive);
@@ -383,20 +446,6 @@ namespace TiltBrush
                 dim.a = 1f;
                 m_TitleText.color = m_TitleActive ? kLinkedTitleColor : dim;
             }
-        }
-
-        Vector3 GetBeamDirection(BeamDirection rDir)
-        {
-            switch (rDir)
-            {
-                case BeamDirection.Up: return transform.up;
-                case BeamDirection.Down: return -transform.up;
-                case BeamDirection.Left: return -transform.right;
-                case BeamDirection.Right: return transform.right;
-                case BeamDirection.Front: return transform.forward;
-                case BeamDirection.Back: return -transform.forward;
-            }
-            return transform.up;
         }
 
         override protected void OnUserBeginInteracting()
