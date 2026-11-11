@@ -21,10 +21,29 @@ namespace TiltBrush
     public class ResetFirstPlay : MonoBehaviour
     {
 
-        [MenuItem("Open Brush/Reset First Play")]
+        [MenuItem("Open Brush/Reset First Play", priority = 2000)]
         static public void Execute()
         {
             PlayerPrefs.DeleteKey(App.kPlayerPrefHasPlayedBefore);
+        }
+
+        [MenuItem("Open Brush/Reset Default Media", priority = 2001)]
+        public static void ResetDefaultMedia()
+        {
+            foreach (string key in new[] {
+                App.kPlayerPrefSeededDefaultModels, App.kPlayerPrefSeededDefaultQuillFiles,
+                App.kPlayerPrefSeededDefaultBackgroundImages, App.kPlayerPrefSeededDefaultReferenceImages,
+                App.kPlayerPrefSeededDefaultVideos, App.kPlayerPrefSeededDefaultSavedStrokes,
+                App.kPlayerPrefSeededDefaultSoundClips, "Seeded bundled sketches"
+            })
+            {
+                PlayerPrefs.DeleteKey(key);
+                // Keep an empty handled-file record so legacy migration does not mark
+                // the examples as already supplied when HasPlayedBefore is still true.
+                PlayerPrefs.SetString($"{key}.HandledFilesV1", "");
+            }
+            PlayerPrefs.Save();
+            Debug.Log("[ResetDefaultMedia] Default file installation records reset. Missing examples will be restored on the next Play.");
         }
     }
 }
