@@ -21,6 +21,7 @@ namespace TiltBrush
         private GrabWidget m_Widget;
         private TrTransform m_WidgetTransform;
         private int m_TiltMeterCost;
+        private (int, int)? m_AnimationPathLocation;
 
         public GrabWidget Widget { get { return m_Widget; } }
 
@@ -28,7 +29,7 @@ namespace TiltBrush
             : base(parent)
         {
             m_Widget = widget;
-            if (widget is ShapeWidget)
+            if (widget is ShapeWidget || widget is CameraPathWidget)
             {
                 m_WidgetTransform = TrTransform.FromLocalTransform(widget.transform);
             }
@@ -45,6 +46,11 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            if (m_Widget is CameraPathWidget path && path.Path.belongsToAnimation)
+            {
+                m_AnimationPathLocation = App.Scene.animationUI_manager.GetAnimationPathLocation(path.Path);
+                App.Scene.animationUI_manager.DetachAnimationPath(path);
+            }
             m_Widget.Hide();
             WidgetManager.m_Instance.RefreshPinAndUnpinLists();
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: false);
@@ -67,8 +73,13 @@ namespace TiltBrush
                 m_Widget.SetSignedWidgetSize(m_WidgetTransform.scale);
                 WidgetManager.m_Instance.RefreshPinAndUnpinLists();
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: true);
-                if (m_Widget is CameraPathWidget)
+                if (m_Widget is CameraPathWidget path)
                 {
+                    if (m_AnimationPathLocation.HasValue && m_AnimationPathLocation.Value.Item1 >= 0)
+                    {
+                        var location = m_AnimationPathLocation.Value;
+                        App.Scene.animationUI_manager.AddAnimationPath(path, location.Item1, location.Item2);
+                    }
                     App.Switchboard.TriggerCameraPathCreated();
                 }
             }

@@ -676,7 +676,8 @@ namespace TiltBrush
         /// All imported strokes are collapsed onto a fresh layer so existing
         /// layers remain untouched. Loading the same sketch multiple times
         /// will duplicate geometry on separate layers.
-        public bool Load(SceneFileInfo fileInfo, bool bAdditive, int targetLayer, out List<Stroke> strokes)
+        public bool Load(SceneFileInfo fileInfo, bool bAdditive, int targetLayer, out List<Stroke> strokes,
+            int targetFrame = 0)
         {
             m_LastThumbnailBytes = null;
             if (!fileInfo.IsHeaderValid())
@@ -753,6 +754,10 @@ namespace TiltBrush
                         jsonData.SceneTransformInRoomSpace);
                     App.Scene.Pose = jsonData.SceneTransformInRoomSpace;
                     App.Scene.ResetLayers(true);
+                    App.Scene.animationUI_manager.StartTimeline();
+                    // This was a conflict between the animation branch and the plugin branch
+                    // Is it needed?
+                    //Coords.CanvasLocalPose = TrTransform.identity;
                     LastThumbnail_SS = App.Scene.Pose.inverse *
                         jsonData.ThumbnailCameraTransformInRoomSpace;
 
@@ -766,6 +771,8 @@ namespace TiltBrush
                     // Create Layers
                     if (jsonData.Layers != null)
                     {
+                        App.Scene.animationUI_manager.StartTimeline();
+
                         for (var i = 0; i < jsonData.Layers.Length; i++)
                         {
                             var layer = jsonData.Layers[i];
@@ -785,7 +792,29 @@ namespace TiltBrush
                                 layer.Transform = tr;
                             }
                             canvas.LocalPose = layer.Transform;
+                            if (jsonData.AnimationTracks == null)
+                            {
+                                App.Scene.animationUI_manager.SetTrackVisibility(i, layer.Visible);
+                            }
                         }
+                    }
+
+                    if (jsonData.AnimationTracks != null)
+                    {
+                        bool hasSparseMetadata =
+                            jsonData.AnimationTracks.Version >= AnimationMetadata.CurrentVersion &&
+                            jsonData.AnimationTracks.Tracks.All(track => track.Spans != null);
+                        var spanDurations = jsonData.AnimationTracks.Tracks
+                            .Select(track => (IReadOnlyList<int>)(hasSparseMetadata
+                                ? track.Spans.Select(span => span.Duration).ToList()
+                                : track.frameLengths ?? new List<int>()))
+                            .ToList();
+                        var trackVisibility = jsonData.AnimationTracks.Tracks
+                            .Select(track => track.Visible)
+                            .ToList();
+                        App.Scene.animationUI_manager.ConfigureAnimationTracks(
+                            spanDurations, trackVisibility,
+                            hasSparseMetadata ? "sparseTimelineLoad" : "legacyTimelineLoad");
                     }
                 }
 
@@ -796,7 +825,7 @@ namespace TiltBrush
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, targetLayer, out legacySketch, out oldGroupToNewGroup, out strokes);
+                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, targetLayer, out legacySketch, out oldGroupToNewGroup, out strokes, targetFrame);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {
@@ -882,6 +911,10 @@ namespace TiltBrush
                     {
                         WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);
                     }
+                    if (jsonData.AnimationPaths != null)
+                    {
+                        WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.AnimationPaths);
+                    }
                     if (fileInfo is GoogleDriveSketchSet.GoogleDriveFileInfo gdInfo)
                     {
                         gdInfo.SourceId = jsonData.SourceId;
@@ -893,6 +926,11 @@ namespace TiltBrush
                                 OverlayType.LoadMedia,
                                 WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
                                 0.5f));
+                    }
+                    if (App.Scene.animationUI_manager != null)
+                    {
+                        App.Scene.animationUI_manager.ResetTimeline();
+                        App.Scene.animationUI_manager.SelectTimelineFrame(0, 0);
                     }
                     m_LastSceneFile = fileInfo;
                 }
@@ -913,7 +951,7 @@ namespace TiltBrush
         }
 
         private void HandleDeserializationError(object sender,
-                                                Newtonsoft.Json.Serialization.ErrorEventArgs errorArgs)
+            Newtonsoft.Json.Serialization.ErrorEventArgs errorArgs)
         {
             var currentError = errorArgs.ErrorContext.Error.Message;
             Debug.LogWarning(currentError);

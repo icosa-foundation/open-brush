@@ -119,6 +119,15 @@ namespace TiltBrush
         override public GrabWidget Clone(Vector3 position, Quaternion rotation, float size)
         {
             TextWidget clone = Instantiate(WidgetManager.m_Instance.TextWidgetPrefab);
+            clone.AssignFont(m_TextMeshPro.font);
+            clone.TextColor = TextColor;
+            clone.StrokeColor = StrokeColor;
+            clone.Text = Text;
+            if (m_MeshFilter != null && clone.m_MeshFilter != null)
+            {
+                clone.m_MeshFilter.sharedMesh = m_MeshFilter.sharedMesh;
+            }
+            clone.Mode = Mode;
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.transform.position = position;
             clone.transform.rotation = rotation;
@@ -146,6 +155,8 @@ namespace TiltBrush
             textWidget.transform.localScale = Vector3.one;
 
             textWidget.Text = tiltText.Text;
+            // Apply saved local coordinates only after binding the authored frame.
+            textWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltText.LayerId, tiltText.FrameId));
             textWidget.SetSignedWidgetSize(tiltText.Transform.scale);
             textWidget.Show(bShow: true, bPlayAudio: false);
             textWidget.transform.localPosition = tiltText.Transform.translation;
@@ -159,7 +170,6 @@ namespace TiltBrush
             textWidget.Text = tiltText.Text;
             textWidget.Mode = tiltText.Mode;
             textWidget.Group = App.GroupManager.GetGroupFromId(tiltText.GroupId);
-            textWidget.SetCanvas(App.Scene.GetOrCreateLayer(tiltText.LayerId));
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(textWidget.GetTiltMeterCost(), up: true);
             textWidget.UpdateScale();

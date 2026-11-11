@@ -4440,6 +4440,58 @@ MonoBehaviour:
     m_Localized: "Prüfe den Pfeil von A nach B. Trigger bestätigt; der Trigger des anderen Controllers tauscht A und B; Abbrechen zum Beenden."
     m_Metadata:
       m_Items: []
+  - m_Id: 467500000000000000
+    m_Localized: "Frame nach links verschieben"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000016
+    m_Localized: "Frame verlängern"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000032
+    m_Localized: "Auswahl auf aktuelle Ebene kopieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000048
+    m_Localized: "Frame duplizieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000064
+    m_Localized: "Frame nach rechts verschieben"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000080
+    m_Localized: "Frame hinzufügen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000096
+    m_Localized: "Frame-Inhalt löschen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000112
+    m_Localized: "Frame teilen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000128
+    m_Localized: "Frame verkürzen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000144
+    m_Localized: "Wiedergabe umschalten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000160
+    m_Localized: "Löschen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000176
+    m_Localized: "Verschmelzen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000192
+    m_Localized: "Inhalte löschen"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -4358,6 +4358,58 @@ MonoBehaviour:
     m_Localized: "A→B 화살표를 확인하세요. 트리거로 확인, 다른 컨트롤러의 트리거로 A와 B 교환, 취소로 종료합니다."
     m_Metadata:
       m_Items: []
+  - m_Id: 467500000000000000
+    m_Localized: "프레임을 왼쪽으로 이동"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000016
+    m_Localized: "프레임 늘리기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000032
+    m_Localized: "선택 영역을 현재 레이어로 복사"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000048
+    m_Localized: "프레임 복제"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000064
+    m_Localized: "프레임을 오른쪽으로 이동"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000080
+    m_Localized: "프레임 추가"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000096
+    m_Localized: "프레임 내용 지우기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000112
+    m_Localized: "프레임 분할"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000128
+    m_Localized: "프레임 줄이기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000144
+    m_Localized: "재생 전환"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000160
+    m_Localized: "삭제"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000176
+    m_Localized: "스쿼시"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000192
+    m_Localized: "콘텐츠 지우기"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

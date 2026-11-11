@@ -4420,6 +4420,58 @@ MonoBehaviour:
     m_Localized: "Comprueba la flecha de A a B. El gatillo confirma; el del otro mando intercambia A y B; Cancelar para salir."
     m_Metadata:
       m_Items: []
+  - m_Id: 467500000000000000
+    m_Localized: "Mover fotograma a la izquierda"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000016
+    m_Localized: "Alargar fotograma"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000032
+    m_Localized: "Copiar la selección a la capa actual"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000048
+    m_Localized: "Duplicar fotograma"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000064
+    m_Localized: "Mover fotograma a la derecha"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000080
+    m_Localized: "Añadir fotograma"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000096
+    m_Localized: "Vaciar contenido del fotograma"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000112
+    m_Localized: "Dividir fotograma"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000128
+    m_Localized: "Acortar fotograma"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000144
+    m_Localized: "Alternar reproducción"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000160
+    m_Localized: "Eliminar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000176
+    m_Localized: "Aplastar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 467500000000000192
+    m_Localized: "Vaciar contenidos"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
