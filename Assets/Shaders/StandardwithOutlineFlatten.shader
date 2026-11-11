@@ -28,7 +28,16 @@ Shader "Custom/StandardWithOutlineFlatten" {
         UNITY_VERTEX_INPUT_INSTANCE_ID
         UNITY_VERTEX_OUTPUT_STEREO
       };
-      V Vert(A v){V o; float3 p=v.positionOS.xyz; p.z = p.z - p.z * _FlattenAmount; o.positionHCS=TransformObjectToHClip(p); return o;}
+      V Vert(A v){
+        V o;
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+        float3 p = v.positionOS.xyz;
+        p.z = p.z - p.z * _FlattenAmount;
+        o.positionHCS = TransformObjectToHClip(p);
+        return o;
+      }
       half4 Frag(V i):SV_Target {
         UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i); return half4(_Color.rgb,1); }
       ENDHLSL
@@ -90,7 +99,16 @@ Shader "Custom/StandardWithOutlineFlatten" {
         UNITY_VERTEX_INPUT_INSTANCE_ID
         UNITY_VERTEX_OUTPUT_STEREO
       };
-      V VertShadow(A v){V o; float3 p=v.positionOS.xyz; p.z=p.z-p.z*_FlattenAmount; o.positionCS=TransformObjectToHClip(p); return o;}
+      V VertShadow(A v){
+        V o;
+        UNITY_SETUP_INSTANCE_ID(v);
+        UNITY_TRANSFER_INSTANCE_ID(v, o);
+        UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+        float3 p = v.positionOS.xyz;
+        p.z = p.z - p.z * _FlattenAmount;
+        o.positionCS = TransformObjectToHClip(p);
+        return o;
+      }
       half4 FragShadow(V i):SV_Target {
         UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i); return 0; }
       ENDHLSL
