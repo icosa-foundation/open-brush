@@ -118,20 +118,30 @@ namespace TiltBrush
             });
         }
 
+        private void OnDestroy()
+        {
+            DisposeFileWatchers();
+        }
+
+        private void DisposeFileWatchers()
+        {
+            if (m_FileWatchers == null) { return; }
+            foreach (var watcher in m_FileWatchers)
+            {
+                watcher.EnableRaisingEvents = false;
+                watcher.FileChanged -= OnChanged;
+                watcher.FileCreated -= OnChanged;
+                watcher.FileDeleted -= OnChanged;
+                watcher.Dispose();
+            }
+            m_FileWatchers = null;
+        }
+
         public void ChangeDirectory(string newPath)
         {
             m_CurrentModelsDirectory = newPath;
 
-            if (m_FileWatchers != null)
-            {
-                foreach (var watcher in m_FileWatchers)
-                {
-                    watcher.FileChanged -= OnChanged;
-                    watcher.FileCreated -= OnChanged;
-                    watcher.FileDeleted -= OnChanged;
-                    watcher.Dispose();
-                }
-            }
+            DisposeFileWatchers();
 
             m_FileWatchers = new List<FileWatcher>();
             foreach (var directory in GetModelDirectories())

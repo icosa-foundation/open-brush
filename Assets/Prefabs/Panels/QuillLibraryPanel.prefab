@@ -3604,7 +3604,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 78bb99e2fe13ca44d9d0b4ab7882f4ce, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: 5ee9246293effe049a954f45d5983441, type: 3}
   m_AtlasTexture: 0
   m_ToggleButton: 1
   m_LongPressReleaseButton: 0
@@ -7532,7 +7532,7 @@ PrefabInstance:
     - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8, type: 3}
       propertyPath: m_ButtonTexture
       value: 
-      objectReference: {fileID: 2800000, guid: 8e8ff83a9fcd53a47aa617cca57a09f3, type: 3}
+      objectReference: {fileID: 2800000, guid: d687782e216b5034c9bd49300ac2ba12, type: 3}
     - target: {fileID: 7879899076693153277, guid: 0963942396a615f4fb1b390436e881b8, type: 3}
       propertyPath: m_DescriptionText
       value: Merge into current sketch
