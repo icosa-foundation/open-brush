@@ -554,8 +554,10 @@ namespace TiltBrush
         {
             cameraData.volumeLayerMask = m_VolumeLayerMask;
             cameraData.volumeTrigger = camera.transform;
-            cameraData.renderPostProcessing =
-                (isCapture || m_EnablePostProcessingOnMainCameras) && CameraConfig.PostEffects;
+            // The capture preference must not disable effects in the normal XR view.
+            cameraData.renderPostProcessing = isCapture
+                ? CameraConfig.PostEffects
+                : m_EnablePostProcessingOnMainCameras;
             camera.allowHDR = m_CurrentHdr;
             // URP's intermediate textures and final XR viewport must use the same scale.
 #if OPEN_BRUSH_ANDROID_XR
