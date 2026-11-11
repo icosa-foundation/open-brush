@@ -21,7 +21,10 @@
       },
       "floatParams": {
         "Shininess": 0.4,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -48,7 +51,10 @@
       },
       "floatParams": {
         "Shininess": 0.4,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -75,7 +81,10 @@
       },
       "floatParams": {
         "Shininess": 0.4,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -102,7 +111,10 @@
       },
       "floatParams": {
         "Shininess": 0.4,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -129,7 +141,10 @@
       },
       "floatParams": {
         "Shininess": 0.4,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -156,7 +171,10 @@
       },
       "floatParams": {
         "Shininess": 0.4,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -183,7 +201,10 @@
       },
       "floatParams": {
         "Shininess": 0.85,
-        "Cutoff": 0.3
+        "Cutoff": 0.3,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -210,7 +231,10 @@
       },
       "floatParams": {
         "Shininess": 0.85,
-        "Cutoff": 0.3
+        "Cutoff": 0.3,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -234,7 +258,10 @@
         "MainTex": [ 64.0, 256.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.067
+        "Cutoff": 0.067,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -255,7 +282,10 @@
         "MainTex": [ 512.0, 256.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.067
+        "Cutoff": 0.067,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -276,7 +306,10 @@
         "MainTex": [ 512.0, 256.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -294,7 +327,11 @@
       "enableCull": false,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {}
     },
@@ -314,7 +351,11 @@
         "MainTex": [ 64.0, 64.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.12
+        "Cutoff": 0.12,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -330,7 +371,11 @@
       "enableCull": false,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ]
@@ -347,7 +392,11 @@
       "enableCull": true,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ]
@@ -365,7 +414,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -388,7 +440,10 @@
         "MainTex": [ 512.0, 256.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.067
+        "Cutoff": 0.067,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -411,7 +466,10 @@
         "MainTex": [ 512.0, 256.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.067
+        "Cutoff": 0.067,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -429,7 +487,11 @@
       "enableCull": false,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ]
@@ -450,7 +512,12 @@
       "textureSizes": {
         "MainTex": [ 512.0, 256.0 ]
       },
-      "floatParams": {},
+      "floatParams": {
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {}
     },
@@ -470,7 +537,10 @@
         "MainTex": [ 512.0, 256.0 ]
       },
       "floatParams": {
-        "EmissionGain": 0.45
+        "EmissionGain": 0.45,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -494,9 +564,16 @@
         "Scroll1": 20.0,
         "Scroll2": 0.0,
         "DisplacementIntensity": 0.1,
-        "EmissionGain": 0.5
+        "EmissionGain": 0.5,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "02ffb866-7fb2-4d15-b761-1012cefb1360": {
@@ -518,10 +595,16 @@
         "ScrollRate": 0.6,
         "ScrollJitterIntensity": 0.0300000012,
         "ScrollJitterFrequency": 5.0,
-        "SpreadRate": 1.539
+        "SpreadRate": 1.539,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {
-        "ScrollDistance": [ 0.2, 0.6, 0.0 ]
+        "ScrollDistance": [ 0.2, 0.6, 0.0 ],
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
       },
       "colorParams": {
         "TintColor": [ 1.0, 1.0, 1.0, 1.0 ]
@@ -543,9 +626,17 @@
         "MainTex": [ 512.0, 512.0 ]
       },
       "floatParams": {
-        "ScrollRate": 0.75
+        "ScrollRate": 0.75,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "TintColor": [ 1.0, 1.0, 1.0, 1.0 ]
       }
@@ -569,10 +660,17 @@
         "ScrollRate": 0.2,
         "ScrollJitterIntensity": 0.0100000007,
         "ScrollJitterFrequency": 12.0,
-        "SpreadRate": 1.539
+        "SpreadRate": 1.539,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {
-        "ScrollDistance": [ 0.0, -0.3, 0.0 ]
+        "ScrollDistance": [ 0.0, -0.3, 0.0 ],
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
       },
       "colorParams": {
         "TintColor": [ 1.0, 1.0, 1.0, 1.0 ]
@@ -590,9 +688,16 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "EmissionGain": 0.65
+        "EmissionGain": 0.65,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "0eb4db27-3f82-408d-b5a1-19ebd7d5b711": {
@@ -612,9 +717,16 @@
       },
       "floatParams": {
         "SparkleRate": 5.3,
-        "SpreadRate": 1.539
+        "SpreadRate": 1.539,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "d229d335-c334-495a-a801-660ac8a87360": {
@@ -632,7 +744,12 @@
       "textureSizes": {
         "MainTex": [ 512.0, 512.0 ]
       },
-      "floatParams": {},
+      "floatParams": {
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {}
     },
@@ -652,9 +769,16 @@
         "MainTex": [ 64.0, 64.0 ]
       },
       "floatParams": {
-        "EmissionGain": 0.517857134
+        "EmissionGain": 0.517857134,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "8dc4a70c-d558-4efd-a5ed-d4e860f40dc3": {
@@ -673,7 +797,10 @@
         "MainTex": [ 512.0, 512.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.2
+        "Cutoff": 0.2,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -696,7 +823,10 @@
         "MainTex": [ 512.0, 512.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.2
+        "Cutoff": 0.2,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -722,7 +852,10 @@
       },
       "floatParams": {
         "Shininess": 0.414,
-        "Cutoff": 0.2
+        "Cutoff": 0.2,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -749,7 +882,10 @@
       },
       "floatParams": {
         "Shininess": 0.414,
-        "Cutoff": 0.2
+        "Cutoff": 0.2,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -776,7 +912,10 @@
       },
       "floatParams": {
         "Shininess": 0.145,
-        "Cutoff": 0.16
+        "Cutoff": 0.16,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -803,7 +942,10 @@
       },
       "floatParams": {
         "Shininess": 0.145,
-        "Cutoff": 0.16
+        "Cutoff": 0.16,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -827,7 +969,10 @@
         "MainTex": [ 512.0, 512.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.25
+        "Cutoff": 0.25,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -850,7 +995,10 @@
         "MainTex": [ 512.0, 512.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.25
+        "Cutoff": 0.25,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -873,9 +1021,16 @@
         "MainTex": [ 512.0, 512.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "e814fef1-97fd-7194-4a2f-50c2bb918be2": {
@@ -894,9 +1049,13 @@
         "MainTex": [ 512.0, 512.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "f6e85de3-6dcc-4e7f-87fd-cee8c3d25d51": {
@@ -912,9 +1071,16 @@
       "textureSizes": {},
       "floatParams": {
         "DisplacementIntensity": 2.0,
-        "EmissionGain": 0.2
+        "EmissionGain": 0.2,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "44bb800a-fbc3-4592-8426-94ecb05ddec3": {
@@ -936,9 +1102,16 @@
         "Scroll1": 1.0,
         "Scroll2": 3.0,
         "DisplacementIntensity": 0.02,
-        "EmissionGain": 0.4
+        "EmissionGain": 0.4,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "dce872c2-7b49-4684-b59b-c45387949c5c": {
@@ -960,9 +1133,16 @@
       },
       "floatParams": {
         "Shininess": 0.5,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ],
         "SpecColor": [ 0.274509817, 0.274509817, 0.274509817, 1.0 ]
@@ -987,9 +1167,13 @@
       },
       "floatParams": {
         "Shininess": 0.5,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ],
         "SpecColor": [ 0.274509817, 0.274509817, 0.274509817, 1.0 ]
@@ -1014,9 +1198,17 @@
         "ScrollRate": 0.5,
         "ScrollJitterIntensity": 0.002,
         "ScrollJitterFrequency": 0.2,
-        "SpreadRate": 1.539
+        "SpreadRate": 1.539,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "b2ffef01-eaaa-4ab5-aa64-95a2c4f5dbc6": {
@@ -1031,9 +1223,16 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "EmissionGain": 0.5
+        "EmissionGain": 0.5,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "700f3aa8-9a7c-2384-8b8a-ea028905dd8c": {
@@ -1052,7 +1251,10 @@
         "MainTex": [ 512.0, 256.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.554
+        "Cutoff": 0.554,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1074,8 +1276,17 @@
       "textureSizes": {
         "MainTex": [ 256.0, 256.0 ]
       },
-      "floatParams": {},
-      "vectorParams": {},
+      "floatParams": {
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "TintColor": [ 0.99999994, 0.99999994, 0.99999994, 1.0 ]
       }
@@ -1096,9 +1307,16 @@
         "MainTex": [ 512.0, 128.0 ]
       },
       "floatParams": {
-        "Shininess": 0.81
+        "Shininess": 0.81,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ],
         "SpecColor": [ 0.3455882, 0.3455882, 0.3455882, 0.0 ]
@@ -1116,9 +1334,16 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "EmissionGain": 0.45
+        "EmissionGain": 0.45,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "6a1cf9f9-032c-45ec-9b1d-a6680bee30f7": {
@@ -1139,7 +1364,10 @@
       "floatParams": {
         "WaveformFreq": 0.1,
         "BaseGain": 0.4,
-        "EmissionGain": 300.0
+        "EmissionGain": 300.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {
         "WaveformIntensity": [ 0.0, 15.0, 0.0 ]
@@ -1160,7 +1388,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Shininess": 0.01
+        "Shininess": 0.01,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1184,7 +1415,10 @@
       },
       "floatParams": {
         "Shininess": 0.15,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1204,7 +1438,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "OutlineMax": 0.005
+        "OutlineMax": 0.005,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -1221,7 +1458,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Cutoff": 0.067
+        "Cutoff": 0.067,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -1237,7 +1477,11 @@
       "enableCull": true,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ]
@@ -1254,7 +1498,11 @@
       "enableCull": true,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ]
@@ -1272,9 +1520,16 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Shininess": 0.65
+        "Shininess": 0.65,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "Color": [ 0.0, 0.0, 0.0, 1.0 ],
         "SpecColor": [ 0.5147059, 0.5147059, 0.5147059, 0.0 ]
@@ -1299,9 +1554,17 @@
       },
       "floatParams": {
         "Speed": 1.0,
-        "EmissionGain": 0.5
+        "EmissionGain": 0.5,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "faaa4d44-fcfb-4177-96be-753ac0421ba3": {
@@ -1317,7 +1580,10 @@
       "textureSizes": {},
       "floatParams": {
         "Shininess": 0.743,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1337,7 +1603,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1356,7 +1625,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -1376,8 +1648,17 @@
       "textureSizes": {
         "MainTex": [ 128.0, 128.0 ]
       },
-      "floatParams": {},
-      "vectorParams": {},
+      "floatParams": {
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "ea19de07-d0c0-4484-9198-18489a3c1487": {
@@ -1399,7 +1680,10 @@
       },
       "floatParams": {
         "Shininess": 0.395,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1423,7 +1707,10 @@
         "MainTex": [ 128.0, 128.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -1449,9 +1736,17 @@
         "EmissionScroll1": 15.0,
         "EmissionScroll2": -10.0,
         "DisplacementIntensity": 0.2,
-        "EmissionGain": 0.5
+        "EmissionGain": 0.5,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "0077f88c-d93a-42f3-b59b-b31c50cdb414": {
@@ -1470,7 +1765,10 @@
         "MainTex": [ 512.0, 512.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -1590,7 +1888,11 @@
       "enableCull": true,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ]
@@ -1607,7 +1909,11 @@
       "enableCull": true,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {
         "Color": [ 1.0, 1.0, 1.0, 1.0 ]
@@ -1652,7 +1958,10 @@
       },
       "floatParams": {
         "Shininess": 0.01,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1679,7 +1988,10 @@
       },
       "floatParams": {
         "Shininess": 0.01,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1704,9 +2016,16 @@
       },
       "floatParams": {
         "Shininess": 0.68,
-        "SqueezeAmount": 0.873
+        "SqueezeAmount": 0.873,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "Color": [ 0.0, 0.0, 0.0, 1.0 ],
         "SpecColor": [ 0.75, 0.75, 0.75, 0.0 ]
@@ -1730,9 +2049,17 @@
       "floatParams": {
         "NumSides": 6.0,
         "Speed": 4.0,
-        "Bulge": 2.25
+        "Bulge": 2.25,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "725f4c6a-6427-6524-29ab-da371924adab": {
@@ -1754,7 +2081,10 @@
       },
       "floatParams": {
         "Shininess": 0.05,
-        "Cutoff": 0.2
+        "Cutoff": 0.2,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1780,7 +2110,10 @@
         "SecondaryTex": [ 512.0, 64.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -1806,9 +2139,16 @@
         "DisplacementExponent": 2.84,
         "StretchDistortionExponent": 1.73,
         "NumSides": 4.0,
-        "Speed": 11.78
+        "Speed": 11.78,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "7136a729-1aab-bd24-f8b2-ca88b6adfb67": {
@@ -1827,9 +2167,17 @@
         "MainTex": [ 512.0, 512.0 ]
       },
       "floatParams": {
-        "Speed": 1.0
+        "Speed": 1.0,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "a8147ce1-005e-abe4-88e8-09a1eaadcc89": {
@@ -1851,10 +2199,17 @@
         "ScrollRate": 0.1,
         "ScrollJitterIntensity": 0.0200000014,
         "ScrollJitterFrequency": 5.0,
-        "SpreadRate": 1.25
+        "SpreadRate": 1.25,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {
-        "ScrollDistance": [ 0.05, 0.5, 0.0 ]
+        "ScrollDistance": [ 0.05, 0.5, 0.0 ],
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
       },
       "colorParams": {
         "TintColor": [ 1.0, 1.0, 1.0, 1.0 ]
@@ -1877,7 +2232,10 @@
       },
       "floatParams": {
         "Shininess": 0.1,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1904,7 +2262,10 @@
       },
       "floatParams": {
         "Shininess": 0.145,
-        "Cutoff": 0.16
+        "Cutoff": 0.16,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1931,7 +2292,10 @@
       },
       "floatParams": {
         "Shininess": 0.414,
-        "Cutoff": 0.2
+        "Cutoff": 0.2,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1950,7 +2314,12 @@
       "enableCull": false,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {}
     },
@@ -1966,7 +2335,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -1985,7 +2357,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2004,7 +2379,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2023,7 +2401,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2049,7 +2430,10 @@
       },
       "floatParams": {
         "Shininess": 0.57,
-        "Cutoff": 0.3
+        "Cutoff": 0.3,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2076,7 +2460,10 @@
       },
       "floatParams": {
         "Shininess": 0.743,
-        "Cutoff": 0.3
+        "Cutoff": 0.3,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2107,9 +2494,16 @@
         "DisplacementIntensity": 0.04,
         "EmissionGain": 0.405,
         "FlameFadeMin": 8.53,
-        "FlameFadeMax": 30.0
+        "FlameFadeMax": 30.0,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "9871385a-df73-4396-9e33-31e4e4930b27": {
@@ -2123,7 +2517,11 @@
       "enableCull": true,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {}
     },
@@ -2138,9 +2536,17 @@
       "enableCull": true,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
-      "colorParams": {}
+      "colorParams": {
+        "ColorX": [ 1.0, 0.0, 0.0, 1.0 ],
+        "ColorY": [ 0.0, 1.0, 0.0, 1.0 ],
+        "ColorZ": [ 0.0, 0.0, 1.0, 1.0 ]
+      }
     },
     "6a1cf9f9-032c-45ec-9b6e-a6680bee30f7": {
       "guid": "6a1cf9f9-032c-45ec-9b6e-a6680bee30f7",
@@ -2157,8 +2563,17 @@
       "textureSizes": {
         "MainTex": [ 256.0, 256.0 ]
       },
-      "floatParams": {},
-      "vectorParams": {},
+      "floatParams": {
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "TintColor": [ 0.99999994, 0.99999994, 0.99999994, 1.0 ]
       }
@@ -2181,9 +2596,17 @@
       "floatParams": {
         "ScrollRate": -0.54,
         "ScrollJitterIntensity": 0.3,
-        "ScrollJitterFrequency": 1.0
+        "ScrollJitterFrequency": 1.0,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "6a1cf9f9-032c-45ec-311e-a6680bee32e9": {
@@ -2201,8 +2624,16 @@
       "textureSizes": {
         "MainTex": [ 256.0, 256.0 ]
       },
-      "floatParams": {},
-      "vectorParams": {},
+      "floatParams": {
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "TintColor": [ 0.99999994, 0.99999994, 0.99999994, 1.0 ]
       }
@@ -2223,7 +2654,10 @@
         "MainTex": [ 64.0, 64.0 ]
       },
       "floatParams": {
-        "EmissionGain": 0.517857134
+        "EmissionGain": 0.517857134,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -2243,7 +2677,12 @@
       "textureSizes": {
         "MainTex": [ 512.0, 256.0 ]
       },
-      "floatParams": {},
+      "floatParams": {
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {}
     },
@@ -2263,7 +2702,10 @@
         "MainTex": [ 512.0, 256.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2286,7 +2728,10 @@
         "MainTex": [ 512.0, 256.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2304,7 +2749,12 @@
       "enableCull": false,
       "textures": {},
       "textureSizes": {},
-      "floatParams": {},
+      "floatParams": {
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {}
     },
@@ -2323,7 +2773,12 @@
       "textureSizes": {
         "MainTex": [ 512.0, 512.0 ]
       },
-      "floatParams": {},
+      "floatParams": {
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
       "vectorParams": {},
       "colorParams": {}
     },
@@ -2346,7 +2801,10 @@
       },
       "floatParams": {
         "Shininess": 0.414,
-        "Cutoff": 0.2
+        "Cutoff": 0.2,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2370,7 +2828,10 @@
         "MainTex": [ 512.0, 256.0 ]
       },
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -2396,9 +2857,16 @@
       },
       "floatParams": {
         "Shininess": 0.8,
-        "Cutoff": 0.9
+        "Cutoff": 0.9,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "Color": [ 0.0, 0.0, 0.0, 1.0 ],
         "SpecColor": [ 0.147058845, 0.147058845, 0.147058845, 1.0 ]
@@ -2425,7 +2893,10 @@
       },
       "floatParams": {
         "Shininess": 0.8,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2452,7 +2923,10 @@
       },
       "floatParams": {
         "Shininess": 0.01,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2472,9 +2946,16 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Shininess": 0.432
+        "Shininess": 0.432,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {
         "Color": [ 0.0, 0.0, 0.0, 1.0 ],
         "SpecColor": [ 0.757352948, 0.757352948, 0.757352948, 0.0 ]
@@ -2492,7 +2973,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Shininess": 0.4
+        "Shininess": 0.4,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2513,7 +2997,10 @@
       "textureSizes": {},
       "floatParams": {
         "Shininess": 0.078125,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2537,9 +3024,16 @@
         "MainTex": [ 64.0, 64.0 ]
       },
       "floatParams": {
-        "EmissionGain": 0.517857134
+        "EmissionGain": 0.517857134,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "d9cc5e99-ace1-4d12-96e0-4a7c18c99cfc": {
@@ -2554,9 +3048,16 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "EmissionGain": 0.5
+        "EmissionGain": 0.5,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "bdf65db2-1fb7-4202-b5e0-c6b5e3ea851e": {
@@ -2571,9 +3072,16 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "EmissionGain": 0.5
+        "EmissionGain": 0.5,
+        "TimeBlend": 0.0,
+        "TimeSpeed": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
-      "vectorParams": {},
+      "vectorParams": {
+        "TimeOverrideValue": [ 0.0, 0.0, 0.0 ]
+      },
       "colorParams": {}
     },
     "30cb9af6-be41-4872-8f3e-cbff63fe3db8": {
@@ -2588,7 +3096,11 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "EmissionGain": 0.5
+        "EmissionGain": 0.5,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -2605,7 +3117,11 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "EmissionGain": 0.5
+        "EmissionGain": 0.5,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {}
@@ -2623,7 +3139,10 @@
       "textureSizes": {},
       "floatParams": {
         "Shininess": 0.574,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2650,7 +3169,10 @@
       },
       "floatParams": {
         "Shininess": 0.395,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2677,7 +3199,10 @@
       },
       "floatParams": {
         "Shininess": 0.4,
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2697,7 +3222,10 @@
       "textures": {},
       "textureSizes": {},
       "floatParams": {
-        "Cutoff": 0.5
+        "Cutoff": 0.5,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
       "vectorParams": {},
       "colorParams": {
@@ -2717,8 +3245,51 @@
       "textureSizes": {},
       "floatParams": {
         "Smoothness": 1.0,
-        "Metallic": 0.0
+        "Metallic": 0.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
       },
+      "vectorParams": {},
+      "colorParams": {}
+    },
+    "8d1510b2-1fc5-4c90-8db7-4c07eecfd849": {
+      "guid": "8d1510b2-1fc5-4c90-8db7-4c07eecfd849",
+      "name": "Slice",
+      "folderName": "Slice-8d1510b2-1fc5-4c90-8db7-4c07eecfd849",
+      "shaderVersion": "10.0",
+      "vertexShader": "Slice-8d1510b2-1fc5-4c90-8db7-4c07eecfd849-v10.0-vertex.glsl",
+      "fragmentShader": "Slice-8d1510b2-1fc5-4c90-8db7-4c07eecfd849-v10.0-fragment.glsl",
+      "blendMode": 2,
+      "enableCull": false,
+      "textures": {
+        "MainTex": "Slice-8d1510b2-1fc5-4c90-8db7-4c07eecfd849-v10.0-MainTex.png"
+      },
+      "textureSizes": {
+        "MainTex": [ 512.0, 256.0 ]
+      },
+      "floatParams": {
+        "EmissionGain": 0.65,
+        "Opacity": 1.0,
+        "Dissolve": 1.0,
+        "ClipStart": 0.0,
+        "ClipEnd": -1.0
+      },
+      "vectorParams": {},
+      "colorParams": {}
+    },
+    "cc131ff8-0d17-4677-93e0-d7cd19fea9ac": {
+      "guid": "cc131ff8-0d17-4677-93e0-d7cd19fea9ac",
+      "name": "PassthroughHull",
+      "folderName": "PassthroughHull-cc131ff8-0d17-4677-93e0-d7cd19fea9ac",
+      "shaderVersion": "10.0",
+      "vertexShader": "PassthroughHull-cc131ff8-0d17-4677-93e0-d7cd19fea9ac-v10.0-vertex.glsl",
+      "fragmentShader": "PassthroughHull-cc131ff8-0d17-4677-93e0-d7cd19fea9ac-v10.0-fragment.glsl",
+      "blendMode": 0,
+      "enableCull": false,
+      "textures": {},
+      "textureSizes": {},
+      "floatParams": {},
       "vectorParams": {},
       "colorParams": {}
     }
