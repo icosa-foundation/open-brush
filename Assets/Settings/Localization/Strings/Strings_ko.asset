@@ -4358,6 +4358,22 @@ MonoBehaviour:
     m_Localized: "A→B 화살표를 확인하세요. 트리거로 확인, 다른 컨트롤러의 트리거로 A와 B 교환, 취소로 종료합니다."
     m_Metadata:
       m_Items: []
+  - m_Id: 241026419819896832
+    m_Localized: "텍스처 페인트"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241060493515120640
+    m_Localized: "페인트 가능하게 만들기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241074401919459328
+    m_Localized: "UV 매핑"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241075235319275520
+    m_Localized: "브러시 설정"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

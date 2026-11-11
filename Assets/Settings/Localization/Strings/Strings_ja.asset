@@ -4358,6 +4358,22 @@ MonoBehaviour:
     m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
     m_Metadata:
       m_Items: []
+  - m_Id: 241026419819896832
+    m_Localized: "テクスチャペイント"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241060493515120640
+    m_Localized: "ペイント可能にする"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241074401919459328
+    m_Localized: "UVマッピング"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241075235319275520
+    m_Localized: "ブラシ設定"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

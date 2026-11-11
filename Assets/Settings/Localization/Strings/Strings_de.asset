@@ -4440,6 +4440,22 @@ MonoBehaviour:
     m_Localized: "Prüfe den Pfeil von A nach B. Trigger bestätigt; der Trigger des anderen Controllers tauscht A und B; Abbrechen zum Beenden."
     m_Metadata:
       m_Items: []
+  - m_Id: 241026419819896832
+    m_Localized: "Texturmalerei"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241060493515120640
+    m_Localized: "Bemalbar machen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241074401919459328
+    m_Localized: "UV-Mapping"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 241075235319275520
+    m_Localized: "Pinseleinstellungen"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

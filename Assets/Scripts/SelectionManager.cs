@@ -404,6 +404,20 @@ namespace TiltBrush
             set => m_LastSelectedStencil = value;
         }
 
+        internal void ReplaceCachedWidget(GrabWidget previous, GrabWidget replacement)
+        {
+            if (LastSelectedWidget == previous) LastSelectedWidget = replacement;
+            if (LastSelectedModel == previous) LastSelectedModel = replacement as ModelWidget;
+            if (LastSelectedImage == previous) LastSelectedImage = replacement as ImageWidget;
+            if (LastSelectedStencil == previous) LastSelectedStencil = replacement as StencilWidget;
+            // This bookmark is live interaction state, not an earlier undo command.
+            if (m_SelectedWidgetsCopyWhileGrabbingGroup != null &&
+                m_SelectedWidgetsCopyWhileGrabbingGroup.Remove(previous))
+            {
+                m_SelectedWidgetsCopyWhileGrabbingGroup.Add(replacement);
+            }
+        }
+
         /// Returns the active strokes in the given group.
         public IEnumerable<Stroke> StrokesInGroup(SketchGroupTag group)
         {
@@ -945,7 +959,7 @@ namespace TiltBrush
 
                 var destination = ChooseDestinationCanvas(targetCanvas, widget.m_PreviousCanvas);
                 widget.SetCanvas(destination);
-                widget.RestoreGameObjectLayer(destination.gameObject.layer);
+                widget.RestoreCanvasLayers(destination.gameObject.layer);
                 widget.gameObject.SetActive(true);
                 m_SelectedWidgets.Remove(widget);
 
