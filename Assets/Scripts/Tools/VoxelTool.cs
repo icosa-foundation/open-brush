@@ -317,6 +317,16 @@ namespace TiltBrush
             BindTargetWidget(widget);
         }
 
+        internal void RestoreTargetWidget(ModelWidget widget, bool creatingNewModel)
+        {
+            EndGesture();
+            CancelRegionDrag();
+            m_PendingTargetWidget = null;
+            m_HasPendingTarget = false;
+            m_CreateNewGrid = creatingNewModel;
+            BindTargetWidget(creatingNewModel ? null : widget);
+        }
+
         private void BindTargetWidget(ModelWidget widget)
         {
             if (!IsAvailableTarget(widget)) widget = null;

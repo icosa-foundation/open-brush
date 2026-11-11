@@ -32,6 +32,9 @@ namespace TiltBrush
         private float m_SnapGridSize;
         private float m_SnapAngle;
         private CanvasScript m_Canvas;
+        private VoxelTool m_VoxelTool;
+        private ModelWidget m_PreviousVoxelTarget;
+        private bool m_PreviousCreatingNewModel;
 
         // Creates a new widget by instantiating the prefab and setting its transform.
         // spawnXf is in world space.
@@ -64,8 +67,23 @@ namespace TiltBrush
 
         public override bool NeedsSave { get { return true; } }
 
+        // Model buttons assign and show their model after the initial command execution.
+        // Record targeting here once that initialization is complete.
+        internal void ActivateVoxelTarget()
+        {
+            if (!(m_Widget is ModelWidget widget) || !widget.IsExternalVox) return;
+            var tool = SketchSurfacePanel.m_Instance?.GetToolOfType(BaseTool.ToolType.VoxelTool) as VoxelTool;
+            if (tool == null) return;
+            m_VoxelTool = tool;
+            m_PreviousVoxelTarget = tool.CurrentTargetWidget;
+            m_PreviousCreatingNewModel = tool.CreatingNewModel;
+            tool.SetTargetWidget(widget);
+        }
+
         protected override void OnUndo()
         {
+            if (m_VoxelTool != null)
+                m_VoxelTool.RestoreTargetWidget(m_PreviousVoxelTarget, m_PreviousCreatingNewModel);
             m_Widget.Hide();
             WidgetManager.m_Instance.RefreshPinAndUnpinLists();
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: false);
@@ -88,6 +106,8 @@ namespace TiltBrush
                 // TODO: This function name is used more generally and should be renamed.
                 m_Widget.gameObject.SetActive(true);
                 m_Widget.RestoreFromToss();
+                if (m_VoxelTool != null)
+                    m_VoxelTool.RestoreTargetWidget(m_Widget as ModelWidget, creatingNewModel: false);
             }
             else
             {
