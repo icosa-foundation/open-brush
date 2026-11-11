@@ -105,7 +105,7 @@ namespace TiltBrush
 
         public virtual void OnTabEnable()
         {
-            if (!App.PlatformConfig.UseFileSystemWatcher)
+            if (!UserConfig.PerformanceOverrides.UseFileSystemWatcher)
             {
                 Catalog.ForceCatalogScan();
             }
