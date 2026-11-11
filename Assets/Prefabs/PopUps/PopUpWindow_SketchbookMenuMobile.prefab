@@ -835,7 +835,7 @@ MonoBehaviour:
     m_LocalVariables: []
   m_DescriptionActivateSpeed: 12
   m_DescriptionZScale: 1
-  m_ButtonTexture: {fileID: 2800000, guid: 92139e46e58d3924fb8e16ba42a0145f, type: 3}
+  m_ButtonTexture: {fileID: 2800000, guid: d687782e216b5034c9bd49300ac2ba12, type: 3}
   m_AtlasTexture: 1
   m_ToggleButton: 0
   m_LongPressReleaseButton: 0
@@ -1120,7 +1120,7 @@ MonoBehaviour:
           m_TableReference:
             m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
           m_TableEntryReference:
-            m_KeyId: 103923340450463744
+            m_KeyId: 103924956079587328
             m_Key: 
           m_FallbackState: 0
           m_WaitForCompletion: 0
@@ -1133,7 +1133,7 @@ MonoBehaviour:
           m_TableReference:
             m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
           m_TableEntryReference:
-            m_KeyId: 103923360889307136
+            m_KeyId: 103924956079587328
             m_Key: 
           m_FallbackState: 0
           m_WaitForCompletion: 0
