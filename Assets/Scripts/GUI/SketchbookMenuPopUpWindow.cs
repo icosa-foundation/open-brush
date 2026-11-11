@@ -30,12 +30,7 @@ namespace TiltBrush
             m_SketchSetType = (SketchSetType)iCommandParam2;
             bool isLinkableSketch = m_SketchSetType is SketchSetType.Curated or SketchSetType.Liked;
 
-            // SetColor is needed to trigger dimming when unavailable for buttons on popups
-            // Proper fix:
-            // In BaseButton: cache the last color passed to SetColor
-            // and re-apply it at the end of SetButtonwhAvailable.
             m_DropPortalButton?.SetButtonAvailable(isLinkableSketch);
-            m_DropPortalButton?.SetColor(Color.white);
 
             OptionButton[] optionButtons = GetComponentsInChildren<OptionButton>();
             foreach (OptionButton button in optionButtons)
