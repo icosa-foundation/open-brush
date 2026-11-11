@@ -770,6 +770,10 @@ namespace TiltBrush
             if (script.Globals.Get("_scriptHasBeenInitialized").Boolean)
             {
                 _CallScript(script, LuaNames.End);
+                if (Scripts[LuaApiCategory.SymmetryScript].Values.Contains(script))
+                {
+                    PointerManager.m_Instance.SymmetryWidget.ClearScriptedGuideBeams();
+                }
                 ApiMethods.ForcePaintingOn(false);
                 ApiMethods.ForcePaintingOff(false);
                 UnsetAllTimers(script);
@@ -998,6 +1002,10 @@ namespace TiltBrush
         {
             if (!script.Globals.Get("_scriptHasBeenInitialized").Boolean)
             {
+                if (Scripts[LuaApiCategory.SymmetryScript].Values.Contains(script))
+                {
+                    PointerManager.m_Instance.SymmetryWidget.ClearScriptedGuideBeams();
+                }
                 var scriptName = script.Globals.Get(LuaNames.ScriptNameString).String;
                 var configs = GetWidgetConfigs(scriptName);
                 foreach (var config in configs)

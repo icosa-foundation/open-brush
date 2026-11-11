@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -128,6 +129,25 @@ namespace TiltBrush
         [LuaDocsDescription("Moves the Symmetry Widget close to user")]
         [LuaDocsExample("Symmetry:SummonWidget()")]
         public static void SummonWidget() => ApiMethods.SummonMirror();
+
+        [LuaDocsDescription("Sets up to four guide beam pairs for scripted symmetry. Directions are in the symmetry widget's local space, independent of Settings.space. Lengths are fixed; zero vectors and omitted pairs are disabled. All pairs reset to off when a symmetry script starts or ends.")]
+        [LuaDocsParameter("directions", "A list of up to four finite direction vectors, one per positive/negative beam pair. An empty list turns all pairs off.")]
+        [LuaDocsExample("Symmetry:SetGuideBeams({Vector3.up, Vector3:New(1, 1, 0)})")]
+        public static void SetGuideBeams(List<Vector3> directions)
+        {
+            try
+            {
+                PointerManager.m_Instance.SymmetryWidget.SetScriptedGuideBeams(directions);
+            }
+            catch (ArgumentException e)
+            {
+                throw new ScriptRuntimeException(e.Message);
+            }
+        }
+
+        [LuaDocsDescription("Turns off all guide beam pairs for scripted symmetry")]
+        [LuaDocsExample("Symmetry:ClearGuideBeams()")]
+        public static void ClearGuideBeams() => PointerManager.m_Instance.SymmetryWidget.ClearScriptedGuideBeams();
 
         [LuaDocsDescription("Returns the radius of an ellipse at a given angle")]
         [LuaDocsParameter("angle", "The angle in degrees to sample the radius at")]

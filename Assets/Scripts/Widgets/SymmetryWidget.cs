@@ -57,6 +57,7 @@ namespace TiltBrush
         }
         [SerializeField] private GuideBeamPair m_GuideBeamPairTemplate;
         private readonly Vector3[] m_GuideBeamDirections = new Vector3[4];
+        private readonly Vector3[] m_ScriptedGuideBeamDirections = new Vector3[4];
         private GuideBeam[] m_GuideBeams;
         private bool m_GuideBeamsDirty;
         [SerializeField] private float m_GuideBeamLength;
@@ -236,6 +237,7 @@ namespace TiltBrush
                     break;
                 case PointerManager.SymmetryMode.ScriptedSymmetryMode:
                     m_SmallCubeMesh.enabled = true;
+                    Array.Copy(m_ScriptedGuideBeamDirections, m_GuideBeamDirections, m_GuideBeamDirections.Length);
                     break;
             }
 
@@ -249,6 +251,37 @@ namespace TiltBrush
             }
             m_GuideBeamsDirty = true;
         }
+
+        public void SetScriptedGuideBeams(IReadOnlyList<Vector3> directions)
+        {
+            if (directions == null || directions.Count > m_ScriptedGuideBeamDirections.Length)
+            {
+                throw new ArgumentException($"Expected zero to {m_ScriptedGuideBeamDirections.Length} guide beam directions.");
+            }
+            // Validate the entire configuration before replacing the previous one.
+            foreach (var direction in directions)
+            {
+                if (float.IsNaN(direction.x) || float.IsInfinity(direction.x)
+                    || float.IsNaN(direction.y) || float.IsInfinity(direction.y)
+                    || float.IsNaN(direction.z) || float.IsInfinity(direction.z))
+                {
+                    throw new ArgumentException("Guide beam directions must have finite components.");
+                }
+            }
+            Array.Clear(m_ScriptedGuideBeamDirections, 0, m_ScriptedGuideBeamDirections.Length);
+            for (int i = 0; i < directions.Count; ++i)
+            {
+                m_ScriptedGuideBeamDirections[i] = directions[i];
+            }
+            // Start() runs before the scripted mode is selected. Save its configuration
+            // now; SetSymmetryMode will apply it once the mode changes.
+            if (PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode)
+            {
+                SetAppearance();
+            }
+        }
+
+        public void ClearScriptedGuideBeams() => SetScriptedGuideBeams(Array.Empty<Vector3>());
 
         private void SetLatticeBeamDirections(PointerManager pm, bool includeNormal)
         {
