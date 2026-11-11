@@ -20,6 +20,10 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using Polyhydra.Core;
+using Polyhydra.Wythoff;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -825,6 +829,83 @@ namespace TiltBrush
                     if (jsonData.ModelIndex != null)
                     {
                         WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex);
+                    }
+
+                    if (jsonData.EditableModelIndex != null)
+                    {
+                        var generatedModels = new List<TiltEditableModels>();
+                        var filesystemModels = new List<TiltEditableModels>();
+
+                        foreach (var model in jsonData.EditableModelIndex)
+                        {
+                            if (model.AssetId != null && jsonData.EditableModelDefinitions != null &&
+                                jsonData.EditableModelDefinitions.ContainsKey(model.AssetId))
+                            {
+                                generatedModels.Add(model);
+                            }
+                            else
+                            {
+                                filesystemModels.Add(model);
+                            }
+                        }
+
+                        // Queue filesystem models for loading
+                        WidgetManager.m_Instance.SetDataFromTilt(filesystemModels);
+
+                        // Rebuild generated models
+                        foreach (TiltEditableModels model in generatedModels)
+                        {
+                            var definition = jsonData.EditableModelDefinitions[model.AssetId];
+                            PolyRecipe recipe;
+                            (Polyhydra.Core.PolyMesh poly, Polyhydra.Core.PolyMesh.MeshData meshData) prepared;
+                            try
+                            {
+                                definition.LoadGeometryFile(fileInfo.GetReadStream);
+                                if (definition.GeometryFile != null)
+                                {
+                                    using var geometry = new MemoryStream(definition.SourceFiles[definition.GeometryFile], writable: false);
+                                    EditableModelGeometry.Read(geometry, definition);
+                                }
+                                if (model.ExtraData?.Count > 0) throw new NotSupportedException("Unfamiliar editable model instance fields");
+                                if (model.RawTransforms == null) throw new InvalidDataException("Missing editable model transforms");
+                                recipe = PolyRecipe.FromDef(definition);
+                                if (recipe.Colors == null || recipe.Colors.Length == 0)
+                                {
+                                    var panel = (PolyhydraPanel)PanelManager.m_Instance.GetPanelByType(BasePanel.PanelType.Polyhydra);
+                                    recipe.Colors = (Color[])panel.DefaultColorPalette.Clone();
+                                }
+                                prepared = PolyBuilder.BuildFromPolyDef(recipe);
+                            }
+                            catch (Exception error)
+                            {
+                                MeshEditing.EditableModelManager.RetainedDefinitions[model.AssetId] = definition;
+                                MeshEditing.EditableModelManager.RetainedInstances.Add(model);
+                                Debug.LogWarning($"[OB_RECIPE_LOAD] Editable model retained without rendering: {error.Message}");
+                                continue;
+                            }
+                            for (var i = 0; i < model.RawTransforms.Length; i++)
+                            {
+                                var tr = model.RawTransforms[i];
+                                var (poly, meshData) = i == 0 ? prepared : PolyBuilder.BuildFromPolyDef(recipe);
+                                var widget = EditableModelManager.m_Instance.GeneratePolyMesh(
+                                    poly, recipe, tr, meshData, recordCommand: false);
+                                bool pin = model.PinStates == null || i >= model.PinStates.Length ||
+                                    model.PinStates[i];
+                                if (pin)
+                                {
+                                    widget.PinFromSave();
+                                }
+                                uint groupId = model.GroupIds != null && i < model.GroupIds.Length
+                                    ? model.GroupIds[i]
+                                    : 0;
+                                widget.Group = App.GroupManager.GetGroupFromId(groupId);
+                                if (model.LayerIds != null && i < model.LayerIds.Length)
+                                {
+                                    var canvas = App.Scene.GetOrCreateLayer(model.LayerIds[i]);
+                                    widget.SetCanvas(canvas);
+                                }
+                            }
+                        }
                     }
 
                     if (jsonData.LightIndex != null)

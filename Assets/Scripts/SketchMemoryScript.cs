@@ -624,6 +624,7 @@ namespace TiltBrush
                 invoke: isFinalStroke
             );
 
+
             if (m_SanityCheckStrokes)
             {
                 SanityCheckGeometryGeneration(rNewStroke);
@@ -906,6 +907,7 @@ namespace TiltBrush
 
         public void ClearMemory()
         {
+            MeshEditing.EditableModelManager.ClearRetainedData();
             if (m_ScenePlayback != null)
             {
                 // Ensure scene playback completes so that geometry is in state expected by rest of system.

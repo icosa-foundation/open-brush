@@ -29,9 +29,12 @@
 #pragma warning disable UAC1001, UAC1015
 
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Polyhydra.Core;
+using TiltBrush.MeshEditing;
 using UnityEngine;
 
 namespace TiltBrush
@@ -452,6 +455,78 @@ namespace TiltBrush
         public List<string> NotSplittableMeshPaths { get; set; }
     }
 
+    public class TiltEditableModels
+    {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string FilePath { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string AssetId { get; private set; }
+
+        /// Prior to M13, never null or empty; but an empty array is allowed on read.
+        /// Post M13, always null.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TrTransform[] Transforms { get; set; }
+
+        // True if model should be pinned on load.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool[] PinStates { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TrTransform[] RawTransforms
+        {
+            get { return m_rawTransforms; }
+            set { m_rawTransforms = MetadataUtils.Sanitize(value); }
+        }
+
+        // Only for use by MetadataUtils.cs
+        [JsonIgnore]
+        public TrTransform[] m_rawTransforms;
+
+        /// used to bridge the gap between strict Tilt Brush and not-so-strict json
+        [JsonIgnore]
+        public Model.Location Location
+        {
+            get
+            {
+                if (AssetId != null)
+                {
+                    return Model.Location.Generated(AssetId);
+                }
+                else if (FilePath != null)
+                {
+                    return Model.Location.File(FilePath);
+                }
+                else
+                {
+                    return new Model.Location(); // invalid location
+                }
+            }
+            set
+            {
+                if (value.GetLocationType() == Model.Location.Type.LocalFile)
+                {
+                    FilePath = value.RelativePath;
+                    AssetId = null;
+                }
+                else if (value.GetLocationType() == Model.Location.Type.Generated)
+                {
+                    FilePath = null;
+                    AssetId = $"{value.AssetId}";
+                }
+            }
+        }
+
+        // Group IDs for widgets. 0 for ungrouped items.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public uint[] GroupIds { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int[] LayerIds { get; set; }
+        [JsonExtensionData]
+        public IDictionary<string, JToken> ExtraData { get; set; }
+    }
+
     [Serializable]
     public class Guides
     {
@@ -833,6 +908,9 @@ namespace TiltBrush
         }
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, EditableModelDefinitionData> EditableModelDefinitions;
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int SchemaVersion { get; set; }
 
         /// Deprecated
@@ -867,6 +945,9 @@ namespace TiltBrush
                 ImageIndex = value.Select(i75b => i75b.Upgrade()).ToArray();
             }
         }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltEditableModels[] EditableModelIndex { get; set; }
 
         // Added in 7.5
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
