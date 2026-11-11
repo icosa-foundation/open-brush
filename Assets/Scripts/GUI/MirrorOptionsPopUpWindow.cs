@@ -119,6 +119,7 @@ namespace TiltBrush
             RefreshMirrorControls();
             RefreshCellsLabel();
             LocalizationSettings.SelectedLocaleChanged += RefreshCellsLabel;
+            LocalizationSettings.SelectedLocaleChanged += RefreshModeLabels;
             SketchMemoryScript.m_Instance.CommandUndo += RefreshMirrorControlsAfterHistory;
             SketchMemoryScript.m_Instance.CommandRedo += RefreshMirrorControlsAfterHistory;
             foreach (var slider in GetComponentsInChildren<AdvancedSlider>(true))
@@ -130,6 +131,7 @@ namespace TiltBrush
         private void OnDestroy()
         {
             LocalizationSettings.SelectedLocaleChanged -= RefreshCellsLabel;
+            LocalizationSettings.SelectedLocaleChanged -= RefreshModeLabels;
             foreach (var slider in GetComponentsInChildren<AdvancedSlider>(true))
             {
                 slider.InteractionEnded -= SymmetryMirrors.EndSettingsEdit;
@@ -710,14 +712,30 @@ namespace TiltBrush
             RefreshLineGroupControls();
         }
 
+        private void RefreshModeLabels(UnityEngine.Localization.Locale locale = null)
+        {
+            var pm = PointerManager.m_Instance;
+            if (m_LineGroupControls.activeSelf)
+            {
+                m_LineFamilyLabel.text = LocalizationSettings.StringDatabase.GetLocalizedString(
+                    "Strings", $"MULTIMIRROR_PANEL_LINE_FAMILY_{(int)pm.m_LineFamily}");
+            }
+            if (m_SpaceGroupControls.activeSelf)
+            {
+                var system = SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber);
+                m_SpaceGroupSystemLabel.text = system.ToString();
+                m_SpaceGroupPresetLabel.text = SpaceGroupCatalog.GetPresets(system)
+                    .Any(preset => preset.number == pm.m_SpaceGroupNumber)
+                    ? LocalizationSettings.StringDatabase.GetLocalizedString(
+                        "Strings", $"MULTIMIRROR_PANEL_SPACE_PRESET_{pm.m_SpaceGroupNumber}")
+                    : SpaceGroupCatalog.GetName(pm.m_SpaceGroupNumber);
+            }
+        }
+
         private void RefreshLineGroupControls()
         {
             var pm = PointerManager.m_Instance;
-            var names = new[] { "Screw + rotations", "Translation + roto-reflection", "Translation + horizontal mirror",
-                "Half-step + horizontal mirror", "Screw + half-turns", "Translation + vertical mirrors",
-                "Glide + rotations", "Half-step + vertical mirrors", "Translation + diagonal mirrors",
-                "Glide + roto-reflection", "Translation + full mirrors", "Glide + horizontal mirror", "Half-step + full mirrors" };
-            m_LineFamilyLabel.text = $"{(int)pm.m_LineFamily}: {names[(int)pm.m_LineFamily - 1]}";
+            RefreshModeLabels();
             m_LineOrderSlider.SetInitialValueAndUpdate(pm.m_LineOrder);
             m_LineRepeatsSlider.SetInitialValueAndUpdate(pm.m_LineRepeats);
             m_LineAdvanceSlider.SetInitialValueAndUpdate(pm.m_LineAdvance);
@@ -775,14 +793,7 @@ namespace TiltBrush
         private void RefreshSpaceGroupControls()
         {
             var pm = PointerManager.m_Instance;
-            var system = SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber);
-            m_SpaceGroupSystemLabel.text = system.ToString();
-            var label = SpaceGroupCatalog.GetName(pm.m_SpaceGroupNumber);
-            foreach (var preset in SpaceGroupCatalog.GetPresets(system))
-            {
-                if (preset.number == pm.m_SpaceGroupNumber) { label = preset.label; break; }
-            }
-            m_SpaceGroupPresetLabel.text = $"{pm.m_SpaceGroupNumber}: {label}";
+            RefreshModeLabels();
             m_SpaceGroupRepeatXSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.x);
             m_SpaceGroupRepeatYSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.y);
             m_SpaceGroupRepeatZSlider.SetInitialValueAndUpdate(pm.m_SpaceGroupRepeats.z);

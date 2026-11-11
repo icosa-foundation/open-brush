@@ -1022,7 +1022,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '5: Screw + half-turns'
+  m_text: Screw + half-turns
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ec48085d8b1ed18499cf1411d42005a0, type: 2}
   m_sharedMaterial: {fileID: 2122602, guid: ec48085d8b1ed18499cf1411d42005a0, type: 2}
@@ -4469,7 +4469,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '19: Screw lattice'
+  m_text: Three screw axes
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: ec48085d8b1ed18499cf1411d42005a0, type: 2}
   m_sharedMaterial: {fileID: 2122602, guid: ec48085d8b1ed18499cf1411d42005a0, type: 2}
