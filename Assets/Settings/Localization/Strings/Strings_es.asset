@@ -4420,6 +4420,10 @@ MonoBehaviour:
     m_Localized: "Comprueba la flecha de A a B. El gatillo confirma; el del otro mando intercambia A y B; Cancelar para salir."
     m_Metadata:
       m_Items: []
+  - m_Id: 150014201369985024
+    m_Localized: "Esculpir"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

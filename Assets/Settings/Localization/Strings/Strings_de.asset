@@ -4440,6 +4440,10 @@ MonoBehaviour:
     m_Localized: "Prüfe den Pfeil von A nach B. Trigger bestätigt; der Trigger des anderen Controllers tauscht A und B; Abbrechen zum Beenden."
     m_Metadata:
       m_Items: []
+  - m_Id: 150014201369985024
+    m_Localized: "Modellieren"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

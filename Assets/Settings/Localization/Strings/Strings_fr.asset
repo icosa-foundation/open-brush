@@ -4382,6 +4382,10 @@ MonoBehaviour:
     m_Localized: "Vérifiez la flèche de A vers B. La gâchette confirme ; celle de l’autre contrôleur inverse A et B ; Annuler pour quitter."
     m_Metadata:
       m_Items: []
+  - m_Id: 150014201369985024
+    m_Localized: "Sculpter"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
