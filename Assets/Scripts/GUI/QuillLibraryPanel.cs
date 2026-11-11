@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using System.Collections;
-using System.Linq;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -48,8 +46,6 @@ namespace TiltBrush
 
         private QuillFileCatalog m_Catalog;
         private QuillFileInfo m_SelectedFile;
-        private bool m_IsDetectingChapters;
-        private int m_ChapterDetectionGeneration;
 
         private List<BaseButton> m_IconButtons;
         private QuillFileButton[] m_FileButtons;
@@ -78,7 +74,6 @@ namespace TiltBrush
                 return;
             }
 
-            CancelChapterDetection();
             m_SelectedFile = null;
 
             switch (buttonType)
@@ -115,13 +110,12 @@ namespace TiltBrush
         }
 
         /// <summary>
-        /// Selects a file for action. Called by QuillFileButton when clicked.
+        /// Opens an IMM file natively. Called by QuillFileButton when clicked.
         /// </summary>
         public void SelectFile(QuillFileInfo file)
         {
-            if (m_SelectedFile == file) return;
+            if (file == null || file.SourceType != QuillSourceType.Imm) return;
 
-            CancelChapterDetection();
 
             // Clear previous selection visual state
             if (m_SelectedFile != null)
@@ -135,7 +129,7 @@ namespace TiltBrush
             if (m_SelectedFile != null)
             {
                 UpdateFileButtonSelection(m_SelectedFile, true);
-                StartChapterDetection(m_SelectedFile);
+                _LoadFile(m_SelectedFile.FullPath, -1, nativeImm: true);
             }
 
             RefreshActionControls();
@@ -156,98 +150,17 @@ namespace TiltBrush
             }
         }
 
-        private void StartChapterDetection(QuillFileInfo file)
-        {
-            int generation = ++m_ChapterDetectionGeneration;
-            m_IsDetectingChapters = true;
-            if (m_ChapterLoadingSpinner != null)
-                m_ChapterLoadingSpinner.SetActive(true);
-            RefreshActionControls();
-            StartCoroutine(DetectChaptersForSelectedFile(file, generation));
-        }
-
-        private void CancelChapterDetection()
-        {
-            ++m_ChapterDetectionGeneration;
-            m_IsDetectingChapters = false;
-            if (m_ChapterLoadingSpinner != null)
-                m_ChapterLoadingSpinner.SetActive(false);
-        }
-
-        private IEnumerator DetectChaptersForSelectedFile(
-            QuillFileInfo selectedFile, int generation)
-        {
-
-            // For IMM files, add a longer delay to allow UI to update first
-            if (selectedFile.SourceType == QuillSourceType.Imm)
-            {
-                yield return new WaitForSeconds(0.1f); // Let UI show spinner
-            }
-            else
-            {
-                yield return null; // Just yield one frame for Quill files
-            }
-
-            if (generation != m_ChapterDetectionGeneration || m_SelectedFile != selectedFile)
-            {
-                yield break;
-            }
-
-            var startTime = System.DateTime.Now;
-
-            try
-            {
-                // This triggers lazy chapter detection
-                int chapterCount = selectedFile.ChapterCount;
-                var elapsed = (System.DateTime.Now - startTime).TotalMilliseconds;
-
-                // Set default chapter if not already set
-                if (selectedFile.SelectedChapterIndex < 0)
-                {
-                    selectedFile.SelectedChapterIndex = 0;
-                }
-            }
-            catch (System.Exception ex)
-            {
-                var elapsed = (System.DateTime.Now - startTime).TotalMilliseconds;
-                Debug.LogError($"Failed to detect chapters for {selectedFile.DisplayName} after {elapsed:F0}ms: {ex}");
-            }
-
-            if (generation == m_ChapterDetectionGeneration)
-            {
-                m_IsDetectingChapters = false;
-                if (m_ChapterLoadingSpinner != null)
-                    m_ChapterLoadingSpinner.SetActive(false);
-                RefreshActionControls();
-            }
-        }
-
         private void RefreshActionControls()
         {
-            bool hasSelection = m_SelectedFile != null;
-            bool isDetecting = m_IsDetectingChapters;
-
-            // Show/hide action controls container
             if (m_ActionControlsContainer != null)
-                m_ActionControlsContainer.SetActive(hasSelection || NativeImmImport.IsActive);
+                m_ActionControlsContainer.SetActive(NativeImmImport.IsActive);
+            if (m_ChapterLoadingSpinner != null) m_ChapterLoadingSpinner.SetActive(false);
 
-            // Enable/disable action buttons
-            if (m_LoadButton != null)
-            {
-                m_LoadButton.gameObject.SetActive(hasSelection);
-                m_LoadButton.SetButtonAvailable(hasSelection && !isDetecting);
-            }
-            if (m_NativeImmButton != null)
-            {
-                bool hasNativeImm = GetSelectedNativeImmPath() != null;
-                m_NativeImmButton.gameObject.SetActive(hasNativeImm);
-                m_NativeImmButton.SetButtonAvailable(hasNativeImm && !isDetecting);
-            }
-            if (m_MergeButton != null)
-            {
-                m_MergeButton.gameObject.SetActive(hasSelection);
-                m_MergeButton.SetButtonAvailable(hasSelection && !isDetecting);
-            }
+            // Loading is initiated by the file itself. Editable conversion lives on
+            // the selected model's media controls.
+            if (m_LoadButton != null) m_LoadButton.gameObject.SetActive(false);
+            if (m_NativeImmButton != null) m_NativeImmButton.gameObject.SetActive(false);
+            if (m_MergeButton != null) m_MergeButton.gameObject.SetActive(false);
             if (m_ContinueButton != null)
                 m_ContinueButton.gameObject.SetActive(NativeImmImport.IsActive);
             if (NativeImmImport.IsActive)
@@ -256,80 +169,7 @@ namespace TiltBrush
                 return;
             }
 
-            // Show/hide chapter controls - use optimistic check first for better performance
-            bool hasMultipleChapters = false;
-            if (hasSelection && !isDetecting)
-            {
-                if (m_SelectedFile.SourceType == QuillSourceType.Quill)
-                {
-                    // Quill detection is fast
-                    hasMultipleChapters = m_SelectedFile.HasMultipleChapters;
-                }
-                else
-                {
-                    // IMM detection is slow - use optimistic approach during detection
-                    hasMultipleChapters = m_SelectedFile.HasMultipleChaptersOptimistic;
-                }
-            }
-
-            if (m_ChapterControls != null)
-                m_ChapterControls.SetActive(hasMultipleChapters);
-
-            if (hasMultipleChapters)
-            {
-                RefreshChapterControls();
-            }
-        }
-
-        private void RefreshChapterControls()
-        {
-            if (m_SelectedFile == null || !m_SelectedFile.HasMultipleChapters) return;
-
-            int count = m_SelectedFile.ChapterCount;
-            int current = m_SelectedFile.SelectedChapterIndex < 0 ? 0 : m_SelectedFile.SelectedChapterIndex;
-
-            if (m_ChapterLabel != null)
-                m_ChapterLabel.text = $"Import chapter {current + 1} / {count}";
-
-            // Enable/disable navigation buttons
-            if (m_PrevChapterButton != null)
-                m_PrevChapterButton.SetButtonAvailable(count > 1);
-            if (m_NextChapterButton != null)
-                m_NextChapterButton.SetButtonAvailable(count > 1);
-        }
-
-        // Action button handlers - called by UI buttons via inspector
-        public void OnLoadButtonPressed()
-        {
-            if (m_SelectedFile == null) return;
-            _LoadFile(m_SelectedFile.FullPath, m_SelectedFile.SelectedChapterIndex);
-        }
-
-        public void OnNativeImmButtonPressed()
-        {
-            string path = GetSelectedNativeImmPath();
-            if (path == null) return;
-            _LoadFile(path, -1, nativeImm: true);
-        }
-
-        private string GetSelectedNativeImmPath()
-        {
-            if (m_SelectedFile == null) return null;
-            string path = m_SelectedFile.FullPath;
-            if (System.IO.File.Exists(path) &&
-                string.Equals(System.IO.Path.GetExtension(path), ".imm",
-                    System.StringComparison.OrdinalIgnoreCase))
-            {
-                return path;
-            }
-            if (m_SelectedFile.SourceType != QuillSourceType.Quill ||
-                !System.IO.Directory.Exists(path)) return null;
-            try
-            {
-                return System.IO.Directory.EnumerateFiles(path, "*.imm").FirstOrDefault();
-            }
-            catch (System.IO.IOException) { return null; }
-            catch (System.UnauthorizedAccessException) { return null; }
+            if (m_ChapterControls != null) m_ChapterControls.SetActive(false);
         }
 
         private void _LoadFile(string filePath, int chapterIndex, bool nativeImm = false)
@@ -344,49 +184,9 @@ namespace TiltBrush
                 SketchControlsScript.GlobalCommands.LoadQuillConfirmUnsaved, 0, 0);
         }
 
-        public void OnMergeButtonPressed()
-        {
-            if (m_SelectedFile == null) return;
+        public void OnPrevChapterPressed() => NativeImmImport.CycleChapter(-1);
 
-            try
-            {
-                Quill.Load(m_SelectedFile.FullPath, chapterIndex: m_SelectedFile.SelectedChapterIndex);
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"Failed to merge '{m_SelectedFile.FullPath}': {ex}");
-            }
-        }
-
-        public void OnPrevChapterPressed()
-        {
-            if (NativeImmImport.IsActive)
-            {
-                NativeImmImport.CycleChapter(-1);
-                return;
-            }
-            if (m_SelectedFile?.HasMultipleChapters != true) return;
-
-            int count = m_SelectedFile.ChapterCount;
-            int current = m_SelectedFile.SelectedChapterIndex < 0 ? 0 : m_SelectedFile.SelectedChapterIndex;
-            m_SelectedFile.SelectedChapterIndex = (current - 1 + count) % count;
-            RefreshChapterControls();
-        }
-
-        public void OnNextChapterPressed()
-        {
-            if (NativeImmImport.IsActive)
-            {
-                NativeImmImport.CycleChapter(1);
-                return;
-            }
-            if (m_SelectedFile?.HasMultipleChapters != true) return;
-
-            int count = m_SelectedFile.ChapterCount;
-            int current = m_SelectedFile.SelectedChapterIndex < 0 ? 0 : m_SelectedFile.SelectedChapterIndex;
-            m_SelectedFile.SelectedChapterIndex = (current + 1) % count;
-            RefreshChapterControls();
-        }
+        public void OnNextChapterPressed() => NativeImmImport.CycleChapter(1);
 
         protected override void Awake()
         {
@@ -519,7 +319,9 @@ namespace TiltBrush
                 {
                     var fileInfo = m_Catalog.GetFileAtIndex(catalogIndex);
                     button.QuillFile = fileInfo;
-                    button.SetButtonAvailable(true);
+                    button.SetButtonAvailable(fileInfo.SourceType == QuillSourceType.Imm);
+                    if (fileInfo.SourceType == QuillSourceType.Quill)
+                        button.SetExtraDescriptionText("Native Quill loading is not yet available");
 
                     // Update selection visual state
                     button.IsSelected = (m_SelectedFile != null &&
@@ -585,23 +387,13 @@ namespace TiltBrush
                     {
                         fileStillExists = true;
                         // Update reference to refreshed file info
-                        bool restartDetection = m_IsDetectingChapters;
-                        if (restartDetection)
-                        {
-                            CancelChapterDetection();
-                        }
                         m_SelectedFile = file;
-                        if (restartDetection)
-                        {
-                            StartChapterDetection(file);
-                        }
                         break;
                     }
                 }
 
                 if (!fileStillExists)
                 {
-                    CancelChapterDetection();
                     m_SelectedFile = null;
                 }
             }

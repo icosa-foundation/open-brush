@@ -46,6 +46,7 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_ChapterLabel;
         [SerializeField] private GameObject m_ViewpointControls;
         [SerializeField] private TextMeshPro m_ViewpointLabel;
+        [SerializeField] private ModelImmConvertButton m_ConvertToEditable;
         [SerializeField] private ModelPathLabel m_ModelPath;
         [SerializeField] private GameObject m_PlaybackButtonsRoot;
         [SerializeField] private FloatPropertySlider m_VolumeSlider;
@@ -176,6 +177,11 @@ namespace TiltBrush
         private void RefreshImmNavigation(ModelPlaybackController playback, bool supported, bool available)
         {
             bool native = supported && playback.Document != null;
+            if (m_ConvertToEditable != null)
+            {
+                m_ConvertToEditable.gameObject.SetActive(native);
+                m_ConvertToEditable.SetButtonAvailable(native && available);
+            }
             if (m_ChapterControls != null) m_ChapterControls.SetActive(native && playback.ChapterCount > 1);
             if (native && m_ChapterLabel != null)
             {
@@ -219,6 +225,24 @@ namespace TiltBrush
             if (index < 0) return;
             try { playback.NavigateToSelectedViewpoint(); }
             catch (InvalidOperationException error) { OutputWindowScript.Error(error.Message); }
+            RefreshModelControls();
+        }
+
+        public void ConvertSelectedImmToEditable()
+        {
+            var playback = SelectedPlayback;
+            if (playback == null || playback.Document == null || playback.IsRestoring) return;
+            var native = m_SelectedModelWidget.GetComponentInChildren<NativeImmReference>();
+            if (native == null) return;
+            try
+            {
+                Quill.Load(native.SourcePath, replaceNativeWidget: m_SelectedModelWidget);
+            }
+            catch (Exception error)
+            {
+                Debug.LogError($"[OB_IMM_EDITABLE_20261111] Conversion failed: {error}");
+                OutputWindowScript.Error("Could not convert the current IMM frame to editable strokes.");
+            }
             RefreshModelControls();
         }
 
