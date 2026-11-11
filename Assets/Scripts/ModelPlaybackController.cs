@@ -439,8 +439,13 @@ namespace TiltBrush
                 state.StopTime = 0;
                 m_RestartAtChapter = false;
             }
-            yield return WaitForRequest(document, () => document.RequestSetTime(
-                ToTicks(state.Time), ToTicks(state.StopTime ?? 0)));
+            long stoppedTicks = ToTicks(state.StopTime ?? 0);
+            long startTicks = ToTicks(state.Time);
+            // GetTime reports a stopped root's held position (stop - start + 1),
+            // whereas SetTime expects elapsed time since start, including time since stop.
+            // Reconstruct that pair so paused/waiting documents return to the same frame.
+            if (stoppedTicks > 0) startTicks = checked(startTicks + stoppedTicks - 1);
+            yield return WaitForRequest(document, () => document.RequestSetTime(startTicks, stoppedTicks));
             SetVolumeInternal(state.Volume);
             SetPlayingInternal(!state.Paused);
             yield return WaitForPauseState(document, state.Paused);
