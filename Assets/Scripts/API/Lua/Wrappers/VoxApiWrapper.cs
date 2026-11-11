@@ -458,7 +458,12 @@ namespace TiltBrush
                     SetTransform(m_ViewState.WidgetTransform);
                 }
                 if (visibilityChanged) MarkWidgetVisibilityChanged();
-                m_ViewState.Widget.RefreshEditableVoxMeshes(optimized);
+                // Query previews retain the imported mesh until a successful edit
+                // adopts their document; enabling visuals must not embed the model.
+                if (!m_ViewState.Widget.IsExternalVox)
+                {
+                    m_ViewState.Widget.RefreshEditableVoxMeshes(optimized);
+                }
                 m_ViewState.VisualsDirty = false;
                 return;
             }
