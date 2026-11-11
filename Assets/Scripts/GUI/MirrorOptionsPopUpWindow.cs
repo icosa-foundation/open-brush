@@ -1,4 +1,4 @@
-﻿// Copyright 2022 The Tilt Brush Authors
+// Copyright 2022 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@ using System;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.Localization.Settings;
 
 namespace TiltBrush
 {
@@ -30,6 +31,8 @@ namespace TiltBrush
         public TextActionButton m_ButtonShowSpaceGroupControls;
         public TextActionButton m_ButtonShowHelicalControls;
         [SerializeField] private ActionButton m_UnlinkAllButton;
+        private float m_NextPointerLimitNotice;
+        private bool m_RefreshRejectedCount;
 
         public GameObject m_SimpleControls;
 
@@ -114,6 +117,8 @@ namespace TiltBrush
         {
             base.Init(rParent, sText);
             RefreshMirrorControls();
+            RefreshCellsLabel();
+            LocalizationSettings.SelectedLocaleChanged += RefreshCellsLabel;
             SketchMemoryScript.m_Instance.CommandUndo += RefreshMirrorControlsAfterHistory;
             SketchMemoryScript.m_Instance.CommandRedo += RefreshMirrorControlsAfterHistory;
             foreach (var slider in GetComponentsInChildren<AdvancedSlider>(true))
@@ -124,6 +129,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            LocalizationSettings.SelectedLocaleChanged -= RefreshCellsLabel;
             foreach (var slider in GetComponentsInChildren<AdvancedSlider>(true))
             {
                 slider.InteractionEnded -= SymmetryMirrors.EndSettingsEdit;
@@ -144,6 +150,11 @@ namespace TiltBrush
         protected override void BaseUpdate()
         {
             base.BaseUpdate();
+            if (m_RefreshRejectedCount)
+            {
+                m_RefreshRejectedCount = false;
+                RefreshMirrorControls();
+            }
             // Also follow recall/undo performed outside this popup.
             if (!ReferenceEquals(m_DisplayedMirror, SymmetryMirrors.Showing))
             {
@@ -258,6 +269,54 @@ namespace TiltBrush
             RefreshSliderValues();
         }
 
+        private bool TrySetCountSetting<T>(ref T setting, T value)
+        {
+            var pm = PointerManager.m_Instance;
+            var previous = setting;
+            long previousCount = pm.GetCustomSymmetryPointerCount();
+            setting = value;
+            if (!CheckPointerLimit(previousCount))
+            {
+                setting = previous;
+                RefreshMirrorControls();
+                return false;
+            }
+            pm.CalculateMirrors();
+            return true;
+        }
+
+        private void RefreshCellsLabel(UnityEngine.Localization.Locale locale = null)
+        {
+            var label = LocalizationSettings.StringDatabase.GetLocalizedString(
+                "Strings", "MULTIMIRROR_PANEL_CELLS_LABEL");
+            if (m_ButtonWallpaperRepeats is TextActionButton button) { button.m_ButtonLabel = label; }
+            m_ButtonWallpaperRepeats.GetComponentInChildren<TMPro.TextMeshPro>(true).text = label;
+        }
+
+        private bool CheckPointerLimit(long previousCount)
+        {
+            var pm = PointerManager.m_Instance;
+            long count = pm.GetCustomSymmetryPointerCount();
+            // Allow reductions of an already oversized configuration loaded from elsewhere,
+            // so it can be brought back under the limit one control at a time.
+            if (count > pm.SymmetryPointerCapacity && count >= previousCount)
+            {
+                if (Time.unscaledTime >= m_NextPointerLimitNotice)
+                {
+                    var message = LocalizationSettings.StringDatabase.GetLocalizedString(
+                        "Strings", "MULTIMIRROR_PANEL_TOO_MANY_POINTERS");
+                    OutputWindowScript.m_Instance.CreateInfoCardAtController(
+                        InputManager.ControllerName.Brush, message, 0.5f, false);
+                    m_NextPointerLimitNotice = Time.unscaledTime + 1f;
+                }
+                // AdvancedSlider updates its visual value after invoking its callback.
+                // Restore the accepted value on the next frame as well.
+                m_RefreshRejectedCount = true;
+                return false;
+            }
+            return true;
+        }
+
         private void RefreshSliderValues()
         {
             m_HelicalCopiesSlider.SetInitialValueAndUpdate(PointerManager.m_Instance.m_HelicalCopies);
@@ -338,19 +397,32 @@ namespace TiltBrush
 
         public void HandleChangeMirrorTypeButton(MirrorTypeButton btn)
         {
+            var pm = PointerManager.m_Instance;
+            long previousCount = pm.GetCustomSymmetryPointerCount();
+            var previousType = pm.m_CustomSymmetryType;
+            var previousPoint = pm.m_PointSymmetryFamily;
+            var previousWallpaper = pm.m_WallpaperSymmetryGroup;
             SetCurrentMirrorTypeButtonState(false);
             PointerManager.m_Instance.m_CustomSymmetryType = btn.m_CustomSymmetryType;
             switch (btn.m_CustomSymmetryType)
             {
                 case PointerManager.CustomSymmetryType.Point:
                     PointerManager.m_Instance.m_PointSymmetryFamily = btn.m_PointSymmetryFamily;
-                    UpdatePointSettingControls();
                     break;
                 case PointerManager.CustomSymmetryType.Wallpaper:
                     PointerManager.m_Instance.m_WallpaperSymmetryGroup = btn.m_WallpaperSymmetryGroup;
-                    UpdateWallpaperSettingControls();
                     break;
             }
+            if (!CheckPointerLimit(previousCount))
+            {
+                pm.m_CustomSymmetryType = previousType;
+                pm.m_PointSymmetryFamily = previousPoint;
+                pm.m_WallpaperSymmetryGroup = previousWallpaper;
+                RefreshMirrorControls();
+                return;
+            }
+            UpdatePointSettingControls();
+            UpdateWallpaperSettingControls();
             SetCurrentMirrorTypeButtonState(true);
             PointerManager.m_Instance.SymmetryWidget.SetAppearance();
             PointerManager.m_Instance.CalculateMirrors();
@@ -488,21 +560,20 @@ namespace TiltBrush
 
         public void HandleChangePointSymmetryOrder(Vector3 value)
         {
-            PointerManager.m_Instance.m_PointSymmetryOrder = Mathf.FloorToInt(value.z);
-            // Regenerate
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            TrySetCountSetting(ref pm.m_PointSymmetryOrder, Mathf.Max(1, Mathf.FloorToInt(value.z)));
         }
 
         public void HandleChangeWallpaperSymmetryX(Vector3 value)
         {
-            PointerManager.m_Instance.m_WallpaperSymmetryX = Mathf.FloorToInt(value.z);
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            TrySetCountSetting(ref pm.m_WallpaperSymmetryX, Mathf.Max(1, Mathf.FloorToInt(value.z)));
         }
 
         public void HandleChangeWallpaperSymmetryY(Vector3 value)
         {
-            PointerManager.m_Instance.m_WallpaperSymmetryY = Mathf.FloorToInt(value.z);
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            TrySetCountSetting(ref pm.m_WallpaperSymmetryY, Mathf.Max(1, Mathf.FloorToInt(value.z)));
         }
 
         public void HandleChangeWallpaperSymmetryScale(Vector3 value)
@@ -535,10 +606,20 @@ namespace TiltBrush
             PointerManager.m_Instance.CalculateMirrors();
         }
 
-        private void SetCustomSymmetryType(PointerManager.CustomSymmetryType type)
+        private bool SetCustomSymmetryType(PointerManager.CustomSymmetryType type)
         {
-            PointerManager.m_Instance.m_CustomSymmetryType = type;
-            PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+            var pm = PointerManager.m_Instance;
+            long previousCount = pm.GetCustomSymmetryPointerCount();
+            var previousType = pm.m_CustomSymmetryType;
+            pm.m_CustomSymmetryType = type;
+            if (!CheckPointerLimit(previousCount))
+            {
+                pm.m_CustomSymmetryType = previousType;
+                RefreshMirrorControls();
+                return false;
+            }
+            pm.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+            return true;
         }
 
         private void UpdateSymmetry()
@@ -583,7 +664,7 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.Penrose;
             m_PenroseControls.SetActive(true);
-            SetCustomSymmetryType(PointerManager.CustomSymmetryType.Penrose);
+            if (!SetCustomSymmetryType(PointerManager.CustomSymmetryType.Penrose)) { return; }
             m_ButtonShowPenroseControls?.SetButtonSelected(true);
             UpdateSymmetry();
             RefreshPenroseControls();
@@ -600,15 +681,14 @@ namespace TiltBrush
         public void HandleNextPenroseTiles()
         {
             var pm = PointerManager.m_Instance;
-            pm.m_PenroseTiles = (PenroseTiling.TileSelection)(((int)pm.m_PenroseTiles + 1) % 3);
-            pm.CalculateMirrors();
+            TrySetCountSetting(ref pm.m_PenroseTiles, (PenroseTiling.TileSelection)(((int)pm.m_PenroseTiles + 1) % 3));
             RefreshPenroseControls();
         }
 
         public void HandleChangePenroseSubdivisions(Vector3 value)
         {
-            PointerManager.m_Instance.m_PenroseSubdivisions = Mathf.Clamp(Mathf.RoundToInt(value.z), 1, 7);
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            TrySetCountSetting(ref pm.m_PenroseSubdivisions, Mathf.Clamp(Mathf.RoundToInt(value.z), 1, 7));
             RefreshPenroseControls();
         }
 
@@ -624,7 +704,7 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.LineGroup;
             m_LineGroupControls.SetActive(true);
-            SetCustomSymmetryType(PointerManager.CustomSymmetryType.LineGroup);
+            if (!SetCustomSymmetryType(PointerManager.CustomSymmetryType.LineGroup)) { return; }
             m_ButtonShowLineGroupControls?.SetButtonSelected(true);
             UpdateSymmetry();
             RefreshLineGroupControls();
@@ -649,22 +729,21 @@ namespace TiltBrush
         public void HandleNextLineFamily()
         {
             var pm = PointerManager.m_Instance;
-            pm.m_LineFamily = (LineGroupSymmetry.Family)((int)pm.m_LineFamily % 13 + 1);
-            pm.CalculateMirrors();
+            TrySetCountSetting(ref pm.m_LineFamily, (LineGroupSymmetry.Family)((int)pm.m_LineFamily % 13 + 1));
             RefreshLineGroupControls();
         }
 
         public void HandleChangeLineOrder(Vector3 value)
         {
-            PointerManager.m_Instance.m_LineOrder = Mathf.Max(1, Mathf.RoundToInt(value.z));
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            TrySetCountSetting(ref pm.m_LineOrder, Mathf.Max(1, Mathf.RoundToInt(value.z)));
             RefreshLineGroupControls();
         }
 
         public void HandleChangeLineRepeats(Vector3 value)
         {
-            PointerManager.m_Instance.m_LineRepeats = Mathf.Max(1, Mathf.RoundToInt(value.z));
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            TrySetCountSetting(ref pm.m_LineRepeats, Mathf.Max(1, Mathf.RoundToInt(value.z)));
             RefreshLineGroupControls();
         }
 
@@ -687,7 +766,7 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.SpaceGroup;
             m_SpaceGroupControls.SetActive(true);
-            SetCustomSymmetryType(PointerManager.CustomSymmetryType.SpaceGroup);
+            if (!SetCustomSymmetryType(PointerManager.CustomSymmetryType.SpaceGroup)) { return; }
             m_ButtonShowSpaceGroupControls?.SetButtonSelected(true);
             UpdateSymmetry();
             RefreshSpaceGroupControls();
@@ -721,8 +800,7 @@ namespace TiltBrush
             var pm = PointerManager.m_Instance;
             var current = SpaceGroupCatalog.GetCrystalSystem(pm.m_SpaceGroupNumber);
             var next = (SpaceGroupCatalog.CrystalSystem)(((int)current + 1) % 7);
-            pm.m_SpaceGroupNumber = SpaceGroupCatalog.GetPresets(next)[0].number;
-            pm.CalculateMirrors();
+            TrySetCountSetting(ref pm.m_SpaceGroupNumber, SpaceGroupCatalog.GetPresets(next)[0].number);
             RefreshSpaceGroupControls();
         }
 
@@ -735,36 +813,41 @@ namespace TiltBrush
             {
                 if (presets[i].number == pm.m_SpaceGroupNumber) { next = (i + 1) % presets.Count; break; }
             }
-            pm.m_SpaceGroupNumber = presets[next].number;
-            pm.CalculateMirrors();
+            TrySetCountSetting(ref pm.m_SpaceGroupNumber, presets[next].number);
             RefreshSpaceGroupControls();
         }
 
         public void HandleChangeSpaceGroupNumber(Vector3 value)
         {
-            PointerManager.m_Instance.m_SpaceGroupNumber = Mathf.Clamp(Mathf.RoundToInt(value.z), 1, 230);
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            TrySetCountSetting(ref pm.m_SpaceGroupNumber, Mathf.Clamp(Mathf.RoundToInt(value.z), 1, 230));
             RefreshSpaceGroupControls();
         }
 
         public void HandleChangeSpaceGroupRepeatX(Vector3 value)
         {
-            PointerManager.m_Instance.m_SpaceGroupRepeats.x = Mathf.Max(1, Mathf.RoundToInt(value.z));
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            var repeats = pm.m_SpaceGroupRepeats;
+            repeats.x = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            TrySetCountSetting(ref pm.m_SpaceGroupRepeats, repeats);
             RefreshSpaceGroupControls();
         }
 
         public void HandleChangeSpaceGroupRepeatY(Vector3 value)
         {
-            PointerManager.m_Instance.m_SpaceGroupRepeats.y = Mathf.Max(1, Mathf.RoundToInt(value.z));
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            var repeats = pm.m_SpaceGroupRepeats;
+            repeats.y = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            TrySetCountSetting(ref pm.m_SpaceGroupRepeats, repeats);
             RefreshSpaceGroupControls();
         }
 
         public void HandleChangeSpaceGroupRepeatZ(Vector3 value)
         {
-            PointerManager.m_Instance.m_SpaceGroupRepeats.z = Mathf.Max(1, Mathf.RoundToInt(value.z));
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            var repeats = pm.m_SpaceGroupRepeats;
+            repeats.z = Mathf.Max(1, Mathf.RoundToInt(value.z));
+            TrySetCountSetting(ref pm.m_SpaceGroupRepeats, repeats);
             RefreshSpaceGroupControls();
         }
 
@@ -780,15 +863,15 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.Helical;
             m_HelicalControls.SetActive(true);
-            SetCustomSymmetryType(PointerManager.CustomSymmetryType.Helical);
+            if (!SetCustomSymmetryType(PointerManager.CustomSymmetryType.Helical)) { return; }
             m_ButtonShowHelicalControls?.SetButtonSelected(true);
             UpdateSymmetry();
         }
 
         public void HandleChangeHelicalCopies(Vector3 value)
         {
-            PointerManager.m_Instance.m_HelicalCopies = Mathf.Max(1, Mathf.FloorToInt(value.z));
-            PointerManager.m_Instance.CalculateMirrors();
+            var pm = PointerManager.m_Instance;
+            TrySetCountSetting(ref pm.m_HelicalCopies, Mathf.Max(1, Mathf.FloorToInt(value.z)));
         }
 
         public void HandleChangeHelicalAngle(Vector3 value)
@@ -808,7 +891,7 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.Point;
             m_PointSymmetryControls.SetActive(true);
-            SetCustomSymmetryType(PointerManager.CustomSymmetryType.Point);
+            if (!SetCustomSymmetryType(PointerManager.CustomSymmetryType.Point)) { return; }
             m_ButtonShowPointControls?.SetButtonSelected(true);
             UpdatePointSettingControls();
             UpdateSymmetry();
@@ -819,7 +902,7 @@ namespace TiltBrush
             HideAllControls();
             m_LastActiveTab = MirrorTab.Wallpaper;
             m_WallpaperSymmetryControls.SetActive(true);
-            SetCustomSymmetryType(PointerManager.CustomSymmetryType.Wallpaper);
+            if (!SetCustomSymmetryType(PointerManager.CustomSymmetryType.Wallpaper)) { return; }
             m_ButtonShowWallpaperControls?.SetButtonSelected(true);
             UpdateWallpaperSettingControls();
             UpdateSymmetry();

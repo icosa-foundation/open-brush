@@ -3955,6 +3955,14 @@ MonoBehaviour:
     m_Key: ICOSAPANEL_PANEL_FILTER_COMPLEXITY
     m_Metadata:
       m_Items: []
+  - m_Id: 563821227493908486
+    m_Key: MULTIMIRROR_PANEL_TOO_MANY_POINTERS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908487
+    m_Key: MULTIMIRROR_PANEL_CELLS_LABEL
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

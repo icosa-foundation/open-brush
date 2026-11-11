@@ -1090,6 +1090,42 @@ MonoBehaviour:
     m_Localized: 
     m_Metadata:
       m_Items: []
+  - m_Id: 563821227493908486
+    m_Localized: '[Too many pointers]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908487
+    m_Localized: '[Cells]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011310442315776
+    m_Localized: '[Cells X]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011387676229632
+    m_Localized: '[Cells Y]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522567
+    m_Localized: '[Cells X]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522568
+    m_Localized: '[Cells Y]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522569
+    m_Localized: '[Cells Z]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522574
+    m_Localized: '[Steps]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522560
+    m_Localized: '[Total pointers]'
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

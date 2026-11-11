@@ -190,6 +190,39 @@ namespace TiltBrush
 
         private int m_NumActivePointers = 1;
         public int ActiveSymmetryPointerCount => m_NumActivePointers;
+        public int SymmetryPointerCapacity => m_MaxPointers;
+
+        // Count complete repeat units before generating the full set of transforms.
+        // Use the package's own groups so centering and family multiplicities stay authoritative.
+        public long GetCustomSymmetryPointerCount()
+        {
+            long units;
+            int placements;
+            switch (m_CustomSymmetryType)
+            {
+                case CustomSymmetryType.SpaceGroup:
+                    placements = new SpaceGroupSymmetry(m_SpaceGroupNumber, Vector3Int.one, 1f).matrices.Count;
+                    units = (long)m_SpaceGroupRepeats.x * m_SpaceGroupRepeats.y * m_SpaceGroupRepeats.z;
+                    return units * placements;
+                case CustomSymmetryType.Wallpaper:
+                    placements = new WallpaperSymmetry(m_WallpaperSymmetryGroup, 1, 1, 1f,
+                        m_WallpaperSymmetryScaleX, m_WallpaperSymmetryScaleY,
+                        m_WallpaperSymmetrySkewX, m_WallpaperSymmetrySkewY).matrices.Count;
+                    units = (long)m_WallpaperSymmetryX * m_WallpaperSymmetryY;
+                    return units * placements;
+                case CustomSymmetryType.LineGroup:
+                    placements = new LineGroupSymmetry(m_LineFamily, 1, 1, m_LineAdvance, m_LineAngle).matrices.Count;
+                    return (long)m_LineRepeats * m_LineOrder * placements;
+                case CustomSymmetryType.Helical:
+                    return Mathf.Max(1, m_HelicalCopies);
+                case CustomSymmetryType.Penrose:
+                    var tiling = new PenroseTiling(m_PenroseSubdivisions, m_PenroseRadius, m_PenroseTiles);
+                    return tiling.matrices.Count;
+                default:
+                    var point = new PointSymmetry(m_PointSymmetryFamily, m_PointSymmetryOrder);
+                    return point.matrices.Count;
+            }
+        }
 
         private bool m_PointersRenderingRequested;
         private bool m_PointersRenderingActive;

@@ -3408,11 +3408,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 129011310442315776
-    m_Localized: X Repeats
+    m_Localized: Cells X
     m_Metadata:
       m_Items: []
   - m_Id: 129011387676229632
-    m_Localized: Y Repeats
+    m_Localized: Cells Y
     m_Metadata:
       m_Items: []
   - m_Id: 129011445721202688
@@ -3948,7 +3948,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000013
-    m_Localized: "Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; Cancel to exit."
+    m_Localized: Check the A-to-B arrow. Trigger confirms; the other controller trigger swaps A and B; Cancel to exit.
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000014
@@ -4028,7 +4028,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 551461337731522560
-    m_Localized: Helical copies, including the original
+    m_Localized: Total pointers
     m_Metadata:
       m_Items: []
   - m_Id: 551461337731522561
@@ -4056,15 +4056,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 551461337731522567
-    m_Localized: Cell repeats along X
+    m_Localized: Cells X
     m_Metadata:
       m_Items: []
   - m_Id: 551461337731522568
-    m_Localized: Cell repeats along Y
+    m_Localized: Cells Y
     m_Metadata:
       m_Items: []
   - m_Id: 551461337731522569
-    m_Localized: Cell repeats along Z
+    m_Localized: Cells Z
     m_Metadata:
       m_Items: []
   - m_Id: 551461337731522570
@@ -4084,7 +4084,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 551461337731522574
-    m_Localized: Number of generalized steps
+    m_Localized: Steps
     m_Metadata:
       m_Items: []
   - m_Id: 551461337731522575
@@ -4128,7 +4128,15 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 554342843789434881
-    m_Localized: "Complexity"
+    m_Localized: Complexity
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908486
+    m_Localized: Too many pointers
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908487
+    m_Localized: Cells
     m_Metadata:
       m_Items: []
   references:
