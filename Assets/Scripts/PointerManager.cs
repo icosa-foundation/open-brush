@@ -1309,7 +1309,10 @@ namespace TiltBrush
                 else
                 {
                     flags |= SketchMemoryScript.StrokeFlags.IsGroupContinue;
-                    Debug.Assert(pointer.TimestampMs == groupStartTime);
+                    // Scripted branches may begin partway through the same gesture.
+                    // Keep their real playback timestamps; flags define Undo grouping.
+                    Debug.Assert(m_CurrentSymmetryMode == SymmetryMode.ScriptedSymmetryMode ||
+                        pointer.TimestampMs == groupStartTime);
                 }
 
                 if (forceGroupContinue)
