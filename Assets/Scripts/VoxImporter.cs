@@ -21,8 +21,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using UnityEngine;
-using VoxReader;
-using VoxReader.Interfaces;
 using Vector3 = UnityEngine.Vector3;
 
 namespace TiltBrush
@@ -105,9 +103,8 @@ namespace TiltBrush
                     GenerateCollider = true
                 };
 
-                // Read the .vox file using VoxReader library
-                IVoxFile voxFile = LoadVoxFile();
-                RuntimeVoxDocument document = RuntimeVoxDocument.FromVoxFile(voxFile);
+                m_voxData ??= File.ReadAllBytes(m_path);
+                RuntimeVoxDocument document = RuntimeVoxDocument.FromBytes(m_voxData, preserveSourceData: false);
 
                 // Create parent GameObject
                 string rootName = string.IsNullOrEmpty(options.RootObjectName)
@@ -222,14 +219,6 @@ namespace TiltBrush
             }
         }
 
-        private IVoxFile LoadVoxFile()
-        {
-            if (m_voxData == null)
-            {
-                m_voxData = File.ReadAllBytes(m_path);
-            }
-            return VoxReader.VoxReader.Read(VoxWriter.CreateVoxReaderCompatibleCopy(m_voxData));
-        }
 
         internal byte[] CopySourceBytes()
         {

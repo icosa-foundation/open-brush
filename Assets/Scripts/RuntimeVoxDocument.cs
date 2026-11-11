@@ -49,32 +49,61 @@ namespace TiltBrush
             private Dictionary<Vector3Int, byte> m_Cells;
             private VoxChunkGrid m_Grid;
             private VoxReader.Voxel[] m_SourceVoxels;
+            private byte[] m_SourceVoxelBytes;
+            private int[] m_StoredToRuntimePalette;
+            internal bool IsDeferred => m_SourceVoxels != null || m_SourceVoxelBytes != null;
+            internal byte[] SourceVoxelBytes => m_SourceVoxelBytes;
             internal Dictionary<Vector3Int, byte> Cells
             {
                 get { EnsureCells(); return m_Cells; }
             }
             internal VoxChunkGrid Grid
             {
-                get { EnsureCells(); return m_Grid; }
+                get
+                {
+                    EnsureCells();
+                    if (m_Grid == null)
+                    {
+                        m_Grid = new VoxChunkGrid();
+                        foreach (var cell in m_Cells) m_Grid.Set(cell.Key, cell.Value);
+                    }
+                    return m_Grid;
+                }
             }
 
             private void EnsureCells()
             {
-                if (m_SourceVoxels == null) return;
+                if (!IsDeferred) return;
                 var source = m_SourceVoxels;
-                m_SourceVoxels = null;
                 m_Cells = new Dictionary<Vector3Int, byte>();
-                m_Grid = new VoxChunkGrid();
-                foreach (var voxel in source)
+                if (m_SourceVoxelBytes != null)
                 {
-                    var position = new Vector3Int(voxel.LocalPosition.X, voxel.LocalPosition.Y, voxel.LocalPosition.Z);
-                    if (position.x < 0 || position.y < 0 || position.z < 0 ||
-                        position.x >= Size.x || position.y >= Size.y || position.z >= Size.z) continue;
-                    // VoxReader exposes IMAP-adjusted colour indices as zero-based values.
-                    byte index = (byte)Mathf.Clamp(voxel.ColorIndex + 1, 1, 255);
-                    m_Cells[position] = index;
-                    m_Grid.Set(position, index);
+                    int count = BitConverter.ToInt32(m_SourceVoxelBytes, 0);
+                    for (int i = 0; i < count; ++i)
+                    {
+                        int offset = 4 + i * 4;
+                        byte storedIndex = m_SourceVoxelBytes[offset + 3];
+                        if (storedIndex == 0)
+                            throw new InvalidDataException("VOX voxel has an invalid palette index.");
+                        AddSourceCell(new Vector3Int(m_SourceVoxelBytes[offset],
+                            m_SourceVoxelBytes[offset + 1], m_SourceVoxelBytes[offset + 2]),
+                            (byte)m_StoredToRuntimePalette[storedIndex]);
+                    }
                 }
+                else
+                    foreach (var voxel in source)
+                        AddSourceCell(new Vector3Int(voxel.LocalPosition.X, voxel.LocalPosition.Y, voxel.LocalPosition.Z),
+                            (byte)Mathf.Clamp(voxel.ColorIndex + 1, 1, 255));
+                m_SourceVoxels = null;
+                m_SourceVoxelBytes = null;
+                m_StoredToRuntimePalette = null;
+            }
+
+            private void AddSourceCell(Vector3Int position, byte index)
+            {
+                if (position.x < 0 || position.y < 0 || position.z < 0 ||
+                    position.x >= Size.x || position.y >= Size.y || position.z >= Size.z) return;
+                m_Cells[position] = index;
             }
 
             internal bool SetCell(Vector3Int position, byte value)
@@ -83,34 +112,37 @@ namespace TiltBrush
                 if (before == value) return false;
                 if (value == 0) Cells.Remove(position);
                 else Cells[position] = value;
-                Grid.Set(position, value);
+                m_Grid?.Set(position, value);
                 return true;
             }
 
-            internal void RestoreCells(IReadOnlyDictionary<Vector3Int, byte> cells)
+            internal VoxelDefinition Clone() => new VoxelDefinition(Size, SourceModelId,
+                IsDeferred ? null : new Dictionary<Vector3Int, byte>(Cells),
+                m_SourceVoxels, m_SourceVoxelBytes, m_StoredToRuntimePalette);
+
+            internal void RestoreCells(VoxelDefinition definition)
             {
-                m_SourceVoxels = null;
-                m_Cells = new Dictionary<Vector3Int, byte>();
-                m_Grid = new VoxChunkGrid();
-                foreach (var cell in cells)
-                {
-                    Cells.Add(cell.Key, cell.Value);
-                    Grid.Set(cell.Key, cell.Value);
-                }
+                var copy = definition.Clone();
+                m_SourceVoxels = copy.m_SourceVoxels;
+                m_SourceVoxelBytes = copy.m_SourceVoxelBytes;
+                m_StoredToRuntimePalette = copy.m_StoredToRuntimePalette;
+                m_Cells = copy.m_Cells;
+                m_Grid = copy.m_Grid;
             }
 
             internal VoxelDefinition(Vector3Int size, int sourceModelId,
-                Dictionary<Vector3Int, byte> cells = null, VoxReader.Voxel[] sourceVoxels = null)
+                Dictionary<Vector3Int, byte> cells = null, VoxReader.Voxel[] sourceVoxels = null,
+                byte[] sourceVoxelBytes = null, int[] storedToRuntimePalette = null)
             {
                 Size = size;
                 SourceModelId = sourceModelId;
-                // Imported definitions retain reader data until rendering or editing needs cells.
+                // Imported definitions retain source data until rendering or editing needs cells.
                 // Instances share the same definition, so it is expanded at most once.
                 m_SourceVoxels = sourceVoxels;
-                if (sourceVoxels != null) return;
+                m_SourceVoxelBytes = sourceVoxelBytes;
+                m_StoredToRuntimePalette = storedToRuntimePalette;
+                if (IsDeferred) return;
                 m_Cells = cells ?? new Dictionary<Vector3Int, byte>();
-                m_Grid = new VoxChunkGrid();
-                foreach (var cell in m_Cells) m_Grid.Set(cell.Key, cell.Value);
             }
         }
 
@@ -381,7 +413,7 @@ namespace TiltBrush
             internal VoxelDefinition[] Definitions;
             internal Vector3[] Offsets;
             internal Vector3Int[] SourceCellOffsets;
-            internal Dictionary<VoxelDefinition, Dictionary<Vector3Int, byte>> Cells;
+            internal Dictionary<VoxelDefinition, VoxelDefinition> Cells;
             internal Color32[] Palette;
             internal Dictionary<int, RuntimeMaterial> Materials;
             internal byte[] Source;
@@ -398,7 +430,7 @@ namespace TiltBrush
                 SourceCellOffsets = m_models.Select(model => model.SourceCellOffset).ToArray(),
                 Cells = m_models.Select(model => model.Definition).Distinct().ToDictionary(
                     definition => definition,
-                    definition => new Dictionary<Vector3Int, byte>(definition.Cells)),
+                    definition => definition.Clone()),
                 Palette = (Color32[])Palette.Clone(),
                 Materials = new Dictionary<int, RuntimeMaterial>(m_materials),
                 // This private buffer is immutable; writers parse their own chunk copies.
@@ -617,6 +649,9 @@ namespace TiltBrush
         }
 
         public static RuntimeVoxDocument FromVoxFile(IVoxFile voxFile)
+            => FromVoxFile(voxFile, null);
+
+        private static RuntimeVoxDocument FromVoxFile(IVoxFile voxFile, IReadOnlyList<byte[]> voxelChunks)
         {
             if (voxFile == null)
             {
@@ -680,7 +715,10 @@ namespace TiltBrush
                         sourceModel.Id,
                         out VoxelDefinition definition))
                 {
-                    definition = new VoxelDefinition(modelSize, sourceModel.Id, sourceVoxels: sourceModel.Voxels);
+                    definition = voxelChunks == null
+                        ? new VoxelDefinition(modelSize, sourceModel.Id, sourceVoxels: sourceModel.Voxels)
+                        : new VoxelDefinition(modelSize, sourceModel.Id, sourceVoxelBytes: voxelChunks[sourceModel.Id],
+                            storedToRuntimePalette: storedToRuntimePalette);
                     definitionsBySourceId.Add(sourceModel.Id, definition);
                 }
 
@@ -715,9 +753,9 @@ namespace TiltBrush
                 throw new ArgumentNullException(nameof(bytes));
             }
 
-            IVoxFile voxFile = VoxReader.VoxReader.Read(
-                VoxWriter.CreateVoxReaderCompatibleCopy(bytes));
-            RuntimeVoxDocument document = FromVoxFile(voxFile);
+            byte[] metadata = VoxWriter.CreateVoxReaderMetadataCopy(bytes, out var voxelChunks);
+            IVoxFile voxFile = VoxReader.VoxReader.Read(metadata);
+            RuntimeVoxDocument document = FromVoxFile(voxFile, voxelChunks);
             if (preserveSourceData)
             {
                 document.m_sourceVoxBytes = (byte[])bytes.Clone();
@@ -749,7 +787,7 @@ namespace TiltBrush
             return VoxWriter.Write(FloatingSelection.HasValue || HasUnboundedCells() ? CreateFinalizedCopy() : this);
         }
 
-        private bool HasUnboundedCells() => m_models.Any(model => !model.Definition.Grid.Empty &&
+        private bool HasUnboundedCells() => m_models.Any(model => !model.Definition.IsDeferred && !model.Definition.Grid.Empty &&
             (model.Definition.Grid.Min.x < 0 || model.Definition.Grid.Min.y < 0 || model.Definition.Grid.Min.z < 0 ||
                 model.Definition.Grid.Max.x >= model.Size.x || model.Definition.Grid.Max.y >= model.Size.y ||
                 model.Definition.Grid.Max.z >= model.Size.z));
@@ -759,6 +797,7 @@ namespace TiltBrush
             bool changed = false;
             foreach (var model in m_models)
             {
+                if (model.Definition.IsDeferred) continue;
                 var grid = model.Definition.Grid;
                 if (!grid.Empty && (grid.Min.x < 0 || grid.Min.y < 0 || grid.Min.z < 0 ||
                         grid.Max.x >= model.Size.x || grid.Max.y >= model.Size.y || grid.Max.z >= model.Size.z))

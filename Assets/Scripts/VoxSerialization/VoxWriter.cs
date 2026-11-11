@@ -32,12 +32,23 @@ namespace TiltBrush
             },
             StringComparer.Ordinal);
 
-        // VoxReader rejects unrecognized chunk IDs. Parse semantics from a filtered copy while
-        // retaining the original bytes on RuntimeVoxDocument for lossless round-trip preservation.
-        internal static byte[] CreateVoxReaderCompatibleCopy(byte[] sourceData)
+        // Let VoxReader interpret scene metadata without expanding every XYZI into voxel
+        // objects. Keep those immutable payloads for on-demand decoding and write-back.
+        internal static byte[] CreateVoxReaderMetadataCopy(byte[] sourceData, out List<byte[]> voxelChunks)
         {
             PreservedVoxFile source = PreservedVoxFile.Parse(sourceData);
-            bool changed = source.Main.RemoveUnknownChildren(s_VoxReaderChunkIds);
+            source.Main.RemoveUnknownChildren(s_VoxReaderChunkIds);
+            voxelChunks = new List<byte[]>();
+            foreach (var chunk in source.Main.Children.Where(chunk => chunk.Id == "XYZI"))
+            {
+                if (chunk.Content.Length < 4)
+                    throw new InvalidDataException("VOX XYZI chunk is missing its voxel count.");
+                int count = BitConverter.ToInt32(chunk.Content, 0);
+                if (count < 0 || count > (chunk.Content.Length - 4) / 4)
+                    throw new InvalidDataException("VOX XYZI voxel count exceeds its payload.");
+                voxelChunks.Add(chunk.Content);
+                chunk.Content = new byte[4];
+            }
             if (!source.Main.Children.Any(chunk => chunk.Id == "RGBA"))
             {
                 // RGBA is optional in the VOX format, but the bundled semantic reader assumes
@@ -49,9 +60,8 @@ namespace TiltBrush
                     Content = BuildDefaultRgbaContent(),
                     Children = new List<PreservedChunk>(),
                 });
-                changed = true;
             }
-            return changed ? source.Write() : sourceData;
+            return source.Write();
         }
 
         public static byte[] Write(RuntimeVoxDocument document)
@@ -423,7 +433,7 @@ namespace TiltBrush
                             voxelIndex,
                             out RuntimeVoxDocument.RuntimeModel model))
                     {
-                        chunk.Content = ExtractChunkContent(BuildXyziChunk(
+                        chunk.Content = model.Definition.SourceVoxelBytes ?? ExtractChunkContent(BuildXyziChunk(
                             model,
                             runtimeToStoredPalette));
                     }

@@ -75,6 +75,7 @@ namespace TiltBrush
                 root.localPosition = pose.translation;
                 root.localRotation = pose.rotation;
                 root.gameObject.SetActive(model.IsVisible);
+                if (!model.IsVisible) continue;
                 if (!m_Nodes.TryGetValue(model, out var nodes))
                 {
                     nodes = root.GetComponentsInChildren<VoxChunkTag>(true).ToDictionary(tag => tag.Coordinate,

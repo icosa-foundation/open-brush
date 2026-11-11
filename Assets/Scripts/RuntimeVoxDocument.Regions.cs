@@ -114,8 +114,7 @@ namespace TiltBrush
                 VoxelDefinition definition;
                 if (!sharedDefinitions.TryGetValue(model.Definition, out definition))
                 {
-                    definition = new VoxelDefinition(model.Size, model.SourceModelId,
-                        new Dictionary<Vector3Int, byte>(model.Voxels));
+                    definition = model.Definition.Clone();
                     sharedDefinitions.Add(model.Definition, definition);
                 }
                 var instance = new RuntimeModel(model.Name, model.Size, model.SourceModelId,
