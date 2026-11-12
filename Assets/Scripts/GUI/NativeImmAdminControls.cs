@@ -60,10 +60,8 @@ namespace TiltBrush
             m_PlaybackButton.RefreshPlaybackState();
 
             int viewpoint = NativeImmImport.CurrentViewpointIndex;
-            m_ViewpointLabel.text = viewpoint >= 0
-                ? $"Viewpoint {viewpoint + 1} / {viewpointCount}"
-                : $"Viewpoint — / {viewpointCount}";
-            m_ChapterLabel.text = $"Chapter {(NativeImmImport.CurrentChapterIndex ?? 0) + 1} / {NativeImmImport.ChapterCount}";
+            m_ViewpointLabel.text = NativeImmStrings.Viewpoint(viewpoint, viewpointCount);
+            m_ChapterLabel.text = NativeImmStrings.Chapter((NativeImmImport.CurrentChapterIndex ?? 0) + 1, NativeImmImport.ChapterCount);
         }
 
         private void UpdateLayout(bool viewpoints, bool chapters)

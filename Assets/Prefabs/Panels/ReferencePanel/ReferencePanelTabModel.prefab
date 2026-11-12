@@ -130,9 +130,9 @@ MonoBehaviour:
   m_DescriptionText: Select Next Viewpoint
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 82311120000000006
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -176,6 +176,7 @@ GameObject:
   - component: {fileID: 5257231499689309640}
   - component: {fileID: 1064260804277971}
   - component: {fileID: 7257668444060566613}
+  - component: {fileID: 82311120000100001}
   m_Layer: 16
   m_Name: Loop Label
   m_TagString: Untagged
@@ -580,9 +581,9 @@ MonoBehaviour:
   m_DescriptionText: Move to Selected Viewpoint
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 82311120000000007
       m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -936,9 +937,9 @@ MonoBehaviour:
   m_DescriptionText: Convert Current Frame to Editable Strokes
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 82311120000000018
       m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -946,9 +947,9 @@ MonoBehaviour:
   m_DescriptionTextExtra: Replaces this IMM only. Other sketch content is preserved.
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 82311120000000019
       m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -1269,6 +1270,7 @@ GameObject:
   - component: {fileID: 3157720930353093779}
   - component: {fileID: 5698126668175943490}
   - component: {fileID: 9076833891636582652}
+  - component: {fileID: 82311120000100003}
   m_Layer: 0
   m_Name: MakeEditableLabel
   m_TagString: Untagged
@@ -2109,9 +2111,9 @@ MonoBehaviour:
   m_DescriptionText: Previous Chapter
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 82311120000000001
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3000,6 +3002,7 @@ GameObject:
   - component: {fileID: 8443408619206057987}
   - component: {fileID: 3880004143990628896}
   - component: {fileID: 2608121085903928178}
+  - component: {fileID: 82311120000100004}
   m_Layer: 0
   m_Name: MakeEditableLabel
   m_TagString: Untagged
@@ -3390,9 +3393,9 @@ MonoBehaviour:
   m_DescriptionText: Next Chapter
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 82311120000000002
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -3436,6 +3439,7 @@ GameObject:
   - component: {fileID: 18333289492166198}
   - component: {fileID: 1004898056820935235}
   - component: {fileID: 7607298127732644181}
+  - component: {fileID: 82311120000100002}
   m_Layer: 16
   m_Name: SpatialLabel
   m_TagString: Untagged
@@ -3819,9 +3823,9 @@ MonoBehaviour:
   m_DescriptionText: Select Previous Viewpoint
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName: 
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 82311120000000005
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -4584,9 +4588,9 @@ MonoBehaviour:
   m_DescriptionText: Import IMM Skydome
   m_LocalizedDescription:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 82311120000000021
       m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -4594,9 +4598,9 @@ MonoBehaviour:
   m_DescriptionTextExtra: Use the skydome visible at the current IMM frame.
   m_LocalizedDescriptionExtra:
     m_TableReference:
-      m_TableCollectionName:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
     m_TableEntryReference:
-      m_KeyId: 0
+      m_KeyId: 82311120000000022
       m_Key:
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -4794,6 +4798,14 @@ PrefabInstance:
     - target: {fileID: 5452949074331721065, guid: 93b56759f69b2774b8e363dbed866a34, type: 3}
       propertyPath: m_DescriptionText
       value: Spatial
+      objectReference: {fileID: 0}
+    - target: {fileID: 5452949074331721065, guid: 93b56759f69b2774b8e363dbed866a34, type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
+      objectReference: {fileID: 0}
+    - target: {fileID: 5452949074331721065, guid: 93b56759f69b2774b8e363dbed866a34, type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 82311120000000016
       objectReference: {fileID: 0}
     - target: {fileID: 5452949074331721065, guid: 93b56759f69b2774b8e363dbed866a34, type: 3}
       propertyPath: m_InitialToggleState
@@ -5569,6 +5581,14 @@ PrefabInstance:
       value: Loop
       objectReference: {fileID: 0}
     - target: {fileID: 5452949074331721065, guid: 93b56759f69b2774b8e363dbed866a34, type: 3}
+      propertyPath: m_LocalizedDescription.m_TableReference.m_TableCollectionName
+      value: GUID:c84355079ab3f3e4f8f3812258805f86
+      objectReference: {fileID: 0}
+    - target: {fileID: 5452949074331721065, guid: 93b56759f69b2774b8e363dbed866a34, type: 3}
+      propertyPath: m_LocalizedDescription.m_TableEntryReference.m_KeyId
+      value: 82311120000000015
+      objectReference: {fileID: 0}
+    - target: {fileID: 5452949074331721065, guid: 93b56759f69b2774b8e363dbed866a34, type: 3}
       propertyPath: m_InitialToggleState
       value: 1
       objectReference: {fileID: 0}
@@ -5928,3 +5948,151 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1109535964008511540, guid: d6018658b41437b42b55823e97697dbd, type: 3}
   m_PrefabInstance: {fileID: 8799674257096362992}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &82311120000100001
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 719500458375922217}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56eb0353ae6e5124bb35b17aff880f16, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  m_StringReference:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 82311120000000015
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_FormatArguments: []
+  m_UpdateString:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7257668444060566613}
+        m_TargetAssemblyTypeName: TMPro.TextMeshPro, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &82311120000100002
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6874946983061707659}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56eb0353ae6e5124bb35b17aff880f16, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  m_StringReference:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 82311120000000016
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_FormatArguments: []
+  m_UpdateString:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 7607298127732644181}
+        m_TargetAssemblyTypeName: TMPro.TextMeshPro, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &82311120000100003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3047411465299388698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56eb0353ae6e5124bb35b17aff880f16, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  m_StringReference:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 82311120000000017
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_FormatArguments: []
+  m_UpdateString:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 9076833891636582652}
+        m_TargetAssemblyTypeName: TMPro.TextMeshPro, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &82311120000100004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6418656501954924828}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 56eb0353ae6e5124bb35b17aff880f16, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  m_StringReference:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 82311120000000020
+      m_Key:
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_FormatArguments: []
+  m_UpdateString:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 2608121085903928178}
+        m_TargetAssemblyTypeName: TMPro.TextMeshPro, Unity.TextMeshPro
+        m_MethodName: set_text
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument:
+          m_BoolArgument: 0
+        m_CallState: 2

@@ -4358,6 +4358,154 @@ MonoBehaviour:
     m_Localized: "A→B 화살표를 확인하세요. 트리거로 확인, 다른 컨트롤러의 트리거로 A와 B 교환, 취소로 종료합니다."
     m_Metadata:
       m_Items: []
+  - m_Id: 82311120000000001
+    m_Localized: "이전 챕터"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000002
+    m_Localized: "다음 챕터"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000003
+    m_Localized: "이전 시점"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000004
+    m_Localized: "다음 시점"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000005
+    m_Localized: "이전 시점 선택"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000006
+    m_Localized: "다음 시점 선택"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000007
+    m_Localized: "선택한 시점으로 이동"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000008
+    m_Localized: "IMM 재생 / 계속"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000009
+    m_Localized: "IMM 일시 정지"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Localized: "챕터 {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "시점 {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "IMM 불러오는 중…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "챕터 변경 중…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "Quill 네이티브 불러오기는 아직 사용할 수 없습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "반복"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "공간 음향"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "편집 가능하게 만들기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "현재 프레임을 편집 가능한 스트로크로 변환"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "이 IMM만 교체합니다. 스케치의 다른 콘텐츠는 유지됩니다."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "스카이돔 가져오기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "IMM 스카이돔 가져오기"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "현재 IMM 프레임에 보이는 스카이돔을 사용합니다."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "현재 IMM 프레임을 편집 가능한 스트로크로 변환하지 못했습니다."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "현재 IMM 프레임에 보이는 스카이돔이 없습니다."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "IMM 스카이돔을 가져오지 못했습니다."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "모델 재생 실패"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "네이티브 IMM 문서 불러오기가 완료되지 않았습니다."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "이전 네이티브 스케치 해제가 완료되지 않았습니다."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "IMM 참조를 불러오지 못했습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "캐시된 IMM을 읽지 못했습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "IMM을 다운로드하지 못했습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "IMM을 캐시하지 못했습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "갤러리 참조를 캐시하지 못했습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "갤러리 참조를 불러오지 못했습니다"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "네이티브 IMM 불러오기 시간이 초과되었습니다."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "동영상 재생 실패"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "오디오 재생 실패"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

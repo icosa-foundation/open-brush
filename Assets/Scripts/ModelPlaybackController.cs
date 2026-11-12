@@ -581,7 +581,7 @@ namespace TiltBrush
             LastError = error.Message;
             m_RestoreFailed = true;
             Debug.LogWarning($"[OB_MODEL_PLAYBACK_20261016] {error.Message}");
-            OutputWindowScript.Error("Model playback failed", error.Message);
+            OutputWindowScript.Error(NativeImmStrings.Get("PLAYBACK_FAILED", "Model playback failed"), error.Message);
         }
         private void RequireReady()
         {

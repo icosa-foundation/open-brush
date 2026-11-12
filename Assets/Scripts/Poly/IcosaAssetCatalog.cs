@@ -919,7 +919,7 @@ namespace TiltBrush
                 catch (Exception exception) { error = exception; }
                 if (error != null)
                 {
-                    OutputWindowScript.Error("Could not read cached IMM", error.Message);
+                    OutputWindowScript.Error(NativeImmStrings.Get("READ_CACHE_FAILED", "Could not read cached IMM"), error.Message);
                     yield break;
                 }
                 if (path == null)
@@ -940,7 +940,7 @@ namespace TiltBrush
                     if (error != null || request.IsCanceled || !request.IsReady)
                     {
                         Debug.LogWarning($"{prefix} Download failed: {assetId}, {error?.Message}");
-                        OutputWindowScript.Error("Could not download IMM", error?.Message ?? assetId);
+                        OutputWindowScript.Error(NativeImmStrings.Get("DOWNLOAD_FAILED", "Could not download IMM"), error?.Message ?? assetId);
                         yield break;
                     }
                     try
@@ -955,7 +955,7 @@ namespace TiltBrush
                     catch (Exception exception) { error = exception; }
                     if (error != null)
                     {
-                        OutputWindowScript.Error("Could not cache IMM", error.Message);
+                        OutputWindowScript.Error(NativeImmStrings.Get("CACHE_FAILED", "Could not cache IMM"), error.Message);
                         yield break;
                     }
                 }
@@ -1468,7 +1468,7 @@ namespace TiltBrush
             }
             catch (Exception error) when (error is IOException || error is UnauthorizedAccessException)
             {
-                OutputWindowScript.Error("Could not cache gallery reference", $"{asset.Id}: {error.Message}");
+                OutputWindowScript.Error(NativeImmStrings.Get("CACHE_GALLERY_FAILED", "Could not cache gallery reference"), $"{asset.Id}: {error.Message}");
                 return null;
             }
         }
@@ -1507,7 +1507,7 @@ namespace TiltBrush
                     {
                         Debug.LogWarning($"Downloaded asset is empty: {request.Asset.Id}");
                         if (!string.IsNullOrEmpty(request.ErrorMessage))
-                            OutputWindowScript.Error("Could not load gallery reference",
+                            OutputWindowScript.Error(NativeImmStrings.Get("LOAD_GALLERY_FAILED", "Could not load gallery reference"),
                                 $"{request.Asset.Id}: {request.ErrorMessage}");
                     }
 

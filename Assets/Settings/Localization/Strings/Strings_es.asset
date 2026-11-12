@@ -4420,6 +4420,154 @@ MonoBehaviour:
     m_Localized: "Comprueba la flecha de A a B. El gatillo confirma; el del otro mando intercambia A y B; Cancelar para salir."
     m_Metadata:
       m_Items: []
+  - m_Id: 82311120000000001
+    m_Localized: "Capítulo anterior"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000002
+    m_Localized: "Capítulo siguiente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000003
+    m_Localized: "Punto de vista anterior"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000004
+    m_Localized: "Punto de vista siguiente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000005
+    m_Localized: "Seleccionar punto de vista anterior"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000006
+    m_Localized: "Seleccionar punto de vista siguiente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000007
+    m_Localized: "Moverse al punto de vista seleccionado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000008
+    m_Localized: "Reproducir / continuar IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000009
+    m_Localized: "Pausar IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Localized: "Capítulo {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "Punto de vista {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "Cargando IMM…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "Cambiando de capítulo…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "La carga nativa de Quill aún no está disponible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "Repetir"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "Espacial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "Hacer editable"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "Convertir el fotograma actual en trazos editables"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "Solo reemplaza este IMM. Se conserva el resto del contenido del boceto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "Importar cúpula celeste"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "Importar cúpula celeste de IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "Usar la cúpula celeste visible en el fotograma actual de IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "No se pudo convertir el fotograma actual de IMM en trazos editables."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "No hay ninguna cúpula celeste visible en el fotograma actual de IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "No se pudo importar la cúpula celeste de IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "Error al reproducir el modelo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "El documento IMM nativo no terminó de cargarse."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "El boceto nativo anterior no terminó de descargarse de la memoria."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "No se pudo cargar la referencia IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "No se pudo leer el IMM en caché"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "No se pudo descargar el IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "No se pudo guardar el IMM en caché"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "No se pudo guardar la referencia de la galería en caché"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "No se pudo cargar la referencia de la galería"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "Se agotó el tiempo de carga del IMM nativo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "Error al reproducir el vídeo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "Error al reproducir el sonido"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

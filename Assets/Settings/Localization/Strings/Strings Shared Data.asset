@@ -3859,6 +3859,154 @@ MonoBehaviour:
     m_Key: ICOSAPANEL_PANEL_FILTER_COMPLEXITY
     m_Metadata:
       m_Items: []
+  - m_Id: 82311120000000001
+    m_Key: NATIVE_IMM_PREVIOUS_CHAPTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000002
+    m_Key: NATIVE_IMM_NEXT_CHAPTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000003
+    m_Key: NATIVE_IMM_PREVIOUS_VIEWPOINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000004
+    m_Key: NATIVE_IMM_NEXT_VIEWPOINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000005
+    m_Key: NATIVE_IMM_SELECT_PREVIOUS_VIEWPOINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000006
+    m_Key: NATIVE_IMM_SELECT_NEXT_VIEWPOINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000007
+    m_Key: NATIVE_IMM_MOVE_TO_VIEWPOINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000008
+    m_Key: NATIVE_IMM_PLAY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000009
+    m_Key: NATIVE_IMM_PAUSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Key: NATIVE_IMM_CHAPTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Key: NATIVE_IMM_VIEWPOINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Key: NATIVE_IMM_LOADING
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Key: NATIVE_IMM_CHANGING_CHAPTER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Key: NATIVE_IMM_QUILL_UNAVAILABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Key: NATIVE_IMM_LOOP
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Key: NATIVE_IMM_SPATIAL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Key: NATIVE_IMM_MAKE_EDITABLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Key: NATIVE_IMM_CONVERT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Key: NATIVE_IMM_CONVERT_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Key: NATIVE_IMM_IMPORT_SKYDOME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Key: NATIVE_IMM_IMPORT_IMM_SKYDOME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Key: NATIVE_IMM_SKYDOME_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Key: NATIVE_IMM_CONVERT_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Key: NATIVE_IMM_NO_SKYDOME
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Key: NATIVE_IMM_SKYDOME_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Key: NATIVE_IMM_PLAYBACK_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Key: NATIVE_IMM_LOAD_INCOMPLETE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Key: NATIVE_IMM_UNLOAD_INCOMPLETE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Key: NATIVE_IMM_LOAD_REFERENCE_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Key: NATIVE_IMM_READ_CACHE_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Key: NATIVE_IMM_DOWNLOAD_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Key: NATIVE_IMM_CACHE_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Key: NATIVE_IMM_CACHE_GALLERY_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Key: NATIVE_IMM_LOAD_GALLERY_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Key: NATIVE_IMM_LOAD_TIMEOUT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Key: NATIVE_IMM_VIDEO_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Key: NATIVE_IMM_SOUND_FAILED
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

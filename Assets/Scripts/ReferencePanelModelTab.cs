@@ -191,7 +191,7 @@ namespace TiltBrush
             if (m_ChapterControls != null) m_ChapterControls.SetActive(native && playback.ChapterCount > 1);
             if (native && m_ChapterLabel != null)
             {
-                string label = $"Chapter {playback.Chapter + 1} / {playback.ChapterCount}";
+                string label = NativeImmStrings.Chapter(playback.Chapter + 1, playback.ChapterCount);
                 if (m_ChapterLabel.text != label) m_ChapterLabel.text = label;
             }
             int index = -1;
@@ -200,7 +200,7 @@ namespace TiltBrush
             if (m_ViewpointControls != null) m_ViewpointControls.SetActive(native && count > 0);
             if (native && m_ViewpointLabel != null)
             {
-                string label = $"Viewpoint {(index < 0 ? "-" : (index + 1).ToString())} / {count}";
+                string label = NativeImmStrings.Viewpoint(index, count);
                 if (m_ViewpointLabel.text != label) m_ViewpointLabel.text = label;
             }
             foreach (var button in m_PlaybackButtons)
@@ -247,7 +247,7 @@ namespace TiltBrush
             catch (Exception error)
             {
                 Debug.LogError($"[OB_IMM_EDITABLE_20261111] Conversion failed: {error}");
-                OutputWindowScript.Error("Could not convert the current IMM frame to editable strokes.");
+                OutputWindowScript.Error(NativeImmStrings.Get("CONVERT_FAILED", "Could not convert the current IMM frame to editable strokes."));
             }
             RefreshModelControls();
         }
@@ -259,12 +259,12 @@ namespace TiltBrush
             try
             {
                 if (!Quill.ImportNativeImmSkydome(m_SelectedModelWidget))
-                    OutputWindowScript.m_Instance.AddNewLine("No visible skydome at the current IMM frame.");
+                    OutputWindowScript.m_Instance.AddNewLine(NativeImmStrings.Get("NO_SKYDOME", "No visible skydome at the current IMM frame."));
             }
             catch (Exception error)
             {
                 Debug.LogError($"[OB_IMM_SKYDOME_20261111] Import failed: {error}");
-                OutputWindowScript.Error("Could not import the IMM skydome.");
+                OutputWindowScript.Error(NativeImmStrings.Get("SKYDOME_FAILED", "Could not import the IMM skydome."));
             }
         }
 

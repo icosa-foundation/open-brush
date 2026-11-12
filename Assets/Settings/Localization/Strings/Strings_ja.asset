@@ -4358,6 +4358,154 @@ MonoBehaviour:
     m_Localized: "A→B の矢印を確認。トリガーで確定、反対側のトリガーで A と B を入れ替え。キャンセルで終了。"
     m_Metadata:
       m_Items: []
+  - m_Id: 82311120000000001
+    m_Localized: "前のチャプター"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000002
+    m_Localized: "次のチャプター"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000003
+    m_Localized: "前の視点"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000004
+    m_Localized: "次の視点"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000005
+    m_Localized: "前の視点を選択"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000006
+    m_Localized: "次の視点を選択"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000007
+    m_Localized: "選択した視点に移動"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000008
+    m_Localized: "IMMを再生／続行"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000009
+    m_Localized: "IMMを一時停止"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Localized: "チャプター {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "視点 {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "IMMを読み込み中…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "チャプターを切り替え中…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "Quillのネイティブ読み込みはまだ利用できません"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "ループ"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "空間音響"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "編集可能にする"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "現在のフレームを編集可能なストロークに変換"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "このIMMのみを置き換えます。スケッチの他の内容は保持されます。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "スカイドームをインポート"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "IMMのスカイドームをインポート"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "現在のIMMフレームに表示されているスカイドームを使用します。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "現在のIMMフレームを編集可能なストロークに変換できませんでした。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "現在のIMMフレームには表示可能なスカイドームがありません。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "IMMのスカイドームをインポートできませんでした。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "モデルの再生に失敗しました"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "ネイティブIMMドキュメントの読み込みが完了しませんでした。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "前のネイティブスケッチのアンロードが完了しませんでした。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "IMM参照を読み込めませんでした"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "キャッシュされたIMMを読み取れませんでした"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "IMMをダウンロードできませんでした"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "IMMをキャッシュできませんでした"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "ギャラリー参照をキャッシュできませんでした"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "ギャラリー参照を読み込めませんでした"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "ネイティブIMMの読み込みがタイムアウトしました。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "動画の再生に失敗しました"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "音声の再生に失敗しました"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
