@@ -4846,6 +4846,10 @@ MonoBehaviour:
     m_Localized: "音频播放失败"
     m_Metadata:
       m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "使用画笔颜色"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

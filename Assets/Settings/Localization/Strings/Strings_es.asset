@@ -4908,6 +4908,10 @@ MonoBehaviour:
     m_Localized: "Error al reproducir el sonido"
     m_Metadata:
       m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "Usar el color del pincel"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
