@@ -4480,6 +4480,10 @@ MonoBehaviour:
     m_Localized: "Halte den Trigger gedrückt und ziehe, um einen Quader auszuwählen. Drücke beim Greifen die Duplizieren-Taste, um eine Kopie zu platzieren. Drücke den Trigger zweimal im leeren Raum, um abzuschließen und die Auswahl aufzuheben."
     m_Metadata:
       m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "Pinselfarbe verwenden"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

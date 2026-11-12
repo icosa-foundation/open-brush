@@ -4394,6 +4394,10 @@ MonoBehaviour:
     m_Localized: "トリガーを押しながらドラッグして直方体を選択します。つかんでいる間に複製ボタンを押すとコピーを配置できます。何もない空間でトリガーを2回押すと確定し、選択を解除します。"
     m_Metadata:
       m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "ブラシの色を使用"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

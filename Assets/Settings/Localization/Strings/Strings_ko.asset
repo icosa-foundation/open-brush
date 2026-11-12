@@ -4394,6 +4394,10 @@ MonoBehaviour:
     m_Localized: "트리거를 누른 채 드래그하여 직육면체를 선택하세요. 잡고 있는 동안 복제 버튼을 눌러 복사본을 배치하세요. 빈 공간에서 트리거를 두 번 눌러 완료하고 선택을 해제하세요."
     m_Metadata:
       m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "브러시 색상 사용"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

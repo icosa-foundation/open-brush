@@ -4424,6 +4424,10 @@ MonoBehaviour:
     m_Localized: "Maintenez la gâchette enfoncée et faites glisser pour sélectionner un pavé droit. Appuyez sur le bouton de duplication pendant la saisie pour déposer une copie. Appuyez deux fois sur la gâchette dans un espace vide pour terminer et effacer la sélection."
     m_Metadata:
       m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "Utiliser la couleur du pinceau"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

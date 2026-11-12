@@ -4394,6 +4394,10 @@ MonoBehaviour:
     m_Localized: "按住扳机拖动以选择一个长方体。抓取时按下复制按钮可放置副本。在空白处双击扳机以完成并清除选择。"
     m_Metadata:
       m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "使用画笔颜色"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

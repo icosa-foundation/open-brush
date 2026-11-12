@@ -4456,6 +4456,10 @@ MonoBehaviour:
     m_Localized: "Mantén pulsado el gatillo y arrastra para seleccionar un cuboide. Pulsa el botón de duplicar mientras lo agarras para colocar una copia. Pulsa dos veces el gatillo en un espacio vacío para finalizar y borrar la selección."
     m_Metadata:
       m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "Usar el color del pincel"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
