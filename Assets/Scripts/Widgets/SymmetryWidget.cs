@@ -590,7 +590,8 @@ namespace TiltBrush
             if (PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Point
                 || PointerManager.m_Instance.m_CustomSymmetryType == PointerManager.CustomSymmetryType.Polyhedra)
             {
-                DrawPointGroupGuides(lrs, matrices, mirrorScale);
+                // These outlines indicate angles, so keep their display radius independent of scene zoom.
+                DrawPointGroupGuides(lrs, matrices, mirrorScale / App.ActiveCanvas.Pose.scale);
                 return;
             }
 
@@ -743,6 +744,7 @@ namespace TiltBrush
         {
             var pm = PointerManager.m_Instance;
             var advance = pm.m_LineAdvance;
+            var displayScale = mirrorScale / App.ActiveCanvas.Pose.scale;
             var domainPath = pm.LineGroupDomainPath;
             var points = new Vector3[domainPath.Length];
             LineRenderer GetRenderer(int index)
@@ -755,8 +757,14 @@ namespace TiltBrush
             }
             for (var i = 0; i < matrices.Count; i++)
             {
+                var origin = matrices[i].MultiplyPoint3x4(Vector3.zero) * mirrorScale;
                 for (var j = 0; j < points.Length; j++)
-                    points[j] = matrices[i].MultiplyPoint3x4(domainPath[j]) * mirrorScale;
+                {
+                    // The radial cutoff is only a display size; the axial extent is a real step distance.
+                    var point = domainPath[j] * displayScale;
+                    point.y = domainPath[j].y * mirrorScale;
+                    points[j] = matrices[i].MultiplyVector(point) + origin;
+                }
                 var renderer = GetRenderer(i);
                 renderer.positionCount = points.Length;
                 renderer.SetPositions(points);
@@ -774,7 +782,7 @@ namespace TiltBrush
             {
                 var matrix = matrices[step * copiesPerStep];
                 var origin = matrix.MultiplyPoint3x4(Vector3.zero) * mirrorScale;
-                var tick = matrix.MultiplyVector(Vector3.right * (PointerManager.LineGroupDomainRadius * 0.08f)) * mirrorScale;
+                var tick = matrix.MultiplyVector(Vector3.right * (PointerManager.LineGroupDomainRadius * 0.08f)) * displayScale;
                 axisPoints[step * 4] = origin;
                 axisPoints[step * 4 + 1] = origin - tick;
                 axisPoints[step * 4 + 2] = origin + tick;
