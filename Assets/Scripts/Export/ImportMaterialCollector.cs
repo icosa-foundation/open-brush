@@ -108,7 +108,9 @@ namespace TiltBrush
                 // Runtime VOX PBR materials use the toolkit property names.
                 color = unityMaterial.GetColor("_BaseColorFactor");
                 hasColor = true;
-                pbrInfo = unityMaterial.shader == TbtSettings.Instance.m_PbrBlendDoubleSided.material.shader
+                var voxGlass = Resources.Load<Material>("VoxMaterials/Glass");
+                pbrInfo = unityMaterial.shader == TbtSettings.Instance.m_PbrBlendDoubleSided.material.shader ||
+                    (voxGlass != null && unityMaterial.shader == voxGlass.shader)
                     ? TbtSettings.Instance.m_PbrBlendDoubleSided
                     : TbtSettings.Instance.m_PbrOpaqueDoubleSided;
             }
@@ -168,6 +170,15 @@ namespace TiltBrush
                 if (lightBrush != null && unityMaterial.shader == lightBrush.Material.shader)
                     dynMat.EmissiveFactor = lightBrush.EmissiveFactor *
                         Mathf.Clamp01(unityMaterial.GetFloat("_EmissionGain"));
+            }
+
+            if (unityMaterial.HasProperty("_EmissionStrength"))
+            {
+                var voxOpaque = Resources.Load<Material>("VoxMaterials/Opaque");
+                var voxGlass = Resources.Load<Material>("VoxMaterials/Glass");
+                if ((voxOpaque != null && unityMaterial.shader == voxOpaque.shader) ||
+                    (voxGlass != null && unityMaterial.shader == voxGlass.shader))
+                    dynMat.EmissiveFactor = unityMaterial.GetFloat("_EmissionStrength");
             }
 
             m_MaterialToIem.Add(unityMaterial, dynMat);

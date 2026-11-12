@@ -208,14 +208,11 @@ namespace TiltBrush
                 if (!m_EatInput && !m_ToolHidden &&
                     InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
                 {
+                    PanelManager.m_Instance.SetCurrentColorOnAllColorPickers(m_SelectionColor);
                     var voxelTool = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.VoxelTool) as VoxelTool;
                     if (voxelTool != null && voxelTool.HasCurrentTarget && !voxelTool.CreatingNewModel)
                     {
-                        if (!voxelTool.TrySamplePalette(voxel)) return;
-                    }
-                    else
-                    {
-                        PanelManager.m_Instance.SetCurrentColorOnAllColorPickers(m_SelectionColor);
+                        voxelTool.TrySamplePalette(voxel);
                     }
                     AudioManager.m_Instance.PlayDropperPickSound(m_DropperRenderer.transform.position);
                     m_RequestExit = true;
