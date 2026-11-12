@@ -158,6 +158,11 @@ namespace TiltBrush
                 WidgetManager.m_Instance.PinnedStencilLayerMask;
         }
 
+        override protected bool HandleNonGpuWidgetIntersections(Vector3 center_GS, float radius_GS)
+        {
+            return IntersectNonGpuModelWidgets(center_GS, radius_GS);
+        }
+
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
             if (widget.Pinned == m_InPinningMode)

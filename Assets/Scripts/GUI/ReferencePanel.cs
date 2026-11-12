@@ -306,7 +306,9 @@ namespace TiltBrush
 
             if (m_DirectoryChooserPopupButton != null)
             {
-                m_DirectoryChooserPopupButton.ButtonLabel = $"{displayPath}";
+                // TMP parses backslash escapes (e.g. the \v in \vox) as control
+                // characters. Escape path separators so directory names stay literal.
+                m_DirectoryChooserPopupButton.ButtonLabel = (displayPath ?? string.Empty).Replace("\\", "\\\\");
                 m_CurrentSubdirectories = AndroidDirectStorage.GetDirectories(currentDir);
 
                 if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models)

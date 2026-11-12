@@ -35,6 +35,7 @@ namespace TiltBrush
         public event Action CurrentCameraPathChanged;
         public event Action AllWidgetsDestroyed;
         public event Action SelectionChanged;
+        public event Action<ModelWidget> ModelWidgetGrabbed;
         public event Action<VideoWidget> VideoWidgetActivated;
         public event Action<SoundClipWidget> SoundClipWidgetActivated;
         public event Action VideoRecordingStopped;
@@ -135,6 +136,11 @@ namespace TiltBrush
         public void TriggerVideoWidgetActivated(VideoWidget widget)
         {
             VideoWidgetActivated?.Invoke(widget);
+        }
+
+        public void TriggerModelWidgetGrabbed(ModelWidget widget)
+        {
+            ModelWidgetGrabbed?.Invoke(widget);
         }
 
         public void TriggerSoundClipWidgetActivated(SoundClipWidget widget)
