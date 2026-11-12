@@ -172,6 +172,15 @@ namespace TiltBrush
                         Mathf.Clamp01(unityMaterial.GetFloat("_EmissionGain"));
             }
 
+            if (unityMaterial.HasProperty("_EmissionStrength"))
+            {
+                var voxOpaque = Resources.Load<Material>("VoxMaterials/Opaque");
+                var voxGlass = Resources.Load<Material>("VoxMaterials/Glass");
+                if ((voxOpaque != null && unityMaterial.shader == voxOpaque.shader) ||
+                    (voxGlass != null && unityMaterial.shader == voxGlass.shader))
+                    dynMat.EmissiveFactor = unityMaterial.GetFloat("_EmissionStrength");
+            }
+
             m_MaterialToIem.Add(unityMaterial, dynMat);
 
         }
