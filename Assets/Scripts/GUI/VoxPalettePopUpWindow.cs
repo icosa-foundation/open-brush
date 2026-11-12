@@ -2,7 +2,6 @@
 // Licensed under the Apache License, Version 2.0. See LICENSE for details.
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using OpenBrush.Multiplayer;
 using TMPro;
 using UnityEngine;
@@ -20,7 +19,6 @@ namespace TiltBrush
         [SerializeField] private TextActionButton m_MaterialTabButton;
         [SerializeField] private GameObject m_MaterialArea;
         [SerializeField] private ValueSlider[] m_MaterialSliders;
-        [FormerlySerializedAs("m_Apply")]
         [SerializeField] private ActionToggleButton m_BrushColor;
         [SerializeField] private ActionButton m_ClearUnused;
         [SerializeField] private ActionButton m_Sort;
@@ -29,6 +27,8 @@ namespace TiltBrush
         [SerializeField] private float m_SwatchSpacing = .15f;
         [SerializeField] private float m_SwatchSize = .13f;
         private readonly VoxPaletteButton[] m_Swatches = new VoxPaletteButton[PageSize];
+        [SerializeField] private TextMeshPro m_PageText;
+        [SerializeField] private TextMeshPro m_InfoText;
         private readonly int[] m_DisplayOrder = new int[byte.MaxValue];
         private ModelWidget m_Widget;
         private Model m_Source;
@@ -202,7 +202,8 @@ namespace TiltBrush
             m_ColourTab.SetButtonSelected(!m_MaterialTab); m_MaterialTabButton.SetButtonSelected(m_MaterialTab);
             m_ClearUnused.SetButtonAvailable(CanEdit); m_Sort.SetButtonAvailable(valid);
             ColorPicker.gameObject.SetActive(!m_MaterialTab); m_MaterialArea.SetActive(m_MaterialTab && valid);
-            m_WindowText.text = valid ? $"VOX palette — {(BrushMode ? "Drawing material" : $"Palette slot {m_Selected}")} — {m_Page + 1}/{PageCount}" : "VOX model unavailable";
+            m_InfoText.text = valid ? $"{(BrushMode ? "Using brush color" : $"Using slot {m_Selected}")}" : "No model selected";
+            m_PageText.text = $"{m_Page + 1}/{PageCount}";
             if (!valid) return;
             ColorPicker.Controller.CurrentColor = BrushMode ? App.BrushColor.CurrentColor : m_Document.Palette[m_Selected - 1];
             if (m_MaterialTab) RefreshMaterialControls();
