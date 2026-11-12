@@ -94,7 +94,8 @@ namespace TiltBrush
 
                     SketchMemoryScript.m_Instance.RenderStrokesDirectly(m_LoadedStrokes);
 
-                    App.Scene.MoveStrokesCentroidTo(m_LoadedStrokes, m_CommandMidpoint);
+                    var offset = App.Scene.MoveStrokesCentroidTo(m_LoadedStrokes, m_CommandMidpoint);
+                    MoveImportedMirrors(offset);
 
                     m_Group = App.GroupManager.NewUnusedGroup();
                     for (int i = 0; i < m_LoadedStrokes.Count; i++)
@@ -127,6 +128,23 @@ namespace TiltBrush
                     m_StrokesVisible = true;
 
                     // The selection child is redone automatically after the strokes are shown.
+                }
+            }
+
+            private void MoveImportedMirrors(Vector3 worldOffset)
+            {
+                if (worldOffset == Vector3.zero) { return; }
+                var sceneMove = TrTransform.T(App.Scene.Pose.inverse.MultiplyVector(worldOffset));
+                foreach (var mirror in m_LoadedStrokes.Select(stroke => stroke.SymmetryPeerGroup?.Mirror)
+                    .Where(mirror => mirror != null).Distinct())
+                {
+                    // Each imported mirror is fresh and shared by all its imported groups.
+                    // Rebase its operations in canvas space and its widget pose in scene space.
+                    var move = TrTransform.T(mirror.Canvas.Pose.inverse.MultiplyVector(worldOffset));
+                    var settings = mirror.Settings.WithPointerTransforms(mirror.Settings.PointerTransforms
+                        .Select(pointer => move * pointer * move.inverse).ToList());
+                    settings.WidgetTransform = sceneMove * settings.WidgetTransform;
+                    mirror.Settings = settings;
                 }
             }
 
