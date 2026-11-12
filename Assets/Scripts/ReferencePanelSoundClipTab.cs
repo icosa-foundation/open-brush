@@ -86,10 +86,8 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
-                    bool previous = SelectedSoundClip.Playing;
-                    SelectedSoundClip.Playing = value;
-                    if (SelectedSoundClip.Playing != previous)
-                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+                    WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundPlaying", value,
+                        w => w.SoundClipController.Playing, (w, v) => w.SoundClipController.Playing = v);
                 }
             }
         }
@@ -102,10 +100,8 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
-                    float previous = SelectedSoundClip.Volume;
-                    SelectedSoundClip.Volume = value;
-                    if (SelectedSoundClip.Volume != previous)
-                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+                    WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundVolume", value,
+                        w => w.SoundClipController.Volume, (w, v) => w.SoundClipController.Volume = v);
                 }
             }
         }
@@ -115,10 +111,8 @@ namespace TiltBrush
             SoundClip.SoundClipController soundClip = SelectedSoundClip;
             if (soundClip != null)
             {
-                var previous = soundClip.Loop;
-                soundClip.Loop = btn.ToggleState;
-                if (soundClip.Loop != previous)
-                    SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+                WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundLoop", btn.ToggleState,
+                    w => w.SoundClipController.Loop, (w, v) => w.SoundClipController.Loop = v);
             }
         }
 
@@ -127,10 +121,8 @@ namespace TiltBrush
             SoundClip.SoundClipController soundClip = SelectedSoundClip;
             if (soundClip != null)
             {
-                var previous = soundClip.SpatialBlend;
-                soundClip.SpatialBlend = btn.ToggleState ? 1f : 0f;
-                if (soundClip.SpatialBlend != previous)
-                    SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+                WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundSpatialBlend", btn.ToggleState ? 1f : 0f,
+                    w => w.SoundClipController.SpatialBlend, (w, v) => w.SoundClipController.SpatialBlend = v);
             }
         }
 
@@ -141,10 +133,8 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
-                    float previous = SelectedSoundClip.MinDistance;
-                    SelectedSoundClip.MinDistance = value;
-                    if (SelectedSoundClip.MinDistance != previous)
-                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+                    WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundMinDistance", value,
+                        w => w.SoundClipController.MinDistance, (w, v) => w.SoundClipController.MinDistance = v);
                 }
             }
         }
@@ -156,10 +146,8 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
-                    float previous = SelectedSoundClip.MaxDistance;
-                    SelectedSoundClip.MaxDistance = value;
-                    if (SelectedSoundClip.MaxDistance != previous)
-                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+                    WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundMaxDistance", value,
+                        w => w.SoundClipController.MaxDistance, (w, v) => w.SoundClipController.MaxDistance = v);
                 }
             }
         }

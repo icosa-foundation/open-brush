@@ -1992,6 +1992,13 @@ Symmetry = {}
 
 function Symmetry:SummonWidget() end
 
+---Sets up to four guide beam pairs for scripted symmetry. Directions use widget-local space, independent of Settings.space. Lengths are fixed. Zero vectors and omitted pairs are disabled. All pairs reset to off when a symmetry script starts or ends.
+---@param directions Vector3[] A list of up to four finite direction vectors; an empty list disables all pairs.
+function Symmetry:SetGuideBeams(directions) end
+
+---Turns off all guide beam pairs for scripted symmetry.
+function Symmetry:ClearGuideBeams() end
+
 ---@param angle number The angle in degrees to sample the radius at
 ---@param minorRadius number The minor radius of the ellipse (The major radius is always 1)
 ---@return number # 

@@ -205,6 +205,23 @@ namespace TiltBrush
             m_ActiveInputUIComponent = null;
         }
 
+        private UIRaycastSurface GetRaycastSurface(Ray ray)
+        {
+            UIRaycastSurface nearest = null;
+            float distance = float.PositiveInfinity;
+            foreach (var component in m_UIComponents)
+            {
+                if (component is UIRaycastSurface surface && surface.isActiveAndEnabled &&
+                    BasePanel.DoesRayHitCollider(ray, surface.GetCollider(), out var hit) &&
+                    hit.distance < distance)
+                {
+                    nearest = surface;
+                    distance = hit.distance;
+                }
+            }
+            return nearest;
+        }
+
         public void UpdateUIComponents(Ray selectionRay, bool inputValid, Collider parentCollider)
         {
             // If we don't have controller input, reset our active input object.  Note that this is
@@ -215,11 +232,17 @@ namespace TiltBrush
                 ResetInput();
             }
 
+            var surface = GetRaycastSurface(selectionRay);
             for (int i = 0; i < m_UIComponents.Count; ++i)
             {
                 UIComponent uiComponent = m_UIComponents[i];
+                // A modal background is a fallback for its own controls, never a competitor
+                // with them. Exclude the underlying popup before it can claim the input.
+                if (uiComponent == surface) { continue; }
 
-                if (uiComponent.UpdateStateWithInput(inputValid, selectionRay, m_ActiveInputObject,
+                bool blocked = surface != null &&
+                    !uiComponent.transform.IsChildOf(surface.transform.parent);
+                if (!blocked && uiComponent.UpdateStateWithInput(inputValid, selectionRay, m_ActiveInputObject,
                     parentCollider))
                 {
                     m_ActiveInputObject = uiComponent.gameObject;
@@ -230,6 +253,17 @@ namespace TiltBrush
                     // Reset state of component because we're not messing with it.
                     uiComponent.ResetState();
                 }
+            }
+
+            if (surface != null)
+            {
+                if (surface.UpdateStateWithInput(inputValid, selectionRay, m_ActiveInputObject,
+                    parentCollider))
+                {
+                    m_ActiveInputObject = surface.gameObject;
+                    m_ActiveInputUIComponent = surface;
+                }
+                else { surface.ResetState(); }
             }
 
             // If we clicked, but didn't hit a UIComponent, set our active object to ourself.
@@ -320,14 +354,25 @@ namespace TiltBrush
 
         public void CalculateReticleCollision(Ray castRay, ref Vector3 pos, ref Vector3 forward)
         {
+            var surface = GetRaycastSurface(castRay);
             for (int i = 0; i < m_UIComponents.Count; ++i)
             {
-                // There's an order of operations issue here.  In practice, UIComponents don't have
-                // overlapping colliders, so it shouldn't matter.
-                if (m_UIComponents[i].CalculateReticleCollision(castRay, ref pos, ref forward))
+                UIComponent uiComponent = m_UIComponents[i];
+                if (uiComponent == surface) { continue; }
+                if (surface != null && !uiComponent.transform.IsChildOf(surface.transform.parent))
+                {
+                    continue;
+                }
+                if (uiComponent.CalculateReticleCollision(castRay, ref pos, ref forward))
                 {
                     return;
                 }
+            }
+
+            // Match input routing: modal controls take priority, then their background.
+            if (surface != null)
+            {
+                surface.CalculateReticleCollision(castRay, ref pos, ref forward);
             }
         }
     }
