@@ -41,7 +41,7 @@ namespace TiltBrush
                     index >= m_Before.PointerTransforms.Count) { continue; }
                 var step = after.PointerTransforms[index] * m_Before.PointerTransforms[index].inverse;
                 var state = member.Before;
-                state.Transform = step * state.Transform;
+                state.SetTransform(member.Widget, step * state.Transform);
                 if (!state.Transform.IsFinite()) { continue; }
                 member.After = state;
                 state.Restore(member.Widget);
@@ -91,7 +91,7 @@ namespace TiltBrush
                     var state = WidgetPlacement.Capture(widget);
                     var next = state;
                     bool removed = index >= after.PointerTransforms.Count;
-                    if (!removed) { next.Transform = after.PointerTransforms[index] * canonical; }
+                    if (!removed) { next.SetTransform(widget, after.PointerTransforms[index] * canonical); }
                     m_Members.Add(new Member
                     {
                         Widget = widget, Group = group, Index = index, Before = state, After = next, Removed = removed
@@ -103,7 +103,7 @@ namespace TiltBrush
                     var copy = source.Clone();
                     copy.SetCanvas(group.Mirror.Canvas);
                     var state = WidgetPlacement.Capture(copy);
-                    state.Transform = after.PointerTransforms[i] * canonical;
+                    state.SetTransform(copy, after.PointerTransforms[i] * canonical);
                     state.Restore(copy);
                     copy.Hide();
                     TiltMeterScript.m_Instance.AdjustMeterWithWidget(copy.GetTiltMeterCost(), up: false);

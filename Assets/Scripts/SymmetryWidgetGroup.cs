@@ -65,6 +65,14 @@ namespace TiltBrush
             Dimensions = widget.CustomDimension
         };
 
+        internal void SetTransform(GrabWidget widget, TrTransform transform)
+        {
+            // Match FlipSelection's local X reflection to retain a positive-size pose.
+            Transform = transform.scale < 0 && !widget.SupportsNegativeSize
+                ? transform * new Plane(Vector3.right, 0).ToTrTransform()
+                : transform;
+        }
+
         internal void Restore(GrabWidget widget)
         {
             widget.LocalTransform = Transform;
