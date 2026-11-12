@@ -2,8 +2,8 @@
   "dependencies": {
     "com.arloopa.unitysplats": "https://github.com/icosa-mirror/UnitySplats.git#9894eca7077ffd72d7bce8e1d77ba3dbf3758aa7",
     "com.icosa.open-brush-unity-tools": "https://github.com/icosa-foundation/open-brush-unity-tools.git#upm",
-    "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#92a457b5045132f046a350205296e5f64d9c9f06",
-    "com.immersive-foundation.imm-unity": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-unity#92a457b5045132f046a350205296e5f64d9c9f06",
+    "com.immersive-foundation.imm-stroke-reader": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#71397b3c9b708ca908c90936f1f338aa8438ba95",
+    "com.immersive-foundation.imm-unity": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-unity#71397b3c9b708ca908c90936f1f338aa8438ba95",
     "com.ixxy.unitysymmetry": "https://github.com/IxxyXR/unity-symmetry.git#abe3134f758d4d130ed32decb215258e647234e4",
     "com.netpyoung.webp": "https://github.com/netpyoung/unity.webp.git?path=unity_project/Assets/unity.webp#0.3.22",
     "com.rlabrecque.steamworks.net": "https://github.com/rlabrecque/Steamworks.NET.git?path=/com.rlabrecque.steamworks.net#ba71581f1ed7349e8d0f17ddc6f135dd3bc8a6a3",
