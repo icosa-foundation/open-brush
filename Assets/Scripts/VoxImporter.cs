@@ -145,9 +145,18 @@ namespace TiltBrush
                     modelObject.transform.localPosition = modelTransform.translation;
                     modelObject.transform.localRotation = modelTransform.rotation;
                     modelObject.SetActive(model.IsVisible);
-                    // Keep the node and source data for hierarchy references and later edits,
-                    // but hidden parts need no mesh, collider, or runtime voxel grid.
-                    if (!model.IsVisible) continue;
+                    // Hidden parts retain import bounds without generating meshes or
+                    // expanding their deferred voxel data. The inactive node cannot collide.
+                    if (!model.IsVisible)
+                    {
+                        if (options.GenerateCollider)
+                        {
+                            var collider = modelObject.AddComponent<BoxCollider>();
+                            collider.center = ((Vector3)model.Size - Vector3.one) * 0.5f;
+                            collider.size = (Vector3)model.Size;
+                        }
+                        continue;
+                    }
 
                     if (options.MeshMode == MeshMode.Optimized && model.Voxels.Count != 0)
                     {

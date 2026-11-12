@@ -720,6 +720,61 @@ namespace TiltBrush
             Assert.IsTrue(reloaded.Models[2].IsVisible);
         }
 
+        [TestCase(false, true)]
+        [TestCase(true, true)]
+        [TestCase(false, false)]
+        [TestCase(true, false)]
+        public void Import_AllHiddenModelsRetainBoundsWithoutMeshes(bool hiddenByLayer, bool generateCollider)
+        {
+            var source = new RuntimeVoxDocument();
+            var size = new Vector3Int(4, 6, 8);
+            var sourceModel = source.CreateModel("hidden", size);
+            sourceModel.AddOrUpdateVoxel(Vector3Int.one, 1);
+            sourceModel.TransformOffset = Vector3.one; // Ensure the writer emits a scene graph.
+            byte[] bytes = ReplaceMainChildContent(source.ToVoxBytes(), "nTRN", 1,
+                BuildTransformContent(10, 1000, hiddenByLayer ? 7 : -1, hidden: !hiddenByLayer));
+            if (hiddenByLayer) bytes = AppendMainChild(bytes, "LAYR", BuildLayerContent(7, hidden: true));
+
+            var previousCatalog = ModelCatalog.m_Instance;
+            var catalogObject = new GameObject("[VoxHiddenBoundsTest] Catalog");
+            catalogObject.SetActive(false);
+            GameObject root = null;
+            Material material = null;
+            try
+            {
+                ModelCatalog.m_Instance = catalogObject.AddComponent<ModelCatalog>();
+                material = new Material(Shader.Find("Hidden/InternalErrorShader"));
+                var importer = new VoxImporter(bytes);
+                var result = importer.Import(new VoxImportOptions
+                {
+                    GenerateCollider = generateCollider,
+                    MaterialOverride = material
+                });
+                root = result.Item1;
+                Assert.IsNotNull(root);
+                Assert.IsEmpty(result.warnings);
+                Assert.AreEqual(1, root.transform.childCount);
+                var modelObject = root.transform.GetChild(0).gameObject;
+                Assert.IsFalse(modelObject.activeSelf);
+                Assert.IsEmpty(root.GetComponentsInChildren<MeshFilter>(includeInactive: true));
+                Assert.IsEmpty(root.GetComponentsInChildren<Renderer>(includeInactive: true));
+                var colliders = root.GetComponentsInChildren<BoxCollider>(includeInactive: true);
+                Assert.AreEqual(generateCollider ? 1 : 0, colliders.Length);
+                if (generateCollider)
+                {
+                    Assert.AreEqual(((Vector3)size - Vector3.one) * 0.5f, colliders[0].center);
+                    Assert.AreEqual((Vector3)size, colliders[0].size);
+                }
+            }
+            finally
+            {
+                if (root != null) UnityEngine.Object.DestroyImmediate(root);
+                if (material != null) UnityEngine.Object.DestroyImmediate(material);
+                UnityEngine.Object.DestroyImmediate(catalogObject);
+                ModelCatalog.m_Instance = previousCatalog;
+            }
+        }
+
         [Test]
         public void BreakApart_PreservesHiddenContentInFirstRegionThroughSave()
         {
