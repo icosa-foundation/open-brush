@@ -31,16 +31,16 @@
       "hash": "3db7af04f838179ebcc74fcc2ac01be39090de04"
     },
     "com.immersive-foundation.imm-stroke-reader": {
-      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#92a457b5045132f046a350205296e5f64d9c9f06",
+      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-stroke-reader#71397b3c9b708ca908c90936f1f338aa8438ba95",
       "depth": 0,
       "source": "git",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "3.2.1"
       },
-      "hash": "92a457b5045132f046a350205296e5f64d9c9f06"
+      "hash": "71397b3c9b708ca908c90936f1f338aa8438ba95"
     },
     "com.immersive-foundation.imm-unity": {
-      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-unity#92a457b5045132f046a350205296e5f64d9c9f06",
+      "version": "https://github.com/icosa-mirror/IMM.git?path=/Packages/com.immersive-foundation.imm-unity#71397b3c9b708ca908c90936f1f338aa8438ba95",
       "depth": 0,
       "source": "git",
       "dependencies": {
@@ -49,7 +49,7 @@
         "com.unity.ugui": "1.0.0",
         "com.unity.render-pipelines.universal": "17.6.0"
       },
-      "hash": "92a457b5045132f046a350205296e5f64d9c9f06"
+      "hash": "71397b3c9b708ca908c90936f1f338aa8438ba95"
     },
     "com.ixxy.unitysymmetry": {
       "version": "https://github.com/IxxyXR/unity-symmetry.git?nocache=7#upm",
