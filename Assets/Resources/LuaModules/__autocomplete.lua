@@ -3074,3 +3074,244 @@ function json:null() end
 
 ---@return bool # true if the value specified is a null read from JSON
 function json:isNull() end
+
+
+---@class Vox
+Vox = {}
+---@param canvasPosition Vector3
+---@return VoxModel #
+function Vox:FindModelAt(canvasPosition) end
+
+---@param sizeX number
+---@param sizeY number
+---@param sizeZ number
+---@return VoxDocument #
+function Vox:NewWidget(sizeX, sizeY, sizeZ) end
+
+---@param canvasPosition Vector3
+---@param radius? number
+---@return VoxHit #
+function Vox:FindHit(canvasPosition, radius) end
+
+---@param origin Vector3
+---@param direction Vector3
+---@param maxDistance? number
+---@return VoxRayHit #
+function Vox:Raycast(origin, direction, maxDistance) end
+
+
+
+
+---@class VoxHit
+---@field model VoxModel The editable model containing this voxel; check model.isValid before reusing a stored hit
+---@field cell Vector3 Integer cell coordinates in the model's local voxel grid
+---@field position Vector3 The center of this cell in canvas coordinates
+---@field paletteIndex number The cell's palette index, from 1 to 255
+---@field color Color The cell's RGB color and alpha from its palette entry
+VoxHit = {}
+
+
+
+---@class VoxRayHit
+---@field point Vector3 The surface intersection point in canvas coordinates
+---@field normal Vector3 The outward unit surface normal in canvas coordinates
+---@field face Vector3 The outward face direction in the model's local voxel grid: one of the six signed axis vectors
+---@field distance number The distance from the ray origin to the surface, in canvas units
+---@field model VoxModel The editable model containing this voxel; check model.isValid before reusing a stored hit
+---@field cell Vector3 Integer cell coordinates in the model's local voxel grid
+---@field position Vector3 The center of this cell in canvas coordinates
+---@field paletteIndex number The cell's palette index, from 1 to 255
+---@field color Color The cell's RGB color and alpha from its palette entry
+VoxRayHit = {}
+
+
+
+---@class VoxDocument
+---@field models VoxModelList All models in this VOX document
+---@field modelCount number Returns the number of models in this VOX document
+---@field defaultModel VoxModel The default model (model 0), for simple one-model-per-file use
+---@field autoVisuals boolean If true, model/palette edits automatically rebuild scene geometry
+---@field isValid boolean False after the widget is deleted or its document is replaced
+VoxDocument = {}
+---@param modelIndex? number
+---@return VoxModel #
+function VoxDocument:Model(modelIndex) end
+
+---@param name string
+---@return VoxModel #
+function VoxDocument:FindModel(name) end
+
+---@param sizeX number
+---@param sizeY number
+---@param sizeZ number
+---@param name? string
+---@return VoxModel #
+function VoxDocument:AddModel(sizeX, sizeY, sizeZ, name) end
+
+---@param paletteIndex number
+---@param r number
+---@param g number
+---@param b number
+---@param a? number
+---@return boolean #
+function VoxDocument:SetPalette(paletteIndex, r, g, b, a) end
+
+
+---@return string #
+function VoxDocument:ExportBase64() end
+
+---Finalizes this document's voxel selection through undo history. Cell coordinates can change; query coordinates again after finalizing. Does nothing during preview execution.
+function VoxDocument:FinalizeSelection() end
+
+---@param optimized? boolean
+function VoxDocument:Show(optimized) end
+
+---@param x number
+---@param y number
+---@param z number
+---@param optimized? boolean
+function VoxDocument:ShowAt(x, y, z, optimized) end
+
+---@param transform Transform
+function VoxDocument:SetTransform(transform) end
+
+---@param enabled? boolean
+---@param optimized? boolean
+function VoxDocument:SetAutoVisuals(enabled, optimized) end
+
+
+function VoxDocument:Refresh() end
+
+
+function VoxDocument:Hide() end
+
+
+
+
+---@class VoxModel
+---@field isValid boolean False while this model is removed; undo can restore the same model
+---@field name string The model name
+---@field index number The zero-based model index within the containing document
+---@field voxelCount number Number of voxels in this model
+---@field sizeX number X size of the model in voxels
+---@field sizeY number Y size of the model in voxels
+---@field sizeZ number Z size of the model in voxels
+---@field document VoxDocument The document containing this model
+---@field centerVoxel Vector3 The middle voxel coordinate, used as the anchor by PlaceAt
+---@field voxelSize number The size of one voxel in canvas units
+VoxModel = {}
+---@param canvasPosition Vector3
+---@param voxelSize? number
+function VoxModel:PlaceAt(canvasPosition, voxelSize) end
+
+---@param canvasPosition Vector3
+---@return Vector3 #
+function VoxModel:CanvasToVoxel(canvasPosition) end
+
+---@param voxelPosition Vector3
+---@return Vector3 #
+function VoxModel:VoxelToCanvas(voxelPosition) end
+
+---@param canvasPosition Vector3
+---@return boolean #
+function VoxModel:ContainsAt(canvasPosition) end
+
+---@param canvasPosition Vector3
+---@param color Color
+function VoxModel:PreviewAt(canvasPosition, color) end
+
+---@param canvasPosition Vector3
+---@param color Color
+---@return boolean #
+function VoxModel:PaintAt(canvasPosition, color) end
+
+---@param canvasPosition Vector3
+---@param color Color
+---@return boolean #
+function VoxModel:RecolorAt(canvasPosition, color) end
+
+---@param canvasPosition Vector3
+---@return boolean #
+function VoxModel:EraseAt(canvasPosition) end
+
+---@param canvasPosition Vector3
+---@param color Color
+---@return boolean #
+function VoxModel:ToggleAt(canvasPosition, color) end
+
+---@param x number
+---@param y number
+---@param z number
+---@param paletteIndex number
+---@return boolean #
+function VoxModel:SetVoxel(x, y, z, paletteIndex) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return boolean #
+function VoxModel:RemoveVoxel(x, y, z) end
+
+
+---@return boolean #
+function VoxModel:MakeUnique() end
+
+
+---@return boolean #
+function VoxModel:Remove() end
+
+---@param fromX number
+---@param fromY number
+---@param fromZ number
+---@param toX number
+---@param toY number
+---@param toZ number
+---@param overwrite? boolean
+---@return boolean #
+function VoxModel:MoveVoxel(fromX, fromY, fromZ, toX, toY, toZ, overwrite) end
+
+---@param x number
+---@param y number
+---@param z number
+---@param paletteIndex number
+---@return boolean #
+function VoxModel:Set(x, y, z, paletteIndex) end
+
+---@param x number
+---@param y number
+---@param z number
+---@return boolean #
+function VoxModel:Remove(x, y, z) end
+
+---@param fromX number
+---@param fromY number
+---@param fromZ number
+---@param toX number
+---@param toY number
+---@param toZ number
+---@param overwrite? boolean
+---@return boolean #
+function VoxModel:Move(fromX, fromY, fromZ, toX, toY, toZ, overwrite) end
+
+---@param optimized? boolean
+---@return VoxMeshStats #
+function VoxModel:MeshStats(optimized) end
+
+
+
+
+---@class VoxModelList
+---@field last VoxModel Returns the last model
+---@field first VoxModel Returns the first model (model 0), for simple one-model-per-file use
+---@field count number The number of models
+VoxModelList = {}
+
+
+
+---@class VoxMeshStats
+---@field mode string Mesh generation mode used
+---@field vertexCount number Number of mesh vertices
+---@field triangleIndexCount number Number of triangle indices
+---@field boundsCenter Vector3 Mesh bounds center
+---@field boundsSize Vector3 Mesh bounds size
+VoxMeshStats = {}

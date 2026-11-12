@@ -70,7 +70,34 @@ namespace TiltBrush
         [NonSerialized] public Quaternion BrushRotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         [NonSerialized] public ForcePaintingMode ForcePainting;
         [NonSerialized] public ForcePaintingMode PreviousForcePaintingMode;
-        public BaseCommand ActiveUndo { get; set; }
+        private BaseCommand m_ActiveUndo;
+        private VoxScriptEditGroup m_VoxEditGroup;
+
+        public BaseCommand ActiveUndo
+        {
+            get => m_ActiveUndo;
+            set
+            {
+                if (ReferenceEquals(m_ActiveUndo, value)) return;
+                // Some tool owners record their group directly rather than calling
+                // EndUndo. Freeze voxel edits before that group is detached too.
+                m_VoxEditGroup?.Complete();
+                m_VoxEditGroup = null;
+                m_ActiveUndo = value;
+            }
+        }
+
+        internal VoxScriptEditGroup GetVoxEditGroup()
+        {
+            if (ActiveUndo == null) return null;
+            if (m_VoxEditGroup == null || !ReferenceEquals(m_VoxEditGroup.Root, ActiveUndo))
+                m_VoxEditGroup = new VoxScriptEditGroup(ActiveUndo);
+            return m_VoxEditGroup;
+        }
+
+        internal bool HasVoxEdit(RuntimeVoxDocument document)
+            => m_VoxEditGroup != null && ReferenceEquals(m_VoxEditGroup.Root, ActiveUndo) &&
+                m_VoxEditGroup.HasChanges(document);
 
         private Dictionary<string, string> m_UserScripts;
         private Dictionary<string, string> m_ExampleScripts;
@@ -1042,6 +1069,9 @@ Success. If you are not automatically redirected, please visit <a href='{success
 
         public void EndUndo()
         {
+            if (m_VoxEditGroup != null && ReferenceEquals(m_VoxEditGroup.Root, ActiveUndo))
+                m_VoxEditGroup.Complete();
+            m_VoxEditGroup = null;
             if (ActiveUndo != null && ActiveUndo.HasChildren)
             {
                 SketchMemoryScript.m_Instance.PerformAndRecordCommand(ActiveUndo);

@@ -28,10 +28,13 @@ namespace TiltBrush
         private List<LightWidget> m_NewLightWidgets;
         private List<SoundClipWidget> m_NewSoundClipWidgets;
         private List<string> m_NodePaths;
+        private BreakVoxApartCommand m_VoxSplit;
+
+        public override bool IsAvailable => m_InitialWidget != null && (m_VoxSplit?.IsAvailable ?? true);
 
         override public bool NeedsSave
         {
-            get => true;
+            get => m_VoxSplit?.NeedsSave ?? true;
         }
 
         private static List<string> ExtractPaths(Transform root)
@@ -163,6 +166,20 @@ namespace TiltBrush
         public BreakModelApartCommand(ModelWidget initialWidget, BaseCommand parent = null) : base(parent)
         {
             m_InitialWidget = initialWidget;
+            if (initialWidget.IsExternalVox && string.IsNullOrEmpty(initialWidget.Subtree))
+            {
+                var document = initialWidget.Model.CreateEditableVoxDocument()
+                    ?? throw new InvalidOperationException("The imported VOX source is not loaded.");
+                new EmbedVoxModelCommand(initialWidget, document, this);
+                m_VoxSplit = new BreakVoxApartCommand(initialWidget, document, this);
+                return;
+            }
+            if (initialWidget.EditableVoxDocument != null)
+            {
+                m_VoxSplit = new BreakVoxApartCommand(initialWidget, this);
+                return;
+            }
+            m_InitialWidget = initialWidget;
             m_NewModelWidgets = new List<ModelWidget>();
             m_NewLightWidgets = new List<LightWidget>();
             m_NewSoundClipWidgets = new List<SoundClipWidget>();
@@ -208,6 +225,7 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            if (m_VoxSplit != null) return; // BaseCommand dispatches the child command.
             SelectionManager.m_Instance.DeselectWidgets(new List<GrabWidget> { m_InitialWidget });
 
             var widgetObjScript = m_InitialWidget.GetComponentInChildren<ObjModelScript>();
@@ -324,6 +342,7 @@ namespace TiltBrush
 
         protected override void OnUndo()
         {
+            if (m_VoxSplit != null) return;
             SelectionManager.m_Instance.DeselectWidgets(m_NewModelWidgets);
             foreach (var widget in m_NewModelWidgets)
             {

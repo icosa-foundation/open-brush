@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Linq;
 using UnityEngine;
 
 namespace TiltBrush
@@ -43,6 +44,9 @@ namespace TiltBrush
         [SerializeField] private Transform m_OffsetTransform;
         private Vector3 m_OffsetTransformBaseScale;
         private Stroke m_StrokeA;
+        private readonly VoxToolTarget m_VoxTarget = new();
+        private ModelWidget m_VoxJoinTarget;
+        private ModelWidget m_LastVoxJoinSource;
 
         public void DisableRequestExit_HackForSceneSurgeon() { m_RequestExit = false; }
 
@@ -73,6 +77,10 @@ namespace TiltBrush
         override public void EnableTool(bool bEnable)
         {
             base.EnableTool(bEnable);
+            m_VoxTarget.Clear();
+            m_VoxJoinTarget = null;
+            m_LastVoxJoinSource = null;
+            m_StrokeA = null;
             ResetDetection();
             if (bEnable)
             {
@@ -130,6 +138,33 @@ namespace TiltBrush
             //keep description locked to controller
             SnapIntersectionObjectToController();
 
+            if (!InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+                m_VoxJoinTarget = null;
+            if (m_VoxTarget.TryFindCell(App.ActiveCanvas, m_DropperTransform.position, GetSize(), out var voxel))
+            {
+                ResetDetection();
+                m_StrokeA = null;
+                if (!m_EatInput && !m_ToolHidden && !OpenBrush.Multiplayer.MultiplayerManager.m_Instance.IsViewOnly &&
+                    !voxel.Widget.Pinned && InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
+                {
+                    if (m_VoxJoinTarget == null || !m_VoxJoinTarget.Showing ||
+                        !m_VoxJoinTarget.gameObject.activeInHierarchy || m_VoxJoinTarget.Pinned ||
+                        m_VoxJoinTarget.Canvas != App.ActiveCanvas)
+                    {
+                        m_VoxJoinTarget = voxel.Widget;
+                        AudioManager.m_Instance.PlayGroupedSound(m_DropperRenderer.transform.position);
+                    }
+                    else if (m_VoxJoinTarget != voxel.Widget && m_LastVoxJoinSource != voxel.Widget)
+                    {
+                        if (TryJoinVoxelWidget(voxel.Widget, voxel.Document))
+                            AudioManager.m_Instance.PlayGroupedSound(m_DropperRenderer.transform.position);
+                    }
+                    m_LastVoxJoinSource = voxel.Widget;
+                }
+                return;
+            }
+            m_LastVoxJoinSource = null;
+
             //always default to resetting detection
             m_ResetDetection = true;
             m_ValidBrushFoundThisFrame = false;
@@ -163,6 +198,22 @@ namespace TiltBrush
             }
         }
 
+        private bool TryJoinVoxelWidget(ModelWidget source, RuntimeVoxDocument sourceDocument)
+        {
+            source.CommitVoxRegionSelection();
+            m_VoxJoinTarget.CommitVoxRegionSelection();
+            var targetDocument = m_VoxTarget.GetDocument(m_VoxJoinTarget);
+            if (targetDocument == null) return false;
+            var targetPose = TrTransform.FromTransform(m_VoxJoinTarget.transform);
+            var sourcePose = TrTransform.FromTransform(source.transform);
+            var targetGrids = targetDocument.Models.Select(model => targetPose * VoxMeshBuilder.GetModelTransform(model)).ToArray();
+            var sourceGrids = sourceDocument.Models.Select(model => sourcePose * VoxMeshBuilder.GetModelTransform(model)).ToArray();
+            int anchor = targetDocument.Models.ToList().FindIndex(model => model.IsVisible && model.Voxels.Count > 0);
+            return VoxToolTarget.Edit(m_VoxJoinTarget, targetDocument,
+                document => document.TryJoin(sourceDocument, targetGrids, sourceGrids, anchor),
+                parent => { new HideWidgetCommand(source, parent); });
+        }
+
         private int ClosestControlPoint(Stroke stroke)
         {
             var closestDistance = float.PositiveInfinity;
@@ -193,6 +244,7 @@ namespace TiltBrush
         {
             if (InputManager.m_Instance.GetCommand(InputManager.SketchCommands.Activate))
             {
+                m_VoxJoinTarget = null;
                 if (m_StrokeA == strokeB)
                 {
                     // Do nothing
