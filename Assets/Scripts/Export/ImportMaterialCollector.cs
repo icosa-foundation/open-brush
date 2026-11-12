@@ -108,7 +108,9 @@ namespace TiltBrush
                 // Runtime VOX PBR materials use the toolkit property names.
                 color = unityMaterial.GetColor("_BaseColorFactor");
                 hasColor = true;
-                pbrInfo = unityMaterial.shader == TbtSettings.Instance.m_PbrBlendDoubleSided.material.shader
+                var voxGlass = Resources.Load<Material>("VoxMaterials/Glass");
+                pbrInfo = unityMaterial.shader == TbtSettings.Instance.m_PbrBlendDoubleSided.material.shader ||
+                    (voxGlass != null && unityMaterial.shader == voxGlass.shader)
                     ? TbtSettings.Instance.m_PbrBlendDoubleSided
                     : TbtSettings.Instance.m_PbrOpaqueDoubleSided;
             }
