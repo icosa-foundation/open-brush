@@ -4784,6 +4784,154 @@ MonoBehaviour:
     m_Localized: "Der einfache Spiegel hat keine zus\xE4tzlichen Einstellungen.\n\nW\xE4hle oben einen Tab, um Wiederholungsmuster, Rotationssymmetrie und mehr auszuprobieren.\n\nUnter Farben kannst du die Kopien variieren."
     m_Metadata:
       m_Items: []
+  - m_Id: 82311120000000001
+    m_Localized: "Vorheriges Kapitel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000002
+    m_Localized: "Nächstes Kapitel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000003
+    m_Localized: "Vorheriger Blickpunkt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000004
+    m_Localized: "Nächster Blickpunkt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000005
+    m_Localized: "Vorherigen Blickpunkt auswählen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000006
+    m_Localized: "Nächsten Blickpunkt auswählen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000007
+    m_Localized: "Zum ausgewählten Blickpunkt bewegen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000008
+    m_Localized: "IMM abspielen / fortsetzen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000009
+    m_Localized: "IMM pausieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Localized: "Kapitel {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "Blickpunkt {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "IMM wird geladen…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "Kapitel wird gewechselt…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "Natives Laden von Quill ist noch nicht verfügbar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "Wiederholen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "Räumlich"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "Bearbeitbar machen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "Aktuelles Bild in bearbeitbare Striche umwandeln"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "Ersetzt nur dieses IMM. Andere Inhalte der Skizze bleiben erhalten."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "Himmelskuppel importieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "IMM-Himmelskuppel importieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "Die im aktuellen IMM-Bild sichtbare Himmelskuppel verwenden."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "Das aktuelle IMM-Bild konnte nicht in bearbeitbare Striche umgewandelt werden."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "Im aktuellen IMM-Bild ist keine Himmelskuppel sichtbar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "Die IMM-Himmelskuppel konnte nicht importiert werden."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "Modellwiedergabe fehlgeschlagen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "Das native IMM-Dokument wurde nicht vollständig geladen."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "Die vorherige native Skizze wurde nicht vollständig entladen."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "IMM-Referenz konnte nicht geladen werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "Zwischengespeichertes IMM konnte nicht gelesen werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "IMM konnte nicht heruntergeladen werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "IMM konnte nicht zwischengespeichert werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "Galerie-Referenz konnte nicht zwischengespeichert werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "Galerie-Referenz konnte nicht geladen werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "Zeitüberschreitung beim Laden des nativen IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "Videowiedergabe fehlgeschlagen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "Audiowiedergabe fehlgeschlagen"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -26,6 +26,22 @@ namespace TiltBrush
         private UnityEngine.Texture2D m_PauseTexture;
         private bool? m_ShowingPause;
 
+        protected override void Awake()
+        {
+            base.Awake();
+            if (m_IsContinue)
+                m_LocalizedDescription.StringChanged += OnPlaybackDescriptionChanged;
+        }
+
+        protected override void OnDestroy()
+        {
+            if (m_IsContinue)
+                m_LocalizedDescription.StringChanged -= OnPlaybackDescriptionChanged;
+            base.OnDestroy();
+        }
+
+        private void OnPlaybackDescriptionChanged(string text) => SetDescriptionText(text);
+
         public void RefreshPlaybackState()
         {
             bool pause = NativeImmImport.CanPause;
@@ -34,7 +50,7 @@ namespace TiltBrush
             if (pause && m_PauseTexture == null)
                 m_PauseTexture = UnityEngine.Resources.Load<UnityEngine.Texture2D>("Icons/pause");
             SetButtonTexture(pause ? m_PauseTexture : m_ButtonTexture);
-            SetDescriptionText(pause ? "Pause IMM" : "Play / Continue IMM");
+            m_LocalizedDescription.TableEntryReference = pause ? "NATIVE_IMM_PAUSE" : "NATIVE_IMM_PLAY";
             m_ShowingPause = pause;
         }
 

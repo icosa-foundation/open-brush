@@ -15,6 +15,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Localization;
 
 namespace TiltBrush
 {
@@ -188,9 +189,23 @@ namespace TiltBrush
 
         public void OnNextChapterPressed() => NativeImmImport.CycleChapter(1);
 
+        private readonly LocalizedString m_QuillUnavailable =
+            new LocalizedString("Strings", "NATIVE_IMM_QUILL_UNAVAILABLE");
+        private string m_QuillUnavailableText = "Native Quill loading is not yet available";
+
+        private void OnQuillUnavailableChanged(string text)
+        {
+            m_QuillUnavailableText = text;
+            if (m_FileButtons == null) return;
+            foreach (var button in m_FileButtons)
+                if (button.QuillFile?.SourceType == QuillSourceType.Quill)
+                    button.SetExtraDescriptionText(text);
+        }
+
         protected override void Awake()
         {
             base.Awake();
+            m_QuillUnavailable.StringChanged += OnQuillUnavailableChanged;
 
             EnsureCatalog();
             if (m_Catalog != null)
@@ -205,6 +220,7 @@ namespace TiltBrush
 
         private void OnDestroy()
         {
+            m_QuillUnavailable.StringChanged -= OnQuillUnavailableChanged;
             if (m_Catalog != null)
             {
                 m_Catalog.CatalogChanged -= OnCatalogChanged;
@@ -261,8 +277,7 @@ namespace TiltBrush
                 if (count > 1 && m_ViewpointLabel != null)
                 {
                     int index = NativeImmImport.CurrentViewpointIndex;
-                    m_ViewpointLabel.text = index >= 0
-                        ? $"Viewpoint {index + 1} / {count}" : $"Viewpoint — / {count}";
+                    m_ViewpointLabel.text = NativeImmStrings.Viewpoint(index, count);
                 }
             }
 
@@ -285,9 +300,9 @@ namespace TiltBrush
                 m_ContinueButton.RefreshPlaybackState();
             }
             if (m_ChapterLabel != null)
-                m_ChapterLabel.text = NativeImmImport.IsLoading ? "Loading IMM…"
-                    : navigating ? "Changing chapter…"
-                    : $"Chapter {(NativeImmImport.CurrentChapterIndex ?? 0) + 1} / {NativeImmImport.ChapterCount}";
+                m_ChapterLabel.text = NativeImmImport.IsLoading ? NativeImmStrings.Get("LOADING", "Loading IMM…")
+                    : navigating ? NativeImmStrings.Get("CHANGING_CHAPTER", "Changing chapter…")
+                    : NativeImmStrings.Chapter((NativeImmImport.CurrentChapterIndex ?? 0) + 1, NativeImmImport.ChapterCount);
         }
 
         protected override void RefreshPage()
@@ -321,7 +336,7 @@ namespace TiltBrush
                     button.QuillFile = fileInfo;
                     button.SetButtonAvailable(fileInfo.SourceType == QuillSourceType.Imm);
                     if (fileInfo.SourceType == QuillSourceType.Quill)
-                        button.SetExtraDescriptionText("Native Quill loading is not yet available");
+                        button.SetExtraDescriptionText(m_QuillUnavailableText);
 
                     // Update selection visual state
                     button.IsSelected = (m_SelectedFile != null &&

@@ -181,7 +181,7 @@ namespace TiltBrush
                 m_ErrorReported = true;
                 // Only selected scene playback reports here. Catalog thumbnail controllers
                 // retain their errors for catalog feedback without opening the output window.
-                OutputWindowScript.Error("Video playback failed", $"{m_ReferenceVideo.HumanName}: {Error}");
+                OutputWindowScript.Error(NativeImmStrings.Get("VIDEO_FAILED", "Video playback failed"), $"{m_ReferenceVideo.HumanName}: {Error}");
             }
 
             private void OnError(VideoPlayer player, string error)

@@ -202,7 +202,7 @@ namespace TiltBrush
                 return false;
 
             Debug.LogError($"[OB_IMM_LOAD_DEADLINE_20261024] Native document did not become ready: {m_Path}");
-            OutputWindowScript.m_Instance.AddNewLine("Native IMM document did not finish loading.");
+            OutputWindowScript.m_Instance.AddNewLine(NativeImmStrings.Get("LOAD_INCOMPLETE", "Native IMM document did not finish loading."));
             // An asynchronous waiter may outlive its owner; never cancel a replacement import.
             if (this == s_Active) Unload();
             return true;
@@ -230,7 +230,7 @@ namespace TiltBrush
                     if (Time.realtimeSinceStartup - unloadStarted > 120f)
                     {
                         Debug.LogError($"[OB_IMM_UNLOAD_DEADLINE_20261023] Previous native sketch documents did not unload: {m_Path}");
-                        OutputWindowScript.m_Instance.AddNewLine("Previous native sketch did not finish unloading.");
+                        OutputWindowScript.m_Instance.AddNewLine(NativeImmStrings.Get("UNLOAD_INCOMPLETE", "Previous native sketch did not finish unloading."));
                         // Preserve pending document IDs so a later import still waits for them.
                         Unload();
                         yield break;

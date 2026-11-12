@@ -4385,6 +4385,154 @@ MonoBehaviour:
       Colors lets you vary the copies.'
     m_Metadata:
       m_Items: []
+  - m_Id: 82311120000000001
+    m_Localized: "Previous Chapter"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000002
+    m_Localized: "Next Chapter"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000003
+    m_Localized: "Previous Viewpoint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000004
+    m_Localized: "Next Viewpoint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000005
+    m_Localized: "Select Previous Viewpoint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000006
+    m_Localized: "Select Next Viewpoint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000007
+    m_Localized: "Move to Selected Viewpoint"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000008
+    m_Localized: "Play / Continue IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000009
+    m_Localized: "Pause IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Localized: "Chapter {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "Viewpoint {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "Loading IMM…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "Changing chapter…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "Native Quill loading is not yet available"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "Loop"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "Spatial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "Make Editable"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "Convert Current Frame to Editable Strokes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "Replaces this IMM only. Other sketch content is preserved."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "Import Skydome"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "Import IMM Skydome"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "Use the skydome visible at the current IMM frame."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "Could not convert the current IMM frame to editable strokes."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "No visible skydome at the current IMM frame."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "Could not import the IMM skydome."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "Model playback failed"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "Native IMM document did not finish loading."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "Previous native sketch did not finish unloading."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "Could not load IMM reference"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "Could not read cached IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "Could not download IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "Could not cache IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "Could not cache gallery reference"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "Could not load gallery reference"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "Native IMM load timed out."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "Video playback failed"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "Sound playback failed"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

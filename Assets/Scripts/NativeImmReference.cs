@@ -275,7 +275,7 @@ namespace TiltBrush
         private static void ReportFailure(string path, string reason)
         {
             Debug.LogWarning($"{LogPrefix} {reason}: {path}");
-            OutputWindowScript.Error("Could not load IMM reference", reason);
+            OutputWindowScript.Error(NativeImmStrings.Get("LOAD_REFERENCE_FAILED", "Could not load IMM reference"), reason);
         }
     }
 }

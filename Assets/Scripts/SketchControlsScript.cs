@@ -4334,7 +4334,7 @@ namespace TiltBrush
                 if (Time.realtimeSinceStartup - loadStarted > 120f)
                 {
                     Debug.LogError($"[OB_IMM_REVIEW_20261021] Native IMM load timed out: {path}");
-                    OutputWindowScript.m_Instance.AddNewLine("Native IMM load timed out.");
+                    OutputWindowScript.m_Instance.AddNewLine(NativeImmStrings.Get("LOAD_TIMEOUT", "Native IMM load timed out."));
                     NativeImmImport.Unload();
                     yield break;
                 }

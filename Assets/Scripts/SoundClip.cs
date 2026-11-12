@@ -224,7 +224,7 @@ namespace TiltBrush
                 if (m_SoundClip == null || Error != null) return;
                 Error = error;
                 Debug.LogWarning($"[OB_SOUND_PLAYBACK_20261105] {error}");
-                OutputWindowScript.Error("Sound playback failed", error);
+                OutputWindowScript.Error(NativeImmStrings.Get("SOUND_FAILED", "Sound playback failed"), error);
             }
 
             public void OnInitialization()
