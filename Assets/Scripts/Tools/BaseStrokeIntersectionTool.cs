@@ -194,6 +194,20 @@ namespace TiltBrush
             return false;
         }
 
+        protected bool IntersectNonGpuModelWidgets(Vector3 center_GS, float radius_GS)
+        {
+            foreach (ModelWidget widget in WidgetManager.m_Instance.ModelWidgets)
+            {
+                if (widget == null || !widget.Showing || !widget.gameObject.activeInHierarchy ||
+                    widget.HasGPUIntersectionObject() || widget.Canvas != m_CurrentCanvas) continue;
+                Collider collider = widget.GrabCollider;
+                if (collider == null || collider.bounds.SqrDistance(center_GS) > radius_GS * radius_GS) continue;
+                if (widget.TryIntersectNonGpuModel(center_GS, radius_GS, out _) &&
+                    HandleIntersectionWithWidget(widget)) return true;
+            }
+            return false;
+        }
+
         // Helper for UpdateBatchedBrushDetection
         private void DoIntersectionResets()
         {
@@ -475,14 +489,14 @@ namespace TiltBrush
                     DoIntersectionResets();
                     return;
                 }
+            }
 
-                if (HandleNonGpuWidgetIntersections(vDetectionCenter_GS, GetSize()))
-                {
-                    IntersectionHappenedThisFrame();
-                    m_DetectionStopwatch.Stop();
-                    DoIntersectionResets();
-                    return;
-                }
+            if (HandleNonGpuWidgetIntersections(vDetectionCenter_GS, GetSize()))
+            {
+                IntersectionHappenedThisFrame();
+                m_DetectionStopwatch.Stop();
+                DoIntersectionResets();
+                return;
             }
 
             m_TimesUp = m_DetectionStopwatch.ElapsedTicks > m_TimeSliceInTicks;
@@ -686,6 +700,14 @@ namespace TiltBrush
 
             m_DetectionStopwatch.Reset();
             m_DetectionStopwatch.Start();
+
+            if (HandleNonGpuWidgetIntersections(vDetectionCenter_GS, GetSize()))
+            {
+                IntersectionHappenedThisFrame();
+                m_DetectionStopwatch.Stop();
+                DoIntersectionResets();
+                return;
+            }
 
             //early out if there's nothing to look at
             if (iNumCanvasChildren > 0 && m_DetectionObjectIndex < iNumCanvasChildren)

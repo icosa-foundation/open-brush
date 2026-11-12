@@ -1073,6 +1073,7 @@ namespace TiltBrush
             RegisterApiClass(script, "Video", typeof(VideoApiWrapper));
             RegisterApiClass(script, "VideoList", typeof(VideoListApiWrapper));
             RegisterApiClass(script, "Visualizer", typeof(VisualizerApiWrapper));
+            RegisterApiClass(script, "Vox", typeof(VoxApiWrapper));
             RegisterApiClass(script, "Wand", typeof(WandApiWrapper));
             RegisterApiClass(script, "Waveform", typeof(WaveformApiWrapper));
             RegisterApiClass(script, "WebRequest", typeof(WebRequestApiWrapper));
@@ -1386,9 +1387,11 @@ namespace TiltBrush
 
         public ToolScriptExecutionResult DoToolScript(
             string fnName, TrTransform firstTr_CS, TrTransform secondTr_CS,
-            bool quickSnapPressed = false)
+            bool quickSnapPressed = false, bool isPreview = false)
         {
-            var pathWrapper = CallActiveToolScript(fnName);
+            PathListApiWrapper pathWrapper;
+            using (VoxScriptEditGroup.BeginExecution(isPreview))
+                pathWrapper = CallActiveToolScript(fnName);
             if (pathWrapper == null)
             {
                 SetLatestToolScriptControlPoints(null, ScriptCoordSpace.Canvas);

@@ -4662,6 +4662,46 @@ MonoBehaviour:
     m_Localized: "\u30B7\u30F3\u30D7\u30EB\u30DF\u30E9\u30FC\u306B\u306F\u8FFD\u52A0\u8A2D\u5B9A\u306F\u3042\u308A\u307E\u305B\u3093\u3002\n\n\u4E0A\u306E\u30BF\u30D6\u3092\u9078\u3076\u3068\u3001\u7E70\u308A\u8FD4\u3057\u6A21\u69D8\u3084\u56DE\u8EE2\u5BFE\u79F0\u306A\u3069\u3092\u8A66\u305B\u307E\u3059\u3002\n\n\u300C\u30AB\u30E9\u30FC\u300D\u3067\u30B3\u30D4\u30FC\u306E\u8272\u306B\u5909\u5316\u3092\u3064\u3051\u3089\u308C\u307E\u3059\u3002"
     m_Metadata:
       m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: "\u5909\u66F4\u3092\u9069\u7528"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: "\u672A\u4F7F\u7528\u306E\u8272\u3092\u30AF\u30EA\u30A2"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: "\u8272\u3092\u4E26\u3079\u66FF\u3048"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: "新規ボクセル"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "新しい空のボクセルモデルを開始"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "ボクセルモデルをグリッドに整列"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "現在のモデルをグリッド設定に合わせて整列"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "ボクセル領域を選択"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "トリガーを押しながらドラッグして直方体を選択します。つかんでいる間に複製ボタンを押すとコピーを配置できます。何もない空間でトリガーを2回押すと確定し、選択を解除します。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "ブラシの色を使用"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

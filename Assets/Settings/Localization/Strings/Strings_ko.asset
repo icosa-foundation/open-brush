@@ -4662,6 +4662,46 @@ MonoBehaviour:
     m_Localized: "\uB2E8\uC21C \uBBF8\uB7EC\uC5D0\uB294 \uCD94\uAC00 \uC124\uC815\uC774 \uC5C6\uC2B5\uB2C8\uB2E4.\n\n\uC704\uCABD \uD0ED\uC5D0\uC11C \uBC18\uBCF5 \uD328\uD134\uACFC \uD68C\uC804 \uB300\uCE6D \uB4F1\uC744 \uC0AC\uC6A9\uD574 \uBCF4\uC138\uC694.\n\n\uC0C9\uC0C1\uC5D0\uC11C \uBCF5\uC0AC\uBCF8\uC5D0 \uBCC0\uD654\uB97C \uC904 \uC218 \uC788\uC2B5\uB2C8\uB2E4."
     m_Metadata:
       m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: "\uBCC0\uACBD \uC0AC\uD56D \uC801\uC6A9"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: "\uC0AC\uC6A9\uD558\uC9C0 \uC54A\uB294 \uC0C9\uC0C1 \uC9C0\uC6B0\uAE30"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: "\uC0C9\uC0C1 \uC815\uB82C"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: "새 복셀"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "새 빈 복셀 모델 시작"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "복셀 모델을 그리드에 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "현재 모델을 그리드 설정에 맞게 정렬"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "복셀 영역 선택"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "트리거를 누른 채 드래그하여 직육면체를 선택하세요. 잡고 있는 동안 복제 버튼을 눌러 복사본을 배치하세요. 빈 공간에서 트리거를 두 번 눌러 완료하고 선택을 해제하세요."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "브러시 색상 사용"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -547,8 +547,12 @@ namespace TiltBrush
 
             m_LastWriteSnapshotError = error;
             m_LastThumbnailBytes = snapshot.Thumbnail;
-            SketchMemoryScript.m_Instance.SetLastOperationStackCount();
-            SketchMemoryScript.m_Instance.InitialSketchTransform = App.Scene.Pose;
+            if (error == null && !selectedOnly)
+            {
+                SketchMemoryScript.m_Instance.SetLastOperationStackCount(
+                    snapshot.UnrecordedChangesRevision);
+                SketchMemoryScript.m_Instance.InitialSketchTransform = App.Scene.Pose;
+            }
             m_SaveCoroutine = null;
             if (error == null)
             {
@@ -854,7 +858,7 @@ namespace TiltBrush
         private void LoadWidgetMetadata(SketchMetadata data, SceneFileInfo fileInfo)
         {
             var widgets = WidgetManager.m_Instance;
-            if (data.ModelIndex != null) { widgets.SetModelDataFromTilt(data.ModelIndex); }
+            if (data.ModelIndex != null) { widgets.SetModelDataFromTilt(data.ModelIndex, fileInfo); }
             if (data.LightIndex != null) { widgets.SetLightDataFromTilt(data.LightIndex); }
             foreach (var guide in data.GuideIndex ?? Array.Empty<Guides>())
             {

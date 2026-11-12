@@ -168,7 +168,7 @@ namespace TiltBrush
         private List<GrabWidget> m_CanBeUnpinnedWidgets;
         public event Action RefreshPinAndUnpinAction;
 
-        private TiltModels75[] m_loadingTiltModels75;
+        private readonly Queue<(TiltModels75[] models, SceneFileInfo source)> m_LoadingModelBatches = new();
         private TiltLights[] m_loadingTiltLights;
         private TiltImages75[] m_loadingTiltImages75;
         private TiltVideo[] m_loadingTiltVideos;
@@ -877,9 +877,9 @@ namespace TiltBrush
         }
 
         // Used only at .tilt-loading time
-        public void SetModelDataFromTilt(TiltModels75[] value)
+        public void SetModelDataFromTilt(TiltModels75[] value, SceneFileInfo fileInfo)
         {
-            m_loadingTiltModels75 = m_loadingTiltModels75 == null ? value : m_loadingTiltModels75.Concat(value).ToArray();
+            if (value != null && value.Length > 0) m_LoadingModelBatches.Enqueue((value, fileInfo));
         }
 
         // Used only at .tilt-loading time
@@ -1746,15 +1746,14 @@ namespace TiltBrush
             m_LoadingMedia = true;
             try
             {
-                while (m_loadingTiltModels75 != null || m_loadingTiltLights != null ||
+                while (m_LoadingModelBatches.Count > 0 || m_loadingTiltLights != null ||
                        m_loadingTiltImages75 != null || m_loadingTiltVideos != null)
                 {
 
                     // TODO reduce code duplication with the next two if blocks
-                    if (m_loadingTiltModels75 != null)
+                    if (m_LoadingModelBatches.Count > 0)
                     {
-                        var models = m_loadingTiltModels75;
-                        m_loadingTiltModels75 = null;
+                        var (models, source) = m_LoadingModelBatches.Dequeue();
                         OverlayManager.m_Instance.RefuseProgressBarChanges(true);
 
                         if (App.Config.kModelWidgetsWaitForLoad)
@@ -1786,7 +1785,7 @@ namespace TiltBrush
 
                         for (int i = 0; i < models.Length; i++)
                         {
-                            Task createTask = ModelWidget.CreateModelFromSaveData(models[i]);
+                            Task createTask = ModelWidget.CreateModelFromSaveData(models[i], source);
                             using (IEnumerator<Null> createCoroutine = createTask.AsIeNull())
                             {
                                 while (createCoroutine.MoveNext())
@@ -1847,7 +1846,7 @@ namespace TiltBrush
         /// - ModelWidgets may not have a model yet (depending on Config.kModelWidgetsWaitForLoad)
         public bool CreatingMediaWidgets =>
             m_LoadingMedia ||
-            m_loadingTiltModels75 != null ||
+            m_LoadingModelBatches.Count > 0 ||
             m_loadingTiltLights != null ||
             m_loadingTiltImages75 != null ||
             m_loadingTiltVideos != null;

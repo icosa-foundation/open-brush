@@ -4748,6 +4748,46 @@ MonoBehaviour:
     m_Localized: "Der einfache Spiegel hat keine zus\xE4tzlichen Einstellungen.\n\nW\xE4hle oben einen Tab, um Wiederholungsmuster, Rotationssymmetrie und mehr auszuprobieren.\n\nUnter Farben kannst du die Kopien variieren."
     m_Metadata:
       m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: "\xC4nderungen \xFCbernehmen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: "Nicht verwendete Farben l\xF6schen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: Farben sortieren
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: "Neues Voxel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "Ein neues leeres Voxelmodell beginnen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "Voxelmodell am Raster ausrichten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "Aktuelles Modell an deinen Rastereinstellungen ausrichten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "Voxelbereich auswählen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "Halte den Trigger gedrückt und ziehe, um einen Quader auszuwählen. Drücke beim Greifen die Duplizieren-Taste, um eine Kopie zu platzieren. Drücke den Trigger zweimal im leeren Raum, um abzuschließen und die Auswahl aufzuheben."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "Pinselfarbe verwenden"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

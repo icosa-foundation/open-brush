@@ -34,6 +34,7 @@ namespace TiltBrush
         private TrTransform m_LastThumbnail_SS;
         private List<SketchWriter.AdjustedMemoryBrushStroke> m_Strokes;
         private SketchMetadata m_Metadata;
+        private MetadataUtils.EditableVoxSavePayload[] m_EditableVoxPayloads;
 
         private JsonSerializer m_JsonSerializer;
         private SaveIconCaptureScript m_SaveIconCapture;
@@ -43,6 +44,7 @@ namespace TiltBrush
         private WidgetLinkSaveContext m_WidgetLinks;
 
         private bool m_SelectedOnly;
+        public long UnrecordedChangesRevision { get; private set; }
 
         public byte[] Thumbnail
         {
@@ -91,6 +93,7 @@ namespace TiltBrush
             m_JsonSerializer.ContractResolver = new CustomJsonContractResolver();
             m_SaveIconCapture = null;
             m_GroupIdMapping = new GroupIdMapping();
+            UnrecordedChangesRevision = SketchMemoryScript.m_Instance.UnrecordedChangesRevision;
             m_Metadata = GetSketchMetadata();
             m_LastThumbnail_SS = SaveLoadScript.m_Instance.ReasonableThumbnail_SS;
         }
@@ -119,6 +122,7 @@ namespace TiltBrush
                 m_WidgetLinks = new WidgetLinkSaveContext(m_SelectedOnly
                     ? selectedWidgets : SymmetryWidgetGroup.ActiveWidgets, m_SelectedOnly);
                 m_SymmetryState = SketchWriter.SymmetrySaveState.Capture(includeUnreferenced: !m_SelectedOnly);
+                UnrecordedChangesRevision = SketchMemoryScript.m_Instance.UnrecordedChangesRevision;
                 m_Metadata = GetSketchMetadata();
                 foreach (var mirror in m_WidgetLinks.Mirrors)
                 {
@@ -178,7 +182,7 @@ namespace TiltBrush
             if (!m_SelectedOnly)
             {
                 m_WidgetLinks ??= new WidgetLinkSaveContext(SymmetryWidgetGroup.ActiveWidgets, false);
-                metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping, m_WidgetLinks);
+                metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping, out m_EditableVoxPayloads, m_WidgetLinks);
                 metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping, m_WidgetLinks);
                 metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping, m_WidgetLinks);
                 metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping, m_WidgetLinks);
@@ -294,6 +298,16 @@ namespace TiltBrush
                         zip.CloseEntry();
                     }
 
+                    if (m_EditableVoxPayloads != null)
+                    {
+                        foreach (MetadataUtils.EditableVoxSavePayload payload in m_EditableVoxPayloads)
+                        {
+                            zip.PutNextEntry(new ZipEntry(payload.FilePath));
+                            zip.Write(payload.VoxBytes, 0, payload.VoxBytes.Length);
+                            zip.CloseEntry();
+                        }
+                    }
+
                     // Add other necessary files as needed
                 }
 
@@ -337,6 +351,17 @@ namespace TiltBrush
                             m_SymmetryState);
                     }
                     m_Metadata.BrushIndex = brushGuids.Select(GetForcePrecededBy).ToArray();
+
+                    if (m_EditableVoxPayloads != null)
+                    {
+                        foreach (MetadataUtils.EditableVoxSavePayload payload in m_EditableVoxPayloads)
+                        {
+                            using (var stream = tiltWriter.GetWriteStream(payload.FilePath))
+                            {
+                                stream.Write(payload.VoxBytes, 0, payload.VoxBytes.Length);
+                            }
+                        }
+                    }
 
                     using (var jsonWriter = new CustomJsonWriter(new StreamWriter(
                         tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))

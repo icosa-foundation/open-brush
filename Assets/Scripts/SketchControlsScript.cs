@@ -1932,7 +1932,8 @@ namespace TiltBrush
                         if (!m_GrabBrush.eatInput && InputManager.Brush.GetControllerGrip())
                         {
                             m_CurrentGrabWidget = m_PotentialGrabWidgetBrush;
-                            if (m_CurrentGrabWidget.Group != SketchGroupTag.None)
+                            if (m_CurrentGrabWidget.Group != SketchGroupTag.None &&
+                                !(m_CurrentGrabWidget is ModelWidget regionModel && regionModel.HasVoxRegionSelection))
                             {
                                 m_GrabBrush.grabbingGroup = true;
                                 m_CurrentGrabWidget =
@@ -1985,7 +1986,8 @@ namespace TiltBrush
                         if (!m_GrabWand.eatInput && InputManager.Wand.GetControllerGrip())
                         {
                             m_CurrentGrabWidget = m_PotentialGrabWidgetWand;
-                            if (m_CurrentGrabWidget.Group != SketchGroupTag.None)
+                            if (m_CurrentGrabWidget.Group != SketchGroupTag.None &&
+                                !(m_CurrentGrabWidget is ModelWidget regionModel && regionModel.HasVoxRegionSelection))
                             {
                                 m_GrabWand.grabbingGroup = true;
                                 m_CurrentGrabWidget =
@@ -2078,7 +2080,7 @@ namespace TiltBrush
                     }
                 }
 
-                if (m_CurrentGrabWidget is SelectionWidget)
+                if (m_CurrentGrabWidget is SelectionWidget selectionWidget && !selectionWidget.HasVoxRegionSelection)
                 {
                     if (InputManager.m_Instance.GetCommandDown(
                         InputManager.SketchCommands.DuplicateSelection))
@@ -2625,6 +2627,10 @@ namespace TiltBrush
             Transform controller = InputManager.Controllers[(int)info.m_Name].Transform;
             Transform widget = m_CurrentGrabWidget.GrabTransform_GS;
             TrTransform newWidgetXf = Coords.AsGlobal[widget];
+            if (m_CurrentGrabWidget is ModelWidget modelWidget && modelWidget.VoxRegionGrabActive)
+                newWidgetXf = modelWidget.GetGrabbedTrTransform();
+            else if (m_CurrentGrabWidget is SelectionWidget selectionWidget && selectionWidget.VoxRegionGrabActive)
+                newWidgetXf = selectionWidget.GetGrabbedTrTransform();
 
             info.m_BaseControllerXf = Coords.AsGlobal[controller];
             info.m_BaseWidgetXf_LS = info.m_BaseControllerXf.inverse * newWidgetXf;

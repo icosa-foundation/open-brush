@@ -4724,6 +4724,46 @@ MonoBehaviour:
     m_Localized: "El espejo simple no tiene ajustes adicionales.\n\nElige una pesta\xF1a arriba para probar patrones repetidos, simetr\xEDa rotacional y m\xE1s.\n\nColores te permite variar las copias."
     m_Metadata:
       m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: Aplicar cambios
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: Borrar colores sin usar
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: Ordenar colores
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: "Nuevo vóxel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "Iniciar un nuevo modelo de vóxeles vacío"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "Alinear modelo de vóxeles a la cuadrícula"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "Alinear el modelo actual según los ajustes de la cuadrícula"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "Seleccionar región de vóxeles"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "Mantén pulsado el gatillo y arrastra para seleccionar un cuboide. Pulsa el botón de duplicar mientras lo agarras para colocar una copia. Pulsa dos veces el gatillo en un espacio vacío para finalizar y borrar la selección."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "Usar el color del pincel"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -4345,6 +4345,46 @@ MonoBehaviour:
       Colors lets you vary the copies.'
     m_Metadata:
       m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: New voxel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: Start a new empty voxel model
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: Align Voxel Model to Grid
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: Align the current model with your grid settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: Select voxel region
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: Drag the trigger to select a cuboid. Press the duplicate button during a grab to stamp a copy. Double press the trigger in empty space to finalise and clear.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: Apply changes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: Clear unused colors
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: Sort colors
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: Use brush colour
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

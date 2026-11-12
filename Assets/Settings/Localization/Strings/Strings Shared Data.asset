@@ -4163,6 +4163,46 @@ MonoBehaviour:
     m_Key: MULTIMIRROR_PANEL_SIMPLE_HELP_BODY
     m_Metadata:
       m_Items: []
+  - m_Id: 559927936423649280
+    m_Key: LABS_PANEL_VOXEL_TRAY_NEW_MODEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Key: LABS_PANEL_VOXEL_TRAY_NEW_MODEL_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Key: LABS_PANEL_VOXEL_TRAY_ALIGN_TO_GRID
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Key: LABS_PANEL_VOXEL_TRAY_ALIGN_TO_GRID_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Key: LABS_PANEL_VOXEL_TRAY_SELECT_REGION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Key: LABS_PANEL_VOXEL_TRAY_SELECT_REGION_EXTRA
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984249517400064
+    m_Key: VOX_PALETTE_APPLY_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Key: VOX_PALETTE_CLEAR_UNUSED_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Key: VOX_PALETTE_SORT_DESCRIPTION
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Key: VOX_PALETTE_USE_BRUSH_COLOR
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

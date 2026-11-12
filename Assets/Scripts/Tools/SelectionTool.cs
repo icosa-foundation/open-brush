@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using System.Linq;
 
 namespace TiltBrush
 {
@@ -104,14 +105,16 @@ namespace TiltBrush
                 // If intersecting with selection widget
                 if (SketchControlsScript.m_Instance.IsUsersBrushIntersectingWithSelectionWidget())
                 {
-                    if (InputManager.m_Instance.GetCommandDown(
+                    bool voxelRegion = SelectionManager.m_Instance.SelectedWidgets.OfType<ModelWidget>()
+                        .Any(widget => widget.HasVoxRegionSelection);
+                    if (!voxelRegion && InputManager.m_Instance.GetCommandDown(
                         InputManager.SketchCommands.DuplicateSelection))
                     {
                         InputManager.Brush.LastHeldInput =
                             InputManager.Brush.GetCommandHoldInput(InputManager.SketchCommands.DuplicateSelection);
                     }
 
-                    if (InputManager.Brush.LastHeldInput != null &&
+                    if (!voxelRegion && InputManager.Brush.LastHeldInput != null &&
                         InputManager.m_Instance.GetCommandHeld(InputManager.SketchCommands.DuplicateSelection))
                     {
                         SketchControlsScript.m_Instance.IssueGlobalCommand(
@@ -182,7 +185,7 @@ namespace TiltBrush
                     continue;
                 }
 
-                if (!widget.TryIntersectGsplat(vDetectionCenter_GS, size_GS, out _))
+                if (!widget.TryIntersectNonGpuModel(vDetectionCenter_GS, size_GS, out _))
                 {
                     continue;
                 }

@@ -278,6 +278,7 @@ namespace TiltBrush
         private StoredBrushInfo? m_StoredBrushInfo;
 
         private bool m_StraightEdgeEnabled; // whether the mode is enabled
+        internal bool VoxelStraightEdgeGuideActive { get; set; }
         // Brushes which return true for NeedsStraightEdgeProxy() use a proxy brush when displaying the
         // initial straight edge and redraw the line with the real brush at the end. This specifies
         // whether that proxy is currently active:
@@ -725,7 +726,7 @@ namespace TiltBrush
         void Update()
         {
             bool endpointSnapActive = false;
-            if (m_StraightEdgeEnabled && m_CurrentLineCreationState == LineCreationState.RecordingInput)
+            if (!VoxelStraightEdgeGuideActive && m_StraightEdgeEnabled && m_CurrentLineCreationState == LineCreationState.RecordingInput)
             {
                 m_StraightEdgeGuide.SnapEnabled =
                     InputManager.Brush.GetCommand(InputManager.SketchCommands.MenuContextClick) &&
@@ -751,7 +752,7 @@ namespace TiltBrush
             }
 
             // Preview endpoint snapping when not actively drawing
-            if (m_StraightEdgeEnabled &&
+            if (!VoxelStraightEdgeGuideActive && m_StraightEdgeEnabled &&
                 m_CurrentLineCreationState == LineCreationState.WaitingForInput &&
                 StraightEdgeGuide.CurrentShape == StraightEdgeGuideScript.Shape.Line)
             {
@@ -763,7 +764,7 @@ namespace TiltBrush
                 }
             }
 
-            m_StraightEdgeGuide.UpdateEndpointSnapHaptics(endpointSnapActive);
+            if (!VoxelStraightEdgeGuideActive) m_StraightEdgeGuide.UpdateEndpointSnapHaptics(endpointSnapActive);
 
             if (SymmetryModeEnabled)
             {
@@ -2134,6 +2135,27 @@ namespace TiltBrush
                 m_CustomSymmetryType == CustomSymmetryType.SpaceGroup ||
                 m_CustomSymmetryType == CustomSymmetryType.LineGroup ||
                 m_CustomSymmetryType == CustomSymmetryType.Penrose ? 1f : m_WallpaperSymmetryScale);
+        }
+
+        // Volumetric tools need the actual reflection, before the extra handedness
+        // fix used to orient stroke brushes. Preserve the same mirror frame/scale.
+        internal void GetVoxelSymmetryMatrices(TrTransform primaryPose_GS, List<Matrix4x4> matrices)
+        {
+            matrices.Clear();
+            if (m_CurrentSymmetryMode == SymmetryMode.MultiMirror && m_CustomMirrorMatrices.Count > 0)
+            {
+                var center = m_SymmetryLockedToController ? primaryPose_GS : TrTransform.FromTransform(m_SymmetryWidget);
+                var toWorld = center.ToMatrix4x4();
+                var fromWorld = center.inverse.ToMatrix4x4();
+                foreach (var matrix in m_CustomMirrorMatrices)
+                    matrices.Add(toWorld * TrFromMatrix(matrix).ToMatrix4x4() * fromWorld);
+            }
+            else
+            {
+                matrices.Add(Matrix4x4.identity);
+                if (m_CurrentSymmetryMode == SymmetryMode.SinglePlane)
+                    matrices.Add(m_SymmetryWidgetScript.ReflectionPlane.ToTrTransform().ToMatrix4x4());
+            }
         }
 
         public TrTransform TrFromMatrix(Matrix4x4 m)

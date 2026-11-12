@@ -4662,6 +4662,46 @@ MonoBehaviour:
     m_Localized: "\u7B80\u5355\u955C\u50CF\u6CA1\u6709\u989D\u5916\u8BBE\u7F6E\u3002\n\n\u9009\u62E9\u4E0A\u65B9\u7684\u6807\u7B7E\u9875\uFF0C\u5C1D\u8BD5\u91CD\u590D\u56FE\u6848\u3001\u65CB\u8F6C\u5BF9\u79F0\u7B49\u6548\u679C\u3002\n\n\u5728\u201C\u989C\u8272\u201D\u4E2D\u53EF\u4EE5\u8C03\u6574\u5404\u4E2A\u526F\u672C\u7684\u989C\u8272\u3002"
     m_Metadata:
       m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: "\u5E94\u7528\u66F4\u6539"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: "\u6E05\u9664\u672A\u4F7F\u7528\u7684\u989C\u8272"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: "\u989C\u8272\u6392\u5E8F"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: "新建体素"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "开始一个新的空体素模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "将体素模型对齐到网格"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "根据网格设置对齐当前模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "选择体素区域"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "按住扳机拖动以选择一个长方体。抓取时按下复制按钮可放置副本。在空白处双击扳机以完成并清除选择。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "使用画笔颜色"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

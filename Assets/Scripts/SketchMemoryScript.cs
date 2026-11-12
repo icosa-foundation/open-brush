@@ -131,6 +131,9 @@ namespace TiltBrush
 
         // operation stack size as of last load (always 0) or save
         private int m_LastOperationStackCount;
+        private long m_UnrecordedChangesRevision;
+        private long m_LastSavedUnrecordedChangesRevision;
+        public long UnrecordedChangesRevision => m_UnrecordedChangesRevision;
         private bool m_HasVisibleObjects;
         private bool m_MemoryExceeded;
         private bool m_MemoryWarningAccepted;
@@ -288,9 +291,18 @@ namespace TiltBrush
             }
         }
 
-        public void SetLastOperationStackCount()
+        public void SetLastOperationStackCount(long? savedUnrecordedRevision = null)
         {
             m_LastOperationStackCount = m_OperationStack.Count;
+            m_LastSavedUnrecordedChangesRevision = Math.Max(
+                m_LastSavedUnrecordedChangesRevision,
+                savedUnrecordedRevision ?? m_UnrecordedChangesRevision);
+        }
+
+        // Scripted document mutations can be persistent without an undo command.
+        public void MarkUnrecordedChange()
+        {
+            ++m_UnrecordedChangesRevision;
         }
 
         public bool WillVertCountPutUsOverTheMemoryLimit(int numVerts)
@@ -332,6 +344,7 @@ namespace TiltBrush
         // True if strokes have been modified since last load or save (approximately)
         public bool IsMemoryDirty()
         {
+            if (m_UnrecordedChangesRevision != m_LastSavedUnrecordedChangesRevision) return true;
             if (m_OperationStack.Count != m_LastOperationStackCount)
             {
                 IEnumerable<BaseCommand> newCommands = null;
@@ -978,6 +991,8 @@ namespace TiltBrush
             m_NetworkStack.Clear();
             NetworkOperationStackChanged?.Invoke();
             m_LastOperationStackCount = 0;
+            ++m_UnrecordedChangesRevision;
+            m_LastSavedUnrecordedChangesRevision = m_UnrecordedChangesRevision;
             m_MemoryList.Clear();
             SymmetryPeerPreview.Forget();
             SymmetryMirrors.Clear();
