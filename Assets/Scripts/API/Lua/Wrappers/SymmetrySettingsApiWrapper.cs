@@ -181,7 +181,8 @@ namespace TiltBrush
                         var wallpaperSym = new WallpaperSymmetry((SymmetryGroup.R)wallpaperType,
                             wallpaperRepeatX, wallpaperRepeatY,
                             wallpaperScale, wallpaperScaleX, wallpaperScaleY,
-                            wallpaperSkewX, wallpaperSkewY
+                            wallpaperSkewX, wallpaperSkewY,
+                            compact: true
                         );
                         matrices = wallpaperSym.matrices;
                     }
@@ -213,7 +214,7 @@ namespace TiltBrush
                     else if (mode == SymmetryMode.SpaceGroup)
                     {
                         var space = new SpaceGroupSymmetry(spaceGroup,
-                            new Vector3Int(spaceRepeatX, spaceRepeatY, spaceRepeatZ), spaceCellSize);
+                            new Vector3Int(spaceRepeatX, spaceRepeatY, spaceRepeatZ), spaceCellSize, compact: true);
                         matrices = space.matrices;
                     }
                     else
