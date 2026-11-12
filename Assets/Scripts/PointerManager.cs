@@ -201,13 +201,13 @@ namespace TiltBrush
             switch (m_CustomSymmetryType)
             {
                 case CustomSymmetryType.SpaceGroup:
-                    placements = new SpaceGroupSymmetry(m_SpaceGroupNumber, Vector3Int.one, 1f).matrices.Count;
+                    placements = new SpaceGroupSymmetry(m_SpaceGroupNumber, Vector3Int.one, 1f, compact: true).matrices.Count;
                     units = (long)m_SpaceGroupRepeats.x * m_SpaceGroupRepeats.y * m_SpaceGroupRepeats.z;
                     return units * placements;
                 case CustomSymmetryType.Wallpaper:
                     placements = new WallpaperSymmetry(m_WallpaperSymmetryGroup, 1, 1, 1f,
                         m_WallpaperSymmetryScaleX, m_WallpaperSymmetryScaleY,
-                        m_WallpaperSymmetrySkewX, m_WallpaperSymmetrySkewY).matrices.Count;
+                        m_WallpaperSymmetrySkewX, m_WallpaperSymmetrySkewY, compact: true).matrices.Count;
                     units = (long)m_WallpaperSymmetryX * m_WallpaperSymmetryY;
                     return units * placements;
                 case CustomSymmetryType.LineGroup:
@@ -1875,7 +1875,7 @@ namespace TiltBrush
                     break;
                 case CustomSymmetryType.SpaceGroup:
                     var spaceGroup = new SpaceGroupSymmetry(m_SpaceGroupNumber,
-                        m_SpaceGroupRepeats, m_SpaceGroupCellSize);
+                        m_SpaceGroupRepeats, m_SpaceGroupCellSize, compact: true);
                     m_CustomMirrorMatrices = spaceGroup.matrices;
                     SymmetryLatticeBasis = spaceGroup.cellBasis;
                     // Rhombohedral groups now repeat on primitive rhombohedral vectors,
@@ -1894,7 +1894,8 @@ namespace TiltBrush
                         m_WallpaperSymmetryScaleX,
                         m_WallpaperSymmetryScaleY,
                         m_WallpaperSymmetrySkewX,
-                        m_WallpaperSymmetrySkewY
+                        m_WallpaperSymmetrySkewY,
+                        compact: true
                     );
                     m_CustomMirrorMatrices = wallpaperSym.matrices;
                     m_CustomMirrorDomain = wallpaperSym.groupProperties.fundamentalRegion.points;
