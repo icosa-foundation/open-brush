@@ -36,6 +36,7 @@ namespace TiltBrush
         private Color m_SelectionColor;
         private BrushDescriptor m_SelectionBrush;
         private Stroke m_SelectionStroke;
+        private readonly VoxToolTarget m_VoxTarget = new();
 
         private enum State
         {
@@ -84,6 +85,7 @@ namespace TiltBrush
         override public void EnableTool(bool bEnable)
         {
             base.EnableTool(bEnable);
+            m_VoxTarget.Clear();
             ResetDetection();
             m_SelectionValid = false;
 
@@ -190,6 +192,35 @@ namespace TiltBrush
                     // Exit out early because we don't need to do actual stroke detection.
                     return;
                 }
+            }
+
+            if (m_VoxTarget.TryFindCell(App.ActiveCanvas, m_DropperTransform.position, GetSize(), out var voxel))
+            {
+                m_SelectionValid = false;
+                m_SelectionStroke = null;
+                m_SelectionColor = voxel.Document.Palette[voxel.PaletteIndex - 1];
+                m_DropperRenderer.material.color = m_SelectionColor;
+                m_DropperColorDescriptionSwatchRenderer.material.color = m_SelectionColor;
+                SetState(State.Enter);
+                m_DropperColorDescription.gameObject.SetActive(true);
+                m_DropperBrushDescription.gameObject.SetActive(false);
+                ResetDetection();
+                if (!m_EatInput && !m_ToolHidden &&
+                    InputManager.m_Instance.GetCommandDown(InputManager.SketchCommands.Activate))
+                {
+                    var voxelTool = SketchSurfacePanel.m_Instance.GetToolOfType(BaseTool.ToolType.VoxelTool) as VoxelTool;
+                    if (voxelTool != null && voxelTool.HasCurrentTarget && !voxelTool.CreatingNewModel)
+                    {
+                        if (!voxelTool.TrySamplePalette(voxel)) return;
+                    }
+                    else
+                    {
+                        PanelManager.m_Instance.SetCurrentColorOnAllColorPickers(m_SelectionColor);
+                    }
+                    AudioManager.m_Instance.PlayDropperPickSound(m_DropperRenderer.transform.position);
+                    m_RequestExit = true;
+                }
+                return;
             }
 
             //select brush and color

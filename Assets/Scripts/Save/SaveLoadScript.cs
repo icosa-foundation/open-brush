@@ -834,7 +834,7 @@ namespace TiltBrush
                     {
                         var immSketch = jsonData.ModelIndex.FirstOrDefault(model => model.ImmSketch);
                         if (immSketch != null) NativeImmImport.LoadFromSketch(immSketch.FilePath);
-                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex);
+                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex, fileInfo);
                     }
 
                     if (jsonData.LightIndex != null)
