@@ -46,6 +46,8 @@ namespace TiltBrush
             }
             if (widgets != null)
             {
+                // Capture resting peer placements, not temporary selection-preview positions.
+                SymmetryWidgetPreview.Hide();
                 m_Widgets = new List<GrabWidget>();
                 m_Widgets.AddRange(widgets);
                 var seen = new HashSet<GrabWidget>(m_Widgets);
