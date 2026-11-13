@@ -242,7 +242,8 @@ namespace TiltBrush
 
                 bool blocked = surface != null &&
                     !uiComponent.transform.IsChildOf(surface.transform.parent);
-                if (!blocked && uiComponent.UpdateStateWithInput(inputValid, selectionRay, m_ActiveInputObject,
+                if (!blocked && uiComponent.UpdateStateWithInput(
+                    inputValid && !InputManager.m_Instance.UIActivationConsumed, selectionRay, m_ActiveInputObject,
                     parentCollider))
                 {
                     m_ActiveInputObject = uiComponent.gameObject;
@@ -257,7 +258,8 @@ namespace TiltBrush
 
             if (surface != null)
             {
-                if (surface.UpdateStateWithInput(inputValid, selectionRay, m_ActiveInputObject,
+                if (surface.UpdateStateWithInput(
+                    inputValid && !InputManager.m_Instance.UIActivationConsumed, selectionRay, m_ActiveInputObject,
                     parentCollider))
                 {
                     m_ActiveInputObject = surface.gameObject;
@@ -268,7 +270,7 @@ namespace TiltBrush
 
             // If we clicked, but didn't hit a UIComponent, set our active object to ourself.
             // This will prevent "off-clicking and dragging" to initiate a press.
-            if (inputValid && m_ActiveInputObject == null)
+            if (inputValid && !InputManager.m_Instance.UIActivationConsumed && m_ActiveInputObject == null)
             {
                 m_ActiveInputObject = gameObject;
             }
@@ -293,6 +295,9 @@ namespace TiltBrush
                         parentPopUp.GotoPage(param);
                         break;
                     case UIComponent.ComponentMessage.ClosePopup:
+                        // The popup may shrink away from the ray before the trigger is released.
+                        // Consume this activation across panels before starting that transition.
+                        InputManager.m_Instance.ConsumeUIActivationUntilRelease();
                         parentPopUp.RequestClose(bForceClose: true);
                         break;
                 }
