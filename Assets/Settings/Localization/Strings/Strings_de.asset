@@ -4457,27 +4457,27 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 559927936423649280
-    m_Localized: "Neues Voxel"
+    m_Localized: Neues Voxel
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118272
-    m_Localized: "Ein neues leeres Voxelmodell beginnen"
+    m_Localized: Ein neues leeres Voxelmodell beginnen
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118273
-    m_Localized: "Voxelmodell am Raster ausrichten"
+    m_Localized: Voxelmodell am Raster ausrichten
     m_Metadata:
       m_Items: []
   - m_Id: 559927936524312576
-    m_Localized: "Aktuelles Modell an deinen Rastereinstellungen ausrichten"
+    m_Localized: Aktuelles Modell an deinen Rastereinstellungen ausrichten
     m_Metadata:
       m_Items: []
   - m_Id: 560634138304536576
-    m_Localized: "Voxelbereich auswählen"
+    m_Localized: "Voxelbereich ausw\xE4hlen"
     m_Metadata:
       m_Items: []
   - m_Id: 560634138455531520
-    m_Localized: "Halte den Trigger gedrückt und ziehe, um einen Quader auszuwählen. Drücke beim Greifen die Duplizieren-Taste, um eine Kopie zu platzieren. Drücke den Trigger zweimal im leeren Raum, um abzuschließen und die Auswahl aufzuheben."
+    m_Localized: "Halte den Trigger gedr\xFCckt und ziehe, um einen Quader auszuw\xE4hlen. Dr\xFCcke beim Greifen die Duplizieren-Taste, um eine Kopie zu platzieren. Dr\xFCcke den Trigger zweimal im leeren Raum, um abzuschlie\xDFen und die Auswahl aufzuheben."
     m_Metadata:
       m_Items: []
   - m_Id: 551461337584721920
@@ -4933,7 +4933,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 563423505335017472
-    m_Localized: "Pinselfarbe verwenden"
+    m_Localized: Pinselfarbe verwenden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 564570892417982464
+    m_Localized: "Zus\xE4tzliche Vorschauhilfen ausblenden"
     m_Metadata:
       m_Items: []
   references:

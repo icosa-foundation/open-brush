@@ -4351,6 +4351,10 @@ MonoBehaviour:
     m_Key: NATIVE_IMM_SOUND_FAILED
     m_Metadata:
       m_Items: []
+  - m_Id: 564570892417982464
+    m_Key: MULTIMIRROR_PANEL_HIDE_EXTRA_PREVIEWS
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

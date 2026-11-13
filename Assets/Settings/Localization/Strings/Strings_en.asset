@@ -4533,6 +4533,10 @@ MonoBehaviour:
     m_Localized: "Sound playback failed"
     m_Metadata:
       m_Items: []
+  - m_Id: 564570892417982464
+    m_Localized: Hide extra preview guides
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

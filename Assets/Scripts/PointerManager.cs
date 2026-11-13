@@ -84,8 +84,8 @@ namespace TiltBrush
 
         [NonSerialized] public LineGroupSymmetry.Family m_LineFamily = LineGroupSymmetry.Family.ScrewRotations;
         [NonSerialized] public int m_LineOrder = 2;
-        [NonSerialized] public int m_LineRepeats = 10;
-        [NonSerialized] public float m_LineAdvance = 0.5f;
+        [NonSerialized] public int m_LineRepeats = 6;
+        [NonSerialized] public float m_LineAdvance = 1.5f;
         [NonSerialized] public float m_LineAngle = 18f;
 
         [NonSerialized] public int m_SpaceGroupNumber = 1;

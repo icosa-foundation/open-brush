@@ -4401,27 +4401,27 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 559927936423649280
-    m_Localized: "Nouveau voxel"
+    m_Localized: Nouveau voxel
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118272
-    m_Localized: "Commencer un nouveau modèle voxel vide"
+    m_Localized: "Commencer un nouveau mod\xE8le voxel vide"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118273
-    m_Localized: "Aligner le modèle voxel sur la grille"
+    m_Localized: "Aligner le mod\xE8le voxel sur la grille"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936524312576
-    m_Localized: "Aligner le modèle actuel selon les paramètres de la grille"
+    m_Localized: "Aligner le mod\xE8le actuel selon les param\xE8tres de la grille"
     m_Metadata:
       m_Items: []
   - m_Id: 560634138304536576
-    m_Localized: "Sélectionner une région de voxels"
+    m_Localized: "S\xE9lectionner une r\xE9gion de voxels"
     m_Metadata:
       m_Items: []
   - m_Id: 560634138455531520
-    m_Localized: "Maintenez la gâchette enfoncée et faites glisser pour sélectionner un pavé droit. Appuyez sur le bouton de duplication pendant la saisie pour déposer une copie. Appuyez deux fois sur la gâchette dans un espace vide pour terminer et effacer la sélection."
+    m_Localized: "Maintenez la g\xE2chette enfonc\xE9e et faites glisser pour s\xE9lectionner un pav\xE9 droit. Appuyez sur le bouton de duplication pendant la saisie pour d\xE9poser une copie. Appuyez deux fois sur la g\xE2chette dans un espace vide pour terminer et effacer la s\xE9lection."
     m_Metadata:
       m_Items: []
   - m_Id: 551461337584721920
@@ -4877,7 +4877,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 563423505335017472
-    m_Localized: "Utiliser la couleur du pinceau"
+    m_Localized: Utiliser la couleur du pinceau
+    m_Metadata:
+      m_Items: []
+  - m_Id: 564570892417982464
+    m_Localized: "Masquer les rep\xE8res suppl\xE9mentaires de pr\xE9visualisation"
     m_Metadata:
       m_Items: []
   references:
