@@ -50,6 +50,9 @@ namespace TiltBrush
         [SerializeField] private ActionButton m_ImportSkydome;
         [SerializeField] private ModelPathLabel m_ModelPath;
         [SerializeField] private GameObject m_PlaybackButtonsRoot;
+        [SerializeField] private BaseButton m_PlayPauseButton;
+        [SerializeField] private Texture2D m_PlayTexture;
+        [SerializeField] private Texture2D m_PauseTexture;
         [SerializeField] private FloatPropertySlider m_VolumeSlider;
         [SerializeField] private float m_ModelSkipTime = 10f;
 
@@ -59,6 +62,7 @@ namespace TiltBrush
         private float? m_PendingVolume;
         private bool m_AnimationClipsLoaded;
         private bool m_ConvertingImm;
+        private bool? m_PlaybackIconShowingPause;
         private ModelPlaybackController SelectedPlayback => m_SelectedModelWidget != null &&
             m_SelectedModelWidget.gameObject.activeInHierarchy ? m_SelectedModelWidget.Playback : null;
 
@@ -150,6 +154,15 @@ namespace TiltBrush
             if (m_ModelControls != null) m_ModelControls.SetActive(m_TabActive && (supported || brokenApart));
             if (m_Scrubber != null) m_Scrubber.gameObject.SetActive(supported);
             if (m_PlaybackButtonsRoot != null) m_PlaybackButtonsRoot.SetActive(supported);
+            if (m_PlayPauseButton != null && m_PlayPauseButton.gameObject.activeInHierarchy)
+            {
+                bool playing = supported && playback.Playing;
+                if (m_PlaybackIconShowingPause != playing)
+                {
+                    m_PlayPauseButton.SetButtonTexture(playing ? m_PauseTexture : m_PlayTexture);
+                    m_PlaybackIconShowingPause = playing;
+                }
+            }
             if (m_ModelPath != null)
             {
                 m_ModelPath.gameObject.SetActive(brokenApart);

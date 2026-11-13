@@ -3688,6 +3688,9 @@ MonoBehaviour:
   m_ImportSkydome: {fileID: 4435717801583934442}
   m_ModelPath: {fileID: 7226170912356697659}
   m_PlaybackButtonsRoot: {fileID: 1619929078953274548}
+  m_PlayPauseButton: {fileID: 82311130000000001}
+  m_PlayTexture: {fileID: 2800000, guid: 6eb1cdc233e81d7469158286f81aa684, type: 3}
+  m_PauseTexture: {fileID: 2800000, guid: 5c0c0b03d5e20c841b1178ea8aeb3f06, type: 3}
   m_VolumeSlider: {fileID: 6933280865181810545}
   m_ModelSkipTime: 10
   references:
@@ -4970,7 +4973,11 @@ PrefabInstance:
     - target: {fileID: 7599348944369875173, guid: c2a88d23f4dea5a4aae06f33862c9716, type: 3}
       propertyPath: m_ButtonTexture
       value: 
-      objectReference: {fileID: 2800000, guid: bebd9dc5824bcc6419ab95987680c688, type: 3}
+      objectReference: {fileID: 2800000, guid: 6eb1cdc233e81d7469158286f81aa684, type: 3}
+    - target: {fileID: 7599348944369875173, guid: c2a88d23f4dea5a4aae06f33862c9716, type: 3}
+      propertyPath: m_AtlasTexture
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7599348944369875173, guid: c2a88d23f4dea5a4aae06f33862c9716, type: 3}
       propertyPath: m_DescriptionText
       value: PANEL_REFERENCE_BUTTON_VIDEO_PLAYPAUSE_DESCRIPTION
@@ -5224,6 +5231,17 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5c1725c7e47f9ee4f857ac443a6fae19, type: 3}
+--- !u!114 &82311130000000001 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7599348944369875173, guid: c2a88d23f4dea5a4aae06f33862c9716, type: 3}
+  m_PrefabInstance: {fileID: 3698947984745135815}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3b3665b03c0f9b14d8200c30d7556394, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
 --- !u!114 &710714228935901245 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4599857359727874635, guid: 5c1725c7e47f9ee4f857ac443a6fae19, type: 3}
