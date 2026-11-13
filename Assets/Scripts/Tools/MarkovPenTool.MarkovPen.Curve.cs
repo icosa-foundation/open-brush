@@ -41,6 +41,12 @@ namespace TiltBrush
             /// The 3D positions of the knot points
             /// </summary>
             protected List<Vector3> m_ControlPoints = new();
+
+            /// <summary>
+            /// Gets the latest accepted control point.
+            /// Call AddControlPoint at least once before reading this property.
+            /// </summary>
+            public Vector3 LatestControlPoint => m_ControlPoints[^1];
             
             /// <summary>
             /// The previous input cached for Elasticurve smoothing 

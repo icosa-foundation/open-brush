@@ -17,6 +17,12 @@ namespace TiltBrush
         [SerializeField] private LineRenderer m_DirectionIndicator;
         [SerializeField, Min(0.0f)] private float m_DirectionIndicatorPanelOffset = 0.03f;
         [SerializeField, Min(0.0f)] private float m_DirectionIndicatorControllerOffset = 0.02f;
+        
+        // Initial responsiveness for live style smoothing; 1 disables smoothing.
+        private const float k_StyleResponsiveness = 0.5f;
+
+        // Preserve the curve's input history between frames of the active stroke.
+        private MarkovPen.Curve m_StyleSmoothingCurve;
 
         private static readonly List<Vector3> s_ControlPoints = new();
         private static readonly List<Vector3> s_BaseCurvePoints = new();
@@ -126,15 +132,24 @@ namespace TiltBrush
             }
         }
 
-        /// @brief Update the tool and redirects painting input to the Markov drawing panel
+        /// @brief Update panel drawing and manage smoothing state for the style stroke.
         public override void UpdateTool()
         {
             base.UpdateTool();
 
             if (!IsDrawingPanelOpen)
             {
+                m_StyleSmoothingCurve = null;
                 SetDirectionIndicatorActive(false);
                 return;
+            }
+
+            // Start each style stroke with fresh smoothing history.
+            if (!s_HasStyleCurveStrokeStarted ||
+                !m_brushTrigger ||
+                s_IsStyleCurveDone)
+            {
+                m_StyleSmoothingCurve = null;
             }
 
             ApplyMarkovPanelPaintingOverride();
@@ -476,17 +491,41 @@ namespace TiltBrush
                 UpdateCurveState(false);
                 return;
             }
-
-            pointerManager.SetPointerTransform(
-                InputManager.ControllerName.Brush,
-                drawingWorldPoint,
-                drawingPanel.transform.rotation);
-
+            
             bool isPaintingActive =
                 m_brushTrigger &&
                 !s_IsStyleCurveDone &&
                 IsApplicationPaintingAllowed() &&
                 !IsViewOnlyMultiplayer();
+
+            // Apply Elasticurve smoothing while drawing the freehand style stroke.
+            if (isPaintingActive && s_IsBaseCurveDone)
+            {
+                if (m_StyleSmoothingCurve == null)
+                {
+                    m_StyleSmoothingCurve =
+                        new MarkovPen.Curve(k_StyleResponsiveness);
+                }
+
+                // Feed the raw panel point into the existing smoothing algorithm.
+                m_StyleSmoothingCurve.AddControlPoint(panelPoint);
+
+                Vector3 smoothedPoint =
+                    m_StyleSmoothingCurve.LatestControlPoint;
+
+                // Rotate the panel-space correction into world space, preserving hit depth.
+                Vector3 panelOffset = smoothedPoint - (Vector3)panelPoint;
+                drawingWorldPoint +=
+                    drawingPanel.transform.rotation * panelOffset;
+
+                // Store the same position that the brush displays.
+                panelPoint = new Vector2(smoothedPoint.x, smoothedPoint.y);
+            }
+
+            pointerManager.SetPointerTransform(
+                InputManager.ControllerName.Brush,
+                drawingWorldPoint,
+                drawingPanel.transform.rotation);
 
             UpdateCurveState(isPaintingActive);
             SetDrawingActive(isPaintingActive);
