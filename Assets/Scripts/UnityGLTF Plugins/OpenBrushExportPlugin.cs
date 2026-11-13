@@ -361,6 +361,23 @@ namespace TiltBrush
                     m_MaterialBrushes[materials[0]] = descriptor;
                 }
             }
+            else if (renderer != null)
+            {
+                // Imported brush meshes have no Batch or BaseBrushScript. Their
+                // importer retains the resolved descriptor in the model's collector.
+                var model = transform.GetComponentInParent<ModelWidget>()?.Model;
+                if (model != null)
+                {
+                    foreach (var material in renderer.sharedMaterials)
+                    {
+                        if (material != null &&
+                            model.GetExportableMaterial(material) is BrushDescriptor importedBrush)
+                        {
+                            m_MaterialBrushes[material] = importedBrush;
+                        }
+                    }
+                }
+            }
             if (App.UserConfig.Export.KeepStrokes &&
                 App.UserConfig.Export.ExportStrokeTimestamp)
             {
