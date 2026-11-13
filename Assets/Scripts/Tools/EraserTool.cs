@@ -82,6 +82,11 @@ namespace TiltBrush
             InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.05f);
         }
 
+        override protected bool HandleNonGpuWidgetIntersections(Vector3 center_GS, float radius_GS)
+        {
+            return IntersectNonGpuModelWidgets(center_GS, radius_GS);
+        }
+
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
             if (widget is MediaWidget && !widget.Pinned)

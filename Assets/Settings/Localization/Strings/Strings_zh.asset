@@ -3451,7 +3451,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 217070349893754880
-    m_Localized: "Open Brush 草图查看器"
+    m_Localized: "Open Brush \u8349\u56FE\u67E5\u770B\u5668"
     m_Metadata:
       m_Items: []
   - m_Id: 217069105871577088
@@ -3515,7 +3515,7 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 156198200358006784
-    m_Localized: "部分用户可能正在使用不支持透视功能的头显"
+    m_Localized: "\u90E8\u5206\u7528\u6237\u53EF\u80FD\u6B63\u5728\u4F7F\u7528\u4E0D\u652F\u6301\u900F\u89C6\u529F\u80FD\u7684\u5934\u663E"
     m_Metadata:
       m_Items: []
   - m_Id: 313111533204348928
@@ -3587,775 +3587,815 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 89041955544915968
-    m_Localized: "媒体库"
+    m_Localized: "\u5A92\u4F53\u5E93"
     m_Metadata:
       m_Items: []
   - m_Id: 89060975102943232
-    m_Localized: "打开"
+    m_Localized: "\u6253\u5F00"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634182
-    m_Localized: "位置"
+    m_Localized: "\u4F4D\u7F6E"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584188022786
-    m_Localized: "召唤镜面"
+    m_Localized: "\u53EC\u5524\u955C\u9762"
     m_Metadata:
       m_Items: []
   - m_Id: 157582826200739840
-    m_Localized: "关闭"
+    m_Localized: "\u5173\u95ED"
     m_Metadata:
       m_Items: []
   - m_Id: 312781662766833664
-    m_Localized: " 状态："
+    m_Localized: " \u72B6\u6001\uFF1A"
     m_Metadata:
       m_Items: []
   - m_Id: 540641902376607744
-    m_Localized: "媒体库"
+    m_Localized: "\u5A92\u4F53\u5E93"
     m_Metadata:
       m_Items: []
   - m_Id: 7930412489482241
-    m_Localized: "所有模型"
+    m_Localized: "\u6240\u6709\u6A21\u578B"
     m_Metadata:
       m_Items: []
   - m_Id: 7932160536977409
-    m_Localized: "所有模型"
+    m_Localized: "\u6240\u6709\u6A21\u578B"
     m_Metadata:
       m_Items: []
   - m_Id: 89043032713486336
-    m_Localized: "点击加载"
+    m_Localized: "\u70B9\u51FB\u52A0\u8F7D"
     m_Metadata:
       m_Items: []
   - m_Id: 89044237590224896
-    m_Localized: "本地模型"
+    m_Localized: "\u672C\u5730\u6A21\u578B"
     m_Metadata:
       m_Items: []
   - m_Id: 89044379697438720
-    m_Localized: "本地视频"
+    m_Localized: "\u672C\u5730\u89C6\u9891"
     m_Metadata:
       m_Items: []
   - m_Id: 89044625424932864
-    m_Localized: "本地图像"
+    m_Localized: "\u672C\u5730\u56FE\u50CF"
     m_Metadata:
       m_Items: []
   - m_Id: 89061114353836032
-    m_Localized: "添加媒体"
+    m_Localized: "\u6DFB\u52A0\u5A92\u4F53"
     m_Metadata:
       m_Items: []
   - m_Id: 89064741239808000
-    m_Localized: "了解方法"
+    m_Localized: "\u4E86\u89E3\u65B9\u6CD5"
     m_Metadata:
       m_Items: []
   - m_Id: 89072407659962368
-    m_Localized: "添加媒体"
+    m_Localized: "\u6DFB\u52A0\u5A92\u4F53"
     m_Metadata:
       m_Items: []
   - m_Id: 89074692188299264
-    m_Localized: "向后跳转"
+    m_Localized: "\u5411\u540E\u8DF3\u8F6C"
     m_Metadata:
       m_Items: []
   - m_Id: 89074820936654848
-    m_Localized: "播放 / 暂停"
+    m_Localized: "\u64AD\u653E / \u6682\u505C"
     m_Metadata:
       m_Items: []
   - m_Id: 89074884501331968
-    m_Localized: "向前跳转"
+    m_Localized: "\u5411\u524D\u8DF3\u8F6C"
     m_Metadata:
       m_Items: []
   - m_Id: 89093320602312704
-    m_Localized: "交换左右手"
+    m_Localized: "\u4EA4\u6362\u5DE6\u53F3\u624B"
     m_Metadata:
       m_Items: []
   - m_Id: 81207223535591424
-    m_Localized: "烟雾"
+    m_Localized: "\u70DF\u96FE"
     m_Metadata:
       m_Items: []
   - m_Id: 106429517453328384
-    m_Localized: "背景图像"
+    m_Localized: "\u80CC\u666F\u56FE\u50CF"
     m_Metadata:
       m_Items: []
   - m_Id: 103924956079587328
-    m_Localized: "重命名草图"
+    m_Localized: "\u91CD\u547D\u540D\u8349\u56FE"
     m_Metadata:
       m_Items: []
   - m_Id: 103943359016206336
-    m_Localized: "变换工具"
+    m_Localized: "\u53D8\u6362\u5DE5\u5177"
     m_Metadata:
       m_Items: []
   - m_Id: 109424659466551296
-    m_Localized: "重新绘制所选内容"
+    m_Localized: "\u91CD\u65B0\u7ED8\u5236\u6240\u9009\u5185\u5BB9"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584125108224
-    m_Localized: "X"
+    m_Localized: X
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634183
-    m_Localized: "旋转"
+    m_Localized: "\u65CB\u8F6C"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634184
-    m_Localized: "对齐"
+    m_Localized: "\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828482
-    m_Localized: "沿 X 轴对齐"
+    m_Localized: "\u6CBF X \u8F74\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828483
-    m_Localized: "沿 Y 轴对齐"
+    m_Localized: "\u6CBF Y \u8F74\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828484
-    m_Localized: "沿 Z 轴对齐"
+    m_Localized: "\u6CBF Z \u8F74\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828485
-    m_Localized: "对齐依据："
+    m_Localized: "\u5BF9\u9F50\u4F9D\u636E\uFF1A"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828486
-    m_Localized: "左侧/底部/前侧边缘"
+    m_Localized: "\u5DE6\u4FA7/\u5E95\u90E8/\u524D\u4FA7\u8FB9\u7F18"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828487
-    m_Localized: "中心"
+    m_Localized: "\u4E2D\u5FC3"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828488
-    m_Localized: "右侧/顶部/后侧边缘"
+    m_Localized: "\u53F3\u4FA7/\u9876\u90E8/\u540E\u4FA7\u8FB9\u7F18"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828489
-    m_Localized: "对齐旋转"
+    m_Localized: "\u5BF9\u9F50\u65CB\u8F6C"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828490
-    m_Localized: "分布："
+    m_Localized: "\u5206\u5E03\uFF1A"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828491
-    m_Localized: "沿 X 轴分布"
+    m_Localized: "\u6CBF X \u8F74\u5206\u5E03"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828492
-    m_Localized: "沿 Y 轴分布"
+    m_Localized: "\u6CBF Y \u8F74\u5206\u5E03"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828493
-    m_Localized: "沿 Z 轴分布"
+    m_Localized: "\u6CBF Z \u8F74\u5206\u5E03"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828494
-    m_Localized: "分布依据："
+    m_Localized: "\u5206\u5E03\u4F9D\u636E\uFF1A"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828495
-    m_Localized: "间距"
+    m_Localized: "\u95F4\u8DDD"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828499
-    m_Localized: "选项"
+    m_Localized: "\u9009\u9879"
     m_Metadata:
       m_Items: []
   - m_Id: 129251051561549824
-    m_Localized: "网络摄像头"
+    m_Localized: "\u7F51\u7EDC\u6444\u50CF\u5934"
     m_Metadata:
       m_Items: []
   - m_Id: 129251441224974336
-    m_Localized: "上一个设备"
+    m_Localized: "\u4E0A\u4E00\u4E2A\u8BBE\u5907"
     m_Metadata:
       m_Items: []
   - m_Id: 129251554584428544
-    m_Localized: "下一个设备"
+    m_Localized: "\u4E0B\u4E00\u4E2A\u8BBE\u5907"
     m_Metadata:
       m_Items: []
   - m_Id: 141243230077059072
-    m_Localized: "深度"
+    m_Localized: "\u6DF1\u5EA6"
     m_Metadata:
       m_Items: []
   - m_Id: 144201565051027456
-    m_Localized: "音频片段"
+    m_Localized: "\u97F3\u9891\u7247\u6BB5"
     m_Metadata:
       m_Items: []
   - m_Id: 144204798700027904
-    m_Localized: "音频片段"
+    m_Localized: "\u97F3\u9891\u7247\u6BB5"
     m_Metadata:
       m_Items: []
   - m_Id: 137988464450723840
-    m_Localized: "将所选内容移至当前图层"
+    m_Localized: "\u5C06\u6240\u9009\u5185\u5BB9\u79FB\u81F3\u5F53\u524D\u56FE\u5C42"
     m_Metadata:
       m_Items: []
   - m_Id: 147094550989828096
-    m_Localized: "错误"
+    m_Localized: "\u9519\u8BEF"
     m_Metadata:
       m_Items: []
   - m_Id: 147809767845167104
-    m_Localized: "更改语言"
+    m_Localized: "\u66F4\u6539\u8BED\u8A00"
     m_Metadata:
       m_Items: []
   - m_Id: 147811113256255488
-    m_Localized: "语言"
+    m_Localized: "\u8BED\u8A00"
     m_Metadata:
       m_Items: []
   - m_Id: 188791089062830080
-    m_Localized: "重置画布位置"
+    m_Localized: "\u91CD\u7F6E\u753B\u5E03\u4F4D\u7F6E"
     m_Metadata:
       m_Items: []
   - m_Id: 188791266398003200
-    m_Localized: "锁定画布位置"
+    m_Localized: "\u9501\u5B9A\u753B\u5E03\u4F4D\u7F6E"
     m_Metadata:
       m_Items: []
   - m_Id: 188792931159203840
-    m_Localized: "解锁画布位置"
+    m_Localized: "\u89E3\u9501\u753B\u5E03\u4F4D\u7F6E"
     m_Metadata:
       m_Items: []
   - m_Id: 224363142209691648
-    m_Localized: "选择子文件夹"
+    m_Localized: "\u9009\u62E9\u5B50\u6587\u4EF6\u5939"
     m_Metadata:
       m_Items: []
   - m_Id: 234808679492837376
-    m_Localized: "已保存的笔划"
+    m_Localized: "\u5DF2\u4FDD\u5B58\u7684\u7B14\u5212"
     m_Metadata:
       m_Items: []
   - m_Id: 235163428054458368
-    m_Localized: "已保存的笔划"
+    m_Localized: "\u5DF2\u4FDD\u5B58\u7684\u7B14\u5212"
     m_Metadata:
       m_Items: []
   - m_Id: 238556149774557184
-    m_Localized: "图像过大，无法加载"
+    m_Localized: "\u56FE\u50CF\u8FC7\u5927\uFF0C\u65E0\u6CD5\u52A0\u8F7D"
     m_Metadata:
       m_Items: []
   - m_Id: 238935604850335744
-    m_Localized: "图像过大，无法加载"
+    m_Localized: "\u56FE\u50CF\u8FC7\u5927\uFF0C\u65E0\u6CD5\u52A0\u8F7D"
     m_Metadata:
       m_Items: []
   - m_Id: 242372529028341760
-    m_Localized: "图像加载失败"
+    m_Localized: "\u56FE\u50CF\u52A0\u8F7D\u5931\u8D25"
     m_Metadata:
       m_Items: []
   - m_Id: 276171365497266176
-    m_Localized: "笔刷大小"
+    m_Localized: "\u7B14\u5237\u5927\u5C0F"
     m_Metadata:
       m_Items: []
   - m_Id: 294636550056648704
-    m_Localized: "连接"
+    m_Localized: "\u8FDE\u63A5"
     m_Metadata:
       m_Items: []
   - m_Id: 294637000357126144
-    m_Localized: "断开连接"
+    m_Localized: "\u65AD\u5F00\u8FDE\u63A5"
     m_Metadata:
       m_Items: []
   - m_Id: 332314407106863104
-    m_Localized: "选项"
+    m_Localized: "\u9009\u9879"
     m_Metadata:
       m_Items: []
   - m_Id: 332573810292776960
-    m_Localized: "按标题搜索"
+    m_Localized: "\u6309\u6807\u9898\u641C\u7D22"
     m_Metadata:
       m_Items: []
   - m_Id: 332574165927813120
-    m_Localized: "筛选和排序"
+    m_Localized: "\u7B5B\u9009\u548C\u6392\u5E8F"
     m_Metadata:
       m_Items: []
   - m_Id: 340941283698237440
-    m_Localized: "对所有人静音"
+    m_Localized: "\u5BF9\u6240\u6709\u4EBA\u9759\u97F3"
     m_Metadata:
       m_Items: []
   - m_Id: 340941524061216768
-    m_Localized: "对所有人静音"
+    m_Localized: "\u5BF9\u6240\u6709\u4EBA\u9759\u97F3"
     m_Metadata:
       m_Items: []
   - m_Id: 341358942189346816
-    m_Localized: "房间名称可用"
+    m_Localized: "\u623F\u95F4\u540D\u79F0\u53EF\u7528"
     m_Metadata:
       m_Items: []
   - m_Id: 341359317994790912
-    m_Localized: "房间已存在"
+    m_Localized: "\u623F\u95F4\u5DF2\u5B58\u5728"
     m_Metadata:
       m_Items: []
   - m_Id: 369886448819200000
-    m_Localized: "全部"
+    m_Localized: "\u5168\u90E8"
     m_Metadata:
       m_Items: []
   - m_Id: 397532058527293440
-    m_Localized: "未登录"
+    m_Localized: "\u672A\u767B\u5F55"
     m_Metadata:
       m_Items: []
   - m_Id: 422456507319803904
-    m_Localized: "Y"
+    m_Localized: Y
     m_Metadata:
       m_Items: []
   - m_Id: 422456718544953344
-    m_Localized: "Z"
+    m_Localized: Z
     m_Metadata:
       m_Items: []
   - m_Id: 436433407381692416
-    m_Localized: "下一步"
+    m_Localized: "\u4E0B\u4E00\u6B65"
     m_Metadata:
       m_Items: []
   - m_Id: 436433674365919232
-    m_Localized: "上一步"
+    m_Localized: "\u4E0A\u4E00\u6B65"
     m_Metadata:
       m_Items: []
   - m_Id: 522174996334338048
-    m_Localized: "360"
+    m_Localized: 360
     m_Metadata:
       m_Items: []
   - m_Id: 533423339270135808
-    m_Localized: "手动输入代码"
+    m_Localized: "\u624B\u52A8\u8F93\u5165\u4EE3\u7801"
     m_Metadata:
       m_Items: []
   - m_Id: 554342843705548800
-    m_Localized: "向左旋转面板"
+    m_Localized: "\u5411\u5DE6\u65CB\u8F6C\u9762\u677F"
     m_Metadata:
       m_Items: []
   - m_Id: 554342843789434880
-    m_Localized: "向右旋转面板"
+    m_Localized: "\u5411\u53F3\u65CB\u8F6C\u9762\u677F"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634176
-    m_Localized: "吸附当前所选内容："
+    m_Localized: "\u5438\u9644\u5F53\u524D\u6240\u9009\u5185\u5BB9\uFF1A"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634177
-    m_Localized: "切换 X 轴位置吸附"
+    m_Localized: "\u5207\u6362 X \u8F74\u4F4D\u7F6E\u5438\u9644"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634178
-    m_Localized: "切换 Y 轴位置吸附"
+    m_Localized: "\u5207\u6362 Y \u8F74\u4F4D\u7F6E\u5438\u9644"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634179
-    m_Localized: "切换 Z 轴位置吸附"
+    m_Localized: "\u5207\u6362 Z \u8F74\u4F4D\u7F6E\u5438\u9644"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634180
-    m_Localized: "将所选内容吸附到网格"
+    m_Localized: "\u5C06\u6240\u9009\u5185\u5BB9\u5438\u9644\u5230\u7F51\u683C"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634181
-    m_Localized: "吸附所选内容的旋转角度"
+    m_Localized: "\u5438\u9644\u6240\u9009\u5185\u5BB9\u7684\u65CB\u8F6C\u89D2\u5EA6"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634185
-    m_Localized: "切换 X 轴位置锁定"
+    m_Localized: "\u5207\u6362 X \u8F74\u4F4D\u7F6E\u9501\u5B9A"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634186
-    m_Localized: "切换 Y 轴位置锁定"
+    m_Localized: "\u5207\u6362 Y \u8F74\u4F4D\u7F6E\u9501\u5B9A"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634187
-    m_Localized: "切换 Z 轴位置锁定"
+    m_Localized: "\u5207\u6362 Z \u8F74\u4F4D\u7F6E\u9501\u5B9A"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584179634188
-    m_Localized: "切换 X 轴旋转锁定"
+    m_Localized: "\u5207\u6362 X \u8F74\u65CB\u8F6C\u9501\u5B9A"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828480
-    m_Localized: "切换 Y 轴旋转锁定"
+    m_Localized: "\u5207\u6362 Y \u8F74\u65CB\u8F6C\u9501\u5B9A"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828481
-    m_Localized: "切换 Z 轴旋转锁定"
+    m_Localized: "\u5207\u6362 Z \u8F74\u65CB\u8F6C\u9501\u5B9A"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828496
-    m_Localized: "多重镜像"
+    m_Localized: "\u591A\u91CD\u955C\u50CF"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828497
-    m_Localized: "点对称"
+    m_Localized: "\u70B9\u5BF9\u79F0"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828498
-    m_Localized: "壁纸对称"
+    m_Localized: "\u58C1\u7EB8\u5BF9\u79F0"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828500
-    m_Localized: "影响色相"
+    m_Localized: "\u5F71\u54CD\u8272\u76F8"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828501
-    m_Localized: "影响饱和度"
+    m_Localized: "\u5F71\u54CD\u9971\u548C\u5EA6"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828502
-    m_Localized: "影响亮度"
+    m_Localized: "\u5F71\u54CD\u4EAE\u5EA6"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828505
-    m_Localized: "正弦波"
+    m_Localized: "\u6B63\u5F26\u6CE2"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828506
-    m_Localized: "三角波"
+    m_Localized: "\u4E09\u89D2\u6CE2"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828507
-    m_Localized: "锯齿波"
+    m_Localized: "\u952F\u9F7F\u6CE2"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584188022784
-    m_Localized: "方波"
+    m_Localized: "\u65B9\u6CE2"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584188022785
-    m_Localized: "噪声"
+    m_Localized: "\u566A\u58F0"
     m_Metadata:
       m_Items: []
   - m_Id: 128978688454426624
-    m_Localized: "将抓取的对象吸附到辅助形状？"
+    m_Localized: "\u5C06\u6293\u53D6\u7684\u5BF9\u8C61\u5438\u9644\u5230\u8F85\u52A9\u5F62\u72B6\uFF1F"
     m_Metadata:
       m_Items: []
   - m_Id: 128979151367176192
-    m_Localized: "切换辅助形状吸附"
+    m_Localized: "\u5207\u6362\u8F85\u52A9\u5F62\u72B6\u5438\u9644"
     m_Metadata:
       m_Items: []
   - m_Id: 129010807801118720
-    m_Localized: "对称阶数"
+    m_Localized: "\u5BF9\u79F0\u9636\u6570"
     m_Metadata:
       m_Items: []
   - m_Id: 129011310442315776
-    m_Localized: "X 轴重复次数"
+    m_Localized: "X \u8F74\u91CD\u590D\u6B21\u6570"
     m_Metadata:
       m_Items: []
   - m_Id: 129011387676229632
-    m_Localized: "Y 轴重复次数"
+    m_Localized: "Y \u8F74\u91CD\u590D\u6B21\u6570"
     m_Metadata:
       m_Items: []
   - m_Id: 129011445721202688
-    m_Localized: "缩放"
+    m_Localized: "\u7F29\u653E"
     m_Metadata:
       m_Items: []
   - m_Id: 129011519415123968
-    m_Localized: "X 轴缩放"
+    m_Localized: "X \u8F74\u7F29\u653E"
     m_Metadata:
       m_Items: []
   - m_Id: 129011554005549056
-    m_Localized: "Y 轴缩放"
+    m_Localized: "Y \u8F74\u7F29\u653E"
     m_Metadata:
       m_Items: []
   - m_Id: 129011580064759808
-    m_Localized: "X 轴错切"
+    m_Localized: "X \u8F74\u9519\u5207"
     m_Metadata:
       m_Items: []
   - m_Id: 129011621378654208
-    m_Localized: "Y 轴错切"
+    m_Localized: "Y \u8F74\u9519\u5207"
     m_Metadata:
       m_Items: []
   - m_Id: 439543626534051840
-    m_Localized: "切换 X 轴旋转吸附"
+    m_Localized: "\u5207\u6362 X \u8F74\u65CB\u8F6C\u5438\u9644"
     m_Metadata:
       m_Items: []
   - m_Id: 439543779617759232
-    m_Localized: "切换 Y 轴旋转吸附"
+    m_Localized: "\u5207\u6362 Y \u8F74\u65CB\u8F6C\u5438\u9644"
     m_Metadata:
       m_Items: []
   - m_Id: 439543840074457088
-    m_Localized: "切换 Z 轴旋转吸附"
+    m_Localized: "\u5207\u6362 Z \u8F74\u65CB\u8F6C\u5438\u9644"
     m_Metadata:
       m_Items: []
   - m_Id: 89060241993129984
-    m_Localized: "添加图像和\n模型后即可\n在此查看"
+    m_Localized: "\u6DFB\u52A0\u56FE\u50CF\u548C\n\u6A21\u578B\u540E\u5373\u53EF\n\u5728\u6B64\u67E5\u770B"
     m_Metadata:
       m_Items: []
   - m_Id: 89064000617996288
-    m_Localized: "将图像添加到\n设备后即可\n在此查看"
+    m_Localized: "\u5C06\u56FE\u50CF\u6DFB\u52A0\u5230\n\u8BBE\u5907\u540E\u5373\u53EF\n\u5728\u6B64\u67E5\u770B"
     m_Metadata:
       m_Items: []
   - m_Id: 89093153698373632
-    m_Localized: "导出时兼容性较低。请参阅我们的文档。"
+    m_Localized: "\u5BFC\u51FA\u65F6\u517C\u5BB9\u6027\u8F83\u4F4E\u3002\u8BF7\u53C2\u9605\u6211\u4EEC\u7684\u6587\u6863\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 89093701847769088
-    m_Localized: "下次重启时显示教程"
+    m_Localized: "\u4E0B\u6B21\u91CD\u542F\u65F6\u663E\u793A\u6559\u7A0B"
     m_Metadata:
       m_Items: []
   - m_Id: 89093763399180288
-    m_Localized: "关闭高级和实验模式"
+    m_Localized: "\u5173\u95ED\u9AD8\u7EA7\u548C\u5B9E\u9A8C\u6A21\u5F0F"
     m_Metadata:
       m_Items: []
   - m_Id: 147094689821290496
-    m_Localized: "此平台目前无法登录账户。"
+    m_Localized: "\u6B64\u5E73\u53F0\u76EE\u524D\u65E0\u6CD5\u767B\u5F55\u8D26\u6237\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 151489918612377600
-    m_Localized: "此设备不支持视频录制。"
+    m_Localized: "\u6B64\u8BBE\u5907\u4E0D\u652F\u6301\u89C6\u9891\u5F55\u5236\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 151490030713540608
-    m_Localized: "在 Mac 或 PC 上打开草图即可创建视频。请在文档网站 https://docs.openbrush.app 搜索“Exporting video”，查看分步指南。"
+    m_Localized: "\u5728 Mac \u6216 PC \u4E0A\u6253\u5F00\u8349\u56FE\u5373\u53EF\u521B\u5EFA\u89C6\u9891\u3002\u8BF7\u5728\u6587\u6863\u7F51\u7AD9 https://docs.openbrush.app \u641C\u7D22\u201CExporting video\u201D\uFF0C\u67E5\u770B\u5206\u6B65\u6307\u5357\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 164911761917042688
-    m_Localized: "登录 Icosa 账户以\n向 Icosa 上传内容。"
+    m_Localized: "\u767B\u5F55 Icosa \u8D26\u6237\u4EE5\n\u5411 Icosa \u4E0A\u4F20\u5185\u5BB9\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 164911966586494976
-    m_Localized: "分享到 Icosa"
+    m_Localized: "\u5206\u4EAB\u5230 Icosa"
     m_Metadata:
       m_Items: []
   - m_Id: 170004956477833216
-    m_Localized: "请允许 Open Brush 访问文件，以保存您的作品！"
+    m_Localized: "\u8BF7\u5141\u8BB8 Open Brush \u8BBF\u95EE\u6587\u4EF6\uFF0C\u4EE5\u4FDD\u5B58\u60A8\u7684\u4F5C\u54C1\uFF01"
     m_Metadata:
       m_Items: []
   - m_Id: 172767995928834048
-    m_Localized: "滑动以调整\n笔刷大小"
+    m_Localized: "\u6ED1\u52A8\u4EE5\u8C03\u6574\n\u7B14\u5237\u5927\u5C0F"
     m_Metadata:
       m_Items: []
   - m_Id: 189087250755706880
-    m_Localized: "为避免在 Sketchfab 上发布时出现 403 错误，请将可见性设为公开（免费 Sketchfab 账户无法发布私有模型）。"
+    m_Localized: "\u4E3A\u907F\u514D\u5728 Sketchfab \u4E0A\u53D1\u5E03\u65F6\u51FA\u73B0 403 \u9519\u8BEF\uFF0C\u8BF7\u5C06\u53EF\u89C1\u6027\u8BBE\u4E3A\u516C\u5F00\uFF08\u514D\u8D39 Sketchfab \u8D26\u6237\u65E0\u6CD5\u53D1\u5E03\u79C1\u6709\u6A21\u578B\uFF09\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 176097607781543936
-    m_Localized: "ALPHA"
+    m_Localized: ALPHA
     m_Metadata:
       m_Items: []
   - m_Id: 235160207315525632
-    m_Localized: "将所选笔划保存到媒体库"
+    m_Localized: "\u5C06\u6240\u9009\u7B14\u5212\u4FDD\u5B58\u5230\u5A92\u4F53\u5E93"
     m_Metadata:
       m_Items: []
   - m_Id: 317029250049335296
-    m_Localized: "鼠标：环顾四周，W,A,S,D：前后/左右移动，Q,E：上升/下降（按住 Shift 加速）"
+    m_Localized: "\u9F20\u6807\uFF1A\u73AF\u987E\u56DB\u5468\uFF0CW,A,S,D\uFF1A\u524D\u540E/\u5DE6\u53F3\u79FB\u52A8\uFF0CQ,E\uFF1A\u4E0A\u5347/\u4E0B\u964D\uFF08\u6309\u4F4F Shift \u52A0\u901F\uFF09"
     m_Metadata:
       m_Items: []
   - m_Id: 380760416547594240
-    m_Localized: "请摘下头显或切换到网页浏览器以继续登录。"
+    m_Localized: "\u8BF7\u6458\u4E0B\u5934\u663E\u6216\u5207\u6362\u5230\u7F51\u9875\u6D4F\u89C8\u5668\u4EE5\u7EE7\u7EED\u767B\u5F55\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 381885131211235328
-    m_Localized: "正在加载草图，请稍候……"
+    m_Localized: "\u6B63\u5728\u52A0\u8F7D\u8349\u56FE\uFF0C\u8BF7\u7A0D\u5019\u2026\u2026"
     m_Metadata:
       m_Items: []
   - m_Id: 393175499957428224
-    m_Localized: "拆分网格？"
+    m_Localized: "\u62C6\u5206\u7F51\u683C\uFF1F"
     m_Metadata:
       m_Items: []
   - m_Id: 393175792879230976
-    m_Localized: "拆分复杂网格可能较慢。请定期保存草图。"
+    m_Localized: "\u62C6\u5206\u590D\u6742\u7F51\u683C\u53EF\u80FD\u8F83\u6162\u3002\u8BF7\u5B9A\u671F\u4FDD\u5B58\u8349\u56FE\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 401824908597354496
-    m_Localized: "使用 Labs 面板中的“保存所选笔划”\n保存笔划后，即可在此查看。"
+    m_Localized: "\u4F7F\u7528 Labs \u9762\u677F\u4E2D\u7684\u201C\u4FDD\u5B58\u6240\u9009\u7B14\u5212\u201D\n\u4FDD\u5B58\u7B14\u5212\u540E\uFF0C\u5373\u53EF\u5728\u6B64\u67E5\u770B\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 436974612083466240
-    m_Localized: "试用 Open Blocks"
+    m_Localized: "\u8BD5\u7528 Open Blocks"
     m_Metadata:
       m_Items: []
   - m_Id: 423748078849216512
-    m_Localized: "分享到 Viverse"
+    m_Localized: "\u5206\u4EAB\u5230 Viverse"
     m_Metadata:
       m_Items: []
   - m_Id: 455073616801390592
-    m_Localized: "Quill 立方体"
+    m_Localized: "Quill \u7ACB\u65B9\u4F53"
     m_Metadata:
       m_Items: []
   - m_Id: 455073689002139648
-    m_Localized: "Quill 圆柱体"
+    m_Localized: "Quill \u5706\u67F1\u4F53"
     m_Metadata:
       m_Items: []
   - m_Id: 455073748024385536
-    m_Localized: "Quill 椭圆"
+    m_Localized: "Quill \u692D\u5706"
     m_Metadata:
       m_Items: []
   - m_Id: 455073795705233408
-    m_Localized: "Quill 丝带"
+    m_Localized: "Quill \u4E1D\u5E26"
     m_Metadata:
       m_Items: []
   - m_Id: 467449183412510720
-    m_Localized: "Quill 草图库"
+    m_Localized: "Quill \u8349\u56FE\u5E93"
     m_Metadata:
       m_Items: []
   - m_Id: 467452096813817856
-    m_Localized: "Quill 库"
+    m_Localized: "Quill \u5E93"
     m_Metadata:
       m_Items: []
   - m_Id: 467464424217206784
-    m_Localized: "在 Quill 文件夹中未找到 Quill 草图"
+    m_Localized: "\u5728 Quill \u6587\u4EF6\u5939\u4E2D\u672A\u627E\u5230 Quill \u8349\u56FE"
     m_Metadata:
       m_Items: []
   - m_Id: 467464562255945728
-    m_Localized: "在媒体库中未找到 .imm 文件"
+    m_Localized: "\u5728\u5A92\u4F53\u5E93\u4E2D\u672A\u627E\u5230 .imm \u6587\u4EF6"
     m_Metadata:
       m_Items: []
   - m_Id: 520669196650635264
-    m_Localized: "访问 <b>https://icosa.gallery/device</b>\n获取登录代码"
+    m_Localized: "\u8BBF\u95EE <b>https://icosa.gallery/device</b>\n\u83B7\u53D6\u767B\u5F55\u4EE3\u7801"
     m_Metadata:
       m_Items: []
   - m_Id: 526462189999579136
-    m_Localized: "只有发布到 Icosa Gallery 的草图才能用作传送门"
+    m_Localized: "\u53EA\u6709\u53D1\u5E03\u5230 Icosa Gallery \u7684\u8349\u56FE\u624D\u80FD\u7528\u4F5C\u4F20\u9001\u95E8"
     m_Metadata:
       m_Items: []
   - m_Id: 540641996467429376
-    m_Localized: "Quill 库"
+    m_Localized: "Quill \u5E93"
     m_Metadata:
       m_Items: []
   - m_Id: 540642256367476736
-    m_Localized: "媒体库中的 Quill 文件"
+    m_Localized: "\u5A92\u4F53\u5E93\u4E2D\u7684 Quill \u6587\u4EF6"
     m_Metadata:
       m_Items: []
   - m_Id: 540642327830028288
-    m_Localized: "在 Quill 中保存的 Quill 文件"
+    m_Localized: "\u5728 Quill \u4E2D\u4FDD\u5B58\u7684 Quill \u6587\u4EF6"
     m_Metadata:
       m_Items: []
   - m_Id: 542228906948255744
-    m_Localized: "将直尺笔划相互吸附？"
+    m_Localized: "\u5C06\u76F4\u5C3A\u7B14\u5212\u76F8\u4E92\u5438\u9644\uFF1F"
     m_Metadata:
       m_Items: []
   - m_Id: 542389062831005696
-    m_Localized: "切换直尺吸附"
+    m_Localized: "\u5207\u6362\u76F4\u5C3A\u5438\u9644"
     m_Metadata:
       m_Items: []
   - m_Id: 482980427487338496
-    m_Localized: "导出高斯位姿"
+    m_Localized: "\u5BFC\u51FA\u9AD8\u65AF\u4F4D\u59FF"
     m_Metadata:
       m_Items: []
   - m_Id: 520000000000000004
-    m_Localized: "添加长方体捕获区域"
+    m_Localized: "\u6DFB\u52A0\u957F\u65B9\u4F53\u6355\u83B7\u533A\u57DF"
     m_Metadata:
       m_Items: []
   - m_Id: 520000000000000001
-    m_Localized: "添加球形捕获区域"
+    m_Localized: "\u6DFB\u52A0\u7403\u5F62\u6355\u83B7\u533A\u57DF"
     m_Metadata:
       m_Items: []
   - m_Id: 520000000000000003
-    m_Localized: "添加半球形捕获区域"
+    m_Localized: "\u6DFB\u52A0\u534A\u7403\u5F62\u6355\u83B7\u533A\u57DF"
     m_Metadata:
       m_Items: []
   - m_Id: 520000000000000002
-    m_Localized: "添加椭球形捕获区域"
+    m_Localized: "\u6DFB\u52A0\u692D\u7403\u5F62\u6355\u83B7\u533A\u57DF"
     m_Metadata:
       m_Items: []
   - m_Id: 522559370036862976
-    m_Localized: "高斯泼溅位姿捕获"
+    m_Localized: "\u9AD8\u65AF\u6CFC\u6E85\u4F4D\u59FF\u6355\u83B7"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000000
-    m_Localized: "对齐游玩空间"
+    m_Localized: "\u5BF9\u9F50\u6E38\u73A9\u7A7A\u95F4"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000001
-    m_Localized: "设置共享对齐"
+    m_Localized: "\u8BBE\u7F6E\u5171\u4EAB\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000002
-    m_Localized: "重置共享对齐"
+    m_Localized: "\u91CD\u7F6E\u5171\u4EAB\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000003
-    m_Localized: "重新对齐游玩空间"
+    m_Localized: "\u91CD\u65B0\u5BF9\u9F50\u6E38\u73A9\u7A7A\u95F4"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000004
-    m_Localized: "对齐已更新 - 请重新对齐"
+    m_Localized: "\u5BF9\u9F50\u5DF2\u66F4\u65B0 - \u8BF7\u91CD\u65B0\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000005
-    m_Localized: "尚未设置共享对齐"
+    m_Localized: "\u5C1A\u672A\u8BBE\u7F6E\u5171\u4EAB\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000006
-    m_Localized: "正在记录共享对齐"
+    m_Localized: "\u6B63\u5728\u8BB0\u5F55\u5171\u4EAB\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000007
-    m_Localized: "共享对齐已就绪"
+    m_Localized: "\u5171\u4EAB\u5BF9\u9F50\u5DF2\u5C31\u7EEA"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000008
-    m_Localized: "游玩空间已对齐"
+    m_Localized: "\u6E38\u73A9\u7A7A\u95F4\u5DF2\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000009
-    m_Localized: "对齐已更改 - 请重新对齐"
+    m_Localized: "\u5BF9\u9F50\u5DF2\u66F4\u6539 - \u8BF7\u91CD\u65B0\u5BF9\u9F50"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000010
-    m_Localized: "对齐错误 - 请重试"
+    m_Localized: "\u5BF9\u9F50\u9519\u8BEF - \u8BF7\u91CD\u8BD5"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000011
-    m_Localized: "将控制器尖端放在端点 A，然后按下扳机。"
+    m_Localized: "\u5C06\u63A7\u5236\u5668\u5C16\u7AEF\u653E\u5728\u7AEF\u70B9 A\uFF0C\u7136\u540E\u6309\u4E0B\u6273\u673A\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000012
-    m_Localized: "端点 A 已记录。将控制器尖端放在端点 B，然后按下扳机。"
+    m_Localized: "\u7AEF\u70B9 A \u5DF2\u8BB0\u5F55\u3002\u5C06\u63A7\u5236\u5668\u5C16\u7AEF\u653E\u5728\u7AEF\u70B9 B\uFF0C\u7136\u540E\u6309\u4E0B\u6273\u673A\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000014
-    m_Localized: "参考线过短。请选择相距至少 0.1 米的端点。"
+    m_Localized: "\u53C2\u8003\u7EBF\u8FC7\u77ED\u3002\u8BF7\u9009\u62E9\u76F8\u8DDD\u81F3\u5C11 0.1 \u7C73\u7684\u7AEF\u70B9\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000015
-    m_Localized: "参考线需要更大的水平间距。请选择更长的水平边缘。"
+    m_Localized: "\u53C2\u8003\u7EBF\u9700\u8981\u66F4\u5927\u7684\u6C34\u5E73\u95F4\u8DDD\u3002\u8BF7\u9009\u62E9\u66F4\u957F\u7684\u6C34\u5E73\u8FB9\u7F18\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000016
-    m_Localized: "控制器位姿无效。请检查追踪状态，然后重试端点 B。"
+    m_Localized: "\u63A7\u5236\u5668\u4F4D\u59FF\u65E0\u6548\u3002\u8BF7\u68C0\u67E5\u8FFD\u8E2A\u72B6\u6001\uFF0C\u7136\u540E\u91CD\u8BD5\u7AEF\u70B9 B\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000017
-    m_Localized: "无法记录参考线。请重试端点 B。"
+    m_Localized: "\u65E0\u6CD5\u8BB0\u5F55\u53C2\u8003\u7EBF\u3002\u8BF7\u91CD\u8BD5\u7AEF\u70B9 B\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000018
-    m_Localized: "参考线无效：{0}。请重试端点 B。"
+    m_Localized: "\u53C2\u8003\u7EBF\u65E0\u6548\uFF1A{0}\u3002\u8BF7\u91CD\u8BD5\u7AEF\u70B9 B\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000019
-    m_Localized: "参考长度：{0:F2} 米。"
+    m_Localized: "\u53C2\u8003\u957F\u5EA6\uFF1A{0:F2} \u7C73\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000020
-    m_Localized: "对齐无效：{0}。请重试端点 B。"
+    m_Localized: "\u5BF9\u9F50\u65E0\u6548\uFF1A{0}\u3002\u8BF7\u91CD\u8BD5\u7AEF\u70B9 B\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000021
-    m_Localized: "测量长度：{0:F2} 米。"
+    m_Localized: "\u6D4B\u91CF\u957F\u5EA6\uFF1A{0:F2} \u7C73\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000022
-    m_Localized: "警告：{0}。"
+    m_Localized: "\u8B66\u544A\uFF1A{0}\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 543158158396841984
-    m_Localized: "捕获所有控件，以及当前相机路径（如果可见）"
+    m_Localized: "\u6355\u83B7\u6240\u6709\u63A7\u4EF6\uFF0C\u4EE5\u53CA\u5F53\u524D\u76F8\u673A\u8DEF\u5F84\uFF08\u5982\u679C\u53EF\u89C1\uFF09"
     m_Metadata:
       m_Items: []
   - m_Id: 5146220882010112
-    m_Localized: "重新着色已开启"
+    m_Localized: "\u91CD\u65B0\u7740\u8272\u5DF2\u5F00\u542F"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828504
-    m_Localized: "频率"
+    m_Localized: "\u9891\u7387"
     m_Metadata:
       m_Items: []
   - m_Id: 475814063085543424
-    m_Localized: "放置传送门"
+    m_Localized: "\u653E\u7F6E\u4F20\u9001\u95E8"
     m_Metadata:
       m_Items: []
   - m_Id: 554342843789434881
-    m_Localized: "复杂度"
+    m_Localized: "\u590D\u6742\u5EA6"
     m_Metadata:
       m_Items: []
   - m_Id: 128947584183828503
-    m_Localized: "强度"
+    m_Localized: "\u5F3A\u5EA6"
     m_Metadata:
       m_Items: []
   - m_Id: 176764812224364544
-    m_Localized: "透视包"
+    m_Localized: "\u900F\u89C6\u5305"
     m_Metadata:
       m_Items: []
   - m_Id: 415628836388560896
-    m_Localized: "变暗"
+    m_Localized: "\u53D8\u6697"
     m_Metadata:
       m_Items: []
   - m_Id: 521000000000000013
-    m_Localized: "检查从 A 到 B 的箭头。按扳机确认；另一只控制器的扳机交换 A 和 B；取消以退出。"
+    m_Localized: "\u68C0\u67E5\u4ECE A \u5230 B \u7684\u7BAD\u5934\u3002\u6309\u6273\u673A\u786E\u8BA4\uFF1B\u53E6\u4E00\u53EA\u63A7\u5236\u5668\u7684\u6273\u673A\u4EA4\u6362 A \u548C B\uFF1B\u53D6\u6D88\u4EE5\u9000\u51FA\u3002"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: "\u5E94\u7528\u66F4\u6539"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: "\u6E05\u9664\u672A\u4F7F\u7528\u7684\u989C\u8272"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: "\u989C\u8272\u6392\u5E8F"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: "新建体素"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "开始一个新的空体素模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "将体素模型对齐到网格"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "根据网格设置对齐当前模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "选择体素区域"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "按住扳机拖动以选择一个长方体。抓取时按下复制按钮可放置副本。在空白处双击扳机以完成并清除选择。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: "使用画笔颜色"
     m_Metadata:
       m_Items: []
   references:

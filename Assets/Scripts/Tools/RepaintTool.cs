@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
@@ -25,6 +26,16 @@ namespace TiltBrush
         private float m_SpinSpeedVel;
         private float m_SpinSpeed;
         private float m_SpinAmount;
+        private readonly VoxToolTarget m_VoxTarget = new();
+        private readonly HashSet<ModelWidget> m_RecoloredVoxWidgets = new();
+        private Color32 m_VoxColor;
+
+        public override void EnableTool(bool enable)
+        {
+            base.EnableTool(enable);
+            m_VoxTarget.Clear();
+            m_RecoloredVoxWidgets.Clear();
+        }
 
         override protected void Awake()
         {
@@ -48,6 +59,7 @@ namespace TiltBrush
         override public void HideTool(bool bHide)
         {
             base.HideTool(bHide);
+            if (bHide) m_RecoloredVoxWidgets.Clear();
             if (m_SketchSurface.IsInFreePaintMode())
             {
                 m_ToolTransform.GetComponent<Renderer>().enabled = !bHide;
@@ -59,13 +71,35 @@ namespace TiltBrush
             InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.05f);
         }
 
+        override protected bool HandleNonGpuWidgetIntersections(Vector3 center_GS, float radius_GS)
+        {
+            // Batched GPU detection already supplies model widget hits. The CPU stroke
+            // paths need their own occupied-cell query for voxel recoloring.
+            if (!PointerManager.m_Instance.RecolorOn ||
+                (App.Config.m_UseBatchedBrushes && App.Config.m_GpuIntersectionEnabled)) return false;
+            return m_VoxTarget.TryFindCell(m_CurrentCanvas, center_GS, radius_GS, out var voxel) &&
+                HandleIntersectionWithWidget(voxel.Widget);
+        }
+
         override protected bool HandleIntersectionWithWidget(GrabWidget widget)
         {
-            return false;
+            // Rebrush, resize and jitter have no voxel equivalent.
+            if (!PointerManager.m_Instance.RecolorOn || widget is not ModelWidget modelWidget ||
+                modelWidget.Pinned || m_RecoloredVoxWidgets.Contains(modelWidget)) return false;
+            var document = m_VoxTarget.GetDocument(modelWidget);
+            if (document == null) return false;
+            Color32 color = App.BrushColor.CurrentColor;
+            bool changed = VoxToolTarget.Edit(modelWidget, document, vox => vox.RecolorAllVoxels(color));
+            m_RecoloredVoxWidgets.Add(modelWidget);
+            if (changed) PlayModifyStrokeSound();
+            return changed;
         }
 
         override protected void UpdateDetection()
         {
+            Color32 color = App.BrushColor.CurrentColor;
+            if (!IsHot || !color.Equals(m_VoxColor)) m_RecoloredVoxWidgets.Clear();
+            m_VoxColor = color;
             // If we just went cold, reset our detection lists.
             // This is done before base.UpdateDetection() because our m_ToolWasHot flag is
             // updated in that call.
