@@ -309,8 +309,8 @@ namespace TiltBrush
                 m_RemoveFromSelection = false;
             }
 
-            // Hide the main canvas if and only if we are in deselect mode.
-            App.Scene.MainCanvas.gameObject.SetActive(!m_RemoveFromSelection);
+            // Layer visibility belongs to the user. Removal mode targets SelectionCanvas
+            // without changing the visibility of Main or any other layer.
 
             // Start the animation to toggle the tool. At the end of the animation, the visual
             // representation of the tool will match the mode.
@@ -823,7 +823,6 @@ namespace TiltBrush
                     // Snapshot capture restores the selection directly and must not edit history.
                     command.Redo();
                 }
-                App.Scene.MainCanvas.gameObject.SetActive(true);
             }
         }
 
