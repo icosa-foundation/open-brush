@@ -168,8 +168,7 @@ namespace TiltBrush
         private List<GrabWidget> m_CanBeUnpinnedWidgets;
         public event Action RefreshPinAndUnpinAction;
 
-        private TiltModels75[] m_loadingTiltModels75;
-        private SceneFileInfo m_loadingModelSceneFileInfo;
+        private readonly Queue<(TiltModels75[] models, SceneFileInfo source)> m_LoadingModelBatches = new();
         private TiltLights[] m_loadingTiltLights;
         private TiltImages75[] m_loadingTiltImages75;
         private TiltVideo[] m_loadingTiltVideos;
@@ -531,6 +530,13 @@ namespace TiltBrush
             }
         }
 
+        // Include hidden widgets retained by undo, so unlinking cannot leave dormant groups.
+        internal IEnumerable<SymmetryWidgetGroup> LinkedWidgetGroups => MediaWidgets
+            .Concat(m_PortalWidgets).Concat(m_GaussianCaptureWidgets)
+            .Where(data => data != null && data.m_WidgetScript != null)
+            .Select(data => data.m_WidgetScript.SymmetryPeerGroup)
+            .Where(group => group != null).Distinct();
+
         public IEnumerable<TypedWidgetData<CameraPathWidget>> CameraPathWidgets =>
             m_CameraPathWidgets.Where(IsWidgetObjectActive);
 
@@ -841,6 +847,7 @@ namespace TiltBrush
         // Returns: path starting after Models/ or null if the path is not to the Models directory
         public static string GetModelSubpath(string fullPath)
         {
+            fullPath = fullPath.Replace('\\', '/');
             string media = GetPathRootedAtMedia(fullPath);
             string blocks = GetPathRootedAtBlocks(fullPath);
             string modelPath = "Media Library/Models/";
@@ -848,6 +855,11 @@ namespace TiltBrush
             if (media != null && media.StartsWith(modelPath))
             {
                 return media.Substring(modelPath.Length);
+            }
+
+            if (media != null && media.StartsWith("Media Library/Quill/", StringComparison.OrdinalIgnoreCase))
+            {
+                return System.IO.Path.GetRelativePath(App.ModelLibraryPath(), fullPath).Replace('\\', '/');
             }
 
             if (blocks != null)
@@ -873,20 +885,19 @@ namespace TiltBrush
         // Used only at .tilt-loading time
         public void SetModelDataFromTilt(TiltModels75[] value, SceneFileInfo fileInfo)
         {
-            m_loadingTiltModels75 = value;
-            m_loadingModelSceneFileInfo = fileInfo;
+            if (value != null && value.Length > 0) m_LoadingModelBatches.Enqueue((value, fileInfo));
         }
 
         // Used only at .tilt-loading time
         public void SetImageDataFromTilt(TiltImages75[] value)
         {
-            m_loadingTiltImages75 = value;
+            m_loadingTiltImages75 = m_loadingTiltImages75 == null ? value : m_loadingTiltImages75.Concat(value).ToArray();
         }
 
         // Used only at .tilt-loading time
         public void SetLightDataFromTilt(TiltLights[] value)
         {
-            m_loadingTiltLights = value;
+            m_loadingTiltLights = m_loadingTiltLights == null ? value : m_loadingTiltLights.Concat(value).ToArray();
         }
 
         public void SetCameraPathDataFromTilt(CameraPathMetadata[] cameraPaths)
@@ -950,7 +961,7 @@ namespace TiltBrush
 
         public void SetVideoDataFromTilt(TiltVideo[] value)
         {
-            m_loadingTiltVideos = value;
+            m_loadingTiltVideos = m_loadingTiltVideos == null ? value : m_loadingTiltVideos.Concat(value).ToArray();
         }
 
         public WidgetPinScript GetWidgetPin()
@@ -1733,87 +1744,105 @@ namespace TiltBrush
         ///   the fullres texture data some time later.
         /// - ModelWidgets may have a dummy, invisible Model instead of the actual Model they want;
         ///   the Model will be automatically replaced with the loaded Model some time later.
+        private bool m_LoadingMedia;
+
         public IEnumerator<Null> CreateMediaWidgetsFromLoadDataCoroutine()
         {
-            // TODO reduce code duplication with the next two if blocks
-            if (m_loadingTiltModels75 != null)
+            if (m_LoadingMedia) { yield break; }
+            m_LoadingMedia = true;
+            try
             {
-                OverlayManager.m_Instance.RefuseProgressBarChanges(true);
-
-                if (App.Config.kModelWidgetsWaitForLoad)
+                while (m_LoadingModelBatches.Count > 0 || m_loadingTiltLights != null ||
+                       m_loadingTiltImages75 != null || m_loadingTiltVideos != null)
                 {
-                    var assetIds = m_loadingTiltModels75
-                        .Select(tm => tm.AssetId).Where(aid => aid != null).ToArray();
-                    // Kick off a bunch of loads...
-                    foreach (var assetId in assetIds)
+
+                    // TODO reduce code duplication with the next two if blocks
+                    if (m_LoadingModelBatches.Count > 0)
                     {
-                        if (App.IcosaAssetCatalog.GetAssetLoadState(assetId)
-                            != IcosaAssetCatalog.AssetLoadState.Loaded)
+                        var (models, source) = m_LoadingModelBatches.Dequeue();
+                        OverlayManager.m_Instance.RefuseProgressBarChanges(true);
+
+                        if (App.Config.kModelWidgetsWaitForLoad)
                         {
-                            App.IcosaAssetCatalog.RequestModelLoad(assetId, "tiltload");
+                            var assetIds = models
+                                .Select(tm => tm.AssetId).Where(aid => aid != null).ToArray();
+                            // Kick off a bunch of loads...
+                            foreach (var assetId in assetIds)
+                            {
+                                if (App.IcosaAssetCatalog.GetAssetLoadState(assetId)
+                                    != IcosaAssetCatalog.AssetLoadState.Loaded)
+                                {
+                                    App.IcosaAssetCatalog.RequestModelLoad(assetId, "tiltload");
+                                }
+                            }
+                            // ... and wait for them to complete
+                            // No widgets have been created yet, so we can't use AreMediaWidgetsStillLoading.
+                            bool IsLoading(string assetId)
+                            {
+                                var state = App.IcosaAssetCatalog.GetAssetLoadState(assetId);
+                                return (state == IcosaAssetCatalog.AssetLoadState.Downloading ||
+                                    state == IcosaAssetCatalog.AssetLoadState.Loading);
+                            }
+                            while (assetIds.Any(IsLoading))
+                            {
+                                yield return null;
+                            }
                         }
-                    }
-                    // ... and wait for them to complete
-                    // No widgets have been created yet, so we can't use AreMediaWidgetsStillLoading.
-                    bool IsLoading(string assetId)
-                    {
-                        var state = App.IcosaAssetCatalog.GetAssetLoadState(assetId);
-                        return (state == IcosaAssetCatalog.AssetLoadState.Downloading ||
-                            state == IcosaAssetCatalog.AssetLoadState.Loading);
-                    }
-                    while (assetIds.Any(IsLoading))
-                    {
-                        yield return null;
-                    }
-                }
 
-                for (int i = 0; i < m_loadingTiltModels75.Length; i++)
-                {
-                    Task createTask = ModelWidget.CreateModelFromSaveData(
-                        m_loadingTiltModels75[i], m_loadingModelSceneFileInfo);
-                    using (IEnumerator<Null> createCoroutine = createTask.AsIeNull())
-                    {
-                        while (createCoroutine.MoveNext())
+                        for (int i = 0; i < models.Length; i++)
                         {
-                            yield return createCoroutine.Current;
+                            Task createTask = ModelWidget.CreateModelFromSaveData(models[i], source);
+                            using (IEnumerator<Null> createCoroutine = createTask.AsIeNull())
+                            {
+                                while (createCoroutine.MoveNext())
+                                {
+                                    yield return createCoroutine.Current;
+                                }
+                            }
+                            OverlayManager.m_Instance.UpdateProgress(
+                                (float)(i + 1) / models.Length, true);
                         }
+                        OverlayManager.m_Instance.RefuseProgressBarChanges(false);
+
                     }
-                    OverlayManager.m_Instance.UpdateProgress(
-                        (float)(i + 1) / m_loadingTiltModels75.Length, true);
-                }
-                OverlayManager.m_Instance.RefuseProgressBarChanges(false);
-                m_loadingTiltModels75 = null;
-                m_loadingModelSceneFileInfo = null;
-            }
 
-            ModelCatalog.m_Instance.PrintMissingModelWarnings();
+                    ModelCatalog.m_Instance.PrintMissingModelWarnings();
 
-            if (m_loadingTiltLights != null)
-            {
-                foreach (var light in m_loadingTiltLights)
-                {
-                    LightWidget.FromTiltLight(light);
+                    if (m_loadingTiltLights != null)
+                    {
+                        var lights = m_loadingTiltLights;
+                        m_loadingTiltLights = null;
+                        foreach (var light in lights)
+                        {
+                            LightWidget.FromTiltLight(light);
+                        }
+
+                    }
+                    if (m_loadingTiltImages75 != null)
+                    {
+                        var images = m_loadingTiltImages75;
+                        m_loadingTiltImages75 = null;
+                        foreach (TiltImages75 import in images)
+                        {
+                            // TODO: FromTiltImage should take advantage of being called by a coroutine
+                            // so it can avoid calling ReferenceImage.SynchronousLoad()
+                            ImageWidget.FromTiltImage(import);
+                        }
+
+                    }
+                    if (m_loadingTiltVideos != null)
+                    {
+                        var videos = m_loadingTiltVideos;
+                        m_loadingTiltVideos = null;
+                        foreach (var video in videos)
+                        {
+                            VideoWidget.FromTiltVideo(video);
+                        }
+
+                    }
                 }
-                m_loadingTiltLights = null;
             }
-            if (m_loadingTiltImages75 != null)
-            {
-                foreach (TiltImages75 import in m_loadingTiltImages75)
-                {
-                    // TODO: FromTiltImage should take advantage of being called by a coroutine
-                    // so it can avoid calling ReferenceImage.SynchronousLoad()
-                    ImageWidget.FromTiltImage(import);
-                }
-                m_loadingTiltImages75 = null;
-            }
-            if (m_loadingTiltVideos != null)
-            {
-                foreach (var video in m_loadingTiltVideos)
-                {
-                    VideoWidget.FromTiltVideo(video);
-                }
-                m_loadingTiltVideos = null;
-            }
+            finally { m_LoadingMedia = false; }
             yield break;
         }
 
@@ -1822,7 +1851,9 @@ namespace TiltBrush
         /// - ImageWidgets may have low-res textures
         /// - ModelWidgets may not have a model yet (depending on Config.kModelWidgetsWaitForLoad)
         public bool CreatingMediaWidgets =>
-            m_loadingTiltModels75 != null ||
+            m_LoadingMedia ||
+            m_LoadingModelBatches.Count > 0 ||
+            m_loadingTiltLights != null ||
             m_loadingTiltImages75 != null ||
             m_loadingTiltVideos != null;
 
@@ -1834,6 +1865,11 @@ namespace TiltBrush
             IcosaAssetCatalog pac = App.IcosaAssetCatalog;
             foreach (var gwd in m_ModelWidgets)
             {
+                var playback = gwd.WidgetScript.GetComponent<ModelPlaybackController>();
+                // Hidden layers retain pending restoration until their controllers can update.
+                if (IsWidgetObjectActiveInHierarchy(gwd) && playback != null && playback.IsRestoring) return true;
+                var nativeReference = gwd.WidgetScript.GetComponentInChildren<NativeImmReference>();
+                if (nativeReference != null && nativeReference.IsLoading) return true;
                 Model.Location loc = gwd.WidgetScript.Model.GetLocation();
                 if (loc.GetLocationType() == Model.Location.Type.IcosaAssetId)
                 {

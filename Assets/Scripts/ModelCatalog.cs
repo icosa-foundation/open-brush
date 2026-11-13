@@ -40,6 +40,7 @@ namespace TiltBrush
         private Dictionary<string, TrTransform[]> m_MissingNormalizedModelsByRelativePath;
         // The other is post-m13 and contains raw transforms (original model's pivot and size)
         private Dictionary<string, TrTransform[]> m_MissingModelsByRelativePath;
+        private readonly List<TiltModels75> m_MissingModelRecords = new List<TiltModels75>();
 
         private Dictionary<string, List<string>> m_OrderedModelNames;
         private bool m_FolderChanged;
@@ -78,7 +79,9 @@ namespace TiltBrush
                             FilePath = e.Key,
                             Transforms = e.Value
                         }).Where(m => m != null);
-                return missingModels.Concat(missingNormalizedModels);
+                var recordedPaths = new HashSet<string>(m_MissingModelRecords.Select(m => m.FilePath));
+                return m_MissingModelRecords.Concat(missingModels.Concat(missingNormalizedModels)
+                    .Where(m => !recordedPaths.Contains(m.FilePath)));
             }
         }
 
@@ -102,15 +105,20 @@ namespace TiltBrush
 
         private IEnumerable<string> GetModelDirectories()
         {
-            return new List<string> { App.ModelLibraryPath(), App.BlocksModelLibraryPath() }
+            return new List<string> { App.ModelLibraryPath(), App.BlocksModelLibraryPath(), App.QuillMediaLibraryPath() }
                 .Where(p => !string.IsNullOrEmpty(p))
                 .Distinct();
         }
 
         private string GetModelRoot(string path)
         {
-            return GetModelDirectories()
-                .FirstOrDefault(directory => path.StartsWith(directory, StringComparison.OrdinalIgnoreCase));
+            path = Path.GetFullPath(path);
+            return GetModelDirectories().FirstOrDefault(directory =>
+            {
+                var root = Path.GetFullPath(directory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                return path.Equals(root, StringComparison.OrdinalIgnoreCase) ||
+                    path.StartsWith(root + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            });
         }
 
         private void OnDestroy()
@@ -165,13 +173,12 @@ namespace TiltBrush
 
         public bool IsSubDirectoryOfHome()
         {
-            // Check if current directory is under the main Models directory OR is the Blocks root
-            var blocksRoot = App.BlocksModelLibraryPath();
-            bool isUnderMainRoot = m_CurrentModelsDirectory.StartsWith(HomeDirectory, StringComparison.OrdinalIgnoreCase);
-            bool isBlocksRoot = !string.IsNullOrEmpty(blocksRoot) &&
-                               m_CurrentModelsDirectory.Equals(blocksRoot, StringComparison.OrdinalIgnoreCase);
+            return IsLibraryDirectory(m_CurrentModelsDirectory);
+        }
 
-            return isUnderMainRoot || isBlocksRoot;
+        public bool IsLibraryDirectory(string path)
+        {
+            return GetModelRoot(path) != null;
         }
 
         public string GetCurrentDirectory()
@@ -195,8 +202,15 @@ namespace TiltBrush
 
         public void ClearMissingModels()
         {
+            m_MissingModelRecords.Clear();
             m_MissingNormalizedModelsByRelativePath.Clear();
             m_MissingModelsByRelativePath.Clear();
+        }
+
+        public void AddMissingModel(TiltModels75 record)
+        {
+            m_MissingModelRecords.Add(record);
+            if (record.FilePath != null) { AddMissingModel(record.FilePath, record.Transforms, record.RawTransforms); }
         }
 
         public void AddMissingModel(
@@ -298,8 +312,8 @@ namespace TiltBrush
                     return true;
                 }
 
-                var dirPath = Path.GetDirectoryName(Path.Join(modelRoot, m));
-                return dirPath == path;
+                var dirPath = Path.GetDirectoryName(Path.GetFullPath(m_ModelsByRelativePath[m].GetLocation().AbsolutePath));
+                return dirPath.Equals(Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase);
             }).ToList();
             modelsInDirectory.Sort();
 
@@ -308,6 +322,19 @@ namespace TiltBrush
 
             foreach (string relativePath in modelsInDirectory)
             {
+                var records = m_MissingModelRecords.Where(m => m.FilePath == relativePath).ToList();
+                if (records.Count > 0)
+                {
+                    foreach (var record in records)
+                    {
+                        m_MissingModelRecords.Remove(record);
+                        _ = ModelWidget.CreateModelFromSaveData(record);
+                    }
+                    m_MissingModelsByRelativePath.Remove(relativePath);
+                    m_MissingNormalizedModelsByRelativePath.Remove(relativePath);
+                    continue;
+                }
+
                 if (m_MissingModelsByRelativePath.ContainsKey(relativePath))
                 {
                     _ = ModelWidget.CreateModelsFromRelativePath(
@@ -354,7 +381,7 @@ namespace TiltBrush
                 if (!isBlocksRoot)
                 {
                     // Models we download from Poly are called ".gltf2", but ".gltf" is more standard
-                    List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".ply", ".spz", ".sog", ".svg", ".obj", ".vox" };
+                    List<string> extensions = new() { ".gltf2", ".gltf", ".glb", ".imm", ".ply", ".spz", ".sog", ".svg", ".obj", ".vox" };
 
 #if USD_SUPPORTED
                     extensions.AddRange(new [] { ".usda", ".usdc", ".usd" });

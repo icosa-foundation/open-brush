@@ -195,6 +195,7 @@ namespace TiltBrush
             OpenScriptParametersPopup = 6005,
             SaveAs = 6006,
             OpenPluginDocs = 6007,
+            ToggleLinkedMirror = 6008,
             SaveSelected = 6500,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
@@ -4322,6 +4323,25 @@ namespace TiltBrush
             }
         }
 
+        IEnumerator LoadNativeImmCoroutine(string path, int chapterIndex)
+        {
+            NewSketch(fade: false);
+            SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(path);
+            NativeImmImport.Load(path, chapterIndex);
+            float loadStarted = Time.realtimeSinceStartup;
+            while (NativeImmImport.IsLoading)
+            {
+                if (Time.realtimeSinceStartup - loadStarted > 120f)
+                {
+                    Debug.LogError($"[OB_IMM_REVIEW_20261021] Native IMM load timed out: {path}");
+                    OutputWindowScript.m_Instance.AddNewLine(NativeImmStrings.Get("LOAD_TIMEOUT", "Native IMM load timed out."));
+                    NativeImmImport.Unload();
+                    yield break;
+                }
+                yield return null;
+            }
+        }
+
         private void SaveModel()
         {
 #if USD_SUPPORTED
@@ -4761,9 +4781,9 @@ namespace TiltBrush
                     }
                     break;
                 case GlobalCommands.MultiMirror:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.MultiMirror)
+                    if (!PointerManager.m_Instance.MirrorModeEnabled)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.m_Instance.LastMirrorMode);
                         ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
                     }
                     else
@@ -4771,6 +4791,14 @@ namespace TiltBrush
                         PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+                    break;
+                case GlobalCommands.ToggleLinkedMirror:
+                    // On: a fresh linked mirror. Off: plain symmetry; the linked mirror keeps
+                    // its strokes. Both undoable.
+                    // A linked mirror left dormant by a mode switch counts as off, so turning
+                    // the toggle on makes a mirror for the current mode.
+                    if (SymmetryMirrors.Showing != null) { SymmetryMirrors.UsePlain(); }
+                    else { SymmetryMirrors.NewLinked(); }
                     break;
                 case GlobalCommands.SymmetryTwoHanded:
                     if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.TwoHanded)
@@ -5301,9 +5329,17 @@ namespace TiltBrush
                         Quill.PendingLoadOptions = null;
                         if (options != null && !string.IsNullOrEmpty(options.Path))
                         {
-                            NewSketch(fade: false);
-                            SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(options.Path);
-                            StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
+                            if (options.NativeImm && !NativeImmImport.CanLoad(options.Path)) break;
+                            if (options.NativeImm)
+                                StartCoroutine(OverlayManager.m_Instance.RunInCompositor(
+                                    OverlayType.LoadSketch,
+                                    LoadNativeImmCoroutine(options.Path, options.ChapterIndex), 0.25f));
+                            else
+                            {
+                                NewSketch(fade: false);
+                                SaveLoadScript.m_Instance.SetPreferredNewSketchFilenameFromPath(options.Path);
+                                StartCoroutine(LoadQuillCoroutine(options.Path, options.ChapterIndex));
+                            }
                         }
                     }
                     break;
@@ -5556,7 +5592,8 @@ namespace TiltBrush
                 case GlobalCommands.StraightEdge: return PointerManager.m_Instance.StraightEdgeModeEnabled;
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.SinglePlane;
-                case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror;
+                case GlobalCommands.MultiMirror: return PointerManager.m_Instance.MirrorModeEnabled;
+                case GlobalCommands.ToggleLinkedMirror: return SymmetryMirrors.Showing != null;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.TwoHanded;
                 case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
@@ -5598,6 +5635,7 @@ namespace TiltBrush
 
         public void NewSketch(bool fade)
         {
+            NativeImmImport.Unload();
             bool keepSceneTransform = m_DisableWorldGrabbing;
             LightsControlScript.m_Instance.DiscoMode = false;
             m_WidgetManager.FollowingPath = false;
@@ -5734,7 +5772,7 @@ namespace TiltBrush
                     return SelectionManager.m_Instance.HasSelection;
                 case GlobalCommands.SummonMirror:
                     return PointerManager.m_Instance.CurrentSymmetryMode !=
-                        PointerManager.SymmetryMode.None;
+                        PointerManager.SymmetryMode.None && SymmetryMirrors.Showing == null;
                 case GlobalCommands.InvertSelection:
                 case GlobalCommands.FlipSelection:
                     return SelectionManager.m_Instance.HasSelection;

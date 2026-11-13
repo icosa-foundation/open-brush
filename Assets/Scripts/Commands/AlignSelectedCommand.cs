@@ -43,9 +43,14 @@ namespace TiltBrush
             // Find the transforms needed to move each object to the alignment plane
             m_NewStrokeTransforms = m_SelectedStrokes.Select(s => CalcTransform(s, anchorValue)).ToList();
             m_NewWidgetTransforms = m_ValidSelectedWidgets.Select(w => CalcTransform(w, anchorValue)).ToList();
+            TransformWidgetPeersCommand.ForEdits(m_ValidSelectedWidgets.Select((w, i) => (w, m_NewWidgetTransforms[i])), this);
 
             m_PreviousStrokeTransforms = m_NewStrokeTransforms.Select(tr => tr.inverse).ToList();
             m_PreviousWidgetTransforms = m_NewWidgetTransforms.Select(tr => tr.inverse).ToList();
+
+            // Linked copies of the selected strokes follow them.
+            TransformSymmetryCopiesCommand.ForSelectionEdit(
+                m_SelectedStrokes.Zip(m_NewStrokeTransforms, (stroke, xf) => (stroke, xf)), this);
         }
 
         private TrTransform CalcTransform(Stroke stroke, float anchorValue)

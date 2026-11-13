@@ -26,13 +26,106 @@ namespace TiltBrush
         private Animator animator; // Keep for debugging/fallback
         private PlayableGraph graph;
         private bool graphInitialized;
+        [SerializeField] private AnimationClip[] m_Clips;
+        [SerializeField] private AnimationClip m_SelectedClip;
+        [SerializeField] private bool m_Loop;
+        private AnimationClipPlayable m_Playable;
+        private bool m_Paused;
+
+        public bool Initialized => m_SelectedClip != null;
+        public string[] ClipNames => m_Clips?.Select(clip => clip.name).ToArray() ?? new string[0];
+        public string ClipName => m_SelectedClip != null ? m_SelectedClip.name : null;
+        public double Length => m_SelectedClip != null ? m_SelectedClip.length : 0;
+        public bool Playing
+        {
+            get => Initialized && !m_Paused && (graphInitialized ? graph.IsPlaying() &&
+                (m_Loop || Length <= 0 || m_Playable.GetTime() < Length) : animationComponent != null && animationComponent.IsPlaying(ClipName));
+            set
+            {
+                if (!Initialized) throw new System.InvalidOperationException("Model has no animation");
+                m_Paused = !value;
+                if (graphInitialized)
+                {
+                    if (value)
+                    {
+                        if (!m_Loop && Length > 0 && m_Playable.GetTime() >= Length)
+                        {
+                            m_Playable.SetTime(0);
+                        }
+                        m_Playable.SetDone(false);
+                        graph.Play();
+                    }
+                    else graph.Stop();
+                }
+                else
+                {
+                    if (value && !animationComponent.IsPlaying(ClipName)) animationComponent.Play(ClipName);
+                    animationComponent[ClipName].speed = value ? 1 : 0;
+                }
+            }
+        }
+        public double Time
+        {
+            get
+            {
+                if (!Initialized) return 0;
+                double time = graphInitialized ? m_Playable.GetTime() : animationComponent[ClipName].time;
+                return m_Loop && Length > 0 ? time % Length : System.Math.Min(time, Length);
+            }
+            set
+            {
+                if (!Initialized) throw new System.InvalidOperationException("Model has no animation");
+                if (double.IsNaN(value) || double.IsInfinity(value) || value < 0 || value > Length)
+                    throw new System.ArgumentOutOfRangeException(nameof(value));
+                if (graphInitialized)
+                {
+                    m_Playable.SetDone(false);
+                    m_Playable.SetTime(value);
+                    graph.Evaluate(0);
+                }
+                else { animationComponent[ClipName].time = (float)value; animationComponent.Sample(); }
+            }
+        }
+        public bool Loop
+        {
+            get => m_Loop;
+            set
+            {
+                m_Loop = value;
+                if (!Initialized) return;
+                if (graphInitialized) m_Playable.SetDuration(value ? double.PositiveInfinity : Length);
+                else animationComponent[ClipName].wrapMode = value ? WrapMode.Loop : WrapMode.Once;
+            }
+        }
+        public void SelectClip(string name)
+        {
+            var clip = m_Clips?.FirstOrDefault(candidate => candidate.name == name);
+            if (clip == null) throw new System.ArgumentException($"Unknown animation clip: {name}", nameof(name));
+            m_SelectedClip = clip;
+            if (clip.legacy) PlayLegacyAnimation(clip, m_Loop); else PlayMecanimAnimation(clip, m_Loop);
+            m_Paused = false;
+        }
+        private void OnEnable()
+        {
+            // Serialized clip references survive template cloning; playable graphs do not.
+            if (m_SelectedClip != null) SelectClip(m_SelectedClip.name);
+        }
+        private void OnDisable()
+        {
+            if (graphInitialized && graph.IsValid()) graph.Stop();
+        }
+
 
         public void PlayAnimation(AnimationClip[] clips)
         {
             if (clips == null || clips.Length == 0) return;
 
+            m_Clips = clips;
             AnimationClip selectedClip = SelectAnimationClip(clips);
             if (selectedClip == null) return;
+            m_SelectedClip = selectedClip;
+            m_Loop = clips.Length == 1;
+            m_Paused = false;
 
             if (selectedClip.legacy)
             {
@@ -82,6 +175,8 @@ namespace TiltBrush
 
         private void PlayLegacyAnimation(AnimationClip clip, bool shouldLoop)
         {
+            if (graphInitialized && graph.IsValid()) graph.Destroy();
+            graphInitialized = false;
             // Remove existing Animator if present (can't have both)
             animator = GetComponent<Animator>();
             if (animator != null)
@@ -138,15 +233,13 @@ namespace TiltBrush
             {
                 graph = PlayableGraph.Create();
                 var playable = AnimationClipPlayable.Create(graph, clip);
+                m_Playable = playable;
                 var output = AnimationPlayableOutput.Create(graph, "Animation", animator);
 
                 playable.SetTime(0);
                 playable.Play();
 
-                if (shouldLoop)
-                {
-                    playable.SetDuration(double.PositiveInfinity);
-                }
+                playable.SetDuration(shouldLoop ? double.PositiveInfinity : clip.length);
 
                 output.SetSourcePlayable(playable);
 
@@ -161,6 +254,18 @@ namespace TiltBrush
                 Debug.LogError($"Failed to play animation clip: {e.Message}");
                 graphInitialized = false;
             }
+        }
+
+        private void LateUpdate()
+        {
+            if (!graphInitialized || !m_Loop || m_Paused || Length <= 0) return;
+            double time = m_Playable.GetTime();
+            if (time < Length) return;
+            // Playable duration controls completion, not clip sampling. Explicitly wrap the
+            // sample time for imported clips whose authored loop flag is disabled.
+            m_Playable.SetDone(false);
+            m_Playable.SetTime(time % Length);
+            graph.Evaluate(0);
         }
 
         private float GetAnimationScore(AnimationClip clip)

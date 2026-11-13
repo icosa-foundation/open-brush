@@ -30,6 +30,7 @@ namespace TiltBrush
         private static BrushDescriptor s_MeshFixtureBrush;
 
         private Dictionary<int, Batch> _meshesToBatches;
+        private readonly Dictionary<Material, BrushDescriptor> m_MaterialBrushes = new();
         private Dictionary<Mesh, TimestampSource> m_TimestampSources;
         private Dictionary<Batch, Mesh> m_OriginalBatchMeshes;
         private List<Mesh> m_TemporaryBatchMeshes;
@@ -95,6 +96,7 @@ namespace TiltBrush
 
         public override void BeforeSceneExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot)
         {
+            m_MaterialBrushes.Clear();
             _meshesToBatches = new Dictionary<int, Batch>();
             m_TimestampSources = new Dictionary<Mesh, TimestampSource>();
             m_OriginalBatchMeshes = new Dictionary<Batch, Mesh>();
@@ -341,6 +343,24 @@ namespace TiltBrush
                 BeforeLayerExport(transform);
             }
             if (!Application.isPlaying) return;
+            // Preserve the stroke's actual brush identity before UnityGLTF exports
+            // and caches its material. Shader and material names may be shared.
+            var batchBrush = transform.GetComponent<Batch>();
+            var strokeBrush = transform.GetComponent<BaseBrushScript>();
+            var descriptor = batchBrush != null ? batchBrush.Brush
+                : strokeBrush?.Stroke != null
+                    ? BrushCatalog.m_Instance.GetBrush(strokeBrush.Stroke.m_BrushGuid)
+                    : null;
+            var renderer = transform.GetComponent<Renderer>();
+            if (descriptor != null && renderer != null)
+            {
+                var materials = renderer.sharedMaterials;
+                // Additional material slots are overlay passes, not the base brush.
+                if (materials.Length > 0 && materials[0] != null)
+                {
+                    m_MaterialBrushes[materials[0]] = descriptor;
+                }
+            }
             if (App.UserConfig.Export.KeepStrokes &&
                 App.UserConfig.Export.ExportStrokeTimestamp)
             {
@@ -640,45 +660,25 @@ namespace TiltBrush
 
         public override void AfterMaterialExport(GLTFSceneExporter exporter, GLTFRoot gltfRoot, Material material, GLTFMaterial materialNode)
         {
-            // Only process Open Brush or Open Blocks materials
-            // Use shaderName to determine if this is the case
+            // Use the brush identity captured from the source batch or stroke.
             string shaderName = material.shader.name;
-
-            if (shaderName.StartsWith("Brush/"))
+            BrushDescriptor manifest = null;
+            if (IsIsolatedMeshFixtureExport)
             {
-                BrushDescriptor manifest;
-                if (IsIsolatedMeshFixtureExport)
+                manifest = s_MeshFixtureBrush;
+                if (manifest == null)
                 {
-                    manifest = s_MeshFixtureBrush;
-                    if (manifest == null)
-                    {
-                        Debug.LogError($"No brush supplied for isolated mesh fixture material {material.name}");
-                        return;
-                    }
+                    Debug.LogError($"No brush supplied for isolated mesh fixture material {material.name}");
+                    return;
                 }
-                else
-                {
-                    // TODO - This assumes that every brush material has a unique name
-                    // (or at least if two brush materials have the same name then they are interchangeable)
-                    // Currently, the former is true, but this may not always be the case
-                    var brushes = BrushCatalog.m_Instance.AllBrushes
-                        .Where(b => b.Material.name == material.name.Replace("(Instance)", "").TrimEnd())
-                        .ToList();
+            }
+            else
+            {
+                m_MaterialBrushes.TryGetValue(material, out manifest);
+            }
 
-                    switch (brushes.Count)
-                    {
-                        case 0:
-                            Debug.LogError($"No matching brush found for material {material.name}");
-                            return;
-                        case > 1:
-                            Debug.LogWarning($"Multiple brushes with the same material name: {material.name}: {string.Join(", ", brushes.Select(b => b.name))}");
-                            break;
-                    }
-
-                    var brush = brushes[0];
-                    manifest = BrushCatalog.m_Instance.GetBrush(brush.m_Guid);
-                }
-
+            if (manifest != null)
+            {
                 materialNode.Name = $"ob-{manifest.DurableName}";
                 // Do we need to override the regular UnityGLTF logic here?
                 materialNode.DoubleSided = manifest.m_RenderBackfaces;
@@ -801,9 +801,13 @@ namespace TiltBrush
                 });
 
                 node.AddExtension(GLTF.Schema.KHR_audio_emitter.ExtensionName,
-                    new KHR_NodeAudioEmitterRef
+                    new KHR_SceneAudioEmittersRef
                     {
-                        emitter = new AudioEmitterId { Id = emitterIndex, Root = gltfRoot }
+                        // The updated node syntax uses the same array shape as scene references.
+                        emitters = new List<AudioEmitterId>
+                        {
+                            new AudioEmitterId { Id = emitterIndex, Root = gltfRoot }
+                        }
                     });
             }
 

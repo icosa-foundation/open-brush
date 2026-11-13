@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -221,6 +221,10 @@ namespace TiltBrush
                 return true;
             }
 
+            if (!removeFromSelection)
+            {
+                SymmetryMirrors.Recall(widget.SymmetryPeerGroup?.Mirror);
+            }
             PlayModifyStrokeSound();
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -255,8 +259,16 @@ namespace TiltBrush
             else
                 m_BatchFilter = null;
             var stroke = rGroup.m_Stroke;
-            var isSelected = SelectionManager.m_Instance.IsStrokeSelected(stroke);
             bool removeFromSelection = SelectionManager.m_Instance.ShouldRemoveFromSelection();
+
+            // A linked group is selected through one copy; touching any copy acts on the group.
+            var selectedCopy = SelectionManager.m_Instance.SelectedSymmetryCopyOf(stroke);
+            if (selectedCopy != null && !ReferenceEquals(selectedCopy, stroke))
+            {
+                if (!removeFromSelection) { return true; }
+                stroke = selectedCopy;
+            }
+            var isSelected = SelectionManager.m_Instance.IsStrokeSelected(stroke);
 
             // Only select from the active layer
             if (!removeFromSelection && (rGroup.Canvas != App.Scene.ActiveCanvas)) return true;
@@ -271,6 +283,10 @@ namespace TiltBrush
                 return true;
             }
 
+            if (!removeFromSelection)
+            {
+                SymmetryMirrors.RecallFromStroke(stroke);
+            }
             PlayModifyStrokeSound();
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(

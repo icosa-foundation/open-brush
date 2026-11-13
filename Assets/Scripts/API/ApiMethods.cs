@@ -1184,8 +1184,6 @@ namespace TiltBrush
                 videoWidget.SetVideo(video);
                 videoWidget.Show(true);
                 cmd.SetWidgetCost(videoWidget.GetTiltMeterCost());
-                // videoWidget.VideoController.Playing = true;
-                UnityAsyncAwaitUtil.AsyncCoroutineRunner.Instance.StartCoroutine(video.PrepareVideoPlayer(() => { }));
             }
             return videoWidget;
         }
@@ -1570,6 +1568,12 @@ namespace TiltBrush
 
         public static void DeleteWidget(GrabWidget widget)
         {
+            if (widget.SymmetryPeerGroup != null)
+            {
+                SymmetryMirrors.EndSelectionOwnedBy(widget.SymmetryPeerGroup.Mirror);
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new HideWidgetCommand(widget));
+                return;
+            }
             widget.HideNow(force: true);
         }
 

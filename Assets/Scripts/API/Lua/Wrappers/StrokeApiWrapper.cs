@@ -90,7 +90,19 @@ namespace TiltBrush
         public LayerApiWrapper layer
         {
             get => _Stroke != null ? new LayerApiWrapper(_Stroke.Canvas) : null;
-            set => _Stroke.SetParentKeepWorldPosition(value._CanvasScript);
+            set => MoveToLayer(_Stroke, value._CanvasScript);
+        }
+
+        /// Moves a stroke to a layer, taking the rest of its linked symmetry group with it, so
+        /// the group stays in one layer under a mirror there. Unrecorded, as Lua edits are.
+        internal static void MoveToLayer(Stroke stroke, CanvasScript layer)
+        {
+            if (stroke.Canvas == layer) { return; }
+            if (SymmetryPeerEditing.IsLinked(stroke) && stroke.SymmetryPeerGroup.Mirror.Canvas != layer)
+            {
+                new MoveSymmetryGroupsToLayerCommand(new[] { stroke.SymmetryPeerGroup }, layer).Redo();
+            }
+            stroke.SetParentKeepWorldPosition(layer);
         }
 
         [LuaDocsDescription("The group this stroke is part of")]

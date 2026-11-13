@@ -2149,6 +2149,10 @@ PrefabInstance:
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
       value: 1801810542
       objectReference: {fileID: 0}
+    - target: {fileID: 5838607888599009430, guid: bc59f933f07268642a3319d424409949, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8695216695422032127, guid: bc59f933f07268642a3319d424409949, type: 3}
       propertyPath: m_Name
       value: ReferencePanelTabSoundClip

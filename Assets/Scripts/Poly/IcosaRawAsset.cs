@@ -103,7 +103,7 @@ namespace TiltBrush
         }
 
         /// The directory must already have been created
-        public bool WriteToDisk()
+        public bool WriteToDisk(string assetDir = null)
         {
             // First, iterate over everything that needs to be written to disk and verify it's valid.
             // If any invalid elements are found, it's likely due to a download failure and we will abort
@@ -127,7 +127,7 @@ namespace TiltBrush
             }
 
             // Next, check to see if we have enough disk space to write all the files.
-            string assetDir = App.IcosaAssetCatalog.GetCacheDirectoryForAsset(m_AssetId);
+            assetDir = assetDir ?? App.IcosaAssetCatalog.GetCacheDirectoryForAsset(m_AssetId);
             if (!FileUtils.HasFreeSpace(assetDir, requiredDiskSpace / (1024 * 1024)))
             {
                 OutputWindowScript.Error(String.Format("Out of disk space! {0} {1}",

@@ -359,6 +359,17 @@ namespace TiltBrush
     [Serializable]
     public class TiltModels75
     {
+        internal TiltModels75 CopyForSave(WidgetLink[] links)
+        {
+            var copy = (TiltModels75)MemberwiseClone();
+            copy.WidgetLinks = links;
+            copy.SplitMeshPaths = SplitMeshPaths?.ToList();
+            copy.NotSplittableMeshPaths = NotSplittableMeshPaths?.ToList();
+            return copy;
+        }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public WidgetLink[] WidgetLinks { get; set; }
         /// Relative path to model from Media Library.
         /// e.g. Media Library/Models/subdirectory/model.obj
         /// With 14.0 on, this is unused if AssetId is valid.
@@ -383,6 +394,18 @@ namespace TiltBrush
         // True if model should be pinned on load. Added in M15.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public bool[] PinStates { get; set; }
+
+        /// Per-instance playback, aligned with RawTransforms. Omitted for static/older models.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public ModelPlaybackState[] PlaybackStates { get; set; }
+
+        /// This local IMM supplies the sketch backdrop and authored chapter/viewpoint behavior.
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool ImmSketch { get; set; }
+
+        /// Preserve an explicitly selected IMM representation of a mixed-format gallery asset.
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool ImmModel { get; set; }
 
         /// Prior to M13, never null or empty; but an empty array is allowed on read.
         /// Post M13, always null.
@@ -671,6 +694,8 @@ namespace TiltBrush
     [Serializable]
     public class TiltLights
     {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public WidgetLink WidgetLink { get; set; }
         public Color? LightColor;
         public float? Intensity;
         public LightType PunctualLightType;
@@ -688,6 +713,8 @@ namespace TiltBrush
     [Serializable]
     public class TiltImages75
     {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public WidgetLink[] WidgetLinks { get; set; }
         /// Name of a supported reference-image file; should have no path.
         public string FileName { get; set; }
         /// FileName plus path relative to images directory
@@ -722,6 +749,8 @@ namespace TiltBrush
     [Serializable]
     public class TiltText
     {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public WidgetLink WidgetLink { get; set; }
         public TrTransform Transform { get; set; }
         public string Text { get; set; }
         public Color FillColor { get; set; }
@@ -737,6 +766,8 @@ namespace TiltBrush
     [Serializable]
     public class TiltVideo
     {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public WidgetLink WidgetLink { get; set; }
         public string FilePath { get; set; } // relative to Media Library folder
         public float AspectRatio { get; set; }
         public bool Pinned;
@@ -744,6 +775,8 @@ namespace TiltBrush
         public bool Paused { get; set; }
         public float Time { get; set; }
         public float Volume { get; set; }
+        // Sketches saved before this field existed retain the original looping behavior.
+        public bool Loop { get; set; } = true;
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
         public int LayerId { get; set; }
@@ -753,6 +786,8 @@ namespace TiltBrush
     [Serializable]
     public class TiltSoundClip
     {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public WidgetLink WidgetLink { get; set; }
         public string FilePath { get; set; } // relative to Media Library folder
         public float AspectRatio { get; set; }
         public bool Pinned;
@@ -772,6 +807,8 @@ namespace TiltBrush
     [Serializable]
     public class TiltPortal
     {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public WidgetLink WidgetLink { get; set; }
         public StencilType ShapeType { get; set; }
         public TrTransform Transform { get; set; }
         public string Destination { get; set; }
@@ -783,6 +820,8 @@ namespace TiltBrush
     [Serializable]
     public class TiltGaussianCapture
     {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public WidgetLink WidgetLink { get; set; }
         public StencilType ShapeType { get; set; }
         public TrTransform Transform { get; set; }
         public Vector3 AspectRatio { get; set; }
@@ -807,6 +846,8 @@ namespace TiltBrush
     [System.Reflection.Obfuscation(Exclude = true)]
     public class SketchMetadata
     {
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public WidgetLinks WidgetLinks { get; set; }
         static public int kSchemaVersion = 3;
 
         // Reference to environment GUID.

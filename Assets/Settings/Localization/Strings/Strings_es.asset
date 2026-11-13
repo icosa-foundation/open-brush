@@ -4081,11 +4081,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 129011310442315776
-    m_Localized: Repeticiones en X
+    m_Localized: Celdas X
     m_Metadata:
       m_Items: []
   - m_Id: 129011387676229632
-    m_Localized: Repeticiones en Y
+    m_Localized: Celdas Y
     m_Metadata:
       m_Items: []
   - m_Id: 129011445721202688
@@ -4433,31 +4433,487 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 559927936423649280
-    m_Localized: "Nuevo vóxel"
+    m_Localized: "Nuevo v\xF3xel"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118272
-    m_Localized: "Iniciar un nuevo modelo de vóxeles vacío"
+    m_Localized: "Iniciar un nuevo modelo de v\xF3xeles vac\xEDo"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118273
-    m_Localized: "Alinear modelo de vóxeles a la cuadrícula"
+    m_Localized: "Alinear modelo de v\xF3xeles a la cuadr\xEDcula"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936524312576
-    m_Localized: "Alinear el modelo actual según los ajustes de la cuadrícula"
+    m_Localized: "Alinear el modelo actual seg\xFAn los ajustes de la cuadr\xEDcula"
     m_Metadata:
       m_Items: []
   - m_Id: 560634138304536576
-    m_Localized: "Seleccionar región de vóxeles"
+    m_Localized: "Seleccionar regi\xF3n de v\xF3xeles"
     m_Metadata:
       m_Items: []
   - m_Id: 560634138455531520
-    m_Localized: "Mantén pulsado el gatillo y arrastra para seleccionar un cuboide. Pulsa el botón de duplicar mientras lo agarras para colocar una copia. Pulsa dos veces el gatillo en un espacio vacío para finalizar y borrar la selección."
+    m_Localized: "Mant\xE9n pulsado el gatillo y arrastra para seleccionar un cuboide. Pulsa el bot\xF3n de duplicar mientras lo agarras para colocar una copia. Pulsa dos veces el gatillo en un espacio vac\xEDo para finalizar y borrar la selecci\xF3n."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337584721920
+    m_Localized: "Simetr\xEDa helicoidal"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522560
+    m_Localized: Total de punteros
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522561
+    m_Localized: "Rotaci\xF3n por copia en grados"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522562
+    m_Localized: Avance por copia en unidades del lienzo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522563
+    m_Localized: Grupos espaciales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522564
+    m_Localized: Siguiente sistema cristalino
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522565
+    m_Localized: Siguiente preajuste de grupo espacial
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522566
+    m_Localized: "N\xFAmero de grupo espacial (1\u2013230)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522567
+    m_Localized: Celdas X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522568
+    m_Localized: Celdas Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522569
+    m_Localized: Celdas Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522570
+    m_Localized: "Tama\xF1o de celda en unidades del lienzo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522571
+    m_Localized: "Grupos de l\xEDnea"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522572
+    m_Localized: "Siguiente familia de grupos de l\xEDnea"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522573
+    m_Localized: "Orden de rotaci\xF3n axial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522574
+    m_Localized: Pasos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522575
+    m_Localized: Avance por paso en Z en unidades del lienzo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522576
+    m_Localized: Giro por paso en grados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522577
+    m_Localized: Teselado de Penrose
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522578
+    m_Localized: "Siguiente selecci\xF3n de teselas: ambas, finas o gruesas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522579
+    m_Localized: "Profundidad de subdivisi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522580
+    m_Localized: "Radio de la regi\xF3n en unidades del lienzo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553016172624830464
+    m_Localized: "Simetr\xEDa simple"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553297782469386240
+    m_Localized: "Mant\xE9n pulsado el bot\xF3n para ver m\xE1s opciones"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908486
+    m_Localized: Demasiados punteros
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908487
+    m_Localized: Celdas
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672029597696
+    m_Localized: "H\xE9lice"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260992
+    m_Localized: "Rotorreflexi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260993
+    m_Localized: Espejo horizontal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260994
+    m_Localized: Espejo horizontal a medio paso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260995
+    m_Localized: "H\xE9lice + medias vueltas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260996
+    m_Localized: Espejos verticales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260997
+    m_Localized: Deslizamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260998
+    m_Localized: Espejos verticales a medio paso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260999
+    m_Localized: Espejos diagonales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261000
+    m_Localized: "Deslizamiento + rotorreflexi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261001
+    m_Localized: Espejos completos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261002
+    m_Localized: Deslizamiento + espejo horizontal
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261003
+    m_Localized: Espejos completos a medio paso
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261004
+    m_Localized: "Traslaci\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261005
+    m_Localized: "Pares de inversi\xF3n"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261006
+    m_Localized: "Rotaci\xF3n doble"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261007
+    m_Localized: "H\xE9lice de media vuelta"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455296
+    m_Localized: Planos de espejo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455297
+    m_Localized: Planos de deslizamiento
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455298
+    m_Localized: "H\xE9lice + deslizamiento"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455299
+    m_Localized: Tres ejes dobles
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455300
+    m_Localized: Tres ejes helicoidales
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455301
+    m_Localized: Espejos cruzados
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455302
+    m_Localized: Espejos completos
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455303
+    m_Localized: Espejos centrados en caras
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455304
+    m_Localized: Espejos centrados en el cuerpo
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455305
+    m_Localized: "Rotaci\xF3n cu\xE1druple"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455306
+    m_Localized: "H\xE9lice de cuarto de vuelta"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455307
+    m_Localized: "H\xE9lice de media celda"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455308
+    m_Localized: "Espejos verticales cu\xE1druples"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455309
+    m_Localized: "Espejos completos cu\xE1druples"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455310
+    m_Localized: "Rotaci\xF3n triple"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455311
+    m_Localized: "H\xE9lice de un tercio"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455312
+    m_Localized: "H\xE9lice de dos tercios"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455313
+    m_Localized: Espejos triples
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455314
+    m_Localized: "Espejos rombo\xE9dricos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455315
+    m_Localized: "Rotaci\xF3n s\xE9xtuple"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455316
+    m_Localized: "H\xE9lice de un sexto"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455317
+    m_Localized: "H\xE9lice de cinco sextos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455318
+    m_Localized: "H\xE9lice de media celda"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455319
+    m_Localized: "Espejos verticales s\xE9xtuples"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455320
+    m_Localized: "Espejos helicoidales s\xE9xtuples"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455321
+    m_Localized: "Rotaciones tetra\xE9dricas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455322
+    m_Localized: "H\xE9lices tetra\xE9dricas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455323
+    m_Localized: "Inversi\xF3n tetra\xE9drica"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455324
+    m_Localized: "Rotaciones c\xFAbicas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455325
+    m_Localized: "Espejos c\xFAbicos"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455326
+    m_Localized: "Espejos c\xFAbicos centrados en caras"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830014894080
+    m_Localized: "Explora la simetr\xEDa"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830023282688
+    m_Localized: "El espejo simple no tiene ajustes adicionales.\n\nElige una pesta\xF1a arriba para probar patrones repetidos, simetr\xEDa rotacional y m\xE1s.\n\nColores te permite variar las copias."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000001
+    m_Localized: "Capítulo anterior"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000002
+    m_Localized: "Capítulo siguiente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000003
+    m_Localized: "Punto de vista anterior"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000004
+    m_Localized: "Punto de vista siguiente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000005
+    m_Localized: "Seleccionar punto de vista anterior"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000006
+    m_Localized: "Seleccionar punto de vista siguiente"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000007
+    m_Localized: "Moverse al punto de vista seleccionado"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000008
+    m_Localized: "Reproducir / continuar IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000009
+    m_Localized: "Pausar IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Localized: "Capítulo {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "Punto de vista {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "Cargando IMM…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "Cambiando de capítulo…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "La carga nativa de Quill aún no está disponible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "Repetir"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "Espacial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "Hacer editable"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "Convertir el fotograma actual en trazos editables"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "Solo reemplaza este IMM. Se conserva el resto del contenido del boceto."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "Importar cúpula celeste"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "Importar cúpula celeste de IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "Usar la cúpula celeste visible en el fotograma actual de IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "No se pudo convertir el fotograma actual de IMM en trazos editables."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "No hay ninguna cúpula celeste visible en el fotograma actual de IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "No se pudo importar la cúpula celeste de IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "Error al reproducir el modelo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "El documento IMM nativo no terminó de cargarse."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "El boceto nativo anterior no terminó de descargarse de la memoria."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "No se pudo cargar la referencia IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "No se pudo leer el IMM en caché"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "No se pudo descargar el IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "No se pudo guardar el IMM en caché"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "No se pudo guardar la referencia de la galería en caché"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "No se pudo cargar la referencia de la galería"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "Se agotó el tiempo de carga del IMM nativo."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "Error al reproducir el vídeo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "Error al reproducir el sonido"
     m_Metadata:
       m_Items: []
   - m_Id: 563423505335017472
-    m_Localized: "Usar el color del pincel"
+    m_Localized: Usar el color del pincel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 564570892417982464
+    m_Localized: "Ocultar gu\xEDas de vista previa adicionales"
     m_Metadata:
       m_Items: []
   references:

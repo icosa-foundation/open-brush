@@ -37,6 +37,8 @@ namespace TiltBrush
         [SerializeField] private AudioSource _audioSource;
         private AudioClip _loadedClip;
 
+        public AudioSource AudioSource => _audioSource;
+
         public void SetAudioSource(AudioSource audioSource)
         {
             _audioSource = audioSource;

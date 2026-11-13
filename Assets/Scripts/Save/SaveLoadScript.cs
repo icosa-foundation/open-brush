@@ -156,6 +156,7 @@ namespace TiltBrush
         private bool m_AutosaveFailed;
         private string m_AutosaveTargetFilename;
         private IEnumerator<Timeslice> m_AutosaveCoroutine;
+        private bool m_AutosaveWriteInProgress;
 
         private RenderTexture m_SaveIconRenderTexture;
 
@@ -268,11 +269,13 @@ namespace TiltBrush
             m_AutosaveThumbnailBytes = m_AutosaveThumbnail.EncodeToPNG();
 
             SketchMemoryScript.m_Instance.OperationStackChanged += SketchChanged;
+            SketchMemoryScript.m_Instance.UnrecordedChangesChanged += SketchChanged;
         }
 
         protected void OnDestroy()
         {
             SketchMemoryScript.m_Instance.OperationStackChanged -= SketchChanged;
+            SketchMemoryScript.m_Instance.UnrecordedChangesChanged -= SketchChanged;
         }
 
         public void ResetLastFilename()
@@ -729,6 +732,7 @@ namespace TiltBrush
 
                 if (!bAdditive)
                 {
+                    NativeImmImport.Unload();
                     var environment = EnvironmentCatalog.m_Instance
                         .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
                     if (environment != null)
@@ -795,12 +799,13 @@ namespace TiltBrush
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();
 
+                var loadedMirrors = new Dictionary<Guid, SymmetryMirror>();
                 // Load sketch
                 using (var stream = fileInfo.GetReadStream(TiltFile.FN_SKETCH))
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, targetLayer, out legacySketch, out oldGroupToNewGroup, out strokes);
+                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, targetLayer, out legacySketch, out oldGroupToNewGroup, out strokes, loadedMirrors);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {
@@ -812,14 +817,13 @@ namespace TiltBrush
                     }
                 }
 
-                // It's proving to be rather complex to merge widgets/models etc.
-                // For now skip all that when loading additively with the if (!bAdditive) below
-                // This should cover the majority of use cases.
 
-                // (For when we do support merging widgets:)
-                // It's much simpler to change the group ids in the JSON
-                // before we pass it to WidgetManager
-                //GroupManager.UpdateWidgetJsonToNewGroups(jsonData, oldGroupToNewGroup);
+                jsonData.WidgetLinks?.Resolve(jsonData, loadedMirrors);
+                if (bAdditive)
+                {
+                    RemapImportedWidgets(jsonData, targetLayer, oldGroupToNewGroup);
+                    LoadWidgetMetadata(jsonData, fileInfo);
+                }
 
                 if (!bAdditive)
                 {
@@ -828,60 +832,23 @@ namespace TiltBrush
 
                     if (jsonData.ModelIndex != null)
                     {
-                        WidgetManager.m_Instance.SetModelDataFromTilt(jsonData.ModelIndex, fileInfo);
+                        var immSketch = jsonData.ModelIndex.FirstOrDefault(model => model.ImmSketch);
+                        if (immSketch != null) NativeImmImport.LoadFromSketch(immSketch.FilePath);
                     }
+                    LoadWidgetMetadata(jsonData, fileInfo);
 
-                    if (jsonData.LightIndex != null)
-                    {
-                        WidgetManager.m_Instance.SetLightDataFromTilt(jsonData.LightIndex);
-                    }
-
-                    if (jsonData.GuideIndex != null)
-                    {
-                        foreach (Guides guides in jsonData.GuideIndex)
-                        {
-                            StencilWidget.FromGuideIndex(guides);
-                        }
-                    }
                     if (jsonData.Lights != null)
                     {
                         LightsControlScript.m_Instance.CustomLights = jsonData.Lights;
                     }
                     // Pass even if null; null is treated as empty
                     CustomColorPaletteStorage.m_Instance.SetColorsFromPalette(jsonData.Palette);
-                    // Images are not stored on Poly either.
-                    // TODO - will this assumption still hold with Icosa?
-                    if (!(fileInfo is IcosaSceneFileInfo))
-                    {
-                        if (ReferenceImageCatalog.m_Instance != null && jsonData.ImageIndex != null)
-                        {
-                            WidgetManager.m_Instance.SetImageDataFromTilt(jsonData.ImageIndex);
-                        }
-                        if (VideoCatalog.Instance != null && jsonData.Videos != null)
-                        {
-                            WidgetManager.m_Instance.SetVideoDataFromTilt(jsonData.Videos);
-                        }
-                        if (jsonData.TextWidgets != null)
-                        {
-                            WidgetManager.m_Instance.SetTextDataFromTilt(jsonData.TextWidgets);
-                        }
-                        if (SoundClipCatalog.Instance != null && jsonData.SoundClips != null)
-                        {
-                            WidgetManager.m_Instance.SetSoundDataFromTilt(jsonData.SoundClips);
-                        }
-                    }
-                    if (jsonData.Portals != null)
-                    {
-                        WidgetManager.m_Instance.SetPortalDataFromTilt(jsonData.Portals);
-                    }
-                    if (jsonData.GaussianCaptures != null)
-                    {
-                        WidgetManager.m_Instance.SetGaussianCaptureDataFromTilt(jsonData.GaussianCaptures);
-                    }
                     if (jsonData.Mirror != null)
                     {
                         PointerManager.m_Instance.SymmetryWidgetFromMirror(jsonData.Mirror);
                     }
+                    // The saved active mirror owns the settings for its linked groups.
+                    SymmetryMirrors.Active?.Settings?.ApplyToCurrentSettings(recordCommand: false);
                     if (jsonData.CameraPaths != null)
                     {
                         WidgetManager.m_Instance.SetCameraPathDataFromTilt(jsonData.CameraPaths);
@@ -890,19 +857,81 @@ namespace TiltBrush
                     {
                         gdInfo.SourceId = jsonData.SourceId;
                     }
-                    if (WidgetManager.m_Instance.CreatingMediaWidgets)
-                    {
-                        StartCoroutine(
-                            OverlayManager.m_Instance.RunInCompositor(
-                                OverlayType.LoadMedia,
-                                WidgetManager.m_Instance.CreateMediaWidgetsFromLoadDataCoroutine(),
-                                0.5f));
-                    }
                     m_LastSceneFile = fileInfo;
                 }
             }
 
             return true;
+        }
+
+        private void LoadWidgetMetadata(SketchMetadata data, SceneFileInfo fileInfo)
+        {
+            var widgets = WidgetManager.m_Instance;
+            if (data.ModelIndex != null) { widgets.SetModelDataFromTilt(data.ModelIndex, fileInfo); }
+            if (data.LightIndex != null) { widgets.SetLightDataFromTilt(data.LightIndex); }
+            foreach (var guide in data.GuideIndex ?? Array.Empty<Guides>())
+            {
+                StencilWidget.FromGuideIndex(guide);
+            }
+            if (!(fileInfo is IcosaSceneFileInfo))
+            {
+                if (ReferenceImageCatalog.m_Instance != null && data.ImageIndex != null) { widgets.SetImageDataFromTilt(data.ImageIndex); }
+                if (VideoCatalog.Instance != null && data.Videos != null) { widgets.SetVideoDataFromTilt(data.Videos); }
+                if (data.TextWidgets != null) { widgets.SetTextDataFromTilt(data.TextWidgets); }
+                if (SoundClipCatalog.Instance != null && data.SoundClips != null) { widgets.SetSoundDataFromTilt(data.SoundClips); }
+            }
+            if (data.Portals != null) { widgets.SetPortalDataFromTilt(data.Portals); }
+            if (data.GaussianCaptures != null) { widgets.SetGaussianCaptureDataFromTilt(data.GaussianCaptures); }
+            if (widgets.CreatingMediaWidgets)
+            {
+                StartCoroutine(OverlayManager.m_Instance.RunInCompositor(OverlayType.LoadMedia,
+                    widgets.CreateMediaWidgetsFromLoadDataCoroutine(), 0.5f));
+            }
+        }
+
+        private static void RemapImportedWidgets(SketchMetadata data, int targetLayer, Dictionary<int, int> groups)
+        {
+            uint Remap(uint id)
+            {
+                if (id == 0) { return 0; }
+                if (!groups.TryGetValue((int)id, out var next))
+                {
+                    next = App.GroupManager.NewUnusedGroup().GetHashCode();
+                    groups.Add((int)id, next);
+                }
+                return (uint)next;
+            }
+            foreach (var model in data.ModelIndex ?? Array.Empty<TiltModels75>())
+            {
+                int count = (model.RawTransforms ?? model.Transforms)?.Length ?? 0;
+                model.LayerIds = Enumerable.Repeat(targetLayer, count).ToArray();
+                model.GroupIds = model.GroupIds?.Select(Remap).ToArray();
+            }
+            foreach (var image in data.ImageIndex ?? Array.Empty<TiltImages75>())
+            {
+                image.LayerIds = Enumerable.Repeat(targetLayer, image.Transforms.Length).ToArray();
+                image.GroupIds = image.GroupIds?.Select(Remap).ToArray();
+            }
+            foreach (var guide in data.GuideIndex ?? Array.Empty<Guides>())
+            {
+                foreach (var state in guide.States ?? Array.Empty<Guides.State>())
+                {
+                    state.LayerId = targetLayer;
+                    state.GroupId = Remap(state.GroupId);
+                }
+            }
+            foreach (var widget in data.LightIndex ?? Array.Empty<TiltLights>())
+            { widget.LayerId = targetLayer; widget.GroupId = Remap(widget.GroupId); }
+            foreach (var widget in data.TextWidgets ?? Array.Empty<TiltText>())
+            { widget.LayerId = targetLayer; widget.GroupId = Remap(widget.GroupId); }
+            foreach (var widget in data.Videos ?? Array.Empty<TiltVideo>())
+            { widget.LayerId = targetLayer; widget.GroupId = Remap(widget.GroupId); }
+            foreach (var widget in data.SoundClips ?? Array.Empty<TiltSoundClip>())
+            { widget.LayerId = targetLayer; widget.GroupId = Remap(widget.GroupId); }
+            foreach (var widget in data.Portals ?? Array.Empty<TiltPortal>())
+            { widget.LayerId = targetLayer; widget.GroupId = Remap(widget.GroupId); }
+            foreach (var widget in data.GaussianCaptures ?? Array.Empty<TiltGaussianCapture>())
+            { widget.LayerId = targetLayer; widget.GroupId = Remap(widget.GroupId); }
         }
 
         public SketchMetadata DeserializeMetadata(JsonTextReader jsonReader)
@@ -965,6 +994,10 @@ namespace TiltBrush
                 SketchChanged();
             }
 
+            // The snapshot coroutine is cleared before its background write completes.
+            // Keep later changes queued instead of starting another writer for the same file.
+            if (m_AutosaveWriteInProgress) return;
+
             if (m_SecondsUntilNextAutosave >= 0f)
             {
                 m_SecondsUntilNextAutosave -= Time.unscaledDeltaTime;
@@ -1001,18 +1034,28 @@ namespace TiltBrush
             // We can clear the reference to the coroutine here because  at this point we already have a
             // full snapshot of the save and can just go ahead and write it.
             m_AutosaveCoroutine = null;
+            MarkAsAutosaveDone();
 
             string error = null;
             if (m_LastSceneFile.Valid)
             {
                 snapshot.SourceId = TransferredSourceIdFrom(m_LastSceneFile);
             }
-            var writeFuture = new Future<string>(
-                () => snapshot.WriteSnapshotToFile(m_AutosaveFileInfo.FullPath),
-                null, true);
-            while (!writeFuture.TryGetResult(out error))
+            string autosavePath = m_AutosaveFileInfo.FullPath;
+            m_AutosaveWriteInProgress = true;
+            try
             {
-                yield return null;
+                var writeFuture = new Future<string>(
+                    () => snapshot.WriteSnapshotToFile(autosavePath),
+                    null, true);
+                while (!writeFuture.TryGetResult(out error))
+                {
+                    yield return null;
+                }
+            }
+            finally
+            {
+                m_AutosaveWriteInProgress = false;
             }
 
             if (error != null)
@@ -1022,8 +1065,6 @@ namespace TiltBrush
                 Debug.LogWarning(error);
                 ControllerConsoleScript.m_Instance.AddNewLine(error);
             }
-            MarkAsAutosaveDone();
-
             App.Instance.AutosaveRestoreFileExists = true;
         }
 
@@ -1129,7 +1170,7 @@ namespace TiltBrush
         public IEnumerator GetLastAutosaveBytes(Action<byte[]> onComplete)
         {
 
-            while (m_AutosaveCoroutine != null) yield return null;
+            while (m_AutosaveCoroutine != null || m_AutosaveWriteInProgress) yield return null;
 
             // Retrieve the autosaved file
             string autosaveFile = MostRecentAutosaveFile();

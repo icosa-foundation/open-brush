@@ -21,7 +21,6 @@ namespace TiltBrush
     public class QuillFileButton : BaseButton
     {
         [SerializeField] private TextMeshPro m_LabelText;
-        [SerializeField] private bool m_MergeMode;
 
         [Header("Selection Visual State")]
         [SerializeField] private GameObject m_SelectionBorder;
@@ -82,7 +81,7 @@ namespace TiltBrush
                 return;
             }
 
-            // New behavior: Select the file instead of loading it directly
+            // The library opens IMM files natively when clicked.
             var libraryPanel = GetComponentInParent<QuillLibraryPanel>();
             if (libraryPanel != null)
             {

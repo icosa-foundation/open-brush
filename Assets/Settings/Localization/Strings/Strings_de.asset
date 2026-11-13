@@ -4105,11 +4105,11 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 129011310442315776
-    m_Localized: X-Wiederholungen
+    m_Localized: Zellen X
     m_Metadata:
       m_Items: []
   - m_Id: 129011387676229632
-    m_Localized: Y-Wiederholungen
+    m_Localized: Zellen Y
     m_Metadata:
       m_Items: []
   - m_Id: 129011445721202688
@@ -4457,31 +4457,487 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 559927936423649280
-    m_Localized: "Neues Voxel"
+    m_Localized: Neues Voxel
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118272
-    m_Localized: "Ein neues leeres Voxelmodell beginnen"
+    m_Localized: Ein neues leeres Voxelmodell beginnen
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118273
-    m_Localized: "Voxelmodell am Raster ausrichten"
+    m_Localized: Voxelmodell am Raster ausrichten
     m_Metadata:
       m_Items: []
   - m_Id: 559927936524312576
-    m_Localized: "Aktuelles Modell an deinen Rastereinstellungen ausrichten"
+    m_Localized: Aktuelles Modell an deinen Rastereinstellungen ausrichten
     m_Metadata:
       m_Items: []
   - m_Id: 560634138304536576
-    m_Localized: "Voxelbereich auswählen"
+    m_Localized: "Voxelbereich ausw\xE4hlen"
     m_Metadata:
       m_Items: []
   - m_Id: 560634138455531520
-    m_Localized: "Halte den Trigger gedrückt und ziehe, um einen Quader auszuwählen. Drücke beim Greifen die Duplizieren-Taste, um eine Kopie zu platzieren. Drücke den Trigger zweimal im leeren Raum, um abzuschließen und die Auswahl aufzuheben."
+    m_Localized: "Halte den Trigger gedr\xFCckt und ziehe, um einen Quader auszuw\xE4hlen. Dr\xFCcke beim Greifen die Duplizieren-Taste, um eine Kopie zu platzieren. Dr\xFCcke den Trigger zweimal im leeren Raum, um abzuschlie\xDFen und die Auswahl aufzuheben."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337584721920
+    m_Localized: Schraubensymmetrie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522560
+    m_Localized: Zeiger insgesamt
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522561
+    m_Localized: Drehung pro Kopie in Grad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522562
+    m_Localized: Versatz pro Kopie in Leinwandeinheiten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522563
+    m_Localized: Raumgruppen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522564
+    m_Localized: "N\xE4chstes Kristallsystem"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522565
+    m_Localized: "N\xE4chste Raumgruppen-Voreinstellung"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522566
+    m_Localized: "Raumgruppennummer (1\u2013230)"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522567
+    m_Localized: Zellen X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522568
+    m_Localized: Zellen Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522569
+    m_Localized: Zellen Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522570
+    m_Localized: "Zellgr\xF6\xDFe in Leinwandeinheiten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522571
+    m_Localized: Liniengruppen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522572
+    m_Localized: "N\xE4chste Liniengruppenfamilie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522573
+    m_Localized: Ordnung der axialen Drehung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522574
+    m_Localized: Schritte
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522575
+    m_Localized: Versatz pro Schritt entlang Z in Leinwandeinheiten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522576
+    m_Localized: Verdrehung pro Schritt in Grad
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522577
+    m_Localized: Penrose-Parkettierung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522578
+    m_Localized: "N\xE4chste Kachelauswahl: beide, schmal oder breit"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522579
+    m_Localized: Unterteilungstiefe
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522580
+    m_Localized: Bereichsradius in Leinwandeinheiten
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553016172624830464
+    m_Localized: Einfache Symmetrie
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553297782469386240
+    m_Localized: "Taste f\xFCr weitere Optionen gedr\xFCckt halten"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908486
+    m_Localized: Zu viele Zeiger
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908487
+    m_Localized: Zellen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672029597696
+    m_Localized: Schraubung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260992
+    m_Localized: Drehspiegelung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260993
+    m_Localized: Horizontalspiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260994
+    m_Localized: Halbschritt-Horizontalspiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260995
+    m_Localized: Schraubung + Halbdrehungen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260996
+    m_Localized: Vertikalspiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260997
+    m_Localized: Gleitspiegelung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260998
+    m_Localized: Halbschritt-Vertikalspiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260999
+    m_Localized: Diagonalspiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261000
+    m_Localized: Gleitung + Drehspiegelung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261001
+    m_Localized: Alle Spiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261002
+    m_Localized: Gleitung + Horizontalspiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261003
+    m_Localized: Halbschritt mit allen Spiegeln
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261004
+    m_Localized: Translation
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261005
+    m_Localized: Inversionspaare
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261006
+    m_Localized: Zweifachdrehung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261007
+    m_Localized: Halbdrehschraubung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455296
+    m_Localized: Spiegelebenen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455297
+    m_Localized: Gleitebenen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455298
+    m_Localized: Schraubung + Gleitung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455299
+    m_Localized: "Drei zweiz\xE4hlige Achsen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455300
+    m_Localized: Drei Schraubenachsen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455301
+    m_Localized: Gekreuzte Spiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455302
+    m_Localized: Alle Spiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455303
+    m_Localized: "Fl\xE4chenzentrierte Spiegel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455304
+    m_Localized: Raumzentrierte Spiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455305
+    m_Localized: Vierfachdrehung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455306
+    m_Localized: Vierteldrehschraubung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455307
+    m_Localized: Halbzellenschraubung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455308
+    m_Localized: Vierfache Vertikalspiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455309
+    m_Localized: Vierfache Vollspiegelung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455310
+    m_Localized: Dreifachdrehung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455311
+    m_Localized: Drittelschraubung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455312
+    m_Localized: Zweidrittelschraubung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455313
+    m_Localized: Dreifache Spiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455314
+    m_Localized: Rhomboedrische Spiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455315
+    m_Localized: Sechsfachdrehung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455316
+    m_Localized: Sechstelschraubung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455317
+    m_Localized: "F\xFCnfsechstelschraubung"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455318
+    m_Localized: Halbzellenschraubung
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455319
+    m_Localized: Sechsfache Vertikalspiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455320
+    m_Localized: Sechsfache Schraubenspiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455321
+    m_Localized: Tetraedrische Drehungen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455322
+    m_Localized: Tetraedrische Schraubungen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455323
+    m_Localized: Tetraedrische Inversion
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455324
+    m_Localized: Kubische Drehungen
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455325
+    m_Localized: Kubische Spiegel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455326
+    m_Localized: "Fl\xE4chenzentrierte W\xFCrfelspiegel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830014894080
+    m_Localized: Symmetrie entdecken
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830023282688
+    m_Localized: "Der einfache Spiegel hat keine zus\xE4tzlichen Einstellungen.\n\nW\xE4hle oben einen Tab, um Wiederholungsmuster, Rotationssymmetrie und mehr auszuprobieren.\n\nUnter Farben kannst du die Kopien variieren."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000001
+    m_Localized: "Vorheriges Kapitel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000002
+    m_Localized: "Nächstes Kapitel"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000003
+    m_Localized: "Vorheriger Blickpunkt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000004
+    m_Localized: "Nächster Blickpunkt"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000005
+    m_Localized: "Vorherigen Blickpunkt auswählen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000006
+    m_Localized: "Nächsten Blickpunkt auswählen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000007
+    m_Localized: "Zum ausgewählten Blickpunkt bewegen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000008
+    m_Localized: "IMM abspielen / fortsetzen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000009
+    m_Localized: "IMM pausieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Localized: "Kapitel {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "Blickpunkt {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "IMM wird geladen…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "Kapitel wird gewechselt…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "Natives Laden von Quill ist noch nicht verfügbar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "Wiederholen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "Räumlich"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "Bearbeitbar machen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "Aktuelles Bild in bearbeitbare Striche umwandeln"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "Ersetzt nur dieses IMM. Andere Inhalte der Skizze bleiben erhalten."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "Himmelskuppel importieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "IMM-Himmelskuppel importieren"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "Die im aktuellen IMM-Bild sichtbare Himmelskuppel verwenden."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "Das aktuelle IMM-Bild konnte nicht in bearbeitbare Striche umgewandelt werden."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "Im aktuellen IMM-Bild ist keine Himmelskuppel sichtbar."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "Die IMM-Himmelskuppel konnte nicht importiert werden."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "Modellwiedergabe fehlgeschlagen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "Das native IMM-Dokument wurde nicht vollständig geladen."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "Die vorherige native Skizze wurde nicht vollständig entladen."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "IMM-Referenz konnte nicht geladen werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "Zwischengespeichertes IMM konnte nicht gelesen werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "IMM konnte nicht heruntergeladen werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "IMM konnte nicht zwischengespeichert werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "Galerie-Referenz konnte nicht zwischengespeichert werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "Galerie-Referenz konnte nicht geladen werden"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "Zeitüberschreitung beim Laden des nativen IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "Videowiedergabe fehlgeschlagen"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "Audiowiedergabe fehlgeschlagen"
     m_Metadata:
       m_Items: []
   - m_Id: 563423505335017472
-    m_Localized: "Pinselfarbe verwenden"
+    m_Localized: Pinselfarbe verwenden
+    m_Metadata:
+      m_Items: []
+  - m_Id: 564570892417982464
+    m_Localized: "Zus\xE4tzliche Vorschauhilfen ausblenden"
     m_Metadata:
       m_Items: []
   references:
