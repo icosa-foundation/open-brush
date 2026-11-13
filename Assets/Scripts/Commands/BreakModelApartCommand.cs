@@ -165,6 +165,10 @@ namespace TiltBrush
 
         public BreakModelApartCommand(ModelWidget initialWidget, BaseCommand parent = null) : base(parent)
         {
+            if (SymmetryWidgetGroup.HasLinkedUsers(initialWidget.Model))
+            {
+                throw new System.InvalidOperationException("Models used by linked copies cannot be split.");
+            }
             m_InitialWidget = initialWidget;
             if (initialWidget.IsExternalVox && string.IsNullOrEmpty(initialWidget.Subtree))
             {

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using MoonSharp.Interpreter;
 using UnityEngine;
@@ -13,7 +14,37 @@ namespace TiltBrush
         Scripted,
         TwoHanded,
         Point,
-        Wallpaper
+        Wallpaper,
+        Helical,
+        SpaceGroup,
+        LineGroup,
+        Penrose
+    }
+
+    [LuaDocsDescription("Penrose tile types receiving copies")]
+    public enum SymmetryPenroseTiles
+    {
+        Both = PenroseTiling.TileSelection.Both,
+        Thin = PenroseTiling.TileSelection.Thin,
+        Thick = PenroseTiling.TileSelection.Thick,
+    }
+
+    [LuaDocsDescription("The thirteen general line-group families")]
+    public enum SymmetryLineFamily
+    {
+        ScrewRotations = LineGroupSymmetry.Family.ScrewRotations,
+        TranslationRotoreflection = LineGroupSymmetry.Family.TranslationRotoreflection,
+        TranslationHorizontalMirror = LineGroupSymmetry.Family.TranslationHorizontalMirror,
+        HalfStepHorizontalMirror = LineGroupSymmetry.Family.HalfStepHorizontalMirror,
+        ScrewHalfTurns = LineGroupSymmetry.Family.ScrewHalfTurns,
+        TranslationVerticalMirrors = LineGroupSymmetry.Family.TranslationVerticalMirrors,
+        GlideRotations = LineGroupSymmetry.Family.GlideRotations,
+        HalfStepVerticalMirrors = LineGroupSymmetry.Family.HalfStepVerticalMirrors,
+        TranslationDiagonalMirrors = LineGroupSymmetry.Family.TranslationDiagonalMirrors,
+        GlideRotoreflection = LineGroupSymmetry.Family.GlideRotoreflection,
+        TranslationFullMirrors = LineGroupSymmetry.Family.TranslationFullMirrors,
+        GlideHorizontalMirror = LineGroupSymmetry.Family.GlideHorizontalMirror,
+        HalfStepFullMirrors = LineGroupSymmetry.Family.HalfStepFullMirrors,
     }
 
     [LuaDocsDescription("The list of valid point symmetry types")]
@@ -98,6 +129,25 @@ namespace TiltBrush
         [LuaDocsDescription("Moves the Symmetry Widget close to user")]
         [LuaDocsExample("Symmetry:SummonWidget()")]
         public static void SummonWidget() => ApiMethods.SummonMirror();
+
+        [LuaDocsDescription("Sets up to four guide beam pairs for scripted symmetry. Directions are in the symmetry widget's local space, independent of Settings.space. Lengths are fixed; zero vectors and omitted pairs are disabled. All pairs reset to off when a symmetry script starts or ends.")]
+        [LuaDocsParameter("directions", "A list of up to four finite direction vectors, one per positive/negative beam pair. An empty list turns all pairs off.")]
+        [LuaDocsExample("Symmetry:SetGuideBeams({Vector3.up, Vector3:New(1, 1, 0)})")]
+        public static void SetGuideBeams(List<Vector3> directions)
+        {
+            try
+            {
+                PointerManager.m_Instance.SymmetryWidget.SetScriptedGuideBeams(directions);
+            }
+            catch (ArgumentException e)
+            {
+                throw new ScriptRuntimeException(e.Message);
+            }
+        }
+
+        [LuaDocsDescription("Turns off all guide beam pairs for scripted symmetry")]
+        [LuaDocsExample("Symmetry:ClearGuideBeams()")]
+        public static void ClearGuideBeams() => PointerManager.m_Instance.SymmetryWidget.ClearScriptedGuideBeams();
 
         [LuaDocsDescription("Returns the radius of an ellipse at a given angle")]
         [LuaDocsParameter("angle", "The angle in degrees to sample the radius at")]

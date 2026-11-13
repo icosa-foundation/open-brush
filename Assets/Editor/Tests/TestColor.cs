@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using NUnit.Framework;
 
@@ -206,6 +207,80 @@ namespace TiltBrush
                 null,
                 new Color32(0, 0, 255, 255),
             }, first.m_OverrideColors);
+        }
+
+        [TestCase(true, true, "4,3,1,2")]
+        [TestCase(true, false, "3,4,1,2")]
+        [TestCase(false, false, "1,2,3,4")]
+        [TestCase(false, true, "1,2,4,3")]
+        public void JoiningStrokeDataKeepsColorsWithPoints(bool prepend, bool reverse, string expectedOrder)
+        {
+            Stroke MakeStroke(int firstId) => new Stroke
+            {
+                m_Color = Color.white,
+                m_ColorOverrideMode = ColorOverrideMode.Replace,
+                m_ControlPoints = new[]
+                {
+                    new PointerManager.ControlPoint { m_Pos = Vector3.right * firstId },
+                    new PointerManager.ControlPoint { m_Pos = Vector3.right * (firstId + 1) }
+                },
+                m_OverrideColors = new List<Color32?>
+                {
+                    new Color32((byte)firstId, 0, 0, 255),
+                    new Color32((byte)(firstId + 1), 0, 0, 255)
+                }
+            };
+            var first = MakeStroke(1);
+            var second = MakeStroke(3);
+
+            var joined = JoinStrokeCommand.BuildJoinedStrokeData(first, second, prepend, reverse);
+
+            Assert.AreEqual(expectedOrder, string.Join(",", joined.Points.Select(p => (int)p.m_Pos.x)));
+            Assert.AreEqual(joined.Points.Count, joined.Colors.Count);
+            for (int i = 0; i < joined.Points.Count; i++)
+            {
+                Assert.AreEqual((int)joined.Points[i].m_Pos.x, joined.Colors[i].Value.r);
+            }
+            Assert.AreEqual(2, first.m_ControlPoints.Length);
+            Assert.AreEqual(2, first.m_OverrideColors.Count);
+            Assert.AreEqual(2, second.m_OverrideColors.Count);
+        }
+
+        [Test]
+        public void JoiningStrokeDataNormalizesColorsWithoutMutatingInputs()
+        {
+            var first = new Stroke
+            {
+                m_Color = Color.red,
+                m_ColorOverrideMode = ColorOverrideMode.Add,
+                m_ControlPoints = new PointerManager.ControlPoint[1]
+            };
+            var second = new Stroke
+            {
+                m_Color = Color.green,
+                m_ColorOverrideMode = ColorOverrideMode.Replace,
+                m_ControlPoints = new PointerManager.ControlPoint[1]
+            };
+
+            var joined = JoinStrokeCommand.BuildJoinedStrokeData(first, second, prepend: true, reverse: false);
+
+            CollectionAssert.AreEqual(new Color32?[] { (Color32)Color.green, (Color32)Color.red }, joined.Colors);
+            Assert.AreEqual(ColorOverrideMode.Replace, joined.Mode);
+            Assert.AreEqual(ColorOverrideMode.Add, first.m_ColorOverrideMode);
+            Assert.IsNull(first.m_OverrideColors);
+            Assert.IsNull(second.m_OverrideColors);
+        }
+
+        [Test]
+        public void JoiningUntintedStrokeDataKeepsNullOverrides()
+        {
+            var first = new Stroke { m_Color = Color.white, m_ControlPoints = new PointerManager.ControlPoint[1] };
+            var second = new Stroke { m_Color = Color.white, m_ControlPoints = new PointerManager.ControlPoint[1] };
+
+            var joined = JoinStrokeCommand.BuildJoinedStrokeData(first, second, prepend: false, reverse: false);
+
+            Assert.IsNull(joined.Colors);
+            Assert.AreEqual(first.m_ColorOverrideMode, joined.Mode);
         }
 
         [Test]
