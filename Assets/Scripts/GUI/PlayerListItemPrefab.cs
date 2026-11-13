@@ -23,6 +23,7 @@ namespace TiltBrush
         public TextMeshPro PlayerIdObject;
         public TextMeshPro NickNameObject;
         public MultiplayerRoomOptionsPanelButton MuteButton;
+        public MultiplayerRoomOptionsPanelButton HideButton;
         public MultiplayerRoomOptionsPanelButton MuteForAllButton;
         public MultiplayerRoomOptionsPanelButton TransferOwnershipButton;
         public MultiplayerRoomOptionsPanelButton ToggleViewOnly;
@@ -42,6 +43,7 @@ namespace TiltBrush
             if (PlayerIdObject) PlayerIdObject.text = remotePlayer.PlayerId.ToString();
             if (TransferOwnershipButton) TransferOwnershipButton.playerId = remotePlayer.PlayerId;
             if (MuteButton) MuteButton.playerId = remotePlayer.PlayerId;
+            if (HideButton) HideButton.playerId = remotePlayer.PlayerId;
             if (MuteButton) MuteForAllButton.playerId = remotePlayer.PlayerId;
             if (ToggleViewOnly) ToggleViewOnly.playerId = remotePlayer.PlayerId;
             if (KickPlayerOut) KickPlayerOut.playerId = remotePlayer.PlayerId;
@@ -55,6 +57,11 @@ namespace TiltBrush
         public void SetAudioForAllToggleState(bool isActive)
         {
             if (MuteForAllButton) MuteForAllButton.IsToggledOn = isActive;
+        }
+
+        public void SetHiddenToggleState(bool isActive)
+        {
+            if (HideButton) HideButton.IsToggledOn = isActive;
         }
 
         public void SetViewOnlyToggleState(bool isActive)

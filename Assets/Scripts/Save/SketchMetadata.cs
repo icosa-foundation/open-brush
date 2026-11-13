@@ -641,6 +641,102 @@ namespace TiltBrush
         public bool Visible;
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TrTransform Transform { get; set; }
+
+        // Post-production preview offsets (POSTPROD_PREVIEW_PLAN.md, stage 8, added
+        // 2026-09-08). Kept separate from the authored Transform above deliberately
+        // (see stage 3) - composed with it at preview/render time
+        // (effective pose = Transform * PostProdOffset), never written into it, so a
+        // still-being-tuned calibration correction can never be confused with the
+        // artist's own layer placement.
+        public TrTransform PostProdOffset { get; set; } = TrTransform.identity;
+        public bool ShouldSerializePostProdOffset() => PostProdOffset != TrTransform.identity;
+
+        public int TimeOffsetMs { get; set; }
+        public bool ShouldSerializeTimeOffsetMs() => TimeOffsetMs != 0;
+    }
+
+    // Global post-production preview settings (POSTPROD_PREVIEW_PLAN.md, stages
+    // 2/3/8, added 2026-09-08) - in-memory state in PostProductionSettings, persisted
+    // here so it survives a reload instead of needing to be re-entered every session.
+    [Serializable]
+    public class PostProductionMetadata
+    {
+        // Composed with App.Scene.Pose at preview/render time
+        // (effective scene pose = App.Scene.Pose * SpatialOffset) - never written into
+        // SceneTransformInRoomSpace itself, for the same reason LayerMetadata.Transform
+        // is kept separate from PostProdOffset above.
+        public TrTransform SpatialOffset { get; set; } = TrTransform.identity;
+        public bool ShouldSerializeSpatialOffset() => SpatialOffset != TrTransform.identity;
+
+        public int TimeOffsetMs { get; set; }
+        public bool ShouldSerializeTimeOffsetMs() => TimeOffsetMs != 0;
+
+        // Video crop start/end, in C006-style native source video frame numbers - which
+        // portion of the real-footage plate is actually used for the final render (see
+        // POSTPROD_PREVIEW_PLAN.md's "known issues to revisit" on why this exists as a
+        // first-class value rather than being implicit in wherever ingested media
+        // happens to start/end). Null means "use the full available range".
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? CropStartFrame { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int? CropEndFrame { get; set; }
+
+        // The clip directory last used with postprod.preview.autoplate, so it doesn't
+        // need re-entering after every reload.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string AutoPlateClipDir { get; set; }
+
+        // Calibrated camera setup (added 2026-09-08, user request) - round-trips
+        // directly with the camera.intrinsics/camera.clip/postprod.preview.camera/
+        // postprod.preview.pose API commands (same raw values, no unit conversion),
+        // so "Apply camera setup" doesn't need re-running by hand after every load.
+        // [fx, fy, cx, cy, refWidth, refHeight] - null if never calibrated.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public float[] CameraIntrinsics { get; set; }
+        // [near, far] - null if never calibrated.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public float[] CameraClip { get; set; }
+        // Exact GameObject name (see postprod.preview.camera) - null/empty means the
+        // default, App.VrSdk.GetVrCamera().
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string CameraName { get; set; }
+        // [x, y, z, qx, qy, qz, qw] - null if never set.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public float[] CameraPose { get; set; }
+
+        // Real camera lens calibration (postprod.lens): [fx, fy, cx, cy, k1, k2, p1, p2,
+        // k3], and whether the preview works undistorted. Added 2026-10-21.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public float[] LensCalibration { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool? LensUndistort { get; set; }
+
+        // The clip folder whose clip.json (postprod.clip.load) supplies the camera, lens,
+        // fps and plates. Added 2026-10-23. When set, those values are read from the
+        // manifest on load and are not stored here (CameraIntrinsics, CameraClip,
+        // CameraPose, LensCalibration and AutoPlateClipDir stay null); they remain only
+        // for sketches saved before clip manifests.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string ClipDir { get; set; }
+
+        // Layer indices shown in post-production, kept apart from the authored
+        // Layers[].Visible. Null means all layers. Added 2026-10-23.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public int[] VisibleLayers { get; set; }
+
+        // How plate depth is sampled: "bilinear", or null for the default, nearest texel.
+        // Added 2026-10-25.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string DepthFilter { get; set; }
+
+        [JsonIgnore]
+        public bool IsDefault =>
+            SpatialOffset == TrTransform.identity && TimeOffsetMs == 0 &&
+            CropStartFrame == null && CropEndFrame == null && string.IsNullOrEmpty(AutoPlateClipDir) &&
+            CameraIntrinsics == null && CameraClip == null &&
+            string.IsNullOrEmpty(CameraName) && CameraPose == null &&
+            LensCalibration == null && LensUndistort == null &&
+            string.IsNullOrEmpty(ClipDir) && VisibleLayers == null && DepthFilter == null;
     }
 
     // TODO: deprecate (7.5b-only)
@@ -802,6 +898,14 @@ namespace TiltBrush
     }
 
     [Serializable]
+    public class StrokeTimeSessionMetadata
+    {
+        public long StartUtcMs { get; set; }
+        public uint StartSketchTimeMs { get; set; }
+        public uint EndSketchTimeMs { get; set; }
+    }
+
+    [Serializable]
     // Serializable protects data members obfuscator, but we need to also protect
     // method names like ShouldSerializeXxx(...) that are used by Json.NET
     [System.Reflection.Obfuscation(Exclude = true)]
@@ -910,6 +1014,8 @@ namespace TiltBrush
         public LayerMetadata[] Layers { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public CameraPathMetadata[] CameraPaths { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public StrokeTimeSessionMetadata[] StrokeTimeSessions { get; set; }
 
         // Added for 24.0b Open-source edition
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -926,5 +1032,9 @@ namespace TiltBrush
         public TiltPortal[] Portals { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public TiltGaussianCapture[] GaussianCaptures { get; set; }
+
+        // Added 2026-09-08 for the post-production compositing preview (stage 8).
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public PostProductionMetadata PostProduction { get; set; }
     }
 } // namespace TiltBrush

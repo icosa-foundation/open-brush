@@ -469,6 +469,11 @@ namespace TiltBrush
         private IEnumerator<Timeslice> SaveLow(
             SceneFileInfo info, bool bNotify = true, SketchSnapshot snapshot = null, bool selectedOnly = false)
         {
+            if (!selectedOnly && snapshot == null && PostProductionExport.IsRunning)
+            {
+                Debug.LogError("[PostProductionSave] Skipping full-sketch save while an export is running.");
+                return Enumerable.Empty<Timeslice>().GetEnumerator();
+            }
             Debug.Assert(selectedOnly || !SelectionManager.m_Instance.HasSelection);
             if (snapshot != null && info.AssetId != snapshot.AssetId)
             {
@@ -682,6 +687,17 @@ namespace TiltBrush
         /// will duplicate geometry on separate layers.
         public bool Load(SceneFileInfo fileInfo, bool bAdditive, int targetLayer, out List<Stroke> strokes)
         {
+            return Load(
+                fileInfo, bAdditive, targetLayer, out strokes,
+                out StrokeTimeSessionMetadata[] _);
+        }
+
+        public bool Load(
+            SceneFileInfo fileInfo, bool bAdditive, int targetLayer,
+            out List<Stroke> strokes,
+            out StrokeTimeSessionMetadata[] additiveStrokeTimeSessions)
+        {
+            additiveStrokeTimeSessions = Array.Empty<StrokeTimeSessionMetadata>();
             m_LastThumbnailBytes = null;
             if (!fileInfo.IsHeaderValid())
             {
@@ -727,8 +743,19 @@ namespace TiltBrush
                     }
                 }
 
+                bool activatePostProduction = false;
                 if (!bAdditive)
                 {
+                    activatePostProduction = PostProductionSettings.ConsumeLoadRequest(fileInfo.FullPath);
+                    // Explicitly enabling scrubbing before a load also opts into this session.
+                    activatePostProduction |= SketchMemoryScript.m_Instance.m_KeepPlaybackAliveForScrubbing;
+                    // Finish a retained timeline before its original layer objects are destroyed.
+                    var sketchMemory = SketchMemoryScript.m_Instance;
+                    if (sketchMemory.m_KeepPlaybackAliveForScrubbing && sketchMemory.IsPlayingBack)
+                    {
+                        sketchMemory.ClearMemory();
+                    }
+                    PostProductionPreviewController.EndSession();
                     var environment = EnvironmentCatalog.m_Instance
                         .GetEnvironment(new Guid(jsonData.EnvironmentPreset));
                     if (environment != null)
@@ -760,6 +787,7 @@ namespace TiltBrush
                     LastThumbnail_SS = App.Scene.Pose.inverse *
                         jsonData.ThumbnailCameraTransformInRoomSpace;
 
+
                 }
 
                 SketchControlsScript.m_Instance.SketchPlaybackMode =
@@ -768,6 +796,9 @@ namespace TiltBrush
                 if (!bAdditive)
                 {
                     // Create Layers
+                    // A previous sketch's per-layer post-production offsets must not carry
+                    // over to layers this sketch doesn't set.
+                    PostProductionSettings.ClearLayerOffsets();
                     if (jsonData.Layers != null)
                     {
                         for (var i = 0; i < jsonData.Layers.Length; i++)
@@ -789,18 +820,34 @@ namespace TiltBrush
                                 layer.Transform = tr;
                             }
                             canvas.LocalPose = layer.Transform;
+
+                            PostProductionSettings.PreserveLayer(canvas, layer);
                         }
                     }
+                    // Keep saved settings inert unless this load was explicitly requested for post-production.
+                    PostProductionSettings.PreserveMetadata(jsonData.PostProduction);
+                    if (activatePostProduction)
+                    {
+                        PostProductionSettings.BeginSession();
+                        SketchMemoryScript.m_Instance.m_KeepPlaybackAliveForScrubbing = true;
+                        PostProductionPreviewController.MovePlayheadAfterLoad();
+                    }
+                    PostProductionSettings.LoadedSketchName =
+                        System.IO.Path.GetFileNameWithoutExtension(fileInfo.FullPath ?? "");
+                    PostProductionSettings.LoadCount++;
                 }
 
                 var oldGroupToNewGroup = new Dictionary<int, int>();
+                uint timestampOffset;
 
                 // Load sketch
                 using (var stream = fileInfo.GetReadStream(TiltFile.FN_SKETCH))
                 {
                     Guid[] brushGuids = jsonData.BrushIndex.Select(GetForceSupersededBy).ToArray();
                     bool legacySketch;
-                    bool success = SketchWriter.ReadMemory(stream, brushGuids, bAdditive, targetLayer, out legacySketch, out oldGroupToNewGroup, out strokes);
+                    bool success = SketchWriter.ReadMemory(
+                        stream, brushGuids, bAdditive, targetLayer, out legacySketch,
+                        out oldGroupToNewGroup, out strokes, out timestampOffset);
                     m_LastSceneIsLegacy |= legacySketch;
                     if (!success)
                     {
@@ -821,10 +868,36 @@ namespace TiltBrush
                 // before we pass it to WidgetManager
                 //GroupManager.UpdateWidgetJsonToNewGroups(jsonData, oldGroupToNewGroup);
 
-                if (!bAdditive)
+                if (bAdditive)
+                {
+                    SketchMemoryScript.m_Instance.EndCurrentStrokeTimeSession();
+                    additiveStrokeTimeSessions = SketchMemoryScript.m_Instance
+                        .AddAdditiveStrokeTimeSessions(
+                            jsonData.StrokeTimeSessions, timestampOffset);
+
+                    // Keep subsequent drawing sessions outside the imported clock ranges.
+                    // Undo leaves the clock advanced so those ranges remain reserved for redo.
+                    uint latestImportedTimestampMs = 0;
+                    foreach (var stroke in strokes)
+                    {
+                        latestImportedTimestampMs = Math.Max(
+                            latestImportedTimestampMs, stroke.TailTimestampMs);
+                    }
+                    foreach (var session in additiveStrokeTimeSessions)
+                    {
+                        latestImportedTimestampMs = Math.Max(
+                            latestImportedTimestampMs, session.EndSketchTimeMs);
+                    }
+                    App.Instance.CurrentSketchTime = Math.Max(
+                        App.Instance.CurrentSketchTime,
+                        ((double)latestImportedTimestampMs + 1) / 1000.0);
+                }
+                else
                 {
                     ModelCatalog.m_Instance.ClearMissingModels();
                     SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
+                    SketchMemoryScript.m_Instance.SetStrokeTimeSessions(
+                        jsonData.StrokeTimeSessions);
 
                     if (jsonData.ModelIndex != null)
                     {

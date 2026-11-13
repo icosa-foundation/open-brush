@@ -4428,6 +4428,26 @@ MonoBehaviour:
     m_Localized: "Utiliser la couleur du pinceau"
     m_Metadata:
       m_Items: []
+  - m_Id: 600000000000000001
+    m_Localized: "Masquer tous les avatars"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000002
+    m_Localized: "Afficher tous les avatars"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000003
+    m_Localized: "Masquer l’avatar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 600000000000000004
+    m_Localized: "Afficher l’avatar"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 535607692813230080
+    m_Localized: "Activer/désactiver les traits en temps réel des autres joueurs"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

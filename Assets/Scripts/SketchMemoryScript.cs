@@ -115,18 +115,32 @@ namespace TiltBrush
         // TODO: Have Update() advance this position to match current sketch time so that we
         // amortize list traversal in timeline edit mode.
         private LinkedListNode<Stroke> m_CurrentNodeByTime;
+        private readonly List<StrokeTimeSessionMetadata> m_StrokeTimeSessions =
+            new List<StrokeTimeSessionMetadata>();
+        private StrokeTimeSessionMetadata m_CurrentStrokeTimeSession;
+        private StrokeTimeSessionMetadata m_PendingStrokeTimeSession;
 
         //for loading .sketches
         public enum PlaybackMode
         {
             Distance,
             Timestamps,
+            RealTime,
         }
         private IScenePlayback m_ScenePlayback;
 
         /// discern between initial and edit-time playback in timeline edit mode
         private bool m_IsInitialPlay;
+
+        /// When set, the playback timeline is kept alive after the initial play finishes,
+        /// instead of being torn down. This is what makes seeking work: App.CurrentSketchTime
+        /// is only acted upon by IScenePlayback.Update(), so with no playback object a seek
+        /// silently does nothing. Keeping it alive lets Update() apply seeks incrementally -
+        /// stepping forward renders only the strokes that started since the last frame.
+        /// Off by default, so ordinary playback is unchanged.
+        [NonSerialized] public bool m_KeepPlaybackAliveForScrubbing;
         private PlaybackMode m_PlaybackMode;
+        public PlaybackMode CurrentPlaybackMode => m_PlaybackMode;
         private float m_DistancePerSecond; // in units. for PlaybackMode.Distance
 
         // operation stack size as of last load (always 0) or save
@@ -429,6 +443,8 @@ namespace TiltBrush
         public Stroke DuplicateStroke(Stroke srcStroke, CanvasScript canvas, TrTransform? transform, bool absoluteScale = false)
         {
             Stroke duplicate = new Stroke(srcStroke);
+            duplicate.m_MultiplayerContributorId = Guid.Empty;
+            duplicate.m_MultiplayerContributorNickname = null;
             duplicate.m_PreviousCanvas = srcStroke.m_PreviousCanvas;
             if (srcStroke.m_Type == Stroke.Type.BatchedBrushStroke)
             {
@@ -448,6 +464,7 @@ namespace TiltBrush
                 duplicate.Recreate(transform, canvas, absoluteScale);
             }
             UpdateTimestampsToCurrentSketchTime(duplicate);
+            RecordStrokeInCurrentTimeSession(duplicate);
             MemoryListAdd(duplicate);
             return duplicate;
         }
@@ -601,6 +618,311 @@ namespace TiltBrush
             }
         }
 
+        public void SetStrokeTimeSessions(StrokeTimeSessionMetadata[] sessions)
+        {
+            m_StrokeTimeSessions.Clear();
+            m_CurrentStrokeTimeSession = null;
+            m_PendingStrokeTimeSession = null;
+
+            if (sessions == null)
+            {
+                return;
+            }
+
+            foreach (var session in sessions)
+            {
+                if (session == null)
+                {
+                    continue;
+                }
+
+                m_StrokeTimeSessions.Add(new StrokeTimeSessionMetadata
+                {
+                    StartUtcMs = session.StartUtcMs,
+                    StartSketchTimeMs = session.StartSketchTimeMs,
+                    EndSketchTimeMs = session.EndSketchTimeMs,
+                });
+            }
+        }
+
+        public StrokeTimeSessionMetadata[] GetStrokeTimeSessionsForSaving()
+        {
+            if (m_StrokeTimeSessions.Count == 0)
+            {
+                return null;
+            }
+
+            return m_StrokeTimeSessions.Select(session => new StrokeTimeSessionMetadata
+            {
+                StartUtcMs = session.StartUtcMs,
+                StartSketchTimeMs = session.StartSketchTimeMs,
+                EndSketchTimeMs = session.EndSketchTimeMs,
+            }).ToArray();
+        }
+
+        internal StrokeTimeSessionMetadata[] AddAdditiveStrokeTimeSessions(
+            StrokeTimeSessionMetadata[] sessions, uint timestampOffset)
+        {
+            if (sessions == null || sessions.Length == 0)
+            {
+                return Array.Empty<StrokeTimeSessionMetadata>();
+            }
+
+            var shiftedSessions = new List<StrokeTimeSessionMetadata>();
+            foreach (var session in sessions)
+            {
+                if (session == null || session.EndSketchTimeMs < session.StartSketchTimeMs)
+                {
+                    Debug.LogWarning(
+                        "[AdditiveStrokeClock] Ignoring invalid imported stroke time session.");
+                    continue;
+                }
+
+                try
+                {
+                    var shiftedSession = new StrokeTimeSessionMetadata
+                    {
+                        StartUtcMs = session.StartUtcMs,
+                        StartSketchTimeMs = checked(
+                            session.StartSketchTimeMs + timestampOffset),
+                        EndSketchTimeMs = checked(
+                            session.EndSketchTimeMs + timestampOffset),
+                    };
+                    shiftedSessions.Add(shiftedSession);
+                }
+                catch (OverflowException)
+                {
+                    Debug.LogWarning("[AdditiveStrokeClock] Ignoring imported stroke time session whose shifted timestamps overflow uint.");
+                }
+            }
+
+            RestoreStrokeTimeSessions(shiftedSessions);
+            return shiftedSessions.ToArray();
+        }
+
+        internal void RestoreStrokeTimeSessions(
+            IEnumerable<StrokeTimeSessionMetadata> sessions)
+        {
+            if (sessions == null)
+            {
+                return;
+            }
+
+            foreach (var session in sessions)
+            {
+                if (session != null && !m_StrokeTimeSessions.Any(existing =>
+                        existing.StartUtcMs == session.StartUtcMs &&
+                        existing.StartSketchTimeMs == session.StartSketchTimeMs &&
+                        existing.EndSketchTimeMs == session.EndSketchTimeMs))
+                {
+                    m_StrokeTimeSessions.Add(session);
+                }
+            }
+        }
+
+        internal void RestoreTargetedStrokeTimeSession(
+            StrokeTimeSessionMetadata session, Stroke stroke)
+        {
+            if (session == null || stroke == null || stroke.m_ControlPoints == null ||
+                stroke.m_ControlPoints.Length == 0)
+            {
+                return;
+            }
+
+            StrokeTimeSessionMetadata existing = m_StrokeTimeSessions.FirstOrDefault(candidate =>
+                candidate.StartUtcMs == session.StartUtcMs &&
+                candidate.StartSketchTimeMs == session.StartSketchTimeMs);
+            if (existing != null)
+            {
+                existing.EndSketchTimeMs = Math.Max(
+                    existing.EndSketchTimeMs, stroke.TailTimestampMs);
+                return;
+            }
+
+            m_StrokeTimeSessions.Add(new StrokeTimeSessionMetadata
+            {
+                StartUtcMs = session.StartUtcMs,
+                StartSketchTimeMs = session.StartSketchTimeMs,
+                EndSketchTimeMs = stroke.TailTimestampMs,
+            });
+        }
+
+        internal void RemoveStrokeTimeSessions(
+            IEnumerable<StrokeTimeSessionMetadata> sessions)
+        {
+            if (sessions == null)
+            {
+                return;
+            }
+
+            foreach (var session in sessions)
+            {
+                if (session != null)
+                {
+                    m_StrokeTimeSessions.Remove(session);
+                }
+            }
+        }
+
+        public bool TryGetStrokeTimeSession(
+            Stroke stroke, out StrokeTimeSessionMetadata session)
+        {
+            session = null;
+            if (stroke == null || stroke.m_ControlPoints == null ||
+                stroke.m_ControlPoints.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = m_StrokeTimeSessions.Count - 1; i >= 0; --i)
+            {
+                var candidate = m_StrokeTimeSessions[i];
+                if (candidate.StartSketchTimeMs <= stroke.HeadTimestampMs &&
+                    candidate.EndSketchTimeMs >= stroke.TailTimestampMs)
+                {
+                    session = CopyStrokeTimeSession(candidate);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        public bool TryGetActiveStrokeTimeSession(out StrokeTimeSessionMetadata session)
+        {
+            var activeSession = m_CurrentStrokeTimeSession ?? m_PendingStrokeTimeSession;
+            session = CopyStrokeTimeSession(activeSession);
+            return session != null;
+        }
+
+        internal static bool TryConvertStrokeTimestampToSession(
+            uint sourceTimestampMs,
+            long sourceStartUtcMs,
+            uint sourceStartSketchTimeMs,
+            long targetStartUtcMs,
+            uint targetStartSketchTimeMs,
+            out uint targetTimestampMs)
+        {
+            long convertedTimestampMs;
+            try
+            {
+                checked
+                {
+                    long pointUtcMs = sourceStartUtcMs +
+                        ((long)sourceTimestampMs - sourceStartSketchTimeMs);
+                    convertedTimestampMs = targetStartSketchTimeMs +
+                        (pointUtcMs - targetStartUtcMs);
+                }
+            }
+            catch (OverflowException)
+            {
+                targetTimestampMs = 0;
+                return false;
+            }
+
+            if (convertedTimestampMs < uint.MinValue ||
+                convertedTimestampMs > uint.MaxValue)
+            {
+                targetTimestampMs = 0;
+                return false;
+            }
+
+            targetTimestampMs = (uint)convertedTimestampMs;
+            return true;
+        }
+
+        private static StrokeTimeSessionMetadata CopyStrokeTimeSession(
+            StrokeTimeSessionMetadata session)
+        {
+            if (session == null)
+            {
+                return null;
+            }
+
+            return new StrokeTimeSessionMetadata
+            {
+                StartUtcMs = session.StartUtcMs,
+                StartSketchTimeMs = session.StartSketchTimeMs,
+                EndSketchTimeMs = session.EndSketchTimeMs,
+            };
+        }
+
+        public void BeginPendingStrokeTimeSession()
+        {
+            if (m_CurrentStrokeTimeSession != null)
+            {
+                return;
+            }
+
+            uint currentSketchTimeMs = (uint)(App.Instance.CurrentSketchTime * 1000);
+            m_PendingStrokeTimeSession = new StrokeTimeSessionMetadata
+            {
+                StartUtcMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+                StartSketchTimeMs = currentSketchTimeMs,
+                EndSketchTimeMs = currentSketchTimeMs,
+            };
+        }
+
+        internal void EndCurrentStrokeTimeSession()
+        {
+            m_CurrentStrokeTimeSession = null;
+            m_PendingStrokeTimeSession = null;
+        }
+
+        public void RecordStrokeInCurrentTimeSession(Stroke stroke)
+        {
+            if (stroke == null || stroke.m_ControlPoints == null ||
+                stroke.m_ControlPoints.Length == 0)
+            {
+                return;
+            }
+
+            if (m_CurrentStrokeTimeSession == null)
+            {
+                if (m_PendingStrokeTimeSession != null)
+                {
+                    long elapsedToFirstPointMs =
+                        (long)stroke.HeadTimestampMs -
+                        m_PendingStrokeTimeSession.StartSketchTimeMs;
+                    m_CurrentStrokeTimeSession = new StrokeTimeSessionMetadata
+                    {
+                        StartUtcMs = m_PendingStrokeTimeSession.StartUtcMs +
+                            elapsedToFirstPointMs,
+                        StartSketchTimeMs = stroke.HeadTimestampMs,
+                        EndSketchTimeMs = stroke.TailTimestampMs,
+                    };
+                }
+                else
+                {
+                    long currentSketchTimeMs = (long)(App.Instance.CurrentSketchTime * 1000);
+                    long elapsedSinceStrokeStartMs =
+                        currentSketchTimeMs - stroke.HeadTimestampMs;
+                    m_CurrentStrokeTimeSession = new StrokeTimeSessionMetadata
+                    {
+                        StartUtcMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() -
+                            elapsedSinceStrokeStartMs,
+                        StartSketchTimeMs = stroke.HeadTimestampMs,
+                        EndSketchTimeMs = stroke.TailTimestampMs,
+                    };
+                }
+
+                m_PendingStrokeTimeSession = null;
+                m_StrokeTimeSessions.Add(m_CurrentStrokeTimeSession);
+                return;
+            }
+
+            if (stroke.HeadTimestampMs < m_CurrentStrokeTimeSession.StartSketchTimeMs)
+            {
+                uint adjustmentMs =
+                    m_CurrentStrokeTimeSession.StartSketchTimeMs - stroke.HeadTimestampMs;
+                m_CurrentStrokeTimeSession.StartUtcMs -= adjustmentMs;
+                m_CurrentStrokeTimeSession.StartSketchTimeMs = stroke.HeadTimestampMs;
+            }
+
+            m_CurrentStrokeTimeSession.EndSketchTimeMs = Math.Max(
+                m_CurrentStrokeTimeSession.EndSketchTimeMs, stroke.TailTimestampMs);
+        }
+
         public void MemorizeBatchedBrushStroke(
             BatchSubset subset, Color rColor, Guid brushGuid,
             float fBrushSize, float brushScale,
@@ -626,6 +948,7 @@ namespace TiltBrush
             rNewStroke.m_OverrideColors = controlPointColors;
             rNewStroke.m_ColorOverrideMode = colorMode;
             subset.m_Stroke = rNewStroke;
+            RecordStrokeInCurrentTimeSession(rNewStroke);
 
             PerformAndRecordCommand(
                 new BrushStrokeCommand(
@@ -671,6 +994,7 @@ namespace TiltBrush
             rNewStroke.m_OverrideColors = controlPointColors;
             rNewStroke.m_ColorOverrideMode = colorMode;
             brushScript.Stroke = rNewStroke;
+            RecordStrokeInCurrentTimeSession(rNewStroke);
 
             SketchMemoryScript.m_Instance.RecordCommand(
                 new BrushStrokeCommand(rNewStroke, stencil, lineLength, ApiManager.Instance.ActiveUndo));
@@ -946,6 +1270,9 @@ namespace TiltBrush
             ++m_UnrecordedChangesRevision;
             m_LastSavedUnrecordedChangesRevision = m_UnrecordedChangesRevision;
             m_MemoryList.Clear();
+            m_StrokeTimeSessions.Clear();
+            m_CurrentStrokeTimeSession = null;
+            m_PendingStrokeTimeSession = null;
             App.GroupManager.ResetGroups();
             SelectionManager.m_Instance.OnFinishReset();
             m_CurrentNodeByTime = null;
@@ -1127,7 +1454,8 @@ namespace TiltBrush
 
         public void SetPlaybackMode(PlaybackMode mode, float distancePerSecond)
         {
-            m_PlaybackMode = mode;
+            m_PlaybackMode = m_KeepPlaybackAliveForScrubbing && mode == PlaybackMode.Distance
+                ? PlaybackMode.Timestamps : mode;
             m_DistancePerSecond = distancePerSecond;
         }
 
@@ -1145,6 +1473,12 @@ namespace TiltBrush
         }
 
         /// timeline edit mode: if forEdit is true, play audio countdown and keep user pointers enabled
+        private static IStrokePlaybackTimeline GetPlaybackTimeline(IStrokePlaybackTimeline timeline = null)
+        {
+            if (!PostProductionSettings.IsSessionActive) { return timeline; }
+            return PostProductionLayerTimeline.Wrap(timeline ?? new SketchTimeStrokePlaybackTimeline());
+        }
+
         public void BeginDrawingFromMemory(bool bDrawFromStart, bool forEdit = false, bool playAudio = true)
         {
             BeginDrawingFromMemory(m_MemoryList, bDrawFromStart, forEdit, playAudio);
@@ -1166,8 +1500,26 @@ namespace TiltBrush
                         if (playAudio) PointerManager.m_Instance.SetPointersAudioForPlayback();
                         break;
                     case PlaybackMode.Timestamps:
-                        App.Instance.CurrentSketchTime = GetEarliestTimestamp();
-                        m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender);
+                        App.Instance.CurrentSketchTime = m_MemoryList.Count == 0 ? 0 : GetEarliestTimestamp();
+                        m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender, GetPlaybackTimeline());
+                        break;
+                    case PlaybackMode.RealTime:
+                        if (RealTimeStrokePlaybackTimeline.TryCreate(
+                            strokesToRender, out var realTimeTimeline))
+                        {
+                            var strokesInWallClockOrder = strokesToRender
+                                .OrderBy(realTimeTimeline.GetHeadTimeMs)
+                                .ToArray();
+                            App.Instance.CurrentSketchTime = 0;
+                            m_ScenePlayback = new ScenePlaybackByTimeLayered(
+                                strokesInWallClockOrder, GetPlaybackTimeline(realTimeTimeline));
+                        }
+                        else
+                        {
+                            Debug.LogWarning("[RealTimePlayback] Sketch does not contain complete wall-clock metadata; using ordinary timestamp playback.");
+                            App.Instance.CurrentSketchTime = m_MemoryList.Count == 0 ? 0 : GetEarliestTimestamp();
+                            m_ScenePlayback = new ScenePlaybackByTimeLayered(strokesToRender, GetPlaybackTimeline());
+                        }
                         break;
                 }
                 m_IsInitialPlay = true;
@@ -1196,11 +1548,36 @@ namespace TiltBrush
                     // we're done-- however in timeline edit mode we keep playback alive to allow scrubbing
                     PointerManager.m_Instance.SetInPlaybackMode(false);
                     PointerManager.m_Instance.RequestPointerRendering(true);
-                    m_ScenePlayback = null;
+                    if (!m_KeepPlaybackAliveForScrubbing)
+                    {
+                        m_ScenePlayback = null;
+                    }
                 }
                 return false;
             }
             return true;
+        }
+
+        // Normal snapshots serialize enabled geometry. Finish scrubbing first so later strokes
+        // are not silently omitted, leaving the playhead paused at the end after saving.
+        public IEnumerator FinishScrubPlaybackForSave()
+        {
+            if (!m_KeepPlaybackAliveForScrubbing ||
+                !(m_ScenePlayback is ScenePlaybackByTimeLayered playback))
+            {
+                yield break;
+            }
+
+            // One millisecond beyond the final point avoids truncating a fractional-second
+            // clock conversion, and also renders zero-timestamp strokes (playback skips 0).
+            double endTimeSeconds = (playback.GetEndTimeMs(m_MemoryList) + 1.0) / 1000.0;
+            PostProductionPreviewController.HoldAt(endTimeSeconds);
+            while (playback.Update())
+            {
+                yield return null;
+            }
+            // Do not use QuickLoadRemaining: its latched flag prevents subsequent scrubbing.
+            PostProductionPreviewController.HoldAt(endTimeSeconds);
         }
 
         private void SortMemoryList()
@@ -1211,6 +1588,43 @@ namespace TiltBrush
             {
                 m_MemoryList.AddLast(obj.m_NodeByTime);
             }
+        }
+
+        // Rebuilds the scrub/playback timeline in place, keeping the current sketch time - used
+        // when post-production per-layer time offsets change (the timeline captures them on
+        // construction). Rewinds first to release in-flight playback pointers, then clears
+        // all geometry, including strokes whose offset puts their end at or before zero.
+        // Starts fresh in the current mode, so a real-time timeline stays real-time.
+        public void RebuildPlaybackKeepingTime()
+        {
+            if (m_ScenePlayback == null) { return; }
+            var savedSketchTime = App.Instance.CurrentSketchTime;
+            App.Instance.CurrentSketchTime = 0;
+            m_ScenePlayback.Update();
+            RestartScrubPlayback();
+            App.Instance.CurrentSketchTime = savedSketchTime;
+            m_ScenePlayback.Update();
+        }
+
+        // Starts a fresh scrub timeline from undrawn strokes. Unlike RebuildPlaybackKeepingTime
+        // this doesn't rewind through the old timeline, so it also works on a discarded one or
+        // one left finished by a quick load (which pins it to the end for good).
+        public void RestartScrubPlayback()
+        {
+            // Distance playback cannot seek. Release an in-flight stroke before replacing it.
+            if (m_ScenePlayback is ScenePlaybackByStrokeDistance distancePlayback)
+            {
+                distancePlayback.ClearPlayback();
+            }
+            if (m_PlaybackMode == PlaybackMode.Distance)
+            {
+                m_PlaybackMode = PlaybackMode.Timestamps;
+            }
+            foreach (var stroke in m_MemoryList)
+            {
+                UnrenderStrokeMemoryObject(stroke);
+            }
+            BeginDrawingFromMemory(bDrawFromStart: true, forEdit: true, playAudio: false);
         }
 
         // Redraw scene instantly and optionally re-sort by timestamp-- will drop frames and thrash mem.
@@ -1236,7 +1650,7 @@ namespace TiltBrush
                 App.Instance.CurrentSketchTime = 0;
                 m_ScenePlayback.Update();
                 if (doSort) { SortMemoryList(); }
-                m_ScenePlayback = new ScenePlaybackByTimeLayered(m_MemoryList);
+                m_ScenePlayback = new ScenePlaybackByTimeLayered(m_MemoryList, GetPlaybackTimeline());
                 App.Instance.CurrentSketchTime = savedSketchTime;
                 m_ScenePlayback.Update();
             }
@@ -1542,24 +1956,52 @@ namespace TiltBrush
 
         public bool IsCommandInStack(Guid commandGuid)
         {
-            return IsCommandInOperationStack(commandGuid) ||
-                   IsCommandInRedoStack(commandGuid) ||
-                   IsCommandInNetworkStack(commandGuid);
+            return FindCommandInStack(m_OperationStack, commandGuid) != null ||
+                   FindCommandInStack(m_RedoStack, commandGuid) != null ||
+                   FindCommandInStack(m_NetworkStack, commandGuid) != null;
         }
 
         public bool IsCommandInOperationStack(Guid commandGuid)
         {
-            return m_OperationStack.Any(command => command.Guid == commandGuid);
+            return FindCommandInStack(m_OperationStack, commandGuid) != null;
         }
 
         public bool IsCommandInRedoStack(Guid commandGuid)
         {
-            return m_RedoStack.Any(command => command.Guid == commandGuid);
+            return FindCommandInStack(m_RedoStack, commandGuid) != null;
         }
 
         public bool IsCommandInNetworkStack(Guid commandGuid)
         {
-            return m_NetworkStack.Any(command => command.Guid == commandGuid);
+            return FindCommandInStack(m_NetworkStack, commandGuid) != null;
+        }
+
+        public BaseCommand FindNetworkCommand(Guid commandGuid)
+        {
+            return FindCommandInStack(m_NetworkStack, commandGuid);
+        }
+
+        private static BaseCommand FindCommandInStack(
+            IEnumerable<BaseCommand> stack, Guid commandGuid)
+        {
+            foreach (BaseCommand command in stack)
+            {
+                BaseCommand match = FindCommandInTree(command, commandGuid);
+                if (match != null) return match;
+            }
+            return null;
+        }
+
+        private static BaseCommand FindCommandInTree(
+            BaseCommand command, Guid commandGuid)
+        {
+            if (command.Guid == commandGuid) return command;
+            foreach (BaseCommand child in command.Children)
+            {
+                BaseCommand match = FindCommandInTree(child, commandGuid);
+                if (match != null) return match;
+            }
+            return null;
         }
 
         public void SetTimeOffsetToAllStacks(int m_NetworkOffsetTimestamp)
