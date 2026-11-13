@@ -140,13 +140,9 @@ namespace TiltBrush
                 }
 
                 model.CalcBoundsGltf(go);
-                if (!model.EndCreatePrefab(go, warnings))
-                {
-                    return;
-                }
                 // The remapping plugin replaces source materials with brush variants.
                 // Preserve the original glTF identity in the model's actual collector,
-                // keyed by the material that will be copied into widget instances.
+                // before EndCreatePrefab restores saved splits and instances materials.
                 for (int i = 0; i < gltf.Root.Nodes.Count; ++i)
                 {
                     var sourceMesh = gltf.Root.Nodes[i].Mesh?.Value;
@@ -164,6 +160,10 @@ namespace TiltBrush
                             model.RegisterImportedBrushMaterial(materials[slot], brush);
                         }
                     }
+                }
+                if (!model.EndCreatePrefab(go, warnings))
+                {
+                    return;
                 }
             }
             catch (Exception e)
