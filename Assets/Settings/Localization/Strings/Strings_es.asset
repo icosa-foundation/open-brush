@@ -4737,31 +4737,35 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 559927936423649280
-    m_Localized: "Nuevo vóxel"
+    m_Localized: "Nuevo v\xF3xel"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118272
-    m_Localized: "Iniciar un nuevo modelo de vóxeles vacío"
+    m_Localized: "Iniciar un nuevo modelo de v\xF3xeles vac\xEDo"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118273
-    m_Localized: "Alinear modelo de vóxeles a la cuadrícula"
+    m_Localized: "Alinear modelo de v\xF3xeles a la cuadr\xEDcula"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936524312576
-    m_Localized: "Alinear el modelo actual según los ajustes de la cuadrícula"
+    m_Localized: "Alinear el modelo actual seg\xFAn los ajustes de la cuadr\xEDcula"
     m_Metadata:
       m_Items: []
   - m_Id: 560634138304536576
-    m_Localized: "Seleccionar región de vóxeles"
+    m_Localized: "Seleccionar regi\xF3n de v\xF3xeles"
     m_Metadata:
       m_Items: []
   - m_Id: 560634138455531520
-    m_Localized: "Mantén pulsado el gatillo y arrastra para seleccionar un cuboide. Pulsa el botón de duplicar mientras lo agarras para colocar una copia. Pulsa dos veces el gatillo en un espacio vacío para finalizar y borrar la selección."
+    m_Localized: "Mant\xE9n pulsado el gatillo y arrastra para seleccionar un cuboide. Pulsa el bot\xF3n de duplicar mientras lo agarras para colocar una copia. Pulsa dos veces el gatillo en un espacio vac\xEDo para finalizar y borrar la selecci\xF3n."
     m_Metadata:
       m_Items: []
   - m_Id: 563423505335017472
-    m_Localized: "Usar el color del pincel"
+    m_Localized: Usar el color del pincel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 564570892417982464
+    m_Localized: "Ocultar gu\xEDas de vista previa adicionales"
     m_Metadata:
       m_Items: []
   references:

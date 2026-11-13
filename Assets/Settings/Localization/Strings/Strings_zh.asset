@@ -4675,31 +4675,35 @@ MonoBehaviour:
     m_Metadata:
       m_Items: []
   - m_Id: 559927936423649280
-    m_Localized: "新建体素"
+    m_Localized: "\u65B0\u5EFA\u4F53\u7D20"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118272
-    m_Localized: "开始一个新的空体素模型"
+    m_Localized: "\u5F00\u59CB\u4E00\u4E2A\u65B0\u7684\u7A7A\u4F53\u7D20\u6A21\u578B"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936520118273
-    m_Localized: "将体素模型对齐到网格"
+    m_Localized: "\u5C06\u4F53\u7D20\u6A21\u578B\u5BF9\u9F50\u5230\u7F51\u683C"
     m_Metadata:
       m_Items: []
   - m_Id: 559927936524312576
-    m_Localized: "根据网格设置对齐当前模型"
+    m_Localized: "\u6839\u636E\u7F51\u683C\u8BBE\u7F6E\u5BF9\u9F50\u5F53\u524D\u6A21\u578B"
     m_Metadata:
       m_Items: []
   - m_Id: 560634138304536576
-    m_Localized: "选择体素区域"
+    m_Localized: "\u9009\u62E9\u4F53\u7D20\u533A\u57DF"
     m_Metadata:
       m_Items: []
   - m_Id: 560634138455531520
-    m_Localized: "按住扳机拖动以选择一个长方体。抓取时按下复制按钮可放置副本。在空白处双击扳机以完成并清除选择。"
+    m_Localized: "\u6309\u4F4F\u6273\u673A\u62D6\u52A8\u4EE5\u9009\u62E9\u4E00\u4E2A\u957F\u65B9\u4F53\u3002\u6293\u53D6\u65F6\u6309\u4E0B\u590D\u5236\u6309\u94AE\u53EF\u653E\u7F6E\u526F\u672C\u3002\u5728\u7A7A\u767D\u5904\u53CC\u51FB\u6273\u673A\u4EE5\u5B8C\u6210\u5E76\u6E05\u9664\u9009\u62E9\u3002"
     m_Metadata:
       m_Items: []
   - m_Id: 563423505335017472
-    m_Localized: "使用画笔颜色"
+    m_Localized: "\u4F7F\u7528\u753B\u7B14\u989C\u8272"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 564570892417982464
+    m_Localized: "\u9690\u85CF\u989D\u5916\u9884\u89C8\u8F85\u52A9\u7EBF"
     m_Metadata:
       m_Items: []
   references:

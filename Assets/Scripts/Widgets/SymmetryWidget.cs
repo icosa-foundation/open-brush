@@ -74,6 +74,23 @@ namespace TiltBrush
         [SerializeField] private Transform m_SymmetryDomainPrefab;
         [SerializeField] private Transform m_SymmetryDomainParent;
 
+        private bool m_HideExtraPreviewGizmos;
+        public bool HideExtraPreviewGizmos
+        {
+            get => m_HideExtraPreviewGizmos;
+            set
+            {
+                m_HideExtraPreviewGizmos = value;
+                UpdateExtraPreviewVisibility();
+            }
+        }
+
+        private void UpdateExtraPreviewVisibility()
+        {
+            m_SymmetryDomainParent.gameObject.SetActive(!m_HideExtraPreviewGizmos &&
+                PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror);
+        }
+
 
         public Plane ReflectionPlane
         {
@@ -173,8 +190,7 @@ namespace TiltBrush
 
         public void SetAppearance()
         {
-            m_SymmetryDomainParent.gameObject.SetActive(
-                PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror);
+            UpdateExtraPreviewVisibility();
             m_FrontBackMesh.enabled = false;
             m_LeftRightMesh.enabled = false;
             m_SingleAxisMesh.enabled = false;
@@ -566,6 +582,7 @@ namespace TiltBrush
 
         public void DrawCustomSymmetryGuides()
         {
+            if (m_HideExtraPreviewGizmos) { return; }
             List<LineRenderer> lrs = new List<LineRenderer>();
             var matrices = PointerManager.m_Instance.CustomMirrorMatrices;
 

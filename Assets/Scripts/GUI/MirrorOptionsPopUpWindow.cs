@@ -31,6 +31,7 @@ namespace TiltBrush
         public TextActionButton m_ButtonShowSpaceGroupControls;
         public TextActionButton m_ButtonShowHelicalControls;
         [SerializeField] private ActionButton m_UnlinkAllButton;
+        [SerializeField] private ActionToggleButton m_HideExtraPreviewGizmosButton;
         private float m_NextPointerLimitNotice;
         private bool m_RefreshRejectedCount;
 
@@ -170,6 +171,12 @@ namespace TiltBrush
             RefreshMirrorControls();
         }
 
+        public void HandleToggleExtraPreviewGizmos()
+        {
+            PointerManager.m_Instance.SymmetryWidget.HideExtraPreviewGizmos =
+                m_HideExtraPreviewGizmosButton.ToggleState;
+        }
+
         public void HandleUnlinkAll()
         {
             SymmetryMirrors.UnlinkAll();
@@ -194,6 +201,10 @@ namespace TiltBrush
             if (m_UnlinkAllButton != null) { m_UnlinkAllButton.SetButtonAvailable(m_DisplayedMirror != null); }
 
             var pm = PointerManager.m_Instance;
+            if (m_HideExtraPreviewGizmosButton != null)
+            {
+                m_HideExtraPreviewGizmosButton.ToggleState = pm.SymmetryWidget.HideExtraPreviewGizmos;
+            }
             var mode = pm.MirrorModeEnabled ? pm.CurrentSymmetryMode : pm.LastMirrorMode;
 
             if (mode == PointerManager.SymmetryMode.SinglePlane)

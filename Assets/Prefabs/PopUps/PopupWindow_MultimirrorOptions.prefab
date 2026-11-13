@@ -34,6 +34,7 @@ Transform:
   m_Children:
   - {fileID: 4368528965265458}
   - {fileID: 2571096770092348187}
+  - {fileID: 7383629892700319451}
   - {fileID: 6801200000000000001}
   - {fileID: 7989218957743760548}
   - {fileID: 41499453769697711}
@@ -122,6 +123,7 @@ MonoBehaviour:
   m_ButtonShowSpaceGroupControls: {fileID: 6690550332352815318}
   m_ButtonShowHelicalControls: {fileID: 4414277739674188290}
   m_UnlinkAllButton: {fileID: 6801200000000000005}
+  m_HideExtraPreviewGizmosButton: {fileID: 6867781565133486296}
   m_SimpleControls: {fileID: 3746995851344061724}
   m_PointSymmetryControls: {fileID: 8433459157768345993}
   m_PointSymmetryOrderSlider: {fileID: 3477534147329139763}
@@ -3734,6 +3736,186 @@ MonoBehaviour:
   m_CustomSymmetryType: 1
   m_PointSymmetryFamily: 0
   m_WallpaperSymmetryGroup: 12
+  references:
+    version: 2
+    RefIds: []
+--- !u!1 &3530295128799590709
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7383629892700319451}
+  - component: {fileID: 3089962609211734375}
+  - component: {fileID: 8250917250917884027}
+  - component: {fileID: 6979371467772919522}
+  - component: {fileID: 6867781565133486296}
+  m_Layer: 16
+  m_Name: Hide Extra Preview Gizmos
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7383629892700319451
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3530295128799590709}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.41799992, y: 0.326, z: -0.02}
+  m_LocalScale: {x: 0.1, y: 0.1, z: 0.1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4450488848677648}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &3089962609211734375
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3530295128799590709}
+  m_Mesh: {fileID: 4300000, guid: 5501f437160666942ae970f3648fbeb8, type: 3}
+--- !u!23 &8250917250917884027
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3530295128799590709}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 0
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 40d29de2bdc11f04dbfa25059165916e, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 0
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!65 &6979371467772919522
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3530295128799590709}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 1, y: 1, z: 0.01}
+  m_Center: {x: 0, y: 0, z: -0.01}
+--- !u!114 &6867781565133486296
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3530295128799590709}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b5e5a42a2a249a38d266ceeed2bf3fa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.ActionToggleButton
+  m_DescriptionType: 0
+  m_DescriptionYOffset: 0
+  m_DescriptionText: Hide extra preview guides
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: GUID:c84355079ab3f3e4f8f3812258805f86
+    m_TableEntryReference:
+      m_KeyId: 564570892417982464
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionActivateSpeed: 12
+  m_DescriptionZScale: 1
+  m_ButtonTexture: {fileID: 2800000, guid: 8b5501d47d5610644b78b76fae035b73, type: 3}
+  m_AtlasTexture: 0
+  m_ToggleButton: 1
+  m_LongPressReleaseButton: 0
+  m_ButtonHasPressedAudio: 0
+  m_ZAdjustHover: -0.04
+  m_ZAdjustClick: -0.04
+  m_HoverScale: 1.1
+  m_HoverBoxColliderGrow: 0.2
+  m_AddOverlay: 0
+  m_Action:
+    m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 114054410763498584}
+        m_TargetAssemblyTypeName: TiltBrush.MirrorOptionsPopUpWindow, Assembly-CSharp
+        m_MethodName: HandleToggleExtraPreviewGizmos
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: 
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+  m_InitialToggleState: 1
+  m_TextureOn: {fileID: 2800000, guid: 8b5501d47d5610644b78b76fae035b73, type: 3}
+  m_TextureOff: {fileID: 2800000, guid: 6ccc0d6136b1bb146b0b7a2e09378dc2, type: 3}
   references:
     version: 2
     RefIds: []
@@ -15883,7 +16065,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2633638204545500139, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.3761
+      value: -0.24099992
       objectReference: {fileID: 0}
     - target: {fileID: 2633638204545500139, guid: bb51b0dc7d0840f4ca79f5cbee2db4f9, type: 3}
       propertyPath: m_LocalPosition.y
