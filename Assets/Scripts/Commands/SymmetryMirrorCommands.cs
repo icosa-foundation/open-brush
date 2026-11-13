@@ -223,8 +223,16 @@ namespace TiltBrush
         /// Puts recorded control points back, converting from the canvas they were recorded in
         /// should the stroke have been reparented since (selection does this without history).
         internal static void RestorePoints(Stroke stroke, CanvasScript recordedIn,
-            PointerManager.ControlPoint[] recorded, float brushScale)
+            PointerManager.ControlPoint[] recorded, float brushScale, TrTransform? geometryStep = null)
         {
+            // Selection can temporarily reparent or preview a copy without a history entry.
+            // Only transform existing geometry when it is still at the recorded endpoint.
+            if (geometryStep.HasValue && stroke.Canvas == recordedIn &&
+                !SelectionManager.m_Instance.IsStrokeSelected(stroke) && !SymmetryPeerPreview.IsShowing)
+            {
+                stroke.RestoreMirrorControlPoints(recorded, brushScale, geometryStep);
+                return;
+            }
             var points = (PointerManager.ControlPoint[])recorded.Clone();
             var conversion = stroke.Canvas.Pose.inverse * recordedIn.Pose;
             for (int i = 0; i < points.Length; ++i)
@@ -289,6 +297,7 @@ namespace TiltBrush
         private class Member
         {
             internal Stroke Stroke;
+            internal int PointerIndex;
             internal TrTransform Step;
             internal PointerManager.ControlPoint[] Before;
             internal float BeforeScale;
@@ -336,6 +345,7 @@ namespace TiltBrush
                     m_Members.Add(new Member
                     {
                         Stroke = stroke,
+                        PointerIndex = index,
                         Step = after.PointerTransforms[index] *
                             before.PointerTransforms[index].inverse,
                         Before = (PointerManager.ControlPoint[])stroke.m_ControlPoints.Clone(),
@@ -374,9 +384,16 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
+            RedoFrom(m_Before);
+        }
+
+        private void RedoFrom(SymmetrySettingsSnapshot before)
+        {
             if (m_LastMerged != null)
             {
-                m_LastMerged.OnRedo();
+                // The last slider update owns the final data, but redo starts at the
+                // beginning of the entire gesture, not at that update's own beginning.
+                m_LastMerged.RedoFrom(before);
                 return;
             }
             foreach (var link in m_BrokenLinks) { link.Break(); }
@@ -391,7 +408,9 @@ namespace TiltBrush
                 else
                 {
                     MirrorStrokeEdits.RestorePoints(
-                        member.Stroke, m_Canvas, member.After, member.AfterScale);
+                        member.Stroke, m_Canvas, member.After, member.AfterScale,
+                        m_After.PointerTransforms[member.PointerIndex] *
+                            before.PointerTransforms[member.PointerIndex].inverse);
                 }
             }
             if (!m_Applied) { m_Widgets.Update(m_After); }
@@ -406,10 +425,13 @@ namespace TiltBrush
         {
             for (int i = m_Rederives.Count - 1; i >= 0; --i) { m_Rederives[i].Undo(); }
             m_Widgets.Restore(false);
+            var after = (m_LastMerged ?? this).m_After;
             foreach (var member in m_Members)
             {
                 MirrorStrokeEdits.RestorePoints(
-                    member.Stroke, m_Canvas, member.Before, member.BeforeScale);
+                    member.Stroke, m_Canvas, member.Before, member.BeforeScale,
+                    m_Before.PointerTransforms[member.PointerIndex] *
+                        after.PointerTransforms[member.PointerIndex].inverse);
             }
             foreach (var link in m_BrokenLinks) { link.Restore(); }
             m_Mirror.Settings = m_Before;

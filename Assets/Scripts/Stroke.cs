@@ -457,8 +457,19 @@ namespace TiltBrush
 
         /// Endpoint restoration for mirror undo and failed live moves. Does not require a batch
         /// and preserves erased/uncreated state. The caller supplies points in the current canvas.
-        internal void RestoreMirrorControlPoints(PointerManager.ControlPoint[] points, float brushScale)
+        internal void RestoreMirrorControlPoints(PointerManager.ControlPoint[] points, float brushScale,
+            TrTransform? geometryStep = null)
         {
+            if (geometryStep.HasValue && geometryStep.Value.IsFinite() && geometryStep.Value.scale > 0 &&
+                TransformGeometryInPlace(geometryStep.Value, updateControlPoints: false))
+            {
+                // Move the mesh cheaply, but restore the recorded data exactly rather than
+                // accumulating inverse-transform rounding in the stroke's control points.
+                m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
+                m_BrushScale = brushScale;
+                InvalidateCopy();
+                return;
+            }
             RebuildPreservingVisibility(() =>
             {
                 m_ControlPoints = (PointerManager.ControlPoint[])points.Clone();
