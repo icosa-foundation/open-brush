@@ -395,6 +395,18 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public bool[] PinStates { get; set; }
 
+        /// Per-instance playback, aligned with RawTransforms. Omitted for static/older models.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public ModelPlaybackState[] PlaybackStates { get; set; }
+
+        /// This local IMM supplies the sketch backdrop and authored chapter/viewpoint behavior.
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool ImmSketch { get; set; }
+
+        /// Preserve an explicitly selected IMM representation of a mixed-format gallery asset.
+        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public bool ImmModel { get; set; }
+
         /// Prior to M13, never null or empty; but an empty array is allowed on read.
         /// Post M13, always null.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
@@ -763,6 +775,8 @@ namespace TiltBrush
         public bool Paused { get; set; }
         public float Time { get; set; }
         public float Volume { get; set; }
+        // Sketches saved before this field existed retain the original looping behavior.
+        public bool Loop { get; set; } = true;
         // Group ID for widget. 0 for ungrouped items.
         public uint GroupId { get; set; }
         public int LayerId { get; set; }

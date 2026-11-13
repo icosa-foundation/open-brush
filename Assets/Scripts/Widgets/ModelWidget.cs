@@ -32,6 +32,9 @@ namespace TiltBrush
         [SerializeField] private float m_MaxBloat;
 
         private Model m_Model;
+        private ModelPlaybackController m_Playback;
+        public ModelPlaybackController Playback => m_Playback != null ? m_Playback :
+            (m_Playback = gameObject.AddComponent<ModelPlaybackController>());
         private RuntimeVoxDocument m_EditableVoxDocument;
 
         private bool m_HasEditableVoxVisuals;
@@ -60,9 +63,7 @@ namespace TiltBrush
         private Transform m_ModelInstance;
         private ObjModelScript m_ObjModelScript;
         private GsplatRenderer m_GsplatRenderer;
-        private int m_GsplatHighlightFrame = -1;
-        private float m_GsplatBaseBrightness;
-        private bool m_HasGsplatBaseBrightness;
+        private MeshFilter m_BoundsHighlight;
         private bool m_SyncHierarchyPending;
         private float m_InitSize_CS;
         public float InitSize_CS => m_InitSize_CS;
@@ -263,6 +264,12 @@ namespace TiltBrush
             m_PinScalar = 0.5f;
         }
 
+        public override void Activate(bool active)
+        {
+            base.Activate(active);
+            if (active) App.Switchboard.TriggerModelWidgetActivated(this);
+        }
+
         protected override void OnUserBeginInteracting()
         {
             BeginVoxRegionGrab();
@@ -308,6 +315,7 @@ namespace TiltBrush
                 clone.transform.position = position;
                 clone.transform.rotation = rotation;
                 clone.m_Subtree = m_Subtree;
+                clone.Playback.Restore(Playback.GetSaveState(), restorePlayingPosition: true);
                 clone.Model = Model;
                 if (document != null)
                 {
@@ -359,7 +367,7 @@ namespace TiltBrush
         public void OnPacCatalogChanged()
         {
             Model model = App.IcosaAssetCatalog.GetModel(AssetId);
-            if (model != null && model.m_Valid)
+            if (model != null && model.m_Valid && (!m_Model.IsNativeImmModel || model.IsNativeImmModel))
             {
                 Model = model;
                 SetSignedWidgetSize(m_Size);
@@ -428,8 +436,6 @@ namespace TiltBrush
                 GameObject.Destroy(m_ModelInstance.gameObject);
             }
             m_GsplatRenderer = null;
-            m_GsplatHighlightFrame = -1;
-            m_HasGsplatBaseBrightness = false;
 
             // Early out if we don't have a model to clone.
             // This can happen if model loading is deferred.
@@ -442,9 +448,12 @@ namespace TiltBrush
             m_ModelInstance.parent = this.transform;
             m_ModelInstance.gameObject.SetActive(true);
             m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(includeInactive: true);
-            CaptureGsplatBaseBrightness();
 
             Coords.AsLocal[m_ModelInstance] = TrTransform.identity;
+            Playback.Bind(m_ModelInstance);
+            if (m_Model.IsNativeImmModel)
+                m_ModelInstance.GetComponent<NativeImmReference>().Activate(
+                    m_Model.m_ModelParent.GetComponent<NativeImmReference>());
             float maxExtent = 2 * Mathf.Max(m_Model.m_MeshBounds.extents.x,
                 Mathf.Max(m_Model.m_MeshBounds.extents.y, m_Model.m_MeshBounds.extents.z));
             float size;
@@ -515,7 +524,7 @@ namespace TiltBrush
                 SyncHierarchyToSubtree();
                 m_SyncHierarchyPending = false;
             }
-            if (m_ObjModelScript.NumMeshes == 0 && !m_Model.IsGsplatModel)
+            if (m_ObjModelScript.NumMeshes == 0 && !m_Model.IsGsplatModel && !m_Model.IsNativeImmModel)
             {
                 OutputWindowScript.Error("No usable geometry in model");
             }
@@ -627,6 +636,7 @@ namespace TiltBrush
 
         public bool HasMultipleNodes()
         {
+            if (m_Model.IsNativeImmModel) return false;
             if (IsVoxModel() && string.IsNullOrEmpty(Subtree)) { return true; }
             // VOX internal models remain document implementation details. Exposing the generic
             // model Break Apart operation would create subtree widgets that no longer own a
@@ -657,6 +667,7 @@ namespace TiltBrush
 
         public bool MeshSplitPossible()
         {
+            if (m_Model.IsNativeImmModel) return false;
             if (IsVoxModel() && string.IsNullOrEmpty(Subtree)) { return true; }
             if (m_EditableVoxDocument != null)
             {
@@ -885,7 +896,7 @@ namespace TiltBrush
 
         public override float GetActivationScore(Vector3 vControllerPos, InputManager.ControllerName name)
         {
-            if (TryIntersectGsplat(vControllerPos, m_CollisionRadius, out float gsplatScore))
+            if (TryIntersectNonMeshModel(vControllerPos, m_CollisionRadius, out float gsplatScore))
             {
                 return gsplatScore;
             }
@@ -911,7 +922,7 @@ namespace TiltBrush
 
         public bool TryIntersectNonGpuModel(Vector3 center_GS, float radius_GS, out float score)
         {
-            if (TryIntersectGsplat(center_GS, radius_GS, out score)) return true;
+            if (TryIntersectNonMeshModel(center_GS, radius_GS, out score)) return true;
             if (!HasEmptyEditableVoxGrid || !Showing || !gameObject.activeInHierarchy || radius_GS < 0)
                 return false;
             Vector3 local = m_BoxCollider.transform.InverseTransformPoint(center_GS);
@@ -926,9 +937,17 @@ namespace TiltBrush
             return true;
         }
 
-        public bool TryIntersectGsplat(Vector3 center_GS, float radius_GS, out float score)
+        public bool TryIntersectNonMeshModel(Vector3 center_GS, float radius_GS, out float score)
         {
             score = -1.0f;
+            if (m_Model != null && m_Model.IsNativeImmModel)
+            {
+                if (GrabCollider == null || !GrabCollider.gameObject.activeInHierarchy) return false;
+                float distance = Vector3.Distance(center_GS, GrabCollider.ClosestPoint(center_GS));
+                if (distance > radius_GS) return false;
+                score = 1.0f / (1.0f + distance);
+                return true;
+            }
             if (m_Model == null || !m_Model.IsGsplatModel)
             {
                 return false;
@@ -1009,11 +1028,6 @@ namespace TiltBrush
             {
                 SetWidgetSizeAboutCenterOfMass(m_HideSize_CS * GetShowRatio());
             }
-
-            if (m_GsplatRenderer != null && m_GsplatHighlightFrame != Time.frameCount)
-            {
-                RestoreGsplatBrightness();
-            }
         }
 
         protected override void UpdateIntroAnim()
@@ -1055,6 +1069,9 @@ namespace TiltBrush
             m_Pin.SetPenetrationScalar(.25f);
         }
 
+        private bool UsesBoundsHighlight => m_Model != null && m_Model.m_Valid &&
+            (m_Model.IsNativeImmModel || m_Model.IsGsplatModel);
+
         public override void RegisterHighlight()
         {
             if (HasVoxRegionSelection)
@@ -1062,13 +1079,18 @@ namespace TiltBrush
                 m_VoxRegionHighlightFrame = Time.frameCount;
                 return;
             }
+            if (UsesBoundsHighlight)
+            {
+                RegisterBoundsHighlight();
+#if UNITY_ANDROID || UNITY_IOS
+                // Mobile skips the outline renderer and needs the base material-tint state.
+                base.RegisterHighlight();
+#endif
+                return;
+            }
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.RegisterHighlight();
-                return;
-            }
-            if (UpdateGsplatSelectionHighlight())
-            {
                 return;
             }
             base.RegisterHighlight();
@@ -1077,7 +1099,17 @@ namespace TiltBrush
         protected override void UnregisterHighlight()
         {
             m_VoxRegionHighlightFrame = -1;
-            RestoreGsplatBrightness();
+            if (m_BoundsHighlight != null)
+            {
+                App.Instance.SelectionEffect.UnregisterMesh(m_BoundsHighlight);
+            }
+            if (UsesBoundsHighlight)
+            {
+#if UNITY_ANDROID || UNITY_IOS
+                base.UnregisterHighlight();
+#endif
+                return;
+            }
             if (m_ObjModelScript != null && m_ObjModelScript.NumMeshes > 0)
             {
                 m_ObjModelScript.UnregisterHighlight();
@@ -1086,43 +1118,24 @@ namespace TiltBrush
             base.UnregisterHighlight();
         }
 
-        private bool UpdateGsplatSelectionHighlight()
+        private void RegisterBoundsHighlight()
         {
-            if (m_GsplatRenderer == null && m_ModelInstance != null)
+            if (m_BoundsHighlight == null)
             {
-                m_GsplatRenderer = m_ModelInstance.GetComponentInChildren<GsplatRenderer>(
-                    includeInactive: true);
+                // The grab container already has the prefab's box-corner selection mesh.
+                m_BoundsHighlight = m_BoxCollider.GetComponentInChildren<MeshFilter>(includeInactive: true);
             }
-            if (m_GsplatRenderer == null)
-            {
-                return false;
-            }
+            if (m_BoundsHighlight == null || m_BoundsHighlight.sharedMesh == null) return;
 
-            CaptureGsplatBaseBrightness();
-            m_GsplatHighlightFrame = Time.frameCount;
-            float pulse = 0.5f + 0.5f * Mathf.Sin(Time.realtimeSinceStartup * 4.0f);
-            m_GsplatRenderer.Brightness = m_GsplatBaseBrightness * Mathf.Lerp(1.5f, 2.0f, pulse);
-            return true;
-        }
-
-        private void CaptureGsplatBaseBrightness()
-        {
-            if (m_GsplatRenderer == null || m_HasGsplatBaseBrightness)
-            {
-                return;
-            }
-            m_GsplatBaseBrightness = m_GsplatRenderer.Brightness;
-            m_HasGsplatBaseBrightness = true;
-        }
-
-        private void RestoreGsplatBrightness()
-        {
-            if (m_GsplatRenderer == null || !m_HasGsplatBaseBrightness)
-            {
-                return;
-            }
-            m_GsplatRenderer.Brightness = m_GsplatBaseBrightness;
-            m_GsplatHighlightFrame = -1;
+            var meshBounds = m_BoundsHighlight.sharedMesh.bounds;
+            var size = meshBounds.size;
+            var scale = new Vector3(m_BoxCollider.size.x / size.x,
+                m_BoxCollider.size.y / size.y, m_BoxCollider.size.z / size.z);
+            var highlight = m_BoundsHighlight.transform;
+            highlight.localPosition = m_BoxCollider.center - Vector3.Scale(meshBounds.center, scale);
+            highlight.localRotation = Quaternion.identity;
+            highlight.localScale = scale;
+            App.Instance.SelectionEffect.RegisterMesh(m_BoundsHighlight);
         }
 
         public TrTransform GetSaveTransform()
@@ -1223,7 +1236,8 @@ namespace TiltBrush
                     modelDatas.GroupIds,
                     modelDatas.LayerIds,
                     modelDatas.SplitMeshPaths,
-                    modelDatas.NotSplittableMeshPaths, modelDatas.WidgetLinks
+                    modelDatas.NotSplittableMeshPaths,
+                    modelDatas.PlaybackStates, modelDatas.WidgetLinks
                 );
                 ok = await okTask;
 
@@ -1238,7 +1252,9 @@ namespace TiltBrush
                     modelDatas.GroupIds,
                     modelDatas.LayerIds,
                     modelDatas.SplitMeshPaths,
-                    modelDatas.NotSplittableMeshPaths, modelDatas.WidgetLinks
+                    modelDatas.NotSplittableMeshPaths,
+                    modelDatas.PlaybackStates,
+                    modelDatas.ImmModel, modelDatas.WidgetLinks
                 );
             }
             else
@@ -1247,7 +1263,7 @@ namespace TiltBrush
                 ok = false;
             }
 
-            if (!ok)
+            if (!ok && modelDatas.FilePath != null)
             {
                 ModelCatalog.m_Instance.AddMissingModel(
                     modelDatas);
@@ -1336,10 +1352,13 @@ namespace TiltBrush
         /// for creating the missing-model placeholder.
         public static async Task<bool> CreateModelsFromRelativePath(
             string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs,
-            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths, WidgetLink[] widgetLinks = null)
+            bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths,
+            ModelPlaybackState[] playbackStates = null, WidgetLink[] widgetLinks = null)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
-            Model model = ModelCatalog.m_Instance.GetModel(relativePath);
+            Model model = NativeImmImport.IsSketchReference(relativePath)
+                ? await NativeImmImport.GetSketchModelAsync()
+                : ModelCatalog.m_Instance.GetModel(relativePath);
             if (model == null) { return false; }
 
             if (!model.m_Valid)
@@ -1364,7 +1383,9 @@ namespace TiltBrush
                 {
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
-                    CreateModel(model, subtrees[i], xfs[i], pin, isNonRawTransform: true, groupId, 0, widgetLink: widgetLinks != null && i < widgetLinks.Length ? widgetLinks[i] : null);
+                    CreateModel(model, subtrees[i], xfs[i], pin, isNonRawTransform: true, groupId, 0,
+                        playbackState: playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null,
+                        widgetLink: widgetLinks != null && i < widgetLinks.Length ? widgetLinks[i] : null);
                 }
             }
             if (rawXfs != null)
@@ -1375,21 +1396,27 @@ namespace TiltBrush
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                     int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
-                    CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId, widgetLink: widgetLinks != null && i < widgetLinks.Length ? widgetLinks[i] : null);
+                    CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId,
+                        playbackState: playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null,
+                        widgetLink: widgetLinks != null && i < widgetLinks.Length ? widgetLinks[i] : null);
                 }
             }
             return true;
         }
 
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
-        static void CreateModel(Model model, string subtree, TrTransform xf, bool pin,
-                                bool isNonRawTransform, uint groupId, int layerId,
-                                string assetId = null, RuntimeVoxDocument editableDocument = null, WidgetLink widgetLink = null)
+        internal static ModelWidget CreateModel(Model model, string subtree, TrTransform xf, bool pin,
+                                bool isNonRawTransform, uint groupId, int layerId, string assetId = null,
+                                ModelPlaybackState playbackState = null, RuntimeVoxDocument editableDocument = null, WidgetLink widgetLink = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
+            var canvas = App.Scene.GetOrCreateLayer(layerId);
+            // Serialized transforms are local to their owning layer, not the active layer.
+            modelWidget.transform.SetParent(canvas.transform, worldPositionStays: false);
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
             modelWidget.m_Subtree = subtree;
+            if (playbackState != null) modelWidget.Playback.Restore(playbackState);
             modelWidget.Model = model;
             if (editableDocument != null)
             {
@@ -1419,21 +1446,28 @@ namespace TiltBrush
                 modelWidget.m_PolyCallbackActive = true;
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
-            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
+            modelWidget.SetCanvas(canvas);
             widgetLink?.Attach(modelWidget);
+            return modelWidget;
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
         static async Task<bool> CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
-                bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths, WidgetLink[] widgetLinks = null)
+                bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths,
+            ModelPlaybackState[] playbackStates = null, bool immModel = false, WidgetLink[] widgetLinks = null)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
+            if (immModel && (model == null || !model.m_Valid || !model.IsNativeImmModel))
+            {
+                model = await LoadImmAssetTemplate(assetId);
+            }
+
             if (model == null)
             {
                 // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
                 // as soon as the Icosa Asset Catalog loads it.
-                model = new Model(assetId, null);
+                model = new Model(assetId, null, nativeImmRequested: immModel);
                 model.ReleaseFromCatalog();
             }
             // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits.
@@ -1445,7 +1479,7 @@ namespace TiltBrush
                 Task t = model.LoadModelAsync();
                 await t;
             }
-            else if (!model.m_Valid)
+            else if (!model.m_Valid && !immModel)
             {
                 App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
             }
@@ -1468,15 +1502,33 @@ namespace TiltBrush
                 int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
                 string subtree = (subtrees != null && i < subtrees.Length) ? subtrees[i] : null;
                 CreateModel(model, subtree, rawXfs[i], pin, isNonRawTransform: false,
-                    groupId, layerId, assetId, widgetLink: widgetLinks != null && i < widgetLinks.Length ? widgetLinks[i] : null);
+                    groupId, layerId, assetId,
+                    playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null,
+                    widgetLink: widgetLinks != null && i < widgetLinks.Length ? widgetLinks[i] : null);
             }
             return true;
         }
 
+        private static async Task<Model> LoadImmAssetTemplate(string assetId)
+        {
+            Model loaded = null;
+            float started = Time.realtimeSinceStartup;
+            while (!App.IcosaAssetCatalog.RequestImmModel(assetId, model => loaded = model))
+            {
+                if (Time.realtimeSinceStartup - started > 120f) return null;
+                await Task.Yield();
+            }
+            while (loaded == null && App.IcosaAssetCatalog.IsLoadingImm(assetId))
+            {
+                if (Time.realtimeSinceStartup - started > 120f) return null;
+                await Task.Yield();
+            }
+            return loaded != null && loaded.m_Valid && loaded.IsNativeImmModel ? loaded : null;
+        }
+
         override public bool HasGPUIntersectionObject()
         {
-            return m_ModelInstance != null && !HasEmptyEditableVoxGrid &&
-                (m_Model == null || !m_Model.IsGsplatModel);
+            return m_ModelInstance != null && !HasEmptyEditableVoxGrid && (m_Model == null || (!m_Model.IsGsplatModel && !m_Model.IsNativeImmModel));
         }
 
         override public void SetGPUIntersectionObjectLayer(int layer)

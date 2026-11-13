@@ -28,6 +28,7 @@ namespace TiltBrush
             public ModelWidget modelWidget;
             public string subtree;
             public bool pinned;
+            public ModelPlaybackState playback;
             public bool tinted;
             public uint groupId;
             public int layerId;
@@ -131,6 +132,7 @@ namespace TiltBrush
                 newEntry.modelWidget = widget;
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
+                newEntry.playback = widget.GetComponent<ModelPlaybackController>()?.GetSaveState();
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
                 newEntry.widgetLink = links?.Get(widget);
                 newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
@@ -149,12 +151,16 @@ namespace TiltBrush
                     var val = new TiltModels75
                     {
                         Location = elem.Key,
+                        ImmSketch = NativeImmImport.IsSketchLocation(elem.Key),
+                        ImmModel = widgetGroup.Any(entry => entry.modelWidget.Model.IsNativeImmModel),
                         SplitMeshPaths = modelSplitsMap[elem.Key].m_SplitMeshPaths?.ToList(),
                         NotSplittableMeshPaths = modelSplitsMap[elem.Key].m_NotSplittableMeshPaths?.ToList(),
                     };
 
                     // Order and align the metadata.
                     WidgetMetadata[] ordered = widgetGroup.OrderBy(ByTranslation).ToArray();
+                    val.PlaybackStates = ordered.Any(entry => entry.playback != null)
+                        ? ordered.Select(entry => entry.playback).ToArray() : null;
                     val.WidgetLinks = ordered.Select(m => m.widgetLink).ToArray();
                     val.PinStates = new bool[ordered.Length];
                     val.Subtrees = new string[ordered.Length];
@@ -368,6 +374,7 @@ namespace TiltBrush
                     video.Paused = !widget.VideoController.Playing;
                     video.Time = widget.VideoController.Time;
                     video.Volume = widget.VideoController.Volume;
+                    video.Loop = widget.VideoController.Loop;
                 }
                 return video;
             }

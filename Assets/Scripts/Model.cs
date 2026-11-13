@@ -91,7 +91,8 @@ namespace TiltBrush
                     {
                         case Type.LocalFile:
                             string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
-                            if (System.IO.File.Exists(blocksPath))
+                            if (!path.StartsWith("../") && !path.StartsWith("..\\") &&
+                                System.IO.File.Exists(blocksPath))
                             {
                                 return blocksPath.Replace("\\", "/");
                             }
@@ -226,6 +227,7 @@ namespace TiltBrush
         private HashSet<string> m_AppliedMeshSplits;
 
         private Location m_Location;
+        private readonly bool m_NativeImmRequested;
 
         // Can the geometry in this model be exported.
         private bool m_AllowExport;
@@ -235,6 +237,7 @@ namespace TiltBrush
         // Store SVG scene info for SVG models (persists across instantiation)
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
 
+        public bool IsNativeImmModel => m_NativeImmRequested || m_Location.Extension == ".imm";
         public bool IsGsplatModel { get; private set; }
         private GsplatAsset m_OwnedGsplatAsset;
         // Models are catalog-cached and shared by widgets, so retain immutable source bytes here.
@@ -343,11 +346,40 @@ namespace TiltBrush
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
-        public Model(string assetId, string path)
+        public Model(string assetId, string path, bool nativeImmRequested = false)
         {
             m_Location = Location.IcosaAsset(assetId, path);
+            // A pending gallery model has no path yet, but must retain its requested representation.
+            m_NativeImmRequested = nativeImmRequested;
             Init();
         }
+
+        /// <summary>Creates a bounded template; each widget owns its native document separately.</summary>
+        public static Model CreateNativeImm(string assetId, string path, Bounds bounds)
+        {
+            var model = assetId == null ? new Model(path) : new Model(assetId, path);
+            model.CreateNativeImmPrefab(bounds);
+            return model;
+        }
+
+        internal void CreateNativeImmPrefab(Bounds bounds)
+        {
+            var size = bounds.size;
+            if (!IsFinite(bounds.center) || !IsFinite(size) ||
+                size.x < 0 || size.y < 0 || size.z < 0 || Mathf.Max(size.x, Mathf.Max(size.y, size.z)) <= Mathf.Epsilon)
+                throw new ArgumentException("IMM document has no usable bounds", nameof(bounds));
+
+            m_MeshBounds = bounds;
+            var root = new GameObject("Native IMM reference template");
+            root.SetActive(false);
+            if (!EndCreatePrefab(root, new List<string>()))
+                throw new InvalidOperationException("Could not create IMM reference template");
+        }
+
+        private static bool IsFinite(Vector3 value) =>
+            !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+            !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+            !float.IsNaN(value.z) && !float.IsInfinity(value.z);
 
         public Location GetLocation() { return m_Location; }
 
@@ -1113,6 +1145,11 @@ namespace TiltBrush
                     go = LoadUsd(warnings);
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
+                }
+                else if (ext == ".imm")
+                {
+                    if (!await NativeImmReference.LoadModelAsync(this))
+                        m_LoadError = new LoadError("Could not load IMM reference", m_Location.AbsolutePath);
                 }
                 else if (ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {

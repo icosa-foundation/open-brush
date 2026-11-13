@@ -4358,6 +4358,42 @@ MonoBehaviour:
     m_Localized: "\u68C0\u67E5\u4ECE A \u5230 B \u7684\u7BAD\u5934\u3002\u6309\u6273\u673A\u786E\u8BA4\uFF1B\u53E6\u4E00\u53EA\u63A7\u5236\u5668\u7684\u6273\u673A\u4EA4\u6362 A \u548C B\uFF1B\u53D6\u6D88\u4EE5\u9000\u51FA\u3002"
     m_Metadata:
       m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: "\u5E94\u7528\u66F4\u6539"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: "\u6E05\u9664\u672A\u4F7F\u7528\u7684\u989C\u8272"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: "\u989C\u8272\u6392\u5E8F"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: "\u65B0\u5EFA\u4F53\u7D20"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "\u5F00\u59CB\u4E00\u4E2A\u65B0\u7684\u7A7A\u4F53\u7D20\u6A21\u578B"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "\u5C06\u4F53\u7D20\u6A21\u578B\u5BF9\u9F50\u5230\u7F51\u683C"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "\u6839\u636E\u7F51\u683C\u8BBE\u7F6E\u5BF9\u9F50\u5F53\u524D\u6A21\u578B"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "\u9009\u62E9\u4F53\u7D20\u533A\u57DF"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "\u6309\u4F4F\u6273\u673A\u62D6\u52A8\u4EE5\u9009\u62E9\u4E00\u4E2A\u957F\u65B9\u4F53\u3002\u6293\u53D6\u65F6\u6309\u4E0B\u590D\u5236\u6309\u94AE\u53EF\u653E\u7F6E\u526F\u672C\u3002\u5728\u7A7A\u767D\u5904\u53CC\u51FB\u6273\u673A\u4EE5\u5B8C\u6210\u5E76\u6E05\u9664\u9009\u62E9\u3002"
+    m_Metadata:
+      m_Items: []
   - m_Id: 551461337584721920
     m_Localized: "\u87BA\u65CB\u5BF9\u79F0"
     m_Metadata:
@@ -4662,40 +4698,152 @@ MonoBehaviour:
     m_Localized: "\u7B80\u5355\u955C\u50CF\u6CA1\u6709\u989D\u5916\u8BBE\u7F6E\u3002\n\n\u9009\u62E9\u4E0A\u65B9\u7684\u6807\u7B7E\u9875\uFF0C\u5C1D\u8BD5\u91CD\u590D\u56FE\u6848\u3001\u65CB\u8F6C\u5BF9\u79F0\u7B49\u6548\u679C\u3002\n\n\u5728\u201C\u989C\u8272\u201D\u4E2D\u53EF\u4EE5\u8C03\u6574\u5404\u4E2A\u526F\u672C\u7684\u989C\u8272\u3002"
     m_Metadata:
       m_Items: []
-  - m_Id: 561984249517400064
-    m_Localized: "\u5E94\u7528\u66F4\u6539"
+  - m_Id: 82311120000000001
+    m_Localized: "上一章"
     m_Metadata:
       m_Items: []
-  - m_Id: 561984250834411520
-    m_Localized: "\u6E05\u9664\u672A\u4F7F\u7528\u7684\u989C\u8272"
+  - m_Id: 82311120000000002
+    m_Localized: "下一章"
     m_Metadata:
       m_Items: []
-  - m_Id: 561984250838605824
-    m_Localized: "\u989C\u8272\u6392\u5E8F"
+  - m_Id: 82311120000000003
+    m_Localized: "上一个视点"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936423649280
-    m_Localized: "\u65B0\u5EFA\u4F53\u7D20"
+  - m_Id: 82311120000000004
+    m_Localized: "下一个视点"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936520118272
-    m_Localized: "\u5F00\u59CB\u4E00\u4E2A\u65B0\u7684\u7A7A\u4F53\u7D20\u6A21\u578B"
+  - m_Id: 82311120000000005
+    m_Localized: "选择上一个视点"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936520118273
-    m_Localized: "\u5C06\u4F53\u7D20\u6A21\u578B\u5BF9\u9F50\u5230\u7F51\u683C"
+  - m_Id: 82311120000000006
+    m_Localized: "选择下一个视点"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936524312576
-    m_Localized: "\u6839\u636E\u7F51\u683C\u8BBE\u7F6E\u5BF9\u9F50\u5F53\u524D\u6A21\u578B"
+  - m_Id: 82311120000000007
+    m_Localized: "移动到所选视点"
     m_Metadata:
       m_Items: []
-  - m_Id: 560634138304536576
-    m_Localized: "\u9009\u62E9\u4F53\u7D20\u533A\u57DF"
+  - m_Id: 82311120000000008
+    m_Localized: "播放 / 继续 IMM"
     m_Metadata:
       m_Items: []
-  - m_Id: 560634138455531520
-    m_Localized: "\u6309\u4F4F\u6273\u673A\u62D6\u52A8\u4EE5\u9009\u62E9\u4E00\u4E2A\u957F\u65B9\u4F53\u3002\u6293\u53D6\u65F6\u6309\u4E0B\u590D\u5236\u6309\u94AE\u53EF\u653E\u7F6E\u526F\u672C\u3002\u5728\u7A7A\u767D\u5904\u53CC\u51FB\u6273\u673A\u4EE5\u5B8C\u6210\u5E76\u6E05\u9664\u9009\u62E9\u3002"
+  - m_Id: 82311120000000009
+    m_Localized: "暂停 IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Localized: "章节 {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "视点 {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "正在加载 IMM…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "正在切换章节…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "暂不支持原生 Quill 加载"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "循环"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "空间音效"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "设为可编辑"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "将当前帧转换为可编辑笔触"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "仅替换此 IMM。草图中的其他内容将保留。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "导入天空穹顶"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "导入 IMM 天空穹顶"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "使用当前 IMM 帧中可见的天空穹顶。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "无法将当前 IMM 帧转换为可编辑笔触。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "当前 IMM 帧中没有可见的天空穹顶。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "无法导入 IMM 天空穹顶。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "模型播放失败"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "原生 IMM 文档未完成加载。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "上一个原生草图未完成卸载。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "无法加载 IMM 参考模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "无法读取缓存的 IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "无法下载 IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "无法缓存 IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "无法缓存图库参考模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "无法加载图库参考模型"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "原生 IMM 加载超时。"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "视频播放失败"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "音频播放失败"
     m_Metadata:
       m_Items: []
   - m_Id: 563423505335017472

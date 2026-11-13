@@ -23,143 +23,231 @@ namespace TiltBrush
     [System.Serializable]
     public class ReferenceVideo
     {
-        /// The controller is used as a handle for controlling the video - videos stay instantiated as
-        /// long as there are controllers in existence that reference them. For this reason it is
-        /// important to Dispose() of controllers once they are no longer needed.
-        ///
-        /// Properties of videos that can change (playing state, volume, scrub position) are all accessed
-        /// through the Controller - properties of videos that are unchanging are accessed through the
-        /// ReferenceVideo.
+        /// A disposable playback instance. ReferenceVideo shares source metadata and the catalog
+        /// thumbnail; each controller owns its decoder, texture and mutable playback state.
         public class Controller : IDisposable
         {
             private Action m_OnVideoInitialized;
-            private ReferenceVideo m_ReferenceVideo;
+            private readonly ReferenceVideo m_ReferenceVideo;
+            private VideoPlayer m_VideoPlayer;
+            private IEnumerator<Null> m_Preparation;
             private bool m_VideoInitialized;
+            private bool m_Disposed;
+            private bool m_ErrorReported;
+            private bool m_Playing;
+            private bool m_Loop;
+            private float m_Volume;
+            private float m_Time;
+            private float? m_Position;
 
             public bool Initialized => m_VideoInitialized;
+            public string Error { get; private set; }
+            public bool IsLoading => !m_Disposed && !Initialized && Error == null;
+            internal bool IsDisposed => m_Disposed;
+            internal long Frame => m_VideoPlayer != null ? m_VideoPlayer.frame : -1;
 
-            /// Videos do not start playing immediately; this event is triggered when the video is ready.
-            /// However, as several controllers may point at the same video, if a controller is made to
-            /// point at an already playing video, when a user adds a value to OnVideoInitialized, the event
-            /// will be made to trigger immediately. The event is always cleared after triggering so this
-            /// will not cause OnVideoInitialized functions to be called more than once.
+            /// Late subscribers are notified immediately once this instance is ready.
             public event Action OnVideoInitialized
             {
                 add
                 {
+                    if (m_Disposed) return;
                     m_OnVideoInitialized += value;
-                    if (m_VideoInitialized)
-                    {
-                        OnInitialization();
-                    }
+                    if (Initialized) OnInitialization();
                 }
                 remove { m_OnVideoInitialized -= value; }
             }
 
-            private VideoPlayer VideoPlayer => m_ReferenceVideo.m_VideoPlayer;
+            public Texture VideoTexture => Initialized ? m_VideoPlayer.texture : null;
 
-            public Texture VideoTexture
-            {
-                get { return m_VideoInitialized ? VideoPlayer.texture : null; }
-            }
-
+            // These setters also retain requests made during preparation. A future shared-player
+            // optimization would detach here before changing transport/volume/loop, copying the shared
+            // position into a newly prepared player. No automatic sharing/rejoining is needed now.
             public bool Playing
             {
-                get => m_VideoInitialized ? VideoPlayer.isPlaying : false;
+                get => Initialized ? m_VideoPlayer.isPlaying : m_Playing;
                 set
                 {
-                    if (m_VideoInitialized)
-                    {
-                        if (VideoPlayer.isPlaying)
-                        {
-                            VideoPlayer.Pause();
-                        }
-                        else
-                        {
-                            VideoPlayer.Play();
-                        }
-                    }
+                    m_Playing = value;
+                    if (!Initialized || value == m_VideoPlayer.isPlaying) return;
+                    if (value) m_VideoPlayer.Play();
+                    else m_VideoPlayer.Pause();
+                }
+            }
+
+            public bool Loop
+            {
+                get => m_Loop;
+                set
+                {
+                    m_Loop = value;
+                    // Apply during preparation too, before the first frame can reach the end.
+                    if (m_VideoPlayer != null) m_VideoPlayer.isLooping = value;
                 }
             }
 
             public float Volume
             {
-                get => (!m_VideoInitialized || VideoPlayer.GetDirectAudioMute(0))
-                    ? 0f : VideoPlayer.GetDirectAudioVolume(0);
+                get => m_Volume;
                 set
                 {
-                    if (m_VideoInitialized)
+                    m_Volume = Mathf.Clamp01(value);
+                    if (!Initialized) return;
+                    for (ushort track = 0; track < m_VideoPlayer.audioTrackCount; ++track)
                     {
-                        if (value <= 0.005f)
-                        {
-                            VideoPlayer.SetDirectAudioVolume(0, 0f);
-                            VideoPlayer.SetDirectAudioMute(0, true);
-                        }
-                        else
-                        {
-                            VideoPlayer.SetDirectAudioMute(0, false);
-                            VideoPlayer.SetDirectAudioVolume(0, value);
-                        }
+                        m_VideoPlayer.SetDirectAudioVolume(track, m_Volume);
+                        m_VideoPlayer.SetDirectAudioMute(track, m_Volume <= 0.005f);
                     }
                 }
             }
 
             public float Position
             {
-                get => m_VideoInitialized ? (float)(VideoPlayer.time / VideoPlayer.length) : 0f;
+                get => Initialized && Length > 0 ? Time / Length : m_Position ?? 0f;
                 set
                 {
-                    if (m_VideoInitialized)
-                    {
-                        VideoPlayer.time = VideoPlayer.length * Mathf.Clamp01(value);
-                    }
+                    m_Position = Mathf.Clamp01(value);
+                    if (Initialized) Time = Length * m_Position.Value;
                 }
             }
 
             public float Time
             {
-                get => m_VideoInitialized ? (float)VideoPlayer.time : 0f;
+                get => Initialized ? (float)m_VideoPlayer.time : m_Time;
                 set
                 {
-                    if (m_VideoInitialized)
-                    {
-                        VideoPlayer.time = Mathf.Clamp(value, 0, (float)VideoPlayer.length);
-                    }
+                    m_Time = Mathf.Max(0, value);
+                    m_Position = null;
+                    if (Initialized) m_VideoPlayer.time = Mathf.Clamp(m_Time, 0, Length);
                 }
             }
 
-            public float Length => m_VideoInitialized ? (float)VideoPlayer.length : 0f;
+            public float Length => Initialized ? (float)m_VideoPlayer.length : 0f;
 
-            public Controller(ReferenceVideo referenceVideo)
+            public Controller(ReferenceVideo referenceVideo) : this(referenceVideo, true, 0, 0, true) { }
+
+            public Controller(Controller other) : this(other.m_ReferenceVideo,
+                other.Playing, other.Volume, other.Time, other.Loop)
+            { }
+
+            private Controller(ReferenceVideo referenceVideo, bool playing, float volume, float time,
+                bool loop)
             {
                 m_ReferenceVideo = referenceVideo;
-                if (m_ReferenceVideo.m_VideoPlayer != null)
-                {
-                    m_VideoInitialized = m_ReferenceVideo.m_VideoPlayer.isPrepared;
-                }
-            }
-
-            public Controller(Controller other)
-            {
-                m_ReferenceVideo = other.m_ReferenceVideo;
-                m_VideoInitialized = other.m_VideoInitialized;
-                m_ReferenceVideo.m_Controllers.Add(this);
+                m_Playing = playing;
+                m_Loop = loop;
+                m_Volume = volume;
+                m_Time = time;
+                // Cloned videos are uncommon. Independent ownership keeps video consistent with
+                // other media without asynchronous copy-on-change complexity. If sharing becomes
+                // worthwhile, acquire a shared playback session here and detach in the setters.
+                referenceVideo.m_Controllers.Add(this);
+                m_Preparation = PrepareVideoPlayer();
+                VideoCatalog.Instance.StartCoroutine(m_Preparation);
             }
 
             public void Dispose()
             {
-                if (m_ReferenceVideo != null)
-                {
-                    m_ReferenceVideo.OnControllerDisposed(this);
-                    m_ReferenceVideo = null;
-                }
+                if (m_Disposed) return;
+                m_Disposed = true;
+                m_OnVideoInitialized = null;
+                if (m_Preparation != null && VideoCatalog.Instance != null)
+                    VideoCatalog.Instance.StopCoroutine(m_Preparation);
+                m_Preparation = null;
+                ReleasePlayer();
+                m_ReferenceVideo.m_Controllers.Remove(this);
             }
 
-            public void OnInitialization()
+            private void ReleasePlayer()
             {
-                m_VideoInitialized = true;
-                m_OnVideoInitialized?.Invoke();
+                m_VideoInitialized = false;
+                if (m_VideoPlayer == null) return;
+                m_VideoPlayer.errorReceived -= OnError;
+                m_VideoPlayer.Stop();
+                UnityEngine.Object.Destroy(m_VideoPlayer.gameObject);
+                m_VideoPlayer = null;
+            }
+
+            private void OnInitialization()
+            {
+                var callback = m_OnVideoInitialized;
                 m_OnVideoInitialized = null;
+                callback?.Invoke();
+            }
+
+            internal void ReportErrorToUser()
+            {
+                if (m_Disposed || Error == null || m_ErrorReported) return;
+                m_ErrorReported = true;
+                // Only selected scene playback reports here. Catalog thumbnail controllers
+                // retain their errors for catalog feedback without opening the output window.
+                OutputWindowScript.Error(NativeImmStrings.Get("VIDEO_FAILED", "Video playback failed"), $"{m_ReferenceVideo.HumanName}: {Error}");
+            }
+
+            private void OnError(VideoPlayer player, string error)
+            {
+                if (m_Disposed) return;
+                Error = error;
+                Debug.LogWarning($"[OB_VIDEO_INSTANCE] {m_ReferenceVideo.HumanName}: {error}");
+                ReleasePlayer();
+            }
+
+            private IEnumerator<Null> PrepareVideoPlayer()
+            {
+                try
+                {
+                    var gobj = new GameObject(m_ReferenceVideo.HumanName);
+                    gobj.transform.SetParent(VideoCatalog.Instance.transform);
+                    m_VideoPlayer = gobj.AddComponent<VideoPlayer>();
+                    m_VideoPlayer.playOnAwake = false;
+                    m_VideoPlayer.url = m_ReferenceVideo.NetworkVideo
+                        ? System.IO.File.ReadAllText(m_ReferenceVideo.AbsolutePath)
+                        : m_ReferenceVideo.AbsolutePath;
+                    m_VideoPlayer.isLooping = m_Loop;
+                    m_VideoPlayer.renderMode = VideoRenderMode.APIOnly;
+                    m_VideoPlayer.skipOnDrop = true;
+                    m_VideoPlayer.audioOutputMode = VideoAudioOutputMode.Direct;
+                    m_VideoPlayer.errorReceived += OnError;
+                    m_VideoPlayer.Prepare();
+                }
+                catch (Exception ex)
+                {
+                    Error = ex.Message;
+                    Debug.LogWarning($"[OB_VIDEO_INSTANCE] {m_ReferenceVideo.HumanName}: {ex.Message}");
+                    ReleasePlayer();
+                    yield break;
+                }
+
+                try
+                {
+                    while (!m_Disposed && Error == null && !m_VideoPlayer.isPrepared)
+                        yield return null;
+                    if (m_Disposed || Error != null) yield break;
+
+                    m_ReferenceVideo.Width = m_VideoPlayer.width;
+                    m_ReferenceVideo.Height = m_VideoPlayer.height;
+                    m_ReferenceVideo.Aspect = m_ReferenceVideo.Width / (float)m_ReferenceVideo.Height;
+                    // Decode a first frame silently so paused restores also receive a valid texture.
+                    for (ushort track = 0; track < m_VideoPlayer.audioTrackCount; ++track)
+                        m_VideoPlayer.SetDirectAudioMute(track, true);
+                    m_VideoPlayer.Play();
+                    while (!m_Disposed && Error == null &&
+                        (m_VideoPlayer.texture == null || m_VideoPlayer.frame < 0))
+                        yield return null;
+                    if (m_Disposed || Error != null) yield break;
+
+                    m_VideoInitialized = true;
+                    Volume = m_Volume;
+                    float time = m_Position.HasValue ? Length * m_Position.Value : m_Time;
+                    if (time > 0) Time = time;
+                    Playing = m_Playing;
+                    OnInitialization();
+                }
+                finally
+                {
+                    m_Preparation = null;
+                    if (!Initialized) ReleasePlayer();
+                }
             }
         }
 
@@ -168,7 +256,6 @@ namespace TiltBrush
             return new ReferenceVideo();
         }
 
-        private VideoPlayer m_VideoPlayer;
         private HashSet<Controller> m_Controllers = new HashSet<Controller>();
 
         /// Persistent path is relative to the Tilt Brush/Media Library/Videos directory, if it is a
@@ -239,173 +326,49 @@ namespace TiltBrush
         /// to Dispose a controller after it is finished with. If disposal does not happen, then the
         /// video decoder will keep decoding, using up memory and bandwidth. If the audio is turned on
         /// then the audio will continue. DISPOSE OF YOUR CONTROLLERS.
-        public Controller CreateController()
-        {
-            Controller controller = new Controller(this);
-            bool alreadyPrepared = HasInstances;
-            m_Controllers.Add(controller);
-            if (!alreadyPrepared)
-            {
-                VideoCatalog.Instance.StartCoroutine(PrepareVideoPlayer(InitializeControllers));
-            }
-            return controller;
-        }
-
-        private void InitializeControllers()
-        {
-            foreach (var controller in m_Controllers)
-            {
-                controller.OnInitialization();
-            }
-        }
-
-        private void OnControllerDisposed(Controller controller)
-        {
-            m_Controllers.Remove(controller);
-            if (!HasInstances && m_VideoPlayer != null)
-            {
-                m_VideoPlayer.Stop();
-                UnityEngine.Object.Destroy(m_VideoPlayer.gameObject);
-                m_VideoPlayer = null;
-            }
-        }
-
-        public IEnumerator<Null> PrepareVideoPlayer(Action onCompletion)
-        {
-            Error = null;
-            var gobj = new GameObject(HumanName);
-            gobj.transform.SetParent(VideoCatalog.Instance.gameObject.transform);
-            try
-            {
-                m_VideoPlayer = gobj.AddComponent<VideoPlayer>();
-                m_VideoPlayer.playOnAwake = false;
-                if (NetworkVideo)
-                {
-                    if (System.IO.File.Exists(AbsolutePath))
-                    {
-                        m_VideoPlayer.url = System.IO.File.ReadAllText(AbsolutePath);
-                    }
-                }
-                else
-                {
-                    // AbsolutePath is the path this video was found at, which is not necessarily
-                    // VideoLibraryPath + PersistentPath. The network branch above already uses it.
-                    m_VideoPlayer.url = $"{AbsolutePath}";
-                }
-                m_VideoPlayer.isLooping = true;
-                m_VideoPlayer.renderMode = VideoRenderMode.APIOnly;
-                m_VideoPlayer.skipOnDrop = true;
-                m_VideoPlayer.audioOutputMode = VideoAudioOutputMode.Direct;
-                m_VideoPlayer.Prepare();
-                m_VideoPlayer.errorReceived += OnError;
-            }
-            catch (Exception ex)
-            {
-                Debug.LogException(ex);
-                Error = ex.Message;
-                yield break;
-            }
-
-            while (!m_VideoPlayer.isPrepared)
-            {
-                if (Error != null)
-                {
-                    yield break;
-                }
-                yield return null;
-            }
-
-            // This code is *super* useful for testing the reference video panel, and I've written it at
-            // least five times, so I'd like to just leave it here as it may well be useful in the future.
-#if false
-    // Delays the video load by two seconds
-    for (var wait = DateTime.Now + TimeSpan.FromSeconds(2); wait > DateTime.Now;) {
-      yield return null;
-    }
-#endif
-
-            Width = m_VideoPlayer.width;
-            Height = m_VideoPlayer.height;
-            Aspect = Width / (float)Height;
-
-            for (int i = 0; i < m_VideoPlayer.audioTrackCount; ++i)
-            {
-                m_VideoPlayer.SetDirectAudioMute((ushort)i, true);
-            }
-
-            m_VideoPlayer.Play();
-
-            if (onCompletion != null)
-            {
-                onCompletion();
-            }
-        }
-
-        private void OnError(VideoPlayer player, string error)
-        {
-            Error = error;
-        }
+        public Controller CreateController() => new Controller(this);
 
         public IEnumerator<Null> Initialize()
         {
-            Controller thumbnailExtractor = CreateController();
-            while (!thumbnailExtractor.Initialized)
+            Error = null;
+            // Thumbnail extraction owns a temporary player; it must never seek or stop a widget.
+            using (Controller thumbnailExtractor = CreateController())
             {
-                if (Error != null)
+                while (!thumbnailExtractor.Initialized || thumbnailExtractor.Frame < 1)
                 {
-                    thumbnailExtractor.Dispose();
-                    yield break;
+                    if (thumbnailExtractor.IsDisposed) yield break;
+                    if (thumbnailExtractor.Error != null)
+                    {
+                        Error = thumbnailExtractor.Error;
+                        yield break;
+                    }
+                    yield return null;
                 }
-                yield return null;
+                int width = Aspect > 1 ? 128 : Mathf.RoundToInt(128 * Aspect);
+                int height = Aspect > 1 ? Mathf.RoundToInt(128 / Aspect) : 128;
+                var rt = RenderTexture.GetTemporary(width, height, 0);
+                var oldActive = RenderTexture.active;
+                try
+                {
+                    Graphics.Blit(thumbnailExtractor.VideoTexture, rt);
+                    Thumbnail = new Texture2D(width, height, TextureFormat.RGB24, false);
+                    RenderTexture.active = rt;
+                    Thumbnail.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                    Thumbnail.Apply(false);
+                }
+                finally
+                {
+                    RenderTexture.active = oldActive;
+                    RenderTexture.ReleaseTemporary(rt);
+                }
+                IsInitialized = true;
             }
-            int width, height;
-            if (Aspect > 1)
-            {
-                width = 128;
-                height = Mathf.RoundToInt(width / Aspect);
-            }
-            else
-            {
-                height = 128;
-                width = Mathf.RoundToInt(height * Aspect);
-            }
-            // A frame does not always seem to be immediately available, so wait until we've hit at least
-            // the second frame before continuing.
-            while (m_VideoPlayer.frame < 1)
-            {
-                yield return null;
-            }
-            // Because the Thumbnail needs to be a Texture2D, we need to do the little dance of copying
-            // the rendertexture over to the Texture2D.
-            var rt = RenderTexture.GetTemporary(width, height, 0);
-            Graphics.Blit(m_VideoPlayer.texture, rt);
-            Thumbnail = new Texture2D(width, height, TextureFormat.RGB24, false);
-            var oldActive = RenderTexture.active;
-            RenderTexture.active = rt;
-            Thumbnail.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-            RenderTexture.active = oldActive;
-            Thumbnail.Apply(false);
-            RenderTexture.ReleaseTemporary(rt);
-            thumbnailExtractor.Dispose();
-            IsInitialized = true;
         }
 
         public void Dispose()
         {
-            if (m_VideoPlayer != null)
-            {
-                Debug.Assert(m_Controllers.Count > 0,
-                    "There should be controllers if the VideoPlayer is not null.");
-                foreach (var controller in m_Controllers.ToArray())
-                {
-                    // Controller.Dispose handles removing itself from m_Controllers, so we don't do it here.
-                    controller.Dispose();
-                }
-            }
-            if (Thumbnail != null)
-            {
-                UnityEngine.Object.Destroy(Thumbnail);
-            }
+            foreach (var controller in m_Controllers.ToArray()) controller.Dispose();
+            if (Thumbnail != null) UnityEngine.Object.Destroy(Thumbnail);
         }
 
         public override string ToString()

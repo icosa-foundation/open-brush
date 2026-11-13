@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ namespace TiltBrush
         public event Action<ModelWidget> ModelWidgetGrabbed;
         public event Action<VideoWidget> VideoWidgetActivated;
         public event Action<SoundClipWidget> SoundClipWidgetActivated;
+        public event Action<ModelWidget> ModelWidgetActivated;
         public event Action VideoRecordingStopped;
 
         public void TriggerAdvancedPanelsChanged()
@@ -136,6 +137,11 @@ namespace TiltBrush
         public void TriggerVideoWidgetActivated(VideoWidget widget)
         {
             VideoWidgetActivated?.Invoke(widget);
+        }
+
+        public void TriggerModelWidgetActivated(ModelWidget widget)
+        {
+            ModelWidgetActivated?.Invoke(widget);
         }
 
         public void TriggerModelWidgetGrabbed(ModelWidget widget)

@@ -61,11 +61,19 @@ namespace TiltBrush
 
         public SoundClip.SoundClipController SoundClipController { get; private set; }
 
-        /// Set audio properties that will be applied once the controller is initialized.
-        /// Call after SetSoundClip.
+        /// Set audio properties before or after SetSoundClip, including while audio is loading.
         public void SetAudioProperties(float volume, bool loop = true,
             float spatialBlend = 0f, float minDistance = 1f, float maxDistance = 500f)
         {
+            if (SoundClipController != null)
+            {
+                SoundClipController.Volume = volume;
+                SoundClipController.Loop = loop;
+                SoundClipController.SpatialBlend = spatialBlend;
+                SoundClipController.MinDistance = minDistance;
+                SoundClipController.MaxDistance = maxDistance;
+                return;
+            }
             m_InitialState = new SoundClipState
             {
                 Volume = volume,
@@ -106,8 +114,7 @@ namespace TiltBrush
             // store off the sound clip state so that if the widget gets shown again it will reset to that.
             if (SoundClipController != null)
             {
-                // Reads through to m_InitialState if the controller hasn't finished loading yet,
-                // so hiding mid-load doesn't replace pending state with uninitialized defaults.
+                // Pending edits are already on the controller, even before its clip is ready.
                 var state = GetAudioSaveState();
                 m_InitialState = new SoundClipState
                 {
@@ -139,40 +146,26 @@ namespace TiltBrush
             {
                 return;
             }
-            if (SoundClipController == null)
-            {
-                SoundClipController = m_SoundClip.CreateController(this);
+            SoundClipController = m_SoundClip.CreateController(this, ApplyInitialState);
+            SoundClipController.OnSoundClipInitialized += OnSoundClipInitialized;
+        }
 
-                //SoundClipController.m_SoundClipAudioSource.Play();
-                SoundClipController.OnSoundClipInitialized += OnSoundClipInitialized;
-            }
-            else
-            {
-                // If instances of the sound clip already exist, don't override with new state.
-                m_InitialState = null;
-            }
+        private void ApplyInitialState(SoundClip.SoundClipController controller)
+        {
+            if (m_InitialState == null) return;
+            controller.Volume = m_InitialState.Volume;
+            controller.Loop = m_InitialState.Loop;
+            controller.SpatialBlend = m_InitialState.SpatialBlend;
+            controller.MinDistance = m_InitialState.MinDistance;
+            controller.MaxDistance = m_InitialState.MaxDistance;
+            if (m_InitialState.Time.HasValue) controller.Time = m_InitialState.Time.Value;
+            controller.Playing = !m_InitialState.Paused;
+            m_InitialState = null;
         }
 
         private void OnSoundClipInitialized()
         {
             UpdateScale();
-            if (m_InitialState != null)
-            {
-                SoundClipController.Volume = m_InitialState.Volume;
-                SoundClipController.Loop = m_InitialState.Loop;
-                SoundClipController.SpatialBlend = m_InitialState.SpatialBlend;
-                SoundClipController.MinDistance = m_InitialState.MinDistance;
-                SoundClipController.MaxDistance = m_InitialState.MaxDistance;
-                if (m_InitialState.Time.HasValue)
-                {
-                    SoundClipController.Time = m_InitialState.Time.Value;
-                }
-                if (m_InitialState.Paused)
-                {
-                    SoundClipController.Playing = false;
-                }
-                m_InitialState = null;
-            }
             UpdateDistanceVisualization();
         }
 
@@ -265,7 +258,6 @@ namespace TiltBrush
                 ControllerConsoleScript.m_Instance.AddNewLine(
                     $"Could not find sound clip {App.SoundClipLibraryPath()}\\{tiltSoundClip.FilePath}.");
             }
-            soundClipWidget.SetSoundClip(soundClip);
             soundClipWidget.m_InitialState = new SoundClipState
             {
                 Volume = tiltSoundClip.Volume,
@@ -279,6 +271,7 @@ namespace TiltBrush
             {
                 soundClipWidget.m_InitialState.Time = tiltSoundClip.Time;
             }
+            soundClipWidget.SetSoundClip(soundClip);
             soundClipWidget.SetSignedWidgetSize(tiltSoundClip.Transform.scale);
             soundClipWidget.Show(bShow: true, bPlayAudio: false);
             soundClipWidget.transform.localPosition = tiltSoundClip.Transform.translation;
@@ -305,13 +298,17 @@ namespace TiltBrush
             clone.m_PreviousCanvas = m_PreviousCanvas;
             clone.m_LoadingFromSketch = true; // prevents intro animation
             clone.transform.parent = transform.parent;
-            var audioSettings = GetAudioExportSettings();
-            clone.SetAudioProperties(
-                audioSettings.volume,
-                audioSettings.loop,
-                audioSettings.spatialBlend,
-                audioSettings.minDistance,
-                audioSettings.maxDistance);
+            var state = GetAudioSaveState();
+            clone.m_InitialState = new SoundClipState
+            {
+                Paused = state.paused,
+                Time = state.time,
+                Volume = state.volume,
+                Loop = state.loop,
+                SpatialBlend = state.spatialBlend,
+                MinDistance = state.minDistance,
+                MaxDistance = state.maxDistance,
+            };
             clone.SetSoundClip(m_SoundClip);
             clone.SetSignedWidgetSize(size);
             clone.Show(bShow: true, bPlayAudio: false);
@@ -480,8 +477,7 @@ namespace TiltBrush
             return Path.GetFileNameWithoutExtension(m_SoundClip.AbsolutePath);
         }
 
-        /// Returns audio settings for GLTF export, reading from the controller when initialized
-        /// and falling back to m_InitialState or defaults otherwise.
+        /// Returns audio settings for GLTF export, including pending controller edits.
         public (bool paused, float volume, bool loop, float spatialBlend,
             float minDistance, float maxDistance) GetAudioExportSettings()
         {
@@ -495,7 +491,7 @@ namespace TiltBrush
         public (bool paused, float time, float volume, bool loop, float spatialBlend,
             float minDistance, float maxDistance) GetAudioSaveState()
         {
-            if (SoundClipController != null && SoundClipController.Initialized)
+            if (SoundClipController != null)
             {
                 return (!SoundClipController.Playing, SoundClipController.Time,
                     SoundClipController.Volume, SoundClipController.Loop,

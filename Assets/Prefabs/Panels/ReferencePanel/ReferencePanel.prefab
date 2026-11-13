@@ -2149,6 +2149,10 @@ PrefabInstance:
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'
       value: 1801810542
       objectReference: {fileID: 0}
+    - target: {fileID: 5838607888599009430, guid: bc59f933f07268642a3319d424409949, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8695216695422032127, guid: bc59f933f07268642a3319d424409949, type: 3}
       propertyPath: m_Name
       value: ReferencePanelTabSoundClip
@@ -2859,10 +2863,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 5575169286801542507}
     m_Modifications:
-    - target: {fileID: 3233423317671272088, guid: 9114a4ea00369d34a80dabcbe3517d85, type: 3}
-      propertyPath: m_RootOrder
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 3233423317671272088, guid: 9114a4ea00369d34a80dabcbe3517d85, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
