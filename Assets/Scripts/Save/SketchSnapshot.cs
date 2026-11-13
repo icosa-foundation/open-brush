@@ -106,6 +106,7 @@ namespace TiltBrush
                 (System.Diagnostics.Stopwatch.Frequency * kNanoSecondsPerSnapshotSlice) / 1000000;
 
             var selection = SelectionManager.m_Instance;
+            bool wasRemovingFromSelection = selection.ShouldRemoveFromSelection();
             var selectedStrokes = selection.SelectedStrokes.ToList();
             var selectedWidgets = selection.SelectedWidgets.ToList();
             var deselectCommand = selection.HasSelection ? selection.CreateEndSelectionCommand() : null;
@@ -114,7 +115,6 @@ namespace TiltBrush
                 if (deselectCommand != null)
                 {
                     deselectCommand.Redo();
-                    App.Scene.MainCanvas.gameObject.SetActive(true);
                 }
                 IEnumerable<Stroke> strokes = m_SelectedOnly
                     ? selectedStrokes.Concat(SymmetryPeerEditing.PeersOutside(selectedStrokes)).ToList()
@@ -147,6 +147,11 @@ namespace TiltBrush
                 // Reverse the temporary bake, including peer movement and selection join baselines,
                 // without adding a command to undo history, even if capture fails or is disposed.
                 deselectCommand?.Undo();
+                if (deselectCommand != null &&
+                    selection.ShouldRemoveFromSelection() != wasRemovingFromSelection)
+                {
+                    selection.RemoveFromSelection(wasRemovingFromSelection);
+                }
             }
         }
 
