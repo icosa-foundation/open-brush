@@ -36,7 +36,7 @@ namespace TiltBrush
             }
             else
             {
-                SceneSettings.m_Instance.SkyboxChanged += OnColorChanged;
+                SceneSettings.m_Instance.SkyGradientChanged += OnColorChanged;
             }
         }
 
@@ -49,7 +49,7 @@ namespace TiltBrush
             }
             else
             {
-                SceneSettings.m_Instance.SkyboxChanged -= OnColorChanged;
+                SceneSettings.m_Instance.SkyGradientChanged -= OnColorChanged;
             }
         }
 

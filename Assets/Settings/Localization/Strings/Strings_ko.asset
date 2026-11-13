@@ -4706,6 +4706,22 @@ MonoBehaviour:
     m_Localized: "\uCD94\uAC00 \uBBF8\uB9AC \uBCF4\uAE30 \uAC00\uC774\uB4DC \uC228\uAE30\uAE30"
     m_Metadata:
       m_Items: []
+  - m_Id: 177558531188809728
+    m_Localized: "패스스루:"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989628385124352
+    m_Localized: "스카이박스"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989815199424512
+    m_Localized: "그라데이션"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989991964172288
+    m_Localized: "패스스루"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

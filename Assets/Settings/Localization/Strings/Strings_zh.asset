@@ -4706,6 +4706,22 @@ MonoBehaviour:
     m_Localized: "\u9690\u85CF\u989D\u5916\u9884\u89C8\u8F85\u52A9\u7EBF"
     m_Metadata:
       m_Items: []
+  - m_Id: 177558531188809728
+    m_Localized: "透视："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989628385124352
+    m_Localized: "天空盒"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989815199424512
+    m_Localized: "渐变"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989991964172288
+    m_Localized: "透视"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

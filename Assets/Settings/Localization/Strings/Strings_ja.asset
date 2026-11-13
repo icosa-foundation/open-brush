@@ -4706,6 +4706,22 @@ MonoBehaviour:
     m_Localized: "\u8FFD\u52A0\u306E\u30D7\u30EC\u30D3\u30E5\u30FC\u30AC\u30A4\u30C9\u3092\u975E\u8868\u793A"
     m_Metadata:
       m_Items: []
+  - m_Id: 177558531188809728
+    m_Localized: "パススルー："
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989628385124352
+    m_Localized: "スカイボックス"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989815199424512
+    m_Localized: "グラデーション"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 177989991964172288
+    m_Localized: "パススルー"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
