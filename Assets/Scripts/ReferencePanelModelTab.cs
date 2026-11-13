@@ -256,7 +256,7 @@ namespace TiltBrush
             var native = widget.GetComponentInChildren<NativeImmReference>();
             if (native == null) return;
             m_ConvertingImm = true;
-            RefreshModelControls();
+            if (m_ConvertToEditable != null) m_ConvertToEditable.SetButtonAvailable(false);
             // The overlay owns the coroutine so closing the media panel cannot
             // interrupt its fade or leave the conversion's busy state behind.
             OverlayManager.m_Instance.StartCoroutine(ConvertImmInCompositor(widget, native.SourcePath));
