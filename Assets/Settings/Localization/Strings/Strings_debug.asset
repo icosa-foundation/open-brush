@@ -1090,6 +1090,248 @@ MonoBehaviour:
     m_Localized: 
     m_Metadata:
       m_Items: []
+  - m_Id: 563821227493908486
+    m_Localized: '[Too many pointers]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908487
+    m_Localized: '[Cells]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011310442315776
+    m_Localized: '[Cells X]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 129011387676229632
+    m_Localized: '[Cells Y]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522567
+    m_Localized: '[Cells X]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522568
+    m_Localized: '[Cells Y]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522569
+    m_Localized: '[Cells Z]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522574
+    m_Localized: '[Steps]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522560
+    m_Localized: '[Total pointers]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672029597696
+    m_Localized: '[Screw]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260992
+    m_Localized: '[Roto-reflection]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260993
+    m_Localized: '[Horizontal mirror]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260994
+    m_Localized: '[Half-step horizontal mirror]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260995
+    m_Localized: '[Screw + half-turns]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260996
+    m_Localized: '[Vertical mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260997
+    m_Localized: '[Glide]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260998
+    m_Localized: '[Half-step vertical mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260999
+    m_Localized: '[Diagonal mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261000
+    m_Localized: '[Glide + roto-reflection]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261001
+    m_Localized: '[Full mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261002
+    m_Localized: '[Glide + horizontal mirror]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261003
+    m_Localized: '[Half-step full mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261004
+    m_Localized: '[Translation]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261005
+    m_Localized: '[Inversion pairs]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261006
+    m_Localized: '[Twofold rotation]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261007
+    m_Localized: '[Half-turn screw]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455296
+    m_Localized: '[Mirror planes]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455297
+    m_Localized: '[Glide planes]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455298
+    m_Localized: '[Screw + glide]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455299
+    m_Localized: '[Three twofold axes]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455300
+    m_Localized: '[Three screw axes]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455301
+    m_Localized: '[Crossed mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455302
+    m_Localized: '[Full mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455303
+    m_Localized: '[Face-centered mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455304
+    m_Localized: '[Body-centered mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455305
+    m_Localized: '[Fourfold rotation]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455306
+    m_Localized: '[Quarter-turn screw]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455307
+    m_Localized: '[Half-cell screw]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455308
+    m_Localized: '[Fourfold vertical mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455309
+    m_Localized: '[Fourfold full mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455310
+    m_Localized: '[Threefold rotation]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455311
+    m_Localized: '[One-third screw]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455312
+    m_Localized: '[Two-thirds screw]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455313
+    m_Localized: '[Threefold mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455314
+    m_Localized: '[Rhombohedral mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455315
+    m_Localized: '[Sixfold rotation]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455316
+    m_Localized: '[One-sixth screw]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455317
+    m_Localized: '[Five-sixths screw]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455318
+    m_Localized: '[Half-cell screw]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455319
+    m_Localized: '[Sixfold vertical mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455320
+    m_Localized: '[Sixfold screw mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455321
+    m_Localized: '[Tetrahedral rotations]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455322
+    m_Localized: '[Tetrahedral screws]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455323
+    m_Localized: '[Tetrahedral inversion]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455324
+    m_Localized: '[Cubic rotations]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455325
+    m_Localized: '[Cubic mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455326
+    m_Localized: '[Face-centered cubic mirrors]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830014894080
+    m_Localized: '[Explore symmetry]'
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830023282688
+    m_Localized: '[Simple mirror has no extra settings.
+
+
+      Choose a tab above to try repeating patterns, rotational symmetry and more.
+
+
+      Colors lets you vary the copies.]'
+    m_Metadata:
+      m_Items: []
   - m_Id: 82311120000000001
     m_Localized: "[PREVIOUS_CHAPTER] Previous Chapter"
     m_Metadata:

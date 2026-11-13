@@ -3899,6 +3899,310 @@ MonoBehaviour:
     m_Key: VOX_PALETTE_USE_BRUSH_COLOR
     m_Metadata:
       m_Items: []
+  - m_Id: 551461337584721920
+    m_Key: MULTIMIRROR_PANEL_HELICAL_SYMMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522560
+    m_Key: MULTIMIRROR_PANEL_HELICAL_COPIES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522561
+    m_Key: MULTIMIRROR_PANEL_HELICAL_ANGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522562
+    m_Key: MULTIMIRROR_PANEL_HELICAL_ADVANCE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522563
+    m_Key: MULTIMIRROR_PANEL_SPACE_GROUPS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522564
+    m_Key: MULTIMIRROR_PANEL_SPACE_CRYSTAL_SYSTEM
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522565
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522566
+    m_Key: MULTIMIRROR_PANEL_SPACE_NUMBER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522567
+    m_Key: MULTIMIRROR_PANEL_SPACE_REPEATS_X
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522568
+    m_Key: MULTIMIRROR_PANEL_SPACE_REPEATS_Y
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522569
+    m_Key: MULTIMIRROR_PANEL_SPACE_REPEATS_Z
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522570
+    m_Key: MULTIMIRROR_PANEL_SPACE_CELL_SIZE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522571
+    m_Key: MULTIMIRROR_PANEL_LINE_GROUPS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522572
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522573
+    m_Key: MULTIMIRROR_PANEL_LINE_ORDER
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522574
+    m_Key: MULTIMIRROR_PANEL_LINE_REPEATS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522575
+    m_Key: MULTIMIRROR_PANEL_LINE_ADVANCE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522576
+    m_Key: MULTIMIRROR_PANEL_LINE_ANGLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522577
+    m_Key: MULTIMIRROR_PANEL_PENROSE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522578
+    m_Key: MULTIMIRROR_PANEL_PENROSE_TILES
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522579
+    m_Key: MULTIMIRROR_PANEL_PENROSE_SUBDIVISIONS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 551461337731522580
+    m_Key: MULTIMIRROR_PANEL_PENROSE_RADIUS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553016172624830464
+    m_Key: MULTIMIRROR_PANEL_SIMPLE_SYMMETRY
+    m_Metadata:
+      m_Items: []
+  - m_Id: 553297782469386240
+    m_Key: UI_LONG_PRESS_MORE_OPTIONS_HINT
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908486
+    m_Key: MULTIMIRROR_PANEL_TOO_MANY_POINTERS
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563821227493908487
+    m_Key: MULTIMIRROR_PANEL_CELLS_LABEL
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672029597696
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260992
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260993
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260994
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_4
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260995
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_5
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260996
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_6
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260997
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_7
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260998
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_8
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130260999
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_9
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261000
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_10
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261001
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_11
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261002
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_12
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261003
+    m_Key: MULTIMIRROR_PANEL_LINE_FAMILY_13
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261004
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_1
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261005
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_2
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261006
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_3
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672130261007
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_4
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455296
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_6
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455297
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_7
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455298
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_14
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455299
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_16
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455300
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_19
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455301
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_25
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455302
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_47
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455303
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_69
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455304
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_71
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455305
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_75
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455306
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_76
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455307
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_77
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455308
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_99
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455309
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_123
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455310
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_143
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455311
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_144
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455312
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_145
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455313
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_156
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455314
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_166
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455315
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_168
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455316
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_169
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455317
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_170
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455318
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_173
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455319
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_183
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455320
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_194
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455321
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_195
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455322
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_198
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455323
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_200
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455324
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_207
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455325
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_221
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563896672134455326
+    m_Key: MULTIMIRROR_PANEL_SPACE_PRESET_225
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830014894080
+    m_Key: MULTIMIRROR_PANEL_SIMPLE_HELP_TITLE
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563907830023282688
+    m_Key: MULTIMIRROR_PANEL_SIMPLE_HELP_BODY
+    m_Metadata:
+      m_Items: []
   - m_Id: 82311120000000001
     m_Key: NATIVE_IMM_PREVIOUS_CHAPTER
     m_Metadata:
@@ -4045,6 +4349,10 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 82311120000000037
     m_Key: NATIVE_IMM_SOUND_FAILED
+    m_Metadata:
+      m_Items: []
+  - m_Id: 564570892417982464
+    m_Key: MULTIMIRROR_PANEL_HIDE_EXTRA_PREVIEWS
     m_Metadata:
       m_Items: []
   m_Metadata:

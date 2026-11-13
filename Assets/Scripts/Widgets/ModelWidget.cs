@@ -1212,7 +1212,7 @@ namespace TiltBrush
         /// I believe (but am not sure) that Media Library content loads synchronously,
         /// and PAC content loads asynchronously.
         public static async Task CreateModelFromSaveData(
-            TiltModels75 modelDatas, SceneFileInfo fileInfo)
+            TiltModels75 modelDatas, SceneFileInfo fileInfo = null)
         {
             Debug.AssertFormat(modelDatas.AssetId == null || modelDatas.FilePath == null,
                 "Model Data should not have an AssetID *and* a File Path");
@@ -1237,7 +1237,7 @@ namespace TiltBrush
                     modelDatas.LayerIds,
                     modelDatas.SplitMeshPaths,
                     modelDatas.NotSplittableMeshPaths,
-                    modelDatas.PlaybackStates
+                    modelDatas.PlaybackStates, modelDatas.WidgetLinks
                 );
                 ok = await okTask;
 
@@ -1254,7 +1254,7 @@ namespace TiltBrush
                     modelDatas.SplitMeshPaths,
                     modelDatas.NotSplittableMeshPaths,
                     modelDatas.PlaybackStates,
-                    modelDatas.ImmModel
+                    modelDatas.ImmModel, modelDatas.WidgetLinks
                 );
             }
             else
@@ -1266,12 +1266,12 @@ namespace TiltBrush
             if (!ok && modelDatas.FilePath != null)
             {
                 ModelCatalog.m_Instance.AddMissingModel(
-                    modelDatas.FilePath, modelDatas.Transforms, modelDatas.RawTransforms);
+                    modelDatas);
             }
         }
 
         private static bool CreateEmbeddedVoxWidgetsFromSaveData(
-            TiltModels75 modelDatas, SceneFileInfo fileInfo)
+            TiltModels75 modelDatas, SceneFileInfo fileInfo = null)
         {
             TrTransform[] transforms = modelDatas.RawTransforms;
             string[] paths = modelDatas.EditableVoxPaths;
@@ -1327,7 +1327,9 @@ namespace TiltBrush
                         ? modelDatas.Subtrees[i] : null;
                     CreateModel(models[i], subtree, transforms[i], pin,
                         isNonRawTransform: false, groupId, layerId,
-                        editableDocument: documents[i]);
+                        editableDocument: documents[i],
+                        widgetLink: modelDatas.WidgetLinks != null && i < modelDatas.WidgetLinks.Length
+                            ? modelDatas.WidgetLinks[i] : null);
                 }
                 return true;
             }
@@ -1351,7 +1353,7 @@ namespace TiltBrush
         public static async Task<bool> CreateModelsFromRelativePath(
             string relativePath, string[] subtrees, TrTransform[] xfs, TrTransform[] rawXfs,
             bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths,
-            ModelPlaybackState[] playbackStates = null)
+            ModelPlaybackState[] playbackStates = null, WidgetLink[] widgetLinks = null)
         {
             // Verify model is loaded.  Or, at least, has been tried to be loaded.
             Model model = NativeImmImport.IsSketchReference(relativePath)
@@ -1382,7 +1384,8 @@ namespace TiltBrush
                     bool pin = (pinStates != null && i < pinStates.Length) ? pinStates[i] : true;
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                     CreateModel(model, subtrees[i], xfs[i], pin, isNonRawTransform: true, groupId, 0,
-                        playbackState: playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null);
+                        playbackState: playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null,
+                        widgetLink: widgetLinks != null && i < widgetLinks.Length ? widgetLinks[i] : null);
                 }
             }
             if (rawXfs != null)
@@ -1394,7 +1397,8 @@ namespace TiltBrush
                     uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                     int layerId = (layerIds != null && i < layerIds.Length) ? layerIds[i] : 0;
                     CreateModel(model, subtrees[i], rawXfs[i], pin, isNonRawTransform: false, groupId, layerId,
-                        playbackState: playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null);
+                        playbackState: playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null,
+                        widgetLink: widgetLinks != null && i < widgetLinks.Length ? widgetLinks[i] : null);
                 }
             }
             return true;
@@ -1403,7 +1407,7 @@ namespace TiltBrush
         /// isNonRawTransform - true if the transform uses the pre-M13 meaning of transform.scale.
         internal static ModelWidget CreateModel(Model model, string subtree, TrTransform xf, bool pin,
                                 bool isNonRawTransform, uint groupId, int layerId, string assetId = null,
-                                ModelPlaybackState playbackState = null, RuntimeVoxDocument editableDocument = null)
+                                ModelPlaybackState playbackState = null, RuntimeVoxDocument editableDocument = null, WidgetLink widgetLink = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
             var canvas = App.Scene.GetOrCreateLayer(layerId);
@@ -1443,13 +1447,14 @@ namespace TiltBrush
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
             modelWidget.SetCanvas(canvas);
+            widgetLink?.Attach(modelWidget);
             return modelWidget;
         }
 
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
         static async Task<bool> CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
                 bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths,
-            ModelPlaybackState[] playbackStates = null, bool immModel = false)
+            ModelPlaybackState[] playbackStates = null, bool immModel = false, WidgetLink[] widgetLinks = null)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
             Model model = App.IcosaAssetCatalog.GetModel(assetId);
@@ -1498,7 +1503,8 @@ namespace TiltBrush
                 string subtree = (subtrees != null && i < subtrees.Length) ? subtrees[i] : null;
                 CreateModel(model, subtree, rawXfs[i], pin, isNonRawTransform: false,
                     groupId, layerId, assetId,
-                    playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null);
+                    playbackStates != null && i < playbackStates.Length ? playbackStates[i] : null,
+                    widgetLink: widgetLinks != null && i < widgetLinks.Length ? widgetLinks[i] : null);
             }
             return true;
         }

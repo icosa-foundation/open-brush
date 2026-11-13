@@ -82,10 +82,8 @@ namespace TiltBrush
             {
                 if (SelectedVideo != null)
                 {
-                    bool previous = SelectedVideo.Playing;
-                    SelectedVideo.Playing = value;
-                    if (SelectedVideo.Playing != previous)
-                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+                    WidgetPropertyCommand.Set(m_SelectedVideoWidget, "VideoPlaying", value,
+                        w => w.VideoController.Playing, (w, v) => { if (w.VideoController.Playing != v) { w.VideoController.Playing = v; } });
                 }
             }
         }
@@ -103,10 +101,8 @@ namespace TiltBrush
             {
                 if (SelectedVideo != null)
                 {
-                    float previous = SelectedVideo.Volume;
-                    SelectedVideo.Volume = value;
-                    if (SelectedVideo.Volume != previous)
-                        SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+                    WidgetPropertyCommand.Set(m_SelectedVideoWidget, "VideoVolume", value,
+                        w => w.VideoController.Volume, (w, v) => w.VideoController.Volume = v);
                 }
             }
         }
