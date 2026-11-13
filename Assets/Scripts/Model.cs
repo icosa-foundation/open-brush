@@ -335,6 +335,12 @@ namespace TiltBrush
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
+        internal void RegisterImportedBrushMaterial(Material material, BrushDescriptor brush)
+        {
+            EnsureCollectorExists();
+            m_ImportMaterialCollector.AddBrush(material, brush);
+        }
+
         // Constructor for local models i.e. Media Library assets
         public Model(string relativePath)
         {

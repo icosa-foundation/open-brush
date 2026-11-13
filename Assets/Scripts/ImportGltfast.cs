@@ -144,14 +144,25 @@ namespace TiltBrush
                 {
                     return;
                 }
-                var materialCollector = new ImportMaterialCollector(assetLocation, uniqueSeed: localPath);
-                // Gather all the unity materials created by UnityGltf
-                var mrs = go.GetComponentsInChildren<MeshRenderer>(true);
-                foreach (var mr in mrs)
+                // The remapping plugin replaces source materials with brush variants.
+                // Preserve the original glTF identity in the model's actual collector,
+                // keyed by the material that will be copied into widget instances.
+                for (int i = 0; i < gltf.Root.Nodes.Count; ++i)
                 {
-                    foreach (var material in mr.materials)
+                    var sourceMesh = gltf.Root.Nodes[i].Mesh?.Value;
+                    var nodeObject = gltf.NodeCache[i];
+                    if (sourceMesh == null || nodeObject == null) continue;
+                    var renderer = nodeObject.GetComponent<MeshRenderer>();
+                    if (renderer == null) continue;
+                    var materials = renderer.sharedMaterials;
+                    for (int slot = 0; slot < sourceMesh.Primitives.Count && slot < materials.Length; ++slot)
                     {
-                        materialCollector.Add(material);
+                        var name = sourceMesh.Primitives[slot].Material?.Value?.Name;
+                        var brush = ResolveImportedBrush(name);
+                        if (brush != null && materials[slot] != null)
+                        {
+                            model.RegisterImportedBrushMaterial(materials[slot], brush);
+                        }
                     }
                 }
             }
@@ -163,6 +174,34 @@ namespace TiltBrush
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);
             }
+        }
+
+        private static BrushDescriptor ResolveImportedBrush(string materialName)
+        {
+            if (string.IsNullOrEmpty(materialName)) return null;
+            if (materialName.StartsWith("material_", StringComparison.Ordinal))
+            {
+                // Legacy names contain either a GUID or a brush-name/GUID pair.
+                var identity = materialName.Substring("material_".Length).Trim();
+                if (identity.Length >= 36 &&
+                    Guid.TryParse(identity.Substring(identity.Length - 36), out var guid))
+                {
+                    return BrushCatalog.m_Instance.GetBrush(guid);
+                }
+                return null;
+            }
+
+            string name;
+            if (materialName.StartsWith("ob-", StringComparison.Ordinal))
+                name = materialName.Substring(3);
+            else if (materialName.StartsWith("brush_", StringComparison.Ordinal))
+                name = materialName.Substring(6);
+            else
+                return null;
+
+            // These are source-file brush identities, not Unity material asset names.
+            return BrushCatalog.m_Instance.AllBrushes.FirstOrDefault(
+                brush => brush.DurableName == name);
         }
     }
 }
