@@ -69,7 +69,11 @@ namespace TiltBrush
             get
             {
                 if (!Initialized) return 0;
-                double time = graphInitialized ? m_Playable.GetTime() : animationComponent[ClipName].time;
+                // An inactive clone retains its selected clip, but OnEnable has
+                // not created a playable graph or legacy animation state yet.
+                var legacyState = !graphInitialized && animationComponent != null ? animationComponent[ClipName] : null;
+                if (!graphInitialized && legacyState == null) return 0;
+                double time = graphInitialized ? m_Playable.GetTime() : legacyState.time;
                 return m_Loop && Length > 0 ? time % Length : System.Math.Min(time, Length);
             }
             set

@@ -3,11 +3,65 @@
 using System;
 using Newtonsoft.Json;
 using NUnit.Framework;
+using UnityEditor;
+using UnityEngine;
 
 namespace TiltBrush
 {
     internal class TestModelPlaybackState
     {
+        [TestCase(false)]
+        [TestCase(true)]
+        public void HiddenAnimatedCloneCanBeSavedBeforeOnEnable(bool legacy)
+        {
+            var template = new GameObject("Hidden animated model template");
+            template.SetActive(false);
+            GameObject clone = null;
+            var clip = new AnimationClip { name = "walk", legacy = legacy };
+            try
+            {
+                var animation = template.AddComponent<PlayGltfAnimationClip>();
+                var serialized = new SerializedObject(animation);
+                var clips = serialized.FindProperty("m_Clips");
+                clips.arraySize = 1;
+                clips.GetArrayElementAtIndex(0).objectReferenceValue = clip;
+                serialized.FindProperty("m_SelectedClip").objectReferenceValue = clip;
+                serialized.FindProperty("m_Loop").boolValue = true;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                clone = UnityEngine.Object.Instantiate(template);
+                var clonedAnimation = clone.GetComponent<PlayGltfAnimationClip>();
+                Assert.IsFalse(clone.activeInHierarchy);
+                Assert.IsTrue(clonedAnimation.Initialized, "The serialized clip must survive cloning.");
+                Assert.AreEqual(0, clonedAnimation.Time);
+
+                var playback = clone.AddComponent<ModelPlaybackController>();
+                playback.Bind(clone.transform);
+                var state = playback.GetSaveState();
+                Assert.IsNotNull(state);
+                Assert.AreEqual(0, state.Time);
+                Assert.AreEqual("walk", state.Clip);
+                Assert.AreEqual(true, state.Loop);
+
+                playback.Restore(new ModelPlaybackState
+                {
+                    Paused = true, Time = 1.25, Clip = "walk", Loop = false, Volume = 0.35f
+                });
+                var pending = playback.GetSaveState();
+                Assert.AreEqual(1.25, pending.Time);
+                Assert.AreEqual("walk", pending.Clip);
+                Assert.AreEqual(false, pending.Loop);
+                Assert.IsTrue(pending.Paused);
+                Assert.AreEqual(0.35f, pending.Volume);
+            }
+            finally
+            {
+                if (clone != null) UnityEngine.Object.DestroyImmediate(clone);
+                UnityEngine.Object.DestroyImmediate(template);
+                UnityEngine.Object.DestroyImmediate(clip);
+            }
+        }
+
         [Test]
         public void OlderModelMetadataHasNoPlaybackState()
         {
