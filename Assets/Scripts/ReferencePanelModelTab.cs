@@ -58,6 +58,7 @@ namespace TiltBrush
         private bool m_TabActive;
         private float? m_PendingVolume;
         private bool m_AnimationClipsLoaded;
+        private bool m_ConvertingImm;
         private ModelPlaybackController SelectedPlayback => m_SelectedModelWidget != null &&
             m_SelectedModelWidget.gameObject.activeInHierarchy ? m_SelectedModelWidget.Playback : null;
 
@@ -181,7 +182,7 @@ namespace TiltBrush
             if (m_ConvertToEditable != null)
             {
                 m_ConvertToEditable.gameObject.SetActive(native);
-                m_ConvertToEditable.SetButtonAvailable(native && available);
+                m_ConvertToEditable.SetButtonAvailable(native && available && !m_ConvertingImm);
             }
             if (m_ImportSkydome != null)
             {
@@ -237,19 +238,44 @@ namespace TiltBrush
         public void ConvertSelectedImmToEditable()
         {
             var playback = SelectedPlayback;
-            if (playback == null || playback.Document == null || playback.IsRestoring) return;
-            var native = m_SelectedModelWidget.GetComponentInChildren<NativeImmReference>();
+            if (m_ConvertingImm || playback == null || playback.Document == null || playback.IsRestoring) return;
+            var widget = m_SelectedModelWidget;
+            var native = widget.GetComponentInChildren<NativeImmReference>();
             if (native == null) return;
+            m_ConvertingImm = true;
+            RefreshModelControls();
+            // The overlay owns the coroutine so closing the media panel cannot
+            // interrupt its fade or leave the conversion's busy state behind.
+            OverlayManager.m_Instance.StartCoroutine(ConvertImmInCompositor(widget, native.SourcePath));
+        }
+
+        private System.Collections.IEnumerator ConvertImmInCompositor(ModelWidget widget, string sourcePath)
+        {
             try
             {
-                Quill.Load(native.SourcePath, replaceNativeWidget: m_SelectedModelWidget);
+                yield return OverlayManager.m_Instance.RunInCompositor(
+                    OverlayType.LoadGeneric, () =>
+                    {
+                        // The selection can change during the fade; convert only
+                        // the model whose button was pressed, if it is still ready.
+                        if (widget == null || !widget.gameObject.activeInHierarchy ||
+                            widget.Playback.Document == null || widget.Playback.IsRestoring) return;
+                        try
+                        {
+                            Quill.Load(sourcePath, replaceNativeWidget: widget);
+                        }
+                        catch (Exception error)
+                        {
+                            Debug.LogError($"[OB_IMM_EDITABLE_COMPOSITOR_20261113] Conversion failed: {error}");
+                            OutputWindowScript.Error(NativeImmStrings.Get("CONVERT_FAILED", "Could not convert the current IMM frame to editable strokes."));
+                        }
+                    }, fadeDuration: 0.25f);
             }
-            catch (Exception error)
+            finally
             {
-                Debug.LogError($"[OB_IMM_EDITABLE_20261111] Conversion failed: {error}");
-                OutputWindowScript.Error(NativeImmStrings.Get("CONVERT_FAILED", "Could not convert the current IMM frame to editable strokes."));
+                m_ConvertingImm = false;
+                if (this != null) RefreshModelControls();
             }
-            RefreshModelControls();
         }
 
         public void ImportSelectedImmSkydome()
