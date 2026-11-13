@@ -106,9 +106,6 @@ namespace TiltBrush
                 (System.Diagnostics.Stopwatch.Frequency * kNanoSecondsPerSnapshotSlice) / 1000000;
 
             var selection = SelectionManager.m_Instance;
-            var mainCanvas = App.Scene.MainCanvas.gameObject;
-            bool mainCanvasWasActive = mainCanvas.activeSelf;
-            bool wasRemovingFromSelection = selection.ShouldRemoveFromSelection();
             var selectedStrokes = selection.SelectedStrokes.ToList();
             var selectedWidgets = selection.SelectedWidgets.ToList();
             var deselectCommand = selection.HasSelection ? selection.CreateEndSelectionCommand() : null;
@@ -117,9 +114,7 @@ namespace TiltBrush
                 if (deselectCommand != null)
                 {
                     deselectCommand.Redo();
-                    // Deselecting exits removal mode and shows the main canvas. Preserve its
-                    // pre-save visibility for both the live scene and captured layer metadata.
-                    mainCanvas.SetActive(mainCanvasWasActive);
+                    App.Scene.MainCanvas.gameObject.SetActive(true);
                 }
                 IEnumerable<Stroke> strokes = m_SelectedOnly
                     ? selectedStrokes.Concat(SymmetryPeerEditing.PeersOutside(selectedStrokes)).ToList()
@@ -151,22 +146,7 @@ namespace TiltBrush
                 stopwatch.Stop();
                 // Reverse the temporary bake, including peer movement and selection join baselines,
                 // without adding a command to undo history, even if capture fails or is disposed.
-                if (deselectCommand != null)
-                {
-                    try
-                    {
-                        deselectCommand.Undo();
-                        if (selection.ShouldRemoveFromSelection() != wasRemovingFromSelection)
-                        {
-                            selection.RemoveFromSelection(wasRemovingFromSelection);
-                        }
-                    }
-                    finally
-                    {
-                        // Restoring the selection-tool mode can itself change visibility.
-                        mainCanvas.SetActive(mainCanvasWasActive);
-                    }
-                }
+                deselectCommand?.Undo();
             }
         }
 
