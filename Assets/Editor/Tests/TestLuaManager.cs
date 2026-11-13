@@ -14,6 +14,7 @@
 
 using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace TiltBrush
 {
@@ -95,6 +96,60 @@ namespace TiltBrush
             Assert.AreEqual(originalColor, document.Palette[0]);
             Assert.IsTrue(voxel.SetVoxel(0, 0, 0, 1));
             Assert.AreEqual(1, model.Voxels.Count);
+        }
+
+        [Test]
+        public void CopiedPenroseSettingsMapSourceTileToOtherTiles()
+        {
+            var settings = new SymmetrySettingsApiWrapper(false)
+            {
+                mode = SymmetryMode.Penrose,
+                penroseSubdivisions = 2,
+                penroseRadius = 1.7f,
+                penroseTiles = SymmetryPenroseTiles.Thin
+            };
+            var native = new PenroseTiling(2, 1.7f, PenroseTiling.TileSelection.Thin);
+            var matrices = settings.Duplicate().matrices._Matrices;
+            Assert.AreEqual(native.matrices.Count, matrices.Count);
+            Assert.AreEqual(Matrix4x4.identity, matrices[0]);
+            var sourceCenter = native.matrices[0].MultiplyPoint3x4(Vector3.zero);
+            var targetCenter = native.matrices[1].MultiplyPoint3x4(Vector3.zero);
+            Assert.Less((matrices[1].MultiplyPoint3x4(sourceCenter) - targetCenter).sqrMagnitude, 1e-8f);
+        }
+
+        [Test]
+        public void CopiedLineSettingsAdvanceAlongWidgetYAxis()
+        {
+            var settings = new SymmetrySettingsApiWrapper(false)
+            {
+                mode = SymmetryMode.LineGroup,
+                lineFamily = SymmetryLineFamily.ScrewRotations,
+                lineOrder = 3,
+                lineRepeats = 2,
+                lineAdvance = 0.7f,
+                lineAngle = 25f
+            };
+            var matrices = settings.Duplicate().matrices._Matrices;
+            Assert.AreEqual(6, matrices.Count);
+            Assert.Less((matrices[3].MultiplyPoint3x4(Vector3.zero) - Vector3.up * 0.7f).sqrMagnitude, 1e-8f);
+        }
+
+        [Test]
+        public void CopiedSpaceGroupSettingsIncludeRepeatedCells()
+        {
+            var settings = new SymmetrySettingsApiWrapper(false)
+            {
+                mode = SymmetryMode.SpaceGroup,
+                spaceGroup = 19,
+                spaceRepeatX = 2,
+                spaceRepeatY = 1,
+                spaceRepeatZ = 1,
+                spaceCellSize = 1.3f
+            };
+            var matrices = settings.Duplicate().matrices._Matrices;
+            Assert.AreEqual(8, matrices.Count);
+            Assert.AreEqual(Matrix4x4.identity, matrices[0]);
+            Assert.Less((matrices[4].MultiplyPoint3x4(Vector3.zero) - Vector3.right * 1.3f).sqrMagnitude, 1e-8f);
         }
 
         [Test]

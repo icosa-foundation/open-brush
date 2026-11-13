@@ -79,7 +79,8 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
-                    SelectedSoundClip.Playing = !SelectedSoundClip.Playing;
+                    WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundPlaying", !SelectedSoundClip.Playing,
+                        w => w.SoundClipController.Playing, (w, v) => w.SoundClipController.Playing = v);
                 }
             }
         }
@@ -92,7 +93,8 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
-                    SelectedSoundClip.Volume = value;
+                    WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundVolume", value,
+                        w => w.SoundClipController.Volume, (w, v) => w.SoundClipController.Volume = v);
                 }
             }
         }
@@ -102,7 +104,8 @@ namespace TiltBrush
             SoundClip.SoundClipController soundClip = SelectedSoundClip;
             if (soundClip != null)
             {
-                soundClip.Loop = btn.ToggleState;
+                WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundLoop", btn.ToggleState,
+                    w => w.SoundClipController.Loop, (w, v) => w.SoundClipController.Loop = v);
             }
         }
 
@@ -111,7 +114,8 @@ namespace TiltBrush
             SoundClip.SoundClipController soundClip = SelectedSoundClip;
             if (soundClip != null)
             {
-                soundClip.SpatialBlend = btn.ToggleState ? 1f : 0f;
+                WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundSpatialBlend", btn.ToggleState ? 1f : 0f,
+                    w => w.SoundClipController.SpatialBlend, (w, v) => w.SoundClipController.SpatialBlend = v);
             }
         }
 
@@ -122,7 +126,8 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
-                    SelectedSoundClip.MinDistance = value;
+                    WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundMinDistance", value,
+                        w => w.SoundClipController.MinDistance, (w, v) => w.SoundClipController.MinDistance = v);
                 }
             }
         }
@@ -134,7 +139,8 @@ namespace TiltBrush
             {
                 if (SelectedSoundClip != null)
                 {
-                    SelectedSoundClip.MaxDistance = value;
+                    WidgetPropertyCommand.Set(m_SelectedSoundClipWidget, "SoundMaxDistance", value,
+                        w => w.SoundClipController.MaxDistance, (w, v) => w.SoundClipController.MaxDistance = v);
                 }
             }
         }

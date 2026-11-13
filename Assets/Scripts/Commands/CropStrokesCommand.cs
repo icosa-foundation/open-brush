@@ -26,11 +26,16 @@ namespace TiltBrush
         private readonly Stroke[] m_CroppedList;
         private readonly HashSet<Stroke> m_SelectedOriginals;
         private readonly Stroke m_LastSelected;
+        private readonly List<SymmetryPeerEditing.BrokenLink> m_BrokenLinks;
+        private readonly List<(Stroke stroke, SymmetryStrokeGroup group, int index)> m_ReplacementGroups;
         private bool m_Created;
         private bool m_Applied;
 
         public CropStrokesCommand(Stroke[] originals, Dictionary<Stroke, List<Stroke>> replacements,
-            List<Stroke> result, List<Stroke> liveList, BaseCommand parent = null) : base(parent)
+            List<Stroke> result, List<Stroke> liveList,
+            List<SymmetryPeerEditing.BrokenLink> brokenLinks,
+            List<(Stroke stroke, SymmetryStrokeGroup group, int index)> replacementGroups,
+            BaseCommand parent = null) : base(parent)
         {
             m_OriginalList = originals;
             m_Replacements = replacements;
@@ -40,6 +45,8 @@ namespace TiltBrush
             m_SelectedOriginals = new HashSet<Stroke>(replacements.Keys.Where(
                 stroke => selection != null && selection.IsStrokeSelected(stroke)));
             m_LastSelected = selection != null ? selection.LastSelectedStroke : null;
+            m_BrokenLinks = brokenLinks;
+            m_ReplacementGroups = replacementGroups;
         }
 
         public override bool NeedsSave => true;
@@ -75,6 +82,10 @@ namespace TiltBrush
                     replacement.Hide(false);
             }
 
+            foreach (var link in m_BrokenLinks) link.Break();
+            foreach (var member in m_ReplacementGroups)
+                member.stroke.JoinSymmetryGroup(member.group, member.index);
+
             var selection = SelectionManager.m_Instance;
             foreach (var entry in m_Replacements)
             {
@@ -99,6 +110,7 @@ namespace TiltBrush
                 replacement.Hide(true);
             }
             foreach (var original in m_Replacements.Keys) original.Hide(false);
+            foreach (var link in m_BrokenLinks) link.Restore();
             var selection = SelectionManager.m_Instance;
             if (selection != null)
             {
