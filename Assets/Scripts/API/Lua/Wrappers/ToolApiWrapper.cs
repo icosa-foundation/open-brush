@@ -17,6 +17,11 @@ namespace TiltBrush
             }
         }
 
+        [LuaDocsDescription(
+            "All paths emitted by the latest Tool Script stroke preview, including symmetry copies. Points are in latestControlPointSpace (canvas space); terminal transforms are omitted. Only paths selected by the preview mode are included; no preview produces an empty list.")]
+        public static ControlPointPathListApiWrapper latestControlPointPaths =>
+            new(LuaManager.Instance.GetLatestToolScriptControlPointPaths());
+
         [LuaDocsDescription("The coordinate space for the latest Tool Script control points")]
         public static ScriptCoordSpace latestControlPointSpace => LuaManager.Instance.LatestToolScriptControlPointSpace;
     }
