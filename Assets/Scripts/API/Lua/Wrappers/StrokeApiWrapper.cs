@@ -100,6 +100,7 @@ namespace TiltBrush
             if (stroke.Canvas == layer) { return; }
             if (SymmetryPeerEditing.IsLinked(stroke) && stroke.SymmetryPeerGroup.Mirror.Canvas != layer)
             {
+                SymmetryMirrors.EndSelectionOwnedBy(stroke.SymmetryPeerGroup.Mirror);
                 new MoveSymmetryGroupsToLayerCommand(new[] { stroke.SymmetryPeerGroup }, layer).Redo();
             }
             stroke.SetParentKeepWorldPosition(layer);
