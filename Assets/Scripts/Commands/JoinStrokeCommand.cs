@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+using System;
 using UnityEngine;
 using System.Collections.Generic;
 using System.Linq;
@@ -63,11 +64,35 @@ namespace TiltBrush
             {
                 return SymmetryJoin.Refused;
             }
-            return ReferenceEquals(groupA, groupB) ? SymmetryJoin.SameGroup : SymmetryJoin.PeerGroups;
+            if (ReferenceEquals(groupA, groupB)) { return SymmetryJoin.SameGroup; }
+            return HasCompleteCounterpartPairing(strokeA, strokeB)
+                ? SymmetryJoin.PeerGroups : SymmetryJoin.Refused;
         }
 
         public static bool CanJoin(Stroke strokeA, Stroke strokeB) =>
             ClassifySymmetryJoin(strokeA, strokeB) != SymmetryJoin.Refused;
+
+        private static bool HasCompleteCounterpartPairing(Stroke strokeA, Stroke strokeB)
+        {
+            var paired = new HashSet<Stroke> { strokeB };
+            foreach (var peerA in SymmetryPeerEditing.PeersOf(strokeA))
+            {
+                var peerB = Counterpart(strokeA, strokeB, peerA);
+                if (peerB == null || !paired.Add(peerB)) { return false; }
+            }
+            return strokeB.SymmetryPeerGroup.Strokes
+                .Where(stroke => stroke.IsGeometryEnabled).All(paired.Contains);
+        }
+
+        private static bool ValidateSymmetryJoin(Stroke strokeA, Stroke strokeB)
+        {
+            var join = ClassifySymmetryJoin(strokeA, strokeB);
+            if (join == SymmetryJoin.Refused)
+            {
+                throw new ArgumentException("Linked strokes require matching mirrors and complete counterpart pairing");
+            }
+            return join == SymmetryJoin.PeerGroups;
+        }
 
         private enum JoinStrokeType
         {
@@ -80,13 +105,13 @@ namespace TiltBrush
         public JoinStrokeCommand(
             Stroke strokeA, Stroke strokeB, BaseCommand parent = null)
             : this(strokeA, strokeB, parent,
-                ClassifySymmetryJoin(strokeA, strokeB) == SymmetryJoin.PeerGroups)
+                ValidateSymmetryJoin(strokeA, strokeB))
         {
             if (!m_KeepGroupA) { return; }
 
             // Every other copy of A joins its counterpart in B's group: the copy that is to B what
-            // it is to A. Afterwards the whole group is derived from A, so it stays an exact
-            // symmetric set even where a copy had no partner (an erased one, say).
+            // it is to A. Validation requires a complete one-to-one pairing of visible copies.
+            // Afterwards the whole group is derived from A, so it stays an exact symmetric set.
             foreach (var peerA in SymmetryPeerEditing.PeersOf(strokeA))
             {
                 var peerB = Counterpart(strokeA, strokeB, peerA);

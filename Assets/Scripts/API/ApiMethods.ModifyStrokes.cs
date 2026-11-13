@@ -247,7 +247,7 @@ namespace TiltBrush
             {
                 case JoinStrokeCommand.SymmetryJoin.Refused:
                     ControllerConsoleScript.m_Instance.AddNewLine(
-                        "A linked stroke can only be joined to strokes of the same linked mirror");
+                        "These strokes cannot be joined: their linked mirrors or copy placements do not match");
                     return stroke2;
                 case JoinStrokeCommand.SymmetryJoin.PeerGroups:
                     // Every pair of copies joins, as the join tool does.
