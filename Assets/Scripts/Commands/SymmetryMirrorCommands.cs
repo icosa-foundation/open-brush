@@ -446,6 +446,7 @@ namespace TiltBrush
     public class RegenerateMirrorStrokesCommand : BaseCommand
     {
         private readonly SymmetryMirror m_Mirror;
+        private readonly object m_EditToken = SymmetryMirrors.SettingsEditToken;
         private readonly SymmetrySettingsSnapshot m_Before;
         private readonly SymmetrySettingsSnapshot m_After;
         private readonly List<Stroke> m_OldStrokes = new List<Stroke>();
@@ -565,6 +566,20 @@ namespace TiltBrush
         }
 
         public override bool NeedsSave => true;
+
+        public override bool Merge(BaseCommand other)
+        {
+            if (base.Merge(other)) { return true; }
+            if (other is RegenerateMirrorStrokesCommand next && ReferenceEquals(next.m_Mirror, m_Mirror) &&
+                ReferenceEquals(next.m_EditToken, m_EditToken))
+            {
+                // Keep every regeneration and its widget children in order, while presenting
+                // the slider gesture as one undo step. Each command owns its created copies.
+                m_Children.Add(next);
+                return true;
+            }
+            return false;
+        }
 
         protected override void OnRedo()
         {
