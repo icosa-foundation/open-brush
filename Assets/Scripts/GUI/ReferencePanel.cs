@@ -38,6 +38,11 @@ namespace TiltBrush
         private ReferencePanelTab m_CurrentTab;
         private int m_EnabledCount = 0;
         private string[] m_CurrentSubdirectories;
+        private string m_CurrentDirectory;
+        private bool m_HasDirectoryTree;
+        // Keyed by catalog home directory so each tab remembers its own expanded folders.
+        private readonly Dictionary<string, ReferenceDirectoryTree> m_DirectoryTrees =
+            new Dictionary<string, ReferenceDirectoryTree>(System.StringComparer.OrdinalIgnoreCase);
         private bool m_FolderNavButtonsNeedUpdate;
         private bool m_CatalogRefreshPending;
         private bool m_WasPaused;
@@ -304,6 +309,8 @@ namespace TiltBrush
                 displayPath = currentDir?.Substring(App.MediaLibraryPath().Length);
             }
 
+            m_CurrentDirectory = currentDir;
+
             if (m_DirectoryChooserPopupButton != null)
             {
                 // TMP parses backslash escapes (e.g. the \v in \vox) as control
@@ -338,6 +345,12 @@ namespace TiltBrush
                         m_CurrentSubdirectories = new string[0];
                     }
                 }
+
+                // The tree is worth opening if there is anywhere else to go from here.
+                // (At the tree root, its children are exactly m_CurrentSubdirectories.)
+                m_HasDirectoryTree = m_CurrentSubdirectories.Length > 0 ||
+                    !ReferenceDirectoryTree.PathsEqual(
+                        GetDirectoryTreeRoot(), ReferenceDirectoryTree.Normalize(currentDir));
             }
 
             base.RefreshPage();
@@ -364,7 +377,7 @@ namespace TiltBrush
                 m_DirectoryUpButton.SetDescriptionUnavailable(true);
             }
 
-            if (m_CurrentSubdirectories.Length == 0)
+            if (!m_HasDirectoryTree)
             {
                 m_DirectoryChooserPopupButton.SetButtonAvailable(false);
                 m_DirectoryChooserPopupButton.SetDescriptionUnavailable(true);
@@ -426,6 +439,101 @@ namespace TiltBrush
             // is only assigned in OnEnablePanel.
             return m_CurrentTab != null &&
                 m_CurrentTab.RaycastAgainstMeshCollider(ray, out hitInfo, dist);
+        }
+
+        // Returns the directory tree for the current tab, rebuilt from disk.
+        // revealCurrent expands the path down to the current directory.
+        public ReferenceDirectoryTree GetDirectoryTree(bool revealCurrent)
+        {
+            string home = m_CurrentTab.Catalog.HomeDirectory;
+            if (!m_DirectoryTrees.TryGetValue(home, out var tree))
+            {
+                tree = new ReferenceDirectoryTree(GetDirectoryTreeChildren, GetDirectoryLabel);
+                m_DirectoryTrees[home] = tree;
+            }
+            tree.Rebuild(GetDirectoryTreeRoot(), m_CurrentDirectory, revealCurrent);
+            return tree;
+        }
+
+        private string GetDirectoryTreeRoot()
+        {
+            string home = ReferenceDirectoryTree.Normalize(m_CurrentTab.Catalog.HomeDirectory);
+            string current = ReferenceDirectoryTree.Normalize(m_CurrentDirectory);
+            if (string.IsNullOrEmpty(current) ||
+                ReferenceDirectoryTree.PathsEqual(home, current) ||
+                ReferenceDirectoryTree.IsPathWithin(home, current))
+            {
+                return home;
+            }
+            // Open Blocks is presented as a virtual subdirectory of the Models home.
+            if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models &&
+                IsBlocksRoot(current))
+            {
+                return home;
+            }
+            // Somewhere outside home: show the tree from where we are.
+            return current;
+        }
+
+        private static bool IsBlocksRoot(string path)
+        {
+            string blocksPath = App.BlocksModelLibraryPath();
+            return !string.IsNullOrEmpty(blocksPath) && ReferenceDirectoryTree.PathsEqual(
+                ReferenceDirectoryTree.Normalize(blocksPath), ReferenceDirectoryTree.Normalize(path));
+        }
+
+        private string[] GetDirectoryTreeChildren(string path)
+        {
+            bool isModels = m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models;
+            // Open Blocks is kept flat.
+            if (isModels && IsBlocksRoot(path))
+            {
+                return new string[0];
+            }
+
+            List<string> children;
+            try
+            {
+                children = AndroidDirectStorage.GetDirectories(path)
+                    .OrderBy(p => Path.GetFileName(p), System.StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+            }
+            catch (System.Exception e) when (
+                e is IOException || e is System.UnauthorizedAccessException ||
+                e is System.Security.SecurityException)
+            {
+                return new string[0];
+            }
+
+            if (isModels && ReferenceDirectoryTree.PathsEqual(
+                    ReferenceDirectoryTree.Normalize(path),
+                    ReferenceDirectoryTree.Normalize(App.ModelLibraryPath())))
+            {
+                string blocksPath = App.BlocksModelLibraryPath();
+                if (!string.IsNullOrEmpty(blocksPath) && Directory.Exists(blocksPath) &&
+                    !children.Any(c => IsBlocksRoot(c)))
+                {
+                    children.Add(blocksPath);
+                }
+            }
+            return children.ToArray();
+        }
+
+        public string GetDirectoryLabel(string path)
+        {
+            if (IsBlocksRoot(path))
+            {
+                return "Open Blocks";
+            }
+            if (m_CurrentTab.ReferenceButtonType == ReferenceButton.Type.Models &&
+                ReferenceDirectoryTree.PathsEqual(
+                    ReferenceDirectoryTree.Normalize(path),
+                    ReferenceDirectoryTree.Normalize(App.ModelLibraryPath())))
+            {
+                return "Models";
+            }
+            string name = Path.GetFileName(ReferenceDirectoryTree.Normalize(path));
+            return string.IsNullOrEmpty(name) ? path : name;
         }
 
         public void ChangeDirectoryForCurrentTab(string path)
