@@ -20,6 +20,7 @@ namespace TiltBrush
     {
         [SerializeField] private float m_LongPressDuration = 0.3f;
         private float m_PressTimer;
+        public float LongPressDuration => m_LongPressDuration;
 
         override protected void Awake()
         {
@@ -37,6 +38,7 @@ namespace TiltBrush
                     transform.forward * panel.PopUpOffset +
                     panel.transform.TransformVector(m_PopupOffset));
                 ResetState();
+                NotifyPressed();
             }
         }
 
@@ -69,6 +71,7 @@ namespace TiltBrush
                 if (IsAvailable())
                 {
                     OnButtonPressed();
+                    NotifyPressed();
 
                     if (m_ButtonHasPressedAudio)
                     {

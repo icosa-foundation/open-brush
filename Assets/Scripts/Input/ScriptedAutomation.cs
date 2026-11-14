@@ -17,6 +17,7 @@ namespace TiltBrush
             public int Hand;
             public BaseButton Button;
             public BaseSlider Slider;
+            public ColorPickerSelector ColorSelector;
             public float SliderStartValue;
             public float SliderAimOffset;
             public BasePanel Panel;
@@ -103,9 +104,14 @@ namespace TiltBrush
             // Validate syntax and selectors before creating any fixture strokes.
             foreach (var step in script.Steps.SelectMany(ExpandMoves))
             {
-                if (!new[] { "present", "focus", "click", "selectScript", "slider", "placePanel", "move", "input", "wait", "rest", "assert" }.Contains(step.Op))
+                if (!new[] { "present", "focus", "click", "pickColor", "selectScript", "slider", "placePanel", "move", "input", "wait", "rest", "assert" }.Contains(step.Op))
                     throw new ArgumentException($"Unknown script operation: {step.Op}");
                 AutomationScript.Positive(step.Seconds, "step seconds", 0.01f, 120);
+                if (step.Op == "pickColor")
+                {
+                    AutomationScript.Rgb(step.ColorRgb);
+                    if (step.Hand != "brush") { throw new ArgumentException("pickColor uses the brush hand."); }
+                }
                 if (step.Op == "slider")
                 {
                     AutomationScript.Positive(step.Value, "slider value", 0, 1);
@@ -335,6 +341,19 @@ namespace TiltBrush
             return AimAt(target, panel.rotation, item);
         }
 
+        private UnityEngine.Pose AimColor(Instruction item, UnityEngine.Pose panel, bool predict)
+        {
+            var mode = ColorPickerUtils.GetActiveMode(false);
+            Vector3 raw = ColorPickerUtils.ColorToRawValue(mode, AutomationScript.Rgb(item.Source.ColorRgb));
+            // The native plane keeps its slider component; this operation chooses hue/saturation.
+            if (Mathf.Abs(raw.z - item.ColorSelector.RawValue.z) > 0.025f)
+                throw new ArgumentException("pickColor must preserve the color picker's current slider component.");
+            Vector3 local = new Vector3(raw.x - 0.5f, raw.y - 0.5f, 0);
+            Vector3 target = predict ? panel.position + panel.rotation * item.Panel.FullScalePoint(item.ColorSelector.transform, local) :
+                item.ColorSelector.transform.TransformPoint(local);
+            return AimAt(target, panel.rotation, item);
+        }
+
         private UnityEngine.Pose[] PlanPanelGrip(UnityEngine.Pose source, UnityEngine.Pose destination, Vector3 center)
         {
             Vector3 local = ContactLocal(1, new AutomationScript.Step()).position;
@@ -437,8 +456,11 @@ namespace TiltBrush
             if (!m_Script.Framing.Enabled)
             {
                 m_RestView = new UnityEngine.Pose(camera.transform.position, camera.transform.rotation);
+                if (m_Script.Framing.Rotation != null)
+                    m_RestView = new UnityEngine.Pose(camera.transform.position,
+                        m_Yaw * Quaternion.Euler(AutomationScript.Vector(m_Script.Framing.Rotation, "framing rotation")));
                 SetArmHead(m_RestView.Value.position);
-                Compile(); return null;
+                Compile(); return m_Script.Framing.Rotation == null ? (UnityEngine.Pose?)null : m_RestView;
             }
             Exception failure = null;
             int failureStage = -1;
@@ -610,6 +632,8 @@ namespace TiltBrush
                     }
                     if (item.Button == null || item.Panel == null)
                         throw new ArgumentException($"Step {m_Instructions.Count + 1} ({step.Op}): target '{step.Target.Tool ?? step.Target.Brush ?? step.Target.Subtool ?? step.Target.Command ?? step.Target.OpensPanel ?? step.Target.Path}' does not exist in the predicted UI state.");
+                    if (step.LongPress && (step.Op != "click" || !(item.Button is LongPressButton)))
+                        throw new ArgumentException("longPress requires a click on a native long-press button.");
                     if (step.Op == "present" && item.Panel.m_Fixed)
                     {
                         item.Hand = 0;
@@ -684,11 +708,11 @@ namespace TiltBrush
                                         controls.AddPoint(point);
                                     }
                         }
-                        if (step.Op == "click" && item.Button is OptionButton option && option.AutomationPopupPrefab != null)
+                        if (step.Op == "click" && item.Button is OptionButton option && option.GetAutomationPopupPrefab(step.LongPress) != null)
                         {
-                            popupPrefab = option.AutomationPopupPrefab;
+                            popupPrefab = option.GetAutomationPopupPrefab(step.LongPress);
                             popupOwner = item.Panel;
-                            popupPose = option.PredictPopupPose(pose);
+                            popupPose = option.PredictPopupPose(pose, step.LongPress);
                             BoxCollider box = popupPrefab.GetComponent<BoxCollider>();
                             if (box != null)
                                 for (int i = 0; i < 8; ++i)
@@ -717,8 +741,31 @@ namespace TiltBrush
                             popupOwner = null;
                         }
                         predicted[1] = item.Path[0];
+                        if (step.Op == "click" && item.Button is NavButton nav &&
+                            nav.m_ButtonType == UIComponent.ComponentMessage.ClosePopup)
+                        {
+                            popupPrefab = null;
+                            popupOwner = null;
+                        }
                         if (item.Deferred) { item.Button = null; }
                     }
+                }
+                else if (step.Op == "pickColor")
+                {
+                    var picker = UnityEngine.Object.FindObjectsByType<ColorPicker>(FindObjectsInactive.Include)
+                        .Single(p => p.Controller == App.BrushColor && p.GetComponentInParent<BasePanel>(true) is BasePanel owner &&
+                            PanelManager.m_Instance.IsPanelAvailable(owner));
+                    item.ColorSelector = picker.GetComponentInChildren<ColorPickerSelector>(true);
+                    item.Panel = picker.GetComponentInParent<BasePanel>(true);
+                    item.Hand = 1;
+                    item.Start = predicted[1];
+                    UnityEngine.Pose pose;
+                    if (item.Panel.m_Fixed) { pose = PanelPose(item.Panel, predicted[0], ring); }
+                    else if (!floating.TryGetValue(item.Panel, out pose))
+                        throw new ArgumentException("Open the color picker panel before using it.");
+                    item.Path = new[] { AimColor(item, pose, true) };
+                    shot.AddSubject("Color picker controls").AddPose(pose, item.Panel.FullScaleRendererPoints());
+                    predicted[1] = item.Path[0];
                 }
                 else if (step.Op == "slider")
                 {
@@ -960,6 +1007,9 @@ namespace TiltBrush
                         case "click":
                             Click(item);
                             break;
+                        case "pickColor":
+                            PickColor(item);
+                            break;
                         case "placePanel":
                             PlacePanel(item);
                             break;
@@ -1013,6 +1063,34 @@ namespace TiltBrush
             }
             ApplyPoses();
             return true;
+        }
+
+        private void PickColor(Instruction item)
+        {
+            if (m_TotalElapsed > item.DurationSeconds + 8)
+                throw new InvalidOperationException("The native color picker did not accept the color.");
+            var pose = new UnityEngine.Pose(item.Panel.transform.position, item.Panel.transform.rotation);
+            var aim = AimColor(item, pose, false);
+            if (m_Stage == 0)
+            {
+                m_Poses[1] = m_Arms[1].Reach(m_ReachStart, m_Arms[1].Solve(aim.position, aim.rotation), m_Elapsed / item.DurationSeconds);
+                if (m_Elapsed >= item.DurationSeconds) { m_Stage = 1; m_Elapsed = 0; }
+                return;
+            }
+            m_Poses[1] = aim;
+            if (m_Stage == 1)
+            {
+                if (!SketchControlsScript.m_Instance.IsUserLookingAtPanel(item.Panel)) { m_Elapsed = 0; }
+                if (m_Elapsed >= 0.35f) { m_Triggers[1] = true; m_Stage = 2; m_Elapsed = 0; }
+            }
+            else if (m_Stage == 2 && m_Elapsed >= 0.16f)
+            { m_Triggers[1] = false; m_Stage = 3; m_Elapsed = 0; }
+            else if (m_Stage == 3 && m_Elapsed >= 0.35f)
+            {
+                if (ColorDistance(App.BrushColor.CurrentColor, AutomationScript.Rgb(item.Source.ColorRgb)) > 0.05f)
+                    throw new InvalidOperationException("The native color picker did not reach the requested color.");
+                Advance();
+            }
         }
 
         private void DragSlider(Instruction item)
@@ -1101,6 +1179,8 @@ namespace TiltBrush
             bool pressWasPublished = m_Triggers[1];
             float hoverSeconds = item.Source.IsRepeatedScriptClick ? 0.05f : 0.45f;
             float pressSeconds = item.Source.IsRepeatedScriptClick ? 0.08f : 0.16f;
+            if (item.Source.LongPress && item.Button is LongPressButton longPress)
+                pressSeconds = longPress.LongPressDuration + 0.15f;
             float releaseSeconds = item.Source.IsRepeatedScriptClick ? 0.12f : 0.45f;
             if (item.Hand != 1) { throw new InvalidOperationException("UI clicks use the brush hand."); }
             if (m_TotalElapsed > item.DurationSeconds + 8) { throw new InvalidOperationException("Button did not receive hover/click."); }

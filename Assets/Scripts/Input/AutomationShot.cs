@@ -17,6 +17,7 @@ namespace TiltBrush
         public class FramingSettings
         {
             public bool Enabled = true;
+            public float[] Rotation;
             [Range(0, 0.25f)] public float Margin = 0.08f;
             public float MaximumPullbackMeters = 0.15f;
             public float MaximumAngleDegrees = 40;

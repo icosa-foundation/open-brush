@@ -120,6 +120,8 @@ namespace TiltBrush
             public string Category;
             public string ScriptName;
             public bool SelectPrevious;
+            public string Symmetry;
+            public float[] Rotation;
         }
 
         public sealed class Step
@@ -140,6 +142,8 @@ namespace TiltBrush
             public float[] EndRotation;
             public float PaddingMeters = 0.02f;
             public Selector Target;
+            public bool LongPress;
+            public float[] ColorRgb;
             public bool? Trigger;
             public float[] Thumbstick;
             public string[] Buttons;
@@ -270,6 +274,21 @@ namespace TiltBrush
                         if (button.m_ButtonType == SnapSettingsPanelToggleType.StraightEdgeEndpointSnap)
                             button.ToggleState = false;
                     }
+                }
+                else if (prep.Op == "symmetry")
+                {
+                    if (!Enum.TryParse(prep.Symmetry, out PointerManager.SymmetryMode mode) ||
+                        (mode != PointerManager.SymmetryMode.SinglePlane && mode != PointerManager.SymmetryMode.MultiMirror))
+                        throw new ArgumentException("symmetry preparation needs SinglePlane or MultiMirror.");
+                    if (prep.Points == null || prep.Points.Length != 1)
+                        throw new ArgumentException("symmetry preparation needs one widget position in points.");
+                    SymmetryMirrors.UsePlain();
+                    var pm = PointerManager.m_Instance;
+                    pm.SetSymmetryMode(mode);
+                    pm.SymmetryWidget.transform.SetPositionAndRotation(
+                        body.position + yaw * (Vector(prep.Points[0], "symmetry position") * App.METERS_TO_UNITS),
+                        yaw * Quaternion.Euler(Vector(prep.Rotation ?? new float[3], "symmetry rotation")));
+                    if (mode == PointerManager.SymmetryMode.MultiMirror) { pm.CalculateMirrors(); }
                 }
                 else if (prep.Op == "script")
                 {

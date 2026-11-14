@@ -22,6 +22,7 @@ namespace TiltBrush
     {
         // Observers can confirm actual activation without relying on transient hover visuals.
         public event System.Action<BaseButton> Pressed;
+        protected void NotifyPressed() => Pressed?.Invoke(this);
         protected enum ButtonState
         {
             Unavailable,

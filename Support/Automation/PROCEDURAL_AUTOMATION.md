@@ -38,6 +38,7 @@ Choose a scenario from the library:
 | 10 | [tool-script-preview](../Python/automation-scripts/tool-script-preview.py) | Resize a live circle preview and release to commit it. |
 | 11 | [darken](../Python/automation-scripts/darken.py) | Layer light-grey Darken strokes over bright artwork at different depths. |
 | 12 | [grid-snapping](../Python/automation-scripts/grid-snapping.py) | Draw a stepped stroke along three grid axes. |
+| 13 | [symmetry-stroke-linking](../Python/automation-scripts/symmetry-stroke-linking.py) | Enable Linked mirror, change Simple to Point and its order, move the widget, then draw another stroke and recolor its linked copies. |
 
 Draw and Open Labs are reusable components in `Support/Python/automation-components`,
 not standalone tutorials. They are excluded from the tutorial recording set.
@@ -273,6 +274,7 @@ Preparation happens before recording and does not simulate visible user actions.
 | `tool` | `tool` enum name, optional `radiusMeters` for stroke modification tools, optional initial `subtool` for Reshape. Sets initial options so subsequent visible selections are meaningful. |
 | `color` | `colorRgb: [r,g,b]`, each channel from 0 to 1. Sets the active colour before recording. |
 | `drawing` | Disable straight edge, endpoint snapping and symmetry, clear straight-edge endpoint history, and reset grid/angle snapping to off. Does not clear artwork. |
+| `symmetry` | `symmetry` (`SinglePlane` or `MultiMirror`), one body-relative widget position in `points`, and optional `rotation`. Establishes plain symmetry before capture; enable Linked mirror visibly through the popup. |
 | `brush` | `brush` durable name, `brushSizeMeters`, optional `paletteBrush` durable name. Sets the starting brush/size and establishes the available palette's page before capture. |
 | `script` | `category` (for example `SymmetryScript`), `scriptName`, optional `selectPrevious`. Initialise scripts and choose the named preset or its predecessor before capture. |
 
@@ -290,9 +292,10 @@ Each step has `op`, optional `label`, and optional `seconds` (default `1.2`).
 | --- | --- |
 | `present` | `target` button selector. For wand panels, raises the wand and uses native thumbstick snaps to bring the panel forward. For an already opened floating panel, waits for its opening animation without twisting the wand. |
 | `focus` | `target` button selector. Points at its parent panel and waits for native focus. |
-| `click` | `target`. Reaches with the brush hand, waits for real hover, presses and releases the trigger, and requires a native button activation event. `seconds` controls the approach; hover/press/release use shared timing. Optional `tool` and `subtool` verify the resulting selection. |
+| `click` | `target`. Reaches with the brush hand, waits for real hover, presses and releases the trigger, and requires a native button activation event. `seconds` controls the approach; hover/press/release use shared timing. `longPress: true` holds a native long-press button to open its popup. Optional `tool` and `subtool` verify the resulting selection. |
 | `selectScript` | `category`, `scriptName`. Navigate the Scripts panel with native Previous/Next button clicks, using the live catalogue, then verify the selected name. `seconds` controls the first approach. Subsequent clicks on the same navigation button use shorter hover, press and release delays. |
 | `slider` | `slider` exact hierarchy path, `value` normalized from 0 to 1. Reach the knob, align the native reticle, hold the trigger and drag. `seconds` controls each reach and drag. The executor verifies the resulting native slider value. |
+| `pickColor` | `colorRgb: [r,g,b]`. After presenting the brush color panel, point at its native color plane and press/release the trigger. The requested color must preserve the current slider component (for example lightness in the default color wheel). The resulting active color is verified. `seconds` controls the reach. |
 | `placePanel` | `panel`, one destination in `points`, optional destination `rotation`. Approaches, grips, moves and releases an opened floating panel. `seconds` controls each reach and drag. |
 | `move` | `points`, optional `curve` (`polyline` or `bezier`), `rotation`, `endRotation`, `rotationConstraint`, `attachment`, `anchor`, `anchorT`, `tool`, `paddingMeters`. One point is a joint-interpolated reach. Multiple points follow the supplied contact path over `seconds`, with minimum-jerk timing. Bezier needs exactly four control points. |
 | `input` | Optional `trigger` boolean, `thumbstick: [x,y]` (axes in `[-1,1]`) and `buttons` array of native `VrInput` enum names. `buttons` replaces the held non-trigger buttons for this hand; `[]` releases them. For example `Button04` is the context/full-pad press used by straight-edge angle snapping. State persists until changed. Each input step consumes a frame so native consumers receive the edges. |
@@ -321,6 +324,10 @@ Open a floating panel before presenting or clicking its controls. The executor
 predicts the native floating-panel placement and includes it in fixed framing;
 Virtual Input uses the stable body reference for that placement so the filming
 camera adjustment cannot move the action.
+
+Close persistent popups, including symmetry options, through their native close
+button before interacting with another panel. Moving the pointer away leaves
+these popups open.
 
 `attachment` is `tip` by default, `tool` for a native tool contact, or `root` for
 the controller itself. A tool contact can specify `tool: "ReshapeTool"` to
@@ -397,6 +404,11 @@ subjects explicitly and use `present` for automatic panel navigation.
 `maximumPullbackMeters` (`0.15`) and `maximumAngleDegrees` (`40`). If the shot
 cannot fit, reduce its spatial extent or submit separate shots. Do not change
 the output format during a take or use repeated camera tracking.
+
+For a manually composed fixed shot, set `framing.enabled` to `false` and supply
+`framing.rotation: [pitch, yaw, roll]` in degrees relative to body yaw. The camera
+keeps its position and uses this angle for the whole shot. Review the footage to
+check visibility; automatic fitting and panel-clearance checks are disabled.
 
 The planner keeps floating panels, their popups and expanded trays clear of the artwork
 and tool paths. It tries nearby wand presentation positions, preferring the
