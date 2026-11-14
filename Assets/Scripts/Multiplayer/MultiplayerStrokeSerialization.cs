@@ -46,7 +46,9 @@ namespace OpenBrush.Multiplayer
                 var strokeSnapshots = SketchWriter.EnumerateAdjustedSnapshots(strokeList).ToList();
                 using (var memoryStream = new MemoryStream())
                 {
-                    SketchWriter.WriteMemory(memoryStream, strokeSnapshots, new GroupIdMapping());
+                    // Linked mirrors aren't supported in multiplayer: strokes go out unlinked.
+                    SketchWriter.WriteMemory(memoryStream, strokeSnapshots, new GroupIdMapping(),
+                        SketchWriter.SymmetrySaveState.None());
                     return memoryStream.ToArray();
                 }
             }

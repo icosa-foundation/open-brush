@@ -156,7 +156,10 @@ namespace TiltBrush
 
         private static void _SetWidgetScale(GrabWidget widget, float scale)
         {
-            widget.SetSignedWidgetSize(scale);
+            var transform = widget.LocalTransform;
+            transform.scale = scale;
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(
+                new MoveWidgetCommand(widget, transform, widget.CustomDimension, true));
         }
 
         private static void _SetWidgetTransform(GrabWidget widget, Vector3 translation, Quaternion rotation, float scale = 1)

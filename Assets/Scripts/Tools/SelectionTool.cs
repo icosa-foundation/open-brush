@@ -13,6 +13,7 @@
 // limitations under the License.
 
 using UnityEngine;
+using System.Linq;
 
 namespace TiltBrush
 {
@@ -104,14 +105,16 @@ namespace TiltBrush
                 // If intersecting with selection widget
                 if (SketchControlsScript.m_Instance.IsUsersBrushIntersectingWithSelectionWidget())
                 {
-                    if (InputManager.m_Instance.GetCommandDown(
+                    bool voxelRegion = SelectionManager.m_Instance.SelectedWidgets.OfType<ModelWidget>()
+                        .Any(widget => widget.HasVoxRegionSelection);
+                    if (!voxelRegion && InputManager.m_Instance.GetCommandDown(
                         InputManager.SketchCommands.DuplicateSelection))
                     {
                         InputManager.Brush.LastHeldInput =
                             InputManager.Brush.GetCommandHoldInput(InputManager.SketchCommands.DuplicateSelection);
                     }
 
-                    if (InputManager.Brush.LastHeldInput != null &&
+                    if (!voxelRegion && InputManager.Brush.LastHeldInput != null &&
                         InputManager.m_Instance.GetCommandHeld(InputManager.SketchCommands.DuplicateSelection))
                     {
                         SketchControlsScript.m_Instance.IssueGlobalCommand(
@@ -182,7 +185,7 @@ namespace TiltBrush
                     continue;
                 }
 
-                if (!widget.TryIntersectGsplat(vDetectionCenter_GS, size_GS, out _))
+                if (!widget.TryIntersectNonGpuModel(vDetectionCenter_GS, size_GS, out _))
                 {
                     continue;
                 }
@@ -218,6 +221,10 @@ namespace TiltBrush
                 return true;
             }
 
+            if (!removeFromSelection)
+            {
+                SymmetryMirrors.Recall(widget.SymmetryPeerGroup?.Mirror);
+            }
             PlayModifyStrokeSound();
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(
@@ -252,8 +259,16 @@ namespace TiltBrush
             else
                 m_BatchFilter = null;
             var stroke = rGroup.m_Stroke;
-            var isSelected = SelectionManager.m_Instance.IsStrokeSelected(stroke);
             bool removeFromSelection = SelectionManager.m_Instance.ShouldRemoveFromSelection();
+
+            // A linked group is selected through one copy; touching any copy acts on the group.
+            var selectedCopy = SelectionManager.m_Instance.SelectedSymmetryCopyOf(stroke);
+            if (selectedCopy != null && !ReferenceEquals(selectedCopy, stroke))
+            {
+                if (!removeFromSelection) { return true; }
+                stroke = selectedCopy;
+            }
+            var isSelected = SelectionManager.m_Instance.IsStrokeSelected(stroke);
 
             // Only select from the active layer
             if (!removeFromSelection && (rGroup.Canvas != App.Scene.ActiveCanvas)) return true;
@@ -268,6 +283,10 @@ namespace TiltBrush
                 return true;
             }
 
+            if (!removeFromSelection)
+            {
+                SymmetryMirrors.RecallFromStroke(stroke);
+            }
             PlayModifyStrokeSound();
 
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(

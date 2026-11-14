@@ -22,6 +22,16 @@ namespace TiltBrush
 
     public class GrabWidget : MonoBehaviour
     {
+        public SymmetryWidgetGroup SymmetryPeerGroup { get; private set; }
+        public int SymmetryPointerIndex { get; private set; } = -1;
+
+        internal void SetSymmetryGroup(SymmetryWidgetGroup group, int index)
+        {
+            SymmetryPeerGroup?.Remove(this);
+            SymmetryPeerGroup = group;
+            SymmetryPointerIndex = group == null ? -1 : index;
+            group?.Add(this);
+        }
         public enum State
         {
             Showing,
@@ -476,6 +486,8 @@ namespace TiltBrush
             {
                 if (interacting)
                 {
+                    // Recall once at grab start, before recording any movement.
+                    SymmetryMirrors.Recall(SymmetryPeerGroup?.Mirror);
                     OnUserBeginInteracting();
                 }
                 else
@@ -543,7 +555,7 @@ namespace TiltBrush
         }
 
         /// Returns true if we think the user intends to throw this thing away
-        bool IsHideToss(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
+        protected bool IsHideToss(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
         {
             if (m_Pinned || !m_AllowHideWithToss)
             {
@@ -635,7 +647,7 @@ namespace TiltBrush
         // vLinVel: units/s
         // vAngVel: degrees/s
         // vPivot: world-space position about which the angular velocity is applied
-        public void SetVelocities(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
+        public virtual void SetVelocities(Vector3 vLinVel, Vector3 vAngVel, Vector3 vPivot)
         {
             if (IsHideToss(vLinVel, vAngVel, vPivot))
             {
@@ -1153,7 +1165,7 @@ namespace TiltBrush
 
         /// Size for "SupportsNegativeSize == true" widgets can be negative. This can happen through the
         /// flip selection command which inverts the scale.
-        public void RecordAndSetSize(float value)
+        public virtual void RecordAndSetSize(float value)
         {
             if (m_RecordMovements)
             {
@@ -1356,6 +1368,18 @@ namespace TiltBrush
                 Quaternion.Angle(inputXf.rotation, snappedXf.rotation) > rotationEpsilon;
         }
 
+        // Most widgets snap their pivot. Grid-backed widgets can supply a face/corner anchor.
+        protected virtual Vector3 GetGridSnapOffset_GS(Quaternion rotation_GS) => Vector3.zero;
+        protected virtual float QuickSnapGridSize_CS => 0;
+
+        internal Vector3 SnapPositionToGrid_GS(
+            Vector3 position_GS, Quaternion rotation_GS, float? gridSize_CS = null)
+        {
+            Vector3 offset = GetGridSnapOffset_GS(rotation_GS);
+            return SelectionManager.m_Instance.SnapToGrid_GS(
+                position_GS + offset, gridSize_CS ?? SelectionManager.m_Instance.SnappingGridSize) - offset;
+        }
+
         // The "new" snapping - based on the settings on the Snap Panel
         private TrTransform GetSnapPanelTransform(TrTransform xf_GS)
         {
@@ -1376,7 +1400,7 @@ namespace TiltBrush
 
             if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
             {
-                outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid_GS(outXf_GS.translation);
+                outXf_GS.translation = SnapPositionToGrid_GS(outXf_GS.translation, outXf_GS.rotation);
             }
 
             return outXf_GS;
@@ -1398,9 +1422,17 @@ namespace TiltBrush
                 outXf_GS.translation = grabSpot + qDelta * grabToCenter;
             }
 
-            if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
+            // This path is used for quick snap with panel snapping disabled. VOX
+            // models add cell-sized position snapping without changing panel overrides.
+            float quickGridSize = QuickSnapGridSize_CS;
+            if (quickGridSize > 0)
             {
-                outXf_GS.translation = SelectionManager.m_Instance.SnapToGrid_GS(outXf_GS.translation);
+                outXf_GS.translation = SnapPositionToGrid_GS(
+                    outXf_GS.translation, outXf_GS.rotation, quickGridSize);
+            }
+            else if (SelectionManager.m_Instance.CurrentSnapGridIndex != 0)
+            {
+                outXf_GS.translation = SnapPositionToGrid_GS(outXf_GS.translation, outXf_GS.rotation);
             }
 
             return outXf_GS;
@@ -2009,6 +2041,7 @@ namespace TiltBrush
 
         virtual protected void OnDestroy()
         {
+            SetSymmetryGroup(null, -1);
             OnPreDestroy();
             WidgetManager.m_Instance.DestroyWidgetPin(m_Pin);
         }

@@ -181,6 +181,7 @@ namespace TiltBrush
             WidgetManager.m_Instance.WidgetsDormant = false;
             SketchControlsScript.m_Instance.EatGazeObjectInput();
             SelectionManager.m_Instance.RemoveFromSelection(false);
+            createCommand.ActivateVoxelTarget();
         }
 
         public void SetPreset(Model model, int index)

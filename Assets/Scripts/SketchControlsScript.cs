@@ -195,6 +195,7 @@ namespace TiltBrush
             OpenScriptParametersPopup = 6005,
             SaveAs = 6006,
             OpenPluginDocs = 6007,
+            ToggleLinkedMirror = 6008,
             SaveSelected = 6500,
             OpenColorOptionsPopup = 7000,
             ChangeSnapAngle = 8000,
@@ -1933,7 +1934,8 @@ namespace TiltBrush
                         if (!m_GrabBrush.eatInput && InputManager.Brush.GetControllerGrip())
                         {
                             m_CurrentGrabWidget = m_PotentialGrabWidgetBrush;
-                            if (m_CurrentGrabWidget.Group != SketchGroupTag.None)
+                            if (m_CurrentGrabWidget.Group != SketchGroupTag.None &&
+                                !(m_CurrentGrabWidget is ModelWidget regionModel && regionModel.HasVoxRegionSelection))
                             {
                                 m_GrabBrush.grabbingGroup = true;
                                 m_CurrentGrabWidget =
@@ -1986,7 +1988,8 @@ namespace TiltBrush
                         if (!m_GrabWand.eatInput && InputManager.Wand.GetControllerGrip())
                         {
                             m_CurrentGrabWidget = m_PotentialGrabWidgetWand;
-                            if (m_CurrentGrabWidget.Group != SketchGroupTag.None)
+                            if (m_CurrentGrabWidget.Group != SketchGroupTag.None &&
+                                !(m_CurrentGrabWidget is ModelWidget regionModel && regionModel.HasVoxRegionSelection))
                             {
                                 m_GrabWand.grabbingGroup = true;
                                 m_CurrentGrabWidget =
@@ -2079,7 +2082,7 @@ namespace TiltBrush
                     }
                 }
 
-                if (m_CurrentGrabWidget is SelectionWidget)
+                if (m_CurrentGrabWidget is SelectionWidget selectionWidget && !selectionWidget.HasVoxRegionSelection)
                 {
                     if (InputManager.m_Instance.GetCommandDown(
                         InputManager.SketchCommands.DuplicateSelection))
@@ -2626,6 +2629,10 @@ namespace TiltBrush
             Transform controller = InputManager.Controllers[(int)info.m_Name].Transform;
             Transform widget = m_CurrentGrabWidget.GrabTransform_GS;
             TrTransform newWidgetXf = Coords.AsGlobal[widget];
+            if (m_CurrentGrabWidget is ModelWidget modelWidget && modelWidget.VoxRegionGrabActive)
+                newWidgetXf = modelWidget.GetGrabbedTrTransform();
+            else if (m_CurrentGrabWidget is SelectionWidget selectionWidget && selectionWidget.VoxRegionGrabActive)
+                newWidgetXf = selectionWidget.GetGrabbedTrTransform();
 
             info.m_BaseControllerXf = Coords.AsGlobal[controller];
             info.m_BaseWidgetXf_LS = info.m_BaseControllerXf.inverse * newWidgetXf;
@@ -4757,9 +4764,9 @@ namespace TiltBrush
                     }
                     break;
                 case GlobalCommands.MultiMirror:
-                    if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.MultiMirror)
+                    if (!PointerManager.m_Instance.MirrorModeEnabled)
                     {
-                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.MultiMirror);
+                        PointerManager.m_Instance.SetSymmetryMode(PointerManager.m_Instance.LastMirrorMode);
                         ControllerConsoleScript.m_Instance.AddNewLine("Symmetry Enabled");
                     }
                     else
@@ -4767,6 +4774,14 @@ namespace TiltBrush
                         PointerManager.m_Instance.SetSymmetryMode(PointerManager.SymmetryMode.None);
                     }
                     InputManager.m_Instance.TriggerHaptics(InputManager.ControllerName.Brush, 0.1f);
+                    break;
+                case GlobalCommands.ToggleLinkedMirror:
+                    // On: a fresh linked mirror. Off: plain symmetry; the linked mirror keeps
+                    // its strokes. Both undoable.
+                    // A linked mirror left dormant by a mode switch counts as off, so turning
+                    // the toggle on makes a mirror for the current mode.
+                    if (SymmetryMirrors.Showing != null) { SymmetryMirrors.UsePlain(); }
+                    else { SymmetryMirrors.NewLinked(); }
                     break;
                 case GlobalCommands.SymmetryTwoHanded:
                     if (PointerManager.m_Instance.CurrentSymmetryMode != PointerManager.SymmetryMode.TwoHanded)
@@ -5552,7 +5567,8 @@ namespace TiltBrush
                 case GlobalCommands.StraightEdge: return PointerManager.m_Instance.StraightEdgeModeEnabled;
                 case GlobalCommands.StraightEdgeMeterDisplay: return PointerManager.m_Instance.StraightEdgeGuide.IsShowingMeter();
                 case GlobalCommands.SymmetryPlane: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.SinglePlane;
-                case GlobalCommands.MultiMirror: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.MultiMirror;
+                case GlobalCommands.MultiMirror: return PointerManager.m_Instance.MirrorModeEnabled;
+                case GlobalCommands.ToggleLinkedMirror: return SymmetryMirrors.Showing != null;
                 case GlobalCommands.SymmetryTwoHanded: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.TwoHanded;
                 case GlobalCommands.ScriptedSymmetryCommand: return PointerManager.m_Instance.CurrentSymmetryMode == PointerManager.SymmetryMode.ScriptedSymmetryMode;
                 case GlobalCommands.AutoOrient: return m_AutoOrientAfterRotation;
@@ -5730,7 +5746,7 @@ namespace TiltBrush
                     return SelectionManager.m_Instance.HasSelection;
                 case GlobalCommands.SummonMirror:
                     return PointerManager.m_Instance.CurrentSymmetryMode !=
-                        PointerManager.SymmetryMode.None;
+                        PointerManager.SymmetryMode.None && SymmetryMirrors.Showing == null;
                 case GlobalCommands.InvertSelection:
                 case GlobalCommands.FlipSelection:
                     return SelectionManager.m_Instance.HasSelection;
