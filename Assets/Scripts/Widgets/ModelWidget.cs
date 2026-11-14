@@ -89,6 +89,20 @@ namespace TiltBrush
             => m_InitialMaterials != null && m_InitialMaterials.TryGetValue(renderer, out var materials)
                 ? materials : renderer.sharedMaterials;
 
+        // The import collector is keyed by the original materials, before the widget
+        // creates per-renderer instances for selection and highlighting.
+        internal IExportableMaterial GetOriginalExportableMaterial(Renderer renderer, int materialIndex)
+        {
+            var originals = m_InitialMaterials != null &&
+                m_InitialMaterials.TryGetValue(renderer, out var materials)
+                    ? materials : renderer.sharedMaterials;
+            if (materialIndex >= originals.Length || originals[materialIndex] == null)
+            {
+                return null;
+            }
+            return m_Model?.GetExportableMaterial(originals[materialIndex]);
+        }
+
         public Model Model
         {
             get { return m_Model; }

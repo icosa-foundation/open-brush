@@ -361,6 +361,26 @@ namespace TiltBrush
                     m_MaterialBrushes[materials[0]] = descriptor;
                 }
             }
+            else if (renderer != null)
+            {
+                // Imported brush meshes have no Batch or BaseBrushScript. Their
+                // importer retains the resolved descriptor in the model's collector.
+                var widget = transform.GetComponentInParent<ModelWidget>();
+                if (widget != null)
+                {
+                    var materials = renderer.sharedMaterials;
+                    for (int i = 0; i < materials.Length; ++i)
+                    {
+                        // Resolve against the saved original, but register the instance
+                        // that UnityGLTF will actually pass to AfterMaterialExport.
+                        if (materials[i] != null &&
+                            widget.GetOriginalExportableMaterial(renderer, i) is BrushDescriptor importedBrush)
+                        {
+                            m_MaterialBrushes[materials[i]] = importedBrush;
+                        }
+                    }
+                }
+            }
             if (App.UserConfig.Export.KeepStrokes &&
                 App.UserConfig.Export.ExportStrokeTimestamp)
             {

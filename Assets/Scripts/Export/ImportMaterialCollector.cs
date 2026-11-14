@@ -96,9 +96,17 @@ namespace TiltBrush
 #endif
 
         // Used for UnityGLTF imports
+        public void AddBrush(Material unityMaterial, BrushDescriptor brush)
+        {
+            m_MaterialToIem[unityMaterial] = brush;
+        }
+
         // Can be removed once we stop using EnsureCollectorExists
         public void Add(Material unityMaterial)
         {
+            // Keep descriptors already recovered from the source glTF instead of
+            // replacing them with a generic PBR approximation on later collection.
+            if (m_MaterialToIem.ContainsKey(unityMaterial)) return;
             TbtSettings.PbrMaterialInfo pbrInfo = TbtSettings.Instance.m_PbrOpaqueSingleSided;
 
             Color color = Color.white;

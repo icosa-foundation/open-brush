@@ -335,6 +335,12 @@ namespace TiltBrush
             return m_ImportMaterialCollector.GetExportableMaterial(material);
         }
 
+        internal void RegisterImportedBrushMaterial(Material material, BrushDescriptor brush)
+        {
+            EnsureCollectorExists();
+            m_ImportMaterialCollector.AddBrush(material, brush);
+        }
+
         // Constructor for local models i.e. Media Library assets
         public Model(string relativePath)
         {
@@ -1468,9 +1474,21 @@ namespace TiltBrush
             m_ImportMaterialCollector = collector;
             foreach (var mf in GetMeshes())
             {
-                foreach (var unityMat in mf.GetComponent<MeshRenderer>().materials)
+                var renderer = mf.GetComponent<MeshRenderer>();
+                var originals = renderer.sharedMaterials;
+                var instances = renderer.materials;
+                for (int i = 0; i < instances.Length; ++i)
                 {
-                    m_ImportMaterialCollector.Add(unityMat);
+                    // Restored mesh splits share the source materials until .materials
+                    // creates per-renderer instances. Carry the descriptor across that copy.
+                    if (m_ImportMaterialCollector.GetExportableMaterial(originals[i]) is BrushDescriptor brush)
+                    {
+                        m_ImportMaterialCollector.AddBrush(instances[i], brush);
+                    }
+                    else
+                    {
+                        m_ImportMaterialCollector.Add(instances[i]);
+                    }
                 }
             }
         }
