@@ -319,6 +319,47 @@ namespace TiltBrush
         public bool IsAvailable() { return m_CurrentState != PanelState.Unavailable; }
         public bool IsActive() { return m_GazeActive; }
         public bool BeginFixed { get { return m_BeginFixed; } }
+        public GameObject PopupPrefab(SketchControlsScript.GlobalCommands command)
+        {
+            foreach (var popup in m_PanelPopUpMap)
+                if (popup.m_Command == command) { return popup.m_PopUpPrefab; }
+            return null;
+        }
+
+        // Works while this panel is hidden at zero scale. Use authored panel scale,
+        // and optionally expand a tool tray without making it visible.
+        public Vector3 FullScalePoint(Transform child, Vector3 point, bool expandTrays = false)
+        {
+            Matrix4x4 relative = Matrix4x4.identity;
+            for (Transform node = child; node != transform; node = node.parent)
+            {
+                if (node == null) { throw new ArgumentException("The point must belong to this panel."); }
+                relative = AutomationLocalMatrix(node, expandTrays) * relative;
+            }
+            return Vector3.Scale(m_BaseScale, relative.MultiplyPoint3x4(point));
+        }
+
+        protected virtual Matrix4x4 AutomationLocalMatrix(Transform node, bool expandTrays)
+        {
+            BaseTray tray = expandTrays ? node.GetComponent<BaseTray>() : null;
+            return tray != null ? tray.ExpandedLocalMatrix() : Matrix4x4.TRS(node.localPosition, node.localRotation, node.localScale);
+        }
+
+        protected virtual bool AutomationRendererVisible(Renderer renderer) => renderer.enabled;
+
+        public IEnumerable<Vector3> FullScaleRendererPoints(bool expandTrays = false)
+        {
+            foreach (Renderer renderer in GetComponentsInChildren<Renderer>(true))
+            {
+                if (!AutomationRendererVisible(renderer) || renderer is LineRenderer) { continue; }
+                bool visible = true;
+                for (Transform node = renderer.transform; node != transform; node = node.parent)
+                    if (!node.gameObject.activeSelf && !(expandTrays && node.GetComponent<BaseTray>() != null)) { visible = false; break; }
+                if (!visible) { continue; }
+                for (int i = 0; i < 8; ++i)
+                    yield return FullScalePoint(renderer.transform, AutomationShot.Corner(renderer.localBounds, i), expandTrays);
+            }
+        }
         public void ClearBeginFixed() { m_BeginFixed = false; }
         public bool CanBeDetached { get { return m_CanBeDetachedFromWand; } }
         public bool IsInInitialPosition()

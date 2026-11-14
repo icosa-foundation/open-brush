@@ -21,6 +21,7 @@ namespace TiltBrush
     {
         [SerializeField] private BaseTool.ToolType m_Tool;
         [SerializeField] private bool m_EatGazeInputOnPress = false;
+        public BaseTool.ToolType Tool => m_Tool;
 
         override protected void Awake()
         {

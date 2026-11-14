@@ -37,8 +37,10 @@ namespace TiltBrush
             switch (mode)
             {
                 case SdkMode.UnityXR when App.Config.IsMobileHardware:
+                case SdkMode.VirtualInput when App.Config.IsMobileHardware:
                     return m_ModeQuest;
                 case SdkMode.UnityXR when !App.Config.IsMobileHardware:
+                case SdkMode.VirtualInput when !App.Config.IsMobileHardware:
                     return m_ModeVr;
                 case SdkMode.Monoscopic:
                     return m_ModeMono;
@@ -319,6 +321,10 @@ namespace TiltBrush
 
         public float GetSnapStepDistance() { return m_WandPanelSnapStepDistance; }
 
+        public const float WandPanelSnapAngle = 360f / 3f;
+        public bool WandPanelRotationIsSettled => !m_AdvancedModeRevealActive &&
+            m_RotateSnapState == RotateSnapState.Done && Mathf.Abs(m_WandPanelsRotationVelocity) < 0.0001f;
+
         public bool PanelsAreStable()
         {
             return StandardActive() || SketchbookActive() || SettingsActive() || MemoryWarningActive() ||
@@ -552,7 +558,7 @@ namespace TiltBrush
             m_SketchbookScale = 0.0f;
 
             // Start with advanced panels off.
-            m_PanelAvailabilityMode = PlayerPrefs.GetInt(kPlayerPrefAdvancedMode, 0) == 1
+            m_PanelAvailabilityMode = App.Config.m_SdkMode != SdkMode.VirtualInput && PlayerPrefs.GetInt(kPlayerPrefAdvancedMode, 0) == 1
                 ? PanelAvailabilityMode.Advanced
                 : PanelAvailabilityMode.Beginner;
 
@@ -935,7 +941,8 @@ namespace TiltBrush
                 }
             }
             m_AdvancedModeRevealActive = true;
-            PlayerPrefs.SetInt(kPlayerPrefAdvancedMode, advancedPanels ? 1 : 0);
+            if (App.Config.m_SdkMode != SdkMode.VirtualInput)
+                PlayerPrefs.SetInt(kPlayerPrefAdvancedMode, advancedPanels ? 1 : 0);
             AudioManager.m_Instance.AdvancedModeSwitch(advancedPanels);
             App.Switchboard.TriggerAdvancedPanelsChanged();
 
@@ -1130,7 +1137,7 @@ namespace TiltBrush
                     // How fast it snaps to next position.
                     const float kSnapSpeed = 10f;
                     // How far to turn to get to the next pannel.
-                    const float kSnapRotationAngle = 360f / 3f;
+                    const float kSnapRotationAngle = WandPanelSnapAngle;
 
                     // Play audio on enter.
                     if (m_RotateSnapAnimTime == 1.0f)
@@ -1331,6 +1338,51 @@ namespace TiltBrush
             m_PanelsCustomized = false;
             AdvancedPanelLayouts.ClearPlayerPrefs();
             // We may not be dismissing a panel here, but we want our panel buttons to refresh, so fake it.
+            App.Switchboard.TriggerPanelDismissed();
+        }
+
+        public void ResetPanelsForAutomation()
+        {
+            if (App.Config.m_SdkMode != SdkMode.VirtualInput)
+                throw new System.InvalidOperationException("Temporary default layouts require Virtual Input.");
+            SetPanelAvailabilityMode(PanelAvailabilityMode.Advanced);
+            m_PanelsMode = PanelMode.Standard;
+            m_StandardScale = 1;
+            m_SketchbookScale = m_SettingsScale = m_MemoryWarningScale = m_CameraScale = m_BrushLabScale = m_MultiplayerScale = 0;
+            foreach (PanelData data in m_AllPanels)
+            {
+                BasePanel panel = data.m_Panel;
+                panel.ResetPanel();
+                panel.ResetPanelToInitialPosition();
+                panel.m_Fixed = panel.BeginFixed;
+                // Floating widgets own visibility; keep the panel's gaze-scale
+                // multiplier at its normal value when the widget hides its transform.
+                panel.SetScale(1);
+                if (!panel.BeginFixed)
+                {
+                    panel.VerifyStateForFloating();
+                    data.m_Widget?.ForceInvisibleForInit();
+                    panel.transform.SetPositionAndRotation(panel.m_InitialSpawnPos, Quaternion.Euler(panel.m_InitialSpawnRotEulers));
+                }
+                data.m_RestoreFlag = false;
+                panel.gameObject.SetActive(panel.BeginFixed && data.AvailableInCurrentMode);
+                if (panel.BeginFixed) { panel.SetScale(data.AvailableInCurrentMode ? 1 : 0); }
+            }
+            m_WandPanelsOriginAngle = m_WandPanelsDefaultOriginAngle;
+            m_WandPanelsOriginAngleOffset = m_WandPanelsRotationVelocity = 0;
+            m_RotateSnapState = RotateSnapState.Done;
+            m_AdvancedModeRevealActive = false;
+            m_AdvancedModeRevealSpinValue = 0;
+            m_PanelsCustomized = false;
+            m_CachedPanelLayouts = new AdvancedPanelLayouts();
+            m_CachedPanelLayouts.PopulateFromPlayerPrefs();
+            RefreshPanelsForAnimations();
+            OrderPanes();
+            SetVisible(true);
+            LockPanelsToController();
+            foreach (PanelData data in m_AllPanels)
+                if (data.AvailableInCurrentMode) { data.m_Panel.ForceUpdatePanelVisuals(); }
+            App.Switchboard.TriggerAdvancedPanelsChanged();
             App.Switchboard.TriggerPanelDismissed();
         }
 

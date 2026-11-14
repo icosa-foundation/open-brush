@@ -155,14 +155,13 @@ namespace TiltBrush
                 }
 
                 bool isCapture = IsCaptureCamera(camera);
-                bool allowXr = !isCapture && camera.stereoTargetEye != StereoTargetEyeMask.None;
+                UniversalAdditionalCameraData cameraData = camera.GetComponent<UniversalAdditionalCameraData>();
+                bool allowXr = !isCapture && (cameraData == null || cameraData.allowXRRendering);
                 if (camera.CompareTag("Ignore") && allowXr)
                 {
                     continue;
                 }
 
-                UniversalAdditionalCameraData cameraData =
-                    camera.GetComponent<UniversalAdditionalCameraData>();
                 if (cameraData == null)
                 {
                     cameraData = camera.gameObject.AddComponent<UniversalAdditionalCameraData>();
