@@ -150,6 +150,7 @@ namespace TiltBrush
             }
             lightWidget.Group = App.GroupManager.GetGroupFromId(tiltLight.GroupId);
             lightWidget.RefreshLightGizmo();
+            tiltLight.WidgetLink?.Attach(lightWidget);
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(lightWidget.GetTiltMeterCost(), up: true);
             lightWidget.UpdateScale();

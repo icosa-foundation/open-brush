@@ -423,6 +423,7 @@ namespace TiltBrush
             if (tilt.Pinned) { widget.PinFromSave(); }
             widget.Group = App.GroupManager.GetGroupFromId(tilt.GroupId);
             widget.SetCanvas(App.Scene.GetOrCreateLayer(tilt.LayerId));
+            tilt.WidgetLink?.Attach(widget);
         }
 
         public override GrabWidget Clone()

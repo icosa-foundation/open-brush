@@ -190,6 +190,7 @@ namespace TiltBrush
 
         public void ResetLayers(bool notify = false)
         {
+
             if (m_LayerCanvases != null)
             {
                 foreach (var canvas in m_LayerCanvases.ToArray())
@@ -365,12 +366,13 @@ namespace TiltBrush
         /// </summary>
         /// <param name="strokes">Collection of strokes to move.</param>
         /// <param name="worldPosition">Target world-space position for the centroid.</param>
-        public void MoveStrokesCentroidTo(IEnumerable<Stroke> strokes, Vector3 worldPosition)
+        /// <returns>The world-space translation applied to the strokes.</returns>
+        public Vector3 MoveStrokesCentroidTo(IEnumerable<Stroke> strokes, Vector3 worldPosition)
         {
             if (strokes == null) { throw new ArgumentNullException(nameof(strokes)); }
 
             var strokeList = strokes as IList<Stroke> ?? strokes.ToList();
-            if (strokeList.Count == 0) { return; }
+            if (strokeList.Count == 0) { return Vector3.zero; }
 
             CanvasScript canvas = strokeList[0].Canvas;
             Bounds bounds = new Bounds();
@@ -410,12 +412,12 @@ namespace TiltBrush
                 }
             }
 
-            if (!initialized) { return; }
+            if (!initialized) { return Vector3.zero; }
 
             Vector3 currentCenter = bounds.center; // Already in world space
             Vector3 worldOffset = worldPosition - currentCenter;
 
-            if (worldOffset == Vector3.zero) { return; }
+            if (worldOffset == Vector3.zero) { return Vector3.zero; }
 
             // Convert world-space offset to canvas-local space for Recreate
             Vector3 localOffset = canvas.transform.InverseTransformVector(worldOffset);
@@ -425,6 +427,7 @@ namespace TiltBrush
             {
                 stroke.Recreate(TrTransform.T(localOffset));
             }
+            return worldOffset;
         }
 
         public void MarkLayerAsNotDeleted(CanvasScript layer)

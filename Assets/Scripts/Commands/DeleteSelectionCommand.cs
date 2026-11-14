@@ -22,6 +22,13 @@ namespace TiltBrush
         private Stroke[] m_Strokes;
         private List<GrabWidget> m_Widgets;
         private TrTransform m_InitialSelectionTransform;
+        private readonly Dictionary<Stroke, TrTransform> m_StrokeJoins =
+            new Dictionary<Stroke, TrTransform>(new ReferenceComparer<Stroke>());
+        private readonly Dictionary<GrabWidget, TrTransform> m_WidgetJoins =
+            new Dictionary<GrabWidget, TrTransform>();
+        private readonly Dictionary<GrabWidget, CanvasScript> m_WidgetCanvases =
+            new Dictionary<GrabWidget, CanvasScript>();
+        private readonly Dictionary<GrabWidget, int> m_LinkedWidgetCosts = new Dictionary<GrabWidget, int>();
 
         public DeleteSelectionCommand(
             ICollection<Stroke> strokes,
@@ -32,13 +39,44 @@ namespace TiltBrush
             {
                 m_Strokes = new Stroke[strokes.Count];
                 strokes.CopyTo(m_Strokes, 0);
+                foreach (var stroke in m_Strokes)
+                {
+                    m_StrokeJoins[stroke] = SelectionManager.m_Instance.SelectionTransformWhenSelected(stroke);
+                }
             }
             if (widgets != null)
             {
+                // Capture resting peer placements, not temporary selection-preview positions.
+                SymmetryWidgetPreview.Hide();
                 m_Widgets = new List<GrabWidget>();
                 m_Widgets.AddRange(widgets);
+                var seen = new HashSet<GrabWidget>(m_Widgets);
+                foreach (var widget in widgets)
+                {
+                    m_WidgetJoins[widget] = SelectionManager.m_Instance.SelectionTransformWhenSelected(widget);
+                    m_WidgetCanvases[widget] = widget.m_PreviousCanvas;
+                    if (widget.SymmetryPeerGroup == null) { continue; }
+                    m_LinkedWidgetCosts[widget] = widget.GetTiltMeterCost();
+                    foreach (var peer in widget.SymmetryPeerGroup.ActiveMembers)
+                    {
+                        if (seen.Add(peer)) { new HideWidgetCommand(peer, this, propagate: false); }
+                    }
+                }
             }
             m_InitialSelectionTransform = SelectionManager.m_Instance.SelectionTransform;
+
+            // Strokes the symmetry drew alongside the selected ones aren't in the selection, so
+            // they are deleted by child commands rather than as part of this one.
+            if (m_Strokes != null)
+            {
+                foreach (var peer in SymmetryPeerEditing.PeersOutside(m_Strokes))
+                {
+                    if (peer.IsGeometryEnabled)
+                    {
+                        new DeleteStrokeCommand(peer, this);
+                    }
+                }
+            }
         }
 
         public override bool NeedsSave { get { return true; } }
@@ -75,6 +113,8 @@ namespace TiltBrush
                 for (int i = 0; i < m_Widgets.Count; ++i)
                 {
                     m_Widgets[i].Hide();
+                    if (m_LinkedWidgetCosts.TryGetValue(m_Widgets[i], out var cost))
+                    { TiltMeterScript.m_Instance.AdjustMeterWithWidget(cost, up: false); }
                 }
             }
 
@@ -114,11 +154,15 @@ namespace TiltBrush
                 for (int i = 0; i < m_Widgets.Count; ++i)
                 {
                     m_Widgets[i].RestoreFromToss();
+                    if (m_LinkedWidgetCosts.TryGetValue(m_Widgets[i], out var cost))
+                    { TiltMeterScript.m_Instance.AdjustMeterWithWidget(cost, up: true); }
                 }
             }
 
             SelectionManager.m_Instance.RegisterStrokesInSelectionCanvas(m_Strokes);
             SelectionManager.m_Instance.RegisterWidgetsInSelectionCanvas(m_Widgets);
+            SelectionManager.m_Instance.RestoreSelectionJoinTransforms(m_StrokeJoins);
+            SelectionManager.m_Instance.RestoreWidgetSelectionJoins(m_WidgetJoins, m_WidgetCanvases);
             SketchSurfacePanel.m_Instance.EnableSpecificTool(BaseTool.ToolType.SelectionTool);
         }
     }

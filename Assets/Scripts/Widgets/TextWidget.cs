@@ -338,6 +338,7 @@ namespace TiltBrush
             // especially a transparent outline used by imported text.
             textWidget.TextColor = tiltText.FillColor;
             textWidget.StrokeColor = tiltText.StrokeColor;
+            tiltText.WidgetLink?.Attach(textWidget);
 
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(textWidget.GetTiltMeterCost(), up: true);
             textWidget.UpdateScale();

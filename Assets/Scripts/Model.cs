@@ -255,6 +255,9 @@ namespace TiltBrush
         private readonly List<Material> m_OwnedGeneratedMaterials = new List<Material>();
 
         internal void TakeGeneratedMaterialOwnership(Material material) => m_OwnedGeneratedMaterials.Add(material);
+        // Models are catalog-cached and shared by widgets, so retain immutable source bytes here.
+        // Each widget creates its own mutable RuntimeVoxDocument from this template.
+        private byte[] m_EditableVoxSource;
 
         // Returns the path starting after Media Library/Models
         // e.g. subdirectory/example.obj
@@ -299,6 +302,42 @@ namespace TiltBrush
         public bool AllowExport
         {
             get { return m_AllowExport; }
+        }
+
+        internal RuntimeVoxDocument CreateEditableVoxDocument()
+        {
+            return m_EditableVoxSource == null
+                ? null
+                : RuntimeVoxDocument.FromBytes(m_EditableVoxSource);
+        }
+
+        // An embedded widget still needs an ordinary Model hierarchy to participate in
+        // selection, batching, cloning, and widget geometry accounting. The path is only
+        // a location label: the importer uses these bytes, not a Media Library file.
+        internal static Model CreateEditableVoxModelFromBytes(
+            byte[] voxBytes, string relativePath = null)
+        {
+            string modelPath = string.IsNullOrEmpty(relativePath)
+                ? $"GeneratedVox_{Guid.NewGuid():N}.vox"
+                : relativePath;
+            var model = new Model(modelPath);
+            var importer = new VoxImporter(voxBytes, sourceName: modelPath);
+            var (root, warnings, collector) = importer.Import();
+            model.m_ImportMaterialCollector = collector;
+            model.CalcBoundsNonGltf(root);
+            if (!model.EndCreatePrefab(root, warnings))
+            {
+                model.ReleaseFromCatalog();
+                return null;
+            }
+            model.m_AllowExport = collector != null;
+            model.SetEditableVoxSource(voxBytes);
+            return model;
+        }
+
+        private void SetEditableVoxSource(byte[] source)
+        {
+            m_EditableVoxSource = source == null ? null : (byte[])source.Clone();
         }
 
         private void Init()
@@ -814,6 +853,7 @@ namespace TiltBrush
 
         GameObject LoadVox(List<string> warningsOut)
         {
+            SetEditableVoxSource(null);
             try
             {
                 // Default to optimized mode with face culling
@@ -822,6 +862,7 @@ namespace TiltBrush
                 warningsOut.AddRange(warnings);
                 m_ImportMaterialCollector = collector;
                 m_AllowExport = (m_ImportMaterialCollector != null);
+                SetEditableVoxSource(reader.CopySourceBytes());
                 return gameObject;
             }
             catch (Exception ex)
@@ -1227,16 +1268,28 @@ namespace TiltBrush
             Debug.Assert(Coords.AsGlobal[go.transform] == TrTransform.identity);
             Bounds b = new Bounds();
             bool first = true;
-            foreach (BoxCollider bc in go.GetComponentsInChildren<BoxCollider>())
+            foreach (BoxCollider bc in go.GetComponentsInChildren<BoxCollider>(includeInactive: true))
             {
+                // Collider.bounds is empty on inactive objects. Transform the local box
+                // explicitly so hidden VOX instances still contribute import bounds.
+                Transform colliderTransform = bc.transform;
+                Vector3 localExtents = bc.size * 0.5f;
+                Vector3 x = colliderTransform.TransformVector(new Vector3(localExtents.x, 0, 0));
+                Vector3 y = colliderTransform.TransformVector(new Vector3(0, localExtents.y, 0));
+                Vector3 z = colliderTransform.TransformVector(new Vector3(0, 0, localExtents.z));
+                Vector3 worldExtents = new Vector3(
+                    Mathf.Abs(x.x) + Mathf.Abs(y.x) + Mathf.Abs(z.x),
+                    Mathf.Abs(x.y) + Mathf.Abs(y.y) + Mathf.Abs(z.y),
+                    Mathf.Abs(x.z) + Mathf.Abs(y.z) + Mathf.Abs(z.z));
+                var colliderBounds = new Bounds(colliderTransform.TransformPoint(bc.center), 2f * worldExtents);
                 if (first)
                 {
-                    b = new Bounds(bc.bounds.center, bc.bounds.size);
+                    b = colliderBounds;
                     first = false;
                 }
                 else
                 {
-                    b.Encapsulate(bc.bounds);
+                    b.Encapsulate(colliderBounds);
                 }
                 UnityEngine.Object.Destroy(bc);
             }
@@ -1365,6 +1418,7 @@ namespace TiltBrush
             m_OwnedGsplatAsset = null;
             foreach (var material in m_OwnedGeneratedMaterials) { UObject.Destroy(material); }
             m_OwnedGeneratedMaterials.Clear();
+            SetEditableVoxSource(null);
             m_AppliedMeshSplits?.Clear();
         }
 

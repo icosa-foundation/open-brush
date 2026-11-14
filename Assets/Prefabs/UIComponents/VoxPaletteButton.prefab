@@ -1,0 +1,130 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &7480243313953374019
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.13
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.13
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.13
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3215671330204284922, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3217828638919557998, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      propertyPath: m_Name
+      value: VoxPaletteButton
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 3258390695722353360, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3217828638919557998, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 114275218848035040}
+  m_SourcePrefab: {fileID: 100100000, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+--- !u!1 &5433363909804260397 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3217828638919557998, guid: 98d7d17f6021c86409b1392b6aff1f3c, type: 3}
+  m_PrefabInstance: {fileID: 7480243313953374019}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &114275218848035040
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5433363909804260397}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d2851f7008754576a4153e0f4f11da4a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TiltBrush.VoxPaletteButton
+  m_DescriptionType: 0
+  m_DescriptionYOffset: 0
+  m_DescriptionText: Palette slot
+  m_LocalizedDescription:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionTextExtra: 
+  m_LocalizedDescriptionExtra:
+    m_TableReference:
+      m_TableCollectionName: 
+    m_TableEntryReference:
+      m_KeyId: 0
+      m_Key: 
+    m_FallbackState: 0
+    m_WaitForCompletion: 0
+    m_LocalVariables: []
+  m_DescriptionActivateSpeed: 12
+  m_DescriptionZScale: 1
+  m_ButtonTexture: {fileID: 2800000, guid: d21c4cae08e56704b98251732eca90cb, type: 3}
+  m_AtlasTexture: 0
+  m_ToggleButton: 1
+  m_LongPressReleaseButton: 0
+  m_ButtonHasPressedAudio: 0
+  m_ZAdjustHover: -0.02
+  m_ZAdjustClick: 0.05
+  m_HoverScale: 1.1
+  m_HoverBoxColliderGrow: 0.2
+  m_AddOverlay: 0
+  m_SelectedTexture: {fileID: 2800000, guid: ced4f608569811f49a9ad00156a7030f, type: 3}
+  references:
+    version: 2
+    RefIds: []

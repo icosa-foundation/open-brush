@@ -184,6 +184,7 @@ namespace TiltBrush
             clone.BlendMode = m_BlendMode;
             clone.SetAspectRatioOverride(m_AspectRatioOverride);
             clone.TrySetCanvasKeywordsFromObject(transform);
+            if (ExtrusionDepth > 0) { clone.SetExtrusion(ExtrusionDepth, ExtrusionColor); }
             return clone;
         }
 
@@ -293,8 +294,13 @@ namespace TiltBrush
             get { return m_ReferenceImage; }
         }
 
+        public float ExtrusionDepth { get; private set; }
+        public Color ExtrusionColor { get; private set; }
+
         public void SetExtrusion(float depth, Color color)
         {
+            ExtrusionDepth = depth;
+            ExtrusionColor = color;
             var extruder = gameObject.GetComponentInChildren<SpriteExtruder>();
             var importer = new RuntimeSVGImporter();
             var imageMeshRenderer = m_Mesh.GetComponent<MeshRenderer>();
@@ -312,7 +318,7 @@ namespace TiltBrush
                 }
                 else
                 {
-                    imageMeshRenderer.enabled = false;
+                    imageMeshRenderer.enabled = true;
                     extruderMeshFilter.mesh = null;
                 }
             }
@@ -410,6 +416,7 @@ namespace TiltBrush
                 uint groupId = (groupIds != null && i < groupIds.Length) ? groupIds[i] : 0;
                 image.Group = App.GroupManager.GetGroupFromId(groupId);
                 image.TwoSided = twoSidedFlags != null && i < twoSidedFlags.Length && twoSidedFlags[i];
+                WidgetLink.Attach(image, tiltImage.WidgetLinks, i);
                 TiltMeterScript.m_Instance.AdjustMeterWithWidget(image.GetTiltMeterCost(), up: true);
             }
         }

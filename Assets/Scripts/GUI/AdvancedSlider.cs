@@ -47,6 +47,51 @@ namespace TiltBrush
         public float Max => m_SafeLimits ? m_safeMax : m_unsafeMax;
 
         private bool m_EatPadInput;
+        private bool m_ChangingValue;
+        public event Action InteractionEnded;
+
+        private void EndInteraction()
+        {
+            if (!m_ChangingValue) { return; }
+            m_ChangingValue = false;
+            InteractionEnded?.Invoke();
+        }
+
+        public override void ButtonPressed(RaycastHit hitInfo)
+        {
+            m_ChangingValue = true;
+            base.ButtonPressed(hitInfo);
+        }
+
+        public override void ButtonReleased()
+        {
+            base.ButtonReleased();
+            EndInteraction();
+        }
+
+        public override void LostFocus()
+        {
+            base.LostFocus();
+            EndInteraction();
+        }
+
+        public override void ManagerLostFocus()
+        {
+            base.ManagerLostFocus();
+            EndInteraction();
+        }
+
+        public override void ResetState()
+        {
+            base.ResetState();
+            EndInteraction();
+        }
+
+        protected override void OnDisable()
+        {
+            base.OnDisable();
+            EndInteraction();
+        }
 
         public void SetMax(float max)
         {
@@ -183,11 +228,13 @@ namespace TiltBrush
         public void HandleIncrement()
         {
             _UpdateValueAbsolute(CurrentValueAbsolute + CalcIncDecAmount());
+            InteractionEnded?.Invoke();
         }
 
         public void HandleDecrement()
         {
             _UpdateValueAbsolute(CurrentValueAbsolute - CalcIncDecAmount());
+            InteractionEnded?.Invoke();
         }
 
         public void HandleChangeLimits()
@@ -228,12 +275,14 @@ namespace TiltBrush
                     Action callback;
                     if (Mathf.Abs(v) > 0.05f)
                     {
+                        m_ChangingValue = true;
                         var newValue = m_CurrentValue + (v * 0.01f);
                         UpdateValue(newValue);
                         callback = () => InputManager.Brush.Geometry.ShowSliderValue(true, m_CurrentValue);
                     }
                     else
                     {
+                        if (!m_HadButtonPress) { EndInteraction(); }
                         callback = () => InputManager.Brush.Geometry.ShowSliderValue(false, m_CurrentValue);
                     }
                     m_Manager.GetPanelForPopUps().m_OverrideControllerMaterial = callback;

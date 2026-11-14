@@ -99,7 +99,7 @@ namespace TiltBrush
             get => m_BlendMode ?? Parent.BlendMode;
             set => m_BlendMode = value;
         }
-        public float EmissiveFactor => 0;
+        public float EmissiveFactor { get; set; }
 
         // TODO(b/142396408): create a better layout?
         public GeometryPool.VertexLayout VertexLayout => Parent.VertexLayout;
