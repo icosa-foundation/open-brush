@@ -35,6 +35,16 @@ namespace TiltBrush
         private bool m_AnimateWhenEnabled;
         public BaseTool.ToolType m_ShowOnToolType;
 
+        // Predict the expanded tray without showing it or inverting its collapsed scale.
+        public Matrix4x4 ExpandedLocalMatrix()
+        {
+            Vector3 position = transform.localPosition;
+            position.x = m_BaseLocalX;
+            Vector3 scale = transform.localScale;
+            scale.x = m_AnimateRange.y;
+            return Matrix4x4.TRS(position, transform.localRotation, scale);
+        }
+
         override protected void Awake()
         {
             base.Awake();

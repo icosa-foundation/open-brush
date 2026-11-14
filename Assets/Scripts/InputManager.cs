@@ -305,6 +305,34 @@ namespace TiltBrush
         private bool m_UIActivationConsumed;
         // This is indexed by enum ControllerName
         private ControllerInfo[] m_ControllerInfos;
+        private ScriptedAutomation m_ProceduralAutomation;
+
+        public string ProceduralAutomationStatus => m_ProceduralAutomation?.Status ?? "Stopped";
+        public string ProceduralAutomationError { get; private set; }
+
+        public void StopProceduralAutomation() => m_ProceduralAutomation?.Stop();
+
+        public void StartAutomationScript(AutomationScript script)
+        {
+            if (m_ProceduralAutomation != null)
+            {
+                throw new InvalidOperationException("Another automation owns the controllers.");
+            }
+            ProceduralAutomationError = null;
+            try { m_ProceduralAutomation = new ScriptedAutomation(script); }
+            catch (Exception exception)
+            {
+                ProceduralAutomationError = exception.Message;
+                throw;
+            }
+        }
+
+        private void DisposeProceduralAutomation()
+        {
+            if (m_ProceduralAutomation?.Error != null) { ProceduralAutomationError = m_ProceduralAutomation.Error; }
+            m_ProceduralAutomation?.Dispose();
+            m_ProceduralAutomation = null;
+        }
 
         private bool m_InhibitControllerSwap = false;
 
@@ -442,6 +470,7 @@ namespace TiltBrush
 
         void OnDisable()
         {
+            DisposeProceduralAutomation();
             if (m_ControllerInfos == null)
             {
                 return;
@@ -460,6 +489,7 @@ namespace TiltBrush
 
         public void CreateControllerInfos()
         {
+            DisposeProceduralAutomation();
             VrControllers vrControllers = App.VrSdk.VrControls;
             if (vrControllers != null)
             {
@@ -517,6 +547,11 @@ namespace TiltBrush
             }
 
             // Update controller infos.
+            if (m_ProceduralAutomation != null)
+            {
+                if (!m_ProceduralAutomation.Tick(Time.deltaTime)) { DisposeProceduralAutomation(); }
+                else { OnControllerPosesApplied(); }
+            }
             for (int i = 0; i < m_ControllerInfos.Length; ++i)
             {
                 m_ControllerInfos[i].Update();
@@ -550,6 +585,7 @@ namespace TiltBrush
 
         void OnControllerPosesApplied()
         {
+            m_ProceduralAutomation?.ApplyPoses();
             for (int i = 0; i < Controllers.Length; ++i)
             {
                 ControllerInfo info = Controllers[i];
@@ -656,7 +692,8 @@ namespace TiltBrush
             switch (rCommand)
             {
                 case SketchCommands.Activate:
-                    return Brush.GetCommand(rCommand) || (!isDemoMode && GetMouseButton(0));
+                    return Brush.GetCommand(rCommand) ||
+                        (!isDemoMode && App.Config.m_SdkMode != SdkMode.VirtualInput && GetMouseButton(0));
                 case SketchCommands.AltActivate:
                     return GetMouseButton(1) || Wand.GetCommand(rCommand);
                 case SketchCommands.LockToHead:
@@ -733,7 +770,7 @@ namespace TiltBrush
             switch (rCommand)
             {
                 case SketchCommands.Activate:
-                    return GetMouseButtonDown(0) || Brush.GetCommandDown(rCommand);
+                    return (App.Config.m_SdkMode != SdkMode.VirtualInput && GetMouseButtonDown(0)) || Brush.GetCommandDown(rCommand);
                 case SketchCommands.RewindTimeline:
                 case SketchCommands.AdvanceTimeline:
                 case SketchCommands.TimelineHome:

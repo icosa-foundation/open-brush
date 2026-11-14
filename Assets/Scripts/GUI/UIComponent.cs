@@ -70,6 +70,7 @@ namespace TiltBrush
         // intersects with them, despite a different button holding focus.
         protected bool m_StealFocus;
         protected bool m_HadFocus;
+        public bool HasPointerFocus => m_HadFocus;
         protected bool m_HadButtonPress;
 
         public virtual Collider GetCollider() { return m_Collider; }

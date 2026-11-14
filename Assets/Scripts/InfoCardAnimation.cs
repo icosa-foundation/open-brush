@@ -20,6 +20,7 @@ namespace TiltBrush
 
     public class InfoCardAnimation : MonoBehaviour
     {
+        public bool IsError { get; set; }
         static public int s_NumCards;
 
         public enum State

@@ -529,6 +529,16 @@ namespace TiltBrush
             m_RequestedPageIndex = Mathf.Clamp(page, 0, m_NumPages - 1);
         }
 
+        // Establish a shot's initial palette page before capture. Selection still uses native input.
+        public bool ShowBrushPage(BrushDescriptor brush)
+        {
+            int index = System.Array.IndexOf(m_TagFilteredBrushes, brush);
+            if (index < 0) { return false; }
+            m_PageIndex = m_RequestedPageIndex = index / m_BrushButtons.Length;
+            RefreshButtonPositions();
+            return true;
+        }
+
         // Called when NavButtons are pressed to flip brush pages.
         public void AdvancePage(int iAmount)
         {

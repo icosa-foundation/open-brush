@@ -43,6 +43,7 @@ namespace TiltBrush
 
         static public void ClearPlayerPrefs()
         {
+            if (App.Config.m_SdkMode == SdkMode.VirtualInput) { return; }
             PlayerPrefs.DeleteKey(kPlayerPrefAdvancedLayout);
         }
 
@@ -54,6 +55,7 @@ namespace TiltBrush
                 layouts = new List<AdvancedPanelDiskLayout>();
             }
             layouts.Clear();
+            if (App.Config.m_SdkMode == SdkMode.VirtualInput) { return; }
 
             // Early out if we've got a blank string.
             string advLayout = PlayerPrefs.GetString(kPlayerPrefAdvancedLayout, "");
@@ -107,6 +109,7 @@ namespace TiltBrush
 
         public void WriteToDisk(List<PanelManager.PanelData> panels)
         {
+            if (App.Config.m_SdkMode == SdkMode.VirtualInput) { return; }
             string layout = "";
             bool first = true;
             for (int i = 0; i < panels.Count; ++i)

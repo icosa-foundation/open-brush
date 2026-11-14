@@ -380,3 +380,9 @@ Code in experimental mode is usually surrounded by the following block:
 
 Experimental brushes and environments are located in the `Assets/Resources/X`
 folder. They are not visible in non-experimental mode.
+
+## Procedural automation
+
+See [Authoring external automation scripts](Support/Automation/PROCEDURAL_AUTOMATION.md) for
+hardware-free controller sequences driven by Python or JSON, fixed camera
+framing and recording tutorial videos.

@@ -53,6 +53,22 @@ namespace TiltBrush
         [SerializeField] HintObjectScript m_AdvancedModeHintObject;
 
         private bool? m_UpdateShareButtonState; // for UpdateShareButton
+        protected override Matrix4x4 AutomationLocalMatrix(Transform node, bool expandTrays)
+        {
+            if (node == m_ButtonRotationContainer.transform)
+                return Matrix4x4.TRS(node.localPosition, Quaternion.identity, node.localScale);
+            foreach (var button in m_AnimButtons)
+                if (node == button.button)
+                    return Matrix4x4.TRS(button.baseLocalPos, node.localRotation, button.baseScale);
+            return base.AutomationLocalMatrix(node, expandTrays);
+        }
+
+        protected override bool AutomationRendererVisible(Renderer renderer)
+        {
+            foreach (var button in m_AnimButtons)
+                if (renderer == button.renderer && button.button.gameObject.activeSelf) { return true; }
+            return base.AutomationRendererVisible(renderer);
+        }
         private Vector3 m_MemoryWarningBaseScale;
 
         public Transform ShareButton { get { return m_ShareButton.transform; } }

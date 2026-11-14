@@ -33,6 +33,7 @@ namespace TiltBrush
             IntersectionResetBehavior.ResetDetection;
         [SerializeField] private float m_TimeSliceInMS = 1.0f;
         [SerializeField] protected float m_PointerForwardOffset = 0f;
+        public float PointerForwardOffset => m_PointerForwardOffset;
 
         // Null when no request is in flight and non-null when active.
         // If non-null, it owns m_GpuFutureResultList.

@@ -21,6 +21,7 @@ namespace TiltBrush
 
     public class OutputWindowScript : MonoBehaviour
     {
+        public bool SuppressErrorCards { get; set; }
         const int CONTROLLER_DETAIL_MAX_LENGTH = 70;
         static public OutputWindowScript m_Instance;
 
@@ -128,7 +129,11 @@ namespace TiltBrush
                 // In the future, maybe use color or something instead of prepending ERROR
                 string card = $"ERROR: {msg}";
                 float cardPop = 1.0f + InfoCardAnimation.s_NumCards * 0.2f;
-                m_Instance.CreateInfoCardAtController(controller, card, cardPop, false);
+                if (!m_Instance.SuppressErrorCards && InputManager.m_Instance.AllowVrControllers)
+                {
+                    var position = InputManager.m_Instance.GetControllerPosition(controller);
+                    m_Instance.SpawnInfoCard(position, card, cardPop).IsError = true;
+                }
 
                 ControllerConsoleScript.m_Instance.AddNewLine(msg, true);
                 if (detail != null)
@@ -325,15 +330,21 @@ namespace TiltBrush
         public void CreateInfoCard(
             Vector3 vPos, string sText, float fPopScalar = 1.0f, bool alsoConsole = true)
         {
+            SpawnInfoCard(vPos, sText, fPopScalar);
+            if (alsoConsole)
+            {
+                ControllerConsoleScript.m_Instance.AddNewLine(sText);
+            }
+        }
+
+        private InfoCardAnimation SpawnInfoCard(Vector3 vPos, string sText, float fPopScalar)
+        {
             GameObject rNewCard = (GameObject)Instantiate(m_InfoCardPrefab);
             rNewCard.transform.position = vPos;
 
             InfoCardAnimation rAnimScript = rNewCard.GetComponent<InfoCardAnimation>();
             rAnimScript.Init(sText, fPopScalar);
-            if (alsoConsole)
-            {
-                ControllerConsoleScript.m_Instance.AddNewLine(sText);
-            }
+            return rAnimScript;
         }
 
         public void AddNewLine(string fmt, params System.Object[] args)

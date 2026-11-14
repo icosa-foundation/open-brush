@@ -38,6 +38,20 @@ namespace TiltBrush
         private Renderer[] m_TintableMeshes;
 
         public virtual float GetCurrentValue() { return m_CurrentValue; }
+        public Vector3 GetKnobLocalPosition(float value)
+        {
+            Vector3 position = m_Nob.transform.localPosition;
+            float offset = (value - 0.5f) * m_MeshScale.x;
+            if (m_Orientation == Orientation.Horizontal) { position.x = offset; }
+            else { position.y = offset; }
+            return position;
+        }
+        public float GetValueAtWorldPosition(Vector3 position)
+        {
+            Vector3 local = m_Nob.transform.parent.InverseTransformPoint(position);
+            float along = m_Orientation == Orientation.Horizontal ? local.x : local.y;
+            return along / m_MeshScale.x + 0.5f;
+        }
         protected bool IsAvailable() { return m_IsAvailable; }
 
         protected void SetAvailable(bool available)
