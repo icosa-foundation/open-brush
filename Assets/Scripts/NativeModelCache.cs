@@ -25,6 +25,8 @@ namespace TiltBrush
             public GltfAssetDocument Document;
             public Vector3 Center;
             public Vector3 Size;
+            public float MeshUnitScale = 1;
+            public Source MaquetteSource;
         }
         private readonly Dictionary<string, ImportResource> m_IcosaResources = new Dictionary<string, ImportResource>(StringComparer.Ordinal);
         private readonly Dictionary<string, Source> m_Sources = new Dictionary<string, Source>(StringComparer.Ordinal);
@@ -83,6 +85,7 @@ namespace TiltBrush
                 contentScale = 1 / longest;
             }
             bool original = primitive.LoadOption == "Original";
+            if (!original && primitive.Type == "ModelFile") { source = GetMaquetteSource(source); }
             Color linear = color.linear;
             float[] appearance = original ? null : new[] { linear.r, linear.g, linear.b, linear.a };
             var colorMaterial = original ? null : MaquetteMaterialAdapter.ModelMaterial(materialId, appearance);
@@ -175,7 +178,8 @@ namespace TiltBrush
                 string directory = Path.Combine(App.ModelLibraryPath(), m_RelativeDirectory, "sources", Guid.NewGuid().ToString("N"));
                 string extension = Path.GetExtension(path);
                 GltfAssetDocument document;
-                if (extension.Equals(".gltf", StringComparison.OrdinalIgnoreCase) || extension.Equals(".glb", StringComparison.OrdinalIgnoreCase))
+                bool nativeGltf = extension.Equals(".gltf", StringComparison.OrdinalIgnoreCase) || extension.Equals(".glb", StringComparison.OrdinalIgnoreCase);
+                if (nativeGltf)
                 {
                     document = GltfAssetDocument.CopySource(resource, path, directory);
                 }
@@ -188,12 +192,33 @@ namespace TiltBrush
                 {
                     Model = model, Document = document,
                     Center = model.m_MeshBounds.center / model.UnitsPerMetre,
-                    Size = model.m_MeshBounds.size / model.UnitsPerMetre
+                    Size = model.m_MeshBounds.size / model.UnitsPerMetre,
+                    MeshUnitScale = nativeGltf ? 1 : 1 / model.UnitsPerMetre
                 };
                 m_Sources.Add(resource.Origin, source);
                 return source;
             }
             catch { model.ReleaseFromCatalog(); throw; }
+        }
+
+        private static Source GetMaquetteSource(Source source)
+        {
+            if (source.MaquetteSource != null) { return source.MaquetteSource; }
+            var data = JObject.Parse(File.ReadAllText(source.Document.Path));
+            if (!MaquetteModelAdapter.TryCreateMeshLocalSource(data, source.MeshUnitScale,
+                    out var local, out var center))
+            {
+                // Keep the existing hierarchy for sources that are not one static mesh primitive.
+                return source.MaquetteSource = source;
+            }
+            string path = Path.Combine(Path.GetDirectoryName(source.Document.Path), "maquette-source.gltf");
+            File.WriteAllText(path, local.ToString(Formatting.None));
+            // glTF reflects X relative to Unity; GetVariant's centering offset is in Unity space.
+            return source.MaquetteSource = new Source
+            {
+                Document = new GltfAssetDocument(path),
+                Center = new Vector3(-center[0], center[1], center[2])
+            };
         }
 
         private static void ExportSource(Model model, string name, string directory)
