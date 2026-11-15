@@ -17,9 +17,12 @@ namespace TiltBrush
         [SerializeField] private TextMeshPro m_StatusLabel;
         [SerializeField] private ShapeParameterSlider[] m_ParameterSliders;
         [SerializeField] private ShapeParameterToggle[] m_ParameterToggles;
-        [SerializeField] private ShapePageButton m_PreviousPage;
-        [SerializeField] private ShapePageButton m_NextPage;
-        [SerializeField] private ShapeMaterialButton[] m_MaterialButtons;
+        [SerializeField] private ActionButton[] m_PresetButtons;
+        [SerializeField] private BaseButton m_PreviousPage;
+        [SerializeField] private BaseButton m_NextPage;
+        [SerializeField] private TextActionButton m_ShapeTab;
+        [SerializeField] private TextActionButton m_MaterialTabButton;
+        [SerializeField] private TextActionButton m_ColorButton;
         [SerializeField] private GameObject m_ColorPickerPrefab;
 
         private EditableModelWidget m_Target;
@@ -63,6 +66,13 @@ namespace TiltBrush
             }
         }
 
+        // Preset buttons and their Inspector events are authored in ShapesPanel.prefab.
+        public void CreateShape(int preset)
+        {
+            if (!ProceduralShapes.IsPresetVisible(preset)) { return; }
+            CreateShape(preset, m_PresetButtons[preset].transform);
+        }
+
         public void CreateShape(int preset, Transform button)
         {
             if (!ProceduralShapes.IsPresetVisible(preset)) { return; }
@@ -92,7 +102,8 @@ namespace TiltBrush
         public void ChangePage(int direction)
         {
             FinishChange();
-            int pages = Mathf.Max(1, Mathf.CeilToInt((float)m_Parameters.Count / m_ParameterSliders.Length));
+            int count = m_MaterialTab ? m_MaterialParameters.Count : m_Parameters.Count;
+            int pages = Mathf.Max(1, Mathf.CeilToInt((float)count / m_ParameterSliders.Length));
             m_Page = Mathf.Clamp(m_Page + direction, 0, pages - 1);
             Refresh();
         }
@@ -189,8 +200,9 @@ namespace TiltBrush
             m_StatusLabel.text = "";
             m_PreviousPage.SetButtonAvailable(count > 0 && m_Page > 0);
             m_NextPage.SetButtonAvailable(m_Page + 1 < pages);
-            if (m_MaterialButtons != null)
-                foreach (var button in m_MaterialButtons) button.Refresh(m_MaterialTab, m_Target != null, m_DisplayedColor);
+            m_ShapeTab.SetButtonSelected(!m_MaterialTab);
+            m_MaterialTabButton.SetButtonSelected(m_MaterialTab);
+            m_ColorButton.SetButtonAvailable(m_Target != null);
             for (int i = 0; i < m_ParameterSliders.Length; ++i)
             {
                 int index = m_Page * m_ParameterSliders.Length + i;
