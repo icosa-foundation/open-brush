@@ -84,6 +84,8 @@ namespace TiltBrush
         {
             foreach (var model in metadata.ModelIndex ?? Array.Empty<TiltModels75>())
             { foreach (var link in model.WidgetLinks ?? Array.Empty<WidgetLink>()) { yield return link; } }
+            foreach (var model in metadata.EditableModelIndex ?? Array.Empty<TiltEditableModels>())
+            { foreach (var link in model.WidgetLinks ?? Array.Empty<WidgetLink>()) { yield return link; } }
             foreach (var image in metadata.ImageIndex ?? Array.Empty<TiltImages75>())
             { foreach (var link in image.WidgetLinks ?? Array.Empty<WidgetLink>()) { yield return link; } }
             foreach (var w in metadata.LightIndex ?? Array.Empty<TiltLights>()) { yield return w.WidgetLink; }
@@ -132,5 +134,13 @@ namespace TiltBrush
 
         internal TiltModels75 CaptureMissing(TiltModels75 model) => model.CopyForSave(
             model.WidgetLinks?.Select(link => link == null ? null : Get(link.RuntimeGroup, link.PointerIndex)).ToArray());
+
+        internal TiltEditableModels CaptureMissing(TiltEditableModels model)
+        {
+            var copy = model.Copy();
+            copy.WidgetLinks = model.WidgetLinks?.Select(link =>
+                link == null ? null : Get(link.RuntimeGroup, link.PointerIndex)).ToArray();
+            return copy;
+        }
     }
 }

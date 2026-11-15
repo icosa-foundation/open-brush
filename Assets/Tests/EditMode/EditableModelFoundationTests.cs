@@ -104,11 +104,108 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void EditableLinksResolveAndRetainedRecordsUseTheCurrentSaveTable()
+        {
+            var metadataType = AppType("SketchMetadata");
+            var recordType = AppType("TiltEditableModels");
+            var mirrorType = AppType("SymmetryMirror");
+            var contextType = AppType("WidgetLinkSaveContext");
+            const BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance;
+            var mirrorId = Guid.NewGuid();
+            string json = $"{{\"EditableModelIndex\":[{{\"AssetId\":\"future\",\"GroupIds\":[9],\"WidgetLinks\":[{{\"GroupId\":17,\"PointerIndex\":1}}],\"Future\":42}}],\"WidgetLinks\":{{\"Version\":1,\"Groups\":[{{\"Id\":17,\"MirrorId\":\"{mirrorId}\"}}]}}}}";
+            var metadata = JsonConvert.DeserializeObject(json, metadataType);
+            var table = metadataType.GetProperty("WidgetLinks").GetValue(metadata);
+            var records = (IList)metadataType.GetProperty("EditableModelIndex").GetValue(metadata);
+            var mirrors = (IDictionary)Activator.CreateInstance(typeof(System.Collections.Generic.Dictionary<,>)
+                .MakeGenericType(typeof(Guid), mirrorType));
+            mirrors.Add(mirrorId, Activator.CreateInstance(mirrorType, new object[] { mirrorId, null }));
+            table.GetType().GetMethod("Resolve", hidden).Invoke(table, new[] { metadata, mirrors });
+            var links = (IList)recordType.GetProperty("WidgetLinks").GetValue(records[0]);
+            Assert.NotNull(links[0].GetType().GetField("RuntimeGroup", hidden).GetValue(links[0]));
+            var context = Activator.CreateInstance(contextType, hidden, null,
+                new object[] { Array.CreateInstance(AppType("GrabWidget"), 0), false }, null);
+            var copy = contextType.GetMethod("CaptureMissing", hidden, null, new[] { recordType }, null)
+                .Invoke(context, new[] { records[0] });
+            var saved = JObject.Parse(JsonConvert.SerializeObject(copy));
+            Assert.AreEqual(1, (int)saved["WidgetLinks"][0]["GroupId"]);
+            Assert.AreEqual(1, (int)saved["WidgetLinks"][0]["PointerIndex"]);
+            Assert.AreEqual(42, (int)saved["Future"]);
+            Assert.AreEqual(17u, links[0].GetType().GetField("GroupId").GetValue(links[0]));
+            Assert.NotNull(contextType.GetProperty("Table", hidden).GetValue(context));
+            var legacy = JsonConvert.DeserializeObject("{\"AssetId\":\"old\",\"GroupIds\":[9]}", recordType);
+            Assert.IsNull(recordType.GetProperty("WidgetLinks").GetValue(legacy));
+        }
+
+        [Test]
         public void PortedPrefabUsesTheEditableModelWidgetScript()
         {
             var editable = AppType("EditableModelWidget");
             Assert.IsTrue(editable.IsSubclassOf(AppType("ModelWidget")));
             Assert.NotNull(Resources.Load("EditableModelWidget", editable));
+        }
+
+        [Test]
+        public void AdditiveEditableImportsKeepRetainedRecordsAndRemapSharedDefinitionsAndPayloads()
+        {
+            var manager = AppType("MeshEditing.EditableModelManager");
+            var definitionType = AppType("EditableModelDefinitionData");
+            var instanceType = AppType("TiltEditableModels");
+            var retainedDefinitions = (IDictionary)manager.GetField("RetainedDefinitions").GetValue(null);
+            var retainedInstances = (IList)manager.GetField("RetainedInstances").GetValue(null);
+            var originalDefinitions = new Hashtable(retainedDefinitions);
+            var originalInstances = new ArrayList(retainedInstances);
+            var definitions = (IDictionary)Activator.CreateInstance(retainedDefinitions.GetType());
+            const string definitionJson = "{\"Recipe\":{\"Version\":1,\"Generator\":{\"Type\":\"future-shape\"}},\"Geometry\":{\"GeometryFile\":\"editable-model-source.bin\"}}";
+            var definition = JsonConvert.DeserializeObject(definitionJson, definitionType);
+            var sourceFiles = (IDictionary)definitionType.GetProperty("SourceFiles").GetValue(definition);
+            sourceFiles.Add("editable-model-source.bin", new byte[] { 1, 2, 3 });
+            definitions.Add("shared", definition);
+            var instances = Array.CreateInstance(instanceType, 2);
+            for (int i = 0; i < instances.Length; ++i)
+            {
+                instances.SetValue(JsonConvert.DeserializeObject("{\"AssetId\":\"shared\",\"RawTransforms\":[],\"Future\":42}", instanceType), i);
+            }
+            try
+            {
+                retainedDefinitions.Clear();
+                retainedInstances.Clear();
+                retainedDefinitions.Add("shared", definition);
+                retainedInstances.Add(instances.GetValue(0));
+                var load = manager.GetMethod("LoadFromTilt");
+                load.Invoke(null, new object[] { definitions, instances, true });
+                load.Invoke(null, new object[] { definitions, instances, true });
+                Assert.AreEqual(3, retainedDefinitions.Count);
+                Assert.AreEqual(5, retainedInstances.Count);
+                string Id(object record) => (string)instanceType.GetProperty("AssetId").GetValue(record);
+                string first = Id(retainedInstances[1]);
+                string second = Id(retainedInstances[3]);
+                Assert.AreEqual(first, Id(retainedInstances[2]));
+                Assert.AreEqual(second, Id(retainedInstances[4]));
+                Assert.AreNotEqual(first, second);
+                Assert.AreNotEqual("shared", first);
+                Assert.AreSame(definition, retainedDefinitions["shared"]);
+                Assert.AreEqual("shared", Id(instances.GetValue(0)));
+                foreach (string id in new[] { first, second })
+                {
+                    var imported = retainedDefinitions[id];
+                    string file = (string)definitionType.GetProperty("GeometryFile").GetValue(imported);
+                    Assert.AreEqual($"editable-model-{id}.bin", file);
+                    var files = (IDictionary)definitionType.GetProperty("SourceFiles").GetValue(imported);
+                    CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, (byte[])files[file]);
+                }
+                Assert.AreEqual("editable-model-source.bin", definitionType.GetProperty("GeometryFile").GetValue(definition));
+                var saved = JsonConvert.SerializeObject(retainedInstances);
+                var restored = (IList)JsonConvert.DeserializeObject(saved, instances.GetType());
+                Assert.AreEqual(5, restored.Count);
+                Assert.AreEqual(42, (int)JObject.FromObject(restored[1])["Future"]);
+            }
+            finally
+            {
+                retainedDefinitions.Clear();
+                foreach (DictionaryEntry entry in originalDefinitions) { retainedDefinitions.Add(entry.Key, entry.Value); }
+                retainedInstances.Clear();
+                foreach (var record in originalInstances) { retainedInstances.Add(record); }
+            }
         }
     }
 }

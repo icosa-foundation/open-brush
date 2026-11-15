@@ -52,6 +52,21 @@ namespace TiltBrush
                 SourceFiles = new Dictionary<string, byte[]>(SourceFiles)
             };
 
+        internal EditableModelDefinitionData CopyForImport(string assetId)
+        {
+            var copy = WithRecipe(Recipe);
+            string file = GeometryFile;
+            if (file != null && copy.SourceFiles.TryGetValue(file, out var bytes))
+            {
+                // Source filenames share the sketch archive's namespace too.
+                string importedFile = $"editable-model-{assetId}.bin";
+                ((JObject)copy.ExtraData["Geometry"])["GeometryFile"] = importedFile;
+                copy.SourceFiles.Remove(file);
+                copy.SourceFiles.Add(importedFile, bytes);
+            }
+            return copy;
+        }
+
         public static EditableModelDefinitionData FromJson(JObject data)
         {
             if (!(data["Recipe"] is JObject recipe)) { throw new JsonSerializationException("Missing geometry recipe"); }

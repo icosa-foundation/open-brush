@@ -29,8 +29,12 @@ namespace TiltBrush
         public Vector3[] AxisScales { get; set; }
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public EditableModelMaterialData[] Materials { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public WidgetLink[] WidgetLinks { get; set; }
         [JsonExtensionData]
         public IDictionary<string, JToken> ExtraData { get; set; }
+
+        internal TiltEditableModels Copy() => (TiltEditableModels)MemberwiseClone();
 
         [JsonIgnore]
         public Model.Location Location

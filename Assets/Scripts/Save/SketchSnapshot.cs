@@ -126,6 +126,7 @@ namespace TiltBrush
                 m_SymmetryState = SketchWriter.SymmetrySaveState.Capture(includeUnreferenced: !m_SelectedOnly);
                 UnrecordedChangesRevision = SketchMemoryScript.m_Instance.UnrecordedChangesRevision;
                 m_Metadata = GetSketchMetadata();
+                EditableModelDefinitionData.CollectGeometryFiles(m_Metadata.EditableModelDefinitions?.Values, m_EditableGeometry);
                 foreach (var mirror in m_WidgetLinks.Mirrors)
                 {
                     m_SymmetryState.WidgetMirrors.Add(mirror);
@@ -186,7 +187,7 @@ namespace TiltBrush
                 m_WidgetLinks ??= new WidgetLinkSaveContext(SymmetryWidgetGroup.ActiveWidgets, false);
                 metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping, out m_EditableVoxPayloads, m_WidgetLinks);
                 metadata.EditableModelDefinitions = MetadataUtils.GetEditableModelDefinitions();
-                metadata.EditableModelIndex = MetadataUtils.GetTiltEditableModels(m_GroupIdMapping);
+                metadata.EditableModelIndex = MetadataUtils.GetTiltEditableModels(m_GroupIdMapping, m_WidgetLinks);
                 metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping, m_WidgetLinks);
                 metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping, m_WidgetLinks);
                 metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping, m_WidgetLinks);
