@@ -1416,7 +1416,7 @@ namespace TiltBrush
             }
             else
             {
-                modelWidget.SetSignedWidgetSize(xf.scale);
+                modelWidget.RestoreSignedWidgetSize(xf.scale);
             }
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(modelWidget.GetTiltMeterCost(), up: true);
             if (pin)

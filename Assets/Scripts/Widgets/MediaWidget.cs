@@ -26,6 +26,7 @@ namespace TiltBrush
 
         protected float m_Size = 1.0f;
         protected bool m_LoadingFromSketch;
+        private bool m_RestoringSize;
 
         public bool LoadingFromSketch { set { m_LoadingFromSketch = value; } }
         override public bool SupportsNegativeSize => true;
@@ -78,10 +79,37 @@ namespace TiltBrush
             UpdateScale();
         }
 
+        /// Applies an authored size during import or sketch loading without the interactive
+        /// resizing limits. Still runs derived widgets' scale, collider and mesh updates.
+        public void RestoreSignedWidgetSize(float size)
+        {
+            if (float.IsNaN(size) || float.IsInfinity(size) || size == 0)
+            {
+                throw new System.ArgumentOutOfRangeException(nameof(size), "Authored size must be finite and nonzero");
+            }
+            bool wasRestoringSize = m_RestoringSize;
+            m_RestoringSize = true;
+            try
+            {
+                SetSignedWidgetSize(size);
+            }
+            finally
+            {
+                m_RestoringSize = wasRestoringSize;
+            }
+        }
+
         override protected void SetWidgetSizeInternal(float fScale)
         {
-            var sizeRange = GetWidgetSizeRange();
-            m_Size = Mathf.Sign(fScale) * Mathf.Clamp(Mathf.Abs(fScale), sizeRange.x, sizeRange.y);
+            if (m_RestoringSize)
+            {
+                m_Size = fScale;
+            }
+            else
+            {
+                var sizeRange = GetWidgetSizeRange();
+                m_Size = Mathf.Sign(fScale) * Mathf.Clamp(Mathf.Abs(fScale), sizeRange.x, sizeRange.y);
+            }
             UpdateScale();
         }
 
