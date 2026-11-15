@@ -104,6 +104,39 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void EditableLinksResolveAndRetainedRecordsUseTheCurrentSaveTable()
+        {
+            var metadataType = AppType("SketchMetadata");
+            var recordType = AppType("TiltEditableModels");
+            var mirrorType = AppType("SymmetryMirror");
+            var contextType = AppType("WidgetLinkSaveContext");
+            const BindingFlags hidden = BindingFlags.NonPublic | BindingFlags.Instance;
+            var mirrorId = Guid.NewGuid();
+            string json = $"{{\"EditableModelIndex\":[{{\"AssetId\":\"future\",\"GroupIds\":[9],\"WidgetLinks\":[{{\"GroupId\":17,\"PointerIndex\":1}}],\"Future\":42}}],\"WidgetLinks\":{{\"Version\":1,\"Groups\":[{{\"Id\":17,\"MirrorId\":\"{mirrorId}\"}}]}}}}";
+            var metadata = JsonConvert.DeserializeObject(json, metadataType);
+            var table = metadataType.GetProperty("WidgetLinks").GetValue(metadata);
+            var records = (IList)metadataType.GetProperty("EditableModelIndex").GetValue(metadata);
+            var mirrors = (IDictionary)Activator.CreateInstance(typeof(System.Collections.Generic.Dictionary<,>)
+                .MakeGenericType(typeof(Guid), mirrorType));
+            mirrors.Add(mirrorId, Activator.CreateInstance(mirrorType, new object[] { mirrorId, null }));
+            table.GetType().GetMethod("Resolve", hidden).Invoke(table, new[] { metadata, mirrors });
+            var links = (IList)recordType.GetProperty("WidgetLinks").GetValue(records[0]);
+            Assert.NotNull(links[0].GetType().GetField("RuntimeGroup", hidden).GetValue(links[0]));
+            var context = Activator.CreateInstance(contextType, hidden, null,
+                new object[] { Array.CreateInstance(AppType("GrabWidget"), 0), false }, null);
+            var copy = contextType.GetMethod("CaptureMissing", hidden, null, new[] { recordType }, null)
+                .Invoke(context, new[] { records[0] });
+            var saved = JObject.Parse(JsonConvert.SerializeObject(copy));
+            Assert.AreEqual(1, (int)saved["WidgetLinks"][0]["GroupId"]);
+            Assert.AreEqual(1, (int)saved["WidgetLinks"][0]["PointerIndex"]);
+            Assert.AreEqual(42, (int)saved["Future"]);
+            Assert.AreEqual(17u, links[0].GetType().GetField("GroupId").GetValue(links[0]));
+            Assert.NotNull(contextType.GetProperty("Table", hidden).GetValue(context));
+            var legacy = JsonConvert.DeserializeObject("{\"AssetId\":\"old\",\"GroupIds\":[9]}", recordType);
+            Assert.IsNull(recordType.GetProperty("WidgetLinks").GetValue(legacy));
+        }
+
+        [Test]
         public void PortedPrefabUsesTheEditableModelWidgetScript()
         {
             var editable = AppType("EditableModelWidget");

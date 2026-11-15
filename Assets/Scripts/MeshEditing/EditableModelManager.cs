@@ -126,6 +126,7 @@ namespace TiltBrush.MeshEditing
                     widget.SetSignedWidgetSize(transform.scale);
                     widget.Group = App.GroupManager.GetGroupFromId(At(instance.GroupIds, i, 0u));
                     if (At(instance.PinStates, i, false)) { widget.PinFromSave(); }
+                    WidgetLink.Attach(widget, instance.WidgetLinks, i);
                 }
             }
         }

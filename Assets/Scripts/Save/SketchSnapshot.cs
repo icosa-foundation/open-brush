@@ -187,7 +187,7 @@ namespace TiltBrush
                 m_WidgetLinks ??= new WidgetLinkSaveContext(SymmetryWidgetGroup.ActiveWidgets, false);
                 metadata.ModelIndex = MetadataUtils.GetTiltModels(m_GroupIdMapping, out m_EditableVoxPayloads, m_WidgetLinks);
                 metadata.EditableModelDefinitions = MetadataUtils.GetEditableModelDefinitions();
-                metadata.EditableModelIndex = MetadataUtils.GetTiltEditableModels(m_GroupIdMapping);
+                metadata.EditableModelIndex = MetadataUtils.GetTiltEditableModels(m_GroupIdMapping, m_WidgetLinks);
                 metadata.LightIndex = MetadataUtils.GetTiltLights(m_GroupIdMapping, m_WidgetLinks);
                 metadata.ImageIndex = MetadataUtils.GetTiltImages(m_GroupIdMapping, m_WidgetLinks);
                 metadata.Videos = MetadataUtils.GetTiltVideos(m_GroupIdMapping, m_WidgetLinks);

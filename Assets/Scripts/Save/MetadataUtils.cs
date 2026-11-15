@@ -221,7 +221,7 @@ namespace TiltBrush
             return definitions.Count == 0 ? null : definitions;
         }
 
-        public static TiltEditableModels[] GetTiltEditableModels(GroupIdMapping groupIdMapping)
+        public static TiltEditableModels[] GetTiltEditableModels(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
         {
             var models = new List<TiltEditableModels>();
             foreach (var group in WidgetManager.m_Instance.EditableModelWidgets
@@ -237,11 +237,13 @@ namespace TiltBrush
                     LayerIds = widgets.Select(widget => App.Scene.GetIndexOfCanvas(GetSavedCanvas(widget))).ToArray(),
                     Colors = widgets.Select(widget => widget.m_Color).ToArray(),
                     AxisScales = widgets.Select(widget => widget.CustomDimension).ToArray(),
+                    WidgetLinks = links == null ? null : widgets.Select(links.Get).ToArray(),
                     Materials = widgets.Any(widget => widget.MaterialSettings != null)
                         ? widgets.Select(widget => widget.MaterialSettings?.Clone()).ToArray() : null
                 });
             }
-            models.AddRange(MeshEditing.EditableModelManager.RetainedInstances);
+            models.AddRange(MeshEditing.EditableModelManager.RetainedInstances.Select(model =>
+                links == null ? model : links.CaptureMissing(model)));
             return models.Count == 0 ? null : models.ToArray();
         }
 
