@@ -1593,7 +1593,7 @@ namespace TiltBrush
                     }
 
                     m_ActiveRequests.RemoveAt(i);
-                m_IsLoadingMemo = null;
+                    m_IsLoadingMemo = null;
                     m_NotifyListeners = true;
                 }
             }
