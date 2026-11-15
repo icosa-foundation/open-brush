@@ -403,9 +403,10 @@ namespace TiltBrush
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
         public bool ImmSketch { get; set; }
 
-        /// Preserve an explicitly selected IMM representation of a mixed-format gallery asset.
-        [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public bool ImmModel { get; set; }
+        /// Gallery representation to restore. Absent in older sketches, which use the ordinary selection.
+        /// Keep this a string so unsupported future formats survive loading and saving.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public string AssetFormat { get; set; }
 
         /// Prior to M13, never null or empty; but an empty array is allowed on read.
         /// Post M13, always null.

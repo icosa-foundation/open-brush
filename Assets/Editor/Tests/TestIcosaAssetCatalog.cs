@@ -191,7 +191,16 @@ namespace TiltBrush
             Assert.AreNotSame(obj, ngon);
             Assert.AreNotEqual(obj.GetLocation().AbsolutePath, ngon.GetLocation().AbsolutePath);
             Assert.AreEqual(VrAssetFormat.OBJ_NGON, ngon.GalleryFormat);
-            Assert.NotNull(catalog.GetModel(assetId, VrAssetFormat.PLY));
+            var legacy = catalog.GetModel(assetId);
+            Assert.NotNull(legacy);
+            Assert.AreEqual(VrAssetFormat.PLY, legacy.GalleryFormat);
+            Assert.IsNull(legacy.AssetFormat);
+            Assert.IsNull(catalog.GetModel(assetId, VrAssetFormat.PLY),
+                "An extension-only cache must not satisfy a request for an exact service format");
+            catalog.RequestModelLoad(assetId, "exact format", VrAssetFormat.PLY);
+            Assert.IsTrue(catalog.IsLoading(assetId, VrAssetFormat.PLY));
+            Assert.AreSame(legacy, catalog.GetModel(assetId));
+            catalog.CancelRequestModelLoad(assetId, VrAssetFormat.PLY);
         }
 
         private IcosaAssetCatalog CreateCatalog()

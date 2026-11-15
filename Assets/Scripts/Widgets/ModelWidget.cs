@@ -366,7 +366,9 @@ namespace TiltBrush
 
         public void OnPacCatalogChanged()
         {
-            Model model = App.IcosaAssetCatalog.GetModel(AssetId, m_Model.GalleryFormat);
+            var format = VrAssetFormat.Unknown;
+            if (m_Model.AssetFormat != null && !Model.TryParseGalleryFormat(m_Model.AssetFormat, out format)) return;
+            Model model = App.IcosaAssetCatalog.GetModel(AssetId, format);
             if (model != null && model.m_Valid && m_Model.IsNativeImmModel == model.IsNativeImmModel)
             {
                 Model = model;
@@ -1254,7 +1256,7 @@ namespace TiltBrush
                     modelDatas.SplitMeshPaths,
                     modelDatas.NotSplittableMeshPaths,
                     modelDatas.PlaybackStates,
-                    modelDatas.ImmModel, modelDatas.WidgetLinks
+                    modelDatas.AssetFormat, modelDatas.WidgetLinks
                 );
             }
             else
@@ -1440,7 +1442,8 @@ namespace TiltBrush
                 modelWidget.PinFromSave();
             }
 
-            if (assetId != null && !model.m_Valid)
+            if (assetId != null && !model.m_Valid &&
+                (model.AssetFormat == null || Model.TryParseGalleryFormat(model.AssetFormat, out _)))
             {
                 App.IcosaAssetCatalog.CatalogChanged += modelWidget.OnPacCatalogChanged;
                 modelWidget.m_PolyCallbackActive = true;
@@ -1454,11 +1457,14 @@ namespace TiltBrush
         // Used when loading model assetIds from a serialized format (e.g. Tilt file).
         static async Task<bool> CreateModelsFromAssetId(string assetId, string[] subtrees, TrTransform[] rawXfs,
                 bool[] pinStates, uint[] groupIds, int[] layerIds, List<string> splitMeshPaths, List<string> noSplitMeshPaths,
-            ModelPlaybackState[] playbackStates = null, bool immModel = false, WidgetLink[] widgetLinks = null)
+            ModelPlaybackState[] playbackStates = null, string assetFormat = null, WidgetLink[] widgetLinks = null)
         {
-            // Request model from Poly and if it doesn't exist, ask to load it.
-            Model model = App.IcosaAssetCatalog.GetModel(assetId,
-                immModel ? VrAssetFormat.IMM : VrAssetFormat.Unknown);
+            // An absent format retains the ordinary selection used by released sketches.
+            // Unsupported explicit formats remain missing; never replace them with that selection.
+            var format = VrAssetFormat.Unknown;
+            bool supported = assetFormat == null || Model.TryParseGalleryFormat(assetFormat, out format);
+            bool immModel = format == VrAssetFormat.IMM;
+            Model model = supported ? App.IcosaAssetCatalog.GetModel(assetId, format) : null;
             if (immModel && (model == null || !model.m_Valid || !model.IsNativeImmModel))
             {
                 model = await LoadImmAssetTemplate(assetId);
@@ -1466,11 +1472,13 @@ namespace TiltBrush
 
             if (model == null)
             {
-                // This Model is transient; the Widget will replace it with a good Model from the Icosa Asset Catalog
-                // as soon as the Icosa Asset Catalog loads it.
-                model = new Model(assetId, null, nativeImmRequested: immModel);
+                // Preserve the requested representation while it is pending or unsupported.
+                model = new Model(assetId, null, assetFormat: assetFormat);
                 model.ReleaseFromCatalog();
             }
+            if (!supported)
+                OutputWindowScript.Error(NativeImmStrings.Get("LOAD_GALLERY_FAILED", "Could not load gallery reference"),
+                    $"{assetId}: unsupported format '{assetFormat}'");
             // Use SetMeshSplitData to properly clear m_AppliedMeshSplits before applying splits.
             // Set this before loading so mesh splits are available when the prefab is built.
             model.SetMeshSplitData(splitMeshPaths, noSplitMeshPaths);
@@ -1480,9 +1488,9 @@ namespace TiltBrush
                 Task t = model.LoadModelAsync();
                 await t;
             }
-            else if (!model.m_Valid && !immModel)
+            else if (!model.m_Valid && !immModel && supported)
             {
-                App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget");
+                App.IcosaAssetCatalog.RequestModelLoad(assetId, "widget", format);
             }
 
             if (model.m_Valid)

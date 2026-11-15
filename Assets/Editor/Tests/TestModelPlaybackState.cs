@@ -1,6 +1,7 @@
 // Copyright 2026 The Open Brush Authors
 // Licensed under the Apache License, Version 2.0. See LICENSE for details.
 using System;
+using System.Reflection;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEditor;
@@ -67,7 +68,62 @@ namespace TiltBrush
         {
             var model = JsonConvert.DeserializeObject<TiltModels75>("{\"AssetId\":\"example\"}");
             Assert.IsNull(model.PlaybackStates);
+            Assert.IsNull(model.AssetFormat);
+            StringAssert.DoesNotContain("AssetFormat", JsonConvert.SerializeObject(model));
             StringAssert.DoesNotContain("PlaybackStates", JsonConvert.SerializeObject(model));
+        }
+
+        [TestCase("IMM")]
+        [TestCase("GLTF2")]
+        [TestCase("OBJ_NGON")]
+        [TestCase("FUTURE_FORMAT")]
+        public void GalleryFormatMetadataRoundTrips(string format)
+        {
+            var model = new TiltModels75 { AssetId = "example", AssetFormat = format };
+            string json = JsonConvert.SerializeObject(model);
+            var restored = JsonConvert.DeserializeObject<TiltModels75>(json);
+            Assert.AreEqual(format, restored.AssetFormat);
+            StringAssert.DoesNotContain("ImmModel", json);
+        }
+
+        [Test]
+        public void PendingGalleryModelsPreserveExplicitFormats()
+        {
+            var imm = new Model("example", null, assetFormat: "IMM");
+            Assert.IsTrue(imm.IsNativeImmModel);
+            Assert.AreEqual("IMM", imm.AssetFormat);
+            var unknown = new Model("example", null, assetFormat: "FUTURE_FORMAT");
+            Assert.AreEqual("FUTURE_FORMAT", unknown.AssetFormat);
+            Assert.NotNull(unknown.Error);
+            unknown.UnloadModel();
+            Assert.AreEqual("FUTURE_FORMAT", unknown.AssetFormat);
+            Assert.NotNull(unknown.Error);
+            Assert.IsFalse(Model.TryParseGalleryFormat(unknown.AssetFormat, out _));
+            Assert.IsFalse(Model.TryParseGalleryFormat("2", out _));
+            Assert.IsFalse(Model.TryParseGalleryFormat("TILT", out _));
+        }
+
+        [Test]
+        public void LegacyGalleryCacheDoesNotInventAnExactFormat()
+        {
+            var legacy = new Model("example", "model.obj");
+            Assert.AreEqual(VrAssetFormat.OBJ, legacy.GalleryFormat);
+            Assert.IsNull(legacy.AssetFormat);
+            var identified = new Model("example", "model.obj", VrAssetFormat.OBJ_NGON);
+            Assert.AreEqual("OBJ_NGON", identified.AssetFormat);
+        }
+
+        [Test]
+        public void SaveKeysSeparatePendingAssetsAndRepresentations()
+        {
+            var getKey = typeof(MetadataUtils).GetMethod("GetModelSaveKey", BindingFlags.Static | BindingFlags.NonPublic);
+            object Key(string id, string format, string path = null) =>
+                getKey.Invoke(null, new object[] { new Model(id, path, assetFormat: format) });
+
+            Assert.AreNotEqual(Key("first", "GLTF2"), Key("second", "GLTF2"));
+            Assert.AreNotEqual(Key("first", "GLTF2"), Key("first", "IMM"));
+            Assert.AreNotEqual(Key("first", null), Key("first", "GLTF2"));
+            Assert.AreEqual(Key("first", "GLTF2"), Key("first", "GLTF2", "model.gltf2"));
         }
 
         [Test]

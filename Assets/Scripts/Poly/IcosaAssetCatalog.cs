@@ -569,7 +569,7 @@ namespace TiltBrush
         }
 
         private static ModelCacheKey GetModelKey(Model model) =>
-            new ModelCacheKey(model.AssetId, model.GalleryFormat);
+            new ModelCacheKey(model.AssetId, model.AssetFormat == null ? VrAssetFormat.Unknown : model.GalleryFormat);
 
         // Unknown means the existing ordinary gallery selection, never any cached representation.
         private ModelCacheKey ResolveModelKey(string assetId, VrAssetFormat format = VrAssetFormat.Unknown)
@@ -579,6 +579,12 @@ namespace TiltBrush
                 if (!m_DefaultModelFormats.TryGetValue(assetId, out format))
                 {
                     // Preserve the existing ordinary cached selection, including when offline.
+                    var legacyKey = new ModelCacheKey(assetId, VrAssetFormat.Unknown);
+                    if (m_ModelsByKey != null && m_ModelsByKey.ContainsKey(legacyKey))
+                    {
+                        m_DefaultModelFormats[assetId] = VrAssetFormat.Unknown;
+                        return legacyKey;
+                    }
                     if (m_ModelsByKey != null)
                     {
                         foreach (var candidate in GetSupportedIcosaFormats())
@@ -1252,7 +1258,7 @@ namespace TiltBrush
                 // to load.
                 throw new InvalidOperationException($"Duplicate {assetId}");
             }
-            RequestModelLoad(assetId, reason, model.GalleryFormat);
+            RequestModelLoad(assetId, reason, GetModelKey(model).Format);
         }
 
         /// Request loading a model with a given Poly Asset ID.
@@ -1535,7 +1541,6 @@ namespace TiltBrush
             try
             {
                 var format = asset.SelectedFormat;
-                if (format == VrAssetFormat.Unknown) format = Model.GetGalleryFormat(asset.RootFilePath);
                 var key = new ModelCacheKey(asset.Id, format);
                 // A precache and an interactive request can finish for the same representation.
                 // Preserve the instance already held by widgets and pending loads.
@@ -1546,7 +1551,8 @@ namespace TiltBrush
                 string directory = GetCacheDirectoryForAsset(asset.Id, format);
                 Directory.CreateDirectory(directory);
                 if (!asset.WriteToDisk(directory)) return null;
-                File.WriteAllText(Path.Combine(directory, kModelCacheFormatMarker), format.ToString());
+                if (format != VrAssetFormat.Unknown)
+                    File.WriteAllText(Path.Combine(directory, kModelCacheFormatMarker), format.ToString());
                 var model = new Model(asset.Id, Path.Combine(directory, asset.RootFilePath), galleryFormat: format);
                 m_ModelsByKey[key] = model;
                 return model;

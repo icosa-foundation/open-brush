@@ -215,7 +215,10 @@ namespace TiltBrush
 
         /// m_LoadError != null implies m_Valid == false
         private LoadError? m_LoadError;
-        public LoadError? Error => m_LoadError;
+        // Unsupported formats are part of the reference, so their error survives unloading a placeholder.
+        public LoadError? Error => m_LoadError ??
+            (AssetFormat != null && GalleryFormat == VrAssetFormat.Unknown
+                ? new LoadError("Unsupported gallery model format", AssetFormat) : (LoadError?)null);
 
         // How many widgets are using this model?
         public int m_UsageCount;
@@ -227,8 +230,9 @@ namespace TiltBrush
         private HashSet<string> m_AppliedMeshSplits;
 
         private Location m_Location;
-        private readonly bool m_NativeImmRequested;
-        // Runtime gallery identity only; saved sketches retain their existing format selection.
+        // Exact service format for persistence, or null for legacy caches identified only by extension.
+        public string AssetFormat { get; }
+        // The inferred format can still be used to load legacy cache files.
         public VrAssetFormat GalleryFormat { get; }
 
         // Can the geometry in this model be exported.
@@ -239,7 +243,7 @@ namespace TiltBrush
         // Store SVG scene info for SVG models (persists across instantiation)
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
 
-        public bool IsNativeImmModel => m_NativeImmRequested || m_Location.Extension == ".imm";
+        public bool IsNativeImmModel => GalleryFormat == VrAssetFormat.IMM || m_Location.Extension == ".imm";
         public bool IsGsplatModel { get; private set; }
         private GsplatAsset m_OwnedGsplatAsset;
         // Models are catalog-cached and shared by widgets, so retain immutable source bytes here.
@@ -348,15 +352,35 @@ namespace TiltBrush
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
-        public Model(string assetId, string path, bool nativeImmRequested = false,
-            VrAssetFormat galleryFormat = VrAssetFormat.Unknown)
+        public Model(string assetId, string path, VrAssetFormat galleryFormat = VrAssetFormat.Unknown,
+            string assetFormat = null)
         {
             m_Location = Location.IcosaAsset(assetId, path);
             // A pending gallery model has no path yet, but must retain its requested representation.
-            m_NativeImmRequested = nativeImmRequested;
-            GalleryFormat = nativeImmRequested ? VrAssetFormat.IMM :
-                galleryFormat != VrAssetFormat.Unknown ? galleryFormat : GetGalleryFormat(path);
+            AssetFormat = assetFormat ?? (galleryFormat == VrAssetFormat.Unknown ? null : galleryFormat.ToString());
+            GalleryFormat = AssetFormat == null ? GetGalleryFormat(path) :
+                TryParseGalleryFormat(AssetFormat, out var parsed) ? parsed : VrAssetFormat.Unknown;
             Init();
+        }
+
+        public static bool TryParseGalleryFormat(string name, out VrAssetFormat format)
+        {
+            if (Enum.TryParse(name, out format) && name == format.ToString())
+            {
+                switch (format)
+                {
+                    case VrAssetFormat.GLTF:
+                    case VrAssetFormat.GLTF2:
+                    case VrAssetFormat.OBJ:
+                    case VrAssetFormat.OBJ_NGON:
+                    case VrAssetFormat.PLY:
+                    case VrAssetFormat.VOX:
+                    case VrAssetFormat.IMM:
+                        return true;
+                }
+            }
+            format = VrAssetFormat.Unknown;
+            return false;
         }
 
         // Legacy disk caches did not record the service's format identifier.
@@ -378,7 +402,7 @@ namespace TiltBrush
         /// <summary>Creates a bounded template; each widget owns its native document separately.</summary>
         public static Model CreateNativeImm(string assetId, string path, Bounds bounds)
         {
-            var model = assetId == null ? new Model(path) : new Model(assetId, path);
+            var model = assetId == null ? new Model(path) : new Model(assetId, path, VrAssetFormat.IMM);
             model.CreateNativeImmPrefab(bounds);
             return model;
         }
