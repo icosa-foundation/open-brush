@@ -609,6 +609,9 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Color32[] GradientColors { get; set; }
         public Quaternion GradientSkew { get; set; }
+        // Bottom, horizon, top. Absent in legacy skies; preserves authored float precision.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Color[] GradientColorsHdr { get; set; }
         public Color32 FogColor { get; set; }
         public float FogDensity { get; set; }
         public float ReflectionIntensity { get; set; }

@@ -19,13 +19,15 @@ namespace TiltBrush
     public class BackdropButton : BaseButton
     {
         [SerializeField] private ColorMode m_ColorMode;
+        [SerializeField] private TMPro.TMP_Text m_ColorLabel;
         [SerializeField] private GameObject[] m_ObjectsToHideBehindPopups;
 
         public enum ColorMode
         {
             SkyColorA,
             SkyColorB,
-            Fog
+            Fog,
+            SkyColorMiddle
         }
 
         void OnEnable()
@@ -80,6 +82,12 @@ namespace TiltBrush
                     popup.ColorPicker.ColorFinalized += SkyColorFinalized;
                     popup.CustomColorPalette.ColorPicked += OnSkyColorBPickedAsFinal;
                     break;
+                case ColorMode.SkyColorMiddle:
+                    popup.ColorPicker.ColorPicked += OnSkyMiddleColorPicked;
+                    popup.ColorPicker.Controller.CurrentColor = SceneSettings.m_Instance.SkyColorMiddle;
+                    popup.ColorPicker.ColorFinalized += SkyColorFinalized;
+                    popup.CustomColorPalette.ColorPicked += OnSkyMiddleColorPickedAsFinal;
+                    break;
                 case ColorMode.Fog:
                     popup.ColorPicker.ColorPicked += OnFogColorPicked;
                     popup.ColorPicker.Controller.CurrentColor = SceneSettings.m_Instance.FogColor;
@@ -106,6 +114,12 @@ namespace TiltBrush
             color.b *= modulation.b;
             color.a *= modulation.a;
             base.SetColor(color);
+            if (m_ColorLabel != null)
+            {
+                var textColor = modulation.grayscale > .5f ? Color.black : Color.white;
+                textColor.a = color.a;
+                m_ColorLabel.color = textColor;
+            }
         }
 
         override public void GazeRatioChanged(float gazeRatio)
@@ -152,6 +166,17 @@ namespace TiltBrush
             SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ModifySkyboxCommand(
                 SceneSettings.m_Instance.SkyColorA, color, SceneSettings.m_Instance.GradientOrientation,
                 final: true));
+        }
+
+        void OnSkyMiddleColorPicked(Color color) => SetSkyMiddleColor(color, false);
+
+        void OnSkyMiddleColorPickedAsFinal(Color color) => SetSkyMiddleColor(color, true);
+
+        void SetSkyMiddleColor(Color color, bool final)
+        {
+            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ModifySkyboxCommand(
+                SceneSettings.m_Instance.SkyColorA, SceneSettings.m_Instance.SkyColorB,
+                SceneSettings.m_Instance.GradientOrientation, color, final));
         }
 
         void OnFogColorPicked(Color color)

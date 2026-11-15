@@ -188,8 +188,12 @@ namespace TiltBrush
                         if (state.Entity.Kind == MaquetteEntityKind.Light)
                         {
                             var data = MaquetteLightAdapter.Read(state, App.METERS_TO_UNITS);
+                            var pose = canvas.Pose * Pose(data.Placement);
+                            // Maquette's spotlight component points down the entity's local Y axis.
+                            // Store that offset in the widget pose so save/load retains the direction.
+                            if (data.IsSpot) { pose.rotation *= Quaternion.Euler(90, 0, 0); }
                             var command = new CreateWidgetCommand(WidgetManager.m_Instance.LightWidgetPrefab,
-                                canvas.Pose * Pose(data.Placement), forceTransform: true, skipIntroAnimation: true);
+                                pose, forceTransform: true, skipIntroAnimation: true);
                             SketchMemoryScript.m_Instance.PerformAndRecordCommand(command);
                             var lightWidget = (LightWidget)command.Widget;
                             var light = lightWidget.SetLightType(data.IsSpot ? LightType.Spot : LightType.Point);

@@ -111,11 +111,13 @@ namespace TiltBrush
         private float m_CustomReflectionIntensity;
         private Color m_SkyColorA;
         private Color m_SkyColorB;
+        private Color? m_SkyHorizonColor;
         private Quaternion m_GradientSkew = Quaternion.identity;
 
         private bool m_FadingOutGradient;
         private Color m_FadingSkyColorA;
         private Color m_FadingSkyColorB;
+        private Color? m_FadingHorizonColor;
 
         private bool m_InGradient;
 
@@ -170,6 +172,22 @@ namespace TiltBrush
                 RenderSettings.skybox.SetColor("_ColorB", value);
                 TriggerSkyboxChanged();
             }
+        }
+
+        // An absent horizon preserves the original two-colour rendering exactly.
+        public Color SkyColorMiddle => m_SkyHorizonColor ?? Color.Lerp(m_SkyColorA, m_SkyColorB, .5f);
+
+        public Color? SkyHorizonColor
+        {
+            get => m_SkyHorizonColor;
+            set { m_SkyHorizonColor = value; TriggerSkyboxChanged(); }
+        }
+
+        public void ApplySkyHorizon(Material material, float fade = 1)
+        {
+            if (material == null || !material.HasProperty("_UseHorizon")) { return; }
+            material.SetFloat("_UseHorizon", m_SkyHorizonColor.HasValue ? 1 : 0);
+            material.SetColor("_ColorMiddle", Color.Lerp(Color.black, SkyColorMiddle, fade));
         }
 
         public Color FogColor
@@ -451,6 +469,7 @@ namespace TiltBrush
                     m_CurrentEnvironment.m_SkyboxColorA != m_SkyColorA ||
                     m_CurrentEnvironment.m_SkyboxColorB != m_SkyColorB ||
                     m_GradientSkew != Quaternion.identity ||
+                    m_SkyHorizonColor.HasValue ||
                     HasCustomSkybox();
                 return skyboxChanged ||
                     m_CurrentEnvironment.m_RenderSettings.m_FogColor != RenderSettings.fogColor ||
@@ -512,10 +531,17 @@ namespace TiltBrush
             m_CustomReflectionIntensity = custom.ReflectionIntensity;
 
             bool hasCustomGradient = custom.GradientColors != null;
+            m_SkyHorizonColor = null;
             if (hasCustomGradient)
             {
                 m_SkyColorA = custom.GradientColors[0];
                 m_SkyColorB = custom.GradientColors[1];
+                if (custom.GradientColorsHdr != null && custom.GradientColorsHdr.Length == 3)
+                {
+                    m_SkyColorA = custom.GradientColorsHdr[0];
+                    m_SkyHorizonColor = custom.GradientColorsHdr[1];
+                    m_SkyColorB = custom.GradientColorsHdr[2];
+                }
                 m_GradientSkew = custom.GradientSkew;
             }
             else
@@ -575,6 +601,13 @@ namespace TiltBrush
                 RenderSettings.skybox.SetColor("_Tint", m_InterimValues.m_SkyboxTint);
                 RenderSettings.skybox.SetColor("_ColorA", Color.Lerp(m_FadingSkyColorA, Color.black, m_TransitionValue));
                 RenderSettings.skybox.SetColor("_ColorB", Color.Lerp(m_FadingSkyColorB, Color.black, m_TransitionValue));
+                if (RenderSettings.skybox.HasProperty("_UseHorizon"))
+                {
+                    RenderSettings.skybox.SetFloat("_UseHorizon", m_FadingHorizonColor.HasValue ? 1 : 0);
+                    RenderSettings.skybox.SetColor("_ColorMiddle", Color.Lerp(
+                        m_FadingHorizonColor ?? Color.Lerp(m_FadingSkyColorA, m_FadingSkyColorB, .5f),
+                        Color.black, m_TransitionValue));
+                }
             }
 
             //fade out lights
@@ -738,6 +771,7 @@ namespace TiltBrush
                 RenderSettings.skybox.SetColor("_Tint", m_InterimValues.m_SkyboxTint);
                 RenderSettings.skybox.SetColor("_ColorA", Color.Lerp(Color.black, m_SkyColorA, m_TransitionValue));
                 RenderSettings.skybox.SetColor("_ColorB", Color.Lerp(Color.black, m_SkyColorB, m_TransitionValue));
+                ApplySkyHorizon(RenderSettings.skybox, m_TransitionValue);
             }
 
             if (m_TransitionValue >= 1.0f)
@@ -749,6 +783,7 @@ namespace TiltBrush
                 {
                     RenderSettings.skybox.SetColor("_ColorA", m_SkyColorA);
                     RenderSettings.skybox.SetColor("_ColorB", m_SkyColorB);
+                    ApplySkyHorizon(RenderSettings.skybox);
                 }
                 m_LoadingCustomEnvironment = false;
                 m_CurrentEnvironment = m_DesiredEnvironment;
@@ -921,6 +956,7 @@ namespace TiltBrush
             m_FadingOutGradient = m_InGradient;
             m_FadingSkyColorA = m_SkyColorA;
             m_FadingSkyColorB = m_SkyColorB;
+            m_FadingHorizonColor = m_SkyHorizonColor;
         }
 
         /// If forceTransition, perform the fade-to-black-and-back even if the
@@ -966,6 +1002,7 @@ namespace TiltBrush
                     m_CustomFogColor = env.m_RenderSettings.m_FogColor;
                     m_SkyColorA = env.m_SkyboxColorA;
                     m_SkyColorB = env.m_SkyboxColorB;
+                    m_SkyHorizonColor = null;
                     m_GradientSkew = Quaternion.identity;
                     m_CustomSkyboxTextureName = null;
                     ++m_CustomSkyboxLoadVersion;
@@ -1039,6 +1076,7 @@ namespace TiltBrush
             {
                 RenderSettings.skybox.SetColor("_ColorA", m_SkyColorA);
                 RenderSettings.skybox.SetColor("_ColorB", m_SkyColorB);
+                ApplySkyHorizon(RenderSettings.skybox);
             }
             RenderSettings.skybox.SetVector("_GradientDirection", Vector3.up);
             RenderSettings.fog = true;
@@ -1054,6 +1092,8 @@ namespace TiltBrush
                         GradientColors = m_InGradient ?
                             new[] { (Color32)m_SkyColorA, (Color32)m_SkyColorB } : null,
                         GradientSkew = m_GradientSkew,
+                        GradientColorsHdr = m_InGradient && m_SkyHorizonColor.HasValue ?
+                            new[] { m_SkyColorA, m_SkyHorizonColor.Value, m_SkyColorB } : null,
                         FogColor = (Color32)RenderSettings.fogColor,
                         FogDensity = SceneSettings.m_Instance.FogDensity,
                         ReflectionIntensity = RenderSettings.reflectionIntensity,
@@ -1070,6 +1110,8 @@ namespace TiltBrush
                     return m_SkyColorA;
                 case BackdropButton.ColorMode.SkyColorB:
                     return m_SkyColorB;
+                case BackdropButton.ColorMode.SkyColorMiddle:
+                    return SkyColorMiddle;
                 case BackdropButton.ColorMode.Fog:
                     return m_CustomFogColor;
             }
@@ -1095,6 +1137,7 @@ namespace TiltBrush
 
         void TriggerSkyboxChanged()
         {
+            ApplySkyHorizon(RenderSettings.skybox);
             if (SkyboxChanged != null)
             {
                 SkyboxChanged();
