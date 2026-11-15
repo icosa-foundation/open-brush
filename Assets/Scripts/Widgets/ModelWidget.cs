@@ -366,8 +366,8 @@ namespace TiltBrush
 
         public void OnPacCatalogChanged()
         {
-            Model model = App.IcosaAssetCatalog.GetModel(AssetId);
-            if (model != null && model.m_Valid && (!m_Model.IsNativeImmModel || model.IsNativeImmModel))
+            Model model = App.IcosaAssetCatalog.GetModel(AssetId, m_Model.GalleryFormat);
+            if (model != null && model.m_Valid && m_Model.IsNativeImmModel == model.IsNativeImmModel)
             {
                 Model = model;
                 SetSignedWidgetSize(m_Size);
@@ -1457,7 +1457,8 @@ namespace TiltBrush
             ModelPlaybackState[] playbackStates = null, bool immModel = false, WidgetLink[] widgetLinks = null)
         {
             // Request model from Poly and if it doesn't exist, ask to load it.
-            Model model = App.IcosaAssetCatalog.GetModel(assetId);
+            Model model = App.IcosaAssetCatalog.GetModel(assetId,
+                immModel ? VrAssetFormat.IMM : VrAssetFormat.Unknown);
             if (immModel && (model == null || !model.m_Valid || !model.IsNativeImmModel))
             {
                 model = await LoadImmAssetTemplate(assetId);

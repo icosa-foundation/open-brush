@@ -228,6 +228,8 @@ namespace TiltBrush
 
         private Location m_Location;
         private readonly bool m_NativeImmRequested;
+        // Runtime gallery identity only; saved sketches retain their existing format selection.
+        public VrAssetFormat GalleryFormat { get; }
 
         // Can the geometry in this model be exported.
         private bool m_AllowExport;
@@ -346,12 +348,31 @@ namespace TiltBrush
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
-        public Model(string assetId, string path, bool nativeImmRequested = false)
+        public Model(string assetId, string path, bool nativeImmRequested = false,
+            VrAssetFormat galleryFormat = VrAssetFormat.Unknown)
         {
             m_Location = Location.IcosaAsset(assetId, path);
             // A pending gallery model has no path yet, but must retain its requested representation.
             m_NativeImmRequested = nativeImmRequested;
+            GalleryFormat = nativeImmRequested ? VrAssetFormat.IMM :
+                galleryFormat != VrAssetFormat.Unknown ? galleryFormat : GetGalleryFormat(path);
             Init();
+        }
+
+        // Legacy disk caches did not record the service's format identifier.
+        internal static VrAssetFormat GetGalleryFormat(string path)
+        {
+            switch (Path.GetExtension(path)?.ToLowerInvariant())
+            {
+                case ".imm": return VrAssetFormat.IMM;
+                case ".vox": return VrAssetFormat.VOX;
+                case ".gltf2": return VrAssetFormat.GLTF2;
+                case ".gltf": return VrAssetFormat.GLTF;
+                case ".glb": return VrAssetFormat.GLTF2;
+                case ".obj": return VrAssetFormat.OBJ;
+                case ".ply": return VrAssetFormat.PLY;
+                default: return VrAssetFormat.Unknown;
+            }
         }
 
         /// <summary>Creates a bounded template; each widget owns its native document separately.</summary>

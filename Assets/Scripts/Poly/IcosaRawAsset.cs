@@ -47,6 +47,8 @@ namespace TiltBrush
             get { return m_DesiredAssetTypes; }
         }
 
+        public VrAssetFormat SelectedFormat { get; internal set; }
+
         public string RootFilePath
         {
             get { return m_RootElement.filePath; }
@@ -127,7 +129,7 @@ namespace TiltBrush
             }
 
             // Next, check to see if we have enough disk space to write all the files.
-            assetDir = assetDir ?? App.IcosaAssetCatalog.GetCacheDirectoryForAsset(m_AssetId);
+            assetDir = assetDir ?? App.IcosaAssetCatalog.GetCacheDirectoryForAsset(m_AssetId, SelectedFormat);
             if (!FileUtils.HasFreeSpace(assetDir, requiredDiskSpace / (1024 * 1024)))
             {
                 OutputWindowScript.Error(String.Format("Out of disk space! {0} {1}",

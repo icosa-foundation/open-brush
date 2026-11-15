@@ -152,6 +152,7 @@ namespace TiltBrush
 
                 if (format != null)
                 {
+                    m_Asset.SelectedFormat = selectedType;
                     string internalRootFilePath = format["root"]?["relativePath"].ToString();
                     // If we successfully get a gltf2 format file, internally change the extension to
                     // "gltf2" so that the cache knows that it is a gltf2 file.
