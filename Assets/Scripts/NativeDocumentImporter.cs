@@ -311,7 +311,7 @@ namespace TiltBrush
                             }
                             else
                             {
-                                if (primitive.Type != "ModelFile")
+                                if (primitive.Type != "ModelFile" && primitive.Type != "GooglePoly")
                                 {
                                     string kind = $"Primitive:{primitive.Type}";
                                     report.UnsupportedObjects.TryGetValue(kind, out int count);
@@ -320,7 +320,10 @@ namespace TiltBrush
                                 }
                                 var placement = new MaquettePlacement(state);
                                 string materialId = (string)state.Data["materialId"];
-                                var imported = await models.MaquetteModel(assets.Resolve(primitive.Path), primitive, placement, color, materialId);
+                                var resource = primitive.Type == "GooglePoly"
+                                    ? await models.IcosaResource(primitive.IcosaAssetId)
+                                    : assets.Resolve(primitive.Path);
+                                var imported = await models.MaquetteModel(resource, primitive, placement, color, materialId);
                                 if (canvas == null) { throw new InvalidOperationException("The import canvas was removed while loading a model"); }
                                 var pose = Pose(placement);
                                 pose.translation += imported.CanvasOffset * App.METERS_TO_UNITS;
