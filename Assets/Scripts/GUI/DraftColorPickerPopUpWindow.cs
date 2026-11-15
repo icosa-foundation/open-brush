@@ -21,6 +21,7 @@ namespace TiltBrush
             bool closeOnApply = true, Func<Color, Color> normalize = null, Func<bool> canApply = null)
         {
             ColorPicker.ColorPicked -= OnColorPicked;
+            if (CustomColorPalette != null) CustomColorPalette.ColorPicked -= OnColorPicked;
             m_ReadColor = readColor;
             m_Apply = apply;
             m_Normalize = normalize;
@@ -34,6 +35,7 @@ namespace TiltBrush
                 ColorPicker.Controller.CurrentColor = DraftColor;
             }
             ColorPicker.ColorPicked += OnColorPicked;
+            if (CustomColorPalette != null) CustomColorPalette.ColorPicked += OnColorPicked;
             RefreshApplyButton();
         }
 
@@ -72,6 +74,7 @@ namespace TiltBrush
         protected virtual void OnDestroy()
         {
             if (ColorPicker != null) ColorPicker.ColorPicked -= OnColorPicked;
+            if (CustomColorPalette != null) CustomColorPalette.ColorPicked -= OnColorPicked;
         }
     }
 }
