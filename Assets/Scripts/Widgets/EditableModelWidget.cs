@@ -287,7 +287,7 @@ namespace TiltBrush
             }
             else
             {
-                EditableModelManager.GetOrCreate().RegenerateMeshes(EditableModelManager.GetShapeEditTargets(this),
+                EditableModelManager.GetOrCreate().RegenerateMeshes(WidgetPropertyCommand.GetTargets(this),
                     EditableModelManager.Evaluate(recipe), recipe);
             }
         }

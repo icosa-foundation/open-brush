@@ -152,12 +152,6 @@ namespace TiltBrush.MeshEditing
             return widget;
         }
 
-        internal static EditableModelWidget[] GetShapeEditTargets(EditableModelWidget widget)
-        {
-            return widget.SymmetryPeerGroup == null ? new[] { widget } : widget.SymmetryPeerGroup.ActiveMembers
-                .OfType<EditableModelWidget>().Prepend(widget).Distinct().ToArray();
-        }
-
         internal void RegenerateMeshes(IEnumerable<EditableModelWidget> widgets, PolyMesh poly, GeometryRecipeData recipe)
         {
             var targets = widgets.Where(widget => widget != null).ToArray();

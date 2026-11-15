@@ -7,6 +7,10 @@ namespace TiltBrush
     /// Command entry point for existing widget content controls.
     internal static class WidgetPropertyCommand
     {
+        internal static TWidget[] GetTargets<TWidget>(TWidget driver) where TWidget : GrabWidget =>
+            driver.SymmetryPeerGroup == null ? new[] { driver } : driver.SymmetryPeerGroup.ActiveMembers
+                .OfType<TWidget>().Prepend(driver).Distinct().ToArray();
+
         internal static void Set<TWidget, TValue>(TWidget driver, string property, TValue value,
             Func<TWidget, TValue> read, Action<TWidget, TValue> write) where TWidget : GrabWidget
         {
@@ -16,45 +20,78 @@ namespace TiltBrush
                 new Change<TWidget, TValue>(driver, property, value, read, write));
         }
 
-        private sealed class Change<TWidget, TValue> : BaseCommand where TWidget : GrabWidget
+        private sealed class Change<TWidget, TValue> : WidgetPropertyCommand<TWidget, TValue> where TWidget : GrabWidget
         {
-            private readonly TWidget m_Driver;
-            private readonly string m_Property;
-            private readonly List<TWidget> m_Widgets;
-            private readonly List<TValue> m_Before;
             private readonly Action<TWidget, TValue> m_Write;
-            private TValue m_After;
 
             internal Change(TWidget driver, string property, TValue value,
                 Func<TWidget, TValue> read, Action<TWidget, TValue> write)
+                : base(driver, value, read, property: property, mergeWithoutGesture: true)
             {
-                m_Driver = driver;
-                m_Property = property;
-                m_Widgets = driver.SymmetryPeerGroup.ActiveMembers.OfType<TWidget>().ToList();
-                m_Before = m_Widgets.Select(read).ToList();
                 m_Write = write;
-                m_After = value;
             }
 
-            public override bool NeedsSave => true;
-            protected override void OnRedo()
+            protected override void Apply(IReadOnlyList<TWidget> widgets, TValue value)
             {
-                foreach (var widget in m_Widgets) { m_Write(widget, m_After); }
+                foreach (var widget in widgets) { m_Write(widget, value); }
             }
-            protected override void OnUndo()
+        }
+    }
+
+    /// Base for user-initiated widget content edits. Raw widget setters remain local so loading,
+    /// cloning and command replay cannot recursively propagate edits or record extra commands.
+    /// Apply receives the whole batch: prepare expensive resources once, then assign them to peers.
+    public abstract class WidgetPropertyCommand<TWidget, TValue> : BaseCommand where TWidget : GrabWidget
+    {
+        protected readonly TWidget m_Driver;
+        private readonly TWidget[] m_Widgets;
+        private readonly TValue[] m_Before;
+        private TValue m_After;
+        private readonly string m_Property;
+        private readonly object m_Gesture;
+        private readonly bool m_MergeWithoutGesture;
+
+        protected WidgetPropertyCommand(TWidget driver, TValue value, Func<TWidget, TValue> read,
+            object gesture = null, BaseCommand parent = null, string property = null, bool mergeWithoutGesture = false)
+            : base(parent)
+        {
+            m_Driver = driver;
+            m_Widgets = WidgetPropertyCommand.GetTargets(driver);
+            m_Before = m_Widgets.Select(read).ToArray();
+            m_After = value;
+            m_Property = property;
+            m_Gesture = gesture;
+            m_MergeWithoutGesture = mergeWithoutGesture;
+        }
+
+        public override bool NeedsSave => true;
+        protected abstract void Apply(IReadOnlyList<TWidget> widgets, TValue value);
+        protected virtual object GetUndoKey(TValue value) => value;
+
+        protected override void OnRedo() => Apply(m_Widgets.Where(widget => widget != null).ToArray(), m_After);
+
+        protected override void OnUndo()
+        {
+            // Restore heterogeneous prior state, preparing once per distinct prior value.
+            foreach (var group in m_Widgets.Select((widget, i) => (Widget: widget, Value: m_Before[i]))
+                         .Where(before => before.Widget != null).GroupBy(before => GetUndoKey(before.Value)))
             {
-                for (int i = 0; i < m_Widgets.Count; ++i) { m_Write(m_Widgets[i], m_Before[i]); }
+                Apply(group.Select(before => before.Widget).ToArray(), group.First().Value);
             }
-            public override bool Merge(BaseCommand other)
+        }
+
+        public override bool Merge(BaseCommand other)
+        {
+            if (other is WidgetPropertyCommand<TWidget, TValue> next && next.GetType() == GetType() &&
+                next.m_Driver == m_Driver && next.m_Property == m_Property &&
+                m_Widgets.SequenceEqual(next.m_Widgets) &&
+                ((m_Gesture != null && ReferenceEquals(m_Gesture, next.m_Gesture)) ||
+                 (m_Gesture == null && next.m_Gesture == null && m_MergeWithoutGesture && next.m_MergeWithoutGesture)))
             {
-                if (other is Change<TWidget, TValue> next && next.m_Driver == m_Driver &&
-                    next.m_Property == m_Property)
-                {
-                    m_After = next.m_After;
-                    return true;
-                }
-                return base.Merge(other);
+                m_After = next.m_After;
+                return true;
             }
+            return base.Merge(other);
         }
     }
 }

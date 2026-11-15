@@ -1,25 +1,19 @@
 // Copyright 2026 The Open Brush Authors
 // Licensed under the Apache License, Version 2.0. See LICENSE for details.
 
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace TiltBrush
 {
-    public sealed class RepaintShapeCommand : BaseCommand
+    public sealed class RepaintShapeCommand : WidgetPropertyCommand<EditableModelWidget, Color>
     {
-        private readonly EditableModelWidget m_Widget;
-        private readonly Color m_Before;
-        private readonly Color m_After;
+        public RepaintShapeCommand(EditableModelWidget widget, Color color, BaseCommand parent = null)
+            : base(widget, color, peer => peer.m_Color, parent: parent) { }
 
-        public RepaintShapeCommand(EditableModelWidget widget, Color color, BaseCommand parent = null) : base(parent)
+        protected override void Apply(IReadOnlyList<EditableModelWidget> widgets, Color color)
         {
-            m_Widget = widget;
-            m_Before = widget.m_Color;
-            m_After = color;
+            foreach (var widget in widgets) { widget.SetColor(color); }
         }
-
-        public override bool NeedsSave => true;
-        protected override void OnRedo() { if (m_Widget != null) { m_Widget.SetColor(m_After); } }
-        protected override void OnUndo() { if (m_Widget != null) { m_Widget.SetColor(m_Before); } }
     }
 }
