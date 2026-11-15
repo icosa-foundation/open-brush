@@ -12,6 +12,7 @@ namespace TiltBrush
         private static void ImportMaquetteEnvironment(MaquetteDocument document, MaquetteScene scene,
             CanvasScript canvas, NativeDocumentImportReport report)
         {
+            ImportMaquetteBackground(document, scene, canvas, report);
             ImportMaquetteFog(document, scene, canvas, report);
             try
             {
@@ -19,7 +20,7 @@ namespace TiltBrush
                 if (environment == null) { return; }
                 // These source settings are not represented by importing the sun. Keep them
                 // visible in the result rather than claiming an environment match.
-                foreach (string feature in new[] { "Maquette background", "Maquette floor", "Maquette ambient and reflections" })
+                foreach (string feature in new[] { "Maquette floor", "Maquette ambient and reflections" })
                 {
                     report.UnmappedEnvironment[feature] = 1;
                 }
@@ -50,6 +51,29 @@ namespace TiltBrush
             {
                 report.UnmappedEnvironment["Maquette sun"] = 1;
                 report.Detail($"Maquette environment: {exception.Message}");
+            }
+        }
+
+        private static void ImportMaquetteBackground(MaquetteDocument document, MaquetteScene scene,
+            CanvasScript canvas, NativeDocumentImportReport report)
+        {
+            try
+            {
+                var colors = MaquetteEnvironmentAdapter.ReadBackgroundColors(document, scene);
+                if (colors == null) { return; }
+                Color ColorAt(int i) => new Color(colors[i][0], colors[i][1], colors[i][2], colors[i][3]);
+                if (!SceneSettings.m_Instance.InGradient)
+                {
+                    SketchMemoryScript.m_Instance.PerformAndRecordCommand(new UnlockSkyboxCommand());
+                }
+                var rotation = Quaternion.Inverse(App.Scene.Pose.rotation) * canvas.Pose.rotation;
+                SketchMemoryScript.m_Instance.PerformAndRecordCommand(new ModifySkyboxCommand(
+                    ColorAt(0), ColorAt(2), rotation, ColorAt(1), final: true));
+            }
+            catch (Exception exception)
+            {
+                report.UnmappedEnvironment["Maquette background"] = 1;
+                report.Detail($"Maquette background: {exception.Message}");
             }
         }
 

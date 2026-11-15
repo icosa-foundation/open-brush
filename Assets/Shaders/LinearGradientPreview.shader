@@ -18,6 +18,8 @@ Shader "Custom/LinearGradientPreview" {
         _Color ("Color", Color) = (1, 1, 1, 1)
   _ColorA ("ColorA", Color) = (0, 0, 0, 1)
         _ColorB ("ColorB", Color) = (1, 1, 1, 1)
+        _ColorMiddle ("Horizon Color", Color) = (0.5, 0.5, 0.5, 1)
+        _UseHorizon ("Use Horizon", Float) = 0
         _GradientDirection("Gradient", Vector) = (0, 0, 1)
         _OutlineWidth("Outline Width", Range(0.001,1)) = 0.02
   _SecondOutlineWidth("Outline Width", Range(0.001,1)) = 0.02
@@ -71,7 +73,8 @@ Shader "Custom/LinearGradientPreview" {
                 return output;
             }
 
-            fixed4 _ColorA, _ColorB, _Color;
+            fixed4 _ColorA, _ColorB, _ColorMiddle, _Color;
+            float _UseHorizon;
             float3 _GradientDirection;
             float _EquatorWidth;
 
@@ -81,7 +84,13 @@ Shader "Custom/LinearGradientPreview" {
                 float t;
                 t = input.uv.y;
                 if (abs(t - 0.5) < _EquatorWidth) return _Color;
-    return lerp(_ColorA, _ColorB, t);
+                if (_UseHorizon > 0.5)
+                {
+                    float skyT = (normalize(input.modelpos).y + 1) * 0.5;
+                    return skyT < 0.5 ? lerp(_ColorA, _ColorMiddle, skyT * 2) :
+                        lerp(_ColorMiddle, _ColorB, skyT * 2 - 1);
+                }
+                return lerp(_ColorA, _ColorB, t);
             }
             ENDCG
         }

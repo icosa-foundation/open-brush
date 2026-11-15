@@ -63,6 +63,18 @@ namespace TiltBrush.DocumentImport
             };
         }
 
+        public static float[][] ReadBackgroundColors(MaquetteDocument document, MaquetteScene scene)
+        {
+            var lighting = ReadSource(document, scene).Lighting;
+            if (lighting == null) { return null; }
+            return new[]
+            {
+                Components(lighting["BackgroundBottomColor"], "rgba"),
+                Components(lighting["BackgroundMiddleColor"], "rgba"),
+                Components(lighting["BackgroundTopColor"], "rgba")
+            };
+        }
+
         public static MaquetteFogData ReadFog(MaquetteDocument document, MaquetteScene scene)
         {
             var source = ReadSource(document, scene);

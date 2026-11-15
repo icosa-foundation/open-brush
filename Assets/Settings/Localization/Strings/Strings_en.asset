@@ -4389,6 +4389,18 @@ MonoBehaviour:
     m_Localized: Hide extra preview guides
     m_Metadata:
       m_Items: []
+  - m_Id: 565420582969630720
+    m_Localized: Top
+    m_Metadata:
+      m_Items: []
+  - m_Id: 565420583028350976
+    m_Localized: Horizon
+    m_Metadata:
+      m_Items: []
+  - m_Id: 565420583028350977
+    m_Localized: Bottom
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
