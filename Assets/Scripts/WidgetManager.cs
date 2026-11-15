@@ -542,6 +542,12 @@ namespace TiltBrush
             }
         }
 
+        // Keep save availability aligned with the widget collections written to sketch metadata.
+        // MediaWidgets includes procedural models, text and audio as well as imported media.
+        public bool HasSaveableWidgets => MediaWidgets.Concat(m_PortalWidgets)
+            .Concat(m_GaussianCaptureWidgets).Concat(m_StencilWidgets).Concat(m_CameraPathWidgets)
+            .Any(IsWidgetObjectActive);
+
         // Include hidden widgets retained by undo, so unlinking cannot leave dormant groups.
         internal IEnumerable<SymmetryWidgetGroup> LinkedWidgetGroups => MediaWidgets
             .Concat(m_PortalWidgets).Concat(m_GaussianCaptureWidgets)
