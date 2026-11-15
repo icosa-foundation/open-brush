@@ -2266,6 +2266,7 @@ namespace TiltBrush
             if (axis != GrabWidget.Axis.Invalid)
             {
                 // Scale along a single axis
+                Vector2 axisSizeRange = m_CurrentGrabWidget.GetAxisSizeRange();
                 float deltaScale;
                 if (App.Config.m_AxisManipulationIsResize)
                 {
@@ -2275,8 +2276,8 @@ namespace TiltBrush
                         xfWand, xfBrush,
                         GetWorkingTransform(m_CurrentGrabWidget),
                         out deltaScale,
-                        deltaScaleMin: vSizeRange.x / axisExtent,
-                        deltaScaleMax: vSizeRange.y / axisExtent);
+                        deltaScaleMin: axisSizeRange.x / axisExtent,
+                        deltaScaleMax: axisSizeRange.y / axisExtent);
                 }
                 else
                 {
@@ -2287,8 +2288,8 @@ namespace TiltBrush
                         GetWorkingTransform(m_CurrentGrabWidget),
                         out deltaScale,
                         finalScaleMin: vSizeRange.x,
-                        deltaScaleMin: vSizeRange.x / axisExtent,
-                        deltaScaleMax: vSizeRange.y / axisExtent);
+                        deltaScaleMin: axisSizeRange.x / axisExtent,
+                        deltaScaleMax: axisSizeRange.y / axisExtent);
                 }
 
                 // The above functions return undefined values in newWidgetXf.scale; but that's
@@ -5845,13 +5846,7 @@ namespace TiltBrush
             return SketchMemoryScript.m_Instance.HasVisibleObjects() ||
                 SceneSettings.m_Instance.EnvironmentChanged ||
                 LightsControlScript.m_Instance.LightsChanged ||
-                m_WidgetManager.ModelWidgets.Any(w => w.gameObject.activeSelf) ||
-                m_WidgetManager.LightWidgets.Any(w => w.gameObject.activeSelf) ||
-                m_WidgetManager.ActivePortalWidgets.Any() ||
-                m_WidgetManager.StencilWidgets.Any(w => w.gameObject.activeSelf) ||
-                m_WidgetManager.ImageWidgets.Any(w => w.gameObject.activeSelf) ||
-                m_WidgetManager.VideoWidgets.Any(w => w.gameObject.activeSelf) ||
-                m_WidgetManager.AnyCameraPathWidgetsActive;
+                m_WidgetManager.HasSaveableWidgets;
         }
 
         public void OpenPanelOfType(BasePanel.PanelType type, TrTransform trSpawnXf, bool forced = false)

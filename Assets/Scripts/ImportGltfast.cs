@@ -115,7 +115,7 @@ namespace TiltBrush
                 // path into a doubled, invalid path (e.g. ".../id/C:/.../id/file.gltf2"), which fails
                 // File.Exists and spams "Invalid AssetDatabase path" before falling through.
                 options.DataLoader = new FileLoader(Path.GetDirectoryName(fullPath));
-                GLTFSceneImporter gltf = new GLTFSceneImporter(Path.GetFileName(fullPath), options);
+                using var gltf = new GLTFSceneImporter(Path.GetFileName(fullPath), options);
 
                 if (options.ImportContext.TryGetPlugin<UnityGLTF.Plugins.OpenBrushAudioImportContext>(out var audioPlugin))
                     audioPlugin.GltfDirectory = Path.GetDirectoryName(localPath);
@@ -130,6 +130,7 @@ namespace TiltBrush
                 // because the player loop can't tick while blocked.
                 await gltf.LoadSceneAsync();
                 GameObject go = gltf.CreatedObject;
+                model.UnitsPerMetre = 1f;
 
                 var clips = gltf.CreatedAnimationClips;
                 if (clips != null && clips.Length > 0)
@@ -160,6 +161,7 @@ namespace TiltBrush
                 Debug.LogError($"Failed to import using UnityGltf. Falling back to legacy import.\nUnityGltf Exception: {e}");
                 // Fall back to the older import code
                 GameObject go = _ImportUsingLegacyGltf(localPath, assetLocation);
+                model.UnitsPerMetre = App.METERS_TO_UNITS;
                 model.CalcBoundsGltf(go);
                 model.EndCreatePrefab(go, warnings);
             }
