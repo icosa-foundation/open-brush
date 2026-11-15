@@ -32,6 +32,8 @@ namespace TiltBrush
         [JsonExtensionData]
         public IDictionary<string, JToken> ExtraData { get; set; }
 
+        internal TiltEditableModels Copy() => (TiltEditableModels)MemberwiseClone();
+
         [JsonIgnore]
         public Model.Location Location
         {

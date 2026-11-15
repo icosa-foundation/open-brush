@@ -35,9 +35,33 @@ namespace TiltBrush.MeshEditing
             RetainedInstances.Clear();
         }
 
-        public static void LoadFromTilt(Dictionary<string, EditableModelDefinitionData> definitions, TiltEditableModels[] instances)
+        public static void LoadFromTilt(Dictionary<string, EditableModelDefinitionData> definitions, TiltEditableModels[] instances,
+            bool additive = false)
         {
-            ClearRetainedData();
+            if (!additive) { ClearRetainedData(); }
+            else
+            {
+                // One mapping for the whole import keeps shared definitions together,
+                // without colliding with content already present or imported earlier.
+                var importedIds = new Dictionary<string, string>();
+                string Remap(string id)
+                {
+                    if (!importedIds.TryGetValue(id, out var mapped))
+                    {
+                        mapped = Guid.NewGuid().ToString();
+                        importedIds.Add(id, mapped);
+                    }
+                    return mapped;
+                }
+                definitions = definitions?.ToDictionary(pair => Remap(pair.Key),
+                    pair => pair.Value.CopyForImport(Remap(pair.Key)));
+                instances = instances?.Select(instance =>
+                {
+                    var imported = instance.Copy();
+                    if (instance.AssetId != null) { imported.Location = Model.Location.Generated(Remap(instance.AssetId)); }
+                    return imported;
+                }).ToArray();
+            }
             if (definitions != null)
             {
                 foreach (var definition in definitions)

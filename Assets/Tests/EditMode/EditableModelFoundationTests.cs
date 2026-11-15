@@ -110,5 +110,69 @@ namespace TiltBrush.Tests
             Assert.IsTrue(editable.IsSubclassOf(AppType("ModelWidget")));
             Assert.NotNull(Resources.Load("EditableModelWidget", editable));
         }
+
+        [Test]
+        public void AdditiveEditableImportsKeepRetainedRecordsAndRemapSharedDefinitionsAndPayloads()
+        {
+            var manager = AppType("MeshEditing.EditableModelManager");
+            var definitionType = AppType("EditableModelDefinitionData");
+            var instanceType = AppType("TiltEditableModels");
+            var retainedDefinitions = (IDictionary)manager.GetField("RetainedDefinitions").GetValue(null);
+            var retainedInstances = (IList)manager.GetField("RetainedInstances").GetValue(null);
+            var originalDefinitions = new Hashtable(retainedDefinitions);
+            var originalInstances = new ArrayList(retainedInstances);
+            var definitions = (IDictionary)Activator.CreateInstance(retainedDefinitions.GetType());
+            const string definitionJson = "{\"Recipe\":{\"Version\":1,\"Generator\":{\"Type\":\"future-shape\"}},\"Geometry\":{\"GeometryFile\":\"editable-model-source.bin\"}}";
+            var definition = JsonConvert.DeserializeObject(definitionJson, definitionType);
+            var sourceFiles = (IDictionary)definitionType.GetProperty("SourceFiles").GetValue(definition);
+            sourceFiles.Add("editable-model-source.bin", new byte[] { 1, 2, 3 });
+            definitions.Add("shared", definition);
+            var instances = Array.CreateInstance(instanceType, 2);
+            for (int i = 0; i < instances.Length; ++i)
+            {
+                instances.SetValue(JsonConvert.DeserializeObject("{\"AssetId\":\"shared\",\"RawTransforms\":[],\"Future\":42}", instanceType), i);
+            }
+            try
+            {
+                retainedDefinitions.Clear();
+                retainedInstances.Clear();
+                retainedDefinitions.Add("shared", definition);
+                retainedInstances.Add(instances.GetValue(0));
+                var load = manager.GetMethod("LoadFromTilt");
+                load.Invoke(null, new object[] { definitions, instances, true });
+                load.Invoke(null, new object[] { definitions, instances, true });
+                Assert.AreEqual(3, retainedDefinitions.Count);
+                Assert.AreEqual(5, retainedInstances.Count);
+                string Id(object record) => (string)instanceType.GetProperty("AssetId").GetValue(record);
+                string first = Id(retainedInstances[1]);
+                string second = Id(retainedInstances[3]);
+                Assert.AreEqual(first, Id(retainedInstances[2]));
+                Assert.AreEqual(second, Id(retainedInstances[4]));
+                Assert.AreNotEqual(first, second);
+                Assert.AreNotEqual("shared", first);
+                Assert.AreSame(definition, retainedDefinitions["shared"]);
+                Assert.AreEqual("shared", Id(instances.GetValue(0)));
+                foreach (string id in new[] { first, second })
+                {
+                    var imported = retainedDefinitions[id];
+                    string file = (string)definitionType.GetProperty("GeometryFile").GetValue(imported);
+                    Assert.AreEqual($"editable-model-{id}.bin", file);
+                    var files = (IDictionary)definitionType.GetProperty("SourceFiles").GetValue(imported);
+                    CollectionAssert.AreEqual(new byte[] { 1, 2, 3 }, (byte[])files[file]);
+                }
+                Assert.AreEqual("editable-model-source.bin", definitionType.GetProperty("GeometryFile").GetValue(definition));
+                var saved = JsonConvert.SerializeObject(retainedInstances);
+                var restored = (IList)JsonConvert.DeserializeObject(saved, instances.GetType());
+                Assert.AreEqual(5, restored.Count);
+                Assert.AreEqual(42, (int)JObject.FromObject(restored[1])["Future"]);
+            }
+            finally
+            {
+                retainedDefinitions.Clear();
+                foreach (DictionaryEntry entry in originalDefinitions) { retainedDefinitions.Add(entry.Key, entry.Value); }
+                retainedInstances.Clear();
+                foreach (var record in originalInstances) { retainedInstances.Add(record); }
+            }
+        }
     }
 }

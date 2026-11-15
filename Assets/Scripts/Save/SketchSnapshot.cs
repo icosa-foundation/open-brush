@@ -126,6 +126,7 @@ namespace TiltBrush
                 m_SymmetryState = SketchWriter.SymmetrySaveState.Capture(includeUnreferenced: !m_SelectedOnly);
                 UnrecordedChangesRevision = SketchMemoryScript.m_Instance.UnrecordedChangesRevision;
                 m_Metadata = GetSketchMetadata();
+                EditableModelDefinitionData.CollectGeometryFiles(m_Metadata.EditableModelDefinitions?.Values, m_EditableGeometry);
                 foreach (var mirror in m_WidgetLinks.Mirrors)
                 {
                     m_SymmetryState.WidgetMirrors.Add(mirror);

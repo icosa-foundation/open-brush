@@ -818,20 +818,21 @@ namespace TiltBrush
                 if (bAdditive)
                 {
                     RemapImportedWidgets(jsonData, targetLayer, oldGroupToNewGroup);
-                    LoadWidgetMetadata(jsonData, fileInfo);
                 }
+                else { ModelCatalog.m_Instance.ClearMissingModels(); }
+                if (jsonData.EditableModelDefinitions != null)
+                {
+                    foreach (var definition in jsonData.EditableModelDefinitions.Values)
+                    {
+                        definition.LoadGeometryFile(fileInfo.GetReadStream);
+                    }
+                }
+                MeshEditing.EditableModelManager.LoadFromTilt(jsonData.EditableModelDefinitions, jsonData.EditableModelIndex,
+                    additive: bAdditive);
+                if (bAdditive) { LoadWidgetMetadata(jsonData, fileInfo); }
 
                 if (!bAdditive)
                 {
-                    ModelCatalog.m_Instance.ClearMissingModels();
-                    if (jsonData.EditableModelDefinitions != null)
-                    {
-                        foreach (var definition in jsonData.EditableModelDefinitions.Values)
-                        {
-                            definition.LoadGeometryFile(fileInfo.GetReadStream);
-                        }
-                    }
-                    MeshEditing.EditableModelManager.LoadFromTilt(jsonData.EditableModelDefinitions, jsonData.EditableModelIndex);
                     SketchMemoryScript.m_Instance.InitialSketchTransform = jsonData.SceneTransformInRoomSpace;
 
                     LoadWidgetMetadata(jsonData, fileInfo);
@@ -904,6 +905,11 @@ namespace TiltBrush
             {
                 int count = (model.RawTransforms ?? model.Transforms)?.Length ?? 0;
                 model.LayerIds = Enumerable.Repeat(targetLayer, count).ToArray();
+                model.GroupIds = model.GroupIds?.Select(Remap).ToArray();
+            }
+            foreach (var model in data.EditableModelIndex ?? Array.Empty<TiltEditableModels>())
+            {
+                model.LayerIds = Enumerable.Repeat(targetLayer, model.RawTransforms?.Length ?? 0).ToArray();
                 model.GroupIds = model.GroupIds?.Select(Remap).ToArray();
             }
             foreach (var image in data.ImageIndex ?? Array.Empty<TiltImages75>())
