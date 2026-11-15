@@ -17,6 +17,9 @@ using System.Collections;
 using TiltBrush;
 using TMPro;
 using UnityEngine;
+#if UNITY_ANDROID && !UNITY_EDITOR
+using UnityEngine.Android;
+#endif
 
 public class WebcamSurface : MonoBehaviour
 {
@@ -66,7 +69,7 @@ public class WebcamSurface : MonoBehaviour
     {
         StopCamera();
         _resumeCamera = false;
-#if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
+#if UNITY_IOS && !UNITY_EDITOR
         DeviceNameLabel.text = "Camera unavailable on this platform";
 #else
         _initializing = true;
@@ -86,7 +89,24 @@ public class WebcamSurface : MonoBehaviour
             {
                 yield return null;
             }
-#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+#if UNITY_ANDROID && !UNITY_EDITOR
+            yield return RequestAndroidPermission(Permission.Camera);
+            if (!Permission.HasUserAuthorizedPermission(Permission.Camera))
+            {
+                DeviceNameLabel.text = "Camera permission denied";
+                yield break;
+            }
+            if (RequiresHeadsetCameraPermission())
+            {
+                const string headsetPermission = "horizonos.permission.HEADSET_CAMERA";
+                yield return RequestAndroidPermission(headsetPermission);
+                if (!Permission.HasUserAuthorizedPermission(headsetPermission))
+                {
+                    DeviceNameLabel.text = "Headset camera permission denied";
+                    yield break;
+                }
+            }
+#elif UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
             yield return Application.RequestUserAuthorization(UserAuthorization.WebCam);
             if (!Application.HasUserAuthorization(UserAuthorization.WebCam))
             {
@@ -94,6 +114,17 @@ public class WebcamSurface : MonoBehaviour
                 yield break;
             }
 #endif
+            // Permission dialogs can suspend the app. Open the camera only after returning.
+            while (_paused)
+            {
+                yield return null;
+            }
+            if (!TryCreateCamera())
+            {
+                yield break;
+            }
+            // Quest's WebCamTexture path needs a frame between construction and Play.
+            yield return null;
             if (!TryStartCamera())
             {
                 yield break;
@@ -112,6 +143,7 @@ public class WebcamSurface : MonoBehaviour
                 yield return null;
             }
             DeviceNameLabel.text = _webcam.deviceName;
+            Debug.Log($"[OB_WEBCAM] Started {_webcam.deviceName}: {_webcam.width}x{_webcam.height}, rotation={_webcam.videoRotationAngle}, mirrored={_webcam.videoVerticallyMirrored}");
             UpdateDisplay();
         }
         finally
@@ -121,7 +153,40 @@ public class WebcamSurface : MonoBehaviour
         }
     }
 
-    private bool TryStartCamera()
+#if UNITY_ANDROID && !UNITY_EDITOR
+    private IEnumerator RequestAndroidPermission(string permission)
+    {
+        if (Permission.HasUserAuthorizedPermission(permission))
+        {
+            yield break;
+        }
+        bool completed = false;
+        var callbacks = new PermissionCallbacks();
+        callbacks.PermissionGranted += _ => completed = true;
+        callbacks.PermissionDenied += _ => completed = true;
+        Permission.RequestUserPermission(permission, callbacks);
+        while (!completed)
+        {
+            yield return null;
+        }
+        // Unity requires a frame after granting permission before camera initialization.
+        yield return null;
+        while (_paused || !Application.isFocused)
+        {
+            yield return null;
+        }
+    }
+
+    private static bool RequiresHeadsetCameraPermission()
+    {
+        using var build = new AndroidJavaClass("android.os.Build");
+        string manufacturer = build.GetStatic<string>("MANUFACTURER");
+        return string.Equals(manufacturer, "Oculus", StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(manufacturer, "Meta", StringComparison.OrdinalIgnoreCase);
+    }
+#endif
+
+    private bool TryCreateCamera()
     {
         try
         {
@@ -132,14 +197,34 @@ public class WebcamSurface : MonoBehaviour
                 return false;
             }
             deviceIndex = Mathf.Clamp(deviceIndex, 0, _devices.Length - 1);
+#if UNITY_ANDROID && !UNITY_EDITOR
+            // A panel needs a preview, not the camera's highest capture resolution.
+            _webcam = new WebCamTexture(_devices[deviceIndex].name, 640, 480, 30);
+#else
             _webcam = new WebCamTexture(_devices[deviceIndex].name);
+#endif
             _screenMaterial.mainTexture = _webcam;
-            _webcam.Play();
             return true;
         }
         catch (Exception exception)
         {
             Debug.LogWarning($"[OB_WEBCAM] Could not open camera: {exception.Message}");
+            ReleaseCamera();
+            DeviceNameLabel.text = "Camera unavailable";
+            return false;
+        }
+    }
+
+    private bool TryStartCamera()
+    {
+        try
+        {
+            _webcam.Play();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"[OB_WEBCAM] Could not start camera: {exception.Message}");
             ReleaseCamera();
             DeviceNameLabel.text = "Camera unavailable";
             return false;

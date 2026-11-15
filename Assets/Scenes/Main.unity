@@ -26423,7 +26423,7 @@ MonoBehaviour:
   - m_PanelPrefab: {fileID: 1272310558547734, guid: 38a4b95a5f6824c41994709bfbd012ad, type: 3}
     m_ModeVr: 1
     m_ModeMono: 1
-    m_ModeQuest: 0
+    m_ModeQuest: 1
     m_Basic: 0
     m_Advanced: 1
     m_ViewOnly: 0
