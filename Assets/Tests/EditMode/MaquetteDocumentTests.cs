@@ -306,8 +306,9 @@ namespace TiltBrush.Tests
                 Assert.AreEqual(new[] { 20000f, 30000f }, text.BoxSize);
                 Assert.AreEqual(.001, text.GlyphTransform[0], 1e-8);
                 Assert.AreEqual(.001, text.GlyphTransform[5], 1e-8);
-                Assert.AreEqual(10, text.GlyphTransform[12], 1e-6);
-                Assert.AreEqual(-15, text.GlyphTransform[13], 1e-6);
+                // Maquette recenters the text field on load; do not add a half-box offset.
+                Assert.AreEqual(0, text.GlyphTransform[12], 1e-6);
+                Assert.AreEqual(0, text.GlyphTransform[13], 1e-6);
                 Assert.AreEqual(-.01, text.GlyphTransform[14], 1e-6);
                 states[1].Data.Remove("textEntityState");
                 text = MaquetteTextAdapter.Read(states[1], guid => guid == id ? "File text" : throw new Exception("Wrong text GUID"), 10);
