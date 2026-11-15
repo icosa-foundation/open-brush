@@ -13,7 +13,7 @@
 // limitations under the License.
 
 using System;
-using System.Collections.Generic;
+using System.Collections;
 using TiltBrush;
 using TMPro;
 using UnityEngine;
@@ -27,77 +27,218 @@ public class WebcamSurface : MonoBehaviour
     public ActionButton PreviousDeviceButton;
     public ActionButton NextDeviceButton;
 
-#if !(UNITY_ANDROID || UNITY_IOS)
-    private WebCamDevice[] _Devices;
+    private WebCamDevice[] _devices = Array.Empty<WebCamDevice>();
     private WebCamTexture _webcam;
-#endif
+    private Material _screenMaterial;
+    private Texture _originalTexture;
+    private Vector2 _originalTextureScale;
+    private Vector2 _originalTextureOffset;
+    private Quaternion _screenRotation;
+    private bool _started;
+    private bool _initializing;
+    private bool _paused;
+    private bool _resumeCamera;
 
-    void Start()
+    private void Awake()
     {
-#if !(UNITY_ANDROID || UNITY_IOS)
-        _Devices = WebCamTexture.devices;
-#endif
-        UpdateButtonState();
-        UpdateDeviceInCompositor();
+        _screenMaterial = Screen.material;
+        _originalTexture = _screenMaterial.mainTexture;
+        _originalTextureScale = _screenMaterial.mainTextureScale;
+        _originalTextureOffset = _screenMaterial.mainTextureOffset;
+        _screenRotation = Screen.transform.localRotation;
     }
 
-    private void UpdateDeviceInCompositor()
+    private void Start()
     {
-        StartCoroutine(
-            OverlayManager.m_Instance.RunInCompositor(
-                OverlayType.LoadGeneric,
-                UpdateDevice,
-                0.25f
-            )
-        );
+        _started = true;
+        StartCamera();
     }
 
-    private void UpdateDevice()
+    private void OnEnable()
     {
-#if !(UNITY_ANDROID || UNITY_IOS)
-        if (_webcam != null)
+        if (_started)
         {
-            _webcam.Stop();
-            Destroy(_webcam);
+            StartCamera();
         }
-        var device = _Devices[deviceIndex];
-        DeviceNameLabel.text = device.name;
-        Application.RequestUserAuthorization(UserAuthorization.WebCam);
-        _webcam = new WebCamTexture(device.name);
-        Screen.material.mainTexture = _webcam;
-        _webcam.Play();
-        // Note that it's height / width, not width / height
-        var aspectRatio = _webcam.height / (float)_webcam.width;
-        Pivot.localScale = new Vector3(1, aspectRatio, 1);
+    }
+
+    private void StartCamera()
+    {
+        StopCamera();
+        _resumeCamera = false;
+#if (UNITY_ANDROID || UNITY_IOS) && !UNITY_EDITOR
+        DeviceNameLabel.text = "Camera unavailable on this platform";
+#else
+        _initializing = true;
+        DeviceNameLabel.text = "Starting camera...";
+        UpdateButtonState();
+        StartCoroutine(InitializeCamera());
 #endif
+    }
+
+    private IEnumerator InitializeCamera()
+    {
+        try
+        {
+            // Allow the previous texture to be destroyed before opening another camera.
+            yield return null;
+            while (_paused)
+            {
+                yield return null;
+            }
+#if UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+            yield return Application.RequestUserAuthorization(UserAuthorization.WebCam);
+            if (!Application.HasUserAuthorization(UserAuthorization.WebCam))
+            {
+                DeviceNameLabel.text = "Camera permission denied";
+                yield break;
+            }
+#endif
+            if (!TryStartCamera())
+            {
+                yield break;
+            }
+
+            float deadline = Time.realtimeSinceStartup + 10f;
+            while (!_webcam.didUpdateThisFrame || _webcam.width <= 16 || _webcam.height <= 16)
+            {
+                if (Time.realtimeSinceStartup >= deadline)
+                {
+                    Debug.LogWarning($"[OB_WEBCAM] No frames from camera {_webcam.deviceName}");
+                    ReleaseCamera();
+                    DeviceNameLabel.text = "Camera did not start";
+                    yield break;
+                }
+                yield return null;
+            }
+            DeviceNameLabel.text = _webcam.deviceName;
+            UpdateDisplay();
+        }
+        finally
+        {
+            _initializing = false;
+            UpdateButtonState();
+        }
+    }
+
+    private bool TryStartCamera()
+    {
+        try
+        {
+            _devices = WebCamTexture.devices;
+            if (_devices.Length == 0)
+            {
+                DeviceNameLabel.text = "No cameras available";
+                return false;
+            }
+            deviceIndex = Mathf.Clamp(deviceIndex, 0, _devices.Length - 1);
+            _webcam = new WebCamTexture(_devices[deviceIndex].name);
+            _screenMaterial.mainTexture = _webcam;
+            _webcam.Play();
+            return true;
+        }
+        catch (Exception exception)
+        {
+            Debug.LogWarning($"[OB_WEBCAM] Could not open camera: {exception.Message}");
+            ReleaseCamera();
+            DeviceNameLabel.text = "Camera unavailable";
+            return false;
+        }
+    }
+
+    private void Update()
+    {
+        if (_webcam != null && _webcam.didUpdateThisFrame && _webcam.width > 16 && _webcam.height > 16)
+        {
+            UpdateDisplay();
+        }
+    }
+
+    private void UpdateDisplay()
+    {
+        int rotation = _webcam.videoRotationAngle;
+        float aspectRatio = _webcam.height / (float)_webcam.width;
+        Pivot.localScale = new Vector3(1, rotation % 180 == 0 ? aspectRatio : 1 / aspectRatio, 1);
+        Screen.transform.localRotation = _screenRotation * Quaternion.Euler(0, 0, -rotation);
+        bool mirrored = _webcam.videoVerticallyMirrored;
+        _screenMaterial.mainTextureScale = new Vector2(_originalTextureScale.x,
+            mirrored ? -_originalTextureScale.y : _originalTextureScale.y);
+        _screenMaterial.mainTextureOffset = _originalTextureOffset +
+            (mirrored ? new Vector2(0, _originalTextureScale.y) : Vector2.zero);
     }
 
     private void UpdateButtonState()
     {
-#if !(UNITY_ANDROID || UNITY_IOS)
-        NextDeviceButton.gameObject.SetActive(deviceIndex < _Devices.Length - 1);
-        PreviousDeviceButton.gameObject.SetActive(deviceIndex > 0);
-#endif
+        if (NextDeviceButton != null)
+        {
+            NextDeviceButton.gameObject.SetActive(!_initializing && deviceIndex < _devices.Length - 1);
+        }
+        if (PreviousDeviceButton != null)
+        {
+            PreviousDeviceButton.gameObject.SetActive(!_initializing && deviceIndex > 0 && _devices.Length > 0);
+        }
+    }
+
+    private void OnApplicationPause(bool paused)
+    {
+        _paused = paused;
+        if (paused && _webcam != null)
+        {
+            StopCamera();
+            _resumeCamera = true;
+        }
+        else if (!paused && _resumeCamera && isActiveAndEnabled)
+        {
+            StartCamera();
+        }
+    }
+
+    private void OnDisable()
+    {
+        StopCamera();
+        _resumeCamera = false;
     }
 
     private void OnDestroy()
     {
-#if !(UNITY_ANDROID || UNITY_IOS)
+        ReleaseCamera();
+        if (_screenMaterial != null)
+        {
+            Destroy(_screenMaterial);
+        }
+    }
+
+    private void StopCamera()
+    {
+        StopAllCoroutines();
+        _initializing = false;
+        ReleaseCamera();
+        UpdateButtonState();
+    }
+
+    private void ReleaseCamera()
+    {
         if (_webcam != null)
         {
             _webcam.Stop();
             Destroy(_webcam);
+            _webcam = null;
         }
-#endif
+        if (_screenMaterial != null)
+        {
+            _screenMaterial.mainTexture = _originalTexture;
+            _screenMaterial.mainTextureScale = _originalTextureScale;
+            _screenMaterial.mainTextureOffset = _originalTextureOffset;
+        }
     }
 
     public void HandleChangeDevice(int increment)
     {
-#if !(UNITY_ANDROID || UNITY_IOS)
-        deviceIndex += increment;
-        deviceIndex = Mathf.Clamp(deviceIndex, 0, _Devices.Length - 1);
-        UpdateButtonState();
-        UpdateDeviceInCompositor();
-#endif
+        if (_initializing || _devices.Length == 0 || !isActiveAndEnabled)
+        {
+            return;
+        }
+        deviceIndex = Mathf.Clamp(deviceIndex + increment, 0, _devices.Length - 1);
+        StartCamera();
     }
 }
