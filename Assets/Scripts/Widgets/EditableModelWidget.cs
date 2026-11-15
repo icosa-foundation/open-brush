@@ -29,7 +29,6 @@ namespace TiltBrush
         private MeshFilter m_ScalePreview;
         private int m_ScalePreviewAxes;
         private Bounds m_ScalePreviewBounds;
-        private Matrix4x4 m_ScalePreviewColliderTransform;
 
         // Session-only editing mode. A loaded ellipse is inferred from its geometry;
         // checking the toggle on a circle doesn't introduce a recipe field.
@@ -226,14 +225,13 @@ namespace TiltBrush
             previewTransform.localScale = transform.localScale;
             m_ScalePreview.gameObject.layer = gameObject.layer;
 
-            Bounds bounds = new Bounds(m_BoxCollider.center, m_BoxCollider.size);
-            Matrix4x4 colliderToWidget = transform.worldToLocalMatrix * m_BoxCollider.transform.localToWorldMatrix;
+            // Match the geometry, not the padded grab collider. Generated meshes use
+            // widget-local coordinates, including any offset in their bounds centre.
+            Bounds bounds = Model.GeneratedMesh != null ? Model.GeneratedMesh.bounds : Model.m_MeshBounds;
             int axes = ProceduralShapes.ResizeAxisMask(m_PolyRecipe, axis, EllipseEnabled);
-            if (axes == m_ScalePreviewAxes && bounds == m_ScalePreviewBounds &&
-                colliderToWidget == m_ScalePreviewColliderTransform) { return; }
+            if (axes == m_ScalePreviewAxes && bounds == m_ScalePreviewBounds) { return; }
             m_ScalePreviewAxes = axes;
             m_ScalePreviewBounds = bounds;
-            m_ScalePreviewColliderTransform = colliderToWidget;
             int faceCount = 0;
             for (int along = 0; along < 3; ++along)
             {
@@ -256,7 +254,7 @@ namespace TiltBrush
                         vertex[along] += bounds.extents[along] * (face == 0 ? -1 : 1);
                         vertex[across] += bounds.extents[across] * (corner == 0 || corner == 3 ? -1 : 1);
                         vertex[up] += bounds.extents[up] * (corner < 2 ? -1 : 1);
-                        vertices[start + corner] = colliderToWidget.MultiplyPoint3x4(vertex);
+                        vertices[start + corner] = vertex;
                     }
                     int index = quad * 6;
                     triangles[index] = start;
