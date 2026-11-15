@@ -198,6 +198,10 @@ namespace TiltBrush
             m_TargetLabel.text = m_Target != null ? $"Editing: {ProceduralShapes.DisplayName(m_DisplayedRecipe)}" : "Create a shape or point at one";
             m_PageLabel.text = count > 0 ? $"{m_Page + 1} / {pages}" : "";
             m_StatusLabel.text = "";
+            bool showPagination = pages > 1;
+            m_PageLabel.gameObject.SetActive(showPagination);
+            m_PreviousPage.gameObject.SetActive(showPagination);
+            m_NextPage.gameObject.SetActive(showPagination);
             m_PreviousPage.SetButtonAvailable(count > 0 && m_Page > 0);
             m_NextPage.SetButtonAvailable(m_Page + 1 < pages);
             m_ShapeTab.SetButtonSelected(!m_MaterialTab);
