@@ -20,7 +20,6 @@ namespace TiltBrush
         private EditableModelMaterialData m_MaterialSettings;
         public EditableModelMaterialData MaterialSettings => m_MaterialSettings;
         public static EditableModelWidget LastActivated { get; private set; }
-        private Mesh m_OwnedGeneratedMesh;
         // Retain stretches already stored in sketches. New axis gestures edit the
         // recipe instead, so newly created shapes keep this at Vector3.one.
         private Vector3 m_AxisScale = Vector3.one;
@@ -119,7 +118,7 @@ namespace TiltBrush
             if (axis == Axis.Invalid || Model == null || !Model.m_Valid) { return Axis.Invalid; }
             if (!ProceduralShapes.CanResizeAxis(m_PolyRecipe, axis)) { return Axis.Invalid; }
             int index = (int)axis;
-            Vector3 size = m_OwnedGeneratedMesh != null ? m_OwnedGeneratedMesh.bounds.size : Model.m_MeshBounds.size;
+            Vector3 size = Model.GeneratedMesh != null ? Model.GeneratedMesh.bounds.size : Model.m_MeshBounds.size;
             axisExtent = Mathf.Abs(TrTransform.FromTransform(transform.parent).scale * m_Size) *
                 m_AxisScale[index] * size[index];
             // A flat face cannot gain thickness through scaling.
@@ -288,16 +287,9 @@ namespace TiltBrush
             }
             else
             {
-                EditableModelManager.GetOrCreate().RegenerateMesh(this, EditableModelManager.Evaluate(recipe));
-                m_PolyRecipe = recipe;
+                EditableModelManager.GetOrCreate().RegenerateMeshes(EditableModelManager.GetShapeEditTargets(this),
+                    EditableModelManager.Evaluate(recipe), recipe);
             }
-        }
-
-        internal void TakeGeneratedMeshOwnership(Mesh mesh)
-        {
-            Mesh previousMesh = m_OwnedGeneratedMesh;
-            m_OwnedGeneratedMesh = mesh;
-            if (previousMesh != null && previousMesh != mesh) { Destroy(previousMesh); }
         }
 
         internal void RefreshGeneratedGeometry(Mesh mesh)
@@ -318,8 +310,6 @@ namespace TiltBrush
                 Destroy(m_ScalePreview.gameObject);
                 m_ScalePreview = null;
             }
-            if (m_OwnedGeneratedMesh != null) { Destroy(m_OwnedGeneratedMesh); }
-            m_OwnedGeneratedMesh = null;
             base.OnPreDestroy();
         }
 

@@ -131,6 +131,7 @@ namespace TiltBrush.MeshEditing
                 model.ReleaseFromCatalog();
                 throw new InvalidOperationException("Procedural model contains no usable geometry");
             }
+            model.SetGeneratedMesh(new Model.GeneratedMeshHandle(mesh));
             var command = new CreateWidgetCommand(WidgetManager.m_Instance.EditableModelWidgetPrefab,
                 tr, desiredEndForward, forceTransform, snapGrid, snapAngle, skipIntroAnimation: skipIntroAnimation);
             if (recordCommand) { SketchMemoryScript.m_Instance.PerformAndRecordCommand(command); }
@@ -143,7 +144,6 @@ namespace TiltBrush.MeshEditing
             }
             widget.Model = model;
             model.ReleaseFromCatalog();
-            widget.TakeGeneratedMeshOwnership(mesh);
             widget.m_PolyRecipe = recipe;
             widget.m_PolyMesh = poly;
             widget.m_Color = color ?? Color.white;
@@ -152,19 +152,33 @@ namespace TiltBrush.MeshEditing
             return widget;
         }
 
-        public void RegenerateMesh(EditableModelWidget widget, PolyMesh poly, Material material = null)
+        internal static EditableModelWidget[] GetShapeEditTargets(EditableModelWidget widget)
         {
-            var root = widget.GetModelGameObject();
-            Mesh mesh = BuildMesh(poly);
-            UpdateMesh(root, mesh, material ?? root.GetComponent<MeshRenderer>().sharedMaterial);
-            // Keep the model's export/template geometry and snap bounds in sync with its widget.
-            var template = widget.Model.m_ModelParent.gameObject;
-            UpdateMesh(template, mesh, template.GetComponent<MeshRenderer>().sharedMaterial);
-            template.GetComponent<ObjModelScript>().InvalidateMeshVertexCount();
-            widget.Model.m_MeshBounds = mesh.bounds;
-            widget.TakeGeneratedMeshOwnership(mesh);
-            widget.RefreshGeneratedGeometry(mesh);
-            widget.m_PolyMesh = poly;
+            return widget.SymmetryPeerGroup == null ? new[] { widget } : widget.SymmetryPeerGroup.ActiveMembers
+                .OfType<EditableModelWidget>().Prepend(widget).Distinct().ToArray();
+        }
+
+        internal void RegenerateMeshes(IEnumerable<EditableModelWidget> widgets, PolyMesh poly, GeometryRecipeData recipe)
+        {
+            var targets = widgets.Where(widget => widget != null).ToArray();
+            if (targets.Length == 0) { return; }
+            // Build once for the whole edit; peer transforms and materials stay independent.
+            var generatedMesh = new Model.GeneratedMeshHandle(BuildMesh(poly));
+            Mesh mesh = generatedMesh.Mesh;
+            foreach (var widget in targets)
+            {
+                var root = widget.GetModelGameObject();
+                UpdateMesh(root, mesh, root.GetComponent<MeshRenderer>().sharedMaterial);
+                // Keep export/template geometry and snap bounds in sync with each widget.
+                var template = widget.Model.m_ModelParent.gameObject;
+                UpdateMesh(template, mesh, template.GetComponent<MeshRenderer>().sharedMaterial);
+                template.GetComponent<ObjModelScript>().InvalidateMeshVertexCount();
+                widget.Model.m_MeshBounds = mesh.bounds;
+                widget.Model.SetGeneratedMesh(generatedMesh);
+                widget.RefreshGeneratedGeometry(mesh);
+                widget.m_PolyMesh = poly;
+                widget.m_PolyRecipe = recipe;
+            }
         }
 
         public void UpdateMesh(GameObject root, Mesh mesh, Material material)

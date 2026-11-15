@@ -253,6 +253,31 @@ namespace TiltBrush
         public bool IsGsplatModel { get; private set; }
         private GsplatAsset m_OwnedGsplatAsset;
         private readonly List<Material> m_OwnedGeneratedMaterials = new List<Material>();
+        private GeneratedMeshHandle m_GeneratedMesh;
+
+        // Each procedural model owns one reference, even when linked widgets share its mesh.
+        internal sealed class GeneratedMeshHandle
+        {
+            internal readonly Mesh Mesh;
+            private int m_References;
+
+            internal GeneratedMeshHandle(Mesh mesh) { Mesh = mesh; }
+            internal void Retain() { ++m_References; }
+            internal void Release()
+            {
+                if (--m_References == 0) { UObject.Destroy(Mesh); }
+            }
+        }
+
+        internal Mesh GeneratedMesh => m_GeneratedMesh?.Mesh;
+
+        internal void SetGeneratedMesh(GeneratedMeshHandle mesh)
+        {
+            if (ReferenceEquals(m_GeneratedMesh, mesh)) { return; }
+            mesh?.Retain();
+            m_GeneratedMesh?.Release();
+            m_GeneratedMesh = mesh;
+        }
 
         internal void TakeGeneratedMaterialOwnership(Material material) => m_OwnedGeneratedMaterials.Add(material);
         // Models are catalog-cached and shared by widgets, so retain immutable source bytes here.
@@ -1409,11 +1434,12 @@ namespace TiltBrush
                 foreach (var mesh in m_ModelParent.GetComponentsInChildren<MeshFilter>()
                     .Select(x => x.sharedMesh))
                 {
-                    UObject.Destroy(mesh);
+                    if (mesh != GeneratedMesh) { UObject.Destroy(mesh); }
                 }
                 UObject.Destroy(m_ModelParent.gameObject);
                 m_ModelParent = null;
             }
+            SetGeneratedMesh(null);
             DestroyRuntimeGsplatAsset(m_OwnedGsplatAsset);
             m_OwnedGsplatAsset = null;
             foreach (var material in m_OwnedGeneratedMaterials) { UObject.Destroy(material); }
