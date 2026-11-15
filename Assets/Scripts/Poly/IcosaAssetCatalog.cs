@@ -647,6 +647,7 @@ namespace TiltBrush
         private string m_CacheDir;
         private string m_ThumbnailCacheDir;
         private Dictionary<ModelCacheKey, Model> m_ModelsByKey;
+        private const string kModelCacheFormatMarker = ".icosa-format";
         private readonly Dictionary<string, VrAssetFormat> m_DefaultModelFormats = new Dictionary<string, VrAssetFormat>();
         private Dictionary<string, JObject> m_AssetJsonByAssetId;
         private Dictionary<IcosaSetType, AssetSet> m_AssetSetByType;
@@ -749,15 +750,17 @@ namespace TiltBrush
                 {
                     string assetId = Path.GetFileName(folderPath);
                     var formatDirectories = Directory.GetDirectories(folderPath)
-                        .Where(dir => Enum.TryParse(Path.GetFileName(dir), out VrAssetFormat format) &&
-                            format != VrAssetFormat.Unknown).ToArray();
+                        .Where(dir => File.Exists(Path.Combine(dir, kModelCacheFormatMarker)) &&
+                            Enum.IsDefined(typeof(VrAssetFormat), Path.GetFileName(dir)) &&
+                            Path.GetFileName(dir) != nameof(VrAssetFormat.Unknown)).ToArray();
                     if (formatDirectories.Length > 0)
                     {
                         foreach (var directory in formatDirectories)
                             RegisterCachedModel(assetId, directory,
                                 (VrAssetFormat)Enum.Parse(typeof(VrAssetFormat), Path.GetFileName(directory)));
                     }
-                    if (!RegisterCachedModel(assetId, folderPath, legacy: true) && formatDirectories.Length == 0)
+                    if (!RegisterCachedModel(assetId, folderPath, excludedDirectories: formatDirectories) &&
+                        formatDirectories.Length == 0)
                     {
                         Debug.LogWarningFormat("Deleting invalid cache folder {0}", folderPath);
                         Directory.Delete(folderPath, true);
@@ -1543,6 +1546,7 @@ namespace TiltBrush
                 string directory = GetCacheDirectoryForAsset(asset.Id, format);
                 Directory.CreateDirectory(directory);
                 if (!asset.WriteToDisk(directory)) return null;
+                File.WriteAllText(Path.Combine(directory, kModelCacheFormatMarker), format.ToString());
                 var model = new Model(asset.Id, Path.Combine(directory, asset.RootFilePath), galleryFormat: format);
                 m_ModelsByKey[key] = model;
                 return model;
@@ -1808,13 +1812,13 @@ namespace TiltBrush
         }
 
         private bool RegisterCachedModel(string assetId, string directory,
-            VrAssetFormat format = VrAssetFormat.Unknown, bool legacy = false)
+            VrAssetFormat format = VrAssetFormat.Unknown, string[] excludedDirectories = null)
         {
-            string modelFile = legacy
+            // Only our marked format folders are excluded; legacy sources may have any folder name.
+            string modelFile = excludedDirectories != null
                 ? FindModelCacheRoot(directory, Directory.GetFiles(directory, "*", SearchOption.AllDirectories)
-                    .Where(file => !Enum.TryParse(file.Substring(directory.Length)
-                        .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                        .Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)[0], out VrAssetFormat _)))
+                    .Where(file => !excludedDirectories.Any(excluded =>
+                        file.StartsWith($"{excluded}{Path.DirectorySeparatorChar}", StringComparison.Ordinal))))
                 : ValidModelCache(directory);
             if (modelFile == null) return false;
             var model = new Model(assetId, Path.Combine(directory, modelFile), galleryFormat: format);

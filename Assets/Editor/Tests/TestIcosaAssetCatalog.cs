@@ -163,8 +163,9 @@ namespace TiltBrush
             Assert.IsTrue(catalog.CancelRequestModelLoad(assetId, VrAssetFormat.GLTF2));
         }
 
-        [Test]
-        public void Init_RetainsDifferentFormatsAndLegacyCacheForSameAsset()
+        [TestCase("0")]
+        [TestCase("GLTF")]
+        public void Init_RetainsDifferentFormatsAndLegacyCacheForSameAsset(string legacyFolder)
         {
             var catalog = CreateCatalog();
             string assetId = $"unit-test-cache-formats-{Guid.NewGuid():N}";
@@ -175,8 +176,11 @@ namespace TiltBrush
                 string directory = catalog.GetCacheDirectoryForAsset(assetId, format);
                 Directory.CreateDirectory(directory);
                 File.WriteAllText(Path.Combine(directory, "model.obj"), "test");
+                File.WriteAllText(Path.Combine(directory, ".icosa-format"), format.ToString());
             }
-            File.WriteAllText(Path.Combine(assetDirectory, "legacy.ply"), "test");
+            string legacyDirectory = Path.Combine(assetDirectory, legacyFolder);
+            Directory.CreateDirectory(legacyDirectory);
+            File.WriteAllText(Path.Combine(legacyDirectory, "legacy.ply"), "test");
 
             catalog.Init();
 
