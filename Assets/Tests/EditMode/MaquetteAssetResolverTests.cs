@@ -144,6 +144,28 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void GooglePolyReferencesUseTheOriginalIcosaIdWithoutChangingSourceData()
+        {
+            foreach (string path in new[] { "assets/1zS7ucaAd4J", "1zS7ucaAd4J" })
+            {
+                var data = new JObject { ["primitiveType"] = "GooglePoly", ["primitivePath"] = path };
+                var primitive = MaquettePrimitiveData.Read(data, 6, null);
+                Assert.AreEqual("1zS7ucaAd4J", primitive.IcosaAssetId);
+                Assert.AreEqual("Original", primitive.LoadOption);
+                Assert.AreEqual(path, primitive.Path);
+                Assert.AreEqual(path, (string)data["primitivePath"]);
+            }
+            foreach (string path in new[] { "", "assets/", "assets/../model", "assets/id/extra", "https://poly.google.com/view/id" })
+            {
+                var primitive = MaquettePrimitiveData.Read(new JObject
+                {
+                    ["primitiveType"] = "GooglePoly", ["primitivePath"] = path
+                }, 21, null);
+                Assert.Throws<InvalidDataException>(() => { _ = primitive.IcosaAssetId; });
+            }
+        }
+
+        [Test]
         public void NativeWorkspaceUsesExistingProjectAndLibraryFilesWithoutCopyingOrDeletingThem()
         {
             string cache = Path.Combine(m_Root, "cache");

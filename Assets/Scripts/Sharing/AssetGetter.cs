@@ -153,7 +153,13 @@ namespace TiltBrush
                 if (format != null)
                 {
                     m_Asset.SelectedFormat = selectedType;
-                    string internalRootFilePath = format["root"]?["relativePath"].ToString();
+                    string internalRootFilePath = GetElementPath(format["root"]);
+                    if (string.IsNullOrEmpty(internalRootFilePath))
+                    {
+                        Debug.LogWarning($"Can't download {m_Asset.Id}: root file has no usable path.");
+                        IsCanceled = true;
+                        yield break;
+                    }
                     // If we successfully get a gltf2 format file, internally change the extension to
                     // "gltf2" so that the cache knows that it is a gltf2 file.
                     if (selectedType == VrAssetFormat.GLTF2)
@@ -172,7 +178,13 @@ namespace TiltBrush
                     // Get all resource infos.  There may be zero.
                     foreach (var r in format["resources"] ?? new JArray())
                     {
-                        string path = r["relativePath"].ToString();
+                        string path = GetElementPath(r);
+                        if (string.IsNullOrEmpty(path))
+                        {
+                            Debug.LogWarning($"Can't download {m_Asset.Id}: resource has no usable path.");
+                            IsCanceled = true;
+                            yield break;
+                        }
                         m_Asset.AddResourceElement(path, r["url"].ToString());
 
                         // The root element should be the only gltf file.
@@ -243,6 +255,18 @@ namespace TiltBrush
             }
 
             m_Ready = true;
+        }
+
+        private static string GetElementPath(JToken element)
+        {
+            string path = (string)element?["relativePath"];
+            if (!string.IsNullOrEmpty(path)) { return path; }
+            // Some archived Poly formats omit relativePath on both roots and resources.
+            // Use only the URL's final path component, without its query or fragment.
+            if (!Uri.TryCreate((string)element?["url"], UriKind.Absolute, out var uri)) { return null; }
+            path = Uri.UnescapeDataString(Path.GetFileName(uri.AbsolutePath));
+            if (path == "." || path == ".." || path.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) { return null; }
+            return path;
         }
     }
 

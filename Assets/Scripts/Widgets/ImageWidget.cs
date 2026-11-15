@@ -94,6 +94,13 @@ namespace TiltBrush
         public override float? AspectRatio =>
             m_AspectRatioOverride ?? m_ReferenceImage?.ImageAspect ?? m_MissingInfo?.aspectRatio;
 
+        public override Vector2 GetWidgetSizeRange()
+        {
+            // Image size is stored as height. Apply the limits to the longest dimension,
+            // as for models, so wide images can be thin without becoming oversized.
+            return base.GetWidgetSizeRange() / Mathf.Max(1, AspectRatio ?? 1);
+        }
+
         /// Prior to M15, images were incorrectly tinted.
         public bool UseLegacyTint
         {
@@ -174,7 +181,7 @@ namespace TiltBrush
             clone.ReferenceImage = m_ReferenceImage;
             clone.Show(true, false);
             clone.transform.parent = transform.parent;
-            clone.SetSignedWidgetSize(size);
+            clone.RestoreSignedWidgetSize(size);
             clone.UseLegacyTint = this.m_UseLegacyTint;
             clone.ImageColor = m_ImageColor;
             HierarchyUtils.RecursivelySetLayer(clone.transform, gameObject.layer);
@@ -392,7 +399,7 @@ namespace TiltBrush
                     image.SetMissing(tiltImage.AspectRatio, tiltImage.FileName);
                 }
                 image.SetAspectRatioOverride(tiltImage.AspectRatio);
-                image.SetSignedWidgetSize(tiltImage.Transforms[i].scale);
+                image.RestoreSignedWidgetSize(tiltImage.Transforms[i].scale);
                 if (extrusionDepths != null &&
                     extrusionColors != null &&
                     i < extrusionDepths.Length &&

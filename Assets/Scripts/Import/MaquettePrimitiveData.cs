@@ -3,6 +3,7 @@
 
 using System;
 using System.IO;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json.Linq;
 
 namespace TiltBrush.DocumentImport
@@ -13,6 +14,21 @@ namespace TiltBrush.DocumentImport
         public string Type { get; }
         public string Path { get; }
         public string LoadOption { get; }
+        public string IcosaAssetId
+        {
+            get
+            {
+                if (Type != "GooglePoly") { return null; }
+                // Poly resource names use assets/<id>; Icosa retains the original, case-sensitive ID.
+                const string prefix = "assets/";
+                string id = Path.StartsWith(prefix, StringComparison.Ordinal) ? Path.Substring(prefix.Length) : Path;
+                if (!Regex.IsMatch(id, @"\A[A-Za-z0-9_-]+\z"))
+                {
+                    throw new InvalidDataException($"Invalid Maquette Google Poly asset: {Path}");
+                }
+                return id;
+            }
+        }
         public bool UsesLegacyMeshOrigin { get; }
         public bool IgnoresImageTint { get; }
         public bool UsesDefaultImageMaterial { get; }

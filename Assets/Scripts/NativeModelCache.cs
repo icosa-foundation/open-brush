@@ -24,7 +24,12 @@ namespace TiltBrush
             public Model Model;
             public GltfAssetDocument Document;
             public Vector3 Center;
+            public Vector3 Size;
+            public float MeshUnitScale = 1;
+            public string OriginalPath;
+            public Source MaquetteSource;
         }
+        private readonly Dictionary<string, ImportResource> m_IcosaResources = new Dictionary<string, ImportResource>(StringComparer.Ordinal);
         private readonly Dictionary<string, Source> m_Sources = new Dictionary<string, Source>(StringComparer.Ordinal);
         private readonly Dictionary<string, Model> m_Variants = new Dictionary<string, Model>(StringComparer.Ordinal);
         private readonly string m_RelativeDirectory = $"Native Imports/{Guid.NewGuid():N}";
@@ -32,19 +37,63 @@ namespace TiltBrush
 
         public NativeModelCache(NativeAssetWorkspace workspace) { m_Workspace = workspace; }
 
+        public async Task<ImportResource> IcosaResource(string assetId)
+        {
+            if (m_IcosaResources.TryGetValue(assetId, out var resource)) { return resource; }
+            var catalog = App.IcosaAssetCatalog;
+            if (catalog == null) { throw new InvalidOperationException("Icosa catalog is unavailable"); }
+            catalog.RequestModelLoad(assetId, "Maquette import");
+            var deadline = DateTime.UtcNow.AddMinutes(5);
+            while (catalog.IsLoading(assetId))
+            {
+                if (DateTime.UtcNow >= deadline) { throw new TimeoutException($"Icosa asset {assetId} timed out"); }
+                await Task.Delay(50);
+            }
+            var model = catalog.GetModel(assetId);
+            if (model == null || !model.m_Valid)
+            {
+                throw new IOException($"Could not load Icosa asset {assetId}: {model?.Error?.message ?? "asset unavailable"}");
+            }
+            // The catalog handles Poly's formats (including glTF 1). Export its loaded model to
+            // the native import cache's glTF 2 representation, once per asset, so save/reload does
+            // not depend on the gallery cache. We do not own or modify the catalog model.
+            string directory = Path.Combine(App.ModelLibraryPath(), m_RelativeDirectory, "sources", Guid.NewGuid().ToString("N"));
+            ExportSource(model, assetId, directory);
+            string path = Path.Combine(directory, "source.gltf");
+            resource = ImportResource.FromFile(path);
+            m_Sources.Add(resource.Origin, new Source
+            {
+                Document = new GltfAssetDocument(path),
+                Center = model.m_MeshBounds.center / model.UnitsPerMetre,
+                Size = model.m_MeshBounds.size / model.UnitsPerMetre
+            });
+            m_IcosaResources.Add(assetId, resource);
+            return resource;
+        }
+
         public async Task<(Model Model, Vector3 CanvasOffset)> MaquetteModel(ImportResource resource,
             MaquettePrimitiveData primitive, MaquettePlacement placement, Color color, string materialId)
         {
             if (resource == null) { throw new FileNotFoundException($"Missing Maquette model: {primitive.Path}"); }
             var source = await GetSource(resource);
+            float contentScale = 1;
+            if (primitive.Type == "GooglePoly")
+            {
+                // Maquette's Poly importer uses FIT with desiredSize=1 and recenter=true.
+                var size = source.Size;
+                float longest = Mathf.Max(size.x, Mathf.Max(size.y, size.z));
+                if (!(longest > 0) || float.IsInfinity(longest)) { throw new InvalidDataException("Icosa model has invalid bounds"); }
+                contentScale = 1 / longest;
+            }
             bool original = primitive.LoadOption == "Original";
+            if (!original && primitive.Type == "ModelFile") { source = GetMaquetteSource(source); }
             Color linear = color.linear;
             float[] appearance = original ? null : new[] { linear.r, linear.g, linear.b, linear.a };
             var colorMaterial = original ? null : MaquetteMaterialAdapter.ModelMaterial(materialId, appearance);
             var model = await GetVariant(resource, source, placement, -source.Center, appearance, original ? null : materialId,
-                colorMaterial: colorMaterial);
+                colorMaterial: colorMaterial, contentScale: contentScale);
             Vector3 offset = Vector3.zero;
-            if (primitive.UsesLegacyMeshOrigin)
+            if (primitive.UsesLegacyMeshOrigin && primitive.Type != "GooglePoly")
             {
                 // Maquette's v9 migration moved the handle to the model center while preserving
                 // visible placement. Apply the equivalent offset after the full hierarchy linear map.
@@ -74,13 +123,14 @@ namespace TiltBrush
 
         private async Task<Model> GetVariant(ImportResource resource, Source source, NativePlacement placement,
             Vector3 contentOffset, float[] appearance, string materialId, IEnumerable<int> excludedNodes = null, float opacity = 1,
-            IReadOnlyList<GltfMaterialOverride> materialOverrides = null, JObject colorMaterial = null)
+            IReadOnlyList<GltfMaterialOverride> materialOverrides = null, JObject colorMaterial = null, float contentScale = 1)
         {
             string key = new JObject
             {
                 ["source"] = resource.Origin,
                 ["transform"] = new JArray(placement.GetIntrinsicTransform(new[] { 1f, 1f, 1f }, new[] { 0f, 0f, 0f }, 1)),
                 ["offset"] = new JArray(contentOffset.x, contentOffset.y, contentOffset.z),
+                ["contentScale"] = contentScale,
                 ["excludedNodes"] = excludedNodes == null ? null : new JArray(excludedNodes),
                 ["color"] = appearance == null ? null : new JArray(appearance),
                 ["material"] = materialId,
@@ -92,7 +142,18 @@ namespace TiltBrush
             {
                 string relative = $"{m_RelativeDirectory}/variants/{Guid.NewGuid():N}.gltf";
                 string path = Path.Combine(App.ModelLibraryPath(), relative);
-                source.Document.WriteVariant(path, placement.LinearTransforms,
+                var transforms = new List<GeometryStepData>();
+                if (contentScale != 1)
+                {
+                    var normalization = new NativePlacement(new[]
+                    {
+                        (System.Numerics.Vector3.Zero, System.Numerics.Quaternion.Identity,
+                            System.Numerics.Vector3.One * contentScale)
+                    });
+                    transforms.AddRange(normalization.LinearTransforms);
+                }
+                transforms.AddRange(placement.LinearTransforms);
+                source.Document.WriteVariant(path, transforms,
                     new[] { contentOffset.x, contentOffset.y, contentOffset.z }, appearance, excludedNodes, opacity, materialOverrides, colorMaterial);
                 model = new Model(relative);
                 try
@@ -118,7 +179,8 @@ namespace TiltBrush
                 string directory = Path.Combine(App.ModelLibraryPath(), m_RelativeDirectory, "sources", Guid.NewGuid().ToString("N"));
                 string extension = Path.GetExtension(path);
                 GltfAssetDocument document;
-                if (extension.Equals(".gltf", StringComparison.OrdinalIgnoreCase) || extension.Equals(".glb", StringComparison.OrdinalIgnoreCase))
+                bool nativeGltf = extension.Equals(".gltf", StringComparison.OrdinalIgnoreCase) || extension.Equals(".glb", StringComparison.OrdinalIgnoreCase);
+                if (nativeGltf)
                 {
                     document = GltfAssetDocument.CopySource(resource, path, directory);
                 }
@@ -127,11 +189,74 @@ namespace TiltBrush
                     ExportSource(model, resource.Name, directory);
                     document = new GltfAssetDocument(Path.Combine(directory, "source.gltf"));
                 }
-                source = new Source { Model = model, Document = document, Center = model.m_MeshBounds.center / model.UnitsPerMetre };
+                source = new Source
+                {
+                    Model = model, Document = document,
+                    Center = model.m_MeshBounds.center / model.UnitsPerMetre,
+                    Size = model.m_MeshBounds.size / model.UnitsPerMetre,
+                    MeshUnitScale = nativeGltf ? 1 : 1 / model.UnitsPerMetre,
+                    OriginalPath = path
+                };
                 m_Sources.Add(resource.Origin, source);
                 return source;
             }
             catch { model.ReleaseFromCatalog(); throw; }
+        }
+
+        private static Source GetMaquetteSource(Source source)
+        {
+            if (source.MaquetteSource != null) { return source.MaquetteSource; }
+            var data = JObject.Parse(File.ReadAllText(source.Document.Path));
+            if (!MaquetteModelAdapter.TryCreateMeshLocalSource(data, GetMaquetteMeshUnitScale(source),
+                    out var local, out var center))
+            {
+                // Keep the existing hierarchy for sources that are not one static mesh primitive.
+                return source.MaquetteSource = source;
+            }
+            string path = Path.Combine(Path.GetDirectoryName(source.Document.Path), "maquette-source.gltf");
+            File.WriteAllText(path, local.ToString(Formatting.None));
+            // glTF reflects X relative to Unity; GetVariant's centering offset is in Unity space.
+            return source.MaquetteSource = new Source
+            {
+                Document = new GltfAssetDocument(path),
+                Center = new Vector3(-center[0], center[1], center[2])
+            };
+        }
+
+        private static float GetMaquetteMeshUnitScale(Source source)
+        {
+#if FBX_SUPPORTED
+            if (Path.GetExtension(source.OriginalPath).Equals(".fbx", StringComparison.OrdinalIgnoreCase))
+            {
+                // FbxReader bakes declared file units into vertices. Maquette's mesh-local
+                // primitive uses the original vertex coordinates, with the saved instance
+                // transform replacing the imported hierarchy (including its unit scale).
+                // Reverse only that baked conversion here; Original mode keeps it intact.
+                var manager = Autodesk.Fbx.FbxManager.Create();
+                try
+                {
+                    var importer = Autodesk.Fbx.FbxImporter.Create(manager, "Maquette units");
+                    var scene = Autodesk.Fbx.FbxScene.Create(manager, "Maquette units");
+                    if (!importer.Initialize(source.OriginalPath) || !importer.Import(scene))
+                    {
+                        throw new InvalidDataException($"Cannot read FBX units for {source.OriginalPath}");
+                    }
+                    double metresPerUnit = scene.GetGlobalSettings().GetSystemUnit()
+                        .GetConversionFactorTo(Autodesk.Fbx.FbxSystemUnit.m);
+                    float scale = (float)(source.MeshUnitScale / metresPerUnit);
+                    if (!(scale > 0) || float.IsInfinity(scale))
+                    {
+                        throw new InvalidDataException($"Invalid Maquette FBX unit conversion for {source.OriginalPath}");
+                    }
+                    return scale;
+                }
+                finally
+                {
+                    manager.Destroy();
+                }
+            }
+#endif
+            return source.MeshUnitScale;
         }
 
         private static void ExportSource(Model model, string name, string directory)
@@ -170,9 +295,10 @@ namespace TiltBrush
         public void Dispose()
         {
             foreach (var model in m_Variants.Values) { model.ReleaseFromCatalog(); }
-            foreach (var source in m_Sources.Values) { source.Model.ReleaseFromCatalog(); }
+            foreach (var source in m_Sources.Values) { source.Model?.ReleaseFromCatalog(); }
             m_Variants.Clear();
             m_Sources.Clear();
+            m_IcosaResources.Clear();
         }
     }
 }

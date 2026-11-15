@@ -23,7 +23,7 @@ namespace TiltBrush.DocumentImport
         public const float FontSizeMin = 1f;
         public const float FontSizeMax = 10000f;
         /// Source font size is an autosizing seed, not a fixed physical glyph height. The shipped
-        /// prefab uses a centered TMP rectangle inside an upper-left-anchored one-unit text field.
+        /// loader recenters the text field on the entity origin before restoring its scene state.
         /// Read only layout facts; vendor font atlases and other prefab assets are not imported.
         public static MaquetteTextData Read(MaquetteState state, Func<string, string> textFile, float unitsPerMetre)
         {
@@ -52,7 +52,7 @@ namespace TiltBrush.DocumentImport
                 FontStyle = Integer(format["FontStyle"], 0), Alignment = Integer(format["TextAlignmentOption"], 257),
                 BoxSize = size, Placement = placement,
                 GlyphTransform = placement.GetIntrinsicTransform(new[] { 1 / size[0], 1 / size[1], 1f },
-                    new[] { .5f, -.5f, -.001f }, unitsPerMetre)
+                    new[] { 0f, 0f, -.001f }, unitsPerMetre)
             };
         }
 
