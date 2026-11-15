@@ -26,6 +26,7 @@ namespace TiltBrush
             public Vector3 Center;
             public Vector3 Size;
             public float MeshUnitScale = 1;
+            public string OriginalPath;
             public Source MaquetteSource;
         }
         private readonly Dictionary<string, ImportResource> m_IcosaResources = new Dictionary<string, ImportResource>(StringComparer.Ordinal);
@@ -193,7 +194,8 @@ namespace TiltBrush
                     Model = model, Document = document,
                     Center = model.m_MeshBounds.center / model.UnitsPerMetre,
                     Size = model.m_MeshBounds.size / model.UnitsPerMetre,
-                    MeshUnitScale = nativeGltf ? 1 : 1 / model.UnitsPerMetre
+                    MeshUnitScale = nativeGltf ? 1 : 1 / model.UnitsPerMetre,
+                    OriginalPath = path
                 };
                 m_Sources.Add(resource.Origin, source);
                 return source;
@@ -205,7 +207,7 @@ namespace TiltBrush
         {
             if (source.MaquetteSource != null) { return source.MaquetteSource; }
             var data = JObject.Parse(File.ReadAllText(source.Document.Path));
-            if (!MaquetteModelAdapter.TryCreateMeshLocalSource(data, source.MeshUnitScale,
+            if (!MaquetteModelAdapter.TryCreateMeshLocalSource(data, GetMaquetteMeshUnitScale(source),
                     out var local, out var center))
             {
                 // Keep the existing hierarchy for sources that are not one static mesh primitive.
@@ -219,6 +221,42 @@ namespace TiltBrush
                 Document = new GltfAssetDocument(path),
                 Center = new Vector3(-center[0], center[1], center[2])
             };
+        }
+
+        private static float GetMaquetteMeshUnitScale(Source source)
+        {
+#if FBX_SUPPORTED
+            if (Path.GetExtension(source.OriginalPath).Equals(".fbx", StringComparison.OrdinalIgnoreCase))
+            {
+                // FbxReader bakes declared file units into vertices. Maquette's mesh-local
+                // primitive uses the original vertex coordinates, with the saved instance
+                // transform replacing the imported hierarchy (including its unit scale).
+                // Reverse only that baked conversion here; Original mode keeps it intact.
+                var manager = Autodesk.Fbx.FbxManager.Create();
+                try
+                {
+                    var importer = Autodesk.Fbx.FbxImporter.Create(manager, "Maquette units");
+                    var scene = Autodesk.Fbx.FbxScene.Create(manager, "Maquette units");
+                    if (!importer.Initialize(source.OriginalPath) || !importer.Import(scene))
+                    {
+                        throw new InvalidDataException($"Cannot read FBX units for {source.OriginalPath}");
+                    }
+                    double metresPerUnit = scene.GetGlobalSettings().GetSystemUnit()
+                        .GetConversionFactorTo(Autodesk.Fbx.FbxSystemUnit.m);
+                    float scale = (float)(source.MeshUnitScale / metresPerUnit);
+                    if (!(scale > 0) || float.IsInfinity(scale))
+                    {
+                        throw new InvalidDataException($"Invalid Maquette FBX unit conversion for {source.OriginalPath}");
+                    }
+                    return scale;
+                }
+                finally
+                {
+                    manager.Destroy();
+                }
+            }
+#endif
+            return source.MeshUnitScale;
         }
 
         private static void ExportSource(Model model, string name, string directory)
