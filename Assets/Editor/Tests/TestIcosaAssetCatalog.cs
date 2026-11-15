@@ -214,6 +214,33 @@ namespace TiltBrush
         }
 
         [Test]
+        public void ModelPreloadsKeepFormatsDistinctAndSkipUnsupportedOrEmbeddedReferences()
+        {
+            var models = new[]
+            {
+                new TiltModels75 { AssetId = "mixed", AssetFormat = "GLTF2" },
+                new TiltModels75 { AssetId = "mixed", AssetFormat = "VOX" },
+                new TiltModels75 { AssetId = "mixed", AssetFormat = "IMM" },
+                new TiltModels75 { AssetId = "mixed", AssetFormat = "GLTF2" },
+                new TiltModels75 { AssetId = "legacy" },
+                new TiltModels75 { AssetId = "future", AssetFormat = "FUTURE_FORMAT" },
+                new TiltModels75 { FilePath = "local.obj" },
+                new TiltModels75 { AssetId = "embedded", AssetFormat = "VOX", EditableVoxPaths = new[] { "vox/widgets/0.vox" } }
+            };
+            var getRequests = typeof(WidgetManager).GetMethod("GetModelLoadRequests",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            var requests = (HashSet<IcosaAssetCatalog.ModelCacheKey>)getRequests.Invoke(null, new object[] { models });
+
+            CollectionAssert.AreEquivalent(new[]
+            {
+                new IcosaAssetCatalog.ModelCacheKey("mixed", VrAssetFormat.GLTF2),
+                new IcosaAssetCatalog.ModelCacheKey("mixed", VrAssetFormat.VOX),
+                new IcosaAssetCatalog.ModelCacheKey("mixed", VrAssetFormat.IMM),
+                new IcosaAssetCatalog.ModelCacheKey("legacy", VrAssetFormat.Unknown)
+            }, requests);
+        }
+
+        [Test]
         public void Init_RetainsCachedAssetsForSupportedFormats()
         {
             m_AppObject = new GameObject("TestApp");
