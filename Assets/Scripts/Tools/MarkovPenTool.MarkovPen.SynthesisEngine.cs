@@ -20,6 +20,7 @@ namespace TiltBrush
 {
     partial class MarkovPen
     {
+        
         /// <summary>
         /// Represents the synthesis engine of a Markov Pen 
         /// that generates associations of the target mapping
@@ -70,6 +71,67 @@ namespace TiltBrush
 
                 return generatedPoints;
             }
-        }
+
+            ///<summary>
+            ///Generates a pair of variates independently drawn from the standard normal distribution
+            ///</summary>   
+            ///<returns>
+            ///A pair of variates independently drawn from the standard normal distribution
+            ///</returns>
+
+            public (double x, double y) GenerateStandardNormalVariates()
+            {
+
+                // Variate from the uniform distribution on the interval [0...1)   
+                double u = Random.Shared.NextDouble();
+
+                // Angle of random vector given in polar coordinates
+                double angle = 2.0 * Math.PI * u;
+
+                // Another variate from the uniform distribution on the interval [0...1)
+                //Must not be zero
+                do {
+                u = Random.Shared.NextDouble();
+                } while (u == 0.0);
+
+                // Magnitude of random vector given in polar coordinates
+                double magnitude = Math.Sqrt(-2.0 * Math.Log(u));
+
+                // x any y coordinate of random vector are standard normal variates
+                double x = Math.Cos(angle) * magnitude;
+                double y = Math.Sin(angle) * magnitude;
+
+                return (x , y);
+            }
+            /// <summary>
+            /// Produces a pair of random values by introducing random variation around the provided mean values
+            /// </summary>
+            /// <returns>
+            /// A pair of randomly adjusted values
+            /// </returns>
+
+            public (double ending1, double ending2) Randomize((double mean1, double mean2) meanValue)
+            {
+                // Standard deviations are asumed to be half of the mean values
+                (double std1, double std2) standardDeviations;
+                standardDeviations.std1 = meanValue.mean1 / 2.0;
+                standardDeviations.std2 = meanValue.mean2 / 2.0;
+
+                // Retrieve standard normal variates
+                (double variate1, double variate2) variates = GenerateStandardNormalVariates();
+                (double ending1, double ending2) endings;
+
+                //Apply mean values and standard deviations
+                endings.ending1 = standardDeviations.std1 * variates.variate1 + meanValue.mean1;
+                endings.ending2 = standardDeviations.std2 * variates.variate2 + meanValue.mean2;
+
+                return endings;
+            
+            }
+
+            public double Randomize(double meanValue)
+            {
+                return Randomize((meanValue, meanValue)).ending1;
+            }
     }
 }
