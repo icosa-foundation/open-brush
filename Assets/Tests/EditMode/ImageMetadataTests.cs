@@ -47,6 +47,24 @@ namespace TiltBrush.Tests
         }
 
         [Test]
+        public void LegacyOpacitiesRoundTripAsWhiteWithPerInstanceAlpha()
+        {
+            var data = RoundTrip("{'Opacities':[0.4,0,1]}");
+            var expected = JArray.Parse("[[1,1,1,0.4],[1,1,1,0],[1,1,1,1]]");
+            CollectionAssert.AreEqual(expected.ToObject<float[][]>(), data["Colors"].ToObject<float[][]>());
+            Assert.IsNull(data["Opacities"]);
+        }
+
+        [TestCase("{'Colors':[[0.25,0.5,1,0.75]],'Opacities':[0.4]}")]
+        [TestCase("{'Opacities':[0.4],'Colors':[[0.25,0.5,1,0.75]]}")]
+        public void ExplicitColorsTakePrecedenceOverLegacyOpacities(string json)
+        {
+            var data = RoundTrip(json);
+            CollectionAssert.AreEqual(new[] { 0.25f, 0.5f, 1f, 0.75f }, data["Colors"][0].ToObject<float[]>());
+            Assert.IsNull(data["Opacities"]);
+        }
+
+        [Test]
         public void EstablishedImageMetadataDoesNotAcquireNewDefaultArrays()
         {
             var data = RoundTrip(@"{'FileName':'old.png','AspectRatio':1.5,

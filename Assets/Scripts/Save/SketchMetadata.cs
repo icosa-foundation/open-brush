@@ -733,6 +733,18 @@ namespace TiltBrush
         // Per-instance texture RGBA multiplier; omitted when every color is white.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Color[] Colors { get; set; }
+        // Older sketches stored only alpha. Explicit Colors win in either JSON field order.
+        [JsonProperty("Opacities", NullValueHandling = NullValueHandling.Ignore)]
+        private float[] LegacyOpacities
+        {
+            set
+            {
+                if (Colors == null)
+                {
+                    Colors = Array.ConvertAll(value, alpha => new Color(1f, 1f, 1f, Mathf.Clamp01(alpha)));
+                }
+            }
+        }
         // Missing values use the established cutout behavior.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public ImageBlendMode[] BlendModes { get; set; }
