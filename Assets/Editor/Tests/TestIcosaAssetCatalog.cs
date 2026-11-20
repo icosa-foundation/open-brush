@@ -214,7 +214,7 @@ namespace TiltBrush
         }
 
         [Test]
-        public void ModelPreloadsKeepFormatsDistinctAndSkipUnsupportedOrEmbeddedReferences()
+        public void ModelPreloadsIncludeOnlyDistinctOrdinaryGalleryRequests()
         {
             var models = new[]
             {
@@ -235,7 +235,6 @@ namespace TiltBrush
             {
                 new IcosaAssetCatalog.ModelCacheKey("mixed", VrAssetFormat.GLTF2),
                 new IcosaAssetCatalog.ModelCacheKey("mixed", VrAssetFormat.VOX),
-                new IcosaAssetCatalog.ModelCacheKey("mixed", VrAssetFormat.IMM),
                 new IcosaAssetCatalog.ModelCacheKey("legacy", VrAssetFormat.Unknown)
             }, requests);
         }

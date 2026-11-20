@@ -1874,8 +1874,12 @@ namespace TiltBrush
             foreach (var model in models)
             {
                 // Embedded VOX widgets restore their payload from the sketch, not the gallery.
+                // Widget restoration waits for the native IMM loader, which checks its disk cache.
+                // Ordinary preload can download an already cached IMM after restart. Skipping it
+                // means a missing IMM starts downloading when restoration reaches its widget.
                 if (model.EditableVoxPaths == null &&
-                    TryGetGalleryLoadRequest(model.AssetId, model.AssetFormat, out var request))
+                    TryGetGalleryLoadRequest(model.AssetId, model.AssetFormat, out var request) &&
+                    request.Format != VrAssetFormat.IMM)
                     requests.Add(request);
             }
             return requests;
