@@ -4207,6 +4207,18 @@ MonoBehaviour:
     m_Key: MULTIMIRROR_PANEL_HIDE_EXTRA_PREVIEWS
     m_Metadata:
       m_Items: []
+  - m_Id: 565420582969630720
+    m_Key: BACKDROP_PANEL_SKY_TOP_COLOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 565420583028350976
+    m_Key: BACKDROP_PANEL_SKY_HORIZON_COLOR
+    m_Metadata:
+      m_Items: []
+  - m_Id: 565420583028350977
+    m_Key: BACKDROP_PANEL_SKY_BOTTOM_COLOR
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

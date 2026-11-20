@@ -596,6 +596,9 @@ namespace TiltBrush
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public Color32[] GradientColors { get; set; }
         public Quaternion GradientSkew { get; set; }
+        // Bottom, horizon, top. Absent in legacy skies; preserves authored float precision.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Color[] GradientColorsHdr { get; set; }
         public Color32 FogColor { get; set; }
         public float FogDensity { get; set; }
         public float ReflectionIntensity { get; set; }
@@ -687,6 +690,10 @@ namespace TiltBrush
         public Color? LightColor;
         public float? Intensity;
         public LightType PunctualLightType;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public bool? Enabled;
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public LightShadows? Shadows;
         public float? Range;
         public float? InnerConeAngle;
         public float? OuterConeAngle;
@@ -723,9 +730,24 @@ namespace TiltBrush
         public bool[] TwoSidedFlags { get; set; }
         public float[] ExtrusionDepths { get; set; }
         public Color[] ExtrusionColors { get; set; }
-        // Per-image alpha multiplier; only written when an image is not fully opaque.
+        // Per-instance texture RGBA multiplier; omitted when every color is white.
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
-        public float[] Opacities { get; set; }
+        public Color[] Colors { get; set; }
+        // Older sketches stored only alpha. Explicit Colors win in either JSON field order.
+        [JsonProperty("Opacities", NullValueHandling = NullValueHandling.Ignore)]
+        private float[] LegacyOpacities
+        {
+            set
+            {
+                if (Colors == null)
+                {
+                    Colors = Array.ConvertAll(value, alpha => new Color(1f, 1f, 1f, Mathf.Clamp01(alpha)));
+                }
+            }
+        }
+        // Missing values use the established cutout behavior.
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public ImageBlendMode[] BlendModes { get; set; }
     }
 
     [Serializable]
@@ -744,6 +766,8 @@ namespace TiltBrush
         public Color FillColor { get; set; }
         public Color StrokeColor { get; set; }
         public string Font { get; set; }
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TextWidgetLayout Layout { get; set; }
         public float ExtrudeDepth { get; set; }
         public TextWidgetMode Mode { get; set; }
         public bool Pinned { get; set; }
@@ -872,6 +896,12 @@ namespace TiltBrush
 
         [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
         public int SchemaVersion { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public Dictionary<string, EditableModelDefinitionData> EditableModelDefinitions { get; set; }
+
+        [JsonProperty(NullValueHandling = NullValueHandling.Ignore)]
+        public TiltEditableModels[] EditableModelIndex { get; set; }
 
         /// Deprecated
         /// Only written in 7.0-7.2

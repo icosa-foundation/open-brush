@@ -81,7 +81,8 @@
     "com.unity.modules.vehicles": "1.0.0",
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.icosa.unitytinyexr": "https://github.com/icosa-mirror/UnityTinyEXR.git#3db7af04f838179ebcc74fcc2ac01be39090de04"
+    "com.icosa.unitytinyexr": "https://github.com/icosa-mirror/UnityTinyEXR.git#3db7af04f838179ebcc74fcc2ac01be39090de04",
+    "com.ixxy.polyhydra.core": "https://github.com/IxxyXR/polyhydra-core.git#c3305c7b12977160b916d07b914f477c3c1daff6"
   },
   "scopedRegistries": [
     {
@@ -97,7 +98,9 @@
       "scopes": [
         "com.atteneder",
         "com.openupm",
+        "com.nition.unity-octree",
         "com.sandrofigo.voxreader",
+        "com.syomus.proceduraltoolkit",
         "org.nuget.google",
         "org.nuget.system"
       ]

@@ -816,6 +816,16 @@ namespace TiltBrush
             }
         }
 
+        protected void RefreshModelGeometry()
+        {
+            m_ObjModelScript.InvalidateMeshVertexCount();
+            int vertexCount = m_ObjModelScript.GetNumVertsInMeshes();
+            WidgetManager.m_Instance.AdjustModelVertCount(vertexCount - m_NumVertsTrackedByWidgetManager);
+            m_NumVertsTrackedByWidgetManager = vertexCount;
+            RecalculateColliderBounds();
+            UpdateBatchInfo();
+        }
+
         public void RecalculateColliderBounds()
         {
             if (m_EditableVoxDocument != null)
@@ -1387,6 +1397,8 @@ namespace TiltBrush
                                 string assetId = null, RuntimeVoxDocument editableDocument = null, WidgetLink widgetLink = null)
         {
             var modelWidget = Instantiate(WidgetManager.m_Instance.ModelWidgetPrefab) as ModelWidget;
+            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
+            modelWidget.m_LoadingFromSketch = true;
             modelWidget.transform.localPosition = xf.translation;
             modelWidget.transform.localRotation = xf.rotation;
             modelWidget.m_Subtree = subtree;
@@ -1395,7 +1407,6 @@ namespace TiltBrush
             {
                 modelWidget.AdoptEditableVoxDocument(editableDocument);
             }
-            modelWidget.m_LoadingFromSketch = true;
             modelWidget.Show(true, false);
             if (isNonRawTransform)
             {
@@ -1405,7 +1416,7 @@ namespace TiltBrush
             }
             else
             {
-                modelWidget.SetSignedWidgetSize(xf.scale);
+                modelWidget.RestoreSignedWidgetSize(xf.scale);
             }
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(modelWidget.GetTiltMeterCost(), up: true);
             if (pin)
@@ -1419,7 +1430,6 @@ namespace TiltBrush
                 modelWidget.m_PolyCallbackActive = true;
             }
             modelWidget.Group = App.GroupManager.GetGroupFromId(groupId);
-            modelWidget.SetCanvas(App.Scene.GetOrCreateLayer(layerId));
             widgetLink?.Attach(modelWidget);
         }
 

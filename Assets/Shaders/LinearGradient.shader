@@ -17,6 +17,8 @@ Shader "Custom/LinearGradient" {
     {
         _ColorA ("ColorA", Color) = (0, 0, 0, 1)
         _ColorB ("ColorB", Color) = (1, 1, 1, 1)
+        _ColorMiddle ("Horizon Color", Color) = (0.5, 0.5, 0.5, 1)
+        _UseHorizon ("Use Horizon", Float) = 0
         _GradientDirection("Gradient", Vector) = (0, 0, 1)
     }
 
@@ -34,7 +36,8 @@ Shader "Custom/LinearGradient" {
 
             #include "UnityCG.cginc"
 
-            fixed4 _ColorA, _ColorB;
+            fixed4 _ColorA, _ColorB, _ColorMiddle;
+            float _UseHorizon;
             float3 _GradientDirection;
 
             struct Attributes {
@@ -73,6 +76,11 @@ Shader "Custom/LinearGradient" {
             {
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
                 float t = (dot(normalize(IN.modelPos), _GradientDirection) + 1.0f) / 2.0f;
+                if (_UseHorizon > 0.5)
+                {
+                    return t < 0.5 ? lerp(_ColorA, _ColorMiddle, (half)(t * 2)) :
+                        lerp(_ColorMiddle, _ColorB, (half)(t * 2 - 1));
+                }
                 return lerp(_ColorA, _ColorB, (half)t);
             }
             ENDHLSL
