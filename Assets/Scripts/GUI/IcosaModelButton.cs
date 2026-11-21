@@ -52,7 +52,9 @@ namespace TiltBrush
         public override bool IsAvailable()
         {
             return base.IsAvailable() && m_IcosaAsset != null &&
-                (!App.IcosaAssetCatalog.IsLoading(m_IcosaAsset.AssetId));
+                (!App.IcosaAssetCatalog.IsLoading(m_IcosaAsset.AssetId)) &&
+                (!m_IcosaAsset.HasImm || string.IsNullOrEmpty(App.IcosaAssetCatalog.LoadingImmAssetId) &&
+                    string.IsNullOrEmpty(App.IcosaAssetCatalog.DownloadingImmAssetId));
         }
 
         public void SetPreset(IcosaAssetCatalog.AssetDetails asset, int index)
@@ -62,7 +64,7 @@ namespace TiltBrush
                 m_LoadingOverlay.SetActive(false);
             }
             m_IcosaAsset = asset;
-            SetPreset(asset.Model, index);
+            SetPreset(asset.HasImm ? null : asset.Model, index);
 
             if (m_IcosaAsset.ModelRotation != null)
             {
@@ -73,13 +75,14 @@ namespace TiltBrush
 
         override protected void RequestModelPreloadInternal(string reason)
         {
+            if (m_IcosaAsset.HasImm) return; // Native references never have live panel previews.
             App.IcosaAssetCatalog.RequestModelLoad(m_IcosaAsset.AssetId, reason);
             m_LoadingOverlay.SetActive(true);
         }
 
         override protected void CancelRequestModelPreload()
         {
-            if (m_IcosaAsset == null) { return; }
+            if (m_IcosaAsset == null || m_IcosaAsset.HasImm) { return; }
             var pac = App.IcosaAssetCatalog;
             var assetId = m_IcosaAsset.AssetId;
             pac.CancelRequestModelLoad(assetId);
@@ -88,15 +91,30 @@ namespace TiltBrush
 
         protected override void OnButtonPressed()
         {
+            int sketchGeneration = SketchControlsScript.m_Instance.SketchGeneration;
+            if (m_IcosaAsset.HasImm)
+            {
+                string assetId = m_IcosaAsset.AssetId;
+                Quaternion rotation = m_PreviewBaseRotation;
+                App.IcosaAssetCatalog.RequestImmModel(assetId, model =>
+                {
+                    // The catalog can finish caching the IMM after the sketch has been replaced.
+                    if (this != null && sketchGeneration == SketchControlsScript.m_Instance.SketchGeneration)
+                    {
+                        SpawnValidModel(model, rotation);
+                    }
+                });
+                return;
+            }
             if (m_Model != null && m_Model.Error != null)
             {
                 return;
             }
-            StartCoroutine(SpawnModelCoroutine("button"));
+            StartCoroutine(SpawnModelCoroutine("button", sketchGeneration));
         }
 
         // Emits user-visible error on failure
-        protected IEnumerator SpawnModelCoroutine(string reason)
+        private IEnumerator SpawnModelCoroutine(string reason, int sketchGeneration)
         {
             if (m_Model == null)
             {
@@ -114,6 +132,14 @@ namespace TiltBrush
             while ((model = App.IcosaAssetCatalog.GetModel(assetId)) == null)
             {
                 yield return null;
+                if (sketchGeneration != SketchControlsScript.m_Instance.SketchGeneration)
+                {
+                    if (assetId == m_IcosaAsset?.AssetId)
+                    {
+                        m_LoadingOverlay.SetActive(App.IcosaAssetCatalog.IsLoading(assetId));
+                    }
+                    yield break;
+                }
             }
             // We only want to disable the loading overlay if the button is still referring to the same
             // asset.
@@ -127,7 +153,15 @@ namespace TiltBrush
             {
                 // The model might be in the "loaded with error" state, but it seems harmless to try again.
                 // If the user keeps clicking, we'll keep trying.
-                yield return model.LoadFullyCoroutine(reason);
+                var load = model.LoadFullyCoroutine(reason);
+                using (load as System.IDisposable)
+                {
+                    while (load.MoveNext())
+                    {
+                        yield return load.Current;
+                        if (sketchGeneration != SketchControlsScript.m_Instance.SketchGeneration) yield break;
+                    }
+                }
                 Debug.Assert(model.m_Valid || model.Error != null);
             }
 
@@ -148,6 +182,13 @@ namespace TiltBrush
 
         protected override void RefreshModelButton()
         {
+            if (m_IcosaAsset != null && m_IcosaAsset.HasImm)
+            {
+                m_Model = null;
+                base.RefreshModelButton();
+                m_LoadingOverlay.SetActive(App.IcosaAssetCatalog.IsLoadingImm(m_IcosaAsset.AssetId));
+                return;
+            }
             base.RefreshModelButton();
             if (m_Model != null)
             {
@@ -182,6 +223,12 @@ namespace TiltBrush
             {
                 m_PreviewParent.localScale = Vector3.one;
             }
+        }
+
+        public override void UpdateVisuals()
+        {
+            base.UpdateVisuals();
+            if (m_IcosaAsset != null && m_IcosaAsset.HasImm) RefreshModelButton();
         }
 
         public override void ResetState()

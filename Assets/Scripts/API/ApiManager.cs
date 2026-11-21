@@ -715,7 +715,12 @@ Success. If you are not automatically redirected, please visit <a href='{success
                 }
                 else
                 {
-                    EnqueueCommand(commandString);
+                    var command = EnqueueCommand(commandString);
+                    // Data-returning endpoints execute on the main thread. Return their
+                    // handle so clients can retrieve the result through query.command.
+                    if (command != null && endpoints.TryGetValue(command.Command, out var endpoint) &&
+                        endpoint.methodInfo.ReturnType != typeof(void))
+                        responses.Add(command.Handle.ToString());
                 }
             }
 
@@ -874,6 +879,14 @@ Success. If you are not automatically redirected, please visit <a href='{success
             }
             catch (Exception e) when (e is UnauthorizedAccessException ||
                 e is StrokeCropping.ActiveSelectionException)
+            {
+                return $"error: {e.Message}";
+            }
+            catch (ArgumentException e)
+            {
+                return $"error: {e.Message}";
+            }
+            catch (FormatException e)
             {
                 return $"error: {e.Message}";
             }

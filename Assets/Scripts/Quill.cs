@@ -32,6 +32,7 @@ namespace TiltBrush
             public string Path { get; set; }
             /// <summary>Chapter index to load. -1 = default (first/only chapter).</summary>
             public int ChapterIndex { get; set; } = -1;
+            public bool NativeImm { get; set; }
         }
 
         public static QuillLoadOptions PendingLoadOptions { get; set; }
@@ -82,7 +83,7 @@ namespace TiltBrush
             string path, int maxStrokes = 0,
             bool loadAnimations = false, string layerName = null,
             bool flattenHierarchy = true, bool layersCanTransform = false,
-            int chapterIndex = -1)
+            int chapterIndex = -1, ModelWidget replaceNativeWidget = null)
         {
             // Clear any environment state cached by a previous load so a failure part-way through
             // this one can't leave the previous project's background or skybox behind.
@@ -103,7 +104,14 @@ namespace TiltBrush
             else if (File.Exists(path))
             {
                 kind = "imm";
-                sequence = ImmStrokeReader.SharpQuillCompat.ReadImmAsSequence(path, includePictures: true, chapterIndex: chapterIndex);
+                if (replaceNativeWidget == null)
+                {
+                    sequence = ImmStrokeReader.SharpQuillCompat.ReadImmAsSequence(path, includePictures: true, chapterIndex: chapterIndex);
+                }
+                else
+                {
+                    sequence = ReadNativeImmFrame(path, replaceNativeWidget);
+                }
             }
             else
             {
@@ -113,6 +121,10 @@ namespace TiltBrush
 
             var recorder = new QuillStatsRecorder();
             s_QuillStatsRecorder = recorder;
+            List<Stroke> allCollectedStrokes = new List<Stroke>();
+            List<CanvasScript> createdLayers = new List<CanvasScript>();
+            List<GrabWidget> createdWidgets = new List<GrabWidget>();
+            bool recorded = false;
             try
             {
                 if (sequence?.RootLayer == null)
@@ -132,9 +144,6 @@ namespace TiltBrush
 
                 // Recurse layers and collect all strokes
                 int strokeCount = 0;
-                List<Stroke> allCollectedStrokes = new List<Stroke>();
-                List<CanvasScript> createdLayers = new List<CanvasScript>();
-                List<GrabWidget> createdWidgets = new List<GrabWidget>();
                 Dictionary<string, ReferenceImage> imageCache = new Dictionary<string, ReferenceImage>(StringComparer.OrdinalIgnoreCase);
                 string quillImageDirectory = GetQuillImageDirectory(path);
                 string quillSoundDirectory = GetQuillSoundDirectory(path);
@@ -143,6 +152,15 @@ namespace TiltBrush
                 // where the scene is hard to see even at max zoom.
                 // 1x is a bit too small - so I went with an arbitrary 2x scale
                 Matrix4x4 globalCorrection = Matrix4x4.Scale(Vector3.one * 2f);
+                if (replaceNativeWidget != null)
+                {
+                    var native = replaceNativeWidget.GetComponentInChildren<NativeImmReference>();
+                    if (native == null) throw new InvalidOperationException("The native IMM instance is unavailable.");
+                    // The flattening path expects world-space transforms and applies each
+                    // destination canvas's world inverse. Keep the full widget hierarchy here,
+                    // including its local pose and the scene pose, so that inverse is applied once.
+                    globalCorrection = native.transform.localToWorldMatrix;
+                }
 
                 // The RootLayer itself can have a transform
                 Matrix4x4 rootWorldNoFlip = globalCorrection * ConvertSQTransformMatrix(sequence.RootLayer.Transform, includeFlip: false);
@@ -238,11 +256,13 @@ namespace TiltBrush
                 }
 
                 if (allCollectedStrokes.Count > 0 || createdLayers.Count > 0 ||
-                    createdWidgets.Count > 0)
+                    createdWidgets.Count > 0 || replaceNativeWidget != null)
                 {
                     // Single undo step for all strokes, layers, and widgets
-                    var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers, createdWidgets);
+                    var cmd = new LoadQuillCommand(allCollectedStrokes, createdLayers, createdWidgets,
+                        replacedWidget: replaceNativeWidget);
                     SketchMemoryScript.m_Instance.PerformAndRecordCommand(cmd);
+                    recorded = true;
 
                     if (maxStrokes > 0 && strokeCount >= maxStrokes)
                     {
@@ -252,10 +272,63 @@ namespace TiltBrush
             }
             finally
             {
+                // A failed conversion must leave its native source and all existing content intact.
+                if (!recorded && replaceNativeWidget != null)
+                {
+                    foreach (var stroke in allCollectedStrokes)
+                    {
+                        SketchMemoryScript.m_Instance.RemoveMemoryObject(stroke);
+                        stroke.DestroyStroke();
+                    }
+                    foreach (var widget in createdWidgets)
+                    {
+                        TiltMeterScript.m_Instance.AdjustMeterWithWidget(widget.GetTiltMeterCost(), up: false);
+                        WidgetManager.m_Instance.UnregisterGrabWidget(widget.gameObject);
+                        UnityEngine.Object.Destroy(widget.gameObject);
+                    }
+                    foreach (var layer in createdLayers) App.Scene.DestroyLayer(layer);
+                }
                 QuillDiagnostics.LastLoad = recorder.ToStats(path, kind);
                 s_QuillStatsRecorder = null;
             }
 
+        }
+
+        private static SQ.Sequence ReadNativeImmFrame(string path, ModelWidget widget)
+        {
+            var playback = widget.Playback;
+            if (playback.Document == null || playback.IsRestoring)
+                throw new InvalidOperationException("IMM playback is not ready for conversion.");
+            var frame = playback.Document.GetEditableLayerStates().ToDictionary(state => state.id,
+                state => new ImmStrokeReader.SharpQuillCompat.FrameLayerState
+                {
+                    Drawing = state.drawing,
+                    Visible = state.visible != 0,
+                    Opacity = state.opacity,
+                    Transform = new ImmPlayer.StrokeLayerTransform
+                    {
+                        rotX = state.rotX, rotY = state.rotY, rotZ = state.rotZ, rotW = state.rotW,
+                        scale = state.scale, flip = state.flip,
+                        transX = state.transX, transY = state.transY, transZ = state.transZ
+                    }
+                });
+            return ImmStrokeReader.SharpQuillCompat.ReadImmFrame(path, frame);
+        }
+
+        public static bool ImportNativeImmSkydome(ModelWidget widget)
+        {
+            var native = widget.GetComponentInChildren<NativeImmReference>();
+            if (native == null) return false;
+            var sequence = ReadNativeImmFrame(native.SourcePath, widget);
+            var picture = sequence?.RootLayer?.Children.OfType<SQ.LayerPicture>().FirstOrDefault(layer =>
+                layer.PictureType == SQ.PictureType.ThreeSixty_Equirect_Mono ||
+                layer.PictureType == SQ.PictureType.ThreeSixty_Equirect_Stereo);
+            if (picture == null) return false;
+            string skybox = ExtractSkybox360Image(picture, native.SourcePath);
+            if (skybox == null) throw new InvalidOperationException("Could not extract the IMM skydome image.");
+            SceneSettings.m_Instance.LoadCustomSkybox(skybox);
+            SketchMemoryScript.m_Instance.MarkUnrecordedChange();
+            return true;
         }
 
         private static void TraverseAndFlattenLayers(

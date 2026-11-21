@@ -91,7 +91,8 @@ namespace TiltBrush
                     {
                         case Type.LocalFile:
                             string blocksPath = Path.Combine(App.BlocksModelLibraryPath(), path);
-                            if (System.IO.File.Exists(blocksPath))
+                            if (!path.StartsWith("../") && !path.StartsWith("..\\") &&
+                                System.IO.File.Exists(blocksPath))
                             {
                                 return blocksPath.Replace("\\", "/");
                             }
@@ -214,7 +215,10 @@ namespace TiltBrush
 
         /// m_LoadError != null implies m_Valid == false
         private LoadError? m_LoadError;
-        public LoadError? Error => m_LoadError;
+        // Unsupported formats are part of the reference, so their error survives unloading a placeholder.
+        public LoadError? Error => m_LoadError ??
+            (AssetFormat != null && GalleryFormat == VrAssetFormat.Unknown
+                ? new LoadError("Unsupported gallery model format", AssetFormat) : (LoadError?)null);
 
         // How many widgets are using this model?
         public int m_UsageCount;
@@ -226,6 +230,10 @@ namespace TiltBrush
         private HashSet<string> m_AppliedMeshSplits;
 
         private Location m_Location;
+        // Exact service format for persistence, or null for legacy caches identified only by extension.
+        public string AssetFormat { get; }
+        // The inferred format can still be used to load legacy cache files.
+        public VrAssetFormat GalleryFormat { get; }
 
         // Can the geometry in this model be exported.
         private bool m_AllowExport;
@@ -235,6 +243,7 @@ namespace TiltBrush
         // Store SVG scene info for SVG models (persists across instantiation)
         public SVGParser.SceneInfo SvgSceneInfo { get; private set; }
 
+        public bool IsNativeImmModel => GalleryFormat == VrAssetFormat.IMM || m_Location.Extension == ".imm";
         public bool IsGsplatModel { get; private set; }
         private GsplatAsset m_OwnedGsplatAsset;
         // Models are catalog-cached and shared by widgets, so retain immutable source bytes here.
@@ -343,11 +352,79 @@ namespace TiltBrush
         }
 
         // Constructor for remote models i.e. Icosa Gallery assets
-        public Model(string assetId, string path)
+        public Model(string assetId, string path, VrAssetFormat galleryFormat = VrAssetFormat.Unknown,
+            string assetFormat = null)
         {
             m_Location = Location.IcosaAsset(assetId, path);
+            // A pending gallery model has no path yet, but must retain its requested representation.
+            AssetFormat = assetFormat ?? (galleryFormat == VrAssetFormat.Unknown ? null : galleryFormat.ToString());
+            GalleryFormat = AssetFormat == null ? GetGalleryFormat(path) :
+                TryParseGalleryFormat(AssetFormat, out var parsed) ? parsed : VrAssetFormat.Unknown;
             Init();
         }
+
+        public static bool TryParseGalleryFormat(string name, out VrAssetFormat format)
+        {
+            if (Enum.TryParse(name, out format) && name == format.ToString())
+            {
+                switch (format)
+                {
+                    case VrAssetFormat.GLTF:
+                    case VrAssetFormat.GLTF2:
+                    case VrAssetFormat.OBJ:
+                    case VrAssetFormat.OBJ_NGON:
+                    case VrAssetFormat.PLY:
+                    case VrAssetFormat.VOX:
+                    case VrAssetFormat.IMM:
+                        return true;
+                }
+            }
+            format = VrAssetFormat.Unknown;
+            return false;
+        }
+
+        // Legacy disk caches did not record the service's format identifier.
+        internal static VrAssetFormat GetGalleryFormat(string path)
+        {
+            switch (Path.GetExtension(path)?.ToLowerInvariant())
+            {
+                case ".imm": return VrAssetFormat.IMM;
+                case ".vox": return VrAssetFormat.VOX;
+                case ".gltf2": return VrAssetFormat.GLTF2;
+                case ".gltf": return VrAssetFormat.GLTF;
+                case ".glb": return VrAssetFormat.GLTF2;
+                case ".obj": return VrAssetFormat.OBJ;
+                case ".ply": return VrAssetFormat.PLY;
+                default: return VrAssetFormat.Unknown;
+            }
+        }
+
+        /// <summary>Creates a bounded template; each widget owns its native document separately.</summary>
+        public static Model CreateNativeImm(string assetId, string path, Bounds bounds)
+        {
+            var model = assetId == null ? new Model(path) : new Model(assetId, path, VrAssetFormat.IMM);
+            model.CreateNativeImmPrefab(bounds);
+            return model;
+        }
+
+        internal void CreateNativeImmPrefab(Bounds bounds)
+        {
+            var size = bounds.size;
+            if (!IsFinite(bounds.center) || !IsFinite(size) ||
+                size.x < 0 || size.y < 0 || size.z < 0 || Mathf.Max(size.x, Mathf.Max(size.y, size.z)) <= Mathf.Epsilon)
+                throw new ArgumentException("IMM document has no usable bounds", nameof(bounds));
+
+            m_MeshBounds = bounds;
+            var root = new GameObject("Native IMM reference template");
+            root.SetActive(false);
+            if (!EndCreatePrefab(root, new List<string>()))
+                throw new InvalidOperationException("Could not create IMM reference template");
+        }
+
+        private static bool IsFinite(Vector3 value) =>
+            !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+            !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+            !float.IsNaN(value.z) && !float.IsInfinity(value.z);
 
         public Location GetLocation() { return m_Location; }
 
@@ -1113,6 +1190,11 @@ namespace TiltBrush
                     go = LoadUsd(warnings);
                     CalcBoundsNonGltf(go);
                     EndCreatePrefab(go, warnings);
+                }
+                else if (ext == ".imm")
+                {
+                    if (!await NativeImmReference.LoadModelAsync(this))
+                        m_LoadError = new LoadError("Could not load IMM reference", m_Location.AbsolutePath);
                 }
                 else if (ext == ".gltf2" || ext == ".gltf" || ext == ".glb")
                 {

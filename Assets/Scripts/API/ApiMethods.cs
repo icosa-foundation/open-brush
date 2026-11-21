@@ -1184,8 +1184,6 @@ namespace TiltBrush
                 videoWidget.SetVideo(video);
                 videoWidget.Show(true);
                 cmd.SetWidgetCost(videoWidget.GetTiltMeterCost());
-                // videoWidget.VideoController.Playing = true;
-                UnityAsyncAwaitUtil.AsyncCoroutineRunner.Instance.StartCoroutine(video.PrepareVideoPlayer(() => { }));
             }
             return videoWidget;
         }

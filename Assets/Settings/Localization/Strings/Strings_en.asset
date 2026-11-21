@@ -4023,6 +4023,58 @@ MonoBehaviour:
     m_Localized: Captures all widgets and also the current camera path if visible
     m_Metadata:
       m_Items: []
+  - m_Id: 554342843705548800
+    m_Localized: Rotate panels left
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434880
+    m_Localized: Rotate panels right
+    m_Metadata:
+      m_Items: []
+  - m_Id: 554342843789434881
+    m_Localized: Complexity
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: New voxel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: Start a new empty voxel model
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: Align Voxel Model to Grid
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: Align the current model with your grid settings
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: Select voxel region
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: Drag the trigger to select a cuboid. Press the duplicate button during a grab to stamp a copy. Double press the trigger in empty space to finalise and clear.
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: Apply changes
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: Clear unused colors
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: Sort colors
+    m_Metadata:
+      m_Items: []
+  - m_Id: 563423505335017472
+    m_Localized: Use brush colour
+    m_Metadata:
+      m_Items: []
   - m_Id: 551461337584721920
     m_Localized: Helical symmetry
     m_Metadata:
@@ -4117,18 +4169,6 @@ MonoBehaviour:
       m_Items: []
   - m_Id: 553297782469386240
     m_Localized: Hold button down for more option
-    m_Metadata:
-      m_Items: []
-  - m_Id: 554342843705548800
-    m_Localized: Rotate panels left
-    m_Metadata:
-      m_Items: []
-  - m_Id: 554342843789434880
-    m_Localized: Rotate panels right
-    m_Metadata:
-      m_Items: []
-  - m_Id: 554342843789434881
-    m_Localized: Complexity
     m_Metadata:
       m_Items: []
   - m_Id: 563821227493908486
@@ -4345,44 +4385,152 @@ MonoBehaviour:
       Colors lets you vary the copies.'
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936423649280
-    m_Localized: New voxel
+  - m_Id: 82311120000000001
+    m_Localized: "Previous Chapter"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936520118272
-    m_Localized: Start a new empty voxel model
+  - m_Id: 82311120000000002
+    m_Localized: "Next Chapter"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936520118273
-    m_Localized: Align Voxel Model to Grid
+  - m_Id: 82311120000000003
+    m_Localized: "Previous Viewpoint"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936524312576
-    m_Localized: Align the current model with your grid settings
+  - m_Id: 82311120000000004
+    m_Localized: "Next Viewpoint"
     m_Metadata:
       m_Items: []
-  - m_Id: 560634138304536576
-    m_Localized: Select voxel region
+  - m_Id: 82311120000000005
+    m_Localized: "Select Previous Viewpoint"
     m_Metadata:
       m_Items: []
-  - m_Id: 560634138455531520
-    m_Localized: Drag the trigger to select a cuboid. Press the duplicate button during a grab to stamp a copy. Double press the trigger in empty space to finalise and clear.
+  - m_Id: 82311120000000006
+    m_Localized: "Select Next Viewpoint"
     m_Metadata:
       m_Items: []
-  - m_Id: 561984249517400064
-    m_Localized: Apply changes
+  - m_Id: 82311120000000007
+    m_Localized: "Move to Selected Viewpoint"
     m_Metadata:
       m_Items: []
-  - m_Id: 561984250834411520
-    m_Localized: Clear unused colors
+  - m_Id: 82311120000000008
+    m_Localized: "Play / Continue IMM"
     m_Metadata:
       m_Items: []
-  - m_Id: 561984250838605824
-    m_Localized: Sort colors
+  - m_Id: 82311120000000009
+    m_Localized: "Pause IMM"
     m_Metadata:
       m_Items: []
-  - m_Id: 563423505335017472
-    m_Localized: Use brush colour
+  - m_Id: 82311120000000010
+    m_Localized: "Chapter {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "Viewpoint {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "Loading IMM…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "Changing chapter…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "Native Quill loading is not yet available"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "Loop"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "Spatial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "Make Editable"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "Convert Current Frame to Editable Strokes"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "Replaces this IMM only. Other sketch content is preserved."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "Import Skydome"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "Import IMM Skydome"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "Use the skydome visible at the current IMM frame."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "Could not convert the current IMM frame to editable strokes."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "No visible skydome at the current IMM frame."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "Could not import the IMM skydome."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "Model playback failed"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "Native IMM document did not finish loading."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "Previous native sketch did not finish unloading."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "Could not load IMM reference"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "Could not read cached IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "Could not download IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "Could not cache IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "Could not cache gallery reference"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "Could not load gallery reference"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "Native IMM load timed out."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "Video playback failed"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "Sound playback failed"
     m_Metadata:
       m_Items: []
   - m_Id: 564570892417982464

@@ -933,6 +933,7 @@ namespace TiltBrush
             bool hasCustomLights = false,
             bool skipFade = false)
         {
+            if (!NativeImmImport.AllowsEnvironment(env)) return;
             m_SkipFade = skipFade;
             if (m_RequestInstantSceneSwitch > 0)
             {

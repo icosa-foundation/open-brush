@@ -4388,6 +4388,42 @@ MonoBehaviour:
     m_Localized: "V\xE9rifiez la fl\xE8che de A vers B. La g\xE2chette confirme ; celle de l\u2019autre contr\xF4leur inverse A et B ; Annuler pour quitter."
     m_Metadata:
       m_Items: []
+  - m_Id: 561984249517400064
+    m_Localized: Appliquer les modifications
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250834411520
+    m_Localized: "Effacer les couleurs inutilis\xE9es"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 561984250838605824
+    m_Localized: Trier les couleurs
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936423649280
+    m_Localized: Nouveau voxel
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118272
+    m_Localized: "Commencer un nouveau mod\xE8le voxel vide"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936520118273
+    m_Localized: "Aligner le mod\xE8le voxel sur la grille"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 559927936524312576
+    m_Localized: "Aligner le mod\xE8le actuel selon les param\xE8tres de la grille"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138304536576
+    m_Localized: "S\xE9lectionner une r\xE9gion de voxels"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 560634138455531520
+    m_Localized: "Maintenez la g\xE2chette enfonc\xE9e et faites glisser pour s\xE9lectionner un pav\xE9 droit. Appuyez sur le bouton de duplication pendant la saisie pour d\xE9poser une copie. Appuyez deux fois sur la g\xE2chette dans un espace vide pour terminer et effacer la s\xE9lection."
+    m_Metadata:
+      m_Items: []
   - m_Id: 551461337584721920
     m_Localized: "Sym\xE9trie h\xE9lico\xEFdale"
     m_Metadata:
@@ -4692,40 +4728,152 @@ MonoBehaviour:
     m_Localized: "Le miroir simple n'a pas de r\xE9glages suppl\xE9mentaires.\n\nChoisissez un onglet ci-dessus pour essayer des motifs r\xE9p\xE9t\xE9s, la sym\xE9trie de rotation et plus encore.\n\nCouleurs permet de varier les copies."
     m_Metadata:
       m_Items: []
-  - m_Id: 561984249517400064
-    m_Localized: Appliquer les modifications
+  - m_Id: 82311120000000001
+    m_Localized: "Chapitre précédent"
     m_Metadata:
       m_Items: []
-  - m_Id: 561984250834411520
-    m_Localized: "Effacer les couleurs inutilis\xE9es"
+  - m_Id: 82311120000000002
+    m_Localized: "Chapitre suivant"
     m_Metadata:
       m_Items: []
-  - m_Id: 561984250838605824
-    m_Localized: Trier les couleurs
+  - m_Id: 82311120000000003
+    m_Localized: "Point de vue précédent"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936423649280
-    m_Localized: Nouveau voxel
+  - m_Id: 82311120000000004
+    m_Localized: "Point de vue suivant"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936520118272
-    m_Localized: "Commencer un nouveau mod\xE8le voxel vide"
+  - m_Id: 82311120000000005
+    m_Localized: "Sélectionner le point de vue précédent"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936520118273
-    m_Localized: "Aligner le mod\xE8le voxel sur la grille"
+  - m_Id: 82311120000000006
+    m_Localized: "Sélectionner le point de vue suivant"
     m_Metadata:
       m_Items: []
-  - m_Id: 559927936524312576
-    m_Localized: "Aligner le mod\xE8le actuel selon les param\xE8tres de la grille"
+  - m_Id: 82311120000000007
+    m_Localized: "Aller au point de vue sélectionné"
     m_Metadata:
       m_Items: []
-  - m_Id: 560634138304536576
-    m_Localized: "S\xE9lectionner une r\xE9gion de voxels"
+  - m_Id: 82311120000000008
+    m_Localized: "Lire / reprendre l’IMM"
     m_Metadata:
       m_Items: []
-  - m_Id: 560634138455531520
-    m_Localized: "Maintenez la g\xE2chette enfonc\xE9e et faites glisser pour s\xE9lectionner un pav\xE9 droit. Appuyez sur le bouton de duplication pendant la saisie pour d\xE9poser une copie. Appuyez deux fois sur la g\xE2chette dans un espace vide pour terminer et effacer la s\xE9lection."
+  - m_Id: 82311120000000009
+    m_Localized: "Mettre l’IMM en pause"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000010
+    m_Localized: "Chapitre {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000011
+    m_Localized: "Point de vue {0} / {1}"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000012
+    m_Localized: "Chargement de l’IMM…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000013
+    m_Localized: "Changement de chapitre…"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000014
+    m_Localized: "Le chargement natif de Quill n’est pas encore disponible"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000015
+    m_Localized: "Boucle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000016
+    m_Localized: "Spatial"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000017
+    m_Localized: "Rendre modifiable"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000018
+    m_Localized: "Convertir l’image actuelle en traits modifiables"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000019
+    m_Localized: "Remplace uniquement cet IMM. Le reste du contenu de l’esquisse est conservé."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000020
+    m_Localized: "Importer le dôme céleste"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000021
+    m_Localized: "Importer le dôme céleste de l’IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000022
+    m_Localized: "Utiliser le dôme céleste visible dans l’image actuelle de l’IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000023
+    m_Localized: "Impossible de convertir l’image actuelle de l’IMM en traits modifiables."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000024
+    m_Localized: "Aucun dôme céleste visible dans l’image actuelle de l’IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000025
+    m_Localized: "Impossible d’importer le dôme céleste de l’IMM."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000026
+    m_Localized: "Échec de la lecture du modèle"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000027
+    m_Localized: "Le chargement du document IMM natif ne s’est pas terminé."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000028
+    m_Localized: "Le déchargement de l’esquisse native précédente ne s’est pas terminé."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000029
+    m_Localized: "Impossible de charger la référence IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000030
+    m_Localized: "Impossible de lire l’IMM en cache"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000031
+    m_Localized: "Impossible de télécharger l’IMM"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000032
+    m_Localized: "Impossible de mettre l’IMM en cache"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000033
+    m_Localized: "Impossible de mettre la référence de la galerie en cache"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000034
+    m_Localized: "Impossible de charger la référence de la galerie"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000035
+    m_Localized: "Le chargement natif de l’IMM a expiré."
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000036
+    m_Localized: "Échec de la lecture de la vidéo"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 82311120000000037
+    m_Localized: "Échec de la lecture du son"
     m_Metadata:
       m_Items: []
   - m_Id: 563423505335017472

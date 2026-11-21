@@ -23,20 +23,33 @@ namespace TiltBrush
         private List<CanvasScript> m_Layers;
         private List<GrabWidget> m_Widgets;
         private bool m_Active;
+        private readonly ModelWidget m_ReplacedWidget;
+        private readonly ModelPlaybackState m_ReplacedPlaybackState;
+        private bool m_SourceHidden;
 
         public override bool NeedsSave => true;
 
-        public LoadQuillCommand(List<Stroke> strokes, List<CanvasScript> layers, List<GrabWidget> widgets, BaseCommand parent = null)
+        public LoadQuillCommand(List<Stroke> strokes, List<CanvasScript> layers, List<GrabWidget> widgets,
+            BaseCommand parent = null, ModelWidget replacedWidget = null)
             : base(parent)
         {
             m_Strokes = strokes;
             m_Layers = layers;
             m_Widgets = widgets;
             m_Active = true;
+            m_ReplacedWidget = replacedWidget;
+            m_ReplacedPlaybackState = replacedWidget != null ? replacedWidget.Playback.GetSaveState() : null;
         }
 
         protected override void OnRedo()
         {
+            if (m_ReplacedWidget != null && !m_SourceHidden)
+            {
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_ReplacedWidget.GetTiltMeterCost(), up: false);
+                m_ReplacedWidget.Hide();
+                m_SourceHidden = true;
+                WidgetManager.m_Instance.RefreshPinAndUnpinLists();
+            }
             if (m_Active)
             {
                 return;
@@ -92,6 +105,17 @@ namespace TiltBrush
                 App.Scene.MarkLayerAsDeleted(layer);
             }
             m_Active = false;
+            if (m_ReplacedWidget != null && m_SourceHidden)
+            {
+                // Restore before enabling: OnEnable must see the pending seek, and playing
+                // documents must return to the captured position rather than a chapter start.
+                m_ReplacedWidget.Playback.Restore(m_ReplacedPlaybackState, restorePlayingPosition: true);
+                m_ReplacedWidget.gameObject.SetActive(true);
+                m_ReplacedWidget.RestoreFromToss();
+                TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_ReplacedWidget.GetTiltMeterCost(), up: true);
+                m_SourceHidden = false;
+                WidgetManager.m_Instance.RefreshPinAndUnpinLists();
+            }
         }
 
         protected override void OnDispose()

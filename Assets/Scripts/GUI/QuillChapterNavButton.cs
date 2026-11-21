@@ -15,18 +15,65 @@
 namespace TiltBrush
 {
     /// <summary>
-    /// Prev/next chapter navigation button for the Quill file browser.
-    /// Now finds the QuillLibraryPanel instead of individual file buttons
-    /// since chapter controls are centralized in the action area.
+    /// Prev/next navigation for a selected file's chapters or the loaded native IMM's viewpoints.
     /// </summary>
     public class QuillChapterNavButton : BaseButton
     {
         [UnityEngine.SerializeField] private bool m_IsNext;
+        [UnityEngine.SerializeField] private bool m_IsViewpoint;
+        [UnityEngine.SerializeField] private bool m_IsContinue;
+
+        private UnityEngine.Texture2D m_PauseTexture;
+        private bool? m_ShowingPause;
+
+        protected override void Awake()
+        {
+            base.Awake();
+            if (m_IsContinue)
+                m_LocalizedDescription.StringChanged += OnPlaybackDescriptionChanged;
+        }
+
+        protected override void OnDestroy()
+        {
+            if (m_IsContinue)
+                m_LocalizedDescription.StringChanged -= OnPlaybackDescriptionChanged;
+            base.OnDestroy();
+        }
+
+        private void OnPlaybackDescriptionChanged(string text) => SetDescriptionText(text);
+
+        public void RefreshPlaybackState()
+        {
+            bool pause = NativeImmImport.CanPause;
+            SetButtonAvailable(pause || NativeImmImport.CanContinue);
+            if (m_ShowingPause == pause) return;
+            if (pause && m_PauseTexture == null)
+                m_PauseTexture = UnityEngine.Resources.Load<UnityEngine.Texture2D>("Icons/pause");
+            SetButtonTexture(pause ? m_PauseTexture : m_ButtonTexture);
+            m_LocalizedDescription.TableEntryReference = pause ? "NATIVE_IMM_PAUSE" : "NATIVE_IMM_PLAY";
+            m_ShowingPause = pause;
+        }
 
         protected override void OnButtonPressed()
         {
             base.OnButtonPressed();
+            if (m_IsContinue)
+            {
+                if (NativeImmImport.CanPause) NativeImmImport.PausePlayback();
+                else NativeImmImport.ContinuePlayback();
+                return;
+            }
+            if (m_IsViewpoint)
+            {
+                NativeImmImport.CycleViewpoint(m_IsNext ? 1 : -1);
+                return;
+            }
             var panel = GetComponentInParent<QuillLibraryPanel>();
+            if (panel == null && GetComponentInParent<NativeImmAdminControls>() != null)
+            {
+                NativeImmImport.CycleChapter(m_IsNext ? 1 : -1);
+                return;
+            }
             if (m_IsNext) panel?.OnNextChapterPressed();
             else panel?.OnPrevChapterPressed();
         }
