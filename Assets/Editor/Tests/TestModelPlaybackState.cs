@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 namespace TiltBrush
 {
@@ -30,14 +31,26 @@ namespace TiltBrush
                 serialized.FindProperty("m_Loop").boolValue = true;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
 
-                clone = UnityEngine.Object.Instantiate(template);
+                clone = UnityEngine.Object.Instantiate(template, template.transform);
+                clone.SetActive(true);
                 var clonedAnimation = clone.GetComponent<PlayGltfAnimationClip>();
+                Assert.IsTrue(clone.activeSelf);
                 Assert.IsFalse(clone.activeInHierarchy);
                 Assert.IsTrue(clonedAnimation.Initialized, "The serialized clip must survive cloning.");
                 Assert.AreEqual(0, clonedAnimation.Time);
 
                 var playback = clone.AddComponent<ModelPlaybackController>();
                 playback.Bind(clone.transform);
+                LogAssert.Expect(LogType.Error, "Cannot pause this model before its animation is initialized.");
+                playback.Pause();
+                LogAssert.Expect(LogType.Error, "Cannot play this model before its animation is initialized.");
+                playback.Play();
+                LogAssert.Expect(LogType.Error, "Cannot continue this model before its animation is initialized.");
+                playback.Continue();
+                LogAssert.Expect(LogType.Error, "Cannot seek this model before its animation is initialized.");
+                playback.Seek(0);
+                LogAssert.Expect(LogType.Error, "Cannot change looping on this model before its animation is initialized.");
+                playback.SetLoop(false);
                 var state = playback.GetSaveState();
                 Assert.IsNotNull(state);
                 Assert.AreEqual(0, state.Time);

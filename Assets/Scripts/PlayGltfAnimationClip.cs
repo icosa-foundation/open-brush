@@ -33,6 +33,8 @@ namespace TiltBrush
         private bool m_Paused;
 
         public bool Initialized => m_SelectedClip != null;
+        internal bool HasPlaybackState => graphInitialized ? graph.IsValid() && m_Playable.IsValid() :
+            animationComponent != null && animationComponent[ClipName] != null;
         public string[] ClipNames => m_Clips?.Select(clip => clip.name).ToArray() ?? new string[0];
         public string ClipName => m_SelectedClip != null ? m_SelectedClip.name : null;
         public double Length => m_SelectedClip != null ? m_SelectedClip.length : 0;
