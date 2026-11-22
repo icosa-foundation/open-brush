@@ -11,6 +11,20 @@ using TiltBrush.DocumentImport;
 
 namespace TiltBrush
 {
+    // A widget's binding to a version of its definition. A shared edit keeps the ID;
+    // an independent edit can fork it. Command history retains the previous bindings.
+    public sealed class EditableModelDefinition
+    {
+        public string Id { get; }
+        public EditableModelDefinitionData Data { get; }
+
+        public EditableModelDefinition(EditableModelDefinitionData data, string id = null)
+        {
+            Id = id ?? Guid.NewGuid().ToString();
+            Data = data;
+        }
+    }
+
     // Shared saved definition. Geometry evaluation consumes Recipe; appearance and
     // additional source data survive loading even when this application cannot use them.
     [JsonConverter(typeof(EditableModelDefinitionDataJsonConverter))]

@@ -13,8 +13,8 @@ namespace TiltBrush
     // the shared generator/operations contract rather than the branch's old serializer.
     public class EditableModelWidget : ModelWidget
     {
-        public GeometryRecipeData m_PolyRecipe;
-        public EditableModelDefinitionData m_Definition;
+        public EditableModelDefinition Definition { get; internal set; }
+        public GeometryRecipeData m_PolyRecipe => Definition?.Data.Recipe;
         public PolyMesh m_PolyMesh;
         public Color m_Color = Color.white;
         private EditableModelMaterialData m_MaterialSettings;
@@ -315,16 +315,10 @@ namespace TiltBrush
             if (!ProceduralShapes.CanResizeAxis(m_PolyRecipe, axis) || !(deltaScale > 0) ||
                 float.IsInfinity(deltaScale) || deltaScale == 1f) { return; }
             var recipe = ProceduralShapes.ResizeAxis(m_PolyRecipe, axis, deltaScale, EllipseEnabled);
-            if (m_RecordMovements)
-            {
-                SketchMemoryScript.m_Instance.PerformAndRecordCommand(
-                    new ModifyShapeCommand(this, recipe, m_AxisResizeGesture, mergeWidgetMovement: true));
-            }
-            else
-            {
-                EditableModelManager.GetOrCreate().RegenerateMeshes(WidgetPropertyCommand.GetTargets(this),
-                    EditableModelManager.Evaluate(recipe), recipe);
-            }
+            var command = new ModifyShapeCommand(this, recipe, ShapeEditScope.Instance, m_AxisResizeGesture,
+                mergeWidgetMovement: true);
+            if (m_RecordMovements) { SketchMemoryScript.m_Instance.PerformAndRecordCommand(command); }
+            else { command.Redo(); }
         }
 
         internal void RefreshGeneratedGeometry(Mesh mesh)
@@ -427,11 +421,12 @@ namespace TiltBrush
         {
             var poly = m_PolyMesh.Duplicate();
             poly.ScalingFactor = m_PolyMesh.ScalingFactor;
+            var recipe = new GeometryRecipeData(m_PolyRecipe.ToJson());
+            var definition = new EditableModelDefinition(Definition.Data.WithRecipe(recipe));
             var clone = EditableModelManager.GetOrCreate().GeneratePolyMesh(poly,
-                new GeometryRecipeData(m_PolyRecipe.ToJson()), TrTransform.TRS(position, rotation, size),
+                definition, TrTransform.TRS(position, rotation, size),
                 recordCommand: false, color: m_Color, skipIntroAnimation: true);
             clone.m_PreviousCanvas = m_PreviousCanvas;
-            clone.m_Definition = m_Definition?.WithRecipe(clone.m_PolyRecipe);
             clone.transform.SetParent(transform.parent, true);
             clone.SetSignedWidgetSize(size);
             clone.CustomDimension = CustomDimension;
@@ -450,6 +445,6 @@ namespace TiltBrush
             m_NewMaterials = m_WidgetRenderers.ToDictionary(renderer => renderer, renderer => renderer.materials);
         }
 
-        public GameObject GetModelGameObject() => GetComponentInChildren<ObjModelScript>().gameObject;
+        public GameObject GetModelGameObject() => GetComponentInChildren<ObjModelScript>(includeInactive: true).gameObject;
     }
 }

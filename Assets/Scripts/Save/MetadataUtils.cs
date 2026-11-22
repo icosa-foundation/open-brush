@@ -215,8 +215,7 @@ namespace TiltBrush
                 MeshEditing.EditableModelManager.RetainedDefinitions);
             foreach (var widget in WidgetManager.m_Instance.EditableModelWidgets.Where(widget => widget.gameObject.activeSelf))
             {
-                definitions[widget.Model.AssetId] = widget.m_Definition?.WithRecipe(widget.m_PolyRecipe)
-                    ?? new EditableModelDefinitionData(widget.m_PolyRecipe);
+                definitions[widget.Definition.Id] = widget.Definition.Data;
             }
             return definitions.Count == 0 ? null : definitions;
         }
@@ -225,12 +224,12 @@ namespace TiltBrush
         {
             var models = new List<TiltEditableModels>();
             foreach (var group in WidgetManager.m_Instance.EditableModelWidgets
-                         .Where(widget => widget.gameObject.activeSelf).GroupBy(widget => widget.Model.GetLocation()))
+                         .Where(widget => widget.gameObject.activeSelf).GroupBy(widget => widget.Definition.Id))
             {
                 var widgets = group.OrderBy(widget => ByTranslation(GetSavedTransform(widget, widget.GetSaveTransform()))).ToArray();
                 models.Add(new TiltEditableModels
                 {
-                    Location = group.Key,
+                    Location = Model.Location.Generated(group.Key),
                     RawTransforms = widgets.Select(widget => GetSavedTransform(widget, widget.GetSaveTransform())).ToArray(),
                     PinStates = widgets.Select(widget => widget.Pinned).ToArray(),
                     GroupIds = widgets.Select(widget => groupIdMapping.GetId(widget.Group)).ToArray(),
