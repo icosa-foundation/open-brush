@@ -309,9 +309,7 @@ namespace TiltBrush
                                 imageWidget.TwoSided = true;
                                 imageWidget.SetAspectRatioOverride(data.Width / data.Height);
                                 imageWidget.BlendMode = blend;
-                                var localPose = imageWidget.Canvas.Pose.inverse * canvas.Pose * pose;
-                                imageWidget.LocalTransform = localPose;
-                                imageWidget.RestoreSignedWidgetSize(localPose.scale);
+                                imageWidget.RestoreImagePose(imageWidget.Canvas.Pose.inverse * canvas.Pose * pose);
                                 command.SetWidgetCost(imageWidget.GetTiltMeterCost());
                                 widget = imageWidget;
                             }
