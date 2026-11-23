@@ -4768,6 +4768,18 @@ MonoBehaviour:
     m_Localized: "Ocultar gu\xEDas de vista previa adicionales"
     m_Metadata:
       m_Items: []
+  - m_Id: 40000000000000001
+    m_Localized: "Tus colecciones"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000002
+    m_Localized: "Colecciones públicas"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000003
+    m_Localized: "No se encontraron colecciones"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

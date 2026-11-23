@@ -4706,6 +4706,18 @@ MonoBehaviour:
     m_Localized: "\u9690\u85CF\u989D\u5916\u9884\u89C8\u8F85\u52A9\u7EBF"
     m_Metadata:
       m_Items: []
+  - m_Id: 40000000000000001
+    m_Localized: "你的收藏集"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000002
+    m_Localized: "公开收藏集"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000003
+    m_Localized: "未找到收藏集"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []

@@ -4736,6 +4736,18 @@ MonoBehaviour:
     m_Localized: "Masquer les rep\xE8res suppl\xE9mentaires de pr\xE9visualisation"
     m_Metadata:
       m_Items: []
+  - m_Id: 40000000000000001
+    m_Localized: "Vos collections"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000002
+    m_Localized: "Collections publiques"
+    m_Metadata:
+      m_Items: []
+  - m_Id: 40000000000000003
+    m_Localized: "Aucune collection trouvée"
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
