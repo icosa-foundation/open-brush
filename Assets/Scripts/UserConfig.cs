@@ -215,6 +215,17 @@ namespace TiltBrush
 
             public bool EnableApiRemoteCalls;
             public bool EnableApiCorsHeaders;
+            private int? m_PollingStrokeListenerTimeoutSeconds;
+            public int PollingStrokeListenerTimeoutSeconds
+            {
+                get { return m_PollingStrokeListenerTimeoutSeconds ?? ApiManager.DEFAULT_POLLING_LISTENER_TIMEOUT_SECONDS; }
+                set
+                {
+                    m_PollingStrokeListenerTimeoutSeconds = value > 0
+                        ? value : ApiManager.DEFAULT_POLLING_LISTENER_TIMEOUT_SECONDS;
+                }
+            }
+
             public bool WebScriptsCanControlPlugins;
             public bool EnablePluginWebRequests;
             private PluginWebRequestRule[] m_PluginWebRequestRules;
