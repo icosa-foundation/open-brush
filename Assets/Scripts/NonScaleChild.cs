@@ -113,6 +113,7 @@ namespace TiltBrush
             if (m_Parent == Parent.Scene)
             {
                 App.Scene.PoseChanged += OnParentPoseChanged;
+                App.Scene.ActiveCanvasChanged += OnActiveCanvasChanged;
                 OnPosRotChanged();
             }
             else
@@ -121,11 +122,17 @@ namespace TiltBrush
             }
         }
 
+        private void OnActiveCanvasChanged(CanvasScript prev, CanvasScript current)
+        {
+            ParentCanvas = current;
+        }
+
         void OnDestroy()
         {
             if (m_Parent == Parent.Scene)
             {
                 App.Scene.PoseChanged -= OnParentPoseChanged;
+                App.Scene.ActiveCanvasChanged -= OnActiveCanvasChanged;
             }
             else
             {

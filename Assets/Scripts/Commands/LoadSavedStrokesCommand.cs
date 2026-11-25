@@ -26,7 +26,7 @@ namespace TiltBrush
     {
         public LoadSavedStrokesCommand(
             SavedStrokeFile savedStrokeFile,
-            int targetLayerIndex,
+            int targetLayerIndex, int targetFrameIndex,
             Vector3 commandMidpoint,
             BaseCommand parent = null) : base(parent)
         {
@@ -37,13 +37,14 @@ namespace TiltBrush
                     selection.SelectionTransform, deselect: true, parent: this);
             }
             // Child order is deselect -> load/place -> select; undo reverses it exactly once.
-            new LoadCommand(savedStrokeFile, targetLayerIndex, commandMidpoint, this);
+            new LoadCommand(savedStrokeFile, targetLayerIndex, targetFrameIndex, commandMidpoint, this);
         }
 
         private sealed class LoadCommand : BaseCommand
         {
             private readonly SavedStrokeFile m_SavedStrokeFile;
             private readonly int m_TargetLayerIndex;
+            private readonly int m_TargetFrameIndex;
             private readonly Vector3 m_CommandMidpoint;
 
             private List<Stroke> m_LoadedStrokes;
@@ -66,11 +67,12 @@ namespace TiltBrush
                 }
             }
 
-            internal LoadCommand(SavedStrokeFile savedStrokeFile, int targetLayerIndex,
+            internal LoadCommand(SavedStrokeFile savedStrokeFile, int targetLayerIndex, int targetFrameIndex,
                 Vector3 commandMidpoint, BaseCommand parent) : base(parent)
             {
                 m_SavedStrokeFile = savedStrokeFile;
                 m_TargetLayerIndex = targetLayerIndex;
+                m_TargetFrameIndex = targetFrameIndex;
                 m_CommandMidpoint = commandMidpoint;
             }
 
@@ -84,7 +86,7 @@ namespace TiltBrush
                         m_SavedStrokeFile.FileInfo,
                         bAdditive: true,
                         m_TargetLayerIndex,
-                        out m_LoadedStrokes);
+                        out m_LoadedStrokes, targetFrame: m_TargetFrameIndex);
 
                     if (!m_LoadSucceeded)
                     {

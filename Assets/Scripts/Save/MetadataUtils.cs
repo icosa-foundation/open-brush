@@ -31,6 +31,7 @@ namespace TiltBrush
             public bool tinted;
             public uint groupId;
             public int layerId;
+            public int frameId;
             public bool twoSided;
             public float extrusionDepth;
             public Color extrusionColor;
@@ -94,9 +95,34 @@ namespace TiltBrush
                 .ToArray();
         }
 
+        public static CameraPathMetadata[] GetAnimationPaths()
+        {
+            return WidgetManager.m_Instance.AnimationPathWidgets
+                .Where(apw => apw.WidgetScript.ShouldSerialize() &&
+                    App.Scene.animationUI_manager.GetAnimationPathLocation(
+                        apw.WidgetScript.Path).Item1 >= 0)
+                .Select(apw => apw.WidgetScript.AsSerializable())
+                .ToArray();
+        }
+
         public static LayerMetadata[] GetLayers()
         {
             return App.Scene.LayerCanvasesSerialized();
+        }
+
+        public static AnimationMetadata GetAnimationTracks()
+        {
+            return App.Scene.AnimationTracksSerialized();
+        }
+
+        private static bool ShouldSerializeWidget(GrabWidget widget)
+        {
+            if (!widget.gameObject.activeSelf) return false;
+
+            // Undo can retain widgets on drawings that no longer belong to the timeline.
+            // Resolve selected widgets through their original canvas, regardless of visibility.
+            (int layerId, int frameId) = App.Scene.GetSerializableIndexOfCanvas(widget);
+            return layerId >= 0 && frameId >= 0;
         }
 
         public static TiltModels75[] GetTiltModels(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
@@ -107,7 +133,7 @@ namespace TiltBrush
         {
             var voxPayloads = new List<EditableVoxSavePayload>();
             var widgets =
-                WidgetManager.m_Instance.ModelWidgets.Where(w => w.gameObject.activeSelf && (links == null || links.Includes(w))).ToArray();
+                WidgetManager.m_Instance.ModelWidgets.Where(w => ShouldSerializeWidget(w) && (links == null || links.Includes(w))).ToArray();
             if (widgets.Length == 0 && !ModelCatalog.m_Instance.MissingModels.Any())
             {
                 editableVoxPayloads = null;
@@ -127,13 +153,14 @@ namespace TiltBrush
             foreach (var widget in widgets)
             {
                 WidgetMetadata newEntry = new WidgetMetadata();
-                newEntry.xf = widget.GetSaveTransform();
+                newEntry.xf = App.Scene.GetSerializableTransform(widget, widget.GetSaveTransform());
                 newEntry.modelWidget = widget;
+                newEntry.widgetLink = links?.Get(widget);
                 newEntry.subtree = widget.Subtree;
                 newEntry.pinned = widget.Pinned;
                 newEntry.groupId = groupIdMapping.GetId(widget.Group);
-                newEntry.widgetLink = links?.Get(widget);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(widget.Canvas);
+                (newEntry.layerId, newEntry.frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(widget);
                 modelLocationMap[widget.Model.GetLocation()].Add(newEntry);
             }
 
@@ -161,6 +188,7 @@ namespace TiltBrush
                     val.RawTransforms = new TrTransform[ordered.Length];
                     val.GroupIds = new uint[ordered.Length];
                     val.LayerIds = new int[ordered.Length];
+                    val.FrameIds = new int[ordered.Length];
                     string[] editableVoxPaths = null;
                     bool[] editableVoxPreserveSource = null;
                     for (int i = 0; i < ordered.Length; ++i)
@@ -170,6 +198,7 @@ namespace TiltBrush
                         val.RawTransforms[i] = ordered[i].xf;
                         val.GroupIds[i] = ordered[i].groupId;
                         val.LayerIds[i] = ordered[i].layerId;
+                        val.FrameIds[i] = ordered[i].frameId;
                         RuntimeVoxDocument document = ordered[i].modelWidget.EditableVoxDocument;
                         if (document != null)
                         {
@@ -200,15 +229,17 @@ namespace TiltBrush
 
         public static TiltText[] GetTiltText(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
         {
-            return WidgetManager.m_Instance.TextWidgets.Where(x => x.gameObject.activeSelf && (links == null || links.Includes(x))).Select(x => ConvertTextWidgetToTiltText(x)).ToArray();
+            return WidgetManager.m_Instance.TextWidgets.Where(x => ShouldSerializeWidget(x) && (links == null || links.Includes(x))).Select(x => ConvertTextWidgetToTiltText(x)).ToArray();
 
             TiltText ConvertTextWidgetToTiltText(TextWidget widget)
             {
+                (int layerId, int frameId) = App.Scene.GetSerializableIndexOfCanvas(widget);
                 TiltText text = new TiltText
                 {
                     Transform = widget.SaveTransform,
                     Text = widget.Text,
-                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    LayerId = layerId,
+                    FrameId = frameId,
                     FillColor = widget.TextColor,
                     Pinned = widget.Pinned,
                     GroupId = groupIdMapping.GetId(widget.Group),
@@ -224,20 +255,23 @@ namespace TiltBrush
 
         public static TiltSoundClip[] GetTiltSoundClip(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
         {
-            return WidgetManager.m_Instance.SoundClipWidgets.Where(x => x.gameObject.activeSelf && (links == null || links.Includes(x))).Select(x => ConvertSoundClipWidgetToTiltSoundClip(x)).ToArray();
+            return WidgetManager.m_Instance.SoundClipWidgets.Where(x => ShouldSerializeWidget(x) && (links == null || links.Includes(x))).Select(x => ConvertSoundClipWidgetToTiltSoundClip(x)).ToArray();
 
             TiltSoundClip ConvertSoundClipWidgetToTiltSoundClip(SoundClipWidget widget)
             {
+                (int layerId, int frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(widget);
                 var audioState = widget.GetAudioSaveState();
                 TiltSoundClip soundClip = new TiltSoundClip
                 {
                     FilePath = widget.SoundClip.PersistentPath,
                     AspectRatio = widget.SoundClip.Aspect,
                     Pinned = widget.Pinned,
-                    Transform = widget.LocalTransform,
+                    Transform = App.Scene.GetSerializableTransform(widget, widget.LocalTransform),
                     GroupId = groupIdMapping.GetId(widget.Group),
                     WidgetLink = links?.Get(widget),
-                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    LayerId = layerId,
+                    FrameId = frameId,
                     Paused = audioState.paused,
                     Time = audioState.time,
                     Volume = audioState.volume,
@@ -254,7 +288,7 @@ namespace TiltBrush
         {
             var portals = WidgetManager.m_Instance.ActivePortalWidgets
                 .Select(x => x.WidgetScript)
-                .Where(x => x.gameObject.activeSelf && (links == null || links.Includes(x)))
+                .Where(x => ShouldSerializeWidget(x) && (links == null || links.Includes(x)))
                 .ToArray();
             if (portals.Length == 0)
             {
@@ -263,15 +297,21 @@ namespace TiltBrush
 
             return portals
                 .OrderBy(x => ByTranslation(x.GetSaveTransform()))
-                .Select(portal => new TiltPortal
+                .Select(portal =>
                 {
-                    ShapeType = portal.PortalShapeType,
-                    Transform = portal.GetSaveTransform(),
-                    Destination = portal.Destination,
-                    Pinned = portal.Pinned,
-                    GroupId = groupIdMapping.GetId(portal.Group),
-                    WidgetLink = links?.Get(portal),
-                    LayerId = App.Scene.GetIndexOfCanvas(portal.Canvas),
+                    (int layerId, int frameId) =
+                        App.Scene.GetSerializableIndexOfCanvas(portal);
+                    return new TiltPortal
+                    {
+                        ShapeType = portal.PortalShapeType,
+                        Transform = App.Scene.GetSerializableTransform(portal, portal.GetSaveTransform()),
+                        Destination = portal.Destination,
+                        Pinned = portal.Pinned,
+                        GroupId = groupIdMapping.GetId(portal.Group),
+                        WidgetLink = links?.Get(portal),
+                        LayerId = layerId,
+                        FrameId = frameId,
+                    };
                 })
                 .ToArray();
         }
@@ -280,17 +320,19 @@ namespace TiltBrush
         {
             var captures = WidgetManager.m_Instance.ActiveGaussianCaptureWidgets
                 .Select(x => x.WidgetScript)
-                .Where(x => x.gameObject.activeSelf && (links == null || links.Includes(x)));
+                .Where(x => ShouldSerializeWidget(x) && (links == null || links.Includes(x)));
 
             var results = captures
                 .Select(widget =>
                 {
+                    (int layerId, int frameId) =
+                        App.Scene.GetSerializableIndexOfCanvas(widget);
                     if (widget is GaussianCaptureBoxWidget box)
                     {
                         return new TiltGaussianCapture
                         {
                             ShapeType = StencilType.Cube,
-                            Transform = box.GetSaveTransform(),
+                            Transform = App.Scene.GetSerializableTransform(box, box.GetSaveTransform()),
                             AspectRatio = box.CustomDimension,
                             SubdivX = box.SubdivX,
                             SubdivY = box.SubdivY,
@@ -298,7 +340,8 @@ namespace TiltBrush
                             Pinned = box.Pinned,
                             GroupId = groupIdMapping.GetId(box.Group),
                             WidgetLink = links?.Get(box),
-                            LayerId = App.Scene.GetIndexOfCanvas(box.Canvas),
+                            LayerId = layerId,
+                            FrameId = frameId,
                         };
                     }
 
@@ -307,14 +350,15 @@ namespace TiltBrush
                         return new TiltGaussianCapture
                         {
                             ShapeType = ellipsoid.CaptureShapeType,
-                            Transform = ellipsoid.GetSaveTransform(),
+                            Transform = App.Scene.GetSerializableTransform(ellipsoid, ellipsoid.GetSaveTransform()),
                             AspectRatio = ellipsoid.CustomDimension,
                             NumRings = ellipsoid.NumRings,
                             ViewsPerRing = ellipsoid.ViewsPerRing,
                             Pinned = ellipsoid.Pinned,
                             GroupId = groupIdMapping.GetId(ellipsoid.Group),
                             WidgetLink = links?.Get(ellipsoid),
-                            LayerId = App.Scene.GetIndexOfCanvas(ellipsoid.Canvas),
+                            LayerId = layerId,
+                            FrameId = frameId,
                         };
                     }
 
@@ -323,14 +367,15 @@ namespace TiltBrush
                         return new TiltGaussianCapture
                         {
                             ShapeType = dome.CaptureShapeType,
-                            Transform = dome.GetSaveTransform(),
+                            Transform = App.Scene.GetSerializableTransform(dome, dome.GetSaveTransform()),
                             AspectRatio = Vector3.one,
                             NumRings = dome.NumRings,
                             ViewsPerRing = dome.ViewsPerRing,
                             Pinned = dome.Pinned,
                             GroupId = groupIdMapping.GetId(dome.Group),
                             WidgetLink = links?.Get(dome),
-                            LayerId = App.Scene.GetIndexOfCanvas(dome.Canvas),
+                            LayerId = layerId,
+                            FrameId = frameId,
                         };
                     }
 
@@ -345,10 +390,12 @@ namespace TiltBrush
 
         public static TiltVideo[] GetTiltVideos(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
         {
-            return WidgetManager.m_Instance.VideoWidgets.Where(x => x.gameObject.activeSelf && (links == null || links.Includes(x))).Select(x => ConvertVideoToTiltVideo(x)).ToArray();
+            return WidgetManager.m_Instance.VideoWidgets.Where(x => ShouldSerializeWidget(x) && (links == null || links.Includes(x))).Select(x => ConvertVideoToTiltVideo(x)).ToArray();
 
             TiltVideo ConvertVideoToTiltVideo(VideoWidget widget)
             {
+                (int layerId, int frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(widget);
                 TiltVideo video = new TiltVideo
                 {
                     // Annoyingly Images now use forward slash and a leading dot. So this is inconsistent.
@@ -360,7 +407,8 @@ namespace TiltBrush
                     Transform = widget.SaveTransform,
                     GroupId = groupIdMapping.GetId(widget.Group),
                     WidgetLink = links?.Get(widget),
-                    LayerId = App.Scene.GetIndexOfCanvas(widget.Canvas),
+                    LayerId = layerId,
+                    FrameId = frameId,
                     TwoSided = widget.TwoSided
                 };
                 if (widget.VideoController != null)
@@ -376,7 +424,7 @@ namespace TiltBrush
         public static Guides[] GetGuideIndex(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
         {
             var stencils =
-                WidgetManager.m_Instance.StencilWidgets.Where(s => s.gameObject.activeSelf && (links == null || links.Includes(s))).ToList();
+                WidgetManager.m_Instance.StencilWidgets.Where(s => ShouldSerializeWidget(s) && (links == null || links.Includes(s))).ToList();
             if (stencils.Count == 0)
             {
                 return null;
@@ -406,7 +454,7 @@ namespace TiltBrush
         public static TiltLights[] GetTiltLights(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
         {
             var imports = WidgetManager.m_Instance.LightWidgets
-                .Where(w => w.gameObject.activeSelf && (links == null || links.Includes(w))).ToArray();
+                .Where(w => ShouldSerializeWidget(w) && (links == null || links.Includes(w))).ToArray();
             if (imports.Length == 0)
             {
                 return null;
@@ -417,11 +465,12 @@ namespace TiltBrush
             {
                 var light = lightWidget.GetComponentInChildren<Light>();
                 var newEntry = new TiltLights();
-                newEntry.Transform = lightWidget.GetSaveTransform();
+                newEntry.Transform = App.Scene.GetSerializableTransform(lightWidget, lightWidget.GetSaveTransform());
                 newEntry.Pinned = lightWidget.Pinned;
                 newEntry.GroupId = groupIdMapping.GetId(lightWidget.Group);
                 newEntry.WidgetLink = links?.Get(lightWidget);
-                newEntry.LayerId = App.Scene.GetIndexOfCanvas(lightWidget.Canvas);
+                (newEntry.LayerId, newEntry.FrameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(lightWidget);
 
                 newEntry.PunctualLightType = light.type;
                 newEntry.Intensity = light.intensity;
@@ -446,7 +495,7 @@ namespace TiltBrush
         public static TiltImages75[] GetTiltImages(GroupIdMapping groupIdMapping, WidgetLinkSaveContext links = null)
         {
             var imports = WidgetManager.m_Instance.ImageWidgets
-                .Where(w => w.gameObject.activeSelf && (links == null || links.Includes(w))).ToArray();
+                .Where(w => ShouldSerializeWidget(w) && (links == null || links.Includes(w))).ToArray();
             if (imports.Length == 0)
             {
                 return null;
@@ -475,7 +524,8 @@ namespace TiltBrush
                 newEntry.tinted = image.UseLegacyTint;
                 newEntry.groupId = groupIdMapping.GetId(image.Group);
                 newEntry.widgetLink = links?.Get(image);
-                newEntry.layerId = App.Scene.GetIndexOfCanvas(image.Canvas);
+                (newEntry.layerId, newEntry.frameId) =
+                    App.Scene.GetSerializableIndexOfCanvas(image);
                 newEntry.twoSided = image.TwoSided;
                 newEntry.opacity = image.Opacity;
                 newEntry.extrusionDepth = image.ExtrusionDepth;
@@ -502,6 +552,7 @@ namespace TiltBrush
                 val.Transforms = new TrTransform[ordered.Length];
                 val.GroupIds = new uint[ordered.Length];
                 val.LayerIds = new int[ordered.Length];
+                val.FrameIds = new int[ordered.Length];
                 val.WidgetLinks = ordered.Select(m => m.widgetLink).ToArray();
                 val.TwoSidedFlags = new bool[ordered.Length];
                 val.ExtrusionDepths = new float[ordered.Length];
@@ -513,6 +564,7 @@ namespace TiltBrush
                     val.Transforms[i] = ordered[i].xf;
                     val.GroupIds[i] = ordered[i].groupId;
                     val.LayerIds[i] = ordered[i].layerId;
+                    val.FrameIds[i] = ordered[i].frameId;
                     val.TwoSidedFlags[i] = ordered[i].twoSided;
                     val.ExtrusionDepths[i] = ordered[i].extrusionDepth;
                     val.ExtrusionColors[i] = ordered[i].extrusionColor;

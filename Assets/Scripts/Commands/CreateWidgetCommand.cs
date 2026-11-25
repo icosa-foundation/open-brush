@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -80,10 +80,17 @@ namespace TiltBrush
             tool.SetTargetWidget(widget);
         }
 
+        private (int, int)? m_AnimationPathLocation;
+
         protected override void OnUndo()
         {
             if (m_VoxelTool != null)
                 m_VoxelTool.RestoreTargetWidget(m_PreviousVoxelTarget, m_PreviousCreatingNewModel);
+            if (m_Widget is CameraPathWidget path && path.Path.belongsToAnimation)
+            {
+                m_AnimationPathLocation = App.Scene.animationUI_manager.GetAnimationPathLocation(path.Path);
+                App.Scene.animationUI_manager.DetachAnimationPath(path);
+            }
             m_Widget.Hide();
             WidgetManager.m_Instance.RefreshPinAndUnpinLists();
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: false);
@@ -149,6 +156,13 @@ namespace TiltBrush
                 m_TiltMeterCost = m_Widget.GetTiltMeterCost();
             }
 
+            if (m_Widget is CameraPathWidget path && m_AnimationPathLocation.HasValue &&
+                m_AnimationPathLocation.Value.Item1 >= 0)
+            {
+                var location = m_AnimationPathLocation.Value;
+                App.Scene.animationUI_manager.AttachAnimationPath(path, location.Item1, location.Item2);
+            }
+            App.Scene?.animationUI_manager?.NotifyWidgetAdded(m_Widget);
             WidgetManager.m_Instance.RefreshPinAndUnpinLists();
             TiltMeterScript.m_Instance.AdjustMeterWithWidget(m_TiltMeterCost, up: true);
             m_TiltMeterCostUndone = false;

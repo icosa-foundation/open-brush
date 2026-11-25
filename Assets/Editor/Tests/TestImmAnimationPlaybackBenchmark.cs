@@ -1,0 +1,649 @@
+// Copyright 2026 The Open Brush Authors
+//
+// Licensed under the Apache License, Version 2.0. See LICENSE for details.
+
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Reflection;
+using ImmPlayer;
+using ImmPlayer.Authoring;
+using Newtonsoft.Json;
+using NUnit.Framework;
+using TiltBrush.FrameAnimation;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.LowLevel;
+using UnityEngine.PlayerLoop;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
+using UnityEngine.TestTools;
+using Debug = UnityEngine.Debug;
+
+namespace TiltBrush.Tests
+{
+    internal class TestImmAnimationPlaybackBenchmark
+    {
+        private const int DrawingCount = 8;
+        private const int StrokesPerDrawing = 64;
+        private const int PointsPerStroke = 16;
+        private const int FramesPerDrawing = 2;
+        private const int Track = 1;
+        private const int Resolution = 512;
+        private const BindingFlags PrivateInstance = BindingFlags.Instance | BindingFlags.NonPublic;
+        private static double Now => (double)Stopwatch.GetTimestamp() / Stopwatch.Frequency;
+
+        [UnitySetUp]
+        public IEnumerator EnterRuntime() => new TestAnimationCanvasLifecycle().EnterRuntime();
+
+        [UnityTearDown]
+        public IEnumerator ExitRuntime() => new TestAnimationCanvasLifecycle().ExitRuntime();
+
+        [UnityTest]
+        [Category("AnimationPerformance")]
+        public IEnumerator CompareCanvasAndImm()
+        {
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                Assert.Ignore("IMM playback requires a graphics device.");
+
+            var manager = App.Scene.animationUI_manager;
+            var camera = App.VrSdk.GetVrCamera();
+            manager.StartTimeline();
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+            manager.ConfigureLegacyAnimationTracks(new List<IReadOnlyList<int>>
+            {
+                new[] { DrawingCount * FramesPerDrawing },
+                Enumerable.Repeat(FramesPerDrawing, DrawingCount).ToArray()
+            }, new List<bool> { true, true });
+
+            var canvases = new CanvasScript[DrawingCount];
+            Stroke editableStroke = null;
+            for (int i = 0; i < DrawingCount; ++i)
+            {
+                canvases[i] = manager.GetOrCreateContentCanvas(Track, i * FramesPerDrawing);
+                for (int j = 0; j < StrokesPerDrawing; ++j)
+                {
+                    var stroke = AddStroke(canvases[i], camera, i, j);
+                    if (i == 0 && j == 0) editableStroke = stroke;
+                }
+            }
+
+            var target = RenderTexture.GetTemporary(Resolution, Resolution, 24);
+            var previousTarget = camera.targetTexture;
+            // The test-runner scene can add a second EventSystem to the Main scene.
+            // Its per-update warning and stack trace otherwise dominate the measured thread.
+            var duplicates = UnityEngine.Object.FindObjectsByType<EventSystem>(FindObjectsSortMode.None)
+                .Where(system => system.isActiveAndEnabled && system != EventSystem.current).ToArray();
+            try
+            {
+                foreach (var duplicate in duplicates) duplicate.enabled = false;
+                camera.targetTexture = target;
+                using (var probe = new CameraProbe(camera))
+                {
+                    var modes = new[] { false, true, true, false };
+                    for (int pass = 0; pass < modes.Length; ++pass)
+                    {
+                        bool imm = modes[pass];
+                        var options = new SerializedObject(manager);
+                        options.FindProperty("m_ImmPaintTrackIndex").intValue = Track;
+                        options.FindProperty("m_UseImmPaintTrack").boolValue = imm;
+                        options.ApplyModifiedPropertiesWithoutUndo();
+                        manager.SelectTimelineFrame(Track, 0);
+                        manager.TimelineSlideDown(true);
+                        yield return probe.Until(() => canvases[0].gameObject.activeSelf != imm);
+
+                        ImmDocument document = null;
+                        int layer = -1;
+                        if (imm)
+                        {
+                            var driver = typeof(AnimationUI_Manager).GetField("m_ImmPlayer", PrivateInstance).GetValue(manager);
+                            document = (ImmDocument)driver.GetType().GetField("_document", PrivateInstance).GetValue(driver);
+                            layer = document.GetLayersManaged().Single(info => info.Type == ImmDocument.LayerType.Paint).Id;
+                        }
+                        manager.TimelineSlideDown(false);
+                        manager.StartAnimation();
+
+                        // Verify native ownership and the evaluated drawing outside the timed window.
+                        var verified = new HashSet<int>();
+                        probe.AfterRender = stamp =>
+                        {
+                            int frame = manager.AppliedFrameForStats;
+                            if (!imm || frame < 0 || canvases[frame / FramesPerDrawing].gameObject.activeSelf ||
+                                verified.Contains(frame)) return;
+                            var paint = document.GetEditableLayerStates().Single(state => state.id == layer);
+                            Assert.AreEqual(0, ImmLiveDrawingEdits.GetFrameDrawing(document.DocumentId, layer, frame, out var expected));
+                            Assert.AreEqual(0, ImmLiveDrawingEdits.GetDrawing(document.DocumentId, layer, paint.drawing, out var actual));
+                            Assert.AreEqual(expected, actual, $"Native drawing at playback frame {frame}");
+                            Assert.AreNotEqual(0, paint.visible);
+                            verified.Add(frame);
+                        };
+                        double warmupEnd = Now + 4;
+                        yield return probe.Until(() => Now >= warmupEnd);
+                        if (imm) Assert.IsNotEmpty(verified, "Native paint never took over during playback.");
+
+                        var wallMs = new List<double>(2048);
+                        var renderMs = new List<double>(2048);
+                        var gpuMs = new List<double>(2048);
+                        var frameTimings = new FrameTiming[1];
+                        ulong lastGpuSample = 0;
+                        int native = 0, holds = 0, changes = 0, nativeHolds = 0, nativeChanges = 0;
+                        int previousFrame = -1;
+                        double previousStamp = 0;
+                        double start = Now;
+                        probe.AfterRender = stamp =>
+                        {
+                            int frame = manager.AppliedFrameForStats;
+                            if (previousFrame >= 0)
+                            {
+                                wallMs.Add((stamp - previousStamp) * 1000);
+                                renderMs.Add(probe.LastRenderMs);
+                                bool taken = !canvases[frame / FramesPerDrawing].gameObject.activeSelf;
+                                if (taken) ++native;
+                                if (frame != previousFrame)
+                                {
+                                    if (frame / FramesPerDrawing == previousFrame / FramesPerDrawing)
+                                    {
+                                        ++holds;
+                                        if (taken) ++nativeHolds;
+                                    }
+                                    else
+                                    {
+                                        ++changes;
+                                        if (taken) ++nativeChanges;
+                                    }
+                                }
+                            }
+                            previousFrame = frame;
+                            previousStamp = stamp;
+                            FrameTimingManager.CaptureFrameTimings();
+                            if (FrameTimingManager.GetLatestTimings(1, frameTimings) != 0 &&
+                                frameTimings[0].frameStartTimestamp != lastGpuSample && frameTimings[0].gpuFrameTime > 0)
+                            {
+                                lastGpuSample = frameTimings[0].frameStartTimestamp;
+                                gpuMs.Add(frameTimings[0].gpuFrameTime);
+                            }
+                        };
+                        yield return probe.Until(() => Now - start >= 8);
+                        probe.AfterRender = null;
+                        manager.StopAnimation();
+                        Assert.That(wallMs.Count, Is.GreaterThan(8));
+                        Assert.That(changes, Is.GreaterThan(0));
+                        if (!imm) Assert.AreEqual(0, native);
+
+                        // Time a real repaint through its first completed camera.Render call.
+                        // For IMM, also time the first native-owned render of the new revision.
+                        var firstRenderMs = new List<double>();
+                        var backendRenderMs = new List<double>();
+                        for (int edit = 0; edit < 5; ++edit)
+                        {
+                            manager.SelectTimelineFrame(Track, 0);
+                            manager.TimelineSlideDown(true);
+                            yield return probe.Until(() => canvases[0].gameObject.activeSelf != imm);
+                            ulong previousRevision = imm ? Presented(document) : 0;
+                            manager.TimelineSlideDown(false);
+                            Color color = editableStroke.m_Color == Color.red ? Color.blue : Color.red;
+                            double editStart = Now;
+                            SketchMemoryScript.m_Instance.PerformAndRecordCommand(new RepaintStrokeCommand(editableStroke,
+                                color, editableStroke.m_BrushGuid, editableStroke.m_BrushSize));
+                            manager.TimelineSlideDown(true);
+                            double first = 0, backend = 0;
+                            probe.AfterRender = stamp =>
+                            {
+                                bool onCanvas = canvases[0].gameObject.activeSelf;
+                                bool updatedNative = imm && !onCanvas && Presented(document) > previousRevision;
+                                if (first == 0 && (onCanvas || updatedNative)) first = (stamp - editStart) * 1000;
+                                if (backend == 0 && (imm ? updatedNative : onCanvas)) backend = (stamp - editStart) * 1000;
+                            };
+                            yield return probe.Until(() => backend > 0);
+                            Assert.AreEqual(color, editableStroke.m_Color);
+                            probe.AfterRender = null;
+                            manager.TimelineSlideDown(false);
+                            if (edit > 0)
+                            {
+                                firstRenderMs.Add(first);
+                                backendRenderMs.Add(backend);
+                            }
+                        }
+                        Debug.Log("[OB_IMM_BENCH] " + JsonConvert.SerializeObject(new
+                        {
+                            pass, mode = imm ? "imm" : "canvas", gpu = SystemInfo.graphicsDeviceName,
+                            graphicsApi = SystemInfo.graphicsDeviceType.ToString(), resolution = Resolution,
+                            drawings = DrawingCount, strokesPerDrawing = StrokesPerDrawing, pointsPerStroke = PointsPerStroke,
+                            framesPerDrawing = FramesPerDrawing, fps = 8, samples = wallMs.Count,
+                            wallP50Ms = Percentile(wallMs, .5), wallP95Ms = Percentile(wallMs, .95),
+                            renderP50Ms = Percentile(renderMs, .5), renderP95Ms = Percentile(renderMs, .95),
+                            disabledDuplicateEventSystems = duplicates.Length,
+                            gpuSamples = gpuMs.Count, gpuP50Ms = Percentile(gpuMs, .5), gpuP95Ms = Percentile(gpuMs, .95),
+                            nativeFrames = native, canvasFrames = wallMs.Count - native,
+                            holdTransitions = holds, holdTransitionsNative = nativeHolds,
+                            drawingTransitions = changes, drawingTransitionsNative = nativeChanges,
+                            verifiedNativeExposures = verified.Count, firstRenderMs, backendRenderMs
+                        }));
+                    }
+                }
+            }
+            finally
+            {
+                foreach (var duplicate in duplicates)
+                    if (duplicate != null) duplicate.enabled = true;
+                manager.StopAnimation();
+                manager.TimelineSlideDown(false);
+                camera.targetTexture = previousTarget;
+                RenderTexture.ReleaseTemporary(target);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator FirstRenderAfterDrawingChange()
+        {
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                Assert.Ignore("Drawing presentation requires a graphics device.");
+
+            const int drawings = 4, size = 256, captureLayer = 30;
+            var manager = App.Scene.animationUI_manager;
+            manager.StartTimeline();
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+            manager.ConfigureLegacyAnimationTracks(new List<IReadOnlyList<int>>
+            {
+                new[] { drawings * FramesPerDrawing }, Enumerable.Repeat(FramesPerDrawing, drawings).ToArray()
+            }, new List<bool> { true, true });
+
+            var camera = CreateDrawingCaptureCamera(size, captureLayer, out var target);
+            var pixels = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+            var canvases = new CanvasScript[drawings];
+            var layers = new Dictionary<MeshRenderer, int>();
+            NativeImmRenderer nativeCamera = null;
+            try
+            {
+                for (int i = 0; i < drawings; ++i)
+                {
+                    canvases[i] = manager.GetOrCreateContentCanvas(Track, i * FramesPerDrawing);
+                    AddStroke(canvases[i], camera, i * 2, 27);
+                    foreach (var renderer in canvases[i].GetComponentsInChildren<MeshRenderer>(true))
+                    {
+                        layers.Add(renderer, renderer.gameObject.layer);
+                        renderer.gameObject.layer = captureLayer;
+                    }
+                }
+                var options = new SerializedObject(manager);
+                options.FindProperty("m_ImmPaintTrackIndex").intValue = Track;
+                options.FindProperty("m_UseImmPaintTrack").boolValue = true;
+                options.ApplyModifiedPropertiesWithoutUndo();
+                manager.SelectTimelineFrame(Track, 0);
+                manager.TimelineSlideDown(true);
+                using (var probe = new CameraProbe(camera))
+                {
+                    yield return probe.Until(() =>
+                    {
+                        if (nativeCamera == null) nativeCamera = NativeImmRenderer.RetainForCapture(camera);
+                        return nativeCamera != null && !canvases[0].gameObject.activeSelf;
+                    });
+                    var driver = typeof(AnimationUI_Manager).GetField("m_ImmPlayer", PrivateInstance).GetValue(manager);
+                    var document = (ImmDocument)driver.GetType().GetField("_document", PrivateInstance).GetValue(driver);
+                    int layer = document.GetLayersManaged().Single(info => info.Type == ImmDocument.LayerType.Paint).Id;
+                    var failures = new List<string>();
+                    void CheckFirstRender(int frame, string mode)
+                    {
+                        int drawing = frame / FramesPerDrawing;
+                        var paint = document.GetEditableLayerStates().Single(state => state.id == layer);
+                        Assert.AreEqual(0, ImmLiveDrawingEdits.GetFrameDrawing(document.DocumentId, layer, frame, out var expected));
+                        Assert.AreEqual(0, ImmLiveDrawingEdits.GetDrawing(document.DocumentId, layer, paint.drawing, out var actual));
+                        bool onCanvas = canvases[drawing].gameObject.activeSelf;
+                        int image = ReadDrawingColor(target, pixels, drawings);
+                        if (!onCanvas && paint.visible != 0 && Mathf.Approximately(paint.opacity, 1f) &&
+                            actual == expected && image == drawing) return;
+
+                        Assert.IsTrue(document.TryGetSpawnAreaSnapshot(null, out var seek));
+                        failures.Add($"{mode} frame {frame}, canvas active {onCanvas}, visibility {paint.visible}, " +
+                            $"opacity {paint.opacity}, evaluated handle {actual}/{expected}, image {image}/{drawing}, " +
+                            $"seek {seek.requestedCommand}/{seek.completedCommand} {seek.commandStatus}");
+                    }
+
+                    // Sample each exposure on the first completed camera render, including the loop boundary.
+                    var changes = new HashSet<int>();
+                    int previous = -1;
+                    probe.AfterRender = _ =>
+                    {
+                        int frame = manager.AppliedFrameForStats;
+                        if (frame == previous) return;
+                        CheckFirstRender(frame, "play");
+                        if (previous >= 0 && frame == (previous + 1) % (drawings * FramesPerDrawing) &&
+                            previous / FramesPerDrawing != frame / FramesPerDrawing)
+                            changes.Add(frame);
+                        previous = frame;
+                    };
+                    manager.TimelineSlideDown(false);
+                    manager.StartAnimation();
+                    yield return probe.Until(() => changes.Count == drawings);
+                    manager.StopAnimation();
+                    manager.TimelineSlideDown(true);
+                    foreach (var requests in new[]
+                    {
+                        new[] { 5 }, new[] { 2 }, new[] { 2 }, new[] { 7 }, new[] { 0 }, new[] { 4, 2 }
+                    })
+                    {
+                        int expectedFrame = requests[requests.Length - 1];
+                        bool sampled = false;
+                        probe.AfterRender = _ =>
+                        {
+                            if (sampled) return;
+                            Assert.AreEqual(expectedFrame, manager.AppliedFrameForStats);
+                            CheckFirstRender(expectedFrame, $"scrub {string.Join(" -> ", requests)}");
+                            sampled = true;
+                        };
+                        // The final pair arrives before a single native update or camera render.
+                        foreach (int request in requests)
+                            manager.SelectTimelineFrame(Track, request);
+                        yield return probe.Until(() => sampled);
+                    }
+                    Assert.IsEmpty(failures, string.Join(System.Environment.NewLine, failures));
+                }
+            }
+            finally
+            {
+                manager.StopAnimation();
+                manager.TimelineSlideDown(false);
+                if (nativeCamera != null) nativeCamera.Release();
+                foreach (var pair in layers)
+                    if (pair.Key != null) pair.Key.gameObject.layer = pair.Value;
+                camera.targetTexture = null;
+                RenderTexture.ReleaseTemporary(target);
+                UnityEngine.Object.Destroy(pixels);
+                UnityEngine.Object.Destroy(camera.gameObject);
+            }
+        }
+
+        [UnityTest, Category("AnimationPerformance")]
+        public IEnumerator RecolorAndUndo64Strokes() => MeasureDenseEdits(64);
+
+        [UnityTest, Category("AnimationPerformance")]
+        public IEnumerator RecolorAndUndo1024Strokes() => MeasureDenseEdits(1024);
+
+        private static IEnumerator MeasureDenseEdits(int strokes)
+        {
+            if (SystemInfo.graphicsDeviceType == GraphicsDeviceType.Null)
+                Assert.Ignore("Edit presentation requires a graphics device.");
+
+            const int captureLayer = 30;
+            var manager = App.Scene.animationUI_manager;
+            manager.StartTimeline();
+            manager.ConfigureDrawingRenderProxiesForTests(enabled: false);
+            manager.ConfigureLegacyAnimationTracks(new List<IReadOnlyList<int>> { new[] { 2 }, new[] { 2 } },
+                new List<bool> { true, true });
+            var canvas = manager.GetOrCreateContentCanvas(Track, 0);
+            var camera = CreateDrawingCaptureCamera(256, captureLayer, out var target);
+            var pixels = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+            var layers = new Dictionary<MeshRenderer, int>();
+            var duplicates = UnityEngine.Object.FindObjectsByType<EventSystem>(FindObjectsSortMode.None)
+                .Where(system => system.isActiveAndEnabled && system != EventSystem.current).ToArray();
+            NativeImmRenderer nativeCamera = null;
+            try
+            {
+                foreach (var duplicate in duplicates) duplicate.enabled = false;
+                var stroke = AddStroke(canvas, camera, 0, 0, new Vector2(0, -.03f));
+                // The other strokes are visible on both sides of the camera's central readback area.
+                // Both sizes contain the same isolated, 16-point stroke at the center.
+                for (int i = 1; i < strokes; ++i)
+                {
+                    float x = (i % 32 - 15.5f) * .014f;
+                    float y = (i / 32 - 15.5f) * .017f;
+                    AddStroke(canvas, camera, 0, i, new Vector2(x + Mathf.Sign(x) * .15f, y));
+                }
+                foreach (var renderer in canvas.GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    layers.Add(renderer, renderer.gameObject.layer);
+                    renderer.gameObject.layer = captureLayer;
+                }
+                var options = new SerializedObject(manager);
+                options.FindProperty("m_ImmPaintTrackIndex").intValue = Track;
+                options.FindProperty("m_UseImmPaintTrack").boolValue = true;
+                options.ApplyModifiedPropertiesWithoutUndo();
+                manager.SelectTimelineFrame(Track, 0);
+                manager.TimelineSlideDown(true);
+                using (var probe = new CameraProbe(camera))
+                {
+                    yield return probe.Until(() =>
+                    {
+                        if (nativeCamera == null) nativeCamera = NativeImmRenderer.RetainForCapture(camera);
+                        return nativeCamera != null && !canvas.gameObject.activeSelf;
+                    });
+                    var driver = typeof(AnimationUI_Manager).GetField("m_ImmPlayer", PrivateInstance).GetValue(manager);
+                    var document = (ImmDocument)driver.GetType().GetField("_document", PrivateInstance).GetValue(driver);
+                    int layer = document.GetLayersManaged().Single(info => info.Type == ImmDocument.LayerType.Paint).Id;
+                    Assert.AreEqual(0, ImmLiveDrawingEdits.GetFrameDrawing(document.DocumentId, layer, 0, out var handle));
+                    yield return probe.Until(() => true);
+                    Assert.AreEqual(0, ReadDrawingColor(target, pixels, 3), "Expected the original red stroke.");
+                    // At both densities the lower left contains only unchanged, red strokes.
+                    void CheckNeighborPixels() => Assert.AreEqual(0,
+                        ReadDrawingColor(target, pixels, 3, new Vector2Int(18, 34)), "Neighboring strokes disappeared or changed color.");
+                    CheckNeighborPixels();
+                    for (int sample = 0; sample <= 5; ++sample)
+                    {
+                        foreach (bool undo in new[] { false, true })
+                        {
+                            string operation = undo ? "undo" : "recolor";
+                            int expectedColor = undo ? 0 : 2; // Red and blue on a three-hue circle.
+                            ulong prior = Presented(document);
+                            manager.TimelineSlideDown(false);
+                            Debug.Log($"[OB_IMM_DENSE_BEGIN] {JsonConvert.SerializeObject(new { strokes, operation, sample, markerTicks = Stopwatch.GetTimestamp(), frequency = Stopwatch.Frequency })}");
+                            long startTicks = Stopwatch.GetTimestamp();
+                            double start = (double)startTicks / Stopwatch.Frequency;
+                            if (undo) SketchMemoryScript.m_Instance.StepBack();
+                            else SketchMemoryScript.m_Instance.PerformAndRecordCommand(new RepaintStrokeCommand(stroke,
+                                Color.blue, stroke.m_BrushGuid, stroke.m_BrushSize));
+                            double commandMs = (Now - start) * 1000;
+                            manager.TimelineSlideDown(true);
+
+                            double? requestedMs = null, preparedMs = null, presentedMs = null, firstCanvasMs = null, nativeMs = null;
+                            int? requestedRender = null, preparedRender = null, presentedRender = null;
+                            int renders = 0;
+                            ulong finalRevision = 0;
+                            probe.AfterRender = stamp =>
+                            {
+                                if (nativeMs.HasValue) return;
+                                ++renders;
+                                double elapsed = (stamp - start) * 1000;
+                                Assert.AreEqual(0, ImmLiveDrawingEdits.GetRevisions(document.DocumentId, out var revisions));
+                                if (revisions.Requested > prior) { requestedMs ??= elapsed; requestedRender ??= renders; }
+                                if (revisions.Prepared > prior) { preparedMs ??= elapsed; preparedRender ??= renders; }
+                                if (revisions.Presented > prior) { presentedMs ??= elapsed; presentedRender ??= renders; }
+                                if (canvas.gameObject.activeSelf)
+                                {
+                                    if (!firstCanvasMs.HasValue && sample == 0)
+                                    {
+                                        Assert.AreEqual(expectedColor, ReadDrawingColor(target, pixels, 3), $"First canvas {operation} render.");
+                                        CheckNeighborPixels();
+                                    }
+                                    firstCanvasMs ??= elapsed;
+                                    return;
+                                }
+                                Assert.Greater(revisions.Presented, prior, $"IMM owned a stale {operation} render.");
+                                nativeMs = elapsed;
+                                finalRevision = revisions.Presented;
+                                var paint = document.GetEditableLayerStates().Single(state => state.id == layer);
+                                Assert.AreEqual(0, ImmLiveDrawingEdits.GetDrawing(document.DocumentId, layer, paint.drawing, out var actual));
+                                Assert.AreEqual(handle, actual, $"Drawing identity after {operation}.");
+                                Assert.AreNotEqual(0, paint.visible);
+                                Assert.That(paint.opacity, Is.EqualTo(1f).Within(.001f));
+                                Assert.AreEqual(expectedColor, ReadDrawingColor(target, pixels, 3), $"First IMM {operation} render.");
+                                if (sample == 0) CheckNeighborPixels();
+                            };
+                            yield return probe.Until(() => nativeMs.HasValue);
+                            probe.AfterRender = null;
+                            var result = new
+                            {
+                                strokes, operation, sample, startTicks, frequency = Stopwatch.Frequency, commandMs,
+                                requestedMs, requestedRender, preparedMs, preparedRender, presentedMs, presentedRender,
+                                firstVisibleMs = firstCanvasMs ?? nativeMs, firstCanvasMs, nativeMs, renders, handle, prior, finalRevision
+                            };
+                            Debug.Log($"[OB_IMM_DENSE_EDIT] {JsonConvert.SerializeObject(result)}");
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                manager.TimelineSlideDown(false);
+                if (nativeCamera != null) nativeCamera.Release();
+                foreach (var duplicate in duplicates)
+                    if (duplicate != null) duplicate.enabled = true;
+                foreach (var pair in layers)
+                    if (pair.Key != null) pair.Key.gameObject.layer = pair.Value;
+                camera.targetTexture = null;
+                RenderTexture.ReleaseTemporary(target);
+                UnityEngine.Object.Destroy(pixels);
+                UnityEngine.Object.Destroy(camera.gameObject);
+            }
+        }
+
+        private static Camera CreateDrawingCaptureCamera(int size, int captureLayer, out RenderTexture target)
+        {
+            var cameraObject = new GameObject("IMM drawing capture camera");
+            var camera = cameraObject.AddComponent<Camera>();
+            var gameCamera = App.VrSdk.GetVrCamera();
+            camera.CopyFrom(gameCamera);
+            camera.transform.SetPositionAndRotation(gameCamera.transform.position, gameCamera.transform.rotation);
+            camera.enabled = false;
+            camera.stereoTargetEye = StereoTargetEyeMask.None;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.black;
+            camera.orthographic = false;
+            camera.fieldOfView = 35;
+            camera.nearClipPlane = .1f;
+            camera.farClipPlane = 10f;
+            camera.allowMSAA = camera.allowHDR = false;
+            camera.GetUniversalAdditionalCameraData().renderPostProcessing = false;
+            camera.cullingMask = 1 << captureLayer;
+            target = RenderTexture.GetTemporary(size, size, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            camera.targetTexture = target;
+            return camera;
+        }
+
+        // The four isolated strokes have equally spaced hues and sit at the center of the camera.
+        // Read its existing target; rendering again here would miss a one-frame stale drawing.
+        private static int ReadDrawingColor(RenderTexture target, Texture2D pixels, int drawings, Vector2Int? origin = null)
+        {
+            var previous = RenderTexture.active;
+            try
+            {
+                RenderTexture.active = target;
+                var corner = origin ?? new Vector2Int((target.width - pixels.width) / 2, (target.height - pixels.height) / 2);
+                pixels.ReadPixels(new Rect(corner.x, corner.y, pixels.width, pixels.height), 0, 0, false);
+                Vector3 sum = Vector3.zero;
+                foreach (Color32 p in pixels.GetRawTextureData<Color32>())
+                {
+                    if (Math.Max(p.r, Math.Max(p.g, p.b)) - Math.Min(p.r, Math.Min(p.g, p.b)) > 30)
+                        sum += new Vector3(p.r, p.g, p.b);
+                }
+                if (sum == Vector3.zero) return -1;
+                sum.Normalize();
+                Color.RGBToHSV(new Color(sum.x, sum.y, sum.z), out float hue, out _, out _);
+                return Mathf.RoundToInt(hue * drawings) % drawings;
+            }
+            finally { RenderTexture.active = previous; }
+        }
+
+
+        private static double? Percentile(List<double> values, double fraction)
+        {
+            if (values.Count == 0) return null;
+            var ordered = values.OrderBy(value => value).ToArray();
+            return ordered[(int)Math.Ceiling(fraction * ordered.Length) - 1];
+        }
+
+        private static ulong Presented(ImmDocument doc)
+        {
+            Assert.AreEqual(0, ImmLiveDrawingEdits.GetRevisions(doc.DocumentId, out var revisions));
+            return revisions.Presented;
+        }
+
+        private static Stroke AddStroke(CanvasScript canvas, Camera camera, int drawing, int index,
+            Vector2? position = null)
+        {
+            // Each canvas carries a different position and color. The grid fits in the registered camera's view.
+            float x = position?.x ?? ((index % 8 - 3.5f) * .08f + drawing * .003f);
+            float y = position?.y ?? ((index / 8 - 3.5f) * .08f);
+            var local = canvas.transform;
+            var forward = local.InverseTransformDirection(camera.transform.up);
+            var normal = local.InverseTransformDirection(-camera.transform.forward);
+            var rotation = Quaternion.LookRotation(forward, normal);
+            var points = new PointerManager.ControlPoint[PointsPerStroke];
+            for (int i = 0; i < points.Length; ++i)
+            {
+                var point = new Vector3(x, y + i * .004f, 1.5f);
+                points[i] = new PointerManager.ControlPoint
+                {
+                    m_Pos = local.InverseTransformPoint(camera.transform.TransformPoint(point)),
+                    m_Orient = rotation, m_Pressure = 1, m_TimestampMs = (uint)((drawing * StrokesPerDrawing + index) * 32 + i)
+                };
+            }
+            var stroke = new Stroke
+            {
+                m_BrushGuid = new Guid(Quill.BRUSH_QUILL_CYLINDER), m_Color = Color.HSVToRGB(drawing / 8f, .8f, 1),
+                m_BrushScale = 1, m_BrushSize = .012f / Mathf.Abs(local.lossyScale.x),
+                m_ControlPoints = points, m_ControlPointsToDrop = new bool[points.Length]
+            };
+            stroke.Recreate(canvas: canvas);
+            Assert.That(stroke.m_BatchSubset?.m_VertLength, Is.GreaterThan(0));
+            SketchMemoryScript.m_Instance.MemoryListAdd(stroke);
+            return stroke;
+        }
+
+        // The test coroutine resumes before LateUpdate. Sample after the playhead, canvas visibility,
+        // and native driver have all run; the batch Editor needs an explicit Game camera render.
+        private sealed class CameraProbe : IDisposable
+        {
+            private readonly PlayerLoopSystem original;
+            private readonly Camera camera;
+            private Exception failure;
+            public Action<double> AfterRender;
+            public double LastRenderMs { get; private set; }
+
+            internal CameraProbe(Camera camera)
+            {
+                this.camera = camera;
+                original = PlayerLoop.GetCurrentPlayerLoop();
+                var loop = original;
+                loop.subSystemList = (PlayerLoopSystem[])original.subSystemList.Clone();
+                int late = Array.FindIndex(loop.subSystemList, system => system.type == typeof(PreLateUpdate));
+                Assert.That(late, Is.GreaterThanOrEqualTo(0));
+                var systems = new List<PlayerLoopSystem>(loop.subSystemList[late].subSystemList)
+                {
+                    new PlayerLoopSystem { type = typeof(CameraProbe), updateDelegate = Tick }
+                };
+                loop.subSystemList[late].subSystemList = systems.ToArray();
+                PlayerLoop.SetPlayerLoop(loop);
+            }
+
+            private void Tick()
+            {
+                if (failure != null) return;
+                try
+                {
+                    double start = Now;
+                    camera.Render();
+                    double end = Now;
+                    LastRenderMs = (end - start) * 1000;
+                    AfterRender?.Invoke(end);
+                }
+                catch (Exception ex) { failure = ex; }
+            }
+
+            internal IEnumerator Until(Func<bool> done)
+            {
+                double deadline = Now + 45;
+                do
+                {
+                    yield return null;
+                    if (failure != null) throw failure;
+                    Assert.Less(Now, deadline, "Timed out waiting for the playback benchmark.");
+                } while (!done());
+            }
+
+            public void Dispose() => PlayerLoop.SetPlayerLoop(original);
+        }
+    }
+}

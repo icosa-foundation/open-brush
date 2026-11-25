@@ -309,8 +309,8 @@ namespace TiltBrush
                 m_RemoveFromSelection = false;
             }
 
-            // Hide the main canvas if and only if we are in deselect mode.
-            App.Scene.MainCanvas.gameObject.SetActive(!m_RemoveFromSelection);
+            // Deselect mode hides the current main drawing; restoring it respects timeline visibility.
+            App.Scene.SetMainCanvasVisibility(!m_RemoveFromSelection);
 
             // Start the animation to toggle the tool. At the end of the animation, the visual
             // representation of the tool will match the mode.
@@ -685,6 +685,7 @@ namespace TiltBrush
         /// Select a group that a widget belongs to and then return the corresponding selection widget.
         public SelectionWidget StartGrabbingGroupWithWidget(GrabWidget grabWidget)
         {
+            Debug.Log("START TRANSFORM SELECT");
             m_IsGrabbingGroup = true;
 
             // Save off the current tool and selection.
@@ -823,7 +824,7 @@ namespace TiltBrush
                     // Snapshot capture restores the selection directly and must not edit history.
                     command.Redo();
                 }
-                App.Scene.MainCanvas.gameObject.SetActive(true);
+                App.Scene.SetMainCanvasVisibility(true);
             }
         }
 
@@ -911,6 +912,14 @@ namespace TiltBrush
 
         public void ForgetStrokesInSelectionCanvas()
         {
+            foreach (Stroke stroke in m_SelectedStrokes)
+            {
+                App.Scene.animationUI_manager?.ReleaseDrawingForEditing(stroke.m_PreviousCanvas);
+            }
+            foreach (GrabWidget widget in m_SelectedWidgets)
+            {
+                App.Scene.animationUI_manager?.ReleaseDrawingForEditing(widget.m_PreviousCanvas);
+            }
             SymmetryPeerPreview.Hide();
             m_SelectedStrokes.Clear();
             m_SelectionJoinTransforms.Clear();
@@ -958,6 +967,7 @@ namespace TiltBrush
                 }
 
                 stroke.m_PreviousCanvas = stroke.Canvas;
+                App.Scene.animationUI_manager?.RetainDrawingForEditing(stroke.m_PreviousCanvas);
                 stroke.SetParentKeepWorldPosition(App.Scene.SelectionCanvas, SelectionTransform.inverse);
                 m_SelectedStrokes.Add(stroke);
                 m_SelectionJoinTransforms[stroke] = SelectionTransform;
@@ -1000,6 +1010,7 @@ namespace TiltBrush
                 }
                 var destination = ChooseDestinationCanvas(targetCanvas, stroke.m_PreviousCanvas);
                 stroke.SetParentKeepWorldPosition(destination, SelectionTransform);
+                App.Scene.animationUI_manager?.ReleaseDrawingForEditing(stroke.m_PreviousCanvas);
                 m_SelectedStrokes.Remove(stroke);
                 m_SelectionJoinTransforms.Remove(stroke);
 
@@ -1053,6 +1064,7 @@ namespace TiltBrush
                 return;
             }
             widget.m_PreviousCanvas = widget.Canvas;
+            App.Scene.animationUI_manager?.RetainDrawingForEditing(widget.m_PreviousCanvas);
             m_WidgetJoinTransforms[widget] = SelectionTransform;
             widget.SetCanvas(App.Scene.SelectionCanvas);
             HierarchyUtils.RecursivelySetLayer(widget.transform,
@@ -1087,6 +1099,7 @@ namespace TiltBrush
 
                 var destination = ChooseDestinationCanvas(targetCanvas, widget.m_PreviousCanvas);
                 widget.SetCanvas(destination);
+                App.Scene.animationUI_manager?.ReleaseDrawingForEditing(widget.m_PreviousCanvas);
                 widget.RestoreGameObjectLayer(destination.gameObject.layer);
                 widget.gameObject.SetActive(true);
                 m_SelectedWidgets.Remove(widget);
@@ -1121,8 +1134,11 @@ namespace TiltBrush
         {
             foreach (var stroke in strokes)
             {
-                m_SelectedStrokes.Add(stroke);
-                AddToGroupToSelectedStrokes(stroke.Group, stroke);
+                if (m_SelectedStrokes.Add(stroke))
+                {
+                    App.Scene.animationUI_manager?.RetainDrawingForEditing(stroke.m_PreviousCanvas);
+                    AddToGroupToSelectedStrokes(stroke.Group, stroke);
+                }
             }
             UpdateSelectionWidget();
         }
@@ -1131,9 +1147,12 @@ namespace TiltBrush
         {
             foreach (var stroke in strokes)
             {
-                m_SelectedStrokes.Remove(stroke);
-                m_SelectionJoinTransforms.Remove(stroke);
-                RemoveFromGroupToSelectedStrokes(stroke.Group, stroke);
+                if (m_SelectedStrokes.Remove(stroke))
+                {
+                    m_SelectionJoinTransforms.Remove(stroke);
+                    App.Scene.animationUI_manager?.ReleaseDrawingForEditing(stroke.m_PreviousCanvas);
+                    RemoveFromGroupToSelectedStrokes(stroke.Group, stroke);
+                }
             }
             UpdateSelectionWidget();
         }
@@ -1142,9 +1161,12 @@ namespace TiltBrush
         {
             foreach (var widget in widgets)
             {
-                m_SelectedWidgets.Add(widget);
-                m_WidgetJoinTransforms[widget] = TrTransform.identity;
-                AddToGroupToSelectedWidgets(widget.Group, widget);
+                if (m_SelectedWidgets.Add(widget))
+                {
+                    m_WidgetJoinTransforms[widget] = TrTransform.identity;
+                    App.Scene.animationUI_manager?.RetainDrawingForEditing(widget.m_PreviousCanvas);
+                    AddToGroupToSelectedWidgets(widget.Group, widget);
+                }
             }
             UpdateSelectionWidget();
         }
@@ -1153,9 +1175,12 @@ namespace TiltBrush
         {
             foreach (var widget in widgets)
             {
-                m_SelectedWidgets.Remove(widget);
-                m_WidgetJoinTransforms.Remove(widget);
-                RemoveFromGroupToSelectedWidgets(widget.Group, widget);
+                if (m_SelectedWidgets.Remove(widget))
+                {
+                    m_WidgetJoinTransforms.Remove(widget);
+                    App.Scene.animationUI_manager?.ReleaseDrawingForEditing(widget.m_PreviousCanvas);
+                    RemoveFromGroupToSelectedWidgets(widget.Group, widget);
+                }
             }
             UpdateSelectionWidget();
         }

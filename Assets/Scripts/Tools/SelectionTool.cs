@@ -54,8 +54,8 @@ namespace TiltBrush
             {
                 EndSelection();
 
-                // Make sure the main canvas is visible when we switch out of this tool.
-                App.Scene.MainCanvas.gameObject.SetActive(true);
+                // Restore the current main drawing according to timeline visibility.
+                App.Scene.SetMainCanvasVisibility(true);
             }
 
             // Call this after setting up our tool's state.

@@ -21,6 +21,7 @@ using UnityEngine;
 using Newtonsoft.Json;
 using Unity.SharpZipLib.Zip;
 using static TiltBrush.SketchWriter;
+using TiltBrush.FrameAnimation;
 
 namespace TiltBrush
 {
@@ -100,6 +101,9 @@ namespace TiltBrush
 
         private IEnumerator<Timeslice> TimeslicedConstructor()
         {
+            using AnimationPerformanceStats.OperationTimer operationTimer =
+                AnimationPerformanceStats.MeasureOperation("saveSnapshot");
+            IDisposable animationDrawingLease = null;
             System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
             stopwatch.Start();
             long maxTicks =
@@ -114,11 +118,16 @@ namespace TiltBrush
                 if (deselectCommand != null)
                 {
                     deselectCommand.Redo();
-                    App.Scene.MainCanvas.gameObject.SetActive(true);
+                    App.Scene.SetMainCanvasVisibility(true);
                 }
                 IEnumerable<Stroke> strokes = m_SelectedOnly
                     ? selectedStrokes.Concat(SymmetryPeerEditing.PeersOutside(selectedStrokes)).ToList()
-                    : SketchMemoryScript.AllStrokes();
+                    : SketchMemoryScript.AllStrokes().ToList();
+                animationDrawingLease = App.Scene?.animationUI_manager?
+                    .RetainTimelineDrawingsForSave(strokes.Select(stroke =>
+                        stroke.Canvas == App.Scene.SelectionCanvas
+                            ? stroke.m_PreviousCanvas
+                            : stroke.Canvas));
                 m_WidgetLinks = new WidgetLinkSaveContext(m_SelectedOnly
                     ? selectedWidgets : SymmetryWidgetGroup.ActiveWidgets, m_SelectedOnly);
                 m_SymmetryState = SketchWriter.SymmetrySaveState.Capture(includeUnreferenced: !m_SelectedOnly);
@@ -147,6 +156,7 @@ namespace TiltBrush
                 // Reverse the temporary bake, including peer movement and selection join baselines,
                 // without adding a command to undo history, even if capture fails or is disposed.
                 deselectCommand?.Undo();
+                animationDrawingLease?.Dispose();
             }
         }
 
@@ -173,6 +183,8 @@ namespace TiltBrush
                     SaveLoadScript.m_Instance.TransferredSourceIdFrom(SaveLoadScript.m_Instance.SceneFile),
                 AssetId = SaveLoadScript.m_Instance.SceneFile.AssetId,
                 Layers = MetadataUtils.GetLayers(),
+                AnimationTracks = MetadataUtils.GetAnimationTracks(),
+                AnimationPaths = MetadataUtils.GetAnimationPaths(),
                 SchemaVersion = SketchMetadata.kSchemaVersion,
                 ApplicationName = App.kAppDisplayName,
                 ApplicationVersion = App.Config.m_VersionNumber,
@@ -366,6 +378,7 @@ namespace TiltBrush
                     using (var jsonWriter = new CustomJsonWriter(new StreamWriter(
                         tiltWriter.GetWriteStream(TiltFile.FN_METADATA))))
                     {
+                        Console.WriteLine("WRITE JSON ");
                         m_JsonSerializer.Serialize(jsonWriter, m_Metadata);
                     }
 

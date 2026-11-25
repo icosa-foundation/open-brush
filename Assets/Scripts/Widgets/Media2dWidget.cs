@@ -56,7 +56,7 @@ namespace TiltBrush
             {
                 TrTransform imageXf = TrTransform.FromLocalTransform(transform);
                 imageXf.scale = GetSignedWidgetSize();
-                return imageXf;
+                return App.Scene.GetSerializableTransform(this, imageXf);
             }
         }
 

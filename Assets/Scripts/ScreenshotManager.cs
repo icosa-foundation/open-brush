@@ -531,6 +531,7 @@ namespace TiltBrush
                 Color prevBackgroundColor = camera.backgroundColor;
                 int prevCullingMask = camera.cullingMask;
                 bool prevAllowMsaa = camera.allowMSAA;
+                NativeImmRenderer nativeCapture = null;
                 StereoTargetEyeMask prevStereoTargetEye = StereoTargetEyeMask.None;
                 bool restoreStereoTargetEye = GraphicsSettings.currentRenderPipeline == null;
                 if (restoreStereoTargetEye)
@@ -551,10 +552,12 @@ namespace TiltBrush
                         camera.backgroundColor = new Color(0, 0, 0, 0);
                         camera.cullingMask = LayerMask.GetMask("MainCanvas");
                     }
+                    nativeCapture = NativeImmRenderer.RetainForCapture(camera);
                     camera.Render();
                 }
                 finally
                 {
+                    if (nativeCapture != null) nativeCapture.Release();
                     camera.clearFlags = prevClearFlags;
                     camera.backgroundColor = prevBackgroundColor;
                     camera.cullingMask = prevCullingMask;

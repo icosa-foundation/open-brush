@@ -408,6 +408,8 @@ namespace TiltBrush
             SelfCheck();
             if (m_bVertexDataDirty)
             {
+                TiltBrush.FrameAnimation.AnimationPerformanceStats.RecordMeshUpload(
+                    geometryChanged: true);
                 // Making !resident clears dirtiness; and adding dirtiness requires resident.
                 Debug.Assert(m_Geometry.IsGeometryResident, "Impossible! Dirty but not resident");
                 m_bVertexDataDirty = false;
@@ -422,6 +424,8 @@ namespace TiltBrush
             }
             else if (m_bTopologyDirty)
             {
+                TiltBrush.FrameAnimation.AnimationPerformanceStats.RecordMeshUpload(
+                    geometryChanged: false);
                 // Visibility edits can have resident indices while vertex channels stay evicted.
                 Debug.Assert(m_Geometry.m_Tris != null, "Impossible! Dirty but no indices");
                 m_bTopologyDirty = false;

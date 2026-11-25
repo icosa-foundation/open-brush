@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 namespace TiltBrush
@@ -13,7 +13,7 @@ namespace TiltBrush
             widgets ??= Enumerable.Empty<GrabWidget>();
             var strokeLayers = new Dictionary<Stroke, CanvasScript>();
             var widgetLayers = new Dictionary<GrabWidget, CanvasScript>();
-            var tempLayer = App.Scene.AddLayerNow();
+            var tempLayer = App.Scene.AddCanvas();
 
             foreach (var stroke in strokes)
             {
@@ -33,12 +33,12 @@ namespace TiltBrush
 
             foreach (var stroke in strokes) stroke.SetParentKeepWorldPosition(strokeLayers[stroke], tempLayer.Pose);
             foreach (var widget in widgets) widget.transform.SetParent(widgetLayers[widget].transform, true);
-            App.Scene.DestroyLayer(tempLayer);
+            App.Scene.DestroyCanvas(tempLayer);
         }
 
         public static void TransformSelected(Vector3 mPivot, TrTransform xf)
         {
-            var tempLayer = App.Scene.AddLayerNow();
+            var tempLayer = App.Scene.AddCanvas();
             tempLayer.Pose = SelectionManager.m_Instance.SelectionTransform;
 
             var strokes = SelectionManager.m_Instance.SelectedStrokes;
@@ -53,14 +53,14 @@ namespace TiltBrush
 
             foreach (var stroke in strokes) stroke.SetParentKeepWorldPosition(App.Scene.SelectionCanvas, tempLayer.Pose);
             foreach (var widget in widgets) widget.transform.SetParent(App.Scene.SelectionCanvas.transform, true);
-            App.Scene.DestroyLayer(tempLayer);
+            App.Scene.DestroyCanvas(tempLayer);
         }
 
         public static void TransformList(List<Stroke> strokes, List<GrabWidget> widgets, List<TrTransform> xforms)
         {
             var strokeLayers = new Dictionary<Stroke, CanvasScript>();
             var widgetLayers = new Dictionary<GrabWidget, CanvasScript>();
-            var tempLayer = App.Scene.AddLayerNow();
+            var tempLayer = App.Scene.AddCanvas();
 
             for (var i = 0; i < xforms.Count; i++)
             {
@@ -99,7 +99,7 @@ namespace TiltBrush
                 tempLayer.Pose = TrTransform.identity;
             }
 
-            App.Scene.DestroyLayer(tempLayer);
+            App.Scene.DestroyCanvas(tempLayer);
         }
 
         public static void SnapSelectedRotationAngles()

@@ -142,7 +142,7 @@ namespace TiltBrush
                     m_PathSerializer = null;
                 }
 #else
-                throw new System.NotImplementedException("CameraPath requires USD support");
+                throw new System.NotImplementedException("MovementPath requires USD support");
 #endif
             }
 

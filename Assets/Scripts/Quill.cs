@@ -73,10 +73,10 @@ namespace TiltBrush
         public static string LastLoaded360SkyboxName { get; private set; }
 
         // Quill-specific brush GUIDs
-        private const string BRUSH_QUILL_CYLINDER = "f1c4e3e7-2a9f-4b5d-8c3e-7d9a1f8e6b4c";
-        private const string BRUSH_QUILL_ELLIPSE = "a2d5f6b8-9c1e-4f3a-7b8d-2e6c9f4a1d5b";
-        private const string BRUSH_QUILL_CUBE = "b3e7f8c2-4d5a-1e9b-6c8f-3a7d2f1e9c4b";
-        private const string BRUSH_QUILL_RIBBON = "c4f8b3e2-9d1a-5e7f-4c3b-8a6d2f9e1c7b";
+        internal const string BRUSH_QUILL_CYLINDER = "f1c4e3e7-2a9f-4b5d-8c3e-7d9a1f8e6b4c";
+        internal const string BRUSH_QUILL_ELLIPSE = "a2d5f6b8-9c1e-4f3a-7b8d-2e6c9f4a1d5b";
+        internal const string BRUSH_QUILL_CUBE = "b3e7f8c2-4d5a-1e9b-6c8f-3a7d2f1e9c4b";
+        internal const string BRUSH_QUILL_RIBBON = "c4f8b3e2-9d1a-5e7f-4c3b-8a6d2f9e1c7b";
 
         public static void Load(
             string path, int maxStrokes = 0,
@@ -88,6 +88,13 @@ namespace TiltBrush
             // this one can't leave the previous project's background or skybox behind.
             LastLoadedBackgroundColor = null;
             LastLoaded360SkyboxName = null;
+            if (loadAnimations)
+            {
+                LastLoadedBackgroundColor = null;
+                LastLoaded360SkyboxName = null;
+                Debug.LogError("Quill animation import is not supported.");
+                return;
+            }
 
             string kind;
             SQ.Sequence sequence = null;
@@ -295,31 +302,22 @@ namespace TiltBrush
             // 1. Process strokes in this layer if it's a Paint layer
             if ((!hasFilter || allowAll) && layer is SQ.LayerPaint paint)
             {
-                // NOTE: For now we always call Quill.Load with loadAnimations=false,
-                // so only the first frame (or first drawing) is imported.
                 IEnumerable<SQ.Drawing> drawingsToLoad;
-                if (loadAnimations)
+                if (paint.Frames.Count > 0)
                 {
-                    drawingsToLoad = paint.Drawings;
-                }
-                else
-                {
-                    if (paint.Frames.Count > 0)
+                    int drawingIndex = paint.Frames[0];
+                    if (drawingIndex >= 0 && drawingIndex < paint.Drawings.Count)
                     {
-                        int drawingIndex = paint.Frames[0];
-                        if (drawingIndex >= 0 && drawingIndex < paint.Drawings.Count)
-                        {
-                            drawingsToLoad = new[] { paint.Drawings[drawingIndex] };
-                        }
-                        else
-                        {
-                            drawingsToLoad = paint.Drawings.Take(1);
-                        }
+                        drawingsToLoad = new[] { paint.Drawings[drawingIndex] };
                     }
                     else
                     {
                         drawingsToLoad = paint.Drawings.Take(1);
                     }
+                }
+                else
+                {
+                    drawingsToLoad = paint.Drawings.Take(1);
                 }
 
                 foreach (var drawing in drawingsToLoad)

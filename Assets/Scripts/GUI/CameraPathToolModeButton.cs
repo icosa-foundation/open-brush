@@ -66,6 +66,7 @@ namespace TiltBrush
 
         override protected void OnButtonPressed()
         {
+
             if (m_ToggleActive)
             {
                 SketchSurfacePanel.m_Instance.EnableDefaultTool();

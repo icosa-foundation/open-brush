@@ -606,6 +606,8 @@ namespace TiltBrush
             {
                 m_NonScaleChild.ParentCanvas = newCanvas;
             }
+            App.Scene?.animationUI_manager?.NotifyWidgetCanvasChanged(
+                this, originalCanvas, newCanvas);
 
             var addKeywords = newCanvas.BatchManager.MaterialKeywords.Except(
                 originalCanvas.BatchManager.MaterialKeywords);
@@ -767,6 +769,8 @@ namespace TiltBrush
                     }
                 }
             }
+
+
 
             RegisterWithWidgetManager();
         }

@@ -1,4 +1,4 @@
-﻿// Copyright 2020 The Tilt Brush Authors
+// Copyright 2020 The Tilt Brush Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -34,21 +34,21 @@ namespace TiltBrush
 
         protected override void OnRedo()
         {
-            if (m_Layer.gameObject.activeSelf)
+            if (!App.Scene.IsLayerDeleted(m_Layer))
             {
                 m_Layer.gameObject.SetActive(false);
                 App.Scene.MarkLayerAsDeleted(m_Layer);
                 if (App.Scene.ActiveCanvas == m_Layer)
                 {
                     // If we've deleted the active canvas the switch to main
-                    App.Scene.ActiveCanvas = App.Scene.MainCanvas;
+                    App.Scene.ActiveCanvas = App.Scene.CurrentMainCanvas;
                 }
             }
         }
 
         protected override void OnUndo()
         {
-            if (!m_Layer.gameObject.activeSelf)
+            if (App.Scene.IsLayerDeleted(m_Layer))
             {
                 m_Layer.gameObject.SetActive(true);
                 App.Scene.MarkLayerAsNotDeleted(m_Layer);
