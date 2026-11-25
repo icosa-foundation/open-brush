@@ -33,6 +33,7 @@ namespace TiltBrush
 #endif
 
         private SDFGroup m_SdfManager;
+        private SDFPrimitive m_SharpBox;
         private SDFGroupMeshGenerator m_MeshGenerator;
         private int m_RequestedVisualRevision;
         private int m_StartedVisualRevision;
@@ -197,7 +198,12 @@ namespace TiltBrush
 
         private void UpdateBoundsCollider()
         {
-            Bounds bounds = CalculatePreviewBounds(GetComponentDefinitions());
+            var components = GetComponents();
+            m_SharpBox = components.Count == 1 && components[0] is SDFPrimitive box &&
+                box.Type == SDFPrimitiveType.Cuboid && box.Data.w == 0f &&
+                box.Data.x > 0f && box.Data.y > 0f && box.Data.z > 0f &&
+                box.Operation == SDFCombineType.SmoothUnion && !box.Flip ? box : null;
+            Bounds bounds = CalculatePreviewBounds(GetComponentDefinitions(components));
             m_BoxCollider.transform.localPosition = bounds.center;
             m_BoxCollider.center = Vector3.zero;
             // A tiny nonzero box keeps Unity's collider valid for an empty SDF.
@@ -383,7 +389,11 @@ namespace TiltBrush
 
         internal IReadOnlyList<ComponentDefinition> GetComponentDefinitions()
         {
-            IReadOnlyList<SDFObject> components = GetComponents();
+            return GetComponentDefinitions(GetComponents());
+        }
+
+        private IReadOnlyList<ComponentDefinition> GetComponentDefinitions(IReadOnlyList<SDFObject> components)
+        {
             var definitions = new List<ComponentDefinition>(components.Count);
             foreach (SDFObject component in components)
             {
@@ -1243,6 +1253,11 @@ namespace TiltBrush
                 surfaceNorm = Vector3.zero;
                 return;
             }
+            if (m_SharpBox != null)
+            {
+                ProjectToBox(m_SharpBox.transform, m_SharpBox.Data, pos, out surfacePos, out surfaceNorm);
+                return;
+            }
             // IsoMesh evaluates distances in each shape's local units. Its nearest-point
             // query applies that distance directly in world space, which breaks when the
             // scene or guide is scaled. Keep the world-space gradient's magnitude to
@@ -1261,6 +1276,21 @@ namespace TiltBrush
                 surfacePos = ProjectStationaryPointToSurface(mapper, pos, radius, maxStep);
             }
             surfaceNorm = m_SdfManager.GetSurfaceNormal(surfacePos);
+        }
+
+        internal static void ProjectToBox(Transform box, Vector3 halfWidth, Vector3 query,
+            out Vector3 point, out Vector3 normal)
+        {
+            Vector3 local = box.InverseTransformPoint(query);
+            CubeStencil.FindClosestPointOnBoxSurface(local, halfWidth, out point, out normal);
+            // Unity's normalized returns zero for very short offsets just outside a face.
+            if (normal == Vector3.zero)
+            {
+                Vector3 offset = local - point;
+                normal = offset / offset.magnitude;
+            }
+            point = box.TransformPoint(point);
+            normal = box.worldToLocalMatrix.transpose.MultiplyVector(normal).normalized;
         }
 
         private static bool TryProjectToSurface(
