@@ -2316,6 +2316,33 @@ namespace TiltBrush.FrameAnimation
             m_AuthoringBaselineRevision = 0;
         }
 
+        private AnimationTimelineModel.Track GetVisibleImmTrack()
+        {
+            var tracks = m_SparseTimeline.Tracks;
+            var track = m_ImmPaintTrackIndex >= 0 && m_ImmPaintTrackIndex < tracks.Count
+                ? tracks[m_ImmPaintTrackIndex] : null;
+            return track != null && track.Visible && !track.Deleted ? track : null;
+        }
+
+        private CanvasScript GetImmPreviewCanvas(int frame)
+        {
+            if (!GetChanging() || !m_ImmSource.TryResolve(frame, out var exposure)) return null;
+            var canvas = GetCanvasForDrawing(exposure.Value.DrawingId);
+            return canvas != null && (canvas.gameObject.activeSelf || canvas == m_ImmSuppressedCanvas)
+                ? canvas : null;
+        }
+
+        private void PrepareImmFrame()
+        {
+            if (!m_UseImmPaintTrack || m_ImmPlayer == null || m_ImmDrawingDirty || m_SparseTimelineDirty ||
+                GetVisibleImmTrack() != m_ImmSource) return;
+
+            // The IMM manager evaluates pending seeks in LateUpdate, before this component
+            // decides which renderer owns the frame.
+            int frame = FrameOn;
+            if (GetImmPreviewCanvas(frame) != null) m_ImmPlayer.PrepareFrame(frame);
+        }
+
         // LateUpdate coalesces notifications from one command (including Split, Undo and Redo)
         // and observes the playhead after Update has advanced it.
         private void LateUpdate()
@@ -2327,10 +2354,8 @@ namespace TiltBrush.FrameAnimation
             }
 
             EnsureSparseTimeline();
-            var tracks = m_SparseTimeline.Tracks;
-            var track = m_ImmPaintTrackIndex >= 0 && m_ImmPaintTrackIndex < tracks.Count
-                ? tracks[m_ImmPaintTrackIndex] : null;
-            if (track == null || !track.Visible || track.Deleted)
+            var track = GetVisibleImmTrack();
+            if (track == null)
             {
                 if (m_ImmSource != null) DisposeImmTrack();
                 return;
@@ -2383,24 +2408,22 @@ namespace TiltBrush.FrameAnimation
             }
             if (changed) m_ImmPlayer.SetTrack(m_ImmSnapshot.Drawings, m_ImmSnapshot.Frames);
 
-            if ((m_Playing || m_Scrolling) && track.TryResolve(FrameOn, out var exposure))
+            int frame = FrameOn;
+            var canvas = GetImmPreviewCanvas(frame);
+            if (canvas != null)
             {
-                CanvasScript canvas = GetCanvasForDrawing(exposure.Value.DrawingId);
-                if (canvas != null && (canvas.gameObject.activeSelf || canvas == m_ImmSuppressedCanvas))
+                if (m_ImmPlayer.TryPresent(frame, canvas.transform.localToWorldMatrix))
                 {
-                    if (m_ImmPlayer.TryPresent(FrameOn, canvas.transform.localToWorldMatrix))
-                    {
-                        if (m_ImmSuppressedCanvas != canvas) RestoreImmCanvas();
-                        m_ImmSuppressedCanvas = canvas;
-                        SetCanvasActive(canvas, false);
-                    }
-                    else
-                    {
-                        RestoreImmCanvas();
-                        ReportImmPlaybackError();
-                    }
-                    return;
+                    if (m_ImmSuppressedCanvas != canvas) RestoreImmCanvas();
+                    m_ImmSuppressedCanvas = canvas;
+                    SetCanvasActive(canvas, false);
                 }
+                else
+                {
+                    RestoreImmCanvas();
+                    ReportImmPlaybackError();
+                }
+                return;
             }
             HideImmTrack();
             m_ImmPlayer.Pump();
@@ -2537,6 +2560,7 @@ namespace TiltBrush.FrameAnimation
             if (!playbackUpdate) BindAuthoringCanvas(App.Scene.ActiveCanvas);
             UpdateUI(timelineInput, updateTimelineLayout: !playbackUpdate);
             if (!playbackUpdate) App.Scene.TriggerLayersUpdate();
+            PrepareImmFrame();
             Profiler.EndSample();
         }
 
@@ -3400,7 +3424,8 @@ namespace TiltBrush.FrameAnimation
         public void TimelineSlideDown(bool down)
         {
             m_Scrolling = down;
-            if (!down && !m_Playing) HideImmTrack();
+            if (down) PrepareImmFrame();
+            else if (!m_Playing) HideImmTrack();
         }
 
         public void TimelineSlide(float Value)
@@ -3438,6 +3463,7 @@ namespace TiltBrush.FrameAnimation
             CommitAuthoringDrawing();
             ApplyFullFrameVisibility(FrameOn, includeEmptyCanvases: false);
             m_Playing = true;
+            PrepareImmFrame();
         }
 
         public void StopAnimation()
